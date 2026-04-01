@@ -1,0 +1,12 @@
+{
+  "lessons": [
+    {"id": "lesson-01", "title": "What Is Surveillance?", "description": "Purpose, definitions, and action orientation", "section": "Foundations", "order": 1},
+    {"id": "lesson-02", "title": "Types of Surveillance", "description": "Passive, active, sentinel, case-based, and syndromic systems", "section": "Foundations", "order": 2},
+    {"id": "lesson-03", "title": "Indicator-Based vs Event-Based Surveillance", "description": "Structured reporting versus signal detection", "section": "Signal design", "order": 3},
+    {"id": "lesson-04", "title": "Case Definitions", "description": "Sensitivity, specificity, and operational consistency", "section": "Signal design", "order": 4},
+    {"id": "lesson-05", "title": "Data Collection and Flow", "description": "Reporting chains, feedback loops, and data governance", "section": "System design", "order": 5},
+    {"id": "lesson-06", "title": "Evaluation Using CDC Attributes", "description": "Simplicity, flexibility, quality, timeliness, and usefulness", "section": "System design", "order": 6},
+    {"id": "lesson-07", "title": "Digital Surveillance", "description": "Platform-era tools, automation, and risk", "section": "Advanced topics", "order": 7},
+    {"id": "lesson-08", "title": "Post-Elimination Surveillance", "description": "Maintaining vigilance when cases become rare", "section": "Advanced topics", "order": 8}
+  ]
+}

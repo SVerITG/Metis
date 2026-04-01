@@ -1,0 +1,16 @@
+{
+  "lessons": [
+    {"id": "lesson-01", "title": "Descriptive Statistics", "description": "Summarizing distributions and spotting structure", "section": "Core concepts", "order": 1},
+    {"id": "lesson-02", "title": "Probability Basics", "description": "Events, conditional probability, and Bayes intuition", "section": "Core concepts", "order": 2},
+    {"id": "lesson-03", "title": "Probability Distributions", "description": "Binomial, normal, Poisson, and sampling variation", "section": "Core concepts", "order": 3},
+    {"id": "lesson-04", "title": "Confidence Intervals", "description": "Precision, uncertainty, and interval estimation", "section": "Inference", "order": 4},
+    {"id": "lesson-05", "title": "Hypothesis Testing", "description": "Null models, p-values, and decision discipline", "section": "Inference", "order": 5},
+    {"id": "lesson-06", "title": "Chi-Square and t-Tests", "description": "Common comparisons for categorical and continuous outcomes", "section": "Inference", "order": 6},
+    {"id": "lesson-07", "title": "Correlation and Simple Regression", "description": "Linear relationships and prediction basics", "section": "Regression", "order": 7},
+    {"id": "lesson-08", "title": "Multiple Regression", "description": "Adjustment, interpretation, and model diagnostics", "section": "Regression", "order": 8},
+    {"id": "lesson-09", "title": "Logistic Regression", "description": "Binary outcomes and odds-based modeling", "section": "Regression", "order": 9},
+    {"id": "lesson-10", "title": "Survival Analysis", "description": "Time-to-event data, censoring, and hazards", "section": "Specialized models", "order": 10},
+    {"id": "lesson-11", "title": "Poisson Regression", "description": "Modeling counts, rates, and incidence", "section": "Specialized models", "order": 11},
+    {"id": "lesson-12", "title": "Introduction to Multilevel Models", "description": "Why clustering changes inference", "section": "Specialized models", "order": 12}
+  ]
+}
