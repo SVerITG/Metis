@@ -1,0 +1,12 @@
+{
+  "lessons": [
+    {"id": "lesson-01", "title": "Why Space Matters", "description": "Place, exposure context, and geographic heterogeneity", "section": "Foundations", "order": 1},
+    {"id": "lesson-02", "title": "GIS Basics and Coordinate Systems", "description": "Vectors, rasters, projections, and joins", "section": "Foundations", "order": 2},
+    {"id": "lesson-03", "title": "Disease Mapping", "description": "Rates, smoothing, and cartographic choices", "section": "Mapping", "order": 3},
+    {"id": "lesson-04", "title": "Cluster Detection with SaTScan", "description": "Spatial scan logic and practical interpretation", "section": "Clusters", "order": 4},
+    {"id": "lesson-05", "title": "Spatial Autocorrelation", "description": "Moran's I, LISA, and dependence", "section": "Dependence", "order": 5},
+    {"id": "lesson-06", "title": "Spatial Regression", "description": "When ordinary regression is not enough", "section": "Dependence", "order": 6},
+    {"id": "lesson-07", "title": "R Packages for Spatial Epidemiology", "description": "A modern toolchain for spatial workflows", "section": "Tools", "order": 7},
+    {"id": "lesson-08", "title": "A Practical Spatial Epi Workflow", "description": "From raw data to defensible maps and models", "section": "Tools", "order": 8}
+  ]
+}
