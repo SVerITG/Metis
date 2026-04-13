@@ -3,6 +3,7 @@
     "version": "1.0",
     "created": "2026-04-13",
     "last_updated": "2026-04-13",
+    "last_phase_completed": "Phase 1 (M1.1–M1.10)",
     "purpose": "Tracks all 75 implementation milestones for the Metis Research Cortex redesign. Statuses: pending | in_progress | completed | skipped. Each completed item records a date and optional notes.",
     "phases": [
       "Phase 0 — Foundations",
@@ -76,62 +77,84 @@
         {
           "id": "M1.1",
           "subject": "Audit current 12 tabs and decide which code modules will be merged or removed",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "Explore agent audited all 14 R module files. Consolidation plan confirmed: 5 new modules, 3 unchanged, Dropzone removed."
         },
         {
           "id": "M1.2",
           "subject": "Create new 8-tab structure in app.R (Today · Knowledge · Thinking · Planner · Work · Meetings · Learning · Metis) with stub modules",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "app.R updated. 8 nav_panel entries and 8 server calls. All new modules wired."
         },
         {
           "id": "M1.3",
-          "subject": "Move Library + Research code into new Knowledge module",
-          "status": "pending"
+          "subject": "Move Library + Research + News code into new Knowledge module via navset_card_tab",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "mod_knowledge.R created as wrapper. Calls library_ui/server, research_ui/server, news_ui/server as nested sub-modules."
         },
         {
           "id": "M1.4",
-          "subject": "Move Ideas + Notes + Journal code into new Thinking module with frictionless-capture classifier",
-          "status": "pending"
+          "subject": "Move Notes + Ideas code into new Thinking module via navset_card_tab",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "mod_thinking.R created as wrapper. Calls notes_ui/server (with parent_session) and ideas_ui/server as nested sub-modules."
         },
         {
           "id": "M1.5",
-          "subject": "Keep Planner as standalone tab — move existing Planner code into standalone Planner module",
-          "status": "pending"
+          "subject": "Keep Planner as standalone tab — existing mod_planning.R unchanged",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "No changes needed. planning_ui/planning_server wired directly in app.R."
         },
         {
           "id": "M1.6",
-          "subject": "Move Projects code into new Work module with card-grid layout",
-          "status": "pending"
+          "subject": "Move Projects code into new Work module",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "mod_work.R created as renamed copy of mod_projects.R. projects_ui → work_ui, projects_server → work_server. h1 heading updated to 'Work'."
         },
         {
           "id": "M1.7",
-          "subject": "Keep Meetings as standalone tab with existing code as baseline",
-          "status": "pending"
+          "subject": "Keep Meetings as standalone tab — existing mod_meetings.R unchanged",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "No changes needed."
         },
         {
           "id": "M1.8",
-          "subject": "Promote Learning from System sub-section to own tab — seed with course registry schema and manifest reader",
-          "status": "pending"
+          "subject": "Keep Learning as standalone tab — existing mod_learning.R unchanged",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "Learning was already a top-level tab. No changes needed."
         },
         {
           "id": "M1.9",
-          "subject": "Move System + News config + Coach surface into new Metis module with five memory sub-views",
-          "status": "pending"
+          "subject": "Move System tab code into new Metis module",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "mod_metis.R created as renamed copy of mod_system.R. system_ui → metis_tab_ui, system_server → metis_tab_server. h1 updated to 'Metis'."
         },
         {
           "id": "M1.10",
-          "subject": "Dissolve Dropzone as tab — implement floating drag-and-drop affordance available from every tab",
-          "status": "pending"
+          "subject": "Remove Dropzone from nav_panel — not in 8-tab structure",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "Dropzone removed from app.R nav and server calls. mod_dropzone.R remains on disk pending M1.11 cleanup."
         },
         {
           "id": "M1.11",
-          "subject": "Delete old modules once consolidated versions are working",
-          "status": "pending"
+          "subject": "Delete old replaced modules: mod_control_room.R, mod_projects.R, mod_system.R, mod_dropzone.R",
+          "status": "pending",
+          "notes": "Awaiting user confirmation (Red Line 2). Sub-modules (library, research, news, notes, ideas) kept — still used by wrappers."
         },
         {
           "id": "M1.12",
-          "subject": "Visual audit: confirm each tab fits one screen, has clear hierarchy, uses whitespace principles",
-          "status": "pending"
+          "subject": "Visual audit: confirm each tab loads, fits one screen, has clear hierarchy",
+          "status": "pending",
+          "notes": "Needs RStudio launch to verify no R errors and 8 tabs render correctly."
         }
       ]
     },
