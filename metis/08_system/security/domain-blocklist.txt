@@ -1,0 +1,13 @@
+# Metis Domain Blocklist — domains that must NEVER be accessed
+# One domain per line. Lines starting with # are comments.
+
+# Known malicious / phishing (seed list — update via threat feeds)
+# This list is intentionally small; the allowlist approach is safer
+
+# Suspicious AI services (data harvesting risk)
+# Add domains here if you discover services that scrape research content
+
+# Explicit blocks
+localhost
+127.0.0.1
+0.0.0.0

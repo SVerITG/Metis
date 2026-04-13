@@ -1,0 +1,53 @@
+# Column names that indicate sensitive/patient-level data
+# If an Excel/CSV file contains any of these column headers, the Data Guardian flags it
+# Case-insensitive matching. One pattern per line.
+
+# Patient identifiers
+patient_id
+patient_name
+patientid
+case_id
+caseid
+person_id
+subject_id
+participant_id
+record_id
+dossier
+
+# Demographics (identifying in combination)
+date_of_birth
+dob
+birth_date
+national_id
+ssn
+social_security
+passport
+insurance_number
+
+# Medical data
+diagnosis
+test_result
+hiv_status
+treatment
+medication
+lab_result
+pathology
+biopsy
+
+# HAT-specific
+catt_result
+mAECT
+trypanolysis
+csf_wbc
+csf_tryps
+parasitology
+lumbar_puncture
+
+# Location at individual level
+gps_lat
+gps_lon
+gps_latitude
+gps_longitude
+home_address
+residence
+village_gps
