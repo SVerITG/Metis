@@ -3,7 +3,7 @@
     "version": "1.0",
     "created": "2026-04-13",
     "last_updated": "2026-04-13",
-    "last_phase_completed": "Phase 1 (M1.1–M1.10)",
+    "last_phase_completed": "Phase 2 (M2.1–M2.6) + M1.11",
     "purpose": "Tracks all 75 implementation milestones for the Metis Research Cortex redesign. Statuses: pending | in_progress | completed | skipped. Each completed item records a date and optional notes.",
     "phases": [
       "Phase 0 — Foundations",
@@ -147,8 +147,9 @@
         {
           "id": "M1.11",
           "subject": "Delete old replaced modules: mod_control_room.R, mod_projects.R, mod_system.R, mod_dropzone.R",
-          "status": "pending",
-          "notes": "Awaiting user confirmation (Red Line 2). Sub-modules (library, research, news, notes, ideas) kept — still used by wrappers."
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "User confirmed deletion. All 4 files removed. Sub-modules (library, research, news, notes, ideas) kept — still used by wrapper modules."
         },
         {
           "id": "M1.12",
@@ -164,33 +165,45 @@
       "items": [
         {
           "id": "M2.1",
-          "subject": "Strip the Control Room down to four sections",
-          "status": "pending"
+          "subject": "Strip Today tab to locked layout: greeting strip, overnight summary, launcher row, focus, scan, token footer",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "mod_today.R fully rewritten. Removed KPI boxes, git panel, snapshot, publications panel, project boards, recent files, task table. New structure: 6 sections."
         },
         {
           "id": "M2.2",
           "subject": "Build six launcher cards with Today-level simplified actions",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "launcher-row grid with 6 buttons: Capture idea, Brainstorm, Work on document, Review code, Prep meeting, Process inbox. Each opens a modal with copy-prompt block or navigation action."
         },
         {
           "id": "M2.3",
           "subject": "Build 'What's new overnight' summary",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "overnight-card shows counts for news items, new papers, new ideas, meetings from last 24h. Shows 'clean slate' message when nothing is new."
         },
         {
           "id": "M2.4",
           "subject": "Build 'Today's focus' card",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "focus_ui shows highest-priority active project with domain badge, priority chip, and next step. Conditional — returns NULL when no active projects."
         },
         {
           "id": "M2.5",
           "subject": "Build 'Scan for changes' button and result area",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "Scan button checks: git dirty/unpushed across active projects, tracked_files with watch=1 changed today, PLANNING.md files updated today. Results shown in scan-section groups."
         },
         {
           "id": "M2.6",
-          "subject": "Wire trust badge into header",
-          "status": "pending"
+          "subject": "Wire trust badge into navbar header",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "nav_spacer() + nav_item(div.trust-badge) added to page_navbar. Shows green shield + 'Local-first' text. Static for now — session call tracking is Phase 4."
         }
       ]
     },
