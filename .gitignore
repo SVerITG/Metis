@@ -1,0 +1,42 @@
+# Python virtual environments
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# R artifacts
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+
+# Data files (never commit)
+*.csv
+*.rds
+*.RData
+*.sqlite
+*.db
+*.cas
+*.geo
+*.pop
+*.shp
+*.shx
+*.dbf
+*.prj
+
+# Office temp files
+~$*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets
+.env
+*.env
+secrets.*

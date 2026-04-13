@@ -1,0 +1,555 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "created": "2026-04-13",
+    "last_updated": "2026-04-13",
+    "purpose": "Tracks all 75 implementation milestones for the Metis Research Cortex redesign. Statuses: pending | in_progress | completed | skipped. Each completed item records a date and optional notes.",
+    "phases": [
+      "Phase 0 — Foundations",
+      "Phase 1 — Dashboard consolidation",
+      "Phase 2 — Today tab redesign",
+      "Phase 3 — Quick capture",
+      "Phase 4 — Master pipeline",
+      "Phase 5 — Multi-layered memory",
+      "Phase 6 — Anonymization and trust UI",
+      "Phase 7 — Backup and portability",
+      "Phase 8 — Brainstorm Plan Mode",
+      "Phase 9 — Self-improvement loop",
+      "Phase 10 — Automated daily tasks",
+      "Phase 11 — Installer and distribution",
+      "Phase 12 — Testing, polish, documentation"
+    ]
+  },
+  "milestones": {
+    "Phase 0": {
+      "label": "Foundations",
+      "target_timeline": "days 1–3",
+      "items": [
+        {
+          "id": "M0.1",
+          "subject": "Create implementation-progress.json and implementation-log.md",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "implementation-progress.json created. implementation-log.md deferred to M0.2 session."
+        },
+        {
+          "id": "M0.2",
+          "subject": "Rename 02_agents/pkm-builder/ → 02_agents/rc-builder/ and update all code references",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "Folder renamed (pkm-builder → rc-builder). agent-registry.json updated (slug, name, invocation, chains_with). MCP server.py, agents.py, projects.py docstrings updated."
+        },
+        {
+          "id": "M0.3",
+          "subject": "Remove all 'Monia' references from non-venv files",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "Replaced Monia/monia with Metis/metis across code and doc files. History files updated inline. 07_outputs/reviews/monia/ folder deleted (confirmed by user, Red Line 2)."
+        },
+        {
+          "id": "M0.4",
+          "subject": "Rename 01_control-room/ → 01_journal/, archive planning docs, flatten memory/",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "Planning docs moved to 09_archive/planning-history/. memory/ flattened to direct children. notes/ and brainstorms/ created."
+        },
+        {
+          "id": "M0.5",
+          "subject": "Rename 08_system/prompts/ → 08_system/patterns/",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "Renamed via git mv. Aligns with Section 28 Pattern browser decision."
+        },
+        {
+          "id": "M0.6",
+          "subject": "Update CLAUDE.md to reflect new folder structure",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "Updated agent invocation table, key paths section, and PKM→RC references."
+        }
+      ]
+    },
+    "Phase 1": {
+      "label": "Dashboard consolidation",
+      "target_timeline": "week 1–2",
+      "items": [
+        {
+          "id": "M1.1",
+          "subject": "Audit current 12 tabs and decide which code modules will be merged or removed",
+          "status": "pending"
+        },
+        {
+          "id": "M1.2",
+          "subject": "Create new 8-tab structure in app.R (Today · Knowledge · Thinking · Planner · Work · Meetings · Learning · Metis) with stub modules",
+          "status": "pending"
+        },
+        {
+          "id": "M1.3",
+          "subject": "Move Library + Research code into new Knowledge module",
+          "status": "pending"
+        },
+        {
+          "id": "M1.4",
+          "subject": "Move Ideas + Notes + Journal code into new Thinking module with frictionless-capture classifier",
+          "status": "pending"
+        },
+        {
+          "id": "M1.5",
+          "subject": "Keep Planner as standalone tab — move existing Planner code into standalone Planner module",
+          "status": "pending"
+        },
+        {
+          "id": "M1.6",
+          "subject": "Move Projects code into new Work module with card-grid layout",
+          "status": "pending"
+        },
+        {
+          "id": "M1.7",
+          "subject": "Keep Meetings as standalone tab with existing code as baseline",
+          "status": "pending"
+        },
+        {
+          "id": "M1.8",
+          "subject": "Promote Learning from System sub-section to own tab — seed with course registry schema and manifest reader",
+          "status": "pending"
+        },
+        {
+          "id": "M1.9",
+          "subject": "Move System + News config + Coach surface into new Metis module with five memory sub-views",
+          "status": "pending"
+        },
+        {
+          "id": "M1.10",
+          "subject": "Dissolve Dropzone as tab — implement floating drag-and-drop affordance available from every tab",
+          "status": "pending"
+        },
+        {
+          "id": "M1.11",
+          "subject": "Delete old modules once consolidated versions are working",
+          "status": "pending"
+        },
+        {
+          "id": "M1.12",
+          "subject": "Visual audit: confirm each tab fits one screen, has clear hierarchy, uses whitespace principles",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 2": {
+      "label": "Today tab redesign",
+      "target_timeline": "week 2",
+      "items": [
+        {
+          "id": "M2.1",
+          "subject": "Strip the Control Room down to four sections",
+          "status": "pending"
+        },
+        {
+          "id": "M2.2",
+          "subject": "Build six launcher cards with Today-level simplified actions",
+          "status": "pending"
+        },
+        {
+          "id": "M2.3",
+          "subject": "Build 'What's new overnight' summary",
+          "status": "pending"
+        },
+        {
+          "id": "M2.4",
+          "subject": "Build 'Today's focus' card",
+          "status": "pending"
+        },
+        {
+          "id": "M2.5",
+          "subject": "Build 'Scan for changes' button and result area",
+          "status": "pending"
+        },
+        {
+          "id": "M2.6",
+          "subject": "Wire trust badge into header",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 3": {
+      "label": "Quick capture",
+      "target_timeline": "week 2 (parallel)",
+      "items": [
+        {
+          "id": "M3.1",
+          "subject": "Build Ctrl+K shortcut handler",
+          "status": "pending"
+        },
+        {
+          "id": "M3.2",
+          "subject": "Build capture modal with auto-classification",
+          "status": "pending"
+        },
+        {
+          "id": "M3.3",
+          "subject": "Wire modal to capture_idea MCP tool",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 4": {
+      "label": "Master pipeline",
+      "target_timeline": "weeks 3–5",
+      "items": [
+        {
+          "id": "M4.1",
+          "subject": "Design session_events and session_context schemas",
+          "status": "pending"
+        },
+        {
+          "id": "M4.2",
+          "subject": "Implement session bootstrap stage",
+          "status": "pending"
+        },
+        {
+          "id": "M4.3",
+          "subject": "Implement Data Guardian intercept stage",
+          "status": "pending"
+        },
+        {
+          "id": "M4.4",
+          "subject": "Implement Cybersecurity intercept stage",
+          "status": "pending"
+        },
+        {
+          "id": "M4.5",
+          "subject": "Implement intent parsing stage",
+          "status": "pending"
+        },
+        {
+          "id": "M4.6",
+          "subject": "Implement token budget allocation stage",
+          "status": "pending"
+        },
+        {
+          "id": "M4.7",
+          "subject": "Implement surgical context assembly stage",
+          "status": "pending"
+        },
+        {
+          "id": "M4.8",
+          "subject": "Implement execution with incremental save stage",
+          "status": "pending"
+        },
+        {
+          "id": "M4.9",
+          "subject": "Implement output red-line post-check",
+          "status": "pending"
+        },
+        {
+          "id": "M4.10",
+          "subject": "Implement logging stage",
+          "status": "pending"
+        },
+        {
+          "id": "M4.11",
+          "subject": "Implement self-improvement capture stage",
+          "status": "pending"
+        },
+        {
+          "id": "M4.12",
+          "subject": "Wire all stages together and run end-to-end pipeline tests",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 5": {
+      "label": "Multi-layered memory",
+      "target_timeline": "weeks 6–7",
+      "items": [
+        {
+          "id": "M5.1",
+          "subject": "Install sqlite-vec and set up vector tables",
+          "status": "pending"
+        },
+        {
+          "id": "M5.2",
+          "subject": "Install sentence-transformers and pick embedding model",
+          "status": "pending"
+        },
+        {
+          "id": "M5.3",
+          "subject": "Implement episodic memory layer",
+          "status": "pending"
+        },
+        {
+          "id": "M5.4",
+          "subject": "Implement semantic memory graph",
+          "status": "pending"
+        },
+        {
+          "id": "M5.5",
+          "subject": "Implement procedural memory tracker",
+          "status": "pending"
+        },
+        {
+          "id": "M5.6",
+          "subject": "Implement working memory",
+          "status": "pending"
+        },
+        {
+          "id": "M5.7",
+          "subject": "Implement reflexive memory",
+          "status": "pending"
+        },
+        {
+          "id": "M5.8",
+          "subject": "Build retrieval pipeline with RRF fusion and reranking",
+          "status": "pending"
+        },
+        {
+          "id": "M5.9",
+          "subject": "Build retrieval debugger UI in Metis → Memory",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 6": {
+      "label": "Anonymization and trust UI",
+      "target_timeline": "week 8",
+      "items": [
+        {
+          "id": "M6.1",
+          "subject": "Build anonymization function (Python + NER)",
+          "status": "pending"
+        },
+        {
+          "id": "M6.2",
+          "subject": "Build diff view for anonymized content",
+          "status": "pending"
+        },
+        {
+          "id": "M6.3",
+          "subject": "Build trust badge in dashboard header",
+          "status": "pending"
+        },
+        {
+          "id": "M6.4",
+          "subject": "Build consent ledger table and UI",
+          "status": "pending"
+        },
+        {
+          "id": "M6.5",
+          "subject": "Build network policy switcher (strict/normal/airplane)",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 7": {
+      "label": "Backup and portability",
+      "target_timeline": "week 9",
+      "items": [
+        {
+          "id": "M7.1",
+          "subject": "Build nightly backup job",
+          "status": "pending"
+        },
+        {
+          "id": "M7.2",
+          "subject": "Build encryption layer",
+          "status": "pending"
+        },
+        {
+          "id": "M7.3",
+          "subject": "Build multi-destination writer",
+          "status": "pending"
+        },
+        {
+          "id": "M7.4",
+          "subject": "Build restore wizard",
+          "status": "pending"
+        },
+        {
+          "id": "M7.5",
+          "subject": "Build backup verification",
+          "status": "pending"
+        },
+        {
+          "id": "M7.6",
+          "subject": "Test full wipe-and-restore cycle",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 8": {
+      "label": "Brainstorm Plan Mode",
+      "target_timeline": "week 10",
+      "items": [
+        {
+          "id": "M8.1",
+          "subject": "Build brainstorm_turn MCP tool",
+          "status": "pending"
+        },
+        {
+          "id": "M8.2",
+          "subject": "Build Plan Mode system prompt",
+          "status": "pending"
+        },
+        {
+          "id": "M8.3",
+          "subject": "Build steering buttons UI in Thinking tab",
+          "status": "pending"
+        },
+        {
+          "id": "M8.4",
+          "subject": "Build cross-pollinate-anytime side panel",
+          "status": "pending"
+        },
+        {
+          "id": "M8.5",
+          "subject": "Build structured output format for saved brainstorms",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 9": {
+      "label": "Self-improvement loop",
+      "target_timeline": "week 11",
+      "items": [
+        {
+          "id": "M9.1",
+          "subject": "Extend every agent's contract to require reflexion output",
+          "status": "pending"
+        },
+        {
+          "id": "M9.2",
+          "subject": "Build Coach agent",
+          "status": "pending"
+        },
+        {
+          "id": "M9.3",
+          "subject": "Build weekly Coach run schedule",
+          "status": "pending"
+        },
+        {
+          "id": "M9.4",
+          "subject": "Build proposal queue UI",
+          "status": "pending"
+        },
+        {
+          "id": "M9.5",
+          "subject": "Build approval/rejection flow",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 10": {
+      "label": "Automated daily tasks",
+      "target_timeline": "week 12",
+      "items": [
+        {
+          "id": "M10.1",
+          "subject": "Build scheduler in the backend",
+          "status": "pending"
+        },
+        {
+          "id": "M10.2",
+          "subject": "Register default schedule (News Radar, Librarian, Morning Brief, Cross-Pollinator, Coach, Weekly Summary)",
+          "status": "pending"
+        },
+        {
+          "id": "M10.3",
+          "subject": "Build schedule UI in Metis → Settings",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 11": {
+      "label": "Installer and distribution",
+      "target_timeline": "weeks 13–14",
+      "items": [
+        {
+          "id": "M11.1",
+          "subject": "Build vendor wheel download script",
+          "status": "pending"
+        },
+        {
+          "id": "M11.2",
+          "subject": "Write Inno Setup script",
+          "status": "pending"
+        },
+        {
+          "id": "M11.3",
+          "subject": "Build JSON config merger",
+          "status": "pending"
+        },
+        {
+          "id": "M11.4",
+          "subject": "Build embedded Python bootstrap",
+          "status": "pending"
+        },
+        {
+          "id": "M11.5",
+          "subject": "Build tray launcher",
+          "status": "pending"
+        },
+        {
+          "id": "M11.6",
+          "subject": "Build port-selection routine",
+          "status": "pending"
+        },
+        {
+          "id": "M11.7",
+          "subject": "Run full install test in clean VM",
+          "status": "pending"
+        },
+        {
+          "id": "M11.8",
+          "subject": "Get code-signing certificate and sign the installer",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 12": {
+      "label": "Testing, polish, documentation",
+      "target_timeline": "week 15",
+      "items": [
+        {
+          "id": "M12.1",
+          "subject": "Write unit test suite",
+          "status": "pending"
+        },
+        {
+          "id": "M12.2",
+          "subject": "Write integration test suite",
+          "status": "pending"
+        },
+        {
+          "id": "M12.3",
+          "subject": "Write e2e test suite in Playwright",
+          "status": "pending"
+        },
+        {
+          "id": "M12.4",
+          "subject": "Write red-line test suite",
+          "status": "pending"
+        },
+        {
+          "id": "M12.5",
+          "subject": "Run manual test checklist end-to-end",
+          "status": "pending"
+        },
+        {
+          "id": "M12.6",
+          "subject": "Write researcher-facing getting-started guide",
+          "status": "pending"
+        },
+        {
+          "id": "M12.7",
+          "subject": "Set up getmetis.org with download page",
+          "status": "pending"
+        },
+        {
+          "id": "M12.8",
+          "subject": "Ship v1.0",
+          "status": "pending"
+        }
+      ]
+    }
+  }
+}
