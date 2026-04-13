@@ -24,7 +24,14 @@ ui <- page_navbar(
   nav_panel("Work",      work_ui("work")),
   nav_panel("Meetings",  meetings_ui("meetings")),
   nav_panel("Learning",  learning_ui("learning")),
-  nav_panel("Metis",     metis_tab_ui("metis"))
+  nav_panel("Metis",     metis_tab_ui("metis")),
+  nav_spacer(),
+  nav_item(
+    div(class = "trust-badge",
+      icon("shield-halved"),
+      tags$span(class = "trust-badge-text", "Local-first")
+    )
+  )
 )
 
 server <- function(input, output, session) {
