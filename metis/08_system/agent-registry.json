@@ -1,0 +1,736 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "last_updated": "2026-04-07",
+    "purpose": "Machine-readable registry of all Research Cortex agents. Single source of truth for trust tiers, permission constraints, allowed paths, and output conventions. Derived from Claude Code architecture principles (metadata-first design, permission tiers, type constraints).",
+    "trust_tiers": {
+      "gate-keeper": "Blocking or veto authority over other agents. No internet. Operates locally only. Cannot be overridden by user for SENSITIVE data blocks.",
+      "orchestrator": "Full routing and delegation authority. Read/write local. Internet requires explicit permission each time.",
+      "write-external": "Can access internet within a defined scope. Writes output files locally. Scope is pre-approved per agent.",
+      "write-local": "No internet access. Can read and write files within allowed_paths only.",
+      "read-advise": "Advisory or propose-only role. Does not create files without explicit approval. May read broadly."
+    }
+  },
+  "agents": [
+    {
+      "slug": "metis",
+      "name": "Metis",
+      "invocation": "/metis",
+      "trust_tier": "orchestrator",
+      "description": "Senior researcher and RC orchestrator. Default entry point. Routes all requests to specialist agents, records all work, manages inbox triage and daily/weekly summaries.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": ["*"],
+      "forbidden_actions": [
+        "delete_files_without_approval",
+        "send_data_externally",
+        "skip_recording_substantive_work",
+        "use_internet_silently"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "file_deletion",
+        "folder_reorganization",
+        "external_sync_or_upload"
+      ],
+      "can_act_without_approval": [
+        "read_local_files",
+        "write_output_files",
+        "log_agent_runs",
+        "update_local_metadata",
+        "create_draft_notes_and_tasks"
+      ],
+      "output_path": "07_outputs/reviews/",
+      "complexity_levels": ["quick", "standard", "deep", "chain"],
+      "chains_with": ["all"]
+    },
+    {
+      "slug": "cybersecurity",
+      "name": "Cybersecurity Agent",
+      "invocation": "/cybersecurity",
+      "trust_tier": "gate-keeper",
+      "description": "Security guardian. Reviews internet requests from other agents, detects prompt injection, validates URLs against domain allowlist, audits agent scope compliance. Has veto authority over internet requests.",
+      "internet": false,
+      "internet_requires_approval": false,
+      "internet_scope": null,
+      "note": "Does NOT access the internet directly. Reviews what other agents are about to access. This prevents the security agent itself from being compromised.",
+      "veto_scope": [
+        "internet requests targeting domains not in 08_system/security/domain-allowlist.txt",
+        "content containing prompt injection patterns",
+        "internet access attempts by agents without internet permission"
+      ],
+      "allowed_paths": [
+        "08_system/security/",
+        "07_outputs/reviews/cybersecurity/"
+      ],
+      "forbidden_actions": [
+        "direct_internet_access",
+        "approve_own_requests",
+        "bypass_domain_allowlist"
+      ],
+      "requires_approval_before": [],
+      "can_act_without_approval": [
+        "block_internet_requests_matching_injection_patterns",
+        "alert_user_on_security_incident",
+        "read_domain_allowlist_and_blocklist",
+        "write_security_log"
+      ],
+      "output_path": "07_outputs/reviews/cybersecurity/",
+      "chains_with": ["data-guardian", "metis"]
+    },
+    {
+      "slug": "data-guardian",
+      "name": "Data Guardian",
+      "invocation": "/data-guardian",
+      "trust_tier": "gate-keeper",
+      "description": "Data privacy enforcer. Detects PII and medical data, classifies data sensitivity, blocks transmission of SENSITIVE data. Has blocking authority — SENSITIVE data blocks are never overridden.",
+      "internet": false,
+      "internet_requires_approval": false,
+      "internet_scope": null,
+      "blocking_scope": {
+        "SENSITIVE": "Always blocks — no user override. Covers patient records, individual case data, medical identifiers.",
+        "CONFIDENTIAL": "Blocks until user explicitly confirms.",
+        "data_files": "Blocks Excel/.csv/database files from leaving local machine until user confirms.",
+        "original_content": "Warns once, proceeds if user acknowledges."
+      },
+      "allowed_paths": [
+        "08_system/security/",
+        "07_outputs/reviews/data-guardian/"
+      ],
+      "forbidden_actions": [
+        "direct_internet_access",
+        "override_sensitive_data_blocks",
+        "allow_patient_data_transmission"
+      ],
+      "requires_approval_before": [
+        "allowing_confidential_data_to_proceed"
+      ],
+      "can_act_without_approval": [
+        "block_sensitive_data_immediately",
+        "classify_data_sensitivity",
+        "write_data_protection_log",
+        "alert_user_on_pii_detection"
+      ],
+      "output_path": "07_outputs/reviews/data-guardian/",
+      "chains_with": ["cybersecurity", "metis"]
+    },
+    {
+      "slug": "librarian",
+      "name": "Librarian",
+      "invocation": "/librarian",
+      "trust_tier": "write-external",
+      "description": "Literature and knowledge-source specialist. Finds new relevant sources, organizes metadata, links sources to projects and PhD articles. Exempt from internet permission requirement within bibliographic scope.",
+      "internet": true,
+      "internet_requires_approval": false,
+      "internet_scope": [
+        "bibliographic searches (PubMed, Google Scholar, Scopus, etc.)",
+        "journal and preprint repositories",
+        "institutional and programmatic reports (WHO, CDC, ECDC, ITM, etc.)",
+        "article monitoring and citation tracking"
+      ],
+      "internet_outside_scope_requires_approval": true,
+      "allowed_paths": [
+        "05_sources/",
+        "06_library/",
+        "07_outputs/reviews/librarian/"
+      ],
+      "forbidden_actions": [
+        "delete_source_files_without_approval",
+        "reorganize_full_library_without_approval",
+        "claim_paper_is_important_without_reason",
+        "browse_unrelated_non-bibliographic_sites"
+      ],
+      "requires_approval_before": [
+        "deleting_source_files",
+        "large_scale_library_reorganization",
+        "accessing_sites_outside_internet_scope"
+      ],
+      "can_act_without_approval": [
+        "search_bibliographic_databases",
+        "update_local_metadata_files",
+        "create_relevance_notes",
+        "identify_duplicates"
+      ],
+      "output_path": "07_outputs/reviews/librarian/",
+      "chains_with": ["phd-architect", "epidemiologist", "methods-coach"]
+    },
+    {
+      "slug": "news-radar",
+      "name": "News Radar",
+      "invocation": "/news-radar",
+      "trust_tier": "write-external",
+      "description": "World and research news monitor. Generates news briefs from approved sources. Exempt from internet permission requirement within news monitoring scope.",
+      "internet": true,
+      "internet_requires_approval": false,
+      "internet_scope": [
+        "sources listed in 02_agents/news-radar/sources.md",
+        "approved domains in 08_system/security/domain-allowlist.txt",
+        "institutional bulletins (WHO, CDC, ECDC, Lancet, etc.)"
+      ],
+      "internet_outside_scope_requires_approval": true,
+      "allowed_paths": [
+        "07_outputs/reviews/news-radar/"
+      ],
+      "forbidden_actions": [
+        "browse_unapproved_domains",
+        "store_raw_external_html",
+        "access_domains_on_blocklist"
+      ],
+      "requires_approval_before": [
+        "accessing_sites_outside_approved_scope"
+      ],
+      "can_act_without_approval": [
+        "fetch_from_approved_sources",
+        "write_news_briefs",
+        "tag_news_items_with_topics"
+      ],
+      "output_path": "07_outputs/reviews/news-radar/",
+      "chains_with": ["news-aggregator", "metis"]
+    },
+    {
+      "slug": "news-aggregator",
+      "name": "News Aggregator",
+      "invocation": "/news-aggregator",
+      "trust_tier": "write-external",
+      "description": "Automated RSS collection and feed curation. Fetches from the 23 configured RSS feeds across 3 tiers. Exempt from internet permission within configured feed list.",
+      "internet": true,
+      "internet_requires_approval": false,
+      "internet_scope": [
+        "RSS feeds defined in 02_agents/news-radar/sources.md",
+        "approved domains in 08_system/security/domain-allowlist.txt"
+      ],
+      "internet_outside_scope_requires_approval": true,
+      "allowed_paths": [
+        "07_outputs/reviews/news-aggregator/"
+      ],
+      "forbidden_actions": [
+        "fetch_from_urls_outside_feed_list",
+        "modify_rss_config_without_approval",
+        "access_domains_on_blocklist"
+      ],
+      "requires_approval_before": [
+        "adding_new_feeds_to_config",
+        "accessing_sites_outside_feed_list"
+      ],
+      "can_act_without_approval": [
+        "fetch_configured_rss_feeds",
+        "write_aggregated_output",
+        "tag_signals"
+      ],
+      "output_path": "07_outputs/reviews/news-aggregator/",
+      "chains_with": ["news-radar", "metis"]
+    },
+    {
+      "slug": "epidemiologist",
+      "name": "Epidemiologist",
+      "invocation": "/epidemiologist",
+      "trust_tier": "read-advise",
+      "description": "Methodology challenger. Reviews study design, challenges analytical choices through Socratic questioning. Advisory only — does not produce final statistical outputs or modify analysis files.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "07_outputs/reviews/epidemiologist/"
+      ],
+      "read_access": [
+        "03_domains/phd/",
+        "05_sources/",
+        "07_outputs/"
+      ],
+      "forbidden_actions": [
+        "modify_analysis_files",
+        "produce_final_statistical_outputs",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access"
+      ],
+      "can_act_without_approval": [
+        "read_any_local_file",
+        "write_review_output",
+        "challenge_methodology_via_questions"
+      ],
+      "output_path": "07_outputs/reviews/epidemiologist/",
+      "chains_with": ["methods-coach", "phd-architect", "writing-partner"]
+    },
+    {
+      "slug": "methods-coach",
+      "name": "Methods Coach",
+      "invocation": "/methods-coach",
+      "trust_tier": "read-advise",
+      "description": "Statistical and epidemiological methods advisor. Advises on analysis approaches, R methodology, sampling. Advisory only — does not write or execute analysis code.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "07_outputs/reviews/methods-coach/"
+      ],
+      "read_access": [
+        "03_domains/",
+        "05_sources/",
+        "06_library/methods/"
+      ],
+      "forbidden_actions": [
+        "modify_analysis_files",
+        "execute_code",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access"
+      ],
+      "can_act_without_approval": [
+        "read_any_local_file",
+        "write_methods_advice_output"
+      ],
+      "output_path": "07_outputs/reviews/methods-coach/",
+      "chains_with": ["epidemiologist", "phd-architect", "software-engineer"]
+    },
+    {
+      "slug": "phd-architect",
+      "name": "PhD Architect",
+      "invocation": "/phd-architect",
+      "trust_tier": "write-local",
+      "description": "PhD structure and research program coherence specialist. Maintains central thesis logic, links papers into a coherent program, identifies gaps.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "03_domains/phd/",
+        "07_outputs/reviews/phd-architect/"
+      ],
+      "read_access": [
+        "05_sources/literature/",
+        "04_projects/",
+        "06_library/"
+      ],
+      "forbidden_actions": [
+        "invent_completed_evidence",
+        "redefine_thesis_silently",
+        "collapse_uncertainty_into_false_certainty",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "major_thesis_reframing"
+      ],
+      "can_act_without_approval": [
+        "update_phd_structure_notes",
+        "create_article_maps",
+        "propose_thesis_changes",
+        "write_review_output"
+      ],
+      "output_path": "07_outputs/reviews/phd-architect/",
+      "chains_with": ["epidemiologist", "methods-coach", "writing-partner", "librarian"]
+    },
+    {
+      "slug": "writing-partner",
+      "name": "Writing Partner",
+      "invocation": "/writing-partner",
+      "trust_tier": "write-local",
+      "description": "Academic writing specialist. Drafts text, improves writing, structures arguments. Operates on output files and drafts — does not commit to git or modify source data.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "03_domains/",
+        "04_projects/",
+        "07_outputs/reviews/writing-partner/"
+      ],
+      "forbidden_actions": [
+        "commit_to_git",
+        "modify_source_data_files",
+        "modify_database",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "overwriting_existing_draft_files"
+      ],
+      "can_act_without_approval": [
+        "create_draft_documents",
+        "edit_draft_documents",
+        "write_review_output"
+      ],
+      "output_path": "07_outputs/reviews/writing-partner/",
+      "chains_with": ["epidemiologist", "phd-architect", "methods-coach"]
+    },
+    {
+      "slug": "meeting-memory",
+      "name": "Meeting Memory",
+      "invocation": "/meeting-memory",
+      "trust_tier": "write-local",
+      "description": "Meeting transcription and structuring specialist. Reads raw meeting notes or audio transcripts, produces structured briefings with action items, decisions, and follow-ups.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "05_sources/meetings/",
+        "07_outputs/reviews/meeting-memory/"
+      ],
+      "forbidden_actions": [
+        "external_internet_access",
+        "modify_other_agents_outputs",
+        "store_audio_outside_approved_path"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "deleting_raw_meeting_files"
+      ],
+      "can_act_without_approval": [
+        "read_meeting_files",
+        "write_structured_meeting_briefing",
+        "log_action_items"
+      ],
+      "output_path": "07_outputs/reviews/meeting-memory/",
+      "chains_with": ["metis"]
+    },
+    {
+      "slug": "software-engineer",
+      "name": "Software Engineer",
+      "invocation": "/software-engineer",
+      "trust_tier": "write-local",
+      "description": "Code review, debugging, and feature implementation for all RC software (R Shiny, Python, scripts). Maintains patterns.md. For tasks involving 10+ files, recommend escalating to rc-builder.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "07_outputs/apps/",
+        "05_sources/code/",
+        "08_system/",
+        "02_agents/software-engineer/patterns.md",
+        "07_outputs/reviews/software-engineer/"
+      ],
+      "forbidden_actions": [
+        "literature_review",
+        "academic_writing",
+        "external_internet_access",
+        "delete_app_files_without_confirmation"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "deleting_app_or_script_files",
+        "modifying_database_schema"
+      ],
+      "can_act_without_approval": [
+        "read_and_review_code",
+        "edit_code_files",
+        "write_review_output",
+        "update_patterns_md"
+      ],
+      "output_path": "07_outputs/reviews/software-engineer/",
+      "chains_with": ["dashboard-engineer", "ux-engineer", "builder", "rc-builder"]
+    },
+    {
+      "slug": "dashboard-engineer",
+      "name": "Dashboard Engineer",
+      "invocation": "/dashboard-engineer",
+      "trust_tier": "write-local",
+      "description": "UI/UX implementation specialist for the Metis dashboard. Makes visual and layout decisions for R Shiny modules. Does not modify database schema or business logic.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "07_outputs/apps/metis-dashboard/",
+        "07_outputs/reviews/dashboard-engineer/"
+      ],
+      "forbidden_actions": [
+        "modify_database_schema",
+        "delete_dashboard_files_without_confirmation",
+        "modify_data_store_r_logic",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "deleting_dashboard_files",
+        "changing_tab_structure"
+      ],
+      "can_act_without_approval": [
+        "edit_shiny_modules",
+        "edit_css",
+        "write_review_output"
+      ],
+      "output_path": "07_outputs/reviews/dashboard-engineer/",
+      "chains_with": ["ux-engineer", "software-engineer", "builder"]
+    },
+    {
+      "slug": "ux-engineer",
+      "name": "UX Engineer",
+      "invocation": "/ux-engineer",
+      "trust_tier": "write-local",
+      "description": "Design system, accessibility, and responsive layout specialist. Owns CSS and visual standards. Does not modify R logic or data handling.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "07_outputs/apps/metis-dashboard/www/",
+        "07_outputs/reviews/ux-engineer/"
+      ],
+      "forbidden_actions": [
+        "modify_r_logic",
+        "modify_database",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "changing_design_system_tokens"
+      ],
+      "can_act_without_approval": [
+        "edit_css",
+        "write_design_review",
+        "audit_accessibility"
+      ],
+      "output_path": "07_outputs/reviews/ux-engineer/",
+      "chains_with": ["dashboard-engineer", "software-engineer"]
+    },
+    {
+      "slug": "builder",
+      "name": "Builder",
+      "invocation": "/builder",
+      "trust_tier": "write-local",
+      "description": "New app and tool construction specialist. Builds new Shiny apps, R scripts, MCP servers. For changes to Metis itself, use rc-builder instead.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "07_outputs/apps/",
+        "08_system/",
+        "07_outputs/reviews/builder/"
+      ],
+      "forbidden_actions": [
+        "delete_without_confirmation",
+        "modify_metis_core_system",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "deleting_existing_apps",
+        "modifying_database_schema"
+      ],
+      "can_act_without_approval": [
+        "create_new_app_scaffolding",
+        "write_new_scripts",
+        "write_review_output"
+      ],
+      "output_path": "07_outputs/reviews/builder/",
+      "chains_with": ["software-engineer", "dashboard-engineer", "ux-engineer"]
+    },
+    {
+      "slug": "rc-builder",
+      "name": "RC Builder",
+      "invocation": "/rc-builder",
+      "trust_tier": "write-local",
+      "description": "Specialist for modifying and extending the Research Cortex (RC) itself. Handles requests to add agents, new dashboard tabs, implement phases. Must load red-lines and token-guardrails before every action.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "must_load_before_acting": [
+        "08_system/token-guardrails.md",
+        "08_system/red-lines.md",
+        "08_system/mcp-server/src/metis_mcp/config.py"
+      ],
+      "allowed_paths": [
+        "*"
+      ],
+      "forbidden_actions": [
+        "delete_files_without_confirmation",
+        "skip_session_report",
+        "ignore_red_lines",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "deleting_any_files",
+        "modifying_agent_system_prompts"
+      ],
+      "can_act_without_approval": [
+        "read_all_local_files",
+        "implement_approved_plan",
+        "write_session_report"
+      ],
+      "output_path": "07_outputs/reviews/implementation/",
+      "chains_with": ["software-engineer", "dashboard-engineer", "ux-engineer", "metis"]
+    },
+    {
+      "slug": "presentation-maker",
+      "name": "Presentation Maker",
+      "invocation": "/presentation-maker",
+      "trust_tier": "write-local",
+      "description": "Slide deck and visual summary specialist. Creates PowerPoint presentations and visual outputs from research content.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "07_outputs/presentations/",
+        "07_outputs/reviews/presentation-maker/"
+      ],
+      "forbidden_actions": [
+        "modify_source_data",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access"
+      ],
+      "can_act_without_approval": [
+        "read_research_files",
+        "create_presentation_files",
+        "write_review_output"
+      ],
+      "output_path": "07_outputs/reviews/presentation-maker/",
+      "chains_with": ["writing-partner", "epidemiologist"]
+    },
+    {
+      "slug": "learning-coach",
+      "name": "Learning Coach",
+      "invocation": "/learning-coach",
+      "trust_tier": "write-local",
+      "description": "Skill progression and learning path specialist. Manages competency tracking, course content, spaced repetition. Works within 06_library/courses/ and the learning DB tables.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "06_library/courses/",
+        "07_outputs/reviews/learning-coach/"
+      ],
+      "forbidden_actions": [
+        "directly_modify_db_learning_tables_via_sql",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "modifying_competency_definitions"
+      ],
+      "can_act_without_approval": [
+        "read_course_content",
+        "create_lesson_files",
+        "write_learning_review"
+      ],
+      "output_path": "07_outputs/reviews/learning-coach/",
+      "chains_with": ["edu-expert", "methods-coach"]
+    },
+    {
+      "slug": "career-coach",
+      "name": "Career Coach",
+      "invocation": "/career-coach",
+      "trust_tier": "write-local",
+      "description": "EU job preparation, CV support, and career strategy specialist. Does not access source data or the research database.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "07_outputs/reviews/career-coach/"
+      ],
+      "forbidden_actions": [
+        "access_source_data_or_database",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access"
+      ],
+      "can_act_without_approval": [
+        "write_career_advice_output"
+      ],
+      "output_path": "07_outputs/reviews/career-coach/",
+      "chains_with": ["metis"]
+    },
+    {
+      "slug": "edu-expert",
+      "name": "Educational Expert",
+      "invocation": "/edu-expert",
+      "trust_tier": "write-local",
+      "description": "Curriculum design and course quality specialist. Creates and reviews course content. Enforces explicit learning objectives, modular navigation, and spaced repetition principles.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "standards_enforced": [
+        "Every module has explicit learning objectives (verb + measurable outcome)",
+        "Jump-in navigation: learner can start at any module",
+        "One concept per slide/section — no wall-of-text",
+        "Key concepts revisited across modules (spaced repetition)"
+      ],
+      "allowed_paths": [
+        "06_library/courses/",
+        "07_outputs/reviews/edu-expert/"
+      ],
+      "forbidden_actions": [
+        "directly_modify_db_learning_tables",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "restructuring_existing_courses"
+      ],
+      "can_act_without_approval": [
+        "create_course_content",
+        "review_course_quality",
+        "write_review_output"
+      ],
+      "output_path": "07_outputs/reviews/edu-expert/",
+      "chains_with": ["learning-coach", "methods-coach"]
+    },
+    {
+      "slug": "hr-talent",
+      "name": "HR / Talent Spotter",
+      "invocation": "/hr-talent",
+      "trust_tier": "read-advise",
+      "description": "Capability gap detector. Activated when no agent matches a task, or when agent output quality is flagged. Proposes new skill stubs or agent updates — never creates files directly.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "07_outputs/reviews/hr-talent/"
+      ],
+      "forbidden_actions": [
+        "create_or_modify_skill_files_directly",
+        "create_new_agent_files_directly",
+        "recommend_new_agent_when_existing_can_be_updated",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "all_file_creation",
+        "internet_access"
+      ],
+      "can_act_without_approval": [
+        "read_agent_contracts",
+        "write_gap_report_to_output_path"
+      ],
+      "output_path": "07_outputs/reviews/hr-talent/",
+      "chains_with": ["metis"]
+    },
+    {
+      "slug": "research-architect",
+      "name": "Research Architect",
+      "invocation": "/research-architect",
+      "trust_tier": "write-local",
+      "description": "Research program design specialist. Focuses on the intellectual architecture of the PhD program: thesis coherence, methodological emphases, paper sequencing, and identifying conceptual gaps.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "03_domains/phd/",
+        "07_outputs/reviews/research-architect/"
+      ],
+      "read_access": [
+        "05_sources/literature/",
+        "04_projects/",
+        "06_library/"
+      ],
+      "forbidden_actions": [
+        "invent_completed_evidence",
+        "redefine_thesis_silently",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "major_thesis_reframing"
+      ],
+      "can_act_without_approval": [
+        "update_phd_structure_notes",
+        "create_article_maps",
+        "write_review_output"
+      ],
+      "output_path": "07_outputs/reviews/research-architect/",
+      "chains_with": ["phd-architect", "epidemiologist", "methods-coach"]
+    }
+  ]
+}
