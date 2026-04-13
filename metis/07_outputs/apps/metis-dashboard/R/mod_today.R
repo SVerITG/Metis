@@ -281,16 +281,13 @@ today_server <- function(id, paths) {
       nav_select("main_nav", tab)
     }, ignoreNULL = TRUE)
 
-    # Save quick idea
+    # Save quick idea (from launcher modal — delegates to insert_idea helper)
     observeEvent(input$save_quick_idea, {
-      req(nzchar(input$quick_idea_text))
+      txt <- trimws(input$quick_idea_text)
+      req(nzchar(txt))
       tryCatch({
-        con <- connect_db(paths)
-        on.exit(DBI::dbDisconnect(con), add = TRUE)
-        DBI::dbExecute(con,
-          "INSERT INTO ideas (text, source, tags, created_at) VALUES (?, 'dashboard', '', datetime('now'))",
-          params = list(input$quick_idea_text)
-        )
+        insert_idea(paths, text = txt, project_id = "", idea_type = "idea",
+                    tags = auto_tags(txt))
         removeModal()
         showNotification("Idea saved.", type = "message", duration = 3L)
       }, error = function(e) {

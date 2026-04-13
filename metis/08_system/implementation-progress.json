@@ -3,7 +3,7 @@
     "version": "1.0",
     "created": "2026-04-13",
     "last_updated": "2026-04-13",
-    "last_phase_completed": "Phase 2 (M2.1–M2.6) + M1.11",
+    "last_phase_completed": "Phase 3 (M3.1–M3.3)",
     "purpose": "Tracks all 75 implementation milestones for the Metis Research Cortex redesign. Statuses: pending | in_progress | completed | skipped. Each completed item records a date and optional notes.",
     "phases": [
       "Phase 0 — Foundations",
@@ -213,18 +213,24 @@
       "items": [
         {
           "id": "M3.1",
-          "subject": "Build Ctrl+K shortcut handler",
-          "status": "pending"
+          "subject": "Build Ctrl+K / Cmd+K shortcut handler + '+ Capture' navbar button",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "JS keydown listener in app.R header fires global_capture input. nav_item button does the same. Both trigger quick_capture_server module via reactive(input$global_capture)."
         },
         {
           "id": "M3.2",
-          "subject": "Build capture modal with auto-classification",
-          "status": "pending"
+          "subject": "Build capture modal with auto-classification (prefix routing)",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "mod_capture.R: quick_capture_server module. Modal shows prefix hints (i: n: t: q:). parse_capture_prefix() classifies text live. renderUI type badge updates as user types. Prefix is stripped before saving."
         },
         {
           "id": "M3.3",
-          "subject": "Wire modal to capture_idea MCP tool",
-          "status": "pending"
+          "subject": "Wire modal to SQLite via capture_idea schema (same DB as MCP tool)",
+          "status": "completed",
+          "completed_date": "2026-04-13",
+          "notes": "i:/default → insert_idea(). n: → insert_quick_note() (personal_notes). t: → insert_task(). q: → insert_idea(idea_type='question'). auto_tags() mirrors MCP tool tag extraction. Also fixed schema bug in mod_today.R quick-capture (was using wrong column names)."
         }
       ]
     },
