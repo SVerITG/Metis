@@ -2,8 +2,8 @@
   "_meta": {
     "version": "1.0",
     "created": "2026-04-13",
-    "last_updated": "2026-04-13",
-    "last_phase_completed": "Phase 3 (M3.1–M3.3)",
+    "last_updated": "2026-04-20",
+    "last_phase_completed": "Phase 4 (M4.1–M4.12)",
     "purpose": "Tracks all 75 implementation milestones for the Metis Research Cortex redesign. Statuses: pending | in_progress | completed | skipped. Each completed item records a date and optional notes.",
     "phases": [
       "Phase 0 — Foundations",
@@ -307,47 +307,64 @@
         {
           "id": "M5.1",
           "subject": "Install sqlite-vec and set up vector tables",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "sqlite-vec 0.1.9 installed in venv. vec_episodic, vec_semantic, vec_procedural virtual tables defined in vector_memory.py DDL."
         },
         {
           "id": "M5.2",
           "subject": "Install sentence-transformers and pick embedding model",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "Using fastembed 0.8.0 (ONNX, no PyTorch needed) instead of sentence-transformers. Model: BAAI/bge-small-en-v1.5, 384 dims. embeddings.py provides lazy-loaded embed()/embed_one(). Model downloads to ~/.cache/fastembed on first use."
         },
         {
           "id": "M5.3",
           "subject": "Implement episodic memory layer",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "store_episodic_memory() MCP tool. Table: episodic_memory + vec_episodic virtual table. Stores events with type (idea/note/task/paper/meeting/agent_run), content, metadata, session_id."
         },
         {
           "id": "M5.4",
           "subject": "Implement semantic memory graph",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "store_semantic_memory() MCP tool. Table: semantic_memory + vec_semantic. Stores concept/definition nodes with related_concepts and source linkage."
         },
         {
           "id": "M5.5",
           "subject": "Implement procedural memory tracker",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "store_procedural_memory() MCP tool. Table: procedural_memory + vec_procedural. Stores workflow patterns with trigger_context and step-by-step instructions."
         },
         {
           "id": "M5.6",
           "subject": "Implement working memory",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "set_working_memory() + get_working_memory() MCP tools. Table: working_memory. Per-session key/value scratchpad for mid-pipeline state."
         },
         {
           "id": "M5.7",
           "subject": "Implement reflexive memory",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "Handled by write_reflexion() in self_improvement.py (Phase 4). reflexion_log table captures agent self-critiques. No separate implementation needed."
         },
         {
           "id": "M5.8",
           "subject": "Build retrieval pipeline with RRF fusion and reranking",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "semantic_search() MCP tool. Vector similarity (sqlite-vec KNN) + keyword LIKE fused via RRF (k=60). Searches episodic, semantic, and procedural layers. Returns top_k ranked results."
         },
         {
           "id": "M5.9",
           "subject": "Build retrieval debugger UI in Metis → Memory",
-          "status": "pending"
+          "status": "pending",
+          "notes": "Needs R Shiny tab in mod_metis.R to call semantic_search() and display layered results. Defer to after MCP tools are confirmed working."
         }
       ]
     },
