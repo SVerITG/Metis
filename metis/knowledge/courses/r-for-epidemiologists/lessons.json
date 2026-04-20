@@ -1,0 +1,16 @@
+{
+  "lessons": [
+    {"id": "lesson-01", "title": "Why R for Epidemiology", "description": "Reproducibility, transparency, and why code beats spreadsheet drift", "section": "Foundations", "order": 1},
+    {"id": "lesson-02", "title": "RStudio, Projects, and Working Directories", "description": "Setting up a stable working environment", "section": "Foundations", "order": 2},
+    {"id": "lesson-03", "title": "Objects, Vectors, Data Frames, and Tibbles", "description": "Core data structures for analysis", "section": "Foundations", "order": 3},
+    {"id": "lesson-04", "title": "Importing Data", "description": "CSV, Excel, and simple import hygiene", "section": "Data workflow", "order": 4},
+    {"id": "lesson-05", "title": "Cleaning and Transforming Data with dplyr", "description": "Filtering, mutating, selecting, grouping, and summarizing", "section": "Data workflow", "order": 5},
+    {"id": "lesson-06", "title": "Reshaping and Joining Data", "description": "tidyr verbs and relational joins in applied analysis", "section": "Data workflow", "order": 6},
+    {"id": "lesson-07", "title": "Exploratory Data Analysis and Visualization", "description": "Using ggplot2 to inspect distributions and patterns", "section": "Analysis", "order": 7},
+    {"id": "lesson-08", "title": "Common Epidemiologic Summaries in R", "description": "Frequencies, rates, tables, and grouped summaries", "section": "Analysis", "order": 8},
+    {"id": "lesson-09", "title": "Statistical Testing and Simple Models", "description": "Running basic tests and regressions responsibly", "section": "Analysis", "order": 9},
+    {"id": "lesson-10", "title": "Reproducible Scripts and Quarto Reports", "description": "From raw code to readable analytical outputs", "section": "Reproducibility", "order": 10},
+    {"id": "lesson-11", "title": "Packages, Functions, and Workflow Discipline", "description": "Building stable habits for larger projects", "section": "Reproducibility", "order": 11},
+    {"id": "lesson-12", "title": "A Practical R Workflow for an Epidemiology Project", "description": "Putting import, cleaning, analysis, and reporting together", "section": "Reproducibility", "order": 12}
+  ]
+}

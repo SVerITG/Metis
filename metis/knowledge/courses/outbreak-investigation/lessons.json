@@ -1,0 +1,14 @@
+{
+  "lessons": [
+    {"id": "lesson-01", "title": "What Counts as an Outbreak?", "description": "Detection, thresholds, signals, and why confirmation matters", "section": "Foundations", "order": 1},
+    {"id": "lesson-02", "title": "Prepare, Verify, and Define the Problem", "description": "Organizing the team, verifying the diagnosis, and confirming excess cases", "section": "Foundations", "order": 2},
+    {"id": "lesson-03", "title": "Case Definitions and Line Listing", "description": "Building usable case definitions and turning cases into analyzable data", "section": "Core workflow", "order": 3},
+    {"id": "lesson-04", "title": "Descriptive Epidemiology in Outbreaks", "description": "Using time, place, and person to characterize the event", "section": "Core workflow", "order": 4},
+    {"id": "lesson-05", "title": "Hypothesis Generation", "description": "Interviews, context review, and plausible transmission pathways", "section": "Core workflow", "order": 5},
+    {"id": "lesson-06", "title": "Analytic Studies During an Outbreak", "description": "Choosing cohort or case-control designs under operational pressure", "section": "Analytic methods", "order": 6},
+    {"id": "lesson-07", "title": "Environmental and Laboratory Investigation", "description": "Sampling, chain of custody, and integrating lab and field evidence", "section": "Analytic methods", "order": 7},
+    {"id": "lesson-08", "title": "Control Measures and Risk Communication", "description": "Acting before certainty and communicating under uncertainty", "section": "Response", "order": 8},
+    {"id": "lesson-09", "title": "Special Outbreak Contexts", "description": "Healthcare, foodborne, humanitarian, and low-resource investigations", "section": "Response", "order": 9},
+    {"id": "lesson-10", "title": "Reporting and After-Action Learning", "description": "Writing the report, documenting lessons, and strengthening systems", "section": "Response", "order": 10}
+  ]
+}
