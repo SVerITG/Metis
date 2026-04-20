@@ -1,0 +1,29 @@
+<!-- metis_stats.html — Metis stats row (replaces skeleton) -->
+<div class="row g-2 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="fw-bold fs-4 text-primary">{{ runs_today }}</div>
+      <div class="text-muted small">Runs today</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="fw-bold fs-4 text-info">
+        {% if tokens_today > 1000 %}{{ (tokens_today // 1000) }}k{% else %}{{ tokens_today }}{% endif %}
+      </div>
+      <div class="text-muted small">Tokens today</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="fw-bold fs-4 text-secondary">{{ total_runs }}</div>
+      <div class="text-muted small">Total runs</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="fw-bold fs-4 text-success">{{ active_agents }}</div>
+      <div class="text-muted small">Agents active</div>
+    </div>
+  </div>
+</div>

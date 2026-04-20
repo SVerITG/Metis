@@ -2,12 +2,80 @@
 {% block title %}Meetings{% endblock %}
 
 {% block content %}
-<div class="row">
-  <div class="col-12">
-    <div class="card p-4">
-      <h3><i class="bi bi-camera-video me-2"></i>Meetings</h3>
-      <p class="text-muted">This tab is being built. Coming in Phase 5.5.</p>
-    </div>
+
+<!-- ===== Header ===== -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h4 class="mb-0"><i class="bi bi-camera-video me-2 text-primary"></i>Meetings</h4>
+    <div class="text-muted small mt-1">Transcripts, action items, and briefings</div>
+  </div>
+  <div class="d-flex gap-2">
+    <input type="search" class="form-control form-control-sm"
+           placeholder="Search meetings…" style="width:200px;"
+           hx-get="/api/partial/meetings/search"
+           hx-trigger="input changed delay:300ms"
+           hx-target="#meetings-table-body"
+           hx-swap="innerHTML"
+           name="q">
   </div>
 </div>
+
+<!-- ===== Stats ===== -->
+<div class="row g-2 mb-3"
+     hx-get="/api/partial/meetings/stats"
+     hx-trigger="load"
+     hx-swap="outerHTML">
+  {% for label in ['Total meetings', 'This month', 'Open actions', 'Avg duration'] %}
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center placeholder-glow">
+      <span class="placeholder col-4 mx-auto mb-1" style="height:1.5rem;"></span>
+      <div class="text-muted small">{{ label }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ===== Meetings table ===== -->
+<div class="card">
+  <div class="card-header py-2 d-flex align-items-center justify-content-between">
+    <span class="fw-semibold small"><i class="bi bi-list-ul me-1"></i>All meetings</span>
+    <select class="form-select form-select-sm" style="width:auto;"
+            hx-get="/api/partial/meetings/list"
+            hx-trigger="change"
+            hx-target="#meetings-table-body"
+            hx-swap="innerHTML"
+            name="filter">
+      <option value="all">All time</option>
+      <option value="month" selected>This month</option>
+      <option value="week">This week</option>
+    </select>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="ps-3" style="width:110px;">Date</th>
+          <th>Title</th>
+          <th>Participants</th>
+          <th style="width:90px;">Duration</th>
+          <th style="width:100px;">Status</th>
+          <th style="width:50px;"></th>
+        </tr>
+      </thead>
+      <tbody id="meetings-table-body"
+             hx-get="/api/partial/meetings/list"
+             hx-trigger="load"
+             hx-swap="innerHTML"
+             hx-vals='{"filter": "month"}'>
+        <tr>
+          <td colspan="6" class="text-center text-muted py-4">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            Loading meetings…
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
 {% endblock %}

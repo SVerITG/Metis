@@ -1,0 +1,25 @@
+<!-- learning_competencies.html — Competency map summary -->
+{% if not skills %}
+<div class="text-center text-muted py-3">
+  <i class="bi bi-diagram-3 fs-3 mb-1 d-block"></i>
+  <div class="small">No competencies tracked yet.</div>
+</div>
+{% else %}
+{% set current_domain = namespace(value='') %}
+<div class="d-flex flex-column gap-1">
+  {% for s in skills %}
+  {% if s.domain != current_domain.value %}
+  {% set current_domain.value = s.domain %}
+  <div class="text-muted fw-semibold mt-2 mb-1" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:.05em;">{{ s.domain }}</div>
+  {% endif %}
+  <div class="d-flex align-items-center gap-2">
+    <div class="small flex-grow-1">{{ s.name }}</div>
+    <div class="d-flex gap-1">
+      {% for i in range(5) %}
+      <div class="rounded-circle" style="width:8px;height:8px;background:{% if i < (s.level or 0) %}var(--metis-blue){% else %}var(--metis-divider){% endif %};"></div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

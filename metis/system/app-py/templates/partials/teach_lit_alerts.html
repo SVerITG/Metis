@@ -1,0 +1,19 @@
+<!--
+  teach_lit_alerts.html — Literature alerts for one course.
+  Injected into the lit-alerts-{id} panel by HTMX.
+-->
+{% if alerts %}
+<div class="small fw-semibold text-primary mb-1">
+  <i class="bi bi-book me-1"></i>{{ alerts | length }} new paper{% if alerts | length != 1 %}s{% endif %}
+</div>
+{% for a in alerts[:3] %}
+<div class="text-truncate small text-muted">{{ a.title }}</div>
+{% endfor %}
+{% if alerts | length > 3 %}
+<div class="small text-muted">…and {{ alerts | length - 3 }} more</div>
+{% endif %}
+{% else %}
+<div class="small text-muted">
+  <i class="bi bi-book me-1"></i>No new literature this month
+</div>
+{% endif %}

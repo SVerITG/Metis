@@ -109,6 +109,16 @@
         <span class="nav-tab-label">Learning</span>
       </button>
 
+      <!-- Teach -->
+      <button class="btn btn-sm nav-tab-btn {% if active_tab == 'teach' %}active{% endif %}"
+              hx-get="/api/tab/teach"
+              hx-target="#tab-content"
+              hx-swap="innerHTML"
+              hx-push-url="/teach">
+        <i class="bi bi-easel"></i>
+        <span class="nav-tab-label">Teach</span>
+      </button>
+
       <!-- Metis -->
       <button class="btn btn-sm nav-tab-btn {% if active_tab == 'metis' %}active{% endif %}"
               hx-get="/api/tab/metis"
