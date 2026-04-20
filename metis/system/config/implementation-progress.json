@@ -3,7 +3,7 @@
     "version": "1.0",
     "created": "2026-04-13",
     "last_updated": "2026-04-20",
-    "last_phase_completed": "Phase 5.6 (M5.6.10)",
+    "last_phase_completed": "Phase 5.5 (M5.5.8b) — all 9 tabs built",
     "purpose": "Tracks all 75 implementation milestones for the Metis Research Cortex redesign. Statuses: pending | in_progress | completed | skipped. Each completed item records a date and optional notes.",
     "phases": [
       "Phase 0 — Foundations",
@@ -702,27 +702,44 @@
         {
           "id": "M5.5.4",
           "subject": "Knowledge tab — cards, search, add/edit",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "Library cards, literature table, domain breakdown, live search via HTMX. Stats row. Partial templates: knowledge_stats, knowledge_library, knowledge_literature, knowledge_domains, knowledge_search."
         },
         {
           "id": "M5.5.5",
           "subject": "Meetings + Learning + Work tabs — tables, details, progress",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "Meetings: filterable table, search, stats. Learning: spaced-repetition due-today, course progress bars, completed list, competency map. Work: stats, filterable task list with priority icons, active project cards."
         },
         {
           "id": "M5.5.6",
           "subject": "Thinking tab — notes, connections",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "Ideas list, personal notes, open questions panel, brainstorm launcher card. Capture links (Ctrl+K → i:/n:/q: prefixes)."
         },
         {
           "id": "M5.5.7",
-          "subject": "Planner tab — kanban, Gantt (Plotly), focus board",
-          "status": "pending"
+          "subject": "Planner tab — kanban, focus board, timeline",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "3-view toggle: kanban (someday/incubating/active columns), PhD focus board (projects + tasks filtered by domain), timeline table with start/target dates."
         },
         {
           "id": "M5.5.8",
           "subject": "Metis tab — agent runs, config panel",
-          "status": "pending"
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "Stats row (runs today, tokens, total, active agents), filterable run history table, agent registry from agent-registry.json, system info (RC root, DB path + size)."
+        },
+        {
+          "id": "M5.5.8b",
+          "subject": "Teach tab — 9th tab for classes the researcher teaches",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "Course cards with Librarian lit alerts (new papers last 30d), News Aggregator alerts (signals last 7d), Chat/Co-work/Slides/Assessment/Q-bank/Gap-analysis action buttons per course. Add-course modal. routers/teach.py, templates/teach.html, 3 partial templates."
         },
         {
           "id": "M5.5.9",
