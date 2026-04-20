@@ -1,7 +1,6 @@
 library(shiny)
 library(bslib)
 library(plotly)
-library(shinyBS)
 
 r_files <- list.files("R", pattern = "\\.[Rr]$", full.names = TRUE)
 invisible(lapply(r_files, source, local = FALSE))
