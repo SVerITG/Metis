@@ -54,8 +54,8 @@ def _skill_path(agent_slug: str) -> Path:
     skills_dir = paths.root / ".claude" / "skills" / agent_slug / "skill.md"
     if skills_dir.exists():
         return skills_dir
-    # Fallback: 02_agents/<slug>/skill.md
-    agents_dir = paths.root / "02_agents" / agent_slug / "skill.md"
+    # Fallback: agents/<slug>/skill.md
+    agents_dir = paths.root / "agents" / agent_slug / "skill.md"
     return agents_dir
 
 

@@ -72,7 +72,7 @@ def load_user_context() -> str:
     Returns empty string if the file doesn't exist or can't be parsed.
     This is a stable block — safe to cache.
     """
-    config_path = Path(paths.pkm_root) / "08_system" / "user-config.yaml"
+    config_path = paths.root / "system" / "config" / "user-config.yaml"
     if not config_path.exists():
         return ""
     try:
@@ -103,8 +103,8 @@ def load_agent_system_prompt(agent_slug: str) -> str:
     Returns empty string if neither exists.
     """
     candidates = [
-        Path(paths.pkm_root) / ".claude" / "skills" / agent_slug / "skill.md",
-        Path(paths.pkm_root) / "02_agents" / agent_slug / "skill.md",
+        paths.root / ".claude" / "skills" / agent_slug / "skill.md",
+        paths.root / "agents" / agent_slug / "skill.md",
     ]
     for path in candidates:
         if path.exists():

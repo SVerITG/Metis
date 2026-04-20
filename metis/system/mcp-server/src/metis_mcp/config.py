@@ -22,24 +22,23 @@ class Paths:
 
     def __init__(self, root: Path | None = None):
         self.root = root or get_root()
-        self.agents = self.root / "02_agents"
-        self.research = self.root / "03_domains" / "research"
-        self.domains = self.root / "03_domains"
-        self.projects_active = self.root / "04_projects" / "active"
+        self.agents = self.root / "agents"
+        self.research = self.root / "knowledge" / "domains" / "research"
+        self.domains = self.root / "knowledge" / "domains"
+        self.projects_active = self.root / "projects" / "active"
         self.literature_metadata = (
             self.root
-            / "05_sources"
+            / "inputs"
             / "literature"
             / "sleeping-sickness"
             / "metadata"
         )
-        self.library = self.root / "06_library"
-        self.reviews = self.root / "07_outputs" / "reviews"
+        self.library = self.root / "knowledge" / "library"
+        self.reviews = self.root / "outputs" / "reviews"
         self.db = (
             self.root
-            / "07_outputs"
-            / "apps"
-            / "metis-dashboard"
+            / "system"
+            / "app"
             / "data"
             / "metis.sqlite"
         )
