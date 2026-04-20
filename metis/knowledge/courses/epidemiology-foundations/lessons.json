@@ -1,0 +1,16 @@
+{
+  "lessons": [
+    {"id": "lesson-01", "title": "What Is Epidemiology?", "description": "Core definitions, uses, and the epidemiologic mindset", "section": "Foundations", "order": 1},
+    {"id": "lesson-02", "title": "Measures of Disease Frequency", "description": "Incidence, prevalence, risk, rate, and person-time", "section": "Foundations", "order": 2},
+    {"id": "lesson-03", "title": "Measures of Association", "description": "Risk ratios, odds ratios, risk differences, and interpretation", "section": "Foundations", "order": 3},
+    {"id": "lesson-04", "title": "Study Designs Overview", "description": "How descriptive, analytic, and experimental designs differ", "section": "Study designs", "order": 4},
+    {"id": "lesson-05", "title": "Cohort Studies", "description": "Follow-up, incidence estimation, and temporality", "section": "Study designs", "order": 5},
+    {"id": "lesson-06", "title": "Case-Control Studies", "description": "Efficient design for rare outcomes and outbreak work", "section": "Study designs", "order": 6},
+    {"id": "lesson-07", "title": "Cross-Sectional Studies", "description": "Population snapshots, prevalence, and analytic limits", "section": "Study designs", "order": 7},
+    {"id": "lesson-08", "title": "Experimental Studies", "description": "Trials, randomization, and pragmatic field evaluation", "section": "Study designs", "order": 8},
+    {"id": "lesson-09", "title": "Bias, Confounding, and Effect Modification", "description": "Threats to validity and how to handle them", "section": "Validity", "order": 9},
+    {"id": "lesson-10", "title": "Screening and Surveillance", "description": "Finding disease early versus monitoring disease over time", "section": "Applications", "order": 10},
+    {"id": "lesson-11", "title": "Causation", "description": "From association to causal claims", "section": "Applications", "order": 11},
+    {"id": "lesson-12", "title": "Outbreak Investigation", "description": "Translating epidemiology into rapid public health action", "section": "Applications", "order": 12}
+  ]
+}
