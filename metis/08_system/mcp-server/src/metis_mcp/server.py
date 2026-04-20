@@ -4,9 +4,10 @@ WhatsApp webhook runs as a separate FastAPI process (see webhook.py).
 Start with: uvicorn metis_mcp.webhook:app --port 8000
 """
 
-from mcp.server.fastmcp import FastMCP
-
-app = FastMCP("metis-rc")
+# Use the shared app instance to avoid split registrations across tool modules.
+# All tool modules should import `app` from either server.py or app_instance.py —
+# both now point to the same object.
+from metis_mcp.app_instance import app  # noqa: F401
 
 # Import tool modules -- each registers handlers via @app.tool()
 from metis_mcp.tools import (  # noqa: E402, F401
@@ -29,6 +30,7 @@ from metis_mcp.tools import (  # noqa: E402, F401
     transcription,
     memory,
     pipeline,
+    vector_memory,
 )
 
 

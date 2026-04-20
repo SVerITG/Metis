@@ -1,0 +1,520 @@
+"""Multi-layered vector memory for Metis (Phase 5, M5.1–M5.8).
+
+Five memory layers:
+  episodic   — raw events (ideas, notes, papers, agent runs)
+  semantic   — distilled concepts and knowledge nodes
+  procedural — successful workflows and how-to patterns
+  working    — ephemeral per-session scratchpad (key/value)
+  reflexive  — alias to reflexion_log (agent self-critiques)
+
+Retrieval uses Reciprocal Rank Fusion (RRF) to merge vector similarity
+and keyword matches.
+
+Requires: sqlite-vec (M5.1) and fastembed (M5.2).
+Vector dimension: 384 (BAAI/bge-small-en-v1.5).
+"""
+
+from __future__ import annotations
+
+import datetime
+import json
+import struct
+from typing import List
+
+from mcp.types import TextContent
+
+from metis_mcp.config import paths
+from metis_mcp.db import connect
+from metis_mcp.app_instance import app
+
+# ── Schema DDL ────────────────────────────────────────────────────────────────
+
+_EPISODIC_DDL = """
+CREATE TABLE IF NOT EXISTS episodic_memory (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id  TEXT DEFAULT '',
+    event_type  TEXT DEFAULT 'note',
+    content     TEXT NOT NULL,
+    metadata    TEXT DEFAULT '{}',
+    created_at  TEXT NOT NULL
+)
+"""
+
+_SEMANTIC_DDL = """
+CREATE TABLE IF NOT EXISTS semantic_memory (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    concept          TEXT NOT NULL,
+    definition       TEXT NOT NULL,
+    related_concepts TEXT DEFAULT '',
+    source_type      TEXT DEFAULT 'user_defined',
+    source_id        TEXT DEFAULT '',
+    created_at       TEXT NOT NULL,
+    updated_at       TEXT NOT NULL
+)
+"""
+
+_PROCEDURAL_DDL = """
+CREATE TABLE IF NOT EXISTS procedural_memory (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    procedure_name  TEXT NOT NULL,
+    trigger_context TEXT DEFAULT '',
+    steps           TEXT NOT NULL,
+    success_count   INTEGER DEFAULT 1,
+    last_used       TEXT NOT NULL,
+    created_at      TEXT NOT NULL
+)
+"""
+
+_WORKING_DDL = """
+CREATE TABLE IF NOT EXISTS working_memory (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id  TEXT NOT NULL,
+    key         TEXT NOT NULL,
+    value       TEXT NOT NULL,
+    created_at  TEXT NOT NULL
+)
+"""
+
+_VEC_EPISODIC_DDL = """
+CREATE VIRTUAL TABLE IF NOT EXISTS vec_episodic USING vec0(
+    embedding float[384]
+)
+"""
+
+_VEC_SEMANTIC_DDL = """
+CREATE VIRTUAL TABLE IF NOT EXISTS vec_semantic USING vec0(
+    embedding float[384]
+)
+"""
+
+_VEC_PROCEDURAL_DDL = """
+CREATE VIRTUAL TABLE IF NOT EXISTS vec_procedural USING vec0(
+    embedding float[384]
+)
+"""
+
+
+def _setup_tables(conn) -> None:
+    """Ensure all memory tables and vec0 virtual tables exist."""
+    import sqlite_vec
+    conn.enable_load_extension(True)
+    sqlite_vec.load(conn)
+    conn.enable_load_extension(False)
+
+    conn.execute(_EPISODIC_DDL)
+    conn.execute(_SEMANTIC_DDL)
+    conn.execute(_PROCEDURAL_DDL)
+    conn.execute(_WORKING_DDL)
+    conn.execute(_VEC_EPISODIC_DDL)
+    conn.execute(_VEC_SEMANTIC_DDL)
+    conn.execute(_VEC_PROCEDURAL_DDL)
+    conn.commit()
+
+
+def _encode_vec(vector: List[float]) -> bytes:
+    """Pack a float list to sqlite-vec binary format."""
+    return struct.pack(f"{len(vector)}f", *vector)
+
+
+# ── Episodic memory ───────────────────────────────────────────────────────────
+
+@app.tool()
+async def store_episodic_memory(
+    content: str,
+    event_type: str = "note",
+    session_id: str = "",
+    metadata: str = "{}",
+) -> list[TextContent]:
+    """Store an event in episodic memory and index it for vector search.
+
+    Episodic memory is a chronological log of things that happened — ideas,
+    notes, papers read, tasks completed, agent runs.
+
+    Args:
+        content: The text content of the event to remember.
+        event_type: One of 'idea', 'note', 'task', 'paper', 'meeting', 'agent_run'.
+        session_id: Current pipeline session ID (optional).
+        metadata: JSON string with extra fields (e.g. title, tags, source).
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    try:
+        from metis_mcp.embeddings import embed_one
+        vector = embed_one(content)
+    except ImportError:
+        return [TextContent(type="text", text="fastembed not installed. Run: pip install fastembed")]
+
+    try:
+        with connect(paths.db) as conn:
+            _setup_tables(conn)
+
+            cur = conn.execute(
+                """INSERT INTO episodic_memory (session_id, event_type, content, metadata, created_at)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (session_id, event_type, content, metadata, now),
+            )
+            row_id = cur.lastrowid
+
+            conn.execute(
+                "INSERT INTO vec_episodic (rowid, embedding) VALUES (?, ?)",
+                (row_id, _encode_vec(vector)),
+            )
+            conn.commit()
+
+        return [TextContent(type="text", text=f"Episodic memory stored (id={row_id}, type={event_type}).")]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error storing episodic memory: {e}")]
+
+
+# ── Semantic memory ───────────────────────────────────────────────────────────
+
+@app.tool()
+async def store_semantic_memory(
+    concept: str,
+    definition: str,
+    related_concepts: str = "",
+    source_type: str = "user_defined",
+    source_id: str = "",
+) -> list[TextContent]:
+    """Store a distilled knowledge node in semantic memory.
+
+    Semantic memory holds the 'what I know' layer — concepts, definitions,
+    and their relationships. Used by retrieval to surface relevant knowledge
+    without relying on raw event history.
+
+    Args:
+        concept: Short name for the concept (e.g. 'RDT sensitivity', 'fAChE inhibition').
+        definition: 1-3 sentence definition or explanation.
+        related_concepts: Comma-separated related concept names.
+        source_type: Where this came from: 'paper', 'note', 'idea', 'user_defined'.
+        source_id: ID of the source record (e.g. paper DOI or idea_id).
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    embed_text = f"{concept}: {definition}"
+
+    try:
+        from metis_mcp.embeddings import embed_one
+        vector = embed_one(embed_text)
+    except ImportError:
+        return [TextContent(type="text", text="fastembed not installed.")]
+
+    try:
+        with connect(paths.db) as conn:
+            _setup_tables(conn)
+
+            cur = conn.execute(
+                """INSERT INTO semantic_memory
+                   (concept, definition, related_concepts, source_type, source_id, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (concept, definition, related_concepts, source_type, source_id, now, now),
+            )
+            row_id = cur.lastrowid
+
+            conn.execute(
+                "INSERT INTO vec_semantic (rowid, embedding) VALUES (?, ?)",
+                (row_id, _encode_vec(vector)),
+            )
+            conn.commit()
+
+        return [TextContent(type="text", text=f"Semantic memory stored (id={row_id}, concept='{concept}').")]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error storing semantic memory: {e}")]
+
+
+# ── Procedural memory ─────────────────────────────────────────────────────────
+
+@app.tool()
+async def store_procedural_memory(
+    procedure_name: str,
+    steps: str,
+    trigger_context: str = "",
+) -> list[TextContent]:
+    """Store a successful workflow pattern in procedural memory.
+
+    Procedural memory captures 'how to do things' — repeatable processes,
+    workflows that worked well, or step-by-step patterns for recurring tasks.
+
+    Args:
+        procedure_name: Short name for this procedure (e.g. 'HAT literature search').
+        steps: Markdown-formatted steps for the procedure.
+        trigger_context: What situation should trigger using this procedure.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    embed_text = f"{procedure_name}. {trigger_context}. {steps[:500]}"
+
+    try:
+        from metis_mcp.embeddings import embed_one
+        vector = embed_one(embed_text)
+    except ImportError:
+        return [TextContent(type="text", text="fastembed not installed.")]
+
+    try:
+        with connect(paths.db) as conn:
+            _setup_tables(conn)
+
+            cur = conn.execute(
+                """INSERT INTO procedural_memory
+                   (procedure_name, trigger_context, steps, last_used, created_at)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (procedure_name, trigger_context, steps, now, now),
+            )
+            row_id = cur.lastrowid
+
+            conn.execute(
+                "INSERT INTO vec_procedural (rowid, embedding) VALUES (?, ?)",
+                (row_id, _encode_vec(vector)),
+            )
+            conn.commit()
+
+        return [TextContent(type="text", text=f"Procedural memory stored (id={row_id}, name='{procedure_name}').")]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error storing procedural memory: {e}")]
+
+
+# ── Working memory ────────────────────────────────────────────────────────────
+
+@app.tool()
+async def set_working_memory(
+    session_id: str,
+    key: str,
+    value: str,
+) -> list[TextContent]:
+    """Write a key/value pair to the current session's working memory.
+
+    Working memory is an ephemeral scratchpad — it persists for the session
+    but is not indexed for vector search. Use it for state that agents need
+    mid-pipeline (e.g. intermediate results, decisions made so far).
+
+    Args:
+        session_id: Pipeline session ID from session_bootstrap().
+        key: Variable name (e.g. 'current_article', 'user_intent').
+        value: Value to store (any string, JSON, or text).
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    try:
+        with connect(paths.db) as conn:
+            conn.execute(_WORKING_DDL)
+            # Upsert: replace existing key for this session
+            conn.execute(
+                """INSERT OR REPLACE INTO working_memory (session_id, key, value, created_at)
+                   VALUES (?, ?, ?, ?)""",
+                (session_id, key, value, now),
+            )
+            conn.commit()
+        return [TextContent(type="text", text=f"Working memory set: {key} = {value[:80]}")]
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error setting working memory: {e}")]
+
+
+@app.tool()
+async def get_working_memory(session_id: str) -> list[TextContent]:
+    """Retrieve all working memory for a session.
+
+    Args:
+        session_id: Pipeline session ID to retrieve memory for.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    try:
+        with connect(paths.db) as conn:
+            conn.execute(_WORKING_DDL)
+            rows = conn.execute(
+                "SELECT key, value FROM working_memory WHERE session_id = ? ORDER BY created_at",
+                (session_id,),
+            ).fetchall()
+
+        if not rows:
+            return [TextContent(type="text", text=f"No working memory for session {session_id[:8]}…")]
+
+        lines = [f"Working memory for session {session_id[:8]}…:\n"]
+        for row in rows:
+            lines.append(f"- **{row['key']}**: {row['value'][:200]}")
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error reading working memory: {e}")]
+
+
+# ── Unified semantic search (M5.8 — RRF retrieval) ───────────────────────────
+
+@app.tool()
+async def semantic_search(
+    query: str,
+    layers: str = "episodic,semantic,procedural",
+    top_k: int = 5,
+) -> list[TextContent]:
+    """Search across memory layers using vector similarity + keyword RRF fusion.
+
+    Retrieval pipeline (M5.8):
+    1. Embed the query.
+    2. Run vector similarity search on each requested layer.
+    3. Run keyword LIKE search on each layer.
+    4. Fuse results using Reciprocal Rank Fusion (RRF, k=60).
+    5. Return top_k deduplicated results ranked by fused score.
+
+    Args:
+        query: Natural language search query.
+        layers: Comma-separated layers to search: 'episodic', 'semantic', 'procedural'.
+        top_k: Number of results to return (default 5).
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    requested = {l.strip() for l in layers.split(",") if l.strip()}
+
+    try:
+        from metis_mcp.embeddings import embed_one
+        query_vec = embed_one(query)
+    except ImportError:
+        return [TextContent(type="text", text="fastembed not installed. Run: pip install fastembed")]
+
+    results = []  # list of (score, layer, content_preview, id)
+    RRF_K = 60
+
+    def rrf_score(rank: int) -> float:
+        return 1.0 / (RRF_K + rank)
+
+    try:
+        with connect(paths.db) as conn:
+            import sqlite_vec
+            conn.enable_load_extension(True)
+            sqlite_vec.load(conn)
+            conn.enable_load_extension(False)
+
+            _setup_tables(conn)
+            vec_bytes = _encode_vec(query_vec)
+            like = f"%{query}%"
+
+            if "episodic" in requested:
+                # Vector search
+                vec_rows = conn.execute(
+                    """SELECT e.id, e.event_type, e.content, e.created_at,
+                              distance
+                         FROM vec_episodic v
+                         JOIN episodic_memory e ON e.id = v.rowid
+                        WHERE embedding MATCH ?
+                          AND k = ?
+                        ORDER BY distance""",
+                    (vec_bytes, top_k * 2),
+                ).fetchall()
+
+                # Keyword search
+                kw_rows = conn.execute(
+                    """SELECT id, event_type, content, created_at
+                         FROM episodic_memory
+                        WHERE content LIKE ?
+                        ORDER BY created_at DESC
+                        LIMIT ?""",
+                    (like, top_k * 2),
+                ).fetchall()
+
+                # Build RRF combined scores
+                vec_ids = {r["id"]: rank + 1 for rank, r in enumerate(vec_rows)}
+                kw_ids = {r["id"]: rank + 1 for rank, r in enumerate(kw_rows)}
+                all_ids = set(vec_ids) | set(kw_ids)
+
+                row_map = {r["id"]: r for r in vec_rows}
+                row_map.update({r["id"]: r for r in kw_rows})
+
+                for rid in all_ids:
+                    score = rrf_score(vec_ids.get(rid, top_k * 4)) + rrf_score(kw_ids.get(rid, top_k * 4))
+                    r = row_map[rid]
+                    results.append((score, "episodic", r["event_type"], r["content"][:300], r["created_at"]))
+
+            if "semantic" in requested:
+                vec_rows = conn.execute(
+                    """SELECT s.id, s.concept, s.definition, s.created_at,
+                              distance
+                         FROM vec_semantic v
+                         JOIN semantic_memory s ON s.id = v.rowid
+                        WHERE embedding MATCH ?
+                          AND k = ?
+                        ORDER BY distance""",
+                    (vec_bytes, top_k * 2),
+                ).fetchall()
+
+                kw_rows = conn.execute(
+                    """SELECT id, concept, definition, created_at
+                         FROM semantic_memory
+                        WHERE concept LIKE ? OR definition LIKE ?
+                        ORDER BY updated_at DESC LIMIT ?""",
+                    (like, like, top_k * 2),
+                ).fetchall()
+
+                vec_ids = {r["id"]: rank + 1 for rank, r in enumerate(vec_rows)}
+                kw_ids = {r["id"]: rank + 1 for rank, r in enumerate(kw_rows)}
+                all_ids = set(vec_ids) | set(kw_ids)
+                row_map = {r["id"]: r for r in vec_rows}
+                row_map.update({r["id"]: r for r in kw_rows})
+
+                for rid in all_ids:
+                    score = rrf_score(vec_ids.get(rid, top_k * 4)) + rrf_score(kw_ids.get(rid, top_k * 4))
+                    r = row_map[rid]
+                    results.append((score, "semantic", r["concept"], r["definition"][:300], r["created_at"]))
+
+            if "procedural" in requested:
+                vec_rows = conn.execute(
+                    """SELECT p.id, p.procedure_name, p.steps, p.trigger_context, p.last_used,
+                              distance
+                         FROM vec_procedural v
+                         JOIN procedural_memory p ON p.id = v.rowid
+                        WHERE embedding MATCH ?
+                          AND k = ?
+                        ORDER BY distance""",
+                    (vec_bytes, top_k * 2),
+                ).fetchall()
+
+                kw_rows = conn.execute(
+                    """SELECT id, procedure_name, steps, trigger_context, last_used
+                         FROM procedural_memory
+                        WHERE procedure_name LIKE ? OR trigger_context LIKE ? OR steps LIKE ?
+                        ORDER BY last_used DESC LIMIT ?""",
+                    (like, like, like, top_k * 2),
+                ).fetchall()
+
+                vec_ids = {r["id"]: rank + 1 for rank, r in enumerate(vec_rows)}
+                kw_ids = {r["id"]: rank + 1 for rank, r in enumerate(kw_rows)}
+                all_ids = set(vec_ids) | set(kw_ids)
+                row_map = {r["id"]: r for r in vec_rows}
+                row_map.update({r["id"]: r for r in kw_rows})
+
+                for rid in all_ids:
+                    score = rrf_score(vec_ids.get(rid, top_k * 4)) + rrf_score(kw_ids.get(rid, top_k * 4))
+                    r = row_map[rid]
+                    results.append((score, "procedural", r["procedure_name"], r["steps"][:300], r["last_used"]))
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error during semantic search: {e}")]
+
+    # Sort by RRF score descending, take top_k
+    results.sort(key=lambda x: x[0], reverse=True)
+    top = results[:top_k]
+
+    if not top:
+        return [TextContent(type="text", text=f"No results found for '{query}' in layers: {layers}.")]
+
+    lines = [f"**Top {len(top)} results for '{query}'** (layers: {layers}):\n"]
+    for i, (score, layer, title, preview, ts) in enumerate(top, 1):
+        lines.append(f"### {i}. [{layer}] {title}")
+        lines.append(f"*Score: {score:.4f} | {ts[:10]}*")
+        lines.append(preview)
+        lines.append("")
+
+    return [TextContent(type="text", text="\n".join(lines))]
