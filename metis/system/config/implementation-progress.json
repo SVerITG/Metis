@@ -3,7 +3,7 @@
     "version": "1.0",
     "created": "2026-04-13",
     "last_updated": "2026-04-20",
-    "last_phase_completed": "Phase 4 (M4.1–M4.12)",
+    "last_phase_completed": "Phase 5.6 (M5.6.10)",
     "purpose": "Tracks all 75 implementation milestones for the Metis Research Cortex redesign. Statuses: pending | in_progress | completed | skipped. Each completed item records a date and optional notes.",
     "phases": [
       "Phase 0 — Foundations",
@@ -12,6 +12,9 @@
       "Phase 3 — Quick capture",
       "Phase 4 — Master pipeline",
       "Phase 5 — Multi-layered memory",
+      "Phase 5.4 — Folder restructuring",
+      "Phase 5.5 — Python dashboard rewrite (FastAPI + HTMX)",
+      "Phase 5.6 — Agent ecosystem overhaul",
       "Phase 6 — Anonymization and trust UI",
       "Phase 7 — Backup and portability",
       "Phase 8 — Brainstorm Plan Mode",
@@ -607,6 +610,222 @@
           "id": "M12.8",
           "subject": "Ship v1.0",
           "status": "pending"
+        }
+      ]
+    },
+    "Phase 5.4": {
+      "label": "Folder restructuring",
+      "target_timeline": "2026-04-20",
+      "items": [
+        {
+          "id": "M5.4.1",
+          "subject": "git mv all top-level folders to new semantic names",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "00_inbox→inbox, 01_journal→journal, 02_agents→agents, 04_projects→projects, 05_sources→inputs, 09_archive→archive. 457 files committed with full rename tracking."
+        },
+        {
+          "id": "M5.4.2",
+          "subject": "Move 07_outputs/apps/metis-dashboard/ → system/app/",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "R Shiny app now lives in system/app/. History preserved via git rename detection."
+        },
+        {
+          "id": "M5.4.3",
+          "subject": "Move 08_system/mcp-server/ → system/mcp-server/",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "MCP server moved. run.sh updated to point to new path."
+        },
+        {
+          "id": "M5.4.4",
+          "subject": "Move 08_system/ remaining config → system/config/",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "agent-registry.json, implementation-progress.json, user-config.yaml, thinking-profile.yaml, red-lines.md, security/, workflows/, ontology/, templates/, logs/ all moved. Strategy docs moved to archive/."
+        },
+        {
+          "id": "M5.4.5",
+          "subject": "Merge 06_library/ + 03_domains/ → knowledge/",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "knowledge/library/ (concepts, disease-areas, methods, people-organizations, reading-lists, glossary.md), knowledge/courses/, knowledge/domains/."
+        },
+        {
+          "id": "M5.4.6",
+          "subject": "Update CLAUDE.md path references throughout",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "Updated App path, Agents path, Key paths section, routing table, output conventions, software stack. Added new agents to routing."
+        },
+        {
+          "id": "M5.4.7",
+          "subject": "Update run.sh and verify MCP server still starts",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "run.sh MCP_DIR updated. config.py Paths class updated with all new paths. cache_helpers.py, config_tools.py, self_improvement.py, thinking_profile.py, images.py all updated. agent-registry.json paths updated."
+        },
+        {
+          "id": "M5.4.8",
+          "subject": "Verify R Shiny dashboard still launches (transition period)",
+          "status": "pending",
+          "notes": "Manual verification needed — launch system/app/launch.R and confirm 8 tabs render."
+        }
+      ]
+    },
+    "Phase 5.5": {
+      "label": "Python dashboard rewrite (FastAPI + HTMX)",
+      "target_timeline": "2026-04-20 onwards",
+      "items": [
+        {
+          "id": "M5.5.1",
+          "subject": "FastAPI scaffold — system/app-py/, deps, base layout + nav",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "main.py, db.py, launch.py, run.sh, requirements.txt. 9 routers. Bootstrap 5 + HTMX navbar with 8 tabs, trust badge, capture button. CSS copied from R app unchanged."
+        },
+        {
+          "id": "M5.5.2",
+          "subject": "DB layer — port db_table(), metis_paths(), schema helpers to Python",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "db.py: get_db_path() (METIS_RC_ROOT env var aware), db_query(), db_scalar(), db_execute(). Graceful fallbacks for missing tables."
+        },
+        {
+          "id": "M5.5.3",
+          "subject": "Today tab — daily summary, trust badge, session count",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "Greeting strip, 6 launcher cards, overnight summary, today's focus, scan for changes (git status), token footer. All HTMX partials."
+        },
+        {
+          "id": "M5.5.4",
+          "subject": "Knowledge tab — cards, search, add/edit",
+          "status": "pending"
+        },
+        {
+          "id": "M5.5.5",
+          "subject": "Meetings + Learning + Work tabs — tables, details, progress",
+          "status": "pending"
+        },
+        {
+          "id": "M5.5.6",
+          "subject": "Thinking tab — notes, connections",
+          "status": "pending"
+        },
+        {
+          "id": "M5.5.7",
+          "subject": "Planner tab — kanban, Gantt (Plotly), focus board",
+          "status": "pending"
+        },
+        {
+          "id": "M5.5.8",
+          "subject": "Metis tab — agent runs, config panel",
+          "status": "pending"
+        },
+        {
+          "id": "M5.5.9",
+          "subject": "Quick-capture — Ctrl+K modal, capture endpoint",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "routers/capture.py: GET /api/capture-modal, POST /api/capture with i:/n:/t:/q: prefix routing. app.js: Ctrl+K shortcut, live type badge."
+        },
+        {
+          "id": "M5.5.10",
+          "subject": "DB watcher — poll for MCP updates, reload notification",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "GET /api/check-db-mtime endpoint. app.js polls every 20s, shows Bootstrap alert with 'Reload now' link when mtime changes."
+        },
+        {
+          "id": "M5.5.11",
+          "subject": "PyInstaller bundle — single .exe (Windows), .app (Mac)",
+          "status": "pending"
+        },
+        {
+          "id": "M5.5.12",
+          "subject": "Installer script — Inno Setup (Windows) + shell script (Mac)",
+          "status": "pending"
+        },
+        {
+          "id": "M5.5.13",
+          "subject": "Verification — all 8 tabs, capture, DB watcher, MCP tools, PyInstaller",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 5.6": {
+      "label": "Agent ecosystem overhaul",
+      "target_timeline": "2026-04-20",
+      "items": [
+        {
+          "id": "M5.6.1",
+          "subject": "Retire dashboard-engineer + ux-engineer + edu-expert agents",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "RETIRED.md added to agents/dashboard-engineer/, agents/ux-engineer/, agents/edu-expert/. Capabilities absorbed by new agents."
+        },
+        {
+          "id": "M5.6.2",
+          "subject": "Frontend Designer Builder — full system prompt + contract + skill",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "agents/frontend-designer-builder/: system-prompt.md (design-shotgun, 9 commands, 3 dials, anti-patterns), contract.md, skill.md."
+        },
+        {
+          "id": "M5.6.3",
+          "subject": "Design Auditor — system prompt + reverse-engineering workflow",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "agents/design-auditor/: 7 scored dimensions, anti-pattern library with severity ratings, 9-step workflow."
+        },
+        {
+          "id": "M5.6.4",
+          "subject": "Visualization Maker — system prompt + fireworks-tech-graph integration",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "agents/visualization-maker/: 14 diagram types, 7 visual styles, semantic shape vocabulary (hexagon=agent, cylinder=vector store, etc.), legend rule."
+        },
+        {
+          "id": "M5.6.5",
+          "subject": "Content Harvester — system prompt + Firecrawl/Playwright MCP tools",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "agents/content-harvester/: 7 source types, 12-field metadata schema, 3 output formats, routing rules table."
+        },
+        {
+          "id": "M5.6.6",
+          "subject": "Learning Architect — system prompt + edu theory + Content Harvester workflow",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "agents/learning-architect/: Bloom's taxonomy, 5-interval spaced repetition, ADDIE/backward design, course JSON schema, knowledge/courses/ structure."
+        },
+        {
+          "id": "M5.6.7",
+          "subject": "Install Claude Code skills — impeccable, taste-skill, animate-skill, fireworks-tech-graph, emil-design-eng",
+          "status": "pending",
+          "notes": "Run: npx skills add <repo> for each after M5.5 is complete."
+        },
+        {
+          "id": "M5.6.8",
+          "subject": "Update CLAUDE.md + routing table — new agent names, invocations",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "CLAUDE.md updated: frontend-designer, design-auditor, visualization-maker, content-harvester, learning-architect added. Routing table updated."
+        },
+        {
+          "id": "M5.6.9",
+          "subject": "Add gstack workflow patterns to relevant agents",
+          "status": "pending",
+          "notes": "office-hours, design-shotgun, qa patterns for Frontend Designer Builder and Software Engineer."
+        },
+        {
+          "id": "M5.6.10",
+          "subject": "Update implementation-progress.json — add Phase 5.4, 5.5, 5.6 milestones",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "This update."
         }
       ]
     }
