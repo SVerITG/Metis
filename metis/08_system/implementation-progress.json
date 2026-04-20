@@ -241,62 +241,62 @@
         {
           "id": "M4.1",
           "subject": "Design session_events and session_context schemas",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "M4.2",
           "subject": "Implement session bootstrap stage",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "M4.3",
           "subject": "Implement Data Guardian intercept stage",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "M4.4",
           "subject": "Implement Cybersecurity intercept stage",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "M4.5",
           "subject": "Implement intent parsing stage",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "M4.6",
           "subject": "Implement token budget allocation stage",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "M4.7",
           "subject": "Implement surgical context assembly stage",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "M4.8",
           "subject": "Implement execution with incremental save stage",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "M4.9",
           "subject": "Implement output red-line post-check",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "M4.10",
           "subject": "Implement logging stage",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "M4.11",
           "subject": "Implement self-improvement capture stage",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "M4.12",
           "subject": "Wire all stages together and run end-to-end pipeline tests",
-          "status": "pending"
+          "status": "completed"
         }
       ]
     },

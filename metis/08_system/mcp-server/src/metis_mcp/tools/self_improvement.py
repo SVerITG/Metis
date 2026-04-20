@@ -28,6 +28,19 @@ CREATE TABLE IF NOT EXISTS skill_improvement_proposals (
 )
 """
 
+_REFLEXION_DDL = """
+CREATE TABLE IF NOT EXISTS reflexion_log (
+    reflexion_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id      TEXT NOT NULL,
+    agent_slug      TEXT NOT NULL,
+    went_well       TEXT DEFAULT '',
+    could_improve   TEXT DEFAULT '',
+    missing_context TEXT DEFAULT '',
+    tool_wishes     TEXT DEFAULT '',
+    created_at      TEXT NOT NULL
+)
+"""
+
 
 def _ensure_table() -> None:
     with connect(paths.db) as con:
@@ -243,3 +256,54 @@ async def reject_proposal(proposal_id: int, reason: str = "") -> list[TextConten
             f"The skill file was not changed."
         ),
     )]
+
+
+# ── Tool: write_reflexion ─────────────────────────────────────────────────────
+
+@app.tool()
+async def write_reflexion(
+    session_id: str,
+    agent_slug: str,
+    went_well: str = "",
+    could_improve: str = "",
+    missing_context: str = "",
+    tool_wishes: str = "",
+) -> list[TextContent]:
+    """Stage 11: Record an agent self-critique entry to the reflexion_log.
+
+    Called at the end of every agent run to capture experience: what worked,
+    what could be better, what context was missing, what tools were needed.
+    Entries are reviewed by the weekly Coach loop for self-improvement proposals.
+
+    Args:
+        session_id: Pipeline session ID from session_bootstrap().
+        agent_slug: Which agent is writing the reflexion (e.g. 'librarian').
+        went_well: What went well in this run (1–2 sentences).
+        could_improve: What could have been done better (1–2 sentences).
+        missing_context: What context or data was unavailable but needed.
+        tool_wishes: Tools or capabilities that would have helped.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    try:
+        with connect(paths.db) as con:
+            con.execute(_REFLEXION_DDL)
+            con.execute(
+                """INSERT INTO reflexion_log
+                   (session_id, agent_slug, went_well, could_improve,
+                    missing_context, tool_wishes, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (session_id, agent_slug, went_well, could_improve,
+                 missing_context, tool_wishes, now),
+            )
+            con.commit()
+
+        return [TextContent(
+            type="text",
+            text=f"Reflexion recorded for '{agent_slug}' (session {session_id[:8]}…).",
+        )]
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error writing reflexion: {e}")]
