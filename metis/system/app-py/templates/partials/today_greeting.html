@@ -1,0 +1,39 @@
+<div class="greeting-strip card p-3 mb-3">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+
+    <div>
+      <h2 class="mb-0 fw-bold">{{ greeting }}</h2>
+      <div class="text-muted">{{ today_label }}</div>
+    </div>
+
+    <div class="d-flex gap-2 flex-wrap">
+
+      <!-- Open tasks chip -->
+      <span class="morning-chip {% if open_tasks > 0 %}morning-chip-alert{% else %}morning-chip-ok{% endif %}">
+        <i class="bi bi-check2-square"></i> {{ open_tasks }} open task{% if open_tasks != 1 %}s{% endif %}
+      </span>
+
+      <!-- Overdue chip -->
+      {% if overdue > 0 %}
+      <span class="morning-chip morning-chip-danger">
+        <i class="bi bi-exclamation-circle"></i> {{ overdue }} overdue
+      </span>
+      {% endif %}
+
+      <!-- Morning agent runs -->
+      {% for run in morning_runs %}
+      <span class="morning-chip morning-chip-ok">
+        <i class="bi bi-check-circle"></i> {{ run.agent_slug }} ran
+      </span>
+      {% endfor %}
+
+      {% if not morning_runs %}
+      <span class="morning-chip morning-chip-muted">
+        <i class="bi bi-clock"></i> No agents run yet
+      </span>
+      {% endif %}
+
+    </div>
+
+  </div>
+</div>
