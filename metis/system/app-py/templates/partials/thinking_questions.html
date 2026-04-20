@@ -1,0 +1,16 @@
+<!-- thinking_questions.html — Open questions -->
+{% if not questions %}
+<div class="text-center text-muted py-3">
+  <i class="bi bi-question-circle fs-3 mb-1 d-block"></i>
+  <div class="small">No open questions. Use Ctrl+K → q: to capture one.</div>
+</div>
+{% else %}
+<ul class="list-unstyled mb-0">
+  {% for q in questions %}
+  <li class="d-flex align-items-start gap-2 mb-2">
+    <i class="bi bi-question-circle text-danger flex-shrink-0 mt-1"></i>
+    <div class="small">{{ q.content }}</div>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}

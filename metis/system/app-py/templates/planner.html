@@ -2,12 +2,99 @@
 {% block title %}Planner{% endblock %}
 
 {% block content %}
-<div class="row">
-  <div class="col-12">
-    <div class="card p-4">
-      <h3><i class="bi bi-calendar3 me-2"></i>Planner</h3>
-      <p class="text-muted">This tab is being built. Coming in Phase 5.5.</p>
+
+<!-- ===== Header ===== -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h4 class="mb-0"><i class="bi bi-calendar3 me-2 text-primary"></i>Planner</h4>
+    <div class="text-muted small mt-1">Projects kanban, PhD focus board, and timeline</div>
+  </div>
+  <div class="d-flex gap-2">
+    <div class="btn-group btn-group-sm" role="group" id="planner-view-toggle">
+      <button type="button" class="btn btn-outline-secondary active"
+              onclick="switchPlannerView('kanban', this)">
+        <i class="bi bi-kanban me-1"></i>Kanban
+      </button>
+      <button type="button" class="btn btn-outline-secondary"
+              onclick="switchPlannerView('focus', this)">
+        <i class="bi bi-crosshair me-1"></i>Focus
+      </button>
+      <button type="button" class="btn btn-outline-secondary"
+              onclick="switchPlannerView('timeline', this)">
+        <i class="bi bi-bar-chart-steps me-1"></i>Timeline
+      </button>
     </div>
   </div>
 </div>
+
+<!-- ===== View panels ===== -->
+
+<!-- Kanban board (default) -->
+<div id="planner-view-kanban"
+     hx-get="/api/partial/planner/kanban"
+     hx-trigger="load"
+     hx-swap="outerHTML">
+  <!-- Skeleton -->
+  <div class="row g-3">
+    {% for col in ['Someday', 'Incubating', 'Active'] %}
+    <div class="col-12 col-md-4">
+      <div class="card">
+        <div class="card-header py-2 fw-semibold small">{{ col }}</div>
+        <div class="card-body p-3 placeholder-glow">
+          <span class="placeholder col-9 mb-2"></span>
+          <span class="placeholder col-7"></span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Focus board (hidden until switched) -->
+<div id="planner-view-focus" style="display:none;">
+  <div class="row g-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header py-2 fw-semibold small">
+          <i class="bi bi-crosshair me-1 text-danger"></i>PhD Focus Board
+        </div>
+        <div class="card-body p-3"
+             hx-get="/api/partial/planner/focus"
+             hx-trigger="revealed"
+             hx-swap="innerHTML">
+          <div class="text-muted small">Switch to Focus view to load…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Timeline (hidden until switched) -->
+<div id="planner-view-timeline" style="display:none;">
+  <div class="card">
+    <div class="card-header py-2 fw-semibold small">
+      <i class="bi bi-bar-chart-steps me-1 text-info"></i>Project timeline
+    </div>
+    <div class="card-body p-3"
+         hx-get="/api/partial/planner/timeline"
+         hx-trigger="revealed"
+         hx-swap="innerHTML">
+      <div class="text-muted small">Switch to Timeline view to load…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchPlannerView(view, btn) {
+  ['kanban', 'focus', 'timeline'].forEach(v => {
+    document.getElementById('planner-view-' + v).style.display = (v === view) ? '' : 'none';
+  });
+  document.querySelectorAll('#planner-view-toggle .btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Trigger HTMX load for hidden panels
+  const panel = document.getElementById('planner-view-' + view);
+  htmx.trigger(panel.querySelector('[hx-trigger="revealed"]') || panel, 'revealed');
+}
+</script>
+
 {% endblock %}

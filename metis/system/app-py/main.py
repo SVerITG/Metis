@@ -18,6 +18,7 @@ from routers import (
     meetings,
     metis_tab,
     planner,
+    teach,
     thinking,
     today,
     work,
@@ -48,6 +49,7 @@ app.include_router(learning.router)
 app.include_router(work.router)
 app.include_router(thinking.router)
 app.include_router(planner.router)
+app.include_router(teach.router)
 app.include_router(metis_tab.router)
 app.include_router(capture.router, prefix="/api")
 
@@ -63,6 +65,7 @@ _TAB_TEMPLATES = {
     "work": "work.html",
     "thinking": "thinking.html",
     "planner": "planner.html",
+    "teach": "teach.html",
     "metis": "metis_tab.html",
 }
 

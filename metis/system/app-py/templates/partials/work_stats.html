@@ -1,0 +1,27 @@
+<!-- work_stats.html — Work stats row (replaces skeleton) -->
+<div class="row g-2 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="fw-bold fs-4 text-primary">{{ open_tasks }}</div>
+      <div class="text-muted small">Open tasks</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="fw-bold fs-4 text-danger">{{ overdue }}</div>
+      <div class="text-muted small">Overdue</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="fw-bold fs-4 text-success">{{ done_week }}</div>
+      <div class="text-muted small">Done this week</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="fw-bold fs-4 text-info">{{ active_projects }}</div>
+      <div class="text-muted small">Active projects</div>
+    </div>
+  </div>
+</div>

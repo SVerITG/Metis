@@ -1,0 +1,23 @@
+<!-- knowledge_search.html — Search results -->
+{% if not results %}
+<p class="text-muted small">No results for <strong>{{ q }}</strong>.</p>
+{% else %}
+<p class="text-muted small mb-2">{{ results | length }} result{% if results | length != 1 %}s{% endif %} for <strong>{{ q }}</strong></p>
+<ul class="list-group list-group-flush">
+  {% for r in results %}
+  <li class="list-group-item px-0 py-2">
+    <div class="d-flex align-items-start gap-2">
+      <span class="badge {{ 'bg-primary-subtle text-primary' if r.source_type == 'library' else 'bg-warning-subtle text-warning' }} mt-1 flex-shrink-0" style="font-size:0.65rem;">
+        {{ r.source_type }}
+      </span>
+      <div>
+        <div class="small fw-semibold">{{ r.title }}</div>
+        {% if r.subtitle %}
+        <div class="text-muted" style="font-size:0.75rem;">{{ r.subtitle }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}

@@ -2,12 +2,106 @@
 {% block title %}Thinking{% endblock %}
 
 {% block content %}
-<div class="row">
-  <div class="col-12">
-    <div class="card p-4">
-      <h3><i class="bi bi-lightbulb me-2"></i>Thinking</h3>
-      <p class="text-muted">This tab is being built. Coming in Phase 5.5.</p>
+
+<!-- ===== Header ===== -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h4 class="mb-0"><i class="bi bi-lightbulb me-2 text-primary"></i>Thinking</h4>
+    <div class="text-muted small mt-1">Notes, ideas, and connections</div>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-sm btn-primary" onclick="openCapture('idea')">
+      <i class="bi bi-plus-lg me-1"></i>Capture idea
+    </button>
+  </div>
+</div>
+
+<!-- ===== Recent ideas + notes ===== -->
+<div class="row g-3 mb-3">
+
+  <!-- Recent ideas -->
+  <div class="col-12 col-md-6">
+    <div class="card h-100">
+      <div class="card-header py-2 d-flex align-items-center justify-content-between">
+        <span class="fw-semibold small"><i class="bi bi-lightbulb-fill me-1 text-warning"></i>Recent ideas</span>
+        <span class="badge bg-secondary" id="ideas-count">…</span>
+      </div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush" id="ideas-list"
+            hx-get="/api/partial/thinking/ideas"
+            hx-trigger="load"
+            hx-swap="innerHTML">
+          <li class="list-group-item text-center text-muted py-4">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            Loading ideas…
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Personal notes -->
+  <div class="col-12 col-md-6">
+    <div class="card h-100">
+      <div class="card-header py-2 d-flex align-items-center justify-content-between">
+        <span class="fw-semibold small"><i class="bi bi-journal-text me-1 text-info"></i>Notes</span>
+        <button class="btn btn-xs btn-link p-0 text-muted" onclick="openCapture('note')" style="font-size:0.75rem;">
+          + Add
+        </button>
+      </div>
+      <div class="card-body p-0">
+        <ul class="list-group list-group-flush" id="notes-list"
+            hx-get="/api/partial/thinking/notes"
+            hx-trigger="load"
+            hx-swap="innerHTML">
+          <li class="list-group-item text-center text-muted py-4">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            Loading notes…
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== Open questions ===== -->
+<div class="card mb-3">
+  <div class="card-header py-2 d-flex align-items-center justify-content-between">
+    <span class="fw-semibold small"><i class="bi bi-question-circle me-1 text-danger"></i>Open questions</span>
+    <button class="btn btn-xs btn-link p-0 text-muted" onclick="openCapture('question')" style="font-size:0.75rem;">
+      + Add
+    </button>
+  </div>
+  <div class="card-body p-3"
+       hx-get="/api/partial/thinking/questions"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="placeholder-glow">
+      <span class="placeholder col-9 mb-2"></span>
+      <span class="placeholder col-7"></span>
     </div>
   </div>
 </div>
+
+<!-- ===== Brainstorm launcher ===== -->
+<div class="card">
+  <div class="card-body p-3">
+    <div class="d-flex align-items-center gap-3">
+      <div class="flex-shrink-0">
+        <i class="bi bi-diagram-3 fs-3 text-primary"></i>
+      </div>
+      <div>
+        <div class="fw-semibold small">Brainstorm with Metis</div>
+        <div class="text-muted small">Open a brainstorm session — Metis surfaces connections across your notes, ideas, and literature.</div>
+      </div>
+      <div class="ms-auto">
+        <button class="btn btn-sm btn-outline-primary">
+          <i class="bi bi-arrow-right-circle me-1"></i>Start brainstorm
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}

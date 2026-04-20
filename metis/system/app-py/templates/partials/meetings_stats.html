@@ -1,0 +1,27 @@
+<!-- meetings_stats.html — Stats row (replaces skeleton) -->
+<div class="row g-2 mb-3">
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="fw-bold fs-4 text-primary">{{ total }}</div>
+      <div class="text-muted small">Total meetings</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="fw-bold fs-4 text-info">{{ this_month }}</div>
+      <div class="text-muted small">This month</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="fw-bold fs-4 text-warning">{{ open_actions }}</div>
+      <div class="text-muted small">Open actions</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="fw-bold fs-4 text-secondary">{{ avg_dur or '—' }}{% if avg_dur %}m{% endif %}</div>
+      <div class="text-muted small">Avg duration</div>
+    </div>
+  </div>
+</div>
