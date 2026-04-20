@@ -1,0 +1,25 @@
+[project]
+name = "metis-mcp-server"
+version = "0.1.0"
+description = "MCP server for the Metis Research Context"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "pyyaml>=6.0",
+    "requests>=2.28",
+    "google-genai>=1.0",
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "twilio>=9.0",
+    "python-multipart>=0.0.9",
+    # Phase 5 — multi-layered vector memory
+    "sqlite-vec>=0.1.9",
+    "fastembed>=0.8.0",
+]
+
+[project.scripts]
+metis-mcp = "metis_mcp.server:run"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
