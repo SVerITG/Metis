@@ -46,12 +46,7 @@ ui <- page_navbar(
     )
   ),
   nav_spacer(),
-  nav_item(
-    div(class = "trust-badge",
-      icon("shield-halved"),
-      tags$span(class = "trust-badge-text", "Local-first")
-    )
-  ),
+  nav_item(uiOutput("trust_badge_ui")),
   # Quick-capture module (no persistent UI — modal only)
   nav_item(quick_capture_ui("capture"))
 )
@@ -91,6 +86,26 @@ server <- function(input, output, session) {
   meetings_server("meetings", paths)
   learning_server("learning", paths)
   metis_tab_server("metis", paths)
+
+  # ── Trust badge: live session count for today ─────────────────────────────
+  output$trust_badge_ui <- renderUI({
+    db_watcher()  # re-evaluate when DB is updated
+    n <- tryCatch({
+      con <- DBI::dbConnect(RSQLite::SQLite(), paths$db)
+      on.exit(DBI::dbDisconnect(con), add = TRUE)
+      today <- format(Sys.Date(), "%Y-%m-%d")
+      DBI::dbGetQuery(
+        con,
+        "SELECT COUNT(*) FROM sessions WHERE started_at LIKE ?",
+        params = list(paste0(today, "%"))
+      )[[1]]
+    }, error = function(e) 0L)
+    label <- if (n == 0L) "Local-first" else paste0(n, " call", if (n != 1L) "s" else "", " today")
+    div(class = "trust-badge",
+      icon("shield-halved"),
+      tags$span(class = "trust-badge-text", label)
+    )
+  })
 
   # ── Global quick-capture (Ctrl+K + nav button) ────────────────────────────
   quick_capture_server("capture", paths, open_trigger = reactive(input$global_capture))

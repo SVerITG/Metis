@@ -28,6 +28,7 @@ from metis_mcp.tools import (  # noqa: E402, F401
     self_improvement,
     transcription,
     memory,
+    pipeline,
 )
 
 
