@@ -11,7 +11,7 @@ from mcp.types import TextContent
 from metis_mcp.config import paths
 from metis_mcp.app_instance import app
 
-_CONFIG_PATH = paths.root / "08_system" / "user-config.yaml"
+_CONFIG_PATH = paths.root / "system" / "config" / "user-config.yaml"
 
 _DEFAULT_CONFIG = {
     "user": {

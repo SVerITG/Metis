@@ -12,7 +12,7 @@ from metis_mcp.app_instance import app
 
 
 def _images_dir():
-    d = paths.root / "07_outputs" / "images"
+    d = paths.root / "outputs" / "images"
     d.mkdir(parents=True, exist_ok=True)
     return d
 

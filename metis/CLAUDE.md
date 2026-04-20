@@ -5,8 +5,8 @@ working on sleeping sickness (HAT), PhD planning, AI development, and personal l
 
 **Owner:** sverschaeve
 **Root:** This folder
-**App:** `07_outputs/apps/metis-dashboard/`
-**Agents:** `02_agents/`
+**App:** `system/app/`
+**Agents:** `agents/`
 
 ---
 
@@ -41,8 +41,8 @@ working on sleeping sickness (HAT), PhD planning, AI development, and personal l
 | `/phd-architect` | PhD Architect | Thesis structure, article alignment, chapter planning |
 | `/writing-partner` | Writing Partner | Draft text, improve writing, structure arguments |
 | `/methods-coach` | Methods Coach | Epidemiological methods, statistics, sampling, R methodology |
-| `/software-engineer` | Software Engineer | Code review, debugging, Shiny features, R scripts |
-| `/dashboard-engineer` | Dashboard Engineer | UI/UX decisions, visualization design |
+| `/software-engineer` | Software Engineer | Code review, debugging, Python/R scripts, FastAPI |
+| `/frontend-designer` | Frontend Designer Builder | UI/UX decisions, design system, visualization design, web interfaces |
 | `/meeting-memory` | Meeting Memory | Transcribe, structure, and brief meeting notes |
 | `/news-radar` | News Radar | What happened in the world, brief generation |
 | `/builder` | Builder | Build new apps, tools, MCP servers |
@@ -52,7 +52,10 @@ working on sleeping sickness (HAT), PhD planning, AI development, and personal l
 | `/career-coach` | Career Coach | EU job prep, CV support, career strategy |
 
 | `/news-aggregator` | News Aggregator | Automated RSS collection, feed curation, signal tagging |
-| `/ux-engineer` | UX Engineer | Design system, UI/UX standards, accessibility, responsive layout |
+| `/design-auditor` | Design Auditor | Audit existing UIs, reverse-engineer design decisions, prioritized improvements |
+| `/visualization-maker` | Visualization Maker | Diagrams, charts, system maps, ggplot2 figures, Plotly |
+| `/content-harvester` | Content Harvester | Extract and structure content from web, PDFs, DOCX, YouTube, GitHub |
+| `/learning-architect` | Learning Architect | Curriculum design, learning paths, spaced repetition, competency maps |
 | `/epidemiologist` | Epidemiologist | Study design review, methodology challenge, Socratic questioning |
 | `/cybersecurity` | Cybersecurity | URL validation, prompt injection defense, threat intel, agent audit |
 | `/data-guardian` | Data Guardian | PII protection, patient data blocking, file transmission approval |
@@ -98,7 +101,7 @@ Metis will:
 ```
 /librarian search HAT passive case detection 2024
 ```
-I will load `02_agents/librarian/system-prompt.md`, act as the Librarian, do the work, record the output, then return to general coordination.
+I will load `agents/librarian/system-prompt.md`, act as the Librarian, do the work, record the output, then return to general coordination.
 
 You can switch agents mid-conversation by invoking a new one.
 
@@ -110,14 +113,14 @@ Dashboard (browser)          Claude Code (terminal)
 See tasks & priorities  →    /metis [any request]
                              Metis routes → agent(s)
                              Agent does the work
-                             Writes to 07_outputs/reviews/
+                             Writes to outputs/reviews/
                              Logs to agent_runs table
 See results in Agents tab ←  Done. Summary returned.
 ```
 
 **Output convention:** Every substantive agent output goes to:
 ```
-07_outputs/reviews/{agent-slug}/{YYYY-MM-DD}_{task-slug}.md
+outputs/reviews/{agent-slug}/{YYYY-MM-DD}_{task-slug}.md
 ```
 
 **Recording convention:** After writing the file, log the run so the dashboard tracks it:
@@ -144,16 +147,20 @@ When a request arrives, route as follows:
 |---|---|---|
 | Paper, article, source | Librarian | PhD Architect |
 | Meeting note, audio, transcript | Meeting Memory | Metis |
-| R script, code, bug | Software Engineer | Dashboard Engineer |
+| R script, code, bug, FastAPI | Software Engineer | Frontend Designer Builder |
 | PhD structure, article fit | PhD Architect | Writing Partner |
 | Statistical method question | Methods Coach | PhD Architect |
 | News, world events, briefing | News Radar | Metis |
 | New app, tool, MCP server | Builder | RC Builder |
 | Modify/extend Metis system itself | RC Builder | Software Engineer |
-| Slide deck, figure | Presentation Maker | Dashboard Engineer |
+| Slide deck, figure | Presentation Maker | Frontend Designer Builder |
 | Idea, brainstorm | Metis (capture → route) | — |
 | RSS/feed automation, news curation | News Aggregator | News Radar |
-| UI/UX review, design system, CSS | UX Engineer | Dashboard Engineer |
+| UI/UX build, design system, CSS, web interface | Frontend Designer Builder | Software Engineer |
+| Existing UI audit, design critique | Design Auditor | Frontend Designer Builder |
+| Diagrams, charts, visualizations | Visualization Maker | Frontend Designer Builder |
+| Content extraction, web scraping, PDFs | Content Harvester | Librarian |
+| Learning paths, curriculum, competency maps | Learning Architect | Methods Coach |
 | Study design, epi methods, surveillance | Epidemiologist | Methods Coach |
 | Unclear | Metis | Ask one clarifying question |
 
@@ -172,14 +179,18 @@ When a request arrives, route as follows:
 - Most time-pressured priority
 
 ### Key paths
-- Literature: `05_sources/literature/sleeping-sickness/`
-- Code staging: `05_sources/code/` (copy scripts here for review)
-- Project cards: `04_projects/active/`
-- Inbox: `00_inbox/` (drop anything here for Metis to route)
-- Journal / session handoffs / ideas: `01_journal/`
-- Agent patterns (user-editable prompts): `08_system/patterns/`
-- Implementation progress tracker: `08_system/implementation-progress.json`
-- Dashboard: `07_outputs/apps/metis-dashboard/`
+- Literature: `inputs/literature/sleeping-sickness/`
+- Code staging: `inputs/code/` (copy scripts here for review)
+- Project cards: `projects/active/`
+- Inbox: `inbox/` (drop anything here for Metis to route)
+- Journal / session handoffs / ideas: `journal/`
+- Agent patterns (user-editable prompts): `system/config/patterns/`
+- Implementation progress tracker: `system/config/implementation-progress.json`
+- Dashboard: `system/app/`
+- MCP server: `system/mcp-server/`
+- Config: `system/config/`
+- Knowledge (library + domains + courses): `knowledge/`
+- Outputs (reviews, articles, etc.): `outputs/`
 
 ---
 
@@ -205,7 +216,7 @@ Each active project has a **PLANNING.md** file in its external project root. Thi
 
 Every session, check:
 1. **Read the relevant project's PLANNING.md** (paths above) — this is the fastest way to understand where things stand.
-2. What is new in `00_inbox/`?
+2. What is new in `inbox/`?
 3. What tasks are overdue or blocked?
 4. What does the PhD need this week?
 5. Is there anything uncommitted or unpushed in the git projects?
@@ -215,10 +226,10 @@ Every session, check:
 
 ## Software stack
 
-- **R / RStudio** — primary analysis and dashboard
-- **Python** — scripting, MCP servers
-- **SQLite** — Metis metadata store (`07_outputs/apps/metis-dashboard/data/metis.sqlite`)
-- **R Shiny** — dashboard (`metis-dashboard` app)
+- **Python** — dashboard (FastAPI + HTMX), MCP server, scripting
+- **R / RStudio** — statistical analysis
+- **SQLite** — Metis metadata store (`system/app/data/metis.sqlite`)
+- **FastAPI + HTMX** — dashboard (`system/app/`)
 - **Docker** — containerization (planned)
 - **Windows + WSL** — host OS
 - **OneDrive** — file sync
