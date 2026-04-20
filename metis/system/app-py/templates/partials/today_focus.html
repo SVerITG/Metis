@@ -1,0 +1,35 @@
+<div class="card p-3">
+  <div class="d-flex align-items-center mb-2">
+    <i class="bi bi-bullseye me-2 text-danger"></i>
+    <span class="fw-semibold">Today's focus</span>
+  </div>
+
+  {% if project %}
+  <div class="focus-project">
+    <div class="d-flex align-items-start justify-content-between gap-2">
+      <div>
+        <div class="fw-semibold fs-6">{{ project.title }}</div>
+        {% if project.domain %}
+        <div class="text-muted small mb-1">
+          <i class="bi bi-folder2 me-1"></i>{{ project.domain }}
+        </div>
+        {% endif %}
+        {% if project.next_step %}
+        <div class="focus-next-step small mt-1">
+          <i class="bi bi-arrow-right-circle me-1 text-success"></i>
+          <span>{{ project.next_step }}</span>
+        </div>
+        {% endif %}
+      </div>
+      {% if project.priority %}
+      <span class="badge bg-danger ms-auto">P{{ project.priority }}</span>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="text-muted small">
+    <i class="bi bi-inbox me-1"></i>
+    No active project found. Add one with <kbd>i: new project idea</kbd> or update a project status to <em>active</em>.
+  </div>
+  {% endif %}
+</div>

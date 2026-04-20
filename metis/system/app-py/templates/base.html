@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Metis — {% block title %}Dashboard{% endblock %}</title>
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous">
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Metis custom styles — loaded AFTER Bootstrap so rules override -->
+  <link rel="stylesheet" href="/static/styles.css">
+
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@1.9.12"
+          integrity="sha384-SKFwBYQlhFXntEPViGbh0FFkk4PYZuMMcRMPdBrEEq8nJhNHjbYfQY4a3YGON/p"
+          crossorigin="anonymous"></script>
+</head>
+<body>
+
+<!-- =====================================================================
+     Navigation bar
+====================================================================== -->
+<nav class="navbar navbar-expand-lg sticky-top">
+  <div class="container-fluid">
+
+    <!-- Brand -->
+    <span class="navbar-brand fw-bold me-3" style="font-size:1.1rem; letter-spacing:.04em;">
+      <i class="bi bi-cpu-fill me-1 text-primary"></i>Metis
+    </span>
+
+    <!-- Nav tabs -->
+    <div class="navbar-nav flex-row flex-wrap gap-1" id="main-nav">
+
+      <!-- Today -->
+      <button class="btn btn-sm nav-tab-btn {% if active_tab == 'today' %}active{% endif %}"
+              hx-get="/api/tab/today"
+              hx-target="#tab-content"
+              hx-swap="innerHTML"
+              hx-push-url="/today">
+        <i class="bi bi-sun"></i>
+        <span class="nav-tab-label">Today</span>
+      </button>
+
+      <!-- Knowledge -->
+      <button class="btn btn-sm nav-tab-btn {% if active_tab == 'knowledge' %}active{% endif %}"
+              hx-get="/api/tab/knowledge"
+              hx-target="#tab-content"
+              hx-swap="innerHTML"
+              hx-push-url="/knowledge">
+        <i class="bi bi-book"></i>
+        <span class="nav-tab-label">Knowledge</span>
+      </button>
+
+      <!-- Thinking -->
+      <button class="btn btn-sm nav-tab-btn {% if active_tab == 'thinking' %}active{% endif %}"
+              hx-get="/api/tab/thinking"
+              hx-target="#tab-content"
+              hx-swap="innerHTML"
+              hx-push-url="/thinking">
+        <i class="bi bi-lightbulb"></i>
+        <span class="nav-tab-label">Thinking</span>
+      </button>
+
+      <!-- Planner -->
+      <button class="btn btn-sm nav-tab-btn {% if active_tab == 'planner' %}active{% endif %}"
+              hx-get="/api/tab/planner"
+              hx-target="#tab-content"
+              hx-swap="innerHTML"
+              hx-push-url="/planner">
+        <i class="bi bi-calendar3"></i>
+        <span class="nav-tab-label">Planner</span>
+      </button>
+
+      <!-- Work -->
+      <button class="btn btn-sm nav-tab-btn {% if active_tab == 'work' %}active{% endif %}"
+              hx-get="/api/tab/work"
+              hx-target="#tab-content"
+              hx-swap="innerHTML"
+              hx-push-url="/work">
+        <i class="bi bi-briefcase"></i>
+        <span class="nav-tab-label">Work</span>
+      </button>
+
+      <!-- Meetings -->
+      <button class="btn btn-sm nav-tab-btn {% if active_tab == 'meetings' %}active{% endif %}"
+              hx-get="/api/tab/meetings"
+              hx-target="#tab-content"
+              hx-swap="innerHTML"
+              hx-push-url="/meetings">
+        <i class="bi bi-camera-video"></i>
+        <span class="nav-tab-label">Meetings</span>
+      </button>
+
+      <!-- Learning -->
+      <button class="btn btn-sm nav-tab-btn {% if active_tab == 'learning' %}active{% endif %}"
+              hx-get="/api/tab/learning"
+              hx-target="#tab-content"
+              hx-swap="innerHTML"
+              hx-push-url="/learning">
+        <i class="bi bi-mortarboard"></i>
+        <span class="nav-tab-label">Learning</span>
+      </button>
+
+      <!-- Metis -->
+      <button class="btn btn-sm nav-tab-btn {% if active_tab == 'metis' %}active{% endif %}"
+              hx-get="/api/tab/metis"
+              hx-target="#tab-content"
+              hx-swap="innerHTML"
+              hx-push-url="/metis">
+        <i class="bi bi-robot"></i>
+        <span class="nav-tab-label">Metis</span>
+      </button>
+
+    </div><!-- /.navbar-nav -->
+
+    <!-- Right side: Capture button + Trust badge -->
+    <div class="ms-auto d-flex align-items-center gap-2">
+
+      <button class="btn btn-capture-nav" id="capture-btn" onclick="openCapture()">
+        <i class="bi bi-plus-lg"></i>
+        <span class="capture-nav-label">Capture</span>
+      </button>
+
+      <div class="trust-badge d-flex align-items-center gap-1"
+           hx-get="/api/trust-badge"
+           hx-trigger="load, every 60s"
+           hx-swap="innerHTML">
+        <i class="bi bi-shield-check"></i>
+        <span>Local-first</span>
+      </div>
+
+    </div>
+
+  </div><!-- /.container-fluid -->
+</nav>
+
+<!-- =====================================================================
+     Main content
+====================================================================== -->
+<div id="tab-content" class="container-fluid mt-3 px-4">
+  {% block content %}{% endblock %}
+</div>
+
+<!-- =====================================================================
+     Capture modal overlay (filled via HTMX on demand)
+====================================================================== -->
+<div id="capture-overlay"
+     style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.45);"
+     onclick="handleOverlayClick(event)">
+  <div id="capture-modal-inner"></div>
+</div>
+
+<!-- =====================================================================
+     Scripts
+====================================================================== -->
+<!-- Bootstrap JS bundle (includes Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmqNZ/6gMNDP9bFHNR3BEA+9Z8E9"
+        crossorigin="anonymous"></script>
+
+<!-- Metis app JS -->
+<script src="/static/app.js"></script>
+
+</body>
+</html>
