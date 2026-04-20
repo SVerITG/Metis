@@ -27,6 +27,7 @@ _AGENT_RUNS_MIGRATE = [
     "ALTER TABLE agent_runs ADD COLUMN input_tokens INTEGER DEFAULT 0",
     "ALTER TABLE agent_runs ADD COLUMN output_tokens INTEGER DEFAULT 0",
     "ALTER TABLE agent_runs ADD COLUMN model TEXT DEFAULT ''",
+    "ALTER TABLE agent_runs ADD COLUMN session_id TEXT DEFAULT ''",
 ]
 
 
@@ -89,6 +90,7 @@ async def log_agent_run(
     input_tokens: int = 0,
     output_tokens: int = 0,
     model: str = "",
+    session_id: str = "",
 ) -> list[TextContent]:
     """Log an agent run to the SQLite database.
 
@@ -103,6 +105,7 @@ async def log_agent_run(
         input_tokens: Input tokens consumed (for cost tracking).
         output_tokens: Output tokens produced (for cost tracking).
         model: Model used (e.g. "claude-sonnet-4-6", "claude-haiku-4-5").
+        session_id: Pipeline session ID from session_bootstrap(), if any.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
@@ -119,8 +122,8 @@ async def log_agent_run(
             conn.execute(
                 """INSERT INTO agent_runs
                    (agent_slug, task_summary, input_path, output_path, status, created_at,
-                    input_tokens, output_tokens, model)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    input_tokens, output_tokens, model, session_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     agent_slug,
                     task_summary,
@@ -131,6 +134,7 @@ async def log_agent_run(
                     input_tokens,
                     output_tokens,
                     model,
+                    session_id,
                 ),
             )
             conn.commit()
