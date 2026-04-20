@@ -1,0 +1,40 @@
+<!-- meetings_list.html — Meetings table rows -->
+{% if not meetings %}
+<tr>
+  <td colspan="6" class="text-center text-muted py-4">
+    <i class="bi bi-camera-video fs-2 mb-2 d-block"></i>
+    No meetings found.
+  </td>
+</tr>
+{% else %}
+{% for m in meetings %}
+<tr>
+  <td class="ps-3 text-muted small">{{ m.date or '—' }}</td>
+  <td class="small fw-semibold" style="max-width:260px;">
+    <div class="text-truncate">{{ m.title or 'Untitled' }}</div>
+  </td>
+  <td class="text-muted small" style="max-width:160px;">
+    <div class="text-truncate">{{ m.participants or '—' }}</div>
+  </td>
+  <td class="text-muted small">
+    {% if m.duration_minutes %}{{ m.duration_minutes }}m{% else %}—{% endif %}
+  </td>
+  <td>
+    {% set s = m.status or 'draft' %}
+    {% if s == 'processed' %}
+    <span class="badge bg-success-subtle text-success">processed</span>
+    {% elif s == 'in_progress' %}
+    <span class="badge bg-warning-subtle text-warning">in progress</span>
+    {% else %}
+    <span class="badge bg-secondary-subtle text-secondary">{{ s }}</span>
+    {% endif %}
+  </td>
+  <td>
+    <button class="btn btn-xs btn-link p-0 text-muted" style="font-size:0.75rem;"
+            title="View meeting details">
+      <i class="bi bi-arrow-right"></i>
+    </button>
+  </td>
+</tr>
+{% endfor %}
+{% endif %}

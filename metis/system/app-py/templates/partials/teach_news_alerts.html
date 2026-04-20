@@ -1,0 +1,19 @@
+<!--
+  teach_news_alerts.html — News alerts for one course.
+  Injected into the news-alerts-{id} panel by HTMX.
+-->
+{% if alerts %}
+<div class="small fw-semibold text-danger mb-1">
+  <i class="bi bi-newspaper me-1"></i>{{ alerts | length }} news signal{% if alerts | length != 1 %}s{% endif %}
+</div>
+{% for a in alerts[:3] %}
+<div class="text-truncate small text-muted">{{ a.headline }}</div>
+{% endfor %}
+{% if alerts | length > 3 %}
+<div class="small text-muted">…and {{ alerts | length - 3 }} more</div>
+{% endif %}
+{% else %}
+<div class="small text-muted">
+  <i class="bi bi-newspaper me-1"></i>No news alerts this week
+</div>
+{% endif %}

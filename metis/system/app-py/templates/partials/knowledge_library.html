@@ -1,0 +1,30 @@
+<!-- knowledge_library.html — Library card list -->
+{% if not cards %}
+<div class="text-center text-muted py-4">
+  <i class="bi bi-journals fs-2 mb-2 d-block"></i>
+  No library cards yet.
+</div>
+{% else %}
+<div class="row g-2">
+  {% for card in cards %}
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card h-100 p-3">
+      <div class="fw-semibold small text-truncate">{{ card.title }}</div>
+      {% if card.domain %}
+      <span class="badge bg-primary-subtle text-primary mt-1 mb-1" style="font-size:0.7rem;">{{ card.domain }}</span>
+      {% endif %}
+      {% if card.summary %}
+      <div class="text-muted small mt-1" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">{{ card.summary }}</div>
+      {% endif %}
+      {% if card.tags %}
+      <div class="mt-2">
+        {% for tag in card.tags.split(',')[:3] %}
+        <span class="badge bg-secondary-subtle text-secondary me-1" style="font-size:0.65rem;">{{ tag.strip() }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

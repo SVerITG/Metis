@@ -1,0 +1,87 @@
+<!-- planner_kanban.html — Three-column kanban board (replaces skeleton div) -->
+<div id="planner-view-kanban" class="row g-3">
+
+  <!-- Someday -->
+  <div class="col-12 col-md-4">
+    <div class="card h-100">
+      <div class="card-header py-2 d-flex align-items-center justify-content-between">
+        <span class="fw-semibold small text-secondary">
+          <i class="bi bi-moon-stars me-1"></i>Someday
+        </span>
+        <span class="badge bg-secondary-subtle text-secondary">{{ someday | length }}</span>
+      </div>
+      <div class="card-body p-2">
+        {% if someday %}
+        <div class="d-flex flex-column gap-2">
+          {% for p in someday %}
+          <div class="border rounded p-2">
+            <div class="small fw-semibold text-truncate">{{ p.title }}</div>
+            {% if p.domain %}<div class="text-muted" style="font-size:0.72rem;">{{ p.domain }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-3 small">Empty</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Incubating -->
+  <div class="col-12 col-md-4">
+    <div class="card h-100">
+      <div class="card-header py-2 d-flex align-items-center justify-content-between">
+        <span class="fw-semibold small text-warning">
+          <i class="bi bi-hourglass-split me-1"></i>Incubating
+        </span>
+        <span class="badge bg-warning-subtle text-warning">{{ incubating | length }}</span>
+      </div>
+      <div class="card-body p-2">
+        {% if incubating %}
+        <div class="d-flex flex-column gap-2">
+          {% for p in incubating %}
+          <div class="border rounded p-2">
+            <div class="small fw-semibold text-truncate">{{ p.title }}</div>
+            {% if p.domain %}<div class="text-muted" style="font-size:0.72rem;">{{ p.domain }}</div>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-3 small">Empty</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Active -->
+  <div class="col-12 col-md-4">
+    <div class="card h-100">
+      <div class="card-header py-2 d-flex align-items-center justify-content-between">
+        <span class="fw-semibold small text-success">
+          <i class="bi bi-lightning-charge me-1"></i>Active
+        </span>
+        <span class="badge bg-success-subtle text-success">{{ active | length }}</span>
+      </div>
+      <div class="card-body p-2">
+        {% if active %}
+        <div class="d-flex flex-column gap-2">
+          {% for p in active %}
+          <div class="border border-success rounded p-2">
+            <div class="small fw-semibold text-truncate">{{ p.title }}</div>
+            {% if p.domain %}<div class="text-muted" style="font-size:0.72rem;">{{ p.domain }}</div>{% endif %}
+            {% if p.next_step %}
+            <div class="text-muted mt-1" style="font-size:0.72rem;">
+              <i class="bi bi-arrow-right-short"></i>{{ p.next_step }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-3 small">No active projects</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>

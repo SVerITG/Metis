@@ -1,0 +1,19 @@
+<!-- metis_system_info.html — System information panel -->
+<dl class="row mb-0 small">
+  <dt class="col-5 text-muted fw-normal">RC root</dt>
+  <dd class="col-7 text-truncate mb-1" title="{{ rc_root }}">{{ rc_root }}</dd>
+
+  <dt class="col-5 text-muted fw-normal">Database</dt>
+  <dd class="col-7 mb-1">
+    {% if db_size_kb %}
+    {{ db_size_kb }} KB
+    {% else %}
+    <span class="text-danger">not found</span>
+    {% endif %}
+  </dd>
+
+  <dt class="col-5 text-muted fw-normal">DB path</dt>
+  <dd class="col-7 text-truncate mb-0" style="font-size:0.7rem; color:var(--metis-text-muted);" title="{{ db_path }}">
+    {{ db_path }}
+  </dd>
+</dl>

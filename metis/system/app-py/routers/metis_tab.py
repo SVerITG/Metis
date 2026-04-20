@@ -2,11 +2,16 @@
 routers/metis_tab.py — Metis tab routes.
 """
 
+import datetime
+import json
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+
+from db import db_query, db_scalar
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -25,4 +30,114 @@ async def metis_tab(request: Request):
 async def metis_tab_partial(request: Request):
     return templates.TemplateResponse(
         "metis_tab.html", {"request": request, "active_tab": "metis"}
+    )
+
+
+# ---------------------------------------------------------------------------
+# Stats
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/metis/stats", response_class=HTMLResponse)
+async def metis_stats(request: Request):
+    today = str(datetime.date.today())
+    runs_today = db_scalar(
+        "SELECT COUNT(*) FROM agent_runs WHERE DATE(started_at) = ?",
+        (today,),
+        default=0,
+    )
+    tokens_today = db_scalar(
+        "SELECT COALESCE(SUM(tokens_used), 0) FROM agent_runs WHERE DATE(started_at) = ?",
+        (today,),
+        default=0,
+    )
+    total_runs = db_scalar("SELECT COUNT(*) FROM agent_runs", default=0)
+    active_agents = db_scalar(
+        "SELECT COUNT(DISTINCT agent_slug) FROM agent_runs", default=0
+    )
+    return templates.TemplateResponse(
+        "partials/metis_stats.html",
+        {
+            "request": request,
+            "runs_today": runs_today,
+            "tokens_today": tokens_today,
+            "total_runs": total_runs,
+            "active_agents": active_agents,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Agent runs list
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/metis/agent-runs", response_class=HTMLResponse)
+async def metis_agent_runs(request: Request, days: int = 1):
+    cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
+    runs = db_query(
+        "SELECT agent_slug, task_summary, started_at, tokens_used, status "
+        "FROM agent_runs WHERE started_at >= ? "
+        "ORDER BY started_at DESC LIMIT 50",
+        (cutoff,),
+    )
+    return templates.TemplateResponse(
+        "partials/metis_runs.html",
+        {"request": request, "runs": runs},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Registered agents (from agent-registry.json)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/metis/agents", response_class=HTMLResponse)
+async def metis_agents(request: Request):
+    agents: list[dict] = []
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    if rc_root:
+        registry_path = (
+            Path(rc_root) / "system" / "config" / "agent-registry.json"
+        )
+        if registry_path.exists():
+            try:
+                data = json.loads(registry_path.read_text(encoding="utf-8"))
+                agents = data.get("agents", [])
+            except Exception:
+                pass
+    return templates.TemplateResponse(
+        "partials/metis_agents.html",
+        {"request": request, "agents": agents},
+    )
+
+
+# ---------------------------------------------------------------------------
+# System info
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/metis/system-info", response_class=HTMLResponse)
+async def metis_system_info(request: Request):
+    rc_root = os.environ.get("METIS_RC_ROOT", "unknown")
+
+    db_path = "unknown"
+    db_size_kb = 0
+    try:
+        from db import get_db_path
+
+        p = get_db_path()
+        db_path = str(p)
+        db_size_kb = round(p.stat().st_size / 1024)
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        "partials/metis_system_info.html",
+        {
+            "request": request,
+            "rc_root": rc_root,
+            "db_path": db_path,
+            "db_size_kb": db_size_kb,
+        },
     )

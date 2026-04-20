@@ -1,0 +1,26 @@
+<!-- learning_due.html — Items due for spaced repetition review -->
+{% if not due %}
+<div class="text-center text-muted py-3">
+  <i class="bi bi-check2-circle fs-3 mb-1 d-block text-success"></i>
+  <div class="small">Nothing due today. Great work!</div>
+</div>
+{% else %}
+<ul class="list-group list-group-flush">
+  {% for item in due %}
+  <li class="list-group-item px-0 py-2">
+    <div class="d-flex align-items-start gap-2">
+      <i class="bi bi-alarm text-warning mt-1 flex-shrink-0"></i>
+      <div>
+        <div class="small fw-semibold">{{ item.topic }}</div>
+        {% if item.course_title %}
+        <div class="text-muted" style="font-size:0.75rem;">{{ item.course_title }}</div>
+        {% endif %}
+      </div>
+      <span class="ms-auto badge bg-warning-subtle text-warning">
+        {% if item.next_review_date < today %}overdue{% else %}today{% endif %}
+      </span>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
