@@ -1,0 +1,4 @@
+<div class="d-flex align-items-center justify-content-between text-muted" style="font-size:0.78rem;">
+  <span><i class="bi bi-cpu me-1"></i>{{ runs_today }} agent run{% if runs_today != 1 %}s{% endif %} today</span>
+  <span>{{ "{:,}".format(total_tokens) }} tokens used</span>
+</div>
