@@ -1,0 +1,12 @@
+{
+  "lessons": [
+    {"id": "lesson-01", "title": "What Elimination Means", "description": "Control, elimination as a public health problem, interruption, and eradication", "section": "Foundations", "order": 1},
+    {"id": "lesson-02", "title": "Setting Targets and Choosing Indicators", "description": "Operational targets, surveillance indicators, and verification logic", "section": "Foundations", "order": 2},
+    {"id": "lesson-03", "title": "Intervention Packages for Elimination", "description": "Case finding, vector control, MDA, and service delivery combinations", "section": "Strategy", "order": 3},
+    {"id": "lesson-04", "title": "Surveillance in the Endgame", "description": "Why surveillance gets harder as incidence falls", "section": "Strategy", "order": 4},
+    {"id": "lesson-05", "title": "Verification, Validation, and Evidence Packages", "description": "How programmes demonstrate progress credibly", "section": "Strategy", "order": 5},
+    {"id": "lesson-06", "title": "Equity, Geography, and the Last Mile", "description": "Residual transmission, hard-to-reach groups, and uneven progress", "section": "Challenges", "order": 6},
+    {"id": "lesson-07", "title": "Integration, Health Systems, and Sustainability", "description": "Embedding elimination work into durable systems", "section": "Challenges", "order": 7},
+    {"id": "lesson-08", "title": "Post-Elimination Surveillance and Reintroduction Risk", "description": "Maintaining vigilance after apparent success", "section": "Challenges", "order": 8}
+  ]
+}
