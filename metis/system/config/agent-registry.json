@@ -41,7 +41,7 @@
         "update_local_metadata",
         "create_draft_notes_and_tasks"
       ],
-      "output_path": "07_outputs/reviews/",
+      "output_path": "outputs/reviews/",
       "complexity_levels": ["quick", "standard", "deep", "chain"],
       "chains_with": ["all"]
     },
@@ -56,13 +56,13 @@
       "internet_scope": null,
       "note": "Does NOT access the internet directly. Reviews what other agents are about to access. This prevents the security agent itself from being compromised.",
       "veto_scope": [
-        "internet requests targeting domains not in 08_system/security/domain-allowlist.txt",
+        "internet requests targeting domains not in system/config/security/domain-allowlist.txt",
         "content containing prompt injection patterns",
         "internet access attempts by agents without internet permission"
       ],
       "allowed_paths": [
-        "08_system/security/",
-        "07_outputs/reviews/cybersecurity/"
+        "system/config/security/",
+        "outputs/reviews/cybersecurity/"
       ],
       "forbidden_actions": [
         "direct_internet_access",
@@ -76,7 +76,7 @@
         "read_domain_allowlist_and_blocklist",
         "write_security_log"
       ],
-      "output_path": "07_outputs/reviews/cybersecurity/",
+      "output_path": "outputs/reviews/cybersecurity/",
       "chains_with": ["data-guardian", "metis"]
     },
     {
@@ -95,8 +95,8 @@
         "original_content": "Warns once, proceeds if user acknowledges."
       },
       "allowed_paths": [
-        "08_system/security/",
-        "07_outputs/reviews/data-guardian/"
+        "system/config/security/",
+        "outputs/reviews/data-guardian/"
       ],
       "forbidden_actions": [
         "direct_internet_access",
@@ -112,7 +112,7 @@
         "write_data_protection_log",
         "alert_user_on_pii_detection"
       ],
-      "output_path": "07_outputs/reviews/data-guardian/",
+      "output_path": "outputs/reviews/data-guardian/",
       "chains_with": ["cybersecurity", "metis"]
     },
     {
@@ -131,9 +131,9 @@
       ],
       "internet_outside_scope_requires_approval": true,
       "allowed_paths": [
-        "05_sources/",
-        "06_library/",
-        "07_outputs/reviews/librarian/"
+        "inputs/",
+        "knowledge/library/",
+        "outputs/reviews/librarian/"
       ],
       "forbidden_actions": [
         "delete_source_files_without_approval",
@@ -152,7 +152,7 @@
         "create_relevance_notes",
         "identify_duplicates"
       ],
-      "output_path": "07_outputs/reviews/librarian/",
+      "output_path": "outputs/reviews/librarian/",
       "chains_with": ["phd-architect", "epidemiologist", "methods-coach"]
     },
     {
@@ -164,13 +164,13 @@
       "internet": true,
       "internet_requires_approval": false,
       "internet_scope": [
-        "sources listed in 02_agents/news-radar/sources.md",
-        "approved domains in 08_system/security/domain-allowlist.txt",
+        "sources listed in agents/news-radar/sources.md",
+        "approved domains in system/config/security/domain-allowlist.txt",
         "institutional bulletins (WHO, CDC, ECDC, Lancet, etc.)"
       ],
       "internet_outside_scope_requires_approval": true,
       "allowed_paths": [
-        "07_outputs/reviews/news-radar/"
+        "outputs/reviews/news-radar/"
       ],
       "forbidden_actions": [
         "browse_unapproved_domains",
@@ -185,7 +185,7 @@
         "write_news_briefs",
         "tag_news_items_with_topics"
       ],
-      "output_path": "07_outputs/reviews/news-radar/",
+      "output_path": "outputs/reviews/news-radar/",
       "chains_with": ["news-aggregator", "metis"]
     },
     {
@@ -197,12 +197,12 @@
       "internet": true,
       "internet_requires_approval": false,
       "internet_scope": [
-        "RSS feeds defined in 02_agents/news-radar/sources.md",
-        "approved domains in 08_system/security/domain-allowlist.txt"
+        "RSS feeds defined in agents/news-radar/sources.md",
+        "approved domains in system/config/security/domain-allowlist.txt"
       ],
       "internet_outside_scope_requires_approval": true,
       "allowed_paths": [
-        "07_outputs/reviews/news-aggregator/"
+        "outputs/reviews/news-aggregator/"
       ],
       "forbidden_actions": [
         "fetch_from_urls_outside_feed_list",
@@ -218,7 +218,7 @@
         "write_aggregated_output",
         "tag_signals"
       ],
-      "output_path": "07_outputs/reviews/news-aggregator/",
+      "output_path": "outputs/reviews/news-aggregator/",
       "chains_with": ["news-radar", "metis"]
     },
     {
@@ -231,12 +231,12 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "07_outputs/reviews/epidemiologist/"
+        "outputs/reviews/epidemiologist/"
       ],
       "read_access": [
-        "03_domains/phd/",
-        "05_sources/",
-        "07_outputs/"
+        "knowledge/domains/phd/",
+        "inputs/",
+        "outputs/"
       ],
       "forbidden_actions": [
         "modify_analysis_files",
@@ -251,7 +251,7 @@
         "write_review_output",
         "challenge_methodology_via_questions"
       ],
-      "output_path": "07_outputs/reviews/epidemiologist/",
+      "output_path": "outputs/reviews/epidemiologist/",
       "chains_with": ["methods-coach", "phd-architect", "writing-partner"]
     },
     {
@@ -264,12 +264,12 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "07_outputs/reviews/methods-coach/"
+        "outputs/reviews/methods-coach/"
       ],
       "read_access": [
-        "03_domains/",
-        "05_sources/",
-        "06_library/methods/"
+        "knowledge/domains/",
+        "inputs/",
+        "knowledge/library/methods/"
       ],
       "forbidden_actions": [
         "modify_analysis_files",
@@ -283,7 +283,7 @@
         "read_any_local_file",
         "write_methods_advice_output"
       ],
-      "output_path": "07_outputs/reviews/methods-coach/",
+      "output_path": "outputs/reviews/methods-coach/",
       "chains_with": ["epidemiologist", "phd-architect", "software-engineer"]
     },
     {
@@ -296,13 +296,13 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "03_domains/phd/",
-        "07_outputs/reviews/phd-architect/"
+        "knowledge/domains/phd/",
+        "outputs/reviews/phd-architect/"
       ],
       "read_access": [
-        "05_sources/literature/",
-        "04_projects/",
-        "06_library/"
+        "inputs/literature/",
+        "projects/",
+        "knowledge/library/"
       ],
       "forbidden_actions": [
         "invent_completed_evidence",
@@ -320,7 +320,7 @@
         "propose_thesis_changes",
         "write_review_output"
       ],
-      "output_path": "07_outputs/reviews/phd-architect/",
+      "output_path": "outputs/reviews/phd-architect/",
       "chains_with": ["epidemiologist", "methods-coach", "writing-partner", "librarian"]
     },
     {
@@ -333,9 +333,9 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "03_domains/",
-        "04_projects/",
-        "07_outputs/reviews/writing-partner/"
+        "knowledge/domains/",
+        "projects/",
+        "outputs/reviews/writing-partner/"
       ],
       "forbidden_actions": [
         "commit_to_git",
@@ -352,7 +352,7 @@
         "edit_draft_documents",
         "write_review_output"
       ],
-      "output_path": "07_outputs/reviews/writing-partner/",
+      "output_path": "outputs/reviews/writing-partner/",
       "chains_with": ["epidemiologist", "phd-architect", "methods-coach"]
     },
     {
@@ -365,8 +365,8 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "05_sources/meetings/",
-        "07_outputs/reviews/meeting-memory/"
+        "inputs/meetings/",
+        "outputs/reviews/meeting-memory/"
       ],
       "forbidden_actions": [
         "external_internet_access",
@@ -382,7 +382,7 @@
         "write_structured_meeting_briefing",
         "log_action_items"
       ],
-      "output_path": "07_outputs/reviews/meeting-memory/",
+      "output_path": "outputs/reviews/meeting-memory/",
       "chains_with": ["metis"]
     },
     {
@@ -395,11 +395,11 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "07_outputs/apps/",
-        "05_sources/code/",
-        "08_system/",
-        "02_agents/software-engineer/patterns.md",
-        "07_outputs/reviews/software-engineer/"
+        "system/app/",
+        "inputs/code/",
+        "system/config/",
+        "agents/software-engineer/patterns.md",
+        "outputs/reviews/software-engineer/"
       ],
       "forbidden_actions": [
         "literature_review",
@@ -418,7 +418,7 @@
         "write_review_output",
         "update_patterns_md"
       ],
-      "output_path": "07_outputs/reviews/software-engineer/",
+      "output_path": "outputs/reviews/software-engineer/",
       "chains_with": ["dashboard-engineer", "ux-engineer", "builder", "rc-builder"]
     },
     {
@@ -431,8 +431,8 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "07_outputs/apps/metis-dashboard/",
-        "07_outputs/reviews/dashboard-engineer/"
+        "system/app/",
+        "outputs/reviews/dashboard-engineer/"
       ],
       "forbidden_actions": [
         "modify_database_schema",
@@ -450,7 +450,7 @@
         "edit_css",
         "write_review_output"
       ],
-      "output_path": "07_outputs/reviews/dashboard-engineer/",
+      "output_path": "outputs/reviews/dashboard-engineer/",
       "chains_with": ["ux-engineer", "software-engineer", "builder"]
     },
     {
@@ -463,8 +463,8 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "07_outputs/apps/metis-dashboard/www/",
-        "07_outputs/reviews/ux-engineer/"
+        "system/app/www/",
+        "outputs/reviews/ux-engineer/"
       ],
       "forbidden_actions": [
         "modify_r_logic",
@@ -480,7 +480,7 @@
         "write_design_review",
         "audit_accessibility"
       ],
-      "output_path": "07_outputs/reviews/ux-engineer/",
+      "output_path": "outputs/reviews/ux-engineer/",
       "chains_with": ["dashboard-engineer", "software-engineer"]
     },
     {
@@ -493,9 +493,9 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "07_outputs/apps/",
-        "08_system/",
-        "07_outputs/reviews/builder/"
+        "system/app/",
+        "system/config/",
+        "outputs/reviews/builder/"
       ],
       "forbidden_actions": [
         "delete_without_confirmation",
@@ -512,7 +512,7 @@
         "write_new_scripts",
         "write_review_output"
       ],
-      "output_path": "07_outputs/reviews/builder/",
+      "output_path": "outputs/reviews/builder/",
       "chains_with": ["software-engineer", "dashboard-engineer", "ux-engineer"]
     },
     {
@@ -525,9 +525,9 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "must_load_before_acting": [
-        "08_system/token-guardrails.md",
-        "08_system/red-lines.md",
-        "08_system/mcp-server/src/metis_mcp/config.py"
+        "system/config/token-guardrails.md",
+        "system/config/red-lines.md",
+        "system/mcp-server/src/metis_mcp/config.py"
       ],
       "allowed_paths": [
         "*"
@@ -548,7 +548,7 @@
         "implement_approved_plan",
         "write_session_report"
       ],
-      "output_path": "07_outputs/reviews/implementation/",
+      "output_path": "outputs/reviews/implementation/",
       "chains_with": ["software-engineer", "dashboard-engineer", "ux-engineer", "metis"]
     },
     {
@@ -561,8 +561,8 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "07_outputs/presentations/",
-        "07_outputs/reviews/presentation-maker/"
+        "outputs/presentations/",
+        "outputs/reviews/presentation-maker/"
       ],
       "forbidden_actions": [
         "modify_source_data",
@@ -576,7 +576,7 @@
         "create_presentation_files",
         "write_review_output"
       ],
-      "output_path": "07_outputs/reviews/presentation-maker/",
+      "output_path": "outputs/reviews/presentation-maker/",
       "chains_with": ["writing-partner", "epidemiologist"]
     },
     {
@@ -584,13 +584,13 @@
       "name": "Learning Coach",
       "invocation": "/learning-coach",
       "trust_tier": "write-local",
-      "description": "Skill progression and learning path specialist. Manages competency tracking, course content, spaced repetition. Works within 06_library/courses/ and the learning DB tables.",
+      "description": "Skill progression and learning path specialist. Manages competency tracking, course content, spaced repetition. Works within knowledge/library/courses/ and the learning DB tables.",
       "internet": false,
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "06_library/courses/",
-        "07_outputs/reviews/learning-coach/"
+        "knowledge/library/courses/",
+        "outputs/reviews/learning-coach/"
       ],
       "forbidden_actions": [
         "directly_modify_db_learning_tables_via_sql",
@@ -605,7 +605,7 @@
         "create_lesson_files",
         "write_learning_review"
       ],
-      "output_path": "07_outputs/reviews/learning-coach/",
+      "output_path": "outputs/reviews/learning-coach/",
       "chains_with": ["edu-expert", "methods-coach"]
     },
     {
@@ -618,7 +618,7 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "07_outputs/reviews/career-coach/"
+        "outputs/reviews/career-coach/"
       ],
       "forbidden_actions": [
         "access_source_data_or_database",
@@ -630,7 +630,7 @@
       "can_act_without_approval": [
         "write_career_advice_output"
       ],
-      "output_path": "07_outputs/reviews/career-coach/",
+      "output_path": "outputs/reviews/career-coach/",
       "chains_with": ["metis"]
     },
     {
@@ -649,8 +649,8 @@
         "Key concepts revisited across modules (spaced repetition)"
       ],
       "allowed_paths": [
-        "06_library/courses/",
-        "07_outputs/reviews/edu-expert/"
+        "knowledge/library/courses/",
+        "outputs/reviews/edu-expert/"
       ],
       "forbidden_actions": [
         "directly_modify_db_learning_tables",
@@ -665,7 +665,7 @@
         "review_course_quality",
         "write_review_output"
       ],
-      "output_path": "07_outputs/reviews/edu-expert/",
+      "output_path": "outputs/reviews/edu-expert/",
       "chains_with": ["learning-coach", "methods-coach"]
     },
     {
@@ -678,7 +678,7 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "07_outputs/reviews/hr-talent/"
+        "outputs/reviews/hr-talent/"
       ],
       "forbidden_actions": [
         "create_or_modify_skill_files_directly",
@@ -694,7 +694,7 @@
         "read_agent_contracts",
         "write_gap_report_to_output_path"
       ],
-      "output_path": "07_outputs/reviews/hr-talent/",
+      "output_path": "outputs/reviews/hr-talent/",
       "chains_with": ["metis"]
     },
     {
@@ -707,13 +707,13 @@
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "03_domains/phd/",
-        "07_outputs/reviews/research-architect/"
+        "knowledge/domains/phd/",
+        "outputs/reviews/research-architect/"
       ],
       "read_access": [
-        "05_sources/literature/",
-        "04_projects/",
-        "06_library/"
+        "inputs/literature/",
+        "projects/",
+        "knowledge/library/"
       ],
       "forbidden_actions": [
         "invent_completed_evidence",
@@ -729,7 +729,7 @@
         "create_article_maps",
         "write_review_output"
       ],
-      "output_path": "07_outputs/reviews/research-architect/",
+      "output_path": "outputs/reviews/research-architect/",
       "chains_with": ["phd-architect", "epidemiologist", "methods-coach"]
     }
   ]

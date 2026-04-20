@@ -32,7 +32,7 @@ _VALID_EVENT_TYPES = {
     "agent_output_flagged",
 }
 
-_PROFILE_PATH_RELATIVE = "08_system/thinking-profile.yaml"
+_PROFILE_PATH_RELATIVE = "system/config/thinking-profile.yaml"
 
 _DEFAULT_PROFILE = {
     "version": 1,
