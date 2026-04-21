@@ -2,8 +2,8 @@
   "_meta": {
     "version": "1.0",
     "created": "2026-04-13",
-    "last_updated": "2026-04-20",
-    "last_phase_completed": "Phase 5.5 (M5.5.8b) — all 9 tabs built",
+    "last_updated": "2026-04-21",
+    "last_phase_completed": "Phase 6 — Anonymization & trust UI",
     "purpose": "Tracks all 75 implementation milestones for the Metis Research Cortex redesign. Statuses: pending | in_progress | completed | skipped. Each completed item records a date and optional notes.",
     "phases": [
       "Phase 0 — Foundations",
@@ -911,6 +911,74 @@
           "status": "completed",
           "completed_date": "2026-04-21",
           "notes": "4th nav pill 'Graph' in Knowledge tab. D3 v7 force-directed graph: nodes colored by domain, sized by phd_relevance, click-to-detail panel, filter input, zoom/pan, domain legend. Data API at /api/knowledge/graph-data."
+        }
+      ]
+    },
+    "Phase 5.9": {
+      "label": "Observability",
+      "target_timeline": "2026-04-21",
+      "items": [
+        {
+          "id": "M5.9.1",
+          "subject": "agent_spans table + observability DDL",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "tools/observability.py: agent_spans table (span_id TEXT PK, parent_id, run_id, session_id, name, kind, status, start_ms, end_ms, duration_ms, error, tags, created_at). WAL-mode compatible."
+        },
+        {
+          "id": "M5.9.2",
+          "subject": "MCP tools: start_span, end_span, log_span, get_spans",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "start_span() returns UUID span_id; end_span(span_id) calculates duration_ms from start_ms; log_span() one-shot for completed spans; get_spans() filtered by session/run. Server now has 78 tools."
+        },
+        {
+          "id": "M5.9.3",
+          "subject": "Span waterfall in Metis tab",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "Traces card in metis_tab.html. /api/partial/metis/traces route in metis_tab.py. CSS horizontal waterfall bars sized by duration_ms, colored by kind (internal/tool/agent/llm). Run header shows status badge + timestamp. Legend rendered when >1 kind used."
+        }
+      ]
+    },
+    "Phase 6": {
+      "label": "Anonymization and trust UI",
+      "target_timeline": "2026-04-21",
+      "items": [
+        {
+          "id": "M6.1",
+          "subject": "anonymize_text MCP tool — regex PII scrubbing",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "tools/anonymization.py: anonymize_text(content, mode, replace_names). Reuses safety.py patterns: PATIENT_ID, GPS, Belgian NID, EMAIL, PHONE. Optional name heuristic (CAPITALIZED tokens). Returns JSON with anonymized text + replacements map + counters."
+        },
+        {
+          "id": "M6.2",
+          "subject": "diff_anonymization MCP tool — unified diff view",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "diff_anonymization(original, anonymized): Python difflib unified_diff. Returns plain text diff suitable for display in dashboard or agent output."
+        },
+        {
+          "id": "M6.3",
+          "subject": "Trust badge enhanced with network policy indicator",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "main.py trust_badge(): reads system/config/network-policy.json. Icons: bi-shield-lock (strict/warning), bi-wifi-off (offline/danger), bi-shield-check (normal). Badge updates every 60s."
+        },
+        {
+          "id": "M6.4",
+          "subject": "Consent ledger MCP tools + dashboard card",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "log_consent_event() + get_consent_ledger() MCP tools. consent_ledger table (id, timestamp, action, data_classification, agent_slug, notes, session_id). Metis tab card shows recent events with colour-coded classification badges."
+        },
+        {
+          "id": "M6.5",
+          "subject": "Network policy MCP tools + dashboard badge",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "set_network_policy(policy) + get_network_policy() MCP tools. Persists to system/config/network-policy.json. Policies: strict/normal/offline. Dashboard consent card header shows live badge via /api/partial/metis/network-policy."
         }
       ]
     }

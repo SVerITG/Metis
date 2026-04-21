@@ -107,7 +107,7 @@ async def check_db_mtime():
 
 @app.get("/api/trust-badge", response_class=HTMLResponse)
 async def trust_badge():
-    """Return an HTML snippet with today's agent call count."""
+    """Return an HTML snippet with today's agent call count + network policy."""
     today = str(datetime.date.today())
     try:
         from db import db_scalar
@@ -119,8 +119,24 @@ async def trust_badge():
     except Exception:
         count = 0
 
-    if count:
-        return HTMLResponse(
-            f'<span class="trust-badge-text">{count} calls today</span>'
-        )
-    return HTMLResponse('<span class="trust-badge-text">Local-first</span>')
+    # Read network policy
+    policy = "normal"
+    try:
+        rc_root = os.environ.get("METIS_RC_ROOT", "")
+        if rc_root:
+            p = Path(rc_root) / "system" / "config" / "network-policy.json"
+            if p.exists():
+                import json
+                data = json.loads(p.read_text(encoding="utf-8"))
+                policy = data.get("policy", "normal")
+    except Exception:
+        pass
+
+    policy_icon = {"strict": "bi-shield-lock", "offline": "bi-wifi-off", "normal": "bi-shield-check"}.get(policy, "bi-shield-check")
+    policy_cls  = {"strict": "text-warning", "offline": "text-danger", "normal": ""}.get(policy, "")
+
+    label = f"{count} calls today" if count else "Local-first"
+    return HTMLResponse(
+        f'<i class="bi {policy_icon} {policy_cls}"></i>'
+        f'<span class="trust-badge-text">{label}</span>'
+    )

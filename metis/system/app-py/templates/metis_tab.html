@@ -103,6 +103,38 @@
   </div>
 </div>
 
+<!-- ===== Consent ledger (Phase 6) ===== -->
+<div class="card mb-3">
+  <div class="card-header py-2 d-flex align-items-center justify-content-between">
+    <span class="fw-semibold small">
+      <i class="bi bi-journal-check me-1 text-success"></i>Consent &amp; data audit ledger
+    </span>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-light text-dark border" id="network-policy-badge"
+            hx-get="/api/partial/metis/network-policy"
+            hx-trigger="load, every 30s"
+            hx-swap="outerHTML">
+        <i class="bi bi-wifi me-1"></i>…
+      </span>
+      <button class="btn btn-sm btn-outline-secondary"
+              hx-get="/api/partial/metis/consent"
+              hx-target="#metis-consent-body"
+              hx-swap="innerHTML">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
+  </div>
+  <div class="card-body p-0" id="metis-consent-body"
+       hx-get="/api/partial/metis/consent"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="p-3 placeholder-glow">
+      <span class="placeholder col-10 mb-2"></span>
+      <span class="placeholder col-8"></span>
+    </div>
+  </div>
+</div>
+
 <!-- ===== System info ===== -->
 <div class="row g-3">
 
