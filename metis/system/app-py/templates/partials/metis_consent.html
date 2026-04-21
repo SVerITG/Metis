@@ -1,0 +1,51 @@
+<!-- partials/metis_consent.html — Phase 6 consent ledger -->
+
+{% set CLASS_COLOR = {
+  'PUBLIC':       'bg-success-subtle text-success-emphasis',
+  'INTERNAL':     'bg-primary-subtle text-primary-emphasis',
+  'CONFIDENTIAL': 'bg-warning-subtle text-warning-emphasis',
+  'SENSITIVE':    'bg-danger-subtle text-danger-emphasis'
+} %}
+
+{% if not events %}
+<p class="text-muted small py-3 text-center">
+  No consent events yet — agents log events via <code>log_consent_event()</code>.
+</p>
+
+{% else %}
+<div class="table-responsive" style="font-size:.82rem;">
+  <table class="table table-sm table-hover mb-0">
+    <thead class="table-light">
+      <tr>
+        <th style="width:130px;">Time</th>
+        <th>Action</th>
+        <th style="width:110px;">Classification</th>
+        <th style="width:120px;">Agent</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ev in events %}
+      <tr>
+        <td class="text-muted">{{ ev.timestamp[:16] if ev.timestamp else '—' }}</td>
+        <td class="text-truncate" style="max-width:200px;" title="{{ ev.action }}">
+          {{ ev.action }}
+        </td>
+        <td>
+          <span class="badge {{ CLASS_COLOR.get(ev.data_classification, 'bg-secondary') }} border-0"
+                style="font-size:.65rem;">
+            {{ ev.data_classification }}
+          </span>
+        </td>
+        <td class="text-muted text-truncate" style="max-width:120px;">
+          {{ ev.agent_slug or '—' }}
+        </td>
+        <td class="text-muted text-truncate" style="max-width:200px;" title="{{ ev.notes or '' }}">
+          {{ ev.notes or '' }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
