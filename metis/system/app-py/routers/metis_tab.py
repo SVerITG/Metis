@@ -182,6 +182,50 @@ async def metis_traces(request: Request, hours: int = 24):
     )
 
 
+@router.get("/api/partial/metis/network-policy", response_class=HTMLResponse)
+async def metis_network_policy(request: Request):
+    """Return an HTML badge showing current network policy; used by consent card header."""
+    import json
+
+    policy = "normal"
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    if rc_root:
+        p = Path(rc_root) / "system" / "config" / "network-policy.json"
+        if p.exists():
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+                policy = data.get("policy", "normal")
+            except Exception:
+                pass
+
+    icons = {"strict": "bi-shield-lock text-warning", "offline": "bi-wifi-off text-danger", "normal": "bi-wifi text-success"}
+    icon_cls = icons.get(policy, "bi-wifi text-success")
+    label = {"strict": "Strict", "offline": "Offline", "normal": "Normal"}.get(policy, policy.title())
+
+    html = (
+        f'<span class="badge bg-light text-dark border" id="network-policy-badge" '
+        f'hx-get="/api/partial/metis/network-policy" hx-trigger="every 30s" hx-swap="outerHTML">'
+        f'<i class="bi {icon_cls} me-1"></i>{label}</span>'
+    )
+    return HTMLResponse(html)
+
+
+@router.get("/api/partial/metis/consent", response_class=HTMLResponse)
+async def metis_consent(request: Request, limit: int = 20):
+    """Return consent ledger partial."""
+    rows = db_query(
+        "SELECT id, timestamp, action, data_classification, agent_slug, notes "
+        "FROM consent_ledger ORDER BY timestamp DESC LIMIT ?",
+        (limit,),
+        default=[],
+    )
+    return templates.TemplateResponse(
+        request,
+        "partials/metis_consent.html",
+        {"events": [dict(r) for r in (rows or [])]},
+    )
+
+
 @router.get("/api/partial/metis/system-info", response_class=HTMLResponse)
 async def metis_system_info(request: Request):
     rc_root = os.environ.get("METIS_RC_ROOT", "unknown")
