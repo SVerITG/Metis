@@ -89,3 +89,25 @@ async def thinking_questions(request: Request):
             "questions": questions
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# Brainstorm sessions (Phase 8)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/thinking/brainstorm-sessions", response_class=HTMLResponse)
+async def thinking_brainstorm_sessions(request: Request):
+    sessions = db_query(
+        "SELECT bs.session_uuid, bs.title, bs.status, bs.started_at, bs.updated_at, "
+        "COUNT(bt.id) as turn_count "
+        "FROM brainstorm_sessions bs "
+        "LEFT JOIN brainstorm_turns bt ON bs.session_uuid = bt.session_uuid "
+        "GROUP BY bs.id ORDER BY bs.updated_at DESC LIMIT 10",
+        default=[],
+    )
+    return templates.TemplateResponse(
+        request,
+        "partials/thinking_brainstorm_sessions.html",
+        {"sessions": [dict(s) for s in (sessions or [])]},
+    )
