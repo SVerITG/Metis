@@ -64,7 +64,7 @@ async def today_greeting(request: Request):
         )
         morning_runs = db_query(
             "SELECT agent_slug FROM agent_runs "
-            "WHERE agent_slug IN ('news-radar','librarian') AND DATE(started_at) = ?",
+            "WHERE agent_slug IN ('news-radar','librarian') AND DATE(created_at) = ?",
             (str(today),),
         )
     except Exception:
@@ -203,12 +203,12 @@ async def today_token_footer(request: Request):
     today = str(datetime.date.today())
     try:
         total_tokens = db_scalar(
-            "SELECT COALESCE(SUM(tokens_used), 0) FROM agent_runs "
-            "WHERE DATE(started_at) = ?",
+            "SELECT COALESCE(SUM(COALESCE(input_tokens,0) + COALESCE(output_tokens,0)), 0) "
+            "FROM agent_runs WHERE DATE(created_at) = ?",
             (today,),
         )
         runs_today = db_scalar(
-            "SELECT COUNT(*) FROM agent_runs WHERE DATE(started_at) = ?",
+            "SELECT COUNT(*) FROM agent_runs WHERE DATE(created_at) = ?",
             (today,),
         )
     except Exception:

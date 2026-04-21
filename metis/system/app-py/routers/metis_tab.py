@@ -42,12 +42,13 @@ async def metis_tab_partial(request: Request):
 async def metis_stats(request: Request):
     today = str(datetime.date.today())
     runs_today = db_scalar(
-        "SELECT COUNT(*) FROM agent_runs WHERE DATE(started_at) = ?",
+        "SELECT COUNT(*) FROM agent_runs WHERE DATE(created_at) = ?",
         (today,),
         default=0,
     )
     tokens_today = db_scalar(
-        "SELECT COALESCE(SUM(tokens_used), 0) FROM agent_runs WHERE DATE(started_at) = ?",
+        "SELECT COALESCE(SUM(COALESCE(input_tokens,0) + COALESCE(output_tokens,0)), 0) "
+        "FROM agent_runs WHERE DATE(created_at) = ?",
         (today,),
         default=0,
     )
@@ -76,9 +77,10 @@ async def metis_stats(request: Request):
 async def metis_agent_runs(request: Request, days: int = 1):
     cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
     runs = db_query(
-        "SELECT agent_slug, task_summary, started_at, tokens_used, status "
-        "FROM agent_runs WHERE started_at >= ? "
-        "ORDER BY started_at DESC LIMIT 50",
+        "SELECT agent_slug, task_summary, created_at as started_at, "
+        "COALESCE(input_tokens,0) + COALESCE(output_tokens,0) as tokens_used, status "
+        "FROM agent_runs WHERE created_at >= ? "
+        "ORDER BY created_at DESC LIMIT 50",
         (cutoff,),
     )
     return templates.TemplateResponse(
