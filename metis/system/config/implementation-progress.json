@@ -451,32 +451,42 @@
     },
     "Phase 8": {
       "label": "Brainstorm Plan Mode",
-      "target_timeline": "week 10",
+      "target_timeline": "2026-04-21",
       "items": [
         {
           "id": "M8.1",
-          "subject": "Build brainstorm_turn MCP tool",
-          "status": "pending"
+          "subject": "brainstorm_turn MCP tool + session table",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "tools/brainstorm.py: brainstorm_turn(topic, steering, session_uuid, turn_notes). Fetches context: ideas, personal_notes, open questions, library .md notes. 5 steering modes (expand/focus/challenge/synthesize/connect) each with 3 steering prompts. brainstorm_sessions + brainstorm_turns SQLite tables."
         },
         {
           "id": "M8.2",
-          "subject": "Build Plan Mode system prompt",
-          "status": "pending"
+          "subject": "Plan Mode system prompt + patterns file",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "system/config/patterns/brainstorm-plan-mode.md: protocol (call brainstorm_turn, generate 3-5 insights, offer 3 steering questions per turn), tone rules, anti-patterns. Activated by /metis_brainstorm skill."
         },
         {
           "id": "M8.3",
-          "subject": "Build steering buttons UI in Thinking tab",
-          "status": "pending"
+          "subject": "Steering buttons UI in Thinking tab",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "Thinking tab brainstorm panel: topic input, 5 steering buttons (Expand/Focus/Challenge/Synthesize/Connect), 'Copy prompt for Claude Code' button that generates /metis_brainstorm prompt with selected steering. Recent sessions list via /api/partial/thinking/brainstorm-sessions."
         },
         {
           "id": "M8.4",
-          "subject": "Build cross-pollinate-anytime side panel",
-          "status": "pending"
+          "subject": "Cross-pollinate session context",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "get_brainstorm_session(session_uuid) + list_brainstorm_sessions(limit) MCP tools provide session history for cross-session cross-pollination. Context payload returned by brainstorm_turn() already surfaces cross-domain library connections."
         },
         {
           "id": "M8.5",
-          "subject": "Build structured output format for saved brainstorms",
-          "status": "pending"
+          "subject": "Structured output format for saved brainstorms",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "save_brainstorm_output(session_uuid, title, synthesis, action_items): writes outputs/brainstorms/<date>_<slug>.md with synthesis, action items, and turn log. Updates brainstorm_sessions.status to 'saved'."
         }
       ]
     },
