@@ -123,6 +123,65 @@ async def metis_agents(request: Request):
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Span waterfall (Phase 5.9)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/metis/traces", response_class=HTMLResponse)
+async def metis_traces(request: Request, hours: int = 24):
+    """Return span waterfall partial for recent agent activity."""
+    cutoff = (
+        datetime.datetime.now() - datetime.timedelta(hours=hours)
+    ).isoformat()
+
+    # Recent runs (become root bars when no spans exist)
+    runs = db_query(
+        "SELECT run_id, agent_slug, task_summary, created_at, status "
+        "FROM agent_runs WHERE created_at >= ? ORDER BY created_at DESC LIMIT 20",
+        (cutoff,),
+    )
+
+    # All spans in window, grouped by run_id
+    raw_spans = db_query(
+        "SELECT span_id, parent_id, run_id, session_id, name, kind, "
+        "status, start_ms, end_ms, duration_ms, error, created_at "
+        "FROM agent_spans WHERE created_at >= ? ORDER BY start_ms ASC",
+        (cutoff,),
+        default=[],
+    )
+
+    # Group spans by run_id
+    spans_by_run: dict = {}
+    orphan_spans: list = []
+    for s in (raw_spans or []):
+        rid = s["run_id"] if s["run_id"] else None
+        if rid:
+            spans_by_run.setdefault(rid, []).append(dict(s))
+        else:
+            orphan_spans.append(dict(s))
+
+    # Enrich runs with span data
+    run_list = []
+    for r in (runs or []):
+        rd = dict(r)
+        rd["spans"] = spans_by_run.get(r["run_id"], [])
+        run_list.append(rd)
+
+    total_spans = sum(len(v) for v in spans_by_run.values()) + len(orphan_spans)
+
+    return templates.TemplateResponse(
+        request,
+        "partials/metis_traces.html",
+        {
+            "runs": run_list,
+            "orphan_spans": orphan_spans,
+            "total_spans": total_spans,
+            "hours": hours,
+        },
+    )
+
+
 @router.get("/api/partial/metis/system-info", response_class=HTMLResponse)
 async def metis_system_info(request: Request):
     rc_root = os.environ.get("METIS_RC_ROOT", "unknown")
