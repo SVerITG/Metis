@@ -35,6 +35,7 @@ class Paths:
         )
         self.library = self.root / "knowledge" / "library"
         self.reviews = self.root / "outputs" / "reviews"
+        self.config = self.root / "system" / "config"
         self.db = (
             self.root
             / "system"
