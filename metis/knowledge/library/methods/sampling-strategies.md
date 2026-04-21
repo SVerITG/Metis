@@ -1,3 +1,21 @@
+---
+title: "Sampling Strategies"
+domain: "methods"
+tags:
+  - sampling
+  - surveys
+  - design
+  - cluster-sampling
+  - probability-sampling
+related:
+  - "methods/study-designs.md"
+  - "methods/surveillance-systems.md"
+  - "disease-areas/hat-sleeping-sickness.md"
+  - "methods/biostatistics-essentials.md"
+phd_relevance: "high"
+status: "current"
+updated: "2026-03-30"
+---
 # Sampling Strategies
 
 > Reference card — probability and non-probability sampling methods, sample size, and decision guidance.

@@ -1,3 +1,19 @@
+---
+title: "Health Equity and Social Determinants of Health"
+domain: "concepts"
+tags:
+  - equity
+  - social-determinants
+  - SDH
+  - inequality
+related:
+  - "concepts/implementation-science.md"
+  - "concepts/global-health-governance.md"
+  - "concepts/health-systems-strengthening.md"
+phd_relevance: "low"
+status: "current"
+updated: "2026-03-29"
+---
 # Health Equity and Social Determinants of Health
 
 > Reference card — frameworks, measurement, SDGs, key concepts.

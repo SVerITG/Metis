@@ -25,15 +25,15 @@ templates = Jinja2Templates(
 @router.get("/tab/teach", response_class=HTMLResponse)
 async def teach_tab(request: Request):
     return templates.TemplateResponse(
-        "teach.html", {"request": request, "active_tab": "teach"}
-    )
+     request, "teach.html", {"active_tab": "teach"}
+ )
 
 
 @router.get("/api/tab/teach", response_class=HTMLResponse)
 async def teach_tab_partial(request: Request):
     return templates.TemplateResponse(
-        "teach.html", {"request": request, "active_tab": "teach"}
-    )
+     request, "teach.html", {"active_tab": "teach"}
+ )
 
 
 # ---------------------------------------------------------------------------
@@ -48,8 +48,11 @@ async def teach_courses(request: Request):
         "FROM courses ORDER BY semester DESC, title"
     )
     return templates.TemplateResponse(
+        request,
         "partials/teach_courses.html",
-        {"request": request, "courses": courses},
+        {
+            "courses": courses
+        },
     )
 
 
@@ -71,8 +74,11 @@ async def teach_lit_alerts(request: Request, course_id: int):
         (course_id, since),
     )
     return templates.TemplateResponse(
+        request,
         "partials/teach_lit_alerts.html",
-        {"request": request, "alerts": alerts, "course_id": course_id},
+        {
+            "alerts": alerts, "course_id": course_id
+        },
     )
 
 
@@ -94,8 +100,11 @@ async def teach_news_alerts(request: Request, course_id: int):
         (course_id, since),
     )
     return templates.TemplateResponse(
+        request,
         "partials/teach_news_alerts.html",
-        {"request": request, "alerts": alerts, "course_id": course_id},
+        {
+            "alerts": alerts, "course_id": course_id
+        },
     )
 
 
@@ -125,6 +134,9 @@ async def teach_add_course(
         "FROM courses ORDER BY semester DESC, title"
     )
     return templates.TemplateResponse(
+        request,
         "partials/teach_courses.html",
-        {"request": request, "courses": courses},
+        {
+            "courses": courses
+        },
     )

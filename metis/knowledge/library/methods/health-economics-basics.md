@@ -1,3 +1,19 @@
+---
+title: "Health Economics Basics"
+domain: "methods"
+tags:
+  - health-economics
+  - cost-effectiveness
+  - CEA
+  - DALY
+  - HTA
+related:
+  - "concepts/implementation-science.md"
+  - "methods/systematic-reviews.md"
+phd_relevance: "low"
+status: "current"
+updated: "2026-03-30"
+---
 # Health Economics Basics
 
 > Reference card — core methods for economic evaluation in health, outcome measures, and decision thresholds.

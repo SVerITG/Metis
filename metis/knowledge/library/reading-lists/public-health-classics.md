@@ -1,3 +1,18 @@
+---
+title: "Public Health Classics"
+domain: "reading-lists"
+tags:
+  - reading-list
+  - public-health
+  - history
+  - classics
+related:
+  - "concepts/global-health-governance.md"
+  - "concepts/health-equity-sdh.md"
+phd_relevance: "low"
+status: "current"
+updated: "2026-04-21"
+---
 # Public Health Classics
 
 > A compact canon of historical papers, reprints, and reports that still define how epidemiologists and public-health practitioners think about evidence, prevention, systems, and equity.

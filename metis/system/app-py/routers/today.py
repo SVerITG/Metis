@@ -27,15 +27,15 @@ templates = Jinja2Templates(
 @router.get("/tab/today", response_class=HTMLResponse)
 async def today_tab(request: Request):
     return templates.TemplateResponse(
-        "today.html", {"request": request, "active_tab": "today"}
-    )
+     request, "today.html", {"active_tab": "today"}
+ )
 
 
 @router.get("/api/tab/today", response_class=HTMLResponse)
 async def today_tab_partial(request: Request):
     return templates.TemplateResponse(
-        "today.html", {"request": request, "active_tab": "today"}
-    )
+     request, "today.html", {"active_tab": "today"}
+ )
 
 
 # ---------------------------------------------------------------------------
@@ -73,9 +73,9 @@ async def today_greeting(request: Request):
         morning_runs = []
 
     return templates.TemplateResponse(
+        request,
         "partials/today_greeting.html",
         {
-            "request": request,
             "greeting": greeting,
             "today_label": today_label,
             "open_tasks": open_tasks,
@@ -112,9 +112,9 @@ async def today_overnight(request: Request):
         meetings = 0
 
     return templates.TemplateResponse(
+        request,
         "partials/today_overnight.html",
         {
-            "request": request,
             "news": news,
             "ideas": ideas,
             "meetings": meetings,
@@ -139,8 +139,11 @@ async def today_focus(request: Request):
         project = None
 
     return templates.TemplateResponse(
+        request,
         "partials/today_focus.html",
-        {"request": request, "project": project},
+        {
+            "project": project
+        },
     )
 
 
@@ -182,8 +185,11 @@ async def today_scan(request: Request):
         scan_results.append({"type": "ok", "message": "Nothing to report"})
 
     return templates.TemplateResponse(
+        request,
         "partials/today_scan.html",
-        {"request": request, "results": scan_results},
+        {
+            "results": scan_results
+        },
     )
 
 
@@ -210,9 +216,9 @@ async def today_token_footer(request: Request):
         runs_today = 0
 
     return templates.TemplateResponse(
+        request,
         "partials/today_token_footer.html",
         {
-            "request": request,
             "total_tokens": total_tokens,
             "runs_today": runs_today,
         },

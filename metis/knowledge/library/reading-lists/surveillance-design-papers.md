@@ -1,3 +1,19 @@
+---
+title: "Surveillance Design Papers"
+domain: "reading-lists"
+tags:
+  - reading-list
+  - surveillance
+  - design
+  - HAT
+related:
+  - "methods/surveillance-systems.md"
+  - "disease-areas/hat-sleeping-sickness.md"
+  - "concepts/elimination-framework.md"
+phd_relevance: "high"
+status: "current"
+updated: "2026-04-21"
+---
 # Surveillance Design Papers
 
 > Readings on surveillance objectives, evaluation, digital innovation, outbreak detection, and the operational design choices that keep surveillance systems useful as disease burdens change.

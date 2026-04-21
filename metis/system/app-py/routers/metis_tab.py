@@ -22,15 +22,15 @@ templates = Jinja2Templates(
 @router.get("/tab/metis", response_class=HTMLResponse)
 async def metis_tab(request: Request):
     return templates.TemplateResponse(
-        "metis_tab.html", {"request": request, "active_tab": "metis"}
-    )
+     request, "metis_tab.html", {"active_tab": "metis"}
+ )
 
 
 @router.get("/api/tab/metis", response_class=HTMLResponse)
 async def metis_tab_partial(request: Request):
     return templates.TemplateResponse(
-        "metis_tab.html", {"request": request, "active_tab": "metis"}
-    )
+     request, "metis_tab.html", {"active_tab": "metis"}
+ )
 
 
 # ---------------------------------------------------------------------------
@@ -56,9 +56,9 @@ async def metis_stats(request: Request):
         "SELECT COUNT(DISTINCT agent_slug) FROM agent_runs", default=0
     )
     return templates.TemplateResponse(
+        request,
         "partials/metis_stats.html",
         {
-            "request": request,
             "runs_today": runs_today,
             "tokens_today": tokens_today,
             "total_runs": total_runs,
@@ -82,8 +82,11 @@ async def metis_agent_runs(request: Request, days: int = 1):
         (cutoff,),
     )
     return templates.TemplateResponse(
+        request,
         "partials/metis_runs.html",
-        {"request": request, "runs": runs},
+        {
+            "runs": runs
+        },
     )
 
 
@@ -107,8 +110,11 @@ async def metis_agents(request: Request):
             except Exception:
                 pass
     return templates.TemplateResponse(
+        request,
         "partials/metis_agents.html",
-        {"request": request, "agents": agents},
+        {
+            "agents": agents
+        },
     )
 
 
@@ -133,9 +139,9 @@ async def metis_system_info(request: Request):
         pass
 
     return templates.TemplateResponse(
+        request,
         "partials/metis_system_info.html",
         {
-            "request": request,
             "rc_root": rc_root,
             "db_path": db_path,
             "db_size_kb": db_size_kb,

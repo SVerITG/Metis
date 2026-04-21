@@ -1,3 +1,22 @@
+---
+title: "Key Institutions in Global Health and Epidemiology"
+domain: "people-organizations"
+tags:
+  - WHO
+  - CDC
+  - ITM
+  - DNDi
+  - MSF
+  - institutions
+  - funders
+related:
+  - "concepts/global-health-governance.md"
+  - "disease-areas/ntd-overview.md"
+  - "disease-areas/hat-sleeping-sickness.md"
+phd_relevance: "low"
+status: "current"
+updated: "2026-03-30"
+---
 # Key Institutions in Global Health and Epidemiology
 
 > Reference card — major organizations, research institutions, and journals.

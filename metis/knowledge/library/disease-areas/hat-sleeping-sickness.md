@@ -1,3 +1,26 @@
+---
+title: "Human African Trypanosomiasis (HAT) — Sleeping Sickness"
+domain: "disease-areas"
+tags:
+  - HAT
+  - sleeping-sickness
+  - trypanosomiasis
+  - Africa
+  - NTD
+  - g-HAT
+  - r-HAT
+related:
+  - "concepts/elimination-framework.md"
+  - "methods/surveillance-systems.md"
+  - "methods/study-designs.md"
+  - "methods/spatial-epidemiology.md"
+  - "methods/diagnostic-test-evaluation.md"
+  - "methods/sampling-strategies.md"
+  - "concepts/one-health.md"
+phd_relevance: "high"
+status: "current"
+updated: "2026-03-29"
+---
 # Human African Trypanosomiasis (HAT) — Sleeping Sickness
 
 > Comprehensive reference card — biology, epidemiology, diagnostics, treatment, surveillance.

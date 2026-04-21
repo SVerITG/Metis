@@ -1,3 +1,19 @@
+---
+title: "Neglected Tropical Diseases (NTD) Overview"
+domain: "disease-areas"
+tags:
+  - NTDs
+  - neglected-tropical-diseases
+  - poverty
+  - global-burden
+related:
+  - "concepts/elimination-framework.md"
+  - "concepts/global-health-governance.md"
+  - "disease-areas/hat-sleeping-sickness.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-03-30"
+---
 # Neglected Tropical Diseases (NTD) Overview
 
 > Reference card — WHO NTDs, Roadmap 2030 targets, cross-cutting interventions, key organizations.

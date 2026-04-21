@@ -1,3 +1,18 @@
+---
+title: "Open-Access Textbooks and Courses"
+domain: "reading-lists"
+tags:
+  - reading-list
+  - textbooks
+  - open-access
+  - reference
+related:
+  - "methods/biostatistics-essentials.md"
+  - "methods/study-designs.md"
+phd_relevance: "low"
+status: "current"
+updated: "2026-04-21"
+---
 # Open-Access Textbooks and Courses
 
 > Free, accessible resources for building epidemiology, statistics, surveillance, spatial, and research-writing skills inside Metis.
