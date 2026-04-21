@@ -731,6 +731,39 @@
       ],
       "output_path": "outputs/reviews/research-architect/",
       "chains_with": ["phd-architect", "epidemiologist", "methods-coach"]
+    },
+    {
+      "slug": "data-analyst",
+      "name": "Data Analyst",
+      "invocation": "/data-analyst",
+      "trust_tier": "write-local",
+      "description": "Tabular data profiling and cleaning specialist. Profiles datasets (shape, dtypes, nulls, distributions), suggests and applies cleaning operations locally, generates before/after comparison reports and audit logs. Supports CSV, TSV, Excel, SPSS (.sav), and Stata (.dta). Never modifies the original file. Detects PII column names before any processing.",
+      "internet": false,
+      "internet_requires_approval": false,
+      "internet_scope": null,
+      "allowed_paths": [
+        "inputs/",
+        "outputs/data-cleaning/"
+      ],
+      "read_access": ["*"],
+      "forbidden_actions": [
+        "modify_original_source_files",
+        "send_data_externally",
+        "external_internet_access",
+        "skip_pii_column_check"
+      ],
+      "requires_approval_before": [
+        "applying_cleaning_operations",
+        "processing_files_with_flagged_pii_columns"
+      ],
+      "can_act_without_approval": [
+        "profile_any_local_dataset",
+        "suggest_cleaning_operations",
+        "write_cleaned_file_to_new_path",
+        "write_audit_log"
+      ],
+      "output_path": "outputs/data-cleaning/",
+      "chains_with": ["data-guardian", "methods-coach", "software-engineer"]
     }
   ]
 }
