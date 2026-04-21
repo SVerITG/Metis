@@ -466,6 +466,7 @@ async def run_metis(
     request: str,
     session_id: str = "",
     client: str = "code",
+    max_turns: int = 20,
 ) -> list[TextContent]:
     """Master /metis entry point — runs the 11-stage pipeline and returns a routing decision.
 
@@ -490,9 +491,32 @@ async def run_metis(
         request: The researcher's request text.
         session_id: Existing session ID if resuming. Leave empty to auto-bootstrap.
         client: Which Claude client is calling ('code'|'chat'|'cowork'|'dashboard').
+        max_turns: Maximum pipeline turns before graceful truncation (default 20).
     """
     _ensure_pipeline_tables()
     lines: list[str] = []
+
+    # ── Turn cap guard ─────────────────────────────────────────────────────
+    # Count existing turns in this session to enforce max_turns
+    if session_id:
+        try:
+            with connect(paths.db) as con:
+                turn_count = con.execute(
+                    "SELECT COUNT(*) FROM session_events "
+                    "WHERE session_id = ? AND event_type = 'turn'",
+                    (session_id,),
+                ).fetchone()[0]
+            if turn_count >= max_turns:
+                return [TextContent(type="text", text=(
+                    f"**max_turns reached** ({turn_count}/{max_turns}).\n"
+                    "**status:** truncated\n"
+                    "This session has reached its turn limit. "
+                    "Start a new session with `session_bootstrap()` to continue.\n\n"
+                    "**Partial context preserved** — call `session_bootstrap()` "
+                    "to resume with recent events."
+                ))]
+        except Exception:
+            pass  # Don't block if we can't check
 
     # ── Stage 1: Session bootstrap ─────────────────────────────────────────
     if not session_id:
@@ -566,6 +590,13 @@ async def run_metis(
     if context:
         lines.append(f"**Context:** {len(context)} chars assembled")
 
+    # ── Stage 7.5: Constitutional policy (deep/chain only) ────────────────
+    try:
+        from metis_mcp.tools.guardrails import load_constitution
+        constitution = load_constitution(intent["complexity"])
+    except Exception:
+        constitution = ""
+
     # ── Stage 8: Persist routing decision ─────────────────────────────────
     _write_event_sync(
         session_id, "result",
@@ -583,5 +614,7 @@ async def run_metis(
     ]
     if context:
         lines += ["**Context for agent:**", context, ""]
+    if constitution:
+        lines += ["", constitution, ""]
 
     return [TextContent(type="text", text="\n".join(lines))]

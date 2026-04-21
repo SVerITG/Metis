@@ -845,6 +845,40 @@
           "notes": "This update."
         }
       ]
+    },
+    "Phase 5.7": {
+      "label": "Safety & Guardrails",
+      "target_timeline": "2026-04-20",
+      "items": [
+        {
+          "id": "M5.7.1",
+          "subject": "Injection probe middleware for external tool results",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "tools/guardrails.py: injection_probe(content) + probe_tool_result MCP tool. Detects 11 adversarial patterns + zero-width chars. Prepends INJECTION WARNING prefix (non-blocking — annotates, doesn't block). Primary surface: content-harvester, news-aggregator, librarian ingestion."
+        },
+        {
+          "id": "M5.7.2",
+          "subject": "max_turns enforcement with graceful truncation",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "pipeline.py run_metis(): new max_turns=20 parameter. Counts session_events WHERE event_type='turn' for current session. Returns {status: truncated} message when exceeded, directing user to start a new session."
+        },
+        {
+          "id": "M5.7.3",
+          "subject": "Constitutional policy file + loader",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "system/config/constitution.md: 12 rules across Clinical Safety, Statistical Integrity, Data Protection, Agent Behaviour, Routing, Research Integrity, PhD Protection. tools/guardrails.py: load_constitution(level) loads CRITICAL rules for quick/standard, all rules for deep/chain. Pipeline Stage 7.5 calls it automatically. get_constitution MCP tool exposes it."
+        },
+        {
+          "id": "M5.7.4",
+          "subject": "Multi-agent trust validation",
+          "status": "completed",
+          "completed_date": "2026-04-20",
+          "notes": "tools/guardrails.py: validate_agent_output(output, required_keys) + validate_pipeline_stage MCP tool. Treats sub-agent output with same suspicion as external tool output. Validates required keys before passing to next pipeline stage."
+        }
+      ]
     }
   }
 }
