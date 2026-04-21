@@ -35,6 +35,7 @@ from metis_mcp.tools import (  # noqa: E402, F401
     knowledge_graph,
     observability,
     anonymization,
+    backup,
 )
 
 

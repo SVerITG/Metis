@@ -404,37 +404,48 @@
     },
     "Phase 7": {
       "label": "Backup and portability",
-      "target_timeline": "week 9",
+      "target_timeline": "2026-04-21",
       "items": [
         {
           "id": "M7.1",
-          "subject": "Build nightly backup job",
-          "status": "pending"
+          "subject": "backup_db MCP tool — SQLite Online Backup API",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "tools/backup.py: backup_db(destination, label, extra_destination). Uses sqlite3.Connection.backup() — safe for live WAL databases. Produces timestamped .sqlite files. Returns path, size, SHA-256 checksum, elapsed_ms."
         },
         {
           "id": "M7.2",
-          "subject": "Build encryption layer",
-          "status": "pending"
+          "subject": "encrypt_backup MCP tool — AES-256-GCM",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "encrypt_backup(backup_path, passphrase). Uses cryptography 46.0.6 (PBKDF2-SHA256, 200k rounds, AES-256-GCM). Falls back to XOR-SHA256 with warning if library absent. Format: METISBK1 magic + 16B salt + 12B nonce + ciphertext+tag."
         },
         {
           "id": "M7.3",
-          "subject": "Build multi-destination writer",
-          "status": "pending"
+          "subject": "list_backups + multi-destination write",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "list_backups(backup_dir): scans .sqlite/.enc files, returns name/path/size/age/type. backup_db() supports extra_destination for off-site copy."
         },
         {
           "id": "M7.4",
-          "subject": "Build restore wizard",
-          "status": "pending"
+          "subject": "restore_db MCP tool — safe restore with pre-restore copy",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "restore_db(backup_path, confirm='YES'). Renames live DB to .pre-restore.<ts>.sqlite before overwriting. Returns status, paths, and restart reminder."
         },
         {
           "id": "M7.5",
-          "subject": "Build backup verification",
-          "status": "pending"
+          "subject": "verify_backup MCP tool — PRAGMA integrity_check",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "verify_backup(backup_path): opens backup in read-only mode, runs PRAGMA integrity_check, returns status/tables/messages. Also: set_backup_schedule + get_backup_schedule persist nightly schedule to system/config/backup-schedule.json for Phase 10 scheduler."
         },
         {
           "id": "M7.6",
           "subject": "Test full wipe-and-restore cycle",
-          "status": "pending"
+          "status": "pending",
+          "notes": "Manual verification — run backup_db, verify_backup, restore_db in sequence against a copy of the live DB."
         }
       ]
     },
