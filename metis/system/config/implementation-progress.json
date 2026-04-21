@@ -879,6 +879,40 @@
           "notes": "tools/guardrails.py: validate_agent_output(output, required_keys) + validate_pipeline_stage MCP tool. Treats sub-agent output with same suspicion as external tool output. Validates required keys before passing to next pipeline stage."
         }
       ]
+    },
+    "Phase 5.8": {
+      "label": "Knowledge graph",
+      "target_timeline": "2026-04-21",
+      "items": [
+        {
+          "id": "M5.8.1",
+          "subject": "YAML frontmatter on all 31 knowledge/library/ .md files",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "YAML header added to 31 files: domain, tags (4-8 terms), related (2-7 links), phd_relevance (high/medium/low), status, updated. Defines graph edges via 'related' list."
+        },
+        {
+          "id": "M5.8.2",
+          "subject": "note_links SQLite table + DDL migration",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "note_links table: source_path, target_path, link_type, source_title, target_title. Unique index on (source_path, target_path). Created on first kg_index_notes() run. 95 bidirectional pairs = 190 directed edges."
+        },
+        {
+          "id": "M5.8.3",
+          "subject": "MCP tools: kg_index_notes, kg_paths, kg_community",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "tools/knowledge_graph.py: kg_index_notes() scans frontmatter → populates note_links; kg_paths(from, to, max_hops) BFS shortest paths; kg_community(note, depth) connected cluster. Server now has 74 tools."
+        },
+        {
+          "id": "M5.8.4",
+          "subject": "Graph view in Knowledge tab — D3 force-directed graph",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "4th nav pill 'Graph' in Knowledge tab. D3 v7 force-directed graph: nodes colored by domain, sized by phd_relevance, click-to-detail panel, filter input, zoom/pan, domain legend. Data API at /api/knowledge/graph-data."
+        }
+      ]
     }
   }
 }
