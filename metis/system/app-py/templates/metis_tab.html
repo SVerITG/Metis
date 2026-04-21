@@ -76,6 +76,33 @@
   </div>
 </div>
 
+<!-- ===== Span waterfall (Phase 5.9) ===== -->
+<div class="card mb-3">
+  <div class="card-header py-2 d-flex align-items-center justify-content-between">
+    <span class="fw-semibold small"><i class="bi bi-bar-chart-steps me-1 text-info"></i>Traces</span>
+    <select class="form-select form-select-sm" style="width:auto;"
+            hx-get="/api/partial/metis/traces"
+            hx-trigger="change"
+            hx-target="#metis-traces-body"
+            hx-swap="innerHTML"
+            name="hours">
+      <option value="24" selected>Last 24h</option>
+      <option value="6">Last 6h</option>
+      <option value="168">Last 7 days</option>
+    </select>
+  </div>
+  <div class="card-body p-3" id="metis-traces-body"
+       hx-get="/api/partial/metis/traces"
+       hx-trigger="load"
+       hx-swap="innerHTML"
+       hx-vals='{"hours": 24}'>
+    <div class="placeholder-glow">
+      <span class="placeholder col-10 mb-2"></span>
+      <span class="placeholder col-8"></span>
+    </div>
+  </div>
+</div>
+
 <!-- ===== System info ===== -->
 <div class="row g-3">
 

@@ -1,0 +1,129 @@
+<!-- partials/metis_traces.html — Phase 5.9 span waterfall -->
+
+{% set KIND_COLOR = {
+  "internal": "#4e8ef7",
+  "tool":     "#34a853",
+  "agent":    "#f39c12",
+  "llm":      "#9b59b6"
+} %}
+
+<div class="d-flex align-items-center gap-2 mb-2 text-muted small">
+  <span><strong>{{ runs|length }}</strong> runs</span>
+  <span>·</span>
+  <span><strong>{{ total_spans }}</strong> spans</span>
+  {% if total_spans == 0 %}
+  <span class="ms-2 badge bg-light text-dark border">
+    No spans yet — call <code>start_span()</code> / <code>log_span()</code> from pipeline stages
+  </span>
+  {% endif %}
+</div>
+
+{% if not runs %}
+<p class="text-muted small py-3 text-center">No agent activity in the last {{ hours }}h.</p>
+
+{% else %}
+
+<div class="trace-list" style="font-size:.82rem;">
+  {% for run in runs %}
+  {% set has_spans = run.spans|length > 0 %}
+
+  <!-- Run header row -->
+  <div class="trace-run mb-2 border rounded overflow-hidden">
+
+    <!-- Run label bar -->
+    <div class="d-flex align-items-center px-2 py-1"
+         style="background:{% if run.status == 'completed' %}#f0f7ff{% elif run.status == 'error' %}#fff0f0{% else %}#fffbf0{% endif %}; border-bottom: 1px solid #e9ecef;">
+      <span class="badge me-2"
+            style="background:#4e8ef7; font-size:.7rem; min-width:70px;">
+        {{ run.agent_slug }}
+      </span>
+      <span class="flex-fill text-truncate" style="max-width:340px;" title="{{ run.task_summary }}">
+        {{ run.task_summary }}
+      </span>
+      <span class="ms-auto text-muted" style="white-space:nowrap; font-size:.72rem;">
+        {{ run.created_at[:16] if run.created_at else '' }}
+      </span>
+      <span class="ms-2 badge {% if run.status == 'completed' %}bg-success{% elif run.status == 'error' %}bg-danger{% else %}bg-secondary{% endif %}"
+            style="font-size:.65rem;">
+        {{ run.status or 'ok' }}
+      </span>
+    </div>
+
+    {% if has_spans %}
+    <!-- Waterfall bars -->
+    {% set all_starts = run.spans | map(attribute='start_ms') | list %}
+    {% set all_ends   = run.spans | selectattr('end_ms') | map(attribute='end_ms') | list %}
+    {% set t_min = all_starts | min %}
+    {% set t_max = (all_ends | max) if all_ends else (t_min + 1) %}
+    {% set t_range = [t_max - t_min, 1] | max %}
+
+    <div class="px-2 py-2" style="background:#fafafa;">
+      {% for span in run.spans | sort(attribute='start_ms') %}
+      {% set left_pct  = ((span.start_ms - t_min) / t_range * 100) | round(1) %}
+      {% set width_pct = ((span.duration_ms or 50) / t_range * 100) | round(1) %}
+      {% set width_pct = [width_pct, 1.5] | max %}
+      {% set color = KIND_COLOR.get(span.kind, '#aaa') %}
+
+      <div class="d-flex align-items-center mb-1" style="height:20px;">
+        <!-- Label -->
+        <div class="text-muted text-truncate pe-2"
+             style="width:160px; min-width:160px; font-size:.72rem;"
+             title="{{ span.name }}">
+          {{ span.name }}
+        </div>
+        <!-- Bar track -->
+        <div style="flex:1; height:14px; position:relative; background:#e9ecef; border-radius:3px;">
+          <div style="
+              position:absolute;
+              left:{{ left_pct }}%;
+              width:{{ width_pct }}%;
+              height:100%;
+              background:{{ color }};
+              border-radius:3px;
+              opacity:{% if span.status == 'error' %}0.5{% else %}0.85{% endif %};
+              min-width:3px;"
+               title="{{ span.name }} — {{ span.duration_ms or '?' }}ms [{{ span.kind }}]{% if span.error %} ERROR: {{ span.error }}{% endif %}">
+          </div>
+          {% if span.status == 'error' %}
+          <span style="position:absolute; left:{{ left_pct }}%; font-size:8px; top:-1px; color:#dc3545;">✕</span>
+          {% endif %}
+        </div>
+        <!-- Duration -->
+        <div class="text-muted ps-2" style="width:55px; min-width:55px; font-size:.7rem; text-align:right;">
+          {% if span.duration_ms %}
+            {% if span.duration_ms >= 1000 %}{{ (span.duration_ms / 1000) | round(1) }}s
+            {% else %}{{ span.duration_ms }}ms{% endif %}
+          {% elif span.status == 'running' %}<span class="text-warning">…</span>
+          {% else %}—{% endif %}
+        </div>
+      </div>
+
+      {% endfor %}
+
+      <!-- Kind legend (only if >1 kind used) -->
+      {% set kinds_used = run.spans | map(attribute='kind') | unique | list %}
+      {% if kinds_used|length > 1 %}
+      <div class="d-flex gap-2 mt-1" style="font-size:.68rem;">
+        {% for k in kinds_used %}
+        <span>
+          <span style="display:inline-block; width:8px; height:8px; border-radius:2px; background:{{ KIND_COLOR.get(k, '#aaa') }};"></span>
+          {{ k }}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+  {% endfor %}
+
+  {% if orphan_spans %}
+  <!-- Spans with no run_id -->
+  <div class="text-muted small mt-2">
+    <i class="bi bi-lightning me-1"></i>{{ orphan_spans|length }} unattached span(s)
+  </div>
+  {% endif %}
+
+</div>
+{% endif %}
