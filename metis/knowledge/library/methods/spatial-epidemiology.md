@@ -1,3 +1,21 @@
+---
+title: "Spatial Epidemiology"
+domain: "methods"
+tags:
+  - spatial
+  - cluster-detection
+  - disease-mapping
+  - risk-factors
+  - hotspots
+related:
+  - "methods/gis-for-epidemiology.md"
+  - "methods/surveillance-systems.md"
+  - "disease-areas/hat-sleeping-sickness.md"
+  - "methods/biostatistics-essentials.md"
+phd_relevance: "high"
+status: "current"
+updated: "2026-03-29"
+---
 # Spatial Epidemiology
 
 > Reference card — spatial analysis methods, disease mapping, cluster detection, software.

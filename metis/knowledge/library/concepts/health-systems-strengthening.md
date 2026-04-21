@@ -1,3 +1,19 @@
+---
+title: "Health Systems Strengthening"
+domain: "concepts"
+tags:
+  - health-systems
+  - capacity-building
+  - UHC
+  - integration
+related:
+  - "concepts/implementation-science.md"
+  - "concepts/global-health-governance.md"
+  - "methods/surveillance-systems.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-03-29"
+---
 # Health Systems Strengthening
 
 > Reference card — WHO building blocks, UHC, system resilience, and integration of vertical programs.

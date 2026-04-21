@@ -1,3 +1,19 @@
+---
+title: "Implementation Science"
+domain: "concepts"
+tags:
+  - implementation
+  - translational-research
+  - scale-up
+  - knowledge-translation
+related:
+  - "methods/study-designs.md"
+  - "methods/systematic-reviews.md"
+  - "concepts/health-systems-strengthening.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-03-29"
+---
 # Implementation Science
 
 > Reference card — frameworks, study designs, and outcomes for understanding how evidence-based interventions work in practice.

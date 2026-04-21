@@ -73,8 +73,8 @@ _TAB_TEMPLATES = {
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     return templates.TemplateResponse(
-        "today.html", {"request": request, "active_tab": "today"}
-    )
+     request, "today.html", {"active_tab": "today"}
+ )
 
 
 @app.get("/{tab}", response_class=HTMLResponse)
@@ -83,7 +83,7 @@ async def tab_page(request: Request, tab: str):
     if template_name is None:
         return HTMLResponse(status_code=404, content="Tab not found")
     return templates.TemplateResponse(
-        template_name, {"request": request, "active_tab": tab}
+        request, template_name, {"active_tab": tab}
     )
 
 

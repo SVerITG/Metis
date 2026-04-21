@@ -1,3 +1,19 @@
+---
+title: "One Health"
+domain: "concepts"
+tags:
+  - one-health
+  - zoonosis
+  - veterinary
+  - animal-human-interface
+related:
+  - "disease-areas/hat-sleeping-sickness.md"
+  - "concepts/elimination-framework.md"
+  - "methods/surveillance-systems.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-03-30"
+---
 # One Health
 
 > Reference card — framework, zoonotic interface, tripartite collaboration, applications.

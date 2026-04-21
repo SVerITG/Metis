@@ -1,3 +1,22 @@
+---
+title: "Elimination Framework"
+domain: "concepts"
+tags:
+  - elimination
+  - WHO
+  - NTDs
+  - certification
+  - post-elimination
+  - eradication
+related:
+  - "disease-areas/hat-sleeping-sickness.md"
+  - "methods/surveillance-systems.md"
+  - "concepts/global-health-governance.md"
+  - "concepts/one-health.md"
+phd_relevance: "high"
+status: "current"
+updated: "2026-03-29"
+---
 # Elimination Framework
 
 > Reference card — WHO definitions, certification criteria, post-elimination surveillance, examples.

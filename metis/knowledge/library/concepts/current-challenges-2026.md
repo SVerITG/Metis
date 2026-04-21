@@ -1,3 +1,19 @@
+---
+title: "Current Challenges in Global Health (2026)"
+domain: "concepts"
+tags:
+  - global-health
+  - challenges
+  - 2026
+  - emerging-issues
+related:
+  - "concepts/global-health-governance.md"
+  - "disease-areas/hat-sleeping-sickness.md"
+  - "concepts/digital-health-epi.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-03-29"
+---
 # Current Challenges in Global Health (2026)
 
 > Living document — major themes shaping public health research and practice.

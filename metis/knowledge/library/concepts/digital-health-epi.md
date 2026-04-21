@@ -1,3 +1,19 @@
+---
+title: "Digital Health and Epidemiology"
+domain: "concepts"
+tags:
+  - digital-health
+  - mhealth
+  - ehealth
+  - data-systems
+related:
+  - "methods/surveillance-systems.md"
+  - "methods/data-management.md"
+  - "methods/gis-for-epidemiology.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-03-29"
+---
 # Digital Health and Epidemiology
 
 > Reference card — AI/ML in epi, digital surveillance, mHealth, ethics.

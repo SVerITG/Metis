@@ -1,3 +1,23 @@
+---
+title: "Surveillance Systems"
+domain: "methods"
+tags:
+  - surveillance
+  - passive
+  - active
+  - sentinel
+  - syndromic
+  - IHR
+related:
+  - "methods/study-designs.md"
+  - "methods/sampling-strategies.md"
+  - "disease-areas/hat-sleeping-sickness.md"
+  - "concepts/elimination-framework.md"
+  - "methods/diagnostic-test-evaluation.md"
+phd_relevance: "high"
+status: "current"
+updated: "2026-03-29"
+---
 # Surveillance Systems
 
 > Reference card — WHO frameworks, surveillance types, evaluation, digital surveillance.

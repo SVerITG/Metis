@@ -1,3 +1,22 @@
+---
+title: "Study Designs in Epidemiology"
+domain: "methods"
+tags:
+  - study-design
+  - cohort
+  - case-control
+  - RCT
+  - cross-sectional
+  - observational
+related:
+  - "methods/biostatistics-essentials.md"
+  - "methods/causal-inference.md"
+  - "methods/systematic-reviews.md"
+  - "methods/sampling-strategies.md"
+phd_relevance: "high"
+status: "current"
+updated: "2026-03-29"
+---
 # Study Designs in Epidemiology
 
 > Reference card — core study designs, when to use, strengths, limitations, key biases.

@@ -1,3 +1,19 @@
+---
+title: "Essential Epidemiology Papers"
+domain: "reading-lists"
+tags:
+  - reading-list
+  - epidemiology
+  - classics
+  - foundational
+related:
+  - "methods/study-designs.md"
+  - "methods/surveillance-systems.md"
+  - "methods/biostatistics-essentials.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-04-21"
+---
 # Essential Epidemiology Papers
 
 > Curated reading list for Metis. This mixes field-defining investigations, methodological breakthroughs, and reporting standards that continue to shape how modern epidemiologists reason, evaluate, and communicate.

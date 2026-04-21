@@ -85,6 +85,16 @@
           <i class="bi bi-globe me-1"></i>Domains
         </button>
       </li>
+      <li class="nav-item">
+        <button class="nav-link small"
+                hx-get="/api/partial/knowledge/graph"
+                hx-target="#knowledge-results"
+                hx-swap="innerHTML"
+                hx-trigger="click"
+                onclick="setActiveKnowledgeTab(this)">
+          <i class="bi bi-diagram-3 me-1"></i>Graph
+        </button>
+      </li>
     </ul>
   </div>
   <div class="card-body p-3">

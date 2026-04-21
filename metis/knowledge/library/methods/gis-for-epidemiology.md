@@ -1,3 +1,20 @@
+---
+title: "GIS for Epidemiology"
+domain: "methods"
+tags:
+  - GIS
+  - mapping
+  - spatial-data
+  - QGIS
+  - OpenStreetMap
+related:
+  - "methods/spatial-epidemiology.md"
+  - "methods/surveillance-systems.md"
+  - "concepts/digital-health-epi.md"
+phd_relevance: "high"
+status: "current"
+updated: "2026-03-30"
+---
 # GIS for Epidemiology
 
 > Reference card — spatial data fundamentals, mapping health data, and software tools for epidemiological GIS work.
