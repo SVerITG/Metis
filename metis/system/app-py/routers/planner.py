@@ -38,13 +38,13 @@ async def planner_tab_partial(request: Request):
 @router.get("/api/partial/planner/kanban", response_class=HTMLResponse)
 async def planner_kanban(request: Request):
     someday = db_query(
-        "SELECT id, title, domain, priority FROM projects WHERE status = 'someday' ORDER BY priority DESC"
+        "SELECT project_id as id, title, domain, priority FROM projects WHERE status = 'someday' ORDER BY priority DESC"
     )
     incubating = db_query(
-        "SELECT id, title, domain, priority FROM projects WHERE status = 'incubating' ORDER BY priority DESC"
+        "SELECT project_id as id, title, domain, priority FROM projects WHERE status = 'incubating' ORDER BY priority DESC"
     )
     active = db_query(
-        "SELECT id, title, domain, priority, next_step FROM projects WHERE status = 'active' ORDER BY priority DESC"
+        "SELECT project_id as id, title, domain, priority, next_step FROM projects WHERE status = 'active' ORDER BY priority DESC"
     )
     return templates.TemplateResponse(
         request,
@@ -65,15 +65,16 @@ async def planner_kanban(request: Request):
 @router.get("/api/partial/planner/focus", response_class=HTMLResponse)
 async def planner_focus(request: Request):
     phd = db_query(
-        "SELECT id, title, domain, priority, next_step "
+        "SELECT project_id as id, title, domain, priority, next_step "
         "FROM projects WHERE status = 'active' AND domain LIKE '%PhD%' "
         "ORDER BY priority DESC"
     )
     tasks_phd = db_query(
-        "SELECT id, title, project, priority, due_date "
+        "SELECT task_id as id, title, COALESCE(category,'') as project, "
+        "'medium' as priority, due_date "
         "FROM tasks WHERE status NOT IN ('done','cancelled') "
-        "AND (project LIKE '%PhD%' OR project LIKE '%Article%') "
-        "ORDER BY due_date LIMIT 10"
+        "AND (COALESCE(category,'') LIKE '%PhD%' OR title LIKE '%Article%' OR title LIKE '%article%') "
+        "ORDER BY due_date NULLS LAST LIMIT 10"
     )
     return templates.TemplateResponse(
         request,
@@ -92,10 +93,10 @@ async def planner_focus(request: Request):
 @router.get("/api/partial/planner/timeline", response_class=HTMLResponse)
 async def planner_timeline(request: Request):
     projects = db_query(
-        "SELECT id, title, domain, status, priority, "
-        "start_date, target_date "
+        "SELECT project_id as id, title, domain, status, priority, "
+        "created_at as start_date, NULL as target_date "
         "FROM projects WHERE status IN ('active','incubating') "
-        "ORDER BY target_date NULLS LAST, priority DESC"
+        "ORDER BY priority DESC"
     )
     return templates.TemplateResponse(
         request,

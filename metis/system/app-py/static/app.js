@@ -116,3 +116,50 @@ window.addEventListener('load', () => {
   checkDbMtime();
   setInterval(checkDbMtime, 20000);
 });
+
+// ---------------------------------------------------------------------------
+// Teach tab course action helpers
+// Each generates a Claude Code prompt and copies it to clipboard.
+// ---------------------------------------------------------------------------
+
+function _teachPrompt(action, courseId, courseTitle) {
+  const prompt = `/metis ${action} for my course "${courseTitle}"`;
+  navigator.clipboard.writeText(prompt).then(() => {
+    _showToast(`Prompt copied — paste into Claude Code: ${prompt}`);
+  }).catch(() => {
+    _showToast(`Use this prompt in Claude Code:\n${prompt}`);
+  });
+}
+
+function _showToast(msg) {
+  let t = document.getElementById('teach-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'teach-toast';
+    t.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9000;min-width:320px;';
+    document.body.appendChild(t);
+  }
+  t.innerHTML = `<div class="alert alert-info alert-dismissible shadow" role="alert">
+    <i class="bi bi-clipboard-check me-2"></i>${msg}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>`;
+}
+
+function openCourseChat(id, title) {
+  _teachPrompt('Open a teaching chat session', id, title);
+}
+function openCourseCowork(id, title) {
+  _teachPrompt('Co-work on course improvement', id, title);
+}
+function openCourseSlides(id, title) {
+  _teachPrompt('Generate a slide deck', id, title);
+}
+function openAssessmentBuilder(id, title) {
+  _teachPrompt('Build an assessment', id, title);
+}
+function openQuestionBank(id, title) {
+  _teachPrompt('Build a student question bank', id, title);
+}
+function openGapAnalysis(id, title) {
+  _teachPrompt('Run a curriculum gap analysis', id, title);
+}

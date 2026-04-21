@@ -18,6 +18,7 @@
       "Phase 6 — Anonymization and trust UI",
       "Phase 7 — Backup and portability",
       "Phase 8 — Brainstorm Plan Mode",
+      "Phase 8.5 — Data Analyst Agent",
       "Phase 9 — Self-improvement loop",
       "Phase 10 — Automated daily tasks",
       "Phase 11 — Installer and distribution",
@@ -487,6 +488,47 @@
           "status": "completed",
           "completed_date": "2026-04-21",
           "notes": "save_brainstorm_output(session_uuid, title, synthesis, action_items): writes outputs/brainstorms/<date>_<slug>.md with synthesis, action items, and turn log. Updates brainstorm_sessions.status to 'saved'."
+        }
+      ]
+    },
+    "Phase 8.5": {
+      "label": "Data Analyst Agent",
+      "target_timeline": "2026-04-21",
+      "items": [
+        {
+          "id": "M8.5.1",
+          "subject": "profile_dataset MCP tool",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "tools/data_tools.py: profile_dataset(path, sample_rows). Shape, dtypes, null %, unique counts, numeric distributions (min/max/mean/median/p25/p75), top-5 values for categoricals. PII column scan before profiling. Supports CSV, TSV, Excel, SPSS (.sav), Stata (.dta)."
+        },
+        {
+          "id": "M8.5.2",
+          "subject": "suggest_cleaning MCP tool",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "suggest_cleaning(path): profiles the dataset and returns prioritised cleaning recommendations with rationale (high/medium/low). Checks duplicates, null %, whitespace, date columns."
+        },
+        {
+          "id": "M8.5.3",
+          "subject": "clean_dataset MCP tool",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "clean_dataset(path, operations, output_path): applies drop_duplicates, drop_columns, fill_na, rename_column, strip_whitespace, standardize_dates, drop_na_rows, drop_na_rows_any. Never modifies original. Returns row/col delta."
+        },
+        {
+          "id": "M8.5.4",
+          "subject": "compare_profiles + list_supported_formats MCP tools",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "compare_profiles(before_json, after_json): side-by-side diff with human_summary. list_supported_formats(): returns supported extensions + library versions."
+        },
+        {
+          "id": "M8.5.5",
+          "subject": "data-analyst agent (system-prompt + contract + registry)",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "agents/data-analyst/system-prompt.md: 7-step workflow (intake → before report → propose → approve → clean → after report → audit). agents/data-analyst/contract.md. agent-registry.json entry (write-local tier). CLAUDE.md routing + invocation table updated. Packages installed: pandas 3.0.2, openpyxl 3.1.5, pyreadstat 1.3.4."
         }
       ]
     },

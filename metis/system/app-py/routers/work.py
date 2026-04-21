@@ -53,7 +53,7 @@ async def work_stats(request: Request):
         default=0,
     )
     done_week = db_scalar(
-        "SELECT COUNT(*) FROM tasks WHERE status = 'done' AND updated_at >= ?",
+        "SELECT COUNT(*) FROM tasks WHERE status = 'done' AND created_at >= ?",
         (week_start,),
         default=0,
     )
@@ -90,10 +90,10 @@ async def work_tasks(request: Request, status: str = "open"):
         params = (status,)
 
     tasks = db_query(
-        f"SELECT id, title, project, priority, status, due_date "
+        f"SELECT task_id as id, title, COALESCE(category,'') as project, "
+        f"'medium' as priority, status, due_date "
         f"FROM tasks WHERE {where} "
-        f"ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END, due_date "
-        f"LIMIT 50",
+        f"ORDER BY due_date NULLS LAST, created_at DESC LIMIT 50",
         params,
     )
     return templates.TemplateResponse(
@@ -113,7 +113,7 @@ async def work_tasks(request: Request, status: str = "open"):
 @router.get("/api/partial/work/projects", response_class=HTMLResponse)
 async def work_projects(request: Request):
     projects = db_query(
-        "SELECT id, title, domain, priority, next_step, status "
+        "SELECT project_id as id, title, domain, priority, next_step, status "
         "FROM projects WHERE status = 'active' ORDER BY priority DESC LIMIT 10"
     )
     return templates.TemplateResponse(

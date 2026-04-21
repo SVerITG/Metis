@@ -59,6 +59,7 @@ working on sleeping sickness (HAT), PhD planning, AI development, and personal l
 | `/epidemiologist` | Epidemiologist | Study design review, methodology challenge, Socratic questioning |
 | `/cybersecurity` | Cybersecurity | URL validation, prompt injection defense, threat intel, agent audit |
 | `/data-guardian` | Data Guardian | PII protection, patient data blocking, file transmission approval |
+| `/data-analyst` | Data Analyst | Profile, clean, and compare tabular datasets (CSV/Excel/SPSS/Stata) — local only |
 
 **Phase 5 skills (automation & scaffolding):**
 
@@ -162,6 +163,7 @@ When a request arrives, route as follows:
 | Content extraction, web scraping, PDFs | Content Harvester | Librarian |
 | Learning paths, curriculum, competency maps | Learning Architect | Methods Coach |
 | Study design, epi methods, surveillance | Epidemiologist | Methods Coach |
+| CSV, Excel, dataset, cleaning, missing values, duplicates, outliers, data quality | Data Analyst | Data Guardian |
 | Unclear | Metis | Ask one clarifying question |
 
 ---

@@ -38,8 +38,10 @@ def _connect() -> sqlite3.Connection:
     return conn
 
 
-def db_query(sql: str, params=()) -> list[dict]:
+def db_query(sql: str, params=(), default=None) -> list[dict]:
     """Execute a SELECT query and return a list of dicts."""
+    if default is None:
+        default = []
     try:
         conn = _connect()
         try:
@@ -48,8 +50,8 @@ def db_query(sql: str, params=()) -> list[dict]:
             return [dict(row) for row in rows]
         finally:
             conn.close()
-    except FileNotFoundError:
-        return []
+    except (FileNotFoundError, sqlite3.OperationalError):
+        return default
 
 
 def db_scalar(sql: str, params=(), default=0):
