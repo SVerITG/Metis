@@ -1,3 +1,20 @@
+---
+title: "Data Management"
+domain: "methods"
+tags:
+  - data-management
+  - FAIR
+  - reproducibility
+  - REDCap
+  - data-quality
+related:
+  - "methods/study-designs.md"
+  - "methods/systematic-reviews.md"
+  - "concepts/research-ethics.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-03-29"
+---
 # Data Management
 
 > Reference card — FAIR principles, data capture tools, cleaning workflows, and reproducible research practices.

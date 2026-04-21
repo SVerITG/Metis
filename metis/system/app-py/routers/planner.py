@@ -19,15 +19,15 @@ templates = Jinja2Templates(
 @router.get("/tab/planner", response_class=HTMLResponse)
 async def planner_tab(request: Request):
     return templates.TemplateResponse(
-        "planner.html", {"request": request, "active_tab": "planner"}
-    )
+     request, "planner.html", {"active_tab": "planner"}
+ )
 
 
 @router.get("/api/tab/planner", response_class=HTMLResponse)
 async def planner_tab_partial(request: Request):
     return templates.TemplateResponse(
-        "planner.html", {"request": request, "active_tab": "planner"}
-    )
+     request, "planner.html", {"active_tab": "planner"}
+ )
 
 
 # ---------------------------------------------------------------------------
@@ -47,9 +47,9 @@ async def planner_kanban(request: Request):
         "SELECT id, title, domain, priority, next_step FROM projects WHERE status = 'active' ORDER BY priority DESC"
     )
     return templates.TemplateResponse(
+        request,
         "partials/planner_kanban.html",
         {
-            "request": request,
             "someday": someday,
             "incubating": incubating,
             "active": active,
@@ -76,8 +76,11 @@ async def planner_focus(request: Request):
         "ORDER BY due_date LIMIT 10"
     )
     return templates.TemplateResponse(
+        request,
         "partials/planner_focus.html",
-        {"request": request, "phd": phd, "tasks_phd": tasks_phd},
+        {
+            "phd": phd, "tasks_phd": tasks_phd
+        },
     )
 
 
@@ -95,6 +98,9 @@ async def planner_timeline(request: Request):
         "ORDER BY target_date NULLS LAST, priority DESC"
     )
     return templates.TemplateResponse(
+        request,
         "partials/planner_timeline.html",
-        {"request": request, "projects": projects},
+        {
+            "projects": projects
+        },
     )

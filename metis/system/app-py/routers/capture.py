@@ -53,8 +53,8 @@ def _parse_prefix(text: str) -> tuple[str, str]:
 @router.get("/capture-modal", response_class=HTMLResponse)
 async def get_capture_modal(request: Request):
     return templates.TemplateResponse(
-        "partials/capture_modal.html", {"request": request}
-    )
+     request, "partials/capture_modal.html"
+ )
 
 
 @router.post("/capture", response_class=HTMLResponse)

@@ -13,7 +13,7 @@ from mcp.types import TextContent
 
 from metis_mcp.config import paths
 from metis_mcp.db import connect
-from metis_mcp.server import app
+from metis_mcp.app_instance import app
 
 _DDL = """
 CREATE TABLE IF NOT EXISTS skill_improvement_proposals (

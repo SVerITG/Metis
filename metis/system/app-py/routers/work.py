@@ -20,15 +20,15 @@ templates = Jinja2Templates(
 @router.get("/tab/work", response_class=HTMLResponse)
 async def work_tab(request: Request):
     return templates.TemplateResponse(
-        "work.html", {"request": request, "active_tab": "work"}
-    )
+     request, "work.html", {"active_tab": "work"}
+ )
 
 
 @router.get("/api/tab/work", response_class=HTMLResponse)
 async def work_tab_partial(request: Request):
     return templates.TemplateResponse(
-        "work.html", {"request": request, "active_tab": "work"}
-    )
+     request, "work.html", {"active_tab": "work"}
+ )
 
 
 # ---------------------------------------------------------------------------
@@ -61,9 +61,9 @@ async def work_stats(request: Request):
         "SELECT COUNT(*) FROM projects WHERE status = 'active'", default=0
     )
     return templates.TemplateResponse(
+        request,
         "partials/work_stats.html",
         {
-            "request": request,
             "open_tasks": open_tasks,
             "overdue": overdue,
             "done_week": done_week,
@@ -97,8 +97,11 @@ async def work_tasks(request: Request, status: str = "open"):
         params,
     )
     return templates.TemplateResponse(
+        request,
         "partials/work_tasks.html",
-        {"request": request, "tasks": tasks, "status_filter": status},
+        {
+            "tasks": tasks, "status_filter": status
+        },
     )
 
 
@@ -114,6 +117,9 @@ async def work_projects(request: Request):
         "FROM projects WHERE status = 'active' ORDER BY priority DESC LIMIT 10"
     )
     return templates.TemplateResponse(
+        request,
         "partials/work_projects.html",
-        {"request": request, "projects": projects},
+        {
+            "projects": projects
+        },
     )

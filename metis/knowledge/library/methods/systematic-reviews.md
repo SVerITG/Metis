@@ -1,3 +1,20 @@
+---
+title: "Systematic Reviews and Meta-Analysis"
+domain: "methods"
+tags:
+  - systematic-review
+  - meta-analysis
+  - evidence-synthesis
+  - PRISMA
+  - Cochrane
+related:
+  - "methods/study-designs.md"
+  - "methods/biostatistics-essentials.md"
+  - "methods/data-management.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-03-29"
+---
 # Systematic Reviews and Meta-Analysis
 
 > Reference card — PRISMA, GRADE, meta-analysis methods, risk of bias, protocol registration.

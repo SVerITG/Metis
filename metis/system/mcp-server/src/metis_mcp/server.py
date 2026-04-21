@@ -32,6 +32,7 @@ from metis_mcp.tools import (  # noqa: E402, F401
     pipeline,
     vector_memory,
     guardrails,
+    knowledge_graph,
 )
 
 

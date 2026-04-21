@@ -1,3 +1,20 @@
+---
+title: "Causal Inference"
+domain: "methods"
+tags:
+  - causal-inference
+  - DAGs
+  - counterfactual
+  - confounding
+  - IV
+  - RDD
+related:
+  - "methods/study-designs.md"
+  - "methods/biostatistics-essentials.md"
+phd_relevance: "high"
+status: "current"
+updated: "2026-03-29"
+---
 # Causal Inference
 
 > Reference card — causal frameworks, DAGs, quasi-experimental methods, key tools.

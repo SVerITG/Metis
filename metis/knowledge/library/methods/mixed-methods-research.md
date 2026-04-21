@@ -1,3 +1,18 @@
+---
+title: "Mixed Methods Research"
+domain: "methods"
+tags:
+  - mixed-methods
+  - qualitative
+  - quantitative
+  - triangulation
+related:
+  - "methods/study-designs.md"
+  - "concepts/implementation-science.md"
+phd_relevance: "low"
+status: "current"
+updated: "2026-03-30"
+---
 # Mixed Methods Research
 
 > Reference card — core designs, integration strategies, and when quantitative alone is not enough.

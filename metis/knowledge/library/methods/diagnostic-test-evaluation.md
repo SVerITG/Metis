@@ -1,3 +1,21 @@
+---
+title: "Diagnostic Test Evaluation"
+domain: "methods"
+tags:
+  - diagnostics
+  - sensitivity
+  - specificity
+  - ROC
+  - predictive-value
+  - LR
+related:
+  - "methods/study-designs.md"
+  - "disease-areas/hat-sleeping-sickness.md"
+  - "methods/surveillance-systems.md"
+phd_relevance: "high"
+status: "current"
+updated: "2026-03-29"
+---
 # Diagnostic Test Evaluation
 
 > Reference card — measures of test accuracy, study designs, and reporting standards for diagnostic evaluations.

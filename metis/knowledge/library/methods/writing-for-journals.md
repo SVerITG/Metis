@@ -1,3 +1,20 @@
+---
+title: "Writing for Journals"
+domain: "methods"
+tags:
+  - academic-writing
+  - publication
+  - manuscript
+  - STROBE
+  - CONSORT
+  - IMRaD
+related:
+  - "methods/systematic-reviews.md"
+  - "methods/study-designs.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-03-29"
+---
 # Writing for Journals
 
 > Reference card — reporting guidelines, manuscript structure, journal selection, and navigating peer review.

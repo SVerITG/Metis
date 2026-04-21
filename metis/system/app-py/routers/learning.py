@@ -20,15 +20,15 @@ templates = Jinja2Templates(
 @router.get("/tab/learning", response_class=HTMLResponse)
 async def learning_tab(request: Request):
     return templates.TemplateResponse(
-        "learning.html", {"request": request, "active_tab": "learning"}
-    )
+     request, "learning.html", {"active_tab": "learning"}
+ )
 
 
 @router.get("/api/tab/learning", response_class=HTMLResponse)
 async def learning_tab_partial(request: Request):
     return templates.TemplateResponse(
-        "learning.html", {"request": request, "active_tab": "learning"}
-    )
+     request, "learning.html", {"active_tab": "learning"}
+ )
 
 
 # ---------------------------------------------------------------------------
@@ -46,8 +46,11 @@ async def learning_due_today(request: Request):
         (today,),
     )
     return templates.TemplateResponse(
+        request,
         "partials/learning_due.html",
-        {"request": request, "due": due, "today": today},
+        {
+            "due": due, "today": today
+        },
     )
 
 
@@ -63,8 +66,11 @@ async def learning_courses(request: Request):
         "FROM learning_courses WHERE status = 'active' ORDER BY progress_pct DESC"
     )
     return templates.TemplateResponse(
+        request,
         "partials/learning_courses.html",
-        {"request": request, "courses": courses},
+        {
+            "courses": courses
+        },
     )
 
 
@@ -81,8 +87,11 @@ async def learning_completed(request: Request):
         "ORDER BY completed_at DESC LIMIT 10"
     )
     return templates.TemplateResponse(
+        request,
         "partials/learning_completed.html",
-        {"request": request, "items": items},
+        {
+            "items": items
+        },
     )
 
 
@@ -97,6 +106,9 @@ async def learning_competencies(request: Request):
         "SELECT name, level, domain FROM competencies ORDER BY domain, level DESC LIMIT 20"
     )
     return templates.TemplateResponse(
+        request,
         "partials/learning_competencies.html",
-        {"request": request, "skills": skills},
+        {
+            "skills": skills
+        },
     )

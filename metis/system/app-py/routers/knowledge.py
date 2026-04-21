@@ -2,10 +2,12 @@
 routers/knowledge.py — Knowledge tab routes.
 """
 
+import json
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_query, db_scalar
@@ -19,15 +21,15 @@ templates = Jinja2Templates(
 @router.get("/tab/knowledge", response_class=HTMLResponse)
 async def knowledge_tab(request: Request):
     return templates.TemplateResponse(
-        "knowledge.html", {"request": request, "active_tab": "knowledge"}
-    )
+     request, "knowledge.html", {"active_tab": "knowledge"}
+ )
 
 
 @router.get("/api/tab/knowledge", response_class=HTMLResponse)
 async def knowledge_tab_partial(request: Request):
     return templates.TemplateResponse(
-        "knowledge.html", {"request": request, "active_tab": "knowledge"}
-    )
+     request, "knowledge.html", {"active_tab": "knowledge"}
+ )
 
 
 # ---------------------------------------------------------------------------
@@ -49,9 +51,9 @@ async def knowledge_stats(request: Request):
         default=0,
     )
     return templates.TemplateResponse(
+        request,
         "partials/knowledge_stats.html",
         {
-            "request": request,
             "cards": cards,
             "domains": domains,
             "lit": lit,
@@ -72,8 +74,11 @@ async def knowledge_library(request: Request):
         "FROM library_cards ORDER BY created_at DESC LIMIT 50"
     )
     return templates.TemplateResponse(
+        request,
         "partials/knowledge_library.html",
-        {"request": request, "cards": cards},
+        {
+            "cards": cards
+        },
     )
 
 
@@ -89,8 +94,11 @@ async def knowledge_literature(request: Request):
         "FROM literature_metadata ORDER BY created_at DESC LIMIT 50"
     )
     return templates.TemplateResponse(
+        request,
         "partials/knowledge_literature.html",
-        {"request": request, "items": items},
+        {
+            "items": items
+        },
     )
 
 
@@ -106,8 +114,11 @@ async def knowledge_domains(request: Request):
         "FROM library_cards GROUP BY domain ORDER BY card_count DESC"
     )
     return templates.TemplateResponse(
+        request,
         "partials/knowledge_domains.html",
-        {"request": request, "domains": domains},
+        {
+            "domains": domains
+        },
     )
 
 
@@ -133,6 +144,110 @@ async def knowledge_search(request: Request, q: str = ""):
         (pattern, pattern, pattern, pattern, pattern, pattern),
     )
     return templates.TemplateResponse(
+        request,
         "partials/knowledge_search.html",
-        {"request": request, "results": results, "q": q},
+        {
+            "results": results, "q": q
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Graph
+# ---------------------------------------------------------------------------
+
+def _parse_frontmatter(text: str) -> dict:
+    """Minimal YAML frontmatter parser — same logic as knowledge_graph.py tool."""
+    if not text.startswith("---"):
+        return {}
+    end = text.find("\n---", 3)
+    if end == -1:
+        return {}
+    block = text[3:end].strip()
+    result: dict = {}
+    current_key = None
+    current_list = None
+    for line in block.splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        if s.startswith("- "):
+            val = s[2:].strip().strip('"').strip("'")
+            if current_list is not None:
+                current_list.append(val)
+            continue
+        if ":" in s:
+            colon = s.index(":")
+            key = s[:colon].strip()
+            val = s[colon + 1:].strip().strip('"').strip("'")
+            current_key = key
+            if val == "":
+                current_list = []
+                result[key] = current_list
+            else:
+                result[key] = val
+                current_list = None
+    return result
+
+
+@router.get("/api/knowledge/graph-data")
+async def knowledge_graph_data():
+    """Return graph nodes + edges as JSON for D3 rendering."""
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    library_root = Path(rc_root) / "knowledge" / "library" if rc_root else None
+
+    nodes = []
+    links = []
+    seen_links: set = set()
+
+    if library_root and library_root.exists():
+        for md_file in sorted(library_root.rglob("*.md")):
+            rel = str(md_file.relative_to(library_root))
+            try:
+                text = md_file.read_text(encoding="utf-8", errors="replace")
+                fm = _parse_frontmatter(text)
+                if not fm:
+                    continue
+                tags = fm.get("tags", [])
+                if isinstance(tags, str):
+                    tags = [tags]
+                related = fm.get("related", [])
+                if isinstance(related, str):
+                    related = [related]
+                nodes.append({
+                    "id": rel,
+                    "title": fm.get("title", md_file.stem),
+                    "domain": fm.get("domain", "unknown"),
+                    "tags": tags[:6],
+                    "phd_relevance": fm.get("phd_relevance", "medium"),
+                    "status": fm.get("status", "current"),
+                })
+                for target in related:
+                    t = target.strip().strip('"').strip("'")
+                    key = tuple(sorted([rel, t]))
+                    if key not in seen_links:
+                        seen_links.add(key)
+                        links.append({"source": rel, "target": t})
+            except Exception:
+                continue
+
+    return JSONResponse({"nodes": nodes, "links": links})
+
+
+@router.get("/api/partial/knowledge/graph", response_class=HTMLResponse)
+async def knowledge_graph_partial(request: Request):
+    """Return the graph view partial (D3 force-directed graph)."""
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    library_root = Path(rc_root) / "knowledge" / "library" if rc_root else None
+
+    # Count indexed edges
+    edge_count = db_scalar("SELECT COUNT(*) FROM note_links", default=0)
+    node_count = 0
+    if library_root and library_root.exists():
+        node_count = sum(1 for f in library_root.rglob("*.md"))
+
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_graph.html",
+        {"node_count": node_count, "edge_count": edge_count},
     )

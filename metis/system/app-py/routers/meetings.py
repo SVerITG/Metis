@@ -20,15 +20,15 @@ templates = Jinja2Templates(
 @router.get("/tab/meetings", response_class=HTMLResponse)
 async def meetings_tab(request: Request):
     return templates.TemplateResponse(
-        "meetings.html", {"request": request, "active_tab": "meetings"}
-    )
+     request, "meetings.html", {"active_tab": "meetings"}
+ )
 
 
 @router.get("/api/tab/meetings", response_class=HTMLResponse)
 async def meetings_tab_partial(request: Request):
     return templates.TemplateResponse(
-        "meetings.html", {"request": request, "active_tab": "meetings"}
-    )
+     request, "meetings.html", {"active_tab": "meetings"}
+ )
 
 
 # ---------------------------------------------------------------------------
@@ -51,9 +51,9 @@ async def meetings_stats(request: Request):
         default=0,
     )
     return templates.TemplateResponse(
+        request,
         "partials/meetings_stats.html",
         {
-            "request": request,
             "total": total,
             "this_month": this_month,
             "open_actions": open_actions,
@@ -82,8 +82,11 @@ async def meetings_list(request: Request, filter: str = "month"):
         (cutoff,),
     )
     return templates.TemplateResponse(
+        request,
         "partials/meetings_list.html",
-        {"request": request, "meetings": meetings},
+        {
+            "meetings": meetings
+        },
     )
 
 
@@ -109,6 +112,9 @@ async def meetings_search(request: Request, q: str = ""):
             (pattern, pattern),
         )
     return templates.TemplateResponse(
+        request,
         "partials/meetings_list.html",
-        {"request": request, "meetings": meetings},
+        {
+            "meetings": meetings
+        },
     )

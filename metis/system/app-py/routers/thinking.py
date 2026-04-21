@@ -19,15 +19,15 @@ templates = Jinja2Templates(
 @router.get("/tab/thinking", response_class=HTMLResponse)
 async def thinking_tab(request: Request):
     return templates.TemplateResponse(
-        "thinking.html", {"request": request, "active_tab": "thinking"}
-    )
+     request, "thinking.html", {"active_tab": "thinking"}
+ )
 
 
 @router.get("/api/tab/thinking", response_class=HTMLResponse)
 async def thinking_tab_partial(request: Request):
     return templates.TemplateResponse(
-        "thinking.html", {"request": request, "active_tab": "thinking"}
-    )
+     request, "thinking.html", {"active_tab": "thinking"}
+ )
 
 
 # ---------------------------------------------------------------------------
@@ -42,8 +42,11 @@ async def thinking_ideas(request: Request):
         "FROM ideas ORDER BY created_at DESC LIMIT 30"
     )
     return templates.TemplateResponse(
+        request,
         "partials/thinking_ideas.html",
-        {"request": request, "ideas": ideas},
+        {
+            "ideas": ideas
+        },
     )
 
 
@@ -59,8 +62,11 @@ async def thinking_notes(request: Request):
         "FROM personal_notes ORDER BY created_at DESC LIMIT 20"
     )
     return templates.TemplateResponse(
+        request,
         "partials/thinking_notes.html",
-        {"request": request, "notes": notes},
+        {
+            "notes": notes
+        },
     )
 
 
@@ -77,6 +83,9 @@ async def thinking_questions(request: Request):
         "ORDER BY created_at DESC LIMIT 15"
     )
     return templates.TemplateResponse(
+        request,
         "partials/thinking_questions.html",
-        {"request": request, "questions": questions},
+        {
+            "questions": questions
+        },
     )

@@ -1,3 +1,19 @@
+---
+title: "Spatial Methods Papers"
+domain: "reading-lists"
+tags:
+  - reading-list
+  - spatial
+  - methods
+  - GIS
+  - disease-mapping
+related:
+  - "methods/spatial-epidemiology.md"
+  - "methods/gis-for-epidemiology.md"
+phd_relevance: "high"
+status: "current"
+updated: "2026-04-21"
+---
 # Spatial Methods Papers
 
 > Core papers for cluster detection, spatial autocorrelation, disease mapping, and practical workflows that keep geography central to public health analysis.

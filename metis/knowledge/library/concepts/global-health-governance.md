@@ -1,3 +1,20 @@
+---
+title: "Global Health Governance"
+domain: "concepts"
+tags:
+  - WHO
+  - governance
+  - policy
+  - NTDs
+  - global-health
+related:
+  - "concepts/elimination-framework.md"
+  - "disease-areas/ntd-overview.md"
+  - "people-organizations/key-institutions.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-03-29"
+---
 # Global Health Governance
 
 > Reference card — institutional architecture, legal frameworks, pandemic preparedness, and the funding landscape.

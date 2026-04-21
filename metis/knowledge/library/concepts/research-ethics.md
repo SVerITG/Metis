@@ -1,3 +1,19 @@
+---
+title: "Research Ethics"
+domain: "concepts"
+tags:
+  - ethics
+  - IRB
+  - consent
+  - research-integrity
+  - GDPR
+related:
+  - "methods/study-designs.md"
+  - "methods/data-management.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-03-30"
+---
 # Research Ethics
 
 > Reference card — foundational principles, informed consent challenges, community engagement, and regulatory frameworks.

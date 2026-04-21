@@ -1,3 +1,20 @@
+---
+title: "Biostatistics Essentials"
+domain: "methods"
+tags:
+  - biostatistics
+  - statistics
+  - hypothesis-testing
+  - regression
+  - sample-size
+related:
+  - "methods/study-designs.md"
+  - "methods/causal-inference.md"
+  - "methods/systematic-reviews.md"
+phd_relevance: "high"
+status: "current"
+updated: "2026-03-30"
+---
 # Biostatistics Essentials
 
 > Reference card — measures of association, regression models, confounding, power, corrections.

@@ -1,3 +1,20 @@
+---
+title: "Outbreak Investigation"
+domain: "methods"
+tags:
+  - outbreak
+  - investigation
+  - response
+  - case-finding
+  - contact-tracing
+related:
+  - "methods/surveillance-systems.md"
+  - "methods/study-designs.md"
+  - "disease-areas/hat-sleeping-sickness.md"
+phd_relevance: "medium"
+status: "current"
+updated: "2026-03-30"
+---
 # Outbreak Investigation
 
 > Reference card — systematic framework for investigating disease outbreaks in the field and from the desk.
