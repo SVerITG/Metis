@@ -1,0 +1,30 @@
+<!-- partials/thinking_brainstorm_sessions.html — Phase 8 -->
+
+{% if not sessions %}
+<p class="text-muted small py-3 text-center px-3">
+  No brainstorm sessions yet — use <code>/metis_brainstorm</code> in Claude Code to start one.
+</p>
+{% else %}
+<ul class="list-group list-group-flush" style="font-size:.82rem;">
+  {% for s in sessions %}
+  <li class="list-group-item px-3 py-2">
+    <div class="d-flex align-items-start justify-content-between gap-2">
+      <div class="flex-fill text-truncate">
+        <span class="fw-semibold">{{ s.title or '(untitled)' }}</span>
+        <span class="badge ms-1 {% if s.status == 'saved' %}bg-success-subtle text-success-emphasis{% else %}bg-secondary-subtle text-secondary-emphasis{% endif %} border-0"
+              style="font-size:.62rem;">
+          {{ s.status }}
+        </span>
+      </div>
+      <div class="text-muted text-nowrap" style="font-size:.72rem;">
+        {{ s.turn_count }} turn{% if s.turn_count != 1 %}s{% endif %}
+      </div>
+    </div>
+    <div class="text-muted mt-1" style="font-size:.72rem;">
+      {{ s.updated_at[:16] if s.updated_at else s.started_at[:16] }}
+      · <code style="font-size:.68rem;">{{ s.session_uuid }}</code>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
