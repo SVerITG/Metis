@@ -1,0 +1,53 @@
+<div class="today-news-rail">
+
+  <div class="news-rail-header">
+    <div class="caps-label caps-label-teal">Dispatch</div>
+    <div class="news-rail-updated">
+      {% if last_updated %}updated {{ last_updated }}{% else %}no scans yet{% endif %}
+    </div>
+  </div>
+
+  {% if categories %}
+  <div class="news-cat-chips">
+    <a class="news-cat-chip {% if not active_category %}active{% endif %}"
+       href="javascript:void(0)"
+       onclick="filterNewsCategory(this, '')">
+      All <span class="news-cat-count">{{ total_count }}</span>
+    </a>
+    {% for c in categories %}
+    <a class="news-cat-chip {% if active_category == c.domain %}active{% endif %}"
+       href="javascript:void(0)"
+       onclick="filterNewsCategory(this, '{{ c.domain }}')">
+      {{ c.domain }}
+      <span class="news-cat-count">{{ c.count }}</span>
+      <span class="news-cat-age">{{ c.age_label }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="news-rail-items" id="news-rail-items">
+    {% if items %}
+    {% for item in items %}
+    <a class="news-rail-item" href="javascript:void(0)" onclick="openNewsSummary({{ item.id }})">
+      <div class="news-rail-item-meta">
+        <span class="news-rail-item-domain news-domain-{{ item.domain_slug }}">{{ item.domain }}</span>
+        <span class="news-rail-item-time">{{ item.time }}</span>
+        {% if item.signal %}
+        <span class="news-rail-item-signal {{ item.signal_class }}">{{ item.signal }}</span>
+        {% endif %}
+      </div>
+      <h4 class="news-rail-item-title">{{ item.title }}</h4>
+      {% if item.summary %}
+      <p class="news-rail-item-summary">{{ item.summary }}</p>
+      {% endif %}
+    </a>
+    {% endfor %}
+    {% else %}
+    <div class="news-rail-empty">
+      Dispatch is empty. Run <code>/news-radar</code> to refresh.
+    </div>
+    {% endif %}
+  </div>
+
+</div>

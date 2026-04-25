@@ -1,44 +1,42 @@
-<!-- work_tasks.html — Task list items -->
+<!-- work_tasks.html — Editorial todo-row list -->
 {% if not tasks %}
-<li class="list-group-item text-center text-muted py-4">
-  <i class="bi bi-check2-all fs-2 mb-2 d-block text-success"></i>
-  {% if status_filter == 'open' %}All tasks done!{% else %}No tasks found.{% endif %}
-</li>
+<div class="empty-row"><em>{% if status_filter == 'open' %}All tasks done. Take a breath.{% else %}No tasks found.{% endif %}</em></div>
 {% else %}
-{% for t in tasks %}
-<li class="list-group-item px-3 py-2">
-  <div class="d-flex align-items-start gap-2">
-    <!-- Priority indicator -->
-    <div class="flex-shrink-0 mt-1">
-      {% if t.priority == 'high' %}
-      <i class="bi bi-exclamation-circle-fill text-danger" title="High priority"></i>
-      {% elif t.priority == 'medium' %}
-      <i class="bi bi-dash-circle text-warning" title="Medium priority"></i>
-      {% else %}
-      <i class="bi bi-circle text-secondary" title="Low priority"></i>
+<div class="panel">
+  {% for t in tasks %}
+  <div class="todo-row{% if t.status == 'done' %} todo-row--done{% endif %}" data-task-id="{{ t.id }}"
+       style="grid-template-columns:28px 1fr auto auto;column-gap:14px;">
+    <span class="todo-check"
+          onclick="markTaskDone({{ t.id }}, this)"
+          title="Mark done">
+      {% if t.status == 'done' %}
+      <svg viewBox="0 0 16 16"><polyline points="4 8 7 11 12 5"/></svg>
       {% endif %}
-    </div>
-    <div class="flex-grow-1 min-width-0">
-      <div class="small fw-semibold text-truncate">{{ t.title }}</div>
-      <div class="d-flex gap-2 mt-1">
-        {% if t.project %}
-        <span class="text-muted" style="font-size:0.72rem;">{{ t.project }}</span>
-        {% endif %}
-        {% if t.due_date %}
-        <span class="text-muted" style="font-size:0.72rem;">
-          <i class="bi bi-calendar3 me-1"></i>{{ t.due_date }}
-        </span>
+    </span>
+    <div style="min-width:0;">
+      <div class="todo-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.title }}</div>
+      <div class="todo-meta" style="margin-top:3px;display:flex;gap:10px;">
+        {% if t.project %}<span>{{ t.project }}</span>{% endif %}
+        {% if t.due_date %}<span>· DUE {{ t.due_date[:10] }}</span>{% endif %}
+        {% if t.priority and t.priority != 'medium' %}
+        <span style="color:{% if t.priority == 'high' %}var(--m-alert){% else %}var(--m-muted-soft){% endif %};">· {{ t.priority|upper }}</span>
         {% endif %}
       </div>
     </div>
-    <div class="flex-shrink-0">
-      {% if t.status == 'in_progress' %}
-      <span class="badge bg-primary-subtle text-primary">in progress</span>
-      {% elif t.status == 'done' %}
-      <span class="badge bg-success-subtle text-success">done</span>
+    <span class="todo-meta">
+      {% if t.status == 'in_progress' %}<span style="color:var(--m-info);">IN PROGRESS</span>
+      {% elif t.status == 'done' %}<span style="color:var(--m-ok);">DONE</span>
       {% endif %}
-    </div>
+    </span>
+    <span class="todo-actions" style="display:flex;gap:4px;">
+      <button class="feed-act" title="Mark done" onclick="markTaskDone({{ t.id }}, this)">
+        <svg viewBox="0 0 16 16"><polyline points="4 8 7 11 12 5"/></svg>
+      </button>
+      <button class="feed-act feed-act-dismiss" title="Delete" onclick="deleteTask({{ t.id }}, this)">
+        <svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+      </button>
+    </span>
   </div>
-</li>
-{% endfor %}
+  {% endfor %}
+</div>
 {% endif %}

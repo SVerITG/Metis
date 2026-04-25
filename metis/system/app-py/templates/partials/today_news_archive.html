@@ -1,0 +1,68 @@
+<div>
+  <div class="sec-label" style="margin-bottom:8px;">
+    News radar
+    <span class="sec-label-tail">{{ news_briefs|length }} NEW</span>
+  </div>
+  <div class="panel">
+    <!-- Category chip strip -->
+    <div class="chip-strip">
+      <button class="chip-btn chip-btn--on" onclick="filterNews(this, 'ALL')">ALL</button>
+      {% for cat in categories %}
+      <button class="chip-btn" onclick="filterNews(this, '{{ cat|e }}')">{{ cat }}</button>
+      {% endfor %}
+    </div>
+
+    <!-- Feed rows -->
+    {% if news_briefs %}
+      {% for brief in news_briefs %}
+      <div class="feed-row" data-cat="{{ (brief.domain or 'General')|upper }}">
+        <div class="feed-meta">
+          <span class="feed-cat">{{ (brief.domain or 'General')|upper }}</span>
+          <span class="feed-dot">·</span>
+          <span class="feed-src">{{ brief.source_url[:40] if brief.source_url else 'News' }}</span>
+          {% if brief.age_label %}
+          <span class="feed-dot">·</span>
+          <span class="feed-when tnum">{{ brief.age_label }}</span>
+          {% endif %}
+        </div>
+        <a class="feed-title" href="{{ brief.source_url or '#' }}" target="_blank" rel="noopener">
+          {{ brief.title or 'Untitled' }}
+        </a>
+        <div class="feed-dek ed">{{ (brief.summary or '')[:200] }}</div>
+        <div class="feed-actions" aria-label="actions">
+          <button class="feed-act" title="Mark read"
+                  onclick="this.closest('.feed-row').style.opacity='0.3'">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 8 7 11 12 5"/>
+            </svg>
+          </button>
+          <button class="feed-act" title="Not interested"
+                  onclick="this.closest('.feed-row').style.display='none'">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="8" cy="8" r="5"/>
+              <line x1="4.8" y1="4.8" x2="11.2" y2="11.2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-row">No news briefs yet. Run the content scan to populate.</div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function filterNews(btn, cat) {
+  btn.closest('.chip-strip').querySelectorAll('.chip-btn').forEach(b => b.classList.remove('chip-btn--on'));
+  btn.classList.add('chip-btn--on');
+  const rows = btn.closest('.panel').querySelectorAll('.feed-row');
+  rows.forEach(row => {
+    if (cat === 'ALL' || row.dataset.cat === cat) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+</script>

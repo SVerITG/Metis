@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Badges & chips</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>body{margin:0;padding:20px 24px;width:700px;box-sizing:border-box;background:var(--metis-bg);font-family:var(--font-system)}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.cap{font-size:11px;color:var(--metis-text-muted);font-family:var(--font-mono);width:88px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:600}
+.ok{background:rgba(23,76,79,.12);color:#174c4f}
+.warn{background:rgba(179,106,29,.15);color:#7a3d00}
+.alert{background:rgba(192,57,43,.12);color:#8b1a11}
+.muted{background:#f2f2f7;color:#6e6e73}
+.badge{border-radius:6px;padding:2px 8px;font-size:.72rem;font-weight:600}
+.b-pri{background:#e8f0fe;color:#0071e3}
+.b-ok{background:rgba(48,164,108,.15);color:#1a6641}
+.b-warn{background:rgba(245,159,0,.18);color:#9a5c00}
+.b-err{background:rgba(224,49,49,.12);color:#e03131}
+.sig-high{color:#fff;background:#2e6b4f;padding:2px 7px;border-radius:3px;font-size:.75em}
+.sig-med{color:#fff;background:#b36a1d;padding:2px 7px;border-radius:3px;font-size:.75em}
+.sig-low{color:#fff;background:#6d7c74;padding:2px 7px;border-radius:3px;font-size:.75em}
+.pri-high{color:#fff;background:#c0392b;padding:1px 6px;border-radius:3px;font-size:.72em}
+.pri-med{color:#fff;background:#e67e22;padding:1px 6px;border-radius:3px;font-size:.72em}
+.pri-low{color:#fff;background:#27ae60;padding:1px 6px;border-radius:3px;font-size:.72em}
+</style></head><body>
+<div class="row"><span class="cap">morning-chip</span><span class="chip ok"><i class="bi bi-check-circle"></i> Librarian ran</span><span class="chip warn"><i class="bi bi-exclamation-circle"></i> 2 overdue</span><span class="chip alert"><i class="bi bi-shield-x"></i> Blocked</span><span class="chip muted"><i class="bi bi-clock"></i> No agents yet</span></div>
+<div class="row"><span class="cap">status badge</span><span class="badge b-pri">agent</span><span class="badge b-ok">done</span><span class="badge b-warn">running</span><span class="badge b-err">error</span></div>
+<div class="row"><span class="cap">signal</span><span class="sig-high">HIGH</span><span class="sig-med">MEDIUM</span><span class="sig-low">LOW</span></div>
+<div class="row"><span class="cap">priority</span><span class="pri-high">HIGH</span><span class="pri-med">MEDIUM</span><span class="pri-low">LOW</span></div>
+</body></html>

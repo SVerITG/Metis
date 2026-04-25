@@ -1,32 +1,35 @@
-<!-- learning_courses.html — Active course progress bars -->
+<!-- learning_courses.html — Editorial course cards -->
 {% if not courses %}
-<div class="text-center text-muted py-3">
-  <i class="bi bi-book-half fs-3 mb-1 d-block"></i>
-  <div class="small">No active courses. Start a new learning path.</div>
+<div class="panel" style="grid-column:1/-1;">
+  <div class="empty-row"><em>No active courses. Use the Build buttons below to start one from the catalog.</em></div>
 </div>
 {% else %}
-<div class="d-flex flex-column gap-3">
-  {% for c in courses %}
-  <div>
-    <div class="d-flex justify-content-between align-items-center mb-1">
-      <div class="small fw-semibold">{{ c.title }}</div>
-      <span class="text-muted small">{{ c.progress_pct or 0 }}%</span>
-    </div>
-    {% if c.category %}
-    <div class="text-muted mb-1" style="font-size:0.72rem;">{{ c.category }}</div>
-    {% endif %}
-    <div class="progress" style="height:6px;">
-      <div class="progress-bar bg-primary" role="progressbar"
-           style="width:{{ c.progress_pct or 0 }}%"
-           aria-valuenow="{{ c.progress_pct or 0 }}"
-           aria-valuemin="0" aria-valuemax="100"></div>
-    </div>
-    {% if c.total_modules %}
-    <div class="text-muted mt-1" style="font-size:0.72rem;">
-      {{ c.completed_modules or 0 }} / {{ c.total_modules }} modules
-    </div>
+{% for c in courses %}
+<div class="panel panel-pad course-card" style="padding:20px 22px;display:flex;flex-direction:column;gap:10px;">
+  <div class="kicker" style="color:{% if c.status == 'active' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
+    <span>{{ (c.category or 'COURSE')|upper }} · {{ (c.status or 'in progress')|upper }}</span>
+  </div>
+  <div style="font-family:var(--m-display);font-size:18px;font-weight:500;color:var(--m-ink);line-height:1.25;">{{ c.title }}</div>
+  {% if c.total_modules %}
+  <div class="todo-meta" style="margin:0;">
+    {{ c.completed_modules or 0 }} OF {{ c.total_modules }} MODULES · {{ c.progress_pct or 0 }}%
+  </div>
+  {% else %}
+  <div class="todo-meta" style="margin:0;">{{ c.progress_pct or 0 }}% COMPLETE</div>
+  {% endif %}
+
+  <div style="height:2px;background:var(--m-surface-3);border-radius:1px;margin-top:4px;">
+    <div class="progress-line" style="height:100%;width:{{ c.progress_pct or 0 }}%;background:var(--m-accent);border-radius:1px;transition:width 600ms ease;"></div>
+  </div>
+
+  <div style="display:flex;gap:6px;margin-top:6px;">
+    {% if c.slug %}
+    <button class="btn btn--sec btn--caps" onclick="buildCourse('{{ c.slug }}')">Continue</button>
+    <button class="btn btn--ghost btn--caps" onclick="openCourseChat('{{ c.id }}','{{ c.title|e }}')">Open chat</button>
+    {% else %}
+    <button class="btn btn--sec btn--caps" onclick="buildCourse('{{ c.id }}')">Continue</button>
     {% endif %}
   </div>
-  {% endfor %}
 </div>
+{% endfor %}
 {% endif %}

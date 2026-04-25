@@ -32,6 +32,95 @@ async def meetings_tab_partial(request: Request):
 
 
 # ---------------------------------------------------------------------------
+# Archive-layout partials
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/meetings/meta", response_class=HTMLResponse)
+async def meetings_meta(request: Request):
+    today = datetime.date.today().isoformat()
+    today_count = db_scalar("SELECT COUNT(*) FROM meetings WHERE date = ?", (today,), default=0) or 0
+    week_start = (datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())).isoformat()
+    week_count = db_scalar("SELECT COUNT(*) FROM meetings WHERE date >= ?", (week_start,), default=0) or 0
+    prepped = db_scalar("SELECT COUNT(*) FROM meetings WHERE date >= ? AND status='prepped'", (today,), default=0) or 0
+    return HTMLResponse(f"{today_count} TODAY · {week_count} THIS WEEK · {prepped} PREPPED")
+
+
+@router.get("/api/partial/meetings/next-label", response_class=HTMLResponse)
+async def meetings_next_label(request: Request):
+    today = datetime.date.today().isoformat()
+    nxt = db_query(
+        "SELECT title, date, status FROM meetings WHERE date >= ? ORDER BY date LIMIT 1", (today,)
+    )
+    if nxt:
+        m = nxt[0]
+        status = (m.get("status") or "").upper() or "UPCOMING"
+        label = (m.get("date") or "")[:10]
+        return HTMLResponse(
+            f'<span>Next meeting</span><span class="tail">{status} · {label}</span>'
+        )
+    return HTMLResponse('<span>Next meeting</span><span class="tail">NONE SCHEDULED</span>')
+
+
+@router.get("/api/partial/meetings/upcoming", response_class=HTMLResponse)
+async def meetings_upcoming(request: Request):
+    today = datetime.date.today().isoformat()
+    meetings = db_query(
+        "SELECT id, date, title, participants, duration_minutes, status, notes "
+        "FROM meetings WHERE date >= ? ORDER BY date LIMIT 1",
+        (today,),
+    ) or []
+    meeting = meetings[0] if meetings else None
+    return templates.TemplateResponse(
+        request,
+        "partials/meetings_upcoming.html",
+        {"meeting": meeting},
+    )
+
+
+@router.get("/api/partial/meetings/transcripts", response_class=HTMLResponse)
+async def meetings_transcripts(request: Request):
+    rows = db_query(
+        "SELECT id, date, title, duration_minutes, status "
+        "FROM meetings ORDER BY date DESC LIMIT 5"
+    ) or []
+    return templates.TemplateResponse(
+        request,
+        "partials/meetings_transcripts.html",
+        {"meetings": rows},
+    )
+
+
+@router.get("/api/partial/meetings/week-ahead", response_class=HTMLResponse)
+async def meetings_week_ahead(request: Request):
+    today = datetime.date.today().isoformat()
+    week_end = (datetime.date.today() + datetime.timedelta(days=7)).isoformat()
+    rows = db_query(
+        "SELECT date, title, participants, status FROM meetings WHERE date >= ? AND date <= ? ORDER BY date LIMIT 5",
+        (today, week_end),
+    ) or []
+    return templates.TemplateResponse(
+        request,
+        "partials/meetings_week_ahead.html",
+        {"meetings": rows},
+    )
+
+
+@router.get("/api/partial/meetings/follow-ups", response_class=HTMLResponse)
+async def meetings_follow_ups(request: Request):
+    actions = db_query(
+        "SELECT ma.description, ma.status, ma.due_date, m.title as meeting_title, m.date as meeting_date "
+        "FROM meeting_actions ma JOIN meetings m ON ma.meeting_id = m.id "
+        "WHERE ma.status != 'done' ORDER BY ma.due_date NULLS LAST LIMIT 5"
+    ) or []
+    return templates.TemplateResponse(
+        request,
+        "partials/meetings_follow_ups.html",
+        {"actions": actions},
+    )
+
+
+# ---------------------------------------------------------------------------
 # Stats
 # ---------------------------------------------------------------------------
 

@@ -1,0 +1,33 @@
+<!-- today_inbox.html — Agent inbox feed-row, editorial -->
+<div id="today-inbox-card">
+  <div class="sec-label" style="margin-bottom:8px;">
+    <span>Agent inbox</span>
+    <span class="tail">{{ items | length }} RECENT</span>
+  </div>
+  <div class="panel" id="inbox-list">
+    {% if not items %}
+    <div class="empty-row"><em>Inbox clear. The agents have nothing for you.</em></div>
+    {% else %}
+    {% for item in items %}
+    <div class="feed-row" id="inbox-item-{{ loop.index }}">
+      <div class="feed-meta">
+        <span class="feed-cat">{{ (item.agent_slug or 'agent').upper() }}</span>
+        <span class="feed-dot">·</span>
+        <span class="chip chip--{{ (item.model or 'sonnet')|lower }}" style="padding:1px 7px;">{{ (item.model or 'SONNET')|upper }}</span>
+        <span class="feed-dot">·</span>
+        <span>{{ item.time }}</span>
+      </div>
+      <a class="feed-title" href="javascript:void(0)" style="font-size:15px;">{{ item.task_summary }}</a>
+      <div class="feed-actions" aria-label="actions">
+        <button class="feed-act feed-act-dismiss" title="Dismiss"
+                onclick="document.getElementById('inbox-item-{{ loop.index }}').classList.add('feed-row--out');setTimeout(function(){var n=document.getElementById('inbox-item-{{ loop.index }}');if(n)n.remove();},220);">
+          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+  </div>
+</div>

@@ -1,0 +1,51 @@
+<div>
+  <div class="sec-label" style="margin-bottom:8px;">
+    Library — freshly filed
+    <span class="sec-label-tail">{{ items|length }} NEW</span>
+  </div>
+  <div class="panel">
+    {% if items %}
+      {% for item in items %}
+      <div class="feed-row">
+        <div class="feed-meta">
+          <span class="feed-cat">{{ (item.source or item.card_type or 'ARTICLE')|upper }}</span>
+          {% if item.domain %}
+          <span class="feed-dot">·</span>
+          <span class="feed-src">{{ (item.domain or '')|upper }}</span>
+          {% endif %}
+        </div>
+        <a class="feed-title feed-title--book" href="#">
+          {{ item.title or 'Untitled' }}
+        </a>
+        {% if item.authors %}
+        <div class="feed-dek ed" style="font-style:italic;color:var(--m-muted);font-size:13px;">
+          {{ item.authors }}
+        </div>
+        {% endif %}
+        {% if item.abstract or item.content or item.summary %}
+        <div class="feed-dek ed">
+          {{ (item.abstract or item.content or item.summary or '')[:200] }}
+        </div>
+        {% endif %}
+        <div class="feed-actions" aria-label="actions">
+          <button class="feed-act" title="Mark read"
+                  onclick="this.closest('.feed-row').style.opacity='0.3'">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 8 7 11 12 5"/>
+            </svg>
+          </button>
+          <button class="feed-act" title="Not interested"
+                  onclick="this.closest('.feed-row').style.display='none'">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="8" cy="8" r="5"/>
+              <line x1="4.8" y1="4.8" x2="11.2" y2="11.2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-row">Your slipcases are clear.</div>
+    {% endif %}
+  </div>
+</div>

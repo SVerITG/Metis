@@ -733,6 +733,40 @@
       "chains_with": ["phd-architect", "epidemiologist", "methods-coach"]
     },
     {
+      "slug": "course-builder",
+      "name": "Course Builder",
+      "invocation": "/course-builder",
+      "trust_tier": "write-local",
+      "description": "End-to-end course creation orchestrator. Runs a 7-step workflow: intake questionnaire → scope plan → harvest sources → curriculum design → draft modules → review loop → publish. Delegates to Content Harvester, Learning Architect, Methods Coach, Epidemiologist, Writing Partner, Visualization Maker. Output goes to knowledge/courses/{slug}/.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "knowledge/courses/",
+        "system/config/course-builder-questionnaire.md",
+        "outputs/reviews/course-builder/"
+      ],
+      "forbidden_actions": [
+        "invent_content_without_sources",
+        "publish_without_review",
+        "modify_source_data_files",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access",
+        "publishing_course"
+      ],
+      "can_act_without_approval": [
+        "read_questionnaire",
+        "draft_course_outline",
+        "write_module_files",
+        "update_learning_courses_table"
+      ],
+      "output_path": "knowledge/courses/",
+      "model": "claude-sonnet-4-6",
+      "chains_with": ["content-harvester", "learning-architect", "methods-coach", "epidemiologist", "writing-partner", "visualization-maker"]
+    },
+    {
       "slug": "data-analyst",
       "name": "Data Analyst",
       "invocation": "/data-analyst",

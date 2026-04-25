@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Metis · Brand</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_preview.css">
+<style>
+  body { max-width: 1080px; margin: 0 auto; }
+
+  .brand-hero {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 80px 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+  }
+  .brand-hero .mark { width: 132px; height: 132px; }
+  .brand-hero .word {
+    font-family: var(--m-display);
+    font-size: 96px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    color: var(--m-ink);
+    line-height: 1;
+  }
+  .brand-hero .word em { font-style: italic; color: var(--m-accent-soft); font-weight: 400; }
+  .brand-hero .tag {
+    font-family: var(--m-mono);
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+  }
+
+  .mark-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .mk-card {
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 40px 24px 18px;
+    text-align: center;
+  }
+  .mk-card.on-paper    { background: var(--m-surface); }
+  .mk-card.on-ground   { background: var(--m-bg); }
+  .mk-card.on-ink      { background: var(--m-ink); }
+  .mk-card.on-forest   { background: var(--m-accent); }
+  .mk-card.on-ochre    { background: var(--m-ochre); }
+  .mk-card.on-obs      { background: #15130f; border-color: rgba(243,234,214,0.12); }
+  .mk-card svg { width: 72px; height: 72px; }
+  .mk-card .caption {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-top: 16px;
+    color: var(--m-muted);
+  }
+  .mk-card.on-ink .caption, .mk-card.on-forest .caption, .mk-card.on-ochre .caption, .mk-card.on-obs .caption {
+    color: rgba(255,255,255,0.7);
+  }
+
+  /* mark renderers — copy of svg inline */
+  .mark-forest { stroke: #2d4a3a; }
+  .mark-bone   { stroke: #f5f2ea; }
+  .mark-ochre  { stroke: #d99a4c; }
+  .mark-ink    { stroke: #1f2a24; }
+
+  .wordmark-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .wm-card {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .wm-card.dark { background: #15130f; border-color: rgba(243,234,214,0.12); }
+  .wm-mark { flex-shrink: 0; }
+  .wm-word {
+    font-family: var(--m-display);
+    font-size: 48px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1;
+    color: var(--m-ink);
+  }
+  .wm-word em { font-style: italic; color: var(--m-accent-soft); font-weight: 400; }
+  .wm-sub {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+    margin-top: 6px;
+  }
+  .wm-card.dark .wm-word { color: #f3ead6; }
+  .wm-card.dark .wm-word em { color: #d99a4c; }
+  .wm-card.dark .wm-sub { color: #8a8075; }
+
+  .princ {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .princ-card {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 28px;
+  }
+  .princ-card .n {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--m-accent);
+    margin-bottom: 10px;
+  }
+  .princ-card h3 {
+    font-family: var(--m-display);
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0 0 8px;
+    letter-spacing: -0.015em;
+    color: var(--m-ink);
+  }
+  .princ-card p {
+    font-family: var(--m-display);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--m-text);
+    margin: 0;
+  }
+  .princ-card p em { color: var(--m-accent-soft); }
+
+  .origin {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 40px 48px;
+  }
+  .origin .ep {
+    font-family: var(--m-display);
+    font-style: italic;
+    font-size: 20px;
+    line-height: 1.5;
+    color: var(--m-muted);
+    padding-left: 24px;
+    border-left: 2px solid var(--m-accent);
+    max-width: 640px;
+  }
+  .origin .ep-src {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--m-muted-soft);
+    margin-top: 14px;
+    padding-left: 26px;
+  }
+  .origin p {
+    margin-top: 22px;
+    font-size: 15px;
+    line-height: 1.65;
+    max-width: 640px;
+  }
+
+  .construction {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 40px;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .construction svg { width: 220px; height: 220px; }
+  .construction h3 { font-family: var(--m-display); font-size: 22px; font-weight: 500; margin: 0 0 8px; color: var(--m-ink); letter-spacing: -0.015em; }
+  .construction ul { margin: 0; padding: 0; list-style: none; font-size: 14px; color: var(--m-text); line-height: 1.8; }
+  .construction ul li::before {
+    content: "— ";
+    font-family: var(--m-mono);
+    color: var(--m-accent);
+    margin-right: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="pv-header">
+  <div>
+    <div class="pv-eyebrow">Metis · Design System · Brand</div>
+    <h1>Brand — mark, wordmark, origin</h1>
+  </div>
+  <div class="pv-note">
+    Metis, daughter of Oceanus: <em>wisdom, counsel, cunning.</em>
+    The mark is drawn as a card-catalog stamp. The italic <em>s</em> is the flourish.
+  </div>
+</div>
+
+<section class="pv-section">
+  <div class="brand-hero">
+    <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+      <g fill="none" class="mark-forest" stroke-width="1.6" stroke-linecap="round">
+        <circle cx="32" cy="32" r="26"/>
+        <circle cx="32" cy="32" r="16"/>
+        <line x1="6"  y1="32" x2="13" y2="32"/>
+        <line x1="51" y1="32" x2="58" y2="32"/>
+        <line x1="32" y1="6"  x2="32" y2="13"/>
+        <line x1="32" y1="51" x2="32" y2="58"/>
+        <line x1="23" y1="32" x2="41" y2="32"/>
+        <line x1="32" y1="23" x2="32" y2="41"/>
+      </g>
+      <circle cx="32" cy="32" r="2.4" fill="#2d4a3a"/>
+    </svg>
+    <div class="word">Meti<em>s</em></div>
+    <div class="tag">A workbench for thinking · Archive edition</div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Mark — on every ground</h2>
+  <div class="mark-grid">
+    <div class="mk-card on-paper">
+      <svg viewBox="0 0 64 64"><g fill="none" class="mark-forest" stroke-width="1.6" stroke-linecap="round"><circle cx="32" cy="32" r="26"/><circle cx="32" cy="32" r="16"/><line x1="6" y1="32" x2="13" y2="32"/><line x1="51" y1="32" x2="58" y2="32"/><line x1="32" y1="6" x2="32" y2="13"/><line x1="32" y1="51" x2="32" y2="58"/><line x1="23" y1="32" x2="41" y2="32"/><line x1="32" y1="23" x2="32" y2="41"/></g><circle cx="32" cy="32" r="2.4" fill="#2d4a3a"/></svg>
+      <div class="caption">Forest · on paper</div>
+    </div>
+    <div class="mk-card on-ground">
+      <svg viewBox="0 0 64 64"><g fill="none" class="mark-forest" stroke-width="1.6" stroke-linecap="round"><circle cx="32" cy="32" r="26"/><circle cx="32" cy="32" r="16"/><line x1="6" y1="32" x2="13" y2="32"/><line x1="51" y1="32" x2="58" y2="32"/><line x1="32" y1="6" x2="32" y2="13"/><line x1="32" y1="51" x2="32" y2="58"/><line x1="23" y1="32" x2="41" y2="32"/><line x1="32" y1="23" x2="32" y2="41"/></g><circle cx="32" cy="32" r="2.4" fill="#2d4a3a"/></svg>
+      <div class="caption">Forest · on ground</div>
+    </div>
+    <div class="mk-card on-ink">
+      <svg viewBox="0 0 64 64"><g fill="none" class="mark-bone" stroke-width="1.6" stroke-linecap="round"><circle cx="32" cy="32" r="26"/><circle cx="32" cy="32" r="16"/><line x1="6" y1="32" x2="13" y2="32"/><line x1="51" y1="32" x2="58" y2="32"/><line x1="32" y1="6" x2="32" y2="13"/><line x1="32" y1="51" x2="32" y2="58"/><line x1="23" y1="32" x2="41" y2="32"/><line x1="32" y1="23" x2="32" y2="41"/></g><circle cx="32" cy="32" r="2.4" fill="#f5f2ea"/></svg>
+      <div class="caption">Bone · on ink</div>
+    </div>
+    <div class="mk-card on-forest">
+      <svg viewBox="0 0 64 64"><g fill="none" class="mark-bone" stroke-width="1.6" stroke-linecap="round"><circle cx="32" cy="32" r="26"/><circle cx="32" cy="32" r="16"/><line x1="6" y1="32" x2="13" y2="32"/><line x1="51" y1="32" x2="58" y2="32"/><line x1="32" y1="6" x2="32" y2="13"/><line x1="32" y1="51" x2="32" y2="58"/><line x1="23" y1="32" x2="41" y2="32"/><line x1="32" y1="23" x2="32" y2="41"/></g><circle cx="32" cy="32" r="2.4" fill="#f5f2ea"/></svg>
+      <div class="caption">Bone · on forest</div>
+    </div>
+    <div class="mk-card on-ochre">
+      <svg viewBox="0 0 64 64"><g fill="none" class="mark-ink" stroke-width="1.6" stroke-linecap="round"><circle cx="32" cy="32" r="26"/><circle cx="32" cy="32" r="16"/><line x1="6" y1="32" x2="13" y2="32"/><line x1="51" y1="32" x2="58" y2="32"/><line x1="32" y1="6" x2="32" y2="13"/><line x1="32" y1="51" x2="32" y2="58"/><line x1="23" y1="32" x2="41" y2="32"/><line x1="32" y1="23" x2="32" y2="41"/></g><circle cx="32" cy="32" r="2.4" fill="#1f2a24"/></svg>
+      <div class="caption">Ink · on ochre</div>
+    </div>
+    <div class="mk-card on-obs">
+      <svg viewBox="0 0 64 64"><g fill="none" class="mark-ochre" stroke-width="1.6" stroke-linecap="round"><circle cx="32" cy="32" r="26"/><circle cx="32" cy="32" r="16"/><line x1="6" y1="32" x2="13" y2="32"/><line x1="51" y1="32" x2="58" y2="32"/><line x1="32" y1="6" x2="32" y2="13"/><line x1="32" y1="51" x2="32" y2="58"/><line x1="23" y1="32" x2="41" y2="32"/><line x1="32" y1="23" x2="32" y2="41"/></g><circle cx="32" cy="32" r="2.4" fill="#d99a4c"/></svg>
+      <div class="caption">Amber · observatory</div>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Construction</h2>
+  <div class="construction">
+    <svg viewBox="0 0 64 64">
+      <g fill="none" stroke="rgba(45,74,58,0.2)" stroke-width="0.5" stroke-dasharray="1 1.5">
+        <circle cx="32" cy="32" r="30"/>
+        <circle cx="32" cy="32" r="26"/>
+        <circle cx="32" cy="32" r="20"/>
+        <circle cx="32" cy="32" r="16"/>
+        <line x1="0" y1="32" x2="64" y2="32"/>
+        <line x1="32" y1="0" x2="32" y2="64"/>
+      </g>
+      <g fill="none" stroke="#2d4a3a" stroke-width="1.6" stroke-linecap="round">
+        <circle cx="32" cy="32" r="26"/>
+        <circle cx="32" cy="32" r="16"/>
+        <line x1="6" y1="32" x2="13" y2="32"/>
+        <line x1="51" y1="32" x2="58" y2="32"/>
+        <line x1="32" y1="6" x2="32" y2="13"/>
+        <line x1="32" y1="51" x2="32" y2="58"/>
+        <line x1="23" y1="32" x2="41" y2="32"/>
+        <line x1="32" y1="23" x2="32" y2="41"/>
+      </g>
+      <circle cx="32" cy="32" r="2.4" fill="#2d4a3a"/>
+    </svg>
+    <div>
+      <h3>An owl's gaze, drawn as a stamp</h3>
+      <ul>
+        <li>Two concentric index rings — <em>the outer catalog, the inner shelf.</em></li>
+        <li>Four compass axes — the bearings of a reader who knows the room.</li>
+        <li>A central pupil — the fix, the cursor, the point where Metis is paying attention.</li>
+        <li>1.5 px stroke, round caps — drawn by the same hand as the iconography.</li>
+        <li>Minimum 24 px; clear-space = half the mark on every side.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Wordmark</h2>
+  <div class="wordmark-grid">
+    <div class="wm-card">
+      <svg class="wm-mark" viewBox="0 0 64 64" width="56" height="56">
+        <g fill="none" class="mark-forest" stroke-width="1.6" stroke-linecap="round"><circle cx="32" cy="32" r="26"/><circle cx="32" cy="32" r="16"/><line x1="6" y1="32" x2="13" y2="32"/><line x1="51" y1="32" x2="58" y2="32"/><line x1="32" y1="6" x2="32" y2="13"/><line x1="32" y1="51" x2="32" y2="58"/><line x1="23" y1="32" x2="41" y2="32"/><line x1="32" y1="23" x2="32" y2="41"/></g>
+        <circle cx="32" cy="32" r="2.4" fill="#2d4a3a"/>
+      </svg>
+      <div>
+        <div class="wm-word">Meti<em>s</em></div>
+        <div class="wm-sub">Archive</div>
+      </div>
+    </div>
+    <div class="wm-card dark">
+      <svg class="wm-mark" viewBox="0 0 64 64" width="56" height="56">
+        <g fill="none" class="mark-ochre" stroke-width="1.6" stroke-linecap="round"><circle cx="32" cy="32" r="26"/><circle cx="32" cy="32" r="16"/><line x1="6" y1="32" x2="13" y2="32"/><line x1="51" y1="32" x2="58" y2="32"/><line x1="32" y1="6" x2="32" y2="13"/><line x1="32" y1="51" x2="32" y2="58"/><line x1="23" y1="32" x2="41" y2="32"/><line x1="32" y1="23" x2="32" y2="41"/></g>
+        <circle cx="32" cy="32" r="2.4" fill="#d99a4c"/>
+      </svg>
+      <div>
+        <div class="wm-word">Meti<em>s</em></div>
+        <div class="wm-sub">Observatory</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Principles</h2>
+  <div class="princ">
+    <div class="princ-card">
+      <div class="n">01</div>
+      <h3>A workbench, not a feed.</h3>
+      <p>Metis is organized like a working archive — <em>shelves, index cards, slipcases.</em> There is no scroll of demands.</p>
+    </div>
+    <div class="princ-card">
+      <div class="n">02</div>
+      <h3>Labels before icons.</h3>
+      <p>Where other tools reach for a glyph, Metis reaches for an UPPERCASE mono label. <em>The word is the signifier.</em></p>
+    </div>
+    <div class="princ-card">
+      <div class="n">03</div>
+      <h3>Offer, don't prompt.</h3>
+      <p>Metis observes first: <em>"Two of yesterday's threads are converging."</em> Offers are a short list of verbs underneath.</p>
+    </div>
+    <div class="princ-card">
+      <div class="n">04</div>
+      <h3>Rules over shadows.</h3>
+      <p>The page is paper. Hierarchy is typographic. Shadows exist but are barely there. <em>Edges do the work.</em></p>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Origin</h2>
+  <div class="origin">
+    <div class="ep">"Of all the gods, the wisest by far was Metis — she who knew the way of every thing."</div>
+    <div class="ep-src">— Hesiod, loosely</div>
+    <p>The Metis of the myth is the first wife of Zeus and the mother of Athena — <em>wisdom, counsel, cunning.</em> She is swallowed, and her wisdom becomes interior. That inheritance is the product's posture: a presence inside your work that knows the shelves, keeps the cards in order, and speaks — when it speaks — from the margin.</p>
+  </div>
+</section>
+
+<div class="pv-footer">
+  <span>METIS · DESIGN SYSTEM · V1</span>
+  <span>BRAND · 05</span>
+</div>
+
+</body>
+</html>

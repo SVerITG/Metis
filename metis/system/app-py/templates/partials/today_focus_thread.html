@@ -1,0 +1,56 @@
+<div class="focus-thread">
+
+  {% if focus %}
+
+  <!-- Section: Resumed -->
+  <div class="focus-section">
+    <div class="caps-label">Resumed {{ focus.resumed_label }}</div>
+    <h2 class="focus-title">
+      {% if focus.project_id %}
+      <a href="/work" hx-get="/api/tab/work" hx-target="#tab-content" hx-swap="outerHTML" hx-select="#tab-content" hx-push-url="/work">
+        {{ focus.title }}
+      </a>
+      {% else %}
+      {{ focus.title }}
+      {% endif %}
+    </h2>
+    {% if focus.next_step %}
+    <div class="focus-meta">{{ focus.next_step }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Section: Best quote / most recent thought -->
+  {% if focus.quote %}
+  <div class="focus-section">
+    <div class="caps-label">Recent thought</div>
+    <blockquote class="focus-quote">
+      {{ focus.quote }}
+      {% if focus.quote_source %}
+      <div class="focus-quote-source">— {{ focus.quote_source }}</div>
+      {% endif %}
+    </blockquote>
+  </div>
+  {% endif %}
+
+  <!-- Section: Continuous scan -->
+  <div class="focus-section">
+    <div class="caps-label">Continuous scan</div>
+    <div class="focus-scan-text">{{ scan.text }}</div>
+    <button class="btn-tune-scan" onclick="tuneScan()">
+      <i class="bi bi-sliders"></i> Tune scan
+    </button>
+  </div>
+
+  {% else %}
+
+  <div class="focus-section">
+    <div class="caps-label">Focus</div>
+    <div class="focus-empty">
+      No active project in focus yet.
+      Add a project in the Work tab or capture an idea to begin a thread.
+    </div>
+  </div>
+
+  {% endif %}
+
+</div>

@@ -32,6 +32,32 @@ async def learning_tab_partial(request: Request):
 
 
 # ---------------------------------------------------------------------------
+# Archive-layout partials
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/learning/meta", response_class=HTMLResponse)
+async def learning_meta(request: Request):
+    total = db_scalar("SELECT COUNT(*) FROM learning_courses", default=0) or 0
+    today = str(datetime.date.today())
+    due = db_scalar("SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ?", (today,), default=0) or 0
+    return HTMLResponse(f"{total} COURSES · {due} DUE TODAY")
+
+
+@router.get("/api/partial/learning/courses-archive", response_class=HTMLResponse)
+async def learning_courses_archive(request: Request):
+    courses = db_query(
+        "SELECT id, title, category, progress_pct, total_modules, completed_modules, status, slug "
+        "FROM learning_courses WHERE status IN ('active','in_progress') ORDER BY progress_pct DESC LIMIT 6"
+    ) or []
+    return templates.TemplateResponse(
+        request,
+        "partials/learning_courses.html",
+        {"courses": courses},
+    )
+
+
+# ---------------------------------------------------------------------------
 # Due for review today
 # ---------------------------------------------------------------------------
 
@@ -63,7 +89,7 @@ async def learning_due_today(request: Request):
 @router.get("/api/partial/learning/courses", response_class=HTMLResponse)
 async def learning_courses(request: Request):
     courses = db_query(
-        "SELECT id, title, category, progress_pct, total_modules, completed_modules "
+        "SELECT id, slug, title, category, progress_pct, total_modules, completed_modules "
         "FROM learning_courses WHERE status = 'active' ORDER BY progress_pct DESC",
         default=[],
     )
@@ -96,6 +122,39 @@ async def learning_completed(request: Request):
             "items": items
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# Placeholder courses (catalog to build)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/learning/placeholder-courses", response_class=HTMLResponse)
+async def learning_placeholder_courses(request: Request):
+    courses = db_query(
+        "SELECT id, slug, title, category FROM learning_courses WHERE status = 'placeholder' ORDER BY category, title",
+        default=[],
+    )
+    return templates.TemplateResponse(
+        request,
+        "partials/learning_placeholder_courses.html",
+        {"courses": courses},
+    )
+
+
+@router.post("/api/course/build-request")
+async def course_build_request(request: Request):
+    data = await request.json()
+    course_id = data.get("courseId", "unknown")
+    course = db_query(
+        "SELECT id, slug, title, category FROM learning_courses WHERE id=? OR slug=? LIMIT 1",
+        (course_id, course_id),
+        default=[],
+    )
+    title = course[0]["title"] if course else course_id
+    slug = course[0]["slug"] if course else course_id
+    prompt = f"/course-builder\ncourse-slug: {slug}\nPlease walk me through the questionnaire at metis/system/config/course-builder-questionnaire.md and build this course: {title}"
+    return {"status": "ok", "prompt": prompt, "title": title}
 
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,18 @@
+<div class="panel" style="padding:24px;margin-bottom:32px;">
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;">
+    {% for d in days %}
+    {% set iso = d.strftime('%Y-%m-%d') %}
+    {% set is_today = (d == today) %}
+    {% set tasks = day_tasks.get(iso, []) %}
+    <div style="padding:12px 10px;border:{% if is_today %}1px solid var(--m-rule);border-left:2px solid var(--m-accent);background:var(--m-accent-wash);{% else %}1px solid var(--m-rule);{% endif %}min-height:150px;border-radius:2px;">
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.16em;color:{% if is_today %}var(--m-accent){% else %}var(--m-muted){% endif %};margin-bottom:8px;">{{ d.strftime('%a %-d').upper() }}</div>
+      {% for t in tasks %}
+      <div style="font-size:11px;font-family:var(--m-display);padding:3px 6px;margin-bottom:3px;border-radius:2px;line-height:1.3;{% if t.priority == 'high' %}background:var(--m-accent);color:var(--m-on-accent);{% elif t.priority == 'medium' %}background:var(--m-ochre-wash);color:var(--m-ochre-deep);border-left:2px solid var(--m-ochre);{% else %}background:var(--m-surface-2);color:var(--m-text);{% endif %}">{{ t.title[:28] }}</div>
+      {% endfor %}
+      {% if not tasks %}
+      <div style="font-size:11px;color:var(--m-surface-3);font-family:var(--m-display);font-style:italic;">—</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</div>

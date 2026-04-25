@@ -1,0 +1,27 @@
+<div>
+  <div class="sec-label" style="margin-bottom:8px;">
+    From your notebook
+    <span class="sec-label-tail">RECENT NOTES</span>
+  </div>
+  <div class="panel">
+    {% if notes %}
+      {% for note in notes %}
+      <div class="nb-row">
+        <div class="nb-when">{{ note.age_label or 'RECENTLY' }}</div>
+        <div class="nb-body ed">"{{ (note.content or note.text or '')[:280] }}"</div>
+        <div class="nb-foot">
+          <span class="nb-card">
+            — {{ note.source or note.idea_type or note.tags or 'notebook' }}
+          </span>
+          <div class="nb-actions">
+            <button class="btn btn--ghost btn--caps">Revisit</button>
+            <button class="btn btn--ghost btn--caps">Follow up</button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-row">No notes yet. Capture something using Ctrl+K.</div>
+    {% endif %}
+  </div>
+</div>

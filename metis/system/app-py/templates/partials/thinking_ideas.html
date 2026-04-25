@@ -1,26 +1,22 @@
-<!-- thinking_ideas.html — Recent ideas list -->
+<!-- thinking_ideas.html — Editorial idea list -->
 {% if not ideas %}
-<li class="list-group-item text-center text-muted py-4">
-  <i class="bi bi-lightbulb fs-2 mb-2 d-block"></i>
-  No ideas yet. Press Ctrl+K to capture one.
-</li>
+<div class="empty-row"><em>No ideas yet. Press ⌘K to capture one.</em></div>
 {% else %}
-{% for idea in ideas %}
-<li class="list-group-item px-3 py-2">
-  <div class="d-flex align-items-start gap-2">
-    <i class="bi bi-lightbulb-fill text-warning flex-shrink-0 mt-1"></i>
-    <div class="flex-grow-1 min-width-0">
-      <div class="small" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{ idea.content }}</div>
-      <div class="d-flex align-items-center gap-2 mt-1">
-        <span class="text-muted" style="font-size:0.7rem;">{{ idea.created_at[:10] if idea.created_at else '' }}</span>
-        {% if idea.tags %}
-        {% for tag in idea.tags.split(',')[:2] %}
-        <span class="badge bg-warning-subtle text-warning" style="font-size:0.62rem;">{{ tag.strip() }}</span>
+<div class="panel">
+  {% for idea in ideas %}
+  <div class="nb-row">
+    <div class="nb-when">{{ (idea.created_at or '')[:10] }} · IDEA</div>
+    <div class="nb-body">{{ idea.content }}</div>
+    {% if idea.tags %}
+    <div class="nb-foot">
+      <div style="display:flex;gap:6px;">
+        {% for tag in idea.tags.split(',')[:3] %}
+        <span class="chip chip--mute" style="font-size:9px;">{{ tag.strip() }}</span>
         {% endfor %}
-        {% endif %}
       </div>
     </div>
+    {% endif %}
   </div>
-</li>
-{% endfor %}
+  {% endfor %}
+</div>
 {% endif %}

@@ -1,0 +1,18 @@
+<div class="panel">
+  {% if meetings %}
+    {% for m in meetings %}
+    <div style="display:grid;grid-template-columns:80px 1fr 100px 140px;gap:16px;padding:14px 22px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}align-items:center;">
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);">{{ m.date[:10] if m.date else '—' }}</div>
+      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">{{ m.title or 'Meeting' }}</div>
+      <div class="tnum" style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">{{ m.duration_minutes or '—' }} MIN</div>
+      <div style="text-align:right;">
+        <span style="display:inline-flex;align-items:center;padding:2px 8px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">
+          {{ (m.status or 'FILED').upper() }}
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-row">No transcripts yet. Use /meeting-memory to add them.</div>
+  {% endif %}
+</div>

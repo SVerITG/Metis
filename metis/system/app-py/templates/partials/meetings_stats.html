@@ -1,27 +1,19 @@
-<!-- meetings_stats.html — Stats row (replaces skeleton) -->
-<div class="row g-2 mb-3">
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-primary">{{ total }}</div>
-      <div class="text-muted small">Total meetings</div>
-    </div>
+<!-- meetings_stats.html — Editorial 4-up stat row -->
+<div class="grid grid-4" style="margin-bottom:24px;">
+  <div class="panel panel-pad" style="padding:18px 20px;">
+    <div class="todo-meta" style="margin:0 0 4px;">TOTAL MEETINGS</div>
+    <div class="tnum" style="font-family:var(--m-display);font-size:28px;font-weight:500;color:var(--m-ink);line-height:1.1;">{{ total }}</div>
   </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-info">{{ this_month }}</div>
-      <div class="text-muted small">This month</div>
-    </div>
+  <div class="panel panel-pad" style="padding:18px 20px;">
+    <div class="todo-meta" style="margin:0 0 4px;">THIS MONTH</div>
+    <div class="tnum" style="font-family:var(--m-display);font-size:28px;font-weight:500;color:var(--m-info);line-height:1.1;">{{ this_month }}</div>
   </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-warning">{{ open_actions }}</div>
-      <div class="text-muted small">Open actions</div>
-    </div>
+  <div class="panel panel-pad" style="padding:18px 20px;">
+    <div class="todo-meta" style="margin:0 0 4px;">OPEN ACTIONS</div>
+    <div class="tnum" style="font-family:var(--m-display);font-size:28px;font-weight:500;color:var(--m-ochre-deep);line-height:1.1;">{{ open_actions }}</div>
   </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-secondary">{{ avg_dur or '—' }}{% if avg_dur %}m{% endif %}</div>
-      <div class="text-muted small">Avg duration</div>
-    </div>
+  <div class="panel panel-pad" style="padding:18px 20px;">
+    <div class="todo-meta" style="margin:0 0 4px;">AVG DURATION</div>
+    <div class="tnum" style="font-family:var(--m-display);font-size:28px;font-weight:500;color:var(--m-muted);line-height:1.1;">{{ avg_dur or '—' }}{% if avg_dur %}<span style="font-size:14px;">m</span>{% endif %}</div>
   </div>
 </div>

@@ -1,0 +1,38 @@
+<div class="panel panel-pad" style="padding:32px 40px;margin-bottom:28px;" id="morning-brief">
+  <div class="kicker kicker--accent">
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8" r="5.5"/>
+      <polygon points="8 4 10 8 8 12 6 8"/>
+    </svg>
+    <span>MORNING BRIEFING</span>
+    <span>·</span>
+    <span style="color:var(--m-muted)">A paragraph, not a dashboard</span>
+  </div>
+  <p class="ed" style="font-size:18px;margin-top:16px;margin-bottom:14px;max-width:720px;">
+    {% if greeting %}
+      {{ greeting | safe }}
+    {% else %}
+      A new day in the Research Cortex.
+      {% if open_threads and open_threads > 0 %}
+        {{ open_threads }} thread{% if open_threads != 1 %}s{% endif %} from yesterday are still warm.
+      {% endif %}
+      Check your tasks, recent literature, and what's new in the field.
+    {% endif %}
+  </p>
+  {% if narrative %}
+  <p class="ed" style="font-size:16px;color:var(--m-muted);max-width:720px;margin-bottom:18px;">
+    {{ narrative }}
+  </p>
+  {% endif %}
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn btn--primary"
+            onclick="setNavActive(document.querySelector('[data-tab=work]'),'work'); htmx.ajax('GET','/api/tab/work',{target:'#tab-content',swap:'outerHTML'})">
+      Open Work
+    </button>
+    <button class="btn btn--sec"
+            onclick="setNavActive(document.querySelector('[data-tab=knowledge]'),'knowledge'); htmx.ajax('GET','/api/tab/knowledge',{target:'#tab-content',swap:'outerHTML'})">
+      Browse Library
+    </button>
+    <button class="btn btn--ghost btn--caps">Later ↓</button>
+  </div>
+</div>

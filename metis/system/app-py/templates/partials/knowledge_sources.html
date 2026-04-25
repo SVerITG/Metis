@@ -1,0 +1,46 @@
+<div>
+  <div class="sec-label" style="margin-bottom:12px;">
+    <span>Sources · recently clipped</span>
+    <span class="tail">IN THE HAND</span>
+  </div>
+  <div class="panel">
+    {% if sources %}
+      {% for source in sources %}
+      <div style="
+            display:grid;
+            grid-template-columns:100px 1fr 160px 80px;
+            gap:20px;
+            align-items:center;
+            padding:14px 24px;
+            {% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}
+           ">
+        <!-- Tag / source type -->
+        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.18em;color:{{ source.tag_color }};text-transform:uppercase;">
+          {{ source.tag }}
+        </div>
+        <!-- Title + author -->
+        <div>
+          <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">{{ source.title }}</div>
+          {% if source.by %}
+          <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);margin-top:2px;">{{ source.by }}</div>
+          {% endif %}
+        </div>
+        <!-- Date -->
+        <div class="tnum" style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
+          {{ source.when }}
+        </div>
+        <!-- Chip -->
+        <div style="text-align:right;">
+          {% if source.doi %}
+          <span style="display:inline-flex;align-items:center;padding:2px 9px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">
+            DOI
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-row">No sources clipped yet. Use /librarian to add literature.</div>
+    {% endif %}
+  </div>
+</div>

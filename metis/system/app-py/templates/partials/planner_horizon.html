@@ -1,0 +1,13 @@
+<div class="grid grid-3" style="margin-bottom:32px;">
+  {% for card in cards %}
+  <div class="panel panel-pad" style="padding:22px 24px;">
+    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.2em;color:var(--m-accent);margin-bottom:10px;">{{ card.label }}</div>
+    <div style="font-family:var(--m-display);font-size:20px;font-weight:500;color:var(--m-ink);line-height:1.25;margin-bottom:8px;">{{ card.title }}</div>
+    <div class="ed" style="font-size:14px;margin-bottom:16px;">{{ card.body }}</div>
+    <div style="height:2px;background:var(--m-surface-3);border-radius:1px;">
+      <div style="height:100%;width:{{ card.pct }}%;background:var(--m-accent);border-radius:1px;"></div>
+    </div>
+    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);margin-top:8px;">{{ card.meta }}</div>
+  </div>
+  {% endfor %}
+</div>

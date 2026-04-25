@@ -1,0 +1,84 @@
+<div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;">
+
+  <!-- Inbox -->
+  <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;">
+    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+      <span>Inbox</span><span>{{ inbox|length }}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for t in inbox %}
+      <div style="background:var(--m-surface);border:1px solid var(--m-rule);border-radius:2px;padding:12px 14px;">
+        <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;margin-bottom:8px;">{{ t.title }}</div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">
+          <span>{{ (t.tag or 'TASK').upper()[:12] }}</span>
+          <span>{{ t.due_date[:10] if t.due_date else '—' }}</span>
+        </div>
+      </div>
+      {% else %}
+      <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px;">Inbox clear.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- This week -->
+  <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;">
+    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+      <span>This week</span><span>{{ this_week|length }}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for t in this_week %}
+      {% set is_high = (t.priority == 'high') %}
+      <div style="background:var(--m-surface);border:1px solid var(--m-rule);border-left:{% if is_high %}2px solid var(--m-accent){% else %}1px solid var(--m-rule){% endif %};border-radius:2px;padding:12px 14px;">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
+          <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;">{{ t.title }}</div>
+          {% if is_high %}<span style="font-size:10px;color:var(--m-accent);">★</span>{% endif %}
+        </div>
+        <div style="margin-top:8px;display:flex;justify-content:space-between;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">
+          <span>{{ (t.tag or 'TASK').upper()[:12] }}</span>
+          <span>{{ t.due_date[:10] if t.due_date else '—' }}</span>
+        </div>
+      </div>
+      {% else %}
+      <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px;">Nothing due this week.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- In progress -->
+  <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;">
+    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+      <span>In progress</span><span>{{ in_progress|length }}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for t in in_progress %}
+      <div style="background:var(--m-surface);border:1px solid var(--m-rule);border-left:2px solid var(--m-accent);border-radius:2px;padding:12px 14px;">
+        <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;margin-bottom:8px;">{{ t.title }}</div>
+        <div style="display:flex;justify-content:space-between;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">
+          <span>{{ (t.tag or 'TASK').upper()[:12] }}</span>
+          <span>IN PROGRESS</span>
+        </div>
+      </div>
+      {% else %}
+      <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px;">Nothing in progress.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Closed this week -->
+  <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;opacity:0.85;">
+    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+      <span>Closed · this week</span><span>{{ closed|length }}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      {% for t in closed %}
+      <div style="background:var(--m-surface);border:1px solid var(--m-rule);border-radius:2px;padding:12px 14px;opacity:0.7;">
+        <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;text-decoration:line-through;margin-bottom:8px;">{{ t.title }}</div>
+        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">{{ (t.tag or 'TASK').upper()[:12] }}</div>
+      </div>
+      {% else %}
+      <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px;">Nothing closed yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>

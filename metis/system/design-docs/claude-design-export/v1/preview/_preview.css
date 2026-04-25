@@ -1,0 +1,121 @@
+/* Shared chrome for Metis design-system preview cards.
+   Each card is a self-contained, fixed-width editorial page. */
+
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--m-bg);
+  padding: 48px 56px 64px;
+  min-height: 100vh;
+}
+
+.pv-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--m-rule-strong);
+  padding-bottom: 16px;
+  margin-bottom: 36px;
+  gap: 24px;
+}
+.pv-header h1 {
+  margin: 0;
+  font-family: var(--m-display);
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--m-ink);
+}
+.pv-header .pv-eyebrow {
+  font-family: var(--m-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  margin-bottom: 8px;
+}
+.pv-header .pv-note {
+  font-family: var(--m-display);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--m-muted);
+  max-width: 360px;
+  text-align: right;
+  line-height: 1.5;
+}
+
+.pv-section {
+  margin-bottom: 48px;
+}
+.pv-section + .pv-section { padding-top: 8px; }
+
+.pv-seclabel {
+  font-family: var(--m-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 20px;
+}
+.pv-seclabel::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--m-rule);
+}
+
+.pv-footer {
+  margin-top: 48px;
+  border-top: 1px solid var(--m-rule);
+  padding-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--m-muted-soft);
+}
+
+/* Grid helpers */
+.pv-grid { display: grid; gap: 16px; }
+.pv-grid-2 { grid-template-columns: 1fr 1fr; }
+.pv-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.pv-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* Swatch/spec atom */
+.pv-row {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--m-rule-soft);
+}
+.pv-row:last-child { border-bottom: 0; }
+.pv-row .pv-name {
+  font-family: var(--m-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  width: 200px;
+  flex-shrink: 0;
+}
+.pv-row .pv-value {
+  font-family: var(--m-mono);
+  font-size: 12px;
+  color: var(--m-ink);
+  margin-left: auto;
+}
+
+.pv-demo {
+  background: var(--m-surface);
+  border: 1px solid var(--m-rule);
+  border-radius: 3px;
+  padding: 24px;
+}
+.pv-demo--sunken {
+  background: var(--m-surface-2);
+}

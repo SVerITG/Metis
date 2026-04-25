@@ -2,99 +2,91 @@
 {% block title %}Planner{% endblock %}
 
 {% block content %}
+<div class="page">
 
-<!-- ===== Header ===== -->
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <div>
-    <h4 class="mb-0"><i class="bi bi-calendar3 me-2 text-primary"></i>Planner</h4>
-    <div class="text-muted small mt-1">Projects kanban, PhD focus board, and timeline</div>
-  </div>
-  <div class="d-flex gap-2">
-    <div class="btn-group btn-group-sm" role="group" id="planner-view-toggle">
-      <button type="button" class="btn btn-outline-secondary active"
-              onclick="switchPlannerView('kanban', this)">
-        <i class="bi bi-kanban me-1"></i>Kanban
-      </button>
-      <button type="button" class="btn btn-outline-secondary"
-              onclick="switchPlannerView('focus', this)">
-        <i class="bi bi-crosshair me-1"></i>Focus
-      </button>
-      <button type="button" class="btn btn-outline-secondary"
-              onclick="switchPlannerView('timeline', this)">
-        <i class="bi bi-bar-chart-steps me-1"></i>Timeline
-      </button>
+  <div class="page-head">
+    <div>
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">SURFACE 04</div>
+      <h1 style="font-family:var(--m-display);font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0;">Planner</h1>
     </div>
+    <div class="page-meta"
+         hx-get="/api/partial/planner/meta"
+         hx-trigger="load"
+         hx-swap="innerHTML">WEEK — · Q— · — WEEKS REMAINING</div>
   </div>
-</div>
 
-<!-- ===== View panels ===== -->
-
-<!-- Kanban board (default) -->
-<div id="planner-view-kanban"
-     hx-get="/api/partial/planner/kanban"
-     hx-trigger="load"
-     hx-swap="outerHTML">
-  <!-- Skeleton -->
-  <div class="row g-3">
-    {% for col in ['Someday', 'Incubating', 'Active'] %}
-    <div class="col-12 col-md-4">
-      <div class="card">
-        <div class="card-header py-2 fw-semibold small">{{ col }}</div>
-        <div class="card-body p-3 placeholder-glow">
-          <span class="placeholder col-9 mb-2"></span>
-          <span class="placeholder col-7"></span>
-        </div>
-      </div>
+  <!-- Horizon cards -->
+  <div class="grid grid-3" style="margin-bottom:32px;"
+       hx-get="/api/partial/planner/horizon"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    {% for label in ['QUARTER · Q4', 'WEEK · 46', 'TODAY'] %}
+    <div class="panel panel-pad" style="padding:22px 24px;opacity:.4;">
+      <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:55%;margin-bottom:10px;"></div>
+      <div style="height:18px;background:var(--m-surface-3);border-radius:2px;margin-bottom:8px;"></div>
+      <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:70%;margin-bottom:16px;"></div>
+      <div style="height:2px;background:var(--m-surface-3);border-radius:1px;"></div>
     </div>
     {% endfor %}
   </div>
-</div>
 
-<!-- Focus board (hidden until switched) -->
-<div id="planner-view-focus" style="display:none;">
-  <div class="row g-3">
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header py-2 fw-semibold small">
-          <i class="bi bi-crosshair me-1 text-danger"></i>PhD Focus Board
+  <!-- Week at a glance -->
+  <div class="sec-label" style="margin-bottom:16px;">
+    <span>This week at a glance</span>
+    <span class="tail"
+          hx-get="/api/partial/planner/week-label"
+          hx-trigger="load"
+          hx-swap="innerHTML">WEEK —</span>
+  </div>
+  <div class="panel" style="padding:24px;margin-bottom:32px;"
+       hx-get="/api/partial/planner/week"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;">
+      {% for d in ['MON','TUE','WED','THU','FRI','SAT','SUN'] %}
+      <div style="padding:12px 10px;border:1px solid var(--m-rule);min-height:150px;border-radius:2px;opacity:.35;">
+        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:8px;">{{ d }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Intentions + Notes -->
+  <div class="grid grid-2">
+
+    <div>
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Intentions · Q4</span>
+      </div>
+      <div class="panel"
+           hx-get="/api/partial/planner/intentions"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        {% for _ in range(4) %}
+        <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}opacity:.4;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+            <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:70%;"></div>
+            <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:10%;"></div>
+          </div>
+          <div style="height:2px;background:var(--m-surface-3);border-radius:1px;"></div>
         </div>
-        <div class="card-body p-3"
-             hx-get="/api/partial/planner/focus"
-             hx-trigger="revealed"
-             hx-swap="innerHTML">
-          <div class="text-muted small">Switch to Focus view to load…</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-label" style="margin-bottom:12px;"><span>Notes from the planner</span></div>
+      <div class="panel panel-pad" style="padding:22px 24px;"
+           hx-get="/api/partial/planner/notes"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div class="ed" style="font-size:15px;margin-bottom:12px;opacity:.5;">
+          <em>Loading planner notes…</em>
         </div>
       </div>
     </div>
+
   </div>
+
 </div>
-
-<!-- Timeline (hidden until switched) -->
-<div id="planner-view-timeline" style="display:none;">
-  <div class="card">
-    <div class="card-header py-2 fw-semibold small">
-      <i class="bi bi-bar-chart-steps me-1 text-info"></i>Project timeline
-    </div>
-    <div class="card-body p-3"
-         hx-get="/api/partial/planner/timeline"
-         hx-trigger="revealed"
-         hx-swap="innerHTML">
-      <div class="text-muted small">Switch to Timeline view to load…</div>
-    </div>
-  </div>
-</div>
-
-<script>
-function switchPlannerView(view, btn) {
-  ['kanban', 'focus', 'timeline'].forEach(v => {
-    document.getElementById('planner-view-' + v).style.display = (v === view) ? '' : 'none';
-  });
-  document.querySelectorAll('#planner-view-toggle .btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  // Trigger HTMX load for hidden panels
-  const panel = document.getElementById('planner-view-' + view);
-  htmx.trigger(panel.querySelector('[hx-trigger="revealed"]') || panel, 'revealed');
-}
-</script>
-
 {% endblock %}

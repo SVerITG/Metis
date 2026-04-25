@@ -1,0 +1,28 @@
+<!-- today_value_boxes.html — 4-up KPI strip -->
+<div class="vbox-strip mb-3">
+
+  <div class="vbox">
+    <div class="vbox-label">Runs today</div>
+    <div class="vbox-value">{{ runs_today }}</div>
+    <div class="vbox-sub">{{ agents_today }} agent{% if agents_today != 1 %}s{% endif %}</div>
+  </div>
+
+  <div class="vbox">
+    <div class="vbox-label">Tokens today</div>
+    <div class="vbox-value">{{ tokens_display }}</div>
+    <div class="vbox-sub">{{ cost_display }}</div>
+  </div>
+
+  <div class="vbox">
+    <div class="vbox-label">Open tasks</div>
+    <div class="vbox-value {% if overdue > 0 %}text-danger{% endif %}">{{ open_tasks }}</div>
+    <div class="vbox-sub">{% if overdue > 0 %}{{ overdue }} overdue{% else %}all on track{% endif %}</div>
+  </div>
+
+  <div class="vbox">
+    <div class="vbox-label">Active projects</div>
+    <div class="vbox-value">{{ active_projects }}</div>
+    <div class="vbox-sub">{{ project_names }}</div>
+  </div>
+
+</div>
