@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_execute, db_query, db_scalar
@@ -784,6 +784,31 @@ async def today_ledger(request: Request):
     except Exception:
         stats["course_count"] = 0
 
+    # Phase 8.13 — token pulse (tokens used today across all agent runs)
+    try:
+        today_iso = datetime.date.today().isoformat()
+        tokens_today = db_scalar(
+            "SELECT COALESCE(SUM(COALESCE(input_tokens,0) + COALESCE(output_tokens,0)), 0) "
+            "FROM agent_runs WHERE DATE(created_at) = ?",
+            (today_iso,),
+            default=0,
+        ) or 0
+    except Exception:
+        tokens_today = 0
+    stats["tokens_today"] = tokens_today
+    if tokens_today >= 1_000_000:
+        stats["token_tier"] = "alert"   # red
+        stats["token_label"] = f"{tokens_today / 1_000_000:.1f}M"
+    elif tokens_today >= 500_000:
+        stats["token_tier"] = "warn"    # amber
+        stats["token_label"] = f"{tokens_today // 1000}K"
+    elif tokens_today >= 1000:
+        stats["token_tier"] = "ok"
+        stats["token_label"] = f"{tokens_today // 1000}K"
+    else:
+        stats["token_tier"] = "muted"
+        stats["token_label"] = str(tokens_today) if tokens_today else "—"
+
     return templates.TemplateResponse(
         request,
         "partials/today_ledger.html",
@@ -977,3 +1002,22 @@ async def api_scan_content():
         "papers_added": lit["papers_added"],
         "news_errors": news.get("errors", []),
     }
+
+
+# ---------------------------------------------------------------------------
+# Handoff brief — Phase 8.13
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/handoff/generate")
+async def api_handoff_generate():
+    """Generate a session-handoff markdown via the MCP tools/handoff helper."""
+    try:
+        from metis_mcp.tools.handoff import generate_handoff_brief
+        result = generate_handoff_brief(write_to_journal=True)
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse(
+            {"status": "error", "message": f"Could not generate handoff: {e}"},
+            status_code=500,
+        )

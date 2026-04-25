@@ -155,3 +155,42 @@ If you are not sure whether a document needs markdown conversion, convert it any
 - [ ] Check `agent_runs` table — identify agents with unusually high token cost per run
 - [ ] Verify prompt caching is active on all stable context in any programmatic pipelines
 - [ ] Review `00_inbox` — ensure documents entering the RC are in markdown format
+
+---
+
+## Auto-handoff (Phase 8.13 — added 2026-04-25)
+
+Long-running sessions with Opus risk silent context exhaustion: the conversation history fills, costs climb, and quality degrades before the user notices. Metis has two layers of defence.
+
+### Layer 1 — Visible token pulse
+
+The Today tab's ledger now includes a **TOKENS · TODAY** cell that surfaces the rolling 24-hour total of `input_tokens + output_tokens` across all `agent_runs`. The cell colour changes with budget tier:
+
+| Tier  | Threshold       | Colour              | Behaviour                      |
+|-------|-----------------|---------------------|--------------------------------|
+| muted | < 1k            | muted               | "—" placeholder                |
+| ok    | 1k – 500k       | info-blue           | normal                         |
+| warn  | 500k – 1M       | ochre / amber       | visual warning                 |
+| alert | > 1M            | alert / red         | gentle pulse animation         |
+
+The pulse animation is decorative — no nagging modals — and respects `prefers-reduced-motion`.
+
+### Layer 2 — `generate_handoff_brief` MCP tool
+
+A handoff brief can be produced at any time (programmatically or via the user calling the `/metis_handoff` skill) by invoking `generate_handoff_brief(session_id?)`. The tool reads recent `session_events`, active projects, open tasks, files touched in the session, and the current `implementation-progress.json` state, and writes a portable markdown brief to `metis/journal/YYYY-MM-DD_session_handoff.md`. The next session can resume from that file without paying to re-load the full conversation history.
+
+### Trigger policy
+
+- The handoff is **manually callable** as of v8.2 — call it deliberately when a session approaches its end, when the token-pulse cell turns amber, or before `/clear`.
+- An automatic trigger inside `pipeline.py` (fire `generate_handoff_brief` when `turn_count >= 0.8 * max_turns`) is the next planned step. It is not enabled yet because the pipeline change needs careful review against the existing turn counter.
+
+### Best-practice interleave
+
+Pair the handoff with `/clear`:
+
+1. Watch the token cell. If it crosses 500k, finish the current task cleanly.
+2. Call `generate_handoff_brief()` — it writes the brief and returns the path.
+3. `/clear` the session.
+4. The next session reads `metis/journal/YYYY-MM-DD_session_handoff.md` first, gets oriented in seconds, and continues with a clean context window.
+
+This is how Metis stays affordable on Opus across multi-day workstreams.

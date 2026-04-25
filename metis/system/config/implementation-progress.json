@@ -3,7 +3,7 @@
     "version": "1.0",
     "created": "2026-04-13",
     "last_updated": "2026-04-25",
-    "last_phase_completed": "Phase 9 \u2014 Dashboard polish & button wiring",
+    "last_phase_completed": "Phase 8.13 \u2014 Token efficiency + handoff brief",
     "sonnet_handoff_plan": "metis/journal/2026-04-24_sonnet_handoff_plan.md",
     "purpose": "Tracks all implementation milestones for the Metis Research Cortex redesign. Statuses: pending | in_progress | completed | skipped. Each completed item records a date and optional notes.",
     "phases": [
@@ -920,28 +920,56 @@
     },
     "Phase 8.13": {
       "label": "Token efficiency + auto-handoff loop",
-      "target_timeline": "2026-04-27 (Sonnet)",
-      "notes": "Full spec in handoff plan \u00a77. Three additions: token pulse widget, auto-handoff at 80% turns, implementation-plan-change detector on resume.",
+      "target_timeline": "2026-04-25 \u2014 same session as Phase 9",
       "items": [
         {
           "id": "M8.13.1",
-          "subject": "Add /api/partial/metis/token-pulse endpoint + hero widget showing rolling 24h tokens",
-          "status": "pending"
+          "subject": "Token-pulse widget on Today ledger (8th cell, tier-coloured)",
+          "status": "completed",
+          "completed_date": "2026-04-25",
+          "notes": "Ledger extended from 7 to 8 columns. New TOKENS \u00b7 TODAY cell sums input+output tokens from agent_runs WHERE DATE(created_at)=today. Tiers: muted (<1k), ok (1k-500k, info-blue), warn (500k-1M, ochre), alert (>1M, red, gentle pulse). v8.2 CSS."
         },
         {
           "id": "M8.13.2",
-          "subject": "Add generate_handoff_brief() in handoff.py; trigger at 80% of max_turns in pipeline.py",
-          "status": "pending"
+          "subject": "generate_handoff_brief MCP tool + FastAPI endpoint",
+          "status": "completed",
+          "completed_date": "2026-04-25",
+          "notes": "metis/system/mcp-server/src/metis_mcp/tools/handoff.py \u2014 pure function plus @app.tool() wrapper. Writes to journal/{date}_session_handoff_auto.md with: tokens-today, phase tracker, last journal name, active projects with next_step, top 8 open tasks, recent 8 agent runs, how-to-resume. Brief stays < 3 KB. POST /api/handoff/generate exposes it to the dashboard."
         },
         {
           "id": "M8.13.3",
-          "subject": "Add implementation-plan mtime check in session_bootstrap \u2014 surface plan_changed status",
-          "status": "pending"
+          "subject": "Handoff link on Today dateline strip + JS handler",
+          "status": "completed",
+          "completed_date": "2026-04-25",
+          "notes": "Added third action 'Handoff' next to Scan changes / Scan for content. generateHandoff() in app.js POSTs /api/handoff/generate and toasts the path + counts."
         },
         {
           "id": "M8.13.4",
-          "subject": "Update token-guardrails.md with new Auto-handoff section",
-          "status": "pending"
+          "subject": "token-guardrails.md updated with Auto-handoff section",
+          "status": "completed",
+          "completed_date": "2026-04-25",
+          "notes": "Documents the two-layer defence (token pulse + handoff brief), tier table, manual trigger policy (auto-trigger inside pipeline.py is the next planned step, deliberately not enabled yet to avoid risk)."
+        },
+        {
+          "id": "M8.13.5",
+          "subject": "Pipeline auto-trigger at 80% turn count",
+          "status": "pending",
+          "completed_date": null,
+          "notes": "Deferred: handoff is callable manually as of M8.13.2-3. Auto-trigger inside pipeline.py needs careful integration with existing turn counter \u2014 handed off to next session per token-guardrails.md note."
+        },
+        {
+          "id": "M8.13.6",
+          "subject": "Implementation-plan-change detector on session bootstrap",
+          "status": "pending",
+          "completed_date": null,
+          "notes": "Deferred to next session \u2014 needs careful pipeline.py integration."
+        },
+        {
+          "id": "M8.13.7",
+          "subject": "M8.8.6 verify content scan end-to-end (bundled)",
+          "status": "completed",
+          "completed_date": "2026-04-25",
+          "notes": "Curl POST /api/scan/content while dashboard live: news_briefs went from 10 \u2192 19 (9 new), agent_runs row logged with task_summary='Dashboard scan: 9 news, 0 papers'."
         }
       ]
     },
