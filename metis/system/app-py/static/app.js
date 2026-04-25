@@ -495,6 +495,29 @@ function openBriefing(meetingId)  { metisStub(`/meeting-memory open briefing for
 function openTranscript(meetingId){ metisStub(`/meeting-memory transcript for meeting ${meetingId || 'last'}`); }
 function rescheduleMeeting(id)    { showToast('<i class="bi bi-calendar2-event toast-icon"></i>Rescheduling lives in your calendar (Outlook/Google) — link coming.'); }
 
+// ---------------------------------------------------------------------------
+// Phase 8.13 — Handoff brief generator (callable from Today dateline strip)
+// ---------------------------------------------------------------------------
+
+async function generateHandoff() {
+  showToast('<i class="bi bi-pencil-square toast-icon"></i>Writing handoff brief…');
+  try {
+    const res = await fetch('/api/handoff/generate', { method: 'POST' });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast(
+        `<i class="bi bi-check2 toast-icon"></i>Handoff written → <code>${data.path || 'journal/'}</code><br>` +
+        `<span style="font-size:0.78rem;opacity:0.8;">${(data.runs_count || 0)} recent runs · ${(data.tokens_today || 0).toLocaleString()} tokens today</span>`,
+        6500
+      );
+    } else {
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Handoff failed.'));
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Handoff failed — server offline?');
+  }
+}
+
 // Teach actions (already partly defined below)
 function openHistory(id, title)   { metisStub(`/course-builder history for course "${title}"`); }
 function continueDraft(id, title) { metisStub(`/course-builder continue draft for "${title}"`); }
