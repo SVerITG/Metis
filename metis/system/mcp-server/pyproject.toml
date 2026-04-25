@@ -15,6 +15,8 @@ dependencies = [
     # Phase 5 — multi-layered vector memory
     "sqlite-vec>=0.1.9",
     "fastembed>=0.8.0",
+    # Phase 8.8 — content scan
+    "feedparser>=6.0",
 ]
 
 [project.scripts]

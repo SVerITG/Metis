@@ -37,6 +37,72 @@ async def teach_tab_partial(request: Request):
 
 
 # ---------------------------------------------------------------------------
+# Archive-layout partials
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/teach/meta", response_class=HTMLResponse)
+async def teach_meta(request: Request):
+    total = db_scalar("SELECT COUNT(*) FROM learning_courses", default=0) or 0
+    active = db_scalar("SELECT COUNT(*) FROM learning_courses WHERE status='active'", default=0) or 0
+    done = db_scalar("SELECT COUNT(*) FROM learning_courses WHERE status='completed'", default=0) or 0
+    return HTMLResponse(f"{active} COURSES · {done} PUBLISHED · {total - active - done} IN PROGRESS")
+
+
+@router.get("/api/partial/teach/active-label", response_class=HTMLResponse)
+async def teach_active_label(request: Request):
+    row = db_query(
+        "SELECT title, progress_pct FROM learning_courses WHERE status='active' ORDER BY progress_pct DESC LIMIT 1"
+    )
+    if row:
+        title = row[0].get("title", "Active course")[:40]
+        pct = row[0].get("progress_pct") or 0
+        return HTMLResponse(
+            f'<span>{title}</span><span class="tail">IN PROGRESS · {pct}%</span>'
+        )
+    return HTMLResponse('<span>Active course</span><span class="tail">IN PROGRESS</span>')
+
+
+@router.get("/api/partial/teach/active-draft", response_class=HTMLResponse)
+async def teach_active_draft(request: Request):
+    rows = db_query(
+        "SELECT id, title, category, progress_pct, total_modules, completed_modules, status, slug "
+        "FROM learning_courses WHERE status='active' ORDER BY progress_pct DESC LIMIT 1"
+    ) or []
+    course = rows[0] if rows else None
+    return templates.TemplateResponse(
+        request,
+        "partials/teach_active_draft.html",
+        {"course": course},
+    )
+
+
+@router.get("/api/partial/teach/courses-list", response_class=HTMLResponse)
+async def teach_courses_list(request: Request):
+    rows = db_query(
+        "SELECT id, title, category, progress_pct, status FROM learning_courses ORDER BY status DESC, progress_pct DESC LIMIT 10"
+    ) or []
+    return templates.TemplateResponse(
+        request,
+        "partials/teach_courses_list.html",
+        {"courses": rows},
+    )
+
+
+@router.get("/api/partial/teach/suggested", response_class=HTMLResponse)
+async def teach_suggested(request: Request):
+    rows = db_query(
+        "SELECT title, category FROM learning_courses WHERE status='placeholder' ORDER BY id LIMIT 1"
+    ) or []
+    course = rows[0] if rows else None
+    return templates.TemplateResponse(
+        request,
+        "partials/teach_suggested.html",
+        {"course": course},
+    )
+
+
+# ---------------------------------------------------------------------------
 # Course list partial
 # ---------------------------------------------------------------------------
 

@@ -1,0 +1,38 @@
+{% if meeting %}
+<div class="panel" style="padding:28px 32px;margin-bottom:18px;">
+  <div class="kicker kicker--ochre">
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8" r="5.5"/><polyline points="8 4.5 8 8 10.5 9.5"/>
+    </svg>
+    <span>{{ meeting.date[:10] if meeting.date else '—' }} · {{ meeting.participants or 'PARTICIPANTS' }}</span>
+  </div>
+  <h2 style="font-family:var(--m-display);font-size:26px;font-weight:500;letter-spacing:-0.018em;margin:10px 0 10px;color:var(--m-ink);">
+    {{ meeting.title or 'Upcoming meeting' }}
+  </h2>
+  {% if meeting.notes %}
+  <div class="ed" style="font-size:15px;max-width:640px;margin-bottom:18px;">{{ meeting.notes }}</div>
+  {% else %}
+  <p class="ed" style="font-size:15px;max-width:640px;margin-bottom:18px;color:var(--m-muted);">
+    <em>No briefing notes yet. Use /meeting-memory to prepare.</em>
+  </p>
+  {% endif %}
+  <div style="display:flex;gap:6px;margin-top:22px;padding-top:18px;border-top:1px solid var(--m-rule);">
+    <button class="btn btn--primary" onclick="launchPrompt('meeting')">Open briefing</button>
+    <button class="btn btn--sec btn--caps" onclick="openTranscript('{{ meeting.id or '' }}')">Transcript (after)</button>
+    <button class="btn btn--ghost btn--caps" onclick="rescheduleMeeting('{{ meeting.id or '' }}')">Reschedule</button>
+  </div>
+</div>
+{% else %}
+<div class="panel" style="padding:28px 32px;margin-bottom:18px;">
+  <div class="kicker">
+    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="8" r="5.5"/><polyline points="8 4.5 8 8 10.5 9.5"/>
+    </svg>
+    <span>NO UPCOMING MEETINGS</span>
+  </div>
+  <h2 style="font-family:var(--m-display);font-size:22px;font-weight:500;margin:10px 0 8px;color:var(--m-ink);">No meetings this week.</h2>
+  <p class="ed" style="font-size:15px;color:var(--m-muted);">
+    <em>The week is clear. Protect it.</em>
+  </p>
+</div>
+{% endif %}

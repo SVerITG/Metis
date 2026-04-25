@@ -49,6 +49,7 @@ working on sleeping sickness (HAT), PhD planning, AI development, and personal l
 | `/rc-builder` | RC Builder | Modify/extend Metis itself — new agents, dashboard phases, MCP tools |
 | `/presentation-maker` | Presentation Maker | PowerPoint slides, visual summaries |
 | `/learning-coach` | Learning Coach | Skill progression, learning paths, statistics competencies |
+| `/course-builder` | Course Builder | Build a course end-to-end: intake questionnaire → harvest → curriculum → draft → review → publish |
 | `/career-coach` | Career Coach | EU job prep, CV support, career strategy |
 
 | `/news-aggregator` | News Aggregator | Automated RSS collection, feed curation, signal tagging |
@@ -146,6 +147,7 @@ When a request arrives, route as follows:
 
 | Input type | Primary agent | Secondary |
 |---|---|---|
+| Build or plan a learning course | Course Builder | Learning Architect |
 | Paper, article, source | Librarian | PhD Architect |
 | Meeting note, audio, transcript | Meeting Memory | Metis |
 | R script, code, bug, FastAPI | Software Engineer | Frontend Designer Builder |

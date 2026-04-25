@@ -190,6 +190,135 @@ def _parse_frontmatter(text: str) -> dict:
     return result
 
 
+# ---------------------------------------------------------------------------
+# Archive-layout partials (v8.1 — Knowledge surface redesign)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/knowledge/stats-meta", response_class=HTMLResponse)
+async def knowledge_stats_meta(request: Request):
+    """Returns a one-liner for the page-head meta area."""
+    import datetime as _dt
+
+    card_count = db_scalar("SELECT COUNT(*) FROM library_cards", default=0)
+    domain_count = db_scalar("SELECT COUNT(DISTINCT domain) FROM library_cards", default=0)
+    lit_count = db_scalar("SELECT COUNT(*) FROM literature_metadata", default=0)
+    week_ago = (_dt.datetime.now() - _dt.timedelta(days=7)).isoformat()
+    added_week = db_scalar(
+        "SELECT COUNT(*) FROM literature_metadata WHERE created_at >= ?",
+        (week_ago,),
+        default=0,
+    )
+    total = (card_count or 0) + (lit_count or 0)
+    return HTMLResponse(
+        f"{total} CARDS · {domain_count or 0} SLIPCASES · {added_week or 0} SOURCES ADDED THIS WEEK"
+    )
+
+
+@router.get("/api/partial/knowledge/slipcases", response_class=HTMLResponse)
+async def knowledge_slipcases(request: Request):
+    """Slipcase sidebar: domain list with card counts."""
+    domains = []
+    try:
+        rows = db_query(
+            "SELECT domain, COUNT(*) as count FROM library_cards "
+            "GROUP BY domain ORDER BY count DESC"
+        ) or []
+        for r in rows:
+            domains.append({"name": r.get("domain") or "Unfiled", "count": r.get("count") or 0})
+    except Exception:
+        pass
+
+    # Also add literature buckets if no library_cards domains
+    if not domains:
+        try:
+            rows = db_query(
+                "SELECT source as domain, COUNT(*) as count FROM literature_metadata "
+                "GROUP BY source ORDER BY count DESC LIMIT 8"
+            ) or []
+            for r in rows:
+                domains.append({"name": r.get("domain") or "General", "count": r.get("count") or 0})
+        except Exception:
+            pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_slipcases.html",
+        {"domains": domains},
+    )
+
+
+@router.get("/api/partial/knowledge/cards", response_class=HTMLResponse)
+async def knowledge_cards(request: Request):
+    """3-column index card grid from library_cards."""
+    cards = db_query(
+        "SELECT id, title, domain, summary, tags, created_at "
+        "FROM library_cards ORDER BY created_at DESC LIMIT 12"
+    )
+    total_cards = db_scalar("SELECT COUNT(*) FROM library_cards", default=0)
+    first_domain = None
+    try:
+        row = db_query(
+            "SELECT domain, COUNT(*) as cnt FROM library_cards GROUP BY domain ORDER BY cnt DESC LIMIT 1"
+        )
+        if row:
+            first_domain = row[0].get("domain")
+    except Exception:
+        pass
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_cards.html",
+        {"cards": cards, "total_cards": total_cards, "first_domain": first_domain},
+    )
+
+
+@router.get("/api/partial/knowledge/sources", response_class=HTMLResponse)
+async def knowledge_sources(request: Request):
+    """Sources table from literature_metadata, recently clipped."""
+    _tag_colors = {
+        "book": "var(--m-accent)",
+        "paper": "var(--m-info)",
+        "lecture": "var(--m-ochre-deep)",
+        "essay": "var(--m-accent)",
+        "article": "var(--m-accent)",
+    }
+    sources = []
+    try:
+        rows = db_query(
+            "SELECT id, title, authors, year, source, tags, doi, created_at "
+            "FROM literature_metadata ORDER BY created_at DESC LIMIT 8"
+        ) or []
+        for r in rows:
+            journal = r.get("source") or "ARTICLE"
+            tag = "PAPER" if journal else "ARTICLE"
+            tag_key = tag.lower()
+            by_parts = []
+            if r.get("authors"):
+                by_parts.append(r["authors"][:50])
+            if r.get("year"):
+                by_parts.append(str(r["year"])[:4])
+            if journal:
+                by_parts.append(journal[:30])
+            created = r.get("created_at") or ""
+            when = created[:10] if created else "—"
+            sources.append({
+                "title": r.get("title") or "Untitled",
+                "by": " · ".join(by_parts),
+                "tag": tag,
+                "tag_color": _tag_colors.get(tag_key, "var(--m-muted)"),
+                "when": when,
+                "doi": r.get("doi") or "",
+            })
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_sources.html",
+        {"sources": sources},
+    )
+
+
 @router.get("/api/knowledge/graph-data")
 async def knowledge_graph_data():
     """Return graph nodes + edges as JSON for D3 rendering."""

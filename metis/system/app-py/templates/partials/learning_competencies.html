@@ -1,22 +1,21 @@
-<!-- learning_competencies.html — Competency map summary -->
+<!-- learning_competencies.html — Editorial competency map -->
 {% if not skills %}
-<div class="text-center text-muted py-3">
-  <i class="bi bi-diagram-3 fs-3 mb-1 d-block"></i>
-  <div class="small">No competencies tracked yet.</div>
-</div>
+<div class="empty-row"><em>No competencies tracked yet.</em></div>
 {% else %}
 {% set current_domain = namespace(value='') %}
-<div class="d-flex flex-column gap-1">
+<div class="panel">
   {% for s in skills %}
   {% if s.domain != current_domain.value %}
   {% set current_domain.value = s.domain %}
-  <div class="text-muted fw-semibold mt-2 mb-1" style="font-size:0.72rem; text-transform:uppercase; letter-spacing:.05em;">{{ s.domain }}</div>
+  <div class="kicker kicker--accent" style="padding:14px 20px 6px;{% if not loop.first %}border-top:1px solid var(--m-rule-soft);{% endif %}">
+    <span>{{ s.domain | upper }}</span>
+  </div>
   {% endif %}
-  <div class="d-flex align-items-center gap-2">
-    <div class="small flex-grow-1">{{ s.name }}</div>
-    <div class="d-flex gap-1">
+  <div style="display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:8px 20px;">
+    <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">{{ s.name }}</div>
+    <div style="display:flex;gap:3px;">
       {% for i in range(5) %}
-      <div class="rounded-circle" style="width:8px;height:8px;background:{% if i < (s.level or 0) %}var(--metis-blue){% else %}var(--metis-divider){% endif %};"></div>
+      <div style="width:7px;height:7px;border-radius:50%;background:{% if i < (s.level or 0) %}var(--m-accent){% else %}var(--m-surface-3){% endif %};"></div>
       {% endfor %}
     </div>
   </div>

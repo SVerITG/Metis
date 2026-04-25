@@ -1,0 +1,23 @@
+<div class="panel panel-pad" style="padding:22px 24px;">
+  {% if stale_task %}
+  <div class="ed" style="font-size:15px;margin-bottom:12px;">
+    <em>{{ stale_task[:80] }}</em> has been open for over 30 days. Retire, pause, or schedule it?
+  </div>
+  <div style="display:flex;gap:6px;">
+    <button class="btn btn--sec btn--caps" onclick="setTaskStatus('retire')">Retire</button>
+    <button class="btn btn--sec btn--caps" onclick="setTaskStatus('pause')">Pause</button>
+    <button class="btn btn--primary btn--caps" onclick="setTaskStatus('schedule')">Schedule</button>
+  </div>
+  {% elif overdue %}
+  <div class="ed" style="font-size:15px;margin-bottom:12px;">
+    <em>{{ overdue }} task{{ 's' if overdue != 1 else '' }} overdue.</em> Review and reschedule or close.
+  </div>
+  <div style="display:flex;gap:6px;">
+    <button class="btn btn--sec btn--caps" onclick="openCapture('t')">Capture note</button>
+  </div>
+  {% else %}
+  <div class="ed" style="font-size:15px;color:var(--m-muted);">
+    <em>No overdue tasks and nothing stale.</em> The planner is clear.
+  </div>
+  {% endif %}
+</div>

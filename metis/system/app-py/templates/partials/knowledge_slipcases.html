@@ -1,0 +1,45 @@
+<div>
+  <div class="sec-label" style="margin-bottom:12px;">Slipcases</div>
+  <div class="panel" style="overflow:hidden;">
+    {% if domains %}
+      {% for domain in domains %}
+      <div style="
+            display:flex; justify-content:space-between; align-items:center;
+            padding:12px 16px;
+            {% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}
+            border-left:{% if loop.first %}2px solid var(--m-accent){% else %}2px solid transparent{% endif %};
+            background:{% if loop.first %}var(--m-accent-wash){% else %}transparent{% endif %};
+            cursor:pointer;
+            font-size:13px;
+            color:{% if loop.first %}var(--m-ink){% else %}var(--m-text){% endif %};
+            font-family:var(--m-display);
+            transition:background 140ms ease, color 140ms ease;
+           "
+           onclick="(function(el){
+             el.closest('.panel').querySelectorAll('[data-slipcase]').forEach(function(s){
+               s.style.borderLeft='2px solid transparent';
+               s.style.background='transparent';
+               s.style.color='var(--m-text)';
+             });
+             el.style.borderLeft='2px solid var(--m-accent)';
+             el.style.background='var(--m-accent-wash)';
+             el.style.color='var(--m-ink)';
+           })(this)"
+           data-slipcase="{{ domain.name }}">
+        <span>{{ domain.name | replace('-', ' ') | title }}</span>
+        <span class="tnum" style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">{{ domain.count }}</span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="padding:12px 16px;border-left:2px solid var(--m-accent);background:var(--m-accent-wash);font-size:13px;font-family:var(--m-display);color:var(--m-ink);display:flex;justify-content:space-between;">
+        <span>Library</span><span class="tnum" style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">0</span>
+      </div>
+      <div style="padding:12px 16px;border-left:2px solid transparent;font-size:13px;font-family:var(--m-display);color:var(--m-text);display:flex;justify-content:space-between;border-top:1px solid var(--m-rule-soft);">
+        <span>Unfiled</span><span class="tnum" style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">0</span>
+      </div>
+    {% endif %}
+  </div>
+  <div style="margin-top:14px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);padding:0 4px;cursor:pointer;">
+    ADD SLIPCASE · ⌘⇧N
+  </div>
+</div>

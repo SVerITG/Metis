@@ -1,0 +1,15 @@
+<div class="panel" style="margin-bottom:18px;">
+  {% if courses %}
+    {% for c in courses %}
+    {% set is_active = (c.status == 'active') %}
+    <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}border-left:{% if is_active %}2px solid var(--m-accent);background:var(--m-accent-wash);{% else %}2px solid transparent;{% endif %}">
+      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);line-height:1.3;margin-bottom:4px;">{{ c.title }}</div>
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:{% if is_active %}var(--m-accent){% elif c.status == 'completed' %}var(--m-ok){% else %}var(--m-muted){% endif %};text-transform:uppercase;">
+        {{ c.status }} · {{ c.progress_pct or 0 }}%
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-row">No courses yet. Use /course-builder to start building.</div>
+  {% endif %}
+</div>

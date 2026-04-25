@@ -1,0 +1,28 @@
+<div class="news-modal-overlay" onclick="closeNewsModal(event)">
+  <div class="news-modal-card" onclick="event.stopPropagation()">
+    <div class="news-modal-header">
+      <span class="news-domain-badge news-domain-{{ brief.domain_slug }}">{{ brief.domain }}</span>
+      <h2 class="news-modal-title">{{ brief.title }}</h2>
+      <div class="news-modal-meta">
+        {{ brief.created_at_display }}
+        {% if brief.signal_strength %} · signal: <strong>{{ brief.signal_strength }}</strong>{% endif %}
+        {% if brief.tags %} · {{ brief.tags }}{% endif %}
+      </div>
+    </div>
+    <div class="news-modal-body">
+      {% if brief.summary %}
+      {{ brief.summary }}
+      {% else %}
+      <em style="color: var(--text-muted);">No summary recorded. Run /news-radar to enrich.</em>
+      {% endif %}
+    </div>
+    <div class="news-modal-footer">
+      {% if brief.source_url %}
+      <a href="{{ brief.source_url }}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-box-arrow-up-right"></i> Open source
+      </a>
+      {% endif %}
+      <button class="btn btn-primary btn-sm" onclick="closeNewsModal()">Close</button>
+    </div>
+  </div>
+</div>

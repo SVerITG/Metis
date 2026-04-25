@@ -2,89 +2,73 @@
 {% block title %}Work{% endblock %}
 
 {% block content %}
+<div class="page" style="max-width:1320px;">
 
-<!-- ===== Header ===== -->
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <div>
-    <h4 class="mb-0"><i class="bi bi-briefcase me-2 text-primary"></i>Work</h4>
-    <div class="text-muted small mt-1">Tasks, projects, and work sessions</div>
+  <div class="page-head">
+    <div>
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">SURFACE 05</div>
+      <h1 style="font-family:var(--m-display);font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0;">Work</h1>
+    </div>
+    <div class="page-meta"
+         hx-get="/api/partial/work/meta"
+         hx-trigger="load"
+         hx-swap="innerHTML">— PROJECTS · — TASKS · — PAUSED</div>
   </div>
-  <div class="d-flex gap-2">
-    <button class="btn btn-sm btn-primary" onclick="openCapture('task')">
-      <i class="bi bi-plus-lg me-1"></i>Add task
+
+  <!-- Workbench -->
+  <div class="panel" style="padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);padding-right:8px;border-right:1px solid var(--m-rule-soft);">Workbench</div>
+    <button class="btn btn--sec"
+            style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;"
+            onclick="fetch('/api/project/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tool:'claude_desktop',project_id:null})})">
+      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><path d="M6 7c.5-1 2.5-1 2.5.5s-1.5 1.5-2 2v.5h3"/></svg>
+      <span style="font-family:var(--m-ui);font-size:13px;">Claude Desktop</span>
+      <span class="wb-dot wb-dot--on" style="margin-left:4px;"></span>
     </button>
-  </div>
-</div>
-
-<!-- ===== Stats ===== -->
-<div class="row g-2 mb-3"
-     hx-get="/api/partial/work/stats"
-     hx-trigger="load"
-     hx-swap="outerHTML">
-  {% for label in ['Open tasks', 'Overdue', 'Done this week', 'Active projects'] %}
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center placeholder-glow">
-      <span class="placeholder col-4 mx-auto mb-1" style="height:1.5rem;"></span>
-      <div class="text-muted small">{{ label }}</div>
-    </div>
-  </div>
-  {% endfor %}
-</div>
-
-<!-- ===== Tasks + Projects ===== -->
-<div class="row g-3">
-
-  <!-- Task list -->
-  <div class="col-12 col-lg-6">
-    <div class="card h-100">
-      <div class="card-header py-2 d-flex align-items-center justify-content-between">
-        <span class="fw-semibold small"><i class="bi bi-check2-square me-1"></i>Tasks</span>
-        <select class="form-select form-select-sm" style="width:auto;"
-                hx-get="/api/partial/work/tasks"
-                hx-trigger="change"
-                hx-target="#work-tasks-list"
-                hx-swap="innerHTML"
-                name="status">
-          <option value="open" selected>Open</option>
-          <option value="in_progress">In progress</option>
-          <option value="done">Done</option>
-          <option value="all">All</option>
-        </select>
-      </div>
-      <div class="card-body p-0">
-        <ul class="list-group list-group-flush" id="work-tasks-list"
-            hx-get="/api/partial/work/tasks"
-            hx-trigger="load"
-            hx-swap="innerHTML"
-            hx-vals='{"status": "open"}'>
-          <li class="list-group-item text-center text-muted py-4">
-            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-            Loading tasks…
-          </li>
-        </ul>
-      </div>
+    <button class="btn btn--sec"
+            style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;"
+            onclick="fetch('/api/project/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tool:'vscode',project_id:null})})">
+      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="1"/><path d="M5 6l3 2-3 2"/><line x1="9" y1="10" x2="13" y2="10"/></svg>
+      <span style="font-family:var(--m-ui);font-size:13px;">VS Code</span>
+      <span class="wb-dot wb-dot--on" style="margin-left:4px;"></span>
+    </button>
+    <button class="btn btn--sec"
+            style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;opacity:0.65;"
+            onclick="fetch('/api/project/launch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tool:'rstudio',project_id:null})})">
+      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><path d="M6 6h2.5a1.5 1.5 0 0 1 0 3H6v3"/><line x1="9.5" y1="9" x2="12" y2="12"/></svg>
+      <span style="font-family:var(--m-ui);font-size:13px;">RStudio</span>
+      <span class="wb-dot" style="margin-left:4px;"></span>
+    </button>
+    <div style="margin-left:auto;display:flex;gap:6px;">
+      <button class="btn btn--sec btn--caps" onclick="openCapture('t')">+ Task</button>
     </div>
   </div>
 
-  <!-- Active projects -->
-  <div class="col-12 col-lg-6">
-    <div class="card h-100">
-      <div class="card-header py-2">
-        <span class="fw-semibold small"><i class="bi bi-kanban me-1"></i>Active projects</span>
-      </div>
-      <div class="card-body p-3"
-           hx-get="/api/partial/work/projects"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        <div class="placeholder-glow">
-          <span class="placeholder col-8 mb-2"></span>
-          <span class="placeholder col-6 mb-2"></span>
-          <span class="placeholder col-7"></span>
+  <!-- Filter chips -->
+  <div style="display:flex;gap:10px;margin-bottom:20px;align-items:center;flex-wrap:wrap;"
+       hx-get="/api/partial/work/filter-chips"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <span class="chip chip--mute chip--plain">ALL</span>
+    <span class="chip chip--plain">HAT Dashboard</span>
+    <span class="chip chip--ochre">PhD</span>
+    <span class="chip chip--mute chip--plain">MLM Course</span>
+  </div>
+
+  <!-- Kanban board -->
+  <div hx-get="/api/partial/work/kanban"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;">
+      {% for col in ['Inbox', 'This week', 'In progress', 'Closed · this week'] %}
+      <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;opacity:.4;min-height:300px;">
+        <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+          <span>{{ col }}</span><span>—</span>
         </div>
       </div>
+      {% endfor %}
     </div>
   </div>
 
 </div>
-
 {% endblock %}

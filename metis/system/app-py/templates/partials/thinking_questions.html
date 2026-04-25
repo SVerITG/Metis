@@ -1,16 +1,16 @@
-<!-- thinking_questions.html — Open questions -->
+<!-- thinking_questions.html — Editorial open-questions list -->
 {% if not questions %}
-<div class="text-center text-muted py-3">
-  <i class="bi bi-question-circle fs-3 mb-1 d-block"></i>
-  <div class="small">No open questions. Use Ctrl+K → q: to capture one.</div>
-</div>
+<div class="empty-row"><em>No open questions. Use ⌘K → q: to capture one.</em></div>
 {% else %}
-<ul class="list-unstyled mb-0">
+<div class="panel">
   {% for q in questions %}
-  <li class="d-flex align-items-start gap-2 mb-2">
-    <i class="bi bi-question-circle text-danger flex-shrink-0 mt-1"></i>
-    <div class="small">{{ q.content }}</div>
-  </li>
+  <div style="display:grid;grid-template-columns:24px 1fr;gap:12px;align-items:start;padding:14px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
+    <span style="font-family:var(--m-display);font-style:italic;font-size:18px;color:var(--m-alert);line-height:1;">?</span>
+    <div>
+      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);line-height:1.5;">{{ q.content }}</div>
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">{{ (q.created_at or '')[:10] }}</div>
+    </div>
+  </div>
   {% endfor %}
-</ul>
+</div>
 {% endif %}

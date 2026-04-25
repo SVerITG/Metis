@@ -1,36 +1,29 @@
-<!-- metis_runs.html — Agent run table rows -->
+<!-- metis_runs.html — Editorial agent run rows -->
 {% if not runs %}
-<tr>
-  <td colspan="5" class="text-center text-muted py-4">
-    <i class="bi bi-robot fs-2 mb-2 d-block"></i>
-    No agent runs found.
-  </td>
-</tr>
+<div class="empty-row"><em>No agent runs in this window. Activity will appear here as agents work.</em></div>
 {% else %}
 {% for r in runs %}
-<tr>
-  <td class="ps-3 text-muted small">{{ r.started_at[:16] if r.started_at else '—' }}</td>
-  <td>
-    <span class="badge bg-primary-subtle text-primary">{{ r.agent_slug or 'unknown' }}</span>
-  </td>
-  <td class="small text-muted" style="max-width:300px;">
-    <div class="text-truncate">{{ r.task_summary or '—' }}</div>
-  </td>
-  <td class="text-muted small">
+<div class="run-row" style="display:grid;grid-template-columns:96px 110px 1fr 70px 70px;gap:14px;align-items:center;padding:12px 18px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %};transition:background 140ms ease;"
+     onmouseover="this.style.background='var(--m-surface-2)';"
+     onmouseout="this.style.background='transparent';">
+  <span class="run-time tnum" style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">
+    {{ (r.started_at or '')[5:16] | replace('T',' ') if r.started_at else '—' }}
+  </span>
+  <span class="chip chip--accent" style="justify-self:start;font-size:9px;letter-spacing:0.12em;padding:2px 8px;background:var(--m-accent-wash);color:var(--m-accent);">
+    {{ (r.agent_slug or 'unknown')[:14] }}
+  </span>
+  <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+    {{ r.task_summary or '—' }}
+  </span>
+  <span class="tnum" style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);text-align:right;">
     {% if r.tokens_used %}
-    {% if r.tokens_used > 1000 %}{{ (r.tokens_used // 1000) }}k{% else %}{{ r.tokens_used }}{% endif %}
+    {% if r.tokens_used > 1000 %}{{ (r.tokens_used // 1000) }}K{% else %}{{ r.tokens_used }}{% endif %}
     {% else %}—{% endif %}
-  </td>
-  <td>
-    {% set s = r.status or 'completed' %}
-    {% if s == 'error' %}
-    <span class="badge bg-danger-subtle text-danger">error</span>
-    {% elif s == 'running' %}
-    <span class="badge bg-warning-subtle text-warning">running</span>
-    {% else %}
-    <span class="badge bg-success-subtle text-success">done</span>
-    {% endif %}
-  </td>
-</tr>
+  </span>
+  {% set s = r.status or 'completed' %}
+  <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;text-align:right;color:{% if s == 'error' %}var(--m-alert){% elif s == 'running' %}var(--m-ochre-deep){% else %}var(--m-ok){% endif %};">
+    {% if s == 'error' %}error{% elif s == 'running' %}live{% else %}done{% endif %}
+  </span>
+</div>
 {% endfor %}
 {% endif %}

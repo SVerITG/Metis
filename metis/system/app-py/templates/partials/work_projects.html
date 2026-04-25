@@ -1,22 +1,38 @@
-<!-- work_projects.html — Active project cards -->
+<!-- work_projects.html — Editorial active-project cards with launcher rail -->
 {% if not projects %}
-<div class="text-center text-muted py-4">
-  <i class="bi bi-kanban fs-2 mb-2 d-block"></i>
-  No active projects.
-</div>
+<div class="empty-row"><em>No active projects. Use /metis to create one.</em></div>
 {% else %}
-<div class="d-flex flex-column gap-3">
+<div class="grid grid-2">
   {% for p in projects %}
-  <div class="border rounded p-3">
-    <div class="d-flex align-items-start justify-content-between mb-1">
-      <div class="small fw-semibold">{{ p.title }}</div>
+  <div class="panel panel-pad project-card" style="padding:20px 22px;display:flex;flex-direction:column;gap:10px;">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">
+      <div style="font-family:var(--m-display);font-size:17px;font-weight:500;color:var(--m-ink);line-height:1.25;">{{ p.title }}</div>
       {% if p.domain %}
-      <span class="badge bg-info-subtle text-info ms-2 flex-shrink-0" style="font-size:0.65rem;">{{ p.domain }}</span>
+      <span class="chip chip--info" style="flex-shrink:0;">{{ p.domain[:18] }}</span>
       {% endif %}
     </div>
     {% if p.next_step %}
-    <div class="text-muted small mt-1">
-      <i class="bi bi-arrow-right-short me-1"></i>{{ p.next_step }}
+    <div class="ed" style="font-size:14px;color:var(--m-muted);margin:0;">
+      <em>Next:</em> {{ p.next_step }}
+    </div>
+    {% endif %}
+
+    {% if p.external_path %}
+    <div class="launcher-rail" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;padding-top:10px;border-top:1px solid var(--m-rule-soft);">
+      {% if p.launcher_type == 'rstudio' %}
+      <button class="btn btn--sec btn--caps proj-launch" onclick="launchProjectTarget('{{ p.id }}','rstudio')" title="Open in RStudio">RStudio</button>
+      {% endif %}
+      <button class="btn btn--sec btn--caps proj-launch" onclick="launchProjectTarget('{{ p.id }}','vscode')" title="Open in VS Code">VS Code</button>
+      <button class="btn btn--sec btn--caps proj-launch" onclick="launchProjectTarget('{{ p.id }}','claude_code')" title="Open in Claude Code">Claude Code</button>
+      <button class="btn btn--ghost btn--caps proj-launch" onclick="launchProjectTarget('{{ p.id }}','claude_desktop')" title="Open Claude Chat">Chat</button>
+      <button class="btn btn--ghost btn--caps proj-launch" onclick="launchProjectTarget('{{ p.id }}','explorer')" title="Open in File Explorer">Files</button>
+      {% if p.github_url %}
+      <a class="btn btn--ghost btn--caps proj-launch" href="{{ p.github_url }}" target="_blank" rel="noopener" title="Open on GitHub">GitHub</a>
+      {% endif %}
+    </div>
+    {% else %}
+    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);margin-top:6px;padding-top:10px;border-top:1px solid var(--m-rule-soft);">
+      NO EXTERNAL PATH SET
     </div>
     {% endif %}
   </div>

@@ -1,0 +1,39 @@
+<div class="activity-feed">
+  <div class="caps-label">Activity · last 24h</div>
+
+  {% if items %}
+  {% for item in items %}
+  {% if item.kind == 'news' and item.href %}
+  <a class="activity-row" href="javascript:void(0)" onclick="openNewsSummary({{ item.id }})">
+    <span class="activity-icon activity-icon-{{ item.kind }}">◆</span>
+    <span class="activity-time">{{ item.time }}</span>
+    <span class="activity-content">
+      <strong>{{ item.title }}</strong>
+      {% if item.summary %}<span class="activity-meta">{{ item.summary }}</span>{% endif %}
+    </span>
+  </a>
+  {% elif item.href %}
+  <a class="activity-row" href="{{ item.href }}"
+     {% if item.htmx_target %}hx-get="{{ item.href }}" hx-target="#tab-content" hx-swap="outerHTML" hx-select="#tab-content" hx-push-url="{{ item.href }}"{% endif %}>
+    <span class="activity-icon activity-icon-{{ item.kind }}">{{ item.icon }}</span>
+    <span class="activity-time">{{ item.time }}</span>
+    <span class="activity-content">
+      <strong>{{ item.title }}</strong>
+      {% if item.summary %}<span class="activity-meta">{{ item.summary }}</span>{% endif %}
+    </span>
+  </a>
+  {% else %}
+  <div class="activity-row" style="cursor:default;">
+    <span class="activity-icon activity-icon-{{ item.kind }}">{{ item.icon }}</span>
+    <span class="activity-time">{{ item.time }}</span>
+    <span class="activity-content">
+      <strong>{{ item.title }}</strong>
+      {% if item.summary %}<span class="activity-meta">{{ item.summary }}</span>{% endif %}
+    </span>
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% else %}
+  <div class="activity-empty">A quiet day so far. Capture an idea or run an agent to begin the feed.</div>
+  {% endif %}
+</div>

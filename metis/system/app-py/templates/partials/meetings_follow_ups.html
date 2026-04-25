@@ -1,0 +1,21 @@
+<div class="panel panel-pad" style="padding:16px 20px;">
+  {% if actions %}
+  <div class="ed" style="font-size:14px;margin-bottom:10px;">
+    {% if actions[0].meeting_date %}From <em>{{ actions[0].meeting_date[:10] }} · {{ actions[0].meeting_title or 'last meeting' }}:</em>{% else %}Open follow-ups:{% endif %}
+  </div>
+  <ul style="margin:0;padding-left:18px;font-family:var(--m-display);font-size:14px;color:var(--m-text);line-height:1.7;">
+    {% for a in actions %}
+    <li>
+      {{ a.description or 'Follow-up item' }}
+      {% if a.due_date %}
+      <span style="display:inline-flex;align-items:center;padding:1px 6px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;background:var(--m-ochre-wash);color:var(--m-ochre-deep);border-radius:2px;margin-left:6px;">DUE {{ a.due_date[:10] }}</span>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="ed" style="font-size:14px;color:var(--m-muted);">
+    <em>No open follow-ups. All clear.</em>
+  </div>
+  {% endif %}
+</div>
