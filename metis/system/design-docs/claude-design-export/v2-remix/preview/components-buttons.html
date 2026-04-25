@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Buttons</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>body{margin:0;padding:20px 24px;width:700px;box-sizing:border-box;background:var(--metis-bg);font-family:var(--font-system)}
+.row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+button{font-family:inherit;cursor:pointer}
+.btn-primary{background:#0071e3;color:#fff;border:1px solid #0071e3;border-radius:8px;padding:.4rem .9rem;font-size:.875rem;font-weight:500;box-shadow:0 1px 3px rgba(0,113,227,.3)}
+.btn-outline{background:rgba(255,255,255,.6);color:#1d1d1f;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:.4rem .9rem;font-size:.875rem;font-weight:500}
+.btn-xs{padding:1px 7px;font-size:.72rem;border-radius:4px;background:transparent;border:1px solid rgba(0,0,0,.1);color:#1d1d1f}
+.btn-capture{background:#0071e3;color:#fff;border:none;border-radius:999px;padding:.4rem 1rem;font-size:.85rem;font-weight:600;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,113,227,.35)}
+.btn-archive{background:transparent;border:1px solid rgba(0,0,0,.1);color:#6e6e73;font-size:.75rem;padding:.2rem .5rem;border-radius:6px}
+.btn-remove{background:transparent;border:1px solid rgba(224,49,49,.3);color:#e03131;font-size:.75rem;padding:.2rem .5rem;border-radius:6px}
+.cap{font-size:11px;color:var(--metis-text-muted);font-family:var(--font-mono);width:90px}
+</style></head><body>
+<div class="row"><span class="cap">primary</span><button class="btn-primary"><i class="bi bi-save"></i> Save</button><button class="btn-primary">Scan now</button></div>
+<div class="row"><span class="cap">outline</span><button class="btn-outline">Cancel</button><button class="btn-outline"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div>
+<div class="row"><span class="cap">capture</span><button class="btn-capture"><i class="bi bi-plus-lg"></i> Capture</button></div>
+<div class="row"><span class="cap">xs / row</span><button class="btn-xs">Open</button><button class="btn-archive">Archive</button><button class="btn-remove">Remove</button></div>
+</body></html>

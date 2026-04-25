@@ -2,13 +2,14 @@
 routers/thinking.py — Thinking tab routes.
 """
 
+import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from db import db_query, db_scalar
+from db import db_execute, db_query, db_scalar
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -28,6 +29,81 @@ async def thinking_tab_partial(request: Request):
     return templates.TemplateResponse(
      request, "thinking.html", {"active_tab": "thinking"}
  )
+
+
+# ---------------------------------------------------------------------------
+# Archive-layout partials
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/thinking/meta", response_class=HTMLResponse)
+async def thinking_meta(request: Request):
+    open_count = db_scalar("SELECT COUNT(*) FROM ideas WHERE tags NOT LIKE '%archived%'", default=0) or 0
+    last_row = db_query("SELECT created_at FROM ideas ORDER BY created_at DESC LIMIT 1") or []
+    last = last_row[0]["created_at"][:10] if last_row else "—"
+    return HTMLResponse(f"{open_count} OPEN · LAST TOUCHED {last}")
+
+
+@router.get("/api/partial/thinking/threads", response_class=HTMLResponse)
+async def thinking_threads(request: Request):
+    threads = db_query(
+        "SELECT id, content, tags, created_at FROM ideas WHERE tags NOT LIKE '%archived%' ORDER BY created_at DESC LIMIT 12"
+    ) or []
+    items = ""
+    for t in threads:
+        title = (t.get("content") or "")[:45]
+        date = (t.get("created_at") or "")[:10]
+        items += (
+            f'<div style="padding:12px 16px;border-bottom:1px solid var(--m-rule-soft);'
+            f'cursor:pointer;font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.3;">'
+            f'{title}<br><span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">{date}</span></div>'
+        )
+    if not items:
+        items = '<div style="padding:24px 16px;font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">No open threads.</div>'
+    return HTMLResponse(items)
+
+
+@router.get("/api/partial/thinking/dialogue", response_class=HTMLResponse)
+async def thinking_dialogue(request: Request):
+    ideas = db_query(
+        "SELECT content, created_at FROM ideas ORDER BY created_at DESC LIMIT 5"
+    ) or []
+    if not ideas:
+        return HTMLResponse(
+            '<div style="padding:24px 0;font-family:var(--m-display);font-style:italic;font-size:15px;color:var(--m-muted);text-align:center;">'
+            'No ideas yet. Capture one with ⌘K.</div>'
+        )
+    items = ""
+    for idea in ideas:
+        content = (idea.get("content") or "")[:300]
+        date = (idea.get("created_at") or "")[:10]
+        items += (
+            f'<div style="padding:18px 0;border-bottom:1px solid var(--m-rule-soft);">'
+            f'<div style="font-family:var(--m-display);font-size:15px;color:var(--m-text);line-height:1.6;">{content}</div>'
+            f'<div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);margin-top:8px;">{date}</div>'
+            f'</div>'
+        )
+    return HTMLResponse(f'<div>{items}</div>')
+
+
+@router.get("/api/partial/thinking/marginalia", response_class=HTMLResponse)
+async def thinking_marginalia(request: Request):
+    notes = db_query(
+        "SELECT content, created_at FROM personal_notes ORDER BY created_at DESC LIMIT 4"
+    ) or []
+    items = ""
+    for note in notes:
+        content = (note.get("content") or "")[:120]
+        date = (note.get("created_at") or "")[:10]
+        items += (
+            f'<div class="panel panel-pad" style="padding:18px 20px;margin-bottom:12px;">'
+            f'<div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:6px;">{date} · NOTE</div>'
+            f'<div style="font-family:var(--m-display);font-size:13px;color:var(--m-text);line-height:1.5;">{content}</div>'
+            f'</div>'
+        )
+    if not items:
+        items = '<div class="panel panel-pad" style="padding:18px 20px;"><div class="ed" style="font-size:13px;color:var(--m-muted);"><em>No notes yet.</em></div></div>'
+    return HTMLResponse(items)
 
 
 # ---------------------------------------------------------------------------
@@ -111,3 +187,36 @@ async def thinking_brainstorm_sessions(request: Request):
         "partials/thinking_brainstorm_sessions.html",
         {"sessions": [dict(s) for s in (sessions or [])]},
     )
+
+
+# ---------------------------------------------------------------------------
+# Export latest idea as a personal note (Phase 9)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/note/from-latest-idea")
+async def note_from_latest_idea():
+    rows = db_query(
+        "SELECT id, content FROM ideas ORDER BY created_at DESC LIMIT 1"
+    ) or []
+    if not rows:
+        return JSONResponse(
+            {"status": "empty", "message": "No ideas to export."},
+            status_code=200,
+        )
+    idea = rows[0]
+    content = idea.get("content") or ""
+    now = datetime.datetime.now().isoformat()
+    try:
+        db_execute(
+            "INSERT INTO personal_notes (content, tags, created_at) VALUES (?, ?, ?)",
+            (content, "exported-from-idea", now),
+        )
+        return JSONResponse(
+            {"status": "ok", "preview": content[:120], "source_idea_id": idea.get("id")}
+        )
+    except Exception as e:
+        return JSONResponse(
+            {"status": "error", "message": f"Could not save note: {e}"},
+            status_code=500,
+        )

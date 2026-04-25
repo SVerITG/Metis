@@ -2,80 +2,83 @@
 {% block title %}Meetings{% endblock %}
 
 {% block content %}
+<div class="page">
 
-<!-- ===== Header ===== -->
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <div>
-    <h4 class="mb-0"><i class="bi bi-camera-video me-2 text-primary"></i>Meetings</h4>
-    <div class="text-muted small mt-1">Transcripts, action items, and briefings</div>
-  </div>
-  <div class="d-flex gap-2">
-    <input type="search" class="form-control form-control-sm"
-           placeholder="Search meetings…" style="width:200px;"
-           hx-get="/api/partial/meetings/search"
-           hx-trigger="input changed delay:300ms"
-           hx-target="#meetings-table-body"
-           hx-swap="innerHTML"
-           name="q">
-  </div>
-</div>
-
-<!-- ===== Stats ===== -->
-<div class="row g-2 mb-3"
-     hx-get="/api/partial/meetings/stats"
-     hx-trigger="load"
-     hx-swap="outerHTML">
-  {% for label in ['Total meetings', 'This month', 'Open actions', 'Avg duration'] %}
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center placeholder-glow">
-      <span class="placeholder col-4 mx-auto mb-1" style="height:1.5rem;"></span>
-      <div class="text-muted small">{{ label }}</div>
+  <div class="page-head">
+    <div>
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">SURFACE 06</div>
+      <h1 style="font-family:var(--m-display);font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0;">Meetings</h1>
     </div>
+    <div class="page-meta"
+         hx-get="/api/partial/meetings/meta"
+         hx-trigger="load"
+         hx-swap="innerHTML">— TODAY · — THIS WEEK · — PREPPED</div>
   </div>
-  {% endfor %}
-</div>
 
-<!-- ===== Meetings table ===== -->
-<div class="card">
-  <div class="card-header py-2 d-flex align-items-center justify-content-between">
-    <span class="fw-semibold small"><i class="bi bi-list-ul me-1"></i>All meetings</span>
-    <select class="form-select form-select-sm" style="width:auto;"
-            hx-get="/api/partial/meetings/list"
-            hx-trigger="change"
-            hx-target="#meetings-table-body"
-            hx-swap="innerHTML"
-            name="filter">
-      <option value="all">All time</option>
-      <option value="month" selected>This month</option>
-      <option value="week">This week</option>
-    </select>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-hover mb-0">
-      <thead class="table-light">
-        <tr>
-          <th class="ps-3" style="width:110px;">Date</th>
-          <th>Title</th>
-          <th>Participants</th>
-          <th style="width:90px;">Duration</th>
-          <th style="width:100px;">Status</th>
-          <th style="width:50px;"></th>
-        </tr>
-      </thead>
-      <tbody id="meetings-table-body"
-             hx-get="/api/partial/meetings/list"
-             hx-trigger="load"
-             hx-swap="innerHTML"
-             hx-vals='{"filter": "month"}'>
-        <tr>
-          <td colspan="6" class="text-center text-muted py-4">
-            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-            Loading meetings…
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="grid grid-main" style="gap:28px;">
+
+    <!-- Left: active meeting + transcripts -->
+    <div>
+      <div class="sec-label" style="margin-bottom:12px;"
+           hx-get="/api/partial/meetings/next-label"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <span>Next meeting</span>
+        <span class="tail">UPCOMING</span>
+      </div>
+
+      <!-- Active meeting panel -->
+      <div hx-get="/api/partial/meetings/upcoming"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div class="panel" style="padding:28px 32px;margin-bottom:18px;opacity:.4;min-height:200px;">
+          <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:45%;margin-bottom:14px;"></div>
+          <div style="height:22px;background:var(--m-surface-3);border-radius:2px;margin-bottom:8px;"></div>
+          <div style="height:14px;background:var(--m-surface-3);border-radius:2px;width:75%;"></div>
+        </div>
+      </div>
+
+      <!-- Transcripts -->
+      <div class="sec-label" style="margin-bottom:12px;"><span>Transcripts · recent</span></div>
+      <div class="panel"
+           hx-get="/api/partial/meetings/transcripts"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        {% for _ in range(3) %}
+        <div style="display:grid;grid-template-columns:80px 1fr 100px 140px;gap:16px;padding:14px 22px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}align-items:center;opacity:.4;">
+          <div style="height:10px;background:var(--m-surface-3);border-radius:2px;"></div>
+          <div style="height:12px;background:var(--m-surface-3);border-radius:2px;"></div>
+          <div style="height:10px;background:var(--m-surface-3);border-radius:2px;"></div>
+          <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:60%;margin-left:auto;"></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Right: week ahead + follow-ups -->
+    <div>
+      <div class="sec-label" style="margin-bottom:12px;"><span>Week ahead</span></div>
+      <div class="panel" style="margin-bottom:18px;"
+           hx-get="/api/partial/meetings/week-ahead"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        {% for _ in range(3) %}
+        <div style="padding:14px 18px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}border-left:2px solid transparent;opacity:.4;">
+          <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:50%;margin-bottom:6px;"></div>
+          <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:80%;"></div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;"><span>Open follow-ups</span></div>
+      <div class="panel panel-pad" style="padding:16px 20px;"
+           hx-get="/api/partial/meetings/follow-ups"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div class="ed" style="font-size:14px;margin-bottom:10px;opacity:.5;"><em>Loading follow-ups…</em></div>
+      </div>
+    </div>
+
   </div>
 </div>
-
 {% endblock %}

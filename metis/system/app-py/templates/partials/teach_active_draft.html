@@ -1,0 +1,34 @@
+{% if course %}
+<div class="panel" style="padding:40px 56px;">
+  <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;color:var(--m-muted);margin-bottom:24px;">{{ (course.category or 'COURSE').upper() }} · IN PROGRESS · {{ course.progress_pct or 0 }}% COMPLETE</div>
+  <h1 style="font-family:var(--m-display);font-size:36px;font-weight:500;letter-spacing:-0.02em;color:var(--m-ink);line-height:1.15;margin:0 0 10px;">{{ course.title }}</h1>
+  <div style="font-family:var(--m-display);font-style:italic;font-size:18px;color:var(--m-muted);margin-bottom:32px;">
+    {{ course.completed_modules or 0 }} of {{ course.total_modules or '—' }} modules complete.
+  </div>
+  <div style="height:2px;background:var(--m-surface-3);border-radius:1px;margin-bottom:8px;">
+    <div style="height:100%;width:{{ course.progress_pct or 0 }}%;background:var(--m-accent);border-radius:1px;"></div>
+  </div>
+  <div style="font-family:var(--m-display);font-size:17px;line-height:1.7;color:var(--m-text);">
+    <p style="margin:0 0 1em;">
+      Continue where you left off. Use <em>/course-builder</em> to add new modules, generate quiz cards, or export the curriculum.
+    </p>
+    <p style="margin:0;color:var(--m-muted);">[continue: next module in sequence]</p>
+  </div>
+  <div style="margin-top:32px;padding-top:18px;border-top:1px solid var(--m-rule);display:flex;justify-content:space-between;">
+    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">
+      SLUG · {{ course.slug or course.id }}
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn--ghost btn--caps" onclick="openHistory({{ course.id }}, '{{ course.title|e }}')">History</button>
+      <button class="btn btn--sec btn--caps" onclick="continueDraft({{ course.id }}, '{{ course.title|e }}')">Continue</button>
+      <button class="btn btn--primary btn--caps" onclick="publishCourse({{ course.id }}, '{{ course.title|e }}')">Publish</button>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="panel" style="padding:40px 56px;">
+  <div style="font-family:var(--m-display);font-style:italic;font-size:17px;color:var(--m-muted);">
+    No active course. Use <em>/course-builder</em> to start one.
+  </div>
+</div>
+{% endif %}

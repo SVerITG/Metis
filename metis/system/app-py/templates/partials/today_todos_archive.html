@@ -1,0 +1,68 @@
+<div>
+  <div class="sec-label" style="margin-bottom:8px;">
+    To-do
+    <span class="sec-label-tail">THE DAY AT HAND</span>
+  </div>
+  <div class="panel">
+    {% if tasks %}
+      {% for task in tasks %}
+      <div class="todo-row {% if task.status == 'done' or task.status == 'completed' %}todo-row--done{% endif %}"
+           onclick="this.classList.toggle('todo-row--done')">
+        <span class="todo-check">
+          {% if task.status == 'done' or task.status == 'completed' %}
+          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 8 7 11 12 5"/>
+          </svg>
+          {% endif %}
+        </span>
+        <span class="todo-title">{{ task.title or 'Untitled task' }}</span>
+        <span class="todo-meta">
+          {%- if task.priority -%}
+            {{ task.priority|upper }}
+            {%- if task.project %} · {{ task.project[:20] }}{% endif %}
+          {%- elif task.project -%}
+            {{ task.project[:20] }}
+          {%- else -%}
+            —
+          {%- endif -%}
+        </span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-row">No open tasks. Add one below.</div>
+    {% endif %}
+
+    <!-- Compose row -->
+    <div class="todo-compose">
+      <span class="todo-check todo-check--ghost">+</span>
+      <input type="text"
+             placeholder="Add to the day…"
+             onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoRow(this);}"
+             id="todo-compose-input">
+      <span class="todo-hint">↵</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function addTodoRow(input) {
+  const val = input.value.trim();
+  if (!val) return;
+  const panel = input.closest('.panel');
+  const compose = input.closest('.todo-compose');
+  const row = document.createElement('div');
+  row.className = 'todo-row';
+  row.onclick = function() { this.classList.toggle('todo-row--done'); };
+  row.innerHTML = '<span class="todo-check"></span>'
+    + '<span class="todo-title">' + val.replace(/</g,'&lt;') + '</span>'
+    + '<span class="todo-meta">ADDED TODAY</span>';
+  panel.insertBefore(row, compose);
+  input.value = '';
+  // Persist via capture endpoint
+  fetch('/api/capture', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({prefix: 't', text: val})
+  }).catch(() => {});
+}
+</script>

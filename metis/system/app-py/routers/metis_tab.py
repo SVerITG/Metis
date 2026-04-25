@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_query, db_scalar
@@ -65,6 +65,37 @@ async def metis_stats(request: Request):
             "total_runs": total_runs,
             "active_agents": active_agents,
         },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Archive-layout partials
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/metis/user", response_class=HTMLResponse)
+async def metis_user(request: Request):
+    today = datetime.date.today().strftime("%-d %b").upper()
+    return HTMLResponse(f"STAN · RESEARCH CORTEX<div style='margin-top:4px;color:var(--m-muted-soft);font-size:11px;'>SIGNED IN · {today}</div>")
+
+
+@router.get("/api/partial/metis/identity", response_class=HTMLResponse)
+async def metis_identity(request: Request):
+    runs = db_scalar("SELECT COUNT(*) FROM agent_runs", default=0) or 0
+    prefs = _read_user_prefs() if "_read_user_prefs" in globals() else {}
+    name = prefs.get("display_name") or "Stan"
+    initial = name[:1].upper() if name else "S"
+    return HTMLResponse(
+        f'<div style="display:flex;align-items:center;gap:16px;">'
+        f'<div style="width:52px;height:52px;border-radius:50%;background:var(--m-surface-2);border:1px solid var(--m-rule);display:inline-flex;align-items:center;justify-content:center;font-family:var(--m-display);font-size:22px;font-weight:500;color:var(--m-accent);">{initial}</div>'
+        f'<div>'
+        f'<div style="font-family:var(--m-display);font-size:17px;color:var(--m-ink);">{name}</div>'
+        f'<div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">sverschaeve@itg.be · {runs} agent runs total</div>'
+        f'</div>'
+        f'<div style="margin-left:auto;display:flex;gap:6px;">'
+        f'<button class="btn btn--ghost btn--caps" onclick="openMetisRename()">Rename</button>'
+        f'<button class="btn btn--sec btn--caps" onclick="openMetisKeys()">Keys</button>'
+        f'</div></div>'
     )
 
 
@@ -226,6 +257,72 @@ async def metis_consent(request: Request, limit: int = 20):
         "partials/metis_consent.html",
         {"events": [dict(r) for r in (rows or [])]},
     )
+
+
+def _user_prefs_path() -> Path:
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    base = Path(rc_root) / "system" / "config" if rc_root else Path("/tmp")
+    base.mkdir(parents=True, exist_ok=True)
+    return base / "user-preferences.json"
+
+
+def _read_user_prefs() -> dict:
+    p = _user_prefs_path()
+    if p.exists():
+        try:
+            return json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+
+def _write_user_prefs(data: dict) -> None:
+    p = _user_prefs_path()
+    p.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+@router.post("/api/model/active")
+async def set_active_model(request: Request):
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    slug = (payload.get("slug") or "").strip().lower()
+    if slug not in {"haiku", "sonnet", "opus"}:
+        return JSONResponse(
+            {"status": "error", "message": f"Unknown model slug: {slug}"},
+            status_code=400,
+        )
+    prefs = _read_user_prefs()
+    prefs["active_model"] = slug
+    prefs["active_model_set_at"] = datetime.datetime.now().isoformat()
+    try:
+        _write_user_prefs(prefs)
+        return JSONResponse({"status": "ok", "slug": slug})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+@router.post("/api/identity/rename")
+async def identity_rename(request: Request):
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    name = (payload.get("name") or "").strip()
+    if not name or len(name) > 80:
+        return JSONResponse(
+            {"status": "error", "message": "Name must be 1–80 characters."},
+            status_code=400,
+        )
+    prefs = _read_user_prefs()
+    prefs["display_name"] = name
+    prefs["display_name_set_at"] = datetime.datetime.now().isoformat()
+    try:
+        _write_user_prefs(prefs)
+        return JSONResponse({"status": "ok", "name": name})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
 @router.get("/api/partial/metis/system-info", response_class=HTMLResponse)

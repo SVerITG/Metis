@@ -1,0 +1,15 @@
+<div class="panel" style="margin-bottom:18px;">
+  {% if meetings %}
+    {% for m in meetings %}
+    <div style="padding:14px 18px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}border-left:2px solid transparent;">
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.2em;color:var(--m-muted);margin-bottom:4px;">{{ m.date[:10] if m.date else '—' }}</div>
+      <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">{{ m.title or 'Meeting' }}</div>
+      {% if m.participants %}
+      <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);margin-top:2px;">{{ m.participants[:50] }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-row">No meetings scheduled this week.</div>
+  {% endif %}
+</div>

@@ -1,21 +1,22 @@
-<!-- thinking_notes.html — Personal notes list -->
+<!-- thinking_notes.html — Editorial note list -->
 {% if not notes %}
-<li class="list-group-item text-center text-muted py-4">
-  <i class="bi bi-journal-text fs-2 mb-2 d-block"></i>
-  No notes yet.
-</li>
+<div class="empty-row"><em>No notes yet.</em></div>
 {% else %}
-{% for note in notes %}
-<li class="list-group-item px-3 py-2">
-  <div class="small" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">{{ note.content }}</div>
-  <div class="d-flex align-items-center gap-2 mt-1">
-    <span class="text-muted" style="font-size:0.7rem;">{{ note.created_at[:10] if note.created_at else '' }}</span>
+<div class="panel">
+  {% for note in notes %}
+  <div class="nb-row">
+    <div class="nb-when">{{ (note.created_at or '')[:10] }} · NOTE</div>
+    <div class="nb-body">{{ note.content }}</div>
     {% if note.tags %}
-    {% for tag in note.tags.split(',')[:2] %}
-    <span class="badge bg-info-subtle text-info" style="font-size:0.62rem;">{{ tag.strip() }}</span>
-    {% endfor %}
+    <div class="nb-foot">
+      <div style="display:flex;gap:6px;">
+        {% for tag in note.tags.split(',')[:3] %}
+        <span class="chip chip--info" style="font-size:9px;">{{ tag.strip() }}</span>
+        {% endfor %}
+      </div>
+    </div>
     {% endif %}
   </div>
-</li>
-{% endfor %}
+  {% endfor %}
+</div>
 {% endif %}

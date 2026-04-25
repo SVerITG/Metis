@@ -1,0 +1,15 @@
+<div class="panel panel-pad" style="padding:18px 20px;">
+  {% if course %}
+  <div class="ed" style="font-size:14px;">
+    <em>{{ course.title }}</em> is queued in your catalog ({{ course.category or 'uncategorised' }}). Start building it with <em>/course-builder</em>, or explore the full catalog below.
+  </div>
+  <div style="display:flex;gap:6px;margin-top:12px;">
+    <button class="btn btn--sec btn--caps" onclick="buildCourse('{{ course.slug or course.id }}')">Start building</button>
+    <button class="btn btn--ghost btn--caps" onclick="setNavActive(document.querySelector('[data-tab=learning]'),'learning'); htmx.ajax('GET','/api/tab/learning',{target:'#tab-content',swap:'outerHTML'});">View catalog</button>
+  </div>
+  {% else %}
+  <div class="ed" style="font-size:14px;color:var(--m-muted);">
+    <em>All placeholder courses have been started. Use /course-builder to add new ones.</em>
+  </div>
+  {% endif %}
+</div>

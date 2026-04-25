@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Metis · Type</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_preview.css">
+<style>
+  body { max-width: 1080px; margin: 0 auto; }
+
+  .type-hero {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 56px 48px;
+    margin-bottom: 12px;
+  }
+  .type-hero .date {
+    font-family: var(--m-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+    margin-bottom: 28px;
+  }
+  .type-hero h1 {
+    font-family: var(--m-display);
+    font-size: 58px;
+    font-weight: 400;
+    letter-spacing: -0.03em;
+    line-height: 1.04;
+    color: var(--m-ink);
+    margin: 0 0 20px;
+  }
+  .type-hero h1 em {
+    font-style: italic;
+    color: var(--m-accent-soft);
+    font-weight: 400;
+  }
+  .type-hero .sub {
+    font-family: var(--m-display);
+    font-size: 19px;
+    font-style: italic;
+    color: var(--m-muted);
+    line-height: 1.5;
+    max-width: 680px;
+    margin: 0;
+  }
+
+  .scale-row {
+    display: grid;
+    grid-template-columns: 110px 80px 1fr;
+    gap: 24px;
+    align-items: baseline;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--m-rule-soft);
+  }
+  .scale-row:last-child { border: 0; }
+  .scale-row .token {
+    font-family: var(--m-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+  }
+  .scale-row .size {
+    font-family: var(--m-mono);
+    font-size: 11px;
+    color: var(--m-muted-soft);
+    text-align: right;
+  }
+  .scale-row .sample { color: var(--m-ink); }
+
+  .sample-display { font-family: var(--m-display); font-size: 42px; font-weight: 400; line-height: 1.08; letter-spacing: -0.025em; }
+  .sample-h1   { font-family: var(--m-display); font-size: 30px; font-weight: 500; letter-spacing: -0.02em; }
+  .sample-h2   { font-family: var(--m-display); font-size: 24px; font-weight: 500; letter-spacing: -0.015em; }
+  .sample-h3   { font-family: var(--m-display); font-size: 20px; font-weight: 500; letter-spacing: -0.012em; }
+  .sample-h4   { font-family: var(--m-display); font-size: 17px; font-weight: 500; }
+  .sample-body-lg { font-family: var(--m-ui); font-size: 16px; line-height: 1.6; }
+  .sample-body { font-family: var(--m-ui); font-size: 15px; line-height: 1.55; }
+  .sample-small { font-family: var(--m-ui); font-size: 13px; }
+  .sample-meta { font-family: var(--m-ui); font-size: 12px; color: var(--m-muted); }
+  .sample-micro { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--m-muted); }
+
+  .fam-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+  }
+  .fam-card {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 24px;
+  }
+  .fam-card .fam-role {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+    margin-bottom: 10px;
+  }
+  .fam-card .fam-name {
+    font-size: 24px;
+    margin-bottom: 4px;
+    color: var(--m-ink);
+  }
+  .fam-card .fam-meta {
+    font-family: var(--m-mono);
+    font-size: 11px;
+    color: var(--m-muted-soft);
+    margin-bottom: 20px;
+  }
+  .fam-card .fam-spec {
+    font-size: 52px;
+    line-height: 1;
+    color: var(--m-accent);
+  }
+  .fam-card.newsreader .fam-name { font-family: var(--m-display); font-weight: 500; }
+  .fam-card.newsreader .fam-spec { font-family: var(--m-display); font-weight: 400; letter-spacing: -0.02em; }
+  .fam-card.newsreader .fam-spec em { font-style: italic; color: var(--m-accent-soft); }
+  .fam-card.inter .fam-name { font-family: var(--m-ui); font-weight: 600; letter-spacing: -0.02em; }
+  .fam-card.inter .fam-spec { font-family: var(--m-ui); font-weight: 500; letter-spacing: -0.03em; }
+  .fam-card.mono .fam-name { font-family: var(--m-mono); font-weight: 500; }
+  .fam-card.mono .fam-spec { font-family: var(--m-mono); font-weight: 500; font-size: 44px; letter-spacing: 0.02em; }
+
+  /* Editorial body demo */
+  .editorial {
+    column-count: 2;
+    column-gap: 48px;
+    font-family: var(--m-display);
+    font-size: 17px;
+    line-height: 1.65;
+    color: var(--m-text);
+  }
+  .editorial .dropcap {
+    font-family: var(--m-display);
+    font-size: 62px;
+    font-weight: 500;
+    line-height: 0.9;
+    float: left;
+    padding: 6px 10px 0 0;
+    color: var(--m-accent);
+  }
+  .editorial p { break-inside: avoid-page; margin: 0 0 1em; }
+  .editorial em { color: var(--m-accent-soft); }
+
+  .voice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .voice-card {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 24px;
+  }
+  .voice-card.do { border-left: 3px solid var(--m-ok); }
+  .voice-card.dont { border-left: 3px solid var(--m-alert); }
+  .voice-card .v-tag {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .voice-card.do .v-tag { color: var(--m-ok); }
+  .voice-card.dont .v-tag { color: var(--m-alert); }
+  .voice-card .v-quote {
+    font-family: var(--m-display);
+    font-size: 18px;
+    line-height: 1.4;
+    color: var(--m-ink);
+    font-style: italic;
+  }
+  .voice-card .v-note {
+    font-family: var(--m-ui);
+    font-size: 12px;
+    color: var(--m-muted);
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="pv-header">
+  <div>
+    <div class="pv-eyebrow">Metis · Design System · Type</div>
+    <h1>Type — the archive voice</h1>
+  </div>
+  <div class="pv-note">
+    A serif for voice, a sans for chrome, a monospace for labels.<br>
+    <span class="mono" style="font-style:normal; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color:var(--m-muted-soft);">Newsreader · Inter · JetBrains Mono</span>
+  </div>
+</div>
+
+<section class="pv-section">
+  <div class="type-hero">
+    <div class="date">Thursday · 14 November · 07:12</div>
+    <h1>Good morning, <em>Stan.</em></h1>
+    <p class="sub">Three threads from yesterday are still warm — <em>Kripke on rigid designators</em>, the draft of Thursday's essay, and a question you left open for Metis about Peirce.</p>
+  </div>
+  <p class="meta" style="text-align:center; margin-top:12px;">
+    <span class="mono label-caps">Display · 58/1.04 · −0.03em</span>
+    &nbsp;·&nbsp;
+    <span class="mono label-caps">Italic S → the flourish</span>
+  </p>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Families</h2>
+  <div class="fam-grid">
+    <div class="fam-card newsreader">
+      <div class="fam-role">Display · voice</div>
+      <div class="fam-name">Newsreader</div>
+      <div class="fam-meta">Serif · 400 / 500 / 600 · italic</div>
+      <div class="fam-spec">Meti<em>s</em></div>
+    </div>
+    <div class="fam-card inter">
+      <div class="fam-role">UI · chrome</div>
+      <div class="fam-name">Inter</div>
+      <div class="fam-meta">Sans · 400 / 450 / 500 / 600 / 700</div>
+      <div class="fam-spec">Today.</div>
+    </div>
+    <div class="fam-card mono">
+      <div class="fam-role">Mono · label</div>
+      <div class="fam-name">JetBrains Mono</div>
+      <div class="fam-meta">Mono · 400 / 500 / 600</div>
+      <div class="fam-spec">ARCHIVE</div>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Scale</h2>
+  <div class="scale-row">
+    <div class="token">Display</div>
+    <div class="size">42 / 1.08</div>
+    <div class="sample sample-display">A workbench for <em>thinking.</em></div>
+  </div>
+  <div class="scale-row">
+    <div class="token">H1</div>
+    <div class="size">30 / 1.2</div>
+    <div class="sample sample-h1">Today, Thursday the fourteenth</div>
+  </div>
+  <div class="scale-row">
+    <div class="token">H2</div>
+    <div class="size">24 / 1.25</div>
+    <div class="sample sample-h2">Active threads</div>
+  </div>
+  <div class="scale-row">
+    <div class="token">H3</div>
+    <div class="size">20 / 1.3</div>
+    <div class="sample sample-h3">Kripke's rigid designators</div>
+  </div>
+  <div class="scale-row">
+    <div class="token">H4</div>
+    <div class="size">17 / 1.35</div>
+    <div class="sample sample-h4">Subsection — Naming and Necessity</div>
+  </div>
+  <div class="scale-row">
+    <div class="token">Body · lg</div>
+    <div class="size">16 / 1.6</div>
+    <div class="sample sample-body-lg">Editorial prose, long-form reading. Set in Inter at 16 over 1.6 for comfortable passage reading.</div>
+  </div>
+  <div class="scale-row">
+    <div class="token">Body</div>
+    <div class="size">15 / 1.55</div>
+    <div class="sample sample-body">The default UI body size. Sits quietly under headlines and never competes with them.</div>
+  </div>
+  <div class="scale-row">
+    <div class="token">Small</div>
+    <div class="size">13 / 1.45</div>
+    <div class="sample sample-small">Dense controls, menus, form help.</div>
+  </div>
+  <div class="scale-row">
+    <div class="token">Meta</div>
+    <div class="size">12 / 1.4</div>
+    <div class="sample sample-meta">Metadata · secondary captions · 14 nov · 2 min read</div>
+  </div>
+  <div class="scale-row">
+    <div class="token">Micro · Label</div>
+    <div class="size">11 / 1.4</div>
+    <div class="sample sample-micro">SHELVES · ACTIVE THREADS · FOLLOW-UPS</div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Editorial body — two columns</h2>
+  <div class="pv-demo">
+    <div class="editorial">
+      <p><span class="dropcap">M</span>etis is, above all, a workbench. It borrows the logic of the reading room and the card catalog, and renders it in pixels for a single reader. The morning begins with a briefing — a paragraph, not a dashboard — and the day continues as a conversation between Stan and the system, <em>sotto voce</em>, in the margins.</p>
+      <p>The voice is plain. Short declaratives. Proper em-dashes and italics. No celebration. No badges. Where other products reach for icons, Metis prefers <span class="mono label-caps">UPPERCASE MONO LABELS</span> — a quiet, typographic signal that we are in a working archive, not a feed.</p>
+      <p>The serif does the human work; the sans holds the chrome; the mono, the metadata. This is the whole trinity. Everything else is restraint.</p>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Voice — do / don't</h2>
+  <div class="voice-grid">
+    <div class="voice-card do">
+      <div class="v-tag">Do</div>
+      <div class="v-quote">"Three threads from yesterday are still warm."</div>
+      <div class="v-note">Metis observes. It offers rather than prompts. Specific nouns, quiet tone.</div>
+    </div>
+    <div class="voice-card dont">
+      <div class="v-tag">Don't</div>
+      <div class="v-quote">"Would you like me to help you with your tasks?"</div>
+      <div class="v-note">Assistant-speak. Unspecific. Frames the human as petitioner, which Metis is not.</div>
+    </div>
+    <div class="voice-card do">
+      <div class="v-tag">Do</div>
+      <div class="v-quote">"That couldn't be saved. The connection dropped; nothing was lost."</div>
+      <div class="v-note">Error prose: declarative, reassuring, next-step implied.</div>
+    </div>
+    <div class="voice-card dont">
+      <div class="v-tag">Don't</div>
+      <div class="v-quote">"Oops! Something went wrong. Please try again!"</div>
+      <div class="v-note">Exclamation, cartoon tone, no information. Not Metis.</div>
+    </div>
+  </div>
+</section>
+
+<div class="pv-footer">
+  <span>METIS · DESIGN SYSTEM · V1</span>
+  <span>TYPE · 01</span>
+</div>
+
+</body>
+</html>

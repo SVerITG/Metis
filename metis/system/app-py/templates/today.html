@@ -2,160 +2,118 @@
 {% block title %}Today{% endblock %}
 
 {% block content %}
+<div class="page">
 
-<!-- ===== Greeting strip ===== -->
-<div hx-get="/api/partial/today/greeting"
-     hx-trigger="load"
-     hx-swap="outerHTML">
-  <div class="card p-3 mb-3 placeholder-glow">
-    <span class="placeholder col-4"></span>
+  <!-- ===== PageHead ===== -->
+  <div class="page-head">
+    <div>
+      <div class="page-eyebrow" id="today-eyebrow">
+        {%- set today_str = '' -%}
+        Loading date…
+      </div>
+      <h1 class="page-title" id="today-title">Good morning.</h1>
+    </div>
+    <div class="page-meta" id="today-meta" style="white-space:pre-line;">—</div>
   </div>
-</div>
+  <script>
+  (function() {
+    const now = new Date();
+    const hour = now.getHours();
+    const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const dayName = days[now.getDay()];
+    const month = months[now.getMonth()];
+    const dateNum = now.getDate();
+    const year = now.getFullYear();
+    const weekNum = Math.ceil((((now - new Date(year, 0, 1)) / 86400000) + new Date(year, 0, 1).getDay() + 1) / 7);
+    document.getElementById('today-eyebrow').textContent =
+      dayName.toUpperCase() + ' · ' + month.toUpperCase() + ' ' + dateNum + ', ' + year + ' · WEEK ' + weekNum;
+    document.getElementById('today-title').textContent = greet + ', Stan.';
+    const hh = String(hour).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('today-meta').textContent = hh + ':' + mm;
+  })();
+  </script>
 
-<!-- ===== Launcher row ===== -->
-<div class="row g-2 mb-3">
-
-  <!-- Capture idea -->
-  <div class="col-6 col-md-4 col-lg-2">
-    <div class="launcher-card" onclick="openCapture()">
-      <div class="launcher-icon">
-        <i class="bi bi-lightbulb"></i>
-      </div>
-      <div class="launcher-content">
-        <div class="launcher-title">Capture idea</div>
-        <div class="launcher-subtitle">Claude Code</div>
-      </div>
+  <!-- ===== Morning Brief ===== -->
+  <div hx-get="/api/partial/today/morning-brief"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <div class="panel panel-pad" style="padding:32px 40px;margin-bottom:28px;">
+      <div style="height:18px;background:var(--m-surface-3);border-radius:2px;width:240px;margin-bottom:16px;"></div>
+      <div style="height:72px;background:var(--m-surface-3);border-radius:2px;width:100%;margin-bottom:14px;"></div>
+      <div style="height:32px;background:var(--m-surface-3);border-radius:2px;width:280px;"></div>
     </div>
   </div>
 
-  <!-- Brainstorm -->
-  <div class="col-6 col-md-4 col-lg-2">
-    <div class="launcher-card">
-      <div class="launcher-icon">
-        <i class="bi bi-diagram-3"></i>
-      </div>
-      <div class="launcher-content">
-        <div class="launcher-title">Brainstorm</div>
-        <div class="launcher-subtitle">Claude Code</div>
-      </div>
+  <!-- ===== Ledger ===== -->
+  <div hx-get="/api/partial/today/ledger"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <div class="ledger" style="opacity:.4;">
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">ARTICLES</div></div>
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">BOOKS</div></div>
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">IDEAS</div></div>
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">THREADS</div></div>
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">PROJECTS</div></div>
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">AGENTS</div></div>
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">COURSES</div></div>
     </div>
   </div>
 
-  <!-- Work on document -->
-  <div class="col-6 col-md-4 col-lg-2">
-    <div class="launcher-card">
-      <div class="launcher-icon">
-        <i class="bi bi-file-text"></i>
-      </div>
-      <div class="launcher-content">
-        <div class="launcher-title">Work on document</div>
-        <div class="launcher-subtitle">Claude Code</div>
-      </div>
-    </div>
-  </div>
+  <!-- ===== News radar + Library freshly filed ===== -->
+  <div class="grid grid-main" style="margin-bottom:32px;">
 
-  <!-- Review code -->
-  <div class="col-6 col-md-4 col-lg-2">
-    <div class="launcher-card">
-      <div class="launcher-icon">
-        <i class="bi bi-code-slash"></i>
-      </div>
-      <div class="launcher-content">
-        <div class="launcher-title">Review code</div>
-        <div class="launcher-subtitle">Claude Code</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Prep meeting -->
-  <div class="col-6 col-md-4 col-lg-2">
-    <div class="launcher-card">
-      <div class="launcher-icon">
-        <i class="bi bi-camera-video"></i>
-      </div>
-      <div class="launcher-content">
-        <div class="launcher-title">Prep meeting</div>
-        <div class="launcher-subtitle">Claude Code</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Process inbox -->
-  <div class="col-6 col-md-4 col-lg-2">
-    <div class="launcher-card">
-      <div class="launcher-icon">
-        <i class="bi bi-inbox"></i>
-      </div>
-      <div class="launcher-content">
-        <div class="launcher-title">Process inbox</div>
-        <div class="launcher-subtitle">Claude Code</div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /.row launcher -->
-
-<!-- ===== Overnight summary + Focus (two-column on md+) ===== -->
-<div class="row g-3 mb-3">
-
-  <!-- Overnight summary -->
-  <div class="col-12 col-md-6">
-    <div hx-get="/api/partial/today/overnight"
+    <!-- News radar -->
+    <div hx-get="/api/partial/today/news-archive"
          hx-trigger="load"
          hx-swap="outerHTML">
-      <div class="card p-3 placeholder-glow" style="min-height:7rem;">
-        <span class="placeholder col-6 mb-2"></span>
-        <span class="placeholder col-8"></span>
+      <div>
+        <div class="sec-label" style="margin-bottom:8px;">News radar</div>
+        <div class="panel" style="height:200px;opacity:.4;"></div>
       </div>
     </div>
-  </div>
 
-  <!-- Today's focus -->
-  <div class="col-12 col-md-6">
-    <div hx-get="/api/partial/today/focus"
+    <!-- Library freshly filed -->
+    <div hx-get="/api/partial/today/library-archive"
          hx-trigger="load"
          hx-swap="outerHTML">
-      <div class="card p-3 placeholder-glow" style="min-height:7rem;">
-        <span class="placeholder col-5 mb-2"></span>
-        <span class="placeholder col-9"></span>
+      <div>
+        <div class="sec-label" style="margin-bottom:8px;">Library — freshly filed</div>
+        <div class="panel" style="height:200px;opacity:.4;"></div>
       </div>
     </div>
+
   </div>
 
-</div>
+  <!-- ===== To-do + From your notebook ===== -->
+  <div class="grid grid-main">
 
-<!-- ===== Scan for changes ===== -->
-<div class="card mb-3">
-  <div class="card-header d-flex align-items-center justify-content-between py-2">
-    <span class="fw-semibold"><i class="bi bi-search me-1"></i>Scan for changes</span>
-    <button class="btn btn-sm btn-outline-secondary"
-            hx-post="/api/partial/today/scan"
-            hx-target="#scan-results"
-            hx-swap="innerHTML"
-            hx-indicator="#scan-spinner">
-      <span id="scan-spinner" class="htmx-indicator spinner-border spinner-border-sm me-1" role="status"></span>
-      Scan now
-    </button>
-  </div>
-  <div class="card-body py-2">
-    <div id="scan-results" class="text-muted small">
-      Press <em>Scan now</em> to check for uncommitted changes.
-    </div>
-  </div>
-</div>
-
-<!-- ===== Token footer ===== -->
-<div class="card mb-3">
-  <div class="card-body py-2">
-    <div hx-get="/api/partial/today/token-footer"
+    <!-- To-do -->
+    <div hx-get="/api/partial/today/todos-archive"
          hx-trigger="load"
          hx-swap="outerHTML">
-      <div class="d-flex align-items-center justify-content-between text-muted placeholder-glow" style="font-size:0.78rem;">
-        <span class="placeholder col-3"></span>
-        <span class="placeholder col-3"></span>
+      <div>
+        <div class="sec-label" style="margin-bottom:8px;">To-do</div>
+        <div class="panel" style="height:180px;opacity:.4;"></div>
       </div>
     </div>
-  </div>
-</div>
 
+    <!-- From your notebook -->
+    <div hx-get="/api/partial/today/notebook-archive"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+      <div>
+        <div class="sec-label" style="margin-bottom:8px;">From your notebook</div>
+        <div class="panel" style="height:180px;opacity:.4;"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /.page -->
+
+<!-- News summary modal host -->
+<div id="news-modal-host"></div>
 {% endblock %}

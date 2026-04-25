@@ -1,0 +1,59 @@
+<div class="card mb-3">
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <span class="fw-semibold"><i class="bi bi-newspaper me-1"></i>Morning briefing</span>
+    <span class="text-muted small">Run <code>/news-radar</code> in Claude Code to refresh</span>
+  </div>
+  <div class="card-body py-2">
+
+    {% if not briefs %}
+    <div class="text-muted small py-2">
+      <i class="bi bi-info-circle me-1"></i>
+      No news briefs yet. Run <code>/news-radar</code> in Claude Code to generate your first briefing.
+    </div>
+    {% else %}
+
+    <div class="d-flex flex-column gap-2">
+    {% for b in briefs %}
+      <div class="news-brief-item d-flex gap-3 py-2 border-bottom">
+        <!-- Domain + signal -->
+        <div class="d-flex flex-column align-items-center gap-1" style="min-width:3.5rem;">
+          <span class="badge news-domain-badge news-domain-{{ b.domain | lower | replace(' ','-') }}">
+            {{ b.domain or "General" }}
+          </span>
+          {% if b.signal_strength == 'high' %}
+            <span class="news-signal-high"><i class="bi bi-reception-4"></i></span>
+          {% elif b.signal_strength == 'medium' %}
+            <span class="news-signal-medium"><i class="bi bi-reception-3"></i></span>
+          {% else %}
+            <span class="news-signal-low"><i class="bi bi-reception-2"></i></span>
+          {% endif %}
+          {% if b.surprise_flag %}
+            <span title="Surprise signal"><i class="bi bi-stars text-warning" style="font-size:0.7rem;"></i></span>
+          {% endif %}
+        </div>
+
+        <!-- Content -->
+        <div class="flex-grow-1 min-width-0">
+          <div class="fw-semibold small mb-1">
+            {% if b.source_url %}
+              <a href="{{ b.source_url }}" target="_blank" rel="noopener" class="text-decoration-none news-title-link">
+                {{ b.title }}
+                <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.65rem;"></i>
+              </a>
+            {% else %}
+              {{ b.title }}
+            {% endif %}
+          </div>
+          {% if b.summary %}
+          <div class="text-muted" style="font-size:0.78rem; line-height:1.45;">
+            {{ b.summary | truncate(180) }}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+    </div>
+
+    {% endif %}
+  </div>
+</div>

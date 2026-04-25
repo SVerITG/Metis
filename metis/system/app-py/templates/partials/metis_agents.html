@@ -1,15 +1,17 @@
-<!-- metis_agents.html — Registered agents list -->
+<!-- metis_agents.html — Editorial agent registry chips -->
 {% if not agents %}
-<div class="text-muted small">No agent registry found.</div>
+<div class="empty-row"><em>No agent registry found.</em></div>
 {% else %}
-<div class="d-flex flex-wrap gap-2">
+<div style="display:flex;flex-wrap:wrap;gap:8px;padding:18px 20px;">
   {% for a in agents %}
-  <div class="d-flex align-items-center gap-2 border rounded px-2 py-1">
-    <i class="bi bi-person-circle text-primary" style="font-size:0.85rem;"></i>
-    <div>
-      <div class="fw-semibold" style="font-size:0.78rem;">{{ a.name or a.slug or '?' }}</div>
-      {% if a.role %}
-      <div class="text-muted" style="font-size:0.68rem;">{{ a.role }}</div>
+  <div class="panel" style="padding:10px 14px;display:flex;align-items:center;gap:10px;min-width:200px;">
+    <div style="width:30px;height:30px;border-radius:50%;background:var(--m-surface-2);border:1px solid var(--m-rule);display:inline-flex;align-items:center;justify-content:center;font-family:var(--m-display);font-size:13px;color:var(--m-accent);font-weight:500;">
+      {{ (a.name or a.slug or '?')[0] | upper }}
+    </div>
+    <div style="min-width:0;">
+      <div style="font-family:var(--m-display);font-size:13px;font-weight:500;color:var(--m-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.name or a.slug or '?' }}</div>
+      {% if a.role or a.invocation %}
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);text-transform:uppercase;">{{ (a.invocation or a.role)[:24] }}</div>
       {% endif %}
     </div>
   </div>

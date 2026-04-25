@@ -1,0 +1,1913 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Metis · Application</title>
+<style>
+/* === colors_and_type.css === */
+/* ================================================================
+   METIS DESIGN SYSTEM — Foundational Tokens
+   ================================================================
+
+   Direction: ARCHIVE (primary, light) + OBSERVATORY (dark mode).
+   Editorial, research-journal tonality.
+
+   ARCHIVE palette:
+     - Bone-white paper (#fbf8f0) on warm off-white ground (#f5f2ea)
+     - Forest-green ink (#2d4a3a) as primary accent
+     - Muted ochre (#9a7b3c) as secondary / "alert" accent
+     - Deep ink (#1f2a24) for text; stone gray-green (#7a8178) for meta
+
+   OBSERVATORY palette (dark):
+     - Warm near-black paper (#15130f) on #1c1915 surfaces
+     - Amber (#d99a4c) as the single accent
+     - Cream ink (#f3ead6) for text
+
+   Typography:
+     Display   → Newsreader (serif)          — hero greetings, card titles
+     UI        → Inter (sans)                — body, chrome, buttons
+     Mono      → JetBrains Mono              — section labels (UPPERCASE),
+                                               dates, meta, code, tokens
+
+   Voice lead: mono UPPERCASE labels with wide tracking (.14–.18em) set the
+   archive/card-catalog rhythm. Serif carries the human voice.
+   ================================================================ */
+
+/* ---- Webfonts (Google Fonts) -------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ==============================================================
+     ARCHIVE — light palette (primary)
+     ============================================================== */
+
+  /* Surfaces */
+  --m-bg:            #f5f2ea;   /* page / app ground — warm off-white */
+  --m-surface:       #fbf8f0;   /* card / panel — bone-white paper */
+  --m-surface-2:     #eee9dd;   /* sunken / inset / code block */
+  --m-surface-3:     #e6e1d2;   /* deeper inset, kanban column bg */
+
+  /* Ink (text) */
+  --m-ink:           #1f2a24;   /* primary headings / high-emphasis */
+  --m-text:          #2c3a33;   /* body text */
+  --m-muted:         #7a8178;   /* secondary / meta / captions */
+  --m-muted-soft:    #9aa098;   /* tertiary / hint */
+
+  /* Rules & dividers */
+  --m-rule:          rgba(31, 42, 36, 0.12);
+  --m-rule-soft:     rgba(31, 42, 36, 0.06);
+  --m-rule-strong:   rgba(31, 42, 36, 0.28);
+
+  /* Primary accent — FOREST */
+  --m-accent:        #2d4a3a;
+  --m-accent-hover:  #223b2e;
+  --m-accent-soft:   #4a6a54;
+  --m-accent-wash:   rgba(45, 74, 58, 0.08);
+  --m-accent-wash-2: rgba(45, 74, 58, 0.14);
+  --m-on-accent:     #f5f2ea;
+
+  /* Secondary accent — OCHRE */
+  --m-ochre:         #9a7b3c;
+  --m-ochre-deep:    #7a5f25;
+  --m-ochre-soft:    #b99759;
+  --m-ochre-wash:    rgba(154, 123, 60, 0.12);
+
+  /* Semantic signals (muted, newspaper-editorial) */
+  --m-ok:            #5a7a5e;   /* moss / positive */
+  --m-ok-wash:       rgba(90, 122, 94, 0.14);
+  --m-warn:          #9a7b3c;   /* ochre (reuse) */
+  --m-warn-wash:     rgba(154, 123, 60, 0.14);
+  --m-alert:         #a84632;   /* brick / destructive */
+  --m-alert-wash:    rgba(168, 70, 50, 0.12);
+  --m-info:          #3e6178;   /* blue-slate */
+  --m-info-wash:     rgba(62, 97, 120, 0.12);
+
+  /* Model-tier tints (Haiku/Sonnet/Opus) — warm, archive-compatible */
+  --m-haiku-bg:      #e4ebd9;  --m-haiku-fg:  #3d5233;
+  --m-sonnet-bg:    #dce7ec;  --m-sonnet-fg: #2d4a5e;
+  --m-opus-bg:      #e8dfd2;  --m-opus-fg:   #5a3d1a;
+
+  /* Highlighter (paper marker — for found terms, annotation) */
+  --m-highlight:     rgba(217, 154, 76, 0.32);
+
+
+  /* ==============================================================
+     SHAPE — radii, borders, shadows
+     ============================================================== */
+
+  --m-radius:        3px;      /* cards, modals — paper edge, near-square */
+  --m-radius-sm:     2px;      /* buttons, inputs, badges */
+  --m-radius-xs:     2px;
+  --m-radius-pill:   999px;    /* pills, chips, avatars */
+  --m-radius-round:  50%;
+
+  --m-border:        1px solid var(--m-rule);
+  --m-border-strong: 1px solid var(--m-rule-strong);
+  --m-border-dashed: 1px dashed var(--m-rule);
+
+  /* Shadows — extremely subtle. Archive prefers rules over shadows. */
+  --m-shadow-sm:     0 1px 0 rgba(31, 42, 36, 0.04);
+  --m-shadow:        0 1px 0 rgba(31, 42, 36, 0.04), 0 4px 14px rgba(31, 42, 36, 0.05);
+  --m-shadow-lg:     0 2px 0 rgba(31, 42, 36, 0.04), 0 12px 36px rgba(31, 42, 36, 0.08);
+  --m-shadow-hover:  0 1px 0 rgba(31, 42, 36, 0.04), 0 6px 22px rgba(31, 42, 36, 0.08);
+  --m-shadow-focus:  0 0 0 3px rgba(45, 74, 58, 0.18);
+
+
+  /* ==============================================================
+     SPACING — 4px base scale (also exposed as --m-s-*)
+     ============================================================== */
+
+  --m-s-1:   4px;
+  --m-s-2:   8px;
+  --m-s-3:   12px;
+  --m-s-4:   16px;
+  --m-s-5:   20px;
+  --m-s-6:   24px;
+  --m-s-7:   28px;
+  --m-s-8:   32px;
+  --m-s-10:  40px;
+  --m-s-12:  48px;
+  --m-s-16:  64px;
+  --m-s-20:  80px;
+
+
+  /* ==============================================================
+     MOTION
+     ============================================================== */
+
+  --m-transition:       200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --m-transition-fast:  150ms ease;
+  --m-transition-slow:  400ms cubic-bezier(0.6, 0.02, 0.2, 1);
+
+
+  /* ==============================================================
+     TYPE — families
+     ============================================================== */
+
+  --m-display: "Newsreader", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --m-ui:      "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --m-mono:    "JetBrains Mono", ui-monospace, "Menlo", "Consolas", monospace;
+
+  /* Alias for convenience */
+  --font-display: var(--m-display);
+  --font-ui:      var(--m-ui);
+  --font-mono:    var(--m-mono);
+
+
+  /* ==============================================================
+     TYPE — semantic sizes (in rem, 16px base)
+     ============================================================== */
+
+  --t-display:    2.625rem;  /* 42px — hero greeting */
+  --t-h1:         1.875rem;  /* 30px — page title */
+  --t-h2:         1.5rem;    /* 24px — section title (serif) */
+  --t-h3:         1.25rem;   /* 20px — card title (serif) */
+  --t-h4:         1.0625rem; /* 17px — subsection */
+  --t-body:       0.9375rem; /* 15px — body */
+  --t-body-lg:    1rem;      /* 16px — editorial body */
+  --t-small:      0.8125rem; /* 13px — UI controls */
+  --t-meta:       0.75rem;   /* 12px — metadata */
+  --t-micro:      0.6875rem; /* 11px — UPPERCASE mono labels */
+
+  --t-tracking-tight:    -0.015em;
+  --t-tracking-hero:     -0.025em;
+  --t-tracking-normal:    0;
+  --t-tracking-label:     0.14em;
+  --t-tracking-label-lg:  0.18em;
+}
+
+
+/* ================================================================
+   OBSERVATORY — dark mode (opt-in via .theme-observatory OR
+   [data-theme="observatory"] on an ancestor, OR prefers-color-scheme)
+   ================================================================ */
+
+.theme-observatory,
+[data-theme="observatory"] {
+  --m-bg:            #15130f;
+  --m-surface:       #1c1915;
+  --m-surface-2:     #211d18;
+  --m-surface-3:     #26221c;
+
+  --m-ink:           #f3ead6;
+  --m-text:          #d9cfba;
+  --m-muted:         #8a8075;
+  --m-muted-soft:    #6d6458;
+
+  --m-rule:          rgba(243, 234, 214, 0.12);
+  --m-rule-soft:     rgba(243, 234, 214, 0.06);
+  --m-rule-strong:   rgba(243, 234, 214, 0.28);
+
+  --m-accent:        #d99a4c;
+  --m-accent-hover:  #e5a855;
+  --m-accent-soft:   #e0b07a;
+  --m-accent-wash:   rgba(217, 154, 76, 0.12);
+  --m-accent-wash-2: rgba(217, 154, 76, 0.22);
+  --m-on-accent:     #15130f;
+
+  --m-ochre:         #d99a4c;
+  --m-ochre-deep:    #b47a30;
+  --m-ochre-soft:    #e0b07a;
+  --m-ochre-wash:    rgba(217, 154, 76, 0.14);
+
+  --m-ok:            #a9c89a;
+  --m-ok-wash:       rgba(169, 200, 154, 0.14);
+  --m-warn:          #e0b07a;
+  --m-warn-wash:     rgba(224, 176, 122, 0.14);
+  --m-alert:         #e28570;
+  --m-alert-wash:    rgba(226, 133, 112, 0.14);
+  --m-info:          #92b3c5;
+  --m-info-wash:     rgba(146, 179, 197, 0.14);
+
+  --m-haiku-bg:      rgba(169, 200, 154, 0.18);  --m-haiku-fg:  #c3d8b6;
+  --m-sonnet-bg:     rgba(146, 179, 197, 0.18);  --m-sonnet-fg: #b4cfde;
+  --m-opus-bg:       rgba(224, 176, 122, 0.18);  --m-opus-fg:   #e8c79a;
+
+  --m-highlight:     rgba(217, 154, 76, 0.28);
+
+  --m-shadow-sm:     0 1px 0 rgba(0, 0, 0, 0.3);
+  --m-shadow:        0 1px 0 rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.35);
+  --m-shadow-lg:     0 2px 0 rgba(0, 0, 0, 0.4), 0 14px 40px rgba(0, 0, 0, 0.5);
+  --m-shadow-hover:  0 1px 0 rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.45);
+  --m-shadow-focus:  0 0 0 3px rgba(217, 154, 76, 0.25);
+}
+
+/* Respect the OS setting too */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="archive"]) {
+    /* Repeat Observatory tokens — kept in sync with .theme-observatory */
+    --m-bg:            #15130f;
+    --m-surface:       #1c1915;
+    --m-surface-2:     #211d18;
+    --m-surface-3:     #26221c;
+    --m-ink:           #f3ead6;
+    --m-text:          #d9cfba;
+    --m-muted:         #8a8075;
+    --m-muted-soft:    #6d6458;
+    --m-rule:          rgba(243, 234, 214, 0.12);
+    --m-rule-soft:     rgba(243, 234, 214, 0.06);
+    --m-rule-strong:   rgba(243, 234, 214, 0.28);
+    --m-accent:        #d99a4c;
+    --m-accent-hover:  #e5a855;
+    --m-accent-soft:   #e0b07a;
+    --m-accent-wash:   rgba(217, 154, 76, 0.12);
+    --m-accent-wash-2: rgba(217, 154, 76, 0.22);
+    --m-on-accent:     #15130f;
+    --m-ochre:         #d99a4c;
+    --m-ochre-deep:    #b47a30;
+    --m-ochre-soft:    #e0b07a;
+    --m-ochre-wash:    rgba(217, 154, 76, 0.14);
+    --m-ok:            #a9c89a;
+    --m-warn:          #e0b07a;
+    --m-alert:         #e28570;
+    --m-info:          #92b3c5;
+    --m-highlight:     rgba(217, 154, 76, 0.28);
+  }
+}
+
+
+/* ================================================================
+   SEMANTIC ELEMENT DEFAULTS
+   Link <html> | <body> | headings to Metis tokens. Apply
+   colors_and_type.css globally for these to take effect.
+   ================================================================ */
+
+html { color-scheme: light; }
+html[data-theme="observatory"] { color-scheme: dark; }
+
+body {
+  background: var(--m-bg);
+  color: var(--m-text);
+  font-family: var(--m-ui);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  letter-spacing: var(--t-tracking-tight);
+  font-feature-settings: "ss01", "cv11", "calt";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--m-display);
+  font-weight: 500;
+  color: var(--m-ink);
+  line-height: 1.2;
+  letter-spacing: var(--t-tracking-tight);
+  margin: 0 0 var(--m-s-3);
+}
+
+h1 { font-size: var(--t-h1); font-weight: 500; letter-spacing: var(--t-tracking-hero); }
+h2 { font-size: var(--t-h2); }
+h3 { font-size: var(--t-h3); }
+h4 { font-size: var(--t-h4); }
+
+p { margin: 0 0 var(--m-s-3); }
+
+a {
+  color: var(--m-accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--m-accent-wash-2);
+  transition: border-color var(--m-transition-fast), color var(--m-transition-fast);
+}
+a:hover { border-bottom-color: var(--m-accent); }
+
+code, pre, kbd, samp {
+  font-family: var(--m-mono);
+  font-size: 0.9em;
+}
+pre {
+  background: var(--m-surface-2);
+  border: var(--m-border);
+  padding: var(--m-s-4);
+  border-radius: var(--m-radius);
+  overflow: auto;
+}
+code {
+  background: var(--m-surface-2);
+  padding: 1px 6px;
+  border-radius: var(--m-radius-sm);
+  color: var(--m-accent-soft);
+}
+pre code { background: transparent; padding: 0; color: inherit; }
+
+hr {
+  border: 0;
+  border-top: var(--m-border);
+  margin: var(--m-s-6) 0;
+}
+
+::selection { background: var(--m-highlight); }
+
+
+/* ================================================================
+   UTILITY CLASSES
+   ================================================================ */
+
+/* Typography helpers */
+.serif   { font-family: var(--m-display); }
+.ui      { font-family: var(--m-ui); }
+.mono    { font-family: var(--m-mono); }
+.italic  { font-style: italic; }
+
+.display { font-family: var(--m-display); font-size: var(--t-display); font-weight: 400; line-height: 1.08; letter-spacing: var(--t-tracking-hero); color: var(--m-ink); }
+.display em { font-style: italic; color: var(--m-accent-soft); font-weight: 400; }
+
+.muted       { color: var(--m-muted); }
+.muted-soft  { color: var(--m-muted-soft); }
+.ink         { color: var(--m-ink); }
+.accent      { color: var(--m-accent); }
+.ochre       { color: var(--m-ochre); }
+
+/* UPPERCASE mono labels — the Archive rhythm-keeper */
+.label-caps {
+  font-family: var(--m-mono);
+  font-size: var(--t-micro);
+  font-weight: 500;
+  letter-spacing: var(--t-tracking-label);
+  text-transform: uppercase;
+  color: var(--m-muted);
+}
+.label-caps--lg {
+  font-size: var(--t-meta);
+  letter-spacing: var(--t-tracking-label-lg);
+}
+.label-caps--ink  { color: var(--m-ink); }
+.label-caps--accent { color: var(--m-accent); }
+
+/* Sectioned label with a trailing rule */
+.seclabel {
+  font-family: var(--m-mono);
+  font-size: var(--t-micro);
+  letter-spacing: var(--t-tracking-label);
+  text-transform: uppercase;
+  color: var(--m-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--m-s-3);
+  margin: 0 0 var(--m-s-3);
+}
+.seclabel::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--m-rule);
+}
+
+/* Body helpers */
+.body-lg { font-size: var(--t-body-lg); line-height: 1.6; }
+.small   { font-size: var(--t-small); }
+.meta    { font-size: var(--t-meta); color: var(--m-muted); }
+
+/* Tabular numerals for stats, dates, counts */
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Dividers / separators */
+.rule          { border-top: var(--m-border); }
+.rule-strong   { border-top: var(--m-border-strong); }
+.rule-dashed   { border-top: var(--m-border-dashed); }
+
+/* === ui_kits/metis/app.css === */
+/* ==========================================================
+   Metis UI Kit — application-specific styles
+   Loads on top of colors_and_type.css
+   ========================================================== */
+
+html, body { height: 100%; margin: 0; background: var(--m-bg); }
+body { overflow: hidden; }
+
+/* ---- Frame ---- */
+.app {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  height: 100vh;
+  min-height: 680px;
+  color: var(--m-text);
+  font-family: var(--m-ui);
+}
+
+/* ---- Sidebar ---- */
+.side {
+  background: var(--m-bg);
+  border-right: 1px solid var(--m-rule);
+  padding: 22px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow-y: auto;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px 6px;
+}
+.brand svg { width: 28px; height: 28px; flex-shrink: 0; }
+.brand .b-word {
+  font-family: var(--m-display);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--m-ink);
+  line-height: 1;
+}
+.brand .b-word em { font-style: italic; color: var(--m-accent-soft); font-weight: 400; }
+.brand .b-sub {
+  font-family: var(--m-mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  margin-top: 2px;
+}
+
+.nav-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.nav-sec + .nav-sec { margin-top: 12px; }
+.nav-label {
+  font-family: var(--m-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--m-muted-soft);
+  padding: 6px 8px 4px;
+  display: flex;
+  justify-content: space-between;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px 7px 12px;
+  border-radius: 2px;
+  border-left: 2px solid transparent;
+  font-size: 14px;
+  color: var(--m-text);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+  user-select: none;
+}
+.nav-item:hover { background: var(--m-accent-wash); color: var(--m-ink); }
+.nav-item.active {
+  background: var(--m-accent-wash);
+  border-left-color: var(--m-accent);
+  color: var(--m-ink);
+  font-weight: 500;
+}
+.nav-item .n-num {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--m-muted-soft);
+  width: 18px;
+}
+.nav-item .n-label { flex: 1; }
+.nav-item .n-meta {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--m-muted);
+}
+.nav-item.active .n-num { color: var(--m-accent); }
+
+.side-foot {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--m-rule);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+}
+.side-foot .mini-ava {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--m-surface-2);
+  border: 1px solid var(--m-rule);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--m-display);
+  font-size: 13px;
+  color: var(--m-accent);
+}
+
+/* ---- Main pane ---- */
+.main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--m-bg);
+}
+.topbar {
+  height: 52px;
+  min-height: 52px;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--m-rule);
+  background: var(--m-bg);
+  gap: 16px;
+}
+.topbar .crumbs {
+  font-family: var(--m-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+}
+.topbar .crumbs .sep { margin: 0 8px; color: var(--m-muted-soft); }
+.topbar .crumbs .here { color: var(--m-ink); }
+.topbar .search {
+  display: flex;
+  align-items: center;
+  background: var(--m-surface);
+  border: 1px solid var(--m-rule);
+  border-radius: 2px;
+  padding: 5px 10px;
+  font-family: var(--m-mono);
+  font-size: 12px;
+  gap: 8px;
+  width: 320px;
+  color: var(--m-muted);
+}
+.topbar .search .hk {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--m-muted-soft);
+  border-left: 1px solid var(--m-rule);
+  padding-left: 8px;
+  margin-left: auto;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.page {
+  padding: 40px 56px 64px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* ---- Page headers ---- */
+.page-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--m-rule-strong);
+  margin-bottom: 32px;
+}
+.page-head .eyebrow {
+  font-family: var(--m-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  margin-bottom: 4px;
+}
+.page-head h1 {
+  font-family: var(--m-display);
+  font-size: 34px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  color: var(--m-ink);
+  margin: 0;
+}
+.page-head h1 em { font-style: italic; color: var(--m-accent-soft); font-weight: 400; }
+.page-head .page-meta {
+  font-family: var(--m-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  text-align: right;
+}
+
+/* ---- Section header with rule ---- */
+.sec-label {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 16px;
+}
+.sec-label::after { content: ""; flex: 1; height: 1px; background: var(--m-rule); }
+.sec-label .tail {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  color: var(--m-muted-soft);
+}
+
+/* ---- Cards & panels ---- */
+.panel {
+  background: var(--m-surface);
+  border: 1px solid var(--m-rule);
+  border-radius: 3px;
+}
+.panel-pad { padding: 22px 24px; }
+
+.kicker {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.kicker .dot { opacity: 0.5; }
+.kicker--accent { color: var(--m-accent); }
+.kicker--ochre  { color: var(--m-ochre-deep); }
+.kicker--alert  { color: var(--m-alert); }
+.kicker--ok     { color: var(--m-ok); }
+
+/* ---- Chips (reused) ---- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: var(--m-accent-wash);
+  color: var(--m-accent);
+  border-radius: 999px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.chip--ochre { background: var(--m-ochre-wash); color: var(--m-ochre-deep); }
+.chip--ok   { background: var(--m-ok-wash); color: var(--m-ok); }
+.chip--warn { background: var(--m-warn-wash); color: var(--m-ochre-deep); }
+.chip--alert{ background: var(--m-alert-wash); color: var(--m-alert); }
+.chip--info { background: var(--m-info-wash); color: var(--m-info); }
+.chip--mute { background: var(--m-surface-2); color: var(--m-muted); }
+.chip--haiku { background: var(--m-haiku-bg); color: var(--m-haiku-fg); }
+.chip--sonnet{ background: var(--m-sonnet-bg); color: var(--m-sonnet-fg); }
+.chip--opus  { background: var(--m-opus-bg); color: var(--m-opus-fg); }
+
+/* ---- Buttons (reused) ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  font-family: var(--m-ui);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+.btn--primary { background: var(--m-accent); color: var(--m-on-accent); }
+.btn--primary:hover { background: var(--m-accent-hover); }
+.btn--ghost { color: var(--m-ink); }
+.btn--ghost:hover { background: var(--m-accent-wash); color: var(--m-accent); }
+.btn--sec { border-color: var(--m-rule-strong); background: var(--m-surface); color: var(--m-ink); }
+.btn--sec:hover { border-color: var(--m-accent); color: var(--m-accent); }
+.btn--caps { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; }
+
+/* ---- Mini icon (stroke) ---- */
+.ico { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.ico-lg { width: 18px; height: 18px; }
+
+/* ---- Metis mark inline ---- */
+.metis-mark {
+  width: 22px; height: 22px;
+  stroke: var(--m-accent);
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.metis-mark circle.pup { fill: var(--m-accent); stroke: none; }
+
+/* ---- Grids ---- */
+.grid { display: grid; gap: 16px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-main { grid-template-columns: 1.6fr 1fr; }
+
+/* ---- Divider ---- */
+.hr { border: 0; border-top: 1px solid var(--m-rule); margin: 24px 0; }
+.hr-soft { border-top-color: var(--m-rule-soft); }
+
+/* Tabular nums */
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* Editorial body */
+.ed {
+  font-family: var(--m-display);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--m-text);
+}
+.ed em { color: var(--m-accent-soft); }
+
+/* Scrollbar — Archive flavor */
+.scroll::-webkit-scrollbar, .side::-webkit-scrollbar { width: 10px; }
+.scroll::-webkit-scrollbar-thumb, .side::-webkit-scrollbar-thumb {
+  background: var(--m-rule-strong);
+  border: 3px solid var(--m-bg);
+  border-radius: 6px;
+}
+.scroll::-webkit-scrollbar-track, .side::-webkit-scrollbar-track { background: transparent; }
+
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+
+// === ui_kits/metis/shell.jsx ===
+// Shared nav + shell for Metis UI kit.
+// Exposes: Sidebar, Topbar, MetisMark, NAV_ITEMS, Ico, Chip, Kicker, SecLabel
+// to window, used by app.html and each surface file.
+
+const NAV_ITEMS = [
+  { id: 'today',     num: '01', label: 'Today',     meta: '07:12',  group: 'surfaces' },
+  { id: 'knowledge', num: '02', label: 'Knowledge', meta: '240',    group: 'surfaces' },
+  { id: 'thinking',  num: '03', label: 'Thinking',  meta: '3',      group: 'surfaces' },
+  { id: 'planner',   num: '04', label: 'Planner',   meta: 'Q4',     group: 'surfaces' },
+  { id: 'work',      num: '05', label: 'Work',      meta: '14',     group: 'surfaces' },
+  { id: 'meetings',  num: '06', label: 'Meetings',  meta: '2',      group: 'surfaces' },
+  { id: 'learning',  num: '07', label: 'Learning',  meta: '6',      group: 'surfaces' },
+  { id: 'teach',     num: '08', label: 'Teach',     meta: '1',      group: 'surfaces' },
+  { id: 'metis',     num: '09', label: 'Metis',     meta: '',       group: 'settings' },
+];
+
+const NAV_TITLES = {
+  today:     { eyebrow: 'Thursday · 14 November · 07:12', title: 'Good morning, Stan.', accent: 'em' },
+  knowledge: { eyebrow: 'The shelves · 240 cards · 14 slipcases', title: 'Knowledge' },
+  thinking:  { eyebrow: 'Three open · last touched 07:12', title: 'Thinking' },
+  planner:   { eyebrow: 'Q4 · week 46 of 52', title: 'Planner' },
+  work:      { eyebrow: '14 tasks · 3 projects · 2 paused', title: 'Work' },
+  meetings:  { eyebrow: 'Two today · three this week', title: 'Meetings' },
+  learning:  { eyebrow: '6 courses · 48 cards due today', title: 'Learning' },
+  teach:     { eyebrow: 'Drafts outward · 1 published this year', title: 'Teach' },
+  metis:     { eyebrow: 'Settings · model · memory · keys', title: 'Metis' },
+};
+
+function MetisMark({ className = 'metis-mark', ...props }) {
+  return (
+    <svg className={className} viewBox="0 0 64 64" {...props}>
+      <circle cx="32" cy="32" r="26"/>
+      <circle cx="32" cy="32" r="16"/>
+      <line x1="6"  y1="32" x2="13" y2="32"/>
+      <line x1="51" y1="32" x2="58" y2="32"/>
+      <line x1="32" y1="6"  x2="32" y2="13"/>
+      <line x1="32" y1="51" x2="32" y2="58"/>
+      <line x1="23" y1="32" x2="41" y2="32"/>
+      <line x1="32" y1="23" x2="32" y2="41"/>
+      <circle className="pup" cx="32" cy="32" r="2.4"/>
+    </svg>
+  );
+}
+
+// Tiny stroke icon bank — bespoke, 1.5px, round caps. currentColor.
+const ICONS = {
+  search:    <><circle cx="7" cy="7" r="4.5"/><line x1="10.2" y1="10.2" x2="13" y2="13"/></>,
+  plus:      <><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></>,
+  chev:      <polyline points="5 6 8 9 11 6"/>,
+  chevR:     <polyline points="6 4 9 8 6 12"/>,
+  chevL:     <polyline points="10 4 7 8 10 12"/>,
+  arrowR:    <><line x1="3" y1="8" x2="13" y2="8"/><polyline points="9 4 13 8 9 12"/></>,
+  dot:       <circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/>,
+  square:    <rect x="3" y="3" width="10" height="10"/>,
+  check:     <polyline points="3 8 7 12 13 4"/>,
+  card:      <><rect x="2" y="4" width="12" height="9"/><line x1="2" y1="7" x2="14" y2="7"/></>,
+  pen:       <><line x1="3" y1="13" x2="5" y2="13"/><path d="M4 12 L11 5 L13 7 L6 14 Z"/></>,
+  book:      <><path d="M2 3 h5 a2 2 0 0 1 2 2 v8 a2 2 0 0 0 -2 -2 H2 Z"/><path d="M14 3 h-5 a2 2 0 0 0 -2 2 v8 a2 2 0 0 1 2 -2 h5 Z"/></>,
+  clock:     <><circle cx="8" cy="8" r="5.5"/><polyline points="8 5 8 8 10 9.5"/></>,
+  thread:    <><circle cx="5" cy="5" r="2"/><circle cx="11" cy="11" r="2"/><path d="M5 7 L5 10 Q5 11 6 11 L9 11"/></>,
+  tag:       <><path d="M3 3 h5 l5 5 -5 5 -5 -5 Z"/><circle cx="6" cy="6" r="0.8" fill="currentColor" stroke="none"/></>,
+  compass:   <><circle cx="8" cy="8" r="5.5"/><polygon points="8 4 10 8 8 12 6 8"/></>,
+  column:    <><rect x="2" y="2" width="4" height="12"/><rect x="7" y="2" width="4" height="12"/><rect x="12" y="2" width="2" height="12"/></>,
+  at:        <><circle cx="8" cy="8" r="2.5"/><path d="M10.5 8 v1.5 a2 2 0 0 0 2 0 v-1 a4.5 4.5 0 1 0 -2 4"/></>,
+  play:      <polygon points="4 3 13 8 4 13"/>,
+  teach:     <><path d="M2 5 L8 2 L14 5 L8 8 Z"/><path d="M4 6.5 V10 Q4 11 5 11.5 L8 13 L11 11.5 Q12 11 12 10 V6.5"/></>,
+  setting:   <><circle cx="8" cy="8" r="2"/><path d="M8 1 v2 M8 13 v2 M1 8 h2 M13 8 h2 M3 3 l1.4 1.4 M11.6 11.6 L13 13 M3 13 l1.4 -1.4 M11.6 4.4 L13 3"/></>,
+  archive:   <><rect x="2" y="3" width="12" height="3"/><path d="M3 6 V13 H13 V6"/><line x1="6" y1="9" x2="10" y2="9"/></>,
+};
+
+function Ico({ name, className = 'ico', ...props }) {
+  return (
+    <svg className={className} viewBox="0 0 16 16" {...props}>
+      {ICONS[name] || ICONS.dot}
+    </svg>
+  );
+}
+
+function Chip({ kind = '', children, plain = false }) {
+  const cls = 'chip' + (kind ? ' chip--' + kind : '') + (plain ? ' chip--plain' : '');
+  return <span className={cls}>{children}</span>;
+}
+
+function Kicker({ kind = '', children }) {
+  const cls = 'kicker' + (kind ? ' kicker--' + kind : '');
+  return <div className={cls}>{children}</div>;
+}
+
+function SecLabel({ children, tail }) {
+  return (
+    <div className="sec-label">
+      <span>{children}</span>
+      {tail && <span className="tail">{tail}</span>}
+    </div>
+  );
+}
+
+function Sidebar({ current, onNavigate }) {
+  const surfaces = NAV_ITEMS.filter(n => n.group === 'surfaces');
+  const settings = NAV_ITEMS.filter(n => n.group === 'settings');
+  return (
+    <aside className="side">
+      <div className="brand">
+        <MetisMark />
+        <div>
+          <div className="b-word">Meti<em>s</em></div>
+          <div className="b-sub">Archive</div>
+        </div>
+      </div>
+
+      <div className="nav-sec">
+        <div className="nav-label"><span>Surfaces</span><span>IX</span></div>
+        {surfaces.map(item => (
+          <div key={item.id}
+               className={'nav-item' + (current === item.id ? ' active' : '')}
+               onClick={() => onNavigate(item.id)}>
+            <span className="n-num">{item.num}</span>
+            <span className="n-label">{item.label}</span>
+            <span className="n-meta">{item.meta}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="nav-sec">
+        <div className="nav-label"><span>System</span></div>
+        {settings.map(item => (
+          <div key={item.id}
+               className={'nav-item' + (current === item.id ? ' active' : '')}
+               onClick={() => onNavigate(item.id)}>
+            <span className="n-num">{item.num}</span>
+            <span className="n-label">{item.label}</span>
+            <span className="n-meta">{item.meta}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="side-foot">
+        <span className="mini-ava">S</span>
+        <span>Stan · Reader in residence</span>
+      </div>
+    </aside>
+  );
+}
+
+function Topbar({ current }) {
+  const t = NAV_TITLES[current];
+  const item = NAV_ITEMS.find(n => n.id === current);
+  return (
+    <div className="topbar">
+      <div className="crumbs">
+        <span>Metis</span>
+        <span className="sep">/</span>
+        <span className="here">{item?.label}</span>
+      </div>
+      <div className="search">
+        <Ico name="search" />
+        <span>Find across the archive…</span>
+        <span className="hk">⌘K</span>
+      </div>
+    </div>
+  );
+}
+
+function PageHead({ current, right }) {
+  const t = NAV_TITLES[current] || {};
+  return (
+    <div className="page-head">
+      <div>
+        <div className="eyebrow">{t.eyebrow}</div>
+        <h1>{t.accent === 'em' ? <>Good morning, <em>Stan.</em></> : t.title}</h1>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+Object.assign(window, {
+  NAV_ITEMS, NAV_TITLES,
+  MetisMark, Ico, Chip, Kicker, SecLabel,
+  Sidebar, Topbar, PageHead,
+});
+
+// === ui_kits/metis/surfaces/today.jsx ===
+// Surface 01 — Today
+// Morning briefing: editorial greeting, warm threads, day's cards.
+
+function TodaySurface() {
+  return (
+    <div className="page">
+      <PageHead current="today" right={
+        <div className="page-meta">
+          <div>07:12 · CALM · NO MEETINGS UNTIL 14:00</div>
+          <div style={{ marginTop: 4, color: 'var(--m-muted-soft)' }}>WEATHER · GREY · 4°C</div>
+        </div>
+      }/>
+
+      {/* Opening paragraph — the briefing itself */}
+      <div className="panel panel-pad" style={{ padding: '32px 40px', marginBottom: 32 }}>
+        <Kicker kind="accent"><Ico name="compass" /><span>MORNING BRIEFING</span><span>·</span><span style={{ color: 'var(--m-muted)' }}>A paragraph, not a dashboard</span></Kicker>
+        <p className="ed" style={{ fontSize: 18, marginTop: 16, marginBottom: 14, maxWidth: 720 }}>
+          Three threads from yesterday are still warm — <em>Kripke on rigid designators</em>, the draft of Thursday's essay, and a question you left open for me about Peirce. The morning is free until fourteen hundred; the Laurent meeting is prepped.
+        </p>
+        <p className="ed" style={{ fontSize: 16, color: 'var(--m-muted)', maxWidth: 720, marginBottom: 18 }}>
+          If you'll take one thing first, <em>take the essay.</em> It is the nearest to finished.
+        </p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn--primary">Open the essay</button>
+          <button className="btn btn--sec">Continue Kripke</button>
+          <button className="btn btn--ghost btn--caps">Later ↓</button>
+        </div>
+      </div>
+
+      <SecLabel tail="ACROSS YOUR SURFACES">Active threads</SecLabel>
+      <div className="grid grid-3" style={{ marginBottom: 32 }}>
+        <ThreadCard kind="thinking" days="2d" title="Kripke's rigid designators" note={<>A tension with descriptivism on p. 48. Two notes reference the <em>morning-star / evening-star</em> example.</>} meta="3 NOTES · 1 QUESTION" />
+        <ThreadCard kind="draft" days="6d" title="The Thursday essay" note={<>Middle section still loose — the turn from Peirce to Kripke <em>wants a sentence of air.</em></>} meta="1 120 WORDS · 4 EDITS" />
+        <ThreadCard kind="question" days="1d" title="On Peirce's interpretant" note={<>You left this for me. <em>I have a short reply in the margin.</em></>} meta="UNREAD · FROM METIS" />
+      </div>
+
+      <div className="grid grid-main" style={{ marginBottom: 32 }}>
+        <div>
+          <SecLabel tail="THU · 14 NOV">The day at hand</SecLabel>
+          <div className="panel">
+            <DayRow time="09:30" label="FOCUS" title="Essay, middle section" meta="90 MIN" accent/>
+            <DayRow time="11:00" label="READ" title="Naming and Necessity — pp. 48–62" meta="45 MIN"/>
+            <DayRow time="12:30" label="LUNCH" title={<span style={{ color: 'var(--m-muted)', fontStyle:'italic'}}>— protected hour —</span>} meta=""/>
+            <DayRow time="14:00" label="MEETING" title="M. Laurent · reading group" meta="30 MIN" ochre/>
+            <DayRow time="16:00" label="WRITE" title="Reply to the Peirce question" meta="30 MIN"/>
+            <DayRow time="17:30" label="END" title={<span style={{ color: 'var(--m-muted)'}}>Close threads · file the day</span>} meta="" last/>
+          </div>
+        </div>
+        <div>
+          <SecLabel tail="ONE FOCUS">Today's single intention</SecLabel>
+          <div className="panel panel-pad" style={{ padding: '24px 26px' }}>
+            <div style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--m-accent)', marginBottom: 10 }}>THE ONE THING</div>
+            <div style={{ fontFamily: 'var(--m-display)', fontSize: 24, fontWeight: 500, letterSpacing: '-0.015em', color: 'var(--m-ink)', lineHeight: 1.25, marginBottom: 12 }}>
+              Finish the middle section of Thursday's essay.
+            </div>
+            <div className="ed" style={{ fontSize: 15, color: 'var(--m-muted)', marginBottom: 18 }}>
+              From your planner, this week. <em>Everything else is optional.</em>
+            </div>
+            <div className="hr hr-soft" style={{ margin: '16px 0' }}/>
+            <Kicker><Ico name="pen" /><span>DRAFT</span><span>·</span><span>NOV 8 → NOV 14</span></Kicker>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10, alignItems: 'baseline' }}>
+              <span className="tnum" style={{ fontFamily: 'var(--m-mono)', fontSize: 12, color: 'var(--m-muted)' }}>1 120 / ~1 800 WORDS</span>
+              <button className="btn btn--primary btn--caps" style={{ padding: '5px 10px' }}>Begin</button>
+            </div>
+            <div style={{ height: 2, background: 'var(--m-surface-3)', marginTop: 10, borderRadius: 1 }}>
+              <div style={{ height: '100%', width: '62%', background: 'var(--m-accent)', borderRadius: 1 }}/>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <SecLabel tail="METIS · NOTES IN THE MARGIN">From the assistant</SecLabel>
+      <div className="grid grid-2">
+        <MarginNote title="Two threads are converging." body={<>Your Kripke note and the Peirce question both lean on the <em>morning-star / evening-star</em> pair. I've added a cross-reference from each to the other.</>} model="haiku" />
+        <MarginNote title="Three drafts older than a week." body={<>The Thursday essay is closest to finished. The other two — on <em>Frege's puzzle</em> and <em>indexicals</em> — can wait, or be retired.</>} model="sonnet" />
+      </div>
+    </div>
+  );
+}
+
+function ThreadCard({ kind, days, title, note, meta }) {
+  const kicker = {
+    thinking: { tag: 'THINKING · ACTIVE', kind: 'accent' },
+    draft:    { tag: 'DRAFT · TEACH',     kind: 'ochre' },
+    question: { tag: 'QUESTION · LEFT FOR METIS', kind: 'accent' },
+  }[kind] || { tag: 'THREAD', kind: 'accent' };
+  return (
+    <div className="panel panel-pad" style={{ padding: '22px 24px 18px' }}>
+      <div className="kicker" style={{ justifyContent: 'space-between' }}>
+        <span className={'kicker kicker--' + kicker.kind} style={{ padding: 0 }}>
+          <Ico name={kind === 'draft' ? 'pen' : kind === 'question' ? 'at' : 'thread'} />
+          <span>{kicker.tag}</span>
+        </span>
+        <span style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.16em', color: 'var(--m-muted)' }}>{days.toUpperCase()}</span>
+      </div>
+      <h3 style={{ fontFamily: 'var(--m-display)', fontSize: 20, fontWeight: 500, letterSpacing: '-0.012em', color: 'var(--m-ink)', margin: '10px 0 8px' }}>{title}</h3>
+      <p className="ed" style={{ fontSize: 14, color: 'var(--m-text)', margin: 0, marginBottom: 14 }}>{note}</p>
+      <div style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--m-muted)', borderTop: '1px solid var(--m-rule-soft)', paddingTop: 10 }}>{meta}</div>
+    </div>
+  );
+}
+
+function DayRow({ time, label, title, meta, accent, ochre, last }) {
+  const color = accent ? 'var(--m-accent)' : ochre ? 'var(--m-ochre-deep)' : 'var(--m-muted)';
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '64px 80px 1fr 100px',
+      gap: 20,
+      alignItems: 'center',
+      padding: '16px 24px',
+      borderBottom: last ? 'none' : '1px solid var(--m-rule-soft)',
+    }}>
+      <div className="tnum" style={{ fontFamily: 'var(--m-mono)', fontSize: 14, color: 'var(--m-ink)', fontWeight: 500 }}>{time}</div>
+      <div style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.2em', color, textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontFamily: 'var(--m-display)', fontSize: 16, color: 'var(--m-ink)' }}>{title}</div>
+      <div className="tnum" style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--m-muted-soft)', textAlign: 'right' }}>{meta}</div>
+    </div>
+  );
+}
+
+function MarginNote({ title, body, model }) {
+  return (
+    <div className="panel panel-pad" style={{ borderLeft: '3px solid var(--m-accent)', padding: '20px 24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+        <Kicker kind="accent"><MetisMark className="metis-mark" style={{ width: 14, height: 14 }}/><span>METIS · 07:14</span></Kicker>
+        <Chip kind={model} plain>{model}</Chip>
+      </div>
+      <div style={{ fontFamily: 'var(--m-display)', fontSize: 17, fontWeight: 500, color: 'var(--m-ink)', marginBottom: 6 }}>{title}</div>
+      <div className="ed" style={{ fontSize: 14 }}>{body}</div>
+    </div>
+  );
+}
+
+window.TodaySurface = TodaySurface;
+
+// === ui_kits/metis/surfaces/knowledge.jsx ===
+// Surface 02 — Knowledge
+// Personal library. Slipcases (collections), index cards, sources.
+
+function KnowledgeSurface() {
+  return (
+    <div className="page">
+      <PageHead current="knowledge" right={
+        <div className="page-meta"><div>240 CARDS · 14 SLIPCASES · 6 SOURCES ADDED THIS WEEK</div></div>
+      }/>
+
+      <div className="grid" style={{ gridTemplateColumns: '240px 1fr', gap: 32, marginBottom: 32 }}>
+        <div>
+          <SecLabel>Slipcases</SecLabel>
+          <div className="panel" style={{ overflow: 'hidden' }}>
+            {SLIPCASES.map((s, i) => (
+              <div key={i} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '12px 16px',
+                borderBottom: i === SLIPCASES.length - 1 ? 'none' : '1px solid var(--m-rule-soft)',
+                borderLeft: s.active ? '2px solid var(--m-accent)' : '2px solid transparent',
+                background: s.active ? 'var(--m-accent-wash)' : 'transparent',
+                cursor: 'pointer',
+                fontSize: 13,
+                color: s.active ? 'var(--m-ink)' : 'var(--m-text)',
+                fontFamily: 'var(--m-display)',
+              }}>
+                <span>{s.name}</span>
+                <span className="tnum" style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.12em', color: 'var(--m-muted)' }}>{s.count}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop: 14, fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--m-muted)', padding: '0 4px' }}>
+            ADD SLIPCASE · ⌘⇧N
+          </div>
+        </div>
+
+        <div>
+          <SecLabel tail="SORT · LAST TOUCHED">Philosophy / Language</SecLabel>
+          <div className="panel" style={{ padding: '20px 24px', marginBottom: 16 }}>
+            <Kicker><Ico name="book" /><span>SLIPCASE · 62 CARDS · 8 SOURCES</span></Kicker>
+            <h3 style={{ fontFamily: 'var(--m-display)', fontSize: 24, fontWeight: 500, margin: '10px 0 6px', color: 'var(--m-ink)' }}>Philosophy of Language</h3>
+            <p className="ed" style={{ margin: 0, fontSize: 15 }}>
+              Reading around <em>names, descriptions, and the things they hold onto.</em> Warm threads: rigid designation, the interpretant, Frege's puzzle.
+            </p>
+          </div>
+
+          <div className="grid grid-3">
+            {CARDS.map((c, i) => <IndexCard key={i} {...c} />)}
+          </div>
+        </div>
+      </div>
+
+      <SecLabel tail="IN THE HAND">Sources · recently clipped</SecLabel>
+      <div className="panel">
+        {SOURCES.map((s, i) => (
+          <div key={i} style={{
+            display: 'grid', gridTemplateColumns: '100px 1fr 140px 100px',
+            gap: 20, alignItems: 'center',
+            padding: '14px 24px',
+            borderBottom: i === SOURCES.length - 1 ? 'none' : '1px solid var(--m-rule-soft)',
+          }}>
+            <div style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.18em', color: s.tagColor, textTransform: 'uppercase' }}>{s.tag}</div>
+            <div>
+              <div style={{ fontFamily: 'var(--m-display)', fontSize: 16, color: 'var(--m-ink)' }}>{s.title}</div>
+              <div style={{ fontFamily: 'var(--m-display)', fontStyle: 'italic', fontSize: 13, color: 'var(--m-muted)', marginTop: 2 }}>{s.by}</div>
+            </div>
+            <div className="tnum" style={{ fontFamily: 'var(--m-mono)', fontSize: 11, color: 'var(--m-muted)' }}>{s.when}</div>
+            <div style={{ textAlign: 'right' }}>
+              <Chip kind="mute" plain>{s.highlights} HL</Chip>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const SLIPCASES = [
+  { name: 'Philosophy / Language', count: 62, active: true },
+  { name: 'Philosophy / Mind', count: 41 },
+  { name: 'Writing · practice', count: 28 },
+  { name: 'Reading group', count: 19 },
+  { name: 'History of science', count: 24 },
+  { name: 'Mathematics / set theory', count: 14 },
+  { name: 'Poetry', count: 22 },
+  { name: 'Unfiled', count: 30 },
+];
+
+const CARDS = [
+  { date: '14 NOV', kicker: 'NOTE', title: 'Rigid designators hold across worlds', body: <>Kripke, <em>N&amp;N</em>, p. 48. The designator picks out the same object in every world where it exists — it is not a <em>de dicto</em> description.</>, tag: 'Kripke', tagKind: 'accent' },
+  { date: '13 NOV', kicker: 'HIGHLIGHT', title: 'Hesperus and Phosphorus, again', body: <>The example Peirce and Kripke both reach for. <em>Same evidence, different questions.</em></>, tag: 'Frege' },
+  { date: '12 NOV', kicker: 'NOTE', title: 'Descriptivism as fall-back', body: <>When the name fails, description does the work. But the work is different — the name <em>insists</em>, description <em>identifies.</em></>, tag: 'Kripke' },
+  { date: '11 NOV', kicker: 'QUESTION', title: 'Does the interpretant nest?', body: <>If every sign generates an interpretant which is itself a sign — <em>where does that terminate?</em></>, tag: 'Peirce', tagKind: 'ochre' },
+  { date: '10 NOV', kicker: 'CLIP', title: 'Frege\'s puzzle — the canonical form', body: <>The puzzle is not about the referent; it is about <em>cognitive value.</em> Two names for Venus, two different lights.</>, tag: 'Frege' },
+  { date: '08 NOV', kicker: 'NOTE', title: 'Why "natural kind" is doing heavy lifting', body: <>Kripke's argument extends from names to kinds — but kinds are <em>not</em> individuals, and this is where Putnam steps in.</>, tag: 'Putnam' },
+];
+
+function IndexCard({ date, kicker, title, body, tag, tagKind = 'accent' }) {
+  return (
+    <div className="panel" style={{ padding: '18px 20px', position: 'relative' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+        <div style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.18em', color: 'var(--m-muted)' }}>{date} · {kicker}</div>
+        <Chip kind={tagKind} plain>{tag}</Chip>
+      </div>
+      <div style={{ fontFamily: 'var(--m-display)', fontSize: 16, fontWeight: 500, color: 'var(--m-ink)', lineHeight: 1.3, marginBottom: 8 }}>{title}</div>
+      <div className="ed" style={{ fontSize: 13, color: 'var(--m-text)', margin: 0 }}>{body}</div>
+    </div>
+  );
+}
+
+const SOURCES = [
+  { tag: 'BOOK',    tagColor: 'var(--m-accent)', title: 'Naming and Necessity', by: 'Saul Kripke · 1980 · Harvard UP', when: '14 NOV · 14:22', highlights: 12 },
+  { tag: 'PAPER',   tagColor: 'var(--m-info)',   title: 'On Sense and Reference', by: 'Gottlob Frege · 1892 · trans. Geach', when: '12 NOV · 09:08', highlights: 8 },
+  { tag: 'LECTURE', tagColor: 'var(--m-ochre-deep)', title: 'Peirce on signs — Part II', by: 'C. Hookway · Oxford, 2019', when: '10 NOV · 19:45', highlights: 5 },
+  { tag: 'ESSAY',   tagColor: 'var(--m-accent)', title: 'The Meaning of "Meaning"', by: 'Hilary Putnam · 1975', when: '08 NOV · 11:30', highlights: 9 },
+];
+
+window.KnowledgeSurface = KnowledgeSurface;
+
+// === ui_kits/metis/surfaces/thinking.jsx ===
+// Surface 03 — Thinking (the flagship: dialogue + marginalia)
+function ThinkingSurface() {
+  return (
+    <div className="page" style={{ maxWidth: 1180 }}>
+      <PageHead current="thinking" right={
+        <div className="page-meta"><div>3 OPEN · 28 ARCHIVED THIS MONTH</div><div style={{marginTop:4,color:'var(--m-muted-soft)'}}>MODEL · SONNET 4.5 · REASONING</div></div>
+      }/>
+      <div className="grid" style={{ gridTemplateColumns: '220px 1fr 240px', gap: 28 }}>
+        <div>
+          <SecLabel>Open threads</SecLabel>
+          <div className="panel">
+            {[
+              { t: 'Kripke on rigid designators', d: '2d', on: true },
+              { t: 'Peirce — interpretant', d: '1d' },
+              { t: 'Frege\'s puzzle, revisited', d: '3d' },
+              { t: 'Indexicals (paused)', d: '9d', muted: true },
+            ].map((th, i, a) => (
+              <div key={i} style={{
+                padding: '14px 16px',
+                borderBottom: i === a.length - 1 ? 0 : '1px solid var(--m-rule-soft)',
+                borderLeft: th.on ? '2px solid var(--m-accent)' : '2px solid transparent',
+                background: th.on ? 'var(--m-accent-wash)' : 'transparent',
+                opacity: th.muted ? 0.55 : 1,
+                cursor: 'pointer',
+              }}>
+                <div style={{ fontFamily: 'var(--m-display)', fontSize: 14, color: 'var(--m-ink)', lineHeight: 1.3 }}>{th.t}</div>
+                <div style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--m-muted)', marginTop: 4 }}>{th.d} · OPEN</div>
+              </div>
+            ))}
+          </div>
+          <button className="btn btn--sec btn--caps" style={{ marginTop: 12, width: '100%', justifyContent: 'center' }}>+ New thread</button>
+        </div>
+
+        <div>
+          <div className="panel" style={{ padding: '28px 36px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 18, paddingBottom: 12, borderBottom: '1px solid var(--m-rule)' }}>
+              <div>
+                <Kicker kind="accent"><Ico name="thread"/><span>THINKING · ACTIVE</span><span>·</span><span style={{color:'var(--m-ochre-deep)'}}>2d OPEN</span></Kicker>
+                <h2 style={{ fontFamily: 'var(--m-display)', fontSize: 28, fontWeight: 500, letterSpacing: '-0.018em', color: 'var(--m-ink)', margin: '8px 0 0' }}>Kripke's rigid designators</h2>
+              </div>
+              <Chip kind="sonnet" plain>Sonnet 4.5</Chip>
+            </div>
+
+            <Turn who="STAN · 07:12" body={<>I'm stuck on why rigid designation isn't just a strong description. If "Hesperus" picks out Venus in every world Venus exists in, isn't that what "the evening star" does too?</>}/>
+            <Turn who="METIS · 07:12" metis body={<>The description shifts with the world. In a world where Venus rose in the morning and not the evening, <em>"the evening star"</em> picks out something else — or nothing. <em>"Hesperus"</em> still picks out Venus. The name holds; the description travels.</>}/>
+            <Turn who="STAN · 07:13" body={<>So the name is indexed to <em>this</em> Venus, not to what Venus does.</>}/>
+            <Turn who="METIS · 07:13" metis body={<>Exactly. Kripke's baptism: a name fastens, once, to a particular. The causal-historical chain carries it forward; possible worlds don't shake it loose.</>}/>
+            <Turn who="STAN · 07:14" body={<>Where does Peirce's interpretant fit in here?</>}/>
+            <Turn who="METIS · 07:14" metis body={<>Differently, I think. Peirce is asking what a sign <em>does</em> in a mind — Kripke, what a name <em>is</em>, across worlds. The morning-star example is the same mineral; they're mining for different metals. <em>Shall I open a branch thread on that?</em></>}/>
+
+            <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--m-rule)' }}>
+              <div className="m-cmd" style={{ background: 'var(--m-bg)', border: '1px solid var(--m-rule-strong)', borderRadius: 2, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'var(--m-display)', fontSize: 15, fontStyle: 'italic', color: 'var(--m-muted)' }}>
+                <span style={{ color: 'var(--m-accent)', fontFamily: 'var(--m-mono)', fontStyle: 'normal', fontSize: 13 }}>›</span>
+                <span>Reply, or ask Metis to branch this thread…</span>
+                <span style={{ marginLeft: 'auto', fontFamily: 'var(--m-mono)', fontStyle: 'normal', fontSize: 10, letterSpacing: '0.16em', color: 'var(--m-muted-soft)' }}>⌘↵</span>
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+                <button className="btn btn--ghost btn--caps">Branch</button>
+                <button className="btn btn--ghost btn--caps">File to Knowledge</button>
+                <button className="btn btn--ghost btn--caps">Export as note</button>
+                <button className="btn btn--ghost btn--caps" style={{ marginLeft: 'auto', color: 'var(--m-muted)' }}>Retire thread</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <SecLabel>Marginalia</SecLabel>
+          <div className="panel panel-pad" style={{ padding: '18px 20px', marginBottom: 12 }}>
+            <Kicker kind="accent"><Ico name="tag"/><span>METIS · LINK</span></Kicker>
+            <div className="ed" style={{ fontSize: 13, marginTop: 8 }}>
+              Cross-ref added: this thread and <em>"On Peirce's interpretant"</em> now share the Hesperus example.
+            </div>
+          </div>
+          <div className="panel panel-pad" style={{ padding: '18px 20px', marginBottom: 12, borderLeft: '2px solid var(--m-ochre)' }}>
+            <Kicker kind="ochre"><Ico name="book"/><span>SOURCE · CITED</span></Kicker>
+            <div style={{ fontFamily: 'var(--m-display)', fontSize: 14, fontWeight: 500, marginTop: 6, color: 'var(--m-ink)' }}>Naming and Necessity</div>
+            <div style={{ fontFamily: 'var(--m-display)', fontStyle: 'italic', fontSize: 12, color: 'var(--m-muted)' }}>Kripke · pp. 48–52</div>
+          </div>
+          <div className="panel panel-pad" style={{ padding: '18px 20px' }}>
+            <Kicker><Ico name="pen"/><span>SUGGESTED NOTE</span></Kicker>
+            <div className="ed" style={{ fontSize: 13, marginTop: 8 }}>
+              <em>"The name holds; the description travels."</em> — a one-line card.
+            </div>
+            <button className="btn btn--sec btn--caps" style={{ marginTop: 10, padding: '4px 10px' }}>File to Knowledge</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Turn({ who, body, metis }) {
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '120px 1fr',
+      gap: 24,
+      padding: '18px 0',
+      borderBottom: '1px solid var(--m-rule-soft)',
+    }}>
+      <div style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.2em', color: metis ? 'var(--m-accent)' : 'var(--m-muted)', paddingTop: 3 }}>{who}</div>
+      <div style={{ fontFamily: 'var(--m-display)', fontSize: 16, lineHeight: 1.55, color: 'var(--m-text)' }}>{body}</div>
+    </div>
+  );
+}
+
+window.ThinkingSurface = ThinkingSurface;
+
+// === ui_kits/metis/surfaces/planner.jsx ===
+// Surface 04 — Planner
+function PlannerSurface() {
+  return (
+    <div className="page">
+      <PageHead current="planner" right={<div className="page-meta"><div>WEEK 46 · Q4 · 6 WEEKS REMAINING</div></div>}/>
+      <div className="grid grid-3" style={{ marginBottom: 32 }}>
+        <HorizonCard label="QUARTER · Q4 OCT–DEC" title="Finish the essays on naming." body={<>Three pieces, publishable. Two are <em>in hand</em>; the third is the shape of a question.</>} progress={0.55} meta="2 of 3 drafts · est. Dec 20"/>
+        <HorizonCard label="WEEK · 46" title="Thursday's essay, middle section." body={<>The single thing. If it's done by Friday, the week is <em>good enough.</em></>} progress={0.62} meta="4 focus blocks · 2 used"/>
+        <HorizonCard label="TODAY · THU 14" title="Begin with the essay." body={<>One focus block at 09:30. <em>Everything else is optional.</em></>} progress={0} meta="90 MIN · 09:30 → 11:00"/>
+      </div>
+
+      <SecLabel tail="WEEK 46 · NOV 11 → NOV 17">This week at a glance</SecLabel>
+      <div className="panel" style={{ padding: '24px 24px', marginBottom: 32 }}>
+        <div className="grid" style={{ gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
+          {['MON 11','TUE 12','WED 13','THU 14','FRI 15','SAT 16','SUN 17'].map((d, i) => (
+            <div key={i} style={{
+              padding: '12px 10px',
+              border: '1px solid var(--m-rule)',
+              background: i === 3 ? 'var(--m-accent-wash)' : 'var(--m-surface)',
+              borderLeft: i === 3 ? '2px solid var(--m-accent)' : '1px solid var(--m-rule)',
+              minHeight: 150,
+              borderRadius: 2,
+            }}>
+              <div style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.16em', color: i===3?'var(--m-accent)':'var(--m-muted)', marginBottom: 8 }}>{d}</div>
+              {WEEK_ITEMS[i].map((it, j) => (
+                <div key={j} style={{
+                  fontSize: 11, fontFamily: 'var(--m-display)', color: 'var(--m-text)',
+                  padding: '3px 6px', marginBottom: 3,
+                  background: it.accent ? 'var(--m-accent)' : it.ochre ? 'var(--m-ochre-wash)' : 'var(--m-surface-2)',
+                  color: it.accent ? 'var(--m-on-accent)' : it.ochre ? 'var(--m-ochre-deep)' : 'var(--m-text)',
+                  borderRadius: 2,
+                  borderLeft: it.ochre ? '2px solid var(--m-ochre)' : '',
+                  lineHeight: 1.3,
+                }}>{it.t}</div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-2">
+        <div>
+          <SecLabel>Intentions · Q4</SecLabel>
+          <div className="panel">
+            {INTENTIONS.map((it, i, a) => (
+              <div key={i} style={{ padding: '16px 20px', borderBottom: i === a.length - 1 ? 0 : '1px solid var(--m-rule-soft)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <div style={{ fontFamily: 'var(--m-display)', fontSize: 15, color: 'var(--m-ink)' }}>{it.t}</div>
+                  <div className="tnum" style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--m-muted)' }}>{it.p}</div>
+                </div>
+                <div style={{ height: 2, background: 'var(--m-surface-3)', marginTop: 6, borderRadius: 1 }}>
+                  <div style={{ height: '100%', width: it.p, background: it.ok ? 'var(--m-ok)' : it.warn ? 'var(--m-ochre)' : 'var(--m-accent)' }}/>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <SecLabel>Notes from the planner</SecLabel>
+          <div className="panel panel-pad" style={{ padding: '22px 24px' }}>
+            <div className="ed" style={{ fontSize: 15, marginBottom: 12 }}>
+              <em>The Frege's-puzzle thread</em> is drifting — three weeks open, no recent addition. Retire, pause, or fold into the Kripke essay?
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button className="btn btn--sec btn--caps">Retire</button>
+              <button className="btn btn--sec btn--caps">Pause</button>
+              <button className="btn btn--primary btn--caps">Fold in</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HorizonCard({ label, title, body, progress, meta }) {
+  return (
+    <div className="panel panel-pad" style={{ padding: '22px 24px' }}>
+      <div style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--m-accent)', marginBottom: 10 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--m-display)', fontSize: 20, fontWeight: 500, color: 'var(--m-ink)', lineHeight: 1.25, marginBottom: 8 }}>{title}</div>
+      <div className="ed" style={{ fontSize: 14, marginBottom: 16 }}>{body}</div>
+      <div style={{ height: 2, background: 'var(--m-surface-3)', borderRadius: 1 }}>
+        <div style={{ height: '100%', width: `${progress*100}%`, background: 'var(--m-accent)' }}/>
+      </div>
+      <div style={{ fontFamily: 'var(--m-mono)', fontSize: 10, letterSpacing: '0.14em', color: 'var(--m-muted)', marginTop: 8 }}>{meta}</div>
+    </div>
+  );
+}
+
+const WEEK_ITEMS = [
+  [{t:'Essay opening'},{t:'Read · Kripke'}],
+  [{t:'Essay draft'},{t:'Lunch · H.'}],
+  [{t:'Editing pass'}],
+  [{t:'Middle section',accent:true},{t:'Laurent · 14:00',ochre:true},{t:'Peirce reply'}],
+  [{t:'Closing pass'},{t:'Reading group'}],
+  [{t:'Rest'}],
+  [{t:'Plan week 47'}],
+];
+
+const INTENTIONS = [
+  { t: 'Finish the three essays on naming', p: '66%' },
+  { t: 'Read Putnam, "Meaning of Meaning"', p: '40%' },
+  { t: 'Submit the Peirce reply to Laurent', p: '85%', ok: true },
+  { t: 'Close the Indexicals thread', p: '15%', warn: true },
+];
+
+window.PlannerSurface = PlannerSurface;
+
+// === ui_kits/metis/surfaces/work.jsx ===
+// Surface 05 — Work (kanban)
+function WorkSurface() {
+  return (
+    <div className="page" style={{ maxWidth: 1320 }}>
+      <PageHead current="work" right={<div className="page-meta"><div>3 PROJECTS · 14 TASKS · 2 PAUSED</div></div>}/>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20, alignItems: 'center' }}>
+        <Chip kind="mute" plain>ALL</Chip>
+        <Chip>Essay on naming</Chip>
+        <Chip kind="ochre">Reading group</Chip>
+        <Chip kind="mute" plain>Site redesign</Chip>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+          <button className="btn btn--sec btn--caps">+ Task</button>
+          <button className="btn btn--ghost btn--caps">Group · Project</button>
+        </div>
+      </div>
+      <div className="grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        <Column title="Inbox" count={3} items={[
+          {title:'Rename the Frege thread',tag:'Essay',mins:'5m'},
+          {title:'Pull quotes from Putnam',tag:'Essay',mins:'20m'},
+          {title:'Schedule reading group prep',tag:'Group',kind:'ochre',mins:'10m'},
+        ]}/>
+        <Column title="This week" count={6} items={[
+          {title:'Middle section of Thursday essay',tag:'Essay',mins:'90m',star:true,kind:'accent'},
+          {title:'Reply to M. Laurent',tag:'Group',kind:'ochre',mins:'30m'},
+          {title:'Read N&N, pp. 48–62',tag:'Essay',mins:'45m'},
+          {title:'Pick epigraph for opening',tag:'Essay',mins:'15m'},
+          {title:'Outline the third essay',tag:'Essay',mins:'60m'},
+          {title:'Tidy the Unfiled slipcase',tag:'Admin',kind:'mute',mins:'20m'},
+        ]}/>
+        <Column title="In progress" count={2} items={[
+          {title:'Essay — middle section',tag:'Essay',mins:'1h used · 30m left',kind:'accent',bar:0.68},
+          {title:'Peirce reply for Metis',tag:'Thinking',kind:'info',mins:'short'},
+        ]}/>
+        <Column title="Closed · this week" count={3} muted items={[
+          {title:'Opening paragraph filed',tag:'Essay',mins:'Tue'},
+          {title:'Kripke outline agreed',tag:'Essay',mins:'Mon'},
+          {title:'Send readings to group',tag:'Group',kind:'ochre',mins:'Mon'},
+        ]}/>
+      </div>
+    </div>
+  );
+}
+function Column({ title, count, items, muted }) {
+  return (
+    <div style={{ background: 'var(--m-surface-3)', borderRadius: 3, padding: 12, opacity: muted ? 0.85 : 1 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 8px 12px', fontFamily:'var(--m-mono)', fontSize:10, letterSpacing:'0.22em', textTransform:'uppercase', color:'var(--m-muted)' }}>
+        <span>{title}</span><span>{count}</span>
+      </div>
+      <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+        {items.map((it,i) => (
+          <div key={i} style={{ background:'var(--m-surface)', border:'1px solid var(--m-rule)', borderLeft: it.kind==='accent' ? '2px solid var(--m-accent)' : it.kind==='ochre' ? '2px solid var(--m-ochre)' : it.kind==='info' ? '2px solid var(--m-info)' : '1px solid var(--m-rule)', borderRadius: 2, padding: '12px 14px' }}>
+            <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:8 }}>
+              <div style={{ fontFamily:'var(--m-display)', fontSize:14, color:'var(--m-ink)', lineHeight:1.3 }}>{it.title}</div>
+              {it.star && <span style={{fontSize:10, color:'var(--m-accent)'}}>★</span>}
+            </div>
+            <div style={{ marginTop:8, display:'flex', justifyContent:'space-between', fontFamily:'var(--m-mono)', fontSize:10, letterSpacing:'0.12em', color:'var(--m-muted)' }}>
+              <span>{it.tag.toUpperCase()}</span><span>{it.mins}</span>
+            </div>
+            {it.bar != null && <div style={{height:2,background:'var(--m-surface-3)',marginTop:8,borderRadius:1}}><div style={{height:'100%',width:`${it.bar*100}%`,background:'var(--m-accent)'}}/></div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+window.WorkSurface = WorkSurface;
+
+// === ui_kits/metis/surfaces/meetings.jsx ===
+// Surface 06 — Meetings
+function MeetingsSurface() {
+  return (
+    <div className="page">
+      <PageHead current="meetings" right={<div className="page-meta"><div>2 TODAY · 3 THIS WEEK · 1 PREPPED</div></div>}/>
+      <div className="grid grid-main" style={{ gap: 28 }}>
+        <div>
+          <SecLabel tail="PREPPED · 14:00 TODAY">M. Laurent · reading group</SecLabel>
+          <div className="panel" style={{ padding: '28px 32px', marginBottom: 18 }}>
+            <Kicker kind="ochre"><Ico name="clock"/><span>THU 14 NOV · 14:00 — 14:30 · MET. LAURENT</span></Kicker>
+            <h2 style={{ fontFamily:'var(--m-display)', fontSize:26, fontWeight:500, letterSpacing:'-0.018em', margin:'10px 0 10px', color:'var(--m-ink)' }}>
+              Reading group — Kripke, lectures I–II
+            </h2>
+            <p className="ed" style={{ fontSize:15, maxWidth:640, marginBottom:18 }}>
+              M. Laurent has read through lecture II. She has a disagreement about the role of <em>a priori</em> knowledge in the baptism case. <em>Metis flagged it in her last email.</em>
+            </p>
+            <SecLabel>One-pager</SecLabel>
+            <ul style={{ margin:0, padding:0, listStyle:'none', fontFamily:'var(--m-display)', fontSize:15, color:'var(--m-text)', lineHeight: 1.9 }}>
+              <li>· Agree on what "rigid" means before arguing about descriptions.</li>
+              <li>· Hesperus / Phosphorus — <em>do not rehash;</em> M. knows it.</li>
+              <li>· M.'s objection: a priori necessity vs. a posteriori necessity.</li>
+              <li>· Open with Kripke's own concession on p. 56 — good-faith framing.</li>
+              <li>· If time: the Putnam thread. Otherwise next week.</li>
+            </ul>
+            <div style={{ display:'flex', gap:6, marginTop: 22, paddingTop:18, borderTop:'1px solid var(--m-rule)'}}>
+              <button className="btn btn--primary">Open one-pager</button>
+              <button className="btn btn--sec btn--caps">Transcript (after)</button>
+              <button className="btn btn--ghost btn--caps">Reschedule</button>
+            </div>
+          </div>
+          <SecLabel>Transcripts · recent</SecLabel>
+          <div className="panel">
+            {[
+              { d:'07 NOV', t:'M. Laurent · reading group', mins:'32 MIN', follow: '3 follow-ups' },
+              { d:'05 NOV', t:'C. Hookway · office hour (Zoom)', mins:'58 MIN', follow: '1 follow-up' },
+              { d:'01 NOV', t:'Editorial — essay pitch, interim', mins:'22 MIN', follow: 'filed' },
+            ].map((m,i,a)=>(
+              <div key={i} style={{ display:'grid', gridTemplateColumns:'80px 1fr 100px 140px', gap:16, padding:'14px 22px', borderBottom: i===a.length-1?0:'1px solid var(--m-rule-soft)', alignItems:'center' }}>
+                <div style={{fontFamily:'var(--m-mono)', fontSize:11, letterSpacing:'0.16em', color:'var(--m-muted)'}}>{m.d}</div>
+                <div style={{fontFamily:'var(--m-display)', fontSize:15, color:'var(--m-ink)'}}>{m.t}</div>
+                <div className="tnum" style={{fontFamily:'var(--m-mono)', fontSize:10, letterSpacing:'0.14em', color:'var(--m-muted)'}}>{m.mins}</div>
+                <div style={{textAlign:'right'}}><Chip kind="mute" plain>{m.follow.toUpperCase()}</Chip></div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div>
+          <SecLabel>Week ahead</SecLabel>
+          <div className="panel">
+            {[
+              {d:'THU · 14:00',t:'M. Laurent · reading',k:'NOW', ochre:true},
+              {d:'FRI · 10:30',t:'Essay editor — call',k:''},
+              {d:'MON · 09:00',t:'C. Hookway · office',k:''},
+            ].map((m,i,a)=>(
+              <div key={i} style={{padding:'14px 18px', borderBottom: i===a.length-1?0:'1px solid var(--m-rule-soft)', borderLeft: m.ochre?'2px solid var(--m-ochre)':'2px solid transparent'}}>
+                <div style={{fontFamily:'var(--m-mono)', fontSize:10, letterSpacing:'0.2em', color: m.ochre ? 'var(--m-ochre-deep)':'var(--m-muted)', marginBottom:4}}>{m.d}{m.k && ' · '+m.k}</div>
+                <div style={{fontFamily:'var(--m-display)', fontSize:14, color:'var(--m-ink)'}}>{m.t}</div>
+              </div>
+            ))}
+          </div>
+
+          <SecLabel>Open follow-ups</SecLabel>
+          <div className="panel" style={{padding:'16px 20px'}}>
+            <div className="ed" style={{ fontSize: 14, marginBottom: 10 }}>
+              From <em>07 Nov · reading group:</em>
+            </div>
+            <ul style={{margin:0, paddingLeft:18, fontFamily:'var(--m-display)', fontSize:14, color:'var(--m-text)', lineHeight:1.7}}>
+              <li>Send M. the Putnam reading <Chip kind="warn" plain>2D OVERDUE</Chip></li>
+              <li>Confirm next date — Nov 21 or 28</li>
+              <li>File Hookway's epigraph idea</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+window.MeetingsSurface = MeetingsSurface;
+
+// === ui_kits/metis/surfaces/learning.jsx ===
+// Surface 07 — Learning
+function LearningSurface() {
+  return (
+    <div className="page">
+      <PageHead current="learning" right={<div className="page-meta"><div>6 COURSES · 48 CARDS DUE · STREAK · 22 DAYS</div></div>}/>
+      <div className="grid grid-3" style={{ marginBottom: 32 }}>
+        <div className="panel panel-pad" style={{ padding: '26px 28px', gridColumn: '1 / 3' }}>
+          <Kicker kind="accent"><Ico name="card"/><span>SPACED REPETITION · 48 DUE TODAY</span></Kicker>
+          <h2 style={{fontFamily:'var(--m-display)', fontSize:24, fontWeight:500, letterSpacing:'-0.015em', margin:'10px 0 8px', color:'var(--m-ink)'}}>
+            Begin the morning's twenty.
+          </h2>
+          <p className="ed" style={{ fontSize:15, margin:'0 0 20px', maxWidth: 560 }}>
+            Twenty cards first, <em>then</em> the essay. Metis has pruned duplicates and sorted by what lapsed longest.
+          </p>
+          <div style={{ display:'flex', alignItems:'center', gap: 14, padding:'14px 16px', background: 'var(--m-bg)', border: '1px solid var(--m-rule)', borderRadius: 2, marginBottom: 14 }}>
+            <div style={{ fontFamily:'var(--m-mono)', fontSize:10, letterSpacing:'0.22em', color:'var(--m-muted)' }}>01 / 20</div>
+            <div style={{ flex:1, fontFamily:'var(--m-display)', fontSize:17, color:'var(--m-ink)' }}>
+              What does Kripke mean by <em>rigid designation?</em>
+            </div>
+            <div style={{ display:'flex', gap:4 }}>
+              <button className="btn btn--sec btn--caps" style={{ padding:'4px 10px' }}>Again</button>
+              <button className="btn btn--sec btn--caps" style={{ padding:'4px 10px' }}>Hard</button>
+              <button className="btn btn--sec btn--caps" style={{ padding:'4px 10px', borderColor:'var(--m-accent)', color:'var(--m-accent)' }}>Good</button>
+              <button className="btn btn--ghost btn--caps" style={{ padding:'4px 10px' }}>Easy</button>
+            </div>
+          </div>
+          <div className="tnum" style={{ fontFamily:'var(--m-mono)', fontSize:11, letterSpacing:'0.14em', color:'var(--m-muted)' }}>
+            NEW · 8 &nbsp;&nbsp; LEARNING · 14 &nbsp;&nbsp; REVIEW · 26
+          </div>
+        </div>
+
+        <div className="panel panel-pad" style={{ padding: '22px 24px' }}>
+          <Kicker><Ico name="clock"/><span>STREAK · 22 DAYS</span></Kicker>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 4, margin: '14px 0 10px' }}>
+            {Array.from({ length: 40 }).map((_, i) => (
+              <div key={i} style={{
+                aspectRatio: '1 / 1',
+                background: i < 22 ? 'var(--m-accent)' : i === 22 ? 'var(--m-ochre)' : 'var(--m-surface-3)',
+                opacity: i < 22 ? (0.4 + (i/22)*0.6) : 1,
+                borderRadius: 1,
+              }}/>
+            ))}
+          </div>
+          <div style={{ fontFamily: 'var(--m-display)', fontStyle: 'italic', fontSize: 13, color: 'var(--m-muted)' }}>
+            Since the 23<sup>rd</sup> of October. <em>Don't break it;</em> don't gamify it either.
+          </div>
+        </div>
+      </div>
+
+      <SecLabel tail="SIX COURSES · FOUR ACTIVE">Courses</SecLabel>
+      <div className="grid grid-3">
+        {[
+          { tag:'PHILOSOPHY', t:'Naming, Necessity, Sense', by:'After Kripke, Frege, Putnam', p:0.42, due:12, kind:'accent' },
+          { tag:'LOGIC', t:'Modal logic, gently', by:'Self-designed · Priest text', p:0.18, due:8 },
+          { tag:'LANGUAGE', t:'Italian · B1', by:'Duolingo import · 14 wks', p:0.66, due:14, kind:'ochre' },
+          { tag:'HISTORY', t:'The long 19th century', by:'Hobsbawm · Bayly', p:0.08, due:0, paused:true },
+          { tag:'WRITING', t:'Practice · 500 words/day', by:'Internal course · streak', p:0.80, due:0, kind:'accent' },
+          { tag:'MUSIC', t:'Ear training, basic intervals', by:'Self-designed', p:0.25, due:14 },
+        ].map((c, i) => (
+          <div key={i} className="panel panel-pad" style={{ padding: '20px 22px', opacity: c.paused ? 0.55 : 1 }}>
+            <div style={{ fontFamily:'var(--m-mono)', fontSize:10, letterSpacing:'0.2em', color: c.kind === 'ochre' ? 'var(--m-ochre-deep)' : 'var(--m-accent)', marginBottom:8 }}>{c.tag}</div>
+            <div style={{ fontFamily:'var(--m-display)', fontSize:18, fontWeight:500, color:'var(--m-ink)', marginBottom:4, letterSpacing:'-0.01em' }}>{c.t}</div>
+            <div style={{ fontFamily:'var(--m-display)', fontStyle:'italic', fontSize:13, color:'var(--m-muted)', marginBottom:16 }}>{c.by}</div>
+            <div style={{ height:2, background:'var(--m-surface-3)', borderRadius:1 }}>
+              <div style={{ height:'100%', width: `${c.p*100}%`, background: c.kind === 'ochre' ? 'var(--m-ochre)' : 'var(--m-accent)' }}/>
+            </div>
+            <div style={{ display:'flex', justifyContent:'space-between', marginTop:8, fontFamily:'var(--m-mono)', fontSize:10, letterSpacing:'0.14em', color:'var(--m-muted)' }}>
+              <span>{Math.round(c.p*100)}%</span>
+              <span>{c.paused ? 'PAUSED' : c.due > 0 ? `${c.due} DUE` : 'CAUGHT UP'}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+window.LearningSurface = LearningSurface;
+
+// === ui_kits/metis/surfaces/teach.jsx ===
+// Surface 08 — Teach (drafts outward)
+function TeachSurface() {
+  return (
+    <div className="page" style={{ maxWidth: 1180 }}>
+      <PageHead current="teach" right={<div className="page-meta"><div>3 DRAFTS · 1 PUBLISHED · 2 IN THE DRAWER</div></div>}/>
+      <div className="grid" style={{ gridTemplateColumns: '1.6fr 1fr', gap: 32 }}>
+        <div>
+          <SecLabel tail="IN PROGRESS · 1 120 / ~1 800 WORDS">The Thursday essay</SecLabel>
+          <div className="panel" style={{ padding: '40px 56px' }}>
+            <div style={{ fontFamily:'var(--m-mono)', fontSize:10, letterSpacing:'0.22em', color:'var(--m-muted)', marginBottom:24 }}>DRAFT · NOV 08 → NOV 14 · FOR THE REVIEW</div>
+            <h1 style={{ fontFamily:'var(--m-display)', fontSize:36, fontWeight:500, letterSpacing:'-0.02em', color:'var(--m-ink)', lineHeight:1.15, margin:'0 0 10px' }}>
+              The name holds; the description travels
+            </h1>
+            <div style={{ fontFamily:'var(--m-display)', fontStyle:'italic', fontSize:18, color:'var(--m-muted)', marginBottom:32 }}>
+              On Kripke, Peirce, and why the morning star keeps returning.
+            </div>
+            <div style={{ fontFamily:'var(--m-display)', fontSize:17, lineHeight:1.7, color:'var(--m-text)' }}>
+              <p style={{ margin:'0 0 1em' }}>
+                A name, Kripke tells us, is <em>rigid</em>. It picks out the same thing in every possible world in which that thing exists. To say "Hesperus" is to reach for Venus — not for <em>some</em> bright evening star, but for this one, the one we baptized.
+              </p>
+              <p style={{ margin:'0 0 1em' }}>
+                A description, by contrast, <span style={{ background: 'var(--m-highlight)', padding:'0 2px' }}>travels</span>. "The evening star" means different things in worlds where the evening star is a different body, and nothing where there is no evening star at all.
+              </p>
+              <p style={{ margin:'0 0 1em', color: 'var(--m-muted-soft)', position: 'relative' }}>
+                [MIDDLE SECTION · in progress]
+                <span style={{ position:'absolute', right: -240, top: 0, width: 220, fontFamily:'var(--m-display)', fontStyle:'italic', fontSize:13, color: 'var(--m-accent)', lineHeight: 1.4, borderLeft: '2px solid var(--m-accent)', paddingLeft: 10 }}>
+                  Metis · The turn from Peirce to Kripke wants a sentence of air. Consider a one-line epigraph here, or a sparer paragraph.
+                </span>
+              </p>
+              <p style={{ margin:'0 0 1em' }}>
+                For Peirce, the same star sits in a different question. Not <em>what does the name hold onto</em>, but <em>what does the sign do in a mind</em>. The interpretant is not a further term on the line; it is the effect, the turn, the small inner click. The name insists; the sign <em>happens</em>.
+              </p>
+              <p style={{ margin:0, color: 'var(--m-muted)' }}>
+                [continue: the essay's turn, then the close]
+              </p>
+            </div>
+
+            <div style={{ marginTop: 32, paddingTop: 18, borderTop: '1px solid var(--m-rule)', display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ fontFamily:'var(--m-mono)', fontSize:10, letterSpacing:'0.14em', color:'var(--m-muted)' }}>SAVED · 07:12 · VERSION 12</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button className="btn btn--ghost btn--caps">Versions</button>
+                <button className="btn btn--sec btn--caps">Read-through</button>
+                <button className="btn btn--primary btn--caps">Publish</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <SecLabel>All pieces</SecLabel>
+          <div className="panel">
+            {[
+              { t:'The name holds; the description travels', s:'Draft · this week', k:'accent', on:true, pct:62 },
+              { t:'On Frege\'s puzzle, for a general reader', s:'Draft · in the drawer', k:'ochre', pct:30 },
+              { t:'Against the indexical as an afterthought', s:'Outline · in the drawer', k:'ochre', pct:10 },
+              { t:'Why Kripke still matters', s:'Published · June', k:'ok', pct:100 },
+            ].map((p,i,a) => (
+              <div key={i} style={{ padding:'16px 20px', borderBottom: i===a.length-1?0:'1px solid var(--m-rule-soft)', borderLeft: p.on ? '2px solid var(--m-accent)' : '2px solid transparent', background: p.on ? 'var(--m-accent-wash)' : 'transparent' }}>
+                <div style={{ fontFamily:'var(--m-display)', fontSize:15, color:'var(--m-ink)', lineHeight:1.3, marginBottom:4 }}>{p.t}</div>
+                <div style={{ fontFamily:'var(--m-mono)', fontSize:10, letterSpacing:'0.14em', color: p.k === 'ok' ? 'var(--m-ok)' : p.k === 'ochre' ? 'var(--m-ochre-deep)' : 'var(--m-accent)', textTransform:'uppercase' }}>{p.s}</div>
+              </div>
+            ))}
+          </div>
+          <SecLabel>Suggested next</SecLabel>
+          <div className="panel panel-pad" style={{ padding: '18px 20px' }}>
+            <div className="ed" style={{ fontSize: 14 }}>
+              The Frege's-puzzle draft has been in the drawer for thirty-two days. <em>Retire, or reopen after the Thursday essay ships.</em>
+            </div>
+            <div style={{ display:'flex', gap:6, marginTop:12 }}>
+              <button className="btn btn--sec btn--caps">Reopen later</button>
+              <button className="btn btn--ghost btn--caps">Retire</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+window.TeachSurface = TeachSurface;
+
+// === ui_kits/metis/surfaces/metis.jsx ===
+// Surface 09 — Metis (settings: model, memory, keys, billing)
+function MetisSurface() {
+  return (
+    <div className="page" style={{ maxWidth: 1180 }}>
+      <PageHead current="metis" right={<div className="page-meta"><div>STAN · READER IN RESIDENCE</div><div style={{marginTop:4, color:'var(--m-muted-soft)'}}>SIGNED IN · 14 NOV</div></div>}/>
+
+      <div className="grid" style={{ gridTemplateColumns: '220px 1fr', gap: 40 }}>
+        <div>
+          {[
+            { id: 'model', label: 'Model' , on: true },
+            { id: 'memory', label: 'Memory & archive' },
+            { id: 'keys', label: 'Keys & identity' },
+            { id: 'connections', label: 'Connections' },
+            { id: 'appearance', label: 'Appearance' },
+            { id: 'billing', label: 'Billing' },
+            { id: 'about', label: 'About Metis' },
+          ].map(s => (
+            <div key={s.id} style={{
+              padding: '10px 14px',
+              borderLeft: s.on ? '2px solid var(--m-accent)' : '2px solid transparent',
+              background: s.on ? 'var(--m-accent-wash)' : 'transparent',
+              color: s.on ? 'var(--m-ink)' : 'var(--m-muted)',
+              fontFamily: 'var(--m-display)', fontSize: 14,
+              cursor: 'pointer', borderRadius: 2,
+            }}>{s.label}</div>
+          ))}
+        </div>
+
+        <div>
+          <SecLabel tail="CHOOSE YOUR HAND">Model</SecLabel>
+          <div className="grid grid-3" style={{ marginBottom: 28 }}>
+            {[
+              { name:'Haiku', v:'4.5', use:'Fast marginal notes, tagging, small answers.', chip:'haiku', on:false },
+              { name:'Sonnet', v:'4.5', use:'The default. Reading, replying, writing with you.', chip:'sonnet', on:true },
+              { name:'Opus', v:'4.1', use:'Long reasoning, book-length threads, careful arguments.', chip:'opus', on:false },
+            ].map((m,i) => (
+              <div key={i} className="panel panel-pad" style={{ padding:'22px 24px', borderColor: m.on ? 'var(--m-accent)' : 'var(--m-rule)', borderLeftWidth: m.on?2:1, borderLeftColor: m.on ? 'var(--m-accent)' : 'var(--m-rule)' }}>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:8}}>
+                  <div style={{ fontFamily:'var(--m-display)', fontSize:22, fontWeight:500, color:'var(--m-ink)' }}>{m.name}</div>
+                  <Chip kind={m.chip} plain>{m.v}</Chip>
+                </div>
+                <div className="ed" style={{ fontSize:13, margin:0, minHeight:52 }}>{m.use}</div>
+                <div style={{ marginTop: 14, paddingTop: 12, borderTop:'1px solid var(--m-rule-soft)', fontFamily:'var(--m-mono)', fontSize:10, letterSpacing:'0.14em', color: m.on ? 'var(--m-accent)' : 'var(--m-muted)' }}>{m.on ? '· SELECTED' : 'USE'}</div>
+              </div>
+            ))}
+          </div>
+
+          <SecLabel>Memory & archive</SecLabel>
+          <div className="panel" style={{ marginBottom: 28 }}>
+            <SettingRow label="Remember across threads" help="Metis keeps a compact index of what you've filed and what you've said. No raw chats stored." value={<Toggle on/>}/>
+            <SettingRow label="Archive after" help="How long an untouched thread stays open before it's filed." value={<Select value="30 days"/>}/>
+            <SettingRow label="Cards per review queue" help="The default size of a spaced-repetition session." value={<Select value="20"/>}/>
+            <SettingRow label="Export the archive" help="A zip of your notes, threads, sources. Monthly or on demand." value={<button className="btn btn--sec btn--caps">Export · 142 MB</button>} last/>
+          </div>
+
+          <SecLabel>Appearance</SecLabel>
+          <div className="panel" style={{ marginBottom: 28 }}>
+            <SettingRow label="Theme" help="Archive (light) for the reading room; Observatory for the lamp at night." value={
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button className="btn btn--sec btn--caps" style={{ padding: '5px 12px', borderColor:'var(--m-accent)', color:'var(--m-accent)' }}>Archive</button>
+                <button className="btn btn--sec btn--caps" style={{ padding: '5px 12px' }}>Observatory</button>
+                <button className="btn btn--ghost btn--caps" style={{ padding: '5px 12px' }}>Follow system</button>
+              </div>
+            }/>
+            <SettingRow label="Display family" help="Newsreader, set. You can swap it here if you prefer something else from the same mood." value={<Select value="Newsreader"/>} last/>
+          </div>
+
+          <SecLabel>Identity</SecLabel>
+          <div className="panel" style={{ padding: '18px 22px', marginBottom: 24 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:16 }}>
+              <div style={{ width:52, height:52, borderRadius:'50%', background:'var(--m-surface-2)', border:'1px solid var(--m-rule)', display:'inline-flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--m-display)', fontSize:22, fontWeight:500, color:'var(--m-accent)' }}>S</div>
+              <div>
+                <div style={{ fontFamily:'var(--m-display)', fontSize:17, color:'var(--m-ink)' }}>Stan</div>
+                <div style={{ fontFamily:'var(--m-display)', fontStyle:'italic', fontSize:13, color:'var(--m-muted)' }}>stan@metis.local · reader in residence since June 2024</div>
+              </div>
+              <div style={{ marginLeft:'auto', display:'flex', gap:6 }}>
+                <button className="btn btn--ghost btn--caps">Rename</button>
+                <button className="btn btn--sec btn--caps">Keys</button>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ fontFamily:'var(--m-display)', fontStyle:'italic', fontSize:14, color:'var(--m-muted)', padding: '8px 4px' }}>
+            <em>Metis · Archive edition · v1.0.</em> Built slowly, for one reader.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingRow({ label, help, value, last }) {
+  return (
+    <div style={{ display:'grid', gridTemplateColumns:'1fr 240px', gap: 24, alignItems:'center', padding:'18px 22px', borderBottom: last ? 'none' : '1px solid var(--m-rule-soft)' }}>
+      <div>
+        <div style={{ fontFamily:'var(--m-display)', fontSize:15, color:'var(--m-ink)' }}>{label}</div>
+        <div style={{ fontSize:12, color:'var(--m-muted)', marginTop:2 }}>{help}</div>
+      </div>
+      <div style={{ textAlign:'right' }}>{value}</div>
+    </div>
+  );
+}
+function Toggle({ on }) {
+  return (
+    <div style={{ display:'inline-flex', alignItems:'center', gap:8 }}>
+      <div style={{ width: 34, height: 18, borderRadius: 12, background: on ? 'var(--m-accent)' : 'var(--m-surface-3)', position:'relative', transition: '0.2s' }}>
+        <div style={{ position:'absolute', top: 2, left: on ? 18 : 2, width: 14, height: 14, borderRadius: '50%', background: 'var(--m-surface)', border: '1px solid var(--m-rule)', transition: '0.2s' }}/>
+      </div>
+      <span style={{ fontFamily:'var(--m-mono)', fontSize:10, letterSpacing:'0.14em', color: on ? 'var(--m-accent)' : 'var(--m-muted)' }}>{on?'ON':'OFF'}</span>
+    </div>
+  );
+}
+function Select({ value }) {
+  return (
+    <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 12px', background:'var(--m-surface)', border:'1px solid var(--m-rule-strong)', borderRadius:2, fontFamily:'var(--m-ui)', fontSize:13, color:'var(--m-ink)' }}>
+      <span>{value}</span>
+      <Ico name="chev" />
+    </div>
+  );
+}
+window.MetisSurface = MetisSurface;
+
+
+const { useState, useEffect } = React;
+
+const SURFACES = {
+  today: TodaySurface,
+  knowledge: KnowledgeSurface,
+  thinking: ThinkingSurface,
+  planner: PlannerSurface,
+  work: WorkSurface,
+  meetings: MeetingsSurface,
+  learning: LearningSurface,
+  teach: TeachSurface,
+  metis: MetisSurface,
+};
+
+function App() {
+  const [current, setCurrent] = useState(() => localStorage.getItem('metis.current') || 'today');
+  useEffect(() => { localStorage.setItem('metis.current', current); }, [current]);
+
+  const Surface = SURFACES[current] || TodaySurface;
+  const idx = NAV_ITEMS.findIndex(n => n.id === current) + 1;
+  const title = (NAV_TITLES[current] && NAV_TITLES[current].title) || current;
+  return (
+    <div className="app" data-screen-label={String(idx).padStart(2,'0') + ' ' + title}>
+      <Sidebar current={current} onNavigate={setCurrent}/>
+      <div className="main">
+        <Topbar current={current}/>
+        <div className="scroll"><Surface/></div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+
+</script>
+</body>
+</html>

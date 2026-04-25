@@ -2,178 +2,189 @@
 {% block title %}Metis{% endblock %}
 
 {% block content %}
+<div class="page" style="max-width:1180px;">
 
-<!-- ===== Header ===== -->
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <div>
-    <h4 class="mb-0"><i class="bi bi-robot me-2 text-primary"></i>Metis</h4>
-    <div class="text-muted small mt-1">Agent runs, token usage, and system config</div>
-  </div>
-  <div class="d-flex gap-2">
-    <button class="btn btn-sm btn-outline-secondary"
-            hx-get="/api/partial/metis/agent-runs"
-            hx-target="#metis-runs-list"
-            hx-swap="innerHTML">
-      <i class="bi bi-arrow-clockwise me-1"></i>Refresh
-    </button>
-  </div>
-</div>
-
-<!-- ===== Stats row ===== -->
-<div class="row g-2 mb-3"
-     hx-get="/api/partial/metis/stats"
-     hx-trigger="load"
-     hx-swap="outerHTML">
-  {% for label in ['Runs today', 'Tokens today', 'Total runs', 'Agents active'] %}
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center placeholder-glow">
-      <span class="placeholder col-4 mx-auto mb-1" style="height:1.5rem;"></span>
-      <div class="text-muted small">{{ label }}</div>
+  <div class="page-head">
+    <div>
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">SURFACE 09</div>
+      <h1 style="font-family:var(--m-display);font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0;">Metis</h1>
     </div>
+    <div class="page-meta"
+         hx-get="/api/partial/metis/user"
+         hx-trigger="load"
+         hx-swap="innerHTML">STAN · RESEARCH CORTEX</div>
   </div>
-  {% endfor %}
-</div>
 
-<!-- ===== Recent agent runs ===== -->
-<div class="card mb-3">
-  <div class="card-header py-2 d-flex align-items-center justify-content-between">
-    <span class="fw-semibold small"><i class="bi bi-clock-history me-1"></i>Recent agent runs</span>
-    <select class="form-select form-select-sm" style="width:auto;"
-            hx-get="/api/partial/metis/agent-runs"
-            hx-trigger="change"
-            hx-target="#metis-runs-list"
-            hx-swap="innerHTML"
-            name="days">
-      <option value="1" selected>Today</option>
-      <option value="7">Last 7 days</option>
-      <option value="30">Last 30 days</option>
-    </select>
-  </div>
-  <div class="table-responsive">
-    <table class="table table-sm table-hover mb-0">
-      <thead class="table-light">
-        <tr>
-          <th class="ps-3" style="width:140px;">Time</th>
-          <th>Agent</th>
-          <th>Task</th>
-          <th style="width:100px;">Tokens</th>
-          <th style="width:90px;">Status</th>
-        </tr>
-      </thead>
-      <tbody id="metis-runs-list"
-             hx-get="/api/partial/metis/agent-runs"
-             hx-trigger="load"
-             hx-swap="innerHTML"
-             hx-vals='{"days": 1}'>
-        <tr>
-          <td colspan="5" class="text-center text-muted py-4">
-            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-            Loading agent runs…
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+  <div class="grid" style="grid-template-columns:220px 1fr;gap:40px;">
 
-<!-- ===== Span waterfall (Phase 5.9) ===== -->
-<div class="card mb-3">
-  <div class="card-header py-2 d-flex align-items-center justify-content-between">
-    <span class="fw-semibold small"><i class="bi bi-bar-chart-steps me-1 text-info"></i>Traces</span>
-    <select class="form-select form-select-sm" style="width:auto;"
-            hx-get="/api/partial/metis/traces"
-            hx-trigger="change"
-            hx-target="#metis-traces-body"
-            hx-swap="innerHTML"
-            name="hours">
-      <option value="24" selected>Last 24h</option>
-      <option value="6">Last 6h</option>
-      <option value="168">Last 7 days</option>
-    </select>
-  </div>
-  <div class="card-body p-3" id="metis-traces-body"
-       hx-get="/api/partial/metis/traces"
-       hx-trigger="load"
-       hx-swap="innerHTML"
-       hx-vals='{"hours": 24}'>
-    <div class="placeholder-glow">
-      <span class="placeholder col-10 mb-2"></span>
-      <span class="placeholder col-8"></span>
+    <!-- Settings nav -->
+    <div>
+      {% set settings_nav = [
+        ('model', 'Model', true),
+        ('memory', 'Memory & archive', false),
+        ('keys', 'Keys & identity', false),
+        ('connections', 'Connections', false),
+        ('appearance', 'Appearance', false),
+        ('agents', 'Agents', false),
+        ('about', 'About Metis', false),
+      ] %}
+      {% for sid, slabel, son in settings_nav %}
+      <div style="padding:10px 14px;border-left:{% if son %}2px solid var(--m-accent);background:var(--m-accent-wash);color:var(--m-ink);{% else %}2px solid transparent;background:transparent;color:var(--m-muted);{% endif %}font-family:var(--m-display);font-size:14px;cursor:pointer;border-radius:2px;margin-bottom:1px;"
+           onclick="setMetisSection('{{ sid }}', this)">{{ slabel }}</div>
+      {% endfor %}
     </div>
-  </div>
-</div>
 
-<!-- ===== Consent ledger (Phase 6) ===== -->
-<div class="card mb-3">
-  <div class="card-header py-2 d-flex align-items-center justify-content-between">
-    <span class="fw-semibold small">
-      <i class="bi bi-journal-check me-1 text-success"></i>Consent &amp; data audit ledger
-    </span>
-    <div class="d-flex align-items-center gap-2">
-      <span class="badge bg-light text-dark border" id="network-policy-badge"
-            hx-get="/api/partial/metis/network-policy"
-            hx-trigger="load, every 30s"
-            hx-swap="outerHTML">
-        <i class="bi bi-wifi me-1"></i>…
-      </span>
-      <button class="btn btn-sm btn-outline-secondary"
-              hx-get="/api/partial/metis/consent"
-              hx-target="#metis-consent-body"
-              hx-swap="innerHTML">
-        <i class="bi bi-arrow-clockwise"></i>
-      </button>
-    </div>
-  </div>
-  <div class="card-body p-0" id="metis-consent-body"
-       hx-get="/api/partial/metis/consent"
-       hx-trigger="load"
-       hx-swap="innerHTML">
-    <div class="p-3 placeholder-glow">
-      <span class="placeholder col-10 mb-2"></span>
-      <span class="placeholder col-8"></span>
-    </div>
-  </div>
-</div>
+    <!-- Main content -->
+    <div>
 
-<!-- ===== System info ===== -->
-<div class="row g-3">
-
-  <!-- Active agents -->
-  <div class="col-12 col-md-6">
-    <div class="card">
-      <div class="card-header py-2">
-        <span class="fw-semibold small"><i class="bi bi-people me-1 text-primary"></i>Registered agents</span>
+      <!-- Model cards -->
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Model</span>
+        <span class="tail">CHOOSE YOUR HAND</span>
       </div>
-      <div class="card-body p-3"
-           hx-get="/api/partial/metis/agents"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        <div class="placeholder-glow">
-          <span class="placeholder col-7 mb-2"></span>
-          <span class="placeholder col-5"></span>
+      <div class="grid grid-3" style="margin-bottom:28px;">
+        {% set models = [
+          ('Haiku', '4.5', 'Fast marginal notes, tagging, small answers.', 'haiku', 'haiku', false),
+          ('Sonnet', '4.6', 'The default. Reading, replying, writing with you.', 'sonnet', 'sonnet', true),
+          ('Opus', '4.1', 'Long reasoning, book-length threads, careful arguments.', 'opus', 'opus', false),
+        ] %}
+        {% for mname, mver, muse, mchip, mslug, mon in models %}
+        <div class="panel panel-pad{% if mon %} model-card-on{% endif %}" style="padding:22px 24px;cursor:pointer;"
+             onclick="setActiveModel('{{ mslug }}', this.querySelector('button'))">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+            <div style="font-family:var(--m-display);font-size:22px;font-weight:500;color:var(--m-ink);">{{ mname }}</div>
+            <span class="chip chip--{{ mchip }} chip--plain">{{ mver }}</span>
+          </div>
+          <div class="ed" style="font-size:13px;margin:0;min-height:52px;">{{ muse }}</div>
+          <button class="btn btn--ghost btn--caps" style="margin-top:14px;padding:0;border:none;background:transparent;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:{% if mon %}var(--m-accent){% else %}var(--m-muted){% endif %};"
+                  onclick="event.stopPropagation();setActiveModel('{{ mslug }}', this)">
+            {{ '· SELECTED' if mon else 'USE' }}
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Memory & archive settings -->
+      <div class="sec-label" style="margin-bottom:12px;"><span>Memory &amp; archive</span></div>
+      <div class="panel" style="margin-bottom:28px;">
+        {% macro setting_row(label, help, last=false) %}
+        <div style="display:grid;grid-template-columns:1fr 240px;gap:24px;align-items:center;padding:18px 22px;{% if not last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
+          <div>
+            <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">{{ label }}</div>
+            <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">{{ help }}</div>
+          </div>
+          <div style="text-align:right;">
+        {% endmacro %}
+
+        <div style="display:grid;grid-template-columns:1fr 240px;gap:24px;align-items:center;padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
+          <div>
+            <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">Remember across threads</div>
+            <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Metis keeps a compact index of what you've filed. No raw chats stored.</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="display:inline-flex;align-items:center;gap:8px;">
+              <div style="width:34px;height:18px;border-radius:12px;background:var(--m-accent);position:relative;">
+                <div style="position:absolute;top:2px;left:18px;width:14px;height:14px;border-radius:50%;background:var(--m-surface);border:1px solid var(--m-rule);"></div>
+              </div>
+              <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-accent);">ON</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 240px;gap:24px;align-items:center;padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
+          <div>
+            <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">Archive after</div>
+            <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">How long an untouched thread stays open before it's filed.</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:var(--m-surface);border:1px solid var(--m-rule-strong);border-radius:2px;font-family:var(--m-ui);font-size:13px;color:var(--m-ink);">30 days</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 240px;gap:24px;align-items:center;padding:18px 22px;">
+          <div>
+            <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">Export the archive</div>
+            <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">A zip of your notes, threads, sources. Monthly or on demand.</div>
+          </div>
+          <div style="text-align:right;">
+            <button class="btn btn--sec btn--caps" onclick="openMetisExport()">Export</button>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- System config -->
-  <div class="col-12 col-md-6">
-    <div class="card">
-      <div class="card-header py-2">
-        <span class="fw-semibold small"><i class="bi bi-gear me-1 text-secondary"></i>System</span>
-      </div>
-      <div class="card-body p-3"
-           hx-get="/api/partial/metis/system-info"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        <div class="placeholder-glow">
-          <span class="placeholder col-8 mb-2"></span>
-          <span class="placeholder col-6"></span>
+      <!-- Appearance -->
+      <div class="sec-label" style="margin-bottom:12px;"><span>Appearance</span></div>
+      <div class="panel" style="margin-bottom:28px;">
+        <div style="display:grid;grid-template-columns:1fr 240px;gap:24px;align-items:center;padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
+          <div>
+            <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">Theme</div>
+            <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Archive (light) for day; Observatory for the lamp at night.</div>
+          </div>
+          <div style="text-align:right;">
+            <button class="btn btn--sec btn--caps" onclick="toggleTheme()">Toggle theme</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 240px;gap:24px;align-items:center;padding:18px 22px;">
+          <div>
+            <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">Display family</div>
+            <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Newsreader, set. Primary display typeface.</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:var(--m-surface);border:1px solid var(--m-rule-strong);border-radius:2px;font-family:var(--m-ui);font-size:13px;color:var(--m-ink);">Newsreader</div>
+          </div>
         </div>
       </div>
+
+      <!-- Identity -->
+      <div class="sec-label" style="margin-bottom:12px;"><span>Identity</span></div>
+      <div class="panel" style="padding:18px 22px;margin-bottom:24px;"
+           hx-get="/api/partial/metis/identity"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="width:52px;height:52px;border-radius:50%;background:var(--m-surface-2);border:1px solid var(--m-rule);display:inline-flex;align-items:center;justify-content:center;font-family:var(--m-display);font-size:22px;font-weight:500;color:var(--m-accent);">S</div>
+          <div>
+            <div style="font-family:var(--m-display);font-size:17px;color:var(--m-ink);">Stan</div>
+            <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">sverschaeve@itg.be · research cortex</div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:6px;">
+            <button class="btn btn--ghost btn--caps" onclick="openMetisRename()">Rename</button>
+            <button class="btn btn--sec btn--caps" onclick="openMetisKeys()">Keys</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Agent runs -->
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Recent agent runs</span>
+        <span class="tail" style="cursor:pointer;"
+              hx-get="/api/partial/metis/agent-runs"
+              hx-target="#metis-runs-body"
+              hx-swap="innerHTML">REFRESH</span>
+      </div>
+      <div class="panel" id="metis-runs-body"
+           hx-get="/api/partial/metis/agent-runs"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:24px 16px;opacity:.4;font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">Loading agent runs…</div>
+      </div>
+
+      <div style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);padding:8px 4px;margin-top:24px;">
+        <em>Metis · Archive edition · v1.0.</em> Built slowly, for one researcher.
+      </div>
+
     </div>
   </div>
-
 </div>
 
+<script>
+function setMetisSection(id, el) {
+  document.querySelectorAll('[onclick^="setMetisSection"]').forEach(function(item) {
+    item.style.borderLeftColor = 'transparent';
+    item.style.background = 'transparent';
+    item.style.color = 'var(--m-muted)';
+  });
+  el.style.borderLeftColor = 'var(--m-accent)';
+  el.style.background = 'var(--m-accent-wash)';
+  el.style.color = 'var(--m-ink)';
+}
+</script>
 {% endblock %}

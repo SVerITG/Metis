@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Metis · Colors</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_preview.css">
+<style>
+  body { max-width: 1080px; margin: 0 auto; }
+
+  /* Hero palette strip */
+  .strip {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1fr;
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .strip > div {
+    padding: 28px 20px;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .strip .role {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 6px;
+  }
+  .strip .name { font-family: var(--m-display); font-size: 22px; line-height: 1; margin-bottom: 4px; font-weight: 500; letter-spacing: -0.01em; }
+  .strip .hex { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.08em; opacity: 0.75; }
+
+  .s-bg { background: var(--m-bg); color: var(--m-ink); }
+  .s-surf { background: var(--m-surface); color: var(--m-ink); border-left: 1px solid var(--m-rule); }
+  .s-accent { background: var(--m-accent); color: var(--m-on-accent); }
+  .s-ochre { background: var(--m-ochre); color: #fff; }
+  .s-ink { background: var(--m-ink); color: var(--m-bg); }
+  .s-muted { background: var(--m-muted); color: var(--m-bg); }
+
+  .palette {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .swatch {
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--m-surface);
+  }
+  .swatch .chip {
+    height: 84px;
+    border-bottom: 1px solid var(--m-rule-soft);
+  }
+  .swatch .meta {
+    padding: 12px 14px 14px;
+  }
+  .swatch .role {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+    margin-bottom: 4px;
+  }
+  .swatch .token {
+    font-family: var(--m-mono);
+    font-size: 11px;
+    color: var(--m-ink);
+    margin-bottom: 2px;
+  }
+  .swatch .hex {
+    font-family: var(--m-mono);
+    font-size: 11px;
+    color: var(--m-muted-soft);
+  }
+
+  /* Semantic row */
+  .semantic {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .sem-card {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .sem-card .dot {
+    width: 44px;
+    height: 44px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .sem-card .label {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+  }
+  .sem-card .title {
+    font-family: var(--m-display);
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--m-ink);
+    margin: 2px 0 4px;
+  }
+  .sem-card .hex {
+    font-family: var(--m-mono);
+    font-size: 11px;
+    color: var(--m-muted-soft);
+  }
+
+  /* Application demo */
+  .demo-app {
+    background: var(--m-bg);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 28px;
+  }
+  .demo-paper {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 22px 24px;
+  }
+  .demo-paper + .demo-paper { margin-top: 12px; }
+  .demo-paper .kicker {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--m-accent);
+    margin-bottom: 8px;
+  }
+  .demo-paper h3 { margin: 0 0 6px; color: var(--m-ink); }
+  .demo-paper p { margin: 0; color: var(--m-text); font-size: 14px; line-height: 1.55; }
+  .demo-paper p em { color: var(--m-accent-soft); }
+
+  /* Observatory */
+  .obs {
+    background: #15130f;
+    border: 1px solid rgba(243,234,214,0.14);
+    border-radius: 3px;
+    padding: 32px;
+    color: #f3ead6;
+  }
+  .obs .strip {
+    grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1fr;
+    border-color: rgba(243,234,214,0.12);
+  }
+  .obs .o-bg { background: #15130f; color: #f3ead6; }
+  .obs .o-surf { background: #1c1915; color: #f3ead6; border-left: 1px solid rgba(243,234,214,0.12); }
+  .obs .o-accent { background: #d99a4c; color: #15130f; }
+  .obs .o-ochre { background: #b47a30; color: #15130f; }
+  .obs .o-ink { background: #f3ead6; color: #15130f; }
+  .obs .o-muted { background: #8a8075; color: #15130f; }
+  .obs .obs-eyebrow {
+    font-family: var(--m-mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #8a8075;
+    margin-bottom: 6px;
+  }
+  .obs h2 { color: #f3ead6; margin: 0 0 20px; font-family: var(--m-display); font-weight: 500; letter-spacing: -0.015em; font-size: 24px; }
+  .obs h2 em { color: #d99a4c; font-style: italic; }
+
+  .contrast {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .contrast .bar {
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 14px 16px;
+    font-family: var(--m-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+</style>
+</head>
+<body>
+
+<div class="pv-header">
+  <div>
+    <div class="pv-eyebrow">Metis · Design System · Colors</div>
+    <h1>Color — forest, bone, ochre</h1>
+  </div>
+  <div class="pv-note">
+    A newspaper-editorial palette. Paper, not screens. Rules, not shadows.
+    Ochre is the single warm accent; brick is destructive; moss is positive.
+  </div>
+</div>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Archive — primary surfaces</h2>
+  <div class="strip">
+    <div class="s-bg">
+      <div class="role">Ground</div>
+      <div class="name">Off-white</div>
+      <div class="hex">#F5F2EA · --m-bg</div>
+    </div>
+    <div class="s-surf">
+      <div class="role">Paper</div>
+      <div class="name">Bone</div>
+      <div class="hex">#FBF8F0 · --m-surface</div>
+    </div>
+    <div class="s-accent">
+      <div class="role">Accent</div>
+      <div class="name">Forest</div>
+      <div class="hex">#2D4A3A</div>
+    </div>
+    <div class="s-ochre">
+      <div class="role">Warm</div>
+      <div class="name">Ochre</div>
+      <div class="hex">#9A7B3C</div>
+    </div>
+    <div class="s-ink">
+      <div class="role">Ink</div>
+      <div class="name">Deep</div>
+      <div class="hex">#1F2A24</div>
+    </div>
+    <div class="s-muted">
+      <div class="role">Meta</div>
+      <div class="name">Stone</div>
+      <div class="hex">#7A8178</div>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Surfaces, ink, rules</h2>
+  <div class="palette">
+    <div class="swatch"><div class="chip" style="background:var(--m-bg)"></div><div class="meta"><div class="role">Ground</div><div class="token">--m-bg</div><div class="hex">#F5F2EA</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-surface)"></div><div class="meta"><div class="role">Paper</div><div class="token">--m-surface</div><div class="hex">#FBF8F0</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-surface-2)"></div><div class="meta"><div class="role">Sunken</div><div class="token">--m-surface-2</div><div class="hex">#EEE9DD</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-surface-3)"></div><div class="meta"><div class="role">Deep sunken</div><div class="token">--m-surface-3</div><div class="hex">#E6E1D2</div></div></div>
+
+    <div class="swatch"><div class="chip" style="background:var(--m-ink)"></div><div class="meta"><div class="role">Primary ink</div><div class="token">--m-ink</div><div class="hex">#1F2A24</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-text)"></div><div class="meta"><div class="role">Body</div><div class="token">--m-text</div><div class="hex">#2C3A33</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-muted)"></div><div class="meta"><div class="role">Meta</div><div class="token">--m-muted</div><div class="hex">#7A8178</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-muted-soft)"></div><div class="meta"><div class="role">Hint</div><div class="token">--m-muted-soft</div><div class="hex">#9AA098</div></div></div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Accents</h2>
+  <div class="palette">
+    <div class="swatch"><div class="chip" style="background:var(--m-accent)"></div><div class="meta"><div class="role">Primary</div><div class="token">--m-accent</div><div class="hex">#2D4A3A · forest</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-accent-hover)"></div><div class="meta"><div class="role">Primary hover</div><div class="token">--m-accent-hover</div><div class="hex">#223B2E</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-accent-soft)"></div><div class="meta"><div class="role">Primary soft</div><div class="token">--m-accent-soft</div><div class="hex">#4A6A54</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-accent-wash); border-top:1px solid var(--m-rule)"></div><div class="meta"><div class="role">Wash · 8%</div><div class="token">--m-accent-wash</div><div class="hex">rgba(45,74,58,.08)</div></div></div>
+
+    <div class="swatch"><div class="chip" style="background:var(--m-ochre)"></div><div class="meta"><div class="role">Secondary</div><div class="token">--m-ochre</div><div class="hex">#9A7B3C</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-ochre-deep)"></div><div class="meta"><div class="role">Deep</div><div class="token">--m-ochre-deep</div><div class="hex">#7A5F25</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-ochre-soft)"></div><div class="meta"><div class="role">Soft</div><div class="token">--m-ochre-soft</div><div class="hex">#B99759</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-highlight); border-top:1px solid var(--m-rule)"></div><div class="meta"><div class="role">Highlighter</div><div class="token">--m-highlight</div><div class="hex">rgba(217,154,76,.32)</div></div></div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Semantic signals</h2>
+  <div class="semantic">
+    <div class="sem-card"><div class="dot" style="background:var(--m-ok)"></div><div><div class="label">OK · Moss</div><div class="title">"Saved · just now"</div><div class="hex">#5A7A5E · --m-ok</div></div></div>
+    <div class="sem-card"><div class="dot" style="background:var(--m-warn)"></div><div><div class="label">Warn · Ochre</div><div class="title">"Three drafts are older than a week"</div><div class="hex">#9A7B3C · --m-warn</div></div></div>
+    <div class="sem-card"><div class="dot" style="background:var(--m-alert)"></div><div><div class="label">Alert · Brick</div><div class="title">"Connection dropped; nothing was lost"</div><div class="hex">#A84632 · --m-alert</div></div></div>
+    <div class="sem-card"><div class="dot" style="background:var(--m-info)"></div><div><div class="label">Info · Slate</div><div class="title">"Metis drafted a reply in the margin"</div><div class="hex">#3E6178 · --m-info</div></div></div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Model tiers</h2>
+  <div class="palette" style="grid-template-columns: repeat(3, 1fr)">
+    <div class="swatch"><div class="chip" style="background:var(--m-haiku-bg); display:flex; align-items:center; justify-content:center;"><span style="font-family:var(--m-mono); font-size:11px; letter-spacing:0.2em; color:var(--m-haiku-fg);">HAIKU</span></div><div class="meta"><div class="role">Fast · quiet</div><div class="token">--m-haiku-*</div><div class="hex">#E4EBD9 / #3D5233</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-sonnet-bg); display:flex; align-items:center; justify-content:center;"><span style="font-family:var(--m-mono); font-size:11px; letter-spacing:0.2em; color:var(--m-sonnet-fg);">SONNET</span></div><div class="meta"><div class="role">Workhorse</div><div class="token">--m-sonnet-*</div><div class="hex">#DCE7EC / #2D4A5E</div></div></div>
+    <div class="swatch"><div class="chip" style="background:var(--m-opus-bg); display:flex; align-items:center; justify-content:center;"><span style="font-family:var(--m-mono); font-size:11px; letter-spacing:0.2em; color:var(--m-opus-fg);">OPUS</span></div><div class="meta"><div class="role">Deep</div><div class="token">--m-opus-*</div><div class="hex">#E8DFD2 / #5A3D1A</div></div></div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">In application</h2>
+  <div class="demo-app">
+    <div class="demo-paper">
+      <div class="kicker">Morning briefing · 07:12</div>
+      <h3>Good morning, Stan.</h3>
+      <p>Three threads from yesterday are still warm — <em>Kripke on rigid designators</em>, the draft of Thursday's essay, and a question about Peirce you left open.</p>
+    </div>
+    <div class="demo-paper">
+      <div class="kicker" style="color:var(--m-ochre-deep)">Follow-up · 2 days overdue</div>
+      <h3>Reply to M. Laurent on the reading group.</h3>
+      <p>Ochre marks unfinished business — warm, patient, not red.</p>
+    </div>
+    <div class="demo-paper">
+      <div class="kicker" style="color:var(--m-alert)">Connection · dropped</div>
+      <h3>Work couldn't be saved.</h3>
+      <p>Brick is reserved for the genuine problem. Never for "delete".</p>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Observatory — dark twin</h2>
+  <div class="obs">
+    <div class="obs-eyebrow">Observatory · opt-in dark mode</div>
+    <h2>The same archive, lit by a <em>brass lamp</em> at night.</h2>
+    <div class="strip">
+      <div class="o-bg"><div class="role" style="opacity:.6">Ground</div><div class="name">Near-black</div><div class="hex">#15130F</div></div>
+      <div class="o-surf"><div class="role" style="opacity:.6">Paper</div><div class="name">Warm ink</div><div class="hex">#1C1915</div></div>
+      <div class="o-accent"><div class="role" style="opacity:.8">Accent</div><div class="name">Amber</div><div class="hex">#D99A4C</div></div>
+      <div class="o-ochre"><div class="role" style="opacity:.8">Deep</div><div class="name">Brass</div><div class="hex">#B47A30</div></div>
+      <div class="o-ink"><div class="role" style="opacity:.6">Ink</div><div class="name">Cream</div><div class="hex">#F3EAD6</div></div>
+      <div class="o-muted"><div class="role" style="opacity:.6">Meta</div><div class="name">Dun</div><div class="hex">#8A8075</div></div>
+    </div>
+    <div style="margin-top:22px; padding: 20px 22px; background:#1c1915; border:1px solid rgba(243,234,214,0.12); border-radius:3px;">
+      <div style="font-family:var(--m-mono); font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:#d99a4c; margin-bottom:6px;">NIGHT · 23:04</div>
+      <div style="font-family:var(--m-display); font-size:22px; color:#f3ead6; margin-bottom:6px;">Still here, Stan?</div>
+      <div style="font-size:14px; color:#d9cfba; line-height:1.55;">Two open drafts and a reading for tomorrow. <em style="color:#e0b07a">The Peirce question can keep.</em></div>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Contrast — Archive</h2>
+  <div class="contrast">
+    <div class="bar" style="background:var(--m-surface); color:var(--m-ink);">Ink on paper · 13.8</div>
+    <div class="bar" style="background:var(--m-surface); color:var(--m-text);">Body on paper · 10.6</div>
+    <div class="bar" style="background:var(--m-surface); color:var(--m-muted);">Meta on paper · 4.7</div>
+    <div class="bar" style="background:var(--m-accent); color:var(--m-on-accent);">Bone on forest · 8.9</div>
+    <div class="bar" style="background:var(--m-bg); color:var(--m-accent);">Forest on ground · 8.1</div>
+    <div class="bar" style="background:var(--m-ochre); color:#fff;">White on ochre · 4.6</div>
+  </div>
+</section>
+
+<div class="pv-footer">
+  <span>METIS · DESIGN SYSTEM · V1</span>
+  <span>COLORS · 02</span>
+</div>
+
+</body>
+</html>

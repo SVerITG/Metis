@@ -2,125 +2,69 @@
 {% block title %}Teach{% endblock %}
 
 {% block content %}
+<div class="page" style="max-width:1180px;">
 
-<!-- ===== Header row ===== -->
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <div>
-    <h4 class="mb-0"><i class="bi bi-easel me-2 text-primary"></i>Teach</h4>
-    <div class="text-muted small mt-1">Your classes, literature alerts, and teaching tools</div>
-  </div>
-  <div class="d-flex gap-2">
-    <button class="btn btn-sm btn-outline-secondary"
-            data-bs-toggle="modal"
-            data-bs-target="#addCourseModal">
-      <i class="bi bi-plus-lg me-1"></i>Add course
-    </button>
-  </div>
-</div>
-
-<!-- ===== Teach summary strip ===== -->
-<div class="row g-2 mb-3">
-
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-primary" id="teach-course-count">—</div>
-      <div class="text-muted small">Active courses</div>
+  <div class="page-head">
+    <div>
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">SURFACE 08</div>
+      <h1 style="font-family:var(--m-display);font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0;">Teach</h1>
     </div>
+    <div class="page-meta"
+         hx-get="/api/partial/teach/meta"
+         hx-trigger="load"
+         hx-swap="innerHTML">— COURSES · — PUBLISHED · — IN PROGRESS</div>
   </div>
 
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-warning" id="teach-lit-count">—</div>
-      <div class="text-muted small">New papers this month</div>
-    </div>
-  </div>
+  <div class="grid" style="grid-template-columns:1.6fr 1fr;gap:32px;">
 
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-danger" id="teach-news-count">—</div>
-      <div class="text-muted small">News alerts this week</div>
-    </div>
-  </div>
+    <!-- Left: active course / draft panel -->
+    <div>
+      <div class="sec-label" style="margin-bottom:12px;"
+           hx-get="/api/partial/teach/active-label"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <span>Active course</span>
+        <span class="tail">IN PROGRESS</span>
+      </div>
 
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-success" id="teach-student-count">—</div>
-      <div class="text-muted small">Students enrolled</div>
-    </div>
-  </div>
-
-</div>
-
-<!-- ===== Course cards ===== -->
-<div id="teach-courses-list"
-     hx-get="/api/partial/teach/courses"
-     hx-trigger="load"
-     hx-swap="outerHTML">
-  <!-- Skeleton while loading -->
-  <div class="row g-3">
-    {% for _ in range(3) %}
-    <div class="col-12 col-lg-6">
-      <div class="card p-4 placeholder-glow">
-        <span class="placeholder col-5 mb-2"></span>
-        <span class="placeholder col-8 mb-1"></span>
-        <span class="placeholder col-6"></span>
+      <div hx-get="/api/partial/teach/active-draft"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div class="panel" style="padding:40px 56px;min-height:420px;opacity:.4;">
+          <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:40%;margin-bottom:24px;"></div>
+          <div style="height:30px;background:var(--m-surface-3);border-radius:2px;margin-bottom:10px;"></div>
+          <div style="height:16px;background:var(--m-surface-3);border-radius:2px;width:65%;margin-bottom:32px;"></div>
+          <div style="height:14px;background:var(--m-surface-3);border-radius:2px;margin-bottom:10px;"></div>
+          <div style="height:14px;background:var(--m-surface-3);border-radius:2px;width:90%;margin-bottom:10px;"></div>
+          <div style="height:14px;background:var(--m-surface-3);border-radius:2px;width:80%;"></div>
+        </div>
       </div>
     </div>
-    {% endfor %}
-  </div>
-</div>
 
-<!-- ===== Add Course Modal ===== -->
-<div class="modal fade" id="addCourseModal" tabindex="-1" aria-labelledby="addCourseLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="addCourseLabel">
-          <i class="bi bi-easel me-2"></i>Add course
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Right: all pieces + suggested -->
+    <div>
+      <div class="sec-label" style="margin-bottom:12px;"><span>All courses</span></div>
+      <div class="panel" style="margin-bottom:18px;"
+           hx-get="/api/partial/teach/courses-list"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        {% for _ in range(4) %}
+        <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}border-left:2px solid transparent;opacity:.4;">
+          <div style="height:12px;background:var(--m-surface-3);border-radius:2px;margin-bottom:6px;"></div>
+          <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:50%;"></div>
+        </div>
+        {% endfor %}
       </div>
-      <form hx-post="/api/teach/add-course"
-            hx-target="#teach-courses-list"
-            hx-swap="outerHTML"
-            hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('addCourseModal')).hide()">
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Course title *</label>
-            <input type="text" name="title" class="form-control" required
-                   placeholder="e.g. Epidemiology for Public Health">
-          </div>
-          <div class="row g-2 mb-3">
-            <div class="col">
-              <label class="form-label fw-semibold">Code</label>
-              <input type="text" name="code" class="form-control"
-                     placeholder="e.g. EPID-301">
-            </div>
-            <div class="col">
-              <label class="form-label fw-semibold">Semester</label>
-              <input type="text" name="semester" class="form-control"
-                     placeholder="e.g. 2025-2026 S1">
-            </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Description</label>
-            <textarea name="description" class="form-control" rows="2"
-                      placeholder="Brief course description…"></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Students enrolled</label>
-            <input type="number" name="student_count" class="form-control" value="0" min="0">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">
-            <i class="bi bi-plus-lg me-1"></i>Add course
-          </button>
-        </div>
-      </form>
+
+      <div class="sec-label" style="margin-bottom:12px;"><span>Suggested next</span></div>
+      <div class="panel panel-pad" style="padding:18px 20px;"
+           hx-get="/api/partial/teach/suggested"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div class="ed" style="font-size:14px;opacity:.5;"><em>Loading suggestions…</em></div>
+      </div>
     </div>
+
   </div>
 </div>
-
 {% endblock %}

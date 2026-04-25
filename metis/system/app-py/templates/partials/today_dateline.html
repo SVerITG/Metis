@@ -1,0 +1,12 @@
+<div class="dateline-strip">
+  <span>{{ dateline }}</span>
+  <span class="dateline-meta">
+    {% if last_scan %}Last scan · {{ last_scan }}{% else %}No scans yet{% endif %}
+    <a href="javascript:void(0)" onclick="runDashboardScan()" style="margin-left:1rem;">
+      <i class="bi bi-arrow-clockwise"></i> Scan changes
+    </a>
+    <a href="javascript:void(0)" onclick="runContentScan(event)" style="margin-left:1rem;">
+      <i class="bi bi-broadcast"></i> Scan for content
+    </a>
+  </span>
+</div>

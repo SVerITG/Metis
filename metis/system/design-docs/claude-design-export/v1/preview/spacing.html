@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Metis · Spacing</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_preview.css">
+<style>
+  body { max-width: 1080px; margin: 0 auto; }
+
+  .spacing-grid {
+    display: grid;
+    gap: 12px;
+  }
+  .sp-row {
+    display: grid;
+    grid-template-columns: 140px 80px 1fr;
+    align-items: center;
+    gap: 24px;
+    padding: 14px 18px;
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+  }
+  .sp-row .token {
+    font-family: var(--m-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+  }
+  .sp-row .size {
+    font-family: var(--m-mono);
+    font-size: 12px;
+    color: var(--m-ink);
+  }
+  .sp-row .bar {
+    height: 14px;
+    background: var(--m-accent);
+    border-radius: 2px;
+  }
+
+  .radii-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .radii-card {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    padding: 28px 20px;
+    text-align: center;
+  }
+  .radii-card .r-shape {
+    width: 80px; height: 80px;
+    background: var(--m-accent-wash-2);
+    border: 1.5px solid var(--m-accent);
+    margin: 0 auto 14px;
+  }
+  .radii-card.r-xs .r-shape    { border-radius: 2px; }
+  .radii-card.r-sm .r-shape    { border-radius: 2px; }
+  .radii-card.r-md .r-shape    { border-radius: 3px; }
+  .radii-card.r-pill .r-shape  { border-radius: 999px; width: 140px; height: 40px; }
+  .radii-card .r-tok { font-family: var(--m-mono); font-size: 11px; color: var(--m-muted); letter-spacing: 0.12em; text-transform: uppercase; }
+  .radii-card .r-val { font-family: var(--m-mono); font-size: 11px; color: var(--m-muted-soft); margin-top: 2px; }
+
+  .shadow-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; padding: 16px 0; }
+  .shadow-card {
+    height: 120px;
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .shadow-card .s-name { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--m-ink); }
+  .shadow-card .s-val  { font-family: var(--m-mono); font-size: 10px; color: var(--m-muted); }
+  .shadow-card.sh-sm  { box-shadow: var(--m-shadow-sm); }
+  .shadow-card.sh-md  { box-shadow: var(--m-shadow); }
+  .shadow-card.sh-lg  { box-shadow: var(--m-shadow-lg); }
+  .shadow-card.sh-hv  { box-shadow: var(--m-shadow-hover); }
+
+  .density-demo {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 32px;
+  }
+  .density-demo h3 {
+    font-family: var(--m-display);
+    font-size: 22px;
+    font-weight: 500;
+    margin: 0 0 4px;
+    color: var(--m-ink);
+  }
+  .density-demo .d-sub {
+    font-family: var(--m-display);
+    font-style: italic;
+    color: var(--m-muted);
+    margin-bottom: 32px;
+  }
+  .density-demo .d-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--m-rule-soft);
+  }
+  .density-demo .d-item:last-child { border: 0; }
+  .density-demo .d-label {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+    margin-bottom: 4px;
+  }
+  .density-demo .d-body {
+    color: var(--m-text);
+    font-size: 15px;
+  }
+
+  .motion {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .m-card {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: 3px;
+    padding: 20px;
+  }
+  .m-card .m-name { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--m-ink); margin-bottom: 6px; }
+  .m-card .m-val  { font-family: var(--m-mono); font-size: 11px; color: var(--m-muted); margin-bottom: 16px; }
+  .m-card .track {
+    height: 3px;
+    background: var(--m-surface-3);
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+  .m-card .track::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    width: 24px;
+    background: var(--m-accent);
+    border-radius: 2px;
+    animation: slide 2.4s infinite;
+  }
+  .m-card.slow .track::after { animation-duration: 3.4s; animation-timing-function: cubic-bezier(0.6,0.02,0.2,1); }
+  .m-card.fast .track::after { animation-duration: 1.5s; animation-timing-function: ease; }
+  @keyframes slide {
+    0%, 100% { left: 0; }
+    50%      { left: calc(100% - 24px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="pv-header">
+  <div>
+    <div class="pv-eyebrow">Metis · Design System · Spacing</div>
+    <h1>Spacing, radii, shadows, motion</h1>
+  </div>
+  <div class="pv-note">
+    4px base scale · near-square radii · barely-there shadows · unhurried motion.
+    Archive prefers rules to shadows and air to density.
+  </div>
+</div>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Spacing scale · 4px base</h2>
+  <div class="spacing-grid">
+    <div class="sp-row"><div class="token">--m-s-1</div><div class="size">4px</div><div class="bar" style="width:4px"></div></div>
+    <div class="sp-row"><div class="token">--m-s-2</div><div class="size">8px</div><div class="bar" style="width:8px"></div></div>
+    <div class="sp-row"><div class="token">--m-s-3</div><div class="size">12px</div><div class="bar" style="width:12px"></div></div>
+    <div class="sp-row"><div class="token">--m-s-4</div><div class="size">16px</div><div class="bar" style="width:16px"></div></div>
+    <div class="sp-row"><div class="token">--m-s-5</div><div class="size">20px</div><div class="bar" style="width:20px"></div></div>
+    <div class="sp-row"><div class="token">--m-s-6</div><div class="size">24px</div><div class="bar" style="width:24px"></div></div>
+    <div class="sp-row"><div class="token">--m-s-8</div><div class="size">32px</div><div class="bar" style="width:32px"></div></div>
+    <div class="sp-row"><div class="token">--m-s-10</div><div class="size">40px</div><div class="bar" style="width:40px"></div></div>
+    <div class="sp-row"><div class="token">--m-s-12</div><div class="size">48px</div><div class="bar" style="width:48px"></div></div>
+    <div class="sp-row"><div class="token">--m-s-16</div><div class="size">64px</div><div class="bar" style="width:64px"></div></div>
+    <div class="sp-row"><div class="token">--m-s-20</div><div class="size">80px</div><div class="bar" style="width:80px"></div></div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Radii — paper has edges</h2>
+  <div class="radii-grid">
+    <div class="radii-card r-xs"><div class="r-shape"></div><div class="r-tok">--m-radius-xs</div><div class="r-val">2px · inputs</div></div>
+    <div class="radii-card r-sm"><div class="r-shape"></div><div class="r-tok">--m-radius-sm</div><div class="r-val">2px · buttons</div></div>
+    <div class="radii-card r-md"><div class="r-shape"></div><div class="r-tok">--m-radius</div><div class="r-val">3px · cards</div></div>
+    <div class="radii-card r-pill"><div class="r-shape"></div><div class="r-tok">--m-radius-pill</div><div class="r-val">999px · chips</div></div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Shadows — a finger's weight</h2>
+  <div class="shadow-grid">
+    <div class="shadow-card sh-sm"><div class="s-name">SM</div><div class="s-val">--m-shadow-sm</div></div>
+    <div class="shadow-card sh-md"><div class="s-name">MD</div><div class="s-val">--m-shadow</div></div>
+    <div class="shadow-card sh-hv"><div class="s-name">HOVER</div><div class="s-val">--m-shadow-hover</div></div>
+    <div class="shadow-card sh-lg"><div class="s-name">LG · Modal</div><div class="s-val">--m-shadow-lg</div></div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Density — editorial, not dashboard</h2>
+  <div class="density-demo">
+    <h3>Active threads</h3>
+    <p class="d-sub">Spacing is generous. Air earns its keep.</p>
+    <div class="d-item">
+      <div class="d-label">THINKING · 2 days open</div>
+      <div class="d-body">Kripke on rigid designators — the tension with descriptivism.</div>
+    </div>
+    <div class="d-item">
+      <div class="d-label">DRAFT · 6 days open</div>
+      <div class="d-body">Thursday essay — second pass on the middle section.</div>
+    </div>
+    <div class="d-item">
+      <div class="d-label">QUESTION · left for Metis</div>
+      <div class="d-body">Peirce's <em>interpretant</em> — does it nest recursively?</div>
+    </div>
+  </div>
+  <p class="meta" style="text-align:center; margin-top:10px; font-family:var(--m-mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase;">
+    Card pad 32 · row pad 16 vert · label→body gap 4 · section gap 32
+  </p>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Motion — unhurried</h2>
+  <div class="motion">
+    <div class="m-card fast">
+      <div class="m-name">Fast · micro</div>
+      <div class="m-val">150ms · ease · --m-transition-fast</div>
+      <div class="track"></div>
+    </div>
+    <div class="m-card">
+      <div class="m-name">Default</div>
+      <div class="m-val">200ms · ease-out · --m-transition</div>
+      <div class="track"></div>
+    </div>
+    <div class="m-card slow">
+      <div class="m-name">Slow · surface</div>
+      <div class="m-val">400ms · cubic-bezier · --m-transition-slow</div>
+      <div class="track"></div>
+    </div>
+  </div>
+</section>
+
+<div class="pv-footer">
+  <span>METIS · DESIGN SYSTEM · V1</span>
+  <span>SPACING · 03</span>
+</div>
+
+</body>
+</html>

@@ -2,33 +2,43 @@
   "_meta": {
     "version": "1.0",
     "created": "2026-04-13",
-    "last_updated": "2026-04-21",
-    "last_phase_completed": "Phase 6 — Anonymization & trust UI",
-    "purpose": "Tracks all 75 implementation milestones for the Metis Research Cortex redesign. Statuses: pending | in_progress | completed | skipped. Each completed item records a date and optional notes.",
+    "last_updated": "2026-04-25",
+    "last_phase_completed": "Phase 9 \u2014 Dashboard polish & button wiring",
+    "sonnet_handoff_plan": "metis/journal/2026-04-24_sonnet_handoff_plan.md",
+    "purpose": "Tracks all implementation milestones for the Metis Research Cortex redesign. Statuses: pending | in_progress | completed | skipped. Each completed item records a date and optional notes.",
     "phases": [
-      "Phase 0 — Foundations",
-      "Phase 1 — Dashboard consolidation",
-      "Phase 2 — Today tab redesign",
-      "Phase 3 — Quick capture",
-      "Phase 4 — Master pipeline",
-      "Phase 5 — Multi-layered memory",
-      "Phase 5.4 — Folder restructuring",
-      "Phase 5.5 — Python dashboard rewrite (FastAPI + HTMX)",
-      "Phase 5.6 — Agent ecosystem overhaul",
-      "Phase 6 — Anonymization and trust UI",
-      "Phase 7 — Backup and portability",
-      "Phase 8 — Brainstorm Plan Mode",
-      "Phase 8.5 — Data Analyst Agent",
-      "Phase 9 — Self-improvement loop",
-      "Phase 10 — Automated daily tasks",
-      "Phase 11 — Installer and distribution",
-      "Phase 12 — Testing, polish, documentation"
+      "Phase 0 \u2014 Foundations",
+      "Phase 1 \u2014 Dashboard consolidation",
+      "Phase 2 \u2014 Today tab redesign",
+      "Phase 3 \u2014 Quick capture",
+      "Phase 4 \u2014 Master pipeline",
+      "Phase 5 \u2014 Multi-layered memory",
+      "Phase 5.4 \u2014 Folder restructuring",
+      "Phase 5.5 \u2014 Python dashboard rewrite (FastAPI + HTMX)",
+      "Phase 5.6 \u2014 Agent ecosystem overhaul",
+      "Phase 6 \u2014 Anonymization and trust UI",
+      "Phase 7 \u2014 Backup and portability",
+      "Phase 8 \u2014 Brainstorm Plan Mode",
+      "Phase 8.5 \u2014 Data Analyst Agent",
+      "Phase 8.6 \u2014 CLI Command Layer",
+      "Phase 8.7 \u2014 Editorial redesign & full functionality",
+      "Phase 8.8 \u2014 Scan for content button (backend ingestion, no Claude Code opens)",
+      "Phase 8.9 \u2014 Visualization handoff to Claude Design",
+      "Phase 8.10 \u2014 Resume post-Claude-Design",
+      "Phase 8.11 \u2014 Learning tab + Course Builder Agent",
+      "Phase 8.12 \u2014 GitHub README with architecture diagram",
+      "Phase 8.13 \u2014 Token efficiency + auto-handoff loop",
+      "Phase 9 \u2014 Dashboard polish & button wiring",
+      "Phase 9 \u2014 Self-improvement loop",
+      "Phase 10 \u2014 Automated daily tasks",
+      "Phase 11 \u2014 Installer and distribution",
+      "Phase 12 \u2014 Testing, polish, documentation"
     ]
   },
   "milestones": {
     "Phase 0": {
       "label": "Foundations",
-      "target_timeline": "days 1–3",
+      "target_timeline": "days 1\u20133",
       "items": [
         {
           "id": "M0.1",
@@ -39,10 +49,10 @@
         },
         {
           "id": "M0.2",
-          "subject": "Rename 02_agents/pkm-builder/ → 02_agents/rc-builder/ and update all code references",
+          "subject": "Rename 02_agents/pkm-builder/ \u2192 02_agents/rc-builder/ and update all code references",
           "status": "completed",
           "completed_date": "2026-04-13",
-          "notes": "Folder renamed (pkm-builder → rc-builder). agent-registry.json updated (slug, name, invocation, chains_with). MCP server.py, agents.py, projects.py docstrings updated."
+          "notes": "Folder renamed (pkm-builder \u2192 rc-builder). agent-registry.json updated (slug, name, invocation, chains_with). MCP server.py, agents.py, projects.py docstrings updated."
         },
         {
           "id": "M0.3",
@@ -53,14 +63,14 @@
         },
         {
           "id": "M0.4",
-          "subject": "Rename 01_control-room/ → 01_journal/, archive planning docs, flatten memory/",
+          "subject": "Rename 01_control-room/ \u2192 01_journal/, archive planning docs, flatten memory/",
           "status": "completed",
           "completed_date": "2026-04-13",
           "notes": "Planning docs moved to 09_archive/planning-history/. memory/ flattened to direct children. notes/ and brainstorms/ created."
         },
         {
           "id": "M0.5",
-          "subject": "Rename 08_system/prompts/ → 08_system/patterns/",
+          "subject": "Rename 08_system/prompts/ \u2192 08_system/patterns/",
           "status": "completed",
           "completed_date": "2026-04-13",
           "notes": "Renamed via git mv. Aligns with Section 28 Pattern browser decision."
@@ -70,13 +80,13 @@
           "subject": "Update CLAUDE.md to reflect new folder structure",
           "status": "completed",
           "completed_date": "2026-04-13",
-          "notes": "Updated agent invocation table, key paths section, and PKM→RC references."
+          "notes": "Updated agent invocation table, key paths section, and PKM\u2192RC references."
         }
       ]
     },
     "Phase 1": {
       "label": "Dashboard consolidation",
-      "target_timeline": "week 1–2",
+      "target_timeline": "week 1\u20132",
       "items": [
         {
           "id": "M1.1",
@@ -87,7 +97,7 @@
         },
         {
           "id": "M1.2",
-          "subject": "Create new 8-tab structure in app.R (Today · Knowledge · Thinking · Planner · Work · Meetings · Learning · Metis) with stub modules",
+          "subject": "Create new 8-tab structure in app.R (Today \u00b7 Knowledge \u00b7 Thinking \u00b7 Planner \u00b7 Work \u00b7 Meetings \u00b7 Learning \u00b7 Metis) with stub modules",
           "status": "completed",
           "completed_date": "2026-04-13",
           "notes": "app.R updated. 8 nav_panel entries and 8 server calls. All new modules wired."
@@ -108,7 +118,7 @@
         },
         {
           "id": "M1.5",
-          "subject": "Keep Planner as standalone tab — existing mod_planning.R unchanged",
+          "subject": "Keep Planner as standalone tab \u2014 existing mod_planning.R unchanged",
           "status": "completed",
           "completed_date": "2026-04-13",
           "notes": "No changes needed. planning_ui/planning_server wired directly in app.R."
@@ -118,18 +128,18 @@
           "subject": "Move Projects code into new Work module",
           "status": "completed",
           "completed_date": "2026-04-13",
-          "notes": "mod_work.R created as renamed copy of mod_projects.R. projects_ui → work_ui, projects_server → work_server. h1 heading updated to 'Work'."
+          "notes": "mod_work.R created as renamed copy of mod_projects.R. projects_ui \u2192 work_ui, projects_server \u2192 work_server. h1 heading updated to 'Work'."
         },
         {
           "id": "M1.7",
-          "subject": "Keep Meetings as standalone tab — existing mod_meetings.R unchanged",
+          "subject": "Keep Meetings as standalone tab \u2014 existing mod_meetings.R unchanged",
           "status": "completed",
           "completed_date": "2026-04-13",
           "notes": "No changes needed."
         },
         {
           "id": "M1.8",
-          "subject": "Keep Learning as standalone tab — existing mod_learning.R unchanged",
+          "subject": "Keep Learning as standalone tab \u2014 existing mod_learning.R unchanged",
           "status": "completed",
           "completed_date": "2026-04-13",
           "notes": "Learning was already a top-level tab. No changes needed."
@@ -139,11 +149,11 @@
           "subject": "Move System tab code into new Metis module",
           "status": "completed",
           "completed_date": "2026-04-13",
-          "notes": "mod_metis.R created as renamed copy of mod_system.R. system_ui → metis_tab_ui, system_server → metis_tab_server. h1 updated to 'Metis'."
+          "notes": "mod_metis.R created as renamed copy of mod_system.R. system_ui \u2192 metis_tab_ui, system_server \u2192 metis_tab_server. h1 updated to 'Metis'."
         },
         {
           "id": "M1.10",
-          "subject": "Remove Dropzone from nav_panel — not in 8-tab structure",
+          "subject": "Remove Dropzone from nav_panel \u2014 not in 8-tab structure",
           "status": "completed",
           "completed_date": "2026-04-13",
           "notes": "Dropzone removed from app.R nav and server calls. mod_dropzone.R remains on disk pending M1.11 cleanup."
@@ -153,7 +163,7 @@
           "subject": "Delete old replaced modules: mod_control_room.R, mod_projects.R, mod_system.R, mod_dropzone.R",
           "status": "completed",
           "completed_date": "2026-04-13",
-          "notes": "User confirmed deletion. All 4 files removed. Sub-modules (library, research, news, notes, ideas) kept — still used by wrapper modules."
+          "notes": "User confirmed deletion. All 4 files removed. Sub-modules (library, research, news, notes, ideas) kept \u2014 still used by wrapper modules."
         },
         {
           "id": "M1.12",
@@ -193,7 +203,7 @@
           "subject": "Build 'Today's focus' card",
           "status": "completed",
           "completed_date": "2026-04-13",
-          "notes": "focus_ui shows highest-priority active project with domain badge, priority chip, and next step. Conditional — returns NULL when no active projects."
+          "notes": "focus_ui shows highest-priority active project with domain badge, priority chip, and next step. Conditional \u2014 returns NULL when no active projects."
         },
         {
           "id": "M2.5",
@@ -207,7 +217,7 @@
           "subject": "Wire trust badge into navbar header",
           "status": "completed",
           "completed_date": "2026-04-13",
-          "notes": "nav_spacer() + nav_item(div.trust-badge) added to page_navbar. Shows green shield + 'Local-first' text. Static for now — session call tracking is Phase 4."
+          "notes": "nav_spacer() + nav_item(div.trust-badge) added to page_navbar. Shows green shield + 'Local-first' text. Static for now \u2014 session call tracking is Phase 4."
         }
       ]
     },
@@ -234,13 +244,13 @@
           "subject": "Wire modal to SQLite via capture_idea schema (same DB as MCP tool)",
           "status": "completed",
           "completed_date": "2026-04-13",
-          "notes": "i:/default → insert_idea(). n: → insert_quick_note() (personal_notes). t: → insert_task(). q: → insert_idea(idea_type='question'). auto_tags() mirrors MCP tool tag extraction. Also fixed schema bug in mod_today.R quick-capture (was using wrong column names)."
+          "notes": "i:/default \u2192 insert_idea(). n: \u2192 insert_quick_note() (personal_notes). t: \u2192 insert_task(). q: \u2192 insert_idea(idea_type='question'). auto_tags() mirrors MCP tool tag extraction. Also fixed schema bug in mod_today.R quick-capture (was using wrong column names)."
         }
       ]
     },
     "Phase 4": {
       "label": "Master pipeline",
-      "target_timeline": "weeks 3–5",
+      "target_timeline": "weeks 3\u20135",
       "items": [
         {
           "id": "M4.1",
@@ -306,7 +316,7 @@
     },
     "Phase 5": {
       "label": "Multi-layered memory",
-      "target_timeline": "weeks 6–7",
+      "target_timeline": "weeks 6\u20137",
       "items": [
         {
           "id": "M5.1",
@@ -366,7 +376,7 @@
         },
         {
           "id": "M5.9",
-          "subject": "Build retrieval debugger UI in Metis → Memory",
+          "subject": "Build retrieval debugger UI in Metis \u2192 Memory",
           "status": "pending",
           "notes": "Needs R Shiny tab in mod_metis.R to call semantic_search() and display layered results. Defer to after MCP tools are confirmed working."
         }
@@ -374,32 +384,42 @@
     },
     "Phase 6": {
       "label": "Anonymization and trust UI",
-      "target_timeline": "week 8",
+      "target_timeline": "2026-04-21",
       "items": [
         {
           "id": "M6.1",
-          "subject": "Build anonymization function (Python + NER)",
-          "status": "pending"
+          "subject": "anonymize_text MCP tool \u2014 regex PII scrubbing",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "tools/anonymization.py: anonymize_text(content, mode, replace_names). Reuses safety.py patterns: PATIENT_ID, GPS, Belgian NID, EMAIL, PHONE. Optional name heuristic (CAPITALIZED tokens). Returns JSON with anonymized text + replacements map + counters."
         },
         {
           "id": "M6.2",
-          "subject": "Build diff view for anonymized content",
-          "status": "pending"
+          "subject": "diff_anonymization MCP tool \u2014 unified diff view",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "diff_anonymization(original, anonymized): Python difflib unified_diff. Returns plain text diff suitable for display in dashboard or agent output."
         },
         {
           "id": "M6.3",
-          "subject": "Build trust badge in dashboard header",
-          "status": "pending"
+          "subject": "Trust badge enhanced with network policy indicator",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "main.py trust_badge(): reads system/config/network-policy.json. Icons: bi-shield-lock (strict/warning), bi-wifi-off (offline/danger), bi-shield-check (normal). Badge updates every 60s."
         },
         {
           "id": "M6.4",
-          "subject": "Build consent ledger table and UI",
-          "status": "pending"
+          "subject": "Consent ledger MCP tools + dashboard card",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "log_consent_event() + get_consent_ledger() MCP tools. consent_ledger table (id, timestamp, action, data_classification, agent_slug, notes, session_id). Metis tab card shows recent events with colour-coded classification badges."
         },
         {
           "id": "M6.5",
-          "subject": "Build network policy switcher (strict/normal/airplane)",
-          "status": "pending"
+          "subject": "Network policy MCP tools + dashboard badge",
+          "status": "completed",
+          "completed_date": "2026-04-21",
+          "notes": "set_network_policy(policy) + get_network_policy() MCP tools. Persists to system/config/network-policy.json. Policies: strict/normal/offline. Dashboard consent card header shows live badge via /api/partial/metis/network-policy."
         }
       ]
     },
@@ -409,14 +429,14 @@
       "items": [
         {
           "id": "M7.1",
-          "subject": "backup_db MCP tool — SQLite Online Backup API",
+          "subject": "backup_db MCP tool \u2014 SQLite Online Backup API",
           "status": "completed",
           "completed_date": "2026-04-21",
-          "notes": "tools/backup.py: backup_db(destination, label, extra_destination). Uses sqlite3.Connection.backup() — safe for live WAL databases. Produces timestamped .sqlite files. Returns path, size, SHA-256 checksum, elapsed_ms."
+          "notes": "tools/backup.py: backup_db(destination, label, extra_destination). Uses sqlite3.Connection.backup() \u2014 safe for live WAL databases. Produces timestamped .sqlite files. Returns path, size, SHA-256 checksum, elapsed_ms."
         },
         {
           "id": "M7.2",
-          "subject": "encrypt_backup MCP tool — AES-256-GCM",
+          "subject": "encrypt_backup MCP tool \u2014 AES-256-GCM",
           "status": "completed",
           "completed_date": "2026-04-21",
           "notes": "encrypt_backup(backup_path, passphrase). Uses cryptography 46.0.6 (PBKDF2-SHA256, 200k rounds, AES-256-GCM). Falls back to XOR-SHA256 with warning if library absent. Format: METISBK1 magic + 16B salt + 12B nonce + ciphertext+tag."
@@ -430,14 +450,14 @@
         },
         {
           "id": "M7.4",
-          "subject": "restore_db MCP tool — safe restore with pre-restore copy",
+          "subject": "restore_db MCP tool \u2014 safe restore with pre-restore copy",
           "status": "completed",
           "completed_date": "2026-04-21",
           "notes": "restore_db(backup_path, confirm='YES'). Renames live DB to .pre-restore.<ts>.sqlite before overwriting. Returns status, paths, and restart reminder."
         },
         {
           "id": "M7.5",
-          "subject": "verify_backup MCP tool — PRAGMA integrity_check",
+          "subject": "verify_backup MCP tool \u2014 PRAGMA integrity_check",
           "status": "completed",
           "completed_date": "2026-04-21",
           "notes": "verify_backup(backup_path): opens backup in read-only mode, runs PRAGMA integrity_check, returns status/tables/messages. Also: set_backup_schedule + get_backup_schedule persist nightly schedule to system/config/backup-schedule.json for Phase 10 scheduler."
@@ -446,7 +466,7 @@
           "id": "M7.6",
           "subject": "Test full wipe-and-restore cycle",
           "status": "pending",
-          "notes": "Manual verification — run backup_db, verify_backup, restore_db in sequence against a copy of the live DB."
+          "notes": "Manual verification \u2014 run backup_db, verify_backup, restore_db in sequence against a copy of the live DB."
         }
       ]
     },
@@ -528,38 +548,448 @@
           "subject": "data-analyst agent (system-prompt + contract + registry)",
           "status": "completed",
           "completed_date": "2026-04-21",
-          "notes": "agents/data-analyst/system-prompt.md: 7-step workflow (intake → before report → propose → approve → clean → after report → audit). agents/data-analyst/contract.md. agent-registry.json entry (write-local tier). CLAUDE.md routing + invocation table updated. Packages installed: pandas 3.0.2, openpyxl 3.1.5, pyreadstat 1.3.4."
+          "notes": "agents/data-analyst/system-prompt.md: 7-step workflow (intake \u2192 before report \u2192 propose \u2192 approve \u2192 clean \u2192 after report \u2192 audit). agents/data-analyst/contract.md. agent-registry.json entry (write-local tier). CLAUDE.md routing + invocation table updated. Packages installed: pandas 3.0.2, openpyxl 3.1.5, pyreadstat 1.3.4."
+        }
+      ]
+    },
+    "Phase 8.6": {
+      "label": "CLI Command Layer",
+      "target_timeline": "2026-04-22 onwards",
+      "notes": "Skills that mirror dashboard tabs from the Claude Code CLI. Naming convention: all non-agent commands start with /metis_. Agents keep their own slash command.",
+      "items": [
+        {
+          "id": "M8.6.1",
+          "subject": "/metis_info \u2014 full command reference for Claude Code power users",
+          "status": "completed",
+          "completed_date": "2026-04-22",
+          "notes": "metis/.claude/skills/metis-info/skill.md. Static output: all commands grouped by category (daily workflow, agents, setup). Haiku, quick. No MCP calls \u2014 instant response."
+        },
+        {
+          "id": "M8.6.2",
+          "subject": "/metis_morning \u2014 daily morning briefing (Today tab equivalent in CLI)",
+          "status": "completed",
+          "completed_date": "2026-04-22",
+          "notes": "metis/.claude/skills/metis-morning/skill.md. Pulls: news_briefs, tasks (open/in_progress/blocked), project_status, agent_runs (overnight), PLANNING.md files. Output: focus block, top tasks, PhD pulse, overnight, news signals. Sonnet, standard. Saves to outputs/reviews/metis/."
+        },
+        {
+          "id": "M8.6.3",
+          "subject": "/metis_projects \u2014 active projects overview (Work/Planner tabs equivalent)",
+          "status": "completed",
+          "completed_date": "2026-04-22",
+          "notes": "metis/.claude/skills/metis-projects/skill.md. Reads project_status + tasks + PLANNING.md for each active project. Status indicators: active/stalled/blocked/someday. Single-project deep-dive mode via /metis_projects [name]. Haiku, quick."
+        },
+        {
+          "id": "M8.6.4",
+          "subject": "/metis_agents \u2014 agent directory with last-run dates (Metis tab equivalent)",
+          "status": "completed",
+          "completed_date": "2026-04-22",
+          "notes": "metis/.claude/skills/metis-agents/skill.md. Lists all 18 agents grouped by domain with capability descriptions, when-to-use guidance, and last-run date from agent_runs. Single-agent deep-dive reads system-prompt.md. Haiku, quick."
+        },
+        {
+          "id": "M8.6.5",
+          "subject": "/metis_tasks [filter] \u2014 task list with filters (Work tab equivalent)",
+          "status": "completed",
+          "notes": "metis-tasks skill.md. Haiku. Quick. Accepts optional filter: blocked/overdue/[project-slug]/all.",
+          "completed_at": "2026-04-25"
+        },
+        {
+          "id": "M8.6.6",
+          "subject": "/metis_phd \u2014 PhD article status and next milestone (Planner PhD board equivalent)",
+          "status": "completed",
+          "notes": "metis-phd skill.md. Sonnet. Standard. Reads phd-framework PLANNING.md + domain notes. Deep-dive per article.",
+          "completed_at": "2026-04-25"
+        },
+        {
+          "id": "M8.6.7",
+          "subject": "/metis_literature [query] \u2014 library search and Zotero status (Knowledge tab equivalent)",
+          "status": "completed",
+          "notes": "metis-literature skill.md. Haiku. Quick. Accepts optional search query. Shows library stats + recent additions.",
+          "completed_at": "2026-04-25"
+        },
+        {
+          "id": "M8.6.8",
+          "subject": "/metis_capture [text] \u2014 quick capture from terminal (capture modal equivalent)",
+          "status": "completed",
+          "notes": "metis-capture skill.md. Haiku. Quick. Prefix routing: i: idea, n: note, t: task, q: question.",
+          "completed_at": "2026-04-25"
+        },
+        {
+          "id": "M8.6.9",
+          "subject": "/metis_inbox \u2014 scan inbox/ folder and route items to agents",
+          "status": "completed",
+          "notes": "metis-inbox skill.md. Sonnet. Standard. Scans inbox/ folder + inbox tasks. Proposes routing, waits for user confirm.",
+          "completed_at": "2026-04-25"
+        },
+        {
+          "id": "M8.6.10",
+          "subject": "/metis_news \u2014 curated news briefs (Today news section equivalent)",
+          "status": "completed",
+          "notes": "metis-news skill.md. Haiku. Quick. Accepts optional domain filter (HAT/AI/public-health/methods). Groups by domain.",
+          "completed_at": "2026-04-25"
+        }
+      ]
+    },
+    "Phase 8.7": {
+      "label": "Editorial redesign & full functionality",
+      "target_timeline": "2026-04-24",
+      "notes": "Matches Claude Design's Metis_Design.png proposal. Research Desk / editorial newspaper layout. Fixes the functional gap where launcher cards and many tabs were read-only. Reference: /home/sverschaeve/.claude/plans/nifty-stargazing-sifakis.md has the full visual spec for continued Claude Design work.",
+      "items": [
+        {
+          "id": "M8.7.1",
+          "subject": "CSS v7.0/v7.1 \u2014 warm editorial tokens + editorial layout classes",
+          "status": "completed",
+          "completed_date": "2026-04-24",
+          "notes": "styles.css v7.1. Single coherent palette (dropped dual macOS/warm split). Added .dateline-strip, .today-hero (grid with stats right-aligned), .today-canvas (3-col: focus|activity|news), .focus-thread (serif, pull-quote), .activity-feed (mono time + sans content), .today-news-rail (category chips with count + age), .question-prompt (Georgia italic input, no border, teal send circle), .today-actions-strip, .metis-toast, .news-modal-overlay. Larger type scale: greeting 3.1rem, narrative 2.05rem italic, focus-title 1.75rem, focus-quote 1.15rem italic with teal left rule."
+        },
+        {
+          "id": "M8.7.2",
+          "subject": "today.html restructured \u2014 dateline \u2192 hero \u2192 3-col canvas \u2192 actions \u2192 question",
+          "status": "completed",
+          "completed_date": "2026-04-24",
+          "notes": "Replaced the dashboard-grid layout with editorial structure. Each section loads via HTMX. Question prompt at bottom uses italic serif placeholder 'What are you thinking about?' with mode toggles (idea/task/note/ask metis)."
+        },
+        {
+          "id": "M8.7.3",
+          "subject": "Today partials \u2014 dateline, hero, focus-thread, activity-feed, news-rail, news-modal",
+          "status": "completed",
+          "completed_date": "2026-04-24",
+          "notes": "6 new partials in templates/partials/: today_dateline.html (with Last scan + Scan now), today_hero.html (greeting + 3 ambient stats), today_focus_thread.html (resumed/quote/scan sections), today_activity_feed.html (news/agent/meeting/idea rows, clickable), today_news_rail.html (category chips + items), news_summary_modal.html. Clickable news titles route through openNewsSummary()."
+        },
+        {
+          "id": "M8.7.4",
+          "subject": "Today router \u2014 new endpoints for dateline/hero/focus/activity/news-rail/news-modal",
+          "status": "completed",
+          "completed_date": "2026-04-24",
+          "notes": "routers/today.py: /api/partial/today/dateline, /api/partial/today/hero, /api/partial/today/focus-thread, /api/partial/today/activity-feed, /api/partial/today/news-rail (accepts ?category=X filter), /api/news/brief/{id}. Hero narrative is dynamic: 'N threads need you today.' based on open tasks. Focus thread reads active project + latest idea/note as pull-quote. Activity unions news/agent_runs/meetings/ideas from last 48h."
+        },
+        {
+          "id": "M8.7.5",
+          "subject": "openCapture(prefillMode) signature fixed + all callers",
+          "status": "completed",
+          "completed_date": "2026-04-24",
+          "notes": "app.js v7.1. Fixes the bug where work.html:13 and thinking.html:13,48,72 were calling openCapture('task'/'idea'/etc) against a zero-arg definition. Now openCapture('idea') prefills the textarea with 'i: '."
+        },
+        {
+          "id": "M8.7.6",
+          "subject": "Launcher cards actually open programs (not just copy prompts)",
+          "status": "completed",
+          "completed_date": "2026-04-24",
+          "notes": "5 cards wired to launchPrompt() which POSTs to /api/project/launch with target+prompt. Config: brainstorm\u2192claude_code+/metis_brainstorm, write\u2192claude_code+/writing-partner, review\u2192vscode+followUp claude_code, meeting\u2192claude_code+/meeting-memory, inbox\u2192claude_code+/metis_inbox. Prompt also copied to clipboard as safety net. 'Capture idea' still opens local modal."
+        },
+        {
+          "id": "M8.7.7",
+          "subject": "News summary modal + task action buttons",
+          "status": "completed",
+          "completed_date": "2026-04-24",
+          "notes": "Click any news item (in activity feed OR news rail) \u2192 modal opens via /api/news/brief/{id} with title, domain, signal, summary, source link. Task rows in work.html now show done (\u2713) + delete (\ud83d\uddd1) buttons on hover \u2192 POST /api/task/{id}/done|delete."
+        },
+        {
+          "id": "M8.7.8",
+          "subject": "Project launcher endpoint \u2014 port R/Shiny logic to FastAPI",
+          "status": "completed",
+          "completed_date": "2026-04-24",
+          "notes": "routers/work.py: POST /api/project/launch accepts project_id, target (rstudio|vscode|explorer|claude_desktop|claude_code), and optional prompt. Reuses logic from legacy system/app/R/mod_work.R (lines 29-160). WSL\u2192Windows path conversion via _wsl_to_windows(). Runs via /mnt/c/Windows/System32/cmd.exe. Special project_id 'rc-root' uses METIS_RC_ROOT. Only launches projects that exist in DB \u2014 prevents arbitrary execution."
+        },
+        {
+          "id": "M8.7.9",
+          "subject": "Seed launcher_type for 5 active projects",
+          "status": "completed",
+          "completed_date": "2026-04-24",
+          "notes": "hat-dashboard=rstudio, hat-clustering=rstudio, multilevel-analysis=vscode, phd-framework=vscode, passive-screening-drc=rstudio. external_path already set for 3 (hat-dashboard, hat-clustering, multilevel-analysis). STILL PENDING: phd-framework + passive-screening-drc need external_path values from user."
+        },
+        {
+          "id": "M8.7.10",
+          "subject": "Per-project 'Open in...' dropdown on work_projects.html",
+          "status": "completed",
+          "completed_date": "2026-04-24",
+          "notes": "Each active project card shows buttons: RStudio (conditional on launcher_type), VS Code, Claude Code (Windows Terminal + claude), Claude Chat (Claude Desktop via protocol), Explorer, GitHub (if github_url set). All call launchProjectTarget(id, target) \u2192 POST /api/project/launch."
+        },
+        {
+          "id": "M8.7.11",
+          "subject": "Scan trigger on dateline \u2014 refresh HTMX partials",
+          "status": "completed",
+          "completed_date": "2026-04-24",
+          "notes": "Dateline now shows 'Last scan \u00b7 Nh ago \u00b7 [Scan now]'. runDashboardScan() in app.js re-triggers the load events on all today partials. Gives the 'I was working elsewhere, catch me up' workflow a single-click entry."
+        },
+        {
+          "id": "M8.7.12",
+          "subject": "Seed external_path for phd-framework and passive-screening-drc",
+          "status": "completed",
+          "notes": "Needs confirmation from user of canonical Windows paths for these two projects. Without it, their 'Open in...' buttons show 'No external path configured'.",
+          "completed_at": "2026-04-24"
+        },
+        {
+          "id": "M8.7.13",
+          "subject": "End-to-end test from Windows browser \u2014 actually open VS Code/Claude Code/RStudio",
+          "status": "user-test",
+          "notes": "Manual click-through test by user"
+        },
+        {
+          "id": "M8.7.14",
+          "subject": "Decide whether 'Review code' card should chain VS Code + Claude Code",
+          "status": "completed",
+          "notes": "Current behavior: opens VS Code in focus project, then 500ms later also opens Claude Code. Two windows might be overkill \u2014 consider making this a single choice (VS Code only OR Claude Code only) based on user preference.",
+          "completed_at": "2026-04-24"
+        },
+        {
+          "id": "M8.7.15",
+          "subject": "Refine news rail categories + add 'last updated per category' affordance",
+          "status": "pending",
+          "notes": "Current rail shows domain chips with age. User may want a different taxonomy (HAT / AI / Public Health / Research / Methods / Geopolitics) or a different display per category. Needs ~10 real news items across domains to evaluate the pattern (currently only 4 rows). AUTOMATIC ONCE M8.8.x SHIPS \u2014 scan will populate enough items to evaluate."
+        }
+      ]
+    },
+    "Phase 8.8": {
+      "label": "Scan for content button (backend ingestion, no Claude Code opens)",
+      "target_timeline": "2026-04-25 (Sonnet)",
+      "notes": "Full spec in metis/journal/2026-04-24_sonnet_handoff_plan.md \u00a72. Primary user ask: one dashboard button that triggers news-radar-like + librarian-like ingestion server-side, no external apps open.",
+      "items": [
+        {
+          "id": "M8.8.1",
+          "subject": "Create content_scan.py in MCP server (feedparser + literature folder scan)",
+          "status": "completed",
+          "completed_at": "2026-04-24"
+        },
+        {
+          "id": "M8.8.2",
+          "subject": "Register scan_news_feeds + scan_literature_folder as MCP tools",
+          "status": "deferred",
+          "notes": "MCP tool registration deferred \u2014 functions usable directly from FastAPI without MCP wrapping"
+        },
+        {
+          "id": "M8.8.3",
+          "subject": "Add POST /api/scan/content endpoint in routers/today.py",
+          "status": "completed",
+          "completed_at": "2026-04-24"
+        },
+        {
+          "id": "M8.8.4",
+          "subject": "Add 'Scan for content' button to dateline partial + runContentScan() in app.js",
+          "status": "completed",
+          "completed_at": "2026-04-24"
+        },
+        {
+          "id": "M8.8.5",
+          "subject": "Install feedparser in MCP venv + update requirements.txt",
+          "status": "completed",
+          "completed_at": "2026-04-24"
+        },
+        {
+          "id": "M8.8.6",
+          "subject": "Verify end-to-end: click button \u2192 feeds fetched \u2192 new rows in news_briefs \u2192 news rail refreshes",
+          "status": "pending-restart",
+          "notes": "Requires dashboard restart to test end-to-end"
+        },
+        {
+          "id": "M8.8.7",
+          "subject": "Close out Phase 8.7 quick wins: simplify Review-code launcher (VS Code only), ask user for 2 external_paths",
+          "status": "completed",
+          "completed_at": "2026-04-24"
+        }
+      ]
+    },
+    "Phase 8.9": {
+      "label": "Visualization handoff to Claude Design",
+      "target_timeline": "2026-04-25 (Sonnet)",
+      "notes": "Minimal handoff file so user's Claude Design tokens are spent on design, not re-briefing.",
+      "items": [
+        {
+          "id": "M8.9.1",
+          "subject": "Create metis/system/design-docs/2026-04-24_claude_design_handoff.md with pillars list",
+          "status": "completed",
+          "completed_at": "2026-04-24"
+        },
+        {
+          "id": "M8.9.2",
+          "subject": "Create metis/system/design-docs/deliveries/.gitkeep for future design iterations",
+          "status": "completed",
+          "completed_at": "2026-04-24"
+        },
+        {
+          "id": "M8.9.3",
+          "subject": "Tell user how to hand off: paste handoff file as first message in Claude Design project; pick ONE pillar per session",
+          "status": "pending-user",
+          "notes": "Handoff file ready at metis/system/design-docs/2026-04-24_claude_design_handoff.md. User pastes into Claude Design project."
+        }
+      ]
+    },
+    "Phase 8.10": {
+      "label": "Resume post-Claude-Design integration",
+      "target_timeline": "on-demand (triggered by user)",
+      "notes": "Auto-trigger on user saying 'Continue what you were doing' or 'Resume post-Claude-Design'. See \u00a74 of handoff plan.",
+      "items": [
+        {
+          "id": "M8.10.1",
+          "subject": "Write detection protocol: scan design-docs/deliveries/ for newest folder, read CHANGES.md",
+          "status": "pending"
+        },
+        {
+          "id": "M8.10.2",
+          "subject": "Integrate delivery: copy CSS/partials, bump styles.css version, verify endpoints still 200",
+          "status": "pending"
+        }
+      ]
+    },
+    "Phase 8.11": {
+      "label": "Learning tab + Course Builder Agent",
+      "target_timeline": "2026-04-26 (Sonnet)",
+      "notes": "Full spec in handoff plan \u00a75. Rename MLM \u2192 statistics-full/statistics-adaptive. Course Builder orchestrates Content Harvester + Learning Architect + domain expert + Writing Partner + Visualization Maker. 15 placeholder courses seeded.",
+      "items": [
+        {
+          "id": "M8.11.1",
+          "subject": "Rename MLM project to statistics-full in DB + CLAUDE.md",
+          "status": "completed",
+          "completed_at": "2026-04-24",
+          "notes": "Updated learning_courses id=6: slug=statistics-full, title=Statistics for Epidemiology (full). projects.multilevel-analysis unchanged (teaching project)."
+        },
+        {
+          "id": "M8.11.2",
+          "subject": "Create learning_courses table (DDL in handoff plan \u00a75.2.2)",
+          "status": "completed",
+          "completed_at": "2026-04-24",
+          "notes": "learning_courses table already existed. Added slug TEXT column via ALTER TABLE. Existing schema: id, title, category, progress_pct, total_modules, completed_modules, status, completed_at, created_at, slug."
+        },
+        {
+          "id": "M8.11.3",
+          "subject": "Seed 15 placeholder courses",
+          "status": "completed",
+          "completed_at": "2026-04-24",
+          "notes": "Seeded 14 placeholder courses (ids 7-20). statistics-full already exists as id=6. All inserted with status=placeholder."
+        },
+        {
+          "id": "M8.11.4",
+          "subject": "Write course-builder-questionnaire.md (7-section intake)",
+          "status": "completed",
+          "completed_at": "2026-04-24",
+          "notes": "Created metis/system/config/course-builder-questionnaire.md \u2014 7 sections: audience, depth, subject matter, delivery, style, review, updating."
+        },
+        {
+          "id": "M8.11.5",
+          "subject": "Create Course Builder agent (system-prompt.md, contract.md, registry entry, CLAUDE.md routing)",
+          "status": "completed",
+          "completed_at": "2026-04-24",
+          "notes": "Created metis/agents/course-builder/system-prompt.md (7-step workflow), contract.md. Added to agent-registry.json. Added to CLAUDE.md invocation table + routing table."
+        },
+        {
+          "id": "M8.11.6",
+          "subject": "Add 'Build this course' button + buildCourse() JS + /api/course/build-request endpoint",
+          "status": "completed",
+          "completed_at": "2026-04-24",
+          "notes": "Added Build button to learning_placeholder_courses.html and Continue building to learning_courses.html. Added buildCourse() to app.js. Added /api/course/build-request endpoint + /api/partial/learning/placeholder-courses endpoint in routers/learning.py."
+        },
+        {
+          "id": "M8.11.7",
+          "subject": "Import MLM reference files (IMPLEMENTATION-PLAN.md, PLANNING.md, app patterns) to _reference folder",
+          "status": "deferred",
+          "notes": "MLM reference file import deferred \u2014 the teaching project files are at external_path in projects table. Course Builder can import via /course-builder import {path} at build time."
+        },
+        {
+          "id": "M8.11.8",
+          "subject": "Course open-in-new-tab decision: add /course/{slug} route stub for future course pages",
+          "status": "deferred",
+          "notes": "Course open-in-new-tab stub deferred to when first course is actually built."
+        }
+      ]
+    },
+    "Phase 8.12": {
+      "label": "GitHub README with architecture diagram",
+      "target_timeline": "2026-04-26 (Sonnet)",
+      "notes": "Content ready in handoff plan \u00a76.3. Mermaid flowchart shows user \u2192 Metis router \u2192 specialist agents, with Data Guardian + Cybersecurity watching + self-improvement loop feedback.",
+      "items": [
+        {
+          "id": "M8.12.1",
+          "subject": "Write README.md at repo root (content in handoff plan \u00a76.3)",
+          "status": "completed",
+          "completed_at": "2026-04-25",
+          "notes": "README.md at repo root with Mermaid architecture diagram, features grid, 3 workflows, getting started block."
+        },
+        {
+          "id": "M8.12.2",
+          "subject": "Verify Mermaid renders correctly via GitHub preview",
+          "status": "pending-user",
+          "notes": "User needs to push and verify Mermaid renders on GitHub."
+        },
+        {
+          "id": "M8.12.3",
+          "subject": "Create docs/screenshots/.gitkeep for future visual assets",
+          "status": "completed",
+          "completed_at": "2026-04-25",
+          "notes": "docs/screenshots/.gitkeep created."
+        }
+      ]
+    },
+    "Phase 8.13": {
+      "label": "Token efficiency + auto-handoff loop",
+      "target_timeline": "2026-04-27 (Sonnet)",
+      "notes": "Full spec in handoff plan \u00a77. Three additions: token pulse widget, auto-handoff at 80% turns, implementation-plan-change detector on resume.",
+      "items": [
+        {
+          "id": "M8.13.1",
+          "subject": "Add /api/partial/metis/token-pulse endpoint + hero widget showing rolling 24h tokens",
+          "status": "pending"
+        },
+        {
+          "id": "M8.13.2",
+          "subject": "Add generate_handoff_brief() in handoff.py; trigger at 80% of max_turns in pipeline.py",
+          "status": "pending"
+        },
+        {
+          "id": "M8.13.3",
+          "subject": "Add implementation-plan mtime check in session_bootstrap \u2014 surface plan_changed status",
+          "status": "pending"
+        },
+        {
+          "id": "M8.13.4",
+          "subject": "Update token-guardrails.md with new Auto-handoff section",
+          "status": "pending"
         }
       ]
     },
     "Phase 9": {
-      "label": "Self-improvement loop",
-      "target_timeline": "week 11",
+      "label": "Dashboard polish & button wiring",
+      "target_timeline": "2026-04-25 single session (Opus 4.7, 1M context)",
       "items": [
         {
           "id": "M9.1",
-          "subject": "Extend every agent's contract to require reflexion output",
-          "status": "pending"
+          "subject": "Editorial refactor of legacy Bootstrap-y partials",
+          "status": "completed",
+          "completed_date": "2026-04-25",
+          "notes": "Refactored 11 partials to Archive style: today_inbox, work_projects, work_tasks, learning_courses, learning_placeholder_courses, learning_due, learning_completed, learning_competencies, thinking_ideas, thinking_notes, thinking_questions, meetings_stats, metis_runs, metis_stats, metis_agents."
         },
         {
           "id": "M9.2",
-          "subject": "Build Coach agent",
-          "status": "pending"
+          "subject": "CSS animations & polish (v8.1)",
+          "status": "completed",
+          "completed_date": "2026-04-25",
+          "notes": "Page fade-in (pageIn keyframe), panel hover lift, run-row slide, feed-row accent slide-in, ledger number wake, kicker shimmer for accent kickers, course-card progress gradient, model-card-on gloss. Toast styles. Tune-scan modal styles. prefers-reduced-motion respected."
         },
         {
           "id": "M9.3",
-          "subject": "Build weekly Coach run schedule",
-          "status": "pending"
+          "subject": "Button wiring across all 9 tabs",
+          "status": "completed",
+          "completed_date": "2026-04-25",
+          "notes": "Wired: Thinking (Brainstorm via /metis_brainstorm launcher; Export-as-note POST /api/note/from-latest-idea; Capture idea modal). Meetings (Open briefing, Transcript hint, Reschedule). Teach (History/Continue/Publish via metisStub copy-prompt; Start building / View catalog). Metis (Rename via /api/identity/rename; Keys hint; Export hint; model USE via /api/model/active). Planner (Retire/Pause/Schedule via /api/task/oldest-open/{action}). Tune scan modal."
         },
         {
           "id": "M9.4",
-          "subject": "Build proposal queue UI",
-          "status": "pending"
+          "subject": "Backend endpoints for new actions",
+          "status": "completed",
+          "completed_date": "2026-04-25",
+          "notes": "Added: POST /api/note/from-latest-idea (thinking.py), POST /api/task/oldest-open/{action} (work.py), POST /api/model/active (metis_tab.py), POST /api/identity/rename (metis_tab.py). User prefs persisted to system/config/user-preferences.json."
         },
         {
           "id": "M9.5",
-          "subject": "Build approval/rejection flow",
-          "status": "pending"
+          "subject": "Bump CSS+JS version to v8.1; cache-bust",
+          "status": "completed",
+          "completed_date": "2026-04-25",
+          "notes": "base.html now references /static/styles.css?v=8.1 and /static/app.js?v=8.1 \u2014 forces browser to pull the new editorial polish."
+        },
+        {
+          "id": "M9.6",
+          "subject": "Smoke-test all 9 tabs in browser + push to GitHub",
+          "status": "in_progress",
+          "completed_date": null,
+          "notes": "User to verify in browser; commit + push at end of session."
         }
       ]
     },
@@ -579,14 +1009,14 @@
         },
         {
           "id": "M10.3",
-          "subject": "Build schedule UI in Metis → Settings",
+          "subject": "Build schedule UI in Metis \u2192 Settings",
           "status": "pending"
         }
       ]
     },
     "Phase 11": {
       "label": "Installer and distribution",
-      "target_timeline": "weeks 13–14",
+      "target_timeline": "weeks 13\u201314",
       "items": [
         {
           "id": "M11.1",
@@ -685,32 +1115,32 @@
           "subject": "git mv all top-level folders to new semantic names",
           "status": "completed",
           "completed_date": "2026-04-20",
-          "notes": "00_inbox→inbox, 01_journal→journal, 02_agents→agents, 04_projects→projects, 05_sources→inputs, 09_archive→archive. 457 files committed with full rename tracking."
+          "notes": "00_inbox\u2192inbox, 01_journal\u2192journal, 02_agents\u2192agents, 04_projects\u2192projects, 05_sources\u2192inputs, 09_archive\u2192archive. 457 files committed with full rename tracking."
         },
         {
           "id": "M5.4.2",
-          "subject": "Move 07_outputs/apps/metis-dashboard/ → system/app/",
+          "subject": "Move 07_outputs/apps/metis-dashboard/ \u2192 system/app/",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "R Shiny app now lives in system/app/. History preserved via git rename detection."
         },
         {
           "id": "M5.4.3",
-          "subject": "Move 08_system/mcp-server/ → system/mcp-server/",
+          "subject": "Move 08_system/mcp-server/ \u2192 system/mcp-server/",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "MCP server moved. run.sh updated to point to new path."
         },
         {
           "id": "M5.4.4",
-          "subject": "Move 08_system/ remaining config → system/config/",
+          "subject": "Move 08_system/ remaining config \u2192 system/config/",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "agent-registry.json, implementation-progress.json, user-config.yaml, thinking-profile.yaml, red-lines.md, security/, workflows/, ontology/, templates/, logs/ all moved. Strategy docs moved to archive/."
         },
         {
           "id": "M5.4.5",
-          "subject": "Merge 06_library/ + 03_domains/ → knowledge/",
+          "subject": "Merge 06_library/ + 03_domains/ \u2192 knowledge/",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "knowledge/library/ (concepts, disease-areas, methods, people-organizations, reading-lists, glossary.md), knowledge/courses/, knowledge/domains/."
@@ -733,7 +1163,7 @@
           "id": "M5.4.8",
           "subject": "Verify R Shiny dashboard still launches (transition period)",
           "status": "pending",
-          "notes": "Manual verification needed — launch system/app/launch.R and confirm 8 tabs render."
+          "notes": "Manual verification needed \u2014 launch system/app/launch.R and confirm 8 tabs render."
         }
       ]
     },
@@ -743,94 +1173,94 @@
       "items": [
         {
           "id": "M5.5.1",
-          "subject": "FastAPI scaffold — system/app-py/, deps, base layout + nav",
+          "subject": "FastAPI scaffold \u2014 system/app-py/, deps, base layout + nav",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "main.py, db.py, launch.py, run.sh, requirements.txt. 9 routers. Bootstrap 5 + HTMX navbar with 8 tabs, trust badge, capture button. CSS copied from R app unchanged."
         },
         {
           "id": "M5.5.2",
-          "subject": "DB layer — port db_table(), metis_paths(), schema helpers to Python",
+          "subject": "DB layer \u2014 port db_table(), metis_paths(), schema helpers to Python",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "db.py: get_db_path() (METIS_RC_ROOT env var aware), db_query(), db_scalar(), db_execute(). Graceful fallbacks for missing tables."
         },
         {
           "id": "M5.5.3",
-          "subject": "Today tab — daily summary, trust badge, session count",
+          "subject": "Today tab \u2014 daily summary, trust badge, session count",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "Greeting strip, 6 launcher cards, overnight summary, today's focus, scan for changes (git status), token footer. All HTMX partials."
         },
         {
           "id": "M5.5.4",
-          "subject": "Knowledge tab — cards, search, add/edit",
+          "subject": "Knowledge tab \u2014 cards, search, add/edit",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "Library cards, literature table, domain breakdown, live search via HTMX. Stats row. Partial templates: knowledge_stats, knowledge_library, knowledge_literature, knowledge_domains, knowledge_search."
         },
         {
           "id": "M5.5.5",
-          "subject": "Meetings + Learning + Work tabs — tables, details, progress",
+          "subject": "Meetings + Learning + Work tabs \u2014 tables, details, progress",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "Meetings: filterable table, search, stats. Learning: spaced-repetition due-today, course progress bars, completed list, competency map. Work: stats, filterable task list with priority icons, active project cards."
         },
         {
           "id": "M5.5.6",
-          "subject": "Thinking tab — notes, connections",
+          "subject": "Thinking tab \u2014 notes, connections",
           "status": "completed",
           "completed_date": "2026-04-20",
-          "notes": "Ideas list, personal notes, open questions panel, brainstorm launcher card. Capture links (Ctrl+K → i:/n:/q: prefixes)."
+          "notes": "Ideas list, personal notes, open questions panel, brainstorm launcher card. Capture links (Ctrl+K \u2192 i:/n:/q: prefixes)."
         },
         {
           "id": "M5.5.7",
-          "subject": "Planner tab — kanban, focus board, timeline",
+          "subject": "Planner tab \u2014 kanban, focus board, timeline",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "3-view toggle: kanban (someday/incubating/active columns), PhD focus board (projects + tasks filtered by domain), timeline table with start/target dates."
         },
         {
           "id": "M5.5.8",
-          "subject": "Metis tab — agent runs, config panel",
+          "subject": "Metis tab \u2014 agent runs, config panel",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "Stats row (runs today, tokens, total, active agents), filterable run history table, agent registry from agent-registry.json, system info (RC root, DB path + size)."
         },
         {
           "id": "M5.5.8b",
-          "subject": "Teach tab — 9th tab for classes the researcher teaches",
+          "subject": "Teach tab \u2014 9th tab for classes the researcher teaches",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "Course cards with Librarian lit alerts (new papers last 30d), News Aggregator alerts (signals last 7d), Chat/Co-work/Slides/Assessment/Q-bank/Gap-analysis action buttons per course. Add-course modal. routers/teach.py, templates/teach.html, 3 partial templates."
         },
         {
           "id": "M5.5.9",
-          "subject": "Quick-capture — Ctrl+K modal, capture endpoint",
+          "subject": "Quick-capture \u2014 Ctrl+K modal, capture endpoint",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "routers/capture.py: GET /api/capture-modal, POST /api/capture with i:/n:/t:/q: prefix routing. app.js: Ctrl+K shortcut, live type badge."
         },
         {
           "id": "M5.5.10",
-          "subject": "DB watcher — poll for MCP updates, reload notification",
+          "subject": "DB watcher \u2014 poll for MCP updates, reload notification",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "GET /api/check-db-mtime endpoint. app.js polls every 20s, shows Bootstrap alert with 'Reload now' link when mtime changes."
         },
         {
           "id": "M5.5.11",
-          "subject": "PyInstaller bundle — single .exe (Windows), .app (Mac)",
+          "subject": "PyInstaller bundle \u2014 single .exe (Windows), .app (Mac)",
           "status": "pending"
         },
         {
           "id": "M5.5.12",
-          "subject": "Installer script — Inno Setup (Windows) + shell script (Mac)",
+          "subject": "Installer script \u2014 Inno Setup (Windows) + shell script (Mac)",
           "status": "pending"
         },
         {
           "id": "M5.5.13",
-          "subject": "Verification — all 8 tabs, capture, DB watcher, MCP tools, PyInstaller",
+          "subject": "Verification \u2014 all 8 tabs, capture, DB watcher, MCP tools, PyInstaller",
           "status": "pending"
         }
       ]
@@ -848,48 +1278,48 @@
         },
         {
           "id": "M5.6.2",
-          "subject": "Frontend Designer Builder — full system prompt + contract + skill",
+          "subject": "Frontend Designer Builder \u2014 full system prompt + contract + skill",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "agents/frontend-designer-builder/: system-prompt.md (design-shotgun, 9 commands, 3 dials, anti-patterns), contract.md, skill.md."
         },
         {
           "id": "M5.6.3",
-          "subject": "Design Auditor — system prompt + reverse-engineering workflow",
+          "subject": "Design Auditor \u2014 system prompt + reverse-engineering workflow",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "agents/design-auditor/: 7 scored dimensions, anti-pattern library with severity ratings, 9-step workflow."
         },
         {
           "id": "M5.6.4",
-          "subject": "Visualization Maker — system prompt + fireworks-tech-graph integration",
+          "subject": "Visualization Maker \u2014 system prompt + fireworks-tech-graph integration",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "agents/visualization-maker/: 14 diagram types, 7 visual styles, semantic shape vocabulary (hexagon=agent, cylinder=vector store, etc.), legend rule."
         },
         {
           "id": "M5.6.5",
-          "subject": "Content Harvester — system prompt + Firecrawl/Playwright MCP tools",
+          "subject": "Content Harvester \u2014 system prompt + Firecrawl/Playwright MCP tools",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "agents/content-harvester/: 7 source types, 12-field metadata schema, 3 output formats, routing rules table."
         },
         {
           "id": "M5.6.6",
-          "subject": "Learning Architect — system prompt + edu theory + Content Harvester workflow",
+          "subject": "Learning Architect \u2014 system prompt + edu theory + Content Harvester workflow",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "agents/learning-architect/: Bloom's taxonomy, 5-interval spaced repetition, ADDIE/backward design, course JSON schema, knowledge/courses/ structure."
         },
         {
           "id": "M5.6.7",
-          "subject": "Install Claude Code skills — impeccable, taste-skill, animate-skill, fireworks-tech-graph, emil-design-eng",
+          "subject": "Install Claude Code skills \u2014 impeccable, taste-skill, animate-skill, fireworks-tech-graph, emil-design-eng",
           "status": "pending",
           "notes": "Run: npx skills add <repo> for each after M5.5 is complete."
         },
         {
           "id": "M5.6.8",
-          "subject": "Update CLAUDE.md + routing table — new agent names, invocations",
+          "subject": "Update CLAUDE.md + routing table \u2014 new agent names, invocations",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "CLAUDE.md updated: frontend-designer, design-auditor, visualization-maker, content-harvester, learning-architect added. Routing table updated."
@@ -902,7 +1332,7 @@
         },
         {
           "id": "M5.6.10",
-          "subject": "Update implementation-progress.json — add Phase 5.4, 5.5, 5.6 milestones",
+          "subject": "Update implementation-progress.json \u2014 add Phase 5.4, 5.5, 5.6 milestones",
           "status": "completed",
           "completed_date": "2026-04-20",
           "notes": "This update."
@@ -918,7 +1348,7 @@
           "subject": "Injection probe middleware for external tool results",
           "status": "completed",
           "completed_date": "2026-04-20",
-          "notes": "tools/guardrails.py: injection_probe(content) + probe_tool_result MCP tool. Detects 11 adversarial patterns + zero-width chars. Prepends INJECTION WARNING prefix (non-blocking — annotates, doesn't block). Primary surface: content-harvester, news-aggregator, librarian ingestion."
+          "notes": "tools/guardrails.py: injection_probe(content) + probe_tool_result MCP tool. Detects 11 adversarial patterns + zero-width chars. Prepends INJECTION WARNING prefix (non-blocking \u2014 annotates, doesn't block). Primary surface: content-harvester, news-aggregator, librarian ingestion."
         },
         {
           "id": "M5.7.2",
@@ -966,11 +1396,11 @@
           "subject": "MCP tools: kg_index_notes, kg_paths, kg_community",
           "status": "completed",
           "completed_date": "2026-04-21",
-          "notes": "tools/knowledge_graph.py: kg_index_notes() scans frontmatter → populates note_links; kg_paths(from, to, max_hops) BFS shortest paths; kg_community(note, depth) connected cluster. Server now has 74 tools."
+          "notes": "tools/knowledge_graph.py: kg_index_notes() scans frontmatter \u2192 populates note_links; kg_paths(from, to, max_hops) BFS shortest paths; kg_community(note, depth) connected cluster. Server now has 74 tools."
         },
         {
           "id": "M5.8.4",
-          "subject": "Graph view in Knowledge tab — D3 force-directed graph",
+          "subject": "Graph view in Knowledge tab \u2014 D3 force-directed graph",
           "status": "completed",
           "completed_date": "2026-04-21",
           "notes": "4th nav pill 'Graph' in Knowledge tab. D3 v7 force-directed graph: nodes colored by domain, sized by phd_relevance, click-to-detail panel, filter input, zoom/pan, domain legend. Data API at /api/knowledge/graph-data."
@@ -1001,47 +1431,6 @@
           "status": "completed",
           "completed_date": "2026-04-21",
           "notes": "Traces card in metis_tab.html. /api/partial/metis/traces route in metis_tab.py. CSS horizontal waterfall bars sized by duration_ms, colored by kind (internal/tool/agent/llm). Run header shows status badge + timestamp. Legend rendered when >1 kind used."
-        }
-      ]
-    },
-    "Phase 6": {
-      "label": "Anonymization and trust UI",
-      "target_timeline": "2026-04-21",
-      "items": [
-        {
-          "id": "M6.1",
-          "subject": "anonymize_text MCP tool — regex PII scrubbing",
-          "status": "completed",
-          "completed_date": "2026-04-21",
-          "notes": "tools/anonymization.py: anonymize_text(content, mode, replace_names). Reuses safety.py patterns: PATIENT_ID, GPS, Belgian NID, EMAIL, PHONE. Optional name heuristic (CAPITALIZED tokens). Returns JSON with anonymized text + replacements map + counters."
-        },
-        {
-          "id": "M6.2",
-          "subject": "diff_anonymization MCP tool — unified diff view",
-          "status": "completed",
-          "completed_date": "2026-04-21",
-          "notes": "diff_anonymization(original, anonymized): Python difflib unified_diff. Returns plain text diff suitable for display in dashboard or agent output."
-        },
-        {
-          "id": "M6.3",
-          "subject": "Trust badge enhanced with network policy indicator",
-          "status": "completed",
-          "completed_date": "2026-04-21",
-          "notes": "main.py trust_badge(): reads system/config/network-policy.json. Icons: bi-shield-lock (strict/warning), bi-wifi-off (offline/danger), bi-shield-check (normal). Badge updates every 60s."
-        },
-        {
-          "id": "M6.4",
-          "subject": "Consent ledger MCP tools + dashboard card",
-          "status": "completed",
-          "completed_date": "2026-04-21",
-          "notes": "log_consent_event() + get_consent_ledger() MCP tools. consent_ledger table (id, timestamp, action, data_classification, agent_slug, notes, session_id). Metis tab card shows recent events with colour-coded classification badges."
-        },
-        {
-          "id": "M6.5",
-          "subject": "Network policy MCP tools + dashboard badge",
-          "status": "completed",
-          "completed_date": "2026-04-21",
-          "notes": "set_network_policy(policy) + get_network_policy() MCP tools. Persists to system/config/network-policy.json. Policies: strict/normal/offline. Dashboard consent card header shows live badge via /api/partial/metis/network-policy."
         }
       ]
     }

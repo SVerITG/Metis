@@ -1,0 +1,36 @@
+<!-- metis_runs.html — Agent run table rows -->
+{% if not runs %}
+<tr>
+  <td colspan="5" class="text-center text-muted py-4">
+    <i class="bi bi-robot fs-2 mb-2 d-block"></i>
+    No agent runs found.
+  </td>
+</tr>
+{% else %}
+{% for r in runs %}
+<tr>
+  <td class="ps-3 text-muted small">{{ r.started_at[:16] if r.started_at else '—' }}</td>
+  <td>
+    <span class="badge bg-primary-subtle text-primary">{{ r.agent_slug or 'unknown' }}</span>
+  </td>
+  <td class="small text-muted" style="max-width:300px;">
+    <div class="text-truncate">{{ r.task_summary or '—' }}</div>
+  </td>
+  <td class="text-muted small">
+    {% if r.tokens_used %}
+    {% if r.tokens_used > 1000 %}{{ (r.tokens_used // 1000) }}k{% else %}{{ r.tokens_used }}{% endif %}
+    {% else %}—{% endif %}
+  </td>
+  <td>
+    {% set s = r.status or 'completed' %}
+    {% if s == 'error' %}
+    <span class="badge bg-danger-subtle text-danger">error</span>
+    {% elif s == 'running' %}
+    <span class="badge bg-warning-subtle text-warning">running</span>
+    {% else %}
+    <span class="badge bg-success-subtle text-success">done</span>
+    {% endif %}
+  </td>
+</tr>
+{% endfor %}
+{% endif %}

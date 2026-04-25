@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Metis · Components</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="_preview.css">
+<style>
+  body { max-width: 1080px; margin: 0 auto; }
+
+  /* ---- Buttons ---- */
+  .m-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-family: var(--m-ui);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    border: 1px solid transparent;
+    border-radius: var(--m-radius-sm);
+    cursor: pointer;
+    transition: background var(--m-transition-fast), border-color var(--m-transition-fast), color var(--m-transition-fast);
+    background: transparent;
+    color: inherit;
+  }
+  .m-btn--primary { background: var(--m-accent); color: var(--m-on-accent); }
+  .m-btn--primary:hover { background: var(--m-accent-hover); }
+  .m-btn--secondary { border-color: var(--m-rule-strong); color: var(--m-ink); background: var(--m-surface); }
+  .m-btn--secondary:hover { border-color: var(--m-accent); color: var(--m-accent); }
+  .m-btn--ghost { color: var(--m-ink); }
+  .m-btn--ghost:hover { background: var(--m-accent-wash); color: var(--m-accent); }
+  .m-btn--destructive { color: var(--m-alert); border-color: var(--m-rule); background: var(--m-surface); }
+  .m-btn--destructive:hover { background: var(--m-alert-wash); border-color: var(--m-alert); }
+  .m-btn--sm { padding: 6px 12px; font-size: 12px; }
+  .m-btn--lg { padding: 14px 24px; font-size: 15px; }
+  .m-btn--caps { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 500; }
+  .m-btn:disabled, .m-btn.is-disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .btn-row .label { font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--m-muted); width: 140px; flex-shrink: 0; }
+
+  /* ---- Inputs ---- */
+  .m-field { display: flex; flex-direction: column; gap: 6px; }
+  .m-field .m-label {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+  }
+  .m-input, .m-textarea, .m-select {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule-strong);
+    border-radius: var(--m-radius-sm);
+    padding: 10px 14px;
+    font-family: var(--m-ui);
+    font-size: 14px;
+    color: var(--m-ink);
+    transition: border-color var(--m-transition-fast), box-shadow var(--m-transition-fast);
+    outline: none;
+  }
+  .m-input:focus, .m-textarea:focus, .m-select:focus {
+    border-color: var(--m-accent);
+    box-shadow: var(--m-shadow-focus);
+  }
+  .m-input::placeholder, .m-textarea::placeholder { color: var(--m-muted-soft); }
+  .m-textarea { resize: vertical; min-height: 80px; font-family: var(--m-display); font-size: 15px; line-height: 1.5; }
+  .m-help { font-size: 12px; color: var(--m-muted); font-family: var(--m-ui); }
+  .m-help.err { color: var(--m-alert); }
+
+  /* Command bar */
+  .m-cmd {
+    display: flex;
+    align-items: center;
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule-strong);
+    border-radius: var(--m-radius-sm);
+    padding: 8px 12px;
+    font-family: var(--m-mono);
+    font-size: 13px;
+    gap: 10px;
+  }
+  .m-cmd .m-cmd-prompt { color: var(--m-accent); }
+  .m-cmd input {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    outline: 0;
+    font-family: inherit;
+    font-size: inherit;
+    color: var(--m-ink);
+  }
+  .m-cmd .m-cmd-hint {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--m-muted-soft);
+    border-left: 1px solid var(--m-rule);
+    padding-left: 10px;
+  }
+
+  /* ---- Badges / chips ---- */
+  .m-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    background: var(--m-accent-wash);
+    color: var(--m-accent);
+    border-radius: var(--m-radius-pill);
+    font-weight: 500;
+  }
+  .m-chip--ochre { background: var(--m-ochre-wash); color: var(--m-ochre-deep); }
+  .m-chip--ok   { background: var(--m-ok-wash); color: var(--m-ok); }
+  .m-chip--warn { background: var(--m-warn-wash); color: var(--m-ochre-deep); }
+  .m-chip--alert { background: var(--m-alert-wash); color: var(--m-alert); }
+  .m-chip--info  { background: var(--m-info-wash); color: var(--m-info); }
+  .m-chip--haiku  { background: var(--m-haiku-bg); color: var(--m-haiku-fg); }
+  .m-chip--sonnet { background: var(--m-sonnet-bg); color: var(--m-sonnet-fg); }
+  .m-chip--opus   { background: var(--m-opus-bg); color: var(--m-opus-fg); }
+  .m-chip::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.6; }
+  .m-chip--plain::before { display: none; }
+
+  /* ---- Cards ---- */
+  .m-card {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: var(--m-radius);
+    padding: 24px;
+  }
+  .m-card__kicker {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .m-card__title {
+    font-family: var(--m-display);
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--m-ink);
+    margin: 0 0 8px;
+    letter-spacing: -0.012em;
+  }
+  .m-card__body {
+    font-size: 14px;
+    color: var(--m-text);
+    line-height: 1.55;
+    margin: 0 0 14px;
+  }
+  .m-card__body em { color: var(--m-accent-soft); }
+  .m-card__foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--m-rule-soft);
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+  }
+
+  /* ---- Menu row ---- */
+  .m-menu {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: var(--m-radius);
+    overflow: hidden;
+  }
+  .m-menu__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--m-text);
+    cursor: pointer;
+    border-bottom: 1px solid var(--m-rule-soft);
+    transition: background var(--m-transition-fast);
+    border-left: 2px solid transparent;
+  }
+  .m-menu__row:last-child { border-bottom: 0; }
+  .m-menu__row:hover { background: var(--m-accent-wash); }
+  .m-menu__row.is-selected {
+    background: var(--m-accent-wash);
+    border-left-color: var(--m-accent);
+    color: var(--m-ink);
+  }
+  .m-menu__row .m-menu__meta {
+    margin-left: auto;
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+  }
+
+  /* ---- Toast / banner ---- */
+  .m-banner {
+    border: 1px solid var(--m-rule);
+    border-left: 3px solid var(--m-accent);
+    background: var(--m-surface);
+    border-radius: var(--m-radius-sm);
+    padding: 14px 18px;
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+  }
+  .m-banner .m-banner__tag {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--m-accent);
+    flex-shrink: 0;
+  }
+  .m-banner .m-banner__body { font-size: 14px; color: var(--m-text); }
+  .m-banner--ok   { border-left-color: var(--m-ok); } .m-banner--ok   .m-banner__tag { color: var(--m-ok); }
+  .m-banner--warn { border-left-color: var(--m-warn); } .m-banner--warn .m-banner__tag { color: var(--m-ochre-deep); }
+  .m-banner--alert { border-left-color: var(--m-alert); } .m-banner--alert .m-banner__tag { color: var(--m-alert); }
+
+  /* ---- Avatar ---- */
+  .m-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--m-surface-2);
+    border: 1px solid var(--m-rule);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--m-display);
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--m-accent);
+  }
+  .m-avatar--sm { width: 28px; height: 28px; font-size: 13px; }
+  .m-avatar--lg { width: 56px; height: 56px; font-size: 22px; }
+
+  /* ---- Thread (message demo) ---- */
+  .m-thread {
+    background: var(--m-surface);
+    border: 1px solid var(--m-rule);
+    border-radius: var(--m-radius);
+    padding: 28px 32px;
+  }
+  .m-turn {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 20px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--m-rule-soft);
+  }
+  .m-turn:last-child { border: 0; }
+  .m-turn .m-turn__who {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+    padding-top: 3px;
+  }
+  .m-turn .m-turn__body {
+    font-family: var(--m-display);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--m-text);
+  }
+  .m-turn .m-turn__body em { color: var(--m-accent-soft); }
+  .m-turn--metis .m-turn__who { color: var(--m-accent); }
+
+  /* Label with sample */
+  .lab {
+    font-family: var(--m-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--m-muted);
+    margin-bottom: 10px;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Icons (bespoke, 20px stroke) */
+  .m-icon { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+</style>
+</head>
+<body>
+
+<div class="pv-header">
+  <div>
+    <div class="pv-eyebrow">Metis · Design System · Components</div>
+    <h1>Components — the small, deliberate kit</h1>
+  </div>
+  <div class="pv-note">
+    Small by design. Where other kits reach for icons, Metis reaches for
+    UPPERCASE mono labels. The archive prefers words.
+  </div>
+</div>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Buttons</h2>
+  <div class="pv-demo">
+    <div class="btn-row">
+      <span class="label">Primary</span>
+      <button class="m-btn m-btn--primary m-btn--sm">Save</button>
+      <button class="m-btn m-btn--primary">File thread</button>
+      <button class="m-btn m-btn--primary m-btn--lg">Begin Thursday</button>
+    </div>
+    <div class="btn-row">
+      <span class="label">Secondary</span>
+      <button class="m-btn m-btn--secondary m-btn--sm">Dismiss</button>
+      <button class="m-btn m-btn--secondary">Open in Thinking</button>
+      <button class="m-btn m-btn--secondary m-btn--lg">Continue reading</button>
+    </div>
+    <div class="btn-row">
+      <span class="label">Ghost</span>
+      <button class="m-btn m-btn--ghost m-btn--sm">Cancel</button>
+      <button class="m-btn m-btn--ghost">Later</button>
+      <button class="m-btn m-btn--ghost m-btn--caps">Expand ↓</button>
+    </div>
+    <div class="btn-row">
+      <span class="label">Destructive</span>
+      <button class="m-btn m-btn--destructive m-btn--sm">Archive</button>
+      <button class="m-btn m-btn--destructive">Delete thread</button>
+    </div>
+    <div class="btn-row">
+      <span class="label">Caps / disabled</span>
+      <button class="m-btn m-btn--primary m-btn--caps">File · ⌘S</button>
+      <button class="m-btn m-btn--secondary m-btn--caps">Open · ⌘O</button>
+      <button class="m-btn m-btn--primary is-disabled">Signing in…</button>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Inputs</h2>
+  <div class="pv-demo">
+    <div class="grid-2">
+      <div class="m-field">
+        <label class="m-label">Thread title</label>
+        <input class="m-input" value="Kripke's rigid designators">
+        <span class="m-help">Sentence case. Specific nouns.</span>
+      </div>
+      <div class="m-field">
+        <label class="m-label">Search the archive</label>
+        <input class="m-input" placeholder="Peirce, interpretant, 2019…">
+        <span class="m-help">⌘K opens the command bar.</span>
+      </div>
+      <div class="m-field" style="grid-column: 1 / -1;">
+        <label class="m-label">A note</label>
+        <textarea class="m-textarea">The interpretant is not a further term — it is the effect a sign has on a mind. Recursion here is metaphorical.</textarea>
+        <span class="m-help">Serif textarea. Long-form lives here.</span>
+      </div>
+      <div class="m-field">
+        <label class="m-label">Error state</label>
+        <input class="m-input" value="" style="border-color: var(--m-alert);">
+        <span class="m-help err">That title is already used by a thread from March.</span>
+      </div>
+      <div class="m-field">
+        <label class="m-label">Command bar</label>
+        <div class="m-cmd">
+          <span class="m-cmd-prompt">›</span>
+          <input value="find: notes mentioning Peirce this month" spellcheck="false">
+          <span class="m-cmd-hint">⌘K</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Badges & model chips</h2>
+  <div class="pv-demo">
+    <div class="btn-row">
+      <span class="label">Semantic</span>
+      <span class="m-chip">Thinking</span>
+      <span class="m-chip m-chip--ok">Saved</span>
+      <span class="m-chip m-chip--warn">Overdue · 2d</span>
+      <span class="m-chip m-chip--alert">Dropped</span>
+      <span class="m-chip m-chip--info">In draft</span>
+      <span class="m-chip m-chip--ochre">Follow-up</span>
+    </div>
+    <div class="btn-row">
+      <span class="label">Model</span>
+      <span class="m-chip m-chip--haiku m-chip--plain">Haiku 4.5</span>
+      <span class="m-chip m-chip--sonnet m-chip--plain">Sonnet 4.5</span>
+      <span class="m-chip m-chip--opus m-chip--plain">Opus 4.1</span>
+    </div>
+    <div class="btn-row">
+      <span class="label">Plain / count</span>
+      <span class="m-chip m-chip--plain" style="background:var(--m-surface-2); color:var(--m-muted);">14 SOURCES</span>
+      <span class="m-chip m-chip--plain" style="background:var(--m-surface-2); color:var(--m-muted);">3 THREADS</span>
+      <span class="m-chip m-chip--plain" style="background:var(--m-ink); color:var(--m-bg);">KEEP</span>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Cards</h2>
+  <div class="grid-2">
+    <div class="m-card">
+      <div class="m-card__kicker"><span>THINKING · ACTIVE</span><span style="color:var(--m-ochre-deep)">· 2d open</span></div>
+      <h3 class="m-card__title">Kripke's rigid designators</h3>
+      <p class="m-card__body">A designator is <em>rigid</em> if it picks out the same object in every possible world in which that object exists. Metis flagged a tension with descriptivism on p. 48.</p>
+      <div class="m-card__foot">
+        <span>3 NOTES · 1 QUESTION</span>
+        <span>LAST TOUCH · 07:12</span>
+      </div>
+    </div>
+    <div class="m-card">
+      <div class="m-card__kicker"><span style="color: var(--m-ochre-deep);">DRAFT · TEACH</span><span>· 6d open</span></div>
+      <h3 class="m-card__title">The Thursday essay, second pass</h3>
+      <p class="m-card__body">Middle section still loose — the turn from Peirce to Kripke wants a sentence of air. <em>Metis suggests a one-line epigraph.</em></p>
+      <div class="m-card__foot">
+        <span>1 120 WORDS · 4 EDITS</span>
+        <span>NOV 08 → NOV 14</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Menu · list rows</h2>
+  <div class="grid-2">
+    <div class="m-menu">
+      <div class="m-menu__row is-selected">
+        <span>Today</span>
+        <span class="m-menu__meta">07:12</span>
+      </div>
+      <div class="m-menu__row">
+        <span>Knowledge</span>
+        <span class="m-menu__meta">240 notes</span>
+      </div>
+      <div class="m-menu__row">
+        <span>Thinking</span>
+        <span class="m-menu__meta">3 open</span>
+      </div>
+      <div class="m-menu__row">
+        <span>Work</span>
+        <span class="m-menu__meta">14 tasks</span>
+      </div>
+      <div class="m-menu__row">
+        <span>Meetings</span>
+        <span class="m-menu__meta">2 today</span>
+      </div>
+    </div>
+    <div class="m-menu">
+      <div class="m-menu__row"><span>Rename thread…</span><span class="m-menu__meta">⌘R</span></div>
+      <div class="m-menu__row"><span>Move to Knowledge</span><span class="m-menu__meta">⌘⇧K</span></div>
+      <div class="m-menu__row"><span>File & close</span><span class="m-menu__meta">⌘↵</span></div>
+      <div class="m-menu__row" style="color: var(--m-alert);"><span>Delete thread</span><span class="m-menu__meta" style="color: var(--m-alert);">⌘⌫</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Banners & toasts</h2>
+  <div style="display:grid; gap: 10px;">
+    <div class="m-banner"><span class="m-banner__tag">NOTE · 07:14</span><span class="m-banner__body">Metis has drafted a reply in the margin of <em>your Peirce question.</em></span></div>
+    <div class="m-banner m-banner--ok"><span class="m-banner__tag">SAVED</span><span class="m-banner__body">Thread filed to <em>Knowledge · Philosophy.</em> Two tags suggested.</span></div>
+    <div class="m-banner m-banner--warn"><span class="m-banner__tag">OVERDUE · 2d</span><span class="m-banner__body">Three drafts are older than a week. The Thursday essay is closest to finished.</span></div>
+    <div class="m-banner m-banner--alert"><span class="m-banner__tag">CONNECTION</span><span class="m-banner__body">The connection dropped; nothing was lost. Metis will retry on its own.</span></div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Avatars</h2>
+  <div class="pv-demo">
+    <div class="btn-row">
+      <span class="label">Sizes</span>
+      <span class="m-avatar m-avatar--sm">S</span>
+      <span class="m-avatar">S</span>
+      <span class="m-avatar m-avatar--lg">S</span>
+      <span style="margin-left: 20px; font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--m-muted);">Stan · the reader</span>
+    </div>
+    <div class="btn-row" style="margin-top: 16px;">
+      <span class="label">Metis voice</span>
+      <span class="m-avatar" style="background:var(--m-accent); color: var(--m-on-accent); border-color: var(--m-accent);">M</span>
+      <span style="font-family: var(--m-display); font-style: italic; color: var(--m-muted);">The marginal hand.</span>
+    </div>
+  </div>
+</section>
+
+<section class="pv-section">
+  <h2 class="pv-seclabel">Thread — editorial two-column</h2>
+  <div class="m-thread">
+    <div class="m-turn m-turn--metis">
+      <div class="m-turn__who">METIS · 07:14</div>
+      <div class="m-turn__body">
+        Two of yesterday's threads are converging. <em>Kripke on rigid designators</em> now leans on the same example you tried in the Peirce note — the morning-star / evening-star pair. Do you want me to stitch them, or keep them separate?
+      </div>
+    </div>
+    <div class="m-turn">
+      <div class="m-turn__who">STAN · 07:16</div>
+      <div class="m-turn__body">
+        Keep them separate. The Kripke one is about naming; the Peirce one is about signs. Same example, different work.
+      </div>
+    </div>
+    <div class="m-turn m-turn--metis">
+      <div class="m-turn__who">METIS · 07:16</div>
+      <div class="m-turn__body">
+        Understood. I've added a cross-reference from each to the other. <em>The example lives in both rooms, with a door between them.</em>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="pv-footer">
+  <span>METIS · DESIGN SYSTEM · V1</span>
+  <span>COMPONENTS · 04</span>
+</div>
+
+</body>
+</html>

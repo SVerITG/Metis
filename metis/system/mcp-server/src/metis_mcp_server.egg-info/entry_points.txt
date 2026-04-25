@@ -1,2 +1,0 @@
-[console_scripts]
-metis-mcp = metis_mcp.server:run

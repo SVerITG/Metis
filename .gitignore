@@ -40,3 +40,16 @@ desktop.ini
 .env
 *.env
 secrets.*
+
+# Build artifacts
+*.egg-info/
+build/
+dist/
+
+# Personal / private (do not push)
+resume.docx
+Prompt.docx
+outputs/
+
+# Per-user runtime state
+metis/system/config/user-preferences.json

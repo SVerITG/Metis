@@ -2,119 +2,55 @@
 {% block title %}Knowledge{% endblock %}
 
 {% block content %}
+<div class="page">
 
-<!-- ===== Header ===== -->
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <div>
-    <h4 class="mb-0"><i class="bi bi-book me-2 text-primary"></i>Knowledge</h4>
-    <div class="text-muted small mt-1">Library cards, domains, and reference material</div>
+  <!-- ===== PageHead ===== -->
+  <div class="page-head">
+    <div>
+      <div class="page-eyebrow">SURFACE 02</div>
+      <h1 class="page-title">Knowledge</h1>
+    </div>
+    <div class="page-meta" id="knowledge-head-meta">
+      <div hx-get="/api/partial/knowledge/stats-meta"
+           hx-trigger="load"
+           hx-swap="innerHTML">— CARDS · — SLIPCASES</div>
+    </div>
   </div>
-  <div class="d-flex gap-2">
-    <input type="search" id="knowledge-search" class="form-control form-control-sm"
-           placeholder="Search library…" style="width:200px;"
-           hx-get="/api/partial/knowledge/search"
-           hx-trigger="input changed delay:300ms"
-           hx-target="#knowledge-results"
-           hx-swap="innerHTML"
-           name="q">
-  </div>
-</div>
 
-<!-- ===== Stats row ===== -->
-<div class="row g-2 mb-3"
-     hx-get="/api/partial/knowledge/stats"
-     hx-trigger="load"
-     hx-swap="outerHTML">
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center placeholder-glow">
-      <span class="placeholder col-4 mx-auto mb-1" style="height:1.5rem;"></span>
-      <div class="text-muted small">Library cards</div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center placeholder-glow">
-      <span class="placeholder col-4 mx-auto mb-1" style="height:1.5rem;"></span>
-      <div class="text-muted small">Domains</div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center placeholder-glow">
-      <span class="placeholder col-4 mx-auto mb-1" style="height:1.5rem;"></span>
-      <div class="text-muted small">Literature items</div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center placeholder-glow">
-      <span class="placeholder col-4 mx-auto mb-1" style="height:1.5rem;"></span>
-      <div class="text-muted small">Added this month</div>
-    </div>
-  </div>
-</div>
+  <!-- ===== Slipcases sidebar + Index cards main ===== -->
+  <div class="grid" style="grid-template-columns:240px 1fr;gap:32px;margin-bottom:32px;">
 
-<!-- ===== Domain tabs ===== -->
-<div class="card mb-3">
-  <div class="card-header py-2">
-    <ul class="nav nav-pills nav-fill" id="knowledge-domain-tabs">
-      <li class="nav-item">
-        <button class="nav-link active small"
-                hx-get="/api/partial/knowledge/library"
-                hx-target="#knowledge-results"
-                hx-swap="innerHTML"
-                hx-trigger="click"
-                onclick="setActiveKnowledgeTab(this)">
-          <i class="bi bi-journals me-1"></i>Library
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link small"
-                hx-get="/api/partial/knowledge/literature"
-                hx-target="#knowledge-results"
-                hx-swap="innerHTML"
-                hx-trigger="click"
-                onclick="setActiveKnowledgeTab(this)">
-          <i class="bi bi-file-earmark-text me-1"></i>Literature
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link small"
-                hx-get="/api/partial/knowledge/domains"
-                hx-target="#knowledge-results"
-                hx-swap="innerHTML"
-                hx-trigger="click"
-                onclick="setActiveKnowledgeTab(this)">
-          <i class="bi bi-globe me-1"></i>Domains
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link small"
-                hx-get="/api/partial/knowledge/graph"
-                hx-target="#knowledge-results"
-                hx-swap="innerHTML"
-                hx-trigger="click"
-                onclick="setActiveKnowledgeTab(this)">
-          <i class="bi bi-diagram-3 me-1"></i>Graph
-        </button>
-      </li>
-    </ul>
-  </div>
-  <div class="card-body p-3">
-    <div id="knowledge-results"
-         hx-get="/api/partial/knowledge/library"
+    <!-- Slipcases list -->
+    <div hx-get="/api/partial/knowledge/slipcases"
          hx-trigger="load"
-         hx-swap="innerHTML">
-      <div class="placeholder-glow">
-        <span class="placeholder col-8 mb-2"></span>
-        <span class="placeholder col-6"></span>
+         hx-swap="outerHTML">
+      <div>
+        <div class="sec-label" style="margin-bottom:8px;">Slipcases</div>
+        <div class="panel" style="overflow:hidden;height:320px;opacity:.4;"></div>
       </div>
     </div>
+
+    <!-- Index cards main area -->
+    <div hx-get="/api/partial/knowledge/cards"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+      <div>
+        <div class="sec-label" style="margin-bottom:8px;">Index cards</div>
+        <div class="panel" style="height:320px;opacity:.4;"></div>
+      </div>
+    </div>
+
   </div>
-</div>
 
-<script>
-function setActiveKnowledgeTab(btn) {
-  document.querySelectorAll('#knowledge-domain-tabs .nav-link').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-</script>
+  <!-- ===== Sources: recently clipped ===== -->
+  <div hx-get="/api/partial/knowledge/sources"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <div>
+      <div class="sec-label" style="margin-bottom:8px;">Sources · recently clipped</div>
+      <div class="panel" style="height:200px;opacity:.4;"></div>
+    </div>
+  </div>
 
+</div><!-- /.page -->
 {% endblock %}

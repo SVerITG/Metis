@@ -1,29 +1,21 @@
-<!-- metis_stats.html — Metis stats row (replaces skeleton) -->
-<div class="row g-2 mb-3">
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-primary">{{ runs_today }}</div>
-      <div class="text-muted small">Runs today</div>
+<!-- metis_stats.html — Editorial 4-up stat row -->
+<div class="grid grid-4" style="margin-bottom:24px;">
+  <div class="panel panel-pad" style="padding:18px 20px;">
+    <div class="todo-meta" style="margin:0 0 4px;">RUNS TODAY</div>
+    <div class="tnum" style="font-family:var(--m-display);font-size:28px;font-weight:500;color:var(--m-accent);line-height:1.1;">{{ runs_today }}</div>
+  </div>
+  <div class="panel panel-pad" style="padding:18px 20px;">
+    <div class="todo-meta" style="margin:0 0 4px;">TOKENS TODAY</div>
+    <div class="tnum" style="font-family:var(--m-display);font-size:28px;font-weight:500;color:var(--m-info);line-height:1.1;">
+      {% if tokens_today > 1000 %}{{ (tokens_today // 1000) }}<span style="font-size:14px;">K</span>{% else %}{{ tokens_today }}{% endif %}
     </div>
   </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-info">
-        {% if tokens_today > 1000 %}{{ (tokens_today // 1000) }}k{% else %}{{ tokens_today }}{% endif %}
-      </div>
-      <div class="text-muted small">Tokens today</div>
-    </div>
+  <div class="panel panel-pad" style="padding:18px 20px;">
+    <div class="todo-meta" style="margin:0 0 4px;">TOTAL RUNS</div>
+    <div class="tnum" style="font-family:var(--m-display);font-size:28px;font-weight:500;color:var(--m-ink);line-height:1.1;">{{ total_runs }}</div>
   </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-secondary">{{ total_runs }}</div>
-      <div class="text-muted small">Total runs</div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-success">{{ active_agents }}</div>
-      <div class="text-muted small">Agents active</div>
-    </div>
+  <div class="panel panel-pad" style="padding:18px 20px;">
+    <div class="todo-meta" style="margin:0 0 4px;">AGENTS ACTIVE</div>
+    <div class="tnum" style="font-family:var(--m-display);font-size:28px;font-weight:500;color:var(--m-ok);line-height:1.1;">{{ active_agents }}</div>
   </div>
 </div>
