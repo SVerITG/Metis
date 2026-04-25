@@ -1266,3 +1266,24 @@ body.capture-open .t-capture {
   .panel, .feed-row, .activity-row, .run-row, .project-card, .course-card { transition: none !important; }
   .kicker--accent::before { animation: none !important; }
 }
+
+/* ================================================================
+   PHASE 8.13 — TOKEN PULSE  (v8.2 · 2026-04-25)
+   ================================================================ */
+.ledger-cell--token .ledger-n {
+  font-feature-settings: "tnum";
+}
+.ledger-tier-muted .ledger-n  { color: var(--m-muted-soft); }
+.ledger-tier-ok    .ledger-n  { color: var(--m-info); }
+.ledger-tier-warn  .ledger-n  { color: var(--m-ochre-deep); }
+.ledger-tier-alert .ledger-n  {
+  color: var(--m-alert);
+  animation: tokenPulse 2.4s ease-in-out infinite;
+}
+@keyframes tokenPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.62; }
+}
+.ledger-cell--token .ledger-l {
+  letter-spacing: 0.18em;
+}
