@@ -1,0 +1,51 @@
+# Pinned from working venv — 2026-05-03
+# Regenerate: pip freeze | grep -v metis-mcp-server > requirements.txt
+mcp==1.27.0
+pyyaml==6.0.3
+requests==2.33.1
+fastapi==0.136.0
+uvicorn==0.45.0
+uvloop==0.22.1
+watchfiles==1.1.1
+python-multipart==0.0.26
+httpx==0.28.1
+httpx-sse==0.4.3
+anyio==4.13.0
+starlette==1.0.0
+sse-starlette==3.3.4
+pydantic==2.13.3
+pydantic-settings==2.14.0
+pydantic_core==2.46.3
+# Phase 5 — vector memory
+sqlite-vec==0.1.9
+fastembed==0.8.0
+onnxruntime==1.24.4
+tokenizers==0.22.2
+# Phase 6 — encryption
+cryptography==46.0.7
+# Phase 7 / data tools
+pandas==3.0.2
+openpyxl==3.1.5
+pyreadstat==1.3.4
+numpy==2.4.4
+# Phase 8.8 — content scan
+feedparser==6.0.12
+# Optional integrations
+google-genai==1.73.1
+twilio==9.10.5
+# Transitive (keep pinned for reproducibility)
+annotated-types==0.7.0
+certifi==2026.2.25
+cffi==2.0.0
+charset-normalizer==3.4.7
+click==8.3.2
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.7.1
+idna==3.12
+loguru==0.7.3
+rich==15.0.0
+sniffio==1.3.1
+typing_extensions==4.15.0
+urllib3==2.6.3
+websockets==16.0
