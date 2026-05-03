@@ -1,0 +1,40 @@
+{# Memory stream — chronological feed of what Metis has learned #}
+{% set type_labels = {
+  'discovery':      ('DISCOVERY', 'm-info'),
+  'decision':       ('DECISION', 'm-ochre-deep'),
+  'implementation': ('IMPL', 'm-ok'),
+  'issue':          ('ISSUE', 'm-alert'),
+  'note':           ('NOTE', 'm-muted'),
+  'idea':           ('IDEA', 'm-accent'),
+  'agent_run':      ('RUN', 'm-muted'),
+} %}
+
+{% if not entries %}
+<div class="empty-row">No observations recorded yet. Agents should call <code style="font-family:var(--m-mono);font-size:11px;">capture_observation()</code> during runs.</div>
+{% else %}
+{% for e in entries %}
+{% set cls = e.classification or e.event_type or 'note' %}
+{% set label_pair = type_labels.get(cls, ('NOTE', 'm-muted')) %}
+{% set label = label_pair[0] %}
+{% set color = label_pair[1] %}
+<div class="feed-row" style="padding:10px 22px;display:grid;grid-template-columns:80px 1fr;gap:12px;border-bottom:1px solid var(--m-rule-soft);align-items:start;">
+  <div style="padding-top:2px;">
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--{{ color }});font-weight:600;">{{ label }}</div>
+    <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-top:2px;">{{ (e.created_at or '')[:10] }}</div>
+    {% if e.agent_slug %}
+    <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted-soft);margin-top:1px;">{{ e.agent_slug }}</div>
+    {% endif %}
+  </div>
+  <div>
+    <div style="font-family:var(--m-ui);font-size:13px;color:var(--m-ink);line-height:1.5;">{{ e.content[:220] }}{% if e.content|length > 220 %}…{% endif %}</div>
+    {% if e.concepts %}
+    <div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:4px;">
+      {% for c in e.concepts[:4] %}
+      <span style="font-family:var(--m-mono);font-size:10px;padding:1px 6px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:2px;color:var(--m-muted);">{{ c }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}

@@ -152,6 +152,18 @@
         </div>
       </div>
 
+      <!-- Memory stream -->
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Memory stream</span>
+        <span class="tail">WHAT METIS HAS LEARNED</span>
+      </div>
+      <div class="panel" id="metis-memory-stream-body" style="margin-bottom:28px;"
+           hx-get="/api/partial/metis/memory-stream"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:24px 16px;opacity:.4;font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">Loading memory stream…</div>
+      </div>
+
       <!-- Self-improvement loop (Phase 9b) -->
       <div class="sec-label" style="margin-bottom:12px;">
         <span>Self-improvement</span>

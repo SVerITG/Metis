@@ -1,0 +1,38 @@
+{# Memory search results — semantic / keyword across episodic memory #}
+{% set type_colors = {
+  'discovery':      'm-info',
+  'decision':       'm-ochre-deep',
+  'implementation': 'm-ok',
+  'issue':          'm-alert',
+  'note':           'm-muted',
+  'idea':           'm-accent',
+} %}
+
+{% if not results %}
+<div class="empty-row">Nothing found for <em>{{ q }}</em>. Try a different phrase or capture more observations.</div>
+{% else %}
+<div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);padding:10px 16px 6px;">{{ results|length }} RESULTS FOR "{{ q|upper }}"</div>
+{% for r in results %}
+{% set cls = r.classification or r.event_type or 'note' %}
+{% set color = type_colors.get(cls, 'm-muted') %}
+<div style="padding:10px 16px;border-bottom:1px solid var(--m-rule-soft);display:grid;grid-template-columns:72px 1fr;gap:10px;">
+  <div>
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--{{ color }});font-weight:600;text-transform:uppercase;">{{ cls[:5] }}</div>
+    <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-top:2px;">{{ (r.created_at or '')[:10] }}</div>
+    {% if r.score is not none %}
+    <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted-soft);margin-top:1px;">{{ (r.score * 100)|int }}%</div>
+    {% endif %}
+  </div>
+  <div>
+    <div style="font-size:13px;color:var(--m-ink);line-height:1.5;">{{ r.content[:200] }}{% if r.content|length > 200 %}…{% endif %}</div>
+    {% if r.concepts %}
+    <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">
+      {% for c in r.concepts[:3] %}
+      <span style="font-family:var(--m-mono);font-size:10px;padding:1px 5px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:2px;color:var(--m-muted);">{{ c }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}

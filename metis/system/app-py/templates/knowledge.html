@@ -52,5 +52,29 @@
     </div>
   </div>
 
+
+  <!-- ===== Memory search ===== -->
+  <div style="margin-top:32px;">
+    <div class="sec-label" style="margin-bottom:12px;">
+      <span>Memory search</span>
+      <span class="tail">SEMANTIC · WHAT METIS KNOWS</span>
+    </div>
+    <div class="panel" style="padding:16px 20px;">
+      <input type="search"
+             id="memory-search-input"
+             placeholder="Search what Metis has observed and learned…"
+             style="width:100%;font-family:var(--m-ui);font-size:14px;padding:10px 14px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
+             hx-get="/api/partial/knowledge/memory-search"
+             hx-trigger="keyup changed delay:400ms"
+             hx-target="#memory-search-results"
+             hx-include="[id='memory-search-input']"
+             name="q"
+             autocomplete="off">
+      <div id="memory-search-results" style="margin-top:8px;min-height:40px;">
+        <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">Type to search episodic memory, observations, and reflexions.</div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /.page -->
 {% endblock %}
