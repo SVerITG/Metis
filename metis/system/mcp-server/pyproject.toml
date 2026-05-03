@@ -4,20 +4,31 @@ version = "0.1.0"
 description = "MCP server for the Metis Research Context"
 requires-python = ">=3.10"
 dependencies = [
-    "mcp>=1.0.0",
+    "mcp>=1.27.0",
     "pyyaml>=6.0",
     "requests>=2.28",
-    "google-genai>=1.0",
     "fastapi>=0.110.0",
     "uvicorn[standard]>=0.29.0",
-    "twilio>=9.0",
     "python-multipart>=0.0.9",
+    "httpx>=0.28.0",
     # Phase 5 — multi-layered vector memory
     "sqlite-vec>=0.1.9",
     "fastembed>=0.8.0",
+    # Phase 6 — encryption
+    "cryptography>=42.0",
+    # Phase 7 / data analyst
+    "pandas>=2.0",
+    "openpyxl>=3.1",
+    "pyreadstat>=1.2",
     # Phase 8.8 — content scan
     "feedparser>=6.0",
+    # Optional integrations (comment out if not needed)
+    "google-genai>=1.0",
+    "twilio>=9.0",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
 
 [project.scripts]
 metis-mcp = "metis_mcp.server:run"
