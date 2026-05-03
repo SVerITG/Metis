@@ -518,6 +518,72 @@ async function generateHandoff() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Self-improvement loop (Phase 9b)
+// ---------------------------------------------------------------------------
+
+async function draftImprovement(slug) {
+  if (!slug) return;
+  showToast('<i class="bi bi-lightbulb toast-icon"></i>Drafting self-improvement notes for <code>' + slug + '</code>…');
+  try {
+    const res = await fetch('/api/improvement/draft/' + encodeURIComponent(slug), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ days: 14 }),
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast('<i class="bi bi-check2 toast-icon"></i>Draft #' + data.proposal_id + ' queued for ' + slug + '. Review below.', 5500);
+      htmx.trigger('#metis-improvement-body', 'refresh-improvement');
+      const el = document.getElementById('metis-improvement-body');
+      if (el) htmx.ajax('GET', '/api/partial/metis/improvement', { target: el, swap: 'innerHTML' });
+    } else {
+      showToast('<i class="bi bi-info-circle toast-icon"></i>' + (data.message || 'No reflexions yet.'), 5000);
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Draft failed.');
+  }
+}
+
+async function promoteProposal(pid) {
+  if (!pid) return;
+  try {
+    const res = await fetch('/api/improvement/promote/' + pid, { method: 'POST' });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast('<i class="bi bi-arrow-up-circle toast-icon"></i>Proposal #' + pid + ' promoted to pending.');
+      const el = document.getElementById('metis-improvement-body');
+      if (el) htmx.ajax('GET', '/api/partial/metis/improvement', { target: el, swap: 'innerHTML' });
+    } else {
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Could not promote.'));
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Promotion failed.');
+  }
+}
+
+async function rejectProposal(pid) {
+  if (!pid) return;
+  const note = window.prompt('Reason for rejecting #' + pid + '? (optional)') || '';
+  try {
+    const res = await fetch('/api/improvement/reject/' + pid, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note }),
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast('<i class="bi bi-x-circle toast-icon"></i>Proposal #' + pid + ' rejected.');
+      const el = document.getElementById('metis-improvement-body');
+      if (el) htmx.ajax('GET', '/api/partial/metis/improvement', { target: el, swap: 'innerHTML' });
+    } else {
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Could not reject.'));
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Rejection failed.');
+  }
+}
+
 // Teach actions (already partly defined below)
 function openHistory(id, title)   { metisStub(`/course-builder history for course "${title}"`); }
 function continueDraft(id, title) { metisStub(`/course-builder continue draft for "${title}"`); }
