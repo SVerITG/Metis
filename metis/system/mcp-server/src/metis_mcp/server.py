@@ -40,6 +40,7 @@ from metis_mcp.tools import (  # noqa: E402, F401
     data_tools,
     handoff,
     improvement,
+    observation,
 )
 
 
