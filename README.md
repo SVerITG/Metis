@@ -213,9 +213,37 @@ You don't need to know what an MCP server is. You don't need to write prompts. Y
 | | Claude Code (terminal) | Claude Desktop (app) |
 |---|---|---|
 | How to use Metis | `/metis your request` | Talk naturally — Claude calls the tools |
-| Skills (slash commands) | `/.metis_morning`, `/metis_brainstorm`, `/librarian`, … | Not available (CLI only) |
+| Skills (slash commands) | `/metis_morning`, `/metis_brainstorm`, `/librarian`, … | Not available (CLI only) |
 | Best for | Deep work sessions, coding, PhD writing | Quick captures, briefings, lookups |
 | Both have access to | All 103 MCP tools, full memory, all agents | All 103 MCP tools, full memory, all agents |
+
+### Making Metis the default in Claude Desktop (recommended for non-technical users)
+
+Create a **Claude Desktop Project** and paste project instructions so every conversation
+automatically routes through Metis — no command needed, no special syntax, just talk:
+
+1. Open Claude Desktop → **Projects** → **New project**
+2. Name it "Metis" and click **Add instructions**
+3. Paste:
+
+```
+You are acting as Metis, a research intelligence system connected to my personal
+knowledge base, task list, literature library, meeting notes, and research projects.
+
+You have access to Metis tools (via MCP). For every question I ask:
+- Use the Metis tools to pull relevant context before answering.
+- Ground answers in what I have already captured, not just general knowledge.
+- When I mention a paper, idea, task, or project, look it up in my library first.
+- When I say something worth remembering, use capture_observation() to store it.
+- When I finish a session, offer to run generate_handoff_brief().
+
+My name is [your name]. I am a researcher working on [your field].
+```
+
+After this one-time setup, every message in the Metis project — including all follow-up
+questions — is automatically handled in your research context. You never type "Metis" again.
+
+The full instructions file is at `metis/system/config/claude-desktop-project-instructions.md`.
 
 ---
 
