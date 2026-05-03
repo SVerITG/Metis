@@ -325,6 +325,62 @@ async def identity_rename(request: Request):
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
+@router.get("/api/partial/metis/memory-stream", response_class=HTMLResponse)
+async def metis_memory_stream(request: Request, limit: int = 40, days: int = 30):
+    """Chronological stream of typed observations from episodic memory + reflexions."""
+    import json as _json
+
+    cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
+
+    # Episodic memory (discovery/decision/implementation/issue/note)
+    raw_episodic = db_query(
+        "SELECT id, event_type, content, metadata, created_at "
+        "FROM episodic_memory WHERE created_at >= ? ORDER BY created_at DESC LIMIT ?",
+        (cutoff, limit),
+        default=[],
+    ) or []
+
+    # Reflexion log (end-of-run self-critiques)
+    raw_reflexions = db_query(
+        "SELECT reflexion_id as id, agent_slug, could_improve as content, created_at "
+        "FROM reflexion_log WHERE created_at >= ? AND could_improve != '' "
+        "ORDER BY created_at DESC LIMIT 10",
+        (cutoff,),
+        default=[],
+    ) or []
+
+    entries: list[dict] = []
+    for r in raw_episodic:
+        row = dict(r)
+        meta: dict = {}
+        try:
+            meta = _json.loads(row.get("metadata") or "{}")
+        except Exception:
+            pass
+        row["classification"] = meta.get("classification") or row.get("event_type") or "note"
+        row["agent_slug"]      = meta.get("agent_slug") or ""
+        row["concepts"]        = meta.get("concepts") or []
+        entries.append(row)
+
+    for r in raw_reflexions:
+        row = dict(r)
+        row["classification"] = "note"
+        row["event_type"]     = "note"
+        row["concepts"]       = []
+        row["source"]         = "reflexion"
+        entries.append(row)
+
+    # Sort all entries newest first
+    entries.sort(key=lambda x: (x.get("created_at") or ""), reverse=True)
+    entries = entries[:limit]
+
+    return templates.TemplateResponse(
+        request,
+        "partials/metis_memory_stream.html",
+        {"entries": entries, "days": days},
+    )
+
+
 @router.get("/api/partial/metis/improvement", response_class=HTMLResponse)
 async def metis_improvement(request: Request, days: int = 14):
     """Self-improvement loop surface: themed reflexions + draft proposals."""

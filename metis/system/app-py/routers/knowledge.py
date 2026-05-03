@@ -10,7 +10,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from db import db_query, db_scalar
+from db import db_query, db_scalar, get_db_path
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -379,4 +379,86 @@ async def knowledge_graph_partial(request: Request):
         request,
         "partials/knowledge_graph.html",
         {"node_count": node_count, "edge_count": edge_count},
+    )
+
+
+@router.get("/api/partial/knowledge/memory-search", response_class=HTMLResponse)
+async def knowledge_memory_search(request: Request, q: str = ""):
+    """Semantic search across episodic, semantic, and procedural memory layers."""
+    if not q or len(q.strip()) < 2:
+        return HTMLResponse(
+            '<div class="empty-row">Type at least 2 characters to search your memory.</div>'
+        )
+
+    import json as _json
+
+    results: list[dict] = []
+
+    # Try vector search via observation/vector_memory layer
+    try:
+        from metis_mcp.embeddings import embed_one
+        import struct, sqlite_vec
+
+        query_vec = embed_one(q.strip())
+        blob = struct.pack(f"{len(query_vec)}f", *query_vec)
+        db_path = get_db_path() if callable(get_db_path) else None
+
+        if db_path:
+            import sqlite3
+            con = sqlite3.connect(str(db_path))
+            con.row_factory = sqlite3.Row
+            con.enable_load_extension(True)
+            sqlite_vec.load(con)
+            con.enable_load_extension(False)
+
+            rows = con.execute(
+                """SELECT e.id, e.event_type, e.content, e.metadata, e.created_at,
+                          v.distance
+                   FROM vec_episodic v
+                   JOIN episodic_memory e ON e.id = v.rowid
+                   ORDER BY v.distance ASC LIMIT 12""",
+                (blob,),
+            ).fetchall()
+            for r in rows:
+                row = dict(r)
+                meta = {}
+                try:
+                    meta = _json.loads(row.get("metadata") or "{}")
+                except Exception:
+                    pass
+                row["classification"] = meta.get("classification") or row.get("event_type") or "note"
+                row["concepts"]       = meta.get("concepts") or []
+                row["agent_slug"]     = meta.get("agent_slug") or ""
+                row["score"]          = round(1 - float(row.get("distance") or 1), 3)
+                results.append(row)
+            con.close()
+    except Exception:
+        pass
+
+    # Fallback: keyword LIKE across all memory tables
+    if not results:
+        like = f"%{q}%"
+        raw = db_query(
+            "SELECT id, event_type, content, metadata, created_at, 0 as distance "
+            "FROM episodic_memory WHERE content LIKE ? ORDER BY created_at DESC LIMIT 12",
+            (like,),
+            default=[],
+        ) or []
+        for r in raw:
+            row = dict(r)
+            meta = {}
+            try:
+                meta = _json.loads(row.get("metadata") or "{}")
+            except Exception:
+                pass
+            row["classification"] = meta.get("classification") or row.get("event_type") or "note"
+            row["concepts"]       = meta.get("concepts") or []
+            row["agent_slug"]     = meta.get("agent_slug") or ""
+            row["score"]          = None
+            results.append(row)
+
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_memory_search.html",
+        {"results": results, "q": q},
     )
