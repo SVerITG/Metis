@@ -1,0 +1,80 @@
+{# Self-improvement loop surface — Phase 9b #}
+{% set totals = themes.totals if themes else None %}
+
+<div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
+    <div>
+      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">Reflexion themes — last {{ days }} days</div>
+      <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">
+        {% if totals and totals.reflexions %}
+          {{ totals.reflexions }} reflexion{{ '' if totals.reflexions == 1 else 's' }} across {{ totals.agents }} agent{{ '' if totals.agents == 1 else 's' }}.
+        {% else %}
+          No reflexions yet. Agents need to call <code style="font-family:var(--m-mono);font-size:11px;">write_reflexion</code> at the end of every run.
+        {% endif %}
+      </div>
+    </div>
+    <span class="tail" style="cursor:pointer;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);"
+          hx-get="/api/partial/metis/improvement"
+          hx-target="#metis-improvement-body"
+          hx-swap="innerHTML">REFRESH</span>
+  </div>
+</div>
+
+{% if themes and themes.agents %}
+  {% for a in themes.agents %}
+  <div style="padding:16px 22px;border-bottom:1px solid var(--m-rule-soft);">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px;">
+      <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">
+        {{ a.agent_slug }}
+        <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);margin-left:8px;">{{ a.n_reflexions }} REFLEXIONS</span>
+      </div>
+      <button class="btn btn--ghost btn--caps" onclick="draftImprovement('{{ a.agent_slug }}')">Draft proposal</button>
+    </div>
+    <div style="font-size:12px;color:var(--m-muted);line-height:1.7;">
+      {% if a.could_improve_themes %}
+        <div><span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-ochre-deep);">COULD IMPROVE</span>
+          {% for t, c in a.could_improve_themes %}<code style="font-family:var(--m-mono);font-size:11px;color:var(--m-ink);">{{ t }}</code><span style="color:var(--m-muted);">·{{ c }}</span>{{ '  ' if not loop.last else '' }}{% endfor %}
+        </div>
+      {% endif %}
+      {% if a.missing_context_themes %}
+        <div><span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-info);">MISSING CONTEXT</span>
+          {% for t, c in a.missing_context_themes %}<code style="font-family:var(--m-mono);font-size:11px;color:var(--m-ink);">{{ t }}</code><span style="color:var(--m-muted);">·{{ c }}</span>{{ '  ' if not loop.last else '' }}{% endfor %}
+        </div>
+      {% endif %}
+      {% if a.tool_wishes_themes %}
+        <div><span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-accent);">TOOL WISHES</span>
+          {% for t, c in a.tool_wishes_themes %}<code style="font-family:var(--m-mono);font-size:11px;color:var(--m-ink);">{{ t }}</code><span style="color:var(--m-muted);">·{{ c }}</span>{{ '  ' if not loop.last else '' }}{% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+{% endif %}
+
+<div style="padding:18px 22px;">
+  <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);margin-bottom:10px;">Pending proposals</div>
+  {% if proposals %}
+    {% for p in proposals %}
+    <div style="padding:12px 0;border-bottom:1px solid var(--m-rule-soft);">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
+        <div>
+          <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">#{{ p.id }} · {{ p.status|upper }}</span>
+          <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);margin-left:8px;">{{ p.agent_slug }}</span>
+          <span style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);margin-left:8px;">{{ (p.proposed_at or '')[:16] }}</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          {% if p.status == 'draft' %}
+          <button class="btn btn--ghost btn--caps" onclick="promoteProposal({{ p.id }})">Promote</button>
+          {% endif %}
+          <button class="btn btn--sec btn--caps" onclick="rejectProposal({{ p.id }})">Reject</button>
+        </div>
+      </div>
+      {% if p.rationale %}
+      <div style="font-size:12px;color:var(--m-muted);margin-top:6px;line-height:1.6;">{{ p.rationale }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="padding:8px 0;font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">No drafts or pending proposals. Drafts surface here once an agent has enough reflexions.</div>
+  {% endif %}
+</div>

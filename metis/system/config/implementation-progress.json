@@ -2,8 +2,8 @@
   "_meta": {
     "version": "1.0",
     "created": "2026-04-13",
-    "last_updated": "2026-04-25",
-    "last_phase_completed": "Phase 8.13 \u2014 Token efficiency + handoff brief",
+    "last_updated": "2026-05-03",
+    "last_phase_completed": "Phase 9b \u2014 Self-improvement loop",
     "sonnet_handoff_plan": "metis/journal/2026-04-24_sonnet_handoff_plan.md",
     "purpose": "Tracks all implementation milestones for the Metis Research Cortex redesign. Statuses: pending | in_progress | completed | skipped. Each completed item records a date and optional notes.",
     "phases": [
@@ -1015,9 +1015,43 @@
         {
           "id": "M9.6",
           "subject": "Smoke-test all 9 tabs in browser + push to GitHub",
-          "status": "in_progress",
-          "completed_date": null,
-          "notes": "User to verify in browser; commit + push at end of session."
+          "status": "completed",
+          "completed_date": "2026-04-25",
+          "notes": "All 9 tab endpoints verified 200 OK. Committed (c86fa71) and pushed to origin/main."
+        }
+      ]
+    },
+    "Phase 9b": {
+      "label": "Self-improvement loop",
+      "target_timeline": "2026-05-03",
+      "items": [
+        {
+          "id": "M9b.1",
+          "subject": "aggregate_reflexions() — theme recent reflexion_log entries per agent",
+          "status": "completed",
+          "completed_date": "2026-05-03",
+          "notes": "tools/improvement.py: aggregate_reflexions(agent_slug, days). Naive Counter-based theming: tokenise, drop stopwords, return top-3 phrases per column (could_improve, missing_context, tool_wishes). Returns {window_days, agents:[…], totals}. MCP wrapper: aggregate_reflexions_tool."
+        },
+        {
+          "id": "M9b.2",
+          "subject": "draft_self_improvement_proposal() — build draft from reflexion themes",
+          "status": "completed",
+          "completed_date": "2026-05-03",
+          "notes": "draft_self_improvement_proposal(agent_slug, days): reads aggregate_reflexions + current skill.md, appends '## Self-improvement notes' section, queues in skill_improvement_proposals with status='draft'. MCP wrapper: draft_self_improvement_proposal_tool. Registered in server.py import list."
+        },
+        {
+          "id": "M9b.3",
+          "subject": "Metis tab Self-improvement dashboard surface",
+          "status": "completed",
+          "completed_date": "2026-05-03",
+          "notes": "partials/metis_improvement.html: themed reflexions per agent + pending/draft proposals table. Endpoints: GET /api/partial/metis/improvement, POST /api/improvement/draft/{slug}, POST /api/improvement/promote/{id}, POST /api/improvement/reject/{id}. JS handlers: draftImprovement(), promoteProposal(), rejectProposal(). All smoke-tested 200 OK."
+        },
+        {
+          "id": "M9b.4",
+          "subject": "Smoke-test, commit, push Phase 9b",
+          "status": "completed",
+          "completed_date": "2026-05-03",
+          "notes": "Seeded 5 reflexions across librarian+news-radar, verified themed view + draft + promote + reject round-trip. Seed data cleaned up. Committed and pushed to origin/main."
         }
       ]
     },

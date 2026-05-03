@@ -325,6 +325,91 @@ async def identity_rename(request: Request):
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
+@router.get("/api/partial/metis/improvement", response_class=HTMLResponse)
+async def metis_improvement(request: Request, days: int = 14):
+    """Self-improvement loop surface: themed reflexions + draft proposals."""
+    themes: dict = {"window_days": days, "agents": [], "totals": {"reflexions": 0, "agents": 0}}
+    proposals: list[dict] = []
+    try:
+        from metis_mcp.tools.improvement import aggregate_reflexions
+        themes = aggregate_reflexions(days=days)
+    except Exception:
+        pass
+    try:
+        rows = db_query(
+            "SELECT id, agent_slug, proposed_at, rationale, status, "
+            "SUBSTR(proposed_content, 1, 280) AS preview "
+            "FROM skill_improvement_proposals "
+            "WHERE status IN ('draft','pending') "
+            "ORDER BY proposed_at DESC LIMIT 12",
+            default=[],
+        ) or []
+        proposals = [dict(r) for r in rows]
+    except Exception:
+        proposals = []
+
+    return templates.TemplateResponse(
+        request,
+        "partials/metis_improvement.html",
+        {
+            "themes": themes,
+            "proposals": proposals,
+            "days": days,
+        },
+    )
+
+
+@router.post("/api/improvement/draft/{agent_slug}")
+async def improvement_draft(agent_slug: str, request: Request):
+    """Queue a self-improvement draft for an agent (status='draft')."""
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    days = int(payload.get("days") or 14)
+    try:
+        from metis_mcp.tools.improvement import draft_self_improvement_proposal
+        result = draft_self_improvement_proposal(agent_slug, days=days)
+        return JSONResponse(result)
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+@router.post("/api/improvement/promote/{proposal_id}")
+async def improvement_promote(proposal_id: int):
+    """Promote a draft proposal to pending so the standard approve flow can act on it."""
+    from db import db_execute
+    try:
+        db_execute(
+            "UPDATE skill_improvement_proposals SET status = 'pending' "
+            "WHERE id = ? AND status = 'draft'",
+            (proposal_id,),
+        )
+        return JSONResponse({"status": "ok", "proposal_id": proposal_id})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+@router.post("/api/improvement/reject/{proposal_id}")
+async def improvement_reject(proposal_id: int, request: Request):
+    """Mark a proposal rejected without applying it."""
+    from db import db_execute
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    note = (payload.get("note") or "").strip()[:500]
+    try:
+        db_execute(
+            "UPDATE skill_improvement_proposals SET status = 'rejected', reviewer_note = ? "
+            "WHERE id = ? AND status IN ('draft','pending')",
+            (note, proposal_id),
+        )
+        return JSONResponse({"status": "ok", "proposal_id": proposal_id})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
 @router.get("/api/partial/metis/system-info", response_class=HTMLResponse)
 async def metis_system_info(request: Request):
     rc_root = os.environ.get("METIS_RC_ROOT", "unknown")
