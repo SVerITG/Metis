@@ -15,7 +15,7 @@ Scaffolds a new project in the Metis RC system from any starting point (idea, da
 **Step 1 — Gather information** (ask all at once, not sequentially):
 - Project name (will be slugified)
 - Type: `shiny` / `script` / `report` / `tool`
-- Domain / research link (e.g., "sleeping sickness", "phd-framework", "general")
+- Domain / research link (e.g., "[your domain]", "phd-framework", "general")
 - Data source path (optional — can be added later)
 
 **Step 2 — Create project card:**
