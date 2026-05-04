@@ -323,11 +323,12 @@ async def set_working_memory(
 
 
 @app.tool()
-async def get_working_memory(session_id: str) -> list[TextContent]:
-    """Retrieve all working memory for a session.
+async def get_working_memory(session_id: str = "") -> list[TextContent]:
+    """Retrieve working memory for a session, or the most recent entries if no session given.
 
     Args:
-        session_id: Pipeline session ID to retrieve memory for.
+        session_id: Pipeline session ID. Leave empty to get the 20 most recent entries
+                    across all sessions.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
@@ -335,17 +336,27 @@ async def get_working_memory(session_id: str) -> list[TextContent]:
     try:
         with connect(paths.db) as conn:
             conn.execute(_WORKING_DDL)
-            rows = conn.execute(
-                "SELECT key, value FROM working_memory WHERE session_id = ? ORDER BY created_at",
-                (session_id,),
-            ).fetchall()
+            if session_id:
+                rows = conn.execute(
+                    "SELECT session_id, key, value FROM working_memory "
+                    "WHERE session_id = ? ORDER BY created_at",
+                    (session_id,),
+                ).fetchall()
+                label = f"session {session_id[:8]}…"
+            else:
+                rows = conn.execute(
+                    "SELECT session_id, key, value FROM working_memory "
+                    "ORDER BY created_at DESC LIMIT 20",
+                ).fetchall()
+                label = "recent sessions"
 
         if not rows:
-            return [TextContent(type="text", text=f"No working memory for session {session_id[:8]}…")]
+            return [TextContent(type="text", text=f"No working memory found ({label}).")]
 
-        lines = [f"Working memory for session {session_id[:8]}…:\n"]
+        lines = [f"Working memory ({label}):\n"]
         for row in rows:
-            lines.append(f"- **{row['key']}**: {row['value'][:200]}")
+            prefix = f"[{row['session_id'][:8]}] " if not session_id else ""
+            lines.append(f"- {prefix}**{row['key']}**: {row['value'][:200]}")
         return [TextContent(type="text", text="\n".join(lines))]
 
     except Exception as e:
