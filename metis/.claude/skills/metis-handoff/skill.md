@@ -38,7 +38,7 @@ Produce the following block verbatim (filled in with real data). The user will c
 ═══════════════════════════════════════════════════
 
 ## WHO YOU ARE TALKING TO
-Senior Researcher / Epidemiologist specialising in sleeping sickness (HAT) and public health surveillance. PhD student. Active projects: HAT Dashboard (R Shiny), HAT Risk Mapping / Clustering (SaTScan), MLM Course (R + Node.js teaching app), Metis PKM system.
+Senior Researcher / [your role] working on [your research domain]. PhD student. Active projects: [My Research Project], [My Dataset Analysis], [My Statistics Course], Metis PKM system.
 
 ## ACTIVE PROJECTS
 {list each project: ID | title | status | open task count}

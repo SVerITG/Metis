@@ -33,7 +33,7 @@ For each section:
 Writing Partner must preserve domain-consistent language for:
 
 - gambiense human African trypanosomiasis
-- sleeping sickness
+- [your research domain]
 - active screening
 - passive screening
 - detection coverage
