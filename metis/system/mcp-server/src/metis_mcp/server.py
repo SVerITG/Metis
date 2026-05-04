@@ -42,6 +42,7 @@ from metis_mcp.tools import (  # noqa: E402, F401
     improvement,
     observation,
     content_scan,
+    zotero,
 )
 
 
