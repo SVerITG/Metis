@@ -31,10 +31,7 @@ from pathlib import Path
 
 # ── Configuration ──────────────────────────────────────────────────────────
 
-RC_ROOT = os.environ.get(
-    "METIS_RC_ROOT",
-    "/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/Research Cortex/metis"
-)
+RC_ROOT = os.environ.get("METIS_RC_ROOT", str(Path(__file__).parent.parent.parent.parent))
 
 SECURITY_DIR = Path(RC_ROOT) / "08_system" / "security"
 LOG_DIR = Path(RC_ROOT) / "07_outputs" / "reviews" / "data-guardian"

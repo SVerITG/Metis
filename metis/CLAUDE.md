@@ -1,9 +1,9 @@
 # Metis Second Brain — Claude Code Configuration
 
-This is the Metis second-brain system for a Senior Researcher / Epidemiologist / Public Health Methodologist
-working on sleeping sickness (HAT), PhD planning, AI development, and personal learning.
+This is the Metis second-brain system for a Senior Researcher / Public Health Methodologist
+working on their research domain, PhD planning, AI development, and personal learning.
 
-**Owner:** sverschaeve
+**Owner:** {user}
 **Root:** This folder
 **App:** `system/app/`
 **Agents:** `agents/`
@@ -101,7 +101,7 @@ Metis will:
 
 **Option B — Call an agent directly:**
 ```
-/librarian search HAT passive case detection 2024
+/librarian search [your topic] surveillance methods 2024
 ```
 I will load `agents/librarian/system-prompt.md`, act as the Librarian, do the work, record the output, then return to general coordination.
 
@@ -173,17 +173,17 @@ When a request arrives, route as follows:
 ## Project context
 
 ### Active projects (with git repos)
-- **HAT Dashboard** — `SVerITG/HAT_Dashboard_1.0`, branch `server`
-- **HAT Clustering / Risk Mapping** — local git initialized, push to `SVerITG/HAT_Clustering` pending
-- **MLM Course** — `SVerITG/MLM_course`
+- **My Research Project** — `{your-github-username}/my-research-project`, branch `main`
+- **My Dataset Analysis** — local git initialized, push pending
+- **My Statistics Course** — `{your-github-username}/my-statistics-course`
 
 ### PhD
-- Topic: elimination / post-elimination surveillance (being defined)
+- Topic: (to be defined — update this with your thesis topic)
 - Three articles in progress — need to be aligned to the thesis backbone
 - Most time-pressured priority
 
 ### Key paths
-- Literature: `inputs/literature/sleeping-sickness/`
+- Literature: `inputs/literature/[your-topic]/`
 - Code staging: `inputs/code/` (copy scripts here for review)
 - Project cards: `projects/active/`
 - Inbox: `inbox/` (drop anything here for Metis to route)
@@ -206,9 +206,9 @@ Each active project has a **PLANNING.md** file in its external project root. Thi
 
 | Project | PLANNING.md path |
 |---|---|
-| HAT Dashboard | `C:/Users/sverschaeve/OneDrive - ITG/Documents/2. HAT disease/1. Epi Data/7. Dashboard/PLANNING.md` |
-| HAT Clustering | `C:/Users/sverschaeve/OneDrive - ITG/Documents/2. HAT disease/1. Epi Data/4. Clustering/PLANNING.md` |
-| MLM Course | `C:/Users/sverschaeve/OneDrive - ITG/Documents/9. Education/1. Multilevel Analysis/PLANNING.md` |
+| My Research Project | `C:/Users/{username}/[path-to-project]/PLANNING.md` |
+| My Dataset Analysis | `C:/Users/{username}/[path-to-analysis]/PLANNING.md` |
+| My Statistics Course | `C:/Users/{username}/[path-to-course]/PLANNING.md` |
 
 **Use `read_file()` to open the relevant PLANNING.md.** Update it at the end of each session with what was done and what the next step is.
 
@@ -237,4 +237,4 @@ Every session, check:
 - **Docker** — containerization (planned)
 - **Windows + WSL** — host OS
 - **OneDrive** — file sync
-- **GitHub** — version control (`SVerITG` account)
+- **GitHub** — version control (`{your-github-username}` account)

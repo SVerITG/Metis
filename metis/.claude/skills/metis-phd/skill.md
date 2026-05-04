@@ -1,6 +1,6 @@
 ---
 name: Metis PhD
-description: "PhD, thesis, article status, PhD progress, dissertation, article alignment, PhD plan, next PhD milestone, thesis structure, research program, article 1, article 2, article 3, phd framework, elimination, post-elimination, HAT"
+description: "PhD, thesis, article status, PhD progress, dissertation, article alignment, PhD plan, next PhD milestone, thesis structure, research program, article 1, article 2, article 3, phd framework"
 model: claude-sonnet-4-6
 effort: normal
 complexity: standard
@@ -18,12 +18,12 @@ A focused PhD status brief: article progress, thesis alignment, next milestone, 
 **Step 1 — Pull PhD data**
 - `get_project_status()` — find `phd-framework` project
 - `get_tasks(project="phd-framework")` — PhD-tagged tasks
-- `get_tasks(project="passive-screening-drc")` — passive screening article tasks
-- `get_tasks(project="hat-dashboard")` — HAT dashboard article tasks
+- `get_tasks(project="article-1")` — article 1 tasks
+- `get_tasks(project="article-2")` — article 2 tasks
 - `get_notes(tags="phd")` — any PhD-tagged notes from the last 14 days
 
 **Step 2 — Read the PhD framework PLANNING.md**
-Path: `C:/Users/sverschaeve/OneDrive - ITG/Documents/5. Scientific/20. Framework/PLANNING.md`
+Path: `C:/Users/{username}/[path-to-phd-framework]/PLANNING.md`
 Extract: thesis topic summary, article titles, alignment status per article, most time-pressured item.
 
 **Step 3 — Check PhD domain notes**
@@ -46,17 +46,17 @@ Structure:
 ```
 ─── PhD Status — [YYYY-MM-DD] ──────────────────────────────
 
-THESIS: Post-elimination surveillance of HAT — [one-line argument]
+THESIS: [Your thesis topic] — [one-line argument]
 
-ARTICLE 1  [passive-screening-drc]
+ARTICLE 1  [article-1-slug]
   Status: DRAFT
   Next: [concrete next step from PLANNING.md]
 
-ARTICLE 2  [hat-dashboard]
+ARTICLE 2  [article-2-slug]
   Status: IN PROGRESS
   Next: [next step]
 
-ARTICLE 3  [hat-clustering]
+ARTICLE 3  [article-3-slug]
   Status: PLANNED
   Next: [next step]
 

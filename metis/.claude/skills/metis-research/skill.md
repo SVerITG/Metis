@@ -24,9 +24,9 @@ Start or continue a research session. Load the full context for a specific artic
 - `get_research_context(article=name)`
 - `scan_tracked_files()` — checks only watched checkpoint files (PLANNING.md per project). Report any that changed since last session.
 - Read the project's `PLANNING.md` via `read_file(path)`:
-  - HAT Dashboard: `/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/2. HAT disease/1. Epi Data/7. Dashboard/PLANNING.md`
-  - HAT Clustering: `/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/2. HAT disease/1. Epi Data/4. Clustering/PLANNING.md`
-  - MLM Course: `/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/9. Education/1. Multilevel Analysis/PLANNING.md`
+  - My Research Project: `/mnt/c/Users/{username}/[path-to-research-project]/PLANNING.md`
+  - My Dataset Analysis: `/mnt/c/Users/{username}/[path-to-analysis]/PLANNING.md`
+  - My Statistics Course: `/mnt/c/Users/{username}/[path-to-course]/PLANNING.md`
 - `get_tasks(project=article_name, status="open")` — open tasks
 
 **Step 2 — Check for new developments**
@@ -63,7 +63,7 @@ Use `read_file()` to read it first, then use the Edit tool to update it.
 - `scan_tracked_files()` detects when it changed, so Metis knows to read it
 
 **When you work outside Metis:** Add a brief note to PLANNING.md under "Last session" and "Key files recently changed". One or two lines is enough. Example:
-> *2026-04-07: Ran clustering analysis on KC data, updated Risk_Mapping_Script_2025_KC.R*
+> *2026-04-07: Updated analysis script with new dataset, revised key output figures.*
 
 ---
 

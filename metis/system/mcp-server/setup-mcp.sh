@@ -13,7 +13,7 @@ set -euo pipefail
 # ── Config ──────────────────────────────────────────────────────────────────
 VENV_DIR="$HOME/.local/share/metis-mcp/.venv"
 RUN_SCRIPT="$HOME/.local/share/metis-mcp/run.sh"
-METIS_RC_ROOT="/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/Research Cortex/metis"
+METIS_RC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SRC_DIR="$METIS_RC_ROOT/system/mcp-server"
 
 # ── Detect Python ────────────────────────────────────────────────────────────
@@ -112,24 +112,90 @@ else
   exit 1
 fi
 
-# ── Print Claude Code / Claude Desktop registration ──────────────────────────
-cat <<REG
+# ── Auto-register with Claude Code ──────────────────────────────────────────
+CC_SETTINGS="$HOME/.claude/settings.json"
+mkdir -p "$HOME/.claude"
 
-────────────────────────────────────────────────────────────────────
-Setup complete. Register the MCP server:
+if [ -f "$CC_SETTINGS" ]; then
+  python3 - <<PYEOF
+import json, sys
 
-  Claude Code:
-    Add to ~/.claude/settings.json:
-      "mcpServers": { "metis-rc": { "command": "$RUN_SCRIPT" } }
+path = "$CC_SETTINGS"
+with open(path) as f:
+    s = json.load(f)
 
-  Claude Desktop (Windows):
-    Add to %APPDATA%\Claude\claude_desktop_config.json:
-      "mcpServers": {
-        "metis-rc": {
-          "command": "wsl",
-          "args": ["-e", "$RUN_SCRIPT"]
-        }
-      }
+s.setdefault("mcpServers", {})["metis-rc"] = {"command": "$RUN_SCRIPT"}
+s.setdefault("permissions", {}).setdefault("allow", [])
+if "mcp__metis-rc__*" not in s["permissions"]["allow"]:
+    s["permissions"]["allow"].append("mcp__metis-rc__*")
 
-────────────────────────────────────────────────────────────────────
-REG
+with open(path, "w") as f:
+    json.dump(s, f, indent=2)
+print("  Claude Code: updated ~/.claude/settings.json")
+PYEOF
+else
+  python3 - <<PYEOF
+import json
+path = "$CC_SETTINGS"
+s = {
+  "mcpServers": {"metis-rc": {"command": "$RUN_SCRIPT"}},
+  "permissions": {"allow": ["mcp__metis-rc__*"]}
+}
+with open(path, "w") as f:
+    json.dump(s, f, indent=2)
+print("  Claude Code: created ~/.claude/settings.json")
+PYEOF
+fi
+
+# ── Auto-register with Claude Desktop (Windows) ──────────────────────────────
+WIN_USER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r\n')
+CD_CONFIG="/mnt/c/Users/$WIN_USER/AppData/Roaming/Claude/claude_desktop_config.json"
+
+if [ -f "$CD_CONFIG" ]; then
+  python3 - <<PYEOF
+import json, sys
+
+path = "$CD_CONFIG"
+run_script = "$RUN_SCRIPT"
+
+with open(path) as f:
+    cfg = json.load(f)
+
+cfg.setdefault("mcpServers", {})["metis-rc"] = {
+    "command": "wsl",
+    "args": ["-e", run_script],
+    "autoApprove": ["*"]
+}
+
+with open(path, "w") as f:
+    json.dump(cfg, f, indent=2)
+print("  Claude Desktop: updated claude_desktop_config.json")
+PYEOF
+else
+  echo "  Claude Desktop config not found at $CD_CONFIG — skipping (Claude Desktop may not be installed)"
+fi
+
+# ── Create Windows desktop shortcut ─────────────────────────────────────────
+BAT_PATH=$(wslpath -w "$METIS_RC_ROOT/system/launch-dashboard.bat" 2>/dev/null || true)
+if [ -n "$BAT_PATH" ]; then
+  powershell.exe -Command "
+\$ws = New-Object -ComObject WScript.Shell
+foreach (\$dest in @(
+  [System.Environment]::GetFolderPath('Desktop') + '\Metis.lnk',
+  [System.Environment]::GetFolderPath('Programs') + '\Metis.lnk'
+)) {
+  \$sc = \$ws.CreateShortcut(\$dest)
+  \$sc.TargetPath = '$BAT_PATH'
+  \$sc.Description = 'Metis Research Cortex Dashboard'
+  \$sc.WindowStyle = 1
+  \$sc.Save()
+}
+Write-Host '  Shortcuts: Desktop + Start Menu created'
+" 2>/dev/null || echo "  Shortcuts: could not create (PowerShell unavailable)"
+fi
+
+echo ""
+echo "════════════════════════════════════════════════════════════════════"
+echo "  Setup complete."
+echo "  Restart Claude Code and Claude Desktop for changes to take effect."
+echo "════════════════════════════════════════════════════════════════════"

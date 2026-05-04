@@ -24,9 +24,9 @@ A clean overview of all active projects: their status, open task counts, recent 
 **Step 2 — Read PLANNING.md files for context on active projects**
 
 Active projects with PLANNING.md files:
-- HAT Dashboard: `C:/Users/sverschaeve/OneDrive - ITG/Documents/2. HAT disease/1. Epi Data/7. Dashboard/PLANNING.md`
-- HAT Clustering: `C:/Users/sverschaeve/OneDrive - ITG/Documents/2. HAT disease/1. Epi Data/4. Clustering/PLANNING.md`
-- MLM Course: `C:/Users/sverschaeve/OneDrive - ITG/Documents/9. Education/1. Multilevel Analysis/PLANNING.md`
+- My Research Project: `C:/Users/{username}/[path-to-research-project]/PLANNING.md`
+- My Dataset Analysis: `C:/Users/{username}/[path-to-analysis]/PLANNING.md`
+- My Statistics Course: `C:/Users/{username}/[path-to-course]/PLANNING.md`
 
 For single-project deep-dive: read the matching PLANNING.md fully and surface the last-session summary + next step.
 
@@ -46,22 +46,18 @@ For each project:
 ```
 ─── Projects Overview — [YYYY-MM-DD] ───────────────────────
 
-🟢 HAT DASHBOARD  [hat-dashboard]
-   Branch: server | Repo: SVerITG/HAT_Dashboard_1.0
+🟢 MY RESEARCH PROJECT  [my-research-project]
+   Branch: main | Repo: {your-github-username}/my-research-project
    Open: N tasks  · Blocked: N  · In progress: N
    Next: [extracted from PLANNING.md or top task]
 
-🟢 HAT CLUSTERING  [hat-clustering]
+🟢 MY DATASET ANALYSIS  [my-dataset-analysis]
    Branch: main  · Open: N tasks
    Next: [next step]
 
-🟢 MLM COURSE  [multilevel-analysis]
-   Teaching / Development  · 33% complete (2/6 modules)
+🟢 MY STATISTICS COURSE  [my-statistics-course]
+   Teaching / Development  · N% complete (N/N modules)
    Next: [next step from PLANNING.md]
-
-🟡 PASSIVE SCREENING DRC  [passive-screening-drc]
-   Open: N tasks
-   Next: [next step]
 
 🔵 PhD FRAMEWORK  [phd-framework]
    Three articles in progress

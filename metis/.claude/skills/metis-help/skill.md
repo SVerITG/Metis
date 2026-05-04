@@ -31,7 +31,7 @@ Produce the following guide in full, formatted with clear headers and short para
 Metis connects to your Research Context (RC) — a structured folder on your computer that stores everything: your projects, literature, meeting notes, ideas, and more. When you ask Metis something, she reads your actual files and database to give you relevant, personalised answers.
 
 You interact with Metis in two ways:
-1. **Plain conversation** — Just type naturally. "What am I working on this week?" or "Summarise my HAT Dashboard tasks."
+1. **Plain conversation** — Just type naturally. "What am I working on this week?" or "Summarise my [project] tasks."
 2. **Commands** — Type a `/command` to trigger a specific workflow.
 
 ---
@@ -41,7 +41,7 @@ You interact with Metis in two ways:
 1. **Check your projects:** Ask *"What are my active projects?"*
 2. **See your tasks:** Ask *"What tasks do I have open right now?"*
 3. **Get a weekly overview:** Type `/metis_weekly`
-4. **Open the dashboard:** [Open Metis Dashboard](http://localhost:3939) *(requires the dashboard to be running — double-click `launch_metis.bat`)*
+4. **Open the dashboard:** [Open Metis Dashboard](http://localhost:8000) *(requires the dashboard to be running — run `system/app-py/run.sh`)*
 
 ---
 
@@ -72,7 +72,7 @@ Metis can read and work with:
 
 - **Your projects** — titles, statuses, tasks, next steps
 - **Your tasks** — all open, in-progress, blocked, or completed tasks
-- **Your literature** — the sleeping-sickness paper database, filtered by topic, method, or year
+- **Your literature** — your paper database, filtered by topic, method, or year
 - **Your notes** — markdown files across domains, projects, and library
 - **Your ideas** — everything captured via Metis or the dashboard
 - **Your meetings** — structured notes and action items
@@ -84,7 +84,7 @@ Metis can read and work with:
 
 If you want Metis to be able to read the actual files in one of your projects (e.g. R scripts, course lessons, manuscript drafts), use the `connect_project_folder` tool:
 
-> *"Connect my MLM course folder at `C:/Users/.../9. Education/1. Multilevel Analysis`"*
+> *"Connect my [course/project] folder at `C:/Users/{username}/[path-to-folder]`"*
 
 Metis will register all the relevant files and can then read them when you ask about the project.
 
@@ -102,9 +102,9 @@ Each project has a **PLANNING.md** file at its root. This is the project's worki
 When you start a new session, Metis reads PLANNING.md automatically and knows exactly where you left off. This replaces scanning thousands of files — lightweight and precise.
 
 **PLANNING.md locations:**
-- HAT Dashboard: `2. HAT disease/1. Epi Data/7. Dashboard/PLANNING.md`
-- HAT Clustering: `2. HAT disease/1. Epi Data/4. Clustering/PLANNING.md`
-- MLM Course: `9. Education/1. Multilevel Analysis/PLANNING.md`
+- My Research Project: `[path-to-project]/PLANNING.md`
+- My Dataset Analysis: `[path-to-analysis]/PLANNING.md`
+- My Statistics Course: `[path-to-course]/PLANNING.md`
 
 ---
 
@@ -112,8 +112,8 @@ When you start a new session, Metis reads PLANNING.md automatically and knows ex
 
 The dashboard is a separate visual interface — a browser-based app that shows your projects, tasks, library, ideas, notes, and more in a structured layout.
 
-- **Start it:** Double-click `launch_metis.bat` in the dashboard folder
-- **Open it:** [http://localhost:3939](http://localhost:3939)
+- **Start it:** Run `system/app-py/run.sh` from the Research Cortex root
+- **Open it:** [http://localhost:8000](http://localhost:8000)
 - **It's optional:** Everything the dashboard shows, you can also ask Metis directly in Claude Desktop
 
 ---
@@ -145,7 +145,7 @@ Yes. The dashboard is a visual helper, but Metis through Claude Desktop has acce
 Ask Metis: *"Add a new project called X in domain Y"* — or use the Projects tab in the dashboard.
 
 **Q: How do I add a task?**
-Ask Metis: *"Add a task: review the HAT passive screening paper, linked to the phd-framework project"*
+Ask Metis: *"Add a task: review the [paper title], linked to the [project-name] project"*
 
 **Q: How do I connect my project files so Metis can read them?**
 Ask: *"Connect my project folder at [path]"* — Metis will register the files and can read them in future conversations.

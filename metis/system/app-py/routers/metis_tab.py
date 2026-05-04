@@ -90,7 +90,7 @@ async def metis_identity(request: Request):
         f'<div style="width:52px;height:52px;border-radius:50%;background:var(--m-surface-2);border:1px solid var(--m-rule);display:inline-flex;align-items:center;justify-content:center;font-family:var(--m-display);font-size:22px;font-weight:500;color:var(--m-accent);">{initial}</div>'
         f'<div>'
         f'<div style="font-family:var(--m-display);font-size:17px;color:var(--m-ink);">{name}</div>'
-        f'<div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">sverschaeve@itg.be · {runs} agent runs total</div>'
+        f'<div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">{prefs.get("email", "research cortex")} · {runs} agent runs total</div>'
         f'</div>'
         f'<div style="margin-left:auto;display:flex;gap:6px;">'
         f'<button class="btn btn--ghost btn--caps" onclick="openMetisRename()">Rename</button>'

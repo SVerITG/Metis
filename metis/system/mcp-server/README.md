@@ -31,10 +31,10 @@ pip install -e .
       "command": "wsl",
       "args": [
         "bash",
-        "/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/PKM/metis/08_system/mcp-server/run_mcp_server.sh"
+        "~/.local/share/metis-mcp/run.sh"
       ],
       "env": {
-        "METIS_RC_ROOT": "/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/PKM/metis"
+        "METIS_RC_ROOT": "/path/to/your/metis"
       }
     }
   }
@@ -50,7 +50,7 @@ pip install -e .
       "command": "bash",
       "args": ["/path/to/metis/08_system/mcp-server/run_mcp_server.sh"],
       "env": {
-        "METIS_RC_ROOT": "/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/PKM/metis"
+        "METIS_RC_ROOT": "/path/to/your/metis"
       }
     }
   }

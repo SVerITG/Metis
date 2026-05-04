@@ -243,7 +243,7 @@ For each confirmed project, insert a row into the `projects` SQLite table at `07
 >
 > Important: these same topics also feed the **New publications alert** — every morning, the Librarian scans for newly published academic articles matching these topics and adds them to your notification queue in the Library tab and Control Room. So the topics you set here do double duty: morning news briefing AND literature monitoring."
 
-**Ask:** "What topics should your News Radar follow? (e.g., sleeping sickness, public health surveillance, AI developments)"
+**Ask:** "What topics should your News Radar follow? (e.g., your research domain, public health surveillance, AI developments)"
 
 **Follow-up:** "Do you have any specific RSS feeds or websites you want to include? (optional — just paste URLs)"
 
@@ -427,7 +427,7 @@ Store answers in user-config.yaml under a `dashboard:` key.
 
 Run:
 ```bash
-cd "/mnt/c/Users/$(whoami)/OneDrive - ITG/Documents/7. Software/Research Cortex/metis/08_system/mcp-server"
+cd "/mnt/c/Users/$(whoami)/[path-to-research-cortex]/metis/08_system/mcp-server"
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e . -q
@@ -470,7 +470,7 @@ If they choose 1, 2, or 3:
 - If yes, run the shortcut creator:
   ```bash
   powershell.exe -ExecutionPolicy Bypass -File \
-    "$(wslpath -w "/mnt/c/Users/$(whoami)/OneDrive - ITG/Documents/7. Software/Research Cortex/metis/07_outputs/apps/metis-dashboard/create_shortcut.ps1")"
+    "$(wslpath -w "/mnt/c/Users/$(whoami)/[path-to-research-cortex]/metis/07_outputs/apps/metis-dashboard/create_shortcut.ps1")"
   ```
 - Confirm with the user that the shortcut appeared.
 

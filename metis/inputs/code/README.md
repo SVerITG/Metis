@@ -26,6 +26,6 @@ OneDrive paths change, symlinks are fragile on Windows/WSL. A deliberate copy ma
 ## Original project locations
 | Project | Path |
 |---|---|
-| HAT Dashboard | `C:\Users\sverschaeve\OneDrive - ITG\Documents\2. HAT disease\1. Epi Data\7. Dashboard` |
-| HAT Clustering / Risk Mapping | `C:\Users\sverschaeve\OneDrive - ITG\Documents\2. HAT disease\1. Epi Data\4. Clustering` |
-| Multilevel Analysis Course | `C:\Users\sverschaeve\OneDrive - ITG\Documents\9. Education\1. Multilevel Analysis` |
+| [Your Project] | `C:\\Users\\{username}\\[path-to-project]`
+| [Your Dataset Analysis] | `C:\\Users\\{username}\\[path-to-analysis]`
+| [Your Course] | `C:\\Users\\{username}\\[path-to-course]`

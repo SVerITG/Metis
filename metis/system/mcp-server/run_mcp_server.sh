@@ -12,6 +12,6 @@ VENV_SITE="$SCRIPT_DIR/.venv/lib/python3.12/site-packages"
 SRC_DIR="$SCRIPT_DIR/src"
 
 export PYTHONPATH="$VENV_SITE:$SRC_DIR${PYTHONPATH:+:$PYTHONPATH}"
-export METIS_RC_ROOT="${METIS_RC_ROOT:-/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/PKM/metis}"
+export METIS_RC_ROOT="${METIS_RC_ROOT:-$(dirname "$(dirname "$SCRIPT_DIR")")}"
 
 exec /usr/bin/python3.12 -m metis_mcp.server

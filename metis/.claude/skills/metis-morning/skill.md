@@ -24,9 +24,9 @@ A single, actionable morning briefing that orients you for the work day. Combine
 - `get_daily_insight(date=today)` — any AI-generated insight for today
 
 **Step 2 — Check PhD PLANNING.md**
-Read the PhD / HAT Dashboard PLANNING.md to surface the most time-pressured active item:
-- `C:/Users/sverschaeve/OneDrive - ITG/Documents/2. HAT disease/1. Epi Data/7. Dashboard/PLANNING.md`
-- `C:/Users/sverschaeve/OneDrive - ITG/Documents/9. Education/1. Multilevel Analysis/PLANNING.md`
+Read the PhD / active project PLANNING.md to surface the most time-pressured active item:
+- `C:/Users/{username}/[path-to-research-project]/PLANNING.md`
+- `C:/Users/{username}/[path-to-statistics-course]/PLANNING.md`
 
 **Step 3 — Compose the briefing**
 
@@ -36,7 +36,7 @@ Structure (keep it tight — no section longer than 5 lines):
 3. **Top tasks** — max 3, prioritised: blocked > overdue > due today > in progress
 4. **PhD pulse** — one line per active article or PhD priority
 5. **Overnight** — what agents ran, any outputs ready for review
-6. **News signals** — top 2-3 items, one line each with a domain tag [HAT / AI / PUBLIC HEALTH / METHODS]
+6. **News signals** — top 2-3 items, one line each with a domain tag [YOUR DOMAIN / AI / PUBLIC HEALTH / METHODS]
 7. **Capture reminder** — one prompt to surface what's on your mind
 
 **Step 4 — Save and log**
@@ -47,7 +47,7 @@ Log: `log_agent_run(paths, "metis", "Morning briefing", "", "outputs/reviews/met
 
 ```
 ╔══════════════════════════════════════════════════════════════╗
-║  Good morning, Stef — [Weekday, DD MMM YYYY]                 ║
+║  Good morning, {name} — [Weekday, DD MMM YYYY]               ║
 ╚══════════════════════════════════════════════════════════════╝
 
 FOCUS TODAY
@@ -64,7 +64,7 @@ PhD PULSE
 ─────────
   · Article 1: [one-line status]
   · Article 2: [one-line status]
-  · MLM Course: [next priority]
+  · [Your Course]: [next priority]
 
 OVERNIGHT
 ─────────
@@ -73,7 +73,7 @@ OVERNIGHT
 
 NEWS SIGNALS
 ────────────
-  [HAT] [headline] — [1 line why it matters]
+  [YOUR DOMAIN] [headline] — [1 line why it matters]
   [AI]  [headline] — [1 line why it matters]
   [PUBLIC HEALTH] [headline] — [1 line why it matters]
 

@@ -13,8 +13,7 @@
 
 import { readFileSync } from "fs";
 
-const RC_ROOT = process.env.METIS_RC_ROOT ||
-  "C:/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/Research Cortex/metis";
+const RC_ROOT = process.env.METIS_RC_ROOT || "";
 
 // ─── Sensitive path patterns ───────────────────────────────────────────────
 const SENSITIVE_PATH_PATTERNS = [
