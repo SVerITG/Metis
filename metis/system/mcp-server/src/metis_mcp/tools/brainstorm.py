@@ -72,6 +72,23 @@ def _ensure_tables(conn):
         s = stmt.strip()
         if s:
             conn.execute(s)
+    # Migrate existing brainstorm_sessions tables that were created before session_uuid
+    existing = {r[1] for r in conn.execute("PRAGMA table_info(brainstorm_sessions)")}
+    if "session_uuid" not in existing:
+        conn.execute(
+            "ALTER TABLE brainstorm_sessions ADD COLUMN "
+            "session_uuid TEXT NOT NULL DEFAULT (lower(hex(randomblob(8))))"
+        )
+    if "started_at" not in existing:
+        conn.execute(
+            "ALTER TABLE brainstorm_sessions ADD COLUMN "
+            "started_at TEXT NOT NULL DEFAULT (datetime('now'))"
+        )
+    if "updated_at" not in existing:
+        conn.execute(
+            "ALTER TABLE brainstorm_sessions ADD COLUMN "
+            "updated_at TEXT NOT NULL DEFAULT (datetime('now'))"
+        )
     conn.commit()
 
 
