@@ -22,6 +22,9 @@ dependencies = [
     "pyreadstat>=1.2",
     # Phase 8.8 — content scan
     "feedparser>=6.0",
+    # Phase 10 — Zotero/library connector
+    "pyzotero>=1.5",
+    "scikit-learn>=1.4",
     # Optional integrations (comment out if not needed)
     "google-genai>=1.0",
     "twilio>=9.0",
