@@ -1,6 +1,7 @@
-"""Project status retrieval from YAML frontmatter and SQLite tasks."""
+"""Project tools — create, read, archive, remove projects in Metis."""
 
 import re
+import datetime
 from pathlib import Path
 
 from mcp.types import TextContent
@@ -8,6 +9,78 @@ from mcp.types import TextContent
 from metis_mcp.config import paths
 from metis_mcp.db import connect
 from metis_mcp.app_instance import app
+
+
+def _ensure_project_columns(conn) -> None:
+    """Add columns introduced after initial schema creation (idempotent)."""
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(projects)")}
+    if "source" not in existing:
+        conn.execute("ALTER TABLE projects ADD COLUMN source TEXT DEFAULT 'manual'")
+    if "description" not in existing:
+        conn.execute("ALTER TABLE projects ADD COLUMN description TEXT")
+
+
+def _slugify(text: str) -> str:
+    slug = re.sub(r"[^\w\s-]", "", text.lower())
+    slug = re.sub(r"[\s_-]+", "-", slug).strip("-")
+    return slug[:60]
+
+
+@app.tool()
+async def create_project(
+    title: str,
+    description: str = "",
+    domain: str = "",
+    source: str = "claude_project",
+) -> list[TextContent]:
+    """Register a new project in the Metis platform.
+
+    Called when a researcher confirms they want a Claude conversation or project
+    tracked permanently in Metis. Creates the project record in the DB so it
+    appears in the Work tab and is available for task linking and memory search.
+
+    Args:
+        title: Human-readable project name, e.g. "Statistics Course".
+        description: What this project is about (one sentence).
+        domain: Research domain, e.g. "education", "epidemiology". Optional.
+        source: Origin — "claude_project" (default), "claude_cowork", or "manual".
+    """
+    project_id = _slugify(title)
+    now = datetime.datetime.now().isoformat(timespec="seconds")
+
+    with connect(paths.db) as conn:
+        _ensure_project_columns(conn)
+
+        existing = conn.execute(
+            "SELECT project_id, title FROM projects WHERE project_id = ?",
+            (project_id,),
+        ).fetchone()
+
+        if existing:
+            return [TextContent(
+                type="text",
+                text=(
+                    f"Project already registered: '{existing['title']}' (id: {project_id}). "
+                    "This conversation is now linked to it."
+                ),
+            )]
+
+        conn.execute(
+            """INSERT INTO projects
+               (project_id, title, description, domain, status, priority,
+                next_step, created_at, source)
+               VALUES (?, ?, ?, ?, 'active', 'medium', '', ?, ?)""",
+            (project_id, title, description, domain, now, source),
+        )
+
+    return [TextContent(
+        type="text",
+        text=(
+            f"Project registered in Metis: '{title}' (id: {project_id}). "
+            "All work in this conversation will be tracked against it. "
+            "You can see it in the Work tab of the Metis dashboard."
+        ),
+    )]
 
 
 def _parse_frontmatter(text: str) -> dict:

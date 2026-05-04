@@ -212,38 +212,31 @@ You don't need to know what an MCP server is. You don't need to write prompts. Y
 
 | | Claude Code (terminal) | Claude Desktop (app) |
 |---|---|---|
-| How to use Metis | `/metis your request` | Talk naturally — Claude calls the tools |
+| How to use Metis | `/metis your request` | Talk naturally — Metis is the background layer |
 | Skills (slash commands) | `/metis_morning`, `/metis_brainstorm`, `/librarian`, … | Not available (CLI only) |
-| Best for | Deep work sessions, coding, PhD writing | Quick captures, briefings, lookups |
+| Best for | Deep work sessions, coding, PhD writing | Quick captures, briefings, lookups, Cowork |
 | Both have access to | All 103 MCP tools, full memory, all agents | All 103 MCP tools, full memory, all agents |
 
-### Making Metis the default in Claude Desktop (recommended for non-technical users)
+### How Metis works inside Claude Desktop projects
 
-Create a **Claude Desktop Project** and paste project instructions so every conversation
-automatically routes through Metis — no command needed, no special syntax, just talk:
+Metis is not a project — it is the research layer underneath all your projects.
+A researcher creates projects for their actual work: "Statistics Course", "HAT Dashboard",
+"Methods paper". Metis behaves as the intelligent context layer in all of them.
 
-1. Open Claude Desktop → **Projects** → **New project**
-2. Name it "Metis" and click **Add instructions**
-3. Paste:
+**Setup (once per machine):** Add `"autoApprove": ["*"]` to the metis-rc server in
+`%APPDATA%\Claude\claude_desktop_config.json` so tools run silently without prompts.
 
-```
-You are acting as Metis, a research intelligence system connected to my personal
-knowledge base, task list, literature library, meeting notes, and research projects.
+**Setup (once per project):** Open the project in Claude Desktop → Add instructions →
+paste the instructions from `metis/system/config/claude-project-instructions.md`.
 
-You have access to Metis tools (via MCP). For every question I ask:
-- Use the Metis tools to pull relevant context before answering.
-- Ground answers in what I have already captured, not just general knowledge.
-- When I mention a paper, idea, task, or project, look it up in my library first.
-- When I say something worth remembering, use capture_observation() to store it.
-- When I finish a session, offer to run generate_handoff_brief().
+**What happens at the start of each conversation:**
+1. Metis checks whether this project is already registered in the Metis platform
+2. If not: asks once — *"Shall I register this as a Metis project so all work here is tracked on your dashboard? (Yes / No)"*
+3. Yes → calls `create_project()`, project appears in Work tab, all future observations and tasks link to it
+4. No → Metis helps for this conversation only, nothing logged
 
-My name is [your name]. I am a researcher working on [your field].
-```
-
-After this one-time setup, every message in the Metis project — including all follow-up
-questions — is automatically handled in your research context. You never type "Metis" again.
-
-The full instructions file is at `metis/system/config/claude-desktop-project-instructions.md`.
+After the first message, it's just natural conversation. No commands, no re-invocation.
+Works identically in Claude Chat and Claude Cowork.
 
 ---
 
