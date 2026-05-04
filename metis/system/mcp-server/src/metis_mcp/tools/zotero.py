@@ -83,7 +83,7 @@ def _get_zotero_client():
         raise RuntimeError("pyzotero not installed — run: pip install pyzotero")
 
     # Load .env if present
-    env_path = paths.root.parent / "system" / ".env"
+    env_path = paths.root / "system" / ".env"
     if env_path.exists():
         for line in env_path.read_text().splitlines():
             line = line.strip()
@@ -551,7 +551,7 @@ async def configure_library_provider(
         user_id: Zotero numeric user ID (shown on the same settings page).
         bibtex_path: For Mendeley: full path to exported .bib file.
     """
-    env_path = paths.root.parent / "system" / ".env"
+    env_path = paths.root / "system" / ".env"
     lines_out = []
 
     if provider.lower() == "zotero":
