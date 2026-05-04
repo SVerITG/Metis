@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS ideas (
     domain_links TEXT DEFAULT '',
     project_links TEXT DEFAULT '',
     image_path TEXT DEFAULT '',
-    timestamp TEXT NOT NULL,
+    created_at TEXT NOT NULL,
     week TEXT NOT NULL
 )
 """
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS journal_entries (
     energy_score INTEGER DEFAULT 0,
     summary TEXT DEFAULT '',
     image_path TEXT DEFAULT '',
-    timestamp TEXT NOT NULL
+    created_at TEXT NOT NULL
 )
 """
 
@@ -139,11 +139,12 @@ async def capture_idea(
     try:
         with connect(paths.db) as conn:
             conn.execute(_IDEAS_DDL)
+            # Detect which text column the table actually uses (content vs text)
+            existing_cols = {r[1] for r in conn.execute("PRAGMA table_info(ideas)")}
+            text_col = "content" if "content" in existing_cols else "text"
             conn.execute(
-                """INSERT INTO ideas
-                   (content, source, tags, image_path, timestamp, week)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
-                (content, source, tags, image_path, now.isoformat(), week),
+                f"INSERT INTO ideas ({text_col}, tags, created_at) VALUES (?, ?, ?)",
+                (content, tags, now.isoformat()),
             )
             conn.commit()
 
@@ -184,16 +185,16 @@ async def get_ideas(
 
             if scope == "all":
                 cur = conn.execute(
-                    "SELECT * FROM ideas ORDER BY timestamp DESC LIMIT ?", (limit,)
+                    "SELECT * FROM ideas ORDER BY created_at DESC LIMIT ?", (limit,)
                 )
             elif scope == "today":
                 cur = conn.execute(
-                    "SELECT * FROM ideas WHERE timestamp LIKE ? ORDER BY timestamp DESC LIMIT ?",
+                    "SELECT * FROM ideas WHERE created_at LIKE ? ORDER BY created_at DESC LIMIT ?",
                     (scope_map["today"] + "%", limit),
                 )
             elif scope in scope_map:
                 cur = conn.execute(
-                    "SELECT * FROM ideas WHERE timestamp >= ? ORDER BY timestamp DESC LIMIT ?",
+                    "SELECT * FROM ideas WHERE created_at >= ? ORDER BY created_at DESC LIMIT ?",
                     (scope_map[scope], limit),
                 )
             else:
@@ -204,11 +205,12 @@ async def get_ideas(
                 return [TextContent(type="text", text=f"No ideas found (scope: {scope}).")]
 
             lines = [f"**{len(rows)} ideas ({scope}):**\n"]
+            cols = {d[0] for d in cur.description} if cur.description else set()
             for row in rows:
-                ts = row["timestamp"][:16]
-                tags = row["tags"] or "none"
-                content = row["content"][:200]
-                lines.append(f"- [{ts}] {content}\n  Tags: {tags}")
+                ts = (row["created_at"] or "")[:16]
+                tags = (row["tags"] or "none") if "tags" in cols else "none"
+                text = (row["content"] if "content" in cols else row["text"] if "text" in cols else "") or ""
+                lines.append(f"- [{ts}] {text[:200]}\n  Tags: {tags}")
 
             return [TextContent(type="text", text="\n".join(lines))]
 
@@ -239,7 +241,7 @@ async def add_journal_entry(
             conn.execute(_JOURNAL_DDL)
             conn.execute(
                 """INSERT INTO journal_entries
-                   (content, mood, energy_score, image_path, timestamp)
+                   (content, mood, energy_score, image_path, created_at)
                    VALUES (?, ?, ?, ?, ?)""",
                 (content, mood, energy, image_path, now.isoformat()),
             )
@@ -276,12 +278,12 @@ async def get_journal(
 
             if date_from:
                 cur = conn.execute(
-                    "SELECT * FROM journal_entries WHERE timestamp >= ? ORDER BY timestamp DESC LIMIT ?",
+                    "SELECT * FROM journal_entries WHERE created_at >= ? ORDER BY created_at DESC LIMIT ?",
                     (date_from, limit),
                 )
             else:
                 cur = conn.execute(
-                    "SELECT * FROM journal_entries ORDER BY timestamp DESC LIMIT ?",
+                    "SELECT * FROM journal_entries ORDER BY created_at DESC LIMIT ?",
                     (limit,),
                 )
 
@@ -291,7 +293,7 @@ async def get_journal(
 
             lines = [f"**{len(rows)} journal entries:**\n"]
             for row in rows:
-                ts = row["timestamp"][:16]
+                ts = (row["created_at"] or "")[:16]
                 mood = row["mood"] or "-"
                 energy = row["energy_score"] or "-"
                 content = row["content"][:300]
@@ -619,8 +621,8 @@ async def assemble_brainstorm_context(
         "library": ("library_seeded", "SELECT title, relevance_note FROM library_seeded ORDER BY rowid DESC LIMIT 30", ["title", "relevance_note"]),
         "meetings": ("meetings", "SELECT title, date FROM meetings ORDER BY date DESC LIMIT 20", ["title", "date"]),
         "news": ("news_briefs", "SELECT title, summary FROM news_briefs ORDER BY rowid DESC LIMIT 20", ["title", "summary"]),
-        "ideas": ("ideas", "SELECT content, tags, timestamp FROM ideas ORDER BY timestamp DESC LIMIT 30", ["content", "tags", "timestamp"]),
-        "journal": ("journal_entries", "SELECT content, mood, timestamp FROM journal_entries ORDER BY timestamp DESC LIMIT 15", ["content", "mood", "timestamp"]),
+        "ideas": ("ideas", "SELECT content, tags, created_at FROM ideas ORDER BY created_at DESC LIMIT 30", ["content", "tags", "created_at"]),
+        "journal": ("journal_entries", "SELECT content, mood, created_at FROM journal_entries ORDER BY created_at DESC LIMIT 15", ["content", "mood", "created_at"]),
     }
 
     try:
