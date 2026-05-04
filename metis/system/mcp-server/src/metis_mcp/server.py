@@ -41,6 +41,7 @@ from metis_mcp.tools import (  # noqa: E402, F401
     handoff,
     improvement,
     observation,
+    content_scan,
 )
 
 
