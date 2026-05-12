@@ -114,20 +114,133 @@ def _iso_week(dt: datetime.datetime) -> str:
     return f"{cal[0]}-W{cal[1]:02d}"
 
 
+def _cross_pollinate_core(content: str, max_results: int = 5) -> list[dict]:
+    """Hybrid vector + keyword cross-pollination with RRF merge and title dedup.
+
+    1. Vector search against episodic_memory (ideas/notes embedded at capture time).
+    2. Keyword SQL search across library, meetings, news, ideas tables.
+    3. RRF merge to combine both result sets.
+    4. Title-dedup pass for diversity (MMR-lite).
+    """
+    if not paths.db.exists():
+        return []
+
+    # ── 1. Vector search (episodic memory) ───────────────────────────────────
+    vec_hits: list[dict] = []
+    try:
+        import struct
+        import sqlite_vec
+        from metis_mcp.embeddings import embed_query
+        from metis_mcp.tools.vector_memory import _setup_tables, _encode_vec
+
+        qvec = embed_query(content)
+        qbytes = _encode_vec(qvec)
+
+        with connect(paths.db) as conn:
+            conn.enable_load_extension(True)
+            sqlite_vec.load(conn)
+            conn.enable_load_extension(False)
+            _setup_tables(conn)
+
+            rows = conn.execute(
+                """SELECT e.id, e.event_type, e.content, e.created_at, v.distance
+                     FROM vec_episodic v
+                     JOIN episodic_memory e ON e.id = v.rowid
+                    WHERE v.embedding MATCH ?
+                      AND k = ?
+                    ORDER BY v.distance""",
+                (qbytes, max_results * 3),
+            ).fetchall()
+
+            for i, r in enumerate(rows):
+                vec_hits.append({
+                    "source": r["event_type"] or "memory",
+                    "title": (r["content"] or "")[:120],
+                    "snippet": "",
+                    "_key": f"episodic:{r['id']}",
+                    "_vec_rank": i + 1,
+                })
+    except Exception:
+        pass  # vector search unavailable — fall back to SQL only
+
+    # ── 2. Keyword SQL search ─────────────────────────────────────────────────
+    words = re.findall(r"\b[a-zA-Z]{4,}\b", content.lower())
+    stopwords = {"about", "after", "before", "between", "could", "should",
+                 "would", "their", "there", "which", "where", "these", "those",
+                 "with", "from", "have", "been", "this", "that", "into", "also"}
+    keywords = [w for w in words if w not in stopwords][:8]
+
+    sql_hits: list[dict] = []
+    if keywords:
+        try:
+            with connect(paths.db) as conn:
+                conn.execute(_IDEAS_DDL)
+                # literature_metadata has title + abstract from Zotero — primary library source
+                _search_table(conn, "literature_metadata", ["title", "abstract", "tags"],
+                              keywords, "library", sql_hits, max_results * 2)
+                # library_seeded as fallback (file-level metadata)
+                _search_table(conn, "library_seeded", ["title", "relevance_note"],
+                              keywords, "library", sql_hits, max_results)
+                _search_table(conn, "meetings", ["title", "transcript", "decisions"],
+                              keywords, "meeting", sql_hits, max_results)
+                _search_table(conn, "news_briefs", ["title", "summary"],
+                              keywords, "news", sql_hits, max_results)
+                _search_table(conn, "ideas", ["content", "title"],
+                              keywords, "idea", sql_hits, max_results)
+        except Exception:
+            pass
+
+    # ── 3. RRF merge ─────────────────────────────────────────────────────────
+    RRF_K = 60
+    score_map: dict[str, float] = {}
+    result_map: dict[str, dict] = {}
+
+    for rank, hit in enumerate(vec_hits, 1):
+        k = hit["_key"]
+        score_map[k] = score_map.get(k, 0) + 1.0 / (RRF_K + rank)
+        result_map[k] = hit
+
+    for rank, hit in enumerate(sql_hits, 1):
+        k = f"sql:{hit['source']}:{hit['title'][:40]}"
+        score_map[k] = score_map.get(k, 0) + 1.0 / (RRF_K + rank)
+        result_map[k] = {**hit, "_key": k}
+
+    ranked = sorted(score_map.items(), key=lambda x: x[1], reverse=True)
+
+    # ── 4. Title-dedup for diversity ──────────────────────────────────────────
+    seen: set[str] = set()
+    unique: list[dict] = []
+    for key, _ in ranked:
+        r = result_map[key]
+        title_key = r.get("title", "")[:40].lower()
+        if title_key not in seen:
+            seen.add(title_key)
+            unique.append(r)
+        if len(unique) >= max_results:
+            break
+
+    return unique
+
+
 @app.tool()
 async def capture_idea(
     content: str,
     source: str = "manual",
     image_path: str = "",
+    auto_cross_pollinate: bool = True,
 ) -> list[TextContent]:
     """Store an idea in the SQLite ideas table.
 
     Auto-extracts tags from content. Links to domains/projects if keywords match.
+    Unless `auto_cross_pollinate=False`, automatically surfaces up to 5 cross-
+    pollination matches from library / meetings / news / older ideas in the same
+    response — so the user sees connections without a second tool call.
 
     Args:
         content: The idea text.
         source: Where the idea came from (default "manual").
         image_path: Optional path to an associated image.
+        auto_cross_pollinate: When True (default), include connection matches in the response.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
@@ -148,12 +261,51 @@ async def capture_idea(
             )
             conn.commit()
 
-        return [
-            TextContent(
-                type="text",
-                text=f"Idea captured (week {week}).\n- Tags: {tags}\n- Source: {source}",
-            )
+        # Also embed into episodic memory so vector cross-pollination can find it
+        try:
+            import struct as _struct
+            import sqlite_vec as _svec
+            from metis_mcp.embeddings import embed_document
+            from metis_mcp.tools.vector_memory import _setup_tables, _encode_vec
+
+            _vec = embed_document(content)
+            _now2 = now.isoformat()
+            with connect(paths.db) as _conn:
+                _conn.enable_load_extension(True)
+                _svec.load(_conn)
+                _conn.enable_load_extension(False)
+                _setup_tables(_conn)
+                _cur2 = _conn.execute(
+                    "INSERT INTO episodic_memory (session_id, event_type, content, metadata, created_at)"
+                    " VALUES ('', 'idea', ?, '{}', ?)",
+                    (content, _now2),
+                )
+                _conn.execute(
+                    "INSERT INTO vec_episodic (rowid, embedding) VALUES (?, ?)",
+                    (_cur2.lastrowid, _encode_vec(_vec)),
+                )
+                _conn.commit()
+        except Exception:
+            pass  # non-fatal: idea already saved to SQL above
+
+        lines = [
+            f"Idea captured (week {week}).",
+            f"- Tags: {tags}",
+            f"- Source: {source}",
         ]
+
+        if auto_cross_pollinate:
+            matches = _cross_pollinate_core(content, max_results=5)
+            if matches:
+                lines.append(f"\n**{len(matches)} connection{'s' if len(matches) != 1 else ''} surfaced:**")
+                for m in matches:
+                    lines.append(f"- [{m['source']}] {m['title']}")
+                    if m.get("snippet"):
+                        lines.append(f"  _{m['snippet']}_")
+            else:
+                lines.append("\n_No cross-pollination matches yet — connections build up as your library and history grow._")
+
+        return [TextContent(type="text", text="\n".join(lines))]
     except Exception as e:
         return [TextContent(type="text", text=f"Error capturing idea: {e}")]
 
@@ -513,20 +665,29 @@ def _search_table(conn, table: str, columns: list, keywords: list,
     if not clauses:
         return
 
+    # Always fetch title separately when available
+    title_col = "title" if "title" in existing_cols else valid_cols[0]
     sql = f"SELECT * FROM {table} WHERE {' OR '.join(clauses)} LIMIT ?"
     params.append(limit)
 
     try:
         cur = conn.execute(sql, params)
+        cur.row_factory = None
+        cols = [d[0] for d in cur.description] if cur.description else []
         for row in cur.fetchall():
-            title = row[valid_cols[0]] or ""
-            snippet = ""
-            if len(valid_cols) > 1:
-                snippet = str(row[valid_cols[1]] or "")[:150]
+            row_dict = dict(zip(cols, row)) if cols else {}
+            title = row_dict.get(title_col) or (row_dict.get(valid_cols[0]) if row_dict else "")
+            # Use abstract > summary > relevance_note > second column as snippet
+            snippet = (
+                row_dict.get("abstract")
+                or row_dict.get("summary")
+                or row_dict.get("relevance_note")
+                or (str(row_dict.get(valid_cols[1], "") or "") if len(valid_cols) > 1 else "")
+            )
             results.append({
                 "source": source_label,
-                "title": str(title)[:200],
-                "snippet": snippet,
+                "title": str(title or "")[:200],
+                "snippet": str(snippet or "")[:150],
             })
     except Exception:
         pass
@@ -545,53 +706,16 @@ async def cross_pollinate(content: str) -> list[TextContent]:
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
 
-    words = re.findall(r"\b[a-zA-Z]{4,}\b", content.lower())
-    stopwords = {"about", "after", "before", "between", "could", "should",
-                 "would", "their", "there", "which", "where", "these", "those",
-                 "with", "from", "have", "been", "this", "that", "into", "also"}
-    keywords = [w for w in words if w not in stopwords][:8]
+    matches = _cross_pollinate_core(content, max_results=5)
+    if not matches:
+        return [TextContent(type="text", text="No cross-pollination matches found.")]
 
-    if not keywords:
-        return [TextContent(type="text", text="No meaningful keywords extracted.")]
-
-    results = []
-
-    try:
-        with connect(paths.db) as conn:
-            conn.execute(_IDEAS_DDL)
-            _search_table(conn, "library_seeded", ["title", "relevance_note"],
-                          keywords, "library", results, 5)
-            _search_table(conn, "meetings", ["title"],
-                          keywords, "meeting", results, 5)
-            _search_table(conn, "news_briefs", ["title", "summary"],
-                          keywords, "news", results, 5)
-            _search_table(conn, "ideas", ["content"],
-                          keywords, "idea", results, 5)
-
-        if not results:
-            return [TextContent(type="text", text="No cross-pollination matches found.")]
-
-        # Deduplicate and limit to top 5
-        seen = set()
-        unique = []
-        for r in results:
-            key = (r["source"], r["title"][:50])
-            if key not in seen:
-                seen.add(key)
-                unique.append(r)
-            if len(unique) >= 5:
-                break
-
-        lines = [f"**{len(unique)} cross-pollination matches:**\n"]
-        for r in unique:
-            lines.append(f"- **[{r['source']}]** {r['title']}")
-            if r["snippet"]:
-                lines.append(f"  _{r['snippet']}_")
-
-        return [TextContent(type="text", text="\n".join(lines))]
-
-    except Exception as e:
-        return [TextContent(type="text", text=f"Error in cross-pollination: {e}")]
+    lines = [f"**{len(matches)} cross-pollination matches:**\n"]
+    for r in matches:
+        lines.append(f"- **[{r['source']}]** {r['title']}")
+        if r.get("snippet"):
+            lines.append(f"  _{r['snippet']}_")
+    return [TextContent(type="text", text="\n".join(lines))]
 
 
 @app.tool()
