@@ -148,54 +148,44 @@ The feature backlog (`feature-backlog.md`) remains the raw list; this document i
 ## Phase E — Security and governance
 *Closing gaps identified in the security evaluation.*
 
-- [ ] **S — Session-level injection tracking**  
-  Current `pre-tool-use.mjs` fires independently on each call. Extend: maintain a session counter per pattern.  
-  If the same injection pattern fires 3+ times in a session: raise severity from warn to block, log to `security_events` table.  
-  Repeated probing is a qualitatively different threat than a single match.
+- [x] **S — Session-level injection tracking** — DONE 2026-05-12  
+  `pre-tool-use.mjs` now maintains `/tmp/metis-injection-session.json` across tool calls.  
+  3+ hits from the same pattern → automatic block with reason. Counts readable by `/security-scan`.
 
-- [ ] **S — /security-scan skill**  
-  Skill that runs a security audit from Claude Code:  
-  - Read last session's tool-use audit log (from PostToolUse hook)  
-  - Run `check_data_safety()` on any files read this session  
-  - Verify no API keys or patient identifiers appeared in outputs  
-  - Print a clean pass/fail summary  
+- [x] **S — /security-scan skill** — DONE 2026-05-12  
+  `.claude/skills/security-scan/skill.md` created. Reads today's session JSONL, injection counter,  
+  sensitive path matches, output PII patterns, and API key exposure. Prints pass/fail summary.
 
-- [ ] **M — Enterprise controls file** `system/config/enterprise-controls.md`  
-  Governance document for research institutes deploying Metis to their researchers:  
-  data classification policy, access controls, escalation procedures, audit requirements.  
-  Not code — documentation that makes Metis credible to IT departments.
+- [x] **M — Enterprise controls file** — DONE 2026-05-12  
+  `system/config/enterprise-controls.md`: data classification tiers, access controls, escalation  
+  procedures (low/medium/high severity), audit requirements, GDPR/HIPAA compliance notes.
 
-- [ ] **M — Output PII scan**  
-  Scan Claude's text responses (not just inputs) for accidentally included secrets or patient identifiers.  
-  Hook on the PostToolUse event: if the tool result contains high-confidence PII patterns, log and warn.  
-  *Gap specific to the patient-data research context.*
+- [x] **M — Output PII scan** — DONE 2026-05-12  
+  `post-tool-use.mjs` now scans tool results for email, phone, patient-ID, and API key patterns.  
+  Warns to stderr and logs to session injection counter. Skipped on minimal profile.
 
 ---
 
 ## Phase F — Developer experience and installation
 *Lowering the barrier for new researchers and institutional deployments.*
 
-- [ ] **L — Install profiles in setup-mcp.sh**  
-  Add a profile selector at the start of installation:  
-  - `light`: MCP server only. Works with Claude Desktop + Claude Code. No dashboard. ~5 min.  
-  - `standard`: MCP server + dashboard. Full 9-tab UI. ~15 min.  
-  - `full`: Standard + Windows Task Scheduler automation + daily scan. ~25 min.  
-  Write chosen profile to `system/config/install-state.json`.
+- [x] **L — Install profiles in setup-mcp.sh** — DONE 2026-05-12  
+  Interactive profile selector at start of `setup-mcp.sh`: light / standard / full.  
+  Dashboard install skipped on `light`. `install-state.json` written at end of every install.  
+  Override without prompting: `METIS_PROFILE=light bash setup-mcp.sh`.
 
-- [ ] **S — install-state.json** `system/config/install-state.json`  
-  Records: installed profile, version, install date, optional components.  
-  Read by `metis-update` skill to know what needs updating.  
-  Read by `metis-doctor` health check to surface profile-specific gaps.
+- [x] **S — install-state.json** — DONE 2026-05-12  
+  `system/config/install-state.json`: profile, version, installed_at, component flags.  
+  Created on install by `setup-mcp.sh`. Initial seed written manually for current install.
 
 - [ ] **M — /metis_config rewrite for Python dashboard**  
   Current wizard requires R + RStudio + 17 R packages, walks through 10 wrong tabs, writes config keys that no code reads.  
   Rewrite: Python-based, covers the actual 9 tabs, prompts for API key, asks for research domain, writes keys that are wired to real behaviour.  
   *Blocking for public release.*
 
-- [ ] **M — .gemini/GEMINI.md**  
-  Gemini 2.0 harness configuration equivalent to CLAUDE.md.  
-  `google-genai` is already in requirements.txt — this is documentation + routing config, not new code.  
-  Adds multi-AI interface support without changing the underlying MCP tools.
+- [x] **M — .gemini/GEMINI.md** — DONE 2026-05-12  
+  `.gemini/GEMINI.md` created: full agent routing table, Stan's profile, key paths, standing rules,  
+  and a section explaining how Gemini's native features (Grounding, code execution) relate to MCP tools.
 
 - [ ] **XL — Windows .exe installer**  
   No terminal required. Double-click, answer configuration questions, done.  
@@ -297,6 +287,8 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
 | 2026-05-12 | **Phase B complete**: 11 slash commands verified, `source_type` column confirmed, `metis-identity.json` created, empty states completed across all 9 tabs |
 | 2026-05-12 | **Phase C (partial)**: PubMed daily alerts, OpenAlex monitoring, inbox watcher — all three new components live. Morning scan job updated. |
 | 2026-05-12 | **Phase D (partial)**: Morning brief richer structure (3-para IHP pattern), prompt caching with ephemeral cache_control, max_tokens 300→600. |
+| 2026-05-12 | **Phase E complete**: Session injection counter, /security-scan skill, enterprise controls doc, output PII scan in post-tool-use hook. |
+| 2026-05-12 | **Phase F (partial)**: install-state.json, install profiles in setup-mcp.sh, .gemini/GEMINI.md. /metis_config rewrite + Docker deferred. |
 
 ---
 

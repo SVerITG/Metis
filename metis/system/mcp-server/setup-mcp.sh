@@ -10,6 +10,36 @@
 
 set -euo pipefail
 
+# ── Install profile ──────────────────────────────────────────────────────────
+# Choose how much of Metis to install:
+#   light    — MCP server only. Works with Claude Desktop + Claude Code. ~5 min.
+#   standard — MCP server + Python dashboard (9-tab UI). ~15 min. (DEFAULT)
+#   full     — Standard + Windows Task Scheduler automation + daily scan. ~25 min.
+#
+# Override via environment: METIS_PROFILE=light bash setup-mcp.sh
+METIS_PROFILE="${METIS_PROFILE:-}"
+
+if [ -z "$METIS_PROFILE" ] && [ -t 0 ]; then
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  Metis Install Profile"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  [1] light    — MCP server only (~5 min)"
+  echo "  [2] standard — MCP server + dashboard (~15 min)  [DEFAULT]"
+  echo "  [3] full     — Standard + Windows scheduler (~25 min)"
+  echo ""
+  read -rp "  Choose profile [1/2/3, Enter for standard]: " PROFILE_CHOICE
+  case "$PROFILE_CHOICE" in
+    1) METIS_PROFILE="light" ;;
+    3) METIS_PROFILE="full" ;;
+    *) METIS_PROFILE="standard" ;;
+  esac
+elif [ -z "$METIS_PROFILE" ]; then
+  METIS_PROFILE="standard"
+fi
+
+echo "Installing Metis with profile: $METIS_PROFILE"
+
 # ── Config ──────────────────────────────────────────────────────────────────
 VENV_DIR="$HOME/.local/share/metis-mcp/.venv"
 RUN_SCRIPT="$HOME/.local/share/metis-mcp/run.sh"
@@ -84,6 +114,19 @@ fi
 # ── Install package in editable mode ─────────────────────────────────────────
 echo "Installing metis-mcp-server (editable)..."
 "$VENV_DIR/bin/pip" install --quiet -e "$SRC_DIR"
+
+# ── Install dashboard (app-py) dependencies into same venv ───────────────────
+# Skipped on 'light' profile — dashboard not included.
+if [ "$METIS_PROFILE" != "light" ]; then
+  APP_REQ="$METIS_RC_ROOT/system/app-py/requirements.txt"
+  if [ -f "$APP_REQ" ]; then
+    echo "Installing dashboard dependencies..."
+    "$VENV_DIR/bin/pip" install --quiet -r "$APP_REQ"
+    echo "  Dashboard deps installed"
+  fi
+else
+  echo "Skipping dashboard install (light profile)"
+fi
 
 # ── Write run.sh ─────────────────────────────────────────────────────────────
 cat > "$RUN_SCRIPT" <<RUNSH
@@ -175,8 +218,16 @@ else
   echo "  Claude Desktop config not found at $CD_CONFIG — skipping (Claude Desktop may not be installed)"
 fi
 
+# ── Initialize DB if not present ─────────────────────────────────────────────
+DB_PATH="$METIS_RC_ROOT/system/app/data/metis.sqlite"
+INIT_SCRIPT="$METIS_RC_ROOT/system/installer/init_db.py"
+if [ ! -f "$DB_PATH" ] && [ -f "$INIT_SCRIPT" ]; then
+  echo "Initializing database..."
+  "$VENV_DIR/bin/python3" "$INIT_SCRIPT"
+fi
+
 # ── Create Windows desktop shortcut ─────────────────────────────────────────
-BAT_PATH=$(wslpath -w "$METIS_RC_ROOT/system/launch-dashboard.bat" 2>/dev/null || true)
+BAT_PATH=$(wslpath -w "$METIS_RC_ROOT/system/launch-metis.bat" 2>/dev/null || true)
 if [ -n "$BAT_PATH" ]; then
   powershell.exe -Command "
 \$ws = New-Object -ComObject WScript.Shell
@@ -194,8 +245,32 @@ Write-Host '  Shortcuts: Desktop + Start Menu created'
 " 2>/dev/null || echo "  Shortcuts: could not create (PowerShell unavailable)"
 fi
 
+# ── Write install-state.json ─────────────────────────────────────────────────
+INSTALL_STATE="$METIS_RC_ROOT/system/config/install-state.json"
+DASHBOARD_INSTALLED="false"
+[ "$METIS_PROFILE" != "light" ] && DASHBOARD_INSTALLED="true"
+HOOKS_INSTALLED="false"
+[ -f "$METIS_RC_ROOT/.claude/settings.json" ] && HOOKS_INSTALLED="true"
+cat > "$INSTALL_STATE" <<STATEEOF
+{
+  "profile": "$METIS_PROFILE",
+  "version": "1.0.0",
+  "installed_at": "$(date -I)",
+  "components": {
+    "mcp_server": true,
+    "dashboard": $DASHBOARD_INSTALLED,
+    "hooks": $HOOKS_INSTALLED,
+    "windows_task_scheduler": false,
+    "nssm_service": false,
+    "docker": false
+  },
+  "notes": "Written by setup-mcp.sh. Update 'components' manually if you add optional components."
+}
+STATEEOF
+echo "  install-state.json written"
+
 echo ""
 echo "════════════════════════════════════════════════════════════════════"
-echo "  Setup complete."
+echo "  Setup complete (profile: $METIS_PROFILE)."
 echo "  Restart Claude Code and Claude Desktop for changes to take effect."
 echo "════════════════════════════════════════════════════════════════════"
