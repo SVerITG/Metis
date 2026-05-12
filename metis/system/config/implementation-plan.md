@@ -261,9 +261,13 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
   `/course-builder` skill already existed with full 7-step pipeline spec.  
   Registered in `server.py`. Quarto integration deferred as a separate enhancement.
 
-- [ ] **XL — Phase 10: Automated daily tasks (full)**  
-  APScheduler 6-job schedule: 06:45 brief synthesis, 07:00 news scan, 07:30 literature scan, 08:00 inbox processing, 20:00 daily reflexion aggregation, Sunday 09:00 weekly summary.  
-  Settings UI in Today tab to enable/disable/reschedule each job.
+- [x] **XL — Phase 10: Automated daily tasks (full)** — DONE 2026-05-12  
+  7 scheduled jobs: 06:45 brief synthesis, 07:00 news scan, 07:30 library index, 08:00 inbox process,  
+  20:00 evening reflexion, Sunday 09:00 weekly summary, 23:00 nightly backup.  
+  Settings persisted to `user-config.yaml` jobs section. `apply_settings_and_reschedule()` applies  
+  changes live without restarting. Automation panel on Today tab shows all jobs with:  
+  per-job time picker, ON/OFF toggle, RUN now button, last-run status dot and message.  
+  Changes saved instantly via `/api/scheduler/settings` POST — no restart needed.
 
 ---
 
