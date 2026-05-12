@@ -43,6 +43,11 @@ from metis_mcp.tools import (  # noqa: E402, F401
     observation,
     content_scan,
     zotero,
+    doctor,
+    ref_miner,
+    fulltext_index,
+    user_profile,
+    literature_monitor,
 )
 
 

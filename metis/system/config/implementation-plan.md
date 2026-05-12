@@ -68,33 +68,26 @@ The feature backlog (`feature-backlog.md`) remains the raw list; this document i
 ## Phase C — Automation and ambient operation
 *What makes Metis run without being asked. The system should work while you sleep.*
 
-- [ ] **L — Morning scan at 07:00**  
-  APScheduler job already exists. What's missing: the OS-level process that keeps it alive.  
-  Implementation:  
-  1. Windows Task Scheduler entry at user logon → runs `run.bat` (wake WSL, start dashboard)  
-  2. NSSM wraps the FastAPI process as a Windows service (auto-restart on crash)  
-  3. APScheduler `job_morning_scan()` fires at 07:00 inside the running process  
-  *The "Schedule morning brief" button on the dateline already writes the Task Scheduler entry — verify it works end-to-end.*
+- [~] **L — Morning scan at 07:00**  
+  APScheduler job already exists and now includes PubMed + OpenAlex.  
+  Remaining: Windows Task Scheduler entry to keep the process alive at user logon + NSSM for auto-restart.  
+  *The "Schedule morning brief" button on the dateline already generates the schtasks command — verify it works end-to-end from Windows.*
 
-- [ ] **L — Inbox auto-processing**  
-  Files dropped in `inbox/` are not automatically picked up.  
-  Implementation: `watchdog` library polling at 5-second interval (NTFS-compatible, inotify is not).  
-  On new file: call `scan_inbox()` → route to Librarian or appropriate agent.  
-  Add `watchdog` to requirements.txt.
+- [x] **L — Inbox auto-processing** — DONE 2026-05-12  
+  `inbox_watcher.py` added to `system/app-py/`: 5-second polling loop (no watchdog dep needed).  
+  On new file: classifies by extension (literature/audio/image/data), logs to `inbox_items` table.  
+  Wired into `main.py` lifespan — starts automatically with the dashboard.
 
 - [ ] **M — PLANNING.md auto-update at session end**  
   The stop hook (Phase A) writes the handoff brief. Extend it to also update the active project's PLANNING.md with what was done and what the next step is. Currently manual.
 
-- [ ] **S — PubMed daily literature monitoring** `tools/literature_monitor.py`  
-  New MCP tool: `scan_pubmed_alerts(query="trypanosomiasis OR sleeping sickness", reldate=1)`.  
-  Uses NCBI E-utilities free API. Inserts to `news_briefs` table with `source_type='article'`.  
-  Add to `job_morning_scan()` alongside RSS feeds.  
-  *Free API, no key required, 5-10 new papers per day for HAT.*
+- [x] **S — PubMed daily literature monitoring** — DONE 2026-05-12  
+  `tools/literature_monitor.py`: `scan_pubmed_alerts()` using NCBI E-utilities (free, no key).  
+  Inserts to `news_briefs` with `source_type='article'`. Added to `job_morning_scan()`.
 
-- [ ] **M — OpenAlex paper monitoring** `tools/literature_monitor.py`  
-  `scan_openalex(query, from_publication_date=yesterday)`.  
-  OpenAlex covers 474M papers including preprints, no API key required.  
-  Same insert pattern as PubMed scan.
+- [x] **M — OpenAlex paper monitoring** — DONE 2026-05-12  
+  `scan_openalex()` in same file. 474M papers, no API key required.  
+  Abstract reconstruction from OpenAlex inverted index. Added to `job_morning_scan()`.
 
 ---
 
@@ -107,13 +100,15 @@ The feature backlog (`feature-backlog.md`) remains the raw list; this document i
 - [x] **Semantic theme extraction for self-improvement** — DONE 2026-05-12  
   `_theme_from()` in `improvement.py` now calls Claude Haiku for semantic themes, falls back to word frequency.
 
-- [ ] **L — Morning brief: richer structure**  
-  Current brief is a single paragraph. Improve toward the IHP Newsletter pattern:  
-  - One leading insight (what to think about today)  
-  - 2–3 items grouped by theme (not just listed)  
-  - One research thread to pick up  
-  - Feedback buttons per item ("useful / not useful") feeding a relevance table  
-  *IHP model: narrative prose, editorial commentary, cross-references between stories.*
+- [x] **L — Morning brief: richer structure** — DONE 2026-05-12  
+  Brief now follows the IHP Newsletter pattern: three prose paragraphs.  
+  1. One leading insight (most important development + why it matters).  
+  2. 2–3 items grouped by theme (research / policy / operational), cross-referenced.  
+  3. One research thread to pick up today.  
+  Prompt caching added (`anthropic-beta: prompt-caching-2024-07-31`) — stable system preamble  
+  cached with `cache_control: {"type": "ephemeral"}`, reducing cost on repeated same-day calls.  
+  max_tokens increased 300 → 600 to allow the fuller structure.  
+  *Feedback buttons deferred — need a relevance_feedback table + routes.*
 
 - [ ] **L — Domain-specific tool loading**  
   Currently all 120 tools are loaded on every agent call.  
@@ -124,12 +119,13 @@ The feature backlog (`feature-backlog.md`) remains the raw list; this document i
 
 - [ ] **S — token-efficient-tools beta header**  
   Add `anthropic-beta: token-efficient-tools-2025-02-19` to all Claude API calls in `pipeline.py`.  
-  One line of code. Estimated 14% output token savings.
+  One line of code. Estimated 14% output token savings.  
+  *Note: not applicable to today.py/improvement.py calls — those don't define tools.*
 
-- [ ] **S — Prompt caching for stable prefixes**  
-  Add `cache_control: {"type": "ephemeral"}` to the stable system prompt + tool block prefix.  
-  Move any dynamic content (timestamps, session IDs) after the cached block.  
-  90% cost reduction on repeated calls within a 5-minute window.
+- [x] **S — Prompt caching for stable prefixes** — DONE 2026-05-12  
+  Added to `_get_or_generate_brief()` in today.py: stable system preamble cached with  
+  `cache_control: {"type": "ephemeral"}` + `anthropic-beta: prompt-caching-2024-07-31`.  
+  Dynamic content (today's context) kept outside the cached block.
 
 - [ ] **XL — SPECTER2 / nomic-embed cross-pollination**  
   The largest single architectural gap. Current cross-pollination uses SQL LIKE matching.  
@@ -299,6 +295,8 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
 | 2026-05-12 | Comprehensive implementation plan created (`system/config/implementation-plan.md`) |
 | 2026-05-12 | **Phase A complete**: hook profiles, stop hook, PostToolUse hook, pre-compact hook — all four registered in `.claude/settings.json` |
 | 2026-05-12 | **Phase B complete**: 11 slash commands verified, `source_type` column confirmed, `metis-identity.json` created, empty states completed across all 9 tabs |
+| 2026-05-12 | **Phase C (partial)**: PubMed daily alerts, OpenAlex monitoring, inbox watcher — all three new components live. Morning scan job updated. |
+| 2026-05-12 | **Phase D (partial)**: Morning brief richer structure (3-para IHP pattern), prompt caching with ephemeral cache_control, max_tokens 300→600. |
 
 ---
 
