@@ -809,32 +809,52 @@ def _get_or_generate_brief() -> str | None:
     if not api_key:
         return None
 
-    # Call Claude Haiku to write the brief
+    # Call Claude Haiku to write the brief — IHP Newsletter pattern
     try:
         import httpx as _httpx
         name = _user_name()
+        # Stable system preamble (eligible for prompt caching on repeated calls)
+        system_preamble = (
+            f"You are writing the daily morning brief for {name}, a senior researcher in public health "
+            "and epidemiology (sleeping sickness, NTDs, surveillance, global health). "
+            "Your voice is like a knowledgeable friend: warm, direct, no corporate language, no bullet lists. "
+            "Structure the brief as three short paragraphs:\n"
+            "1. ONE LEADING INSIGHT — the single most important development from today's context. "
+            "State it plainly and say why it matters.\n"
+            "2. TWO OR THREE ITEMS GROUPED BY THEME — briefly note related developments, grouped "
+            "by whether they are research findings, policy news, or operational tasks. "
+            "Cross-reference items when they connect.\n"
+            "3. ONE RESEARCH THREAD — a specific paper, idea, or open question worth returning to today. "
+            "Name it and say why now is a good moment.\n"
+            "No greeting. No sign-off. No headers. Three paragraphs of prose, total ~150 words."
+        )
         resp = _httpx.post(
             "https://api.anthropic.com/v1/messages",
             headers={
                 "x-api-key": api_key,
                 "anthropic-version": "2023-06-01",
+                "anthropic-beta": "prompt-caching-2024-07-31",
                 "content-type": "application/json",
             },
             json={
                 "model": "claude-haiku-4-5-20251001",
-                "max_tokens": 300,
+                "max_tokens": 600,
+                "system": [
+                    {
+                        "type": "text",
+                        "text": system_preamble,
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
                 "messages": [{
                     "role": "user",
                     "content": (
-                        f"You are writing a morning briefing paragraph for {name}, a senior researcher in public health and epidemiology. "
-                        "Based on their recent activity below, write 2-3 sentences that feel like a knowledgeable friend catching them up — "
-                        "warm, direct, no corporate language. Mention the most interesting new development, any critical tasks, and one "
-                        "research thread worth picking up today. Plain prose, no bullet points, no greeting, no sign-off.\n\n"
-                        f"{ctx['context'][:3000]}"
+                        "Today's research context:\n\n"
+                        f"{ctx['context'][:3500]}"
                     ),
                 }],
             },
-            timeout=25.0,
+            timeout=30.0,
         )
         if resp.status_code == 200:
             narrative = resp.json()["content"][0]["text"].strip()

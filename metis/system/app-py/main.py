@@ -3,16 +3,19 @@ main.py — Metis Dashboard FastAPI application.
 """
 
 import datetime
+import logging
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from routers import (
     capture,
+    jobs,
     knowledge,
     learning,
     meetings,
@@ -21,14 +24,44 @@ from routers import (
     teach,
     thinking,
     today,
+    transcription,
     work,
 )
+
+log = logging.getLogger("metis")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from db import run_migrations
+    applied = run_migrations()
+    if applied:
+        log.info("DB migrations applied: %s", ", ".join(applied))
+    try:
+        from scheduler import scheduler, setup_jobs
+        setup_jobs()
+        scheduler.start()
+        log.info("APScheduler started")
+    except Exception as exc:
+        log.warning("Scheduler could not start: %s", exc)
+    try:
+        from inbox_watcher import start_inbox_watcher
+        start_inbox_watcher()
+    except Exception as exc:
+        log.warning("Inbox watcher could not start: %s", exc)
+    yield
+    try:
+        from scheduler import scheduler
+        if scheduler.running:
+            scheduler.shutdown(wait=False)
+    except Exception:
+        pass
 
 # ---------------------------------------------------------------------------
 # App setup
 # ---------------------------------------------------------------------------
 
-app = FastAPI(title="Metis Dashboard", docs_url=None, redoc_url=None)
+app = FastAPI(title="Metis Dashboard", docs_url=None, redoc_url=None, lifespan=lifespan)
 
 BASE_DIR = Path(__file__).parent
 
@@ -52,6 +85,8 @@ app.include_router(planner.router)
 app.include_router(teach.router)
 app.include_router(metis_tab.router)
 app.include_router(capture.router, prefix="/api")
+app.include_router(transcription.router)
+app.include_router(jobs.router)
 
 # ---------------------------------------------------------------------------
 # Root + named tab full-page routes
@@ -81,7 +116,7 @@ async def root(request: Request):
 async def tab_page(request: Request, tab: str):
     template_name = _TAB_TEMPLATES.get(tab)
     if template_name is None:
-        return HTMLResponse(status_code=404, content="Tab not found")
+        return RedirectResponse(url="/", status_code=302)
     return templates.TemplateResponse(
         request, template_name, {"active_tab": tab}
     )
