@@ -198,7 +198,7 @@ Metis will ship in three forms: *Empty Research Cortex* (you build it from scrat
 After setup, here is what is immediately available:
 
 - **30 specialist agents** — Librarian, Epidemiologist, Writing Partner, Methods Coach, Meeting Memory, Course Builder, Career Coach, and 23 others
-- **120 MCP tools** — for literature search, idea capture, meeting notes, cross-pollination, data analysis, and more
+- **135 MCP tools** — for literature search, idea capture, meeting notes, cross-pollination, PDF semantic search, data analysis, and more
 - **9-tab dashboard** — local, runs in your browser, no internet required for most features
 - **Daily news scan** — 23 RSS feeds covering disease surveillance, NTD research, global health policy, AI developments, and world news
 - **Zotero / Mendeley integration** — import your existing library
@@ -217,7 +217,7 @@ After setup, here is what is immediately available:
 
 ## What is Metis technically?
 
-Metis is an **MCP server** (Model Context Protocol) with a **FastAPI + HTMX dashboard**. The MCP server exposes 120 tools that any compatible AI harness can use. The dashboard provides a web UI for the same underlying data. A SQLite database connects them.
+Metis is an **MCP server** (Model Context Protocol) with a **FastAPI + HTMX dashboard**. The MCP server exposes 135 tools that any compatible AI harness can use. The dashboard provides a web UI for the same underlying data. A SQLite database connects them.
 
 **Key design decisions:**
 - **Local-first.** All data stays on your machine. No external database, no cloud sync for research data. OneDrive/Dropbox sync works because the data is just files and a SQLite database.
@@ -275,7 +275,7 @@ flowchart LR
 | MCP server | Python 3.10+, FastMCP, runs in WSL venv |
 | Dashboard | FastAPI + HTMX + Jinja2, no JavaScript framework |
 | Database | SQLite (WAL mode, 46 tables, ~500 KB typical) |
-| Vector memory | sqlite-vec + BAAI/bge-small-en-v1.5 (384 dims, local) |
+| Vector memory | sqlite-vec + nomic-embed-text-v1.5-Q (768 dims, local) |
 | Host OS | Windows + WSL2 (Ubuntu 20/22/24) |
 | File sync | OneDrive / Dropbox (optional, works transparently) |
 
@@ -361,7 +361,7 @@ Metis brings in the following dependencies. The setup script handles all of them
 | `htmx` (CDN or local) | Dashboard interactivity |
 | `jinja2` | Dashboard templates |
 | `sqlite-vec` | Local vector similarity search |
-| `fastembed` | BAAI/bge-small-en-v1.5 embeddings |
+| `fastembed` | nomic-embed-text-v1.5-Q local embeddings (768 dims) |
 | `feedparser` | RSS feed parsing (23 feeds) |
 | `pyyaml` | User config parsing |
 | `httpx` | Async HTTP (Claude API calls, feeds) |
@@ -418,7 +418,7 @@ The self-improvement loop proposes changes to `skill.md` files based on agent re
 
 **Memory (5 layers):**
 1. `episodic` — session events, observations (discovery / decision / implementation / issue)
-2. `semantic` — vector-indexed full text (sqlite-vec + BAAI/bge-small-en-v1.5)
+2. `semantic` — vector-indexed full text (sqlite-vec + nomic-embed-text-v1.5-Q, 768 dims)
 3. `procedural` — skill files and agent contracts (the agent's persistent behaviour)
 4. `working` — active session context, current project focus
 5. `reflexive` — reflexion log and improvement proposals
@@ -526,10 +526,10 @@ The biggest gap: Metis currently ships with one domain (Public Health & Epidemio
 
 ### Infrastructure
 
-- Better cross-pollination algorithms (semantic similarity via SPECTER2 or nomic-embed)
+- ~~Better cross-pollination algorithms (semantic similarity via SPECTER2 or nomic-embed)~~ ✅ Done — nomic-embed-text-v1.5-Q (768-dim) + PaperQA2 library search
 - Telegram bot for mobile idea capture
-- Mobile PWA capture page (Tailscale + FastAPI)
-- Domain-specific tool loading (serve only relevant tools per agent, ~50% token reduction)
+- ~~Mobile PWA capture page (Tailscale + FastAPI)~~ ✅ Done — `/capture` PWA route
+- ~~Domain-specific tool loading (serve only relevant tools per agent, ~50% token reduction)~~ ✅ Done — `METIS_AGENT_SUBSET` env var
 
 ---
 
