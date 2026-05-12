@@ -198,3 +198,41 @@ async def trust_badge():
         f'<i class="bi {policy_icon} {policy_cls}"></i>'
         f'<span class="trust-badge-text">{label}</span>'
     )
+
+
+@app.get("/api/session/touch-planning")
+async def touch_planning_files():
+    """Append last-session timestamp to active project PLANNING.md files.
+
+    Called by the stop hook at session end. Queries active projects with an
+    external_path, finds PLANNING.md there, and appends a dated marker line
+    (idempotent — no duplicate markers on the same day).
+    """
+    import json
+    from pathlib import Path as _Path
+
+    today = str(datetime.date.today())
+    marker = f"\n\n---\n_Last Metis session: {today}_\n"
+    updated = []
+
+    try:
+        from db import db_query
+
+        rows = db_query(
+            "SELECT project_id, title, external_path FROM projects "
+            "WHERE status = 'active' AND external_path IS NOT NULL AND external_path != ''"
+        )
+        for row in rows:
+            ext = (row.get("external_path") or "").strip()
+            if not ext:
+                continue
+            planning = _Path(ext) / "PLANNING.md"
+            if planning.exists():
+                content = planning.read_text(encoding="utf-8")
+                if f"_Last Metis session: {today}_" not in content:
+                    planning.write_text(content + marker, encoding="utf-8")
+                    updated.append(str(planning))
+    except Exception:
+        pass
+
+    return JSONResponse({"updated": updated, "date": today})

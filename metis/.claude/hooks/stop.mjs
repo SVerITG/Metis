@@ -16,7 +16,7 @@
  * This hook never blocks — errors are silent.
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 
 const RC_ROOT = process.env.METIS_RC_ROOT || "";
@@ -85,9 +85,52 @@ function writeMarker(brief_path_or_flag) {
   }
 }
 
+async function touchPlanningFiles() {
+  if (!RC_ROOT) return [];
+  try {
+    const res = await fetch(`${DASHBOARD_URL}/api/session/touch-planning`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return data?.updated || [];
+    }
+  } catch {
+    // Dashboard not running — fall through to local fallback
+  }
+
+  // Local fallback: scan known PLANNING.md paths from RC root
+  const today = now.toISOString().slice(0, 10);
+  const marker = `\n\n---\n_Last Metis session: ${today}_\n`;
+  const updated = [];
+  try {
+    const projectsActive = join(RC_ROOT, "projects", "active");
+    if (existsSync(projectsActive)) {
+      const { readdirSync, statSync } = await import("fs");
+      for (const entry of readdirSync(projectsActive, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const planningPath = join(projectsActive, entry.name, "PLANNING.md");
+        if (existsSync(planningPath)) {
+          const content = readFileSync(planningPath, "utf8");
+          if (!content.includes(`_Last Metis session: ${today}_`)) {
+            writeFileSync(planningPath, content + marker);
+            updated.push(planningPath);
+          }
+        }
+      }
+    }
+  } catch {
+    // Silent — PLANNING.md update is best-effort
+  }
+  return updated;
+}
+
 // Run async and wait briefly so the hook doesn't outlive the process
 (async () => {
-  const result = await tryDashboardHandoff();
+  const [result] = await Promise.all([
+    tryDashboardHandoff(),
+    touchPlanningFiles(),
+  ]);
   writeMarker(result);
   process.exit(0);
 })();

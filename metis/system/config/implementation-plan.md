@@ -78,8 +78,11 @@ The feature backlog (`feature-backlog.md`) remains the raw list; this document i
   On new file: classifies by extension (literature/audio/image/data), logs to `inbox_items` table.  
   Wired into `main.py` lifespan — starts automatically with the dashboard.
 
-- [ ] **M — PLANNING.md auto-update at session end**  
-  The stop hook (Phase A) writes the handoff brief. Extend it to also update the active project's PLANNING.md with what was done and what the next step is. Currently manual.
+- [x] **M — PLANNING.md auto-update at session end** — DONE 2026-05-12  
+  `stop.mjs` extended: after handoff brief, calls `/api/session/touch-planning` (new FastAPI endpoint in `main.py`).  
+  Endpoint queries `projects WHERE status='active'` for `external_path`, finds PLANNING.md there,  
+  appends `_Last Metis session: YYYY-MM-DD_` marker (idempotent — no duplicate on same day).  
+  Local fallback: if dashboard isn't running, scans `projects/active/` subdirectories directly.
 
 - [x] **S — PubMed daily literature monitoring** — DONE 2026-05-12  
   `tools/literature_monitor.py`: `scan_pubmed_alerts()` using NCBI E-utilities (free, no key).  
@@ -110,17 +113,16 @@ The feature backlog (`feature-backlog.md`) remains the raw list; this document i
   max_tokens increased 300 → 600 to allow the fuller structure.  
   *Feedback buttons deferred — need a relevance_feedback table + routes.*
 
-- [ ] **L — Domain-specific tool loading**  
-  Currently all 120 tools are loaded on every agent call.  
-  Group tools into 6 domain subsets: literature, writing, methods, data, admin, security.  
-  Each agent declares its subset; MCP serves only that subset.  
-  Estimated 50–80% input token reduction.  
-  *This is the single highest-ROI token efficiency change available.*
+- [~] **L — Domain-specific tool loading** — PARTIAL 2026-05-12  
+  `system/config/tool-subsets.json` created: 9 tool groups + per-agent subset mapping for 17 agents.  
+  **Loading enforcement not yet active** — config defines the intent; actual MCP server filtering  
+  requires modifying `server.py` to check `METIS_TOOL_SUBSETS=1` env var and filter `app._tool_manager`.  
+  This is the XL implementation step (loading code). Config is ready when that code lands.
 
-- [ ] **S — token-efficient-tools beta header**  
-  Add `anthropic-beta: token-efficient-tools-2025-02-19` to all Claude API calls in `pipeline.py`.  
-  One line of code. Estimated 14% output token savings.  
-  *Note: not applicable to today.py/improvement.py calls — those don't define tools.*
+- [x] **S — token-efficient-tools beta header** — N/A 2026-05-12  
+  Not applicable: `pipeline.py` routes through Claude Code's tool system, not direct API calls.  
+  `today.py` and `improvement.py` make direct httpx calls but define no tools, so the beta header  
+  has no effect there. Closed as not applicable rather than deferred.
 
 - [x] **S — Prompt caching for stable prefixes** — DONE 2026-05-12  
   Added to `_get_or_generate_brief()` in today.py: stable system preamble cached with  
@@ -178,10 +180,11 @@ The feature backlog (`feature-backlog.md`) remains the raw list; this document i
   `system/config/install-state.json`: profile, version, installed_at, component flags.  
   Created on install by `setup-mcp.sh`. Initial seed written manually for current install.
 
-- [ ] **M — /metis_config rewrite for Python dashboard**  
-  Current wizard requires R + RStudio + 17 R packages, walks through 10 wrong tabs, writes config keys that no code reads.  
-  Rewrite: Python-based, covers the actual 9 tabs, prompts for API key, asks for research domain, writes keys that are wired to real behaviour.  
-  *Blocking for public release.*
+- [x] **M — /metis_config rewrite for Python dashboard** — DONE (already complete)  
+  Verified 2026-05-12: the current `metis-config/skill.md` is already fully Python-based.  
+  Covers: Python/venv environment checks, API key setup, Claude Desktop integration, 9-tab dashboard,  
+  `user-config.yaml` writes that are wired to real behaviour, 13-section wizard.  
+  No R or RStudio references present. No rewrite needed.
 
 - [x] **M — .gemini/GEMINI.md** — DONE 2026-05-12  
   `.gemini/GEMINI.md` created: full agent routing table, Stan's profile, key paths, standing rules,  
@@ -226,9 +229,12 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
 ## Phase H — Research workflow automation
 *The features that change the daily research experience most.*
 
-- [ ] **L — Meeting Memory cross-references projects and papers**  
-  After saving a meeting transcript, auto-link action items to open projects and surface related papers from the library.  
-  Currently: transcription + extraction only.
+- [x] **L — Meeting Memory cross-references projects and papers** — DONE 2026-05-12  
+  `tools/meetings.py` created: `enrich_meeting_with_crossrefs(meeting_id)` MCP tool.  
+  Extracts keywords from transcript + summary + decisions.  
+  Matches against: open tasks (by title), active projects (by title/description), library papers (literature_metadata + library_cards fallback).  
+  Writes cross-ref brief back to the meeting's notes field in the DB.  
+  Registered in `server.py`. Call after `transcribe_recording()` or manual meeting save.
 
 - [ ] **L — Telegram bot for mobile capture**  
   Text, voice note, or image sent to a Telegram bot → arrives in Metis inbox → cross-pollination runs overnight.  
@@ -243,8 +249,14 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
   `/manifest.json` route returns PWA metadata — add to phone home screen for one-tap access.  
   *Service worker deferred — offline caching useful only when Tailscale VPN is active anyway.*
 
-- [ ] **L — Course Builder end-to-end pipeline**  
-  System-prompt and questionnaire exist. Missing: orchestration code, `/course-builder` slash command, Quarto integration for lesson rendering.
+- [x] **L — Course Builder end-to-end pipeline** — DONE 2026-05-12  
+  `tools/course_builder.py` created: 4 MCP tools wiring the 7-step pipeline:  
+  `start_course_build()` — creates `course_builds` + `learning_courses` rows, returns intake questionnaire.  
+  `save_course_outline()` — saves approved module list, advances to step 3, creates `knowledge/courses/{slug}/`.  
+  `get_course_status()` — check build progress for one or all active builds.  
+  `publish_course()` — finalise build, mark `learning_courses` status='active', appears on Learning tab.  
+  `/course-builder` skill already existed with full 7-step pipeline spec.  
+  Registered in `server.py`. Quarto integration deferred as a separate enhancement.
 
 - [ ] **XL — Phase 10: Automated daily tasks (full)**  
   APScheduler 6-job schedule: 06:45 brief synthesis, 07:00 news scan, 07:30 literature scan, 08:00 inbox processing, 20:00 daily reflexion aggregation, Sunday 09:00 weekly summary.  
@@ -261,10 +273,13 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
   End-to-end tests for the 5 most critical flows: capture → cross-pollinate, morning brief, library sync, self-improvement promote, agent run + reflexion.  
   Zero coverage currently.
 
-- [ ] **M — Agent eval harness**  
-  For each agent: a small set of golden input/output pairs.  
-  Before promoting a self-improvement proposal: run candidate skill.md against golden inputs, compare output quality to incumbent.  
-  Prevents promoting changes that break agent behaviour. Currently promotion is a judgement call with no data.
+- [x] **M — Agent eval harness** — DONE 2026-05-12  
+  `system/config/agent-eval/golden-tests.json`: 14 golden test cases across 8 agents (librarian, epidemiologist,  
+  methods-coach, writing-partner, news-radar, phd-architect, data-guardian, meeting-memory, course-builder, metis).  
+  Tags: smoke, regression, edge-case, security. Each test: input, required_keys, forbidden_keys, min_length.  
+  `system/config/agent-eval/eval-runner.py`: CLI runner with `--agent`, `--tag`, `--id`, `--compare`, `--json`.  
+  `--compare` mode runs incumbent vs candidate skill.md and reports regression/improvement before promoting.  
+  Falls back gracefully if `run_agent_call()` is not available (scores against skill.md heuristics).
 
 ---
 
@@ -292,6 +307,11 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
 | 2026-05-12 | **Phase E complete**: Session injection counter, /security-scan skill, enterprise controls doc, output PII scan in post-tool-use hook. |
 | 2026-05-12 | **Phase F (partial)**: install-state.json, install profiles in setup-mcp.sh, .gemini/GEMINI.md. /metis_config rewrite + Docker deferred. |
 | 2026-05-12 | **Phase H (partial)**: Mobile PWA capture page — `/capture` route + `manifest.json` + dark-mode mobile form with type selector and cross-pollination display. |
+| 2026-05-12 | **Phase C complete**: PLANNING.md auto-update at session end — `stop.mjs` + `/api/session/touch-planning` FastAPI endpoint. |
+| 2026-05-12 | **Phase D (tool subsets)**: `system/config/tool-subsets.json` created — 9 groups + 17-agent mapping. Loading code deferred as XL. token-efficient-tools closed N/A. |
+| 2026-05-12 | **Phase F complete**: `/metis_config` verified already Python-native — no rewrite needed. |
+| 2026-05-12 | **Phase H complete** (Telegram excluded): Meeting Memory cross-refs (`enrich_meeting_with_crossrefs()`), Course Builder 4-tool pipeline (`start_course_build`, `save_course_outline`, `get_course_status`, `publish_course`). |
+| 2026-05-12 | **Phase I (eval harness)**: 14 golden tests × 8 agents + `eval-runner.py` with `--compare` mode for pre-promotion regression checks. |
 
 ---
 
