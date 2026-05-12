@@ -50,6 +50,7 @@ from metis_mcp.tools import (  # noqa: E402, F401
     literature_monitor,
     meetings,
     course_builder,
+    paperqa_search,
 )
 
 
