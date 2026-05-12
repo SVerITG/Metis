@@ -15,15 +15,24 @@ import { readFileSync } from "fs";
 
 const RC_ROOT = process.env.METIS_RC_ROOT || "";
 
+// ─── Hook profile ──────────────────────────────────────────────────────────
+// Set METIS_HOOK_PROFILE=minimal for speed (domain allowlist only).
+// Set METIS_HOOK_PROFILE=full for strictest checks (adds PII detection on reads).
+// Default: standard (current full behaviour).
+const HOOK_PROFILE = (process.env.METIS_HOOK_PROFILE || "standard").toLowerCase();
+
 // ─── Sensitive path patterns ───────────────────────────────────────────────
+// Updated 2026-05-05: refer to current folder layout (knowledge/library, inbox).
 const SENSITIVE_PATH_PATTERNS = [
-  /05_sources\/literature/i,
-  /patient/i,
-  /individual.level/i,
+  /knowledge\/library\/disease-areas/i,
+  /knowledge\/library\/people-organizations/i,
+  /\bpatient\b/i,
+  /\bindividual.level\b/i,
   /\.rds$/i,
   /\.RData$/i,
   /metis\.sqlite$/i,
-  /00_inbox\/.+\.(csv|xlsx|xls)$/i,
+  /\binbox\/.+\.(csv|xlsx|xls)$/i,
+  /\boutputs\/reviews\/data-guardian\//i,
 ];
 
 // ─── Domain allowlist ──────────────────────────────────────────────────────
@@ -34,6 +43,8 @@ const ALLOWED_DOMAINS = [
   "biorxiv.org",
   "medrxiv.org",
   "who.int",
+  "ecdc.europa.eu",
+  "cdc.gov",
   "github.com",
   "raw.githubusercontent.com",
   "api.anthropic.com",
@@ -45,18 +56,28 @@ const ALLOWED_DOMAINS = [
   "reliefweb.int",
   "dndi.org",
   "msf.org",
+  "doi.org",
+  "crossref.org",
+  "zotero.org",
+  "api.zotero.org",
 ];
 
 // ─── Prompt injection patterns ─────────────────────────────────────────────
+// Mirrors metis/system/mcp-server/src/metis_mcp/tools/guardrails.py — keep in sync.
 const INJECTION_PATTERNS = [
-  /ignore (all |previous )?instructions/i,
-  /you are now/i,
+  /ignore\s+(all\s+)?previous\s+instructions?/i,
+  /disregard\s+(all\s+)?instructions?/i,
+  /you\s+are\s+now\s+a\s+/i,
+  /act\s+as\s+(if\s+you\s+(were|are)\s+)?a\s+/i,
+  /forget\s+(everything|all)\s+/i,
+  /new\s+instructions?\s*:/i,
+  /system\s+prompt\s*:/i,
+  /<\s*\/?system\s*>/i,
+  /\[INST\]|\[\/INST\]/i,
+  /print\s+your\s+(system\s+)?prompt/i,
+  /reveal\s+(your\s+)?(system\s+)?instructions?/i,
+  /override\s+(safety|constraints|rules)/i,
   /jailbreak/i,
-  /system prompt/i,
-  /act as (a |an )?(?!assistant|librarian|metis)/i,
-  /forget (all |your )?previous/i,
-  /\[system\]/i,
-  /override (safety|constraints|rules)/i,
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -94,6 +115,23 @@ try {
 const { tool_name, tool_input } = input;
 let decision = "allow";
 let reason = null;
+
+// ── Minimal profile: domain allowlist check only, return early ─────────────
+if (HOOK_PROFILE === "minimal") {
+  if (tool_name === "WebFetch") {
+    const domain = extractDomain(tool_input?.url || "");
+    if (domain) {
+      const allowed = ALLOWED_DOMAINS.some(
+        (d) => domain === d || domain.endsWith("." + d)
+      );
+      if (!allowed) {
+        warn(`Domain not on allowlist: ${domain} (minimal profile)`);
+      }
+    }
+  }
+  console.log(JSON.stringify({ decision: "allow" }));
+  process.exit(0);
+}
 
 // ── WebFetch / WebSearch ───────────────────────────────────────────────────
 if (tool_name === "WebFetch" || tool_name === "WebSearch") {
@@ -170,6 +208,21 @@ if (tool_name === "WebSearch") {
     decision = "block";
     reason = `Prompt injection pattern detected in search query: "${query.slice(0, 80)}"`;
     warn(`BLOCKED — injection in WebSearch query: ${query.slice(0, 80)}`);
+  }
+}
+
+// ── Full profile: PII keyword scan on Read operations ─────────────────────
+if (HOOK_PROFILE === "full" && tool_name === "Read") {
+  const filePath = tool_input?.file_path || "";
+  const PII_FILENAME_PATTERNS = [
+    /\bpatient/i, /\bparticipant[_-]?id/i, /\bsubject[_-]?id/i,
+    /\bname[s]?\.(csv|xlsx|xls)/i, /\bpersonal/i, /\bconfidential/i,
+  ];
+  if (PII_FILENAME_PATTERNS.some((p) => p.test(filePath))) {
+    warn(
+      `[FULL profile] Reading a file with a PII-indicative name: ${filePath}\n` +
+      `  Data Guardian review: confirm this file contains no patient identifiers.`
+    );
   }
 }
 

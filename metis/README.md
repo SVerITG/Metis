@@ -51,12 +51,12 @@ Metis is not a single application. It is a layered system of components that wor
 │  You                                                        │
 │  Claude Desktop · Claude Code · Any MCP client             │
 ├─────────────────────────────────────────────────────────────┤
-│  Metis MCP Server  ·  76+ tools  ·  local, always running  │
+│  Metis MCP Server  ·  120 tools  ·  local, always running  │
 ├────────────┬───────────┬──────────┬──────────┬─────────────┤
 │  Library   │  Memory   │  Agents  │  Safety  │  Dashboard  │
-│  Zotero    │  Ideas    │  24 spec │  Guardian│  FastAPI    │
+│  Zotero    │  Ideas    │  26 spec │  Guardian│  FastAPI    │
 │  BibTeX    │  Journal  │  ialists │  Cyber   │  9 tabs     │
-│  Search    │  Meetings │  routing │  guardrls│  local      │
+│  Vector    │  Meetings │  routing │  guardrls│  local      │
 └────────────┴───────────┴──────────┴──────────┴─────────────┘
 │  SQLite (local)  ·  Your files  ·  Never leaves your machine│
 └─────────────────────────────────────────────────────────────┘
@@ -64,20 +64,22 @@ Metis is not a single application. It is a layered system of components that wor
 
 **Local-first.** Your data never leaves your machine unless you explicitly send it. The database, the literature library, your notes and ideas — all stored locally in plain SQLite and Markdown files. You can open and read every file Metis creates.
 
-**76+ MCP tools.** From searching your literature to capturing an idea, from analysing a meeting transcript to profiling a dataset — each tool is a precise, callable operation that any MCP-compatible AI client can use.
+**120 MCP tools.** From searching your literature to capturing an idea, from analysing a meeting transcript to profiling a dataset — each tool is a precise, callable operation that any MCP-compatible AI client can use. The exact count is printed by `setup-mcp.sh` at install time.
 
-**24 specialist agents.** Not one general-purpose AI, but a team of specialists: Librarians, Epidemiologists, Writing Partners, Course Builders, Data Guardians, Cybersecurity agents, and more. Each agent has a defined role, a defined scope, and cannot exceed it. Metis routes your request to the right agent — or the right combination of agents — automatically.
+**26 specialist agents** (3 retired). Not one general-purpose AI, but a team of specialists: Librarians, Epidemiologists, Writing Partners, Data Guardians, Cybersecurity agents, Methods Coaches, Software Engineers, and more. Each agent has a defined role, a defined scope, and cannot exceed it. Metis routes your request to the right agent — or the right combination of agents — automatically.
 
 **The innovation is not in the components.** Python, SQLite, FastAPI, the MCP protocol — none of these are new. The innovation is in how the components interact with each other and how you interact with them. A paper you read becomes context for the next meeting. An idea you capture becomes a search query against your literature. A news brief triggers a literature update. The connections happen without you doing anything.
 
 **Self-improving.** Agents evaluate their own outputs and propose improvements. Those proposals queue in the dashboard until you review and approve them. No agent rewrites itself without your permission. Over time, Metis becomes more accurate, more relevant, and more personalised to how you think.
 
 **Multi-layered memory.** Metis tracks context across five layers simultaneously:
-- *Prompts* — what you have asked and how you ask it
-- *Ideas* — every note and thought you have captured, with connections
-- *Literature* — your full paper library, indexed and searchable
-- *Cross-pollination* — automatic links between papers, meetings, news, and ideas
-- *Working memory* — the context of the current session, always in view
+- *Episodic* — every agent run, every session, every decision recorded with timestamp and outcome
+- *Semantic* — your literature, notes, ideas, and meetings indexed for vector search (sqlite-vec + BAAI/bge-small-en, 384-dim embeddings)
+- *Procedural* — the skill files that define how each agent thinks, edited and improved over time
+- *Working* — the context of the current session, always visible in the dashboard's token pulse
+- *Reflexive* — agent self-critiques after every run, themed weekly into self-improvement proposals you approve
+
+Vector search across all five layers is exposed as `search_memory(query)` — ask "what have I read about X?" and get semantic matches from papers, meetings, ideas, and journal entries in one query.
 
 **Claude-based. Claude-optimised.** Built for Claude Desktop and Claude Code using the MCP protocol. Agent skills are plain Markdown files — readable, editable, extensible, with no code required. As Claude improves, Metis improves with it.
 
@@ -133,6 +135,32 @@ Three modes for different situations:
 - **Dictate**: Speak a summary after the meeting
 
 Meeting Memory structures the transcript, extracts action items and decisions, and cross-references the discussion with your literature and open projects. "We discussed the sensitivity of the passive detection strategy" — Metis connects this to the three papers on case detection you have in your library, the project card you have for that study, and the idea you captured last week about the same topic.
+
+### Local data analyst — profile and clean datasets without uploading them
+
+The Data Analyst agent profiles, cleans, and compares tabular datasets entirely on your machine — CSV, Excel, SPSS, Stata. Returns a full structured profile (shape, dtypes, null %, unique counts, distributions, top categorical values), suggests cleaning operations with rationale, applies them to a new file (the original is never modified), and diffs the before/after profiles.
+
+Critically: **no dataset path is ever URL-based, and column names are scanned against the PII pattern list before profiling**. Sensitive columns are surfaced before any analysis touches them. This makes Metis usable on patient-level CSVs that you cannot legally upload to a cloud API.
+
+### Knowledge graph
+
+The Knowledge tab renders a force-directed graph (D3) of your library, ideas, and projects. Edges show co-occurrence, citation links, and cross-pollination matches. Click any node to pivot the view to its neighbours. Useful when you sense that something connects but cannot articulate the link yet.
+
+### Semantic memory search
+
+Beyond keyword search, Metis indexes your literature, notes, ideas, and meeting transcripts as 384-dim vectors using `sqlite-vec` and BAAI's `bge-small-en` embedding model. The search bar in the Knowledge tab returns semantic matches: "papers about diagnostic accuracy in low-prevalence settings" surfaces the right work even when none of the words match exactly. Embeddings are computed and stored locally — nothing is sent to a remote vector service.
+
+### Encrypted backup and export
+
+A single MCP tool (`backup_db`) writes an AES-256-GCM encrypted snapshot of the entire Metis database to disk on demand. The passphrase is yours; the file is yours. Use this for off-site backup, for sharing a frozen state with a collaborator, or for migrating between machines without exposing the database in plain SQLite.
+
+### Project tracking with one-click launchers
+
+Each project in the Work tab has a card with status, next-step note, linked papers, linked outputs, and a launcher rail. One click opens the project in **VS Code**, **RStudio**, **Claude Code**, **Claude Desktop**, **File Explorer**, or directly to its **GitHub** page. The launcher uses the project's recorded path — no remembering which folder it was in.
+
+### Health check — `/metis_doctor`
+
+A one-screen self-test that verifies Python version, the SQLite database, your Anthropic API key, your `user-config.yaml`, agent and skill folders, folder-rename hygiene, MCP imports, and `.env` git safety. Run it whenever something feels off, after a `git pull`, or before sharing the repo. Each check returns OK / WARN / FAIL with a one-line plain-English explanation.
 
 ### Continuity across your research
 
@@ -282,11 +310,11 @@ Everything personal (your notes, ideas, outputs, project files) is stored locall
 | **Presentation Maker** | Builds slide decks from your content and agent outputs |
 | **Frontend Designer** | Design system, UI/UX standards, CSS, dashboard interface |
 | **RC Builder** | Builds and extends Metis itself — new agents, tools, MCP server features |
-| **Course Builder** | Builds courses end-to-end: intake → curriculum → lessons → assessment |
+| **Course Builder** 🔬 | Orchestrator for course-building: intake → curriculum → lessons → assessment. Prompt and 7-step workflow are in place; end-to-end automated pipeline is in active development |
 | **Learning Architect** | Curriculum design, competency maps, spaced repetition scheduling |
 | **News Radar** | Compiles daily briefing on your topics and field |
 | **News Aggregator** | Automated RSS collection, feed curation, signal tagging |
-| **Meeting Memory** | Transcribes meetings, extracts action items, cross-references with projects |
+| **Meeting Memory** 🟡 | Transcribes meetings; structured action-item extraction and project cross-linking are in progress |
 | **Learning Coach** | Tracks skill progress, surfaces what to review, identifies gaps |
 | **Career Coach** | Career direction, job preparation, CV development |
 | **Content Harvester** | Extracts and structures content from web pages, PDFs, YouTube, GitHub |
@@ -316,7 +344,7 @@ Every piece of content that passes through Metis is classified before any extern
 You → Metis → Data Guardian → [BLOCKED | WARN | INFORM | OK] → API
 ```
 
-The Data Guardian checks 40+ PII patterns: names, addresses, national ID numbers, patient identifiers, GPS coordinates, phone numbers. Detection is automatic and silent. You do not need to tag or label your files.
+The Data Guardian runs 14 PII checks: 5 regex patterns covering email addresses, phone numbers, patient/case IDs, high-precision GPS coordinates, and Belgian national IDs; plus 9 sensitive column-name signals (`patient`, `patient_id`, `case_id`, `diagnosis`, `dob`, `date_of_birth`, `test_result`, `gps_lat`, `gps_lon`). Detection is automatic and silent. You do not need to tag or label your files. The pattern set is conservative — extend it for your domain in `metis/system/mcp-server/src/metis_mcp/tools/safety.py`.
 
 **What this means in practice:**
 - Drop a CSV with patient-level data into Metis → the Data Guardian blocks it from reaching the API
@@ -329,6 +357,36 @@ See `system/config/red-lines.md` for the full data policy.
 
 ---
 
+## Constitution and red lines — the rules every agent obeys
+
+Metis is governed by an explicit, machine-readable policy. Two files anchor it:
+
+- **`system/config/constitution.md`** — 12 rules, loaded into every agent's context for `deep` and `chain` complexity runs. The rules cover **clinical safety** (cite at least one primary source for any clinical recommendation; flag limited-evidence claims), **statistical integrity** (state sample size; never imply causation from observational data outside an RCT), **data protection** (block patient-identifying output; redact secrets), **agent behaviour** (write a reflexion after deep runs; flag uncertainty explicitly; never fabricate items in lists), **routing & escalation** (ask one clarifying question if the routing is genuinely ambiguous; validate sub-agent output before passing it on), **research integrity** (full citations; no predatory journals), and **PhD protection** (any change to a thesis article must check thesis-backbone alignment first).
+
+- **`system/config/red-lines.md`** — five non-overridable rules: never send patient/medical data externally; always confirm before destructive actions; log every agent run; ask when in doubt; never leak personal or unpublished work without explicit approval.
+
+These are not suggestions. They are loaded as system context before every substantive run, and the most critical rules (no patient data, no API keys in output) are enforced at the code level by the Data Guardian and the pre-tool-use hook — agents cannot override them by reasoning their way around the rule.
+
+You can read both files. You can edit them. The change applies to every agent on the next run.
+
+---
+
+## Working within your context
+
+A senior epidemiologist asks Metis a methodology question and gets an answer calibrated to epidemiology. A researcher building dashboards asks the same question framed as a UI problem and gets an answer for that. Same Metis. Different context.
+
+This is configured in `system/config/user-config.yaml`:
+
+- **`general_context`** — your one-paragraph bio. Loaded into every agent run. The Methods Coach knows you're an epidemiologist; the Writing Partner knows your target journals; the Librarian knows your domain vocabulary.
+- **`specialist_contexts`** — additional contexts you can activate when working on a specific area. *"Epidemiological dashboard development"* is a specialist context the user activates when working on a Shiny app, but not when reviewing an article draft. The Builder loads it; the Writing Partner does not.
+- **`active_contexts`** — which contexts apply right now. Switchable at any time.
+
+Each agent folder also accepts **`*-context.md` overlay files** (gitignored) where you can add domain-specific knowledge — your disease focus, your country surveillance system, your standard methods, your cohort. The agent loads any matching overlay automatically.
+
+Add or update contexts via `/add-context` from Claude Code, or directly in `/metis_config`.
+
+---
+
 ## Cybersecurity
 
 Metis operates agentically — agents browse the web, process RSS feeds, and handle external content. Every external boundary has an active defence.
@@ -336,7 +394,7 @@ Metis operates agentically — agents browse the web, process RSS feeds, and han
 | Layer | Threat | Defence |
 |-------|--------|---------|
 | **URL allowlist** | Agents fetching from malicious domains | Only Librarian, News Radar, and News Aggregator have internet access. Every URL is validated against a domain allowlist before any request is made |
-| **Injection probe** | RSS feeds or web pages containing hidden instructions to hijack agent behaviour | Every piece of external content is scanned for 11 prompt injection patterns and zero-width characters. Suspicious content is annotated and flagged, not silently dropped |
+| **Injection probe** | RSS feeds or web pages containing hidden instructions to hijack agent behaviour | External content is scanned for **13 prompt injection patterns** plus zero-width Unicode characters. The same 13-pattern list is enforced both server-side (`tools/guardrails.py`) and in the Claude Code pre-tool-use hook (`.claude/hooks/pre-tool-use.mjs`) — the lists are kept in sync. Suspicious content is annotated and flagged, not silently dropped |
 | **Agent scope enforcement** | Agents taking actions outside their defined role | Each agent declares its permitted actions. The Cybersecurity agent audits outputs for scope violations before execution |
 | **File integrity** | Imported files containing embedded instructions or encoding anomalies | Files are checked before processing |
 | **Security event log** | Undetected incidents | All security events are logged in the dashboard for review |
@@ -385,11 +443,12 @@ metis/
 ├── outputs/           Agent outputs — YYYY-MM-DD_task.md per run
 ├── system/
 │   ├── app-py/        FastAPI + HTMX dashboard (9 tabs, local, port 8000)
-│   ├── mcp-server/    Python MCP server (76+ tools)
-│   ├── config/        Guardrails, constitution, token policy
+│   ├── mcp-server/    Python MCP server (120 tools)
+│   ├── config/        Guardrails, constitution, red-lines, token policy
 │   └── .env           Your API keys — never committed to git
 ├── .claude/
-│   ├── skills/        40+ slash commands (/metis, /librarian, /methods-coach, …)
+│   ├── skills/        54 slash commands (/metis, /librarian, /methods-coach, /metis_doctor, …)
+│   ├── hooks/         Pre-tool-use security hook (path patterns, injection guard)
 │   └── CLAUDE.md      Agent routing guide (loaded by Claude Code automatically)
 └── PERSONALIZE.md     How to make Metis yours
 ```
