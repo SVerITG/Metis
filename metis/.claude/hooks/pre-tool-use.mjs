@@ -11,7 +11,7 @@
  * Hook output (stdout): JSON { decision: "allow"|"block", reason?: string }
  */
 
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync, existsSync } from "fs";
 
 const RC_ROOT = process.env.METIS_RC_ROOT || "";
 
@@ -223,6 +223,35 @@ if (HOOK_PROFILE === "full" && tool_name === "Read") {
       `[FULL profile] Reading a file with a PII-indicative name: ${filePath}\n` +
       `  Data Guardian review: confirm this file contains no patient identifiers.`
     );
+  }
+}
+
+// ── Session-level injection counter ─────────────────────────────────────────
+// Track how many times each pattern fires in this process lifetime.
+// Stored at /tmp/metis-injection-session.json (survives across tool calls in same session).
+if (HOOK_PROFILE !== "minimal") {
+  const counterFile = "/tmp/metis-injection-session.json";
+  const inputText = JSON.stringify(tool_input || {});
+  let firedPatterns = [];
+  for (const pattern of INJECTION_PATTERNS) {
+    if (pattern.test(inputText)) firedPatterns.push(pattern.source);
+  }
+  if (firedPatterns.length > 0) {
+    let counts = {};
+    try {
+      if (existsSync(counterFile)) {
+        counts = JSON.parse(readFileSync(counterFile, "utf8"));
+      }
+    } catch { /* start fresh */ }
+    for (const p of firedPatterns) {
+      counts[p] = (counts[p] || 0) + 1;
+      if (counts[p] >= 3 && decision !== "block") {
+        decision = "block";
+        reason = `Repeated injection pattern (${counts[p]}x in session): "${p.slice(0, 60)}"`;
+        warn(`BLOCKED — repeated injection (${counts[p]}x): ${p.slice(0, 60)}`);
+      }
+    }
+    try { writeFileSync(counterFile, JSON.stringify(counts)); } catch { /* silent */ }
   }
 }
 
