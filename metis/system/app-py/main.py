@@ -88,6 +88,29 @@ app.include_router(capture.router, prefix="/api")
 app.include_router(transcription.router)
 app.include_router(jobs.router)
 
+# ── PWA capture page — standalone mobile-friendly route ─────────────────────
+@app.get("/capture", response_class=HTMLResponse)
+async def pwa_capture_page(request: Request):
+    """Standalone capture page — add to phone home screen for one-tap access."""
+    return templates.TemplateResponse(request, "capture.html", {})
+
+@app.get("/manifest.json")
+async def pwa_manifest():
+    from fastapi.responses import JSONResponse
+    return JSONResponse({
+        "name": "Metis Capture",
+        "short_name": "Capture",
+        "description": "Capture ideas, notes, tasks, and questions for your Research Cortex",
+        "start_url": "/capture",
+        "display": "standalone",
+        "background_color": "#1a1a1a",
+        "theme_color": "#3b82f6",
+        "icons": [
+            {"src": "/static/metis-icon.png", "sizes": "192x192", "type": "image/png"},
+            {"src": "/static/metis-icon.png", "sizes": "512x512", "type": "image/png"},
+        ],
+    })
+
 # ---------------------------------------------------------------------------
 # Root + named tab full-page routes
 # ---------------------------------------------------------------------------

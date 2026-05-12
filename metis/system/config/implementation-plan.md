@@ -236,10 +236,12 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
   Telegram is strictly better than WhatsApp for this: open API, no approval process, free.  
   *The WhatsApp webhook stub in `webhook.py` can be repurposed.*
 
-- [ ] **M — Mobile PWA capture page**  
-  FastAPI `/capture` route + `manifest.json` + service worker = home screen shortcut on phone.  
-  Accessible via Tailscale from anywhere. No external service dependency.  
-  *Simpler than Telegram if Stan already has Tailscale installed.*
+- [x] **M — Mobile PWA capture page** — DONE 2026-05-12  
+  `/capture` route in `main.py` renders `templates/capture.html` — standalone dark-mode mobile form.  
+  Type selector buttons (IDEA / NOTE / TASK / QUESTION / JOURNAL) auto-prefix the capture text.  
+  Submits to existing `/api/capture` POST handler. Shows cross-pollination connections inline.  
+  `/manifest.json` route returns PWA metadata — add to phone home screen for one-tap access.  
+  *Service worker deferred — offline caching useful only when Tailscale VPN is active anyway.*
 
 - [ ] **L — Course Builder end-to-end pipeline**  
   System-prompt and questionnaire exist. Missing: orchestration code, `/course-builder` slash command, Quarto integration for lesson rendering.
@@ -289,6 +291,7 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
 | 2026-05-12 | **Phase D (partial)**: Morning brief richer structure (3-para IHP pattern), prompt caching with ephemeral cache_control, max_tokens 300→600. |
 | 2026-05-12 | **Phase E complete**: Session injection counter, /security-scan skill, enterprise controls doc, output PII scan in post-tool-use hook. |
 | 2026-05-12 | **Phase F (partial)**: install-state.json, install profiles in setup-mcp.sh, .gemini/GEMINI.md. /metis_config rewrite + Docker deferred. |
+| 2026-05-12 | **Phase H (partial)**: Mobile PWA capture page — `/capture` route + `manifest.json` + dark-mode mobile form with type selector and cross-pollination display. |
 
 ---
 
