@@ -7,6 +7,7 @@ Layout: dateline → hero (greeting + stats) → 2-col canvas (focus / activity)
 import datetime
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 from fastapi import APIRouter, Request
@@ -37,6 +38,20 @@ async def today_tab(request: Request):
 async def today_tab_partial(request: Request):
     return templates.TemplateResponse(
         request, "today.html", {"active_tab": "today"}
+    )
+
+
+@router.get("/news", response_class=HTMLResponse)
+async def news_page(request: Request):
+    return templates.TemplateResponse(
+        request, "news.html", {"active_tab": "news"}
+    )
+
+
+@router.get("/api/tab/news", response_class=HTMLResponse)
+async def news_tab_partial(request: Request):
+    return templates.TemplateResponse(
+        request, "news.html", {"active_tab": "news"}
     )
 
 
@@ -99,11 +114,24 @@ def _user_name() -> str:
         row = db_query(
             "SELECT value FROM user_config WHERE key = 'user_name' LIMIT 1"
         )
-        if row:
+        if row and row[0].get("value"):
             return row[0]["value"]
     except Exception:
         pass
-    return "Stef"
+    try:
+        import yaml
+        from pathlib import Path as _P
+        rc = os.environ.get("METIS_RC_ROOT", "")
+        if rc:
+            cfg = _P(rc) / "system" / "config" / "user-config.yaml"
+            if cfg.exists():
+                data = yaml.safe_load(cfg.read_text())
+                name = (data or {}).get("user", {}).get("name", "")
+                if name:
+                    return name
+    except Exception:
+        pass
+    return "Stan"
 
 
 @router.get("/api/partial/today/hero", response_class=HTMLResponse)
@@ -285,12 +313,36 @@ async def today_focus_thread(request: Request):
     except Exception:
         pass
 
+    # Recent field-relevant articles alert
+    field_articles: list[dict] = []
+    _field_terms = ("sleeping sickness", "hat ", "trypanosoma", "trypanosomiasis",
+                    "ntd", "neglected tropical", "epidemiology", "surveillance")
+    since_48h = (datetime.datetime.now() - datetime.timedelta(hours=48)).isoformat()
+    try:
+        rows = db_query(
+            "SELECT brief_id, title, created_at FROM news_briefs "
+            "WHERE source_type='article' AND created_at >= ? "
+            "ORDER BY created_at DESC LIMIT 20",
+            (since_48h,),
+        ) or []
+        for r in rows:
+            t = (r.get("title") or "").lower()
+            if any(term in t for term in _field_terms):
+                field_articles.append({
+                    "id": r["brief_id"],
+                    "title": r.get("title") or "Untitled",
+                    "time": _fmt_relative_time(r["created_at"]),
+                })
+    except Exception:
+        pass
+
     return templates.TemplateResponse(
         request,
         "partials/today_focus_thread.html",
         {
             "focus": focus,
             "scan": {"text": scan_text},
+            "field_articles": field_articles,
         },
     )
 
@@ -450,16 +502,85 @@ def _signal_class(signal: str) -> str:
     return "low"
 
 
+def _build_news_items(qrows) -> list[dict]:
+    items = []
+    for r in (qrows or []):
+        dom = r.get("domain") or "General"
+        items.append({
+            "id": r["brief_id"],
+            "title": r.get("title") or "Untitled",
+            "summary": (r.get("summary") or "")[:180],
+            "domain": dom,
+            "domain_slug": dom.lower().replace(" ", "-").replace("_", "-"),
+            "signal": (r.get("signal_strength") or "").strip(),
+            "signal_class": _signal_class(r.get("signal_strength") or ""),
+            "source_url": r.get("source_url"),
+            "time": _hm(r["created_at"]),
+        })
+    return items
+
+
 @router.get("/api/partial/today/news-rail", response_class=HTMLResponse)
 async def today_news_rail(request: Request, category: str = ""):
-    categories: list[dict] = []
-    total_count = 0
     last_updated = None
 
     try:
+        ts_row = db_query(
+            "SELECT MAX(created_at) as last_ts FROM news_briefs"
+        ) or []
+        if ts_row and ts_row[0].get("last_ts"):
+            last_updated = _age_label(ts_row[0]["last_ts"]) + " ago"
+    except Exception:
+        pass
+
+    # General news items (source_type='news' or NULL/'news')
+    news_items: list[dict] = []
+    try:
+        if category:
+            qrows = db_query(
+                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
+                "FROM news_briefs WHERE (source_type IS NULL OR source_type='news') AND domain=? "
+                "ORDER BY created_at DESC LIMIT 10",
+                (category,),
+            )
+        else:
+            qrows = db_query(
+                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
+                "FROM news_briefs WHERE (source_type IS NULL OR source_type='news') "
+                "ORDER BY created_at DESC LIMIT 10"
+            )
+        news_items = _build_news_items(qrows)
+    except Exception:
+        pass
+
+    # Scientific articles (source_type='article')
+    article_items: list[dict] = []
+    try:
+        if category:
+            qrows = db_query(
+                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
+                "FROM news_briefs WHERE source_type='article' AND domain=? "
+                "ORDER BY created_at DESC LIMIT 8",
+                (category,),
+            )
+        else:
+            qrows = db_query(
+                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
+                "FROM news_briefs WHERE source_type='article' "
+                "ORDER BY created_at DESC LIMIT 8"
+            )
+        article_items = _build_news_items(qrows)
+    except Exception:
+        pass
+
+    # Category chips — only from news items
+    categories: list[dict] = []
+    total_count = 0
+    try:
         rows = db_query(
             "SELECT domain, COUNT(*) as n, MAX(created_at) as last_ts "
-            "FROM news_briefs GROUP BY domain ORDER BY last_ts DESC"
+            "FROM news_briefs WHERE (source_type IS NULL OR source_type='news') "
+            "GROUP BY domain ORDER BY last_ts DESC"
         ) or []
         for r in rows:
             dom = r.get("domain") or "General"
@@ -469,39 +590,6 @@ async def today_news_rail(request: Request, category: str = ""):
                 "domain": dom,
                 "count": cnt,
                 "age_label": _age_label(r["last_ts"]) if r.get("last_ts") else "",
-                "last_ts": r.get("last_ts"),
-            })
-        if rows:
-            last_updated = _age_label(rows[0]["last_ts"]) + " ago"
-    except Exception:
-        pass
-
-    # Items: optionally filtered by category
-    items = []
-    try:
-        if category:
-            qrows = db_query(
-                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
-                "FROM news_briefs WHERE domain = ? ORDER BY created_at DESC LIMIT 8",
-                (category,),
-            )
-        else:
-            qrows = db_query(
-                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
-                "FROM news_briefs ORDER BY created_at DESC LIMIT 8"
-            )
-        for r in (qrows or []):
-            dom = r.get("domain") or "General"
-            items.append({
-                "id": r["brief_id"],
-                "title": r.get("title") or "Untitled",
-                "summary": (r.get("summary") or "")[:180],
-                "domain": dom,
-                "domain_slug": dom.lower().replace(" ", "-").replace("_", "-"),
-                "signal": (r.get("signal_strength") or "").strip(),
-                "signal_class": _signal_class(r.get("signal_strength") or ""),
-                "source_url": r.get("source_url"),
-                "time": _hm(r["created_at"]),
             })
     except Exception:
         pass
@@ -512,7 +600,8 @@ async def today_news_rail(request: Request, category: str = ""):
         {
             "categories": categories,
             "total_count": total_count,
-            "items": items,
+            "news_items": news_items,
+            "article_items": article_items,
             "active_category": category,
             "last_updated": last_updated,
         },
@@ -664,6 +753,124 @@ async def today_token_footer(request: Request):
 # ---------------------------------------------------------------------------
 
 
+def _get_or_generate_brief() -> str | None:
+    """Return today's AI-generated morning brief, generating it if needed.
+
+    Checks daily_insights for today. If absent (or only raw context without a
+    narrative paragraph), assembles context via assemble_daily_context() and
+    calls Claude Haiku to synthesize a 2-3 sentence brief. Stores the result
+    so subsequent page loads are free (no API call).
+
+    Returns the narrative string, or None if generation is unavailable.
+    """
+    import sqlite3 as _sqlite3
+
+    db_path_str = os.environ.get("METIS_DB", "")
+    if not db_path_str:
+        try:
+            from pathlib import Path as _P
+            rc = os.environ.get("METIS_RC_ROOT", "")
+            if rc:
+                db_path_str = str(_P(rc) / "system" / "app" / "data" / "metis.sqlite")
+        except Exception:
+            pass
+    if not db_path_str:
+        return None
+
+    today = datetime.date.today().isoformat()
+
+    # Check cache first
+    try:
+        conn = _sqlite3.connect(db_path_str)
+        conn.row_factory = _sqlite3.Row
+        row = conn.execute(
+            "SELECT content, model FROM daily_insights WHERE insight_date = ? LIMIT 1",
+            (today,),
+        ).fetchone()
+        conn.close()
+        if row and row["model"] == "claude-haiku-brief" and row["content"]:
+            return row["content"]
+    except Exception:
+        pass
+
+    # Assemble context
+    try:
+        sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent /
+                               "mcp-server" / "src"))
+        from metis_mcp.tools.intelligence import assemble_daily_context
+        ctx = assemble_daily_context(db_path_str)
+    except Exception:
+        return None
+
+    if not ctx.get("context"):
+        return None
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return None
+
+    # Call Claude Haiku to write the brief
+    try:
+        import httpx as _httpx
+        name = _user_name()
+        resp = _httpx.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                "model": "claude-haiku-4-5-20251001",
+                "max_tokens": 300,
+                "messages": [{
+                    "role": "user",
+                    "content": (
+                        f"You are writing a morning briefing paragraph for {name}, a senior researcher in public health and epidemiology. "
+                        "Based on their recent activity below, write 2-3 sentences that feel like a knowledgeable friend catching them up — "
+                        "warm, direct, no corporate language. Mention the most interesting new development, any critical tasks, and one "
+                        "research thread worth picking up today. Plain prose, no bullet points, no greeting, no sign-off.\n\n"
+                        f"{ctx['context'][:3000]}"
+                    ),
+                }],
+            },
+            timeout=25.0,
+        )
+        if resp.status_code == 200:
+            narrative = resp.json()["content"][0]["text"].strip()
+            # Cache in daily_insights
+            try:
+                conn = _sqlite3.connect(db_path_str)
+                conn.execute("PRAGMA journal_mode=WAL")
+                conn.execute(
+                    """CREATE TABLE IF NOT EXISTS daily_insights (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        insight_date TEXT NOT NULL UNIQUE,
+                        content TEXT NOT NULL,
+                        sources TEXT DEFAULT '',
+                        generated_at TEXT NOT NULL,
+                        model TEXT DEFAULT ''
+                    )"""
+                )
+                conn.execute(
+                    """INSERT INTO daily_insights (insight_date, content, sources, generated_at, model)
+                       VALUES (?, ?, ?, ?, ?)
+                       ON CONFLICT(insight_date) DO UPDATE SET
+                           content = excluded.content, model = excluded.model,
+                           generated_at = excluded.generated_at""",
+                    (today, narrative, ctx["sources"],
+                     datetime.datetime.now().isoformat(), "claude-haiku-brief"),
+                )
+                conn.commit()
+                conn.close()
+            except Exception:
+                pass
+            return narrative
+    except Exception:
+        pass
+    return None
+
+
 @router.get("/api/partial/today/morning-brief", response_class=HTMLResponse)
 async def today_morning_brief(request: Request):
     hour = datetime.datetime.now().hour
@@ -682,7 +889,6 @@ async def today_morning_brief(request: Request):
     except Exception:
         pass
 
-    # Get project focus
     project_title = None
     try:
         rows = db_query(
@@ -694,17 +900,26 @@ async def today_morning_brief(request: Request):
     except Exception:
         pass
 
+    # Try AI-generated brief first
+    ai_brief = None
+    try:
+        import sys
+        ai_brief = _get_or_generate_brief()
+    except Exception:
+        pass
+
+    # Fallback static greeting when no AI brief is available
     greeting = None
-    if project_title:
+    if not ai_brief and project_title:
         greeting = (
             f"{greeting_word}, {_user_name()}. "
             f"Your focus project is <em>{project_title}</em>. "
             f"{'%d thread%s from yesterday are still warm.' % (open_threads, 's' if open_threads != 1 else '') if open_threads else 'The desk is clear — a good moment to push forward.'}"
         )
 
-    narrative = None
-    if open_threads > 0:
-        narrative = "If you'll take one thing first, take the most urgent thread."
+    narrative = ai_brief or (
+        "If you'll take one thing first, take the most urgent thread." if open_threads > 0 else None
+    )
 
     return templates.TemplateResponse(
         request,
@@ -713,6 +928,7 @@ async def today_morning_brief(request: Request):
             "greeting": greeting,
             "narrative": narrative,
             "open_threads": open_threads,
+            "ai_brief": bool(ai_brief),
         },
     )
 
@@ -971,37 +1187,148 @@ async def today_notebook_archive(request: Request):
 
 @router.post("/api/scan/content")
 async def api_scan_content():
+    """Comprehensive Metis update: news scan + Zotero sync + project staleness check."""
+    results: dict = {"status": "ok", "steps": []}
+
+    # ── Step 1: News feeds + literature folder scan
+    news_added = 0
+    papers_added = 0
     try:
         from metis_mcp.tools.content_scan import scan_literature_folder, scan_news_feeds
-        news = scan_news_feeds(max_per_feed=10)
-        lit = scan_literature_folder()
+        news_r = scan_news_feeds(max_per_feed=10)
+        lit_r  = scan_literature_folder()
+        news_added   = news_r.get("news_added", 0)
+        papers_added = lit_r.get("papers_added", 0)
+        results["steps"].append(f"News: {news_added} new signals")
+        results["steps"].append(f"Literature folder: {papers_added} new items")
     except Exception as e:
-        return {"status": "error", "detail": str(e)}
+        results["steps"].append(f"News/lit scan error: {e!s:.80}")
 
+    # ── Step 2: Zotero incremental sync
+    zotero_added = 0
+    try:
+        import os, re, sqlite3 as _sq3, urllib.request as _ur, urllib.parse as _up
+        from datetime import datetime as _dt
+        from pathlib import Path as _P
+
+        rc = os.environ.get("METIS_RC_ROOT", "")
+        env_p = _P(rc) / "system" / ".env" if rc else None
+        if env_p and env_p.exists():
+            for line in env_p.read_text().splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, _, v = line.partition("=")
+                    os.environ.setdefault(k.strip(), v.strip())
+
+        api_key = os.environ.get("ZOTERO_API_KEY", "")
+        user_id = os.environ.get("ZOTERO_USER_ID", "")
+        if api_key and user_id:
+            from pyzotero import zotero as _pyz
+            zot = _pyz.Zotero(user_id, "user", api_key)
+            db_p = _P(rc) / "system" / "app" / "data" / "metis.sqlite" if rc else None
+            if db_p and db_p.exists():
+                con = _sq3.connect(str(db_p))
+                con.row_factory = _sq3.Row
+                _SYNC_DDL = ("CREATE TABLE IF NOT EXISTS zotero_sync_state "
+                             "(id INTEGER PRIMARY KEY, last_version INTEGER DEFAULT 0, "
+                             "last_synced TEXT, item_count INTEGER DEFAULT 0)")
+                con.execute(_SYNC_DDL)
+                row = con.execute("SELECT last_version FROM zotero_sync_state LIMIT 1").fetchone()
+                last_ver = row["last_version"] if row else 0
+                items = zot.everything(zot.items(since=last_ver, itemType="-attachment || -note")) if last_ver else []
+                added = 0
+                for item in items:
+                    data = item.get("data", {})
+                    if data.get("itemType") in ("attachment", "note"): continue
+                    title = (data.get("title") or "")[:500]
+                    if not title: continue
+                    zk = data.get("key") or ""
+                    ex = con.execute("SELECT id FROM literature_metadata WHERE zotero_key=?", (zk,)).fetchone()
+                    if not ex:
+                        creators = data.get("creators", [])
+                        authors = "; ".join(
+                            (c["lastName"] + (f", {c['firstName'][0]}." if c.get("firstName") else ""))
+                            if c.get("lastName") else c.get("name","")
+                            for c in creators[:8] if c.get("lastName") or c.get("name")
+                        )[:300]
+                        raw_d = data.get("date","") or ""
+                        ym = re.search(r"\b(19|20)\d{2}\b", raw_d)
+                        yr = int(ym.group()) if ym else None
+                        doi = data.get("DOI","")
+                        con.execute(
+                            "INSERT INTO literature_metadata "
+                            "(title,authors,year,source,journal,doi,abstract,url,item_type,zotero_key,zotero_version,library_source,created_at) "
+                            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                            (title,authors,yr,data.get("publicationTitle",""),data.get("publicationTitle",""),
+                             doi,(data.get("abstractNote","") or "")[:2000],
+                             data.get("url","") or (f"https://doi.org/{doi}" if doi else ""),
+                             data.get("itemType",""),zk,item.get("version",0),"zotero",_dt.now().isoformat())
+                        )
+                        added += 1
+                if items:
+                    try:
+                        nv = zot.last_modified_version()
+                        tc = con.execute("SELECT COUNT(*) FROM literature_metadata WHERE library_source='zotero'").fetchone()[0]
+                        con.execute("DELETE FROM zotero_sync_state")
+                        con.execute("INSERT INTO zotero_sync_state (last_version,last_synced,item_count) VALUES (?,?,?)",
+                                    (nv, _dt.now().isoformat(), tc))
+                    except Exception: pass
+                con.commit(); con.close()
+                zotero_added = added
+                results["steps"].append(f"Zotero: {added} new papers synced")
+            else:
+                results["steps"].append("Zotero: DB not found")
+        else:
+            results["steps"].append("Zotero: not configured (no API key)")
+    except Exception as e:
+        results["steps"].append(f"Zotero sync error: {e!s:.80}")
+
+    # ── Step 3: Project staleness check
+    stale_projects = []
+    try:
+        import os as _os
+        from pathlib import Path as _P2
+        rc2 = _os.environ.get("METIS_RC_ROOT","")
+        proj_rows = db_query("SELECT title, external_path, updated_at FROM projects WHERE status='active'") or []
+        import datetime as _dtt
+        now = _dtt.datetime.now()
+        for pr in proj_rows:
+            ext = pr.get("external_path","")
+            if not ext: continue
+            # Convert Windows path to WSL
+            if ":" in ext and not ext.startswith("/mnt/"):
+                drive = ext[0].lower(); rest = ext[2:].replace("\\","/")
+                ext = f"/mnt/{drive}{rest}"
+            planning = _P2(ext) / "PLANNING.md"
+            if planning.exists():
+                mtime = _dtt.datetime.fromtimestamp(planning.stat().st_mtime)
+                days_since = (now - mtime).days
+                if days_since > 7:
+                    stale_projects.append(f"{pr.get('title','?')} (last updated {days_since}d ago)")
+    except Exception:
+        pass
+    if stale_projects:
+        results["steps"].append(f"Projects needing update: {', '.join(stale_projects[:3])}")
+    else:
+        results["steps"].append("Projects: all up to date")
+
+    # ── Log the run
     try:
         db_execute(
-            """INSERT INTO agent_runs
-               (agent_slug, task_summary, input_path, output_path, status, created_at, model)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (
-                "content-scan",
-                f"Dashboard scan: {news['news_added']} news, {lit['papers_added']} papers",
-                "rss+literature",
-                "news_briefs+literature_metadata",
-                "completed",
-                datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                "none",
-            ),
+            "INSERT INTO agent_runs (agent_slug,task_summary,input_path,output_path,status,created_at,model) VALUES (?,?,?,?,?,?,?)",
+            ("metis-update",
+             f"Update: {news_added} news, {papers_added} lit, {zotero_added} Zotero",
+             "rss+zotero+projects", "news_briefs+literature_metadata",
+             "completed", datetime.datetime.now(datetime.timezone.utc).isoformat(), "none"),
         )
     except Exception:
-        pass  # non-fatal — scan result still returned
+        pass
 
-    return {
-        "status": "ok",
-        "news_added": news["news_added"],
-        "papers_added": lit["papers_added"],
-        "news_errors": news.get("errors", []),
-    }
+    results["news_added"]    = news_added
+    results["papers_added"]  = papers_added
+    results["zotero_added"]  = zotero_added
+    results["summary"]       = " · ".join(results["steps"])
+    return results
 
 
 # ---------------------------------------------------------------------------
@@ -1021,3 +1348,105 @@ async def api_handoff_generate():
             {"status": "error", "message": f"Could not generate handoff: {e}"},
             status_code=500,
         )
+
+
+# ---------------------------------------------------------------------------
+# /api/doctor — health check (calls metis_mcp.tools.doctor.run_doctor)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/doctor")
+async def doctor_endpoint():
+    """Run metis_doctor and return a structured report for the dashboard."""
+    try:
+        from metis_mcp.tools.doctor import run_doctor
+        return JSONResponse(run_doctor())
+    except Exception as e:
+        return JSONResponse(
+            {"status": "error", "message": f"Doctor failed: {e}"},
+            status_code=500,
+        )
+
+
+# ---------------------------------------------------------------------------
+# /api/schedule/register-morning — manual scheduler entry registration
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/schedule/register-morning")
+async def register_morning_schedule():
+    """Register Windows Task Scheduler entries for the morning brief.
+
+    On Windows + WSL: shells out to `schtasks /Create` for News Radar and
+    Librarian scans. On non-Windows hosts: returns instructions for `cron`.
+
+    This is an explicit, one-off action triggered by the user from the
+    dashboard. It is idempotent — re-running replaces the existing tasks.
+    """
+    import os
+    import subprocess
+
+    if os.name != "nt" and not Path("/mnt/c/Windows").exists():
+        # Pure Linux / macOS — give the user the cron line to add.
+        cron = (
+            "0 7 * * *  cd ~/.local/share/metis-mcp && "
+            "./.venv/bin/python -m metis_mcp.cli scan-news\n"
+            "30 7 * * *  cd ~/.local/share/metis-mcp && "
+            "./.venv/bin/python -m metis_mcp.cli scan-literature"
+        )
+        return JSONResponse({
+            "status": "warn",
+            "message": (
+                "On Linux/macOS, run `crontab -e` and add:\n\n" + cron
+            ),
+        })
+
+    # Windows path: register two scheduled tasks via schtasks.exe (called
+    # through cmd.exe so it works whether or not we're inside WSL).
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    if not rc_root:
+        return JSONResponse({
+            "status": "error",
+            "message": "METIS_RC_ROOT not set — cannot register Task Scheduler entries.",
+        }, status_code=500)
+
+    run_script = str(Path.home() / ".local" / "share" / "metis-mcp" / "run.sh")
+    actions = [
+        ("Metis_NewsRadar", "07:00", "scan-news"),
+        ("Metis_LibrarianScan", "07:30", "scan-literature"),
+    ]
+    results = []
+    for name, time_str, sub in actions:
+        cmd = (
+            f'schtasks /Create /F /SC DAILY /TN "{name}" /ST {time_str} '
+            f'/TR "wsl.exe -e bash -lc \\"{run_script} {sub}\\""'
+        )
+        try:
+            proc = subprocess.run(
+                ["cmd.exe", "/c", cmd],
+                capture_output=True, text=True, timeout=15,
+            )
+            results.append({
+                "task": name,
+                "ok": proc.returncode == 0,
+                "stdout": proc.stdout.strip()[-200:],
+                "stderr": proc.stderr.strip()[-200:],
+            })
+        except Exception as e:
+            results.append({"task": name, "ok": False, "stderr": str(e)})
+
+    failed = [r for r in results if not r["ok"]]
+    if failed:
+        return JSONResponse({
+            "status": "warn",
+            "message": (
+                "Registration partially failed. Run `/schedule` from Claude "
+                "Code for an interactive setup."
+            ),
+            "results": results,
+        })
+    return JSONResponse({
+        "status": "ok",
+        "message": "Morning brief scheduled. First run tomorrow at 07:00.",
+        "results": results,
+    })

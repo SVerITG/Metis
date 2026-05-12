@@ -3,7 +3,7 @@
 This is the Metis second-brain system for a Senior Researcher / Public Health Methodologist
 working on their research domain, PhD planning, AI development, and personal learning.
 
-**Owner:** {user}
+**Owner:** Stan (sverschaeve) — always address as "Stan", never guess another name
 **Root:** This folder
 **App:** `system/app/`
 **Agents:** `agents/`
@@ -29,7 +29,7 @@ working on their research domain, PhD planning, AI development, and personal lea
 /metis Review my Article 1 draft for methodology and grammar
 → Metis routes to: Epidemiologist (methodology) + Writing Partner (grammar)
 → Complexity: chain (opus + subagents)
-→ Output: 07_outputs/reviews/epidemiologist/... + 07_outputs/reviews/writing-partner/...
+→ Output: outputs/reviews/epidemiologist/... + outputs/reviews/writing-partner/...
 ```
 
 **Direct call:** If you already know which agent you want, call them directly:
@@ -41,6 +41,7 @@ working on their research domain, PhD planning, AI development, and personal lea
 | `/phd-architect` | PhD Architect | Thesis structure, article alignment, chapter planning |
 | `/writing-partner` | Writing Partner | Draft text, improve writing, structure arguments |
 | `/methods-coach` | Methods Coach | Epidemiological methods, statistics, sampling, R methodology |
+| `/dhis2-expert` | DHIS2 Expert | DHIS2 server, metadata, tracker programs, dashboards, app development, NTD implementations |
 | `/software-engineer` | Software Engineer | Code review, debugging, Python/R scripts, FastAPI |
 | `/frontend-designer` | Frontend Designer Builder | UI/UX decisions, design system, visualization design, web interfaces |
 | `/meeting-memory` | Meeting Memory | Transcribe, structure, and brief meeting notes |
@@ -95,7 +96,7 @@ Metis will:
 1. Analyze the request
 2. Announce: "Routing to Epidemiologist (methodology) + Writing Partner (grammar). Complexity: chain."
 3. Load each agent's system prompt, execute sequentially
-4. Write output files to `07_outputs/reviews/{agent-slug}/`
+4. Write output files to `outputs/reviews/{agent-slug}/`
 5. Log each run to the `agent_runs` database table
 6. Return a summary of what was done and where outputs are
 
@@ -151,6 +152,7 @@ When a request arrives, route as follows:
 | Paper, article, source | Librarian | PhD Architect |
 | Meeting note, audio, transcript | Meeting Memory | Metis |
 | R script, code, bug, FastAPI | Software Engineer | Frontend Designer Builder |
+| DHIS2 configuration, tracker, dashboard, API, implementation | DHIS2 Expert | Software Engineer / Epidemiologist |
 | PhD structure, article fit | PhD Architect | Writing Partner |
 | Statistical method question | Methods Coach | PhD Architect |
 | News, world events, briefing | News Radar | Metis |
@@ -195,6 +197,16 @@ When a request arrives, route as follows:
 - Config: `system/config/`
 - Knowledge (library + domains + courses): `knowledge/`
 - Outputs (reviews, articles, etc.): `outputs/`
+- Basket (legacy inspiration docs): `basket/` — flat folder, drop anything here
+
+### Basket — inspiration & legacy documents
+
+`basket/` is a flat holding area for any old document kept as a reference for future work (presentations, meeting notes, scripts, reports — anything). Not indexed. Not categorised. `basket/private/` is the only subfolder — for personal or patient data that AI tools must never read.
+
+**Agent rule:** Any agent producing new content (Presentation Maker, Writing Partner, Software Engineer) should call `list_basket()` first and read relevant files with `read_file()` to pick up style or content cues.
+**No agent may access `basket/private/` under any circumstances.**
+**MCP tools:** `list_basket()` — `promote_basket_item(source, target)` — `read_file(path)`
+**Removable.** No DB rows. `rm -rf basket/` is safe.
 
 ---
 
@@ -219,12 +231,15 @@ Each active project has a **PLANNING.md** file in its external project root. Thi
 ## Metis standing priorities
 
 Every session, check:
-1. **Read the relevant project's PLANNING.md** (paths above) — this is the fastest way to understand where things stand.
-2. What is new in `inbox/`?
-3. What tasks are overdue or blocked?
-4. What does the PhD need this week?
-5. Is there anything uncommitted or unpushed in the git projects?
-6. What should the user be aware of that they have not asked about?
+1. **Read `system/config/feature-backlog.md`** — the persistent list of everything requested and not yet built. Check what is open before starting any new work. If the user asks for something already on the backlog, build it immediately rather than acknowledging and deferring.
+2. **Read the relevant project's PLANNING.md** (paths above) — this is the fastest way to understand where things stand.
+3. What is new in `inbox/`?
+4. What tasks are overdue or blocked?
+5. What does the PhD need this week?
+6. Is there anything uncommitted or unpushed in the git projects?
+7. What should the user be aware of that they have not asked about?
+
+**Feature request rule:** When the user requests any new feature or functionality during a session, write it to `system/config/feature-backlog.md` immediately — even if you are about to build it. This ensures it persists if the session ends before completion.
 
 ---
 
