@@ -113,11 +113,14 @@ The feature backlog (`feature-backlog.md`) remains the raw list; this document i
   max_tokens increased 300 → 600 to allow the fuller structure.  
   *Feedback buttons deferred — need a relevance_feedback table + routes.*
 
-- [~] **L — Domain-specific tool loading** — PARTIAL 2026-05-12  
-  `system/config/tool-subsets.json` created: 9 tool groups + per-agent subset mapping for 17 agents.  
-  **Loading enforcement not yet active** — config defines the intent; actual MCP server filtering  
-  requires modifying `server.py` to check `METIS_TOOL_SUBSETS=1` env var and filter `app._tool_manager`.  
-  This is the XL implementation step (loading code). Config is ready when that code lands.
+- [x] **L — Domain-specific tool loading** — DONE 2026-05-12  
+  `system/config/tool-subsets.json`: 9 tool groups + 17-agent subset mapping.  
+  `metis_mcp/subset_loader.py`: `apply_tool_subset(app, agent_slug)` — reads config, resolves groups  
+  to module names, removes non-matching tools from `app._tool_manager._tools` via `tool.fn.__module__`.  
+  `server.py`: checks `METIS_TOOL_SUBSETS=1` + `METIS_AGENT_SUBSET=<slug>` at startup and applies filter.  
+  `run.sh`: auto-sets `METIS_TOOL_SUBSETS=1` when `METIS_AGENT_SUBSET` is present.  
+  Verified: librarian 82/133 tools (38% reduction), data-guardian 47/133 (65% reduction).  
+  ALWAYS_ALLOWED set ensures infrastructure tools (pipeline, agents, observability, handoff) are never stripped.
 
 - [x] **S — token-efficient-tools beta header** — N/A 2026-05-12  
   Not applicable: `pipeline.py` routes through Claude Code's tool system, not direct API calls.  
@@ -312,6 +315,7 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
 | 2026-05-12 | **Phase F complete**: `/metis_config` verified already Python-native — no rewrite needed. |
 | 2026-05-12 | **Phase H complete** (Telegram excluded): Meeting Memory cross-refs (`enrich_meeting_with_crossrefs()`), Course Builder 4-tool pipeline (`start_course_build`, `save_course_outline`, `get_course_status`, `publish_course`). |
 | 2026-05-12 | **Phase I (eval harness)**: 14 golden tests × 8 agents + `eval-runner.py` with `--compare` mode for pre-promotion regression checks. |
+| 2026-05-12 | **Phase D complete**: Domain-specific tool loading live — `subset_loader.py` + `server.py` wiring. Verified: librarian 38% reduction, data-guardian 65% reduction. |
 
 ---
 
