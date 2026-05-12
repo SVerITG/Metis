@@ -1,6 +1,12 @@
 <!-- thinking_questions.html — Editorial open-questions list -->
 {% if not questions %}
-<div class="empty-row"><em>No open questions. Use ⌘K → q: to capture one.</em></div>
+<div class="panel panel-pad" style="text-align:center;padding:24px 20px;border:1px dashed var(--m-line);">
+  <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 8px;">No open questions.</p>
+  <p class="ed" style="font-size:13px;color:var(--m-muted);margin:0;">
+    Press <kbd>Ctrl+K</kbd> and prefix with <code>q:</code> to capture a question.
+    Good research runs on unresolved questions — write them down when they surface.
+  </p>
+</div>
 {% else %}
 <div class="panel">
   {% for q in questions %}

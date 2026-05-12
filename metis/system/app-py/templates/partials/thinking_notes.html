@@ -1,6 +1,12 @@
 <!-- thinking_notes.html — Editorial note list -->
 {% if not notes %}
-<div class="empty-row"><em>No notes yet.</em></div>
+<div class="panel panel-pad" style="text-align:center;padding:24px 20px;border:1px dashed var(--m-line);">
+  <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 8px;">No notes yet.</p>
+  <p class="ed" style="font-size:13px;color:var(--m-muted);margin:0;">
+    Press <kbd>Ctrl+K</kbd> and prefix with <code>n:</code> to capture a note.
+    Or run <code>/metis-notes</code> in Claude Code to add from there.
+  </p>
+</div>
 {% else %}
 <div class="panel">
   {% for note in notes %}

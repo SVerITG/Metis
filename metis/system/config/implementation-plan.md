@@ -46,29 +46,22 @@ The feature backlog (`feature-backlog.md`) remains the raw list; this document i
 ## Phase B — Missing commands and surface fixes
 *These are gaps the researcher hits immediately. Small effort, high friction reduction.*
 
-- [ ] **M — 11 missing slash commands**  
-  These agents are registered in routing but have no `/<slug>` skill file — invoking them fails silently.  
-  Create stub `.claude/skills/<slug>/skill.md` for each:  
+- [x] **M — 11 missing slash commands** — DONE 2026-05-12  
+  All 11 skill.md files were already present with real content:  
   `course-builder`, `content-harvester`, `design-auditor`, `frontend-designer-builder`,  
   `hr-talent`, `learning-architect`, `news-aggregator`, `rc-builder`,  
-  `research-architect`, `visualization-maker`, `data-analyst`  
-  Each stub: description, input format, steps, output. Pull from existing system-prompts.
+  `research-architect`, `visualization-maker`, `data-analyst`
 
-- [ ] **XS — news_briefs source_type column**  
-  Add `source_type TEXT DEFAULT 'news'` column to `news_briefs` table (ALTER TABLE + backfill).  
-  Distinguish RSS news items from scientific articles. Feeds news rail categorisation and morning brief.
+- [x] **XS — news_briefs source_type column** — DONE (column already existed)  
+  `source_type TEXT DEFAULT 'news'` confirmed present in `news_briefs` schema.
 
-- [ ] **XS — metis-identity.json** `system/config/metis-identity.json`  
-  Machine-readable file: version, active agent list, install profile, feature flags, domain.  
-  Enables any AI interface to discover what this Metis instance can do without reading CLAUDE.md.
+- [x] **XS — metis-identity.json** `system/config/metis-identity.json` — DONE 2026-05-12  
+  Machine-readable file created: version, active agent list, install profile, feature flags, domain.
 
-- [ ] **L — Empty states on all 9 tabs**  
-  Every tab shows "0" or blank on first use with no guidance.  
-  Each tab needs first-run copy and a clear next-step action:  
-  - Knowledge: "Import your literature — run `/metis-library-setup` to connect Zotero"  
-  - Meetings: "Drop a transcript in `inbox/` or paste one with `/meeting-memory`"  
-  - Work: "Add your first project — type `t:` + task name in the capture bar"  
-  - (etc. for all 9 tabs)
+- [x] **L — Empty states on all 9 tabs** — DONE 2026-05-12  
+  Verified across all 9 tabs — 7 already had proper empty states.  
+  Upgraded `thinking_notes.html` and `thinking_questions.html` from bare `<em>` text to  
+  styled panels with keyboard shortcut guidance matching the rest of the system.
 
 ---
 
@@ -305,6 +298,7 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
 | 2026-05-12 | CONTRIBUTING.md rewritten: domain backgrounds as priority, full contribution spec |
 | 2026-05-12 | Comprehensive implementation plan created (`system/config/implementation-plan.md`) |
 | 2026-05-12 | **Phase A complete**: hook profiles, stop hook, PostToolUse hook, pre-compact hook — all four registered in `.claude/settings.json` |
+| 2026-05-12 | **Phase B complete**: 11 slash commands verified, `source_type` column confirmed, `metis-identity.json` created, empty states completed across all 9 tabs |
 
 ---
 
