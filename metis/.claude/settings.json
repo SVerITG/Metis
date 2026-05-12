@@ -2,11 +2,42 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "WebFetch|WebSearch|Bash|Write|Edit",
+        "matcher": "WebFetch|WebSearch|Bash|Write|Edit|Read",
         "hooks": [
           {
             "type": "command",
             "command": "node \".claude/hooks/pre-tool-use.mjs\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \".claude/hooks/post-tool-use.mjs\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \".claude/hooks/stop.mjs\""
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \".claude/hooks/pre-compact.mjs\""
           }
         ]
       }

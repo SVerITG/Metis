@@ -14,10 +14,34 @@ from metis_mcp.app_instance import app
 from metis_mcp.config import paths
 
 FEED_ALLOWLIST = [
-    ("WHO outbreak news",  "https://www.who.int/feeds/entity/csr/don/en/rss.xml",           "HAT,public-health"),
-    ("CDC EID journal",    "https://wwwnc.cdc.gov/eid/rss/ahead-of-print.xml",              "methods,public-health"),
-    ("PLOS NTDs latest",   "https://journals.plos.org/plosntds/feed/atom",                   "HAT,public-health,methods"),
-    ("Anthropic News",     "https://www.anthropic.com/news/rss.xml",                         "AI"),
+    # Disease surveillance & outbreak monitoring
+    ("WHO outbreak news",      "https://www.who.int/feeds/entity/csr/don/en/rss.xml",                                    "surveillance,public-health"),
+    ("ProMED-mail",            "https://promedmail.org/feed/",                                                            "surveillance,HAT,public-health"),
+    ("ECDC Threat Reports",    "https://www.ecdc.europa.eu/en/rss.xml",                                                  "surveillance,public-health"),
+    ("Africa CDC",             "https://africacdc.org/feed/",                                                             "surveillance,public-health,africa"),
+    # NTD & infectious disease research
+    ("PLOS NTDs",              "https://journals.plos.org/plosntds/feed/atom",                                            "HAT,ntd,public-health"),
+    ("CDC EID journal",        "https://wwwnc.cdc.gov/eid/rss/ahead-of-print.xml",                                       "methods,surveillance"),
+    ("Lancet Inf. Diseases",   "https://www.thelancet.com/rssFeed/laninf_current.xml",                                   "HAT,public-health,methods"),
+    ("MSF Science",            "https://www.msf.org/rss.xml",                                                            "HAT,public-health,field-research"),
+    ("Eurosurveillance",       "https://www.eurosurveillance.org/content/rss.xml",                                       "surveillance,methods,public-health"),
+    # Global health research
+    ("PLOS Medicine",          "https://journals.plos.org/plosmedicine/feed/atom",                                        "public-health,methods"),
+    ("BMJ Global Health",      "https://gh.bmj.com/rss/current.xml",                                                     "public-health,methods"),
+    ("Nature Medicine",        "https://www.nature.com/nm.rss",                                                           "methods,biomedical"),
+    ("Tropical Med & IH",      "https://onlinelibrary.wiley.com/action/showFeed?jc=13653156&type=etoc&feed=rss",         "HAT,methods,public-health"),
+    # Global health policy
+    ("IHP Newsletter",         "https://www.internationalhealthpolicies.org/feed/",                                       "policy,public-health"),
+    ("DEVEX Global Health",    "https://www.devex.com/news/rss.xml",                                                     "policy,public-health"),
+    ("The New Humanitarian",   "https://www.thenewhumanitarian.org/rss.xml",                                              "policy,public-health,africa"),
+    ("Reliefweb",              "https://reliefweb.int/updates/rss.xml",                                                  "policy,public-health"),
+    # World / general context
+    ("BBC World",              "https://feeds.bbci.co.uk/news/world/rss.xml",                                             "world-news"),
+    ("Reuters World",          "https://feeds.reuters.com/Reuters/worldNews",                                             "world-news"),
+    # AI & methods
+    ("Anthropic News",         "https://www.anthropic.com/news/rss.xml",                                                  "AI"),
+    ("arXiv cs.AI",            "https://rss.arxiv.org/rss/cs.AI",                                                         "AI,methods"),
+    ("arXiv q-bio (epi)",      "https://rss.arxiv.org/rss/q-bio.PE",                                                      "HAT,epidemiology,methods"),
 ]
 
 _DDL_NEWS = """
@@ -55,7 +79,7 @@ def _connect():
     return conn
 
 
-def _scan_news_feeds(max_per_feed: int = 10) -> dict:
+def scan_news_feeds(max_per_feed: int = 10) -> dict:
     added = 0
     errors = []
     with _connect() as conn:
@@ -89,7 +113,7 @@ def _scan_news_feeds(max_per_feed: int = 10) -> dict:
     return {"news_added": added, "errors": errors}
 
 
-def _scan_literature_folder() -> dict:
+def scan_literature_folder() -> dict:
     """Scan inputs/literature/ for new PDFs not yet in literature_metadata."""
     lit_path = paths.root / "inputs" / "literature"
     if not lit_path.exists():
@@ -136,7 +160,7 @@ async def scan_news() -> list[TextContent]:
     Checks WHO outbreak news, CDC EID journal, PLOS NTDs, and Anthropic news.
     Deduplicates by URL so running multiple times is safe.
     """
-    result = _scan_news_feeds()
+    result = scan_news_feeds()
     errors = result.get("errors", [])
     msg = f"News scan complete. {result['news_added']} new items added."
     if errors:
@@ -151,7 +175,7 @@ async def scan_literature() -> list[TextContent]:
     Walks all subdirectories. Uses the parent folder name as a domain tag.
     Deduplicates by title so running multiple times is safe.
     """
-    result = _scan_literature_folder()
+    result = scan_literature_folder()
     note = result.get("note", "")
     msg = f"Literature scan complete. {result['papers_added']} new papers registered."
     if note:
@@ -176,6 +200,60 @@ async def scan_inbox() -> list[TextContent]:
 
 
 @app.tool()
+async def get_news_briefs(
+    limit: int = 10,
+    source_type: str = "",
+    domain: str = "",
+    since: str = "",
+) -> list[TextContent]:
+    """Retrieve recent news briefs from the database.
+
+    Args:
+        limit: Maximum number of briefs to return (default 10).
+        source_type: Filter by type — "news" for RSS items, "article" for scientific papers. Empty = all.
+        domain: Filter by domain tag (e.g. "HAT", "AI", "public-health"). Empty = all.
+        since: ISO date string — only return briefs created after this date. Empty = all.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text="Database not found.")]
+
+    conditions: list[str] = []
+    params: list = []
+    if source_type:
+        conditions.append("source_type = ?")
+        params.append(source_type)
+    if domain:
+        conditions.append("domain = ?")
+        params.append(domain)
+    if since:
+        conditions.append("created_at >= ?")
+        params.append(since)
+
+    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    params.append(limit)
+
+    with _connect() as conn:
+        conn.execute(_DDL_NEWS)
+        rows = conn.execute(
+            f"SELECT brief_id, title, domain, signal_strength, summary, source_url, "
+            f"source_type, created_at, tags "
+            f"FROM news_briefs {where} ORDER BY created_at DESC LIMIT ?",
+            params,
+        ).fetchall()
+
+    if not rows:
+        return [TextContent(type="text", text="No news briefs found.")]
+
+    lines = [f"{len(rows)} brief(s):\n"]
+    for r in rows:
+        tag = f"[{(r['domain'] or '').upper()}]" if r["domain"] else "[—]"
+        src = f"\n  {r['source_url']}" if r["source_url"] else ""
+        summary = (r["summary"] or "")[:200]
+        lines.append(f"{tag} {r['title']}\n  {summary}{src}")
+    return [TextContent(type="text", text="\n\n".join(lines))]
+
+
+@app.tool()
 async def full_scan() -> list[TextContent]:
     """Run all Metis update scans in sequence and return a combined report.
 
@@ -192,7 +270,7 @@ async def full_scan() -> list[TextContent]:
 
     # 1. News
     try:
-        news = _scan_news_feeds()
+        news = scan_news_feeds()
         err_note = f" ({len(news['errors'])} feed errors)" if news["errors"] else ""
         lines.append(f"NEWS       {news['news_added']:>4} new items{err_note}")
     except Exception as e:
@@ -200,7 +278,7 @@ async def full_scan() -> list[TextContent]:
 
     # 2. Literature
     try:
-        lit = _scan_literature_folder()
+        lit = scan_literature_folder()
         note = f" ({lit.get('note', '')})" if lit.get("note") else ""
         lines.append(f"LITERATURE {lit['papers_added']:>4} new papers{note}")
     except Exception as e:
