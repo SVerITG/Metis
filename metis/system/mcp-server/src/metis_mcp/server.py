@@ -48,6 +48,8 @@ from metis_mcp.tools import (  # noqa: E402, F401
     fulltext_index,
     user_profile,
     literature_monitor,
+    meetings,
+    course_builder,
 )
 
 
