@@ -223,7 +223,7 @@ If you answer those correctly, you will usually choose the right frequency measu
 - [Framingham Heart Study overview](https://framinghamheartstudy.org/)
 
 ## Links to Metis library
-- `06_library/methods/biostatistics-essentials.md`
-- `06_library/methods/study-designs.md`
-- `06_library/methods/surveillance-systems.md`
-- `06_library/concepts/elimination-framework.md`
+- `knowledge/library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/study-designs.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/concepts/elimination-framework.md`

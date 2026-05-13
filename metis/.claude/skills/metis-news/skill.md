@@ -10,6 +10,10 @@ complexity: quick
 
 A curated news digest from the CLI — the Today tab's news rail without opening a browser. Shows the most recent signals from `news_briefs`, grouped by domain. Accepts an optional domain filter.
 
+## Critical: MCP tools are always available
+
+The `metis-rc` MCP server is registered globally. **Always call the MCP tools immediately — do not say they are unavailable without first attempting the call.** If a tool call returns an error, report that error. If it succeeds, use the data.
+
 ## What to do when invoked
 
 **Usage:** `/metis_news` or `/metis_news [domain]`

@@ -109,9 +109,9 @@ updated: "2026-03-30"
 
 ## Learning Path
 
-- Start with `06_library/courses/spatial-epidemiology/` and `06_library/courses/epidemiology-foundations/`.
-- Pair with `06_library/methods/data-management.md` for reproducible GIS workflows and `06_library/concepts/digital-health-epi.md` for digital surveillance integration.
-- Use alongside `06_library/concepts/health-systems-strengthening.md` for service or workforce mapping insights.
+- Start with `knowledge/library/courses/spatial-epidemiology/` and `knowledge/library/courses/epidemiology-foundations/`.
+- Pair with `knowledge/library/methods/data-management.md` for reproducible GIS workflows and `knowledge/library/concepts/digital-health-epi.md` for digital surveillance integration.
+- Use alongside `knowledge/library/concepts/health-systems-strengthening.md` for service or workforce mapping insights.
 - In the Learning Hub, this card supports **Spatial epidemiology** and **Data management & R**.
 
 ---

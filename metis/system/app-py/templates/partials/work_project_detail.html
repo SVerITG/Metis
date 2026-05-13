@@ -1,0 +1,114 @@
+<!-- work_project_detail.html — Full project panel (loaded in overlay) -->
+<div class="proj-detail-overlay" id="proj-detail-overlay" onclick="if(event.target===this)closeProjectDetail()">
+<div class="proj-detail-panel">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:flex-start;gap:12px;padding:28px 32px 20px;border-bottom:1px solid var(--m-rule);">
+    <div style="flex:1;">
+      {% if p.domain %}
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
+                  color:var(--m-muted);margin-bottom:6px;">{{ p.domain }}</div>
+      {% endif %}
+      <h2 style="font-family:var(--m-display);font-size:22px;font-weight:500;
+                 letter-spacing:-0.02em;color:var(--m-ink);margin:0 0 6px;">{{ p.title }}</h2>
+      {% if last_activity %}
+      <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
+        Last activity · {{ last_activity[:16] | replace('T',' ') }}
+      </div>
+      {% endif %}
+    </div>
+    <button onclick="closeProjectDetail()"
+            style="background:none;border:none;font-size:20px;color:var(--m-muted);
+                   cursor:pointer;padding:0;line-height:1;flex-shrink:0;margin-top:2px;">✕</button>
+  </div>
+
+  <div style="padding:24px 32px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:24px;">
+
+    <!-- Description -->
+    {% if p.description %}
+    <div>
+      <div class="caps-label" style="margin-bottom:8px;">About</div>
+      <p style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);
+                line-height:1.6;margin:0;">{{ p.description }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Next step -->
+    {% if p.next_step %}
+    <div>
+      <div class="caps-label" style="margin-bottom:8px;color:var(--m-accent);">Next step</div>
+      <div style="font-family:var(--m-mono);font-size:12px;color:var(--m-accent);
+                  background:var(--m-accent-wash);border-radius:4px;padding:10px 14px;
+                  line-height:1.5;">{{ p.next_step }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Open tasks — grouped by category -->
+    <div>
+      <div class="caps-label" style="margin-bottom:10px;">
+        Open tasks
+        <span style="margin-left:6px;font-weight:400;color:var(--m-muted);">{{ open_count }}</span>
+      </div>
+      {% if grouped %}
+        {% for grp in grouped %}
+        <div style="margin-bottom:14px;">
+          {% if grp.category and grp.category != 'General' %}
+          <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;
+                      text-transform:uppercase;color:var(--m-muted);padding-bottom:4px;
+                      border-bottom:1px solid var(--m-rule-soft);margin-bottom:6px;">
+            {{ grp.category | replace('_',' ') }} · {{ grp.tasks | length }}
+          </div>
+          {% endif %}
+          {% for t in grp.tasks %}
+          <div style="display:flex;align-items:baseline;gap:10px;padding:4px 0;">
+            <span style="font-family:var(--m-mono);font-size:10px;flex-shrink:0;
+                         color:{% if t.status == 'blocked' %}var(--m-alert){% elif t.status == 'in_progress' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
+              {% if t.status == 'blocked' %}BLOCKED{% elif t.status == 'in_progress' %}IN PROGRESS{% else %}·{% endif %}
+            </span>
+            <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);
+                         line-height:1.4;flex:1;">{{ t.title }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      {% else %}
+      <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">No open tasks.</div>
+      {% endif %}
+    </div>
+
+    <!-- Completed tasks -->
+    {% if done_tasks %}
+    <div>
+      <div class="caps-label" style="margin-bottom:10px;color:var(--m-ok);">Recently completed</div>
+      {% for t in done_tasks %}
+      <div style="display:flex;align-items:baseline;gap:10px;padding:3px 0;
+                  border-bottom:1px solid var(--m-rule-soft);">
+        <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-ok);flex-shrink:0;">✓</span>
+        <span style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);
+                     line-height:1.35;flex:1;text-decoration:line-through;opacity:0.7;">{{ t.title }}</span>
+        {% if t.updated_at %}
+        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);flex-shrink:0;">
+          {{ t.updated_at[:10] }}
+        </span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Links -->
+    {% if p.external_path or p.github_url %}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--m-rule-soft);">
+      {% if p.github_url %}
+      <a class="btn btn--ghost btn--caps" href="{{ p.github_url }}" target="_blank" rel="noopener">GitHub</a>
+      {% endif %}
+      {% if p.external_path %}
+      <button class="btn btn--ghost btn--caps"
+              onclick="closeProjectDetail();launchProjectTarget('{{ p.id }}','explorer')">Open Folder</button>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div><!-- /body -->
+</div><!-- /panel -->
+</div><!-- /overlay -->

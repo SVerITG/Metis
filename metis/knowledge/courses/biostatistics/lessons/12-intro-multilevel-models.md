@@ -112,6 +112,6 @@ The practical lesson is that multilevel modeling is not just a more advanced reg
 - [CDC Principles of Epidemiology](https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/index.html)
 
 ## Links to Metis library
-- `06_library/methods/biostatistics-essentials.md`
-- `06_library/methods/spatial-epidemiology.md`
-- `06_library/methods/study-designs.md`
+- `knowledge/library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/spatial-epidemiology.md`
+- `knowledge/library/methods/study-designs.md`

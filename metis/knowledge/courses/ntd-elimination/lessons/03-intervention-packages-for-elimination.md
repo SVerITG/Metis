@@ -37,6 +37,6 @@ Operationally, the challenge is not only choosing the right interventions but se
 - [WHO publications](https://www.who.int/publications)
 
 ## Links to Metis library
-- `06_library/disease-areas/ntd-overview.md`
-- `06_library/disease-areas/hat-sleeping-sickness.md`
-- `06_library/methods/surveillance-systems.md`
+- `knowledge/library/disease-areas/ntd-overview.md`
+- `knowledge/library/disease-areas/hat-sleeping-sickness.md`
+- `knowledge/library/methods/surveillance-systems.md`

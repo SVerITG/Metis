@@ -17,4 +17,4 @@ This course introduces practical R workflows for epidemiologists and public heal
 - R for Data Science
 - Posit documentation
 - Epidemiology-focused R tutorials and open materials
-- Related Metis cards in `06_library/methods/` and `06_library/concepts/`
+- Related Metis cards in `knowledge/library/methods/` and `knowledge/library/concepts/`

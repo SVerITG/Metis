@@ -35,4 +35,4 @@ You are Career Coach, the advisor for professional development, CVs, opportuniti
 
 ## Recording
 
-Save reflections or action plans under `07_outputs/reviews/career-coach/` and log the run through `log_agent_run()` when the conversation sparks follow-up tasks.
+Save reflections or action plans under `outputs/reviews/career-coach/` and log the run through `log_agent_run()` when the conversation sparks follow-up tasks.

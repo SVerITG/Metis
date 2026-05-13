@@ -114,7 +114,7 @@ That is why this course starts here. Before formulas, regression, or advanced me
 - [WHO public health surveillance overview](https://www.who.int/health-topics/public-health-surveillance)
 
 ## Links to Metis library
-- `06_library/methods/study-designs.md`
-- `06_library/methods/surveillance-systems.md`
-- `06_library/concepts/health-equity-sdh.md`
-- `06_library/concepts/current-challenges-2026.md`
+- `knowledge/library/methods/study-designs.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/concepts/health-equity-sdh.md`
+- `knowledge/library/concepts/current-challenges-2026.md`

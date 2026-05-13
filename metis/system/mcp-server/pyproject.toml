@@ -32,6 +32,12 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+voice = [
+    "faster-whisper>=1.0",
+    "sounddevice>=0.4",
+    "numpy>=1.24",
+    "scipy>=1.10",
+]
 
 [project.scripts]
 metis-mcp = "metis_mcp.server:run"

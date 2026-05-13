@@ -130,6 +130,6 @@ The practical lesson is that digital surveillance should be introduced only when
 - [WHO digital health strategy extension news](https://www.who.int/news/item/23-05-2025-world-health-assembly-endorses-extension-of-the-global-digital-health-strategy-to-2027)
 
 ## Links to Metis library
-- `06_library/concepts/digital-health-epi.md`
-- `06_library/methods/surveillance-systems.md`
-- `06_library/methods/data-management.md`
+- `knowledge/library/concepts/digital-health-epi.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/methods/data-management.md`

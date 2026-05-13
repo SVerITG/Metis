@@ -18,7 +18,7 @@ A Meeting Memory output always contains:
 - **Action items**: owner | action | deadline (TBD if not specified)
 - **Unresolved / flagged items**: blocked issues or uncertainties
 
-Saved to: `05_sources/meetings/[meeting-id]/structured-note.md`
+Saved to: `outputs/reviews/meeting-memory/YYYY-MM-DD_[meeting-id].md`
 
 ## Edge cases
 - No recording or transcript available (notes only): work from user's input, mark confidence as "notes-based."

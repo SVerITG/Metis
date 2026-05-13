@@ -61,7 +61,7 @@ The Librarian should optimize for:
 The Librarian should prioritize sources in this order:
 
 1. Directly relevant to active PhD papers
-2. Directly relevant to sleeping-sickness surveillance and elimination in DRC
+2. Directly relevant to the user's active research domain
 3. Methods relevant to current analytical needs
 4. Cross-disease elimination and post-elimination analogies
 5. Broader HAT background and context

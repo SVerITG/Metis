@@ -144,6 +144,6 @@ The practical lesson is that GIS quality control is part of epidemiologic validi
 - [R-spatial transition guidance](https://r-spatial.org/r/2023/05/15/evolution4.html)
 
 ## Links to Metis library
-- `06_library/methods/gis-for-epidemiology.md`
-- `06_library/methods/data-management.md`
-- `06_library/methods/spatial-epidemiology.md`
+- `knowledge/library/methods/gis-for-epidemiology.md`
+- `knowledge/library/methods/data-management.md`
+- `knowledge/library/methods/spatial-epidemiology.md`

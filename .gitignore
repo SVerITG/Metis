@@ -36,6 +36,12 @@ __pycache__/
 Thumbs.db
 desktop.ini
 
+# OneDrive sync conflict files (named like foo-239GX64.py, foo-DL29GY3.toml)
+*-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9].py
+*-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9].toml
+*-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9].R
+*-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]-*.py
+
 # Secrets
 .env
 *.env
@@ -51,23 +57,30 @@ dist/
 # They stay on your machine but are never committed.
 metis/journal/
 metis/inbox/
-metis/outputs/reviews/
+metis/inputs/meetings/
+metis/outputs/
 metis/projects/active/
 metis/archive/
+metis/basket/
+metis/knowledge/library/papers/
+metis/knowledge/library/open-access-books/
 metis/knowledge/library/disease-areas/
 metis/knowledge/library/reading-lists/
 metis/knowledge/library/people-organizations/
+metis/system/app/data/
+metis-eval-prompt.md
+metis-functional-test.docx
 
-# Personal agent context files (added after personalisation)
+# Personal agent overlay files. Only *-context.md and the user-specific
+# `sources.md` overlays are gitignored — all generic skill.md / system-prompt.md
+# files are tracked so a fresh clone is functional out of the box.
 metis/agents/**/*-context.md
 metis/agents/librarian/sources.md
 metis/agents/news-radar/sources.md
-metis/agents/epidemiologist/skill.md
-metis/agents/phd-architect/system-prompt.md
-metis/agents/research-architect/system-prompt.md
 
 # Per-user config and session state
 metis/system/config/user-preferences.json
+metis/system/config/user-config.yaml
 metis/system/config/session-log.md
 metis/system/config/SETUP-*.md
 metis/system/config/claude-project-instructions.md

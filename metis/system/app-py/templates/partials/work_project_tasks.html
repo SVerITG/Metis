@@ -1,0 +1,76 @@
+<!-- work_project_tasks.html — Top-5 tasks + expand to full detail -->
+{% if not tasks and not done_count %}
+<div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);padding:4px 0;">
+  NO OPEN TASKS
+</div>
+{% else %}
+
+{% for t in tasks %}
+<div style="display:flex;align-items:baseline;gap:8px;padding:3px 0;border-bottom:1px solid var(--m-rule-soft);">
+  <span style="font-family:var(--m-mono);font-size:9px;flex-shrink:0;
+               color:{% if t.status == 'blocked' %}var(--m-alert){% elif t.status == 'in_progress' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
+    {% if t.status == 'blocked' %}●{% elif t.status == 'in_progress' %}▸{% else %}·{% endif %}
+  </span>
+  <span style="font-family:var(--m-display);font-size:12px;color:var(--m-ink);line-height:1.35;
+               white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;"
+        title="{{ t.title }}">{{ t.title }}</span>
+  <button onclick="markProjectTaskDone('{{ t.task_id }}','{{ project_id }}')"
+          title="Mark done"
+          style="background:none;border:none;padding:0;cursor:pointer;color:var(--m-muted);
+                 font-size:11px;flex-shrink:0;line-height:1;opacity:0.45;">✓</button>
+</div>
+{% endfor %}
+
+{% if total_open > 5 or done_count %}
+<div style="display:flex;align-items:center;gap:8px;padding-top:6px;">
+  {% if total_open > 5 %}
+  <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">+{{ total_open - 5 }} more</span>
+  {% endif %}
+  {% if done_count %}
+  <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-ok);">{{ done_count }} done</span>
+  {% endif %}
+  <button onclick="openProjectDetail('{{ project_id }}')"
+          style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:3px;
+                 padding:2px 8px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+                 color:var(--m-muted);cursor:pointer;">ALL TASKS ↗</button>
+</div>
+{% endif %}
+
+{% endif %}
+
+<!-- Quick-add task form (hidden by default) -->
+<div id="task-add-{{ project_id }}" style="display:none;padding-top:8px;border-top:1px solid var(--m-rule-soft);margin-top:6px;">
+  <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+    <input id="task-title-{{ project_id }}"
+           type="text"
+           placeholder="Task title…"
+           onkeydown="if(event.key==='Enter'){submitQuickTask('{{ project_id }}');}"
+           style="flex:1;min-width:120px;font-family:var(--m-display);font-size:12px;
+                  border:1px solid var(--m-line);border-radius:3px;
+                  padding:4px 8px;background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+    <select id="task-cat-{{ project_id }}"
+            style="font-family:var(--m-mono);font-size:10px;border:1px solid var(--m-line);
+                   border-radius:3px;padding:4px 6px;background:var(--m-surface-2);color:var(--m-muted);">
+      <option value="general">general</option>
+      <option value="urgent">urgent</option>
+      <option value="high">high</option>
+      <option value="research">research</option>
+      <option value="writing">writing</option>
+      <option value="code">code</option>
+      <option value="review">review</option>
+    </select>
+    <button onclick="submitQuickTask('{{ project_id }}')"
+            style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
+                   padding:4px 10px;font-family:var(--m-mono);font-size:10px;cursor:pointer;">Add</button>
+    <button onclick="document.getElementById('task-add-{{ project_id }}').style.display='none';"
+            style="background:none;border:none;padding:2px 4px;cursor:pointer;color:var(--m-muted);font-size:13px;">✕</button>
+  </div>
+</div>
+
+<!-- "+ add task" trigger -->
+<button onclick="document.getElementById('task-add-{{ project_id }}').style.display='block';
+                 document.getElementById('task-title-{{ project_id }}').focus();"
+        style="background:none;border:none;padding:4px 0 0;cursor:pointer;
+               font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;
+               color:var(--m-muted);text-decoration:underline dotted;text-underline-offset:2px;
+               display:block;margin-top:4px;">+ add task</button>

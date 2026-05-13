@@ -177,6 +177,6 @@ Those questions keep cross-sectional evidence useful without overselling it.
 - [OpenIntro Statistics](https://www.openintro.org/book/os/)
 
 ## Links to Metis library
-- `06_library/methods/study-designs.md`
-- `06_library/methods/sampling-strategies.md`
-- `06_library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/study-designs.md`
+- `knowledge/library/methods/sampling-strategies.md`
+- `knowledge/library/methods/biostatistics-essentials.md`

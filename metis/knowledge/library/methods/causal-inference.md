@@ -181,9 +181,9 @@ Criteria for assessing causation from observational evidence (not a checklist â€
 
 ## Learning Path
 
-- Start with `06_library/courses/epidemiology-foundations/`, then `06_library/courses/biostatistics/`.
-- Pair this card with `06_library/methods/study-designs.md` for design logic and `06_library/methods/biostatistics-essentials.md` for estimation tools.
-- Use it alongside `06_library/courses/research-writing/` when drafting study protocols and analytic plans.
+- Start with `knowledge/library/courses/epidemiology-foundations/`, then `knowledge/library/courses/biostatistics/`.
+- Pair this card with `knowledge/library/methods/study-designs.md` for design logic and `knowledge/library/methods/biostatistics-essentials.md` for estimation tools.
+- Use it alongside `knowledge/library/courses/research-writing/` when drafting study protocols and analytic plans.
 - In the Learning Hub, this card aligns primarily with **Epidemiological methods** and secondarily with **Biostatistics**.
 
 ---

@@ -56,7 +56,7 @@ INPUT: folder path containing R scripts
 1. List and categorise all scripts
 2. Apply single-file review to each (or group similar ones)
 3. Aggregate findings by severity
-4. Produce prioritised report at 07_outputs/reviews/[date]-r-audit.md
+4. Produce prioritised report at outputs/reviews/[date]-r-audit.md
 OUTPUT: prioritised audit report
 ```
 

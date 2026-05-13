@@ -1,41 +1,34 @@
-<div class="card p-3">
-  <div class="d-flex align-items-center mb-2">
-    <i class="bi bi-moon-stars me-2 text-info"></i>
-    <span class="fw-semibold">Overnight summary</span>
-    <span class="text-muted small ms-2">(last 24 h)</span>
+{# today_overnight.html — Archive (replaces Bootstrap overnight-count card)
+   Three ledger cells: NEWS · IDEAS · MEETINGS (overnight counts).
+   Context vars: news, ideas, meetings — ints (last 24h)
+#}
+
+{% set total = (news or 0) + (ideas or 0) + (meetings or 0) %}
+
+{% if total == 0 %}
+  <div class="ledger-cell">
+    <div class="ledger-n tnum" style="color:var(--m-muted-soft);">—</div>
+    <div class="ledger-l">NEWS</div>
   </div>
-
-  {% set total = news + ideas + meetings %}
-
-  {% if total == 0 %}
-  <div class="text-muted small">
-    <i class="bi bi-check2-all me-1 text-success"></i>
-    Clean slate — nothing new overnight.
+  <div class="ledger-cell">
+    <div class="ledger-n tnum" style="color:var(--m-muted-soft);">—</div>
+    <div class="ledger-l">IDEAS</div>
   </div>
-  {% else %}
-  <div class="d-flex flex-wrap gap-3">
-
-    {% if news > 0 %}
-    <div class="overnight-count">
-      <div class="overnight-count-value text-info">{{ news }}</div>
-      <div class="overnight-count-label">news item{% if news != 1 %}s{% endif %}</div>
-    </div>
-    {% endif %}
-
-    {% if ideas > 0 %}
-    <div class="overnight-count">
-      <div class="overnight-count-value text-warning">{{ ideas }}</div>
-      <div class="overnight-count-label">new idea{% if ideas != 1 %}s{% endif %}</div>
-    </div>
-    {% endif %}
-
-    {% if meetings > 0 %}
-    <div class="overnight-count">
-      <div class="overnight-count-value text-primary">{{ meetings }}</div>
-      <div class="overnight-count-label">new meeting{% if meetings != 1 %}s{% endif %}</div>
-    </div>
-    {% endif %}
-
+  <div class="ledger-cell">
+    <div class="ledger-n tnum" style="color:var(--m-muted-soft);">—</div>
+    <div class="ledger-l">MEETINGS</div>
   </div>
-  {% endif %}
-</div>
+{% else %}
+  <div class="ledger-cell">
+    <div class="ledger-n tnum">{{ news or 0 }}</div>
+    <div class="ledger-l">{% if news == 1 %}NEWS ITEM{% else %}NEWS{% endif %}</div>
+  </div>
+  <div class="ledger-cell">
+    <div class="ledger-n tnum">{{ ideas or 0 }}</div>
+    <div class="ledger-l">{% if ideas == 1 %}IDEA{% else %}IDEAS{% endif %}</div>
+  </div>
+  <div class="ledger-cell">
+    <div class="ledger-n tnum">{{ meetings or 0 }}</div>
+    <div class="ledger-l">{% if meetings == 1 %}MEETING{% else %}MEETINGS{% endif %}</div>
+  </div>
+{% endif %}

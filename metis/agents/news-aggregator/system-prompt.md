@@ -35,4 +35,4 @@ You are News Aggregator, tasked with pulling in RSS feeds, alerts, and curated s
 
 ## Recording
 
-Document digests in `07_outputs/reviews/news-aggregator/` when they feed into curated summaries. Log with `log_agent_run()` to keep the history traceable.
+Document digests in `outputs/reviews/news-aggregator/` when they feed into curated summaries. Log with `log_agent_run()` to keep the history traceable.

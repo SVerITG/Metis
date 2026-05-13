@@ -35,7 +35,7 @@ _AGENT_RUNS_MIGRATE = [
 async def get_agent_context(agent_slug: str) -> list[TextContent]:
     """Load an agent's system prompt and contract from the RC.
 
-    Reads system-prompt.md and contract.md from 02_agents/{agent_slug}/.
+    Reads system-prompt.md and contract.md from agents/{agent_slug}/.
     If the agent is not found, lists all available agents.
 
     Args:
@@ -147,3 +147,58 @@ async def log_agent_run(
         ]
     except Exception as e:
         return [TextContent(type="text", text=f"Error logging agent run: {e}")]
+
+
+@app.tool()
+async def get_agent_runs(
+    limit: int = 10,
+    since: str = "",
+    agent_slug: str = "",
+) -> list[TextContent]:
+    """Retrieve recent agent run history from the database.
+
+    Args:
+        limit: Maximum number of runs to return (default 10).
+        since: ISO date/datetime string — only return runs after this time. Empty = all.
+        agent_slug: Filter by agent name (e.g. "librarian", "metis"). Empty = all agents.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text="Database not found.")]
+
+    conditions: list[str] = []
+    params: list = []
+    if since:
+        conditions.append("created_at >= ?")
+        params.append(since)
+    if agent_slug:
+        conditions.append("agent_slug = ?")
+        params.append(agent_slug)
+
+    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+    params.append(limit)
+
+    try:
+        with connect(paths.db) as conn:
+            conn.execute(_AGENT_RUNS_DDL)
+            rows = conn.execute(
+                f"SELECT run_id, agent_slug, task_summary, status, created_at, "
+                f"input_tokens, output_tokens, model "
+                f"FROM agent_runs {where} ORDER BY created_at DESC LIMIT ?",
+                params,
+            ).fetchall()
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error reading agent runs: {e}")]
+
+    if not rows:
+        return [TextContent(type="text", text="No agent runs found.")]
+
+    lines = [f"{len(rows)} run(s):\n"]
+    for r in rows:
+        tokens = (r["input_tokens"] or 0) + (r["output_tokens"] or 0)
+        tok_str = f" · {tokens:,} tok" if tokens else ""
+        model_str = f" · {r['model']}" if r.get("model") else ""
+        lines.append(
+            f"[{r['agent_slug']}] {(r['task_summary'] or '')[:80]}\n"
+            f"  {(r['created_at'] or '')[:16]} · {r['status']}{tok_str}{model_str}"
+        )
+    return [TextContent(type="text", text="\n\n".join(lines))]

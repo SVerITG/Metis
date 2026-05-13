@@ -41,6 +41,22 @@
     </button>
   </div>
 
+  <!-- Section: Field articles alert -->
+  {% if field_articles %}
+  <div class="focus-section">
+    <div class="caps-label" style="color:var(--m-ok);">
+      <i class="bi bi-journal-text" style="margin-right:4px;"></i>New in your field
+    </div>
+    {% for a in field_articles %}
+    <a class="focus-field-article" href="javascript:void(0)" onclick="openNewsSummary({{ a.id }})"
+       style="display:block;padding:5px 0;border-bottom:1px solid var(--m-rule-soft);text-decoration:none;">
+      <div style="font-size:11px;color:var(--m-ink);line-height:1.4;">{{ a.title }}</div>
+      <div style="font-size:10px;color:var(--m-muted);margin-top:2px;">{{ a.time }}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
   {% else %}
 
   <div class="focus-section">

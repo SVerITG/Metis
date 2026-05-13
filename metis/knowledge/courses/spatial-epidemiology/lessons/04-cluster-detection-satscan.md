@@ -123,6 +123,6 @@ The practical habit is to treat cluster detection as one layer of evidence, not 
 - [CRAN rsatscan package](https://cran.r-project.org/package=rsatscan)
 
 ## Links to Metis library
-- `06_library/methods/spatial-epidemiology.md`
-- `06_library/methods/surveillance-systems.md`
-- `06_library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/spatial-epidemiology.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/methods/outbreak-investigation.md`

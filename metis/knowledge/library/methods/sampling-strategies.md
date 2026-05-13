@@ -97,9 +97,9 @@ updated: "2026-03-30"
 
 ## Learning Path
 
-- Start with `06_library/courses/epidemiology-foundations/` and `06_library/courses/surveillance-methods/`.
-- Pair this card with `06_library/methods/biostatistics-essentials.md` because weighting, design effects, precision, and inference depend on the sampling design.
-- Use `06_library/methods/outbreak-investigation.md` when rapid field sampling is being planned during acute events.
+- Start with `knowledge/library/courses/epidemiology-foundations/` and `knowledge/library/courses/surveillance-methods/`.
+- Pair this card with `knowledge/library/methods/biostatistics-essentials.md` because weighting, design effects, precision, and inference depend on the sampling design.
+- Use `knowledge/library/methods/outbreak-investigation.md` when rapid field sampling is being planned during acute events.
 - In the Learning Hub, this card aligns primarily with **Sampling strategies** and also supports **Surveillance systems** and **Epidemiological methods**.
 
 ---

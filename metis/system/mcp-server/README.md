@@ -14,7 +14,7 @@ adds the venv site-packages to `PYTHONPATH`.
 ## Installation
 
 ```bash
-cd "08_system/mcp-server"
+cd "system/mcp-server"
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
@@ -48,7 +48,7 @@ pip install -e .
   "mcpServers": {
     "metis-rc": {
       "command": "bash",
-      "args": ["/path/to/metis/08_system/mcp-server/run_mcp_server.sh"],
+      "args": ["/path/to/metis/system/mcp-server/run_mcp_server.sh"],
       "env": {
         "METIS_RC_ROOT": "/path/to/your/metis"
       }
@@ -67,7 +67,7 @@ pip install -e .
 
 | Tool | Description |
 |---|---|
-| `search_literature` | Search the sleeping-sickness literature database |
+| `search_literature` | Search the user's literature database |
 | `get_agent_context` | Load an agent's system prompt and contract |
 | `log_agent_run` | Record an agent run for audit tracking |
 | `search_notes` | Search markdown notes across domains/projects/library |

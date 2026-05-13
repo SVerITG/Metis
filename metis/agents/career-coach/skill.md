@@ -16,7 +16,7 @@ A Career Coach output always contains:
 - **Action list**: concrete next steps with deadlines (training, networking, materials)
 - **EU context note** (when relevant): recruitment timeline, eligibility, process specifics
 
-Action plans saved to: `07_outputs/reviews/career-coach/YYYY-MM-DD_[task].md`
+Action plans saved to: `outputs/reviews/career-coach/YYYY-MM-DD_[task].md`
 
 ## Edge cases
 - User provides no existing materials: ask for CV, target role, and time horizon before advising.

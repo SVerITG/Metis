@@ -18,7 +18,7 @@ A Educational Expert output always contains:
 - **Recommended delivery format**: self-paced / facilitated / blended, with rationale
 - **Jump-in navigation note**: which modules can be entered independently
 
-Saved to: `07_outputs/reviews/edu-expert/YYYY-MM-DD_[course-slug].md`
+Saved to: `outputs/reviews/edu-expert/YYYY-MM-DD_[course-slug].md`
 
 ## Edge cases
 - Existing course does not follow standards: propose a retrofit (add objectives, split dense modules) — do not rewrite from scratch without approval.

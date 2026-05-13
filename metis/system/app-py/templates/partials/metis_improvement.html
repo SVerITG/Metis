@@ -1,7 +1,45 @@
-{# Self-improvement loop surface — Phase 9b #}
+{# Self-improvement loop surface — Phase 9b, with "What I've learned" header #}
 {% set totals = themes.totals if themes else None %}
 
 <div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
+    <div>
+      <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">What I&rsquo;ve learned</div>
+      <div style="font-size:12.5px;color:var(--m-muted);margin-top:2px;">
+        {% if learned %}
+          {{ learned|length }} change{{ '' if learned|length == 1 else 's' }} applied to specialist skills.
+        {% else %}
+          No improvements applied yet — when a draft proposal gets approved and applied, it shows up here.
+        {% endif %}
+      </div>
+    </div>
+    <span class="tail" style="cursor:pointer;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);"
+          hx-get="/api/partial/metis/improvement"
+          hx-target="#metis-improvement-body"
+          hx-swap="innerHTML">REFRESH</span>
+  </div>
+</div>
+
+{% if learned %}
+<div>
+  {% for L in learned %}
+  <div class="learned-row">
+    <div class="learned-head">
+      <span class="chip chip--ok" style="font-size:9px;">APPLIED</span>
+      <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">{{ L.agent_slug }}</span>
+      <span class="learned-when">{{ (L.applied_at or L.proposed_at or '')[:16] }}</span>
+    </div>
+    {% if L.rationale %}
+    <div style="font-size:12.5px;color:var(--m-text);line-height:1.55;">{{ L.rationale }}</div>
+    {% else %}
+    <div style="font-size:12.5px;color:var(--m-muted);font-style:italic;">No rationale recorded for proposal #{{ L.id }}.</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);border-top:1px solid var(--m-rule-soft);">
   <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
     <div>
       <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">Reflexion themes — last {{ days }} days</div>
@@ -13,10 +51,6 @@
         {% endif %}
       </div>
     </div>
-    <span class="tail" style="cursor:pointer;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);"
-          hx-get="/api/partial/metis/improvement"
-          hx-target="#metis-improvement-body"
-          hx-swap="innerHTML">REFRESH</span>
   </div>
 </div>
 
@@ -62,11 +96,20 @@
           <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);margin-left:8px;">{{ p.agent_slug }}</span>
           <span style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);margin-left:8px;">{{ (p.proposed_at or '')[:16] }}</span>
         </div>
-        <div style="display:flex;gap:6px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
           {% if p.status == 'draft' %}
-          <button class="btn btn--ghost btn--caps" onclick="promoteProposal({{ p.id }})">Promote</button>
+          <button class="btn btn--ghost btn--caps" onclick="promoteProposal({{ p.id }})" title="Mark as pending review">Promote</button>
           {% endif %}
+          {% if p.status in ('draft','pending','approved') %}
+          <button class="btn btn--ghost btn--caps" onclick="previewProposal({{ p.id }})" title="See the diff before applying">Preview diff</button>
+          <button class="btn btn--primary btn--caps" onclick="applyProposal({{ p.id }})" title="Write the change to the agent's skill.md (with backup)">Apply</button>
+          {% endif %}
+          {% if p.status == 'applied' %}
+          <span class="chip chip--ok" style="font-size:10px;">APPLIED</span>
+          {% endif %}
+          {% if p.status not in ('rejected','applied') %}
           <button class="btn btn--sec btn--caps" onclick="rejectProposal({{ p.id }})">Reject</button>
+          {% endif %}
         </div>
       </div>
       {% if p.rationale %}

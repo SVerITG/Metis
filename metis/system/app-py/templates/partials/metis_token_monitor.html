@@ -1,0 +1,98 @@
+{# Token monitor — totals + by-agent bars + by-model bars.
+   Inputs: runs_today, tokens_today, runs_window, tokens_window, days,
+           by_agent[], by_model[], active_model #}
+{% macro fmt_tokens(n) -%}
+  {%- if n is none -%}—{%- elif n >= 1000000 -%}{{ '%.1f' % (n/1000000) }}M
+  {%- elif n >= 1000 -%}{{ '%.1f' % (n/1000) }}K
+  {%- else -%}{{ n }}{%- endif -%}
+{%- endmacro %}
+
+<div class="token-stats-row">
+  <div class="token-stat">
+    <div class="token-stat-num">{{ fmt_tokens(tokens_today) }}</div>
+    <div class="token-stat-label">tokens · today</div>
+  </div>
+  <div class="token-stat">
+    <div class="token-stat-num">{{ runs_today }}</div>
+    <div class="token-stat-label">runs · today</div>
+  </div>
+  <div class="token-stat">
+    <div class="token-stat-num">{{ fmt_tokens(tokens_window) }}</div>
+    <div class="token-stat-label">tokens · last {{ days }}d</div>
+  </div>
+  <div class="token-stat">
+    <div class="token-stat-num">{{ runs_window }}</div>
+    <div class="token-stat-label">runs · last {{ days }}d</div>
+  </div>
+</div>
+
+{# Daily trend — last 7 days #}
+<div style="padding:14px 22px 6px;border-bottom:1px solid var(--m-rule-soft);">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
+    <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">Daily trend</div>
+    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">LAST 7 DAYS · TOKENS</span>
+  </div>
+  {% set all_zero = (by_day | selectattr('tokens', 'gt', 0) | list | length) == 0 %}
+  {% if all_zero %}
+    <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);padding:4px 0 10px;">
+      No agent runs recorded yet. Runs launched via <code style="font-family:var(--m-mono);font-size:10px;">/metis</code> in Claude Code will appear here.
+    </div>
+  {% else %}
+    <div class="token-day-strip">
+      {% for d in by_day %}
+      <div class="token-day-col" data-today="{{ 'true' if d.is_today else 'false' }}" title="{{ d.day }}: {{ d.tokens }} tokens, {{ d.runs }} runs">
+        <div class="token-day-bar" style="height: {{ [d.pct, 4] | max }}%;"></div>
+        <div class="token-day-label">{{ d.label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+<div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+    <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">By agent</div>
+    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">LAST {{ days }}D · TOP 12</span>
+  </div>
+  {% if by_agent %}
+    {% for a in by_agent %}
+    <div class="token-bar-row">
+      <div class="token-bar-name" title="{{ a.agent_slug }} · {{ a.runs }} runs">{{ a.agent_slug }}</div>
+      <div class="token-bar-track">
+        <div class="token-bar-fill" style="width: {{ a.pct }}%;"></div>
+      </div>
+      <div class="token-bar-value">{{ fmt_tokens(a.total) }}</div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:6px 0;">No agent runs in the last {{ days }} days.</div>
+  {% endif %}
+</div>
+
+<div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+    <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">By model</div>
+    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">DEFAULT · {{ active_model|upper }}</span>
+  </div>
+  {% if by_model and by_model|length > 0 and (by_model|length > 1 or by_model[0].model != 'unspecified') %}
+    {% for m in by_model %}
+    <div class="token-bar-row" data-tone="ochre">
+      <div class="token-bar-name">{{ m.model }} <span style="color:var(--m-muted);">· {{ m.runs }}r</span></div>
+      <div class="token-bar-track">
+        <div class="token-bar-fill" style="width: {{ m.pct }}%;"></div>
+      </div>
+      <div class="token-bar-value">{{ fmt_tokens(m.total) }}</div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:6px 0;">
+      No per-model data yet. Newer agent runs will start recording the model used; older runs show as <code style="font-family:var(--m-mono);font-size:11px;">unspecified</code>.
+    </div>
+  {% endif %}
+</div>
+
+<div style="padding:14px 22px;">
+  <div class="metis-note">
+    Session and weekly token limits are managed by Anthropic on the API side and are not exposed to client apps. The numbers above show what your local Metis runs have used.
+  </div>
+</div>

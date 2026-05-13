@@ -143,6 +143,6 @@ The main habit to build is simple: ask whether you are modeling counts, rates, o
 - [CDC Principles of Epidemiology](https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/index.html)
 
 ## Links to Metis library
-- `06_library/methods/biostatistics-essentials.md`
-- `06_library/methods/surveillance-systems.md`
-- `06_library/methods/study-designs.md`
+- `knowledge/library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/methods/study-designs.md`

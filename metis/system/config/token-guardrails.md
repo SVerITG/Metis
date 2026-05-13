@@ -154,7 +154,7 @@ If you are not sure whether a document needs markdown conversion, convert it any
 - [ ] Prune agent system prompts — remove instructions that were written for older model generations
 - [ ] Check `agent_runs` table — identify agents with unusually high token cost per run
 - [ ] Verify prompt caching is active on all stable context in any programmatic pipelines
-- [ ] Review `00_inbox` — ensure documents entering the RC are in markdown format
+- [ ] Review `inbox` — ensure documents entering the RC are in markdown format
 
 ---
 

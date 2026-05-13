@@ -136,6 +136,6 @@ A practical test is simple: if the team cannot explain the question in one or tw
 - [CDC Principles of Epidemiology](https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/index.html)
 
 ## Links to Metis library
-- `06_library/methods/study-designs.md`
-- `06_library/methods/writing-for-journals.md`
-- `06_library/methods/causal-inference.md`
+- `knowledge/library/methods/study-designs.md`
+- `knowledge/library/methods/writing-for-journals.md`
+- `knowledge/library/methods/causal-inference.md`

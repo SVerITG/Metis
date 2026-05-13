@@ -159,6 +159,6 @@ These questions help separate the prestige of a "trial" label from the actual qu
 - [BMJ overview of stepped-wedge trials](https://www.bmj.com/content/350/bmj.h391)
 
 ## Links to Metis library
-- `06_library/methods/study-designs.md`
-- `06_library/concepts/research-ethics.md`
-- `06_library/methods/causal-inference.md`
+- `knowledge/library/methods/study-designs.md`
+- `knowledge/library/concepts/research-ethics.md`
+- `knowledge/library/methods/causal-inference.md`

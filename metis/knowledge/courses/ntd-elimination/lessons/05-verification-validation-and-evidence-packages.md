@@ -37,5 +37,5 @@ The central idea is credibility. External reviewers need enough evidence to judg
 - [WHO NTD resources](https://www.who.int/teams/control-of-neglected-tropical-diseases)
 
 ## Links to Metis library
-- `06_library/concepts/elimination-framework.md`
-- `06_library/methods/writing-for-journals.md`
+- `knowledge/library/concepts/elimination-framework.md`
+- `knowledge/library/methods/writing-for-journals.md`

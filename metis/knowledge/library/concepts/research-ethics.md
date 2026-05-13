@@ -107,9 +107,9 @@ updated: "2026-03-30"
 
 ## Learning Path
 
-- Start with `06_library/courses/research-writing/`.
-- Pair this card with `06_library/methods/data-management.md` because many ethics failures in research practice involve identifiers, access controls, retention, and secondary data use.
-- Use `06_library/concepts/global-health-governance.md` when navigating multicountry review, sponsor-host obligations, and institutional accountability.
+- Start with `knowledge/library/courses/research-writing/`.
+- Pair this card with `knowledge/library/methods/data-management.md` because many ethics failures in research practice involve identifiers, access controls, retention, and secondary data use.
+- Use `knowledge/library/concepts/global-health-governance.md` when navigating multicountry review, sponsor-host obligations, and institutional accountability.
 - In the Learning Hub, this card aligns primarily with **Research ethics** and **Scientific communication**, and supports **Data management & R** and **Leadership & management**.
 
 ---

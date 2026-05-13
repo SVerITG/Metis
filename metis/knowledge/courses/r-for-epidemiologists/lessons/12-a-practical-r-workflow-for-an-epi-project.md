@@ -37,6 +37,6 @@ Quality checks should appear throughout: after import, after joins, before model
 - [Quarto documentation](https://quarto.org/)
 
 ## Links to Metis library
-- `06_library/methods/data-management.md`
-- `06_library/methods/biostatistics-essentials.md`
-- `06_library/methods/writing-for-journals.md`
+- `knowledge/library/methods/data-management.md`
+- `knowledge/library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/writing-for-journals.md`

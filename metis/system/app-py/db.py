@@ -3,6 +3,7 @@ db.py — SQLite helper for the Metis dashboard.
 """
 
 import os
+import re
 import sqlite3
 from pathlib import Path
 
@@ -81,3 +82,77 @@ def db_execute(sql: str, params=()) -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Schema migrations — safe to call on every startup
+# ---------------------------------------------------------------------------
+
+_CONSTRAINT_PREFIXES = frozenset(
+    ("primary", "unique", "foreign", "check", "constraint")
+)
+
+
+def run_migrations() -> list[str]:
+    """Apply any missing tables or columns from schema.sql to the live database.
+
+    Reads the canonical schema.sql, creates any tables that don't exist yet,
+    and adds any columns missing from existing tables. Never drops or renames
+    anything, so it is safe to run on every startup after a git pull.
+
+    Returns a list of changes applied (empty if nothing was needed).
+    """
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    if rc_root:
+        schema_path = Path(rc_root) / "system" / "installer" / "schema.sql"
+    else:
+        schema_path = Path(__file__).parent.parent / "installer" / "schema.sql"
+
+    if not schema_path.exists():
+        return []
+
+    schema_sql = schema_path.read_text(encoding="utf-8")
+    changes: list[str] = []
+
+    try:
+        db_path = get_db_path()
+        conn = sqlite3.connect(str(db_path))
+
+        for block in re.finditer(
+            r"CREATE TABLE IF NOT EXISTS (\w+)\s*\((.+?)\);",
+            schema_sql,
+            re.IGNORECASE | re.DOTALL,
+        ):
+            table = block.group(1)
+            body = block.group(2)
+
+            conn.execute(f"CREATE TABLE IF NOT EXISTS {table} ({body})")
+
+            cur = conn.execute(f"PRAGMA table_info({table})")
+            live_cols = {row[1].lower() for row in cur.fetchall()}
+
+            for raw_line in body.splitlines():
+                line = raw_line.strip().rstrip(",")
+                if not line or line.startswith("--"):
+                    continue
+                tokens = line.split()
+                if not tokens:
+                    continue
+                first = tokens[0].lower()
+                if first in _CONSTRAINT_PREFIXES:
+                    continue
+                if not re.match(r"^[a-z_]\w*$", first):
+                    continue
+                if first not in live_cols:
+                    try:
+                        conn.execute(f"ALTER TABLE {table} ADD COLUMN {line}")
+                        changes.append(f"{table}.{first}")
+                    except sqlite3.OperationalError:
+                        pass
+
+        conn.commit()
+        conn.close()
+    except (FileNotFoundError, sqlite3.OperationalError):
+        pass
+
+    return changes

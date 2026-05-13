@@ -48,6 +48,6 @@ Suppose a district notices six meningitis notifications in one week. Before esca
 - [WHO Public Health Intelligence](https://www.who.int/teams/emergency-intelligence/public-health-intelligence)
 
 ## Links to Metis library
-- `06_library/methods/outbreak-investigation.md`
-- `06_library/methods/surveillance-systems.md`
-- `06_library/concepts/elimination-framework.md`
+- `knowledge/library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/concepts/elimination-framework.md`

@@ -1,40 +1,32 @@
-<!-- meetings_list.html — Meetings table rows -->
 {% if not meetings %}
-<tr>
-  <td colspan="6" class="text-center text-muted py-4">
-    <i class="bi bi-camera-video fs-2 mb-2 d-block"></i>
-    No meetings found.
-  </td>
-</tr>
+<div style="padding:28px 20px;font-family:var(--m-sans);font-size:14px;color:var(--m-muted);font-style:italic;">
+  No meetings yet. Click <strong>Import meeting</strong> above to add your first one, or paste notes with <code>/meeting-memory</code> in Claude Code.
+</div>
 {% else %}
-{% for m in meetings %}
-<tr>
-  <td class="ps-3 text-muted small">{{ m.date or '—' }}</td>
-  <td class="small fw-semibold" style="max-width:260px;">
-    <div class="text-truncate">{{ m.title or 'Untitled' }}</div>
-  </td>
-  <td class="text-muted small" style="max-width:160px;">
-    <div class="text-truncate">{{ m.participants or '—' }}</div>
-  </td>
-  <td class="text-muted small">
-    {% if m.duration_minutes %}{{ m.duration_minutes }}m{% else %}—{% endif %}
-  </td>
-  <td>
-    {% set s = m.status or 'draft' %}
-    {% if s == 'processed' %}
-    <span class="badge bg-success-subtle text-success">processed</span>
-    {% elif s == 'in_progress' %}
-    <span class="badge bg-warning-subtle text-warning">in progress</span>
-    {% else %}
-    <span class="badge bg-secondary-subtle text-secondary">{{ s }}</span>
-    {% endif %}
-  </td>
-  <td>
-    <button class="btn btn-xs btn-link p-0 text-muted" style="font-size:0.75rem;"
-            title="View meeting details">
-      <i class="bi bi-arrow-right"></i>
-    </button>
-  </td>
-</tr>
-{% endfor %}
+<div class="panel">
+  {% for m in meetings %}
+  <div style="display:grid;grid-template-columns:88px 1fr 160px 70px 110px 32px;gap:12px;padding:13px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}align-items:center;cursor:pointer;"
+       hx-get="/api/partial/meetings/detail/{{ m.id }}"
+       hx-target="#meeting-detail-panel"
+       hx-swap="innerHTML">
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">{{ (m.date or '—')[:10] }}</div>
+    <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.title or 'Meeting' }}</div>
+    <div style="font-family:var(--m-sans);font-size:12px;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.participants or '—' }}</div>
+    <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{% if m.duration_minutes %}{{ m.duration_minutes }}m{% else %}—{% endif %}</div>
+    <div>
+      {% set s = (m.status or 'filed').lower() %}
+      {% if s == 'filed' %}
+      <span style="display:inline-flex;padding:2px 7px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">FILED</span>
+      {% elif s == 'processed' %}
+      <span style="display:inline-flex;padding:2px 7px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;background:var(--m-ok-bg, rgba(74,164,102,0.1));color:var(--m-ok);border-radius:2px;">PROCESSED</span>
+      {% else %}
+      <span style="display:inline-flex;padding:2px 7px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">{{ s.upper() }}</span>
+      {% endif %}
+    </div>
+    <div style="text-align:right;color:var(--m-muted);">
+      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 3 11 8 6 13"/></svg>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 {% endif %}
