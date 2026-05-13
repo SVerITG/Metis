@@ -10,7 +10,7 @@
 
 ## Domain language preferences
 
-- use `gambiense human African trypanosomiasis` or `gHAT` consistently when appropriate
+- use `gambiense human African [your research topic]` or `gHAT` consistently when appropriate
 - avoid switching terms casually between disease labels without purpose
 - preserve distinctions between active and passive surveillance
 - preserve distinctions between elimination, elimination of transmission, and post-elimination surveillance

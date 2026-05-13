@@ -64,7 +64,7 @@ These rules apply to all code reviewed or produced by Software Engineer and Dash
 
 ## 4. Privacy Rules for Research Data
 
-- **HAT surveillance data** (case counts, health zone data) is **SENSITIVE**
+- **[your surveillance domain] data** (case counts, health zone data) is **SENSITIVE**
   - Display aggregate statistics only (counts by zone × year)
   - Never display records with identifiable fields (patient ID, date + location combination)
   - The research dashboard must enforce this at the data layer, not the UI layer
