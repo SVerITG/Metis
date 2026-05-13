@@ -133,11 +133,21 @@ def job_morning_scan() -> None:
         from metis_mcp.tools.literature_monitor import _pubmed_esearch, _pubmed_esummary, _insert_article
         import sqlite3 as _sq, asyncio as _a
         from metis_mcp.config import paths as _p
-        pmids = _pubmed_esearch(
-            "trypanosomiasis[Title/Abstract] OR sleeping sickness[Title/Abstract] "
-            "OR neglected tropical diseases[Title/Abstract] OR HAT[Title/Abstract]",
-            reldate=1, max_results=15,
+        # Default query — override via user-preferences.json pubmed_query field
+        _prefs = {}
+        try:
+            import json as _json
+            _pref_path = _p.config / "user-preferences.json"
+            if _pref_path.exists():
+                _prefs = _json.loads(_pref_path.read_text())
+        except Exception:
+            pass
+        _pubmed_query = _prefs.get(
+            "pubmed_query",
+            "neglected tropical diseases[Title/Abstract] OR NTD[Title/Abstract] "
+            "OR global health[Title/Abstract] OR epidemiology surveillance[Title/Abstract]",
         )
+        pmids = _pubmed_esearch(_pubmed_query, reldate=1, max_results=15)
         summaries = _pubmed_esummary(pmids) if pmids else []
         pub_added = 0
         if summaries:
@@ -164,10 +174,19 @@ def job_morning_scan() -> None:
         from metis_mcp.config import paths as _p
         import datetime as _dt
         from_date = (_dt.date.today() - _dt.timedelta(days=1)).isoformat()
-        items = _openalex_search(
-            "trypanosomiasis OR sleeping sickness OR neglected tropical diseases",
-            from_date=from_date, max_results=10,
+        _alex_prefs = {}
+        try:
+            import json as _json2
+            _apref_path = _p.config / "user-preferences.json"
+            if _apref_path.exists():
+                _alex_prefs = _json2.loads(_apref_path.read_text())
+        except Exception:
+            pass
+        _alex_query = _alex_prefs.get(
+            "openalex_query",
+            "neglected tropical diseases OR global health OR epidemiology surveillance",
         )
+        items = _openalex_search(_alex_query, from_date=from_date, max_results=10)
         alex_added = 0
         if items:
             con = _sq.connect(str(_p.db))
