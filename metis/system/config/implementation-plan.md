@@ -334,14 +334,14 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
 **Goal:** 13-section guided setup wizard that runs inside Claude Desktop / Claude Code
 on first launch. Spec: `system/config/first-run-wizard.md` (already written).
 
-- [ ] **J1** (S) — `write_user_config(yaml_str)` MCP tool: writes `user-config.yaml` from wizard
-- [ ] **J2** (S) — `write_user_preferences(json_str)` MCP tool: writes `user-preferences.json`
-- [ ] **J3** (S) — `ingest_ideas_document(path)` MCP tool: imports Word/text/markdown ideas file
-- [ ] **J4** (S) — `remove_first_run_marker()` MCP tool: deletes `.first-run`, signals wizard complete
-- [ ] **J5** (M) — Wire wizard trigger in CLAUDE.md: detect `.first-run`, load wizard, block other requests
-- [ ] **J6** (M) — Claude Project instructions file for claude.ai Projects wizard experience
-- [ ] **J7** (L) — Dashboard `/setup` page — visual wizard alternative for dashboard users
-- [ ] **J8** (S) — `/metis-config` skill: re-run any section of the wizard at any time
+- [x] **J1** (S) — `write_user_config()` MCP tool — DONE 2026-05-13 (`config_tools.py`)
+- [x] **J2** (S) — `write_user_preferences()` MCP tool — DONE 2026-05-13
+- [x] **J3** (S) — `ingest_ideas_document()` MCP tool — DONE 2026-05-13
+- [x] **J4** (S) — `remove_first_run_marker()` MCP tool — DONE 2026-05-13
+- [x] **J5** (M) — `.first-run` wizard trigger in CLAUDE.md — DONE 2026-05-13
+- [x] **J6** (M) — `system/config/claude-project-wizard.md` for claude.ai Projects — DONE 2026-05-13
+- [x] **J7** (L) — Dashboard `/setup` page (`routers/setup.py` + `templates/setup.html`) — DONE 2026-05-13
+- [x] **J8** (S) — `/metis-config` skill section-argument routing — DONE 2026-05-13
 
 ---
 
