@@ -16,7 +16,7 @@
       "agent": "librarian",
       "id": "lib-001",
       "tags": ["smoke"],
-      "input": "Find recent papers on sleeping sickness diagnosis 2022-2024",
+      "input": "Find recent papers on NTD elimination surveillance 2022-2024",
       "required_keys": ["HAT", "diagnosis", "Trypanosoma"],
       "forbidden_keys": ["I cannot", "I don't have access"],
       "min_length": 200,

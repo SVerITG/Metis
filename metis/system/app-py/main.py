@@ -21,6 +21,7 @@ from routers import (
     meetings,
     metis_tab,
     planner,
+    setup,
     teach,
     thinking,
     today,
@@ -87,6 +88,7 @@ app.include_router(metis_tab.router)
 app.include_router(capture.router, prefix="/api")
 app.include_router(transcription.router)
 app.include_router(jobs.router)
+app.include_router(setup.router)
 
 # ── PWA capture page — standalone mobile-friendly route ─────────────────────
 @app.get("/capture", response_class=HTMLResponse)
