@@ -356,15 +356,15 @@ if (Test-Path $claudeExe) {
     Write-OK "Shortcut: Metis — Open AI"
 }
 
-# Dashboard shortcut (Stage 2 only)
+# Dashboard shortcut (Stage 2 only) — uses VBS so no terminal window appears
 if (-not $Stage1Only) {
-    $dashDir = Join-Path $metisTarget "system\app-py"
+    $vbsPath = Join-Path $metisTarget "system\install\windows\launch-dashboard-silent.vbs"
     $sc2 = $wsh.CreateShortcut((Join-Path $desktop "Metis — Dashboard.lnk"))
-    $sc2.TargetPath       = Join-Path $dashDir "run-windows.bat"
-    $sc2.Description      = "Open Metis Dashboard in browser"
-    $sc2.WindowStyle      = 7  # minimized
+    $sc2.TargetPath       = "wscript.exe"
+    $sc2.Arguments        = "`"$vbsPath`""
+    $sc2.Description      = "Open Metis Dashboard in browser (no terminal)"
     $sc2.Save()
-    Write-OK "Shortcut: Metis — Dashboard"
+    Write-OK "Shortcut: Metis — Dashboard (silent)"
 }
 
 # ── Done ─────────────────────────────────────────────────────────────────────

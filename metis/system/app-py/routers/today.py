@@ -928,18 +928,21 @@ async def today_morning_brief(request: Request):
     except Exception:
         pass
 
-    # Fallback static greeting when no AI brief is available
-    greeting = None
-    if not ai_brief and project_title:
+    # AI brief is the primary content — show it in the main large slot.
+    # Fall back to a static greeting only when the AI brief is unavailable.
+    if ai_brief:
+        greeting = ai_brief
+        narrative = None
+    elif project_title:
         greeting = (
             f"{greeting_word}, {_user_name()}. "
             f"Your focus project is <em>{project_title}</em>. "
             f"{'%d thread%s from yesterday are still warm.' % (open_threads, 's' if open_threads != 1 else '') if open_threads else 'The desk is clear — a good moment to push forward.'}"
         )
-
-    narrative = ai_brief or (
-        "If you'll take one thing first, take the most urgent thread." if open_threads > 0 else None
-    )
+        narrative = "If you'll take one thing first, take the most urgent thread." if open_threads > 0 else None
+    else:
+        greeting = None
+        narrative = None
 
     return templates.TemplateResponse(
         request,
