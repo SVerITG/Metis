@@ -21,6 +21,20 @@
 
 ---
 
+## The idea behind Metis
+
+Metis was built by a senior public health researcher with no technical background — and that is the whole point.
+
+Over the past year, AI capabilities have advanced faster than most researchers can follow. The gap between what today's AI can do and what a typical researcher actually gets from it is enormous — not because the tools are bad, but because accessing their full potential still requires a level of technical fluency that most researchers don't have, and shouldn't need to develop. Researchers are not software engineers. Their time is for research.
+
+**Metis is an exploration of what AI looks like when it is built around a research profile.** What does it mean to give a researcher — one who works with literature, data, ethics, and ideas across a multi-year timescale — genuine AI support that requires no technical setup, no prompt engineering, and no understanding of what is happening under the hood? This is not just a tool. It is an attempt to answer that question in practice: to find a way of working with AI that is as natural for a researcher as the tools they already use.
+
+The current version serves an individual researcher. But the longer vision is larger: **a research institute deploying its own Metis** — an AI infrastructure tuned to the institute's literature, ongoing projects, data systems, and research culture, available to every member of staff from day one. A shared second brain for an entire organisation.
+
+That vision is still ahead. What exists today is a fully working proof of concept, built and refined in active daily research use.
+
+---
+
 ## Table of Contents
 
 - [For Researchers](#for-researchers) — plain language, quick start, what you get
