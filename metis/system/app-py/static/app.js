@@ -206,6 +206,21 @@ async function runContentScan(event) {
 }
 
 // ---------------------------------------------------------------------------
+// Scheduler — trigger a job manually from the automation panel
+// ---------------------------------------------------------------------------
+
+async function triggerJob(jobId) {
+  showToast('<i class="bi bi-broadcast toast-icon"></i>Running ' + jobId + '...');
+  try {
+    const res = await fetch('/api/scheduler/jobs/' + jobId + '/run', { method: 'POST' });
+    const data = await res.json();
+    showToast('<i class="bi bi-check2 toast-icon"></i>' + (data.message || 'Job triggered'));
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Trigger failed');
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Course Builder — copy prompt to clipboard + notify server
 // ---------------------------------------------------------------------------
 
@@ -218,14 +233,84 @@ async function buildCourse(courseId) {
     });
     const data = await res.json();
     if (data.prompt) {
-      navigator.clipboard.writeText(data.prompt).then(() => {
-        showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Prompt copied — paste into Claude Code or Claude Desktop`);
-      }).catch(() => {
-        showToast(`<i class="bi bi-info-circle toast-icon"></i>Course: ${data.title} — use /course-builder in Claude Code`);
-      });
+      await navigator.clipboard.writeText(data.prompt).catch(() => {});
+      await _launchClaudeDesktop();
+      showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — prompt copied for <strong>${data.title || courseId}</strong>`);
     }
   } catch (e) {
     showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not load course prompt');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Course Ideas — build via Claude Desktop
+// ---------------------------------------------------------------------------
+
+async function _fetchBuildIdeaPrompt(slug, title, adaptive, topicHint, researchQuestion) {
+  const res = await fetch('/api/course/build-idea', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug, title, adaptive: !!adaptive, topicHint: topicHint || '', researchQuestion: researchQuestion || '' })
+  });
+  return await res.json();
+}
+
+async function _launchClaudeDesktop() {
+  await fetch('/api/launch/claude-desktop', { method: 'POST' }).catch(() => {});
+}
+
+async function buildCourseIdea(slug, title) {
+  try {
+    const data = await _fetchBuildIdeaPrompt(slug, title, false, '');
+    if (data.prompt) {
+      await navigator.clipboard.writeText(data.prompt).catch(() => {});
+      await _launchClaudeDesktop();
+      showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — paste prompt to build <strong>${data.title}</strong>`);
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not prepare course prompt');
+  }
+}
+
+async function buildAdaptiveCourse(topicSlug, topicTitle) {
+  try {
+    const data = await _fetchBuildIdeaPrompt('statistics-adaptive', topicTitle, true, topicTitle, '');
+    if (data.prompt) {
+      await navigator.clipboard.writeText(data.prompt).catch(() => {});
+      await _launchClaudeDesktop();
+      showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — paste prompt to start adaptive course on <strong>${topicTitle}</strong>`);
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not prepare adaptive course prompt');
+  }
+}
+
+function toggleQuestionPanel(btn, slug, title) {
+  const card = btn.closest('.course-card');
+  if (!card) return;
+  const panel = card.querySelector('.course-question-panel');
+  if (!panel) return;
+  const visible = panel.style.display !== 'none';
+  panel.style.display = visible ? 'none' : 'block';
+  if (!visible) panel.querySelector('textarea')?.focus();
+}
+
+async function launchWithQuestion(btn, slug, title) {
+  const panel = btn.closest('.course-question-panel');
+  const question = panel?.querySelector('.question-input')?.value?.trim() || '';
+  if (!question) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Please enter a research question first');
+    return;
+  }
+  try {
+    const data = await _fetchBuildIdeaPrompt(slug, title, true, title, question);
+    if (data.prompt) {
+      await navigator.clipboard.writeText(data.prompt).catch(() => {});
+      await _launchClaudeDesktop();
+      showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — prompt includes your research question`);
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not prepare course prompt');
   }
 }
 
@@ -253,6 +338,28 @@ function filterNewsCategory(btn, category) {
 }
 
 // ---------------------------------------------------------------------------
+// Project detail overlay — full project panel with all tasks + history
+// ---------------------------------------------------------------------------
+
+function openProjectDetail(projectId) {
+  const existing = document.getElementById('proj-detail-overlay');
+  if (existing) existing.remove();
+  htmx.ajax('GET', '/api/partial/work/project-detail/' + projectId, {
+    target: document.body,
+    swap: 'beforeend',
+  });
+}
+
+function closeProjectDetail() {
+  const el = document.getElementById('proj-detail-overlay');
+  if (el) el.remove();
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeProjectDetail();
+});
+
+// ---------------------------------------------------------------------------
 // Project launcher — open external app (VS Code / RStudio / Claude Code)
 // ---------------------------------------------------------------------------
 
@@ -263,6 +370,8 @@ async function launchProjectTarget(projectId, target) {
     const data = await res.json();
     if (data.status === 'ok') {
       showToast(`<i class="bi bi-box-arrow-up-right toast-icon"></i>Launched ${target} → ${data.path}`);
+    } else if (data.status === 'starting') {
+      showToast(`<i class="bi bi-hourglass-split toast-icon"></i>${data.message || 'Starting…'}`);
     } else {
       showToast(`<i class="bi bi-exclamation-triangle"></i>${data.message || 'Launch failed'}`);
     }
@@ -322,6 +431,131 @@ async function deleteTask(taskId, btn) {
     showToast('Task deleted');
   } catch {
     showToast('Could not delete task');
+  }
+}
+
+async function markProjectTaskDone(taskId, projectId) {
+  try {
+    const res = await fetch(`/api/task/${taskId}/done`, { method: 'POST' });
+    if (!res.ok) throw new Error();
+    await _refreshProjectTasks(projectId);
+    showToast('Task done ✓');
+  } catch {
+    showToast('Could not update task');
+  }
+}
+
+async function submitQuickTask(projectId) {
+  const titleEl = document.getElementById(`task-title-${projectId}`);
+  const catEl   = document.getElementById(`task-cat-${projectId}`);
+  const title   = titleEl ? titleEl.value.trim() : '';
+  if (!title) { if (titleEl) titleEl.focus(); return; }
+  const category = catEl ? catEl.value : 'general';
+  try {
+    const res = await fetch('/api/task/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ project_id: projectId, title, category }),
+    });
+    if (!res.ok) throw new Error();
+    const html = await res.text();
+    const target = document.getElementById(`proj-tasks-${projectId}`);
+    if (target) target.innerHTML = html;
+    if (titleEl) titleEl.value = '';
+    document.getElementById(`task-add-${projectId}`).style.display = 'none';
+    showToast('Task added');
+  } catch {
+    showToast('Could not add task');
+  }
+}
+
+async function _refreshProjectTasks(projectId) {
+  const res = await fetch(`/api/partial/work/project-tasks/${projectId}`);
+  if (!res.ok) return;
+  const html = await res.text();
+  const target = document.getElementById(`proj-tasks-${projectId}`);
+  if (target) target.innerHTML = html;
+}
+
+async function toggleProjectNotes(projectId) {
+  const panel = document.getElementById(`proj-notes-${projectId}`);
+  if (!panel) return;
+  if (panel.style.display !== 'none') {
+    panel.style.display = 'none';
+    return;
+  }
+  if (!panel.dataset.loaded) {
+    const res = await fetch(`/api/project/${projectId}/notes`);
+    panel.innerHTML = await res.text();
+    panel.dataset.loaded = '1';
+  }
+  panel.style.display = '';
+}
+
+async function saveProjectNotes(projectId) {
+  const area = document.getElementById(`notes-area-${projectId}`);
+  if (!area) return;
+  try {
+    await fetch(`/api/project/${projectId}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes: area.value }),
+    });
+    const indicator = document.getElementById(`notes-saved-${projectId}`);
+    if (indicator) { indicator.textContent = 'SAVED'; setTimeout(() => indicator.textContent = '', 2000); }
+  } catch {
+    showToast('Could not save notes');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Add Project modal
+// ---------------------------------------------------------------------------
+
+function openAddProjectModal() {
+  const overlay = document.getElementById('add-project-overlay');
+  if (overlay) { overlay.style.display = 'flex'; document.getElementById('np-title').focus(); }
+}
+
+function closeAddProjectModal() {
+  const overlay = document.getElementById('add-project-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+async function submitAddProject() {
+  const title = (document.getElementById('np-title')?.value || '').trim();
+  if (!title) { document.getElementById('np-title').focus(); return; }
+  const typeMap = {
+    vscode: ['vscode', 'claude_code', 'claude_desktop', 'explorer'],
+    rstudio: ['rstudio', 'claude_code', 'claude_desktop', 'explorer'],
+    article: ['explorer', 'claude_desktop'],
+    none:    ['claude_code', 'claude_desktop'],
+  };
+  const npType = document.getElementById('np-type')?.value || 'vscode';
+  const payload = {
+    title,
+    description: document.getElementById('np-desc')?.value || '',
+    domain:      document.getElementById('np-domain')?.value || '',
+    external_path: document.getElementById('np-path')?.value || '',
+    launcher_type: npType,
+    launchers:   typeMap[npType] || typeMap.vscode,
+  };
+  try {
+    const res = await fetch('/api/project/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') throw new Error(data.message);
+    closeAddProjectModal();
+    // Refresh project grid
+    htmx.ajax('GET', '/api/partial/work/projects', { target: '#project-grid', swap: 'outerHTML' });
+    showToast(`Project "${data.title}" created`);
+    // Clear form
+    ['np-title','np-desc','np-path'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  } catch(e) {
+    showToast('Could not create project: ' + (e.message || 'unknown error'));
   }
 }
 
@@ -458,7 +692,7 @@ async function setActiveModel(slug, btn) {
 }
 
 function openMetisRename() {
-  const name = prompt('What should Metis call you?', 'Stan');
+  const name = prompt('What should Metis call you?', '');
   if (!name) return;
   fetch('/api/identity/rename', {
     method: 'POST',
@@ -478,6 +712,124 @@ function openMetisKeys() {
 
 function openMetisExport() {
   showToast('<i class="bi bi-box-arrow-down toast-icon"></i>Run <code>/metis_handoff</code> in Claude Code to export the current archive.');
+}
+
+// ---------------------------------------------------------------------------
+// Identity edit modal — name, role, interests, news topics
+// ---------------------------------------------------------------------------
+
+function _readIdentityFromCard() {
+  const card = document.getElementById('metis-identity-card');
+  const data = { name: '', role: '', interests: [], news_topics: [] };
+  if (!card) return data;
+  const nm = card.querySelector('.metis-id-name');
+  if (nm) data.name = nm.textContent.trim();
+  const sub = card.querySelector('.metis-id-sub');
+  if (sub) data.role = sub.textContent.trim();
+  const blocks = card.querySelectorAll('.metis-id-block');
+  if (blocks.length >= 1) {
+    data.interests = Array.from(blocks[0].querySelectorAll('.metis-tag:not(.metis-tag--empty)'))
+      .map(function (t) { return t.textContent.trim(); });
+  }
+  if (blocks.length >= 2) {
+    data.news_topics = Array.from(blocks[1].querySelectorAll('.metis-tag:not(.metis-tag--empty)'))
+      .map(function (t) { return t.textContent.trim(); });
+  }
+  return data;
+}
+
+function openMetisIdentityEdit() {
+  const ov = document.getElementById('metis-identity-overlay');
+  if (!ov) return;
+  const cur = _readIdentityFromCard();
+  const f = function (id) { return document.getElementById(id); };
+  if (f('me-name'))      f('me-name').value = cur.name || '';
+  if (f('me-role'))      f('me-role').value = cur.role || '';
+  if (f('me-interests')) f('me-interests').value = (cur.interests || []).join(', ');
+  if (f('me-news'))      f('me-news').value = (cur.news_topics || []).join(', ');
+  ov.dataset.open = 'true';
+  setTimeout(function () { f('me-name')?.focus(); }, 60);
+}
+
+function closeMetisIdentityEdit() {
+  const ov = document.getElementById('metis-identity-overlay');
+  if (ov) ov.dataset.open = 'false';
+}
+
+async function saveMetisIdentity() {
+  const f = function (id) { return document.getElementById(id); };
+  const payload = {
+    name:        (f('me-name')?.value || '').trim(),
+    role:        (f('me-role')?.value || '').trim(),
+    interests:   (f('me-interests')?.value || '').trim(),
+    news_topics: (f('me-news')?.value || '').trim(),
+  };
+  try {
+    const res = await fetch('/api/identity/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast('<i class="bi bi-check2 toast-icon"></i>Identity saved.');
+      closeMetisIdentityEdit();
+      // Reload the identity card
+      const card = document.getElementById('metis-identity-card')?.parentElement;
+      if (card && window.htmx) htmx.ajax('GET', '/api/partial/metis/identity', { target: card, swap: 'innerHTML' });
+    } else {
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Could not save.'));
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not save identity.');
+  }
+}
+
+// Close on Escape
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    const ov = document.getElementById('metis-identity-overlay');
+    if (ov && ov.dataset.open === 'true') closeMetisIdentityEdit();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Memory filter chips + archive setting
+// ---------------------------------------------------------------------------
+
+function filterMemoryStream(type, btn) {
+  // Toggle chip active state
+  document.querySelectorAll('#mem-filter-strip .mem-filter').forEach(function (el) {
+    el.dataset.active = (el === btn) ? 'true' : 'false';
+  });
+  // Update tail label
+  const tail = document.getElementById('memory-stream-tail');
+  if (tail) tail.textContent = (type === 'all') ? 'RECENT FIRST' : type.toUpperCase() + ' ONLY';
+  // Reload the memory stream with the filter
+  const target = document.getElementById('metis-memory-stream-body');
+  if (target && window.htmx) {
+    const url = '/api/partial/metis/memory-stream' + (type !== 'all' ? ('?type=' + encodeURIComponent(type)) : '');
+    htmx.ajax('GET', url, { target: target, swap: 'innerHTML' });
+  }
+}
+
+async function saveMemoryArchive(value) {
+  try {
+    const res = await fetch('/api/settings/memory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ archive_days: parseInt(value, 10) }),
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      const label = (parseInt(value, 10) === 0) ? 'never archive' : (value + ' days');
+      showToast('<i class="bi bi-archive toast-icon"></i>Archive setting saved — ' + label + '.');
+    } else {
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Could not save.'));
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not save archive setting.');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -515,6 +867,63 @@ async function generateHandoff() {
     }
   } catch (e) {
     showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Handoff failed — server offline?');
+  }
+}
+
+// Schedule daily morning brief via Windows Task Scheduler (one-off setup).
+async function scheduleMorningBrief() {
+  const proceed = window.confirm(
+    'Schedule a daily 7:00 AM scan?\n\n' +
+    'This registers two Windows Task Scheduler entries:\n' +
+    '  • Metis_NewsRadar — runs the news scan\n' +
+    '  • Metis_LibrarianScan — runs the literature scan\n\n' +
+    'You can change the time later via Task Scheduler. ' +
+    'You can also run /schedule from Claude Code for more control.'
+  );
+  if (!proceed) return;
+  showToast('<i class="bi bi-clock-history toast-icon"></i>Registering schedule…');
+  try {
+    const res = await fetch('/api/schedule/register-morning', { method: 'POST' });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast(
+        '<i class="bi bi-check2 toast-icon"></i>' +
+        (data.message || 'Morning brief scheduled. First run tomorrow at 7:00.'),
+        6500
+      );
+    } else {
+      showToast(
+        '<i class="bi bi-exclamation-circle toast-icon"></i>' +
+        (data.message || 'Could not register schedule. Try /schedule from Claude Code.'),
+        7000
+      );
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Schedule failed — server offline?');
+  }
+}
+
+// Run the metis_doctor self-test and surface results.
+async function runMetisDoctor() {
+  showToast('<i class="bi bi-stethoscope toast-icon"></i>Running diagnostics…');
+  try {
+    const res = await fetch('/api/doctor');
+    const data = await res.json();
+    if (data.status !== 'ok' && data.status !== 'warn' && data.status !== 'fail') {
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Doctor failed: ' + (data.message || 'unknown error'));
+      return;
+    }
+    const lines = (data.checks || []).map(function (c) {
+      const icon = c.ok ? '✓' : (c.severity === 'warn' ? '⚠' : '✗');
+      return icon + ' ' + c.name + (c.detail ? ' — ' + c.detail : '');
+    });
+    const summary =
+      'Metis Doctor — ' + (data.status || '?').toUpperCase() + '\n\n' +
+      lines.join('\n') +
+      '\n\n' + (data.summary || '');
+    window.alert(summary);
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Doctor unreachable.');
   }
 }
 
@@ -559,6 +968,55 @@ async function promoteProposal(pid) {
     }
   } catch (e) {
     showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Promotion failed.');
+  }
+}
+
+// Show the diff for a proposal in a modal-like prompt, then optionally apply.
+async function previewProposal(pid) {
+  if (!pid) return;
+  try {
+    const res = await fetch('/api/improvement/preview/' + pid);
+    const data = await res.json();
+    if (data.status !== 'ok') {
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Could not load preview.'));
+      return;
+    }
+    const summary =
+      'Proposal #' + data.proposal_id + ' for "' + data.agent_slug + '"\n' +
+      'Status: ' + data.proposal_status + '\n' +
+      '+' + data.added_lines + ' / -' + data.removed_lines + ' lines\n\n' +
+      (data.rationale ? 'Rationale:\n' + data.rationale + '\n\n' : '') +
+      'Diff (truncated to 4000 chars):\n\n' +
+      (data.diff || '(empty)').slice(0, 4000) + '\n\n' +
+      'Apply this change to the agent\'s skill.md? (OK = apply, Cancel = keep as-is)';
+    if (window.confirm(summary)) {
+      applyProposal(pid);
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Preview failed.');
+  }
+}
+
+// Apply: actually writes proposed_content to the agent's skill.md (with backup).
+async function applyProposal(pid) {
+  if (!pid) return;
+  try {
+    const res = await fetch('/api/improvement/apply/' + pid, { method: 'POST' });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast(
+        '<i class="bi bi-check-circle toast-icon"></i>Applied to <code>' +
+        data.agent_slug + '/skill.md</code>. Backup at <code>' +
+        (data.backup_path || '').split('/').pop() + '</code>.',
+        6000
+      );
+      const el = document.getElementById('metis-improvement-body');
+      if (el) htmx.ajax('GET', '/api/partial/metis/improvement', { target: el, swap: 'innerHTML' });
+    } else {
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Apply failed.'));
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Apply failed.');
   }
 }
 
@@ -718,3 +1176,342 @@ async function submitInlineCapture() {
     if (fb) fb.innerHTML = '<span class="text-danger">Error saving — is the server running?</span>';
   }
 }
+
+// ---------------------------------------------------------------------------
+// Project cards — drag-to-reorder (live snap) + collapse/expand
+// ---------------------------------------------------------------------------
+
+let _dragSrc      = null;
+let _dragLastOver = null;   // tracks last card entered, prevents repeated DOM moves
+
+function _saveProjectOrder() {
+  const cards = document.querySelectorAll('#project-grid .project-card[data-project-id]');
+  const order = Array.from(cards).map(c => c.dataset.projectId);
+  fetch('/api/project/reorder', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ order }),
+  });
+}
+
+function _restoreProjectStates() {
+  document.querySelectorAll('#project-grid .project-card[data-project-id]').forEach(card => {
+    const pid  = card.dataset.projectId;
+    const body = card.querySelector('.proj-body');
+    const btn  = card.querySelector('.proj-collapse-btn');
+    if (!body || !btn) return;
+    if (localStorage.getItem(`proj-collapsed-${pid}`) === '1') {
+      body.style.display = 'none';
+      btn.textContent = '+';
+    }
+  });
+}
+
+function initProjectCards() {
+  const grid = document.getElementById('project-grid');
+  if (!grid) return;
+
+  _restoreProjectStates();
+
+  // Use event delegation on the grid so we don't have to re-bind after DOM moves
+  grid.addEventListener('dragstart', e => {
+    const card = e.target.closest('.project-card[data-project-id]');
+    if (!card) return;
+    _dragSrc      = card;
+    _dragLastOver = null;
+    e.dataTransfer.effectAllowed = 'move';
+    // Delay opacity so browser can still snapshot the drag image
+    requestAnimationFrame(() => { if (_dragSrc) _dragSrc.style.opacity = '0.35'; });
+  });
+
+  grid.addEventListener('dragenter', e => {
+    e.preventDefault();
+    const card = e.target.closest('.project-card[data-project-id]');
+    if (!card || card === _dragSrc || card === _dragLastOver) return;
+    _dragLastOver = card;
+
+    // Determine insert position: before or after the hovered card
+    const rect = card.getBoundingClientRect();
+    const after = e.clientY > rect.top + rect.height / 2;
+    if (after) {
+      grid.insertBefore(_dragSrc, card.nextSibling);
+    } else {
+      grid.insertBefore(_dragSrc, card);
+    }
+  });
+
+  grid.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  });
+
+  grid.addEventListener('drop', e => {
+    e.preventDefault();
+    // DOM is already in the correct order from dragenter — nothing to do
+  });
+
+  grid.addEventListener('dragend', () => {
+    if (_dragSrc) _dragSrc.style.opacity = '';
+    _dragSrc      = null;
+    _dragLastOver = null;
+    _saveProjectOrder();
+  });
+}
+
+function toggleProjectCollapse(projectId) {
+  const card = document.querySelector(`#project-grid .project-card[data-project-id="${projectId}"]`);
+  if (!card) return;
+  const body = card.querySelector('.proj-body');
+  const btn  = card.querySelector('.proj-collapse-btn');
+  if (!body) return;
+  const collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  if (btn) btn.textContent = collapsed ? '−' : '+';
+  if (collapsed) {
+    localStorage.removeItem(`proj-collapsed-${projectId}`);
+  } else {
+    localStorage.setItem(`proj-collapsed-${projectId}`, '1');
+  }
+}
+
+// Re-init after HTMX settles (outerHTML swaps replace the element)
+document.addEventListener('htmx:afterSettle', () => {
+  if (document.getElementById('project-grid')) initProjectCards();
+});
+
+document.addEventListener('DOMContentLoaded', initProjectCards);
+
+// ─── Library browser ───────────────────────────────────────────────────
+
+function setLibCollection(col) {
+  const hiddenEl = document.getElementById('lib-col-hidden');
+  if (hiddenEl) hiddenEl.value = col;
+  document.querySelectorAll('.lib-chip[data-col]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.col === col);
+  });
+  _refreshLibTable();
+}
+
+function setLibType(type) {
+  const hiddenEl = document.getElementById('lib-type-hidden');
+  if (hiddenEl) hiddenEl.value = type;
+  document.querySelectorAll('.lib-type-btn[data-type]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.type === type);
+  });
+  _refreshLibTable();
+}
+
+function _refreshLibTable() {
+  // Sync select values into hidden fields before submitting
+  const sortSel = document.getElementById('lib-sort');
+  const siSel   = document.getElementById('lib-search-in');
+  const yfInput = document.getElementById('lib-year-from');
+  const ytInput = document.getElementById('lib-year-to');
+  if (sortSel) { const h = document.getElementById('lib-sort-hidden'); if (h) h.value = sortSel.value; }
+  if (siSel)   { const h = document.getElementById('lib-si-hidden');   if (h) h.value = siSel.value; }
+  if (yfInput) { const h = document.getElementById('lib-yf-hidden');   if (h) h.value = yfInput.value; }
+  if (ytInput) { const h = document.getElementById('lib-yt-hidden');   if (h) h.value = ytInput.value; }
+
+  const q         = (document.getElementById('lib-q')         || {}).value || '';
+  const author    = (document.getElementById('lib-author')     || {}).value || '';
+  const col       = (document.getElementById('lib-col-hidden') || {}).value || '';
+  const type      = (document.getElementById('lib-type-hidden')|| {}).value || '';
+  const sort      = (document.getElementById('lib-sort-hidden')|| {}).value || 'newest';
+  const searchIn  = (document.getElementById('lib-si-hidden')  || {}).value || 'all';
+  const yearFrom  = (document.getElementById('lib-yf-hidden')  || {}).value || '';
+  const yearTo    = (document.getElementById('lib-yt-hidden')  || {}).value || '';
+  const journalQ  = (document.getElementById('lib-journal')    || {}).value || '';
+
+  htmx.ajax('GET', '/api/partial/knowledge/library-table', {
+    target: '#lib-table-area',
+    swap:   'outerHTML',
+    values: {
+      q, author, collection: col, item_type: type,
+      sort, search_in: searchIn,
+      year_from: yearFrom, year_to: yearTo,
+      journal_q: journalQ,
+    },
+  });
+}
+
+function clearLibFilters() {
+  ['lib-q','lib-author','lib-journal','lib-year-from','lib-year-to'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['lib-col-hidden','lib-type-hidden','lib-yf-hidden','lib-yt-hidden'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const sortEl = document.getElementById('lib-sort');
+  if (sortEl) sortEl.value = 'newest';
+  const siEl = document.getElementById('lib-search-in');
+  if (siEl) siEl.value = 'all';
+  document.querySelectorAll('.lib-chip[data-col]').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.col === ''));
+  document.querySelectorAll('.lib-type-btn[data-type]').forEach(btn =>
+    btn.classList.toggle('active', btn.dataset.type === ''));
+  _refreshLibTable();
+}
+
+function toggleAbstract(id) {
+  const el = document.getElementById('abs-' + id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function runMetisUpdate() {
+  const btn = document.getElementById('update-btn');
+  const spin = document.getElementById('update-spinner');
+  if (btn) { btn.style.display = 'none'; }
+  if (spin) { spin.style.display = 'inline'; }
+  try {
+    const res = await fetch('/api/scan/content', { method: 'POST' });
+    const data = await res.json();
+    const msg = data.summary || [
+      data.news_added   != null ? `${data.news_added} news`    : null,
+      data.papers_added != null ? `${data.papers_added} papers` : null,
+      data.zotero_added != null ? `${data.zotero_added} Zotero` : null,
+    ].filter(Boolean).join(' · ') || 'Update complete.';
+    showToast(msg);
+    // Refresh today scan panel if visible
+    const todayScan = document.getElementById('today-scan');
+    if (todayScan) {
+      htmx.ajax('GET', '/api/partial/today/scan', { target: '#today-scan', swap: 'outerHTML' });
+    }
+    // Refresh lib table if Library tab visible
+    const libTable = document.getElementById('lib-table-area');
+    if (libTable) {
+      htmx.ajax('GET', '/api/partial/knowledge/sync-status', { target: '#lib-sync-bar', swap: 'outerHTML' });
+    }
+  } catch (e) {
+    showToast('Update failed: ' + e.message);
+  } finally {
+    if (btn) { btn.style.display = ''; }
+    if (spin) { spin.style.display = 'none'; }
+  }
+}
+
+async function syncZoteroLibrary() {
+  const btn = document.getElementById('zotero-sync-btn');
+  if (btn) { btn.textContent = 'SYNCING…'; btn.disabled = true; }
+  try {
+    const res = await fetch('/api/knowledge/sync-zotero', { method: 'POST' });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast(data.message || 'Zotero sync complete.');
+      // Refresh the sync status bar and library table
+      htmx.ajax('GET', '/api/partial/knowledge/sync-status',  { target: '#lib-sync-bar',    swap: 'outerHTML' });
+      htmx.ajax('GET', '/api/partial/knowledge/library-table', { target: '#lib-table-area', swap: 'outerHTML' });
+    } else {
+      showToast('Sync failed: ' + (data.message || 'unknown error'));
+    }
+  } catch (e) {
+    showToast('Sync error: ' + e.message);
+  } finally {
+    if (btn) { btn.textContent = 'SYNC NOW'; btn.disabled = false; }
+  }
+}
+
+// ─── Integration — Claude Code mode toggle ────────────────────────────────
+
+function setClaudeCodeMode(mode) {
+  var label = mode === 'background' ? 'background layer (always-on)' : 'invoke mode (/metis per message)';
+  if (!confirm('Switch Claude Code to ' + label + '?\n\nThis will rewrite ~/.claude/CLAUDE.md.')) return;
+  fetch('/api/settings/claude-code-mode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: mode })
+  })
+  .then(function (r) { return r.json(); })
+  .then(function (d) {
+    if (d.status === 'ok') {
+      htmx.ajax('GET', '/api/partial/metis/integration', { target: '#metis-integration-body', swap: 'innerHTML' });
+      showToast(mode === 'background' ? 'Background layer activated — restart Claude Code to apply.' : 'Reverted to invoke mode.');
+    } else {
+      showToast('Error: ' + (d.message || 'Could not update CLAUDE.md.'));
+    }
+  })
+  .catch(function () { showToast('Could not reach the dashboard — is it running?'); });
+}
+
+function copyDesktopPrompt() {
+  var el = document.getElementById('desktop-prompt-text');
+  if (!el) return;
+  var text = el.textContent || el.innerText;
+  navigator.clipboard.writeText(text).then(function () {
+    showToast('System prompt copied — paste it into your Claude Desktop project instructions.');
+  }).catch(function () {
+    showToast('Copy failed — select the text manually and use Ctrl+C.');
+  });
+}
+
+// ─── API key management ───────────────────────────────────────────────────
+
+function openApiKeyReplace(name, label) {
+  var overlay = document.getElementById('api-key-modal-overlay');
+  if (!overlay) return;
+  document.getElementById('akm-title').textContent = label || name || 'New key';
+  document.getElementById('akm-key-name').value = name || '';
+  document.getElementById('akm-key-name-display').value = name || '';
+  document.getElementById('akm-key-name-display').readOnly = !!name;
+  document.getElementById('akm-key-name-display').style.opacity = name ? '0.6' : '1';
+  document.getElementById('akm-key-value').value = '';
+  overlay.dataset.open = 'true';
+  setTimeout(function () {
+    var target = name ? document.getElementById('akm-key-value') : document.getElementById('akm-key-name-display');
+    if (target) target.focus();
+  }, 80);
+}
+
+function closeApiKeyModal() {
+  var overlay = document.getElementById('api-key-modal-overlay');
+  if (overlay) overlay.dataset.open = 'false';
+}
+
+function saveApiKey() {
+  var nameInput = document.getElementById('akm-key-name');
+  var nameDisplay = document.getElementById('akm-key-name-display');
+  var name = (nameInput && nameInput.value.trim()) || (nameDisplay && nameDisplay.value.trim()) || '';
+  var value = (document.getElementById('akm-key-value') || {}).value || '';
+  name = name.trim().toUpperCase().replace(/\s+/g, '_');
+  value = value.trim();
+  if (!name) { showToast('Key name is required.'); return; }
+  if (!value) { showToast('Key value is required.'); return; }
+  fetch('/api/settings/api-key', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name, value: value })
+  })
+  .then(function (r) { return r.json(); })
+  .then(function (d) {
+    if (d.status === 'ok') {
+      closeApiKeyModal();
+      htmx.ajax('GET', '/api/partial/metis/api-keys', { target: '#metis-api-keys-body', swap: 'innerHTML' });
+      showToast('Key saved.');
+    } else {
+      showToast('Error: ' + (d.message || 'Could not save key.'));
+    }
+  })
+  .catch(function () { showToast('Could not save key — network error.'); });
+}
+
+function removeApiKey(name) {
+  if (!confirm('Remove ' + name + '? This cannot be undone.')) return;
+  fetch('/api/settings/api-key/' + encodeURIComponent(name), { method: 'DELETE' })
+  .then(function (r) { return r.json(); })
+  .then(function (d) {
+    if (d.status === 'ok') {
+      htmx.ajax('GET', '/api/partial/metis/api-keys', { target: '#metis-api-keys-body', swap: 'innerHTML' });
+      showToast('Key removed.');
+    } else {
+      showToast('Error: ' + (d.message || 'Could not remove key.'));
+    }
+  })
+  .catch(function () { showToast('Could not remove key — network error.'); });
+}
+
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    closeApiKeyModal();
+  }
+});

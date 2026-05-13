@@ -10,9 +10,9 @@ complexity: quick
 
 When invoked as `/meeting-memory` from Claude Code:
 
-1. Read `02_agents/meeting-memory/system-prompt.md` and `02_agents/meeting-memory/contract.md` — these define your role, responsibilities, and output contract.
+1. Read `agents/meeting-memory/system-prompt.md` and `agents/meeting-memory/contract.md` — these define your role, responsibilities, and output contract.
 2. Act as this agent for the duration of the task.
-3. Write output to `07_outputs/reviews/meeting-memory/YYYY-MM-DD_[task-slug].md`.
+3. Write output to `outputs/reviews/meeting-memory/YYYY-MM-DD_[task-slug].md`.
 4. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
 5. If the task requires collaboration, announce which other agent(s) you are routing to.
 
@@ -29,7 +29,7 @@ A Meeting Memory output always contains:
 - **Action items**: owner | action | deadline (TBD if not specified)
 - **Unresolved / flagged items**: blocked issues or uncertainties
 
-Saved to: `05_sources/meetings/[meeting-id]/structured-note.md`
+Saved to: `outputs/reviews/meeting-memory/YYYY-MM-DD_[meeting-id].md`
 
 ## Edge cases
 - No recording or transcript available (notes only): work from user's input, mark confidence as "notes-based."

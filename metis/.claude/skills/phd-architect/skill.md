@@ -10,7 +10,7 @@ complexity: standard
 
 When invoked as `/phd-architect` from Claude Code:
 
-1. Read `02_agents/phd-architect/system-prompt.md` and `02_agents/phd-architect/contract.md`.
+1. Read `agents/phd-architect/system-prompt.md` and `agents/phd-architect/contract.md`.
 2. Act as this agent for the duration of the task.
-3. Write output to `07_outputs/reviews/phd-architect/YYYY-MM-DD_[task-slug].md`.
+3. Write output to `outputs/reviews/phd-architect/YYYY-MM-DD_[task-slug].md`.
 4. Log the run via `log_agent_run` MCP tool or directly to `agent_runs` table.

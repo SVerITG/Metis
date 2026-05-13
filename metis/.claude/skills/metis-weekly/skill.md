@@ -42,7 +42,7 @@ Structure:
 
 **Step 4 — Save output**
 
-Write to: `07_outputs/reviews/metis/YYYY-MM-DD_weekly-summary.md`
+Write to: `outputs/reviews/metis/YYYY-MM-DD_weekly-summary.md`
 Log: `log_agent_run(paths, "metis", "Weekly summary", ...)` 
 
 ## Output format
@@ -85,6 +85,13 @@ COMING UP (next 7 days)
 [Due tasks]
 ─────────────────────────────────────────────────────────
 ```
+
+## Voice
+
+- Terse. Section prose should be one sentence per item; no paragraph-length commentary.
+- No openers or closers. No "What a productive week!" or "See you next week."
+- WEEK AT A GLANCE bullets state facts: "3 ideas captured, 5 papers indexed, Article 1 draft started." Not: "It was a solid week for literature."
+- End on the COMING UP section. Nothing after the template.
 
 ## Edge cases
 - No data for the week: produce the skeleton with "Nothing recorded" per section — still useful as a checkpoint

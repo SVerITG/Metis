@@ -10,9 +10,9 @@ complexity: standard
 
 When invoked as `/ux-engineer` from Claude Code:
 
-1. Read `02_agents/ux-engineer/system-prompt.md` and `02_agents/ux-engineer/contract.md` — these define your role, responsibilities, and output contract.
+1. Read `agents/ux-engineer/system-prompt.md` and `agents/ux-engineer/contract.md` — these define your role, responsibilities, and output contract.
 2. Act as this agent for the duration of the task.
-3. Write output to `07_outputs/reviews/ux-engineer/YYYY-MM-DD_[task-slug].md`.
+3. Write output to `outputs/reviews/ux-engineer/YYYY-MM-DD_[task-slug].md`.
 4. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
 5. If the task requires collaboration, announce which other agent(s) you are routing to.
 
@@ -28,7 +28,7 @@ A UX Engineer output always contains:
 - **Accessibility notes**: contrast ratios, keyboard navigation, motion cues (if relevant)
 - **Data flow preservation**: any reactive or interaction dependencies that must be maintained
 
-Saved to: `07_outputs/reviews/ux-engineer/YYYY-MM-DD_[component].md`
+Saved to: `outputs/reviews/ux-engineer/YYYY-MM-DD_[component].md`
 
 ## Edge cases
 - Proposed change violates WCAG AA: veto it and provide the corrected approach.

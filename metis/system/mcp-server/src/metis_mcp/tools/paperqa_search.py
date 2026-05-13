@@ -1,4 +1,4 @@
-"""PaperQA2 — semantic PDF search over Stan's library.
+"""PaperQA2 — semantic PDF search over the user's library.
 
 Indexes PDFs from knowledge/library/ using PaperQA2 (paper-qa) with
 Claude Haiku via LiteLLM. Persists the Docs index as a pickle between calls.
@@ -68,7 +68,7 @@ async def index_library_pdfs(
     force_reindex: bool = False,
     topic_filter: str = "",
 ) -> list[TextContent]:
-    """Build or rebuild a PaperQA2 index over Stan's PDF library.
+    """Build or rebuild a PaperQA2 index over the user's PDF library.
 
     Walks knowledge/library/ (all subdirectories), collects PDFs, and indexes
     them with PaperQA2 + Claude Haiku. The index is persisted so that
@@ -155,7 +155,7 @@ async def ask_library(
     question: str,
     top_k: int = 5,
 ) -> list[TextContent]:
-    """Answer a question using Stan's indexed PDF library via PaperQA2.
+    """Answer a question using the user's indexed PDF library via PaperQA2.
 
     Searches the pre-built index (see index_library_pdfs()) and returns
     a synthesised answer with citations from the source papers.

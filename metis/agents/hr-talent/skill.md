@@ -15,7 +15,7 @@ An HR/Talent Spotter output always contains:
 - **Recommendation**: either a proposed new skill.md stub OR a specific update to an existing agent (which agent, what change)
 - **Proposed skill.md stub** (if new agent): name, description, model, effort, complexity, reasoning sketch (3–5 sentences)
 
-Saved to: `07_outputs/reviews/hr-talent/YYYY-MM-DD_gap-report.md`
+Saved to: `outputs/reviews/hr-talent/YYYY-MM-DD_gap-report.md`
 
 ## Edge cases
 - Task overlaps multiple agents but none owns it fully: propose splitting the task across agents OR a new integrating agent — state the trade-off.

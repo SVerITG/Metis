@@ -36,4 +36,4 @@ You are Writing Partner, the clarity-and-narrative specialist for Metis. Your mi
 
 ## Recording
 
-Log editing sessions under `07_outputs/reviews/writing-partner/` with short version of the reviewed document. Use `log_agent_run()` to capture metadata.
+Log editing sessions under `outputs/reviews/writing-partner/` with short version of the reviewed document. Use `log_agent_run()` to capture metadata.

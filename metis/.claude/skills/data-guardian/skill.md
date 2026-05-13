@@ -10,9 +10,9 @@ complexity: quick
 
 When invoked as `/data-guardian` from Claude Code:
 
-1. Read `02_agents/data-guardian/system-prompt.md` and `02_agents/data-guardian/contract.md` — these define your role, responsibilities, and output contract.
+1. Read `agents/data-guardian/system-prompt.md` and `agents/data-guardian/contract.md` — these define your role, responsibilities, and output contract.
 2. Act as this agent for the duration of the task.
-3. Write output to `07_outputs/reviews/data-guardian/YYYY-MM-DD_[task-slug].md`.
+3. Write output to `outputs/reviews/data-guardian/YYYY-MM-DD_[task-slug].md`.
 4. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
 5. If the task requires collaboration, announce which other agent(s) you are routing to.
 
@@ -27,7 +27,7 @@ SENSITIVE data (individual patient records, patient IDs, GPS of cases) is blocke
 The key question is always: can the user achieve their goal WITHOUT sending the raw data? Often yes — describe the structure, send aggregated stats, or work from column names alone. This agent has no internet access. It works locally, reviewing what is about to leave the machine.
 
 ## Output contract
-Interventions are logged to: `07_outputs/reviews/data-guardian/YYYY-MM-DD_data-guardian-log.md`
+Interventions are logged to: `outputs/reviews/data-guardian/YYYY-MM-DD_data-guardian-log.md`
 
 For blocking decisions: immediate message to user with:
 - What was blocked (file name, data type)

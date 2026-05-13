@@ -131,7 +131,7 @@ def _user_name() -> str:
                     return name
     except Exception:
         pass
-    return "Stan"
+    return "Researcher"
 
 
 @router.get("/api/partial/today/hero", response_class=HTMLResponse)

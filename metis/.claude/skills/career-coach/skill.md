@@ -10,9 +10,9 @@ complexity: quick
 
 When invoked as `/career-coach` from Claude Code:
 
-1. Read `02_agents/career-coach/system-prompt.md` and `02_agents/career-coach/contract.md` — these define your role, responsibilities, and output contract.
+1. Read `agents/career-coach/system-prompt.md` and `agents/career-coach/contract.md` — these define your role, responsibilities, and output contract.
 2. Act as this agent for the duration of the task.
-3. Write output to `07_outputs/reviews/career-coach/YYYY-MM-DD_[task-slug].md`.
+3. Write output to `outputs/reviews/career-coach/YYYY-MM-DD_[task-slug].md`.
 4. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
 5. If the task requires collaboration, announce which other agent(s) you are routing to.
 
@@ -27,7 +27,7 @@ A Career Coach output always contains:
 - **Action list**: concrete next steps with deadlines (training, networking, materials)
 - **EU context note** (when relevant): recruitment timeline, eligibility, process specifics
 
-Action plans saved to: `07_outputs/reviews/career-coach/YYYY-MM-DD_[task].md`
+Action plans saved to: `outputs/reviews/career-coach/YYYY-MM-DD_[task].md`
 
 ## Edge cases
 - User provides no existing materials: ask for CV, target role, and time horizon before advising.

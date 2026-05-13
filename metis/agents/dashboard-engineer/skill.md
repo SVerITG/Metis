@@ -17,7 +17,7 @@ A Dashboard Engineer output always contains:
 - **New UI state**: any new inputs, outputs, or conditional panels introduced
 - **Verification steps**: how to manually test (e.g., `shiny::runApp()`, what to click, what to expect)
 
-Saved to: `07_outputs/reviews/dashboard-engineer/YYYY-MM-DD_[feature].md`
+Saved to: `outputs/reviews/dashboard-engineer/YYYY-MM-DD_[feature].md`
 
 ## Edge cases
 - Change requires a new R package dependency: flag it explicitly and confirm it is allowed before implementing.

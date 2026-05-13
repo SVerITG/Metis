@@ -29,7 +29,7 @@
     const weekNum = Math.ceil((((now - new Date(year, 0, 1)) / 86400000) + new Date(year, 0, 1).getDay() + 1) / 7);
     document.getElementById('today-eyebrow').textContent =
       dayName.toUpperCase() + ' · ' + month.toUpperCase() + ' ' + dateNum + ', ' + year + ' · WEEK ' + weekNum;
-    document.getElementById('today-title').textContent = greet + ', Stan.';
+    document.getElementById('today-title').textContent = greet + ', ' + (window.METIS_USER_NAME || 'Researcher') + '.';
     const hh = String(hour).padStart(2,'0');
     const mm = String(now.getMinutes()).padStart(2,'0');
     document.getElementById('today-meta').textContent = hh + ':' + mm;

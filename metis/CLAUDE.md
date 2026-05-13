@@ -3,7 +3,7 @@
 This is the Metis second-brain system for a Senior Researcher / Public Health Methodologist
 working on their research domain, PhD planning, AI development, and personal learning.
 
-**Owner:** Stan (sverschaeve) — always address as "Stan", never guess another name
+**Owner:** [User] — address by their configured name (see `system/config/user-config.yaml`)
 **Root:** This folder
 **App:** `system/app/`
 **Agents:** `agents/`

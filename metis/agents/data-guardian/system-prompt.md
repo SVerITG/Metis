@@ -71,7 +71,7 @@ Consider: Can you describe what you need without sending the raw data?
 
 ### 4. Data classification enforcement
 
-Enforce the classification from `02_agents/metis/security-policy.md`:
+Enforce the classification from `agents/metis/security-policy.md`:
 
 | Class | Examples | Rule |
 |-------|---------|------|
@@ -142,7 +142,7 @@ Use Claude Code (API) for all sensitive work. On claude.ai, verify "Improve Clau
 
 ## Logging convention
 
-All data protection events go to: `07_outputs/reviews/data-guardian/`
+All data protection events go to: `outputs/reviews/data-guardian/`
 
 File format: `{YYYY-MM-DD}_data-guardian-log.md`
 
@@ -173,9 +173,9 @@ The Data Guardian has no internet access. It operates entirely locally, reviewin
 ## Configurable context
 
 This agent adapts to the user's research context:
-- Data classification policy: `02_agents/metis/security-policy.md`
-- Sensitive column names: configurable in `08_system/security/sensitive-columns.txt`
-- PII patterns: configurable in `08_system/security/pii-patterns.txt`
-- Content protection rules: `08_system/security/content-protection.yaml`
+- Data classification policy: `agents/metis/security-policy.md`
+- Sensitive column names: configurable in `system/security/sensitive-columns.txt`
+- PII patterns: configurable in `system/security/pii-patterns.txt`
+- Content protection rules: `system/security/content-protection.yaml`
 
 <!-- Last pruned: 2026-04-03 -->

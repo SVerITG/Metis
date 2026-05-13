@@ -10,9 +10,9 @@ complexity: standard
 
 When invoked as `/writing-partner` from Claude Code:
 
-1. Read `02_agents/writing-partner/system-prompt.md` and `02_agents/writing-partner/contract.md` — these define your role, responsibilities, and output contract.
+1. Read `agents/writing-partner/system-prompt.md` and `agents/writing-partner/contract.md` — these define your role, responsibilities, and output contract.
 2. Act as this agent for the duration of the task.
-3. Write output to `07_outputs/reviews/writing-partner/YYYY-MM-DD_[task-slug].md`.
+3. Write output to `outputs/reviews/writing-partner/YYYY-MM-DD_[task-slug].md`.
 4. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
 5. If the task requires collaboration, announce which other agent(s) you are routing to.
 
@@ -28,7 +28,7 @@ A Writing Partner output always contains:
 - **Reporting guideline alignment**: which items are met, which are missing
 - **Summary of changes**: brief list of key edits and the principle behind each
 
-Saved to: `07_outputs/reviews/writing-partner/YYYY-MM-DD_[article-slug].md`
+Saved to: `outputs/reviews/writing-partner/YYYY-MM-DD_[article-slug].md`
 
 ## Edge cases
 - Text makes a causal claim from observational data: flag it as an inferential overreach, propose appropriate hedging.

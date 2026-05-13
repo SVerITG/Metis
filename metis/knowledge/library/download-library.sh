@@ -4,7 +4,7 @@
 #  Generated: 2026-05-13
 #
 #  Run from the Research Cortex root:
-#    cd "/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/Research Cortex"
+#    cd "/path/to/your/Research Cortex"
 #    bash metis/knowledge/library/download-library.sh
 #
 #  Items already downloaded are skipped (wget -c / -nc flags).

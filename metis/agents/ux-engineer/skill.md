@@ -17,7 +17,7 @@ A UX Engineer output always contains:
 - **Accessibility notes**: contrast ratios, keyboard navigation, motion cues (if relevant)
 - **Data flow preservation**: any reactive or interaction dependencies that must be maintained
 
-Saved to: `07_outputs/reviews/ux-engineer/YYYY-MM-DD_[component].md`
+Saved to: `outputs/reviews/ux-engineer/YYYY-MM-DD_[component].md`
 
 ## Edge cases
 - Proposed change violates WCAG AA: veto it and provide the corrected approach.
