@@ -8,7 +8,7 @@
 ## Output
 - Capability gap assessment (1 paragraph)
 - Proposed new skill.md stub OR recommendation to update existing agent
-- Saved to: 07_outputs/reviews/hr-talent/YYYY-MM-DD_gap-report.md
+- Saved to: outputs/reviews/hr-talent/YYYY-MM-DD_gap-report.md
 
 ## Never
 - Create or modify skill.md files directly (propose only — human approves)

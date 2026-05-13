@@ -17,7 +17,7 @@ A Writing Partner output always contains:
 - **Reporting guideline alignment**: which items are met, which are missing
 - **Summary of changes**: brief list of key edits and the principle behind each
 
-Saved to: `07_outputs/reviews/writing-partner/YYYY-MM-DD_[article-slug].md`
+Saved to: `outputs/reviews/writing-partner/YYYY-MM-DD_[article-slug].md`
 
 ## Edge cases
 - Text makes a causal claim from observational data: flag it as an inferential overreach, propose appropriate hedging.

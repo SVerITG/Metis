@@ -10,9 +10,9 @@ complexity: quick
 
 When invoked as `/cybersecurity` from Claude Code:
 
-1. Read `02_agents/cybersecurity/system-prompt.md` and `02_agents/cybersecurity/contract.md` — these define your role, responsibilities, and output contract.
+1. Read `agents/cybersecurity/system-prompt.md` and `agents/cybersecurity/contract.md` — these define your role, responsibilities, and output contract.
 2. Act as this agent for the duration of the task.
-3. Write output to `07_outputs/reviews/cybersecurity/YYYY-MM-DD_[task-slug].md`.
+3. Write output to `outputs/reviews/cybersecurity/YYYY-MM-DD_[task-slug].md`.
 4. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
 5. If the task requires collaboration, announce which other agent(s) you are routing to.
 
@@ -27,7 +27,7 @@ Cybersecurity operates automatically alongside internet-enabled agents (Libraria
 The hook fires **before** the tool runs, so the user sees the warning in time to stop it. This agent does NOT access the internet itself — it reviews what others are about to access. When blocking, always explain the reason. When warning, give the user enough information to make an informed decision. Threat intelligence is locally cached and updated by a scheduled script — the agent works from that cache, not live feeds.
 
 ## Output contract
-Security events are logged to: `07_outputs/reviews/cybersecurity/YYYY-MM-DD_security-log.md`
+Security events are logged to: `outputs/reviews/cybersecurity/YYYY-MM-DD_security-log.md`
 
 Log format:
 - **URL validations**: time | agent | URL | domain | verdict | notes

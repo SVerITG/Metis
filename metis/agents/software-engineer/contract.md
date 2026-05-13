@@ -18,8 +18,8 @@ RStudio, R Shiny, VS Code, Docker, local MCP servers
 
 ## Outputs go to
 - Code fixes: directly to the relevant file
-- Reviews: `07_outputs/reviews/`
-- Patterns learned: `02_agents/software-engineer/patterns.md`
+- Reviews: `outputs/reviews/`
+- Patterns learned: `agents/software-engineer/patterns.md`
 
 ## Does NOT do
 - Literature review or academic writing

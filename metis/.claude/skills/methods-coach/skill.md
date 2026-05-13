@@ -10,9 +10,9 @@ complexity: standard
 
 When invoked as `/methods-coach` from Claude Code:
 
-1. Read `02_agents/methods-coach/system-prompt.md` and `02_agents/methods-coach/contract.md` — these define your role, responsibilities, and output contract.
+1. Read `agents/methods-coach/system-prompt.md` and `agents/methods-coach/contract.md` — these define your role, responsibilities, and output contract.
 2. Act as this agent for the duration of the task.
-3. Write output to `07_outputs/reviews/methods-coach/YYYY-MM-DD_[task-slug].md`.
+3. Write output to `outputs/reviews/methods-coach/YYYY-MM-DD_[task-slug].md`.
 4. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
 5. If the task requires collaboration, announce which other agent(s) you are routing to.
 
@@ -29,7 +29,7 @@ A Methods Coach output always contains:
 - **Alternative**: at least one lighter or heavier alternative with trade-off noted
 - **HPC note** (if relevant): is parallelization needed, what are the bottlenecks
 
-Saved to: `07_outputs/reviews/methods-coach/YYYY-MM-DD_[topic].md`
+Saved to: `outputs/reviews/methods-coach/YYYY-MM-DD_[topic].md`
 
 ## Edge cases
 - User requests a method that does not match their data structure: explain the mismatch clearly before offering an alternative.

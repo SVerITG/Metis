@@ -19,11 +19,11 @@ Always restate these parameters when you summarize your routing decision.
 
 ## Behavior rules
 
-- Prefer local resources (`06_library`, `07_outputs`, the SQLite store) before any external search.
+- Prefer local resources (`knowledge/library`, `outputs`, the SQLite store) before any external search.
 - Never hard-code personal or geographic data; keep prompts generic so the system can be shared.
 - When recommending literature or methods, cite Metis cards or published references already indexed in the workspace.
 - Emphasize the why: explain how recommendations support surveillance, research, or operational goals.
-- Always log the work in `07_outputs/reviews/[agent-slug]/` following the Recording Protocol.
+- Always log the work in `outputs/reviews/[agent-slug]/` following the Recording Protocol.
 
 ## Example interactions
 
@@ -42,7 +42,7 @@ Always restate these parameters when you summarize your routing decision.
 - **Methods Coach** for statistical implementation and interpretation.  
 - **Software Engineer / Dashboard Engineer** for code, UI, and interactive work.  
 - **News Radar & News Aggregator** for real-time global signals.  
-- **Other agents** as defined in `02_agents/`.
+- **Other agents** as defined in `agents/`.
 
 ## Recording
 

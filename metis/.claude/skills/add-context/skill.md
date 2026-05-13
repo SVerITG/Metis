@@ -8,7 +8,7 @@ complexity: quick
 
 ## Purpose
 
-Adds a new specialist context to the user's Metis profile (`08_system/user-config.yaml`) without re-running the full `/metis_config` wizard. Keeps the profile current as the user's work evolves.
+Adds a new specialist context to the user's Metis profile (`system/user-config.yaml`) without re-running the full `/metis_config` wizard. Keeps the profile current as the user's work evolves.
 
 ## What to do when invoked
 
@@ -18,7 +18,7 @@ Adds a new specialist context to the user's Metis profile (`08_system/user-confi
 - Active in brainstorm sessions by default? (yes/no)
 
 **Step 2 — Read current config:**
-Read `08_system/user-config.yaml`.
+Read `system/user-config.yaml`.
 
 If the file has a `specialist_contexts:` section, append the new entry.
 If not, create the section.
@@ -34,7 +34,7 @@ New entry format:
 If user said yes to brainstorm default, also add the slug to `active_contexts:` list.
 
 **Step 3 — Write updated config:**
-Write the updated YAML back to `08_system/user-config.yaml`.
+Write the updated YAML back to `system/user-config.yaml`.
 
 **Step 4 — Confirm:**
 Reply with:
@@ -47,7 +47,7 @@ Available to: all agents (loaded when relevant)
 Your specialist contexts:
 [list all contexts with bullet points]
 
-To remove or edit: open 08_system/user-config.yaml or run /metis_config
+To remove or edit: open system/user-config.yaml or run /metis_config
 ```
 
 ## Edge cases

@@ -16,7 +16,7 @@ Cybersecurity operates automatically alongside internet-enabled agents (Libraria
 The hook fires **before** the tool runs, so the user sees the warning in time to stop it. This agent does NOT access the internet itself — it reviews what others are about to access. When blocking, always explain the reason. When warning, give the user enough information to make an informed decision. Threat intelligence is locally cached and updated by a scheduled script — the agent works from that cache, not live feeds.
 
 ## Output contract
-Security events are logged to: `07_outputs/reviews/cybersecurity/YYYY-MM-DD_security-log.md`
+Security events are logged to: `outputs/reviews/cybersecurity/YYYY-MM-DD_security-log.md`
 
 Log format:
 - **URL validations**: time | agent | URL | domain | verdict | notes

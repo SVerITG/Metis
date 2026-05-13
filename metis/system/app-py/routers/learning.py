@@ -89,7 +89,7 @@ async def learning_due_today(request: Request):
 @router.get("/api/partial/learning/courses", response_class=HTMLResponse)
 async def learning_courses(request: Request):
     courses = db_query(
-        "SELECT id, slug, title, category, progress_pct, total_modules, completed_modules "
+        "SELECT id, slug, title, category, progress_pct, total_modules, completed_modules, project_id "
         "FROM learning_courses WHERE status = 'active' ORDER BY progress_pct DESC",
         default=[],
     )
@@ -132,12 +132,12 @@ async def learning_completed(request: Request):
 @router.get("/api/partial/learning/placeholder-courses", response_class=HTMLResponse)
 async def learning_placeholder_courses(request: Request):
     courses = db_query(
-        "SELECT id, slug, title, category FROM learning_courses WHERE status = 'placeholder' ORDER BY category, title",
+        "SELECT id, slug, title, category FROM learning_courses WHERE status = 'idea' ORDER BY category, title",
         default=[],
     )
     return templates.TemplateResponse(
         request,
-        "partials/learning_placeholder_courses.html",
+        "partials/learning_ideas.html",
         {"courses": courses},
     )
 
@@ -155,6 +155,52 @@ async def course_build_request(request: Request):
     slug = course[0]["slug"] if course else course_id
     prompt = f"/course-builder\ncourse-slug: {slug}\nPlease walk me through the questionnaire at metis/system/config/course-builder-questionnaire.md and build this course: {title}"
     return {"status": "ok", "prompt": prompt, "title": title}
+
+
+@router.post("/api/course/build-idea")
+async def course_build_idea(request: Request):
+    """Generate a context-rich course-builder prompt for a course idea."""
+    data = await request.json()
+    slug = data.get("slug", "")
+    title = data.get("title", slug)
+    adaptive = data.get("adaptive", False)
+    topic_hint = data.get("topicHint", "")
+    research_question = data.get("researchQuestion", "").strip()
+
+    mlm_ref = "Statistics for Epidemiology course (id=6, slug=statistics-full)"
+    mlm_path = ""  # set via user-config.yaml: course_reference_path
+    questionnaire = "metis/system/config/course-builder-questionnaire.md"
+
+    if adaptive:
+        topic = topic_hint or title
+        project_name = f"{topic} Course"
+        rq_section = f"\nResearch question context:\n{research_question}\n" if research_question else ""
+        prompt = (
+            f"/course-builder\n"
+            f"Project: {project_name}\n\n"
+            f"Build an adaptive statistics course on: {topic}\n"
+            f"{rq_section}"
+            f"Use {mlm_ref} as the structural template.\n"
+            f"MLM course reference files: {mlm_path}\n\n"
+            f"Walk me through the questionnaire at {questionnaire} "
+            f"and adapt the course specifically for \"{topic}\" — "
+            f"same modular structure, learning objectives format, and spaced repetition design."
+        )
+    else:
+        project_name = f"{title} Course"
+        rq_section = f"\nResearch question context:\n{research_question}\n" if research_question else ""
+        prompt = (
+            f"/course-builder\n"
+            f"Project: {project_name}\n\n"
+            f"Build a new course: {title}\n"
+            f"{rq_section}"
+            f"Reference template: {mlm_ref}\n"
+            f"MLM course reference files: {mlm_path}\n\n"
+            f"Walk me through the questionnaire at {questionnaire} "
+            f"and build this course following the same principles and structure."
+        )
+
+    return {"status": "ok", "prompt": prompt, "title": title, "slug": slug}
 
 
 # ---------------------------------------------------------------------------

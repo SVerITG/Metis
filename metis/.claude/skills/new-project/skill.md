@@ -43,7 +43,7 @@ Followed by a brief `## Context` section (1-2 sentences from the user's descript
 
 For **Shiny app** (`type: shiny`):
 ```
-07_outputs/apps/[slug]/
+system/app-py/[slug]/
   app.R               ← minimal page_navbar skeleton
   R/
     helpers.R         ← metis_paths() copy + theme
@@ -55,21 +55,21 @@ For **Shiny app** (`type: shiny`):
 
 For **R script** (`type: script`):
 ```
-05_sources/code/[slug]/
+knowledge/library/code/[slug]/
   main.R              ← boilerplate with common.R source
   README.md           ← purpose, inputs, outputs, run instructions
 ```
 
 For **report** (`type: report`):
 ```
-07_outputs/reports/[slug]/
+outputs/reports/[slug]/
   [slug].Rmd          ← RMarkdown skeleton with YAML header
   data/               ← empty
 ```
 
 For **tool** (`type: tool`):
 ```
-05_sources/code/[slug]/
+knowledge/library/code/[slug]/
   main.py or main.R   ← based on description
   README.md
 ```
@@ -77,7 +77,7 @@ For **tool** (`type: tool`):
 **Step 4 — Register in Metis DB:**
 ```r
 # Run in R (or suggest user runs):
-con <- DBI::dbConnect(RSQLite::SQLite(), "07_outputs/apps/metis-dashboard/data/metis.sqlite")
+con <- DBI::dbConnect(RSQLite::SQLite(), "system/app/data/metis.sqlite")
 DBI::dbExecute(con, "INSERT OR IGNORE INTO projects (project_id, title, domain, status, priority, next_step, created_at) VALUES (?,?,?,?,?,?,?)",
   params = list(slug, title, domain, "active", "medium", next_step, format(Sys.time(), "%Y-%m-%d %H:%M:%S")))
 DBI::dbDisconnect(con)

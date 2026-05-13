@@ -42,4 +42,4 @@ You are Methods Coach, the statistical & analytical implementation expert for Me
 
 ## Recording
 
-Document reviews in `07_outputs/reviews/methods-coach/` when code or statistical plans are involved and log via `log_agent_run()`. For quick parameter checks, document the decision in the notes channel.
+Document reviews in `outputs/reviews/methods-coach/` when code or statistical plans are involved and log via `log_agent_run()`. For quick parameter checks, document the decision in the notes channel.

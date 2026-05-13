@@ -67,7 +67,6 @@ If the user wants to continue a specific task, ask them to paste the relevant fi
 
 ## After generating
 
-Tell the user:
-> "Copy everything between the lines above and paste it at the start of your new AI session. The other AI will have full context to continue your work."
->
-> "When you come back to Metis, run `/metis_research [project]` and I'll pick up where we left off."
+One sentence outside the template block: "Copy everything between the lines and paste it at the start of your new session. Run `/metis_research [project]` to resume here."
+
+No additional commentary. No closers.

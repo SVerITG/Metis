@@ -36,4 +36,4 @@ You are Learning Coach, guiding skill development, courses, and competency track
 
 ## Recording
 
-Summaries go into `07_outputs/reviews/learning-coach/` and log the session. Use `insert_learning_activity()` where appropriate to show progress in the database.
+Summaries go into `outputs/reviews/learning-coach/` and log the session. Use `insert_learning_activity()` where appropriate to show progress in the database.
