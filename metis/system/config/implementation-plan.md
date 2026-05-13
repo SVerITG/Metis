@@ -194,15 +194,14 @@ The feature backlog (`feature-backlog.md`) remains the raw list; this document i
   `.gemini/GEMINI.md` created: full agent routing table, the user's profile, key paths, standing rules,  
   and a section explaining how Gemini's native features (Grounding, code execution) relate to MCP tools.
 
-- [ ] **XL — Windows .exe installer**  
-  No terminal required. Double-click, answer configuration questions, done.  
-  Handles: Python, virtual environment, MCP registration, Windows shortcut, dashboard autostart.  
-  *Phase 11 item. Blocking for public release.*
+- [~] **XL — Windows .exe installer**  
+  Inno Setup script complete (`metis-setup.iss`). Pending: compile on Windows + clean-VM test.  
+  *Code written — needs Stan to run `ISCC.exe metis-setup.iss` on a Windows machine with Inno Setup 6.*
 
 - [ ] **XXL — Docker image**  
   `ghcr.io/sveritg/metis:latest`. Self-contained, no WSL required.  
   Low priority for solo Windows use; high priority for Linux users and institutional deployments.  
-  *Phase 11 item.*
+  *Phase 11 item — deferred.*
 
 ---
 
@@ -325,6 +324,8 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
 | 2026-05-13 | **nomic-embed-text-v1.5-Q upgrade**: 384→768 dims, task-prefix API (embed_query/embed_document), vec0 auto-migration, ideas now embed to episodic memory on capture. |
 | 2026-05-13 | **PaperQA2 library search**: `index_library_pdfs()` + `ask_library()` MCP tools, pypdf pre-validation, API key .env fallback. Awaiting `ANTHROPIC_API_KEY` in `.env` to run indexer. |
 | 2026-05-13 | **README pushed to main**: full researcher/developer overhaul with Metis PNG (380px), Mermaid architecture diagram, dual audience structure, contributing spec. |
+| 2026-05-13 | **Phase K complete** (K1–K5): `course-build-lessons-learned.md` written, course-builder skill.md updated with standing rules, `knowledge/course-template/` created, edition variants defined, Inno Setup course selector added. |
+| 2026-05-13 | **Phase 11 partial** (M11.1, M11.3, M11.5+M11.6): `vendor_download.py` + `config_merger.py` + `tray_launcher.py` (with port selection) written. Tray launcher wired into installer + install.ps1. Pending: Inno Setup compile + clean-VM test + code signing. |
 
 ---
 
@@ -349,11 +350,11 @@ on first launch. Spec: `system/config/first-run-wizard.md` (already written).
 **Goal:** Document all lessons from the MLM course build, bake fixes into the Course Builder
 agent so every new course starts with those improvements applied.
 
-- [ ] **K1** (M) — Write `system/config/course-build-lessons-learned.md`: every problem and fix from the MLM build (content structure, lesson format, quiz generation, Quarto rendering, spaced repetition seeding, metadata issues)
-- [ ] **K2** (M) — Update `agents/course-builder/skill.md` with standing rules from K1
-- [ ] **K3** (S) — Create `course-template/` starter with all K1 fixes pre-applied
-- [ ] **K4** (S) — Metis_PH edition variants: define "full" (with MLM course) vs "standard" content
-- [ ] **K5** (M) — Installer course variant selector: "Include statistics course? (~50 MB)"
+- [x] **K1** (M) — Write `system/config/course-build-lessons-learned.md` — DONE 2026-05-13
+- [x] **K2** (M) — Update `.claude/skills/course-builder/skill.md` with standing rules from K1 — DONE 2026-05-13
+- [x] **K3** (S) — Create `knowledge/course-template/` starter with all K1 fixes pre-applied — DONE 2026-05-13
+- [x] **K4** (S) — Edition variants defined in `system/config/edition-variants.md` — DONE 2026-05-13
+- [x] **K5** (M) — Installer course component selector in `metis-setup.iss` (full/standard/minimal types, courses/biostatistics component, install-state.json write) — DONE 2026-05-13
 
 ---
 

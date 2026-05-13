@@ -53,14 +53,21 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
 english.WelcomeText=This will install Metis Research Cortex on your computer.%n%nMetis is an AI assistant designed for researchers. It works alongside Claude AI and runs entirely on your computer — your research files never leave your machine.%n%nInstallation takes about 5 minutes.%n%nYou will need an Anthropic API key (free from console.anthropic.com).
+english.CoursePageTitle=Optional: Biostatistics Course
+english.CoursePageDesc=Include a pre-built statistics course for epidemiologists?
+english.CourseCheckboxLabel=Biostatistics for Epidemiologists (12 lessons, ~0.5 MB)%n%nCovers: descriptive stats, inference, regression, survival analysis, and multilevel models.%nDesigned for researchers — no prior statistics knowledge required.
 
 [Types]
-Name: "standard"; Description: "Standard — AI assistant + research dashboard (recommended)"
+Name: "full";     Description: "Full — dashboard + courses (recommended for new users)"
+Name: "standard"; Description: "Standard — AI assistant + research dashboard"
 Name: "minimal";  Description: "Minimal — AI assistant only (fastest, no dashboard)"
+Name: "custom";   Description: "Custom installation"; Flags: iscustom
 
 [Components]
-Name: "core";       Description: "Metis core (agents, skills, config)"; Types: standard minimal; Flags: fixed
-Name: "dashboard";  Description: "Research dashboard (browser app)";     Types: standard
+Name: "core";                 Description: "Metis core (agents, skills, config)";              Types: full standard minimal custom; Flags: fixed
+Name: "dashboard";            Description: "Research dashboard (browser-based, 9 tabs)";       Types: full standard custom
+Name: "courses";              Description: "Pre-built courses";                                  Types: full custom
+Name: "courses/biostatistics"; Description: "Biostatistics for Epidemiologists (12 lessons)";  Types: full custom
 
 [Tasks]
 Name: "desktopai";     Description: "Shortcut on desktop: Open Metis AI";        GroupDescription: "Shortcuts:"
@@ -72,8 +79,15 @@ Name: "startmenu";     Description: "Create Start Menu folder";                 
 Source: "{#RepoRoot}\agents\*";           DestDir: "{app}\agents";      Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*-context.md"
 Source: "{#RepoRoot}\.claude\*";          DestDir: "{app}\.claude";     Flags: ignoreversion recursesubdirs createallsubdirs
 
-; Knowledge base (courses + library concepts/methods — no personal disease-area files)
-Source: "{#RepoRoot}\knowledge\courses\*";              DestDir: "{app}\knowledge\courses";                   Flags: ignoreversion recursesubdirs createallsubdirs
+; Knowledge base — course template (always included so /course-builder has a starter)
+Source: "{#RepoRoot}\knowledge\course-template\*";      DestDir: "{app}\knowledge\course-template";           Flags: ignoreversion recursesubdirs createallsubdirs
+
+; Pre-built courses — optional component
+Source: "{#RepoRoot}\knowledge\courses\biostatistics\*"; DestDir: "{app}\knowledge\courses\biostatistics";   Flags: ignoreversion recursesubdirs createallsubdirs; Components: courses/biostatistics
+
+; Placeholder courses (14 rows seeded into DB at post-install — no files needed)
+
+; Library concepts/methods
 Source: "{#RepoRoot}\knowledge\library\concepts\*";     DestDir: "{app}\knowledge\library\concepts";          Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#RepoRoot}\knowledge\library\methods\*";      DestDir: "{app}\knowledge\library\methods";           Flags: ignoreversion recursesubdirs createallsubdirs
 
@@ -99,6 +113,10 @@ Source: "{#RepoRoot}\system\app-py\*"; DestDir: "{app}\system\app-py"; \
 Source: "..\windows\install.ps1";        DestDir: "{app}\system\install\windows"; Flags: ignoreversion
 Source: "..\windows\run-mcp.bat";        DestDir: "{app}\system\mcp-server";      Flags: ignoreversion
 Source: "..\windows\run-dashboard.bat";  DestDir: "{app}\system\app-py";          Flags: ignoreversion; Components: dashboard
+Source: "..\windows\run-tray.bat";       DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
+Source: "..\tray_launcher.py";           DestDir: "{app}\system\install";         Flags: ignoreversion; Components: dashboard
+Source: "..\vendor_download.py";         DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\config_merger.py";           DestDir: "{app}\system\install";         Flags: ignoreversion
 
 ; CONTRIBUTING + README
 Source: "{#RepoRoot}\..\CONTRIBUTING.md"; DestDir: "{app}";  Flags: ignoreversion skipifsourcedoesntexist
@@ -120,15 +138,15 @@ Name: "{app}\system\config"
 ; Start Menu
 Name: "{group}\Metis — Open AI";        Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; \
   Tasks: startmenu; Comment: "Open Metis AI assistant"
-Name: "{group}\Metis — Dashboard";      Filename: "{app}\system\app-py\run-windows.bat"; \
-  Tasks: startmenu; Components: dashboard
+Name: "{group}\Metis — Dashboard";      Filename: "{app}\system\install\windows\run-tray.bat"; \
+  Tasks: startmenu; Components: dashboard; Comment: "Start Metis in the system tray"
 Name: "{group}\Uninstall Metis";        Filename: "{uninstallexe}"; Tasks: startmenu
 
 ; Desktop
 Name: "{autodesktop}\Metis — Open AI";      Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; \
   Tasks: desktopai
-Name: "{autodesktop}\Metis — Dashboard";    Filename: "{app}\system\app-py\run-windows.bat"; \
-  Tasks: desktopdash; Components: dashboard
+Name: "{autodesktop}\Metis — Dashboard";    Filename: "{app}\system\install\windows\run-tray.bat"; \
+  Tasks: desktopdash; Components: dashboard; Comment: "Start Metis in the system tray"
 
 [Run]
 ; Post-install: run PowerShell to install Python, MCP server, configure Claude Desktop
@@ -225,6 +243,32 @@ begin
 
     // Write first-run marker
     SaveStringToFile(ExpandConstant('{app}\system\config\.first-run'), '', False);
+
+    // Write install-state.json reflecting chosen components
+    begin
+      var StateFile := ExpandConstant('{app}\system\config\install-state.json');
+      var HasDash   := WizardIsComponentSelected('dashboard');
+      var HasCourse := WizardIsComponentSelected('courses/biostatistics');
+      var Profile   := 'standard';
+      if HasDash and HasCourse then Profile := 'full'
+      else if not HasDash then Profile := 'mcp-only';
+      var StateContent :=
+        '{' + #13#10 +
+        '  "profile": "' + Profile + '",' + #13#10 +
+        '  "version": "' + '{#MyAppVersion}' + '",' + #13#10 +
+        '  "installed_at": "' + GetDateTimeString('yyyy/mm/dd', '-', ':') + '",' + #13#10 +
+        '  "courses_included": [' + (if HasCourse then '"biostatistics"' else '') + '],' + #13#10 +
+        '  "components": {' + #13#10 +
+        '    "mcp_server": true,' + #13#10 +
+        '    "dashboard": ' + (if HasDash then 'true' else 'false') + ',' + #13#10 +
+        '    "hooks": true,' + #13#10 +
+        '    "windows_task_scheduler": false,' + #13#10 +
+        '    "nssm_service": false,' + #13#10 +
+        '    "docker": false' + #13#10 +
+        '  }' + #13#10 +
+        '}' + #13#10;
+      SaveStringToFile(StateFile, StateContent, False);
+    end;
   end;
 end;
 
