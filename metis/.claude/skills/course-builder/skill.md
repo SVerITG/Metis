@@ -45,3 +45,41 @@ Final delivery includes:
 - Source material is mostly paywalled: stop at step 3 and ask whether to switch to open-access alternatives or drop the topic.
 - Course duplicates one already in `learning_courses`: ask whether to extend the existing course or start a new one.
 - User wants a course on a controversial / contested topic: include explicit "what is contested" framing in the curriculum, do not present one viewpoint as settled.
+
+## Standing rules (from lessons-learned doc)
+
+Full reference: `system/config/course-build-lessons-learned.md`
+
+**Lesson structure (non-negotiable):**
+Every lesson file must contain — in this order — `## Learning objectives`, `## Prerequisites`, `## Content` (with named `### Section N:` subsections), `## Summary`, `## Exercises`, `## Further reading`. No exceptions. The spaced-repetition seeder and the Learning tab progress parser both depend on this structure.
+
+**lessons.json ids must match filenames:**
+`01-topic.md` → `"id": "lesson-01"`. `order` must be sequential from 1. Gaps break the progress bar.
+
+**Bloom verb discipline:**
+Every learning objective starts with a Bloom-level action verb. Assessment difficulty must not exceed the ceiling verb in that lesson's objectives.
+
+**Domain-grounded examples:**
+Every content section includes an example tied to the learner's domain (not generic numbers). For public health / epidemiology courses, use disease/population framing.
+
+**R code style:**
+tidyverse only, `library()` at top of every block, expected output as a comment at the end. No package data that isn't in the standard install.
+
+**Pre-publish validation:**
+Before setting status → 'active', run:
+```bash
+for f in knowledge/courses/{slug}/lessons/*.md; do
+  grep -q "## Summary" "$f" || echo "MISSING: $f"
+  grep -q "## Exercises" "$f" || echo "MISSING EXERCISES: $f"
+done
+```
+Fix all failures before publishing. Missing summaries produce zero spaced-repetition items for that lesson.
+
+**DB registration:**
+`total_modules` = count from `lessons.json`, `progress_pct = 0`, `slug` must match folder name exactly.
+
+**Source strategy (open-access first):**
+1. `ask_library()` (PaperQA2 index) → 2. OpenAlex `is_oa=true` → 3. arXiv/bioRxiv/medRxiv → 4. Ask user for paywalled PDF. Never scrape or reproduce copyrighted content.
+
+**Output contract (corrected):**
+Lessons live at `knowledge/courses/{slug}/lessons/NN-slug.md` (flat — no subdirectories). The previous contract listed `modules/NN_slug/` which was incorrect.

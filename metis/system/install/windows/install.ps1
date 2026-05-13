@@ -238,6 +238,7 @@ if (-not $Stage1Only) {
     & $pip install --quiet --upgrade pip 2>&1 | Out-Null
     & $pip install --quiet -e (Join-Path $mcpSrc ".") 2>&1 | Out-Null
     & $pip install --quiet "faster-whisper>=1.0" "feedparser>=6.0" "pyzotero>=1.5" 2>&1 | Out-Null
+    & $pip install --quiet "pystray>=0.19" "Pillow>=10.0" 2>&1 | Out-Null
     Write-OK "MCP server packages installed"
 
     # Write run-mcp.bat
