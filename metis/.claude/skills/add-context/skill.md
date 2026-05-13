@@ -13,7 +13,7 @@ Adds a new specialist context to the user's Metis profile (`system/user-config.y
 ## What to do when invoked
 
 **Step 1 — Gather information** (ask in one message):
-- Context name: short label (e.g. "Epidemiological dashboards", "HAT surveillance mapping")
+- Context name: short label (e.g. "Epidemiological dashboards", "[your surveillance domain] mapping")
 - Description: 1-2 sentences about what this covers and why it matters to the user's work
 - Active in brainstorm sessions by default? (yes/no)
 
