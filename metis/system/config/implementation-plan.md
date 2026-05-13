@@ -191,7 +191,7 @@ The feature backlog (`feature-backlog.md`) remains the raw list; this document i
   No R or RStudio references present. No rewrite needed.
 
 - [x] **M — .gemini/GEMINI.md** — DONE 2026-05-12  
-  `.gemini/GEMINI.md` created: full agent routing table, Stan's profile, key paths, standing rules,  
+  `.gemini/GEMINI.md` created: full agent routing table, the user's profile, key paths, standing rules,  
   and a section explaining how Gemini's native features (Grounding, code execution) relate to MCP tools.
 
 - [ ] **XL — Windows .exe installer**  
@@ -328,11 +328,43 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
 
 ---
 
+## Phase J — Config Wizard (comprehensive first-run experience)
+
+**Goal:** 13-section guided setup wizard that runs inside Claude Desktop / Claude Code
+on first launch. Spec: `system/config/first-run-wizard.md` (already written).
+
+- [ ] **J1** (S) — `write_user_config(yaml_str)` MCP tool: writes `user-config.yaml` from wizard
+- [ ] **J2** (S) — `write_user_preferences(json_str)` MCP tool: writes `user-preferences.json`
+- [ ] **J3** (S) — `ingest_ideas_document(path)` MCP tool: imports Word/text/markdown ideas file
+- [ ] **J4** (S) — `remove_first_run_marker()` MCP tool: deletes `.first-run`, signals wizard complete
+- [ ] **J5** (M) — Wire wizard trigger in CLAUDE.md: detect `.first-run`, load wizard, block other requests
+- [ ] **J6** (M) — Claude Project instructions file for claude.ai Projects wizard experience
+- [ ] **J7** (L) — Dashboard `/setup` page — visual wizard alternative for dashboard users
+- [ ] **J8** (S) — `/metis-config` skill: re-run any section of the wizard at any time
+
+---
+
+## Phase K — Course Builder: Lessons Learned
+
+**Goal:** Document all lessons from the MLM course build, bake fixes into the Course Builder
+agent so every new course starts with those improvements applied.
+
+- [ ] **K1** (M) — Write `system/config/course-build-lessons-learned.md`: every problem and fix from the MLM build (content structure, lesson format, quiz generation, Quarto rendering, spaced repetition seeding, metadata issues)
+- [ ] **K2** (M) — Update `agents/course-builder/skill.md` with standing rules from K1
+- [ ] **K3** (S) — Create `course-template/` starter with all K1 fixes pre-applied
+- [ ] **K4** (S) — Metis_PH edition variants: define "full" (with MLM course) vs "standard" content
+- [ ] **K5** (M) — Installer course variant selector: "Include statistics course? (~50 MB)"
+
+---
+
 ## What to build next (ordered recommendation)
 
 1. **Activate PaperQA2 index** (XS, 5min) — add `ANTHROPIC_API_KEY` to `metis/system/.env`, call `index_library_pdfs()`. Unlocks semantic Q&A over 221 papers.
-2. **Morning scan Windows autostart** (S, 1h) — verify "Schedule morning brief" button end-to-end from Windows Task Scheduler. Phase C last open item.
-3. **Telegram bot for mobile capture** (L, 1d) — text/voice/image → inbox → cross-pollination. `python-telegram-bot` + `faster-whisper`. Reuse `webhook.py`.
-4. **Windows .exe installer** (XL, 3d) — Phase 11. Blocking for public release.
-5. **Docker image** (XXL) — Phase 11. Linux users + institutional deployments.
-6. **Phase 12 test suite** (XXL) — unit + integration + e2e for 5 critical flows. Zero coverage currently.
+2. **Phase J — Config wizard** (L, 2d) — J1–J5 are critical path; J6–J8 are polish.
+3. **Phase K — Course Builder lessons learned** (M, 1d) — K1 document + K2 skill update first.
+4. **Morning scan Windows autostart** (S, 1h) — verify "Schedule morning brief" button end-to-end.
+5. **Telegram bot** (L, 1d) — text/voice/image → inbox → cross-pollination.
+6. **Windows .exe final build** (XL, 1d) — compile `metis-setup.iss` with Inno Setup. Installer scripts written (Phase 11 code ✅, pending compile + test).
+7. **Docker image final build** (M, 4h) — test Dockerfile + docker-compose end-to-end.
+8. **Phase 12 test suite** (XXL) — unit + integration + e2e. Zero coverage currently.
+9. **Metis GitHub repos** — create `Metis` (empty shell), `Metis_BM`, `Metis_CL` placeholder repos.

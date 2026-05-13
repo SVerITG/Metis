@@ -28,13 +28,13 @@
 
 ## STRATEGIC — System-level improvements requested 2026-05-10
 
-- [ ] **On-demand improvement scanner ("Metis Radar")** — A script/skill that Stan runs periodically to ask: "what new repos, tools, or techniques exist that could improve a specific part of Metis?" It searches GitHub + web per capability, compares with current Metis implementation, generates structured improvement proposals that flow into the existing self-improvement pipeline (same proposals table). Requested: "in the future this self-improvement needs to be present in the project on demand, a full script to question what we can find on the internet that would improve Metis." Design:
+- [ ] **On-demand improvement scanner ("Metis Radar")** — A script/skill that the user runs periodically to ask: "what new repos, tools, or techniques exist that could improve a specific part of Metis?" It searches GitHub + web per capability, compares with current Metis implementation, generates structured improvement proposals that flow into the existing self-improvement pipeline (same proposals table). Requested: "in the future this self-improvement needs to be present in the project on demand, a full script to question what we can find on the internet that would improve Metis." Design:
   - New skill: `/metis-scan [capability|all]` — e.g. `/metis-scan cross-pollination`
   - Reads a capabilities manifest (`system/config/capabilities-manifest.json`) listing each Metis feature + its current implementation description
   - For each capability: web search "best {capability} implementation 2026" + GitHub search → Claude compares ideal vs. current → generates proposal
   - Saves proposals to `improvement_proposals` table (same pipeline as reflexion-based proposals)
   - Can be scheduled monthly or triggered on demand
-  - Stan reviews and approves/rejects each proposal
+  - The user reviews and approves/rejects each proposal
   - (~2 days to build: manifest JSON + skill + MCP tool + search integration)
 
 ---
