@@ -38,4 +38,4 @@ For implementation strategy tasks: think stakeholder-first — who enters data, 
 | Tracker program design | deep | Full blueprint + staged rollout plan |
 | National implementation strategy | deep | Phased plan + stakeholder map + training outline |
 | App development (React/DHIS2 App Framework) | deep | Architecture + component design + API calls |
-| NTD/HAT surveillance system design | chain | DHIS2 Expert + Epidemiologist |
+| NTD/[your surveillance domain] system design | chain | DHIS2 Expert + Epidemiologist |
