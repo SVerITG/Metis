@@ -95,9 +95,9 @@ updated: "2026-03-30"
 
 ## Learning Path
 
-- Start with `06_library/courses/research-writing/`.
-- Pair this card with `06_library/concepts/implementation-science.md` because mixed methods are often central to process evaluation and context analysis.
-- Review `06_library/methods/study-designs.md` and `06_library/methods/biostatistics-essentials.md` so each strand of the design is defensible on its own before integration.
+- Start with `knowledge/library/courses/research-writing/`.
+- Pair this card with `knowledge/library/concepts/implementation-science.md` because mixed methods are often central to process evaluation and context analysis.
+- Review `knowledge/library/methods/study-designs.md` and `knowledge/library/methods/biostatistics-essentials.md` so each strand of the design is defensible on its own before integration.
 - In the Learning Hub, this card aligns primarily with **Scientific communication** and **Epidemiological methods**, and supports **Leadership & management** when multisector programmes are studied.
 
 ---

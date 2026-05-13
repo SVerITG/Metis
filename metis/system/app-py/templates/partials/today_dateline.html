@@ -11,5 +11,12 @@
     <a href="javascript:void(0)" onclick="generateHandoff()" style="margin-left:1rem;" title="Write a session handoff brief to the journal">
       <i class="bi bi-box-arrow-up-right"></i> Handoff
     </a>
+    <span id="scheduler-next" style="margin-left:1rem;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-muted);"
+          hx-get="/api/partial/today/automation-next"
+          hx-trigger="load, every 60s"
+          hx-swap="outerHTML"></span>
+    <a href="javascript:void(0)" onclick="runMetisDoctor()" style="margin-left:1rem;" title="Run a full health check on Metis">
+      <i class="bi bi-stethoscope"></i> Doctor
+    </a>
   </span>
 </div>

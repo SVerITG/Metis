@@ -119,6 +119,6 @@ The practical lesson is that an introduction should be structured persuasion, no
 - [Cochrane Handbook](https://training.cochrane.org/handbook/current)
 
 ## Links to Metis library
-- `06_library/methods/writing-for-journals.md`
-- `06_library/methods/systematic-reviews.md`
-- `06_library/methods/study-designs.md`
+- `knowledge/library/methods/writing-for-journals.md`
+- `knowledge/library/methods/systematic-reviews.md`
+- `knowledge/library/methods/study-designs.md`

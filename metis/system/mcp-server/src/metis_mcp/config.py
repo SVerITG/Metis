@@ -30,7 +30,6 @@ class Paths:
             self.root
             / "inputs"
             / "literature"
-            / "sleeping-sickness"
             / "metadata"
         )
         self.library = self.root / "knowledge" / "library"

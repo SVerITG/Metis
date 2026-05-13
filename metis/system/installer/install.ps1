@@ -23,7 +23,7 @@ function Write-Step  { param($msg) Write-Host "  $msg" -ForegroundColor Cyan }
 function Write-OK    { param($msg) Write-Host "  [OK] $msg" -ForegroundColor Green }
 function Write-Warn  { param($msg) Write-Host "  [!]  $msg" -ForegroundColor Yellow }
 function Write-Fail  { param($msg) Write-Host "  [X]  $msg" -ForegroundColor Red }
-function Write-Head  { param($msg) Write-Host "`n$msg`n$('─' * $msg.Length)" -ForegroundColor White }
+function Write-Head  { param($msg) Write-Host "`n$msg`n$('-' * $msg.Length)" -ForegroundColor White }
 
 Write-Host @"
 
@@ -37,7 +37,8 @@ Write-Host @"
 $ScriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $MetisRoot   = (Resolve-Path (Join-Path $ScriptDir "..\..")).Path   # metis/
 $SetupScript = Join-Path $MetisRoot "system\mcp-server\setup-mcp.sh"
-$BatchFile   = Join-Path $MetisRoot "system\launch-dashboard.bat"
+$BatchFile   = Join-Path $MetisRoot "system\launch-metis.bat"
+$InitDbScript = Join-Path $ScriptDir "init_db.py"
 
 Write-Head "Step 1 — Checking prerequisites"
 
@@ -89,7 +90,23 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-OK "MCP server installed and registered"
 
-Write-Head "Step 3 — Creating shortcuts"
+Write-Head "Step 3 — Initializing database"
+
+$DbPath = Join-Path $MetisRoot "system\app\data\metis.sqlite"
+if (-not (Test-Path $DbPath)) {
+    Write-Step "Creating metis.sqlite..."
+    $InitDbWSL = wsl wslpath -u $InitDbScript.Replace('\', '/')
+    wsl python3 "$InitDbWSL"
+    if ($LASTEXITCODE -eq 0) {
+        Write-OK "Database created"
+    } else {
+        Write-Warn "Database init failed — dashboard will show empty data on first run"
+    }
+} else {
+    Write-OK "Database already exists"
+}
+
+Write-Head "Step 4 — Creating shortcuts"
 
 $WShell = New-Object -ComObject WScript.Shell
 
@@ -98,7 +115,7 @@ if (-not (Test-Path $BatchFile)) {
     $BatchFileWSL = wsl wslpath -u $BatchFile.Replace('\', '/')
     $RunSh        = Join-Path $MetisRoot "system\app-py\run.sh"
     $RunShWSL     = wsl wslpath -u $RunSh.Replace('\', '/')
-    $BatContent   = "@echo off`r`ntitle Metis — Starting...`r`nstart `"Metis Dashboard`" wsl.exe -e bash `"$RunShWSL`"`r`ntimeout /t 4 /nobreak > nul`r`nstart `"`" `"http://127.0.0.1:8000`"`r`nexit"
+    $BatContent   = "@echo off`r`ntitle Metis -- Starting...`r`nstart `"Metis Dashboard`" wsl.exe -e bash `"$RunShWSL`"`r`ntimeout /t 6 /nobreak > nul`r`nstart `"`" `"http://127.0.0.1:8080`"`r`nexit"
     Set-Content -Path $BatchFile -Value $BatContent -Encoding ASCII
 }
 
@@ -115,14 +132,14 @@ foreach ($Dest in @(
     Write-OK "Shortcut: $Dest"
 }
 
-Write-Head "Step 4 — Done"
+Write-Head "Step 5 — Done"
 
 Write-Host @"
 
   Metis is installed.
 
   NEXT STEPS:
-  ──────────────────────────────────────────────────────
+  ------------------------------------------------------
   1. Restart Claude Desktop and Claude Code
      (required for the MCP server to appear)
 
@@ -136,8 +153,8 @@ Write-Host @"
 
   4. Double-click the Metis shortcut on your Desktop
      to open the dashboard.
-  ──────────────────────────────────────────────────────
+  ------------------------------------------------------
 
 "@ -ForegroundColor Green
 
-Read-Host "Press Enter to close"
+exit 0

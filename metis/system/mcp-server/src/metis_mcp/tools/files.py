@@ -340,6 +340,81 @@ async def list_folder(folder_path: str, pattern: str = "*") -> list[TextContent]
 
 
 @app.tool()
+async def list_basket() -> list[TextContent]:
+    """List files in the Metis basket (legacy & inspiration documents).
+
+    The basket is a flat holding area for any document kept as a reference for
+    future work. The private/ subfolder is NEVER listed — it contains personal
+    or patient data.
+    """
+    basket_root = paths.root / "basket"
+    if not basket_root.is_dir():
+        return [TextContent(type="text", text="Basket folder not found. Create it at metis/basket/.")]
+
+    private_dir = basket_root / "private"
+    files = sorted([
+        f for f in basket_root.iterdir()
+        if f.is_file() and f.name != "BASKET.md"
+    ])
+
+    lines = [f"**Metis Basket** — `{basket_root}`\n"]
+    if not files:
+        lines.append("*(empty — drop inspiration documents here)*")
+    else:
+        for f in files[:50]:
+            size_kb = f.stat().st_size // 1024
+            lines.append(f"  • {f.name}  ({size_kb} KB)")
+        if len(files) > 50:
+            lines.append(f"  … and {len(files) - 50} more")
+        lines.append(f"\n**Total:** {len(files)} file{'s' if len(files) != 1 else ''} (private/ excluded)")
+
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
+@app.tool()
+async def promote_basket_item(source_path: str, target_path: str) -> list[TextContent]:
+    """Move a basket item to a stable project folder (promote from basket to active storage).
+
+    Refuses to touch basket/private/ items.
+
+    Args:
+        source_path: Absolute path to the file in basket/ to promote.
+        target_path: Absolute destination path (file or folder).
+    """
+    import shutil
+
+    basket_root = paths.root / "basket"
+    src = Path(source_path)
+
+    # Safety: must be inside basket/, must not be inside private/
+    try:
+        src.relative_to(basket_root)
+    except ValueError:
+        return [TextContent(type="text", text=f"Source must be inside the basket folder: {basket_root}")]
+
+    private_dir = basket_root / "private"
+    try:
+        src.relative_to(private_dir)
+        return [TextContent(type="text", text="Cannot promote items from basket/private/ — personal data must stay protected.")]
+    except ValueError:
+        pass  # good — not in private
+
+    if not src.exists():
+        return [TextContent(type="text", text=f"Source file not found: {source_path}")]
+
+    dest = Path(target_path)
+    if dest.is_dir():
+        dest = dest / src.name
+
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(src), str(dest))
+        return [TextContent(type="text", text=f"Promoted:\n  {src}\n→ {dest}")]
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error promoting file: {e}")]
+
+
+@app.tool()
 async def remove_tracked_file(path: str) -> list[TextContent]:
     """Remove a file from the tracking list.
 

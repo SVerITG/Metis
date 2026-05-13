@@ -61,7 +61,7 @@ async def generate_image(
 ) -> list[TextContent]:
     """Generate an image using AI and save it to the PKM.
 
-    Saves to {pkm_root}/07_outputs/images/YYYY-MM-DD_[slug].png
+    Saves to {pkm_root}/outputs/images/YYYY-MM-DD_[slug].png
 
     Args:
         prompt: Description of the image to generate.
@@ -190,7 +190,7 @@ async def generate_image(
 async def list_generated_images(limit: int = 20) -> list[TextContent]:
     """List recently generated images in the PKM.
 
-    Reads from {pkm_root}/07_outputs/images/ directory.
+    Reads from {pkm_root}/outputs/images/ directory.
     Returns filename, date, and prompt (from JSON sidecar if present).
 
     Args:

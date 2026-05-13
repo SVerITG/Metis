@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Setup — Metis{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <div class="page-eyebrow">Configuration</div>
+      <h1 class="page-title">
+        {% if first_run %}First-run setup{% else %}Personalise Metis{% endif %}
+      </h1>
+    </div>
+    <div class="page-meta">
+      {% if display_name %}{{ display_name }}{% if domain %} · {{ domain }}{% endif %}{% else %}Not yet configured{% endif %}
+    </div>
+  </div>
+
+  <!-- ===== Status banner ===== -->
+  {% if first_run %}
+  <div class="card" style="background:var(--accent-warning-soft,#fff8e6);border:1px solid var(--accent-warning,#d97706);margin-bottom:1.5rem;">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <span style="font-size:1.5rem;">🧭</span>
+      <div>
+        <strong>Wizard pending</strong> — Metis will start the setup wizard the next time you open Claude Desktop or Claude Code.
+        <br><span style="color:var(--text-muted,#6b7280);font-size:0.875rem;">Open Claude and type anything to begin.</span>
+      </div>
+    </div>
+  </div>
+  {% elif not has_config %}
+  <div class="card" style="background:var(--accent-info-soft,#eff6ff);border:1px solid var(--accent-info,#3b82f6);margin-bottom:1.5rem;">
+    <strong>Not configured yet.</strong> Click <em>Re-run wizard</em> below and then open Claude to begin.
+  </div>
+  {% else %}
+  <div class="card" style="background:var(--surface-success-soft,#f0fdf4);border:1px solid var(--accent-success,#16a34a);margin-bottom:1.5rem;">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <span style="font-size:1.5rem;">✓</span>
+      <div>
+        <strong>Metis is configured.</strong>
+        {% if display_name %}Welcome, {{ display_name }}.{% endif %}
+        You can re-run any section below or re-trigger the full wizard.
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ===== Wizard sections checklist ===== -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <h2 class="section-label" style="margin-bottom:1rem;">Wizard sections</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.5rem;">
+      {% for name, done in sections %}
+      <div style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.75rem;border-radius:8px;background:var(--surface-secondary,#f9fafb);">
+        <span style="font-size:1rem;{% if done %}color:#16a34a{% else %}color:#9ca3af{% endif %}">
+          {% if done %}✓{% else %}○{% endif %}
+        </span>
+        <span style="{% if done %}color:var(--text-primary){% else %}color:var(--text-muted,#6b7280){% endif %}">{{ name }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ===== Actions ===== -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-bottom:2rem;">
+
+    <!-- Re-run full wizard -->
+    <div class="card">
+      <h3 style="margin:0 0 0.5rem;">Re-run full wizard</h3>
+      <p style="color:var(--text-muted,#6b7280);font-size:0.875rem;margin:0 0 1rem;">
+        Resets the wizard marker. Open Claude after clicking this and the wizard will restart.
+      </p>
+      <button class="btn btn-primary" onclick="resetWizard()">Re-run wizard in Claude</button>
+    </div>
+
+    <!-- Reconfigure a section -->
+    <div class="card">
+      <h3 style="margin:0 0 0.5rem;">Reconfigure a section</h3>
+      <p style="color:var(--text-muted,#6b7280);font-size:0.875rem;margin:0 0 1rem;">
+        In Claude, type: <code>/metis-config</code> followed by the section name.
+        <br>Example: <code>/metis-config news</code>
+      </p>
+      <code style="background:var(--surface-secondary,#f4f4f5);padding:0.4rem 0.75rem;border-radius:6px;font-size:0.875rem;">/metis-config [section]</code>
+    </div>
+
+    <!-- Claude Project setup -->
+    <div class="card">
+      <h3 style="margin:0 0 0.5rem;">Run in claude.ai Projects</h3>
+      <p style="color:var(--text-muted,#6b7280);font-size:0.875rem;margin:0 0 1rem;">
+        Create a Claude Project on claude.ai and paste these instructions as the system prompt.
+        The wizard will run in the browser — no install needed.
+      </p>
+      <button class="btn btn-secondary" onclick="copyProjectInstructions()">Copy project instructions</button>
+    </div>
+
+  </div>
+
+  <!-- ===== How the wizard works ===== -->
+  <div class="card">
+    <h2 class="section-label" style="margin-bottom:1rem;">How the wizard works</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;">
+      <div>
+        <div style="font-weight:600;margin-bottom:0.25rem;">1. Opens in Claude</div>
+        <div style="color:var(--text-muted,#6b7280);font-size:0.875rem;">The wizard runs as a conversation in Claude Desktop or Claude Code — no web forms, no config files to edit.</div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:0.25rem;">2. Asks 13 questions</div>
+        <div style="color:var(--text-muted,#6b7280);font-size:0.875rem;">Your domain, interests, projects, news topics, tools, working style, data sensitivity. About 10 minutes.</div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:0.25rem;">3. Configures everything</div>
+        <div style="color:var(--text-muted,#6b7280);font-size:0.875rem;">Writes your profile to <code>user-config.yaml</code> and <code>user-preferences.json</code> locally. Nothing is sent to the internet.</div>
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:0.25rem;">4. Personalisation grows</div>
+        <div style="color:var(--text-muted,#6b7280);font-size:0.875rem;">Every agent run adds to your profile. The longer you use Metis, the better every response gets.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+async function resetWizard() {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = "Setting up…";
+  try {
+    const r = await fetch("/api/setup/reset-wizard", {method:"POST"});
+    const d = await r.json();
+    if (d.ok) {
+      btn.textContent = "Done — open Claude now";
+      btn.style.background = "var(--accent-success,#16a34a)";
+      showToast("Wizard reset. Open Claude Desktop to start setup.");
+    } else {
+      btn.textContent = "Re-run wizard in Claude";
+      btn.disabled = false;
+    }
+  } catch(e) {
+    btn.textContent = "Re-run wizard in Claude";
+    btn.disabled = false;
+    showToast("Could not reset wizard — is the dashboard running?", "error");
+  }
+}
+
+async function copyProjectInstructions() {
+  try {
+    const r = await fetch("/api/setup/project-instructions");
+    const text = await r.text();
+    await navigator.clipboard.writeText(text);
+    showToast("Claude Project instructions copied to clipboard.");
+  } catch(e) {
+    showToast("Could not copy — check browser clipboard permissions.", "error");
+  }
+}
+
+function showToast(msg, type="success") {
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.style.cssText = `
+    position:fixed;bottom:1.5rem;right:1.5rem;
+    background:${type==="error"?"#dc2626":"#16a34a"};color:#fff;
+    padding:0.75rem 1.25rem;border-radius:8px;font-size:0.9rem;
+    box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:9999;
+    animation:slideUp .2s ease;
+  `;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+</script>
+{% endblock %}

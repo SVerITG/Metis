@@ -1,39 +1,48 @@
-<div class="greeting-strip card p-3 mb-3">
-  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+{# today_greeting.html — Archive (replaces Bootstrap card+chips) #}
+<div class="panel panel-pad" style="padding:32px 40px;margin-bottom:28px;">
 
-    <div>
-      <h2 class="mb-0 morning-greeting">{{ greeting }}</h2>
-      <div class="text-muted">{{ today_label }}</div>
-    </div>
+  <div class="kicker" style="margin-bottom:14px;">
+    <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--m-accent);margin-right:8px;vertical-align:middle;"></span>
+    MORNING BRIEF · {{ today_label or '' }}
+  </div>
 
-    <div class="d-flex gap-2 flex-wrap">
+  <p style="font-family:var(--m-display);font-size:22px;line-height:1.45;color:var(--m-ink);margin:0 0 18px;font-style:italic;font-weight:400;letter-spacing:-0.005em;text-wrap:pretty;">
+    {{ greeting }}, {{ user_name }}. Three threads waiting for you.
+    {% if open_tasks > 0 %}
+      <span style="font-style:normal;color:var(--m-text);">{{ open_tasks }} open task{% if open_tasks != 1 %}s{% endif %}{% if overdue > 0 %}, {{ overdue }} overdue{% endif %}.</span>
+    {% else %}
+      <span style="font-style:normal;color:var(--m-muted);">A clean desk.</span>
+    {% endif %}
+  </p>
 
-      <!-- Open tasks chip -->
-      <span class="morning-chip {% if open_tasks > 0 %}morning-chip-alert{% else %}morning-chip-ok{% endif %}">
-        <i class="bi bi-check2-square"></i> {{ open_tasks }} open task{% if open_tasks != 1 %}s{% endif %}
-      </span>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
 
-      <!-- Overdue chip -->
-      {% if overdue > 0 %}
-      <span class="morning-chip morning-chip-danger">
-        <i class="bi bi-exclamation-circle"></i> {{ overdue }} overdue
-      </span>
-      {% endif %}
+    <span class="chip {% if overdue > 0 %}chip--alert{% elif open_tasks > 0 %}chip--ochre{% else %}chip--accent{% endif %}"
+          style="font-size:10px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;">
+      {{ open_tasks }} OPEN
+    </span>
 
-      <!-- Morning agent runs -->
-      {% for run in morning_runs %}
-      <span class="morning-chip morning-chip-ok">
-        <i class="bi bi-check-circle"></i> {{ run.agent_slug }} ran
-      </span>
-      {% endfor %}
+    {% if overdue > 0 %}
+    <span class="chip chip--alert"
+          style="font-size:10px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;background:var(--m-alert-wash);color:var(--m-alert);">
+      {{ overdue }} OVERDUE
+    </span>
+    {% endif %}
 
-      {% if not morning_runs %}
-      <span class="morning-chip morning-chip-muted">
-        <i class="bi bi-clock"></i> No agents run yet
-      </span>
-      {% endif %}
+    {% for run in morning_runs %}
+    <span class="chip"
+          style="font-size:10px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;background:var(--m-ok-wash);color:var(--m-ok);">
+      {{ run.agent_slug }} · DONE
+    </span>
+    {% endfor %}
 
-    </div>
+    {% if not morning_runs %}
+    <span class="chip"
+          style="font-size:10px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;background:var(--m-surface-2);color:var(--m-muted);">
+      AGENTS · IDLE
+    </span>
+    {% endif %}
 
   </div>
+
 </div>

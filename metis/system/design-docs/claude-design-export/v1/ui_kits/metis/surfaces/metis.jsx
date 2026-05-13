@@ -70,7 +70,7 @@ function MetisSurface() {
             <div style={{ display:'flex', alignItems:'center', gap:16 }}>
               <div style={{ width:52, height:52, borderRadius:'50%', background:'var(--m-surface-2)', border:'1px solid var(--m-rule)', display:'inline-flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--m-display)', fontSize:22, fontWeight:500, color:'var(--m-accent)' }}>S</div>
               <div>
-                <div style={{ fontFamily:'var(--m-display)', fontSize:17, color:'var(--m-ink)' }}>Stan</div>
+                <div style={{ fontFamily:'var(--m-display)', fontSize:17, color:'var(--m-ink)' }}>Researcher</div>
                 <div style={{ fontFamily:'var(--m-display)', fontStyle:'italic', fontSize:13, color:'var(--m-muted)' }}>stan@metis.local · reader in residence since June 2024</div>
               </div>
               <div style={{ marginLeft:'auto', display:'flex', gap:6 }}>

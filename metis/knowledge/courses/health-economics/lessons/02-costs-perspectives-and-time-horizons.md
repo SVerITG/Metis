@@ -37,5 +37,5 @@ Time horizon also matters. A vaccination programme may look expensive in year on
 - [WHO publications](https://www.who.int/publications)
 
 ## Links to Metis library
-- `06_library/methods/health-economics-basics.md`
-- `06_library/methods/data-management.md`
+- `knowledge/library/methods/health-economics-basics.md`
+- `knowledge/library/methods/data-management.md`

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}News{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <!-- ===== PageHead ===== -->
+  <div class="page-head">
+    <div>
+      <div class="page-eyebrow">SURFACE 03 · NEWS RADAR</div>
+      <h1 class="page-title">News.</h1>
+    </div>
+    <div class="page-meta" id="news-meta" style="white-space:pre-line;">
+      <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">Global Health · Tropical Disease · Public Health</span>
+    </div>
+  </div>
+
+  <!-- ===== News Radar ===== -->
+  <div hx-get="/api/partial/today/news-archive"
+       hx-trigger="load"
+       hx-swap="outerHTML"
+       style="margin-bottom:28px;">
+    <div>
+      <div class="sec-label" style="margin-bottom:8px;">News radar <span class="sec-label-tail">—</span></div>
+      <div class="panel" style="height:200px;opacity:.4;"></div>
+    </div>
+  </div>
+
+  <!-- ===== New in Library ===== -->
+  <div hx-get="/api/partial/today/library-archive"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <div>
+      <div class="sec-label" style="margin-bottom:8px;">New in library <span class="sec-label-tail">—</span></div>
+      <div class="panel" style="height:200px;opacity:.4;"></div>
+    </div>
+  </div>
+
+</div><!-- /.page -->
+{% endblock %}

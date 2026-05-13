@@ -188,9 +188,9 @@ async def sync_zotero_library(full: bool = False) -> list[TextContent]:
 
     try:
         if full or last_version == 0:
-            items = zot.everything(zot.items(itemType="-attachment || note"))
+            items = zot.everything(zot.items())
         else:
-            items = zot.everything(zot.items(since=last_version, itemType="-attachment || note"))
+            items = zot.everything(zot.items(since=last_version))
     except Exception as e:
         return [TextContent(type="text", text=f"Zotero API error: {e}")]
 

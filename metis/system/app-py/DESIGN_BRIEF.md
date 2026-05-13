@@ -1,368 +1,269 @@
-# Metis Dashboard — Design Brief for Claude Design
-
-## What this is
-
-**Metis** is a personal research operating system for a senior epidemiologist / PhD researcher. It is a **local-first web dashboard** (FastAPI + HTMX + Bootstrap 5) that runs at `http://127.0.0.1:8000`. It connects to a local SQLite database and 76 AI tools via an MCP server. No cloud. No login screen. This is a productivity tool for one person.
-
-The goal of this session with Claude Design is to **redesign the visual layer** — templates, CSS, and layout — to create a polished, professional interface befitting a research command center. The backend (Python routers, database queries, HTMX wiring) is **not to be changed**. Only `templates/`, `static/styles.css`, and optionally `static/app.js` for minor visual enhancements.
+# Metis Research Cortex — Design Brief
+_Last updated: 2026-05-06 · CSS v8.1 · Archive-Observatory design system_
 
 ---
 
-## Tech stack & constraints
+## 1. What is Metis?
 
-| Item | Detail |
-|------|--------|
-| Framework | FastAPI + Jinja2 templates |
-| Interactivity | **HTMX 1.9** — no React, no Vue, no SPA |
-| CSS base | Bootstrap 5.3.3 (CDN) + custom `styles.css` |
-| Icons | Bootstrap Icons 1.11 |
-| Typography | System font stack (`-apple-system`, `Inter`, `SF Pro`) |
-| CDN dependencies | Bootstrap CSS/JS (CDN), Bootstrap Icons (CDN), HTMX (CDN) |
-| Local files | `/static/styles.css`, `/static/app.js` |
-| Template engine | Jinja2 — `{% if %}`, `{% for %}`, `{{ variable }}` |
-| Tab navigation | HTMX swaps `#tab-content` div on navbar click |
-| Partials | Each tab section loads via `hx-get="/api/partial/..."` on page load |
-| No build step | Plain CSS and JS — no Webpack, no Tailwind, no PostCSS |
+Metis is a **personal research second-brain dashboard** for a Senior Researcher / Epidemiologist / PhD candidate (senior researcher). It surfaces literature, news signals, tasks, meetings, learning progress, and AI agent activity in a single local-first web app.
 
-**HTMX pattern used everywhere:**
+**Stack:** Python FastAPI + HTMX + Jinja2 + SQLite. All content loads via HTMX partial swaps — no full page reloads. Runs at `http://127.0.0.1:8000`.
+
+---
+
+## 2. Design System — Archive / Observatory
+
+### Philosophy
+An academic archive meets a scientific observatory. Typography-first, high information density, zero decorative noise. Feels like a well-organised research library, works like a control room.
+
+### Two themes
+- **Archive** (light): warm parchment — aged paper, ink, forest green accent
+- **Observatory** (dark): deep charcoal — night sky, warm parchment text, same accent
+
+### CSS Tokens
+
+```css
+:root {
+  /* Surfaces */
+  --m-bg:            #f5f2ea;   /* warm parchment page */
+  --m-surface:       #fbf8f0;   /* panel / card */
+  --m-surface-2:     #eee9dd;   /* input backgrounds, secondary */
+  --m-surface-3:     #e6e1d2;   /* hover states */
+
+  /* Ink */
+  --m-ink:           #1f2a24;   /* primary text */
+  --m-text:          #2c3a33;   /* body */
+  --m-muted:         #7a8178;   /* captions, labels */
+  --m-muted-soft:    #9aa098;
+
+  /* Rules */
+  --m-rule:          rgba(31,42,36,0.12);
+  --m-rule-soft:     rgba(31,42,36,0.06);
+  --m-rule-strong:   rgba(31,42,36,0.28);
+
+  /* Accent — Forest green */
+  --m-accent:        #2d4a3a;
+  --m-accent-hover:  #223b2e;
+  --m-accent-soft:   #4a6a54;
+  --m-accent-wash:   rgba(45,74,58,0.08);
+  --m-accent-wash-2: rgba(45,74,58,0.14);
+  --m-on-accent:     #f5f2ea;
+
+  /* Ochre */
+  --m-ochre:         #9a7b3c;
+  --m-ochre-deep:    #7a5f25;
+  --m-ochre-wash:    rgba(154,123,60,0.12);
+
+  /* Semantic */
+  --m-ok:    #5a7a5e;  --m-ok-wash:    rgba(90,122,94,0.14);
+  --m-warn:  #9a7b3c;  --m-warn-wash:  rgba(154,123,60,0.14);
+  --m-alert: #a84632;  --m-alert-wash: rgba(168,70,50,0.12);
+  --m-info:  #3e6178;  --m-info-wash:  rgba(62,97,120,0.12);
+
+  /* Shape */
+  --m-radius: 3px;  --m-radius-sm: 2px;
+
+  /* Shadows */
+  --m-shadow:    0 1px 0 rgba(31,42,36,0.04), 0 4px 14px rgba(31,42,36,0.05);
+  --m-shadow-lg: 0 2px 0 rgba(31,42,36,0.04), 0 12px 36px rgba(31,42,36,0.08);
+}
+/* Observatory dark overrides (data-theme != "archive"):
+   --m-bg:#15130f; --m-surface:#1c1915; --m-ink:#f3ead6; --m-text:#d9cfba; etc. */
+```
+
+### Typography
+```css
+--m-display: 'EB Garamond', Georgia, serif;      /* headings, titles, italic captions */
+--m-ui:      'Inter', system-ui, sans-serif;     /* UI chrome, buttons, labels */
+--m-mono:    'JetBrains Mono', monospace;        /* metadata, tags, dates, codes */
+```
+
+**Scale:** page titles 28–32px display · section labels 10px mono uppercase · body 14px · chips/tags 9–10px mono
+
+---
+
+## 3. App Shell
+
+**Layout:** Fixed sidebar (240px / 56px rail collapsed) + main with topbar + scrollable content area.
+
+```
+┌──────────────┬────────────────────────────────────────────────────────┐
+│  [icon]      │  TOPBAR                                                │
+│  Metis       │  Metis / Library    [search…]  [UPDATE]  ☀  [+Capture]│
+│  Research    ├────────────────────────────────────────────────────────┤
+│  Cortex      │                                                        │
+│  ─────────   │              TAB CONTENT (HTMX partial swap)           │
+│  SURFACES IX │                                                        │
+│  01 Today    │                                                        │
+│  02 Library  │                                                        │
+│  03 Reflect  │                                                        │
+│  04 Planner  │                                                        │
+│  05 Work     │                                                        │
+│  06 Meetings │                                                        │
+│  07 Learning │                                                        │
+│  08 Teach    │                                                        │
+│  09 Metis    │                                                        │
+│  ─────────   │                                                        │
+│  [R] Researcher·RC │                                                        │
+└──────────────┴────────────────────────────────────────────────────────┘
+```
+
+### Topbar (right side, left-to-right)
+1. `Find across the archive…` — ghost search box (not yet wired)
+2. **`UPDATE`** button — mono 9px uppercase, 1px border, hover accent. Calls `/api/scan/content`: runs news feed scan + Zotero incremental sync + project staleness check. Shows "UPDATING…" spinner, then toast with summary.
+3. Theme toggle (☀ Archive / ☾ Observatory) — flips CSS vars, persists to localStorage
+4. `+ Capture` — opens capture modal (slide from right)
+5. Trust badge `Local-first`
+
+### Sidebar nav items
+Structure: `[icon 16px] [label] [meta count] [tooltip]`
+Active: `border-left: 2px solid --m-accent; background: --m-accent-wash`
+
+---
+
+## 4. The 9 Surfaces
+
+### 01 TODAY
+Morning briefing, focus, and quick capture.
+- Header: greeting + date
+- Overnight AI summary
+- Focus block (what matters today)
+- **News scan rail** — signals from `news_briefs` grouped by domain/strength
+- Token footer — session turn counter + usage bar
+
+### 02 LIBRARY _(tab key: `knowledge`)_
+The entire research literature in one place.
+
+**Left sidebar — Collections (240px):**
+List of Zotero collection names with counts. Click to filter the main browser. Styled like a filing cabinet index — each row has collection name + count, active row has accent left-border.
+
+Your collections: Thesis (52) · Diagnostics (30) · Screening & Surveillance (21) · Methodology (17) · Elimination (11) · Statistics & Modelling (9) · Sero-surveillance (9) · WHO (8) · Epidemiology (8) · Passive (8) · and ~13 more.
+
+**Main area:**
+- Stats meta: `222 CARDS · N COLLECTIONS · N ADDED THIS WEEK`
+- Index cards grid (from `library_cards` — domain knowledge notes)
+- **Sync status bar:** `197 ZOTERO PAPERS · SYNCED 2026-05-06 00:59 · v1393` + `SYNC NOW` button
+- **Library browser panel:**
+  - Row 1: Search bar + "Search in: All / Title / Authors / Abstract" + Sort select + "Clear N filters" button
+  - Row 2: Author field · Year from · Year to · Journal (autocomplete datalist)
+  - Row 3: Type pills — All · Article · Book · Chapter · Report · Preprint · Web
+  - Row 4: Collection chips — All + all Zotero collections
+  - **Table:** Type badge · Title (DOI-linked) / Authors (italic) / Abstract (expandable) · Year · Journal · Collection tags · [ABS] [DOI ↗]
+- Memory search (semantic across episodic memory)
+
+**Data:** `literature_metadata` (222 rows: 197 Zotero + 25 manual) · `library_cards` (31 rows) · `zotero_sync_state`
+
+### 03 REFLECTION
+Ideas, notes, open questions, brainstorm launcher. Capture modal feeds here.
+
+### 04 PLANNER
+Work planning across time horizons.
+- Kanban: Someday → Incubating → Active (drag-and-drop columns)
+- PhD focus board
+- Timeline view
+- **Each card needs:** inline text editing, done checkmark, user-set priority (H/M/L)
+
+### 05 WORK
+Task list (priority left-border coloring) + active project cards + launcher buttons.
+Project card actions: `Code` (VS Code) · `Data` (Explorer) · `📊 Dashboard` (launches Shiny on 4321) · `Folder` · `Docs`.
+
+### 06 MEETINGS
+Structured meeting log — transcription, decisions, action items.
+
+### 07 LEARNING
+Spaced repetition queue + course progress bars + competency radar.
+
+### 08 TEACH
+Course cards with AI actions: Chat · Co-work · Slides · Assessment · Q-bank · Gap analysis.
+
+### 09 METIS
+Agent run history table · token stats · agent registry · self-improvement proposals.
+
+---
+
+## 5. Component Reference
+
+### Panel
 ```html
-<div hx-get="/api/partial/tab/section"
-     hx-trigger="load"
-     hx-swap="innerHTML">
-  <!-- Skeleton placeholder shown while loading -->
+<div class="panel">…</div>
+```
+Surface background, 1px `--m-rule` border, 3px radius, subtle shadow.
+
+### Section Label
+```html
+<div class="sec-label">
+  <span>Title</span>
+  <span class="tail">META · COUNTS</span>
 </div>
 ```
+10px mono, uppercase, muted. `.tail` floats right.
 
----
-
-## Current design direction
-
-The current design is **macOS-inspired glassmorphism**:
-- Background: `#f5f5f7` (macOS system gray)
-- Cards: `rgba(255,255,255,0.85)` with `backdrop-filter: blur(20px)`
-- Primary blue: `#0071e3` (macOS blue)
-- Accent green: `#30a46c`
-- Text: `#1d1d1f` (near-black), muted: `#6e6e73`
-- Radius: 12px cards, 8px buttons
-- Font: `-apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui`
-
-The navbar has a frosted glass effect (`backdrop-filter: saturate(180%) blur(20px)`).
-
-**Current problems:**
-1. The design feels inconsistent — some components use the macOS tokens, others still use legacy colors like `#174c4f` (teal) and `#faf9f6` from an older version
-2. There are TWO visual identities in conflict: macOS-clean (top of CSS) and the legacy teal/parchment theme (bottom of CSS, ~1500 lines of legacy CSS)
-3. The legacy classes (`.kanban-col`, `.gallery-card`, `.morning-brief`, etc.) override Bootstrap correctly but don't match the macOS token system
-4. The navbar tab labels disappear on small screens (`.nav-tab-label` has no responsive handling)
-5. No dark mode support
-6. The capture modal has no animation
-7. Stat cards have no visual hierarchy — numbers don't pop
-
----
-
-## The 9 tabs
-
-### 1. Today (`/today`)
-**Purpose:** Daily briefing — what to focus on, what happened overnight, git status.
-
-**Sections (loaded as HTMX partials):**
-- **Greeting strip**: Time-based greeting ("Good morning, Stef") + today's date
-- **Overnight summary**: 3 counters — news briefs, ideas, meetings captured
-- **Focus card**: Top active project + its next step
-- **Scan**: Git status button (POST) → shows uncommitted changes
-- **Token footer**: Agent calls today + total tokens used
-
-**Design goal:** Should feel like a calm morning newspaper front page. High information density but gentle. The greeting should be large and warm.
-
----
-
-### 2. Knowledge (`/knowledge`)
-**Purpose:** Library of concept notes + research literature.
-
-**Sections:**
-- **Stats row**: 4 stat cards — library notes count, domain count, literature count, new this month
-- **Library cards grid**: Cards from `knowledge/library/*.md` — title, domain badge, tags, 2-line summary
-- **Literature table**: Research papers from `inputs/literature/` — title, authors, year, source
-- **Domain breakdown**: Papers grouped by domain (HAT, methods, surveillance, etc.)
-- **Search bar**: Live HTMX search across both library and literature
-- **Graph view**: D3 force-directed knowledge graph (tab within Knowledge)
-
-**Design goal:** The library cards should look like a card catalog — clean grid, domain color-coded. Literature table should be clean and scannable. The knowledge graph needs a full-height container.
-
----
-
-### 3. Thinking (`/thinking`)
-**Purpose:** Ideas, personal notes, open questions, and brainstorm sessions.
-
-**Sections:**
-- **Ideas list**: 30 most recent ideas — content excerpt, tags, date
-- **Notes list**: 20 most recent personal notes
-- **Questions list**: 15 open research questions
-- **Brainstorm panel**: Topic input + 5 steering buttons (Expand/Focus/Challenge/Synthesize/Connect) + "Copy prompt" button. Recent sessions list below.
-
-**Design goal:** The brainstorm panel should feel like a creative workspace — slightly warmer background, less clinical than other tabs.
-
----
-
-### 4. Planner (`/planner`)
-**Purpose:** Project management — Kanban board, PhD focus, timeline.
-
-**Sections:**
-- **Kanban**: 3 columns — Someday / Incubating / Active (projects, not tasks)
-- **Focus board**: PhD-specific active projects + tasks mentioning article/Article
-- **Timeline**: Active + incubating projects ordered by priority (no actual dates in DB yet)
-
-**Design goal:** Kanban columns should feel spacious. Active column should be visually distinguished (blue border or badge). The focus board should feel urgent.
-
----
-
-### 5. Work (`/work`)
-**Purpose:** Task list + active project overview.
-
-**Sections:**
-- **Stats row**: Open tasks, overdue tasks, done this week, active projects
-- **Task list**: Filterable (open/all/done) — title, project/category, status badge, due date
-- **Active projects**: Cards with title, domain, priority, next step
-
-**Design goal:** The task list is the most-used section. It needs to be highly scannable. Overdue items should pop red. Priority colors matter.
-
----
-
-### 6. Meetings (`/meetings`)
-**Purpose:** Meeting history and structured notes.
-
-**Sections:**
-- Stats: total meetings, decisions, action items this month
-- Filterable meeting table: title, date, type, attendees, decisions/actions badge
-
----
-
-### 7. Learning (`/learning`)
-**Purpose:** Self-directed learning tracker.
-
-**Sections:**
-- **Due today**: Spaced repetition items due for review (cards in DB)
-- **Active courses**: Progress bars — title, category, % complete
-- **Completed courses**: List of finished courses
-- **Competencies**: Skill grid — topic, domain, level badge (beginner/intermediate/advanced/expert)
-
-**Design goal:** Course progress bars should be prominent. Competency cards could use color by level.
-
----
-
-### 8. Teach (`/teach`)
-**Purpose:** Teaching support — course management, content tools.
-
-**Sections:**
-- **Course cards**: For each course (title, code, semester, student count)
-  - Literature alerts panel (lazy-loaded by intersection)
-  - News alerts panel (lazy-loaded by intersection)
-  - Action buttons: Chat / Co-work / Slides / Assessment / Q-bank / Gap analysis
-
-**Design goal:** Course cards should feel professional and distinct. Buttons copy Claude Code prompts to clipboard.
-
----
-
-### 9. Metis (`/metis`)
-**Purpose:** System monitoring — agent activity, trust, observability.
-
-**Sections:**
-- **Stats row**: Runs today, tokens today, total runs, active agents
-- **Agent run history**: Table of recent agent runs — slug, task summary, timestamp, token count, status
-- **Agent registry**: Grid of all 28 registered agents — slug, name, trust tier badge, description
-- **Span waterfall**: Observability view of agent execution traces (Phase 5.9)
-- **Consent ledger**: Log of data processing decisions
-- **Network policy badge**: Current policy (strict/offline/normal)
-- **System info**: RC root path, DB path, DB size
-
----
-
-## Navigation bar
-
-```
-[Metis logo] [Today] [Knowledge] [Thinking] [Planner] [Work] [Meetings] [Learning] [Teach] [Metis]    [+Capture] [🛡 Local-first]
+### Library filter chips
+```css
+.lib-chip       { 9px mono; padding:3px 10px; 1px border; radius:2px; bg:surface-2 }
+.lib-chip.active{ bg:--m-accent; color:#fff; border:accent }
+.lib-type-btn.active { bg:--m-ink; color:surface }
 ```
 
-- 9 nav tab buttons: icon + label
-- Active tab: highlighted in blue
-- Right side: blue pill "Capture" button (Ctrl+K) + green trust badge
-- Sticky on scroll, frosted glass background
+### Toast
+Bottom-right, 3s auto-dismiss. Accent background, parchment text.
+
+### Inputs
+```css
+.lib-input { font:12px --m-ui; padding:7px 10px; bg:surface-2; border:1px rule; radius:3px }
+.lib-input:focus { border-color:--m-accent }
+.lib-select { font:10px mono; same bg/border/radius }
+```
 
 ---
 
-## Capture modal (Ctrl+K)
+## 6. HTMX Patterns (do not break)
 
-A full-screen overlay with a centered card:
-- Large textarea
-- Prefix detection: `i:` = Idea (blue), `n:` = Note (green), `t:` = Task (yellow), `q:` = Question (purple)
-- Live badge update as user types
-- Submit → POST to `/api/capture`
-- Close on backdrop click or Escape
+Every section loads independently:
+```html
+<div hx-get="/api/partial/knowledge/library-browser"
+     hx-trigger="load"
+     hx-swap="outerHTML">…skeleton…</div>
+```
 
----
+Live filter (debounced):
+```html
+<input hx-get="/api/partial/knowledge/library-table"
+       hx-trigger="keyup changed delay:350ms"
+       hx-target="#lib-table-area"
+       hx-include="#lib-hidden-fields">
+```
 
-## Design requests for Claude Design
-
-### Priority 1 — Unify the design system
-Remove the legacy `#174c4f` teal and `#faf9f6` parchment colors throughout. Replace all components with the macOS token system (defined in `:root`). The current CSS is ~2700 lines — many selectors are dead code or duplicates.
-
-### Priority 2 — Stat cards
-The stat cards (4-column rows on Work, Knowledge, Metis) need a clear visual treatment. Numbers should be large (2rem+), labels small. Currently they're plain Bootstrap cards with no visual hierarchy.
-
-### Priority 3 — Task list
-Make the task list more scannable. Overdue dates in red. Priority indicator (left border or dot). Status badge colors: open = blue, done = green, cancelled = gray.
-
-### Priority 4 — Kanban board
-Active column should be visually distinct (blue left border on cards, or column header in blue). Project cards should show a small priority pip.
-
-### Priority 5 — Capture modal animation
-Add a smooth slide-in/fade-in animation when the capture overlay opens. Currently appears instantaneously.
-
-### Priority 6 — Knowledge graph container
-The D3 graph needs a fixed-height container (`min-height: 600px`) and should fill the full tab width. Currently it's constrained by Bootstrap grid.
-
-### Priority 7 — Responsive navbar
-On narrow screens, hide the text labels on nav buttons (show only icons). The current `.nav-tab-label` class exists but has no responsive logic.
-
-### Priority 8 — Dark mode (optional, low priority)
-Prefers-color-scheme support. Dark: `#1c1c1e` background, `#2c2c2e` cards.
+All filter state lives in `#lib-hidden-fields` (hidden inputs). JS function `_refreshLibTable()` reads all values and fires one HTMX request.
 
 ---
 
-## File structure
+## 7. File Locations
 
 ```
-metis/system/app-py/
-├── main.py                    # FastAPI app — do not modify
-├── db.py                      # SQLite helpers — do not modify
-├── routers/                   # Route handlers — do not modify
-│   ├── today.py
-│   ├── knowledge.py
-│   ├── work.py
-│   ├── planner.py
-│   ├── meetings.py
-│   ├── learning.py
-│   ├── thinking.py
-│   ├── teach.py
-│   ├── metis_tab.py
-│   └── capture.py
-├── templates/
-│   ├── base.html              # Nav + layout shell ← can modify
-│   ├── today.html             # Today tab template ← can modify
-│   ├── knowledge.html         ← can modify
-│   ├── work.html              ← can modify
-│   ├── planner.html           ← can modify
-│   ├── meetings.html          ← can modify
-│   ├── learning.html          ← can modify
-│   ├── thinking.html          ← can modify
-│   ├── teach.html             ← can modify
-│   ├── metis_tab.html         ← can modify
-│   └── partials/              # HTMX fragment templates ← can modify
-│       ├── today_greeting.html
-│       ├── today_overnight.html
-│       ├── today_focus.html
-│       ├── today_scan.html
-│       ├── today_token_footer.html
-│       ├── knowledge_stats.html
-│       ├── knowledge_library.html
-│       ├── knowledge_literature.html
-│       ├── knowledge_domains.html
-│       ├── knowledge_search.html
-│       ├── knowledge_graph.html
-│       ├── work_stats.html
-│       ├── work_tasks.html
-│       ├── work_projects.html
-│       ├── planner_kanban.html
-│       ├── planner_focus.html
-│       ├── planner_timeline.html
-│       ├── meetings_stats.html
-│       ├── meetings_table.html
-│       ├── learning_due.html
-│       ├── learning_courses.html
-│       ├── learning_completed.html
-│       ├── learning_competencies.html
-│       ├── thinking_ideas.html
-│       ├── thinking_notes.html
-│       ├── thinking_questions.html
-│       ├── thinking_brainstorm_sessions.html
-│       ├── teach_courses.html
-│       ├── teach_lit_alerts.html
-│       ├── teach_news_alerts.html
-│       ├── metis_stats.html
-│       ├── metis_runs.html
-│       ├── metis_agents.html
-│       ├── metis_traces.html
-│       ├── metis_consent.html
-│       ├── metis_system_info.html
-│       └── capture_modal.html
+system/app-py/
 ├── static/
-│   ├── styles.css             ← primary target for redesign
-│   └── app.js                 ← minor JS enhancements only
-└── run.sh                     # launcher — do not modify
+│   ├── styles.css          (1289 lines — full design system)
+│   ├── app.js              (1200+ lines — all interactivity)
+│   └── metis-icon.png      (dark blue AI brain, sidebar favicon)
+├── templates/
+│   ├── base.html           (shell: sidebar, topbar, theme toggle)
+│   ├── knowledge.html      (Library surface)
+│   └── partials/           (80 partials)
+└── routers/
+    ├── knowledge.py        (Library + filter + sync endpoints)
+    ├── today.py            (Today + /api/scan/content Update endpoint)
+    └── work.py             (Work + project launcher)
 ```
 
 ---
 
-## Running the dashboard
+## 8. Open Design Work
 
-```bash
-# Start the dashboard
-bash metis/system/app-py/run.sh
-# Opens at http://127.0.0.1:8000
-```
-
-The dashboard hot-reloads (`--reload` flag). Changes to templates and static files are reflected immediately on browser refresh.
-
----
-
-## Key Jinja2 context variables
-
-Each partial template receives data from its router:
-
-| Partial | Key variables |
-|---------|--------------|
-| `today_greeting.html` | `greeting`, `today_label`, `open_tasks`, `overdue`, `morning_runs` |
-| `today_overnight.html` | `news`, `ideas`, `meetings` |
-| `today_focus.html` | `project` (dict: title, domain, priority, next_step) |
-| `work_stats.html` | `open_tasks`, `overdue`, `done_week`, `active_projects` |
-| `work_tasks.html` | `tasks` (list: id, title, project, priority, status, due_date) |
-| `work_projects.html` | `projects` (list: id, title, domain, priority, next_step, status) |
-| `knowledge_library.html` | `cards` (list: id, title, domain, tags, summary, created_at) |
-| `knowledge_literature.html` | `items` (list: id, title, authors, year, source, tags) |
-| `planner_kanban.html` | `someday`, `incubating`, `active` (lists of projects) |
-| `learning_courses.html` | `courses` (list: id, title, category, progress_pct, total_modules, completed_modules) |
-| `learning_competencies.html` | `skills` (list: name, level, domain) |
-| `teach_courses.html` | `courses` (list: id, title, code, semester, description, student_count) |
-| `metis_stats.html` | `runs_today`, `tokens_today`, `total_runs`, `active_agents` |
-| `metis_agents.html` | `agents` (list from agent-registry.json: slug, name, trust_tier, description) |
-
----
-
-## Skeleton / loading states
-
-All lazy-loaded partials show skeleton placeholders while loading:
-
-```html
-<div hx-get="/api/partial/work/tasks"
-     hx-trigger="load"
-     hx-swap="innerHTML">
-  <div class="placeholder-glow">
-    <span class="placeholder col-8 mb-2"></span>
-    <span class="placeholder col-6 mb-2"></span>
-    <span class="placeholder col-7"></span>
-  </div>
-</div>
-```
-
-These should look good in both the base state and the loaded state.
-
----
-
-## Design inspiration references
-
-- **Raycast** — minimal launcher aesthetic, high keyboard usability, monochrome with accent colors
-- **Linear** — task management density and color system
-- **Notion** — clean content hierarchy
-- **macOS System Preferences / Settings** — sidebar + content pane pattern
-- **GitHub's Primer design system** — status badges and diff views
-
-The final result should feel like a **professional research cockpit**: dense but not cluttered, calm but not boring, capable of showing a lot of data without overwhelming.
+| Item | Notes |
+|---|---|
+| Planner cards inline editing | Click-to-edit, checkmark done, priority selector |
+| Planner drag-and-drop | Columns: Someday / Incubating / Active |
+| Library PDF column | `file_path` column needed, PDF icon + open button |
+| News as separate Today section | Signals stay on Today scan rail, not in Library |
+| Responsive navbar | Labels hide below 900px (already CSS-supported) |

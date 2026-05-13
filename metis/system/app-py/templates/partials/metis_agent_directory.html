@@ -1,0 +1,46 @@
+{# Agent directory — full cards with description, when-to-use, slash command.
+   Inputs: agents[] from agent-registry.json, agent_count #}
+<div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;">
+    <div>
+      <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">Agent registry</div>
+      <div style="font-size:12.5px;color:var(--m-muted);margin-top:2px;">
+        {{ agent_count }} specialist{{ '' if agent_count == 1 else 's' }} available · invoke any one with the slash command shown.
+      </div>
+    </div>
+    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">FROM AGENT-REGISTRY.JSON</span>
+  </div>
+</div>
+
+<div style="padding:18px 22px;">
+  {% if not agents %}
+    <div style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">No agent registry found at <code style="font-family:var(--m-mono);font-size:11px;">system/config/agent-registry.json</code>.</div>
+  {% else %}
+  <div class="agent-card-grid">
+    {% for a in agents %}
+    {% set initial = (a.name or a.slug or '?')[0] | upper %}
+    <div class="agent-card">
+      <div class="agent-card-head">
+        <div class="agent-card-avatar">{{ initial }}</div>
+        <div style="min-width:0;flex:1;">
+          <div class="agent-card-name">{{ a.name or a.slug }}</div>
+          <div class="agent-card-cmd">{{ a.invocation or ('/' ~ (a.slug or '')) }}{% if a.trust_tier %} · {{ a.trust_tier }}{% endif %}</div>
+        </div>
+      </div>
+      {% if a.description %}
+      <div class="agent-card-desc">{{ a.description }}</div>
+      {% endif %}
+      {% if a.note %}
+      <div class="agent-card-when">When to use: {{ a.note }}</div>
+      {% endif %}
+      {% if a.chains_with %}
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
+        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);align-self:center;">CHAINS WITH</span>
+        {% for c in a.chains_with[:6] %}<span class="chip chip--mute" style="font-size:9px;">{{ c }}</span>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>

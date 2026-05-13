@@ -37,5 +37,5 @@ The incremental cost-effectiveness ratio, or ICER, divides additional cost by ad
 - [iDSI Reference Case](https://www.idsihealth.org/resource-items/reference-case-for-economic-evaluation/)
 
 ## Links to Metis library
-- `06_library/methods/health-economics-basics.md`
-- `06_library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/health-economics-basics.md`
+- `knowledge/library/methods/biostatistics-essentials.md`

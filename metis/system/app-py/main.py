@@ -3,32 +3,66 @@ main.py — Metis Dashboard FastAPI application.
 """
 
 import datetime
+import logging
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from routers import (
     capture,
+    jobs,
     knowledge,
     learning,
     meetings,
     metis_tab,
     planner,
+    setup,
     teach,
     thinking,
     today,
+    transcription,
     work,
 )
+
+log = logging.getLogger("metis")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from db import run_migrations
+    applied = run_migrations()
+    if applied:
+        log.info("DB migrations applied: %s", ", ".join(applied))
+    try:
+        from scheduler import scheduler, setup_jobs
+        setup_jobs()
+        scheduler.start()
+        log.info("APScheduler started")
+    except Exception as exc:
+        log.warning("Scheduler could not start: %s", exc)
+    try:
+        from inbox_watcher import start_inbox_watcher
+        start_inbox_watcher()
+    except Exception as exc:
+        log.warning("Inbox watcher could not start: %s", exc)
+    yield
+    try:
+        from scheduler import scheduler
+        if scheduler.running:
+            scheduler.shutdown(wait=False)
+    except Exception:
+        pass
 
 # ---------------------------------------------------------------------------
 # App setup
 # ---------------------------------------------------------------------------
 
-app = FastAPI(title="Metis Dashboard", docs_url=None, redoc_url=None)
+app = FastAPI(title="Metis Dashboard", docs_url=None, redoc_url=None, lifespan=lifespan)
 
 BASE_DIR = Path(__file__).parent
 
@@ -52,6 +86,32 @@ app.include_router(planner.router)
 app.include_router(teach.router)
 app.include_router(metis_tab.router)
 app.include_router(capture.router, prefix="/api")
+app.include_router(transcription.router)
+app.include_router(jobs.router)
+app.include_router(setup.router)
+
+# ── PWA capture page — standalone mobile-friendly route ─────────────────────
+@app.get("/capture", response_class=HTMLResponse)
+async def pwa_capture_page(request: Request):
+    """Standalone capture page — add to phone home screen for one-tap access."""
+    return templates.TemplateResponse(request, "capture.html", {})
+
+@app.get("/manifest.json")
+async def pwa_manifest():
+    from fastapi.responses import JSONResponse
+    return JSONResponse({
+        "name": "Metis Capture",
+        "short_name": "Capture",
+        "description": "Capture ideas, notes, tasks, and questions for your Research Cortex",
+        "start_url": "/capture",
+        "display": "standalone",
+        "background_color": "#1a1a1a",
+        "theme_color": "#3b82f6",
+        "icons": [
+            {"src": "/static/metis-icon.png", "sizes": "192x192", "type": "image/png"},
+            {"src": "/static/metis-icon.png", "sizes": "512x512", "type": "image/png"},
+        ],
+    })
 
 # ---------------------------------------------------------------------------
 # Root + named tab full-page routes
@@ -81,7 +141,7 @@ async def root(request: Request):
 async def tab_page(request: Request, tab: str):
     template_name = _TAB_TEMPLATES.get(tab)
     if template_name is None:
-        return HTMLResponse(status_code=404, content="Tab not found")
+        return RedirectResponse(url="/", status_code=302)
     return templates.TemplateResponse(
         request, template_name, {"active_tab": tab}
     )
@@ -140,3 +200,41 @@ async def trust_badge():
         f'<i class="bi {policy_icon} {policy_cls}"></i>'
         f'<span class="trust-badge-text">{label}</span>'
     )
+
+
+@app.get("/api/session/touch-planning")
+async def touch_planning_files():
+    """Append last-session timestamp to active project PLANNING.md files.
+
+    Called by the stop hook at session end. Queries active projects with an
+    external_path, finds PLANNING.md there, and appends a dated marker line
+    (idempotent — no duplicate markers on the same day).
+    """
+    import json
+    from pathlib import Path as _Path
+
+    today = str(datetime.date.today())
+    marker = f"\n\n---\n_Last Metis session: {today}_\n"
+    updated = []
+
+    try:
+        from db import db_query
+
+        rows = db_query(
+            "SELECT project_id, title, external_path FROM projects "
+            "WHERE status = 'active' AND external_path IS NOT NULL AND external_path != ''"
+        )
+        for row in rows:
+            ext = (row.get("external_path") or "").strip()
+            if not ext:
+                continue
+            planning = _Path(ext) / "PLANNING.md"
+            if planning.exists():
+                content = planning.read_text(encoding="utf-8")
+                if f"_Last Metis session: {today}_" not in content:
+                    planning.write_text(content + marker, encoding="utf-8")
+                    updated.append(str(planning))
+    except Exception:
+        pass
+
+    return JSONResponse({"updated": updated, "date": today})

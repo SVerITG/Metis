@@ -15,7 +15,7 @@ const NAV_ITEMS = [
 ];
 
 const NAV_TITLES = {
-  today:     { eyebrow: 'Thursday · 14 November · 07:12', title: 'Good morning, Stan.', accent: 'em' },
+  today:     { eyebrow: 'Thursday · 14 November · 07:12', title: 'Good morning, Researcher.', accent: 'em' },
   knowledge: { eyebrow: 'The shelves · 240 cards · 14 slipcases', title: 'Knowledge' },
   thinking:  { eyebrow: 'Three open · last touched 07:12', title: 'Thinking' },
   planner:   { eyebrow: 'Q4 · week 46 of 52', title: 'Planner' },
@@ -136,7 +136,7 @@ function Sidebar({ current, onNavigate }) {
 
       <div className="side-foot">
         <span className="mini-ava">S</span>
-        <span>Stan · Reader in residence</span>
+        <span>Researcher · Reader in residence</span>
       </div>
     </aside>
   );
@@ -167,7 +167,7 @@ function PageHead({ current, right }) {
     <div className="page-head">
       <div>
         <div className="eyebrow">{t.eyebrow}</div>
-        <h1>{t.accent === 'em' ? <>Good morning, <em>Stan.</em></> : t.title}</h1>
+        <h1>{t.accent === 'em' ? <>Good morning, <em>Researcher.</em></> : t.title}</h1>
       </div>
       {right}
     </div>

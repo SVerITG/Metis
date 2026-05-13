@@ -148,7 +148,7 @@ These are not cosmetic issues. They shape what the findings mean. A methods sect
 - [BMJ Statistics Notes archive](https://www.bmj.com/specialties/statistics-notes)
 
 ## Links to Metis library
-- `06_library/methods/writing-for-journals.md`
-- `06_library/methods/study-designs.md`
-- `06_library/methods/data-management.md`
-- `06_library/methods/mixed-methods-research.md`
+- `knowledge/library/methods/writing-for-journals.md`
+- `knowledge/library/methods/study-designs.md`
+- `knowledge/library/methods/data-management.md`
+- `knowledge/library/methods/mixed-methods-research.md`

@@ -49,6 +49,6 @@ If a line list shows that most cases are among school-aged children from neighbo
 - [ECDC outbreak resources](https://www.ecdc.europa.eu/en/publications-data)
 
 ## Links to Metis library
-- `06_library/methods/outbreak-investigation.md`
-- `06_library/methods/spatial-epidemiology.md`
-- `06_library/methods/gis-for-epidemiology.md`
+- `knowledge/library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/spatial-epidemiology.md`
+- `knowledge/library/methods/gis-for-epidemiology.md`

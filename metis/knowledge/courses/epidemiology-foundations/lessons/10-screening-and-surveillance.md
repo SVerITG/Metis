@@ -172,6 +172,6 @@ This is why epidemiologists often say the endpoint is not detection alone. The e
 - [USPSTF methods and screening framework](https://www.uspreventiveservicestaskforce.org/uspstf/methods-and-processes/procedure-manual)
 
 ## Links to Metis library
-- `06_library/methods/surveillance-systems.md`
-- `06_library/methods/diagnostic-test-evaluation.md`
-- `06_library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/methods/diagnostic-test-evaluation.md`
+- `knowledge/library/methods/outbreak-investigation.md`

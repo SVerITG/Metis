@@ -141,9 +141,9 @@ updated: "2026-03-29"
 
 ## Learning Path
 
-- Link this card to `06_library/courses/surveillance-methods/` for post-elimination surveillance design.
-- Combine it with `06_library/concepts/global-health-governance.md` for treaty, financing, and regional coordination context.
-- Map it to `06_library/methods/data-management.md` to align verification with FAIR data sharing and audit-ready pipelines.
+- Link this card to `knowledge/library/courses/surveillance-methods/` for post-elimination surveillance design.
+- Combine it with `knowledge/library/concepts/global-health-governance.md` for treaty, financing, and regional coordination context.
+- Map it to `knowledge/library/methods/data-management.md` to align verification with FAIR data sharing and audit-ready pipelines.
 - In the Learning Hub, this card touches **Surveillance systems** and **Epidemiological methods** most directly.
 
 ---

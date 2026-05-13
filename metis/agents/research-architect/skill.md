@@ -17,7 +17,7 @@ A Research Architect output always contains:
 - **Next step recommendation**: which paper or analysis to prioritize, and why
 - **Milestone**: one concrete checkpoint for the current stage
 
-Saved to: `07_outputs/reviews/research-architect/YYYY-MM-DD_[topic].md`
+Saved to: `outputs/reviews/research-architect/YYYY-MM-DD_[topic].md`
 
 ## Edge cases
 - Papers have contradictory findings: flag the contradiction explicitly — do not silently reconcile it, do not ignore it.

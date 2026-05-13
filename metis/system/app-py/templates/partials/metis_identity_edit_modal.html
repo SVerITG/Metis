@@ -1,0 +1,28 @@
+{# Identity edit modal — included from metis_tab.html so it lives in the DOM
+   from page load. Toggled via .metis-modal-overlay[data-open]. #}
+<div class="metis-modal-overlay" id="metis-identity-overlay" data-open="false"
+     onclick="if(event.target===this) closeMetisIdentityEdit()">
+  <div class="metis-modal" role="dialog" aria-modal="true" aria-labelledby="metis-identity-title">
+    <h3 id="metis-identity-title">Your identity</h3>
+    <div class="metis-modal-sub">Metis uses these to address you, route work, and shape news.</div>
+
+    <label for="me-name">Display name</label>
+    <input type="text" id="me-name" maxlength="80" placeholder="Stan">
+
+    <label for="me-role">Role / subtitle</label>
+    <input type="text" id="me-role" maxlength="120" placeholder="Senior researcher · public health">
+
+    <label for="me-interests">Interests <span style="color:var(--m-muted);text-transform:none;letter-spacing:0;font-family:var(--m-display);font-style:italic;">— comma separated</span></label>
+    <textarea id="me-interests" placeholder="sleeping sickness, multilevel models, AI agent design"></textarea>
+    <div class="metis-help-line">These help agents tailor recommendations and what gets surfaced on Today.</div>
+
+    <label for="me-news">News topics <span style="color:var(--m-muted);text-transform:none;letter-spacing:0;font-family:var(--m-display);font-style:italic;">— comma separated</span></label>
+    <textarea id="me-news" placeholder="HAT outbreaks, WHO surveillance, AI governance"></textarea>
+    <div class="metis-help-line">News Radar will prioritise stories matching these topics.</div>
+
+    <div class="metis-modal-actions">
+      <button class="btn btn--sec btn--caps" onclick="closeMetisIdentityEdit()">Cancel</button>
+      <button class="btn btn--primary btn--caps" onclick="saveMetisIdentity()">Save</button>
+    </div>
+  </div>
+</div>

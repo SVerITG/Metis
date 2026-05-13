@@ -11,7 +11,7 @@ from metis_mcp.app_instance import app
 async def search_literature(
     query: str, field: str = "all", limit: int = 20
 ) -> list[TextContent]:
-    """Search the sleeping-sickness literature database.
+    """Search the user's literature database.
 
     Searches the library_seeded SQLite table. Use this to find papers
     by disease focus, methodology, geography, or any keyword.

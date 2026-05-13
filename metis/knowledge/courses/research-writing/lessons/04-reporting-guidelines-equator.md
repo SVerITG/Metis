@@ -108,6 +108,6 @@ The practical lesson is that guidelines work best when they are integrated into 
 - [STARD guideline](https://www.equator-network.org/reporting-guidelines/stard/)
 
 ## Links to Metis library
-- `06_library/methods/writing-for-journals.md`
-- `06_library/methods/diagnostic-test-evaluation.md`
-- `06_library/methods/study-designs.md`
+- `knowledge/library/methods/writing-for-journals.md`
+- `knowledge/library/methods/diagnostic-test-evaluation.md`
+- `knowledge/library/methods/study-designs.md`

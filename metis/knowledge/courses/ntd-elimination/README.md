@@ -16,4 +16,4 @@ This course introduces how neglected tropical disease elimination programmes mov
 ## Core resources
 - WHO NTD road map and disease-specific guidance
 - Elimination and post-elimination surveillance resources
-- Related Metis cards in `06_library/methods/` and `06_library/concepts/`
+- Related Metis cards in `knowledge/library/methods/` and `knowledge/library/concepts/`

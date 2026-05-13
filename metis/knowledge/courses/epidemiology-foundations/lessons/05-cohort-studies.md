@@ -150,6 +150,6 @@ If those questions are vague, the cohort is probably not yet well designed.
 - [BMJ TARGET statement on target trial emulation](https://www.bmj.com/content/390/bmj-2025-087179)
 
 ## Links to Metis library
-- `06_library/methods/study-designs.md`
-- `06_library/methods/causal-inference.md`
-- `06_library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/study-designs.md`
+- `knowledge/library/methods/causal-inference.md`
+- `knowledge/library/methods/biostatistics-essentials.md`

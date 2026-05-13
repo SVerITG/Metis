@@ -13,7 +13,7 @@ Metis is **workflow-defined**: the features exist to serve specific ways of work
 | 3 | **Idea capture (desktop)** | Ideas tab → "+ New idea" | capture_idea, cross_pollinate |
 | 4 | **Brainstorm session** | Ideas tab → context selector → start session | Metis, domain agents |
 | 5 | **Research session** | Research tab → open article → work in Word → "Scan for updates" | Research Architect, Writing Partner |
-| 6 | **Literature intake** | Drop PDF in 00_inbox OR Dropzone tab | Librarian |
+| 6 | **Literature intake** | Drop PDF in inbox OR Dropzone tab | Librarian |
 | 7 | **Meeting** | Meetings tab → record (3 modes) or import transcript | Meeting Memory |
 | 8 | **Project work** | Projects tab → launcher button → work in IDE | RC Builder (for Metis work) |
 | 9 | **Deep query / routing** | Claude Desktop or Claude Code via MCP | Metis → any agent |
@@ -83,9 +83,9 @@ Metis is **workflow-defined**: the features exist to serve specific ways of work
 
 ## Workflow 6 — Literature intake
 
-**Trigger:** Drop PDF in `00_inbox/` OR Dropzone tab  
+**Trigger:** Drop PDF in `inbox/` OR Dropzone tab  
 **Steps:**
-1. File appears in Dropzone tab intake form (or `00_inbox/`)
+1. File appears in Dropzone tab intake form (or `inbox/`)
 2. Librarian agent analyzes: metadata, methods, findings, relevance
 3. Entry added to `library_seeded` table with tags
 4. Cross-links created to related ideas, meetings, projects
@@ -119,7 +119,7 @@ Metis is **workflow-defined**: the features exist to serve specific ways of work
 **Steps:**
 1. User sends request to `/metis`
 2. Metis analyzes intent, selects agent(s), announces routing decision
-3. Agent(s) execute, write output to `07_outputs/reviews/{agent}/`
+3. Agent(s) execute, write output to `outputs/reviews/{agent}/`
 4. Run logged to `agent_runs` table
 5. Summary returned to user
 
@@ -144,9 +144,9 @@ Metis is **workflow-defined**: the features exist to serve specific ways of work
 1. RC Builder agent loads architecture context (config.py, app.R, token-guardrails.md, red-lines.md)
 2. Plans change, confirms scope with user
 3. Implements: MCP tool / R module / agent skill / migration
-4. Writes session report to `07_outputs/reviews/implementation/YYYY-MM-DD_[task].md`
+4. Writes session report to `outputs/reviews/implementation/YYYY-MM-DD_[task].md`
 5. Lists: completed, skipped, issues found, how to verify
 
 ---
 
-*See also: `08_system/red-lines.md`, `08_system/token-guardrails.md`*
+*See also: `system/red-lines.md`, `system/token-guardrails.md`*

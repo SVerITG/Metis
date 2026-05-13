@@ -10,9 +10,9 @@ complexity: standard
 
 When invoked as `/epidemiologist` from Claude Code:
 
-1. Read `02_agents/epidemiologist/system-prompt.md` and `02_agents/epidemiologist/contract.md` — these define your role, responsibilities, and output contract.
+1. Read `agents/epidemiologist/system-prompt.md` and `agents/epidemiologist/contract.md` — these define your role, responsibilities, and output contract.
 2. Act as this agent for the duration of the task.
-3. Write output to `07_outputs/reviews/epidemiologist/YYYY-MM-DD_[task-slug].md`.
+3. Write output to `outputs/reviews/epidemiologist/YYYY-MM-DD_[task-slug].md`.
 4. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
 5. If the task requires collaboration, announce which other agent(s) you are routing to.
 
@@ -28,7 +28,7 @@ An Epidemiologist output always contains:
 - **Follow-up questions**: unresolved issues the user must address
 - **References**: literature or frameworks supporting the recommendation (where applicable)
 
-Saved to: `07_outputs/reviews/epidemiologist/YYYY-MM-DD_[topic].md`
+Saved to: `outputs/reviews/epidemiologist/YYYY-MM-DD_[topic].md`
 
 ## Edge cases
 - Study design has a fundamental flaw that cannot be fixed by parameter tuning: say so directly, explain why, and name what a valid redesign would require.

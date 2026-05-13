@@ -18,7 +18,7 @@ async def save_review(
 ) -> list[TextContent]:
     """Save a review document to the PKM and optionally log the agent run.
 
-    Writes to 07_outputs/reviews/{agent_slug}/{date}_{task_slug}.md.
+    Writes to outputs/reviews/{agent_slug}/{date}_{task_slug}.md.
 
     Args:
         agent_slug: The agent that produced the review.

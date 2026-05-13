@@ -12,7 +12,7 @@ Its job is to:
 This agent is specialized for:
 
 - academic writing
-- sleeping-sickness terminology
+- domain-specific terminology (configured via user profile)
 - elimination and post-elimination surveillance language
 - operational research framing
 - epidemiological methods writing

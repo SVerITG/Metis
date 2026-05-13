@@ -120,6 +120,6 @@ That conclusion is concrete, proportionate, and useful to decision-makers.
 - [TARGET guideline for interpretation of epidemiological studies](https://www.bmj.com/content/390/bmj-2025-087179)
 
 ## Links to Metis library
-- `06_library/methods/writing-for-journals.md`
-- `06_library/methods/causal-inference.md`
-- `06_library/methods/study-designs.md`
+- `knowledge/library/methods/writing-for-journals.md`
+- `knowledge/library/methods/causal-inference.md`
+- `knowledge/library/methods/study-designs.md`

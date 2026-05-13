@@ -1,6 +1,6 @@
 # Metis Design System
 
-A design system distilled from **Research Cortex / Metis** — a personal AI ops platform for a field epidemiologist (HAT / sleeping sickness, MLM teaching). Local-first FastAPI + htmx app with a consolidated `styles.css` (≈3.5k lines) plus Quarto notebooks and a Typst academic template.
+A design system distilled from **Research Cortex / Metis** — a personal AI ops platform for a field epidemiologist (NTD surveillance, multilevel models). Local-first FastAPI + htmx app with a consolidated `styles.css` (≈3.5k lines) plus Quarto notebooks and a Typst academic template.
 
 ## Sources
 

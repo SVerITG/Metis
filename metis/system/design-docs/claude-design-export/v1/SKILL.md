@@ -1,6 +1,6 @@
 # Metis Design System · Skill
 
-This project is the canonical design system for **Metis** — a personal knowledge-work companion for one reader (Stan). Nine connected surfaces: Today, Knowledge, Thinking, Planner, Work, Meetings, Learning, Teach, Metis.
+This project is the canonical design system for **Metis** — a personal knowledge-work companion for one researcher. Nine connected surfaces: Today, Knowledge, Thinking, Planner, Work, Meetings, Learning, Teach, Metis.
 
 ## Before you design anything
 

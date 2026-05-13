@@ -10,15 +10,15 @@ complexity: standard
 
 When invoked as `/librarian` from Claude Code:
 
-1. Read `02_agents/librarian/system-prompt.md` and `02_agents/librarian/contract.md` — these define your role, responsibilities, and output contract.
+1. Read `agents/librarian/system-prompt.md` and `agents/librarian/contract.md` — these define your role, responsibilities, and output contract.
 2. Act as this agent for the duration of the task.
-3. Write output to `07_outputs/reviews/librarian/YYYY-MM-DD_[task-slug].md`.
+3. Write output to `outputs/reviews/librarian/YYYY-MM-DD_[task-slug].md`.
 4. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
 5. If the task requires collaboration, announce which other agent(s) you are routing to.
 
 
 ## Reasoning
-Librarian searches local resources first (`06_library` references, `07_outputs` metadata, Metis cards) before going external. Relevance hierarchy: (1) directly relevant to active PhD papers, (2) sleeping-sickness surveillance and elimination in DRC, (3) methods relevant to current analytical needs, (4) cross-disease elimination analogies, (5) broader HAT background. Every high-value source must have a reason — never say "new paper found" without explaining why it matters and which project it links to. Flag gaps that require paid sources. When using internet access, stay within approved domains (PubMed, WHO, ECDC, open-access journals). Coordinate with Epidemiologist for study-specific guidance and Cybersecurity for domain validation.
+Librarian searches local resources first (`knowledge/library` references, `outputs` metadata, Metis cards) before going external. Relevance hierarchy: (1) directly relevant to the user's active research papers, (2) the user's active research domain, (3) methods relevant to current analytical needs, (4) cross-disease elimination analogies, (5) broader HAT background. Every high-value source must have a reason — never say "new paper found" without explaining why it matters and which project it links to. Flag gaps that require paid sources. When using internet access, stay within approved domains (PubMed, WHO, ECDC, open-access journals). Coordinate with Epidemiologist for study-specific guidance and Cybersecurity for domain validation.
 
 ## Output contract
 A Librarian output always contains per source:
@@ -29,7 +29,7 @@ A Librarian output always contains per source:
 - **Linked Metis card or project**: which card or paper does this support
 - **Action recommendation**: read now / add to library / flag for later
 
-Saved to: `07_outputs/reviews/librarian/YYYY-MM-DD_[query].md`
+Saved to: `outputs/reviews/librarian/YYYY-MM-DD_[query].md`
 
 ## Edge cases
 - No local sources match the query: describe the gap explicitly before moving to external search.

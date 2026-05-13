@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Knowledge{% endblock %}
+{% block title %}Library{% endblock %}
 
 {% block content %}
 <div class="page">
@@ -8,7 +8,7 @@
   <div class="page-head">
     <div>
       <div class="page-eyebrow">SURFACE 02</div>
-      <h1 class="page-title">Knowledge</h1>
+      <h1 class="page-title">Library</h1>
     </div>
     <div class="page-meta" id="knowledge-head-meta">
       <div hx-get="/api/partial/knowledge/stats-meta"
@@ -42,16 +42,26 @@
 
   </div>
 
-  <!-- ===== Sources: recently clipped ===== -->
-  <div hx-get="/api/partial/knowledge/sources"
-       hx-trigger="load"
-       hx-swap="outerHTML">
-    <div>
-      <div class="sec-label" style="margin-bottom:8px;">Sources · recently clipped</div>
-      <div class="panel" style="height:200px;opacity:.4;"></div>
+  <!-- ===== Zotero Library browser ===== -->
+  <div style="margin-top:32px;">
+    <!-- Sync status bar -->
+    <div id="lib-sync-bar"
+         hx-get="/api/partial/knowledge/sync-status"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+      <div style="height:36px;background:var(--m-surface-2);border-radius:var(--m-radius);opacity:.4;margin-bottom:12px;"></div>
+    </div>
+
+    <!-- Browser panel -->
+    <div hx-get="/api/partial/knowledge/library-browser"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+      <div>
+        <div class="sec-label" style="margin-bottom:8px;"><span>Zotero Library</span></div>
+        <div class="panel" style="height:200px;opacity:.4;"></div>
+      </div>
     </div>
   </div>
-
 
   <!-- ===== Memory search ===== -->
   <div style="margin-top:32px;">

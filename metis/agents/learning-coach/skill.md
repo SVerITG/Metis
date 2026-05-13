@@ -17,7 +17,7 @@ A Learning Coach output always contains:
 - **Spaced repetition items**: 2–3 review prompts for key concepts
 - **Milestone**: one concrete measurable checkpoint
 
-Saved to: `07_outputs/reviews/learning-coach/YYYY-MM-DD_[skill].md`
+Saved to: `outputs/reviews/learning-coach/YYYY-MM-DD_[skill].md`
 
 ## Edge cases
 - User overestimates their level: provide an honest reframe with evidence from what they described.

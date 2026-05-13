@@ -2,7 +2,7 @@
 
 _Archive edition — v1.0_
 
-A design system for **Metis**, a personal knowledge-work companion for Stan. The product is a single web app with nine connected surfaces: Today, Knowledge, Thinking, Planner, Work, Meetings, Learning, Teach, and Metis (settings & model).
+A design system for **Metis**, a personal knowledge-work companion for the researcher. The product is a single web app with nine connected surfaces: Today, Knowledge, Thinking, Planner, Work, Meetings, Learning, Teach, and Metis (settings & model).
 
 This system is the canonical source of truth. Read the relevant sections before designing anything in this project — do not guess.
 
@@ -10,7 +10,7 @@ This system is the canonical source of truth. Read the relevant sections before 
 
 ## 1. What Metis is (context)
 
-**Metis** is Stan's second brain and daily operating surface. It is not a chatbot and not a notes app — it is a **workbench for thinking**, organized like a working archive: shelves, index cards, slipcases, and a marginal hand (the assistant) that reads alongside you, proposes moves, and never interrupts.
+**Metis** is the researcher's second brain and daily operating surface. It is not a chatbot and not a notes app — it is a **workbench for thinking**, organized like a working archive: shelves, index cards, slipcases, and a marginal hand (the assistant) that reads alongside you, proposes moves, and never interrupts.
 
 ### Product anatomy — the nine surfaces
 
@@ -23,7 +23,7 @@ This system is the canonical source of truth. Read the relevant sections before 
 | 5 | **Work** | Projects, tasks, kanban. The doing surface. |
 | 6 | **Meetings** | Prep, transcripts, follow-ups, one-pagers. |
 | 7 | **Learning** | Courses, study plans, spaced-repetition queues. |
-| 8 | **Teach** | Drafts outward — essays, lessons, talks Stan is producing. |
+| 8 | **Teach** | Drafts outward — essays, lessons, talks the researcher is producing. |
 | 9 | **Metis** | Settings, model, memory, keys, billing. |
 
 ### Voice & tone — how Metis speaks
@@ -36,7 +36,7 @@ Metis sounds like **a literate, patient assistant working in the same room.** It
 - Uses **lowercase freely in chrome** (`inbox`, `today`, `thinking`) and **sentence-case in prose.**
 - Names things. `Thursday's notes on Kripke.` Not `Your recent note.`
 - Never uses exclamation marks. Rarely uses emoji. Never gamifies.
-- Calls the user by name (**Stan**) sparingly, at thresholds — morning greeting, end-of-day, first use of a new surface.
+- Calls the user by name (**the researcher**) sparingly, at thresholds — morning greeting, end-of-day, first use of a new surface.
 
 **Never:**
 - "Let me help you with that!" / "Great question!" / "I'd be happy to…"
@@ -52,7 +52,7 @@ The chosen direction is **Archive**: an editorial, research-journal aesthetic. P
 ### Foundational moves
 
 1. **Paper over panels.** Bone-white surfaces (`--m-surface: #fbf8f0`) on warm off-white ground (`--m-bg: #f5f2ea`). No pure white.
-2. **Serif for voice, sans for chrome, mono for labels.** Newsreader (Stan) for greetings, titles, editorial body. Inter for UI. JetBrains Mono, UPPERCASE, wide-tracked, for section labels and meta.
+2. **Serif for voice, sans for chrome, mono for labels.** Newsreader (the researcher) for greetings, titles, editorial body. Inter for UI. JetBrains Mono, UPPERCASE, wide-tracked, for section labels and meta.
 3. **Forest-green ink + muted ochre.** Green is primary. Ochre is the single warm accent — used for highlights, annotations, warnings. Alert-red is brick, never fire-truck.
 4. **Rules over shadows.** Prefer 1px dividers to drop shadows. Shadows exist but are `rgba(31, 42, 36, 0.05)` subtle.
 5. **Near-square radii.** `--m-radius: 3px`. Paper has edges.
@@ -131,7 +131,7 @@ Model-tier tints (for `Haiku` / `Sonnet` / `Opus` badges) are warm, low-saturati
 ### Type scale
 | Token | Size | Use |
 |-------|------|-----|
-| `--t-display` | 42 / 1.08 | Hero greetings ("Good morning, Stan.") |
+| `--t-display` | 42 / 1.08 | Hero greetings ("Good morning, Researcher.") |
 | `--t-h1` | 30 / 1.2 | Page titles (serif) |
 | `--t-h2` | 24 / 1.25 | Section titles (serif) |
 | `--t-h3` | 20 / 1.3 | Card titles (serif) |
@@ -187,7 +187,7 @@ Built in `preview/` as review cards. The kit is intentionally small:
 - **Avatar** — 32/40/56px, pill, cream background, serif initial.
 - **Modal / Drawer** — paper, rule-framed, no drop shadow on mobile.
 - **Command bar** — mono input, fixed-width results, forest cursor.
-- **Thread / Message** — two-column editorial; Metis left-margin annotation, Stan right-hand prose.
+- **Thread / Message** — two-column editorial; Metis left-margin annotation, the researcher right-hand prose.
 
 ---
 

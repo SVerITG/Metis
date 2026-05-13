@@ -10,9 +10,9 @@ complexity: standard
 
 When invoked as `/dashboard-engineer` from Claude Code:
 
-1. Read `02_agents/dashboard-engineer/system-prompt.md` and `02_agents/dashboard-engineer/contract.md` — these define your role, responsibilities, and output contract.
+1. Read `agents/dashboard-engineer/system-prompt.md` and `agents/dashboard-engineer/contract.md` — these define your role, responsibilities, and output contract.
 2. Act as this agent for the duration of the task.
-3. Write output to `07_outputs/reviews/dashboard-engineer/YYYY-MM-DD_[task-slug].md`.
+3. Write output to `outputs/reviews/dashboard-engineer/YYYY-MM-DD_[task-slug].md`.
 4. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
 5. If the task requires collaboration, announce which other agent(s) you are routing to.
 
@@ -28,7 +28,7 @@ A Dashboard Engineer output always contains:
 - **New UI state**: any new inputs, outputs, or conditional panels introduced
 - **Verification steps**: how to manually test (e.g., `shiny::runApp()`, what to click, what to expect)
 
-Saved to: `07_outputs/reviews/dashboard-engineer/YYYY-MM-DD_[feature].md`
+Saved to: `outputs/reviews/dashboard-engineer/YYYY-MM-DD_[feature].md`
 
 ## Edge cases
 - Change requires a new R package dependency: flag it explicitly and confirm it is allowed before implementing.

@@ -1,0 +1,166 @@
+<div style="max-width:780px;margin:0 auto;">
+
+  <!-- Close button -->
+  <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+    <button class="btn btn--ghost btn--caps" onclick="document.getElementById('lm-report-panel').style.display='none'">← Back to Session</button>
+  </div>
+
+  <!-- Report header -->
+  <div style="margin-bottom:32px;">
+    <div class="kicker kicker--ochre" style="margin-bottom:12px;">
+      <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h10v10H3z"/><line x1="6" y1="7" x2="10" y2="7"/><line x1="6" y1="10" x2="10" y2="10"/></svg>
+      MEETING REPORT
+    </div>
+    <h1 style="font-family:var(--m-display);font-size:32px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0 0 12px;">{{ title }}</h1>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">{{ date }}</div>
+      {% if participants %}
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">{{ participants }}</div>
+      {% endif %}
+      {% if duration %}
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">{{ duration }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Summary -->
+  {% if summary_lines %}
+  <div style="margin-bottom:28px;">
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:10px;">SUMMARY</div>
+    <div style="font-family:var(--m-sans);font-size:15px;color:var(--m-ink);line-height:1.7;padding:16px 20px;background:var(--m-surface-2);border-radius:4px;">
+      {% for line in summary_lines %}{{ line }} {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;">
+
+    <!-- Decisions -->
+    <div>
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-accent);margin-bottom:10px;">DECISIONS ({{ extracted.decisions|length }})</div>
+      {% if extracted.decisions %}
+        {% for d in extracted.decisions %}
+        <div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--m-rule-soft);">
+          <span style="color:var(--m-accent);font-family:var(--m-mono);font-size:10px;flex-shrink:0;margin-top:3px;">■</span>
+          <span style="font-family:var(--m-sans);font-size:14px;color:var(--m-ink);line-height:1.5;">{{ d }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="font-family:var(--m-sans);font-size:13px;color:var(--m-muted);font-style:italic;">No decisions extracted. Add them with "Decision: …" in your notes.</div>
+      {% endif %}
+    </div>
+
+    <!-- Action items -->
+    <div>
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-ochre);margin-bottom:10px;">ACTION ITEMS ({{ extracted.actions|length }})</div>
+      {% if extracted.actions %}
+        {% for a in extracted.actions %}
+        <div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--m-rule-soft);">
+          <span style="color:var(--m-ochre);font-family:var(--m-mono);font-size:10px;flex-shrink:0;margin-top:3px;">→</span>
+          <span style="font-family:var(--m-sans);font-size:14px;color:var(--m-ink);line-height:1.5;">{{ a }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="font-family:var(--m-sans);font-size:13px;color:var(--m-muted);font-style:italic;">No action items extracted. Add them with "Action: …" in your notes.</div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Follow-ups -->
+  {% if extracted.follow_ups %}
+  <div style="margin-bottom:28px;">
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:10px;">FOLLOW-UPS</div>
+    {% for f in extracted.follow_ups %}
+    <div style="padding:6px 0 6px 12px;border-left:2px solid var(--m-rule);font-family:var(--m-sans);font-size:14px;color:var(--m-ink);margin-bottom:4px;">{{ f }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Connections surfaced during meeting -->
+  {% if all_connections %}
+  <div style="margin-bottom:28px;">
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:10px;">KNOWLEDGE CONNECTIONS SURFACED ({{ all_connections|length }})</div>
+    <div class="panel" style="padding:0;">
+      {% for c in all_connections %}
+      {% set src_colors = {'library': 'var(--m-accent)', 'meeting': 'var(--m-ochre)', 'news': 'var(--m-ok)', 'idea': 'var(--m-muted)'} %}
+      <div style="display:flex;align-items:baseline;gap:10px;padding:9px 16px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
+        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:{{ src_colors.get(c.source, 'var(--m-muted)') }};flex-shrink:0;width:52px;">{{ c.source.upper() }}</span>
+        <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">{{ (c.title or '')[:80] }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Full transcript -->
+  <div style="margin-bottom:28px;">
+    <details>
+      <summary style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);cursor:pointer;padding:6px 0;">FULL TRANSCRIPT</summary>
+      <div style="margin-top:12px;padding:16px 18px;background:var(--m-surface-2);border-radius:4px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);line-height:1.75;white-space:pre-wrap;max-height:480px;overflow-y:auto;">{{ transcript }}</div>
+    </details>
+  </div>
+
+  <!-- Action buttons -->
+  <div style="display:flex;gap:10px;padding:20px 0;border-top:1px solid var(--m-rule-soft);flex-wrap:wrap;">
+    <button class="btn btn--primary btn--caps" onclick="copyReportToClipboard()">Copy Report</button>
+    <button class="btn btn--ghost btn--caps" onclick="openReportInClaude()">Polish with Claude</button>
+    <button class="btn btn--ghost btn--caps" onclick="closeLiveSession()">Done</button>
+  </div>
+
+</div>
+
+<script>
+function copyReportToClipboard() {
+  const title = {{ title|tojson }};
+  const date = {{ date|tojson }};
+  const participants = {{ participants|tojson }};
+  const duration = {{ duration|tojson }};
+  const decisions = {{ extracted.decisions|tojson }};
+  const actions = {{ extracted.actions|tojson }};
+  const followups = {{ extracted.follow_ups|tojson }};
+  const transcript = {{ transcript|tojson }};
+
+  let text = `MEETING REPORT\n${'─'.repeat(60)}\n`;
+  text += `Title:        ${title}\n`;
+  text += `Date:         ${date}\n`;
+  text += `Participants: ${participants}\n`;
+  text += `Duration:     ${duration}\n\n`;
+
+  if (decisions.length) {
+    text += `DECISIONS\n${'─'.repeat(40)}\n`;
+    decisions.forEach((d, i) => text += `${i+1}. ${d}\n`);
+    text += '\n';
+  }
+  if (actions.length) {
+    text += `ACTION ITEMS\n${'─'.repeat(40)}\n`;
+    actions.forEach((a, i) => text += `${i+1}. ${a}\n`);
+    text += '\n';
+  }
+  if (followups.length) {
+    text += `FOLLOW-UPS\n${'─'.repeat(40)}\n`;
+    followups.forEach(f => text += `- ${f}\n`);
+    text += '\n';
+  }
+  text += `TRANSCRIPT\n${'─'.repeat(40)}\n${transcript}`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = event.target;
+    btn.textContent = 'COPIED ✓';
+    setTimeout(() => btn.textContent = 'Copy Report', 2000);
+  });
+}
+
+function openReportInClaude() {
+  const title = {{ title|tojson }};
+  const transcript = {{ transcript|tojson }};
+  const decisions = {{ extracted.decisions|tojson }};
+  const actions = {{ extracted.actions|tojson }};
+
+  const prompt = `I have a meeting transcript from "${title}". Please write a polished, professional meeting report from it. Include an executive summary, decisions, action items with owners, and key discussion points.\n\nRaw transcript:\n${transcript}\n\nAuto-extracted decisions: ${decisions.join('; ')}\nAuto-extracted actions: ${actions.join('; ')}`;
+
+  navigator.clipboard.writeText(prompt).then(() => {
+    alert('Prompt copied to clipboard. Paste it in Claude Desktop or Claude.ai for a polished AI-written report.');
+  });
+}
+</script>
