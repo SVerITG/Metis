@@ -37,4 +37,4 @@ Tibbles are a modern, easier-to-read data-frame variant used heavily in tidyvers
 - [Posit Cheatsheets](https://posit.co/resources/cheatsheets/)
 
 ## Links to Metis library
-- `06_library/methods/data-management.md`
+- `knowledge/library/methods/data-management.md`

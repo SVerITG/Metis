@@ -160,9 +160,9 @@ Key targets relevant to public health:
 
 ## Learning Path
 
-- Pair this card with `06_library/courses/surveillance-methods/` and `06_library/courses/research-writing/` for equity-focused surveillance analyses.
-- Follow it with `06_library/methods/data-management.md` to align FAIR, disaggregated data infrastructure with equity monitoring.
-- Use `06_library/concepts/global-health-governance.md` to understand how financing and treaty politics influence equity agendas.
+- Pair this card with `knowledge/library/courses/surveillance-methods/` and `knowledge/library/courses/research-writing/` for equity-focused surveillance analyses.
+- Follow it with `knowledge/library/methods/data-management.md` to align FAIR, disaggregated data infrastructure with equity monitoring.
+- Use `knowledge/library/concepts/global-health-governance.md` to understand how financing and treaty politics influence equity agendas.
 - In the Learning Hub, this card links to **Data management & R**, **Surveillance systems**, and **Scientific communication**.
 
 ---

@@ -98,9 +98,9 @@ updated: "2026-03-29"
 
 ## Learning Path
 
-- Start with `06_library/courses/surveillance-methods/` and `06_library/courses/biostatistics/`.
-- Pair this card with `06_library/methods/surveillance-systems.md` for case definitions, signal quality, and low-prevalence surveillance design.
-- Pair it with `06_library/disease-areas/hat-sleeping-sickness.md` for a concrete elimination-phase use case.
+- Start with `knowledge/library/courses/surveillance-methods/` and `knowledge/library/courses/biostatistics/`.
+- Pair this card with `knowledge/library/methods/surveillance-systems.md` for case definitions, signal quality, and low-prevalence surveillance design.
+- Pair it with `knowledge/library/disease-areas/hat-sleeping-sickness.md` for a concrete elimination-phase use case.
 - In the Learning Hub, this card aligns primarily with **Diagnostic evaluation** and also supports **Surveillance systems**.
 
 ---

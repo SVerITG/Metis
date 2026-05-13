@@ -1,0 +1,64 @@
+<div id="lm-setup-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:800;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;">
+  <div class="panel m-drawer-top" style="width:520px;max-width:96vw;padding:0;box-shadow:0 8px 32px rgba(0,0,0,0.22);">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;border-bottom:1px solid var(--m-rule-soft);">
+      <div class="kicker kicker--ochre" style="margin:0;">
+        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><line x1="8" y1="5" x2="8" y2="8"/></svg>
+        LIVE MEETING — SETUP
+      </div>
+      <button onclick="closeLiveSession()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;padding:2px 6px;">ESC</button>
+    </div>
+
+    <div style="padding:20px;">
+
+      <div style="margin-bottom:14px;">
+        <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">MEETING TITLE</label>
+        <input id="lm-setup-title" type="text" autofocus
+               placeholder="e.g. HAT Kwilu coordination"
+               style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:14px;color:var(--m-ink);outline:none;">
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:6px;">PARTICIPANTS — one per line, first name or full name</label>
+        <div id="lm-speaker-inputs" style="display:flex;flex-direction:column;gap:6px;">
+          <input class="lm-setup-speaker" type="text" placeholder="Name 1 (will be first active speaker)"
+                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+          <input class="lm-setup-speaker" type="text" placeholder="Name 2"
+                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+          <input class="lm-setup-speaker" type="text" placeholder="Name 3 (optional)"
+                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+          <input class="lm-setup-speaker" type="text" placeholder="Name 4 (optional)"
+                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">LANGUAGE</label>
+        <select id="lm-setup-lang"
+                style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+          <option value="en-US">English (US)</option>
+          <option value="en-GB">English (UK)</option>
+          <option value="fr-FR">French</option>
+          <option value="nl-NL">Dutch</option>
+          <option value="nl-BE">Dutch (Belgium)</option>
+          <option value="fr-BE">French (Belgium)</option>
+        </select>
+      </div>
+
+      <div style="background:var(--m-surface-2);border-radius:4px;padding:12px 14px;margin-bottom:16px;font-family:var(--m-sans);font-size:12px;color:var(--m-muted);line-height:1.6;">
+        Metis will listen via your microphone and transcribe everything in real time.<br>
+        Use the speaker buttons to switch whose voice is being attributed.<br>
+        Works in <strong>Chrome</strong> and <strong>Edge</strong> — requires microphone permission.
+      </div>
+
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn--primary btn--caps" style="flex:1;" onclick="beginLiveMeeting()">
+          <svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor" style="margin-right:4px;"><circle cx="8" cy="8" r="6"/></svg>
+          Start Listening
+        </button>
+        <button class="btn btn--ghost btn--caps" onclick="closeLiveSession()">Cancel</button>
+      </div>
+
+    </div>
+  </div>
+</div>

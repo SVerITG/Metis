@@ -103,6 +103,6 @@ The lesson is pragmatic: the best package is the one that fits the task and pres
 - [CRAN spdep package](https://cran.r-project.org/package=spdep)
 
 ## Links to Metis library
-- `06_library/methods/gis-for-epidemiology.md`
-- `06_library/methods/data-management.md`
-- `06_library/methods/spatial-epidemiology.md`
+- `knowledge/library/methods/gis-for-epidemiology.md`
+- `knowledge/library/methods/data-management.md`
+- `knowledge/library/methods/spatial-epidemiology.md`

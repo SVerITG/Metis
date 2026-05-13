@@ -37,5 +37,5 @@ Specific outcomes are often easier for programme teams to understand, but they a
 - [WHO publications](https://www.who.int/publications)
 
 ## Links to Metis library
-- `06_library/methods/health-economics-basics.md`
-- `06_library/concepts/health-equity-sdh.md`
+- `knowledge/library/methods/health-economics-basics.md`
+- `knowledge/library/concepts/health-equity-sdh.md`

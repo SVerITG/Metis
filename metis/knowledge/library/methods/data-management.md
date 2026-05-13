@@ -107,9 +107,9 @@ updated: "2026-03-29"
 
 ## Learning Path
 
-- Start with `06_library/courses/biostatistics/` and `06_library/courses/surveillance-methods/`.
-- Pair this card with `06_library/methods/surveillance-systems.md` for reporting flows and with `06_library/concepts/digital-health-epi.md` for governance and platform questions.
-- Use it alongside `06_library/courses/research-writing/` when building protocols, reproducible analysis plans, and sharing strategies.
+- Start with `knowledge/library/courses/biostatistics/` and `knowledge/library/courses/surveillance-methods/`.
+- Pair this card with `knowledge/library/methods/surveillance-systems.md` for reporting flows and with `knowledge/library/concepts/digital-health-epi.md` for governance and platform questions.
+- Use it alongside `knowledge/library/courses/research-writing/` when building protocols, reproducible analysis plans, and sharing strategies.
 - In the Learning Hub, this card aligns primarily with **Data management & R** and also supports **Surveillance systems**.
 
 ---

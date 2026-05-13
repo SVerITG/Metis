@@ -1,6 +1,13 @@
 <!-- thinking_ideas.html — Editorial idea list -->
 {% if not ideas %}
-<div class="empty-row"><em>No ideas yet. Press ⌘K to capture one.</em></div>
+<div class="panel panel-pad" style="text-align:center;padding:24px 20px;border:1px dashed var(--m-line);">
+  <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 8px;">
+    No ideas captured yet.
+  </p>
+  <p class="ed" style="font-size:13px;color:var(--m-muted);margin:0;">
+    Press <kbd>Ctrl+K</kbd> (or <kbd>⌘K</kbd>) and prefix with <code>i:</code>. Cross-pollination runs automatically and surfaces connections.
+  </p>
+</div>
 {% else %}
 <div class="panel">
   {% for idea in ideas %}

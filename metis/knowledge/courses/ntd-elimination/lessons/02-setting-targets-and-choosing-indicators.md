@@ -37,5 +37,5 @@ Poor indicator choice can distort priorities. If programmes focus only on report
 - [WHO publications](https://www.who.int/publications)
 
 ## Links to Metis library
-- `06_library/concepts/elimination-framework.md`
-- `06_library/methods/surveillance-systems.md`
+- `knowledge/library/concepts/elimination-framework.md`
+- `knowledge/library/methods/surveillance-systems.md`

@@ -142,6 +142,6 @@ A disciplined workflow is simple:
 - [CDC Principles of Epidemiology](https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/index.html)
 
 ## Links to Metis library
-- `06_library/methods/biostatistics-essentials.md`
-- `06_library/methods/causal-inference.md`
-- `06_library/methods/study-designs.md`
+- `knowledge/library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/causal-inference.md`
+- `knowledge/library/methods/study-designs.md`

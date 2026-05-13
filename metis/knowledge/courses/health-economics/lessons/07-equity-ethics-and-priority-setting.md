@@ -37,6 +37,6 @@ Equity matters because population averages can hide who benefits and who is excl
 - [WMA Declaration of Helsinki](https://www.wma.net/what-we-do/medical-ethics/declaration-of-helsinki/)
 
 ## Links to Metis library
-- `06_library/methods/health-economics-basics.md`
-- `06_library/concepts/health-equity-sdh.md`
-- `06_library/concepts/research-ethics.md`
+- `knowledge/library/methods/health-economics-basics.md`
+- `knowledge/library/concepts/health-equity-sdh.md`
+- `knowledge/library/concepts/research-ethics.md`

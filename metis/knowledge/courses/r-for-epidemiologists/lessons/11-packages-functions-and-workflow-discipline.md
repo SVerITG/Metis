@@ -37,5 +37,5 @@ This does not require advanced software engineering. It requires habits that kee
 - [R for Data Science](https://r4ds.hadley.nz/)
 
 ## Links to Metis library
-- `06_library/methods/data-management.md`
-- `06_library/methods/writing-for-journals.md`
+- `knowledge/library/methods/data-management.md`
+- `knowledge/library/methods/writing-for-journals.md`

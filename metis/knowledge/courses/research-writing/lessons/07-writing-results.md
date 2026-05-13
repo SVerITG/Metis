@@ -131,6 +131,6 @@ Secondary analyses should not overshadow the primary result. If the main finding
 - [BMJ Author Hub](https://authors.bmj.com/)
 
 ## Links to Metis library
-- `06_library/methods/writing-for-journals.md`
-- `06_library/methods/biostatistics-essentials.md`
-- `06_library/methods/data-management.md`
+- `knowledge/library/methods/writing-for-journals.md`
+- `knowledge/library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/data-management.md`

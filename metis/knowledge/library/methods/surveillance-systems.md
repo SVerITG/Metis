@@ -168,9 +168,9 @@ Key attributes to evaluate:
 
 ## Learning Path
 
-- Start with `06_library/courses/surveillance-methods/`.
-- Pair this card with `06_library/methods/diagnostic-test-evaluation.md` for case definitions, PPV, and low-prevalence interpretation.
-- Use `06_library/methods/data-management.md` alongside this card when designing reporting flows, identifiers, and data-quality checks.
+- Start with `knowledge/library/courses/surveillance-methods/`.
+- Pair this card with `knowledge/library/methods/diagnostic-test-evaluation.md` for case definitions, PPV, and low-prevalence interpretation.
+- Use `knowledge/library/methods/data-management.md` alongside this card when designing reporting flows, identifiers, and data-quality checks.
 - In the Learning Hub, this card aligns primarily with **Surveillance systems** and also supports **Outbreak investigation** and **Data management & R**.
 
 ---

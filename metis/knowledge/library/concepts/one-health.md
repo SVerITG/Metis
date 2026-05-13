@@ -166,9 +166,9 @@ updated: "2026-03-30"
 
 ## Learning Path
 
-- Start with `06_library/courses/surveillance-methods/` and `06_library/courses/epidemiology-foundations/`.
-- Pair this card with `06_library/methods/surveillance-systems.md` because One Health becomes operational mainly through integrated surveillance, laboratory coordination, and shared risk assessment.
-- Use `06_library/concepts/global-health-governance.md` for the institutional side and `06_library/concepts/health-systems-strengthening.md` for implementation constraints.
+- Start with `knowledge/library/courses/surveillance-methods/` and `knowledge/library/courses/epidemiology-foundations/`.
+- Pair this card with `knowledge/library/methods/surveillance-systems.md` because One Health becomes operational mainly through integrated surveillance, laboratory coordination, and shared risk assessment.
+- Use `knowledge/library/concepts/global-health-governance.md` for the institutional side and `knowledge/library/concepts/health-systems-strengthening.md` for implementation constraints.
 - In the Learning Hub, this card aligns primarily with **Surveillance systems**, **Outbreak investigation**, and **Leadership & management**, with strong relevance to **Research ethics** and **Health systems**.
 
 ---

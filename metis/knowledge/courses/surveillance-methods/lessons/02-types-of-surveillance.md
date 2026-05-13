@@ -139,6 +139,6 @@ The practical lesson is that surveillance design should reflect the decision pro
 - [WHO public health surveillance overview](https://www.who.int/health-topics/public-health-surveillance)
 
 ## Links to Metis library
-- `06_library/methods/surveillance-systems.md`
-- `06_library/concepts/digital-health-epi.md`
-- `06_library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/concepts/digital-health-epi.md`
+- `knowledge/library/methods/outbreak-investigation.md`

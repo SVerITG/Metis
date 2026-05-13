@@ -37,5 +37,5 @@ The point of visualization is not decoration. It is to discover structure, probl
 - [R for Data Science](https://r4ds.hadley.nz/)
 
 ## Links to Metis library
-- `06_library/methods/biostatistics-essentials.md`
-- `06_library/methods/data-management.md`
+- `knowledge/library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/data-management.md`

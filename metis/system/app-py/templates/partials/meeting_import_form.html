@@ -1,0 +1,68 @@
+<div id="meeting-import-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:800;background:rgba(0,0,0,0.3);display:flex;align-items:flex-start;justify-content:center;padding-top:60px;">
+  <div class="panel m-drawer-top" style="width:640px;max-width:96vw;padding:0;box-shadow:0 8px 32px rgba(0,0,0,0.18);max-height:88vh;overflow-y:auto;">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;border-bottom:1px solid var(--m-rule-soft);position:sticky;top:0;background:var(--m-surface);z-index:1;">
+      <div class="kicker kicker--ochre" style="margin:0;">
+        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><polyline points="8 4.5 8 8 10.5 9.5"/></svg>
+        IMPORT MEETING
+      </div>
+      <button onclick="closeMeetingImport()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;padding:2px 6px;">ESC</button>
+    </div>
+
+    <!-- Form -->
+    <form hx-post="/api/meeting/import"
+          hx-target="#meeting-import-result"
+          hx-swap="innerHTML"
+          style="padding:18px 20px 20px;">
+
+      <div style="display:grid;grid-template-columns:1fr 140px 100px;gap:10px;margin-bottom:12px;">
+        <div>
+          <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">TITLE</label>
+          <input type="text" name="title" required placeholder="Meeting title"
+                 style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:14px;color:var(--m-ink);outline:none;">
+        </div>
+        <div>
+          <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">DATE</label>
+          <input type="date" name="meeting_date" required
+                 value="{{ today }}"
+                 style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:14px;color:var(--m-ink);outline:none;">
+        </div>
+        <div>
+          <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">DURATION</label>
+          <input type="number" name="duration_minutes" placeholder="min"
+                 style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:14px;color:var(--m-ink);outline:none;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">PARTICIPANTS</label>
+        <input type="text" name="attendees" placeholder="Name 1, Name 2, …"
+               style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:14px;color:var(--m-ink);outline:none;">
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">TRANSCRIPT / NOTES</label>
+        <textarea name="transcript" rows="10" autofocus
+                  placeholder="Paste your meeting transcript or notes here.&#10;&#10;Metis will auto-extract:&#10;Action: Do X  → action items&#10;Decision: We agreed on Y  → decisions&#10;Follow-up: Check Z by Friday  → follow-ups&#10;&#10;Or use section headers:&#10;Actions:&#10;- Fix the report&#10;- Send to supervisor"
+                  style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:10px 12px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);resize:vertical;line-height:1.6;outline:none;"></textarea>
+      </div>
+
+      <!-- Result area -->
+      <div id="meeting-import-result"></div>
+
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button type="submit" class="btn btn--primary btn--caps" style="flex:1;">Save &amp; Analyse</button>
+        <button type="button" class="btn btn--ghost btn--caps" onclick="closeMeetingImport()">Cancel</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+function closeMeetingImport() {
+  const el = document.getElementById('meeting-import-modal');
+  if (el) el.remove();
+}
+</script>

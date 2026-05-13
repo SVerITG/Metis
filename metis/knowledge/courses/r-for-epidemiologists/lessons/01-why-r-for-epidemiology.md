@@ -37,5 +37,5 @@ That visibility matters for surveillance summaries, manuscript tables, reproduci
 - [Posit Cheatsheets](https://posit.co/resources/cheatsheets/)
 
 ## Links to Metis library
-- `06_library/methods/data-management.md`
-- `06_library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/data-management.md`
+- `knowledge/library/methods/biostatistics-essentials.md`

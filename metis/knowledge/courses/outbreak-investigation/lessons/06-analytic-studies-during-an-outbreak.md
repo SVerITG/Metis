@@ -47,6 +47,6 @@ After a wedding-associated gastroenteritis outbreak, a retrospective cohort amon
 - [STROBE statement](https://www.strobe-statement.org/)
 
 ## Links to Metis library
-- `06_library/methods/outbreak-investigation.md`
-- `06_library/methods/study-designs.md`
-- `06_library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/study-designs.md`
+- `knowledge/library/methods/biostatistics-essentials.md`

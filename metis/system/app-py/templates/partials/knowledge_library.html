@@ -1,8 +1,13 @@
 <!-- knowledge_library.html — Library card list -->
 {% if not cards %}
-<div class="text-center text-muted py-4">
-  <i class="bi bi-journals fs-2 mb-2 d-block"></i>
-  No library cards yet.
+<div class="panel panel-pad" style="text-align:center;padding:32px 24px;border:1px dashed var(--m-line);">
+  <h4 class="ed" style="margin:0 0 8px;font-size:17px;">Your library is empty</h4>
+  <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 16px;max-width:420px;margin-left:auto;margin-right:auto;">
+    Connect your reference manager (Zotero, Mendeley, or any BibTeX file) to populate this view.
+  </p>
+  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+    <span class="btn btn--primary" style="cursor:default;">In Claude Code: <code style="margin-left:4px;">/metis-library-setup</code></span>
+  </div>
 </div>
 {% else %}
 <div class="row g-2">

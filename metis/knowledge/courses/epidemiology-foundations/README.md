@@ -16,4 +16,4 @@ This course is a beginner-friendly introduction to epidemiologic reasoning for p
 - CDC Principles of Epidemiology in Public Health Practice
 - CDC field epidemiology and outbreak resources
 - OpenWHO outbreak and surveillance learning materials
-- Related Metis cards in `06_library/methods/` and `06_library/concepts/`
+- Related Metis cards in `knowledge/library/methods/` and `knowledge/library/concepts/`

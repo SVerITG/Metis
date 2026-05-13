@@ -46,6 +46,6 @@ During a suspected typhoid cluster, interviews may suggest shared use of a marke
 - [WHO outbreak investigation resources](https://www.who.int/emergencies/surveillance)
 
 ## Links to Metis library
-- `06_library/methods/outbreak-investigation.md`
-- `06_library/methods/study-designs.md`
-- `06_library/methods/mixed-methods-research.md`
+- `knowledge/library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/study-designs.md`
+- `knowledge/library/methods/mixed-methods-research.md`

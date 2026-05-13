@@ -37,13 +37,13 @@ CREATE TABLE IF NOT EXISTS news_briefs (
 """
 
 _DEFAULT_PUBMED_QUERY = (
-    "trypanosomiasis[Title/Abstract] OR sleeping sickness[Title/Abstract] "
+    "neglected tropical diseases[Title/Abstract] OR NTD[Title/Abstract] "  # configured via user-preferences.json
     "OR trypanosoma brucei[Title/Abstract] OR HAT[Title/Abstract] "
     "OR neglected tropical diseases[Title/Abstract]"
 )
 
 _DEFAULT_OPENALEX_QUERY = (
-    "trypanosomiasis OR sleeping sickness OR neglected tropical diseases "
+    "neglected tropical diseases OR surveillance[Title/Abstract] "  # configured via user-preferences.json
     "OR HAT epidemiology OR surveillance public health"
 )
 

@@ -58,12 +58,18 @@ dist/
 metis/journal/
 metis/inbox/
 metis/inputs/meetings/
-metis/outputs/reviews/
+metis/outputs/
 metis/projects/active/
 metis/archive/
+metis/basket/
+metis/knowledge/library/papers/
+metis/knowledge/library/open-access-books/
 metis/knowledge/library/disease-areas/
 metis/knowledge/library/reading-lists/
 metis/knowledge/library/people-organizations/
+metis/system/app/data/
+metis-eval-prompt.md
+metis-functional-test.docx
 
 # Personal agent overlay files. Only *-context.md and the user-specific
 # `sources.md` overlays are gitignored — all generic skill.md / system-prompt.md

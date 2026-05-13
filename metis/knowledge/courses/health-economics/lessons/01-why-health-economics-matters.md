@@ -39,5 +39,5 @@ For example, a very effective intervention may still be a poor policy choice if 
 - [iDSI Reference Case](https://www.idsihealth.org/resource-items/reference-case-for-economic-evaluation/)
 
 ## Links to Metis library
-- `06_library/methods/health-economics-basics.md`
-- `06_library/concepts/health-systems-strengthening.md`
+- `knowledge/library/methods/health-economics-basics.md`
+- `knowledge/library/concepts/health-systems-strengthening.md`

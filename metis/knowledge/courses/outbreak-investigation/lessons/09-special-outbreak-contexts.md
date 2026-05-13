@@ -49,6 +49,6 @@ A measles outbreak in a displacement camp may require rapid descriptive assessme
 - [WHO emergencies resources](https://www.who.int/emergencies)
 
 ## Links to Metis library
-- `06_library/methods/outbreak-investigation.md`
-- `06_library/methods/sampling-strategies.md`
-- `06_library/concepts/health-systems-strengthening.md`
+- `knowledge/library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/sampling-strategies.md`
+- `knowledge/library/concepts/health-systems-strengthening.md`

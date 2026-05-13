@@ -148,6 +148,6 @@ The practical lesson is that a literature review should be a method-backed argum
 - [EQUATOR Network](https://www.equator-network.org/)
 
 ## Links to Metis library
-- `06_library/methods/systematic-reviews.md`
-- `06_library/methods/writing-for-journals.md`
-- `06_library/methods/study-designs.md`
+- `knowledge/library/methods/systematic-reviews.md`
+- `knowledge/library/methods/writing-for-journals.md`
+- `knowledge/library/methods/study-designs.md`

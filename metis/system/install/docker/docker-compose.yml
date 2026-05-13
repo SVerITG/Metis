@@ -1,0 +1,63 @@
+version: "3.9"
+
+# Metis Research Cortex — Docker Compose
+#
+# Quick start:
+#   1. Copy .env.example to .env and fill in your API key
+#   2. Edit METIS_DATA_DIR to point to your research folder
+#   3. Run: docker-compose up -d
+#   4. Open: http://localhost:8000
+#
+# Your research files (PDFs, notes, database) stay on your machine.
+# The container only holds the application code.
+
+services:
+
+  # ── MCP server (AI tools for Claude Desktop) ─────────────────────────────
+  mcp:
+    build:
+      context: ../../..
+      dockerfile: metis/system/install/docker/Dockerfile
+    container_name: metis-mcp
+    restart: unless-stopped
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - METIS_RC_ROOT=/metis
+      - PYTHONPATH=/app/src
+    volumes:
+      # Mount your research directory here
+      - ${METIS_DATA_DIR:-~/Documents/Metis}:/metis
+    command: ["mcp"]
+    # MCP server communicates via stdio — no port needed
+    stdin_open: true
+    tty: true
+
+  # ── Dashboard (browser interface) ────────────────────────────────────────
+  dashboard:
+    build:
+      context: ../../..
+      dockerfile: metis/system/install/docker/Dockerfile
+    container_name: metis-dashboard
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - METIS_RC_ROOT=/metis
+      - PYTHONPATH=/app/src
+    volumes:
+      - ${METIS_DATA_DIR:-~/Documents/Metis}:/metis
+    command: ["dashboard"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  # Named volume for SQLite database (alternative to host mount)
+  metis-db:
+
+networks:
+  default:
+    name: metis-network
