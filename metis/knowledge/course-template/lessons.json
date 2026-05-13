@@ -1,0 +1,18 @@
+{
+  "lessons": [
+    {
+      "id": "lesson-01",
+      "title": "First Lesson Title",
+      "description": "One-sentence learning promise for this lesson",
+      "section": "Module Group One",
+      "order": 1
+    },
+    {
+      "id": "lesson-02",
+      "title": "Second Lesson Title",
+      "description": "One-sentence learning promise for this lesson",
+      "section": "Module Group One",
+      "order": 2
+    }
+  ]
+}
