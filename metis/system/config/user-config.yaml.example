@@ -1,0 +1,10 @@
+user:
+  # Your name — used in greetings and briefings
+  name: Your Name
+  # Your role — used for context in agent responses
+  role: Researcher
+  language: en
+  general_context: ''
+  active_contexts:
+    - general
+  specialist_contexts: []

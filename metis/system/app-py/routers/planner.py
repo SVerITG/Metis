@@ -174,6 +174,9 @@ async def planner_kanban(request: Request):
     active = db_query(
         "SELECT project_id as id, title, domain, priority, next_step FROM projects WHERE status = 'active' ORDER BY priority DESC"
     )
+    done = db_query(
+        "SELECT project_id as id, title, domain, priority FROM projects WHERE status = 'done' ORDER BY updated_at DESC LIMIT 8"
+    )
     return templates.TemplateResponse(
         request,
         "partials/planner_kanban.html",
@@ -181,6 +184,7 @@ async def planner_kanban(request: Request):
             "someday": someday,
             "incubating": incubating,
             "active": active,
+            "done": done,
         },
     )
 

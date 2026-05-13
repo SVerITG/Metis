@@ -184,6 +184,91 @@ async def generate_daily_insight() -> list[TextContent]:
         return [TextContent(type="text", text=f"Error generating daily insight: {e}")]
 
 
+def assemble_daily_context(db_path) -> dict:
+    """Assemble daily briefing context from the database. Pure function, no MCP.
+
+    Returns a dict with keys: ``date``, ``context`` (assembled prose), ``sources``.
+    Callable directly from the FastAPI dashboard without going through MCP.
+    """
+    import sqlite3 as _sqlite3
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    d7 = (now - datetime.timedelta(days=7)).isoformat()
+    d3 = (now - datetime.timedelta(days=3)).isoformat()
+
+    sources_used: list[str] = []
+    context_parts: list[str] = []
+
+    def _q(conn, sql, params=()):
+        try:
+            cur = conn.execute(sql, params)
+            return cur.fetchall()
+        except Exception:
+            return []
+
+    try:
+        conn = _sqlite3.connect(str(db_path))
+        conn.row_factory = _sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+
+        # Agent runs (7d)
+        rows = _q(conn,
+            "SELECT agent_slug, task_summary, timestamp FROM agent_runs "
+            "WHERE timestamp >= ? ORDER BY timestamp DESC LIMIT 20", (d7,))
+        if rows:
+            lines = ["## Recent Agent Activity"]
+            for r in rows:
+                lines.append(f"- [{r['agent_slug']}] {r['task_summary']}")
+            context_parts.append("\n".join(lines))
+            sources_used.append(f"agent_runs:{len(rows)}")
+
+        # News briefs (3d) — high-signal items only
+        rows = _q(conn,
+            "SELECT title, summary, domain FROM news_briefs "
+            "WHERE created_at >= ? ORDER BY created_at DESC LIMIT 15", (d3,))
+        if rows:
+            lines = ["## Recent News & Literature"]
+            for r in rows:
+                tag = f"[{r['domain'].upper()}] " if r["domain"] else ""
+                summary = str(r["summary"] or "")[:200]
+                lines.append(f"- {tag}{r['title']}: {summary}")
+            context_parts.append("\n".join(lines))
+            sources_used.append(f"news:{len(rows)}")
+
+        # Ideas (7d)
+        rows = _q(conn,
+            "SELECT text, created_at FROM ideas "
+            "WHERE created_at >= ? ORDER BY created_at DESC LIMIT 8", (d7,))
+        if rows:
+            lines = ["## Recent Ideas"]
+            for r in rows:
+                lines.append(f"- {str(r['text'] or '')[:120]}")
+            context_parts.append("\n".join(lines))
+            sources_used.append(f"ideas:{len(rows)}")
+
+        # Open tasks
+        rows = _q(conn,
+            "SELECT title, priority FROM tasks WHERE status IN ('open','in_progress','blocked') "
+            "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END LIMIT 5")
+        if rows:
+            lines = ["## Open Tasks"]
+            for r in rows:
+                lines.append(f"- [{r['priority']}] {r['title']}")
+            context_parts.append("\n".join(lines))
+            sources_used.append(f"tasks:{len(rows)}")
+
+        conn.close()
+    except Exception:
+        pass
+
+    return {
+        "date": today,
+        "context": "\n\n".join(context_parts) if context_parts else "",
+        "sources": ", ".join(sources_used),
+    }
+
+
 @app.tool()
 async def get_daily_insight(date: str = "") -> list[TextContent]:
     """Retrieve a stored daily insight.

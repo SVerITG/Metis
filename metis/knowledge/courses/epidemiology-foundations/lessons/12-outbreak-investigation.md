@@ -135,6 +135,6 @@ Finally, documentation matters. A good outbreak report explains not only what ha
 - [WHO rapid risk assessment guidance](https://www.who.int/publications/i/item/9789241510141)
 
 ## Links to Metis library
-- `06_library/methods/outbreak-investigation.md`
-- `06_library/methods/surveillance-systems.md`
-- `06_library/methods/diagnostic-test-evaluation.md`
+- `knowledge/library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/methods/diagnostic-test-evaluation.md`

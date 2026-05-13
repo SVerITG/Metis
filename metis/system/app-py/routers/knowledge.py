@@ -211,7 +211,7 @@ async def knowledge_stats_meta(request: Request):
     )
     total = (card_count or 0) + (lit_count or 0)
     return HTMLResponse(
-        f"{total} CARDS · {domain_count or 0} SLIPCASES · {added_week or 0} SOURCES ADDED THIS WEEK"
+        f"{total} CARDS · {domain_count or 0} COLLECTIONS · {added_week or 0} SOURCES ADDED THIS WEEK"
     )
 
 
@@ -272,6 +272,237 @@ async def knowledge_cards(request: Request):
     )
 
 
+_SORT_MAP = {
+    "newest": "CAST(year AS INTEGER) DESC, title ASC",
+    "oldest": "CAST(year AS INTEGER) ASC, title ASC",
+    "author":  "authors ASC, title ASC",
+    "title":   "title ASC",
+    "added":   "created_at DESC",
+}
+
+
+def _fetch_library_items(
+    q: str = "",
+    search_in: str = "all",
+    author: str = "",
+    year_from: str = "",
+    year_to: str = "",
+    journal_q: str = "",
+    collection: str = "",
+    item_type: str = "",
+    sort: str = "newest",
+    per_page: int = 200,
+    offset: int = 0,
+) -> tuple[list[dict], int]:
+    """Query literature_metadata with PubMed-style filters. Returns (items, total)."""
+    where_parts: list[str] = []
+    params: list = []
+
+    if q and len(q.strip()) >= 2:
+        like = f"%{q.strip()}%"
+        if search_in == "title":
+            where_parts.append("title LIKE ?")
+            params.append(like)
+        elif search_in == "authors":
+            where_parts.append("authors LIKE ?")
+            params.append(like)
+        elif search_in == "abstract":
+            where_parts.append("abstract LIKE ?")
+            params.append(like)
+        else:
+            where_parts.append(
+                "(title LIKE ? OR authors LIKE ? OR abstract LIKE ? OR source LIKE ? OR tags LIKE ?)"
+            )
+            params.extend([like, like, like, like, like])
+
+    if author and len(author.strip()) >= 2:
+        where_parts.append("authors LIKE ?")
+        params.append(f"%{author.strip()}%")
+
+    if year_from:
+        try:
+            where_parts.append("CAST(year AS INTEGER) >= ?")
+            params.append(int(year_from))
+        except ValueError:
+            pass
+
+    if year_to:
+        try:
+            where_parts.append("CAST(year AS INTEGER) <= ?")
+            params.append(int(year_to))
+        except ValueError:
+            pass
+
+    if journal_q and len(journal_q.strip()) >= 2:
+        jlike = f"%{journal_q.strip()}%"
+        where_parts.append("(journal LIKE ? OR source LIKE ?)")
+        params.extend([jlike, jlike])
+
+    if collection:
+        where_parts.append("collection LIKE ?")
+        params.append(f"%{collection}%")
+
+    if item_type:
+        where_parts.append("item_type = ?")
+        params.append(item_type)
+
+    base_filter = (
+        "title IS NOT NULL AND title != '' AND title != '[No title found]' "
+        "AND id IN (SELECT MAX(id) FROM literature_metadata GROUP BY lower(title))"
+    )
+    where_sql = "WHERE " + base_filter
+    if where_parts:
+        where_sql += " AND " + " AND ".join(where_parts)
+    p = tuple(params)
+
+    order = _SORT_MAP.get(sort, _SORT_MAP["newest"])
+
+    total = db_scalar(
+        f"SELECT COUNT(*) FROM literature_metadata {where_sql}", p, default=0
+    )
+
+    rows = db_query(
+        f"SELECT id, title, authors, year, source, journal, collection, "
+        f"item_type, doi, url, abstract "
+        f"FROM literature_metadata {where_sql} "
+        f"ORDER BY {order} "
+        f"LIMIT {per_page} OFFSET {offset}",
+        p,
+    ) or []
+
+    items: list[dict] = []
+    for r in rows:
+        col_str = r.get("collection") or ""
+        col_tags = [t.strip() for t in col_str.split(",") if t.strip()] if col_str else []
+        src = r.get("source") or r.get("journal") or ""
+        abstract = r.get("abstract") or ""
+        items.append(
+            {
+                "id": r.get("id"),
+                "title": r.get("title") or "Untitled",
+                "authors": r.get("authors") or "",
+                "year": r.get("year") or "",
+                "source": src,
+                "collection_tags": col_tags[:4],
+                "item_type": r.get("item_type") or "",
+                "doi": r.get("doi") or "",
+                "url": r.get("url") or "",
+                "abstract": abstract,
+                "has_abstract": bool(abstract.strip()),
+            }
+        )
+
+    return items, total or 0
+
+
+@router.get("/api/partial/knowledge/library-browser", response_class=HTMLResponse)
+async def knowledge_library_browser_panel(
+    request: Request,
+    q: str = "",
+    search_in: str = "all",
+    author: str = "",
+    year_from: str = "",
+    year_to: str = "",
+    journal_q: str = "",
+    collection: str = "",
+    item_type: str = "",
+    sort: str = "newest",
+):
+    """Full library browser: collection chips + search + table. Initial load."""
+    coll_rows = db_query(
+        "SELECT collection FROM literature_metadata "
+        "WHERE collection IS NOT NULL AND collection != ''"
+    ) or []
+    tag_counts: dict[str, int] = {}
+    for r in coll_rows:
+        for tag in (r.get("collection") or "").split(","):
+            tag = tag.strip()
+            if tag:
+                tag_counts[tag] = tag_counts.get(tag, 0) + 1
+    collections = sorted(tag_counts.items(), key=lambda x: (-x[1], x[0]))
+
+    type_rows = db_query(
+        "SELECT DISTINCT item_type FROM literature_metadata "
+        "WHERE item_type IS NOT NULL AND item_type != '' ORDER BY item_type"
+    ) or []
+    item_types = [r.get("item_type", "") for r in type_rows if r.get("item_type")]
+
+    # Top journals for the journal quick-select
+    journal_rows = db_query(
+        "SELECT journal, COUNT(*) as cnt FROM literature_metadata "
+        "WHERE journal IS NOT NULL AND journal != '' "
+        "GROUP BY journal ORDER BY cnt DESC LIMIT 12"
+    ) or []
+    top_journals = [r.get("journal", "") for r in journal_rows if r.get("journal")]
+
+    items, total = _fetch_library_items(
+        q=q, search_in=search_in, author=author,
+        year_from=year_from, year_to=year_to,
+        journal_q=journal_q, collection=collection,
+        item_type=item_type, sort=sort,
+    )
+
+    active_filter_count = sum(bool(v) for v in [q, author, year_from, year_to, journal_q, collection, item_type])
+
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_library_browser.html",
+        {
+            "collections": collections,
+            "items": items,
+            "total": total,
+            "q": q,
+            "search_in": search_in,
+            "author": author,
+            "year_from": year_from,
+            "year_to": year_to,
+            "journal_q": journal_q,
+            "active_collection": collection,
+            "active_type": item_type,
+            "active_sort": sort,
+            "item_types": item_types,
+            "top_journals": top_journals,
+            "active_filter_count": active_filter_count,
+        },
+    )
+
+
+@router.get("/api/partial/knowledge/library-table", response_class=HTMLResponse)
+async def knowledge_library_table_partial(
+    request: Request,
+    q: str = "",
+    search_in: str = "all",
+    author: str = "",
+    year_from: str = "",
+    year_to: str = "",
+    journal_q: str = "",
+    collection: str = "",
+    item_type: str = "",
+    sort: str = "newest",
+):
+    """Table rows only — swapped in for live search/filter updates."""
+    items, total = _fetch_library_items(
+        q=q, search_in=search_in, author=author,
+        year_from=year_from, year_to=year_to,
+        journal_q=journal_q, collection=collection,
+        item_type=item_type, sort=sort,
+    )
+    active_filter_count = sum(bool(v) for v in [q, author, year_from, year_to, journal_q, collection, item_type])
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_library_table.html",
+        {
+            "items": items,
+            "total": total,
+            "q": q,
+            "collection": collection,
+            "item_type": item_type,
+            "sort": sort,
+            "active_filter_count": active_filter_count,
+        },
+    )
+
+
 @router.get("/api/partial/knowledge/sources", response_class=HTMLResponse)
 async def knowledge_sources(request: Request):
     """Sources table from literature_metadata, recently clipped."""
@@ -316,6 +547,206 @@ async def knowledge_sources(request: Request):
         request,
         "partials/knowledge_sources.html",
         {"sources": sources},
+    )
+
+
+@router.get("/api/partial/knowledge/sync-status", response_class=HTMLResponse)
+async def knowledge_sync_status(request: Request):
+    """Sync status bar for the Zotero library browser."""
+    zotero_count = db_scalar(
+        "SELECT COUNT(*) FROM literature_metadata WHERE library_source='zotero'", default=0
+    ) or 0
+    manual_count = db_scalar(
+        "SELECT COUNT(*) FROM literature_metadata WHERE library_source NOT IN ('zotero') AND library_source IS NOT NULL",
+        default=0,
+    ) or 0
+    sync_info = {"last_synced": None, "last_version": 0}
+    try:
+        row = db_query("SELECT last_version, last_synced FROM zotero_sync_state LIMIT 1")
+        if row:
+            sync_info = row[0]
+    except Exception:
+        pass
+    last = (sync_info.get("last_synced") or "")[:16].replace("T", " ")
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_sync_status.html",
+        {
+            "zotero_count": zotero_count,
+            "manual_count": manual_count,
+            "last_synced": last or "Never",
+            "version": sync_info.get("last_version") or 0,
+        },
+    )
+
+
+@router.post("/api/knowledge/sync-zotero")
+async def trigger_zotero_sync():
+    """Trigger an incremental Zotero sync. Runs the sync logic inline."""
+    import re
+    from datetime import datetime
+
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    env_path = Path(rc_root) / "system" / ".env" if rc_root else None
+    if env_path and env_path.exists():
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, _, v = line.partition("=")
+                os.environ.setdefault(k.strip(), v.strip())
+
+    api_key = os.environ.get("ZOTERO_API_KEY", "")
+    user_id = os.environ.get("ZOTERO_USER_ID", "")
+    group_id = os.environ.get("ZOTERO_GROUP_ID", "")
+
+    if not api_key:
+        return JSONResponse(
+            {"status": "error", "message": "ZOTERO_API_KEY not set in system/.env"},
+            status_code=400,
+        )
+    if not user_id and not group_id:
+        return JSONResponse(
+            {"status": "error", "message": "ZOTERO_USER_ID not set in system/.env"},
+            status_code=400,
+        )
+
+    try:
+        from pyzotero import zotero as pyz
+    except ImportError:
+        return JSONResponse(
+            {"status": "error", "message": "pyzotero not installed — run: pip install pyzotero"},
+            status_code=500,
+        )
+
+    try:
+        zot = pyz.Zotero(group_id or user_id, "group" if group_id else "user", api_key)
+
+        _SYNC_DDL = """CREATE TABLE IF NOT EXISTS zotero_sync_state (
+            id INTEGER PRIMARY KEY, last_version INTEGER DEFAULT 0,
+            last_synced TEXT, item_count INTEGER DEFAULT 0)"""
+        _LIT_EXTRA = {
+            "abstract": "TEXT DEFAULT ''", "journal": "TEXT DEFAULT ''",
+            "item_type": "TEXT DEFAULT ''", "url": "TEXT DEFAULT ''",
+            "zotero_key": "TEXT DEFAULT ''", "zotero_version": "INTEGER DEFAULT 0",
+            "collection": "TEXT DEFAULT ''", "library_source": "TEXT DEFAULT 'manual'",
+        }
+
+        import sqlite3 as _sq3
+        db_path = Path(rc_root) / "system" / "app" / "data" / "metis.sqlite" if rc_root else None
+        if not db_path or not db_path.exists():
+            return JSONResponse({"status": "error", "message": "Database not found."}, status_code=500)
+
+        con = _sq3.connect(str(db_path))
+        con.row_factory = _sq3.Row
+        con.execute(_SYNC_DDL)
+        existing_cols = {r[1] for r in con.execute("PRAGMA table_info(literature_metadata)")}
+        for col, dtype in _LIT_EXTRA.items():
+            if col not in existing_cols:
+                con.execute(f"ALTER TABLE literature_metadata ADD COLUMN {col} {dtype}")
+        con.commit()
+
+        row = con.execute("SELECT last_version FROM zotero_sync_state LIMIT 1").fetchone()
+        last_version = row["last_version"] if row else 0
+
+        items = zot.everything(zot.items(since=last_version, itemType="-attachment || -note")) if last_version else zot.everything(zot.items(itemType="-attachment || -note"))
+
+        added = updated = skipped = 0
+        for item in items:
+            data = item.get("data", {})
+            if data.get("itemType") in ("attachment", "note"):
+                skipped += 1
+                continue
+            title = (data.get("title") or "")[:500]
+            if not title:
+                skipped += 1
+                continue
+
+            creators = data.get("creators", [])
+            authors = "; ".join(
+                (c["lastName"] + (f", {c['firstName'][0]}." if c.get("firstName") else ""))
+                if c.get("lastName") else c.get("name", "")
+                for c in creators[:8]
+                if c.get("lastName") or c.get("name")
+            )[:300]
+
+            raw_date = data.get("date", "") or ""
+            ym = re.search(r"\b(19|20)\d{2}\b", raw_date)
+            year = int(ym.group()) if ym else None
+            journal = data.get("publicationTitle") or ""
+            source = journal or data.get("bookTitle") or data.get("publisher") or ""
+            doi = data.get("DOI") or ""
+            abstract = (data.get("abstractNote") or "")[:2000]
+            url = data.get("url") or (f"https://doi.org/{doi}" if doi else "")
+            item_type = data.get("itemType") or ""
+            zotero_key = data.get("key") or ""
+            zotero_version = item.get("version") or 0
+            tags = ",".join(t.get("tag", "") for t in data.get("tags", [])[:12])
+            collection = ",".join(
+                c for c in (data.get("_collections_names") or [])
+            ) if data.get("_collections_names") else ""
+
+            existing = con.execute(
+                "SELECT id FROM literature_metadata WHERE zotero_key=?", (zotero_key,)
+            ).fetchone()
+            if existing:
+                con.execute(
+                    """UPDATE literature_metadata SET title=?,authors=?,year=?,source=?,journal=?,
+                       tags=?,doi=?,abstract=?,url=?,item_type=?,zotero_version=?,library_source=?
+                       WHERE zotero_key=?""",
+                    (title, authors, year, source, journal, tags, doi, abstract, url,
+                     item_type, zotero_version, "zotero", zotero_key),
+                )
+                updated += 1
+            else:
+                con.execute(
+                    """INSERT INTO literature_metadata
+                       (title,authors,year,source,journal,tags,doi,abstract,url,
+                        item_type,zotero_key,zotero_version,library_source,created_at)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (title, authors, year, source, journal, tags, doi, abstract, url,
+                     item_type, zotero_key, zotero_version, "zotero", datetime.now().isoformat()),
+                )
+                added += 1
+
+        try:
+            new_version = zot.last_modified_version()
+            total = con.execute(
+                "SELECT COUNT(*) FROM literature_metadata WHERE library_source='zotero'"
+            ).fetchone()[0]
+            con.execute("DELETE FROM zotero_sync_state")
+            con.execute(
+                "INSERT INTO zotero_sync_state (last_version,last_synced,item_count) VALUES (?,?,?)",
+                (new_version, datetime.now().isoformat(), total),
+            )
+        except Exception:
+            pass
+        con.commit()
+        con.close()
+
+        msg = f"Sync complete — {added} added, {updated} updated, {skipped} skipped."
+        return JSONResponse({"status": "ok", "message": msg, "added": added, "updated": updated})
+
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+@router.get("/api/partial/knowledge/news-signals", response_class=HTMLResponse)
+async def knowledge_news_signals(request: Request):
+    """Recent news signals from news_briefs, shown in the Knowledge tab."""
+    signals: list[dict] = db_query(
+        "SELECT title, domain, signal_strength, summary, source_url, created_at "
+        "FROM news_briefs ORDER BY created_at DESC LIMIT 40"
+    ) or []
+
+    domains: dict[str, list[dict]] = {}
+    for s in signals:
+        d = s.get("domain") or "General"
+        domains.setdefault(d, []).append(s)
+
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_news_signals.html",
+        {"domains": domains, "total": len(signals)},
     )
 
 

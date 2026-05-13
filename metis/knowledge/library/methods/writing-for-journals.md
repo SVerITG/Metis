@@ -116,9 +116,9 @@ updated: "2026-03-29"
 
 ## Learning Path
 
-- Start with `06_library/courses/research-writing/`.
-- Pair this card with `06_library/methods/systematic-reviews.md` for review papers and with `06_library/methods/diagnostic-test-evaluation.md` for diagnostic manuscripts.
-- Use `06_library/methods/study-designs.md` alongside this card when checking whether the paper's structure matches the underlying design.
+- Start with `knowledge/library/courses/research-writing/`.
+- Pair this card with `knowledge/library/methods/systematic-reviews.md` for review papers and with `knowledge/library/methods/diagnostic-test-evaluation.md` for diagnostic manuscripts.
+- Use `knowledge/library/methods/study-designs.md` alongside this card when checking whether the paper's structure matches the underlying design.
 - In the Learning Hub, this card aligns primarily with **Scientific communication**.
 
 ---

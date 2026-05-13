@@ -11,7 +11,7 @@ Retrieval uses Reciprocal Rank Fusion (RRF) to merge vector similarity
 and keyword matches.
 
 Requires: sqlite-vec (M5.1) and fastembed (M5.2).
-Vector dimension: 384 (BAAI/bge-small-en-v1.5).
+Vector dimension: 768 (nomic-ai/nomic-embed-text-v1.5-Q).
 """
 
 from __future__ import annotations
@@ -77,21 +77,43 @@ CREATE TABLE IF NOT EXISTS working_memory (
 
 _VEC_EPISODIC_DDL = """
 CREATE VIRTUAL TABLE IF NOT EXISTS vec_episodic USING vec0(
-    embedding float[384]
+    embedding float[768]
 )
 """
 
 _VEC_SEMANTIC_DDL = """
 CREATE VIRTUAL TABLE IF NOT EXISTS vec_semantic USING vec0(
-    embedding float[384]
+    embedding float[768]
 )
 """
 
 _VEC_PROCEDURAL_DDL = """
 CREATE VIRTUAL TABLE IF NOT EXISTS vec_procedural USING vec0(
-    embedding float[384]
+    embedding float[768]
 )
 """
+
+
+def _migrate_vec_table(conn, table: str, ddl: str) -> None:
+    """Drop and recreate a vec0 table if its embedding dimension has changed.
+
+    Probes by attempting a test insert with the current EMBEDDING_DIM.
+    Safe because vec0 tables are rebuilt from source tables when needed.
+    """
+    from metis_mcp.embeddings import EMBEDDING_DIM
+    row = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table,)
+    ).fetchone()
+    if not row:
+        return  # doesn't exist yet — CREATE IF NOT EXISTS will handle it
+    test_bytes = struct.pack(f"{EMBEDDING_DIM}f", *([0.0] * EMBEDDING_DIM))
+    try:
+        conn.execute(f"INSERT INTO {table} (rowid, embedding) VALUES (-9999, ?)", (test_bytes,))
+        conn.execute(f"DELETE FROM {table} WHERE rowid = -9999")
+    except Exception:
+        # Dimension mismatch — drop and recreate with correct dim
+        conn.execute(f"DROP TABLE IF EXISTS {table}")
+        conn.execute(ddl)
 
 
 def _setup_tables(conn) -> None:
@@ -105,6 +127,12 @@ def _setup_tables(conn) -> None:
     conn.execute(_SEMANTIC_DDL)
     conn.execute(_PROCEDURAL_DDL)
     conn.execute(_WORKING_DDL)
+
+    # Migrate vec0 tables if dimension changed (e.g. 384→768 upgrade)
+    _migrate_vec_table(conn, "vec_episodic", _VEC_EPISODIC_DDL)
+    _migrate_vec_table(conn, "vec_semantic", _VEC_SEMANTIC_DDL)
+    _migrate_vec_table(conn, "vec_procedural", _VEC_PROCEDURAL_DDL)
+
     conn.execute(_VEC_EPISODIC_DDL)
     conn.execute(_VEC_SEMANTIC_DDL)
     conn.execute(_VEC_PROCEDURAL_DDL)
@@ -142,8 +170,8 @@ async def store_episodic_memory(
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     try:
-        from metis_mcp.embeddings import embed_one
-        vector = embed_one(content)
+        from metis_mcp.embeddings import embed_document
+        vector = embed_document(content)
     except ImportError:
         return [TextContent(type="text", text="fastembed not installed. Run: pip install fastembed")]
 
@@ -200,8 +228,8 @@ async def store_semantic_memory(
     embed_text = f"{concept}: {definition}"
 
     try:
-        from metis_mcp.embeddings import embed_one
-        vector = embed_one(embed_text)
+        from metis_mcp.embeddings import embed_document
+        vector = embed_document(embed_text)
     except ImportError:
         return [TextContent(type="text", text="fastembed not installed.")]
 
@@ -254,8 +282,8 @@ async def store_procedural_memory(
     embed_text = f"{procedure_name}. {trigger_context}. {steps[:500]}"
 
     try:
-        from metis_mcp.embeddings import embed_one
-        vector = embed_one(embed_text)
+        from metis_mcp.embeddings import embed_document
+        vector = embed_document(embed_text)
     except ImportError:
         return [TextContent(type="text", text="fastembed not installed.")]
 
@@ -391,8 +419,8 @@ async def semantic_search(
     requested = {l.strip() for l in layers.split(",") if l.strip()}
 
     try:
-        from metis_mcp.embeddings import embed_one
-        query_vec = embed_one(query)
+        from metis_mcp.embeddings import embed_query
+        query_vec = embed_query(query)
     except ImportError:
         return [TextContent(type="text", text="fastembed not installed. Run: pip install fastembed")]
 

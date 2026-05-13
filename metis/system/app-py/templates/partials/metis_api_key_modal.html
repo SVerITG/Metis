@@ -1,0 +1,36 @@
+{# API key replace/add modal — included once in metis_tab.html #}
+<div id="api-key-modal-overlay" class="metis-modal-overlay" data-open="false"
+     onclick="if(event.target===this){closeApiKeyModal();}">
+  <div class="metis-modal" style="max-width:440px;">
+
+    <div style="font-family:var(--m-display);font-size:20px;font-weight:500;color:var(--m-ink);margin-bottom:16px;">
+      <span id="akm-title">API key</span>
+    </div>
+
+    <input type="hidden" id="akm-key-name">
+
+    <div style="margin-bottom:10px;">
+      <label style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);display:block;margin-bottom:5px;">Key name</label>
+      <input type="text" id="akm-key-name-display"
+             style="width:100%;font-family:var(--m-mono);font-size:12px;padding:7px 10px;background:var(--m-surface);border:1px solid var(--m-rule-strong);border-radius:2px;color:var(--m-ink);outline:none;"
+             placeholder="e.g. ANTHROPIC_API_KEY" autocomplete="off" autocorrect="off" spellcheck="false">
+      <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-top:4px;">Stored as this name in system/.env</div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);display:block;margin-bottom:5px;">Value</label>
+      <input type="password" id="akm-key-value"
+             style="width:100%;font-family:var(--m-mono);font-size:13px;padding:8px 10px;background:var(--m-surface);border:1px solid var(--m-rule-strong);border-radius:2px;color:var(--m-ink);outline:none;"
+             placeholder="Paste key here…" autocomplete="new-password" autocorrect="off" spellcheck="false">
+    </div>
+
+    <div class="metis-note" style="margin-bottom:16px;">
+      Stored in <code style="font-family:var(--m-mono);font-size:10px;">system/.env</code> on your local machine. Never transmitted anywhere — only read by the Metis dashboard on startup and by the MCP server for API calls.
+    </div>
+
+    <div class="metis-modal-actions">
+      <button class="btn btn--ghost btn--caps" onclick="closeApiKeyModal()">Cancel</button>
+      <button class="btn btn--primary btn--caps" onclick="saveApiKey()">Save key</button>
+    </div>
+  </div>
+</div>

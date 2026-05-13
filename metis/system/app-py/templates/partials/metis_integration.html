@@ -1,0 +1,101 @@
+{# Integration panel — Claude Code mode toggle + Claude Desktop setup.
+   Inputs: mode ('background'|'invoke'), claude_md_path, claude_md_exists,
+           desktop_prompt, user_name #}
+
+{# ── Claude Code ──────────────────────────────────────────────────── #}
+<div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">Claude Code</div>
+    {% if mode == 'background' %}
+      <span class="chip chip--ok" style="font-size:10px;">BACKGROUND LAYER · ACTIVE</span>
+    {% else %}
+      <span class="chip chip--mute" style="font-size:10px;">INVOKE MODE</span>
+    {% endif %}
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+
+    {# Background layer card #}
+    <div class="panel panel-pad" style="padding:16px 18px;{% if mode == 'background' %}border-color:var(--m-accent);background:var(--m-accent-wash);{% endif %}">
+      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);margin-bottom:6px;">Background layer</div>
+      <div style="font-size:12.5px;color:var(--m-text);line-height:1.55;margin-bottom:12px;">
+        Metis is active in <strong>every</strong> conversation from the first message. You specify the rare times you <em>don't</em> want it by starting a message with <code style="font-family:var(--m-mono);font-size:11px;">direct:</code>.
+      </div>
+      <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-bottom:10px;">
+        Writes to: <code>~/.claude/CLAUDE.md</code>
+      </div>
+      {% if mode == 'background' %}
+        <button class="btn btn--ghost btn--caps" style="font-size:10px;color:var(--m-accent);" disabled>· Active</button>
+        <button class="btn btn--ghost btn--caps" style="font-size:10px;margin-left:6px;"
+                onclick="setClaudeCodeMode('invoke')">Deactivate</button>
+      {% else %}
+        <button class="btn btn--primary btn--caps" style="font-size:10px;"
+                onclick="setClaudeCodeMode('background')">Activate</button>
+      {% endif %}
+    </div>
+
+    {# Invoke mode card #}
+    <div class="panel panel-pad" style="padding:16px 18px;{% if mode == 'invoke' %}border-color:var(--m-accent);background:var(--m-accent-wash);{% endif %}">
+      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);margin-bottom:6px;">Invoke mode</div>
+      <div style="font-size:12.5px;color:var(--m-text);line-height:1.55;margin-bottom:12px;">
+        Type <code style="font-family:var(--m-mono);font-size:11px;">/metis</code> at the start of each message when you want Metis. Good if you use Claude Code heavily for unrelated technical work and want a clear on/off switch.
+      </div>
+      <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-bottom:10px;">
+        CLAUDE.md contains routing hints only.
+      </div>
+      {% if mode == 'invoke' %}
+        <button class="btn btn--ghost btn--caps" style="font-size:10px;color:var(--m-accent);" disabled>· Active</button>
+      {% else %}
+        <button class="btn btn--ghost btn--caps" style="font-size:10px;"
+                onclick="setClaudeCodeMode('invoke')">Switch to invoke</button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if mode == 'background' %}
+  <div class="metis-note">
+    CLAUDE.md at <code style="font-family:var(--m-mono);font-size:10px;">{{ claude_md_path }}</code> — Metis is now always on. To silence it for one message, start with <code style="font-family:var(--m-mono);font-size:10px;">direct:</code> and it skips routing for that turn only.
+  </div>
+  {% else %}
+  <div class="metis-note">
+    CLAUDE.md at <code style="font-family:var(--m-mono);font-size:10px;">{{ claude_md_path }}</code> — currently invoke mode. Activate background layer to make Metis always on.
+  </div>
+  {% endif %}
+</div>
+
+{# ── Claude Desktop ───────────────────────────────────────────────── #}
+<div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px;">
+    <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">Claude Desktop</div>
+    <span class="chip chip--info" style="font-size:10px;">PER-PROJECT ONLY</span>
+  </div>
+
+  <div style="font-size:13px;color:var(--m-text);line-height:1.6;margin-bottom:14px;">
+    Claude Desktop has no global config equivalent to CLAUDE.md. The closest is a <strong>Project</strong> with a system prompt — which applies to every conversation you open inside it. Do all your Metis work inside one project and it's effectively always on.
+  </div>
+
+  <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);margin-bottom:8px;">Setup — takes 2 minutes, do it once</div>
+  <ol style="font-size:12.5px;color:var(--m-text);line-height:1.8;margin:0 0 14px 18px;padding:0;">
+    <li>Open Claude Desktop</li>
+    <li>In the left panel, click <strong>New Project</strong></li>
+    <li>Name it <em>Research Cortex</em> (or anything you prefer)</li>
+    <li>Click the pencil icon next to the project name → <strong>Set project instructions</strong></li>
+    <li>Copy the text below and paste it in, then save</li>
+    <li>Open any conversation inside this project — Metis is now active from the first message</li>
+  </ol>
+
+  <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);margin-bottom:6px;">
+    Project system prompt
+    <button class="btn btn--ghost btn--caps" style="font-size:9px;margin-left:10px;"
+            onclick="copyDesktopPrompt()">Copy</button>
+  </div>
+  <pre id="desktop-prompt-text"
+       style="white-space:pre-wrap;word-break:break-word;font-family:var(--m-mono);font-size:11px;line-height:1.6;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:3px;padding:12px 14px;color:var(--m-text);margin:0;max-height:220px;overflow-y:auto;">{{ desktop_prompt }}</pre>
+</div>
+
+{# ── Opt-out reminder ─────────────────────────────────────────────── #}
+<div style="padding:14px 22px;">
+  <div class="metis-note">
+    <strong>Opt out for one message</strong> — in both Claude Code and Claude Desktop, start any message with <code style="font-family:var(--m-mono);font-size:10px;">direct:</code> and Metis steps back for that turn. Useful for quick shell commands, unrelated code fixes, or anything where you just want plain Claude.
+  </div>
+</div>

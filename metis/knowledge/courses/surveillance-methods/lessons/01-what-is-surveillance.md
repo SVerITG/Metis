@@ -133,6 +133,6 @@ The practical lesson is that surveillance is operational infrastructure, not jus
 - [WHO public health surveillance overview](https://www.who.int/health-topics/public-health-surveillance)
 
 ## Links to Metis library
-- `06_library/methods/surveillance-systems.md`
-- `06_library/methods/diagnostic-test-evaluation.md`
-- `06_library/methods/data-management.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/methods/diagnostic-test-evaluation.md`
+- `knowledge/library/methods/data-management.md`

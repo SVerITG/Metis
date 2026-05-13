@@ -115,6 +115,6 @@ These are not minor reporting issues. They affect whether the review's conclusio
 - [EQUATOR Network](https://www.equator-network.org/)
 
 ## Links to Metis library
-- `06_library/methods/systematic-reviews.md`
-- `06_library/methods/writing-for-journals.md`
-- `06_library/methods/data-management.md`
+- `knowledge/library/methods/systematic-reviews.md`
+- `knowledge/library/methods/writing-for-journals.md`
+- `knowledge/library/methods/data-management.md`

@@ -46,5 +46,5 @@ Recent notes
 ```
 
 ## Edge cases
-- No RC connection: tell the user the note can't be saved to the database; suggest copying to 00_inbox/ as a .txt file
+- No RC connection: tell the user the note can't be saved to the database; suggest copying to inbox/ as a .txt file
 - Note references a patient or individual by name: flag as potentially CONFIDENTIAL before saving

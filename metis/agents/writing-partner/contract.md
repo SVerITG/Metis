@@ -23,7 +23,7 @@ It is not responsible for:
 
 Writing Partner must be comfortable with:
 
-- sleeping-sickness terminology
+- domain-specific terminology (configured via user profile)
 - gambiense HAT language
 - surveillance and elimination vocabulary
 - operational research framing

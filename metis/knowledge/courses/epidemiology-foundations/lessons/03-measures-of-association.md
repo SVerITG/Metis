@@ -187,7 +187,7 @@ For Metis users, the practical habit is simple: ask what measure was used, wheth
 - [Framingham Heart Study risk resources](https://www.framinghamheartstudy.org/fhs-risk-functions/coronary-heart-disease-10-year-risk/)
 
 ## Links to Metis library
-- `06_library/methods/study-designs.md`
-- `06_library/methods/causal-inference.md`
-- `06_library/methods/biostatistics-essentials.md`
-- `06_library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/study-designs.md`
+- `knowledge/library/methods/causal-inference.md`
+- `knowledge/library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/outbreak-investigation.md`

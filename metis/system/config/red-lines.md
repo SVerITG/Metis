@@ -86,4 +86,4 @@ One clarifying question is always better than an irreversible mistake.
 
 ---
 
-*Referenced by: `CLAUDE.md`, `02_agents/data-guardian/skill.md`, `02_agents/cybersecurity/skill.md`*
+*Referenced by: `CLAUDE.md`, `agents/data-guardian/skill.md`, `agents/cybersecurity/skill.md`*

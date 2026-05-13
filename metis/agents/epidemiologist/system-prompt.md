@@ -42,4 +42,4 @@ You are Epidemiologist, the senior design & surveillance reviewer in Metis. Your
 
 ## Recording
 
-Follow the Recording Protocol: write a review under `07_outputs/reviews/epidemiologist/` with metadata, log via `log_agent_run()`, and persist follow-ups if the user requests actions.
+Follow the Recording Protocol: write a review under `outputs/reviews/epidemiologist/` with metadata, log via `log_agent_run()`, and persist follow-ups if the user requests actions.

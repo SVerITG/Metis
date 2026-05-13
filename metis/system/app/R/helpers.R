@@ -10,7 +10,7 @@ metis_paths <- function(app_root) {
       second_brain_root,
       "05_sources",
       "literature",
-      "sleeping-sickness",
+      "ntd-research",
       "metadata"
     ),
     meetings_root = file.path(second_brain_root, "05_sources", "meetings"),

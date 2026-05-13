@@ -108,7 +108,7 @@ Any domain NOT on this list triggers a warning (not a block — the user may app
 
 ## Logging convention
 
-All security events go to: `07_outputs/reviews/cybersecurity/`
+All security events go to: `outputs/reviews/cybersecurity/`
 
 File format: `{YYYY-MM-DD}_security-log.md`
 
@@ -133,10 +133,10 @@ File format: `{YYYY-MM-DD}_security-log.md`
 ## Configurable context
 
 This agent adapts to the user's environment:
-- Allowlist: loaded from `08_system/security/domain-allowlist.txt`
-- Blocklist: loaded from `08_system/security/domain-blocklist.txt`
+- Allowlist: loaded from `system/security/domain-allowlist.txt`
+- Blocklist: loaded from `system/security/domain-blocklist.txt`
 - Threat feeds: updated daily via `inst/scripts/update_threat_intel.R`
-- Custom rules: `08_system/security/custom-rules.yaml`
+- Custom rules: `system/security/custom-rules.yaml`
 
 ---
 

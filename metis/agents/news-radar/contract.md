@@ -32,7 +32,7 @@ It should:
 News Radar should prioritize:
 
 1. developments directly affecting active projects
-2. developments affecting your sleeping-sickness and PhD work
+2. developments affecting your the user's active research topics
 3. AI and software developments relevant to your builder interests
 4. geopolitics, humanitarian, and financial developments that may shape context
 5. weak signals that may matter later

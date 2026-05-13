@@ -37,5 +37,5 @@ This matters for regular surveillance reports, manuscript tables, technical appe
 - [Posit documentation](https://posit.co/)
 
 ## Links to Metis library
-- `06_library/methods/writing-for-journals.md`
-- `06_library/methods/data-management.md`
+- `knowledge/library/methods/writing-for-journals.md`
+- `knowledge/library/methods/data-management.md`

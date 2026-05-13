@@ -127,7 +127,7 @@ Another common mistake is to discuss design without discussing reporting. For ob
 - [BMJ TARGET statement on target trial emulation](https://www.bmj.com/content/390/bmj-2025-087179)
 
 ## Links to Metis library
-- `06_library/methods/study-designs.md`
-- `06_library/methods/causal-inference.md`
-- `06_library/methods/biostatistics-essentials.md`
-- `06_library/methods/surveillance-systems.md`
+- `knowledge/library/methods/study-designs.md`
+- `knowledge/library/methods/causal-inference.md`
+- `knowledge/library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/surveillance-systems.md`

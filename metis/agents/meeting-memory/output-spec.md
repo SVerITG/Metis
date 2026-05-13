@@ -65,8 +65,8 @@ This should reflect transcript quality and extraction certainty.
 
 ## Folder usage
 
-- `05_sources/meetings/audio`
-- `05_sources/meetings/transcripts`
-- `05_sources/meetings/structured`
-- `05_sources/meetings/briefings`
-- `05_sources/meetings/templates`
+- `outputs/reviews/meeting-memory/audio/`
+- `outputs/reviews/meeting-memory/transcripts/`
+- `outputs/reviews/meeting-memory/structured/`
+- `outputs/reviews/meeting-memory/briefings/`
+- `outputs/reviews/meeting-memory/templates/`

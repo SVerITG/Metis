@@ -1,47 +1,60 @@
-<div style="position:absolute; top:20%; left:50%; transform:translateX(-50%); width:500px; max-width:90vw;">
-  <div class="card shadow-lg border-secondary">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <strong><i class="bi bi-plus-circle me-1"></i>Quick Capture</strong>
-      <button type="button" class="btn-close btn-close-white" onclick="closeCapture()"></button>
-    </div>
-    <div class="card-body">
+<div style="position:fixed;top:0;left:0;right:0;z-index:900;display:flex;justify-content:center;padding-top:72px;">
+  <div class="panel m-drawer-top" style="width:540px;max-width:92vw;padding:0;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
 
-      <!-- Prefix hint -->
-      <div class="capture-modal-prefix-hint mb-2 small">
-        <span class="badge bg-primary me-1">i:</span> idea
-        <span class="badge bg-info text-dark me-1 ms-2">n:</span> note
-        <span class="badge bg-warning text-dark me-1 ms-2">t:</span> task
-        <span class="badge bg-secondary me-1 ms-2">q:</span> question
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;border-bottom:1px solid var(--m-rule-soft);">
+      <div class="kicker" style="margin:0;">
+        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="11" x2="8.01" y2="11"/></svg>
+        QUICK CAPTURE
+      </div>
+      <button onclick="closeCapture()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;padding:2px 6px;" aria-label="Close">ESC</button>
+    </div>
+
+    <!-- Prefix chips -->
+    <div style="display:flex;gap:6px;padding:10px 20px 0;flex-wrap:wrap;">
+      <span class="chip chip--accent" style="cursor:pointer;" onclick="setPrefixMode('i:')">i: idea</span>
+      <span class="chip chip--muted" style="cursor:pointer;" onclick="setPrefixMode('n:')">n: note</span>
+      <span class="chip chip--ochre" style="cursor:pointer;" onclick="setPrefixMode('t:')">t: task</span>
+      <span class="chip chip--muted" style="cursor:pointer;" onclick="setPrefixMode('q:')">q: question</span>
+      <span class="chip chip--muted" style="cursor:pointer;" onclick="setPrefixMode('j:')">j: journal</span>
+    </div>
+
+    <!-- Form -->
+    <form hx-post="/api/capture"
+          hx-target="#capture-feedback"
+          hx-swap="innerHTML"
+          style="padding:12px 20px 16px;">
+
+      <textarea id="capture-text"
+                name="text"
+                rows="3"
+                autofocus
+                required
+                style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:10px 12px;font-family:var(--m-sans);font-size:14px;color:var(--m-ink);resize:vertical;line-height:1.5;outline:none;"
+                placeholder="Type your idea, note, task, or question…"></textarea>
+
+      <!-- Live type badge -->
+      <div id="capture-type-badge" style="min-height:20px;margin-top:6px;"></div>
+
+      <!-- Feedback + cross-pollination results -->
+      <div id="capture-feedback" style="margin-top:2px;"></div>
+
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button type="submit" class="btn btn--primary btn--caps" style="flex:1;">Save</button>
+        <button type="button" class="btn btn--ghost btn--caps" onclick="closeCapture()">Cancel</button>
       </div>
 
-      <form hx-post="/api/capture"
-            hx-target="#capture-feedback"
-            hx-swap="innerHTML">
-
-        <textarea id="capture-text"
-                  name="text"
-                  class="form-control mb-2"
-                  rows="3"
-                  placeholder="Type your idea, note, task, or question…"
-                  autofocus
-                  required></textarea>
-
-        <!-- Live type badge -->
-        <div id="capture-type-badge" class="mb-2" style="min-height:1.6rem;"></div>
-
-        <!-- Feedback area (success/error from POST) -->
-        <div id="capture-feedback"></div>
-
-        <div class="d-flex gap-2 mt-2">
-          <button type="submit" class="btn btn-primary flex-grow-1">
-            <i class="bi bi-save me-1"></i>Save
-          </button>
-          <button type="button" class="btn btn-outline-secondary" onclick="closeCapture()">
-            Cancel
-          </button>
-        </div>
-
-      </form>
-    </div><!-- /.card-body -->
-  </div><!-- /.card -->
+    </form>
+  </div>
 </div>
+
+<script>
+function setPrefixMode(prefix) {
+  const ta = document.getElementById('capture-text');
+  if (!ta) return;
+  const bare = ta.value.replace(/^[a-z]+:\s*/, '');
+  ta.value = prefix + ' ' + bare;
+  ta.selectionStart = ta.selectionEnd = ta.value.length;
+  ta.focus();
+}
+</script>

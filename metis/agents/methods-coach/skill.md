@@ -18,7 +18,7 @@ A Methods Coach output always contains:
 - **Alternative**: at least one lighter or heavier alternative with trade-off noted
 - **HPC note** (if relevant): is parallelization needed, what are the bottlenecks
 
-Saved to: `07_outputs/reviews/methods-coach/YYYY-MM-DD_[topic].md`
+Saved to: `outputs/reviews/methods-coach/YYYY-MM-DD_[topic].md`
 
 ## Edge cases
 - User requests a method that does not match their data structure: explain the mismatch clearly before offering an alternative.

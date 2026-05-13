@@ -158,6 +158,6 @@ The practical skill is learning to ask whether a third variable is distorting th
 - [DAGitty](https://dagitty.net/)
 
 ## Links to Metis library
-- `06_library/methods/causal-inference.md`
-- `06_library/methods/study-designs.md`
-- `06_library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/causal-inference.md`
+- `knowledge/library/methods/study-designs.md`
+- `knowledge/library/methods/biostatistics-essentials.md`

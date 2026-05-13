@@ -1,51 +1,39 @@
-<!-- partials/metis_consent.html — Phase 6 consent ledger -->
-
-{% set CLASS_COLOR = {
-  'PUBLIC':       'bg-success-subtle text-success-emphasis',
-  'INTERNAL':     'bg-primary-subtle text-primary-emphasis',
-  'CONFIDENTIAL': 'bg-warning-subtle text-warning-emphasis',
-  'SENSITIVE':    'bg-danger-subtle text-danger-emphasis'
+{# Consent ledger — Archive design system #}
+{% set CLASS_CHIP = {
+  'PUBLIC':       'chip--ok',
+  'INTERNAL':     'chip--info',
+  'CONFIDENTIAL': 'chip--warn',
+  'SENSITIVE':    'chip--alert'
 } %}
 
 {% if not events %}
-<p class="text-muted small py-3 text-center">
-  No consent events yet — agents log events via <code>log_consent_event()</code>.
-</p>
-
+<div style="padding:24px 22px;text-align:center;font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">
+  No consent events yet — agents log events via <code style="font-family:var(--m-mono);font-size:11px;">log_consent_event()</code>.
+</div>
 {% else %}
-<div class="table-responsive" style="font-size:.82rem;">
-  <table class="table table-sm table-hover mb-0">
-    <thead class="table-light">
-      <tr>
-        <th style="width:130px;">Time</th>
-        <th>Action</th>
-        <th style="width:110px;">Classification</th>
-        <th style="width:120px;">Agent</th>
-        <th>Notes</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for ev in events %}
-      <tr>
-        <td class="text-muted">{{ ev.timestamp[:16] if ev.timestamp else '—' }}</td>
-        <td class="text-truncate" style="max-width:200px;" title="{{ ev.action }}">
-          {{ ev.action }}
-        </td>
-        <td>
-          <span class="badge {{ CLASS_COLOR.get(ev.data_classification, 'bg-secondary') }} border-0"
-                style="font-size:.65rem;">
-            {{ ev.data_classification }}
-          </span>
-        </td>
-        <td class="text-muted text-truncate" style="max-width:120px;">
-          {{ ev.agent_slug or '—' }}
-        </td>
-        <td class="text-muted text-truncate" style="max-width:200px;" title="{{ ev.notes or '' }}">
-          {{ ev.notes or '' }}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<div style="padding:14px 22px;">
+  <div style="display:grid;grid-template-columns:120px 1fr 110px 100px;gap:10px;padding:6px 0 8px;border-bottom:1px solid var(--m-rule-strong);font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);text-transform:uppercase;">
+    <div>Time</div>
+    <div>Action</div>
+    <div>Class</div>
+    <div>Agent</div>
+  </div>
+  {% for ev in events %}
+  <div style="display:grid;grid-template-columns:120px 1fr 110px 100px;gap:10px;padding:9px 0;align-items:center;border-bottom:1px solid var(--m-rule-soft);">
+    <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">{{ ev.timestamp[:16] if ev.timestamp else '—' }}</div>
+    <div style="font-family:var(--m-ui);font-size:12.5px;color:var(--m-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ ev.action }}">
+      {{ ev.action }}
+      {% if ev.notes %}<span style="color:var(--m-muted);font-style:italic;"> · {{ ev.notes }}</span>{% endif %}
+    </div>
+    <div>
+      <span class="chip {{ CLASS_CHIP.get(ev.data_classification, 'chip--mute') }}" style="font-size:9px;">
+        {{ ev.data_classification or '—' }}
+      </span>
+    </div>
+    <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+      {{ ev.agent_slug or '—' }}
+    </div>
+  </div>
+  {% endfor %}
 </div>
 {% endif %}

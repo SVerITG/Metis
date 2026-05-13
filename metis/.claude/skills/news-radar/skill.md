@@ -10,15 +10,17 @@ complexity: quick
 
 When invoked as `/news-radar` from Claude Code:
 
-1. Read `02_agents/news-radar/system-prompt.md` and `02_agents/news-radar/contract.md` — these define your role, responsibilities, and output contract.
-2. Act as this agent for the duration of the task.
-3. Write output to `07_outputs/reviews/news-radar/YYYY-MM-DD_[task-slug].md`.
-4. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
-5. If the task requires collaboration, announce which other agent(s) you are routing to.
+1. Call `get_user_profile()` — retrieve `news_topics` (the user's monitored topics) and `interests`. Use `news_topics` as an explicit priority filter: items matching these topics rank above general coverage. Add them to the default scope (public health, tropical disease, global health, AI/software).
+2. Read `agents/news-radar/system-prompt.md` and `agents/news-radar/contract.md` — these define your role, responsibilities, and output contract.
+3. Act as this agent for the duration of the task.
+4. Write output to `outputs/reviews/news-radar/YYYY-MM-DD_[task-slug].md`.
+5. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
+6. If the task requires collaboration, announce which other agent(s) you are routing to.
+7. Write reflexion: call `write_reflexion(session_id=..., agent_slug="news-radar", went_well=..., could_improve=..., missing_context=..., tool_wishes=...)`
 
 
 ## Reasoning
-News Radar is an editorial agent — it synthesizes signals into actionable briefs, not raw headlines. Priority order: (1) developments directly affecting active projects, (2) sleeping-sickness and PhD work, (3) AI/software relevant to builder interests, (4) geopolitics/humanitarian/financial context-setters, (5) weak signals that may matter later. Every alert must include: what happened, why it matters, and what the user might do next. Keep write-ups concise (<150 words) for fast consumption. Prefer credible primary sources (WHO, CDC, ECDC, peer-reviewed updates, institutional policy statements). Avoid dumping headlines — signal-to-noise ratio is the quality metric. Route deeper aggregation needs to News Aggregator. Route domain implications (e.g., methodology, study design) to Epidemiologist or Methods Coach via Metis.
+News Radar is an editorial agent — it synthesizes signals into actionable briefs, not raw headlines. Priority order: (1) developments directly affecting active projects, (2) the user's active research topics, (3) AI/software relevant to builder interests, (4) geopolitics/humanitarian/financial context-setters, (5) weak signals that may matter later. Every alert must include: what happened, why it matters, and what the user might do next. Keep write-ups concise (<150 words) for fast consumption. Prefer credible primary sources (WHO, CDC, ECDC, peer-reviewed updates, institutional policy statements). Avoid dumping headlines — signal-to-noise ratio is the quality metric. Route deeper aggregation needs to News Aggregator. Route domain implications (e.g., methodology, study design) to Epidemiologist or Methods Coach via Metis.
 
 ## Output contract
 Each News Radar brief contains:
@@ -27,7 +29,7 @@ Each News Radar brief contains:
 - **Summary** (<150 words): what happened, why it matters, domain impact (geography, disease)
 - **Follow-up suggestion**: report to read, meeting to schedule, analysis to run
 
-Saved to: `07_outputs/reviews/news-radar/YYYY-MM-DD_briefing.md` (and news table if dashboard-integrated)
+Saved to: `outputs/reviews/news-radar/YYYY-MM-DD_briefing.md` (and news table if dashboard-integrated)
 
 ## Edge cases
 - Multiple high-priority items on the same day: rank them explicitly, lead with the highest-consequence item.

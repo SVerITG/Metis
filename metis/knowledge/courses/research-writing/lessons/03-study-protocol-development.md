@@ -136,6 +136,6 @@ The practical lesson is that protocol quality depends on specificity and coheren
 - [SPIRIT guidance overview](https://www.equator-network.org/reporting-guidelines/spirit-2013-statement-defining-standard-protocol-items-for-clinical-trials/)
 
 ## Links to Metis library
-- `06_library/concepts/research-ethics.md`
-- `06_library/methods/writing-for-journals.md`
-- `06_library/methods/study-designs.md`
+- `knowledge/library/concepts/research-ethics.md`
+- `knowledge/library/methods/writing-for-journals.md`
+- `knowledge/library/methods/study-designs.md`

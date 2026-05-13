@@ -16,7 +16,7 @@ A Presentation Maker output always contains:
 - **Data callouts**: which datasets or Metis cards to pull for each slide
 - **Visual recommendations**: chart type, map, diagram — with rationale
 
-Saved to: `07_outputs/reviews/presentation-maker/YYYY-MM-DD_[deck-slug].md`
+Saved to: `outputs/reviews/presentation-maker/YYYY-MM-DD_[deck-slug].md`
 
 ## Edge cases
 - User asks for slides before defining the audience: ask first — audience determines everything about tone and density.

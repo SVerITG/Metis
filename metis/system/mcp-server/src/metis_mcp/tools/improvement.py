@@ -82,24 +82,71 @@ def _skill_path(agent_slug: str) -> Path | None:
 
 
 def _theme_from(texts: list[str], top_n: int = 3) -> list[tuple[str, int]]:
-    """Return the top N noun-ish phrases across a list of free-text reflexions.
+    """Return top N semantic themes from a list of reflexion texts.
 
-    Naive: tokenise, drop stopwords + 1-character tokens, count, return most
-    common. Good enough for surfacing recurring themes across a few dozen
-    entries; not trying to be a topic model.
+    Uses Claude Haiku for semantic extraction when ANTHROPIC_API_KEY is set
+    (produces meaningful themes like "agent lacks NTD domain knowledge" rather
+    than token frequencies). Falls back to word-frequency counting otherwise.
     """
     if not texts:
         return []
+
+    non_empty = [t for t in texts if t and t.strip()]
+    if not non_empty:
+        return []
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if api_key and len(non_empty) >= 2:
+        try:
+            import json as _json
+            import httpx as _httpx
+
+            combined = "\n---\n".join(non_empty)
+            resp = _httpx.post(
+                "https://api.anthropic.com/v1/messages",
+                headers={
+                    "x-api-key": api_key,
+                    "anthropic-version": "2023-06-01",
+                    "content-type": "application/json",
+                },
+                json={
+                    "model": "claude-haiku-4-5-20251001",
+                    "max_tokens": 256,
+                    "messages": [{
+                        "role": "user",
+                        "content": (
+                            f"Read these {len(non_empty)} reflexion notes written after AI agent runs. "
+                            f"Identify the top {top_n} recurring semantic themes — short descriptive phrases "
+                            "(not single words). Return ONLY a JSON array: "
+                            '[[\"theme description\", occurrence_count], ...]. '
+                            "No explanation, no markdown, just the array.\n\n"
+                            f"Reflexions:\n{combined[:3000]}"
+                        ),
+                    }],
+                },
+                timeout=20.0,
+            )
+            if resp.status_code == 200:
+                raw = resp.json()["content"][0]["text"].strip()
+                start, end = raw.find("["), raw.rfind("]") + 1
+                if start >= 0 and end > start:
+                    parsed = _json.loads(raw[start:end])
+                    if isinstance(parsed, list) and parsed:
+                        return [
+                            (str(item[0]), int(item[1]))
+                            for item in parsed[:top_n]
+                            if isinstance(item, (list, tuple)) and len(item) >= 2
+                        ]
+        except Exception:
+            pass  # fall through to word-frequency
+
+    # Word-frequency fallback
     counter: Counter[str] = Counter()
-    for t in texts:
-        if not t:
-            continue
-        # Lower-case, keep word boundaries
+    for t in non_empty:
         tokens = re.findall(r"[a-z][a-z\-]{2,}", t.lower())
         for tok in tokens:
-            if tok in _STOP_WORDS:
-                continue
-            counter[tok] += 1
+            if tok not in _STOP_WORDS:
+                counter[tok] += 1
     return counter.most_common(top_n)
 
 
@@ -331,7 +378,7 @@ async def draft_self_improvement_proposal_tool(
     notes' section to the agent's current skill.md, and queues the result in
     ``skill_improvement_proposals`` with status='draft'.
 
-    The draft is NOT applied. Use ``approve_proposal(id)`` to promote it.
+    The draft is NOT applied. Use ``apply_proposal(id)`` to write it to disk.
     """
     result = draft_self_improvement_proposal(agent_slug, days=days)
     if result["status"] != "ok":
@@ -344,6 +391,122 @@ async def draft_self_improvement_proposal_tool(
             f"Rationale:\n{result['rationale']}\n\n"
             f"Preview of the new section:\n\n{result['preview']}\n\n"
             "Review with `get_pending_proposals()` (also lists drafts) and "
-            "promote with `approve_proposal({pid})`.".format(pid=result["proposal_id"])
+            "apply with `apply_proposal({pid})`.".format(pid=result["proposal_id"])
+        ),
+    )]
+
+
+def apply_proposal(proposal_id: int) -> dict:
+    """Apply an approved/promoted proposal: write proposed_content to disk.
+
+    Behaviour:
+      1. Look up the proposal. Must exist and be in status 'pending'/'draft'/'approved'.
+      2. Resolve the agent's skill.md path (uses _skill_path).
+      3. Back up the current file to `<file>.bak.<timestamp>` next to it.
+      4. Write proposed_content to the file.
+      5. Update the proposal row to status='applied' with applied_at timestamp.
+
+    Returns a dict with status, the backup path, and a one-line summary so the
+    caller (dashboard or CLI) can display what happened.
+    """
+    _ensure_tables()
+    with connect(paths.db) as con:
+        row = con.execute(
+            "SELECT id, agent_slug, proposed_content, status "
+            "FROM skill_improvement_proposals WHERE id = ?",
+            (proposal_id,),
+        ).fetchone()
+
+    if row is None:
+        return {"status": "error", "message": f"Proposal #{proposal_id} not found."}
+
+    row = dict(row)
+    if row["status"] not in ("pending", "draft", "approved"):
+        return {
+            "status": "error",
+            "message": (
+                f"Proposal #{proposal_id} is in status '{row['status']}'; "
+                "only 'pending', 'draft', or 'approved' proposals can be applied."
+            ),
+        }
+
+    skill_file = _skill_path(row["agent_slug"])
+    if skill_file is None:
+        return {
+            "status": "error",
+            "message": (
+                f"No skill.md found for agent '{row['agent_slug']}'. "
+                "Looked in .claude/skills/<slug>/ and agents/<slug>/."
+            ),
+        }
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%dT%H%M%S")
+    backup_path = skill_file.with_suffix(f".md.bak.{timestamp}")
+    try:
+        backup_path.write_text(skill_file.read_text(encoding="utf-8"), encoding="utf-8")
+        skill_file.write_text(row["proposed_content"], encoding="utf-8")
+    except Exception as e:
+        return {"status": "error", "message": f"Filesystem error: {e}"}
+
+    applied_at = datetime.datetime.now().isoformat(timespec="seconds")
+    with connect(paths.db) as con:
+        # Some installs may not yet have the applied_at column; ALTER if missing.
+        cols = {r[1] for r in con.execute(
+            "PRAGMA table_info(skill_improvement_proposals)"
+        )}
+        if "applied_at" not in cols:
+            try:
+                con.execute(
+                    "ALTER TABLE skill_improvement_proposals ADD COLUMN applied_at TEXT"
+                )
+            except Exception:
+                pass
+        if "backup_path" not in cols:
+            try:
+                con.execute(
+                    "ALTER TABLE skill_improvement_proposals ADD COLUMN backup_path TEXT"
+                )
+            except Exception:
+                pass
+        con.execute(
+            "UPDATE skill_improvement_proposals SET status='applied', "
+            "applied_at = ?, backup_path = ? WHERE id = ?",
+            (applied_at, str(backup_path), proposal_id),
+        )
+        con.commit()
+
+    return {
+        "status": "ok",
+        "proposal_id": proposal_id,
+        "agent_slug": row["agent_slug"],
+        "skill_file": str(skill_file),
+        "backup_path": str(backup_path),
+        "applied_at": applied_at,
+    }
+
+
+@app.tool()
+async def apply_proposal_tool(proposal_id: int) -> list[TextContent]:
+    """Apply a self-improvement proposal: writes the proposed change to disk.
+
+    The previous skill.md content is backed up alongside as
+    ``skill.md.bak.<timestamp>`` so a revert is always possible. Updates the
+    proposal row to status='applied' with the applied_at timestamp and the
+    backup path.
+
+    Args:
+        proposal_id: the id from skill_improvement_proposals.
+    """
+    result = apply_proposal(proposal_id)
+    if result["status"] != "ok":
+        return [TextContent(type="text", text=result.get("message", "apply failed"))]
+    return [TextContent(
+        type="text",
+        text=(
+            f"Proposal #{result['proposal_id']} applied to `{result['agent_slug']}`.\n"
+            f"- Wrote: {result['skill_file']}\n"
+            f"- Backup: {result['backup_path']}\n"
+            f"- Applied at: {result['applied_at']}\n"
+            "If the change is wrong, restore from the backup and set status back to 'rejected'."
         ),
     )]

@@ -1,0 +1,21 @@
+#!/bin/bash
+# Metis Python Dashboard — launcher template.
+#
+# `setup-mcp.sh` generates a real `run.sh` from this file with paths filled in.
+# If you need to create `run.sh` manually, copy this file to `run.sh` and replace:
+#   {METIS_RC_ROOT}    — absolute path to the metis/ folder
+#   {VENV_SITE_PKG}    — absolute path to your venv site-packages
+#                        e.g. /home/you/.local/share/metis-mcp/.venv/lib/python3.12/site-packages
+#   {MCP_SRC}          — absolute path to metis/system/mcp-server/src
+#   {APP_DIR}          — absolute path to metis/system/app-py
+#   {PYTHON}           — absolute path to your Python 3.10+ binary
+
+APP_DIR="{APP_DIR}"
+SITE_PKG="{VENV_SITE_PKG}"
+MCP_SRC="{MCP_SRC}"
+
+export METIS_RC_ROOT="{METIS_RC_ROOT}"
+export PYTHONPATH="$SITE_PKG:$MCP_SRC:$APP_DIR"
+
+cd "$APP_DIR"
+exec "{PYTHON}" -m uvicorn main:app --host 127.0.0.1 --port 8000

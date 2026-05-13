@@ -67,15 +67,15 @@ These rules apply to all code reviewed or produced by Software Engineer and Dash
 - **HAT surveillance data** (case counts, health zone data) is **SENSITIVE**
   - Display aggregate statistics only (counts by zone × year)
   - Never display records with identifiable fields (patient ID, date + location combination)
-  - The HAT Dashboard must enforce this at the data layer, not the UI layer
+  - The research dashboard must enforce this at the data layer, not the UI layer
 
 - **Meeting content** is **CONFIDENTIAL**
-  - Audio files stay in `05_sources/meetings/` — local only
+  - Audio files stay in `outputs/reviews/meeting-memory/` — local only
   - Transcripts are local by default; never auto-uploaded to cloud transcription services
   - Meeting notes containing names or decisions: treat as CONFIDENTIAL
 
 - **Literature PDFs** are **INTERNAL**
-  - PDFs stored locally in `05_sources/literature/` — not re-distributed
+  - PDFs stored locally in `knowledge/library/` — not re-distributed
   - Metadata (title, DOI, abstract) can be shared; full text cannot
 
 ---

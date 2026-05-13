@@ -16,7 +16,7 @@ A News Aggregator output contains a structured digest:
 - **Surprise items**: separately listed with reason for flagging
 - **Routing recommendation**: which items warrant News Radar escalation
 
-Saved to: `07_outputs/reviews/news-aggregator/YYYY-MM-DD_digest.md`
+Saved to: `outputs/reviews/news-aggregator/YYYY-MM-DD_digest.md`
 
 ## Edge cases
 - Feed URL is not on the authorized list: do not fetch — flag for Cybersecurity and user approval.

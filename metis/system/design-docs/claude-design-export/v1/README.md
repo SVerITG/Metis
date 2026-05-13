@@ -131,7 +131,7 @@ Model-tier tints (for `Haiku` / `Sonnet` / `Opus` badges) are warm, low-saturati
 ### Type scale
 | Token | Size | Use |
 |-------|------|-----|
-| `--t-display` | 42 / 1.08 | Hero greetings ("Good morning, the researcher.") |
+| `--t-display` | 42 / 1.08 | Hero greetings ("Good morning, Researcher.") |
 | `--t-h1` | 30 / 1.2 | Page titles (serif) |
 | `--t-h2` | 24 / 1.25 | Section titles (serif) |
 | `--t-h3` | 20 / 1.3 | Card titles (serif) |

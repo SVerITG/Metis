@@ -1,0 +1,77 @@
+{# signal_strength → CSS color helper #}
+
+<div id="knowledge-news-signals">
+  <div class="sec-label" style="margin-bottom:12px;">
+    <span>Signals</span>
+    <span class="tail">{{ total }} ITEMS · NEWS · INTELLIGENCE</span>
+  </div>
+
+  {% if domains %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;">
+    {% for domain, items in domains.items() %}
+    <div class="panel" style="overflow:hidden;">
+      <!-- Domain header -->
+      <div style="padding:10px 16px;border-bottom:1px solid var(--m-rule-soft);
+                  display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.16em;
+                     text-transform:uppercase;color:var(--m-ink);">{{ domain }}</span>
+        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
+          {{ items | length }} SIGNAL{% if items | length != 1 %}S{% endif %}
+        </span>
+      </div>
+      <!-- Signal rows -->
+      {% for s in items[:5] %}
+      <div style="padding:10px 16px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
+        <div style="display:flex;align-items:flex-start;gap:8px;">
+          <!-- Signal strength dot -->
+          <div style="margin-top:4px;flex-shrink:0;width:6px;height:6px;border-radius:50%;
+                      background:{% set _str = (s.signal_strength or '')|upper %}{% if _str == 'HIGH' %}var(--m-accent){% elif _str == 'MEDIUM' %}var(--m-ochre-deep){% else %}var(--m-muted){% endif %};"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);
+                        line-height:1.35;margin-bottom:2px;">
+              {% if s.source_url %}
+              <a href="{{ s.source_url }}" target="_blank" rel="noopener"
+                 style="color:inherit;text-decoration:none;"
+                 onmouseover="this.style.color='var(--m-accent)'"
+                 onmouseout="this.style.color='var(--m-ink)'">{{ s.title }}</a>
+              {% else %}
+              {{ s.title }}
+              {% endif %}
+            </div>
+            {% if s.summary %}
+            <div style="font-family:var(--m-display);font-style:italic;font-size:11px;
+                        color:var(--m-muted);line-height:1.5;">
+              {% if s.summary | length > 120 %}{{ s.summary[:120] }}…{% else %}{{ s.summary }}{% endif %}
+            </div>
+            {% endif %}
+            <div style="margin-top:4px;font-family:var(--m-mono);font-size:9px;
+                        letter-spacing:0.1em;color:var(--m-muted);display:flex;gap:10px;">
+              {% set _str = (s.signal_strength or '')|upper %}
+              <span style="color:{% if _str == 'HIGH' %}var(--m-accent){% elif _str == 'MEDIUM' %}var(--m-ochre-deep){% else %}var(--m-muted){% endif %};">
+                {{ _str or 'LOW' }}
+              </span>
+              <span>{{ (s.created_at or '')[:10] }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+      {% if items | length > 5 %}
+      <div style="padding:8px 16px;font-family:var(--m-mono);font-size:9px;
+                  letter-spacing:0.1em;color:var(--m-muted);text-align:center;
+                  border-top:1px solid var(--m-rule-soft);">
+        + {{ items | length - 5 }} MORE SIGNALS
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="panel" style="padding:28px 24px;text-align:center;">
+    <div style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">
+      No signals yet. Run the News Radar to start collecting intelligence.
+    </div>
+  </div>
+  {% endif %}
+</div>

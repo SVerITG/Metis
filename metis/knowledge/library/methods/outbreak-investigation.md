@@ -105,9 +105,9 @@ updated: "2026-03-30"
 
 ## Learning Path
 
-- Start with `06_library/courses/epidemiology-foundations/lessons/12-outbreak-investigation.md`.
-- Pair this card with `06_library/methods/surveillance-systems.md` because outbreak investigations almost always depend on existing indicator-based and event-based detection systems.
-- Review `06_library/methods/diagnostic-test-evaluation.md` when confirmation testing and case classification are uncertain.
+- Start with `knowledge/library/courses/epidemiology-foundations/lessons/12-outbreak-investigation.md`.
+- Pair this card with `knowledge/library/methods/surveillance-systems.md` because outbreak investigations almost always depend on existing indicator-based and event-based detection systems.
+- Review `knowledge/library/methods/diagnostic-test-evaluation.md` when confirmation testing and case classification are uncertain.
 - In the Learning Hub, this card aligns primarily with **Outbreak investigation** and also supports **Surveillance systems** and **Scientific communication**.
 
 ---
