@@ -1,5 +1,5 @@
 # Metis — Implementation Plan
-**Last updated:** 2026-05-12  
+**Last updated:** 2026-05-13  
 **Sources:** May 10 deep system evaluation · open-source AI tooling research · user sessions
 
 This plan consolidates all open work into a single prioritised roadmap. Items are grouped by phase. Within each phase, order is impact-per-effort. Check items off as they complete and update this file — it is the single source of truth for what to build next.
@@ -132,21 +132,22 @@ The feature backlog (`feature-backlog.md`) remains the raw list; this document i
   `cache_control: {"type": "ephemeral"}` + `anthropic-beta: prompt-caching-2024-07-31`.  
   Dynamic content (today's context) kept outside the cached block.
 
-- [ ] **XL — SPECTER2 / nomic-embed cross-pollination**  
-  The largest single architectural gap. Current cross-pollination uses SQL LIKE matching.  
-  Target: hybrid vector + entity retrieval finding connections keyword search misses.  
-  Implementation path:  
-  1. Install `nomic-embed-text` via Ollama (local, free) for notes and ideas  
-  2. Install `SPECTER2` via sentence-transformers for papers and abstracts  
-  3. Add `connections` table in SQLite for storing cross-pollination vectors  
-  4. Async background task on every capture: embed → retrieve top 3 (MMR diversity scoring)  
-  5. Enforce: exactly 3 connections, at least 1 from a different content type  
-  *This changes the emotional experience of using cross-pollination.*
+- [x] **XL — nomic-embed-text-v1.5-Q cross-pollination** — DONE 2026-05-13  
+  Upgraded from BAAI/bge-small-en-v1.5 (384-dim) to nomic-embed-text-v1.5-Q (768-dim) via fastembed.  
+  `embeddings.py`: `embed_query()` / `embed_document()` task-prefix API. Model ~130MB, cached in `~/.cache/fastembed/`.  
+  `vector_memory.py`: DDL updated float[384]→float[768]. `_migrate_vec_table()` auto-drops and recreates vec0  
+  tables on dimension mismatch — safe upgrade path, no data lost (tables were empty).  
+  `ideas.py`: `_cross_pollinate_core()` upgraded to hybrid vector (episodic_memory) + keyword SQL with RRF  
+  merge and title-dedup (MMR-lite). `capture_idea()` now embeds every idea into `vec_episodic` on save —  
+  cross-pollination gets richer with every captured idea. `semantic_search()` updated to use `embed_query`.
 
-- [ ] **XL — PaperQA2 + ZoteroDB semantic library search**  
-  Replace SQL LIKE search on abstracts with PaperQA2 hybrid retrieval (BM25 + vector + reranker).  
-  Enables: "What does my library say about treatment outcomes in stage 2 gambiense HAT?" answered with inline citations.  
-  *Separate phase — install size and setup time mean this is post-v1.0.*
+- [x] **XL — PaperQA2 semantic library search** — DONE 2026-05-13 (index pending)  
+  `tools/paperqa_search.py`: two MCP tools — `index_library_pdfs()` and `ask_library()`.  
+  Walks `knowledge/library/`, pre-validates PDFs with pypdf strict=False, indexes with Claude Haiku.  
+  Persists index as pickle to `system/app/data/paperqa_index/docs.pkl`.  
+  API key loaded from environment or `metis/system/.env` fallback.  
+  **To activate:** add `ANTHROPIC_API_KEY=sk-ant-...` to `metis/system/.env`, then call `index_library_pdfs()`.  
+  After indexing (~15 min, 221 PDFs): `ask_library("what does my library say about HAT treatment outcomes?")`.
 
 ---
 
@@ -320,18 +321,18 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
 | 2026-05-12 | **Phase H complete** (Telegram excluded): Meeting Memory cross-refs (`enrich_meeting_with_crossrefs()`), Course Builder 4-tool pipeline (`start_course_build`, `save_course_outline`, `get_course_status`, `publish_course`). |
 | 2026-05-12 | **Phase I (eval harness)**: 14 golden tests × 8 agents + `eval-runner.py` with `--compare` mode for pre-promotion regression checks. |
 | 2026-05-12 | **Phase D complete**: Domain-specific tool loading live — `subset_loader.py` + `server.py` wiring. Verified: librarian 38% reduction, data-guardian 65% reduction. |
+| 2026-05-13 | **Phase 10 complete**: 7 APScheduler jobs, settings UI, automation panel — per-job time/toggle/run controls, live reschedule without restart. |
+| 2026-05-13 | **nomic-embed-text-v1.5-Q upgrade**: 384→768 dims, task-prefix API (embed_query/embed_document), vec0 auto-migration, ideas now embed to episodic memory on capture. |
+| 2026-05-13 | **PaperQA2 library search**: `index_library_pdfs()` + `ask_library()` MCP tools, pypdf pre-validation, API key .env fallback. Awaiting `ANTHROPIC_API_KEY` in `.env` to run indexer. |
+| 2026-05-13 | **README pushed to main**: full researcher/developer overhaul with Metis PNG (380px), Mermaid architecture diagram, dual audience structure, contributing spec. |
 
 ---
 
 ## What to build next (ordered recommendation)
 
-1. **Stop hook** (S, 2h) — ambient handoff brief without any user action. Immediate daily value.
-2. **11 missing slash commands** (M, 3h) — fixes broken invocations, half a day, high friction reduction.
-3. **Hook profiles** (XS, 30min) — flexibility for different work contexts, almost free.
-4. **Morning scan at 07:00** (L, 1d) — the single change that most makes Metis feel "on" rather than "waiting".
-5. **Inbox auto-processing** (L, 1d) — files dropped, Metis picks them up. No manual step.
-6. **PubMed + OpenAlex monitoring** (L, 1d) — new papers arrive without asking. Closes the most obvious research workflow gap.
-7. **Empty states on all 9 tabs** (L, 1d) — essential before any public release.
-8. **/metis_config rewrite** (M, half day) — blocking for public release.
-9. **Domain-specific tool loading** (L, 1d) — 50–80% token cost reduction, biggest ROI on infrastructure.
-10. **token-efficient-tools + prompt caching** (S, 3h combined) — quick wins on token cost.
+1. **Activate PaperQA2 index** (XS, 5min) — add `ANTHROPIC_API_KEY` to `metis/system/.env`, call `index_library_pdfs()`. Unlocks semantic Q&A over 221 papers.
+2. **Morning scan Windows autostart** (S, 1h) — verify "Schedule morning brief" button end-to-end from Windows Task Scheduler. Phase C last open item.
+3. **Telegram bot for mobile capture** (L, 1d) — text/voice/image → inbox → cross-pollination. `python-telegram-bot` + `faster-whisper`. Reuse `webhook.py`.
+4. **Windows .exe installer** (XL, 3d) — Phase 11. Blocking for public release.
+5. **Docker image** (XXL) — Phase 11. Linux users + institutional deployments.
+6. **Phase 12 test suite** (XXL) — unit + integration + e2e for 5 critical flows. Zero coverage currently.
