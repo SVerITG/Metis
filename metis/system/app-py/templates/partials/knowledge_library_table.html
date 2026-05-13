@@ -1,0 +1,132 @@
+<div id="lib-table-area">
+
+  <!-- count line -->
+  <div style="padding:9px 20px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);border-bottom:1px solid var(--m-rule-soft);">
+    {% if collection or q or item_type %}
+    {{ total }} PAPER{% if total != 1 %}S{% endif %} MATCHING FILTERS
+    {% else %}
+    {{ total }} PAPERS TOTAL
+    {% endif %}
+  </div>
+
+  {% if items %}
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;border-bottom:1px solid var(--m-rule);">
+        <th style="padding:8px 20px 8px 20px;text-align:left;font-weight:400;width:90px;">Type</th>
+        <th style="padding:8px 10px;text-align:left;font-weight:400;">Title / Authors</th>
+        <th style="padding:8px 10px;text-align:left;font-weight:400;width:56px;">Year</th>
+        <th style="padding:8px 10px;text-align:left;font-weight:400;width:150px;">Journal</th>
+        <th style="padding:8px 10px;text-align:left;font-weight:400;">Collections</th>
+        <th style="padding:8px 20px;text-align:right;font-weight:400;width:70px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr style="border-bottom:1px solid var(--m-rule-soft);"
+          onmouseover="this.style.background='var(--m-surface-2)'"
+          onmouseout="this.style.background=''">
+
+        <!-- Type badge -->
+        <td style="padding:11px 20px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);white-space:nowrap;vertical-align:top;">
+          {% if item.item_type == 'journalArticle' %}Article
+          {% elif item.item_type == 'book' %}Book
+          {% elif item.item_type == 'bookSection' %}Chapter
+          {% elif item.item_type == 'report' %}Report
+          {% elif item.item_type == 'preprint' %}Preprint
+          {% elif item.item_type %}{{ item.item_type }}
+          {% else %}Paper{% endif %}
+        </td>
+
+        <!-- Title + Authors + Abstract -->
+        <td style="padding:11px 10px;vertical-align:top;">
+          <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.35;">
+            {% if item.doi %}
+            <a href="https://doi.org/{{ item.doi }}" target="_blank" rel="noopener"
+               style="color:inherit;text-decoration:none;"
+               onmouseover="this.style.color='var(--m-accent)'"
+               onmouseout="this.style.color='var(--m-ink)'">{{ item.title }}</a>
+            {% elif item.url %}
+            <a href="{{ item.url }}" target="_blank" rel="noopener"
+               style="color:inherit;text-decoration:none;"
+               onmouseover="this.style.color='var(--m-accent)'"
+               onmouseout="this.style.color='var(--m-ink)'">{{ item.title }}</a>
+            {% else %}
+            {{ item.title }}
+            {% endif %}
+          </div>
+          {% if item.authors %}
+          <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);margin-top:2px;line-height:1.3;">
+            {% if item.authors | length > 90 %}{{ item.authors[:90] }}…{% else %}{{ item.authors }}{% endif %}
+          </div>
+          {% endif %}
+          {% if item.has_abstract %}
+          <div id="abs-{{ item.id }}"
+               style="display:none;font-family:var(--m-display);font-size:12px;color:var(--m-muted);
+                      margin-top:8px;line-height:1.6;max-width:640px;padding:8px 12px;
+                      background:var(--m-surface-2);border-radius:3px;border-left:2px solid var(--m-rule);">
+            {{ item.abstract }}
+          </div>
+          {% endif %}
+        </td>
+
+        <!-- Year -->
+        <td style="padding:11px 10px;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);vertical-align:top;white-space:nowrap;">
+          {{ item.year if item.year else '—' }}
+        </td>
+
+        <!-- Journal / Source -->
+        <td style="padding:11px 10px;font-family:var(--m-display);font-size:12px;color:var(--m-muted);vertical-align:top;">
+          {% if item.source %}
+          {% if item.source | length > 38 %}{{ item.source[:38] }}…{% else %}{{ item.source }}{% endif %}
+          {% endif %}
+        </td>
+
+        <!-- Collection tags -->
+        <td style="padding:11px 10px;vertical-align:top;">
+          <div style="display:flex;flex-wrap:wrap;gap:3px;">
+            {% for tag in item.collection_tags %}
+            <span data-col="{{ tag | e }}"
+                  onclick="setLibCollection(this.dataset.col)"
+                  title="Filter by {{ tag | e }}"
+                  style="cursor:pointer;display:inline-block;padding:2px 7px;
+                         font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;
+                         background:var(--m-surface-2);color:var(--m-muted);
+                         border-radius:2px;border:1px solid var(--m-rule-soft);
+                         text-transform:uppercase;"
+                  onmouseover="this.style.background='var(--m-surface-3)'"
+                  onmouseout="this.style.background='var(--m-surface-2)'">{{ tag }}</span>
+            {% endfor %}
+          </div>
+        </td>
+
+        <!-- Actions -->
+        <td style="padding:11px 20px;text-align:right;vertical-align:top;white-space:nowrap;">
+          {% if item.has_abstract %}
+          <button onclick="toggleAbstract({{ item.id }})"
+                  style="background:none;border:none;cursor:pointer;
+                         font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+                         color:var(--m-muted);padding:0 3px;"
+                  title="Show/hide abstract">ABS</button>
+          {% endif %}
+          {% if item.doi %}
+          <a href="https://doi.org/{{ item.doi }}" target="_blank" rel="noopener"
+             style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+                    color:var(--m-accent);text-decoration:none;padding:0 3px;"
+             title="Open DOI">DOI ↗</a>
+          {% endif %}
+        </td>
+
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% else %}
+  <div style="padding:40px 24px;text-align:center;font-family:var(--m-display);
+              font-style:italic;font-size:14px;color:var(--m-muted);">
+    No papers match your filters. Try a different search or clear the collection filter.
+  </div>
+  {% endif %}
+
+</div><!-- /#lib-table-area -->

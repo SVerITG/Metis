@@ -37,5 +37,5 @@ Hardcoded absolute paths are a common beginner mistake. So is running scripts fr
 - [R for Data Science](https://r4ds.hadley.nz/)
 
 ## Links to Metis library
-- `06_library/methods/data-management.md`
-- `06_library/methods/writing-for-journals.md`
+- `knowledge/library/methods/data-management.md`
+- `knowledge/library/methods/writing-for-journals.md`

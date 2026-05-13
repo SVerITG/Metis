@@ -163,9 +163,9 @@ updated: "2026-03-29"
 
 ## Learning Path
 
-- Start with `06_library/courses/epidemiology-foundations/`.
-- Pair this card with `06_library/methods/causal-inference.md` for design assumptions and with `06_library/methods/biostatistics-essentials.md` for effect measures and models.
-- Use `06_library/courses/research-writing/` when turning design choices into protocols and manuscripts.
+- Start with `knowledge/library/courses/epidemiology-foundations/`.
+- Pair this card with `knowledge/library/methods/causal-inference.md` for design assumptions and with `knowledge/library/methods/biostatistics-essentials.md` for effect measures and models.
+- Use `knowledge/library/courses/research-writing/` when turning design choices into protocols and manuscripts.
 - In the Learning Hub, this card aligns primarily with **Epidemiological methods** and also supports **Scientific communication**.
 
 ---

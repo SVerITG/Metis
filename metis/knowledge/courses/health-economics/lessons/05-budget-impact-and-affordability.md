@@ -37,5 +37,5 @@ This is especially important for public health programmes that require national 
 - [iDSI resources](https://www.idsihealth.org/)
 
 ## Links to Metis library
-- `06_library/methods/health-economics-basics.md`
-- `06_library/concepts/health-systems-strengthening.md`
+- `knowledge/library/methods/health-economics-basics.md`
+- `knowledge/library/concepts/health-systems-strengthening.md`

@@ -37,5 +37,5 @@ Common mistakes include vague data-management plans, unclear risk descriptions, 
 - [Declaration of Helsinki](https://www.wma.net/what-we-do/medical-ethics/declaration-of-helsinki/)
 
 ## Links to Metis library
-- `06_library/concepts/research-ethics.md`
-- `06_library/methods/writing-for-journals.md`
+- `knowledge/library/concepts/research-ethics.md`
+- `knowledge/library/methods/writing-for-journals.md`

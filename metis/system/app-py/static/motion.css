@@ -1,0 +1,187 @@
+/* ================================================================
+   Metis · motion.css — Archive-appropriate micro-animations
+   ================================================================
+   Drop into:    metis/system/app-py/static/motion.css
+   Load after:   styles.css   (in base.html <head>)
+   Activate by adding attributes to the .app shell:
+
+     <div class="app"
+           data-motion="on"      ← surface fades, button micro-press, theme transition
+           data-hairline="on"    ← underline-grows hover state
+           data-lift="on">       ← cards rise 1px on hover
+
+   Each feature is independent. Persist user choice in localStorage
+   if you wire a settings panel; otherwise leave on by default.
+
+   prefers-reduced-motion is honored — animations collapse to ~0ms
+   when the OS asks for reduced motion. No JS needed.
+
+   All durations and easings reference custom properties at the top
+   so you can globally re-tune the feel.
+   ================================================================ */
+
+/* Tunables (override per-instance via inline style if needed) */
+.app[data-motion="on"],
+.app[data-hairline="on"],
+.app[data-lift="on"] {
+  --m-mo-fast:    140ms;
+  --m-mo-base:    220ms;
+  --m-mo-slow:    320ms;
+  --m-mo-ease:    cubic-bezier(0.32, 0.08, 0.24, 1);
+  --m-mo-ease-out: cubic-bezier(0.16, 0.84, 0.32, 1);
+}
+
+/* ---- 1. Surface cross-fade (page turn) ----------------------
+   In base.html, give the surface root a key that changes per route
+   (Jinja: <main key="{{ request.path }}" class="surface-fade">).
+   HTMX users: add hx-swap="outerHTML swap:140ms settle:200ms" on
+   the wrapper instead — same effect, no key needed.
+   ------------------------------------------------------------- */
+.app[data-motion="on"] .surface-fade {
+  animation: m-surface-in var(--m-mo-slow) var(--m-mo-ease) both;
+}
+@keyframes m-surface-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* ---- 2. Staggered section reveal --------------------------- */
+.app[data-motion="on"] .surface-fade > * {
+  animation: m-section-in var(--m-mo-base) var(--m-mo-ease) both;
+}
+.app[data-motion="on"] .surface-fade > *:nth-child(1) { animation-delay: 0ms; }
+.app[data-motion="on"] .surface-fade > *:nth-child(2) { animation-delay: 60ms; }
+.app[data-motion="on"] .surface-fade > *:nth-child(3) { animation-delay: 120ms; }
+.app[data-motion="on"] .surface-fade > *:nth-child(4) { animation-delay: 180ms; }
+.app[data-motion="on"] .surface-fade > *:nth-child(5) { animation-delay: 240ms; }
+.app[data-motion="on"] .surface-fade > *:nth-child(n+6) { animation-delay: 300ms; }
+@keyframes m-section-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* ---- 3. Hairline reveal on hover ---------------------------
+   Add class="m-hairline" to elements you want underlined on hover
+   (e.g. ledger cells, news rail items, knowledge slipcases).
+   ------------------------------------------------------------ */
+.app[data-hairline="on"] .m-hairline {
+  position: relative;
+}
+.app[data-hairline="on"] .m-hairline::after {
+  content: "";
+  position: absolute;
+  left: 0; right: auto; bottom: -1px;
+  width: 0; height: 1px;
+  background: var(--m-accent);
+  transition: width var(--m-mo-base) var(--m-mo-ease-out);
+  pointer-events: none;
+}
+.app[data-hairline="on"] .m-hairline:hover::after { width: 100%; }
+
+/* Left-border variant — subtler, for list rows.
+   Add class="m-edge-left" to .run-row, .feed-row, etc. */
+.app[data-hairline="on"] .m-edge-left {
+  position: relative;
+  transition: padding-left var(--m-mo-fast) var(--m-mo-ease);
+}
+.app[data-hairline="on"] .m-edge-left::before {
+  content: "";
+  position: absolute;
+  left: -2px; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--m-accent);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform var(--m-mo-base) var(--m-mo-ease-out);
+  pointer-events: none;
+}
+.app[data-hairline="on"] .m-edge-left:hover::before { transform: scaleY(1); }
+.app[data-hairline="on"] .m-edge-left:hover { padding-left: calc(var(--m-s-3, 12px) + 4px); }
+
+/* ---- 4. Lift on hover (panels, kanban cards) --------------- */
+/* Auto-applied to .panel.panel-pad and .run-row */
+.app[data-lift="on"] .panel.panel-pad,
+.app[data-lift="on"] .run-row,
+.app[data-lift="on"] .m-lift {
+  transition:
+    box-shadow var(--m-mo-base) var(--m-mo-ease),
+    transform  var(--m-mo-base) var(--m-mo-ease),
+    border-color var(--m-mo-fast) ease;
+}
+.app[data-lift="on"] .panel.panel-pad:hover,
+.app[data-lift="on"] .run-row:hover,
+.app[data-lift="on"] .m-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--m-shadow);
+  border-color: var(--m-rule-strong);
+}
+
+/* ---- 5. Theme cross-fade (whole viewport) ------------------
+   Activates when [data-theme] flips between "archive" and "observatory".
+   ------------------------------------------------------------ */
+.app[data-motion="on"] {
+  transition:
+    background-color var(--m-mo-slow) ease,
+    color var(--m-mo-slow) ease;
+}
+.app[data-motion="on"] .panel,
+.app[data-motion="on"] .topbar,
+.app[data-motion="on"] .side {
+  transition:
+    background-color var(--m-mo-slow) ease,
+    border-color var(--m-mo-slow) ease,
+    color var(--m-mo-slow) ease;
+}
+
+/* ---- 6. Drawer-from-top (capture modal) -------------------
+   Add class="m-drawer-top" to the modal wrapper instead of plain
+   .modal. The capture-modal partial already uses .modal — change it
+   to .modal.m-drawer-top to opt in.
+   ------------------------------------------------------------ */
+.app[data-motion="on"] .m-drawer-top {
+  animation: m-drawer-in var(--m-mo-slow) var(--m-mo-ease-out) both;
+}
+@keyframes m-drawer-in {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ---- 7. Numeric ticker baseline ---------------------------
+   Tabular numerals so counts don't jitter when animating up.
+   The animation itself is JS — roll your own with requestAnimationFrame.
+   ---------------------------------------------------------------- */
+.tnum-tick {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ---- 8. Button micro-press --------------------------------- */
+.app[data-motion="on"] .btn,
+.app[data-motion="on"] .t-capture {
+  transition:
+    background-color var(--m-mo-fast) ease,
+    color var(--m-mo-fast) ease,
+    border-color var(--m-mo-fast) ease,
+    transform 80ms ease;
+}
+.app[data-motion="on"] .btn:active,
+.app[data-motion="on"] .t-capture:active {
+  transform: translateY(1px);
+}
+
+/* ---- 9. Reduced motion — system override ------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .app[data-motion="on"] *,
+  .app[data-motion="on"] *::before,
+  .app[data-motion="on"] *::after,
+  .app[data-hairline="on"] *,
+  .app[data-hairline="on"] *::before,
+  .app[data-hairline="on"] *::after,
+  .app[data-lift="on"] *,
+  .app[data-lift="on"] *::before,
+  .app[data-lift="on"] *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
+  }
+}

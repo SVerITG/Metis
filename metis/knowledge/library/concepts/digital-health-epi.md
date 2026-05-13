@@ -197,9 +197,9 @@ updated: "2026-03-29"
 
 ## Learning Path
 
-- Start with `06_library/courses/surveillance-methods/` and `06_library/courses/research-writing/`.
-- Pair this card with `06_library/concepts/current-challenges-2026.md` for the wider policy and governance context.
-- Use it alongside `06_library/methods/data-management.md` for interoperability, metadata, stewardship, and reproducibility issues.
+- Start with `knowledge/library/courses/surveillance-methods/` and `knowledge/library/courses/research-writing/`.
+- Pair this card with `knowledge/library/concepts/current-challenges-2026.md` for the wider policy and governance context.
+- Use it alongside `knowledge/library/methods/data-management.md` for interoperability, metadata, stewardship, and reproducibility issues.
 - In the Learning Hub, this card supports **Surveillance systems**, **Data management & R**, and **Scientific communication**.
 
 ---

@@ -37,5 +37,5 @@ Analysts should therefore pair every model with questions about data structure, 
 - [OpenIntro Statistics](https://www.openintro.org/book/os/)
 
 ## Links to Metis library
-- `06_library/methods/biostatistics-essentials.md`
-- `06_library/methods/study-designs.md`
+- `knowledge/library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/study-designs.md`

@@ -180,9 +180,9 @@ updated: "2026-03-30"
 
 ## Learning Path
 
-- Start with `06_library/courses/biostatistics/`.
-- Pair this card with `06_library/methods/study-designs.md` because measures of association and regression choices only make sense in relation to study design.
-- Use `06_library/methods/causal-inference.md` when deciding what to adjust for and how to interpret model coefficients causally.
+- Start with `knowledge/library/courses/biostatistics/`.
+- Pair this card with `knowledge/library/methods/study-designs.md` because measures of association and regression choices only make sense in relation to study design.
+- Use `knowledge/library/methods/causal-inference.md` when deciding what to adjust for and how to interpret model coefficients causally.
 - In the Learning Hub, this card aligns primarily with **Biostatistics** and secondarily with **Epidemiological methods** and **Data management & R**.
 
 ---

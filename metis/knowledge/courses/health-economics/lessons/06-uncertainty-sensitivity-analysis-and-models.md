@@ -37,5 +37,5 @@ Decision models are often needed when evidence must be combined across studies o
 - [iDSI Reference Case](https://www.idsihealth.org/resource-items/reference-case-for-economic-evaluation/)
 
 ## Links to Metis library
-- `06_library/methods/health-economics-basics.md`
-- `06_library/methods/systematic-reviews.md`
+- `knowledge/library/methods/health-economics-basics.md`
+- `knowledge/library/methods/systematic-reviews.md`

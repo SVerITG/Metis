@@ -82,9 +82,9 @@ updated: "2026-03-30"
 
 ## Learning Path
 
-- Pair this card with `06_library/courses/surveillance-methods/` for measuring elimination returns and with `06_library/courses/biostatistics/` for statistical modeling in economic evaluations.
-- Combine with `06_library/concepts/health-equity-sdh.md` when equity-adjusted cost-effectiveness or distributional considerations are required.
-- Link to `06_library/courses/research-writing/` for framing economic arguments within funding proposals or manuscripts.
+- Pair this card with `knowledge/library/courses/surveillance-methods/` for measuring elimination returns and with `knowledge/library/courses/biostatistics/` for statistical modeling in economic evaluations.
+- Combine with `knowledge/library/concepts/health-equity-sdh.md` when equity-adjusted cost-effectiveness or distributional considerations are required.
+- Link to `knowledge/library/courses/research-writing/` for framing economic arguments within funding proposals or manuscripts.
 - In the Learning Hub, this card links to **Health economics** (conceptual domain) and **Epidemiological methods** for modeling.
 
 ---

@@ -34,6 +34,15 @@
   {% endif %}
   {% endfor %}
   {% else %}
-  <div class="activity-empty">A quiet day so far. Capture an idea or run an agent to begin the feed.</div>
+  <div class="activity-empty" style="padding:18px 4px;line-height:1.6;">
+    <strong>Quiet day so far.</strong><br>
+    Try one of these to seed the feed:
+    <ul style="margin:8px 0 0 18px;padding:0;color:var(--m-muted);font-size:13px;">
+      <li>Click <em>Scan now</em> on the dateline above to fetch news + literature.</li>
+      <li>Press <kbd>Ctrl+K</kbd> to capture an idea (<code>i:</code>), note (<code>n:</code>), task (<code>t:</code>), or question (<code>q:</code>).</li>
+      <li>Run <code>/metis_morning</code> in Claude Code for a briefing.</li>
+      <li>If your library is empty, run <code>/metis-library-setup</code>.</li>
+    </ul>
+  </div>
   {% endif %}
 </div>

@@ -37,4 +37,4 @@ A good habit is to import, inspect, and document immediately rather than assumin
 - [R for Data Science](https://r4ds.hadley.nz/)
 
 ## Links to Metis library
-- `06_library/methods/data-management.md`
+- `knowledge/library/methods/data-management.md`

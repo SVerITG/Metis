@@ -26,9 +26,10 @@
   </div>
   {% endif %}
 
+  <!-- General news section -->
   <div class="news-rail-items" id="news-rail-items">
-    {% if items %}
-    {% for item in items %}
+    {% if news_items %}
+    {% for item in news_items %}
     <a class="news-rail-item" href="javascript:void(0)" onclick="openNewsSummary({{ item.id }})">
       <div class="news-rail-item-meta">
         <span class="news-rail-item-domain news-domain-{{ item.domain_slug }}">{{ item.domain }}</span>
@@ -45,9 +46,39 @@
     {% endfor %}
     {% else %}
     <div class="news-rail-empty">
-      Dispatch is empty. Run <code>/news-radar</code> to refresh.
+      No news yet. Run <code>/news-radar</code> to refresh.
     </div>
     {% endif %}
   </div>
+
+  <!-- Scientific Update section -->
+  {% if article_items or true %}
+  <div class="news-rail-section-header" style="margin-top:16px;padding-top:12px;border-top:1px solid var(--m-rule-soft);">
+    <span class="caps-label" style="font-size:9px;letter-spacing:0.12em;color:var(--m-muted);">Scientific Update</span>
+  </div>
+  <div class="news-rail-items">
+    {% if article_items %}
+    {% for item in article_items %}
+    <a class="news-rail-item news-rail-item--article" href="javascript:void(0)" onclick="openNewsSummary({{ item.id }})">
+      <div class="news-rail-item-meta">
+        <span class="news-rail-item-domain news-domain-{{ item.domain_slug }}">{{ item.domain }}</span>
+        <span class="news-rail-item-time">{{ item.time }}</span>
+        {% if item.signal %}
+        <span class="news-rail-item-signal {{ item.signal_class }}">{{ item.signal }}</span>
+        {% endif %}
+      </div>
+      <h4 class="news-rail-item-title">{{ item.title }}</h4>
+      {% if item.summary %}
+      <p class="news-rail-item-summary">{{ item.summary }}</p>
+      {% endif %}
+    </a>
+    {% endfor %}
+    {% else %}
+    <div class="news-rail-empty" style="font-size:11px;color:var(--m-muted);padding:8px 0;">
+      No new articles. Run <code>/librarian</code> to check for recent publications.
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
 
 </div>

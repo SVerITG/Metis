@@ -135,6 +135,6 @@ The practical lesson is that good surveillance balances signal sensitivity with 
 - [WHO AFRO IDSR resources](https://www.afro.who.int/health-topics/integrated-disease-surveillance-and-response)
 
 ## Links to Metis library
-- `06_library/methods/surveillance-systems.md`
-- `06_library/concepts/digital-health-epi.md`
-- `06_library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/concepts/digital-health-epi.md`
+- `knowledge/library/methods/outbreak-investigation.md`

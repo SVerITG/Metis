@@ -31,7 +31,7 @@ The `metis-rc` MCP server is registered globally. **Always call the MCP tools im
 Five sections, each max 3-4 lines:
 
 1. **Date line** — `Good morning, [User] — [Weekday, DD MMM YYYY]`
-2. **News** — 2-3 items from general news (health, outbreaks, sleeping sickness, tropical diseases, global events). One line per item: domain tag + headline + one-sentence why-it-matters.
+2. **News** — 2-3 items from general news (health, outbreaks, tropical diseases, NTDs, global health, AI in science). One line per item: domain tag + headline + one-sentence why-it-matters.
 3. **Scientific Update** — 1-2 new articles in the field if available. Title + journal + one sentence on relevance. If none, skip this section silently.
 4. **Idea / Inspiration** — one thought. Either: a connection between a recent idea and something in the news/literature, OR a brief interesting fact relevant to research or public health. Write it as a single insight, not a list.
 5. **Focus line** — one sentence only: what is the single most valuable thing to do in the next 2 hours. Base it on tasks only if something is clearly urgent/blocked; otherwise pick the highest-impact research action.

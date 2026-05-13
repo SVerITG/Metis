@@ -50,6 +50,6 @@ After a district foodborne outbreak, an after-action review may reveal that the 
 - [WHO Rapid Risk Assessment Manual](https://www.who.int/publications/i/item/9789241510141)
 
 ## Links to Metis library
-- `06_library/methods/outbreak-investigation.md`
-- `06_library/methods/writing-for-journals.md`
-- `06_library/methods/surveillance-systems.md`
+- `knowledge/library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/writing-for-journals.md`
+- `knowledge/library/methods/surveillance-systems.md`

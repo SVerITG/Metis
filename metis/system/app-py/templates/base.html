@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Metis — {% block title %}Dashboard{% endblock %}</title>
+  <link rel="icon" type="image/png" href="/static/metis-icon.png">
 
   <!-- Bootstrap 5 (grid + card components used in tab content) -->
   <link rel="stylesheet"
@@ -16,17 +17,33 @@
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <!-- Archive design system — loaded after Bootstrap so it overrides -->
-  <link rel="stylesheet" href="/static/styles.css?v=9b">
+  <link rel="stylesheet" href="/static/styles.css?v=9d">
+  <!-- Archive micro-animations -->
+  <link rel="stylesheet" href="/static/motion.css">
 
   <!-- HTMX — served locally -->
   <script src="/static/htmx.min.js"></script>
+
+  <!-- Theme: restore before first paint to avoid flash -->
+  <script>
+    (function () {
+      var VALID = ['archive','fieldwork','paper','observatory','midnight','cavern'];
+      try {
+        var t = localStorage.getItem('metis-theme');
+        if (t && VALID.indexOf(t) !== -1) {
+          document.documentElement.dataset.theme = (t === 'archive') ? '' : t;
+        }
+      } catch (e) {}
+    })();
+  </script>
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
 
 <!-- =====================================================================
      App shell — Archive sidebar layout
 ====================================================================== -->
-<div class="app" id="app-shell" data-side="expanded">
+<div class="app" id="app-shell" data-side="expanded" data-motion="on" data-hairline="on" data-lift="on">
 
   <!-- ---- Sidebar ---- -->
   <aside class="side">
@@ -58,20 +75,20 @@
       </div>
       <div class="b-text">
         <div class="b-word">Meti<em>s</em></div>
-        <div class="b-sub">Archive</div>
+        <div class="b-sub">Research Cortex</div>
       </div>
     </div>
 
     <!-- Surfaces nav section -->
     <div class="nav-sec">
-      <div class="nav-label"><span>Surfaces</span><span>IX</span></div>
+      <div class="nav-label"><span>Surfaces</span><span>X</span></div>
 
       <!-- 01 Today -->
       <div class="nav-item {% if active_tab == 'today' %}active{% endif %}"
            data-tab="today"
            hx-get="/api/tab/today"
            hx-target="#tab-content"
-           hx-swap="outerHTML"
+           hx-swap="innerHTML"
            hx-select="#tab-content"
            hx-push-url="/today"
            onclick="setNavActive(this,'today')"
@@ -91,34 +108,35 @@
         <span class="n-tip">Today</span>
       </div>
 
-      <!-- 02 Knowledge -->
-      <div class="nav-item {% if active_tab == 'knowledge' %}active{% endif %}"
-           data-tab="knowledge"
-           hx-get="/api/tab/knowledge"
+      <!-- 02 News -->
+      <div class="nav-item {% if active_tab == 'news' %}active{% endif %}"
+           data-tab="news"
+           hx-get="/api/tab/news"
            hx-target="#tab-content"
-           hx-swap="outerHTML"
+           hx-swap="innerHTML"
            hx-select="#tab-content"
-           hx-push-url="/knowledge"
-           onclick="setNavActive(this,'knowledge')"
+           hx-push-url="/news"
+           onclick="setNavActive(this,'news')"
            role="button" tabindex="0"
            onkeydown="if(event.key==='Enter'){this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-          <rect x="2.5" y="2.5" width="3" height="11"/>
-          <rect x="6" y="3.5" width="3" height="10"/>
-          <rect x="9.5" y="4.5" width="4" height="9"/>
-          <line x1="10.5" y1="6.5" x2="12.5" y2="6.5"/>
+          <path d="M8 11 a4 4 0 0 0 0-6"/>
+          <path d="M8 11 a4 4 0 0 1 0-6"/>
+          <path d="M8 13 a7 7 0 0 0 0-10"/>
+          <path d="M8 13 a7 7 0 0 1 0-10"/>
+          <circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/>
         </svg>
-        <span class="n-label">Knowledge</span>
+        <span class="n-label">News</span>
         <span class="n-meta">—</span>
-        <span class="n-tip">Knowledge</span>
+        <span class="n-tip">News Radar</span>
       </div>
 
-      <!-- 03 Thinking -->
+      <!-- 03 Reflection -->
       <div class="nav-item {% if active_tab == 'thinking' %}active{% endif %}"
            data-tab="thinking"
            hx-get="/api/tab/thinking"
            hx-target="#tab-content"
-           hx-swap="outerHTML"
+           hx-swap="innerHTML"
            hx-select="#tab-content"
            hx-push-url="/thinking"
            onclick="setNavActive(this,'thinking')"
@@ -139,7 +157,7 @@
            data-tab="planner"
            hx-get="/api/tab/planner"
            hx-target="#tab-content"
-           hx-swap="outerHTML"
+           hx-swap="innerHTML"
            hx-select="#tab-content"
            hx-push-url="/planner"
            onclick="setNavActive(this,'planner')"
@@ -164,7 +182,7 @@
            data-tab="work"
            hx-get="/api/tab/work"
            hx-target="#tab-content"
-           hx-swap="outerHTML"
+           hx-swap="innerHTML"
            hx-select="#tab-content"
            hx-push-url="/work"
            onclick="setNavActive(this,'work')"
@@ -185,7 +203,7 @@
            data-tab="meetings"
            hx-get="/api/tab/meetings"
            hx-target="#tab-content"
-           hx-swap="outerHTML"
+           hx-swap="innerHTML"
            hx-select="#tab-content"
            hx-push-url="/meetings"
            onclick="setNavActive(this,'meetings')"
@@ -205,7 +223,7 @@
            data-tab="learning"
            hx-get="/api/tab/learning"
            hx-target="#tab-content"
-           hx-swap="outerHTML"
+           hx-swap="innerHTML"
            hx-select="#tab-content"
            hx-push-url="/learning"
            onclick="setNavActive(this,'learning')"
@@ -226,7 +244,7 @@
            data-tab="teach"
            hx-get="/api/tab/teach"
            hx-target="#tab-content"
-           hx-swap="outerHTML"
+           hx-swap="innerHTML"
            hx-select="#tab-content"
            hx-push-url="/teach"
            onclick="setNavActive(this,'teach')"
@@ -242,6 +260,28 @@
         <span class="n-tip">Teach</span>
       </div>
 
+      <!-- 09 Library -->
+      <div class="nav-item {% if active_tab == 'knowledge' %}active{% endif %}"
+           data-tab="knowledge"
+           hx-get="/api/tab/knowledge"
+           hx-target="#tab-content"
+           hx-swap="innerHTML"
+           hx-select="#tab-content"
+           hx-push-url="/knowledge"
+           onclick="setNavActive(this,'knowledge')"
+           role="button" tabindex="0"
+           onkeydown="if(event.key==='Enter'){this.click();}">
+        <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <rect x="2.5" y="2.5" width="3" height="11"/>
+          <rect x="6" y="3.5" width="3" height="10"/>
+          <rect x="9.5" y="4.5" width="4" height="9"/>
+          <line x1="10.5" y1="6.5" x2="12.5" y2="6.5"/>
+        </svg>
+        <span class="n-label">Library</span>
+        <span class="n-meta">—</span>
+        <span class="n-tip">Library</span>
+      </div>
+
     </div><!-- /.nav-sec surfaces -->
 
     <!-- System nav section -->
@@ -253,7 +293,7 @@
            data-tab="metis"
            hx-get="/api/tab/metis"
            hx-target="#tab-content"
-           hx-swap="outerHTML"
+           hx-swap="innerHTML"
            hx-select="#tab-content"
            hx-push-url="/metis"
            onclick="setNavActive(this,'metis')"
@@ -273,7 +313,7 @@
     <!-- Sidebar footer -->
     <div class="side-foot">
       <span class="mini-ava">S</span>
-      <span class="sf-text">Stan · Research Cortex</span>
+      <span class="sf-text">Research Cortex</span>
     </div>
 
   </aside><!-- /.side -->
@@ -301,8 +341,22 @@
           <span>Find across the archive…</span>
         </div>
 
+        <!-- Update button -->
+        <button id="update-btn"
+                onclick="runMetisUpdate()"
+                title="Update — scan news, sync library, check projects"
+                style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;
+                       padding:5px 12px;background:transparent;border:1px solid var(--m-rule);
+                       border-radius:2px;color:var(--m-muted);cursor:pointer;white-space:nowrap;
+                       transition:border-color .15s,color .15s;"
+                onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
+                onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'">
+          Update
+        </button>
+        <span id="update-spinner" style="display:none;font-family:var(--m-mono);font-size:9px;
+              letter-spacing:0.1em;color:var(--m-muted);">UPDATING…</span>
+
         <!-- Theme switch -->
-        <span class="theme-label" id="theme-label">ARCHIVE</span>
         <div class="theme-switch"
              id="theme-switch"
              data-mode="archive"
@@ -349,7 +403,7 @@
     </div><!-- /.topbar -->
 
     <!-- Tab content (scroll area) -->
-    <div class="scroll" id="tab-content" style="padding: 28px 32px 64px;">
+    <div class="scroll surface-fade" id="tab-content" style="padding: 28px 32px 64px;">
       {% block content %}{% endblock %}
     </div>
 
@@ -373,12 +427,12 @@
         crossorigin="anonymous"></script>
 
 <!-- Metis app JS -->
-<script src="/static/app.js?v=9b"></script>
+<script src="/static/app.js?v=9d"></script>
 
 <!-- Archive shell JS -->
 <script>
   const NAV_LABELS = {
-    today: 'Today', knowledge: 'Knowledge', thinking: 'Reflection',
+    today: 'Today', knowledge: 'Library', news: 'News', thinking: 'Reflection',
     planner: 'Planner', work: 'Work', meetings: 'Meetings',
     learning: 'Learning', teach: 'Teach', metis: 'Metis'
   };
@@ -395,14 +449,62 @@
     app.dataset.side = app.dataset.side === 'rail' ? 'expanded' : 'rail';
   }
 
-  function toggleTheme() {
-    const sw = document.getElementById('theme-switch');
-    const lbl = document.getElementById('theme-label');
-    const isObs = sw.dataset.mode === 'observatory';
-    sw.dataset.mode = isObs ? 'archive' : 'observatory';
-    lbl.textContent = isObs ? 'ARCHIVE' : 'OBSERVATORY';
-    document.documentElement.dataset.theme = isObs ? '' : 'observatory';
+  // 6-theme system: 3 light (archive, fieldwork, paper) + 3 dark (observatory, midnight, cavern).
+  // Toggle switches between the user's chosen light theme and chosen dark theme.
+  var _THEME_GROUP = {
+    archive: 'light', fieldwork: 'light', paper: 'light',
+    observatory: 'dark', midnight: 'dark', cavern: 'dark'
+  };
+
+  function applyTheme(theme) {
+    var group = _THEME_GROUP[theme] || 'light';
+    // Apply to DOM — archive maps to empty string (default :root block)
+    document.documentElement.dataset.theme = (theme === 'archive') ? '' : theme;
+    // Sync topbar switch icon
+    var sw = document.getElementById('theme-switch');
+    if (sw) sw.dataset.mode = group;
+    // Sync swatch highlights
+    document.querySelectorAll('.theme-swatch').forEach(function (el) {
+      el.dataset.active = (el.dataset.theme === theme) ? 'true' : 'false';
+    });
+    // Save: current theme + chosen-for-group
+    try {
+      localStorage.setItem('metis-theme', theme);
+      localStorage.setItem('metis-' + group + '-theme', theme);
+    } catch (e) {}
+    // Persist server-side (best-effort)
+    try {
+      fetch('/api/settings/theme', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ theme: theme })
+      }).catch(function () {});
+    } catch (e) {}
   }
+
+  function toggleTheme() {
+    var current = document.documentElement.dataset.theme || 'archive';
+    if (!current) current = 'archive';
+    var currentGroup = _THEME_GROUP[current] || 'light';
+    var target;
+    if (currentGroup === 'light') {
+      try { target = localStorage.getItem('metis-dark-theme') || 'observatory'; } catch (e) { target = 'observatory'; }
+    } else {
+      try { target = localStorage.getItem('metis-light-theme') || 'archive'; } catch (e) { target = 'archive'; }
+    }
+    applyTheme(target);
+  }
+
+  // Sync topbar switch on first load.
+  (function () {
+    var VALID = ['archive','fieldwork','paper','observatory','midnight','cavern'];
+    try {
+      var t = localStorage.getItem('metis-theme');
+      if (t && VALID.indexOf(t) !== -1) {
+        document.addEventListener('DOMContentLoaded', function () { applyTheme(t); });
+      }
+    } catch (e) {}
+  })();
 </script>
 
 </body>

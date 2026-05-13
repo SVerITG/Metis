@@ -17,4 +17,4 @@ This course introduces the practical workflow of outbreak investigation for epid
 - CDC Principles of Epidemiology and Field Epidemiology Manual
 - WHO outbreak investigation and rapid risk assessment guidance
 - ECDC operational public health resources
-- Related Metis cards in `06_library/methods/` and `06_library/concepts/`
+- Related Metis cards in `knowledge/library/methods/` and `knowledge/library/concepts/`

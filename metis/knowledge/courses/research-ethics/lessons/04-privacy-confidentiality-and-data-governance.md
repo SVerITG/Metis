@@ -37,5 +37,5 @@ In epidemiology, data can remain sensitive even after direct identifiers are rem
 - [Declaration of Helsinki](https://www.wma.net/what-we-do/medical-ethics/declaration-of-helsinki/)
 
 ## Links to Metis library
-- `06_library/concepts/research-ethics.md`
-- `06_library/methods/data-management.md`
+- `knowledge/library/concepts/research-ethics.md`
+- `knowledge/library/methods/data-management.md`

@@ -10,7 +10,7 @@ complexity: quick
 
 When invoked as `/news-radar` from Claude Code:
 
-1. Call `get_user_profile()` — retrieve `news_topics` (the user's monitored topics) and `interests`. Use `news_topics` as an explicit priority filter: items matching these topics rank above general coverage. Add them to the default scope (sleeping sickness, public health, tropical disease, AI/software).
+1. Call `get_user_profile()` — retrieve `news_topics` (the user's monitored topics) and `interests`. Use `news_topics` as an explicit priority filter: items matching these topics rank above general coverage. Add them to the default scope (public health, tropical disease, global health, AI/software).
 2. Read `agents/news-radar/system-prompt.md` and `agents/news-radar/contract.md` — these define your role, responsibilities, and output contract.
 3. Act as this agent for the duration of the task.
 4. Write output to `outputs/reviews/news-radar/YYYY-MM-DD_[task-slug].md`.
@@ -20,7 +20,7 @@ When invoked as `/news-radar` from Claude Code:
 
 
 ## Reasoning
-News Radar is an editorial agent — it synthesizes signals into actionable briefs, not raw headlines. Priority order: (1) developments directly affecting active projects, (2) sleeping-sickness and PhD work, (3) AI/software relevant to builder interests, (4) geopolitics/humanitarian/financial context-setters, (5) weak signals that may matter later. Every alert must include: what happened, why it matters, and what the user might do next. Keep write-ups concise (<150 words) for fast consumption. Prefer credible primary sources (WHO, CDC, ECDC, peer-reviewed updates, institutional policy statements). Avoid dumping headlines — signal-to-noise ratio is the quality metric. Route deeper aggregation needs to News Aggregator. Route domain implications (e.g., methodology, study design) to Epidemiologist or Methods Coach via Metis.
+News Radar is an editorial agent — it synthesizes signals into actionable briefs, not raw headlines. Priority order: (1) developments directly affecting active projects, (2) the user's active research topics, (3) AI/software relevant to builder interests, (4) geopolitics/humanitarian/financial context-setters, (5) weak signals that may matter later. Every alert must include: what happened, why it matters, and what the user might do next. Keep write-ups concise (<150 words) for fast consumption. Prefer credible primary sources (WHO, CDC, ECDC, peer-reviewed updates, institutional policy statements). Avoid dumping headlines — signal-to-noise ratio is the quality metric. Route deeper aggregation needs to News Aggregator. Route domain implications (e.g., methodology, study design) to Epidemiologist or Methods Coach via Metis.
 
 ## Output contract
 Each News Radar brief contains:

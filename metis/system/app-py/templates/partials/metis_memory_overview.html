@@ -1,0 +1,66 @@
+{# Memory overview — stats + filter chips + archive control.
+   Inputs: total_memories, week_count, oldest, by_type{}, archive_days #}
+<div class="token-stats-row">
+  <div class="token-stat">
+    <div class="token-stat-num">{{ total_memories }}</div>
+    <div class="token-stat-label">total memories</div>
+  </div>
+  <div class="token-stat">
+    <div class="token-stat-num">{{ week_count }}</div>
+    <div class="token-stat-label">this week</div>
+  </div>
+  <div class="token-stat">
+    <div class="token-stat-num" style="font-size:18px;">{{ oldest or '—' }}</div>
+    <div class="token-stat-label">oldest entry</div>
+  </div>
+  <div class="token-stat">
+    <div class="token-stat-num">{{ by_type | length }}</div>
+    <div class="token-stat-label">distinct types</div>
+  </div>
+</div>
+
+<div class="mem-filter-strip" id="mem-filter-strip">
+  {% set filters = [
+    ('all', 'All'),
+    ('discovery', 'Discovery'),
+    ('decision', 'Decision'),
+    ('implementation', 'Implementation'),
+    ('issue', 'Issue'),
+    ('note', 'Note'),
+    ('idea', 'Idea'),
+  ] %}
+  {% for slug, label in filters %}
+  <button class="mem-filter" data-type="{{ slug }}" data-active="{{ 'true' if slug == 'all' else 'false' }}"
+          onclick="filterMemoryStream('{{ slug }}', this)"
+          title="Show {{ label.lower() }} only">
+    {{ label }}{% if slug != 'all' and by_type.get(slug) %} · {{ by_type.get(slug) }}{% endif %}
+  </button>
+  {% endfor %}
+</div>
+
+<div class="metis-setting-row">
+  <div>
+    <div class="ms-title">Archive memories older than</div>
+    <div class="ms-help">Older entries are moved to a cold archive on disk and hidden from the stream. Set to "Never" to keep everything visible.</div>
+  </div>
+  <div class="ms-control">
+    <select id="memory-archive-select" onchange="saveMemoryArchive(this.value)">
+      <option value="0"   {% if archive_days == 0   %}selected{% endif %}>Never</option>
+      <option value="30"  {% if archive_days == 30  %}selected{% endif %}>30 days</option>
+      <option value="60"  {% if archive_days == 60  %}selected{% endif %}>60 days</option>
+      <option value="90"  {% if archive_days == 90  %}selected{% endif %}>90 days</option>
+      <option value="180" {% if archive_days == 180 %}selected{% endif %}>180 days</option>
+      <option value="365" {% if archive_days == 365 %}selected{% endif %}>1 year</option>
+    </select>
+  </div>
+</div>
+
+<div class="metis-setting-row">
+  <div>
+    <div class="ms-title">Export memories</div>
+    <div class="ms-help">A snapshot of the memory store, written to <code style="font-family:var(--m-mono);font-size:11px;">journal/exports/</code>.</div>
+  </div>
+  <div class="ms-control">
+    <button class="btn btn--sec btn--caps" onclick="openMetisExport()">Export</button>
+  </div>
+</div>

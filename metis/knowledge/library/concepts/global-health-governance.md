@@ -98,9 +98,9 @@ updated: "2026-03-29"
 
 ## Learning Path
 
-- Pair this card with `06_library/concepts/current-challenges-2026.md` for policy, funding, and inequity context.
-- Link it to `06_library/concepts/elimination-framework.md` when thinking about how governance affects elimination validation and post-certification funding.
-- Add `06_library/courses/research-writing/` when writing policy briefs or institutional proposals for global health governance.
+- Pair this card with `knowledge/library/concepts/current-challenges-2026.md` for policy, funding, and inequity context.
+- Link it to `knowledge/library/concepts/elimination-framework.md` when thinking about how governance affects elimination validation and post-certification funding.
+- Add `knowledge/library/courses/research-writing/` when writing policy briefs or institutional proposals for global health governance.
 - In the Learning Hub, this card relates to **Global governance** (custom domain) and supports **Surveillance systems** and **Epidemiological methods** indirectly.
 
 ---

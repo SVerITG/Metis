@@ -1,0 +1,61 @@
+<div style="border-top:1px solid var(--m-rule-soft);padding-top:14px;">
+
+  <!-- Saved confirmation -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+    <span style="color:var(--m-ok);font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;">&#10003; SAVED — {{ title[:60] }}</span>
+  </div>
+
+  <!-- Extracted structure -->
+  {% if extracted.decisions or extracted.actions or extracted.follow_ups %}
+  <div style="margin-bottom:16px;">
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:8px;">EXTRACTED FROM NOTES</div>
+
+    {% if extracted.decisions %}
+    <div style="margin-bottom:10px;">
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-accent);margin-bottom:4px;">DECISIONS ({{ extracted.decisions|length }})</div>
+      {% for d in extracted.decisions %}
+      <div style="font-family:var(--m-sans);font-size:13px;color:var(--m-ink);padding:3px 0 3px 10px;border-left:2px solid var(--m-accent);">{{ d }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if extracted.actions %}
+    <div style="margin-bottom:10px;">
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-ochre);margin-bottom:4px;">ACTION ITEMS ({{ extracted.actions|length }})</div>
+      {% for a in extracted.actions %}
+      <div style="font-family:var(--m-sans);font-size:13px;color:var(--m-ink);padding:3px 0 3px 10px;border-left:2px solid var(--m-ochre);">{{ a }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if extracted.follow_ups %}
+    <div style="margin-bottom:10px;">
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:4px;">FOLLOW-UPS ({{ extracted.follow_ups|length }})</div>
+      {% for f in extracted.follow_ups %}
+      <div style="font-family:var(--m-sans);font-size:13px;color:var(--m-ink);padding:3px 0 3px 10px;border-left:2px solid var(--m-rule);">{{ f }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Connections -->
+  {% if connections %}
+  <div style="border-top:1px solid var(--m-rule-soft);padding-top:12px;">
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:6px;">{{ connections|length }} CONNECTION{{ 'S' if connections|length != 1 else '' }} SURFACED</div>
+    {% for c in connections %}
+    {% set src_colors = {'library': 'var(--m-accent)', 'meeting': 'var(--m-ochre)', 'news': 'var(--m-ok)', 'idea': 'var(--m-muted)'} %}
+    <div style="display:flex;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid var(--m-rule-soft);">
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:{{ src_colors.get(c.source, 'var(--m-muted)') }};flex-shrink:0;width:48px;">{{ c.source.upper() }}</span>
+      <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.3;">{{ (c.title or '')[:80] }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">NO CONNECTIONS FOUND YET — GROW YOUR LIBRARY TO SEE LINKS</div>
+  {% endif %}
+
+  <div style="margin-top:14px;">
+    <button class="btn btn--ghost btn--caps" onclick="closeMeetingImport(); htmx.trigger('#meetings-list', 'refresh')">Close &amp; Refresh</button>
+  </div>
+</div>

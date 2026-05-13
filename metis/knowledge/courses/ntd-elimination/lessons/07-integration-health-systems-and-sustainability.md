@@ -37,6 +37,6 @@ Integration does not mean abandoning disease-specific expertise. It means ensuri
 - [WHO NTD resources](https://www.who.int/teams/control-of-neglected-tropical-diseases)
 
 ## Links to Metis library
-- `06_library/concepts/health-systems-strengthening.md`
-- `06_library/concepts/elimination-framework.md`
-- `06_library/methods/surveillance-systems.md`
+- `knowledge/library/concepts/health-systems-strengthening.md`
+- `knowledge/library/concepts/elimination-framework.md`
+- `knowledge/library/methods/surveillance-systems.md`

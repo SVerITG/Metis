@@ -6,9 +6,36 @@ effort: thorough
 complexity: chain
 ---
 
+## Input handling
+
+`/metis-config` accepts an optional section name argument.
+
+**No argument** → run the full wizard (all 13 sections, or resume from where the user left off).
+
+**Section argument** → jump directly to that section and re-run it only. Then write the updated values and return. Supported shortcuts:
+
+| Argument | Runs section |
+|---|---|
+| `identity` / `name` / `role` | Section 1 — Identity |
+| `projects` | Section 2 — Active projects |
+| `news` / `topics` | Section 3 — News topics |
+| `data` / `privacy` / `security` | Sections 4 & 5 — Data protection + Cybersecurity |
+| `writing` / `style` | Section 11 — Writing style |
+| `schedule` / `hours` | Section 12 — Working hours |
+| `notifications` | Section 13 — Notification preferences |
+| `wizard` / `full` | Force full wizard from Section 0 |
+
+After a section re-run, call:
+- `write_user_config(yaml_content)` to write the updated YAML
+- `write_user_preferences(json_content)` to write updated JSON preferences (sections 3, 5)
+
+For a full re-run, call `remove_first_run_marker()` at the end if it still exists.
+
+---
+
 ## Purpose
 
-`/metis_config` is the Metis personalisation wizard. It runs once after install (or any time you want to reconfigure) and walks you through 13 short sections that turn the generic Metis system into your personal research cortex.
+`/metis-config` is the Metis personalisation wizard. It runs once after install (or any time you want to reconfigure) and walks you through 13 short sections that turn the generic Metis system into your personal research cortex.
 
 **This wizard is designed for first-time users who have never used Claude Code or built an AI workflow.** Every step is plain English. Where a technical decision is needed, the wizard explains the trade-off in researcher terms, not developer terms.
 
@@ -383,4 +410,8 @@ Show:
 >
 > Welcome to Metis."
 
-Log the wizard run via `log_agent_run("metis-config", "Personalisation wizard completed", "", "system/config/user-config.yaml")`.
+Write all config via MCP tools — do not edit files directly:
+- `write_user_config(yaml_content)` — writes `system/config/user-config.yaml`
+- `write_user_preferences(json_content)` — writes `system/config/user-preferences.json`
+- `remove_first_run_marker()` — clears the first-run marker if it exists
+- `log_agent_run("metis-config", "Personalisation wizard completed", "", "system/config/user-config.yaml")` — logs the run
