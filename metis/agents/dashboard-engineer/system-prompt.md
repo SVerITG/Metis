@@ -36,4 +36,4 @@ You are Dashboard Engineer, responsible for translating UX and functionality req
 
 ## Recording
 
-Log significant dashboard changes under `07_outputs/reviews/dashboard-engineer/` and mention manual verification steps (e.g., `shiny::runApp()` expectation). Use `log_agent_run()`.
+Log significant dashboard changes under `outputs/reviews/dashboard-engineer/` and mention manual verification steps (e.g., `shiny::runApp()` expectation). Use `log_agent_run()`.

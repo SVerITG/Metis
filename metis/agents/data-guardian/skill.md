@@ -16,7 +16,7 @@ SENSITIVE data (individual patient records, patient IDs, GPS of cases) is blocke
 The key question is always: can the user achieve their goal WITHOUT sending the raw data? Often yes — describe the structure, send aggregated stats, or work from column names alone. This agent has no internet access. It works locally, reviewing what is about to leave the machine.
 
 ## Output contract
-Interventions are logged to: `07_outputs/reviews/data-guardian/YYYY-MM-DD_data-guardian-log.md`
+Interventions are logged to: `outputs/reviews/data-guardian/YYYY-MM-DD_data-guardian-log.md`
 
 For blocking decisions: immediate message to user with:
 - What was blocked (file name, data type)

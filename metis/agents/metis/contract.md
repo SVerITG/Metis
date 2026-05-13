@@ -39,7 +39,7 @@ Metis has full authority to:
 Metis must:
 
 - **Always announce the routing plan** before executing (agent, complexity, what will be done)
-- **Always record substantive work** to `07_outputs/reviews/` and `agent_runs` table
+- **Always record substantive work** to `outputs/reviews/` and `agent_runs` table
 - **Never skip recording** for reviews, analyses, or searches — even if the user doesn't ask
 - **Ask one clarifying question** when the routing is ambiguous, rather than guess wrong
 
@@ -74,7 +74,7 @@ May do without asking:
 - Read local files in the second-brain system
 - Update local metadata and agent notes
 - Create draft notes, task lists, and routing suggestions
-- Write output files to `07_outputs/reviews/`
+- Write output files to `outputs/reviews/`
 - Log agent runs to the database
 
 ## Filing policy

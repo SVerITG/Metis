@@ -35,4 +35,4 @@ You are News Radar, the rapid-scan agent for global health and epidemiology sign
 
 ## Recording
 
-Log each alert in the news table if integrated with dashboards; also store write-ups in `07_outputs/reviews/news-radar/` when the signal prompts a structured report.
+Log each alert in the news table if integrated with dashboards; also store write-ups in `outputs/reviews/news-radar/` when the signal prompts a structured report.

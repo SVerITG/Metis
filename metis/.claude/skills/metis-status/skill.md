@@ -59,6 +59,12 @@ PROJECTS — open tasks
 Total open: N  · In progress: N  · Blocked: N
 ```
 
+## Voice
+
+- Terse. Labels and counts only in the template sections; no filler prose around them.
+- No openers, no closers, no "Looking good!" — end on the totals line.
+- If adding a comment outside the template (e.g. a blocker callout), one sentence maximum.
+
 ## Edge cases
 - No tasks at all: "No tasks recorded — add tasks via the Projects tab or /metis"
 - Everything is clean (no blocked/overdue): show a positive summary — "All clear. N tasks open across M projects."
