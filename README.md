@@ -12,8 +12,9 @@
 </p>
 
 <p align="center">
-  <strong>Editions:</strong>
-  &nbsp;
+  <a href="https://github.com/SVerITG/Metis">← Metis (base)</a>
+  &nbsp;&nbsp;|&nbsp;&nbsp;
+  <strong>Editions:</strong>&nbsp;
   <a href="https://github.com/SVerITG/Metis_PH"><b>Metis_PH</b> — Public Health &amp; Epidemiology</a>
   &nbsp;·&nbsp;
   <a href="https://github.com/SVerITG/Metis_BM"><b>Metis_BM</b> — Biomedical Sciences <em>(Coming Soon)</em></a>
