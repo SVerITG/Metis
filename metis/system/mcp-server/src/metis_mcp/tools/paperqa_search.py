@@ -18,6 +18,35 @@ from mcp.types import TextContent
 from metis_mcp.config import paths
 from metis_mcp.app_instance import app
 
+
+def _get_api_key() -> str:
+    """Return ANTHROPIC_API_KEY from env or metis/system/.env fallback."""
+    key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if key:
+        return key
+    env_file = paths.root / "system" / ".env"
+    if env_file.exists():
+        for line in env_file.read_text().splitlines():
+            line = line.strip()
+            if line.startswith("ANTHROPIC_API_KEY=") and not line.startswith("#"):
+                key = line.split("=", 1)[1].strip().strip('"').strip("'")
+                if key:
+                    os.environ["ANTHROPIC_API_KEY"] = key
+                    return key
+    return ""
+
+
+def _pdf_is_readable(path: Path) -> bool:
+    """Quick pre-check using pypdf strict=False to skip malformed PDFs."""
+    try:
+        from pypdf import PdfReader
+        with open(path, "rb") as f:
+            reader = PdfReader(f, strict=False)
+            _ = len(reader.pages)
+        return True
+    except Exception:
+        return False
+
 _INDEX_PATH: Path | None = None
 
 
@@ -77,9 +106,12 @@ async def index_library_pdfs(
     if not pdfs:
         return [TextContent(type="text", text=f"No PDFs found in {lib_dir}.")]
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    api_key = _get_api_key()
     if not api_key:
-        return [TextContent(type="text", text="ANTHROPIC_API_KEY not set — cannot call Claude Haiku for PaperQA.")]
+        return [TextContent(type="text", text=(
+            "ANTHROPIC_API_KEY not set. Add it to metis/system/.env as:\n"
+            "  ANTHROPIC_API_KEY=sk-ant-..."
+        ))]
 
     settings = Settings(
         llm="claude-haiku-4-5-20251001",
@@ -87,9 +119,12 @@ async def index_library_pdfs(
     )
 
     docs = Docs()
-    indexed, errors = 0, []
+    indexed, errors, skipped = 0, [], []
 
     for pdf in pdfs:
+        if not _pdf_is_readable(pdf):
+            skipped.append(pdf.name)
+            continue
         try:
             await docs.aadd(str(pdf), settings=settings)
             indexed += 1
@@ -104,6 +139,10 @@ async def index_library_pdfs(
         return [TextContent(type="text", text=f"Indexed {indexed} PDFs but failed to save index: {exc}")]
 
     msg = f"Indexed {indexed}/{len(pdfs)} PDFs. Index saved to {idx}."
+    if skipped:
+        msg += f"\n\nSkipped {len(skipped)} unreadable PDFs: " + ", ".join(skipped[:5])
+        if len(skipped) > 5:
+            msg += f" … and {len(skipped) - 5} more."
     if errors:
         msg += f"\n\nErrors ({len(errors)}):\n" + "\n".join(errors[:10])
         if len(errors) > 10:
@@ -136,9 +175,12 @@ async def ask_library(
             "No index found. Run index_library_pdfs() first to build the PDF index."
         ))]
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    api_key = _get_api_key()
     if not api_key:
-        return [TextContent(type="text", text="ANTHROPIC_API_KEY not set.")]
+        return [TextContent(type="text", text=(
+            "ANTHROPIC_API_KEY not set. Add it to metis/system/.env as:\n"
+            "  ANTHROPIC_API_KEY=sk-ant-..."
+        ))]
 
     try:
         import pickle

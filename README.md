@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="Metis_github.png" alt="Metis — Second Brain AI Research Assistant" width="200"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="Metis_github.png"/>
+    <img src="Metis_github.png" alt="Metis — Second Brain AI Research Assistant" width="380"/>
+  </picture>
 </p>
 
 <h1 align="center">Metis — The Research Cortex</h1>
