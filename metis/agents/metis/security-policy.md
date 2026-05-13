@@ -67,7 +67,7 @@ These rules apply to all code reviewed or produced by Software Engineer and Dash
 - **HAT surveillance data** (case counts, health zone data) is **SENSITIVE**
   - Display aggregate statistics only (counts by zone × year)
   - Never display records with identifiable fields (patient ID, date + location combination)
-  - The HAT Dashboard must enforce this at the data layer, not the UI layer
+  - The research dashboard must enforce this at the data layer, not the UI layer
 
 - **Meeting content** is **CONFIDENTIAL**
   - Audio files stay in `outputs/reviews/meeting-memory/` — local only

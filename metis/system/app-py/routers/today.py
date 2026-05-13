@@ -315,8 +315,9 @@ async def today_focus_thread(request: Request):
 
     # Recent field-relevant articles alert
     field_articles: list[dict] = []
-    _field_terms = ("sleeping sickness", "hat ", "trypanosoma", "trypanosomiasis",
-                    "ntd", "neglected tropical", "epidemiology", "surveillance")
+    _field_terms = ("neglected tropical", "ntd", "epidemiology", "surveillance",
+                    "global health", "public health", "outbreak")
+    # extend with user-configured interests at runtime via get_user_profile()
     since_48h = (datetime.datetime.now() - datetime.timedelta(hours=48)).isoformat()
     try:
         rows = db_query(
@@ -815,8 +816,7 @@ def _get_or_generate_brief() -> str | None:
         name = _user_name()
         # Stable system preamble (eligible for prompt caching on repeated calls)
         system_preamble = (
-            f"You are writing the daily morning brief for {name}, a senior researcher in public health "
-            "and epidemiology (sleeping sickness, NTDs, surveillance, global health). "
+            f"You are writing the daily morning brief for {name}, a senior researcher. "
             "Your voice is like a knowledgeable friend: warm, direct, no corporate language, no bullet lists. "
             "Structure the brief as three short paragraphs:\n"
             "1. ONE LEADING INSIGHT — the single most important development from today's context. "

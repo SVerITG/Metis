@@ -83,9 +83,9 @@ updated: "2026-03-29"
 
 ## Learning Path
 
-- Pair this card with `06_library/courses/surveillance-methods/` and `06_library/courses/biostatistics/` for resilient service delivery and financing analytics.
-- Combine with `06_library/methods/data-management.md` for interoperable digital infrastructure and `06_library/concepts/digital-health-epi.md` for AI governance.
-- Use `06_library/courses/research-writing/` when drafting policy briefs or funding proposals focused on system reform.
+- Pair this card with `knowledge/library/courses/surveillance-methods/` and `knowledge/library/courses/biostatistics/` for resilient service delivery and financing analytics.
+- Combine with `knowledge/library/methods/data-management.md` for interoperable digital infrastructure and `knowledge/library/concepts/digital-health-epi.md` for AI governance.
+- Use `knowledge/library/courses/research-writing/` when drafting policy briefs or funding proposals focused on system reform.
 - In the Learning Hub, align this card with **Surveillance systems**, **Data management & R**, and a custom **Health systems** area.
 
 ---

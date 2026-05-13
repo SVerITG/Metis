@@ -119,6 +119,6 @@ Good response letters make it easy for the editor to say yes. They reduce fricti
 - [ICMJE Recommendations](https://www.icmje.org/recommendations/)
 
 ## Links to Metis library
-- `06_library/methods/writing-for-journals.md`
-- `06_library/concepts/research-ethics.md`
-- `06_library/methods/data-management.md`
+- `knowledge/library/methods/writing-for-journals.md`
+- `knowledge/library/concepts/research-ethics.md`
+- `knowledge/library/methods/data-management.md`

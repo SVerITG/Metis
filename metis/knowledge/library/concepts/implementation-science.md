@@ -83,9 +83,9 @@ updated: "2026-03-29"
 
 ## Learning Path
 
-- Start with `06_library/courses/surveillance-methods/` and `06_library/courses/research-writing/` for implementation evaluations and policy syntheses.
-- Combine with `06_library/methods/systematic-reviews.md` for evidence synthesis and `06_library/methods/data-management.md` for documenting implementation outcomes.
-- Map outputs to `06_library/concepts/global-health-governance.md` when influencing funding, partnerships, and policy context.
+- Start with `knowledge/library/courses/surveillance-methods/` and `knowledge/library/courses/research-writing/` for implementation evaluations and policy syntheses.
+- Combine with `knowledge/library/methods/systematic-reviews.md` for evidence synthesis and `knowledge/library/methods/data-management.md` for documenting implementation outcomes.
+- Map outputs to `knowledge/library/concepts/global-health-governance.md` when influencing funding, partnerships, and policy context.
 - In the Learning Hub, this card aligns with a custom **Implementation science** focus and supports **Surveillance systems** and **Scientific communication**.
 
 ---

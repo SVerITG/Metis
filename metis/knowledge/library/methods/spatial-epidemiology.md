@@ -162,9 +162,9 @@ updated: "2026-03-29"
 
 ## Learning Path
 
-- Start with `06_library/courses/spatial-epidemiology/`.
-- Pair this card with `06_library/methods/gis-for-epidemiology.md` for data structures, CRS, and mapping basics.
-- Review `06_library/methods/biostatistics-essentials.md` before fitting spatial regression or Bayesian smoothing models.
+- Start with `knowledge/library/courses/spatial-epidemiology/`.
+- Pair this card with `knowledge/library/methods/gis-for-epidemiology.md` for data structures, CRS, and mapping basics.
+- Review `knowledge/library/methods/biostatistics-essentials.md` before fitting spatial regression or Bayesian smoothing models.
 - In the Learning Hub, this card aligns primarily with **Spatial epidemiology** and secondarily with **Biostatistics**.
 
 ---

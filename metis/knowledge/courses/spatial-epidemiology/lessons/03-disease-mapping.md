@@ -120,6 +120,6 @@ The practical lesson is simple: before publishing a map, ask what a reader is li
 - [OpenIntro Statistics](https://www.openintro.org/book/os/)
 
 ## Links to Metis library
-- `06_library/methods/spatial-epidemiology.md`
-- `06_library/methods/biostatistics-essentials.md`
-- `06_library/methods/gis-for-epidemiology.md`
+- `knowledge/library/methods/spatial-epidemiology.md`
+- `knowledge/library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/gis-for-epidemiology.md`

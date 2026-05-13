@@ -1,13 +1,15 @@
 <div class="panel">
   {% if projects %}
+    {% set prio_pct = {'high': 85, 'medium': 55, 'low': 30} %}
     {% for p in projects %}
     <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
       <div style="display:flex;justify-content:space-between;align-items:baseline;">
         <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">{{ p.title }}</div>
-        <div class="tnum" style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">ACTIVE</div>
+        <div class="tnum" style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">{{ (p.priority or 'ACTIVE') | upper }}</div>
       </div>
+      {% set bar_w = prio_pct[p.priority] if p.priority in prio_pct else 45 %}
       <div style="height:2px;background:var(--m-surface-3);margin-top:6px;border-radius:1px;">
-        <div style="height:100%;width:{{ (p.priority or 2) * 20 }}%;background:var(--m-accent);border-radius:1px;"></div>
+        <div style="height:100%;width:{{ bar_w }}%;background:var(--m-accent);border-radius:1px;"></div>
       </div>
     </div>
     {% endfor %}

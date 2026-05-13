@@ -37,5 +37,5 @@ Warning signs include hidden comparators, unclear costing methods, implausible a
 - [iDSI resources](https://www.idsihealth.org/)
 
 ## Links to Metis library
-- `06_library/methods/health-economics-basics.md`
-- `06_library/methods/writing-for-journals.md`
+- `knowledge/library/methods/health-economics-basics.md`
+- `knowledge/library/methods/writing-for-journals.md`

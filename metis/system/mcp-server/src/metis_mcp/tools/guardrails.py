@@ -30,6 +30,9 @@ from metis_mcp.config import paths
 # M5.7.1 — Injection probe: wrap external tool / ingestion results
 # ---------------------------------------------------------------------------
 
+# Injection patterns. Mirrors metis/.claude/hooks/pre-tool-use.mjs — keep in sync.
+# 13 patterns total covering: instruction overrides, role-switching, system-prompt
+# extraction, model-specific tokens, jailbreak/override phrasing.
 _INJECTION_PATTERNS = [
     re.compile(r"ignore\s+(all\s+)?previous\s+instructions?", re.IGNORECASE),
     re.compile(r"disregard\s+(all\s+)?instructions?", re.IGNORECASE),
@@ -42,6 +45,8 @@ _INJECTION_PATTERNS = [
     re.compile(r"\[INST\]|\[\/INST\]", re.IGNORECASE),       # LLaMA-style tokens
     re.compile(r"print\s+your\s+(system\s+)?prompt", re.IGNORECASE),
     re.compile(r"reveal\s+(your\s+)?(system\s+)?instructions?", re.IGNORECASE),
+    re.compile(r"override\s+(safety|constraints|rules)", re.IGNORECASE),
+    re.compile(r"jailbreak", re.IGNORECASE),
 ]
 
 _ZERO_WIDTH_RE = re.compile(r"[\u200b\u200c\u200d\ufeff\u00ad]")

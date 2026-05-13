@@ -114,6 +114,6 @@ Spatial models are powerful, but they still depend on measurement quality, denom
 - [OpenIntro Statistics](https://www.openintro.org/book/os/)
 
 ## Links to Metis library
-- `06_library/methods/spatial-epidemiology.md`
-- `06_library/methods/causal-inference.md`
-- `06_library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/spatial-epidemiology.md`
+- `knowledge/library/methods/causal-inference.md`
+- `knowledge/library/methods/biostatistics-essentials.md`

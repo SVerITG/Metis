@@ -37,5 +37,5 @@ For epidemiologists, this is especially useful for constructing age bands, colla
 - [R for Data Science](https://r4ds.hadley.nz/)
 
 ## Links to Metis library
-- `06_library/methods/data-management.md`
-- `06_library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/data-management.md`
+- `knowledge/library/methods/biostatistics-essentials.md`

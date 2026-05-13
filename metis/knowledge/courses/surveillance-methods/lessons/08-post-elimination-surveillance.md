@@ -120,6 +120,6 @@ The practical lesson is that post-elimination surveillance needs deliberate desi
 - [WHO AFRO IDSR resources](https://www.afro.who.int/health-topics/integrated-disease-surveillance-and-response)
 
 ## Links to Metis library
-- `06_library/methods/surveillance-systems.md`
-- `06_library/disease-areas/hat-sleeping-sickness.md`
-- `06_library/methods/diagnostic-test-evaluation.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/disease-areas/hat-sleeping-sickness.md`
+- `knowledge/library/methods/diagnostic-test-evaluation.md`

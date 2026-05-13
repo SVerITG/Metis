@@ -37,6 +37,6 @@ Outbreak research may involve rapid protocol changes, public health mandates, vu
 - [CIOMS guidelines](https://cioms.ch/publications/product/international-ethical-guidelines-for-health-related-research-involving-humans/)
 
 ## Links to Metis library
-- `06_library/concepts/research-ethics.md`
-- `06_library/methods/outbreak-investigation.md`
-- `06_library/methods/surveillance-systems.md`
+- `knowledge/library/concepts/research-ethics.md`
+- `knowledge/library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/surveillance-systems.md`

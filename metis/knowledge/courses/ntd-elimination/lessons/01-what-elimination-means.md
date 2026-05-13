@@ -37,5 +37,5 @@ These distinctions matter because each goal implies different indicators, interv
 - [WHO publications](https://www.who.int/publications)
 
 ## Links to Metis library
-- `06_library/concepts/elimination-framework.md`
-- `06_library/disease-areas/ntd-overview.md`
+- `knowledge/library/concepts/elimination-framework.md`
+- `knowledge/library/disease-areas/ntd-overview.md`

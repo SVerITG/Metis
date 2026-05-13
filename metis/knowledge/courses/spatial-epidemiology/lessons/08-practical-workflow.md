@@ -148,6 +148,6 @@ The core habit is sequential discipline: define, audit, align, describe, diagnos
 - [CRAN tmap package](https://cran.r-project.org/package=tmap)
 
 ## Links to Metis library
-- `06_library/methods/spatial-epidemiology.md`
-- `06_library/methods/gis-for-epidemiology.md`
-- `06_library/methods/data-management.md`
+- `knowledge/library/methods/spatial-epidemiology.md`
+- `knowledge/library/methods/gis-for-epidemiology.md`
+- `knowledge/library/methods/data-management.md`

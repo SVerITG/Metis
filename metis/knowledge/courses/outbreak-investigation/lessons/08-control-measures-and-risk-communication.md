@@ -46,6 +46,6 @@ If a school outbreak strongly suggests a contaminated meal but laboratory confir
 - [ECDC publications](https://www.ecdc.europa.eu/en/publications-data)
 
 ## Links to Metis library
-- `06_library/methods/outbreak-investigation.md`
-- `06_library/methods/surveillance-systems.md`
-- `06_library/concepts/global-health-governance.md`
+- `knowledge/library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/concepts/global-health-governance.md`

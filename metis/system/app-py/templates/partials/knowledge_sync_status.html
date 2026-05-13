@@ -1,0 +1,23 @@
+<div id="lib-sync-bar"
+     style="display:flex;align-items:center;justify-content:space-between;
+            gap:16px;padding:9px 16px;margin-bottom:12px;
+            background:var(--m-surface-2);border-radius:var(--m-radius);
+            border:1px solid var(--m-rule-soft);">
+  <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:flex;gap:20px;flex-wrap:wrap;">
+    <span>{{ zotero_count }} ZOTERO PAPERS</span>
+    {% if manual_count %}<span>· {{ manual_count }} MANUAL</span>{% endif %}
+    <span style="color:var(--m-rule);">·</span>
+    <span>SYNCED {{ last_synced }}</span>
+    {% if version %}<span style="opacity:.6;">v{{ version }}</span>{% endif %}
+  </div>
+  <button id="zotero-sync-btn"
+          onclick="syncZoteroLibrary()"
+          style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
+                 padding:5px 12px;background:transparent;border:1px solid var(--m-rule);
+                 border-radius:2px;color:var(--m-muted);cursor:pointer;white-space:nowrap;
+                 transition:border-color .15s,color .15s;"
+          onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
+          onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'">
+    SYNC NOW
+  </button>
+</div>

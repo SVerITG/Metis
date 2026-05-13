@@ -1,7 +1,11 @@
 <!-- learning_courses.html — Editorial course cards -->
 {% if not courses %}
-<div class="panel" style="grid-column:1/-1;">
-  <div class="empty-row"><em>No active courses. Use the Build buttons below to start one from the catalog.</em></div>
+<div class="panel panel-pad" style="grid-column:1/-1;text-align:center;padding:32px 24px;border:1px dashed var(--m-line);">
+  <h4 class="ed" style="margin:0 0 8px;font-size:17px;">No courses yet</h4>
+  <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 14px;max-width:480px;margin-left:auto;margin-right:auto;">
+    Two ways to start: pick a placeholder course from the catalog below and click <em>Build</em>,
+    or in Claude Code run <code>/course-builder</code> for an end-to-end build.
+  </p>
 </div>
 {% else %}
 {% for c in courses %}
@@ -22,14 +26,36 @@
     <div class="progress-line" style="height:100%;width:{{ c.progress_pct or 0 }}%;background:var(--m-accent);border-radius:1px;transition:width 600ms ease;"></div>
   </div>
 
-  <div style="display:flex;gap:6px;margin-top:6px;">
-    {% if c.slug %}
-    <button class="btn btn--sec btn--caps" onclick="buildCourse('{{ c.slug }}')">Continue</button>
-    <button class="btn btn--ghost btn--caps" onclick="openCourseChat('{{ c.id }}','{{ c.title|e }}')">Open chat</button>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+    {% if c.project_id %}
+    <button class="btn btn--primary btn--caps"
+            onclick="launchProjectTarget('{{ c.project_id }}','claude_code')"
+            title="Open in Claude Code">Claude Code</button>
+    <button class="btn btn--ghost btn--caps"
+            onclick="launchProjectTarget('{{ c.project_id }}','claude_desktop')"
+            title="Open Claude Desktop">Chat</button>
+    <button class="btn btn--ghost btn--caps"
+            onclick="launchProjectTarget('{{ c.project_id }}','explorer')"
+            title="Open course folder">Folder</button>
+    {% elif c.slug %}
+    <button class="btn btn--primary btn--caps" onclick="buildCourse('{{ c.slug }}')">Launch</button>
+    <button class="btn btn--ghost btn--caps" onclick="toggleQuestionPanel(this,'{{ c.slug }}','{{ c.title|e }}')">Research question</button>
     {% else %}
-    <button class="btn btn--sec btn--caps" onclick="buildCourse('{{ c.id }}')">Continue</button>
+    <button class="btn btn--sec btn--caps" onclick="buildCourse('{{ c.id }}')">Launch</button>
     {% endif %}
   </div>
+
+  {% if c.slug and not c.project_id %}
+  <div class="course-question-panel" style="display:none;width:100%;">
+    <textarea class="question-input" rows="3"
+      style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:13px;resize:vertical;background:var(--m-surface-2);color:var(--m-ink);line-height:1.5;"
+      placeholder="Paste your research question here — the course will be adapted to your specific context…"></textarea>
+    <div style="display:flex;gap:6px;margin-top:6px;">
+      <button class="btn btn--sec btn--caps" onclick="launchWithQuestion(this,'{{ c.slug }}','{{ c.title|e }}')">Start with this question</button>
+      <button class="btn btn--ghost btn--caps" onclick="buildCourse('{{ c.slug }}')">Chat without question</button>
+    </div>
+  </div>
+  {% endif %}
 </div>
 {% endfor %}
 {% endif %}

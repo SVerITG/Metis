@@ -1,6 +1,14 @@
 <!-- work_tasks.html — Editorial todo-row list -->
 {% if not tasks %}
-<div class="empty-row"><em>{% if status_filter == 'open' %}All tasks done. Take a breath.{% else %}No tasks found.{% endif %}</em></div>
+<div class="panel panel-pad" style="text-align:center;padding:28px 24px;border:1px dashed var(--m-line);">
+  <h4 class="ed" style="margin:0 0 6px;font-size:16px;">
+    {% if status_filter == 'open' %}All tasks done. Take a breath.{% else %}No tasks yet.{% endif %}
+  </h4>
+  <p class="ed" style="font-size:13px;color:var(--m-muted);margin:0 0 14px;">
+    Press <kbd>Ctrl+K</kbd> from anywhere on the dashboard and prefix with <code>t:</code> to add a task.
+    Or capture from Claude Code with <code>/metis_capture t: my task</code>.
+  </p>
+</div>
 {% else %}
 <div class="panel">
   {% for t in tasks %}

@@ -99,7 +99,7 @@ def load_user_context() -> str:
 def load_agent_system_prompt(agent_slug: str) -> str:
     """Load an agent's skill.md content for use as a cached system prompt.
 
-    Tries .claude/skills/<slug>/skill.md first, then 02_agents/<slug>/skill.md.
+    Tries .claude/skills/<slug>/skill.md first, then agents/<slug>/skill.md.
     Returns empty string if neither exists.
     """
     candidates = [

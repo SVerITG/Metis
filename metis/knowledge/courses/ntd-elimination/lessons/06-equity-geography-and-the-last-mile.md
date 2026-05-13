@@ -37,6 +37,6 @@ This is why equity and geography are not side issues. They are central to elimin
 - [WHO publications](https://www.who.int/publications)
 
 ## Links to Metis library
-- `06_library/concepts/health-equity-sdh.md`
-- `06_library/concepts/elimination-framework.md`
-- `06_library/methods/spatial-epidemiology.md`
+- `knowledge/library/concepts/health-equity-sdh.md`
+- `knowledge/library/concepts/elimination-framework.md`
+- `knowledge/library/methods/spatial-epidemiology.md`

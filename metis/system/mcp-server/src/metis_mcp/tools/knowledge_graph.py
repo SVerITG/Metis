@@ -285,7 +285,7 @@ async def kg_community(
     related concepts when working on a specific topic.
 
     Args:
-        note_path: Relative path from knowledge/library/ (e.g. 'disease-areas/hat-sleeping-sickness.md')
+        note_path: Relative path from knowledge/library/ (e.g. 'disease-areas/[condition].md')
         depth:     Maximum hop distance to explore (default 2).
     """
     with connect(paths.db) as conn:

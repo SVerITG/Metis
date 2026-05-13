@@ -1,6 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Teach{% endblock %}
 
+{% block extra_head %}
+<style>
+.source-chip {
+  display:inline-flex;align-items:center;gap:4px;
+  font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+  padding:4px 10px;border:1px solid var(--m-line);border-radius:3px;
+  cursor:pointer;color:var(--m-muted);background:transparent;transition:all 100ms;
+}
+.source-chip.active { border-color:var(--m-accent);color:var(--m-accent);background:rgba(99,102,241,.07); }
+.slide-row { padding:10px 0;border-bottom:1px solid var(--m-rule-soft);display:flex;gap:10px;align-items:flex-start; }
+.slide-row:last-child { border-bottom:none; }
+.slide-num { font-family:var(--m-mono);font-size:9px;color:var(--m-muted);width:22px;padding-top:2px;flex-shrink:0; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page" style="max-width:1180px;">
 
@@ -8,63 +23,218 @@
     <div>
       <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">SURFACE 08</div>
       <h1 style="font-family:var(--m-display);font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0;">Teach</h1>
+      <div style="font-family:var(--m-sans);font-size:13px;color:var(--m-muted);margin-top:4px;">Build courses and presentations from your knowledge base.</div>
     </div>
-    <div class="page-meta"
-         hx-get="/api/partial/teach/meta"
-         hx-trigger="load"
-         hx-swap="innerHTML">— COURSES · — PUBLISHED · — IN PROGRESS</div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn btn--ghost btn--caps" onclick="resetBuilder()">Reset</button>
+    </div>
   </div>
 
-  <div class="grid" style="grid-template-columns:1.6fr 1fr;gap:32px;">
+  <div class="grid" style="grid-template-columns:1.55fr 1fr;gap:32px;">
 
-    <!-- Left: active course / draft panel -->
+    <!-- LEFT: Builder form / output -->
     <div>
-      <div class="sec-label" style="margin-bottom:12px;"
-           hx-get="/api/partial/teach/active-label"
-           hx-trigger="load"
-           hx-swap="outerHTML">
-        <span>Active course</span>
-        <span class="tail">IN PROGRESS</span>
-      </div>
 
-      <div hx-get="/api/partial/teach/active-draft"
-           hx-trigger="load"
-           hx-swap="outerHTML">
-        <div class="panel" style="padding:40px 56px;min-height:420px;opacity:.4;">
-          <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:40%;margin-bottom:24px;"></div>
-          <div style="height:30px;background:var(--m-surface-3);border-radius:2px;margin-bottom:10px;"></div>
-          <div style="height:16px;background:var(--m-surface-3);border-radius:2px;width:65%;margin-bottom:32px;"></div>
-          <div style="height:14px;background:var(--m-surface-3);border-radius:2px;margin-bottom:10px;"></div>
-          <div style="height:14px;background:var(--m-surface-3);border-radius:2px;width:90%;margin-bottom:10px;"></div>
-          <div style="height:14px;background:var(--m-surface-3);border-radius:2px;width:80%;"></div>
+      <!-- Builder form -->
+      <div id="teach-builder-form">
+        <div class="sec-label" style="margin-bottom:12px;"><span>Course builder</span></div>
+
+        <div class="panel" style="padding:24px 24px 20px;">
+
+          <div style="margin-bottom:16px;">
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">COURSE TITLE</label>
+            <input id="teach-title" type="text" autofocus
+                   placeholder="e.g. Introduction to HAT Epidemiology"
+                   style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:9px 12px;font-family:var(--m-sans);font-size:14px;color:var(--m-ink);outline:none;">
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+            <div>
+              <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">AUDIENCE</label>
+              <select id="teach-audience" style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+                <option value="expert">Expert / Specialist</option>
+                <option value="practitioner" selected>Health Practitioner</option>
+                <option value="student">Graduate Student</option>
+                <option value="public">General Public</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">DEPTH</label>
+              <select id="teach-depth" style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+                <option value="overview" selected>Overview (8–12 slides)</option>
+                <option value="lecture">Full lecture (20–25 slides)</option>
+                <option value="workshop">Workshop (30–40 slides)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:8px;">KNOWLEDGE SOURCES</label>
+            <div style="display:flex;gap:7px;flex-wrap:wrap;" id="teach-source-chips">
+              <button class="source-chip active" data-src="library" onclick="toggleSource(this)">Library</button>
+              <button class="source-chip active" data-src="literature" onclick="toggleSource(this)">Literature</button>
+              <button class="source-chip active" data-src="meetings" onclick="toggleSource(this)">Meetings</button>
+              <button class="source-chip" data-src="web" onclick="toggleSource(this)">Web search</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:8px;">OUTPUT FORMAT</label>
+            <div style="display:flex;gap:7px;" id="teach-fmt-chips">
+              <button class="source-chip active" data-fmt="pptx" onclick="toggleFormat(this)">PowerPoint (.pptx)</button>
+              <button class="source-chip" data-fmt="outline" onclick="toggleFormat(this)">Outline only</button>
+              <button class="source-chip" data-fmt="markdown" onclick="toggleFormat(this)">Markdown slides</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom:20px;">
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">CONTEXT / OBJECTIVES <span style="opacity:.5;">(optional)</span></label>
+            <textarea id="teach-context" rows="3"
+                      placeholder="Learning objectives, required sections, key messages to include…"
+                      style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:9px 12px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;resize:vertical;"></textarea>
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn--primary btn--caps" onclick="buildCourse()" id="teach-build-btn">Build Course</button>
+            <button class="btn btn--ghost btn--caps" onclick="buildOutline()">Outline First</button>
+            <span id="teach-build-status" style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);"></span>
+            <span id="teach-ai-badge" style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.08em;color:var(--m-muted);margin-left:auto;">TEMPLATE MODE</span>
+          </div>
+
         </div>
       </div>
-    </div>
 
-    <!-- Right: all pieces + suggested -->
-    <div>
-      <div class="sec-label" style="margin-bottom:12px;"><span>All courses</span></div>
-      <div class="panel" style="margin-bottom:18px;"
-           hx-get="/api/partial/teach/courses-list"
-           hx-trigger="load"
-           hx-swap="outerHTML">
-        {% for _ in range(4) %}
-        <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}border-left:2px solid transparent;opacity:.4;">
-          <div style="height:12px;background:var(--m-surface-3);border-radius:2px;margin-bottom:6px;"></div>
-          <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:50%;"></div>
+      <!-- Output panel (hidden until build runs) -->
+      <div id="teach-output-panel" style="display:none;">
+        <div class="sec-label" style="margin-bottom:12px;">
+          <span id="teach-output-label">Build output</span>
+          <button class="btn btn--ghost btn--caps" style="font-size:9px;padding:3px 8px;" onclick="resetBuilder()">New Build</button>
         </div>
-        {% endfor %}
+        <div id="teach-output-body" class="panel" style="padding:24px;min-height:300px;"></div>
+        <div id="teach-download-bar" style="margin-top:12px;display:none;gap:10px;align-items:center;"></div>
       </div>
 
-      <div class="sec-label" style="margin-bottom:12px;"><span>Suggested next</span></div>
-      <div class="panel panel-pad" style="padding:18px 20px;"
-           hx-get="/api/partial/teach/suggested"
-           hx-trigger="load"
-           hx-swap="outerHTML">
-        <div class="ed" style="font-size:14px;opacity:.5;"><em>Loading suggestions…</em></div>
-      </div>
     </div>
 
+    <!-- RIGHT: Past builds + KB stats -->
+    <div>
+
+      <div class="sec-label" style="margin-bottom:12px;"><span>Past builds</span></div>
+      <div id="teach-past-builds"
+           hx-get="/api/partial/teach/past-builds"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div class="panel" style="padding:20px;opacity:.4;">
+          <div style="height:10px;background:var(--m-surface-3);border-radius:2px;margin-bottom:8px;width:60%;"></div>
+          <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:80%;"></div>
+        </div>
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;margin-top:24px;"><span>Knowledge base</span></div>
+      <div hx-get="/api/partial/teach/kb-stats"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div class="panel panel-pad" style="opacity:.4;">
+          <div style="height:10px;background:var(--m-surface-3);border-radius:2px;margin-bottom:8px;width:70%;"></div>
+          <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:50%;"></div>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
+
+<script>
+let _activeFmt = 'pptx';
+let _activeSrcs = new Set(['library','literature','meetings']);
+window._anthropicKeySet = false;
+
+fetch('/api/teach/status').then(r => r.json()).then(d => {
+  window._anthropicKeySet = d.ai_available;
+  const badge = document.getElementById('teach-ai-badge');
+  if (badge) {
+    badge.textContent = d.ai_available ? 'AI ENABLED' : 'TEMPLATE MODE';
+    badge.style.color = d.ai_available ? 'var(--m-accent)' : 'var(--m-muted)';
+  }
+}).catch(() => {});
+
+function toggleSource(btn) {
+  const s = btn.dataset.src;
+  if (_activeSrcs.has(s)) { _activeSrcs.delete(s); btn.classList.remove('active'); }
+  else { _activeSrcs.add(s); btn.classList.add('active'); }
+}
+
+function toggleFormat(btn) {
+  document.querySelectorAll('[data-fmt]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  _activeFmt = btn.dataset.fmt;
+}
+
+function buildCourse()  { _submit('full'); }
+function buildOutline() { _submit('outline'); }
+
+function _submit(mode) {
+  const title = document.getElementById('teach-title').value.trim();
+  if (!title) { document.getElementById('teach-title').focus(); return; }
+
+  const btn  = document.getElementById('teach-build-btn');
+  const stat = document.getElementById('teach-build-status');
+  btn.disabled = true;
+  stat.textContent = window._anthropicKeySet ? 'Generating with AI…' : 'Building from templates…';
+
+  const fd = new FormData();
+  fd.append('title',    title);
+  fd.append('audience', document.getElementById('teach-audience').value);
+  fd.append('depth',    document.getElementById('teach-depth').value);
+  fd.append('context',  document.getElementById('teach-context').value.trim());
+  fd.append('sources',  JSON.stringify([..._activeSrcs]));
+  fd.append('format',   mode === 'outline' ? 'outline' : _activeFmt);
+
+  fetch('/api/teach/build', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false; stat.textContent = '';
+      _showOutput(data, title);
+      htmx.ajax('GET', '/api/partial/teach/past-builds', { target: '#teach-past-builds', swap: 'outerHTML' });
+    })
+    .catch(() => { btn.disabled = false; stat.textContent = 'Build failed.'; });
+}
+
+function _showOutput(data, title) {
+  document.getElementById('teach-builder-form').style.display = 'none';
+  const panel = document.getElementById('teach-output-panel');
+  panel.style.display = 'block';
+  document.getElementById('teach-output-label').textContent = title;
+  document.getElementById('teach-output-body').innerHTML =
+    data.html || '<em style="color:var(--m-muted)">No output returned.</em>';
+
+  const aiChip = data.ai_generated
+    ? `<span id="teach-mode-chip" style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:2px 6px;background:var(--m-accent);color:#fff;border-radius:2px;margin-left:8px;">AI</span>`
+    : `<span id="teach-mode-chip" style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:2px 6px;border:1px solid var(--m-line);color:var(--m-muted);border-radius:2px;margin-left:8px;">TEMPLATE</span>`;
+  const oldChip = document.getElementById('teach-mode-chip');
+  if (oldChip) oldChip.remove();
+  document.getElementById('teach-output-label').insertAdjacentHTML('afterend', aiChip);
+
+  const dlBar = document.getElementById('teach-download-bar');
+  if (data.pptx_path) {
+    dlBar.style.display = 'flex';
+    dlBar.innerHTML = `
+      <a href="/api/teach/download?path=${encodeURIComponent(data.pptx_path)}"
+         class="btn btn--primary btn--caps" download>Download .pptx</a>
+      <button class="btn btn--ghost btn--caps" onclick="copyOutline()">Copy Text</button>`;
+  } else {
+    dlBar.style.display = 'none';
+  }
+}
+
+function resetBuilder() {
+  document.getElementById('teach-builder-form').style.display = 'block';
+  document.getElementById('teach-output-panel').style.display = 'none';
+}
+
+function copyOutline() {
+  navigator.clipboard.writeText(document.getElementById('teach-output-body').innerText)
+    .then(() => { const b = event.target; b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy Text', 1500); });
+}
+</script>
 {% endblock %}

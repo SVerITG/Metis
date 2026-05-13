@@ -205,9 +205,9 @@ updated: "2026-03-29"
 
 ## Learning Path
 
-- Start with `06_library/courses/research-writing/`, especially the literature review, protocol, reporting-guideline, and PRISMA lessons.
-- Pair this card with `06_library/methods/writing-for-journals.md` for manuscript preparation and with `06_library/methods/diagnostic-test-evaluation.md` when reading diagnostic test reviews.
-- Use it alongside `06_library/methods/study-designs.md` when deciding whether review inclusion criteria are clinically and epidemiologically coherent.
+- Start with `knowledge/library/courses/research-writing/`, especially the literature review, protocol, reporting-guideline, and PRISMA lessons.
+- Pair this card with `knowledge/library/methods/writing-for-journals.md` for manuscript preparation and with `knowledge/library/methods/diagnostic-test-evaluation.md` when reading diagnostic test reviews.
+- Use it alongside `knowledge/library/methods/study-designs.md` when deciding whether review inclusion criteria are clinically and epidemiologically coherent.
 - In the Learning Hub, this card aligns primarily with **Scientific communication** and secondarily with **Epidemiological methods**.
 
 ---

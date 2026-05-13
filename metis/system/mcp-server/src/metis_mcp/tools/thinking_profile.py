@@ -116,7 +116,7 @@ async def record_thinking_event(
 
 @app.tool()
 async def get_thinking_profile() -> list[TextContent]:
-    """Read and return the current thinking profile from 08_system/thinking-profile.yaml.
+    """Read and return the current thinking profile from system/thinking-profile.yaml.
 
     Falls back to default structure if the file does not exist.
     """
@@ -170,7 +170,7 @@ async def update_thinking_profile() -> list[TextContent]:
     - preferred_idea_sources: frequency of source_type in high-rated idea events
     - agent_feedback: accepted/flagged rates per agent_slug
 
-    Writes updated 08_system/thinking-profile.yaml. Safe to call multiple times.
+    Writes updated system/thinking-profile.yaml. Safe to call multiple times.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]

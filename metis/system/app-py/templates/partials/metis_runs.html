@@ -1,6 +1,11 @@
 <!-- metis_runs.html — Editorial agent run rows -->
 {% if not runs %}
-<div class="empty-row"><em>No agent runs in this window. Activity will appear here as agents work.</em></div>
+<div style="text-align:center;padding:24px 22px;font-family:var(--m-ui);">
+  <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);margin-bottom:6px;">No agent activity in this window.</div>
+  <div style="font-size:12.5px;color:var(--m-muted);">
+    Try <code style="font-family:var(--m-mono);font-size:11px;">/metis</code> in Claude Code, or click <em>Scan now</em> on the Today tab.
+  </div>
+</div>
 {% else %}
 {% for r in runs %}
 <div class="run-row" style="display:grid;grid-template-columns:96px 110px 1fr 70px 70px;gap:14px;align-items:center;padding:12px 18px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %};transition:background 140ms ease;"

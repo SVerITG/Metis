@@ -35,5 +35,5 @@ Routine epidemiologic analysis often involves counts by time, place, and person;
 - [R for Data Science](https://r4ds.hadley.nz/)
 
 ## Links to Metis library
-- `06_library/methods/biostatistics-essentials.md`
-- `06_library/methods/surveillance-systems.md`
+- `knowledge/library/methods/biostatistics-essentials.md`
+- `knowledge/library/methods/surveillance-systems.md`

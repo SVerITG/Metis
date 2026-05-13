@@ -132,10 +132,10 @@ updated: "2026-03-29"
 
 ## Learning Path
 
-- Pair this living document with `06_library/courses/surveillance-methods/`, `06_library/courses/spatial-epidemiology/`, and `06_library/courses/research-writing/`.
-- Use `06_library/concepts/global-health-governance.md` for treaty and institutional context.
-- Use `06_library/concepts/digital-health-epi.md` for AI, interoperability, and digital-governance questions.
-- Use `06_library/concepts/one-health.md` and `06_library/concepts/health-systems-strengthening.md` to connect macro trends to research design and implementation.
+- Pair this living document with `knowledge/library/courses/surveillance-methods/`, `knowledge/library/courses/spatial-epidemiology/`, and `knowledge/library/courses/research-writing/`.
+- Use `knowledge/library/concepts/global-health-governance.md` for treaty and institutional context.
+- Use `knowledge/library/concepts/digital-health-epi.md` for AI, interoperability, and digital-governance questions.
+- Use `knowledge/library/concepts/one-health.md` and `knowledge/library/concepts/health-systems-strengthening.md` to connect macro trends to research design and implementation.
 
 ## Key References
 

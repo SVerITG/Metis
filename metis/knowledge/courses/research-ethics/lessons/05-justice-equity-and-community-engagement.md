@@ -37,6 +37,6 @@ Community engagement improves ethics and science. It helps researchers understan
 - [WHO publications](https://www.who.int/publications)
 
 ## Links to Metis library
-- `06_library/concepts/research-ethics.md`
-- `06_library/concepts/health-equity-sdh.md`
-- `06_library/concepts/global-health-governance.md`
+- `knowledge/library/concepts/research-ethics.md`
+- `knowledge/library/concepts/health-equity-sdh.md`
+- `knowledge/library/concepts/global-health-governance.md`

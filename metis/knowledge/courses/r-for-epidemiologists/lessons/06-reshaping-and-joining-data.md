@@ -37,4 +37,4 @@ Join mistakes are common and dangerous. Duplicate keys, mismatched identifiers, 
 - [dplyr documentation](https://dplyr.tidyverse.org/)
 
 ## Links to Metis library
-- `06_library/methods/data-management.md`
+- `knowledge/library/methods/data-management.md`

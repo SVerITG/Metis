@@ -49,6 +49,6 @@ During a suspected foodborne outbreak after a wedding, the team should confirm t
 - [WHO Rapid Risk Assessment Manual](https://www.who.int/publications/i/item/9789241510141)
 
 ## Links to Metis library
-- `06_library/methods/outbreak-investigation.md`
-- `06_library/methods/data-management.md`
-- `06_library/methods/diagnostic-test-evaluation.md`
+- `knowledge/library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/data-management.md`
+- `knowledge/library/methods/diagnostic-test-evaluation.md`

@@ -138,6 +138,6 @@ The practical lesson is that surveillance evaluation is about redesigning a work
 - [WHO AFRO IDSR resources](https://www.afro.who.int/health-topics/integrated-disease-surveillance-and-response)
 
 ## Links to Metis library
-- `06_library/methods/surveillance-systems.md`
-- `06_library/methods/data-management.md`
-- `06_library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/methods/data-management.md`
+- `knowledge/library/methods/outbreak-investigation.md`

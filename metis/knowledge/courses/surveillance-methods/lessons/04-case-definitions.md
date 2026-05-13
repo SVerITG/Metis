@@ -105,6 +105,6 @@ The practical lesson is that case definitions should be judged by how well they 
 - [WHO public health surveillance overview](https://www.who.int/health-topics/public-health-surveillance)
 
 ## Links to Metis library
-- `06_library/methods/surveillance-systems.md`
-- `06_library/methods/diagnostic-test-evaluation.md`
-- `06_library/methods/outbreak-investigation.md`
+- `knowledge/library/methods/surveillance-systems.md`
+- `knowledge/library/methods/diagnostic-test-evaluation.md`
+- `knowledge/library/methods/outbreak-investigation.md`

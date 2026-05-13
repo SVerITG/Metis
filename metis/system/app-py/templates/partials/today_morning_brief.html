@@ -26,11 +26,11 @@
   {% endif %}
   <div style="display:flex;gap:8px;flex-wrap:wrap;">
     <button class="btn btn--primary"
-            onclick="setNavActive(document.querySelector('[data-tab=work]'),'work'); htmx.ajax('GET','/api/tab/work',{target:'#tab-content',swap:'outerHTML'})">
+            onclick="setNavActive(document.querySelector('[data-tab=work]'),'work'); htmx.ajax('GET','/api/tab/work',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'})">
       Open Work
     </button>
     <button class="btn btn--sec"
-            onclick="setNavActive(document.querySelector('[data-tab=knowledge]'),'knowledge'); htmx.ajax('GET','/api/tab/knowledge',{target:'#tab-content',swap:'outerHTML'})">
+            onclick="setNavActive(document.querySelector('[data-tab=knowledge]'),'knowledge'); htmx.ajax('GET','/api/tab/knowledge',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'})">
       Browse Library
     </button>
     <button class="btn btn--ghost btn--caps">Later ↓</button>

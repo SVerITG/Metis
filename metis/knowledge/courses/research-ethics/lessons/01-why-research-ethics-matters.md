@@ -37,5 +37,5 @@ Core principles include respect for persons, beneficence, non-maleficence, justi
 - [CIOMS guidelines](https://cioms.ch/publications/product/international-ethical-guidelines-for-health-related-research-involving-humans/)
 
 ## Links to Metis library
-- `06_library/concepts/research-ethics.md`
-- `06_library/methods/study-designs.md`
+- `knowledge/library/concepts/research-ethics.md`
+- `knowledge/library/methods/study-designs.md`

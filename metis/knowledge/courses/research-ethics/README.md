@@ -17,4 +17,4 @@ This course introduces practical research ethics for epidemiologists and public 
 - WMA Declaration of Helsinki
 - CIOMS International Ethical Guidelines
 - WHO ethics and emergency research guidance
-- Related Metis cards in `06_library/methods/` and `06_library/concepts/`
+- Related Metis cards in `knowledge/library/methods/` and `knowledge/library/concepts/`

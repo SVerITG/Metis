@@ -1,19 +1,17 @@
-<!-- metis_system_info.html — System information panel -->
-<dl class="row mb-0 small">
-  <dt class="col-5 text-muted fw-normal">RC root</dt>
-  <dd class="col-7 text-truncate mb-1" title="{{ rc_root }}">{{ rc_root }}</dd>
+{# System info panel — Archive design system #}
+<div style="padding:14px 22px;display:grid;grid-template-columns:120px 1fr;gap:8px 14px;font-family:var(--m-ui);font-size:12.5px;color:var(--m-text);">
+  <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;">RC root</div>
+  <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--m-ink);" title="{{ rc_root }}">{{ rc_root }}</div>
 
-  <dt class="col-5 text-muted fw-normal">Database</dt>
-  <dd class="col-7 mb-1">
+  <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;">Database</div>
+  <div>
     {% if db_size_kb %}
-    {{ db_size_kb }} KB
+      <span style="font-family:var(--m-mono);color:var(--m-ink);">{{ db_size_kb }} KB</span>
     {% else %}
-    <span class="text-danger">not found</span>
+      <span style="color:var(--m-alert);">not found</span>
     {% endif %}
-  </dd>
+  </div>
 
-  <dt class="col-5 text-muted fw-normal">DB path</dt>
-  <dd class="col-7 text-truncate mb-0" style="font-size:0.7rem; color:var(--metis-text-muted);" title="{{ db_path }}">
-    {{ db_path }}
-  </dd>
-</dl>
+  <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;">DB path</div>
+  <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ db_path }}">{{ db_path }}</div>
+</div>

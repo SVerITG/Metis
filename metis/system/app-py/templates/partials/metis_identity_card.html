@@ -1,0 +1,38 @@
+{# Identity card — shown in the Metis tab left rail.
+   Inputs: name, initial, role, interests[], news_topics[], runs #}
+<div class="metis-id-card" id="metis-identity-card">
+  <div class="metis-id-avatar">{{ initial }}</div>
+  <div class="metis-id-name">{{ name }}</div>
+  <div class="metis-id-sub">{{ role }}</div>
+  <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+    <button class="btn btn--primary btn--caps" onclick="openMetisIdentityEdit()">Edit identity</button>
+    <button class="btn btn--ghost btn--caps" onclick="openMetisRename()" title="Quick rename">Rename</button>
+  </div>
+
+  <div class="metis-id-block">
+    <div class="metis-id-label">Interests</div>
+    <div class="metis-tag-strip">
+      {% if interests %}
+        {% for t in interests %}<span class="metis-tag">{{ t }}</span>{% endfor %}
+      {% else %}
+        <span class="metis-tag metis-tag--empty">none yet — click Edit identity</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="metis-id-block">
+    <div class="metis-id-label">News topics</div>
+    <div class="metis-tag-strip">
+      {% if news_topics %}
+        {% for t in news_topics %}<span class="metis-tag">{{ t }}</span>{% endfor %}
+      {% else %}
+        <span class="metis-tag metis-tag--empty">none set</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="metis-id-block" style="display:flex;justify-content:space-between;align-items:baseline;">
+    <div class="metis-id-label" style="margin:0;">Total runs</div>
+    <div style="font-family:var(--m-mono);font-size:12px;color:var(--m-ink);">{{ runs }}</div>
+  </div>
+</div>
