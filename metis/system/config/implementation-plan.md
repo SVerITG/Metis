@@ -371,39 +371,17 @@ The result is a distributable SQLite database (~80–150 MB) that ships with Met
 
 **Estimated output:** ~10,000 chunks from 96 PDFs, 768-dim embeddings, ~80 MB DB increment
 
-- [ ] **L1** (S) — Add `pdf_chunks` + `pdf_index_state` tables to `system/installer/schema.sql`
-  - `pdf_chunks`: id, source_file, domain, title, page_start, page_end, chunk_idx, chunk_text, char_count
-  - `pdf_index_state`: source_file (UNIQUE), domain, title, total_pages, chunk_count, indexed_at
-- [ ] **L2** (M) — `vec_pdf_chunks` vec0 virtual table setup in `knowledge_db.py` (sqlite-vec, 768-dim)
-- [ ] **L3** (L) — `build_pdf_knowledge_db()` MCP tool
-  - Walks `knowledge/library/open-access-books/` + `papers/` recursively
-  - Skips already-indexed files (checks `pdf_index_state`)
-  - pypdf text extraction with OCR artifact cleanup
-  - Chunks: 3200 chars per chunk, 400-char overlap, split on paragraph boundaries
-  - Batch embeddings (32 at a time) via fastembed
-  - Auto-generates `library_cards` entry for each new document
-  - Reports: files indexed, chunks created, time taken, DB size
-- [ ] **L4** (M) — `search_pdf_knowledge(query, top_k, domain_filter)` MCP tool
-  - Vec0 ANN search → returns top-k chunks with source, page range, similarity score
-  - BM25 hybrid re-ranking (combine keyword + semantic scores)
-  - Result includes: title, domain, page_start, chunk excerpt, score
-- [ ] **L5** (S) — `get_pdf_index_stats()` MCP tool — per-domain stats, total chunks, DB size
-- [ ] **L6** (M) — Dashboard: **Knowledge search bar** (Knowledge tab)
-  - HTMX input → `/api/knowledge/search?q=...` → chunk results with source citations
-  - Filters by domain chip (matches existing domain tabs on Knowledge tab)
-- [ ] **L7** (M) — **Standalone build script** `system/install/build_knowledge_db.py`
-  - Runs outside MCP (direct Python script for installer post-build step)
-  - `--library-dir`, `--db`, `--domain`, `--force` flags
-  - Outputs progress bar + final stats
-  - Callable from `seed_ph_database.py --index-pdfs` flag
-- [ ] **L8** (S) — **Installer integration**: add post-install step in `metis-setup.iss` [Run]
-  - `build_knowledge_db.py --library-dir {app}\knowledge\library --db {app}\system\app\data\metis.sqlite`
-  - StatusMsg: "Building knowledge database (this takes 5–15 minutes)…"
-  - Only runs if any PDFs present (check `knowledge\library\open-access-books\` exists)
-- [ ] **L9** (S) — **Distributable DB export**: `export_knowledge_db.py`
-  - Exports `pdf_chunks` + `vec_pdf_chunks` to standalone `knowledge_db.sqlite`
-  - Can be shipped as optional ~150 MB download for users who skip the PDF indexing step
-  - Imported back via `import_knowledge_db.py --merge`
+- [x] **L1** (S) — `pdf_chunks` + `pdf_index_state` tables added to `system/installer/schema.sql` — DONE 2026-05-14
+- [x] **L2** (M) — `vec_pdf_chunks` vec0 virtual table (sqlite-vec, 768-dim) — DONE 2026-05-14
+- [x] **L3** (L) — `build_pdf_knowledge_db()` MCP tool: pypdf → 3200-char chunks → batch nomic-embed → SQLite — DONE 2026-05-14
+- [x] **L4** (M) — `search_pdf_knowledge(query, top_k, domain_filter)` MCP tool: vec0 ANN search — DONE 2026-05-14
+- [x] **L5** (S) — `get_pdf_index_stats()` MCP tool — DONE 2026-05-14
+- [x] **L6** (M) — Dashboard: PDF search bar + stats panel on Knowledge tab; `/api/partial/knowledge/pdf-search`, `/api/partial/knowledge/pdf-stats`, `/api/knowledge/build-index` (background trigger) — DONE 2026-05-14
+- [x] **L7** (M) — `build_knowledge_db.py` standalone CLI (`--library-dir`, `--db`, `--domain`, `--force`, `--quiet`) — DONE 2026-05-14
+- [x] **L8** (S) — `metis-setup.iss` Step 2 post-install: silent background DB build for full/standard editions — DONE 2026-05-14
+- [ ] **L9** (S) — **Distributable DB export**: `export_knowledge_db.py` — exports `pdf_chunks` + `vec_pdf_chunks` to standalone `knowledge_db.sqlite` for optional ~150 MB download (deferred — run indexer first, export after)
+
+**Status 2026-05-14:** Indexing 338 PDFs running in background (open-access-books/ + papers/). Expected ~20-40 min. Scanned PDFs (no text layer) will show ✗ no text — these need OCR or manual extraction.
 
 ---
 
