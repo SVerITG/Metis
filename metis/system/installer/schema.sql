@@ -493,6 +493,16 @@ CREATE TABLE IF NOT EXISTS projects (
     detection_source TEXT DEFAULT 'manual'
 );
 
+CREATE TABLE IF NOT EXISTS content_packs (
+    pack_id      TEXT PRIMARY KEY,
+    name         TEXT NOT NULL,
+    version      TEXT DEFAULT '1.0',
+    pack_type    TEXT DEFAULT 'course',
+    description  TEXT DEFAULT '',
+    installed_at TEXT,
+    enabled      INTEGER DEFAULT 1
+);
+
 CREATE TABLE IF NOT EXISTS reflexion_log (
     reflexion_id    INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id      TEXT NOT NULL,
