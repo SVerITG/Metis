@@ -117,6 +117,52 @@ async def save_scheduler_settings(request: Request):
     return JSONResponse({"status": "ok", "saved": list(cleaned.keys())})
 
 
+@router.get("/api/partial/metis/automation-log", response_class=HTMLResponse)
+async def automation_log_partial():
+    """HTMX partial: recent job run log for the Metis → Automation section."""
+    import datetime
+    try:
+        from db import db_query
+        rows = db_query(
+            "SELECT job_type, status, details, created_at FROM jobs_log "
+            "ORDER BY created_at DESC LIMIT 30"
+        )
+    except Exception:
+        rows = []
+
+    if not rows:
+        return HTMLResponse(
+            '<div style="padding:18px 22px;font-family:var(--m-display);font-style:italic;'
+            'font-size:13px;color:var(--m-muted);">No jobs have run yet.</div>'
+        )
+
+    from scheduler import JOB_LABELS
+    items_html = ""
+    for r in rows:
+        job_id  = r.get("job_type", "")
+        status  = r.get("status", "")
+        details = (r.get("details") or "")[:80]
+        ran_at  = (r.get("created_at") or "")[:16].replace("T", " ")
+        label   = JOB_LABELS.get(job_id, job_id)
+        dot_col = {"ok": "var(--m-ok)", "error": "var(--m-alert)", "skip": "var(--m-muted)"}.get(status, "var(--m-line)")
+        items_html += f"""
+<div style="display:flex;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid var(--m-rule-soft);">
+  <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:{dot_col};flex-shrink:0;margin-top:4px;"></span>
+  <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);min-width:120px;flex-shrink:0;">{ran_at}</span>
+  <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-ink);min-width:170px;flex-shrink:0;">{label}</span>
+  <span style="font-size:11px;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{details}</span>
+</div>"""
+
+    return HTMLResponse(f"""
+<div id="automation-log"
+     hx-get="/api/partial/metis/automation-log"
+     hx-trigger="every 60s"
+     hx-swap="outerHTML"
+     style="padding:4px 0;">
+  {items_html}
+</div>""")
+
+
 @router.get("/api/partial/today/automation", response_class=HTMLResponse)
 async def automation_status_partial():
     """HTMX partial: scheduler job status strip with settings controls."""
