@@ -1,7 +1,8 @@
 # Manual Downloads Required
 
 Last updated: 2026-05-14
-Status: ~75 files need browser download (WHO IRIS requires login/terms acceptance; PMC returns CAPTCHA; some publisher sites block bots)
+Status: 57 files confirmed broken (HTML redirect or empty) + a few extra entries in list not yet downloaded.
+Note: files with names starting `Besag-York-Mollie` and `SaTScan` appear twice (old name + NEW_ prefix) — save once and rename/copy.
 
 After downloading, save each file to the folder shown. The filename must match exactly.
 
@@ -12,6 +13,14 @@ After downloading, save each file to the folder shown. The filename must match e
 1. Click each link → browser opens the PDF
 2. File → Save As (or Ctrl+S) → save to the folder shown with the exact filename
 3. Check the file is > 10 KB (a 755-byte file is a redirect page, not the real PDF)
+
+---
+
+## NTDs — Overview  →  `open-access-books/NTDs - Overview/`
+
+| File to save as | Download link | What it is |
+|---|---|---|
+| `WHO-Preventive-Chemotherapy-Human-Helminthiasis-2006.pdf` | https://iris.who.int/bitstream/handle/10665/43814/9789241547109_eng.pdf | WHO Preventive Chemotherapy (MDA guidelines) |
 
 ---
 
@@ -90,6 +99,10 @@ After downloading, save each file to the folder shown. The filename must match e
 | `NEW_WHO-health-mapping-GIS-epidemiology-2002.pdf` | https://iris.who.int/bitstream/handle/10665/42483/9241545577.pdf | WHO Health Mapping & GIS |
 | `NEW_Kulldorff-spatial-scan-statistic-1997.pdf` | https://pmc.ncbi.nlm.nih.gov/articles/PMC2279481/pdf/ | Kulldorff – Spatial scan statistic |
 | `NEW_Riebler-BYM2-disease-mapping-2016.pdf` | https://pmc.ncbi.nlm.nih.gov/articles/PMC4985630/pdf/ | Riebler – BYM2 model |
+| `Besag-York-Mollie-BYM-1991.pdf` | https://link.springer.com/article/10.1007/BF00116466 | Besag, York & Mollié 1991 – original BYM model (may require institutional access; also on Sci-Hub) |
+| `NEW_Besag-York-Mollie-BYM-1991.pdf` | *(same file as above — save a second copy with this name, or rename)* | Duplicate entry |
+| `SaTScan-Users-Guide-v10.pdf` | https://www.satscan.org/cgi-bin/satscan/register.pl/SaTScan_Users_Guide.pdf?todo=process_userguide_download | SaTScan v10 user guide (free registration required) |
+| `NEW_SaTScan-user-guide-v10.pdf` | *(same file as above — save a second copy with this name, or rename)* | Duplicate entry |
 
 ---
 
