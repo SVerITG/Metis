@@ -481,10 +481,16 @@ CREATE TABLE IF NOT EXISTS projects (
     launcher_path TEXT,
     source        TEXT DEFAULT 'manual',
     description   TEXT,
-    display_order INTEGER DEFAULT 999,
-    launchers     TEXT,
-    dashboard_url TEXT,
-    notes         TEXT
+    display_order    INTEGER DEFAULT 999,
+    launchers        TEXT,
+    dashboard_url    TEXT,
+    notes            TEXT,
+    project_type     TEXT DEFAULT 'research',
+    context_doc      TEXT DEFAULT '',
+    history_log      TEXT DEFAULT '[]',
+    prompt_memory    TEXT DEFAULT '',
+    last_session_at  TEXT,
+    detection_source TEXT DEFAULT 'manual'
 );
 
 CREATE TABLE IF NOT EXISTS reflexion_log (
