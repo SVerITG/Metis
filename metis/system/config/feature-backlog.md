@@ -26,6 +26,21 @@
 
 ---
 
+## STRATEGIC — System-level improvements requested 2026-05-15
+
+- [ ] **Release Orchestrator agent (`/release-coordinator`)** — Coordinates the full Metis multi-repo release workflow. Design:
+  - Knows the repo graph: Metis (base) → Metis_PH (this repo) → Metis_PH personal (local, never published) → Metis_BM, Metis_CL (placeholders)
+  - On each commit to Metis_PH: checks what changed, determines what needs to propagate to base Metis and to domain variants
+  - Pre-publish checklist runs automatically: scans all staged files for personal data (names, API keys, email addresses, article titles, institution names, DB paths, `sverschaeve`, `itg.be`, Stan's name), blocks if found
+  - Updates installer files (`.iss`, Docker, `setup-mcp.sh`) to reflect code changes
+  - Verifies all install variants build and produce working artifacts
+  - Generates a signed release manifest (`release-manifest.json`) summarising what changed across all repos
+  - Posts a GitHub Release draft with the manifest as release notes
+  - Implementation: new agent `agents/release-coordinator/` + MCP tool `coordinate_release()` + pre-publish scanner hook
+  - (~3-4 days: scanner + orchestration logic + GitHub API integration + installer sync)
+
+---
+
 ## STRATEGIC — System-level improvements requested 2026-05-10
 
 - [ ] **On-demand improvement scanner ("Metis Radar")** — A script/skill that the user runs periodically to ask: "what new repos, tools, or techniques exist that could improve a specific part of Metis?" It searches GitHub + web per capability, compares with current Metis implementation, generates structured improvement proposals that flow into the existing self-improvement pipeline (same proposals table). Requested: "in the future this self-improvement needs to be present in the project on demand, a full script to question what we can find on the internet that would improve Metis." Design:
