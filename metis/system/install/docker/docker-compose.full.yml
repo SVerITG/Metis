@@ -1,0 +1,86 @@
+version: "3.9"
+
+# Metis Research Cortex — Docker Compose (FULL)
+#
+# Includes: MCP server + dashboard + biostatistics course seeding
+#
+# Quick start:
+#   1. Copy .env.example to .env and fill in your API key
+#   2. Run: docker compose -f docker-compose.full.yml up -d
+#   3. Open: http://localhost:8080
+#
+# The seeder runs once on first launch to populate the database
+# with library cards and the biostatistics course structure.
+
+services:
+
+  # ── One-time database seeder ─────────────────────────────────────────────
+  seeder:
+    build:
+      context: ../../..
+      dockerfile: metis/system/install/docker/Dockerfile
+    container_name: metis-seeder
+    env_file: .env
+    environment:
+      - METIS_RC_ROOT=/metis
+      - PYTHONPATH=/app/src:/app/dashboard
+    volumes:
+      - ${METIS_DATA_DIR:-~/Documents/Metis}:/metis
+    command: >
+      sh -c "python /app/metis/system/install/seed_epi_base.py
+             --db /metis/system/app/data/metis.sqlite --quiet && echo 'Seeding complete'"
+    restart: "no"
+
+  # ── MCP server ───────────────────────────────────────────────────────────
+  mcp:
+    build:
+      context: ../../..
+      dockerfile: metis/system/install/docker/Dockerfile
+    container_name: metis-mcp
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - METIS_RC_ROOT=/metis
+      - PYTHONPATH=/app/src:/app/dashboard
+    volumes:
+      - ${METIS_DATA_DIR:-~/Documents/Metis}:/metis
+    command: ["mcp"]
+    stdin_open: true
+    tty: true
+    depends_on:
+      seeder:
+        condition: service_completed_successfully
+
+  # ── Dashboard ────────────────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: ../../..
+      dockerfile: metis/system/install/docker/Dockerfile
+    container_name: metis-dashboard
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file: .env
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - METIS_RC_ROOT=/metis
+      - PYTHONPATH=/app/src:/app/dashboard
+    volumes:
+      - ${METIS_DATA_DIR:-~/Documents/Metis}:/metis
+    command: ["dashboard"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      seeder:
+        condition: service_completed_successfully
+
+volumes:
+  metis-db:
+
+networks:
+  default:
+    name: metis-network

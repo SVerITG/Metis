@@ -1250,3 +1250,110 @@ Use `/metis` for any research or knowledge task. Use project-specific skills dir
             return JSONResponse({"status": "ok", "mode": "invoke", "path": str(_CLAUDE_MD_PATH)})
         except Exception as e3:
             return JSONResponse({"status": "error", "message": str(e3)}, status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# Content packs — install / remove / list
+# ---------------------------------------------------------------------------
+
+@router.get("/api/partial/metis/content-packs", response_class=HTMLResponse)
+async def content_packs_partial(request: Request):
+    """Show installed content packs with toggle controls."""
+    packs = db_query(
+        "SELECT pack_id, name, version, pack_type, description, installed_at, enabled "
+        "FROM content_packs ORDER BY pack_type, name"
+    ) or []
+
+    # Known packs not yet installed
+    KNOWN_PACKS = [
+        {
+            "pack_id": "biostatistics-course",
+            "name": "Biostatistics for Epidemiologists",
+            "pack_type": "course",
+            "description": "12 lessons: descriptive stats, inference, regression, survival, MLM.",
+            "version": "1.0",
+        },
+        {
+            "pack_id": "ph-content",
+            "name": "Public Health Content Pack",
+            "pack_type": "domain",
+            "description": "50 library cards, NTD/HAT literature seeds, 20 PH courses.",
+            "version": "1.0",
+        },
+    ]
+    installed_ids = {p["pack_id"] for p in packs}
+    available = [k for k in KNOWN_PACKS if k["pack_id"] not in installed_ids]
+
+    return templates.TemplateResponse(
+        request,
+        "partials/metis_content_packs.html",
+        {"packs": packs, "available": available},
+    )
+
+
+@router.post("/api/content-packs/{pack_id}/toggle")
+async def toggle_content_pack(pack_id: str):
+    """Enable or disable a content pack (toggle enabled flag)."""
+    row = db_query(
+        "SELECT pack_id, name, enabled FROM content_packs WHERE pack_id = ?",
+        (pack_id,),
+    )
+    if not row:
+        return JSONResponse({"status": "error", "message": "Pack not found."}, status_code=404)
+    new_state = 0 if row[0]["enabled"] else 1
+    db_execute(
+        "UPDATE content_packs SET enabled = ? WHERE pack_id = ?",
+        (new_state, pack_id),
+    )
+    return JSONResponse({"status": "ok", "pack_id": pack_id, "enabled": bool(new_state)})
+
+
+@router.post("/api/content-packs/{pack_id}/install")
+async def install_content_pack(pack_id: str):
+    """Run the seed script for a known content pack."""
+    import subprocess
+    import os
+
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    db_path = ""
+    try:
+        from db import get_db_path
+        db_path = str(get_db_path())
+    except Exception:
+        pass
+
+    seed_scripts = {
+        "biostatistics-course": "seed_epi_base.py",
+        "ph-content": "seed_ph_database.py",
+    }
+    script_name = seed_scripts.get(pack_id)
+    if not script_name:
+        return JSONResponse({"status": "error", "message": f"Unknown pack: {pack_id}"}, status_code=400)
+
+    script_path = Path(rc_root) / "system" / "install" / script_name if rc_root else None
+    if not script_path or not script_path.exists():
+        return JSONResponse(
+            {"status": "error", "message": f"Seed script not found: {script_name}"},
+            status_code=500,
+        )
+
+    try:
+        result = subprocess.run(
+            ["python3", str(script_path), "--db", db_path, "--quiet"],
+            capture_output=True, text=True, timeout=120,
+        )
+        if result.returncode != 0:
+            return JSONResponse(
+                {"status": "error", "message": result.stderr[:500]},
+                status_code=500,
+            )
+        return JSONResponse({"status": "ok", "pack_id": pack_id, "installed": True})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+@router.delete("/api/content-packs/{pack_id}")
+async def remove_content_pack(pack_id: str):
+    """Remove a content pack record (does not delete seeded rows)."""
+    db_execute("DELETE FROM content_packs WHERE pack_id = ?", (pack_id,))
+    return JSONResponse({"status": "ok", "pack_id": pack_id, "removed": True})

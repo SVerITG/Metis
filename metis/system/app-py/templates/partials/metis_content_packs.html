@@ -1,0 +1,91 @@
+<!-- metis_content_packs.html — Content packs toggle panel -->
+<div style="display:flex;flex-direction:column;gap:6px;">
+
+  {% if packs %}
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;
+                color:var(--m-muted);margin-bottom:4px;">INSTALLED</div>
+
+    {% for pack in packs %}
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;
+                background:var(--m-surface-1);border:1px solid var(--m-rule-soft);
+                border-radius:var(--m-radius);">
+      <div style="flex:1;">
+        <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);
+                    font-weight:500;line-height:1.3;">{{ pack.name }}</div>
+        <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);
+                    margin-top:2px;">
+          {{ pack.pack_type | upper }} · v{{ pack.version }}
+          {% if pack.installed_at %} · installed {{ pack.installed_at[:10] }}{% endif %}
+        </div>
+        {% if pack.description %}
+        <div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);
+                    margin-top:4px;line-height:1.4;">{{ pack.description }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Toggle switch -->
+      <button
+        hx-post="/api/content-packs/{{ pack.pack_id }}/toggle"
+        hx-target="closest div[style*='flex-direction:column']"
+        hx-swap="outerHTML"
+        style="padding:4px 12px;font-family:var(--m-mono);font-size:8.5px;
+               letter-spacing:0.1em;border-radius:var(--m-radius);cursor:pointer;
+               transition:background 150ms,border-color 150ms;
+               {% if pack.enabled %}
+               background:var(--m-accent-wash);border:1px solid var(--m-accent);color:var(--m-accent);
+               {% else %}
+               background:transparent;border:1px solid var(--m-rule-strong);color:var(--m-muted);
+               {% endif %}"
+        title="{{ 'Disable' if pack.enabled else 'Enable' }} this pack">
+        {{ 'ENABLED' if pack.enabled else 'DISABLED' }}
+      </button>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if available %}
+    {% if packs %}
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;
+                color:var(--m-muted);margin:8px 0 4px;">AVAILABLE</div>
+    {% endif %}
+
+    {% for pack in available %}
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;
+                background:transparent;border:1px dashed var(--m-rule-soft);
+                border-radius:var(--m-radius);opacity:0.7;">
+      <div style="flex:1;">
+        <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);
+                    font-weight:500;line-height:1.3;">{{ pack.name }}</div>
+        <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);
+                    margin-top:2px;">{{ pack.pack_type | upper }} · v{{ pack.version }}</div>
+        {% if pack.description %}
+        <div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);
+                    margin-top:4px;line-height:1.4;">{{ pack.description }}</div>
+        {% endif %}
+      </div>
+
+      <button
+        hx-post="/api/content-packs/{{ pack.pack_id }}/install"
+        hx-target="closest div[style*='flex-direction:column']"
+        hx-swap="outerHTML"
+        hx-indicator="this"
+        style="padding:4px 12px;font-family:var(--m-mono);font-size:8.5px;
+               letter-spacing:0.1em;background:transparent;
+               border:1px solid var(--m-rule-strong);border-radius:var(--m-radius);
+               color:var(--m-text);cursor:pointer;transition:background 150ms;"
+        onmouseover="this.style.background='var(--m-surface-2)'"
+        onmouseout="this.style.background='transparent'"
+        title="Install this content pack">
+        INSTALL
+      </button>
+    </div>
+    {% endfor %}
+  {% endif %}
+
+  {% if not packs and not available %}
+  <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
+    No content packs found.
+  </div>
+  {% endif %}
+
+</div>

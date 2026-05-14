@@ -1,11 +1,19 @@
 ; Metis Research Cortex — Inno Setup 6 Script
-; Compile: ISCC.exe metis-setup.iss
-; Output:  dist\MetisSetup-1.0.exe
+; Single compile:   ISCC.exe metis-setup.iss               → MetisSetup-full-1.0.exe
+; Typed compiles:   ISCC /DDefaultType=full    metis-setup.iss → MetisSetup-full-1.0.exe
+;                   ISCC /DDefaultType=standard metis-setup.iss → MetisSetup-standard-1.0.exe
+;                   ISCC /DDefaultType=minimal  metis-setup.iss → MetisSetup-minimal-1.0.exe
+; GitHub Actions runs all three automatically on every v* tag push.
 
 #define MyAppName      "Metis Research Cortex"
 #define MyAppVersion   "1.0"
 #define MyAppPublisher "Metis Project"
 #define MyAppURL       "https://github.com/SVerITG/Metis_PH"
+
+; Install type — override via /DDefaultType=standard on the command line
+#ifndef DefaultType
+#define DefaultType "full"
+#endif
 
 ; RepoRoot = metis/ (3 levels up: installer/ -> install/ -> system/ -> metis/)
 #define RepoRoot       "..\..\.."
@@ -29,9 +37,9 @@ AllowNoIcons=yes
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 
-; Output
+; Output — filename encodes the install type so releases have 3 distinct files
 OutputDir=dist
-OutputBaseFilename=MetisSetup-{#MyAppVersion}
+OutputBaseFilename=MetisSetup-{#DefaultType}-{#MyAppVersion}
 
 ; Compression
 Compression=lzma2/max
@@ -40,6 +48,9 @@ DiskSpanning=no
 
 ; Appearance
 WizardStyle=modern
+
+; Default install type — pre-selects in wizard (user can still change)
+DefaultType={#DefaultType}
 
 ; Windows 10 minimum
 MinVersion=10.0.17134
