@@ -1,53 +1,40 @@
 <div>
   <div class="sec-label" style="margin-bottom:8px;">
     News radar
-    <span class="sec-label-tail">{{ news_briefs|length }} NEW</span>
+    <span class="sec-label-tail">{{ news_briefs|length }} SIGNALS</span>
   </div>
   <div class="panel">
     <!-- Category chip strip -->
+    {% if categories %}
     <div class="chip-strip">
       <button class="chip-btn chip-btn--on" onclick="filterNews(this, 'ALL')">ALL</button>
       {% for cat in categories %}
       <button class="chip-btn" onclick="filterNews(this, '{{ cat|e }}')">{{ cat }}</button>
       {% endfor %}
     </div>
+    {% endif %}
 
-    <!-- Feed rows -->
+    <!-- Compact feed rows -->
     {% if news_briefs %}
       {% for brief in news_briefs %}
-      <div class="feed-row" data-cat="{{ (brief.domain or 'General')|upper }}">
-        <div class="feed-meta">
-          <span class="feed-cat">{{ (brief.domain or 'General')|upper }}</span>
-          <span class="feed-dot">·</span>
-          <span class="feed-src">{{ brief.source_url[:40] if brief.source_url else 'News' }}</span>
-          {% if brief.age_label %}
-          <span class="feed-dot">·</span>
-          <span class="feed-when tnum">{{ brief.age_label }}</span>
+      <div class="feed-row feed-row--compact" data-cat="{{ (brief.domain or 'General')|upper }}"
+           style="padding:7px 0;border-bottom:1px solid var(--m-rule-soft);">
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          {% if brief.domain %}
+          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-accent);white-space:nowrap;flex-shrink:0;">{{ (brief.domain)|upper }}</span>
           {% endif %}
-        </div>
-        <a class="feed-title" href="{{ brief.source_url or '#' }}" target="_blank" rel="noopener">
-          {{ brief.title or 'Untitled' }}
-        </a>
-        <div class="feed-dek ed">{{ (brief.summary or '')[:200] }}</div>
-        <div class="feed-actions" aria-label="actions">
-          <button class="feed-act" title="Mark read"
-                  onclick="this.closest('.feed-row').style.opacity='0.3'">
-            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="4 8 7 11 12 5"/>
-            </svg>
-          </button>
-          <button class="feed-act" title="Not interested"
-                  onclick="this.closest('.feed-row').style.display='none'">
-            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="8" cy="8" r="5"/>
-              <line x1="4.8" y1="4.8" x2="11.2" y2="11.2"/>
-            </svg>
-          </button>
+          {% if brief.age_label %}
+          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);white-space:nowrap;flex-shrink:0;">{{ brief.age_label }}</span>
+          {% endif %}
+          <a class="feed-title" href="{{ brief.source_url or '#' }}" target="_blank" rel="noopener"
+             style="font-size:13px;line-height:1.4;color:var(--m-ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">
+            {{ brief.title or 'Untitled' }}
+          </a>
         </div>
       </div>
       {% endfor %}
     {% else %}
-      <div class="empty-row">No news briefs yet. Run the content scan to populate.</div>
+      <div class="empty-row">No signals yet. Run the content scan to populate.</div>
     {% endif %}
   </div>
 </div>
@@ -58,11 +45,7 @@ function filterNews(btn, cat) {
   btn.classList.add('chip-btn--on');
   const rows = btn.closest('.panel').querySelectorAll('.feed-row');
   rows.forEach(row => {
-    if (cat === 'ALL' || row.dataset.cat === cat) {
-      row.style.display = '';
-    } else {
-      row.style.display = 'none';
-    }
+    row.style.display = (cat === 'ALL' || row.dataset.cat === cat) ? '' : 'none';
   });
 }
 </script>

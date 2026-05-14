@@ -17,9 +17,11 @@
         </span>
         <span class="todo-title">{{ task.title or 'Untitled task' }}</span>
         <span class="todo-meta">
-          {%- if task.priority -%}
-            {{ task.priority|upper }}
+          {%- if task.status == 'in_progress' -%}
+            IN PROGRESS
             {%- if task.project %} · {{ task.project[:20] }}{% endif %}
+          {%- elif task.status == 'blocked' -%}
+            BLOCKED
           {%- elif task.project -%}
             {{ task.project[:20] }}
           {%- else -%}
@@ -58,7 +60,6 @@ function addTodoRow(input) {
     + '<span class="todo-meta">ADDED TODAY</span>';
   panel.insertBefore(row, compose);
   input.value = '';
-  // Persist via capture endpoint
   fetch('/api/capture', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},

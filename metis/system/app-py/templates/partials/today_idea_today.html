@@ -1,0 +1,33 @@
+<div>
+  <div class="sec-label" style="margin-bottom:8px;">
+    <span>Idea for today</span>
+    <span class="sec-label-tail">ROTATES DAILY</span>
+  </div>
+  <div class="panel">
+    {% if idea %}
+    <div style="padding:20px 24px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);padding:2px 7px;border:1px solid var(--m-accent);border-radius:2px;">{{ idea.idea_type }}</span>
+        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ idea.age_label }} AGO</span>
+      </div>
+      <p class="ed" style="font-size:13.5px;line-height:1.65;color:var(--m-text);margin:0 0 14px 0;max-width:600px;">
+        {{ idea.text }}
+      </p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn--ghost btn--caps"
+                onclick="setNavActive(document.querySelector('[data-tab=thinking]'),'thinking'); htmx.ajax('GET','/api/tab/thinking',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'})">
+          Open Thinking
+        </button>
+        <button class="btn btn--ghost btn--caps"
+                hx-get="/api/partial/today/idea-today"
+                hx-swap="outerHTML"
+                hx-target="closest div">
+          Next idea
+        </button>
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-row">No ideas captured yet. Use Ctrl+K to add one.</div>
+    {% endif %}
+  </div>
+</div>
