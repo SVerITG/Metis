@@ -524,38 +524,76 @@ flowchart LR
 
 ## Installation Options
 
-### Option 1 — Single command
+### Option 1 — Single command (Linux, macOS, WSL)
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/metis/system/mcp-server/setup-mcp.sh)
 ```
 
-Detects Ubuntu 20/22/24, creates venv, installs all dependencies, registers with Claude Code and Claude Desktop. Idempotent.
+Detects Ubuntu 20/22/24, Debian, macOS (Homebrew). Creates venv, installs all dependencies, registers with Claude Code and Claude Desktop. Idempotent — safe to re-run.
 
-### Option 2 — Manual
+### Option 2 — WSL on Windows (recommended for developers on Windows)
+
+Open **Windows Terminal → Ubuntu** (or any WSL distro) and run:
+
+```bash
+# 1. Clone
+git clone https://github.com/SVerITG/Metis_PH.git ~/Metis_PH
+
+# 2. Install MCP server + register with Claude Code and Claude Desktop
+cd ~/Metis_PH/metis/system/mcp-server && bash setup-mcp.sh
+
+# 3. Start the dashboard
+cd ~/Metis_PH/metis/system/app-py && bash run.sh
+# → http://127.0.0.1:8080
+```
+
+Claude Desktop on Windows picks up the WSL MCP server automatically via `wsl.exe` — see [Register with Claude Desktop](#register-with-claude-desktop-windows--wsl) below.
+
+### Option 3 — Manual (any platform)
 
 ```bash
 git clone https://github.com/SVerITG/Metis_PH.git
-cd Metis_PH/metis/system/mcp-server && bash setup-mcp.sh
-cd ../app-py && bash run.sh   # → http://127.0.0.1:8000
+cd Metis_PH/metis/system/mcp-server
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e ".[voice]"
+
+# Set env vars and start
+export METIS_RC_ROOT="$(pwd)/../../.."
+export ANTHROPIC_API_KEY="sk-ant-..."
+
+# MCP server (register path in Claude settings)
+python -m metis_mcp.server
+
+# Dashboard (separate terminal)
+cd ../app-py && pip install -r requirements.txt
+uvicorn main:app --host 127.0.0.1 --port 8080
+# → http://127.0.0.1:8080
 ```
 
-### Option 3 — Docker
+### Option 4 — Docker
 
 ```bash
-# Full (MCP + dashboard)
+# Copy env file and fill in your API key + data directory
+cp metis/system/install/docker/.env.example metis/system/install/docker/.env
+
+# Full: MCP server + dashboard
 docker compose -f metis/system/install/docker/docker-compose.yml up -d
 # → http://localhost:8080
 
-# MCP-only light (AI tools for Claude Desktop, no dashboard)
+# Light: MCP tools only (no dashboard, for Claude Desktop only)
 docker compose -f metis/system/install/docker/docker-compose.light.yml up -d
 ```
 
-Copy `metis/system/install/docker/.env.example` to `.env` and fill in your API key first.
+For the MCP-only Docker image, point Claude Desktop at the container — see `.env.example` for the config snippet.
 
-### Option 4 — Windows .exe installer (planned for v1.0)
+### Option 5 — Windows .exe installer
 
-No terminal needed. Download, double-click, answer configuration questions.
+No terminal. No Python. Download, double-click, answer three questions.
+
+> **[Download the latest MetisSetup.exe →](https://github.com/SVerITG/Metis_PH/releases/latest)**
+
+Four variants (Full / PH Shell / Standard / MCP-only) — all install Claude Desktop and launch the config wizard on first run.
 
 ---
 
