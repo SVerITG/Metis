@@ -44,6 +44,8 @@ async def knowledge_stats(request: Request):
     cards = db_scalar("SELECT COUNT(*) FROM library_cards", default=0)
     domains = db_scalar("SELECT COUNT(DISTINCT domain) FROM library_cards", default=0)
     lit = db_scalar("SELECT COUNT(*) FROM literature_metadata", default=0)
+    pdf_chunks = db_scalar("SELECT COUNT(*) FROM pdf_chunks", default=0)
+    pdf_docs = db_scalar("SELECT COUNT(*) FROM pdf_index_state", default=0)
     month_start = datetime.date.today().replace(day=1).isoformat()
     new_this_month = db_scalar(
         "SELECT COUNT(*) FROM literature_metadata WHERE created_at >= ?",
@@ -58,6 +60,8 @@ async def knowledge_stats(request: Request):
             "domains": domains,
             "lit": lit,
             "new_this_month": new_this_month,
+            "pdf_chunks": pdf_chunks,
+            "pdf_docs": pdf_docs,
         },
     )
 
@@ -150,6 +154,98 @@ async def knowledge_search(request: Request, q: str = ""):
             "results": results, "q": q
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# PDF knowledge search (keyword + snippet from indexed chunks)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/knowledge/pdf-search", response_class=HTMLResponse)
+async def knowledge_pdf_search(request: Request, q: str = "", domain: str = ""):
+    """Full-text keyword search across indexed PDF chunks."""
+    if not q or len(q) < 2:
+        return HTMLResponse(
+            '<p class="text-muted small">Type at least 2 characters to search the document library.</p>'
+        )
+    pattern = f"%{q}%"
+    params: list = [pattern, pattern]
+    domain_clause = ""
+    if domain:
+        domain_clause = " AND domain LIKE ?"
+        params.append(f"%{domain}%")
+
+    results = db_query(
+        f"""SELECT title, domain, source_file, page_start, page_end,
+               substr(chunk_text, 1, 300) as excerpt
+            FROM pdf_chunks
+            WHERE (chunk_text LIKE ? OR title LIKE ?){domain_clause}
+            GROUP BY source_file
+            ORDER BY title
+            LIMIT 20""",
+        params,
+    )
+
+    # Highlight query term in excerpt
+    for r in results:
+        if r.get("excerpt"):
+            hi = r["excerpt"].replace(q, f"<mark>{q}</mark>")
+            r["excerpt_html"] = hi
+        r["filename"] = (r.get("source_file") or "").split("/")[-1]
+
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_pdf_search.html",
+        {"results": results, "q": q, "domain": domain},
+    )
+
+
+@router.get("/api/partial/knowledge/pdf-stats", response_class=HTMLResponse)
+async def knowledge_pdf_stats(request: Request):
+    """Per-domain stats for the indexed PDF knowledge base."""
+    rows = db_query(
+        """SELECT domain, COUNT(*) as docs, SUM(chunk_count) as chunks
+           FROM pdf_index_state
+           GROUP BY domain ORDER BY chunks DESC""",
+    )
+    total_chunks = db_scalar("SELECT COUNT(*) FROM pdf_chunks", default=0)
+    total_docs = db_scalar("SELECT COUNT(*) FROM pdf_index_state", default=0)
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_pdf_stats.html",
+        {"rows": rows, "total_chunks": total_chunks, "total_docs": total_docs},
+    )
+
+
+@router.post("/api/knowledge/build-index", response_class=HTMLResponse)
+async def knowledge_build_index(request: Request):
+    """Trigger PDF indexing via build_knowledge_db.py as a background subprocess."""
+    import subprocess, sys, os
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    if not rc_root:
+        return HTMLResponse(
+            '<span class="text-danger small">METIS_RC_ROOT not set — cannot locate build script.</span>'
+        )
+    script = Path(rc_root) / "system" / "install" / "build_knowledge_db.py"
+    if not script.exists():
+        return HTMLResponse(
+            f'<span class="text-danger small">build_knowledge_db.py not found at {script}</span>'
+        )
+    try:
+        subprocess.Popen(
+            [sys.executable, str(script), "--quiet"],
+            env={**os.environ, "METIS_RC_ROOT": rc_root},
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return HTMLResponse(
+            '<span class="text-success small">'
+            '✓ Indexing started in background (5–20 min). '
+            'Refresh this panel when done.'
+            '</span>'
+        )
+    except Exception as e:
+        return HTMLResponse(f'<span class="text-danger small">Failed to start: {e}</span>')
 
 
 # ---------------------------------------------------------------------------

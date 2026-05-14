@@ -120,6 +120,7 @@ Source: "..\tray_launcher.py";               DestDir: "{app}\system\install";   
 Source: "..\vendor_download.py";             DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\config_merger.py";               DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\seed_ph_database.py";            DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\build_knowledge_db.py";          DestDir: "{app}\system\install";         Flags: ignoreversion
 
 ; Bundled Python embeddable (offline fallback — created by download_vendor_python.ps1)
 Source: "..\vendor\python-embed.zip";        DestDir: "{app}\vendor";                 Flags: ignoreversion skipifsourcedoesntexist
@@ -182,6 +183,14 @@ Filename: "powershell.exe"; \
   Flags: waituntilterminated; \
   StatusMsg: "Configuring Metis AI assistant…"; \
   Components: not dashboard
+
+; Step 2 (full/standard): Build PDF knowledge database — local embeddings, no API key needed
+; Runs only when the library folder has PDFs. Skips gracefully if library is empty.
+Filename: "powershell.exe"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& { $py = $env:METIS_PYTHON; if (-not $py) { $py = 'python' }; & $py '{app}\system\install\build_knowledge_db.py' --library-dir '{app}\knowledge\library' --db '{app}\system\app\data\metis.sqlite' --quiet }"""; \
+  Flags: waituntilterminated runhidden; \
+  StatusMsg: "Building knowledge database (5–15 min, uses your CPU — Metis will learn from all included documents)…"; \
+  Components: full standard
 
 ; Launch Claude Desktop
 Filename: "{pf}\Anthropic\Claude\Claude.exe"; \

@@ -1,18 +1,18 @@
 <!-- knowledge_stats.html — replaces the stats skeleton row -->
 <div class="row g-2 mb-3">
-  <div class="col-6 col-md-3">
+  <div class="col-6 col-md-2">
     <div class="card p-3 text-center">
       <div class="fw-bold fs-4 text-primary">{{ cards }}</div>
       <div class="text-muted small">Library cards</div>
     </div>
   </div>
-  <div class="col-6 col-md-3">
+  <div class="col-6 col-md-2">
     <div class="card p-3 text-center">
       <div class="fw-bold fs-4 text-info">{{ domains }}</div>
       <div class="text-muted small">Domains</div>
     </div>
   </div>
-  <div class="col-6 col-md-3">
+  <div class="col-6 col-md-2">
     <div class="card p-3 text-center">
       <div class="fw-bold fs-4 text-warning">{{ lit }}</div>
       <div class="text-muted small">Literature items</div>
@@ -20,8 +20,24 @@
   </div>
   <div class="col-6 col-md-3">
     <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-success">{{ new_this_month }}</div>
-      <div class="text-muted small">Added this month</div>
+      {% if pdf_docs %}
+      <div class="fw-bold fs-4 text-success">{{ pdf_docs }}</div>
+      <div class="text-muted small">PDFs indexed</div>
+      {% else %}
+      <div class="fw-bold fs-4 text-body-tertiary">—</div>
+      <div class="text-muted small">PDFs indexed</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      {% if pdf_chunks %}
+      <div class="fw-bold fs-4 text-success">{{ "{:,}".format(pdf_chunks) }}</div>
+      <div class="text-muted small">Searchable chunks</div>
+      {% else %}
+      <div class="fw-bold fs-4 text-body-tertiary">—</div>
+      <div class="text-muted small">Searchable chunks</div>
+      {% endif %}
     </div>
   </div>
 </div>

@@ -52,6 +52,7 @@ from metis_mcp.tools import (  # noqa: E402, F401
     course_builder,
     paperqa_search,
     voice_capture,
+    knowledge_db,
 )
 
 
