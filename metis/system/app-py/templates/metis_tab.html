@@ -29,6 +29,7 @@
         ('memory',      'Memory',           false),
         ('improvement', 'What I learned',   false),
         ('agents',      'Agents',           false),
+        ('automation',  'Automation',       false),
         ('appearance',  'Appearance',       false),
         ('integration', 'Integration',      false),
         ('keys',        'API Keys',         false),
@@ -214,6 +215,41 @@
            hx-trigger="load"
            hx-swap="innerHTML">
         <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading agent registry…</div>
+      </div>
+
+    </section>
+
+    <!-- =================================================
+         AUTOMATION
+    ================================================== -->
+    <section class="metis-section" data-section="automation" data-active="false">
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Scheduled jobs</span>
+        <span class="tail">RUNS WHILE DASHBOARD IS OPEN</span>
+      </div>
+      <div class="metis-note" style="margin-bottom:14px;">
+        These jobs run automatically in the background every day at the times shown below. You can change the time, turn any job off, or trigger it manually right now with the Run button. Changes take effect immediately &mdash; no restart needed.
+      </div>
+      <div class="panel" id="metis-automation-panel" style="padding:14px 18px;margin-bottom:24px;"
+           hx-get="/api/partial/today/automation"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:18px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading scheduler&hellip;</div>
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Recent runs</span>
+        <span class="tail" style="cursor:pointer;"
+              hx-get="/api/partial/metis/automation-log"
+              hx-target="#metis-automation-log-body"
+              hx-swap="innerHTML">REFRESH</span>
+      </div>
+      <div class="panel" id="metis-automation-log-body" style="padding:4px 14px;margin-bottom:24px;"
+           hx-get="/api/partial/metis/automation-log"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:18px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading job log&hellip;</div>
       </div>
 
     </section>
