@@ -47,6 +47,19 @@
     </div>
   </div>
 
+  <!-- ===== Resume card ===== -->
+  <div hx-get="/api/partial/today/resume"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <div style="margin-bottom:28px;opacity:.4;">
+      <div class="sec-label" style="margin-bottom:10px;"><span>Where you left off</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="panel panel-pad" style="height:80px;"></div>
+        <div class="panel panel-pad" style="height:80px;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== Ledger ===== -->
   <div hx-get="/api/partial/today/ledger"
        hx-trigger="load"
@@ -100,12 +113,12 @@
       </div>
     </div>
 
-    <!-- From your notebook -->
-    <div hx-get="/api/partial/today/notebook-archive"
+    <!-- Idea for today -->
+    <div hx-get="/api/partial/today/idea-today"
          hx-trigger="load"
          hx-swap="outerHTML">
       <div>
-        <div class="sec-label" style="margin-bottom:8px;">From your notebook</div>
+        <div class="sec-label" style="margin-bottom:8px;">Idea for today</div>
         <div class="panel" style="height:180px;opacity:.4;"></div>
       </div>
     </div>
