@@ -198,6 +198,7 @@ def _setup_schema(conn: sqlite3.Connection) -> None:
     except Exception as e:
         print(f"  ⚠ sqlite-vec not loaded ({e}) — vector search disabled", flush=True)
 
+    # Step 1: create tables (no indexes yet — db_id may need migration first)
     conn.executescript("""
         CREATE TABLE IF NOT EXISTS knowledge_databases (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -224,8 +225,6 @@ def _setup_schema(conn: sqlite3.Connection) -> None:
             char_count  INTEGER DEFAULT 0,
             created_at  TEXT NOT NULL DEFAULT (datetime('now'))
         );
-        CREATE INDEX IF NOT EXISTS idx_pdf_chunks_source ON pdf_chunks (source_file);
-        CREATE INDEX IF NOT EXISTS idx_pdf_chunks_db_id  ON pdf_chunks (db_id);
         CREATE TABLE IF NOT EXISTS pdf_index_state (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             db_id       INTEGER NOT NULL DEFAULT 0,
@@ -238,10 +237,21 @@ def _setup_schema(conn: sqlite3.Connection) -> None:
             indexed_at  TEXT NOT NULL DEFAULT (datetime('now'))
         );
     """)
-    # Add db_id column to existing tables if missing
+    # Step 2: migrate existing tables to add db_id if missing
     for table, col in [("pdf_chunks", "db_id"), ("pdf_index_state", "db_id")]:
         try:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} INTEGER DEFAULT 0")
+            conn.commit()
+        except Exception:
+            pass
+    # Step 3: create indexes now that db_id is guaranteed to exist
+    for sql in [
+        "CREATE INDEX IF NOT EXISTS idx_pdf_chunks_source ON pdf_chunks (source_file)",
+        "CREATE INDEX IF NOT EXISTS idx_pdf_chunks_db_id  ON pdf_chunks (db_id)",
+        "CREATE INDEX IF NOT EXISTS idx_pdf_chunks_domain ON pdf_chunks (domain)",
+    ]:
+        try:
+            conn.execute(sql)
         except Exception:
             pass
     try:
