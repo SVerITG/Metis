@@ -162,7 +162,19 @@ async def index_pdf_library(scope: str = "all") -> list[TextContent]:
         scope: "literature" = inputs/literature/ only | "zotero" = Zotero storage only | "all" = both
     """
     rc_root = Path(os.environ.get("METIS_RC_ROOT", ""))
-    zotero_root = Path("/mnt/c/Users/sverschaeve/Zotero/storage")
+    # Zotero storage: use ZOTERO_ROOT env var, or standard per-OS default
+    _zotero_env = os.environ.get("ZOTERO_ROOT", "")
+    if _zotero_env:
+        zotero_root = Path(_zotero_env)
+    else:
+        import platform
+        _home = Path.home()
+        if platform.system() == "Windows":
+            zotero_root = _home / "Zotero" / "storage"
+        elif platform.system() == "Darwin":
+            zotero_root = _home / "Zotero" / "storage"
+        else:
+            zotero_root = _home / "Zotero" / "storage"
     lit_root = rc_root / "inputs" / "literature"
 
     _ensure_table()
@@ -182,7 +194,7 @@ async def index_pdf_library(scope: str = "all") -> list[TextContent]:
     if not has_pymupdf:
         return [TextContent(type="text", text=
             "PyMuPDF (fitz) not installed. Run:\n"
-            "  /home/sverschaeve/.local/share/metis-mcp/.venv/bin/pip install pymupdf\n"
+            "  pip install pymupdf\n"
             "then call index_pdf_library again."
         )]
 

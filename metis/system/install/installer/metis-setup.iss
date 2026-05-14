@@ -8,7 +8,7 @@
 #define MyAppName      "Metis Research Cortex"
 #define MyAppVersion   "1.0"
 #define MyAppPublisher "Metis Project"
-#define MyAppURL       "https://github.com/SVerITG/Metis_PH"
+#define MyAppURL       "https://github.com/SVerITG/Metis"
 
 ; Install type — override via /DDefaultType=standard on the command line
 #ifndef DefaultType
@@ -69,16 +69,14 @@ english.CoursePageDesc=Include the Statistics for Epidemiology course?
 english.CourseCheckboxLabel=Statistics for Epidemiology%n%nCovers: descriptive stats, inference, regression, survival analysis, and multilevel models.%nDesigned for researchers — grows as new lessons are added.
 
 [Types]
-Name: "full";     Description: "Full — dashboard + courses (recommended for new users)"
-Name: "ph";       Description: "Public Health Shell — dashboard + public health starter content"
+Name: "full";     Description: "Full — dashboard + Statistics for Epidemiology course (recommended)"
 Name: "standard"; Description: "Standard — AI assistant + research dashboard"
 Name: "minimal";  Description: "Minimal — AI assistant only (fastest, no dashboard)"
 Name: "custom";   Description: "Custom installation"; Flags: iscustom
 
 [Components]
-Name: "core";                 Description: "Metis core (agents, skills, config)";              Types: full ph standard minimal custom; Flags: fixed
-Name: "dashboard";            Description: "Research dashboard (browser-based, 9 tabs)";       Types: full ph standard custom
-Name: "ph_content";           Description: "Public health starter content (50 library cards, literature seeds, 20 courses)"; Types: ph custom
+Name: "core";                 Description: "Metis core (agents, skills, config)";              Types: full standard minimal custom; Flags: fixed
+Name: "dashboard";            Description: "Research dashboard (browser-based, 9 tabs)";       Types: full standard custom
 Name: "courses";              Description: "Pre-built courses";                                  Types: full custom
 Name: "courses/statistics"; Description: "Statistics for Epidemiology (full course)";  Types: full custom
 
@@ -96,7 +94,8 @@ Source: "{#RepoRoot}\.claude\*";          DestDir: "{app}\.claude";     Flags: i
 Source: "{#RepoRoot}\knowledge\course-template\*";      DestDir: "{app}\knowledge\course-template";           Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Pre-built courses — optional component
-Source: "{#RepoRoot}\knowledge\courses\biostatistics\*"; DestDir: "{app}\knowledge\courses\biostatistics";   Flags: ignoreversion recursesubdirs createallsubdirs; Components: courses/biostatistics
+Source: "{#RepoRoot}\knowledge\courses\statistics\*"; DestDir: "{app}\knowledge\courses\statistics";   Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist; Components: courses/statistics
+Source: "{#RepoRoot}\knowledge\courses\biostatistics\*"; DestDir: "{app}\knowledge\courses\statistics"; Flags: ignoreversion recursesubdirs createallsubdirs skipifsourcedoesntexist; Components: courses/statistics
 
 ; Placeholder courses (14 rows seeded into DB at post-install — no files needed)
 
@@ -132,7 +131,7 @@ Source: "..\windows\run-tray.bat";           DestDir: "{app}\system\install\wind
 Source: "..\tray_launcher.py";               DestDir: "{app}\system\install";         Flags: ignoreversion; Components: dashboard
 Source: "..\vendor_download.py";             DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\config_merger.py";               DestDir: "{app}\system\install";         Flags: ignoreversion
-Source: "..\seed_ph_database.py";            DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\seed_epi_base.py";               DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\build_knowledge_db.py";          DestDir: "{app}\system\install";         Flags: ignoreversion
 
 ; Bundled Python embeddable (offline fallback — created by download_vendor_python.ps1)
@@ -197,20 +196,20 @@ Filename: "powershell.exe"; \
   StatusMsg: "Configuring Metis AI assistant…"; \
   Components: not dashboard
 
-; Step 2a (PH shell): seed public health starter content into SQLite
+; Step 2 (full): seed Statistics for Epidemiology course into SQLite
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& { $py = $env:METIS_PYTHON; if (-not $py) { $py = 'python' }; & $py '{app}\system\install\seed_ph_database.py' --db '{app}\system\app\data\metis.sqlite' --quiet }"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& { $py = $env:METIS_PYTHON; if (-not $py) { $py = 'python' }; & $py '{app}\system\install\seed_epi_base.py' --db '{app}\system\app\data\metis.sqlite' --quiet }"""; \
   Flags: waituntilterminated runhidden; \
-  StatusMsg: "Seeding public health library (50 cards, epidemiology literature, 20 courses)…"; \
-  Components: ph_content
+  StatusMsg: "Seeding Statistics for Epidemiology course…"; \
+  Components: courses/statistics
 
-; Step 2b (full/standard): Build PDF knowledge database — local embeddings, no API key needed
+; Step 3 (full/standard): Build PDF knowledge database — local embeddings, no API key needed
 ; Runs only when the library folder has PDFs. Skips gracefully if library is empty.
 Filename: "powershell.exe"; \
   Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& { $py = $env:METIS_PYTHON; if (-not $py) { $py = 'python' }; & $py '{app}\system\install\build_knowledge_db.py' --library-dir '{app}\knowledge\library' --db '{app}\system\app\data\metis.sqlite' --quiet }"""; \
   Flags: waituntilterminated runhidden; \
   StatusMsg: "Building knowledge database (5–15 min, uses your CPU — Metis will learn from all included documents)…"; \
-  Components: full standard
+  Types: full standard
 
 ; Launch Claude Desktop
 Filename: "{pf}\Anthropic\Claude\Claude.exe"; \
@@ -295,21 +294,18 @@ begin
 
     // Write install-state.json reflecting chosen components
     begin
-      var StateFile := ExpandConstant('{app}\system\config\install-state.json');
+      var StateFile  := ExpandConstant('{app}\system\config\install-state.json');
       var HasDash    := WizardIsComponentSelected('dashboard');
-      var HasCourse  := WizardIsComponentSelected('courses/biostatistics');
-      var HasPH      := WizardIsComponentSelected('ph_content');
+      var HasCourse  := WizardIsComponentSelected('courses/statistics');
       var Profile    := 'standard';
       if HasDash and HasCourse then Profile := 'full'
-      else if HasDash and HasPH then Profile := 'ph-shell'
       else if not HasDash then Profile := 'mcp-only';
       var StateContent :=
         '{' + #13#10 +
         '  "profile": "' + Profile + '",' + #13#10 +
         '  "version": "' + '{#MyAppVersion}' + '",' + #13#10 +
         '  "installed_at": "' + GetDateTimeString('yyyy/mm/dd', '-', ':') + '",' + #13#10 +
-        '  "courses_included": [' + (if HasCourse then '"biostatistics"' else '') + '],' + #13#10 +
-        '  "ph_content_seeded": ' + (if HasPH then 'true' else 'false') + ',' + #13#10 +
+        '  "courses_included": [' + (if HasCourse then '"statistics"' else '') + '],' + #13#10 +
         '  "components": {' + #13#10 +
         '    "mcp_server": true,' + #13#10 +
         '    "dashboard": ' + (if HasDash then 'true' else 'false') + ',' + #13#10 +
