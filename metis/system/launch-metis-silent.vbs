@@ -31,7 +31,7 @@ WshShell.Run "wsl.exe -- bash " & Chr(34) & wslDir & "/app-py/run.sh" & Chr(34),
 WScript.Sleep 4000
 
 ' Open dashboard in default browser
-WshShell.Run "http://127.0.0.1:8000", 1, False
+WshShell.Run "http://127.0.0.1:8080", 1, False
 
 Set WshShell = Nothing
 Set fso      = Nothing
