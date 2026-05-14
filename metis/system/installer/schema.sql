@@ -604,9 +604,25 @@ CREATE TABLE IF NOT EXISTS zotero_sync_state (
     item_count   INTEGER DEFAULT 0
 );
 
--- Phase L: PDF Knowledge Database (L1)
+-- Phase L: PDF Knowledge Database — layered architecture
+-- Users build knowledge layer by layer: foundation → specialist → custom
+
+CREATE TABLE IF NOT EXISTS knowledge_databases (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug        TEXT NOT NULL UNIQUE,   -- 'ph-background', 'hat-specialist', 'epi-methods'
+    name        TEXT NOT NULL,          -- 'Public Health Background'
+    description TEXT DEFAULT '',
+    layer       INTEGER DEFAULT 1,      -- 1=foundation, 2=specialist, 3=methods, 4+=custom
+    color       TEXT DEFAULT '#6c757d', -- badge color for UI
+    doc_count   INTEGER DEFAULT 0,
+    chunk_count INTEGER DEFAULT 0,
+    last_built  TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS pdf_chunks (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    db_id       INTEGER NOT NULL DEFAULT 0,  -- FK → knowledge_databases.id
     source_file TEXT NOT NULL,
     domain      TEXT DEFAULT '',
     title       TEXT DEFAULT '',
@@ -620,9 +636,11 @@ CREATE TABLE IF NOT EXISTS pdf_chunks (
 
 CREATE INDEX IF NOT EXISTS idx_pdf_chunks_source ON pdf_chunks (source_file);
 CREATE INDEX IF NOT EXISTS idx_pdf_chunks_domain  ON pdf_chunks (domain);
+CREATE INDEX IF NOT EXISTS idx_pdf_chunks_db_id   ON pdf_chunks (db_id);
 
 CREATE TABLE IF NOT EXISTS pdf_index_state (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    db_id       INTEGER NOT NULL DEFAULT 0,  -- FK → knowledge_databases.id
     source_file TEXT NOT NULL UNIQUE,
     domain      TEXT DEFAULT '',
     title       TEXT DEFAULT '',
