@@ -326,6 +326,8 @@ Each domain background lives in `knowledge/domains/<field>/` and contains:
 | 2026-05-13 | **README pushed to main**: full researcher/developer overhaul with Metis PNG (380px), Mermaid architecture diagram, dual audience structure, contributing spec. |
 | 2026-05-13 | **Phase K complete** (K1–K5): `course-build-lessons-learned.md` written, course-builder skill.md updated with standing rules, `knowledge/course-template/` created, edition variants defined, Inno Setup course selector added. |
 | 2026-05-13 | **Phase 11 partial** (M11.1, M11.3, M11.5+M11.6): `vendor_download.py` + `config_merger.py` + `tray_launcher.py` (with port selection) written. Tray launcher wired into installer + install.ps1. Pending: Inno Setup compile + clean-VM test + code signing. |
+| 2026-05-14 | **Phase 11 complete (code)** (M11.2, M11.4): `bootstrap_python.ps1` (4-strategy Python cascade: PATH → winget → python.org → bundled embed zip), `download_vendor_python.ps1` (pre-download offline embed), `metis-setup.iss` updated (full/standard/minimal/custom types, courses/biostatistics component, 3-step [Run] bootstrap sequence). All installer code done. M11.7 (clean VM test) + M11.8 (code signing) require Stan. |
+| 2026-05-14 | **Library seed script**: `download-library-ph-seed.sh` — 600-line comprehensive script, 176 resources across 19 MPH/GH domains. Fixed `set -e` bug that aborted on failed wget. Running now. |
 
 ---
 
@@ -365,7 +367,7 @@ agent so every new course starts with those improvements applied.
 3. **Phase K — Course Builder lessons learned** (M, 1d) — K1 document + K2 skill update first.
 4. **Morning scan Windows autostart** (S, 1h) — verify "Schedule morning brief" button end-to-end.
 5. **Telegram bot** (L, 1d) — text/voice/image → inbox → cross-pollination.
-6. **Windows .exe final build** (XL, 1d) — compile `metis-setup.iss` with Inno Setup. Installer scripts written (Phase 11 code ✅, pending compile + test).
+6. **Windows .exe final build** (XL, 1d) — compile `metis-setup.iss` with Inno Setup. All installer code ✅ done. Steps: (1) on Windows run `download_vendor_python.ps1` to get embed zip, (2) run `ISCC.exe installer/metis-setup.iss`, (3) test `.exe` on a clean VM.
 7. **Docker image final build** (M, 4h) — test Dockerfile + docker-compose end-to-end.
 8. **Phase 12 test suite** (XXL) — unit + integration + e2e. Zero coverage currently.
 9. **Metis GitHub repos** — create `Metis` (empty shell), `Metis_BM`, `Metis_CL` placeholder repos.

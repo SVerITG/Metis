@@ -1,7 +1,7 @@
 # Manual Downloads Required
 
-Last checked: 2026-05-13
-Status: 46 files need browser download (CAPTCHA / terms-of-use blocks wget)
+Last updated: 2026-05-14
+Status: ~75 files need browser download (WHO IRIS requires login/terms acceptance; PMC returns CAPTCHA; some publisher sites block bots)
 
 After downloading, save each file to the folder shown. The filename must match exactly.
 
@@ -114,6 +114,102 @@ After downloading, save each file to the folder shown. The filename must match e
 | `WHO-public-health-intelligence-curriculum.pdf` | https://iris.who.int/bitstream/handle/10665/365842/9789240072633-eng.pdf | WHO PHI curriculum guide |
 | `WHO-vaccination-coverage-cluster-surveys-manual.pdf` | https://iris.who.int/bitstream/handle/10665/272512/WHO-IVB-18.09-eng.pdf | WHO vaccination coverage survey manual |
 | `WHO-field-guide-epidemic-investigation.pdf` | https://iris.who.int/bitstream/handle/10665/37255/9241544899.pdf | WHO field guide epidemic investigation |
+
+---
+
+## Health Systems & Financing  →  `open-access-books/Health Systems & Financing/`
+
+| File to save as | Download link | What it is |
+|---|---|---|
+| `WHO-monitoring-building-blocks-health-systems-2010.pdf` | https://iris.who.int/bitstream/handle/10665/258734/9789241564052-eng.pdf | WHO Health Systems Building Blocks |
+| `WorldBank-UHC-inclusive-sustainable-2014.pdf` | https://documents1.worldbank.org/curated/en/575211468278746561/pdf/888620PUB0REPL00Box385245B00PUBLIC0.pdf | World Bank UHC & sustainable development |
+| `WorldBank-health-financing-revisited-2006.pdf` | https://openknowledge.worldbank.org/bitstream/handle/10986/6944/370910REVISED01ONLY10rev0020060313.pdf | World Bank Health Financing Revisited |
+
+---
+
+## Global Health Governance  →  `open-access-books/Global Health Governance/`
+
+| File to save as | Download link | What it is |
+|---|---|---|
+| `WHO-global-strategy-health-environment-climate-2020.pdf` | https://iris.who.int/bitstream/handle/10665/331959/9789240000377-eng.pdf | WHO strategy on health, environment and climate |
+| `WHO-WHO-role-global-health-governance-2013.pdf` | https://apps.who.int/gb/ebwha/pdf_files/eb132/b132_5add5-en.pdf | WHO's role in global health governance |
+
+---
+
+## Social Determinants & Equity  →  `open-access-books/Social Determinants & Equity/`
+
+| File to save as | Download link | What it is |
+|---|---|---|
+| `WHO-CSDH-closing-gap-generation-2008.pdf` | https://iris.who.int/bitstream/handle/10665/43943/9789241563703_eng.pdf | CSDH – Closing the Gap in a Generation |
+| `WHO-SDH-framework-conceptual-2010.pdf` | https://iris.who.int/bitstream/handle/10665/44489/9789241500852_eng.pdf | WHO SDH conceptual framework |
+| `WHO-social-determinants-health-debates-evidence-2013.pdf` | https://iris.who.int/bitstream/handle/10665/85355/9789241505529_eng.pdf | WHO SDH debates and evidence |
+
+---
+
+## Environmental Health  →  `open-access-books/Environmental Health/`
+
+| File to save as | Download link | What it is |
+|---|---|---|
+| `WHO-UNFCCC-guidance-protect-health-climate-2018.pdf` | https://iris.who.int/bitstream/handle/10665/272096/9789241514422-eng.pdf | WHO guidance on protecting health from climate change |
+| `McMichael-climate-change-human-health-2003.pdf` | https://iris.who.int/bitstream/handle/10665/42742/924156234X.pdf | McMichael – Climate change & human health |
+
+---
+
+## Mental Health  →  `open-access-books/Mental Health/`
+
+| File to save as | Download link | What it is |
+|---|---|---|
+| `WHO-mhGAP-intervention-guide-v2-2016.pdf` | https://iris.who.int/bitstream/handle/10665/250239/9789241549790-eng.pdf | WHO mhGAP Intervention Guide v2 |
+| `WHO-mhGAP-humanitarian-guide-2015.pdf` | https://iris.who.int/bitstream/handle/10665/199834/9789241548922_eng.pdf | WHO mhGAP for humanitarian settings |
+| `WHO-mental-health-atlas-2020.pdf` | https://iris.who.int/bitstream/handle/10665/345946/9789240036703-eng.pdf | WHO Mental Health Atlas 2020 |
+| `WHO-comprehensive-MH-action-plan-2013-2030.pdf` | https://iris.who.int/bitstream/handle/10665/345947/9789240031029-eng.pdf | WHO Comprehensive Mental Health Action Plan |
+
+---
+
+## NCDs  →  `open-access-books/NCDs/`
+
+| File to save as | Download link | What it is |
+|---|---|---|
+| `WHO-global-NCD-action-plan-2013-2020.pdf` | https://iris.who.int/bitstream/handle/10665/94384/9789241506236_eng.pdf | WHO Global NCD Action Plan 2013-2020 |
+| `PAHO-NCD-roadmap-2023-2030.pdf` | https://iris.paho.org/bitstream/handle/10665.2/57349/9789275126677_eng.pdf | PAHO NCD Roadmap 2023-2030 |
+
+---
+
+## Nutrition & Food Security  →  `open-access-books/Nutrition & Food Security/`
+
+| File to save as | Download link | What it is |
+|---|---|---|
+| `FAO-SOFI-2023-food-security-nutrition.pdf` | https://openknowledge.fao.org/bitstream/handle/20.500.14283/cc3017en/cc3017en.pdf | FAO State of Food Security 2023 |
+| `WHO-essential-nutrition-actions-2019.pdf` | https://iris.who.int/bitstream/handle/10665/326261/9789241515856-eng.pdf | WHO Essential Nutrition Actions |
+
+---
+
+## Maternal & Child Health  →  `open-access-books/Maternal & Child Health/`
+
+| File to save as | Download link | What it is |
+|---|---|---|
+| `WHO-antenatal-care-recommendations-2016.pdf` | https://iris.who.int/bitstream/handle/10665/250796/9789241549912-eng.pdf | WHO ANC recommendations 2016 |
+| `WHO-antenatal-care-operational-guide-2018.pdf` | https://iris.who.int/bitstream/handle/10665/272444/9789241513487-eng.pdf | WHO ANC operational guide |
+
+---
+
+## Field Epidemiology  →  `open-access-books/Field Epidemiology/`
+
+| File to save as | Download link | What it is |
+|---|---|---|
+| `CDC-MMWR-evaluating-surveillance-systems-2001.pdf` | https://www.cdc.gov/mmwr/pdf/rr/rr5013a1.pdf | CDC MMWR guidelines for evaluating surveillance |
+| `CDC-FETP-standard-core-curriculum.pdf` | https://stacks.cdc.gov/view/cdc/29401/cdc_29401_DS1.pdf | CDC FETP standard core curriculum |
+| `AFENET-FETP-training-manual.pdf` | https://www.afenet.net/images/stories/pdf_files/FETP-Training-Manual.pdf | AFENET FETP training manual |
+| `ECDC-field-epidemiology-manual.pdf` | https://www.ecdc.europa.eu/sites/default/files/documents/fem-surveillance-methods-and-interpretation.pdf | ECDC field epidemiology manual |
+
+---
+
+## Research Methods & Scientific Writing  →  `open-access-books/Research Methods & Writing/`
+
+| File to save as | Download link | What it is |
+|---|---|---|
+| `OpenStax-introductory-statistics-2e.pdf` | https://openstax.org/books/introductory-statistics-2e/pages/preface | OpenStax statistics textbook (use Download PDF on page) |
+| `EpiRHandbook-offline-full.pdf` | https://github.com/appliedepi/epiRhandbook_eng/releases/download/v1.0.1/epiRhandbook.pdf | Applied Epi R Handbook (full) |
 
 ---
 
