@@ -1,0 +1,41 @@
+<!-- knowledge_pdf_search.html — PDF chunk keyword search results -->
+{% if not results %}
+<p class="text-muted small">No documents found for <strong>{{ q }}</strong>{% if domain %} in <em>{{ domain }}</em>{% endif %}.</p>
+<p class="text-muted" style="font-size:0.75rem;">
+  Tip: Ask Metis in Claude for deep semantic search across all document content.
+</p>
+{% else %}
+<p class="text-muted small mb-2">
+  {{ results | length }} document{% if results | length != 1 %}s{% endif %} matching
+  <strong>{{ q }}</strong>{% if domain %} in <em>{{ domain }}</em>{% endif %}
+</p>
+<div class="d-flex flex-column gap-2">
+  {% for r in results %}
+  <div class="card border-0 bg-body-secondary" style="font-size:0.82rem;">
+    <div class="card-body py-2 px-3">
+      <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+        <span class="fw-semibold text-body-emphasis" style="font-size:0.85rem;">{{ r.title }}</span>
+        <span class="badge bg-primary-subtle text-primary flex-shrink-0" style="font-size:0.65rem;">
+          {{ r.domain }}
+        </span>
+      </div>
+      {% if r.excerpt_html %}
+      <p class="text-muted mb-1" style="font-size:0.78rem; line-height:1.4;">
+        {{ r.excerpt_html | safe }}…
+      </p>
+      {% endif %}
+      <div class="text-muted d-flex gap-3" style="font-size:0.7rem;">
+        <span>📄 {{ r.filename }}</span>
+        {% if r.page_start %}
+        <span>p. {{ r.page_start }}{% if r.page_end and r.page_end != r.page_start %}–{{ r.page_end }}{% endif %}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<p class="text-muted mt-2 mb-0" style="font-size:0.72rem;">
+  For semantic search (meaning-based, not just keyword), ask Metis:
+  <em>"Search the library for…"</em>
+</p>
+{% endif %}
