@@ -133,41 +133,22 @@ if (-not $SkipClaude) {
     }
 }
 
-# ── Install Python ───────────────────────────────────────────────────────────
+# ── Install Python (via bootstrap_python.ps1 — M11.4) ───────────────────────
 if (-not $SkipPython -and -not $Stage1Only) {
-    Write-Step "Installing Python 3.11"
-    $pythonExe = $null
-    # Check existing Python
-    foreach ($candidate in @("python3.11", "python3", "python")) {
-        $found = Get-Command $candidate -ErrorAction SilentlyContinue
-        if ($found -and (& $found.Source --version 2>&1) -match "3\.(1[01]|[89])") {
-            $pythonExe = $found.Source
-            break
-        }
+    Write-Step "Ensuring Python 3.11+ is available"
+    $bootstrapScript = Join-Path $scriptDir "..\..\bootstrap_python.ps1"
+    if (Test-Path $bootstrapScript) {
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass `
+            -File $bootstrapScript -InstallDir $InstallDir 2>&1 | Out-Null
+        $pythonExe = $env:METIS_PYTHON
     }
-    if ($pythonExe) {
-        Write-OK "Python already installed: $pythonExe"
-    }
-    elseif ($hasWinget) {
-        winget install --id Python.Python.3.11 --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Null
-        # Refresh PATH
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
-                    [System.Environment]::GetEnvironmentVariable("Path","User")
+    if (-not $pythonExe) {
+        # Fallback: plain PATH check
         $pythonExe = (Get-Command python -ErrorAction SilentlyContinue)?.Source
-        if ($pythonExe) { Write-OK "Python 3.11 installed" }
-        else {
-            Write-Warn "Python install via winget may have failed. Trying direct download…"
-            $pyInstaller = Join-Path $env:TEMP "python-3.11.9.exe"
-            Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe" `
-                -OutFile $pyInstaller -UseBasicParsing
-            Start-Process -FilePath $pyInstaller `
-                -ArgumentList "/quiet", "InstallAllUsers=0", "PrependPath=1", "Include_test=0" -Wait
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" +
-                        [System.Environment]::GetEnvironmentVariable("Path","User")
-            $pythonExe = (Get-Command python -ErrorAction SilentlyContinue)?.Source
-        }
     }
-    if (-not $pythonExe) { Write-Fail "Python installation failed. Please install Python 3.11 from https://python.org and re-run." }
+    if (-not $pythonExe) {
+        Write-Fail "Python 3.11+ could not be installed. Try running bootstrap_python.ps1 manually or install Python from https://python.org"
+    }
     Write-OK "Python: $pythonExe"
 }
 

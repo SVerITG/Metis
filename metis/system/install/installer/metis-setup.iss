@@ -109,14 +109,21 @@ Source: "{#RepoRoot}\system\app-py\*"; DestDir: "{app}\system\app-py"; \
   Flags: ignoreversion recursesubdirs createallsubdirs; Components: dashboard; \
   Excludes: "*.pyc,__pycache__,.venv*,*.sqlite"
 
-; Windows launcher scripts
-Source: "..\windows\install.ps1";        DestDir: "{app}\system\install\windows"; Flags: ignoreversion
-Source: "..\windows\run-mcp.bat";        DestDir: "{app}\system\mcp-server";      Flags: ignoreversion
-Source: "..\windows\run-dashboard.bat";  DestDir: "{app}\system\app-py";          Flags: ignoreversion; Components: dashboard
-Source: "..\windows\run-tray.bat";       DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
-Source: "..\tray_launcher.py";           DestDir: "{app}\system\install";         Flags: ignoreversion; Components: dashboard
-Source: "..\vendor_download.py";         DestDir: "{app}\system\install";         Flags: ignoreversion
-Source: "..\config_merger.py";           DestDir: "{app}\system\install";         Flags: ignoreversion
+; Windows launcher and install scripts
+Source: "..\windows\install.ps1";            DestDir: "{app}\system\install\windows"; Flags: ignoreversion
+Source: "..\bootstrap_python.ps1";           DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\download_vendor_python.ps1";     DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\windows\run-mcp.bat";            DestDir: "{app}\system\mcp-server";      Flags: ignoreversion
+Source: "..\windows\run-dashboard.bat";      DestDir: "{app}\system\app-py";          Flags: ignoreversion; Components: dashboard
+Source: "..\windows\run-tray.bat";           DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
+Source: "..\tray_launcher.py";               DestDir: "{app}\system\install";         Flags: ignoreversion; Components: dashboard
+Source: "..\vendor_download.py";             DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\config_merger.py";               DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\seed_ph_database.py";            DestDir: "{app}\system\install";         Flags: ignoreversion
+
+; Bundled Python embeddable (offline fallback — created by download_vendor_python.ps1)
+Source: "..\vendor\python-embed.zip";        DestDir: "{app}\vendor";                 Flags: ignoreversion skipifsourcedoesntexist
+Source: "..\vendor\get-pip.py";              DestDir: "{app}\vendor";                 Flags: ignoreversion skipifsourcedoesntexist
 
 ; CONTRIBUTING + README
 Source: "{#RepoRoot}\..\CONTRIBUTING.md"; DestDir: "{app}";  Flags: ignoreversion skipifsourcedoesntexist
@@ -149,12 +156,25 @@ Name: "{autodesktop}\Metis — Dashboard";    Filename: "{app}\system\install\wi
   Tasks: desktopdash; Components: dashboard; Comment: "Start Metis in the system tray"
 
 [Run]
-; Post-install: run PowerShell to install Python, MCP server, configure Claude Desktop
+; Step 0: Python bootstrap (M11.4) — tries winget, python.org, then bundled embed
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -SkipClaude -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\bootstrap_python.ps1"" -InstallDir ""{app}"""; \
   Flags: waituntilterminated; \
-  StatusMsg: "Installing Python and configuring Metis (2–4 minutes)…"; \
+  StatusMsg: "Setting up Python (checking installed versions)…"
+
+; Step 1 (dashboard): full install — Python, venv, MCP, Claude Desktop config
+Filename: "powershell.exe"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -SkipPython -SkipClaude -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}"""; \
+  Flags: waituntilterminated; \
+  StatusMsg: "Installing Metis (2–4 minutes)…"; \
   Components: dashboard
+
+; Step 1 (no dashboard): MCP only — skip Python, skip dashboard
+Filename: "powershell.exe"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\system\install\windows\install.ps1"" -Stage1Only -SkipPython -SkipClaude -InstallDir ""{app}"" -ApiKey ""{code:GetApiKey}"""; \
+  Flags: waituntilterminated; \
+  StatusMsg: "Configuring Metis AI assistant…"; \
+  Components: not dashboard
 
 ; Stage 1 only: skip Python, just configure
 Filename: "powershell.exe"; \
