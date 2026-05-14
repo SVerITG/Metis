@@ -1267,10 +1267,10 @@ async def content_packs_partial(request: Request):
     # Known packs not yet installed
     KNOWN_PACKS = [
         {
-            "pack_id": "biostatistics-course",
-            "name": "Biostatistics for Epidemiologists",
+            "pack_id": "statistics-course",
+            "name": "Statistics for Epidemiology",
             "pack_type": "course",
-            "description": "12 lessons: descriptive stats, inference, regression, survival, MLM.",
+            "description": "Full statistics course: inference, regression, survival analysis, multilevel models.",
             "version": "1.0",
         },
         {
@@ -1323,7 +1323,7 @@ async def install_content_pack(pack_id: str):
         pass
 
     seed_scripts = {
-        "biostatistics-course": "seed_epi_base.py",
+        "statistics-course": "seed_epi_base.py",
         "ph-content": "seed_ph_database.py",
     }
     script_name = seed_scripts.get(pack_id)
