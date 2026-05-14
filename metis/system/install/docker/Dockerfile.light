@@ -1,70 +1,58 @@
-# Metis Research Cortex — Docker image
-# Runs the MCP server + dashboard in a single container.
-# Your research data is mounted from the host — never inside the image.
+# Metis Research Cortex — MCP-only light image
+# Runs only the MCP server (AI tools for Claude Desktop).
+# No dashboard, no browser interface — half the size.
+#
+# Use this if you only want Metis tools in Claude Desktop,
+# without the browser dashboard.
 #
 # Usage:
-#   docker build -t metis-rc .
-#   docker run -p 8080:8080 \
+#   docker build -f Dockerfile.light -t metis-mcp-light .
+#   docker run -i \
 #     -v /path/to/your/metis:/metis \
 #     -e ANTHROPIC_API_KEY=sk-ant-... \
-#     metis-rc
+#     metis-mcp-light
+#
+# Claude Desktop config (claude_desktop_config.json):
+#   "metis-rc": {
+#     "command": "docker",
+#     "args": ["run", "-i", "--rm",
+#       "-v", "/path/to/metis:/metis",
+#       "-e", "ANTHROPIC_API_KEY=sk-ant-...",
+#       "metis-mcp-light"]
+#   }
 
 FROM python:3.11-slim
 
 LABEL maintainer="Metis Project"
-LABEL description="Metis Research Cortex — AI assistant for researchers"
+LABEL description="Metis Research Cortex — MCP server only (light)"
 
 # ── System dependencies ───────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
     libsqlite3-dev \
     libffi-dev \
-    curl \
-    git \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Python environment ────────────────────────────────────────────────────────
 WORKDIR /app
 
-# Install MCP server package
 COPY metis/system/mcp-server/pyproject.toml .
 COPY metis/system/mcp-server/src ./src
 
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -e ".[voice]" && \
-    pip install --no-cache-dir \
-        "fastapi>=0.110.0" \
-        "uvicorn[standard]>=0.29.0" \
-        "feedparser>=6.0" \
-        "pyzotero>=1.5" \
-        "apscheduler>=3.10" \
-        "pyyaml>=6.0"
+    pip install --no-cache-dir -e ".[voice]"
 
-# Copy dashboard
-COPY metis/system/app-py ./dashboard
-
-# Copy agents, skills, config (no personal data)
+# Copy agents and config (no personal data, no dashboard)
 COPY metis/agents ./metis/agents
 COPY metis/.claude ./metis/.claude
-COPY metis/knowledge/courses ./metis/knowledge/courses
-COPY metis/knowledge/library/concepts ./metis/knowledge/library/concepts
-COPY metis/knowledge/library/methods ./metis/knowledge/library/methods
 COPY metis/system/config ./metis/system/config
 
 # ── Runtime configuration ─────────────────────────────────────────────────────
-# METIS_RC_ROOT must point to the mounted volume containing personal data.
-# Set this to the path of your mounted research directory.
 ENV METIS_RC_ROOT=/metis
-ENV PYTHONPATH=/app/src:/app/dashboard
+ENV PYTHONPATH=/app/src
 ENV METIS_DOCKER=1
 
-# Expose dashboard port
-EXPOSE 8080
+# MCP communicates via stdio — no port to expose
 
 # ── Entrypoint ────────────────────────────────────────────────────────────────
-# Runs both MCP server and dashboard via a supervisor script.
-COPY metis/system/install/docker/docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
-
-ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["python", "-m", "metis_mcp.server"]

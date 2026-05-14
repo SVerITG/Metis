@@ -9,15 +9,15 @@ case "$1" in
     exec python -m metis_mcp.server
     ;;
   dashboard)
-    echo "Starting Metis dashboard on port 8000…"
+    echo "Starting Metis dashboard on port 8080…"
     cd /app/dashboard
-    exec python -m uvicorn app:app --host 0.0.0.0 --port 8000
+    exec python -m uvicorn main:app --host 0.0.0.0 --port 8080
     ;;
   both)
     echo "Starting Metis MCP server + dashboard…"
     python -m metis_mcp.server &
     cd /app/dashboard
-    exec python -m uvicorn app:app --host 0.0.0.0 --port 8000
+    exec python -m uvicorn main:app --host 0.0.0.0 --port 8080
     ;;
   *)
     echo "Usage: docker run metis-rc [mcp|dashboard|both]"

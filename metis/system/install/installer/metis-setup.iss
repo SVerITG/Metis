@@ -59,13 +59,15 @@ english.CourseCheckboxLabel=Biostatistics for Epidemiologists (12 lessons, ~0.5 
 
 [Types]
 Name: "full";     Description: "Full — dashboard + courses (recommended for new users)"
+Name: "ph";       Description: "Public Health Shell — dashboard + public health starter content"
 Name: "standard"; Description: "Standard — AI assistant + research dashboard"
 Name: "minimal";  Description: "Minimal — AI assistant only (fastest, no dashboard)"
 Name: "custom";   Description: "Custom installation"; Flags: iscustom
 
 [Components]
-Name: "core";                 Description: "Metis core (agents, skills, config)";              Types: full standard minimal custom; Flags: fixed
-Name: "dashboard";            Description: "Research dashboard (browser-based, 9 tabs)";       Types: full standard custom
+Name: "core";                 Description: "Metis core (agents, skills, config)";              Types: full ph standard minimal custom; Flags: fixed
+Name: "dashboard";            Description: "Research dashboard (browser-based, 9 tabs)";       Types: full ph standard custom
+Name: "ph_content";           Description: "Public health starter content (50 library cards, literature seeds, 20 courses)"; Types: ph custom
 Name: "courses";              Description: "Pre-built courses";                                  Types: full custom
 Name: "courses/biostatistics"; Description: "Biostatistics for Epidemiologists (12 lessons)";  Types: full custom
 
@@ -184,7 +186,14 @@ Filename: "powershell.exe"; \
   StatusMsg: "Configuring Metis AI assistant…"; \
   Components: not dashboard
 
-; Step 2 (full/standard): Build PDF knowledge database — local embeddings, no API key needed
+; Step 2a (PH shell): seed public health starter content into SQLite
+Filename: "powershell.exe"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& { $py = $env:METIS_PYTHON; if (-not $py) { $py = 'python' }; & $py '{app}\system\install\seed_ph_database.py' --db '{app}\system\app\data\metis.sqlite' --quiet }"""; \
+  Flags: waituntilterminated runhidden; \
+  StatusMsg: "Seeding public health library (50 cards, epidemiology literature, 20 courses)…"; \
+  Components: ph_content
+
+; Step 2b (full/standard): Build PDF knowledge database — local embeddings, no API key needed
 ; Runs only when the library folder has PDFs. Skips gracefully if library is empty.
 Filename: "powershell.exe"; \
   Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& { $py = $env:METIS_PYTHON; if (-not $py) { $py = 'python' }; & $py '{app}\system\install\build_knowledge_db.py' --library-dir '{app}\knowledge\library' --db '{app}\system\app\data\metis.sqlite' --quiet }"""; \
@@ -276,10 +285,12 @@ begin
     // Write install-state.json reflecting chosen components
     begin
       var StateFile := ExpandConstant('{app}\system\config\install-state.json');
-      var HasDash   := WizardIsComponentSelected('dashboard');
-      var HasCourse := WizardIsComponentSelected('courses/biostatistics');
-      var Profile   := 'standard';
+      var HasDash    := WizardIsComponentSelected('dashboard');
+      var HasCourse  := WizardIsComponentSelected('courses/biostatistics');
+      var HasPH      := WizardIsComponentSelected('ph_content');
+      var Profile    := 'standard';
       if HasDash and HasCourse then Profile := 'full'
+      else if HasDash and HasPH then Profile := 'ph-shell'
       else if not HasDash then Profile := 'mcp-only';
       var StateContent :=
         '{' + #13#10 +
@@ -287,6 +298,7 @@ begin
         '  "version": "' + '{#MyAppVersion}' + '",' + #13#10 +
         '  "installed_at": "' + GetDateTimeString('yyyy/mm/dd', '-', ':') + '",' + #13#10 +
         '  "courses_included": [' + (if HasCourse then '"biostatistics"' else '') + '],' + #13#10 +
+        '  "ph_content_seeded": ' + (if HasPH then 'true' else 'false') + ',' + #13#10 +
         '  "components": {' + #13#10 +
         '    "mcp_server": true,' + #13#10 +
         '    "dashboard": ' + (if HasDash then 'true' else 'false') + ',' + #13#10 +
