@@ -603,3 +603,31 @@ CREATE TABLE IF NOT EXISTS zotero_sync_state (
     last_synced  TEXT,
     item_count   INTEGER DEFAULT 0
 );
+
+-- Phase L: PDF Knowledge Database (L1)
+CREATE TABLE IF NOT EXISTS pdf_chunks (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_file TEXT NOT NULL,
+    domain      TEXT DEFAULT '',
+    title       TEXT DEFAULT '',
+    page_start  INTEGER DEFAULT 0,
+    page_end    INTEGER DEFAULT 0,
+    chunk_idx   INTEGER NOT NULL,
+    chunk_text  TEXT NOT NULL,
+    char_count  INTEGER DEFAULT 0,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_pdf_chunks_source ON pdf_chunks (source_file);
+CREATE INDEX IF NOT EXISTS idx_pdf_chunks_domain  ON pdf_chunks (domain);
+
+CREATE TABLE IF NOT EXISTS pdf_index_state (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_file TEXT NOT NULL UNIQUE,
+    domain      TEXT DEFAULT '',
+    title       TEXT DEFAULT '',
+    total_pages INTEGER DEFAULT 0,
+    chunk_count INTEGER DEFAULT 0,
+    file_size   INTEGER DEFAULT 0,
+    indexed_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);

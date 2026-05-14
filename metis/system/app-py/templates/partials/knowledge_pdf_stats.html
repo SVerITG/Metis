@@ -1,0 +1,39 @@
+<!-- knowledge_pdf_stats.html — PDF index stats panel -->
+<div class="d-flex align-items-center justify-content-between mb-2">
+  <span class="text-muted small">
+    <strong>{{ total_docs }}</strong> documents &nbsp;·&nbsp; <strong>{{ "{:,}".format(total_chunks) }}</strong> indexed chunks
+  </span>
+  <button class="btn btn-outline-primary btn-sm" style="font-size:0.72rem;"
+          hx-post="/api/knowledge/build-index"
+          hx-target="#pdf-index-status"
+          hx-swap="innerHTML"
+          hx-confirm="This will index all PDFs in your library using local AI embeddings. It may take 5–20 minutes. Continue?">
+    Rebuild index
+  </button>
+</div>
+{% if rows %}
+<table class="table table-sm table-hover mb-0" style="font-size:0.78rem;">
+  <thead>
+    <tr>
+      <th class="text-muted fw-normal">Domain</th>
+      <th class="text-muted fw-normal text-end">Docs</th>
+      <th class="text-muted fw-normal text-end">Chunks</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.domain or '(unknown)' }}</td>
+      <td class="text-end">{{ r.docs }}</td>
+      <td class="text-end text-muted">{{ "{:,}".format(r.chunks or 0) }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="text-muted small mb-0">
+  No PDFs indexed yet. Run <code>build_pdf_knowledge_db()</code> in Metis,
+  or click <em>Rebuild index</em> above.
+</p>
+{% endif %}
+<div id="pdf-index-status" class="mt-2"></div>
