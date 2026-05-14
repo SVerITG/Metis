@@ -119,6 +119,19 @@ def _user_name() -> str:
     except Exception:
         pass
     try:
+        import json as _json
+        from pathlib import Path as _P
+        rc = os.environ.get("METIS_RC_ROOT", "")
+        if rc:
+            prefs = _P(rc) / "system" / "config" / "user-preferences.json"
+            if prefs.exists():
+                data = _json.loads(prefs.read_text())
+                name = data.get("display_name", "")
+                if name:
+                    return name
+    except Exception:
+        pass
+    try:
         import yaml
         from pathlib import Path as _P
         rc = os.environ.get("METIS_RC_ROOT", "")
