@@ -1,10 +1,3 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="Metis_github.png"/>
-    <img src="Metis_github.png" alt="Metis — Research Cortex" width="420"/>
-  </picture>
-</p>
-
 <h1 align="center">Metis — The Research Cortex</h1>
 
 <p align="center">
@@ -59,6 +52,15 @@ Generic AI tools leave several researcher-specific problems unsolved:
 | **Long-horizon projects** — research unfolds over months and years | Persistent project memory, reflexion loop, session handoffs |
 | **Data sensitivity** — patient data, embargoed results, institutional ethics | Everything local. PII detection. AES-256 encryption. Constitution + red-lines. |
 | **Workflow fragmentation** — literature, meetings, writing, analysis, teaching in separate tools | Single interface with 30 specialist agents across all research workflows |
+
+---
+
+<table width="100%" cellspacing="0" cellpadding="0" border="0">
+<tr>
+<td width="50%" align="center"><img src="docs/metis-stack.svg" width="460" alt="Metis — The System"/></td>
+<td width="50%" align="center"><img src="docs/metis-workflow.svg" width="460" alt="Metis — The Workflow"/></td>
+</tr>
+</table>
 
 ---
 
@@ -538,14 +540,18 @@ cd Metis_PH/metis/system/mcp-server && bash setup-mcp.sh
 cd ../app-py && bash run.sh   # → http://127.0.0.1:8000
 ```
 
-### Option 3 — Docker (planned for v1.0)
+### Option 3 — Docker
 
 ```bash
-docker run -p 8000:8000 \
-  -v /path/to/your/data:/metis/data \
-  -e METIS_RC_ROOT=/metis \
-  ghcr.io/sveritg/metis:latest
+# Full (MCP + dashboard)
+docker compose -f metis/system/install/docker/docker-compose.yml up -d
+# → http://localhost:8080
+
+# MCP-only light (AI tools for Claude Desktop, no dashboard)
+docker compose -f metis/system/install/docker/docker-compose.light.yml up -d
 ```
+
+Copy `metis/system/install/docker/.env.example` to `.env` and fill in your API key first.
 
 ### Option 4 — Windows .exe installer (planned for v1.0)
 
