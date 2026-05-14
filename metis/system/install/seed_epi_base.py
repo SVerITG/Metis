@@ -1,21 +1,22 @@
 """
-seed_epi_base.py — Seeds the Biostatistics for Epidemiologists course
+seed_epi_base.py — Seeds the Statistics for Epidemiology course
 into the Metis database.
 
 This is the content pack for the "full" base install. It registers:
-  - 12 biostatistics lessons as learning_courses entries
+  - All statistics lessons from knowledge/courses/statistics/ (count is dynamic)
   - Spaced-repetition topics per lesson
-  - A content_packs record (pack_id: biostatistics-course)
+  - A content_packs record (pack_id: statistics-course)
 
 The PH content pack (HAT/NTD library cards, epi literature, domain
 knowledge) is in seed_ph_database.py and is only for Metis_PH.
 
-Toggle off: DELETE FROM content_packs WHERE pack_id = 'biostatistics-course'
-            DELETE FROM learning_courses WHERE slug LIKE 'biostats-%'
+Toggle off: DELETE FROM content_packs WHERE pack_id = 'statistics-course'
+            DELETE FROM learning_courses WHERE slug = 'statistics-for-epidemiology'
 Toggle on:  run this script again.
 
 Usage:
   python seed_epi_base.py --db /path/to/metis.sqlite [--quiet] [--remove]
+                          [--course-dir /path/to/knowledge/courses/statistics]
 """
 
 import argparse
@@ -25,52 +26,21 @@ import sqlite3
 import sys
 from pathlib import Path
 
-PACK_ID = "biostatistics-course"
+PACK_ID = "statistics-course"
 PACK_VERSION = "1.0"
 
-COURSE_SLUG = "biostatistics-for-epidemiologists"
+COURSE_SLUG = "statistics-for-epidemiology"
+COURSE_TITLE = "Statistics for Epidemiology"
 
-LESSONS = [
-    (1,  "01-descriptive-statistics",     "Descriptive Statistics",
-     "Central tendency, spread, distributions, and graphical summaries."),
-    (2,  "02-probability-basics",          "Probability Basics",
-     "Events, conditional probability, Bayes' theorem, independence."),
-    (3,  "03-probability-distributions",   "Probability Distributions",
-     "Binomial, Poisson, normal — when to use each and key properties."),
-    (4,  "04-confidence-intervals",        "Confidence Intervals",
-     "Construction, interpretation, and common misconceptions."),
-    (5,  "05-hypothesis-testing",          "Hypothesis Testing",
-     "Null and alternative hypotheses, p-values, Type I and II errors."),
-    (6,  "06-chi-square-and-t-tests",      "Chi-Square & t-Tests",
-     "Tests for categorical and continuous outcomes."),
-    (7,  "07-correlation-simple-regression", "Correlation & Simple Regression",
-     "Pearson r, linear regression, assumptions, and interpretation."),
-    (8,  "08-multiple-regression",         "Multiple Regression",
-     "Confounding, model building, collinearity, and diagnostics."),
-    (9,  "09-logistic-regression",         "Logistic Regression",
-     "Binary outcomes, odds ratios, likelihood, ROC curves."),
-    (10, "10-survival-analysis",           "Survival Analysis",
-     "Kaplan-Meier, log-rank test, Cox proportional hazards model."),
-    (11, "11-poisson-regression",          "Poisson & Negative Binomial Regression",
-     "Count outcomes, rate ratios, overdispersion."),
-    (12, "12-intro-multilevel-models",     "Introduction to Multilevel Models",
-     "Clustered data, random intercepts, ICC, and when MLM is needed."),
+# Default course folder — can be overridden via --course-dir argument.
+# The script reads lessons.json (and counts .md files) dynamically so the
+# lesson count is never hardcoded here.
+_DEFAULT_COURSE_DIRS = [
+    # Canonical location after rename
+    "knowledge/courses/statistics",
+    # Legacy location (folder was originally named biostatistics/)
+    "knowledge/courses/biostatistics",
 ]
-
-SRS_TOPICS = {
-    "01-descriptive-statistics":       ["mean vs median", "variance vs SD", "skewness", "IQR"],
-    "02-probability-basics":           ["conditional probability", "Bayes theorem", "sensitivity vs specificity"],
-    "03-probability-distributions":    ["normal distribution", "Poisson assumptions", "binomial vs Poisson"],
-    "04-confidence-intervals":         ["95% CI interpretation", "CI vs p-value", "wide CIs — what they mean"],
-    "05-hypothesis-testing":           ["p-value definition", "Type I vs Type II", "statistical vs clinical significance"],
-    "06-chi-square-and-t-tests":       ["chi-square assumptions", "paired vs independent t", "Fisher exact"],
-    "07-correlation-simple-regression": ["r² interpretation", "regression assumptions", "correlation ≠ causation"],
-    "08-multiple-regression":          ["confounding control", "collinearity", "model selection criteria"],
-    "09-logistic-regression":          ["odds ratio interpretation", "log-odds", "Hosmer-Lemeshow"],
-    "10-survival-analysis":            ["hazard ratio", "censoring", "PH assumption"],
-    "11-poisson-regression":           ["rate ratio", "offset term", "overdispersion check"],
-    "12-intro-multilevel-models":      ["ICC calculation", "random vs fixed effects", "when MLM is needed"],
-}
 
 
 def connect(db_path: str) -> sqlite3.Connection:
@@ -112,7 +82,52 @@ def remove_pack(conn: sqlite3.Connection) -> None:
     print("Biostatistics course removed.")
 
 
-def seed_pack(conn: sqlite3.Connection, quiet: bool = False) -> None:
+def _find_course_dir(override: str = "") -> Path | None:
+    """Locate the statistics course folder."""
+    if override:
+        p = Path(override)
+        return p if p.exists() else None
+    # Search relative to this script (works from installer/ or repo root)
+    script_dir = Path(__file__).parent
+    for rel in _DEFAULT_COURSE_DIRS:
+        # Try relative to script's parent chain up to 5 levels
+        base = script_dir
+        for _ in range(6):
+            candidate = base / rel
+            if candidate.exists():
+                return candidate
+            base = base.parent
+    return None
+
+
+def _read_lessons(course_dir: Path) -> tuple[int, list[str]]:
+    """Return (total_lessons, list_of_srs_keywords) from lessons.json + .md files."""
+    lessons_json = course_dir / "lessons.json"
+    md_files = sorted((course_dir / "lessons").glob("*.md")) if (course_dir / "lessons").exists() else []
+
+    total = len(md_files)
+    keywords: list[str] = []
+
+    if lessons_json.exists():
+        try:
+            data = json.loads(lessons_json.read_text(encoding="utf-8"))
+            lesson_list = data.get("lessons", [])
+            total = max(total, len(lesson_list))
+            for lesson in lesson_list:
+                title = lesson.get("title", "")
+                desc = lesson.get("description", "")
+                if title:
+                    keywords.append(title)
+                if desc:
+                    keywords.append(desc[:60])
+        except Exception:
+            pass
+
+    return total, keywords
+
+
+def seed_pack(conn: sqlite3.Connection, quiet: bool = False,
+              course_dir_override: str = "") -> None:
     now = datetime.datetime.now().isoformat(timespec="seconds")
 
     # Check if already seeded
@@ -124,6 +139,13 @@ def seed_pack(conn: sqlite3.Connection, quiet: bool = False) -> None:
             print(f"Pack '{PACK_ID}' already installed — skipping.")
         return
 
+    # Locate course directory and read lesson count dynamically
+    course_dir = _find_course_dir(course_dir_override)
+    total_lessons = 0
+    srs_keywords: list[str] = []
+    if course_dir:
+        total_lessons, srs_keywords = _read_lessons(course_dir)
+
     # Register the parent course entry
     existing_course = conn.execute(
         "SELECT id FROM learning_courses WHERE slug = ?", (COURSE_SLUG,)
@@ -134,48 +156,50 @@ def seed_pack(conn: sqlite3.Connection, quiet: bool = False) -> None:
             """INSERT INTO learning_courses
                (title, category, progress_pct, total_modules, completed_modules,
                 status, created_at, slug)
-               VALUES (?, 'methods', 0, 12, 0, 'active', ?, ?)""",
-            ("Biostatistics for Epidemiologists", now, COURSE_SLUG),
+               VALUES (?, 'methods', 0, ?, 0, 'active', ?, ?)""",
+            (COURSE_TITLE, total_lessons, now, COURSE_SLUG),
         )
         course_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
     else:
         course_id = existing_course["id"]
-        # Remove stale topic rows before re-seeding
+        # Refresh module count and remove stale SRS topics
+        conn.execute(
+            "UPDATE learning_courses SET total_modules=?, title=? WHERE id=?",
+            (total_lessons, COURSE_TITLE, course_id),
+        )
         conn.execute("DELETE FROM course_topics WHERE course_id = ?", (course_id,))
 
-    # Seed SRS topics
-    for slug, topics in SRS_TOPICS.items():
-        for kw in topics:
-            conn.execute(
-                "INSERT INTO course_topics (course_id, keyword) VALUES (?, ?)",
-                (course_id, kw),
-            )
+    # Seed SRS topics from the actual lesson content
+    for kw in srs_keywords:
+        conn.execute(
+            "INSERT INTO course_topics (course_id, keyword) VALUES (?, ?)",
+            (course_id, kw),
+        )
+
+    desc = f"Statistics course for epidemiologists covering statistical inference, regression, survival analysis, and multilevel models."
+    if total_lessons:
+        desc = f"{total_lessons}-lesson statistics course for epidemiologists."
 
     # Register content pack
     conn.execute(
         """INSERT INTO content_packs
            (pack_id, name, version, pack_type, description, installed_at, enabled)
            VALUES (?, ?, ?, 'course', ?, ?, 1)""",
-        (
-            PACK_ID,
-            "Biostatistics for Epidemiologists",
-            PACK_VERSION,
-            "12-lesson course covering descriptive stats, inference, "
-            "regression, survival analysis, and multilevel models.",
-            now,
-        ),
+        (PACK_ID, COURSE_TITLE, PACK_VERSION, desc, now),
     )
     conn.commit()
 
     if not quiet:
-        print(f"✓ Biostatistics course seeded ({len(LESSONS)} lessons, "
-              f"{sum(len(v) for v in SRS_TOPICS.values())} SRS topics)")
+        print(f"✓ Statistics course seeded ({total_lessons} lessons, "
+              f"{len(srs_keywords)} SRS topics)")
         print(f"  Pack registered: {PACK_ID} v{PACK_VERSION}")
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Seed or remove the Biostatistics course pack.")
+    parser = argparse.ArgumentParser(description="Seed or remove the Statistics for Epidemiology course pack.")
     parser.add_argument("--db", required=True, help="Path to metis.sqlite")
+    parser.add_argument("--course-dir", default="",
+                        help="Path to the statistics course folder (auto-detected if omitted)")
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--remove", action="store_true",
                         help="Remove the pack instead of installing it")
@@ -197,7 +221,7 @@ def main() -> None:
         if args.remove:
             remove_pack(conn)
         else:
-            seed_pack(conn, quiet=args.quiet)
+            seed_pack(conn, quiet=args.quiet, course_dir_override=args.course_dir)
     finally:
         conn.close()
 

@@ -64,9 +64,9 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
 english.WelcomeText=This will install Metis Research Cortex on your computer.%n%nMetis is an AI assistant designed for researchers. It works alongside Claude AI and runs entirely on your computer — your research files never leave your machine.%n%nInstallation takes about 5 minutes.%n%nYou will need an Anthropic API key (free from console.anthropic.com).
-english.CoursePageTitle=Optional: Biostatistics Course
-english.CoursePageDesc=Include a pre-built statistics course for epidemiologists?
-english.CourseCheckboxLabel=Biostatistics for Epidemiologists (12 lessons, ~0.5 MB)%n%nCovers: descriptive stats, inference, regression, survival analysis, and multilevel models.%nDesigned for researchers — no prior statistics knowledge required.
+english.CoursePageTitle=Optional: Statistics Course
+english.CoursePageDesc=Include the Statistics for Epidemiology course?
+english.CourseCheckboxLabel=Statistics for Epidemiology%n%nCovers: descriptive stats, inference, regression, survival analysis, and multilevel models.%nDesigned for researchers — grows as new lessons are added.
 
 [Types]
 Name: "full";     Description: "Full — dashboard + courses (recommended for new users)"
@@ -80,7 +80,7 @@ Name: "core";                 Description: "Metis core (agents, skills, config)"
 Name: "dashboard";            Description: "Research dashboard (browser-based, 9 tabs)";       Types: full ph standard custom
 Name: "ph_content";           Description: "Public health starter content (50 library cards, literature seeds, 20 courses)"; Types: ph custom
 Name: "courses";              Description: "Pre-built courses";                                  Types: full custom
-Name: "courses/biostatistics"; Description: "Biostatistics for Epidemiologists (12 lessons)";  Types: full custom
+Name: "courses/statistics"; Description: "Statistics for Epidemiology (full course)";  Types: full custom
 
 [Tasks]
 Name: "desktopai";     Description: "Shortcut on desktop: Open Metis AI";        GroupDescription: "Shortcuts:"
