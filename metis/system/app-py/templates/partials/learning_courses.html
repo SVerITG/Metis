@@ -1,34 +1,67 @@
-<!-- learning_courses.html — Editorial course cards -->
+<!-- learning_courses.html — Editorial course cards with detailed progress -->
 {% if not courses %}
 <div class="panel panel-pad" style="grid-column:1/-1;text-align:center;padding:32px 24px;border:1px dashed var(--m-line);">
-  <h4 class="ed" style="margin:0 0 8px;font-size:17px;">No courses yet</h4>
+  <h4 class="ed" style="margin:0 0 8px;font-size:17px;">No active courses</h4>
   <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 14px;max-width:480px;margin-left:auto;margin-right:auto;">
-    Two ways to start: pick a placeholder course from the catalog below and click <em>Build</em>,
-    or in Claude Code run <code>/course-builder</code> for an end-to-end build.
+    Pick a course idea from the catalog below and click <em>Build</em>, or run <code>/course-builder</code> in Claude Code.
   </p>
 </div>
 {% else %}
 {% for c in courses %}
-<div class="panel panel-pad course-card" style="padding:20px 22px;display:flex;flex-direction:column;gap:10px;">
+<div class="panel panel-pad course-card" style="padding:20px 22px;display:flex;flex-direction:column;gap:10px;" id="course-card-{{ c.id }}">
+
+  <!-- Kicker -->
   <div class="kicker" style="color:{% if c.status == 'active' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
     <span>{{ (c.category or 'COURSE')|upper }} · {{ (c.status or 'in progress')|upper }}</span>
   </div>
+
+  <!-- Title -->
   <div style="font-family:var(--m-display);font-size:18px;font-weight:500;color:var(--m-ink);line-height:1.25;">{{ c.title }}</div>
+
+  <!-- Progress bar + module count -->
   {% if c.total_modules %}
   <div class="todo-meta" style="margin:0;">
-    {{ c.completed_modules or 0 }} OF {{ c.total_modules }} MODULES · {{ c.progress_pct or 0 }}%
+    MODULE {{ c.completed_modules or 0 }} OF {{ c.total_modules }} &nbsp;·&nbsp; {{ (c.progress_pct or 0)|int }}% COMPLETE
   </div>
   {% else %}
-  <div class="todo-meta" style="margin:0;">{{ c.progress_pct or 0 }}% COMPLETE</div>
+  <div class="todo-meta" style="margin:0;">{{ (c.progress_pct or 0)|int }}% COMPLETE</div>
   {% endif %}
-
-  <div style="height:2px;background:var(--m-surface-3);border-radius:1px;margin-top:4px;">
-    <div class="progress-line" style="height:100%;width:{{ c.progress_pct or 0 }}%;background:var(--m-accent);border-radius:1px;transition:width 600ms ease;"></div>
+  <div style="height:3px;background:var(--m-surface-3);border-radius:2px;">
+    <div style="height:100%;width:{{ (c.progress_pct or 0)|int }}%;background:var(--m-accent);border-radius:2px;transition:width 600ms ease;"></div>
   </div>
 
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+  <!-- Last completed lesson -->
+  {% if c.current_lesson %}
+  <div style="display:flex;gap:8px;align-items:flex-start;margin-top:2px;">
+    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-muted);white-space:nowrap;padding-top:2px;">LAST</span>
+    <span style="font-size:13px;color:var(--m-muted);line-height:1.4;">{{ c.current_lesson }}</span>
+  </div>
+  {% endif %}
+
+  <!-- Next lesson -->
+  {% if c.next_lesson %}
+  <div style="display:flex;gap:8px;align-items:flex-start;">
+    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-accent);white-space:nowrap;padding-top:2px;">NEXT</span>
+    <span style="font-size:13px;font-weight:500;color:var(--m-ink);line-height:1.4;">{{ c.next_lesson }}</span>
+  </div>
+  {% endif %}
+
+  <!-- Lesson notes -->
+  {% if c.lesson_notes %}
+  <div style="font-size:12px;color:var(--m-muted);line-height:1.5;padding:8px 10px;background:var(--m-surface-2);border-radius:3px;border-left:2px solid var(--m-accent-soft,var(--m-line));">
+    {{ c.lesson_notes }}
+  </div>
+  {% endif %}
+
+  <!-- Action buttons -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+    {% if c.course_url %}
+    <a href="{{ c.course_url }}" target="_blank" class="btn btn--primary btn--caps" style="text-decoration:none;">
+      Open course
+    </a>
+    {% endif %}
     {% if c.project_id %}
-    <button class="btn btn--primary btn--caps"
+    <button class="btn {% if not c.course_url %}btn--primary{% else %}btn--ghost{% endif %} btn--caps"
             onclick="launchProjectTarget('{{ c.project_id }}','claude_code')"
             title="Open in Claude Code">Claude Code</button>
     <button class="btn btn--ghost btn--caps"
@@ -38,24 +71,46 @@
             onclick="launchProjectTarget('{{ c.project_id }}','explorer')"
             title="Open course folder">Folder</button>
     {% elif c.slug %}
-    <button class="btn btn--primary btn--caps" onclick="buildCourse('{{ c.slug }}')">Launch</button>
-    <button class="btn btn--ghost btn--caps" onclick="toggleQuestionPanel(this,'{{ c.slug }}','{{ c.title|e }}')">Research question</button>
-    {% else %}
-    <button class="btn btn--sec btn--caps" onclick="buildCourse('{{ c.id }}')">Launch</button>
+    <button class="btn {% if not c.course_url %}btn--primary{% else %}btn--ghost{% endif %} btn--caps"
+            onclick="buildCourse('{{ c.slug }}')">Build</button>
     {% endif %}
+    <button class="btn btn--ghost btn--caps"
+            onclick="toggleLessonEdit({{ c.id }})"
+            title="Edit lesson progress">Update progress</button>
   </div>
 
-  {% if c.slug and not c.project_id %}
-  <div class="course-question-panel" style="display:none;width:100%;">
-    <textarea class="question-input" rows="3"
-      style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:13px;resize:vertical;background:var(--m-surface-2);color:var(--m-ink);line-height:1.5;"
-      placeholder="Paste your research question here — the course will be adapted to your specific context…"></textarea>
-    <div style="display:flex;gap:6px;margin-top:6px;">
-      <button class="btn btn--sec btn--caps" onclick="launchWithQuestion(this,'{{ c.slug }}','{{ c.title|e }}')">Start with this question</button>
-      <button class="btn btn--ghost btn--caps" onclick="buildCourse('{{ c.slug }}')">Chat without question</button>
+  <!-- Inline lesson editor (hidden by default) -->
+  <div id="lesson-edit-{{ c.id }}" style="display:none;margin-top:6px;padding:14px;background:var(--m-surface-2);border-radius:4px;border:1px solid var(--m-line);">
+    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:10px;">UPDATE PROGRESS</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div>
+        <label style="font-size:11px;color:var(--m-muted);display:block;margin-bottom:3px;">Last completed lesson</label>
+        <input id="last-{{ c.id }}" type="text" value="{{ c.current_lesson or '' }}"
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:3px;padding:6px 8px;font-size:13px;background:var(--m-surface-1);color:var(--m-ink);">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--m-muted);display:block;margin-bottom:3px;">Next lesson</label>
+        <input id="next-{{ c.id }}" type="text" value="{{ c.next_lesson or '' }}"
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:3px;padding:6px 8px;font-size:13px;background:var(--m-surface-1);color:var(--m-ink);">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--m-muted);display:block;margin-bottom:3px;">Course URL (localhost, if any)</label>
+        <input id="url-{{ c.id }}" type="text" value="{{ c.course_url or '' }}"
+               placeholder="e.g. http://localhost:3000"
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:3px;padding:6px 8px;font-size:13px;background:var(--m-surface-1);color:var(--m-ink);">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--m-muted);display:block;margin-bottom:3px;">Notes</label>
+        <textarea id="notes-{{ c.id }}" rows="2"
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:3px;padding:6px 8px;font-size:13px;background:var(--m-surface-1);color:var(--m-ink);resize:vertical;line-height:1.5;">{{ c.lesson_notes or '' }}</textarea>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn--primary btn--caps" onclick="saveLessonProgress({{ c.id }})">Save</button>
+        <button class="btn btn--ghost btn--caps" onclick="toggleLessonEdit({{ c.id }})">Cancel</button>
+      </div>
     </div>
   </div>
-  {% endif %}
+
 </div>
 {% endfor %}
 {% endif %}

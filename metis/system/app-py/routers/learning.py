@@ -3,13 +3,14 @@ routers/learning.py — Learning tab routes.
 """
 
 import datetime
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from db import db_query, db_scalar
+from db import db_query, db_scalar, db_execute
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -47,7 +48,8 @@ async def learning_meta(request: Request):
 @router.get("/api/partial/learning/courses-archive", response_class=HTMLResponse)
 async def learning_courses_archive(request: Request):
     courses = db_query(
-        "SELECT id, title, category, progress_pct, total_modules, completed_modules, status, slug "
+        "SELECT id, title, category, progress_pct, total_modules, completed_modules, status, slug, "
+        "project_id, current_lesson, next_lesson, course_url, lesson_notes "
         "FROM learning_courses WHERE status IN ('active','in_progress') ORDER BY progress_pct DESC LIMIT 6"
     ) or []
     return templates.TemplateResponse(
@@ -89,7 +91,8 @@ async def learning_due_today(request: Request):
 @router.get("/api/partial/learning/courses", response_class=HTMLResponse)
 async def learning_courses(request: Request):
     courses = db_query(
-        "SELECT id, slug, title, category, progress_pct, total_modules, completed_modules, project_id "
+        "SELECT id, slug, title, category, progress_pct, total_modules, completed_modules, project_id, "
+        "current_lesson, next_lesson, course_url, lesson_notes "
         "FROM learning_courses WHERE status = 'active' ORDER BY progress_pct DESC",
         default=[],
     )
@@ -140,6 +143,78 @@ async def learning_placeholder_courses(request: Request):
         "partials/learning_ideas.html",
         {"courses": courses},
     )
+
+
+# ---------------------------------------------------------------------------
+# Course idea CRUD
+# ---------------------------------------------------------------------------
+
+
+@router.delete("/api/course/idea/{course_id}", response_class=HTMLResponse)
+async def delete_course_idea(course_id: int, request: Request):
+    db_execute("DELETE FROM learning_courses WHERE id=? AND status='idea'", (course_id,))
+    # Return refreshed ideas list
+    courses = db_query(
+        "SELECT id, slug, title, category FROM learning_courses WHERE status = 'idea' ORDER BY category, title",
+        default=[],
+    )
+    return templates.TemplateResponse(request, "partials/learning_ideas.html", {"courses": courses})
+
+
+@router.post("/api/course/idea/add", response_class=HTMLResponse)
+async def add_course_idea(request: Request):
+    data = await request.form()
+    title = (data.get("title") or "").strip()
+    category = (data.get("category") or "general").strip()
+    if not title:
+        return HTMLResponse("<div class='error-msg' style='color:var(--m-danger);font-size:13px;padding:6px 0;'>Title is required.</div>")
+    slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+    # Ensure slug uniqueness
+    existing = db_scalar("SELECT COUNT(*) FROM learning_courses WHERE slug=?", (slug,), default=0) or 0
+    if existing:
+        slug = f"{slug}-{existing}"
+    db_execute(
+        "INSERT INTO learning_courses (title, slug, category, status, progress_pct, created_at) "
+        "VALUES (?,?,?,'idea',0,datetime('now'))",
+        (title, slug, category),
+    )
+    courses = db_query(
+        "SELECT id, slug, title, category FROM learning_courses WHERE status = 'idea' ORDER BY category, title",
+        default=[],
+    )
+    return templates.TemplateResponse(request, "partials/learning_ideas.html", {"courses": courses})
+
+
+@router.post("/api/course/idea/{course_id}/update", response_class=HTMLResponse)
+async def update_course_idea(course_id: int, request: Request):
+    data = await request.form()
+    title = (data.get("title") or "").strip()
+    category = (data.get("category") or "general").strip()
+    if title:
+        db_execute(
+            "UPDATE learning_courses SET title=?, category=? WHERE id=? AND status='idea'",
+            (title, category, course_id),
+        )
+    courses = db_query(
+        "SELECT id, slug, title, category FROM learning_courses WHERE status = 'idea' ORDER BY category, title",
+        default=[],
+    )
+    return templates.TemplateResponse(request, "partials/learning_ideas.html", {"courses": courses})
+
+
+@router.post("/api/course/{course_id}/update-progress", response_class=JSONResponse)
+async def update_course_progress(course_id: int, request: Request):
+    data = await request.json()
+    fields, vals = [], []
+    for col in ("current_lesson", "next_lesson", "course_url", "lesson_notes", "completed_modules", "progress_pct"):
+        if col in data:
+            fields.append(f"{col}=?")
+            vals.append(data[col])
+    if not fields:
+        return JSONResponse({"status": "no_change"})
+    vals.append(course_id)
+    db_execute(f"UPDATE learning_courses SET {','.join(fields)} WHERE id=?", tuple(vals))
+    return JSONResponse({"status": "ok"})
 
 
 @router.post("/api/course/build-request")

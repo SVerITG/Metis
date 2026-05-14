@@ -238,7 +238,11 @@ CREATE TABLE IF NOT EXISTS learning_courses (
     completed_at      TEXT DEFAULT NULL,
     created_at        TEXT NOT NULL DEFAULT (datetime('now')),
     slug              TEXT,
-    project_id        TEXT
+    project_id        TEXT,
+    current_lesson    TEXT DEFAULT '',
+    next_lesson       TEXT DEFAULT '',
+    course_url        TEXT DEFAULT '',
+    lesson_notes      TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS learning_resources (
