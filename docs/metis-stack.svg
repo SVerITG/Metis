@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 660" width="460" height="660">
+<defs>
+  <linearGradient id="bg-g" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#131c18"/>
+    <stop offset="100%" stop-color="#1a2820"/>
+  </linearGradient>
+  <linearGradient id="metis-g" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#2a4538"/>
+    <stop offset="100%" stop-color="#1e3328"/>
+  </linearGradient>
+  <linearGradient id="mcp-g" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#241c10"/>
+    <stop offset="100%" stop-color="#1e1a10"/>
+  </linearGradient>
+  <pattern id="dots" x="0" y="0" width="18" height="18" patternUnits="userSpaceOnUse">
+    <circle cx="9" cy="9" r="0.6" fill="#2d4a3a" opacity="0.35"/>
+  </pattern>
+</defs>
+
+<!-- Background -->
+<rect width="460" height="660" fill="url(#bg-g)"/>
+<rect width="460" height="660" fill="url(#dots)"/>
+
+<!-- Header bar -->
+<rect x="0" y="0" width="460" height="68" fill="#182420" opacity="0.9"/>
+<line x1="0" y1="68" x2="460" y2="68" stroke="#2d4a3a" stroke-width="1.2"/>
+
+<!-- Corner marks -->
+<polyline points="28,20 28,36" stroke="#3d6050" stroke-width="1" fill="none"/>
+<polyline points="28,20 44,20" stroke="#3d6050" stroke-width="1" fill="none"/>
+<polyline points="432,20 432,36" stroke="#3d6050" stroke-width="1" fill="none"/>
+<polyline points="416,20 432,20" stroke="#3d6050" stroke-width="1" fill="none"/>
+
+<!-- Header text -->
+<text x="28" y="30" font-family="'Courier New',monospace" font-size="9" fill="#4a7a5e" letter-spacing="4">METIS RESEARCH CORTEX</text>
+<text x="28" y="56" font-family="Georgia,'Times New Roman',serif" font-size="24" fill="#ddd8ce" letter-spacing="-0.5">The System</text>
+
+<!-- Pill badge -->
+<rect x="362" y="26" width="72" height="20" rx="10" fill="#2d4a3a" opacity="0.8"/>
+<text x="398" y="40" font-family="'Courier New',monospace" font-size="8" fill="#5a8a6a" text-anchor="middle" letter-spacing="1">PH EDITION</text>
+
+<!-- Central spine line -->
+<line x1="230" y1="82" x2="230" y2="568" stroke="#2d4a3a" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+
+<!-- === LAYER 1: RESEARCHER === -->
+<circle cx="230" cy="100" r="12" fill="#182420" stroke="#4a7a5e" stroke-width="1.5"/>
+<circle cx="230" cy="100" r="4" fill="#4a7a5e"/>
+<text x="254" y="96" font-family="'Courier New',monospace" font-size="8" fill="#4a7a5e" letter-spacing="2.5">RESEARCHER</text>
+<text x="254" y="109" font-family="Georgia,serif" font-size="10" fill="#5a7060" font-style="italic">questions · ideas · files · conversations</text>
+
+<!-- Connector arrow down -->
+<line x1="230" y1="115" x2="230" y2="126" stroke="#3d6050" stroke-width="1"/>
+<polygon points="225,124 230,132 235,124" fill="#3d6050"/>
+
+<!-- === LAYER 2: METIS ROUTER === -->
+<rect x="78" y="134" width="304" height="50" rx="3" fill="url(#metis-g)" stroke="#3d6050" stroke-width="1"/>
+<rect x="78" y="134" width="5" height="50" rx="2" fill="#4a7a5e"/>
+<text x="98" y="154" font-family="'Courier New',monospace" font-size="9" fill="#5a8a6a" letter-spacing="2">METIS ROUTER</text>
+<text x="98" y="170" font-family="Georgia,serif" font-size="10" fill="#7a9888" font-style="italic">context assembly · agent routing · reflexion · persona</text>
+
+<!-- Connector -->
+<line x1="230" y1="186" x2="230" y2="196" stroke="#3d6050" stroke-width="1"/>
+<polygon points="225,194 230,202 235,194" fill="#3d6050"/>
+
+<!-- === LAYER 3: AGENTS === -->
+<rect x="28" y="204" width="404" height="132" rx="3" fill="#141d19" stroke="#2d4a3a" stroke-width="1"/>
+<text x="44" y="221" font-family="'Courier New',monospace" font-size="8" fill="#9a7b3c" letter-spacing="3">30 SPECIALIST AGENTS</text>
+
+<!-- Agent chips row 1 -->
+<rect x="44" y="229" width="76" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
+<text x="82" y="241" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">Librarian</text>
+
+<rect x="126" y="229" width="86" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
+<text x="169" y="241" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">Epidemiologist</text>
+
+<rect x="218" y="229" width="88" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
+<text x="262" y="241" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">Methods Coach</text>
+
+<rect x="312" y="229" width="84" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
+<text x="354" y="241" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">PhD Architect</text>
+
+<!-- Agent chips row 2 -->
+<rect x="44" y="252" width="88" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
+<text x="88" y="264" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">Writing Partner</text>
+
+<rect x="138" y="252" width="80" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
+<text x="178" y="264" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">Data Analyst</text>
+
+<rect x="224" y="252" width="88" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
+<text x="268" y="264" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">Meeting Memory</text>
+
+<rect x="318" y="252" width="78" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
+<text x="357" y="264" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">News Radar</text>
+
+<!-- Agent chips row 3 -->
+<rect x="44" y="275" width="84" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
+<text x="86" y="287" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">Course Builder</text>
+
+<rect x="134" y="275" width="82" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
+<text x="175" y="287" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">DHIS2 Expert</text>
+
+<rect x="222" y="275" width="86" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
+<text x="265" y="287" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">Data Guardian</text>
+
+<rect x="314" y="275" width="82" height="17" rx="2" fill="#1a2820" stroke="#2d4a3a" stroke-width="0.6"/>
+<text x="355" y="287" font-family="'Courier New',monospace" font-size="7.5" fill="#8aa89a" text-anchor="middle">Career Coach</text>
+
+<!-- More agents note -->
+<text x="44" y="316" font-family="'Courier New',monospace" font-size="8" fill="#3d5a48">+ Software Engineer · Cybersecurity · RC Builder · Visualization Maker · 16 more…</text>
+
+<!-- Connector -->
+<line x1="230" y1="337" x2="230" y2="347" stroke="#3d6050" stroke-width="1"/>
+<polygon points="225,345 230,353 235,345" fill="#3d6050"/>
+
+<!-- === LAYER 4: MCP SERVER === -->
+<rect x="78" y="355" width="304" height="50" rx="3" fill="url(#mcp-g)" stroke="#7a5f25" stroke-width="1" opacity="0.9"/>
+<rect x="78" y="355" width="5" height="50" rx="2" fill="#9a7b3c"/>
+<text x="98" y="375" font-family="'Courier New',monospace" font-size="9" fill="#b99759" letter-spacing="2">MCP SERVER</text>
+<text x="98" y="391" font-family="Georgia,serif" font-size="10" fill="#9a8060" font-style="italic">135 tools · FastMCP · Python 3.10+ · local venv</text>
+
+<!-- Connector splits to two -->
+<line x1="230" y1="407" x2="230" y2="414" stroke="#3d6050" stroke-width="1"/>
+<line x1="150" y1="414" x2="310" y2="414" stroke="#3d6050" stroke-width="1"/>
+<line x1="150" y1="414" x2="150" y2="422" stroke="#3d6050" stroke-width="1"/>
+<line x1="310" y1="414" x2="310" y2="422" stroke="#3d6050" stroke-width="1"/>
+
+<!-- === LAYER 5a: MEMORY === -->
+<rect x="28" y="422" width="194" height="88" rx="3" fill="#141d19" stroke="#2d4a3a" stroke-width="1"/>
+<rect x="28" y="422" width="194" height="4" rx="2" fill="#3d6050"/>
+<text x="44" y="442" font-family="'Courier New',monospace" font-size="8" fill="#4a7a5e" letter-spacing="2">MEMORY · 5 LAYERS</text>
+<text x="44" y="458" font-family="Georgia,serif" font-size="10" fill="#5a7060" font-style="italic">Episodic · Semantic</text>
+<text x="44" y="472" font-family="Georgia,serif" font-size="10" fill="#5a7060" font-style="italic">Procedural · Working</text>
+<text x="44" y="486" font-family="Georgia,serif" font-size="10" fill="#5a7060" font-style="italic">Reflexive</text>
+<text x="44" y="502" font-family="'Courier New',monospace" font-size="7.5" fill="#2d4a3a">sqlite-vec · 768-dim · local ONNX</text>
+
+<!-- === LAYER 5b: DASHBOARD === -->
+<rect x="238" y="422" width="194" height="88" rx="3" fill="#141d19" stroke="#2d4a3a" stroke-width="1"/>
+<rect x="238" y="422" width="194" height="4" rx="2" fill="#3d6050"/>
+<text x="254" y="442" font-family="'Courier New',monospace" font-size="8" fill="#4a7a5e" letter-spacing="2">DASHBOARD · 9 TABS</text>
+<text x="254" y="458" font-family="Georgia,serif" font-size="10" fill="#5a7060" font-style="italic">Today · Knowledge · Work</text>
+<text x="254" y="472" font-family="Georgia,serif" font-size="10" fill="#5a7060" font-style="italic">Meetings · Learning · Think</text>
+<text x="254" y="486" font-family="Georgia,serif" font-size="10" fill="#5a7060" font-style="italic">Planner · Teach · Metis</text>
+<text x="254" y="502" font-family="'Courier New',monospace" font-size="7.5" fill="#2d4a3a">FastAPI + HTMX · no JS framework</text>
+
+<!-- Converge to SQLite -->
+<line x1="150" y1="512" x2="150" y2="520" stroke="#3d6050" stroke-width="1"/>
+<line x1="310" y1="512" x2="310" y2="520" stroke="#3d6050" stroke-width="1"/>
+<line x1="150" y1="520" x2="310" y2="520" stroke="#3d6050" stroke-width="1"/>
+<line x1="230" y1="520" x2="230" y2="528" stroke="#3d6050" stroke-width="1"/>
+<polygon points="225,526 230,534 235,526" fill="#3d6050"/>
+
+<!-- === LAYER 6: SQLITE === -->
+<rect x="138" y="536" width="184" height="38" rx="3" fill="#1a2820" stroke="#2d4a3a" stroke-width="1"/>
+<text x="230" y="553" font-family="'Courier New',monospace" font-size="8.5" fill="#4a7a5e" text-anchor="middle" letter-spacing="2">SQLite WAL</text>
+<text x="230" y="567" font-family="Georgia,serif" font-size="9.5" fill="#5a7060" text-anchor="middle" font-style="italic">46 tables · everything local · never uploaded</text>
+
+<!-- Footer rule -->
+<line x1="28" y1="594" x2="432" y2="594" stroke="#2d4a3a" stroke-width="0.5" opacity="0.5"/>
+<text x="230" y="614" font-family="Georgia,serif" font-size="10.5" fill="#3d5a48" text-anchor="middle" font-style="italic">Everything runs on your machine. Your data never leaves.</text>
+<text x="230" y="634" font-family="'Courier New',monospace" font-size="7.5" fill="#2d4438" text-anchor="middle" letter-spacing="2">SECURITY · PII DETECTION · 5-LAYER GUARD · AES-256</text>
+
+<!-- Security indicator dots -->
+<circle cx="138" cy="646" r="3.5" fill="#5a7060" opacity="0.6"/>
+<circle cx="152" cy="646" r="3.5" fill="#5a7060" opacity="0.6"/>
+<circle cx="166" cy="646" r="3.5" fill="#9a7b3c" opacity="0.6"/>
+<circle cx="180" cy="646" r="3.5" fill="#5a7060" opacity="0.6"/>
+<circle cx="194" cy="646" r="3.5" fill="#5a7060" opacity="0.6"/>
+<text x="208" y="650" font-family="'Courier New',monospace" font-size="7" fill="#2d4438">5 layers active</text>
+</svg>

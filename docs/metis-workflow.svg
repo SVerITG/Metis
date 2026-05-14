@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 660" width="460" height="660">
+<defs>
+  <pattern id="rules" x="0" y="0" width="460" height="22" patternUnits="userSpaceOnUse">
+    <line x1="0" y1="21.5" x2="460" y2="21.5" stroke="#1f2a24" stroke-width="0.3" opacity="0.07"/>
+  </pattern>
+</defs>
+
+<!-- Background -->
+<rect width="460" height="660" fill="#f5f2ea"/>
+<rect width="460" height="660" fill="url(#rules)"/>
+
+<!-- Header bar -->
+<rect x="0" y="0" width="460" height="68" fill="#eee9dd"/>
+<line x1="0" y1="68" x2="460" y2="68" stroke="#1f2a24" stroke-width="0.8" opacity="0.14"/>
+
+<!-- Ochre left accent -->
+<rect x="0" y="0" width="4" height="68" fill="#9a7b3c"/>
+
+<!-- Corner marks -->
+<polyline points="28,18 28,34" stroke="#9a7b3c" stroke-width="1" fill="none" opacity="0.5"/>
+<polyline points="28,18 44,18" stroke="#9a7b3c" stroke-width="1" fill="none" opacity="0.5"/>
+<polyline points="432,18 432,34" stroke="#9a7b3c" stroke-width="1" fill="none" opacity="0.5"/>
+<polyline points="416,18 432,18" stroke="#9a7b3c" stroke-width="1" fill="none" opacity="0.5"/>
+
+<!-- Header text -->
+<text x="28" y="29" font-family="'Courier New',monospace" font-size="9" fill="#9a7b3c" letter-spacing="4">A RESEARCHER'S DAY</text>
+<text x="28" y="56" font-family="Georgia,'Times New Roman',serif" font-size="24" fill="#1f2a24" letter-spacing="-0.5">The Workflow</text>
+
+<!-- Timeline spine -->
+<line x1="58" y1="82" x2="58" y2="590" stroke="#2d4a3a" stroke-width="1.5" opacity="0.18"/>
+
+<!-- === NODE 1: OVERNIGHT === -->
+<circle cx="58" cy="104" r="8" fill="#eee9dd" stroke="#7a8178" stroke-width="1.2"/>
+<circle cx="58" cy="104" r="2.5" fill="#7a8178"/>
+<text x="80" y="97" font-family="'Courier New',monospace" font-size="8" fill="#9a7b3c" letter-spacing="2.5">OVERNIGHT</text>
+<text x="80" y="110" font-family="Georgia,serif" font-size="12.5" fill="#1f2a24" font-weight="400">Metis scans while you sleep</text>
+<text x="80" y="124" font-family="Georgia,serif" font-size="10" fill="#7a8178" font-style="italic">New papers · field news · RSS · surveillance alerts</text>
+
+<!-- === NODE 2: 06:45 === -->
+<circle cx="58" cy="158" r="8" fill="#2d4a3a" stroke="#2d4a3a" stroke-width="1.2"/>
+<circle cx="58" cy="158" r="3" fill="#f5f2ea"/>
+<text x="80" y="151" font-family="'Courier New',monospace" font-size="8" fill="#7a8178" letter-spacing="2">06:45</text>
+<text x="80" y="165" font-family="Georgia,serif" font-size="12.5" fill="#1f2a24">Brief synthesis</text>
+<text x="80" y="179" font-family="Georgia,serif" font-size="10" fill="#7a8178" font-style="italic">AI writes your morning brief from overnight context</text>
+
+<!-- === NODE 3: 07:00 === -->
+<circle cx="58" cy="213" r="8" fill="#2d4a3a" stroke="#2d4a3a" stroke-width="1.2"/>
+<circle cx="58" cy="213" r="3" fill="#f5f2ea"/>
+<text x="80" y="206" font-family="'Courier New',monospace" font-size="8" fill="#7a8178" letter-spacing="2">07:00</text>
+<text x="80" y="220" font-family="Georgia,serif" font-size="12.5" fill="#1f2a24">Morning scan</text>
+<text x="80" y="234" font-family="Georgia,serif" font-size="10" fill="#7a8178" font-style="italic">News feeds · PubMed · OpenAlex · Zotero sync</text>
+
+<!-- === NODE 4: MORNING === -->
+<circle cx="58" cy="268" r="8" fill="#f5f2ea" stroke="#2d4a3a" stroke-width="1.5"/>
+<circle cx="58" cy="268" r="3" fill="#2d4a3a"/>
+<text x="80" y="261" font-family="'Courier New',monospace" font-size="8" fill="#9a7b3c" letter-spacing="2.5">MORNING</text>
+<text x="80" y="275" font-family="Georgia,serif" font-size="12.5" fill="#1f2a24">Open dashboard → read brief</text>
+<text x="80" y="289" font-family="Georgia,serif" font-size="10" fill="#7a8178" font-style="italic">Focus suggestion · priorities · overnight news rail</text>
+
+<!-- === NODE 5: LIBRARY === -->
+<circle cx="58" cy="323" r="8" fill="#f5f2ea" stroke="#2d4a3a" stroke-width="1.5"/>
+<circle cx="58" cy="323" r="3" fill="#2d4a3a"/>
+<text x="80" y="316" font-family="'Courier New',monospace" font-size="8" fill="#7a8178" letter-spacing="2.5">LIBRARY</text>
+<text x="80" y="330" font-family="Georgia,serif" font-size="12.5" fill="#1f2a24">Ask your papers a question</text>
+<text x="80" y="344" font-family="Georgia,serif" font-size="10" fill="#7a8178" font-style="italic">Librarian · PaperQA2 · cross-pollination · citation search</text>
+
+<!-- === NODE 6: CAPTURE === -->
+<circle cx="58" cy="378" r="8" fill="#f5f2ea" stroke="#9a7b3c" stroke-width="1.5"/>
+<circle cx="58" cy="378" r="3" fill="#9a7b3c"/>
+<text x="80" y="371" font-family="'Courier New',monospace" font-size="8" fill="#7a8178" letter-spacing="2.5">CAPTURE</text>
+<text x="80" y="385" font-family="Georgia,serif" font-size="12.5" fill="#1f2a24">Idea surfaces → Ctrl+K</text>
+<text x="80" y="399" font-family="Georgia,serif" font-size="10" fill="#7a8178" font-style="italic">i: idea · n: note · t: task · q: question · auto-linked</text>
+
+<!-- === NODE 7: MEETING === -->
+<circle cx="58" cy="433" r="8" fill="#f5f2ea" stroke="#2d4a3a" stroke-width="1.5"/>
+<circle cx="58" cy="433" r="3" fill="#2d4a3a"/>
+<text x="80" y="426" font-family="'Courier New',monospace" font-size="8" fill="#7a8178" letter-spacing="2.5">MEETING</text>
+<text x="80" y="440" font-family="Georgia,serif" font-size="12.5" fill="#1f2a24">Live meeting assistant</text>
+<text x="80" y="454" font-family="Georgia,serif" font-size="10" fill="#7a8178" font-style="italic">Meeting Memory · action items · project cross-refs</text>
+
+<!-- === NODE 8: WRITE === -->
+<circle cx="58" cy="488" r="8" fill="#f5f2ea" stroke="#2d4a3a" stroke-width="1.5"/>
+<circle cx="58" cy="488" r="3" fill="#2d4a3a"/>
+<text x="80" y="481" font-family="'Courier New',monospace" font-size="8" fill="#7a8178" letter-spacing="2.5">WRITE</text>
+<text x="80" y="495" font-family="Georgia,serif" font-size="12.5" fill="#1f2a24">Writing session</text>
+<text x="80" y="509" font-family="Georgia,serif" font-size="10" fill="#7a8178" font-style="italic">Writing Partner · Epidemiologist · Methods Coach</text>
+
+<!-- === NODE 9: END OF DAY === -->
+<circle cx="58" cy="548" r="8" fill="#2d4a3a" stroke="#2d4a3a" stroke-width="1.5"/>
+<circle cx="58" cy="548" r="3" fill="#f5f2ea"/>
+<text x="80" y="541" font-family="'Courier New',monospace" font-size="8" fill="#7a8178" letter-spacing="2">END OF DAY</text>
+<text x="80" y="555" font-family="Georgia,serif" font-size="12.5" fill="#1f2a24">Session close</text>
+<text x="80" y="569" font-family="Georgia,serif" font-size="10" fill="#7a8178" font-style="italic">Handoff brief · reflexion logged · memory updated</text>
+
+<!-- Footer rule -->
+<line x1="28" y1="596" x2="432" y2="596" stroke="#1f2a24" stroke-width="0.5" opacity="0.1"/>
+<text x="230" y="619" font-family="Georgia,serif" font-size="11" fill="#9a7b3c" text-anchor="middle" font-style="italic">The more you use it, the better it knows you.</text>
+<text x="230" y="640" font-family="'Courier New',monospace" font-size="7.5" fill="#b0a890" text-anchor="middle" letter-spacing="2">METIS · PUBLIC HEALTH EDITION · LOCAL · PRIVATE</text>
+</svg>
