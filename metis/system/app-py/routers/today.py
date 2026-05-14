@@ -942,20 +942,51 @@ async def today_morning_brief(request: Request):
         pass
 
     # AI brief is the primary content — show it in the main large slot.
-    # Fall back to a static greeting only when the AI brief is unavailable.
+    # Fall back to top news headlines when the AI brief is unavailable.
     if ai_brief:
         greeting = ai_brief
         narrative = None
-    elif project_title:
-        greeting = (
-            f"{greeting_word}, {_user_name()}. "
-            f"Your focus project is <em>{project_title}</em>. "
-            f"{'%d thread%s from yesterday are still warm.' % (open_threads, 's' if open_threads != 1 else '') if open_threads else 'The desk is clear — a good moment to push forward.'}"
-        )
-        narrative = "If you'll take one thing first, take the most urgent thread." if open_threads > 0 else None
     else:
-        greeting = None
-        narrative = None
+        # Build a brief from the latest news signals
+        fallback_lines = []
+        try:
+            top_news = db_query(
+                "SELECT title, domain FROM news_briefs ORDER BY created_at DESC LIMIT 3"
+            ) or []
+            for r in top_news:
+                title = (r.get("title") or "")[:90]
+                dom = r.get("domain") or ""
+                if title:
+                    fallback_lines.append(
+                        f'<span style="color:var(--m-muted);font-size:13px;font-family:var(--m-mono);">'
+                        f'{dom.upper() + " · " if dom else ""}</span>{title}'
+                    )
+        except Exception:
+            pass
+
+        if fallback_lines:
+            name = _user_name()
+            threads_note = (
+                f"{open_threads} open thread{'s' if open_threads != 1 else ''} from yesterday."
+                if open_threads else ""
+            )
+            greeting = (
+                f"{greeting_word}, {name}."
+                + (f" {threads_note}" if threads_note else "")
+                + " Here's what's moving in the field:"
+                + "".join(f'<br>· {line}' for line in fallback_lines)
+            )
+            narrative = "AI brief will appear here once the morning scan completes."
+        elif project_title:
+            greeting = (
+                f"{greeting_word}, {_user_name()}. "
+                f"Your focus project is <em>{project_title}</em>. "
+                f"{'%d thread%s from yesterday are still warm.' % (open_threads, 's' if open_threads != 1 else '') if open_threads else 'The desk is clear — a good moment to push forward.'}"
+            )
+            narrative = None
+        else:
+            greeting = None
+            narrative = None
 
     return templates.TemplateResponse(
         request,
@@ -1074,8 +1105,8 @@ async def today_news_archive(request: Request):
     categories = set()
     try:
         rows = db_query(
-            "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
-            "FROM news_briefs ORDER BY created_at DESC LIMIT 10"
+            "SELECT rowid as brief_id, title, domain, summary, signal_strength, source_url, created_at "
+            "FROM news_briefs ORDER BY created_at DESC LIMIT 12"
         ) or []
         for r in rows:
             domain = r.get("domain") or "General"
@@ -1101,15 +1132,91 @@ async def today_news_archive(request: Request):
     )
 
 
+@router.get("/api/partial/today/resume", response_class=HTMLResponse)
+async def today_resume(request: Request):
+    """Where you left off — active course + top active project."""
+    course = None
+    try:
+        rows = db_query(
+            "SELECT title, current_lesson, next_lesson, progress_pct "
+            "FROM learning_courses WHERE status='active' ORDER BY id LIMIT 1"
+        )
+        if rows:
+            r = rows[0]
+            course = {
+                "title": r.get("title") or "Course",
+                "current_lesson": r.get("current_lesson") or "—",
+                "next_lesson": r.get("next_lesson") or "—",
+                "progress_pct": int(r.get("progress_pct") or 0),
+            }
+    except Exception:
+        pass
+
+    project = None
+    try:
+        rows = db_query(
+            "SELECT title, next_step, project_id FROM projects WHERE status='active' "
+            "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END LIMIT 1"
+        )
+        if rows:
+            r = rows[0]
+            project = {
+                "title": r.get("title") or "Project",
+                "next_step": (r.get("next_step") or "")[:180],
+                "project_id": r.get("project_id") or "",
+            }
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_resume.html",
+        {"course": course, "project": project},
+    )
+
+
+@router.get("/api/partial/today/idea-today", response_class=HTMLResponse)
+async def today_idea_today(request: Request):
+    """Single idea — rotates daily — to seed today's thinking."""
+    idea = None
+    try:
+        day_idx = datetime.date.today().timetuple().tm_yday
+        rows = db_query(
+            "SELECT text, idea_type, created_at FROM ideas ORDER BY created_at DESC LIMIT 10"
+        ) or []
+        if rows:
+            r = rows[day_idx % len(rows)]
+            idea = {
+                "text": (r.get("text") or "")[:500],
+                "idea_type": (r.get("idea_type") or "idea").upper(),
+                "age_label": _age_label(r["created_at"]).upper() if r.get("created_at") else "RECENT",
+            }
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_idea_today.html",
+        {"idea": idea},
+    )
+
+
 @router.get("/api/partial/today/library-archive", response_class=HTMLResponse)
 async def today_library_archive(request: Request):
     items = []
     try:
-        # Try literature_metadata first
+        # Show most recently added papers (Zotero sync or manual adds)
+        since_week = (datetime.datetime.now() - datetime.timedelta(days=30)).isoformat()
         rows = db_query(
             "SELECT id, title, authors, year, source, tags, abstract, created_at "
-            "FROM literature_metadata ORDER BY created_at DESC LIMIT 6"
+            "FROM literature_metadata WHERE created_at >= ? ORDER BY created_at DESC LIMIT 6",
+            (since_week,),
         ) or []
+        if not rows:
+            rows = db_query(
+                "SELECT id, title, authors, year, source, tags, abstract, created_at "
+                "FROM literature_metadata ORDER BY created_at DESC LIMIT 6"
+            ) or []
         for r in rows:
             items.append({
                 "title": r.get("title") or "Untitled",
@@ -1154,17 +1261,16 @@ async def today_todos_archive(request: Request):
     tasks = []
     try:
         rows = db_query(
-            "SELECT task_id, title, project, priority, status, created_at "
+            "SELECT task_id, title, project_id, status, category, created_at "
             "FROM tasks WHERE status NOT IN ('done','completed','cancelled') "
-            "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 4 END, "
+            "ORDER BY CASE status WHEN 'in_progress' THEN 1 WHEN 'blocked' THEN 2 ELSE 3 END, "
             "created_at DESC LIMIT 10"
         ) or []
         for r in rows:
             tasks.append({
                 "id": r.get("task_id"),
                 "title": r.get("title") or "Untitled task",
-                "project": r.get("project") or "",
-                "priority": r.get("priority") or "",
+                "project": r.get("project_id") or r.get("category") or "",
                 "status": r.get("status") or "open",
             })
     except Exception:
