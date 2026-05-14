@@ -767,16 +767,18 @@ async def today_token_footer(request: Request):
 # ---------------------------------------------------------------------------
 
 
-def _get_or_generate_brief() -> str | None:
+def _get_or_generate_brief(force: bool = False) -> str | None:
     """Return today's AI-generated morning brief, generating it if needed.
 
-    Checks daily_insights for today. If absent (or only raw context without a
-    narrative paragraph), assembles context via assemble_daily_context() and
-    calls Claude Haiku to synthesize a 2-3 sentence brief. Stores the result
-    so subsequent page loads are free (no API call).
+    Checks daily_insights for today. Assembles context via assemble_daily_context()
+    and calls Claude Haiku to synthesize a ~300-word brief personalised to the
+    researcher's specific interests and monitored topics. Stores the result so
+    subsequent page loads are free (no API call).
 
+    force=True deletes the cached entry first, forcing a fresh generation.
     Returns the narrative string, or None if generation is unavailable.
     """
+    import json as _json
     import sqlite3 as _sqlite3
 
     db_path_str = os.environ.get("METIS_DB", "")
@@ -793,7 +795,17 @@ def _get_or_generate_brief() -> str | None:
 
     today = datetime.date.today().isoformat()
 
-    # Check cache first
+    # Force regeneration — drop today's cached entry
+    if force:
+        try:
+            conn = _sqlite3.connect(db_path_str)
+            conn.execute("DELETE FROM daily_insights WHERE insight_date = ?", (today,))
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
+
+    # Check cache
     try:
         conn = _sqlite3.connect(db_path_str)
         conn.row_factory = _sqlite3.Row
@@ -804,6 +816,40 @@ def _get_or_generate_brief() -> str | None:
         conn.close()
         if row and row["model"] == "claude-haiku-brief" and row["content"]:
             return row["content"]
+    except Exception:
+        pass
+
+    # Compute how many days since the last brief was generated
+    days_since_last = 1
+    try:
+        conn2 = _sqlite3.connect(db_path_str)
+        prev = conn2.execute(
+            "SELECT generated_at FROM daily_insights "
+            "WHERE insight_date < ? AND model = 'claude-haiku-brief' "
+            "ORDER BY insight_date DESC LIMIT 1",
+            (today,),
+        ).fetchone()
+        conn2.close()
+        if prev and prev[0]:
+            prev_dt = datetime.datetime.fromisoformat(prev[0])
+            days_since_last = max(1, (datetime.datetime.now() - prev_dt).days)
+    except Exception:
+        pass
+
+    # Load user profile — interests and monitored topics
+    interests: list[str] = []
+    news_topics: list[str] = []
+    research_field = ""
+    try:
+        from pathlib import Path as _P
+        rc = os.environ.get("METIS_RC_ROOT", "")
+        if rc:
+            prefs_path = _P(rc) / "system" / "config" / "user-preferences.json"
+            if prefs_path.exists():
+                prefs = _json.loads(prefs_path.read_text(encoding="utf-8"))
+                interests = prefs.get("interests", [])
+                news_topics = prefs.get("news_topics", [])
+                research_field = prefs.get("role", "")
     except Exception:
         pass
 
@@ -823,24 +869,47 @@ def _get_or_generate_brief() -> str | None:
     if not api_key:
         return None
 
-    # Call Claude Haiku to write the brief — IHP Newsletter pattern
+    # Build period description
+    name = _user_name()
+    if days_since_last <= 1:
+        period_desc = "today"
+    elif days_since_last <= 7:
+        period_desc = f"the last {days_since_last} days"
+    else:
+        period_desc = f"the last {days_since_last // 7} week{'s' if days_since_last >= 14 else ''}"
+
+    field_str = research_field or "public health and epidemiology"
+    interests_str = ", ".join(interests[:8]) if interests else "neglected tropical diseases, sleeping sickness, global health, surveillance, DHIS2"
+    topics_str = ", ".join(news_topics[:6]) if news_topics else "WHO surveillance, NTDs, global health emergencies, AI in science"
+
+    system_preamble = (
+        f"You are writing the daily research intelligence brief for {name}, "
+        f"a senior researcher in {field_str}.\n\n"
+        f"Their specific research interests: {interests_str}\n"
+        f"Topics they monitor daily: {topics_str}\n"
+        f"Briefing period: {period_desc}\n\n"
+        "Write exactly three paragraphs, 270-320 words total:\n\n"
+        "Paragraph 1 — THE LEAD: The single most important development in global health, "
+        "science, or AI since the last brief. State what happened and why it matters. "
+        f"If it touches {name}'s specific interests — NTDs, sleeping sickness, HAT, surveillance "
+        "systems, DHIS2, epidemiology methods, AI in research — draw that connection explicitly "
+        "and plainly. Don't hint: say it directly.\n\n"
+        "Paragraph 2 — THE REST: Two or three other notable developments, grouped thematically. "
+        "Cross-reference items when they are connected. Be specific — name papers, organizations, "
+        "or numbers when you have them from the context. Group by theme: research findings, "
+        "policy news, or field operations.\n\n"
+        "Paragraph 3 — THE THREAD: One specific paper, news item, or open question from the "
+        f"context that {name} should follow up on today. Name it precisely and say exactly why "
+        "it matters for their work right now — not generically, but concretely.\n\n"
+        f"Tone: warm, direct, occasionally dry. Like a smart colleague who read everything during {period_desc} "
+        "and is giving you the 90-second version before your first meeting. Plain language. "
+        "Field-standard terms are fine; unexplained jargon is not. A wry observation is welcome "
+        "when the situation calls for it.\n\n"
+        "No greeting. No sign-off. No headers. No bullet points. Continuous prose only."
+    )
+
     try:
         import httpx as _httpx
-        name = _user_name()
-        # Stable system preamble (eligible for prompt caching on repeated calls)
-        system_preamble = (
-            f"You are writing the daily morning brief for {name}, a senior researcher. "
-            "Your voice is like a knowledgeable friend: warm, direct, no corporate language, no bullet lists. "
-            "Structure the brief as three short paragraphs:\n"
-            "1. ONE LEADING INSIGHT — the single most important development from today's context. "
-            "State it plainly and say why it matters.\n"
-            "2. TWO OR THREE ITEMS GROUPED BY THEME — briefly note related developments, grouped "
-            "by whether they are research findings, policy news, or operational tasks. "
-            "Cross-reference items when they connect.\n"
-            "3. ONE RESEARCH THREAD — a specific paper, idea, or open question worth returning to today. "
-            "Name it and say why now is a good moment.\n"
-            "No greeting. No sign-off. No headers. Three paragraphs of prose, total ~150 words."
-        )
         resp = _httpx.post(
             "https://api.anthropic.com/v1/messages",
             headers={
@@ -851,7 +920,7 @@ def _get_or_generate_brief() -> str | None:
             },
             json={
                 "model": "claude-haiku-4-5-20251001",
-                "max_tokens": 600,
+                "max_tokens": 800,
                 "system": [
                     {
                         "type": "text",
@@ -862,20 +931,46 @@ def _get_or_generate_brief() -> str | None:
                 "messages": [{
                     "role": "user",
                     "content": (
-                        "Today's research context:\n\n"
-                        f"{ctx['context'][:3500]}"
+                        f"Research context for {period_desc}:\n\n"
+                        f"{ctx['context'][:4000]}"
                     ),
                 }],
             },
-            timeout=30.0,
+            timeout=40.0,
         )
         if resp.status_code == 200:
             narrative = resp.json()["content"][0]["text"].strip()
+
+            # Build source items from context — top news with URLs for the template
+            source_items: list[dict] = []
+            try:
+                conn3 = _sqlite3.connect(db_path_str)
+                conn3.row_factory = _sqlite3.Row
+                since = (datetime.datetime.now() - datetime.timedelta(days=max(days_since_last, 3))).isoformat()
+                src_rows = conn3.execute(
+                    "SELECT title, domain, source_url FROM news_briefs "
+                    "WHERE created_at >= ? ORDER BY "
+                    "CASE WHEN signal_strength='high' THEN 1 WHEN signal_strength='medium' THEN 2 ELSE 3 END, "
+                    "created_at DESC LIMIT 6",
+                    (since,),
+                ).fetchall()
+                conn3.close()
+                for r in src_rows:
+                    source_items.append({
+                        "title": (r["title"] or "")[:80],
+                        "domain": r["domain"] or "",
+                        "url": r["source_url"] or "",
+                    })
+            except Exception:
+                pass
+
+            sources_json = _json.dumps(source_items)
+
             # Cache in daily_insights
             try:
-                conn = _sqlite3.connect(db_path_str)
-                conn.execute("PRAGMA journal_mode=WAL")
-                conn.execute(
+                conn4 = _sqlite3.connect(db_path_str)
+                conn4.execute("PRAGMA journal_mode=WAL")
+                conn4.execute(
                     """CREATE TABLE IF NOT EXISTS daily_insights (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         insight_date TEXT NOT NULL UNIQUE,
@@ -885,17 +980,18 @@ def _get_or_generate_brief() -> str | None:
                         model TEXT DEFAULT ''
                     )"""
                 )
-                conn.execute(
+                conn4.execute(
                     """INSERT INTO daily_insights (insight_date, content, sources, generated_at, model)
                        VALUES (?, ?, ?, ?, ?)
                        ON CONFLICT(insight_date) DO UPDATE SET
                            content = excluded.content, model = excluded.model,
+                           sources = excluded.sources,
                            generated_at = excluded.generated_at""",
-                    (today, narrative, ctx["sources"],
+                    (today, narrative, sources_json,
                      datetime.datetime.now().isoformat(), "claude-haiku-brief"),
                 )
-                conn.commit()
-                conn.close()
+                conn4.commit()
+                conn4.close()
             except Exception:
                 pass
             return narrative
@@ -904,16 +1000,41 @@ def _get_or_generate_brief() -> str | None:
     return None
 
 
+def _load_brief_sources(db_path_str: str) -> list[dict]:
+    """Load today's stored source links from daily_insights.sources (JSON blob)."""
+    import json as _json
+    import sqlite3 as _sqlite3
+    today = datetime.date.today().isoformat()
+    try:
+        conn = _sqlite3.connect(db_path_str)
+        row = conn.execute(
+            "SELECT sources FROM daily_insights WHERE insight_date = ? AND model = 'claude-haiku-brief'",
+            (today,),
+        ).fetchone()
+        conn.close()
+        if row and row[0]:
+            items = _json.loads(row[0])
+            if isinstance(items, list):
+                return items
+    except Exception:
+        pass
+    return []
+
+
+def _get_db_path() -> str:
+    db = os.environ.get("METIS_DB", "")
+    if not db:
+        try:
+            rc = os.environ.get("METIS_RC_ROOT", "")
+            if rc:
+                db = str(Path(rc) / "system" / "app" / "data" / "metis.sqlite")
+        except Exception:
+            pass
+    return db
+
+
 @router.get("/api/partial/today/morning-brief", response_class=HTMLResponse)
 async def today_morning_brief(request: Request):
-    hour = datetime.datetime.now().hour
-    if hour < 12:
-        greeting_word = "Good morning"
-    elif hour < 17:
-        greeting_word = "Good afternoon"
-    else:
-        greeting_word = "Good evening"
-
     open_threads = 0
     try:
         open_threads = db_scalar(
@@ -922,80 +1043,96 @@ async def today_morning_brief(request: Request):
     except Exception:
         pass
 
-    project_title = None
-    try:
-        rows = db_query(
-            "SELECT title FROM projects WHERE status='active' "
-            "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END LIMIT 1"
-        )
-        if rows:
-            project_title = rows[0]["title"]
-    except Exception:
-        pass
-
-    # Try AI-generated brief first
     ai_brief = None
     try:
-        import sys
         ai_brief = _get_or_generate_brief()
     except Exception:
         pass
 
-    # AI brief is the primary content — show it in the main large slot.
-    # Fall back to top news headlines when the AI brief is unavailable.
+    sources: list[dict] = []
     if ai_brief:
-        greeting = ai_brief
-        narrative = None
-    else:
-        # Build a brief from the latest news signals
-        fallback_lines = []
+        db_path = _get_db_path()
+        if db_path:
+            sources = _load_brief_sources(db_path)
+
+    # Fallback when AI brief unavailable
+    fallback_headlines: list[str] = []
+    if not ai_brief:
         try:
-            top_news = db_query(
-                "SELECT title, domain FROM news_briefs ORDER BY created_at DESC LIMIT 3"
+            rows = db_query(
+                "SELECT title, domain, source_url FROM news_briefs "
+                "ORDER BY created_at DESC LIMIT 5"
             ) or []
-            for r in top_news:
-                title = (r.get("title") or "")[:90]
-                dom = r.get("domain") or ""
-                if title:
-                    fallback_lines.append(
-                        f'<span style="color:var(--m-muted);font-size:13px;font-family:var(--m-mono);">'
-                        f'{dom.upper() + " · " if dom else ""}</span>{title}'
-                    )
+            for r in rows:
+                if r.get("title"):
+                    fallback_headlines.append({
+                        "title": (r["title"] or "")[:100],
+                        "domain": r.get("domain") or "",
+                        "url": r.get("source_url") or "",
+                    })
         except Exception:
             pass
-
-        if fallback_lines:
-            name = _user_name()
-            threads_note = (
-                f"{open_threads} open thread{'s' if open_threads != 1 else ''} from yesterday."
-                if open_threads else ""
-            )
-            greeting = (
-                f"{greeting_word}, {name}."
-                + (f" {threads_note}" if threads_note else "")
-                + " Here's what's moving in the field:"
-                + "".join(f'<br>· {line}' for line in fallback_lines)
-            )
-            narrative = "AI brief will appear here once the morning scan completes."
-        elif project_title:
-            greeting = (
-                f"{greeting_word}, {_user_name()}. "
-                f"Your focus project is <em>{project_title}</em>. "
-                f"{'%d thread%s from yesterday are still warm.' % (open_threads, 's' if open_threads != 1 else '') if open_threads else 'The desk is clear — a good moment to push forward.'}"
-            )
-            narrative = None
-        else:
-            greeting = None
-            narrative = None
 
     return templates.TemplateResponse(
         request,
         "partials/today_morning_brief.html",
         {
-            "greeting": greeting,
-            "narrative": narrative,
+            "brief": ai_brief,
+            "sources": sources,
+            "fallback_headlines": fallback_headlines,
             "open_threads": open_threads,
-            "ai_brief": bool(ai_brief),
+        },
+    )
+
+
+@router.post("/api/morning-brief/refresh", response_class=HTMLResponse)
+async def morning_brief_refresh(request: Request):
+    """Force regenerate the morning brief and return the updated partial."""
+    open_threads = 0
+    try:
+        open_threads = db_scalar(
+            "SELECT COUNT(*) FROM tasks WHERE status IN ('in_progress','blocked','open')"
+        ) or 0
+    except Exception:
+        pass
+
+    ai_brief = None
+    try:
+        ai_brief = _get_or_generate_brief(force=True)
+    except Exception:
+        pass
+
+    sources: list[dict] = []
+    if ai_brief:
+        db_path = _get_db_path()
+        if db_path:
+            sources = _load_brief_sources(db_path)
+
+    fallback_headlines: list[dict] = []
+    if not ai_brief:
+        try:
+            rows = db_query(
+                "SELECT title, domain, source_url FROM news_briefs "
+                "ORDER BY created_at DESC LIMIT 5"
+            ) or []
+            for r in rows:
+                if r.get("title"):
+                    fallback_headlines.append({
+                        "title": (r["title"] or "")[:100],
+                        "domain": r.get("domain") or "",
+                        "url": r.get("source_url") or "",
+                    })
+        except Exception:
+            pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_morning_brief.html",
+        {
+            "brief": ai_brief,
+            "sources": sources,
+            "fallback_headlines": fallback_headlines,
+            "open_threads": open_threads,
         },
     )
 

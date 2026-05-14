@@ -50,6 +50,21 @@ async def lifespan(app: FastAPI):
         start_inbox_watcher()
     except Exception as exc:
         log.warning("Inbox watcher could not start: %s", exc)
+    # Pre-generate today's morning brief in the background on startup
+    try:
+        import asyncio
+        import threading
+
+        def _boot_brief():
+            try:
+                from routers.today import _get_or_generate_brief
+                _get_or_generate_brief()
+            except Exception as exc:
+                log.debug("Startup brief generation skipped: %s", exc)
+
+        threading.Thread(target=_boot_brief, daemon=True, name="boot-brief").start()
+    except Exception as exc:
+        log.debug("Could not start boot brief thread: %s", exc)
     yield
     try:
         from scheduler import scheduler

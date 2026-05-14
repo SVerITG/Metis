@@ -424,7 +424,7 @@ JOB_LABELS: dict[str, str] = {
 
 # Default schedule (used when no user-config entry exists)
 JOB_DEFAULTS: dict[str, dict] = {
-    "brief_synthesis":   {"enabled": True, "time": "06:45"},
+    "brief_synthesis":   {"enabled": True, "time": "07:15"},
     "morning_scan":      {"enabled": True, "time": "07:00"},
     "library_index":     {"enabled": True, "time": "07:30"},
     "inbox_process":     {"enabled": True, "time": "08:00"},
