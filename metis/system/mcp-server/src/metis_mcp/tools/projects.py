@@ -1,5 +1,6 @@
 """Project tools — create, read, archive, remove projects in Metis."""
 
+import json
 import re
 import datetime
 from pathlib import Path
@@ -303,5 +304,244 @@ async def remove_project(project_id: str, delete_files: bool = False) -> list[Te
             else:
                 shutil.rmtree(folder)
                 lines.append(f"Deleted folder from disk: {folder}")
+
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
+def _ensure_context_columns(conn) -> None:
+    """Add context container columns introduced after initial schema."""
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(projects)")}
+    additions = [
+        ("project_type", "TEXT DEFAULT 'research'"),
+        ("context_doc", "TEXT DEFAULT ''"),
+        ("history_log", "TEXT DEFAULT '[]'"),
+        ("prompt_memory", "TEXT DEFAULT ''"),
+        ("last_session_at", "TEXT"),
+        ("detection_source", "TEXT DEFAULT 'manual'"),
+    ]
+    for col, typedef in additions:
+        if col not in existing:
+            try:
+                conn.execute(f"ALTER TABLE projects ADD COLUMN {col} {typedef}")
+            except Exception:
+                pass
+
+
+@app.tool()
+async def load_project_context(project_id: str) -> list[TextContent]:
+    """Load the full context block for a project — ready to paste into Claude.
+
+    Returns the project's context_doc, recent session history, and next step
+    formatted as a structured brief. Use this at the start of any work session
+    on a specific project so Claude has full background.
+
+    Args:
+        project_id: The project slug (e.g. "hat-dashboard", "article-1").
+    """
+    with connect(paths.db) as conn:
+        _ensure_context_columns(conn)
+        row = conn.execute(
+            "SELECT project_id, title, description, domain, next_step, project_type, "
+            "context_doc, history_log, prompt_memory, last_session_at, status "
+            "FROM projects WHERE project_id = ?",
+            (project_id,),
+        ).fetchone()
+
+    if not row:
+        # Try partial match
+        with connect(paths.db) as conn:
+            row = conn.execute(
+                "SELECT project_id, title, description, domain, next_step, project_type, "
+                "context_doc, history_log, prompt_memory, last_session_at, status "
+                "FROM projects WHERE project_id LIKE ? LIMIT 1",
+                (f"%{project_id}%",),
+            ).fetchone()
+
+    if not row:
+        return [TextContent(type="text", text=f"No project found matching '{project_id}'.")]
+
+    history = []
+    try:
+        history = json.loads(row["history_log"] or "[]")[-5:]
+    except Exception:
+        pass
+
+    lines = [
+        f"# PROJECT CONTEXT: {row['title']}",
+        f"**ID:** {row['project_id']}  |  **Type:** {row['project_type'] or 'research'}  |  **Status:** {row['status']}",
+    ]
+    if row["domain"]:
+        lines.append(f"**Domain:** {row['domain']}")
+    if row["last_session_at"]:
+        lines.append(f"**Last Metis session:** {row['last_session_at'][:10]}")
+    lines.append("")
+
+    if row["context_doc"]:
+        lines.append("## Context")
+        lines.append(row["context_doc"])
+        lines.append("")
+
+    if row["description"] and not row["context_doc"]:
+        lines.append("## Description")
+        lines.append(row["description"])
+        lines.append("")
+
+    if history:
+        lines.append("## Recent session history")
+        for e in reversed(history):
+            lines.append(f"- **{e.get('date', '')}**: {e.get('summary', '')}")
+        lines.append("")
+
+    if row["next_step"]:
+        lines.append(f"## Next step\n{row['next_step']}")
+        lines.append("")
+
+    lines.append("---")
+    lines.append("*Paste this block into any Claude conversation to give full project context.*")
+
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
+@app.tool()
+async def update_project_memory(
+    project_id: str,
+    what_was_done: str,
+    next_steps: str = "",
+) -> list[TextContent]:
+    """Append a session summary to a project's history and refresh its prompt memory.
+
+    Call this at the end of any work session on a project. The history feeds
+    into load_project_context() so future sessions automatically know what
+    happened before.
+
+    Args:
+        project_id: The project slug.
+        what_was_done: 1-3 sentence summary of what was accomplished this session.
+        next_steps: Optional: what needs to happen next. Updates the next_step field.
+    """
+    now = datetime.datetime.now().isoformat()
+
+    with connect(paths.db) as conn:
+        _ensure_context_columns(conn)
+        row = conn.execute(
+            "SELECT project_id, title, history_log FROM projects WHERE project_id = ?",
+            (project_id,),
+        ).fetchone()
+
+        if not row:
+            return [TextContent(type="text", text=f"Project not found: {project_id}")]
+
+        try:
+            history = json.loads(row["history_log"] or "[]")
+        except Exception:
+            history = []
+
+        history.append({
+            "date": now[:10],
+            "ts": now,
+            "summary": what_was_done,
+            "author": "metis",
+        })
+        history = history[-50:]
+
+        recent = history[-5:]
+        pm_lines = [f"- {e['date']}: {e['summary']}" for e in reversed(recent)]
+        prompt_memory = "Recent session history:\n" + "\n".join(pm_lines)
+
+        updates = {
+            "history_log": json.dumps(history),
+            "prompt_memory": prompt_memory,
+            "last_session_at": now,
+        }
+        if next_steps:
+            updates["next_step"] = next_steps
+
+        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        conn.execute(
+            f"UPDATE projects SET {set_clause} WHERE project_id = ?",
+            list(updates.values()) + [project_id],
+        )
+
+    return [TextContent(
+        type="text",
+        text=(
+            f"Session recorded for '{row['title']}' ({project_id}).\n"
+            f"History entries: {len(history)}\n"
+            f"Memory updated: {now[:10]}"
+        ),
+    )]
+
+
+@app.tool()
+async def detect_projects(scan_path: str = "") -> list[TextContent]:
+    """Scan a folder for unregistered git repos and article folders.
+
+    Useful for onboarding — finds existing project folders that are not yet
+    tracked in Metis. Call create_project() for each item you want to register.
+
+    Args:
+        scan_path: Absolute path to scan. Defaults to the parent of METIS_RC_ROOT.
+    """
+    import os
+
+    if scan_path:
+        root = Path(scan_path)
+    else:
+        rc_root = os.environ.get("METIS_RC_ROOT", str(paths.root))
+        root = Path(rc_root).parent
+
+    if not root.exists():
+        return [TextContent(type="text", text=f"Path not found: {root}")]
+
+    with connect(paths.db) as conn:
+        existing_ids = {
+            row[0]
+            for row in conn.execute("SELECT project_id FROM projects").fetchall()
+        }
+        existing_paths = {
+            (row[0] or "").rstrip("/\\")
+            for row in conn.execute(
+                "SELECT external_path FROM projects "
+                "WHERE external_path IS NOT NULL AND external_path != ''"
+            ).fetchall()
+        }
+
+    found = []
+    try:
+        for item in sorted(root.iterdir()):
+            if item.name.startswith(".") or not item.is_dir():
+                continue
+            path_str = str(item)
+            if path_str in existing_paths:
+                continue
+            slug = re.sub(r"[^a-z0-9]+", "-", item.name.lower()).strip("-")[:40]
+            if slug in existing_ids:
+                continue
+            has_git = (item / ".git").exists()
+            doc_files = (
+                list(item.glob("*.md"))
+                + list(item.glob("*.Rmd"))
+                + list(item.glob("*.qmd"))
+            )
+            if has_git or doc_files:
+                found.append((item.name, path_str, slug, has_git, len(doc_files)))
+    except (PermissionError, OSError) as e:
+        return [TextContent(type="text", text=f"Scan error: {e}")]
+
+    if not found:
+        return [TextContent(type="text", text=f"No unregistered projects found in {root}")]
+
+    lines = [f"Found {len(found)} unregistered project(s) in {root}:\n"]
+    for name, path, slug, has_git, ndocs in found[:20]:
+        indicators = []
+        if has_git:
+            indicators.append("git repo")
+        if ndocs:
+            indicators.append(f"{ndocs} doc(s)")
+        lines.append(f"- **{name}** ({', '.join(indicators)})")
+        lines.append(f"  Path: {path}")
+        lines.append(f"  Suggested ID: `{slug}`")
+        lines.append(f"  Register: `create_project(title=\"{name}\", external_path=\"{path}\")`")
+        lines.append("")
 
     return [TextContent(type="text", text="\n".join(lines))]

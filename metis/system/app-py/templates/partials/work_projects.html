@@ -29,9 +29,11 @@
       {% if p.domain %}
       <span class="chip chip--info" style="flex-shrink:0;font-size:10px;">{{ p.domain[:16] }}</span>
       {% endif %}
-      <!-- Article badge -->
-      {% if p.launcher_type == 'article' %}
+      <!-- Type / article badge -->
+      {% if p.launcher_type == 'article' or p.project_type == 'article' %}
       <span class="chip" style="flex-shrink:0;font-size:10px;background:var(--m-ochre-wash,#fff8ee);color:var(--m-ochre-deep,#b36a1d);border:1px solid var(--m-ochre-soft,#e8c97a);">ARTICLE</span>
+      {% elif p.project_type and p.project_type != 'research' %}
+      <span class="chip chip--plain" style="flex-shrink:0;font-size:10px;">{{ p.project_type | upper }}</span>
       {% endif %}
       <!-- Notes toggle -->
       <button onclick="toggleProjectNotes('{{ p.id }}')"
@@ -52,6 +54,13 @@
       <div class="ed" style="font-size:13px;color:var(--m-muted);margin:0;line-height:1.5;
                               overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">
         {{ p.description }}
+      </div>
+      {% endif %}
+
+      <!-- Last session indicator -->
+      {% if p.last_session_at %}
+      <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
+        Last session · {{ p.last_session_at[:10] }}
       </div>
       {% endif %}
 

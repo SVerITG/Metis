@@ -96,6 +96,80 @@
     </div>
     {% endif %}
 
+    <!-- Context document -->
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div class="caps-label">Project context</div>
+        <button id="ctx-copy-btn-{{ p.id }}"
+                onclick="copyProjectContext('{{ p.id }}')"
+                style="margin-left:auto;padding:3px 10px;font-family:var(--m-mono);font-size:8.5px;
+                       letter-spacing:0.1em;background:transparent;border:1px solid var(--m-rule-strong);
+                       border-radius:var(--m-radius);color:var(--m-text);cursor:pointer;
+                       transition:background 150ms;"
+                onmouseover="this.style.background='var(--m-surface-2)'"
+                onmouseout="this.style.background='transparent'">COPY FOR CLAUDE</button>
+        <button onclick="toggleCtxEdit('{{ p.id }}')"
+                style="padding:3px 10px;font-family:var(--m-mono);font-size:8.5px;
+                       letter-spacing:0.1em;background:transparent;border:1px solid var(--m-rule-strong);
+                       border-radius:var(--m-radius);color:var(--m-text);cursor:pointer;"
+                onmouseover="this.style.background='var(--m-surface-2)'"
+                onmouseout="this.style.background='transparent'">EDIT</button>
+      </div>
+
+      <!-- View mode -->
+      <div id="ctx-view-{{ p.id }}">
+        {% if p.context_doc %}
+        <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.65;
+                    white-space:pre-wrap;background:var(--m-surface-1);border-radius:6px;
+                    padding:14px 16px;border:1px solid var(--m-rule-soft);">{{ p.context_doc }}</div>
+        {% else %}
+        <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);
+                    padding:12px 16px;background:var(--m-surface-1);border-radius:6px;
+                    border:1px dashed var(--m-rule-soft);">
+          No context yet. Click EDIT to add a project brief — goals, background, key decisions.
+          Metis will load this automatically when you ask about this project.
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Edit mode -->
+      <div id="ctx-edit-{{ p.id }}" style="display:none;">
+        <textarea id="ctx-textarea-{{ p.id }}"
+                  style="width:100%;min-height:180px;font-family:var(--m-display);font-size:13px;
+                         color:var(--m-ink);line-height:1.65;background:var(--m-surface-1);
+                         border:1px solid var(--m-rule-strong);border-radius:6px;padding:12px 14px;
+                         resize:vertical;box-sizing:border-box;"
+                  placeholder="Write the project context here: goals, background, key decisions, constraints, stakeholders…">{{ p.context_doc or '' }}</textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button onclick="saveProjectContext('{{ p.id }}')"
+                  style="padding:5px 14px;font-family:var(--m-mono);font-size:8.5px;
+                         letter-spacing:0.1em;background:var(--m-accent);border:none;
+                         border-radius:var(--m-radius);color:#fff;cursor:pointer;">SAVE</button>
+          <button onclick="toggleCtxEdit('{{ p.id }}')"
+                  style="padding:5px 14px;font-family:var(--m-mono);font-size:8.5px;
+                         letter-spacing:0.1em;background:transparent;border:1px solid var(--m-rule-strong);
+                         border-radius:var(--m-radius);color:var(--m-text);cursor:pointer;">CANCEL</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session history -->
+    {% if history_entries %}
+    <div>
+      <div class="caps-label" style="margin-bottom:10px;">Session history</div>
+      <div style="display:flex;flex-direction:column;gap:0;">
+        {% for e in history_entries %}
+        <div style="display:flex;gap:12px;padding:7px 0;border-bottom:1px solid var(--m-rule-soft);">
+          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);
+                       flex-shrink:0;padding-top:2px;min-width:72px;">{{ e.date }}</span>
+          <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);
+                       line-height:1.4;flex:1;">{{ e.summary }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
     <!-- Links -->
     {% if p.external_path or p.github_url %}
     <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--m-rule-soft);">
@@ -112,3 +186,58 @@
   </div><!-- /body -->
 </div><!-- /panel -->
 </div><!-- /overlay -->
+
+<script>
+(function() {
+  function toggleCtxEdit(pid) {
+    var view = document.getElementById('ctx-view-' + pid);
+    var edit = document.getElementById('ctx-edit-' + pid);
+    if (!view || !edit) return;
+    var editing = edit.style.display !== 'none';
+    view.style.display = editing ? '' : 'none';
+    edit.style.display = editing ? 'none' : '';
+  }
+
+  function saveProjectContext(pid) {
+    var ta = document.getElementById('ctx-textarea-' + pid);
+    if (!ta) return;
+    fetch('/api/project/' + pid + '/context', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({context_doc: ta.value}),
+    }).then(function(r) { return r.json(); }).then(function() {
+      var view = document.getElementById('ctx-view-' + pid);
+      if (view) {
+        view.innerHTML = ta.value
+          ? '<div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.65;white-space:pre-wrap;background:var(--m-surface-1);border-radius:6px;padding:14px 16px;border:1px solid var(--m-rule-soft);">' + ta.value.replace(/</g,'&lt;') + '</div>'
+          : '<div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);padding:12px 16px;background:var(--m-surface-1);border-radius:6px;border:1px dashed var(--m-rule-soft);">No context yet.</div>';
+      }
+      toggleCtxEdit(pid);
+    });
+  }
+
+  function copyProjectContext(pid) {
+    fetch('/api/project/' + pid + '/context')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var lines = [];
+        lines.push('PROJECT CONTEXT: ' + d.title);
+        if (d.domain) lines.push('Domain: ' + d.domain);
+        if (d.project_type) lines.push('Type: ' + d.project_type);
+        lines.push('---');
+        if (d.context_doc) lines.push(d.context_doc);
+        if (d.prompt_memory) { lines.push('---'); lines.push(d.prompt_memory); }
+        if (d.next_step) { lines.push('---'); lines.push('NEXT STEP: ' + d.next_step); }
+        var text = lines.join('\n');
+        navigator.clipboard.writeText(text).then(function() {
+          var btn = document.getElementById('ctx-copy-btn-' + pid);
+          if (btn) { btn.textContent = 'COPIED!'; setTimeout(function() { btn.textContent = 'COPY FOR CLAUDE'; }, 2000); }
+        });
+      });
+  }
+
+  window.toggleCtxEdit = toggleCtxEdit;
+  window.saveProjectContext = saveProjectContext;
+  window.copyProjectContext = copyProjectContext;
+})();
+</script>

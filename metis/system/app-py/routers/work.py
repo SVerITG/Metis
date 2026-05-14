@@ -211,7 +211,8 @@ def _parse_launchers(p: dict) -> list:
 async def work_projects(request: Request):
     projects = db_query(
         "SELECT project_id as id, title, description, domain, priority, next_step, status, "
-        "external_path, launcher_type, github_url, launchers, dashboard_url "
+        "external_path, launcher_type, github_url, launchers, dashboard_url, "
+        "project_type, last_session_at "
         "FROM projects WHERE status = 'active' ORDER BY COALESCE(display_order, 999) ASC LIMIT 20"
     )
     for p in (projects or []):
@@ -297,7 +298,8 @@ async def project_tasks_partial(request: Request, project_id: str):
 async def project_detail_panel(request: Request, project_id: str):
     rows = db_query(
         "SELECT project_id as id, title, description, domain, priority, next_step, status, "
-        "created_at, external_path, github_url "
+        "created_at, external_path, github_url, project_type, context_doc, "
+        "history_log, prompt_memory, last_session_at "
         "FROM projects WHERE project_id=? LIMIT 1",
         (project_id,),
     )
@@ -346,6 +348,14 @@ async def project_detail_panel(request: Request, project_id: str):
         by_cat[cat].append(t)
     grouped = [{"category": k, "tasks": v} for k, v in sorted(by_cat.items())]
 
+    # Parse history_log for the detail view
+    history_entries = []
+    try:
+        import json as _json
+        history_entries = _json.loads(p.get("history_log") or "[]")[-8:]
+    except Exception:
+        pass
+
     return templates.TemplateResponse(
         request,
         "partials/work_project_detail.html",
@@ -355,6 +365,7 @@ async def project_detail_panel(request: Request, project_id: str):
             "open_count": len(open_tasks),
             "done_tasks": done_tasks,
             "last_activity": last_activity,
+            "history_entries": list(reversed(history_entries)),
         },
     )
 
@@ -452,6 +463,152 @@ async def save_project_notes(project_id: str, request: Request):
     notes = data.get("notes", "")
     db_execute("UPDATE projects SET notes=? WHERE project_id=?", (notes, project_id))
     return JSONResponse({"status": "ok"})
+
+
+# ---------------------------------------------------------------------------
+# Project context (context_doc + history_log + prompt_memory)
+# ---------------------------------------------------------------------------
+
+for _col, _default in [
+    ("project_type TEXT DEFAULT 'research'", None),
+    ("context_doc TEXT DEFAULT ''", None),
+    ("history_log TEXT DEFAULT '[]'", None),
+    ("prompt_memory TEXT DEFAULT ''", None),
+    ("last_session_at TEXT", None),
+    ("detection_source TEXT DEFAULT 'manual'", None),
+]:
+    try:
+        db_execute(f"ALTER TABLE projects ADD COLUMN {_col}")
+    except Exception:
+        pass
+
+
+@router.get("/api/project/{project_id}/context")
+async def get_project_context(project_id: str):
+    rows = db_query(
+        "SELECT project_id, title, description, domain, next_step, project_type, "
+        "context_doc, history_log, prompt_memory, last_session_at "
+        "FROM projects WHERE project_id=? LIMIT 1",
+        (project_id,),
+    )
+    if not rows:
+        return JSONResponse({"error": "not found"}, status_code=404)
+    p = rows[0]
+    history = []
+    try:
+        history = json.loads(p.get("history_log") or "[]")
+    except Exception:
+        pass
+    return JSONResponse({
+        "project_id": project_id,
+        "title": p.get("title") or "",
+        "description": p.get("description") or "",
+        "domain": p.get("domain") or "",
+        "next_step": p.get("next_step") or "",
+        "project_type": p.get("project_type") or "research",
+        "context_doc": p.get("context_doc") or "",
+        "prompt_memory": p.get("prompt_memory") or "",
+        "history": history[-10:],
+        "last_session_at": p.get("last_session_at"),
+    })
+
+
+@router.post("/api/project/{project_id}/context")
+async def save_project_context(project_id: str, request: Request):
+    data = await request.json()
+    context_doc = data.get("context_doc", "")
+    db_execute(
+        "UPDATE projects SET context_doc=? WHERE project_id=?",
+        (context_doc, project_id),
+    )
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/api/project/{project_id}/history")
+async def append_project_history(project_id: str, request: Request):
+    data = await request.json()
+    summary = (data.get("summary") or "").strip()
+    if not summary:
+        return JSONResponse({"status": "error", "message": "summary required"}, status_code=400)
+    now = datetime.datetime.now().isoformat()
+    raw = db_scalar(
+        "SELECT history_log FROM projects WHERE project_id=?",
+        (project_id,),
+        default="[]",
+    ) or "[]"
+    try:
+        history = json.loads(raw)
+    except Exception:
+        history = []
+    history.append({
+        "date": now[:10],
+        "ts": now,
+        "summary": summary,
+        "author": data.get("author", "metis"),
+    })
+    history = history[-50:]
+    recent = history[-5:]
+    pm_lines = [f"- {e['date']}: {e['summary']}" for e in reversed(recent)]
+    prompt_memory = "Recent session history:\n" + "\n".join(pm_lines)
+    db_execute(
+        "UPDATE projects SET history_log=?, prompt_memory=?, last_session_at=? WHERE project_id=?",
+        (json.dumps(history), prompt_memory, now, project_id),
+    )
+    return JSONResponse({"status": "ok", "entries": len(history)})
+
+
+@router.get("/api/projects/detect")
+async def detect_projects():
+    """Scan parent folder of METIS_RC_ROOT for unregistered git repos and article folders."""
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    if not rc_root:
+        return JSONResponse({"detected": [], "message": "METIS_RC_ROOT not set"})
+
+    existing_ids = {
+        r["project_id"]
+        for r in (db_query("SELECT project_id FROM projects") or [])
+    }
+    existing_paths = {
+        (r.get("external_path") or "").rstrip("/\\")
+        for r in (db_query(
+            "SELECT external_path FROM projects WHERE external_path IS NOT NULL AND external_path != ''"
+        ) or [])
+    }
+
+    scan_root = Path(rc_root).parent
+    detected = []
+    checked: set = set()
+
+    if scan_root.exists():
+        try:
+            for item in scan_root.iterdir():
+                if item.name.startswith(".") or not item.is_dir():
+                    continue
+                path_str = str(item)
+                if path_str in checked or path_str in existing_paths:
+                    continue
+                checked.add(path_str)
+                has_git = (item / ".git").exists()
+                doc_files = (
+                    list(item.glob("*.md"))
+                    + list(item.glob("*.Rmd"))
+                    + list(item.glob("*.qmd"))
+                )
+                slug = re.sub(r"[^a-z0-9]+", "-", item.name.lower()).strip("-")[:40]
+                if slug in existing_ids:
+                    continue
+                if has_git or doc_files:
+                    detected.append({
+                        "folder": item.name,
+                        "path": path_str,
+                        "suggested_id": slug,
+                        "has_git": has_git,
+                        "doc_count": len(doc_files),
+                    })
+        except (PermissionError, OSError):
+            pass
+
+    return JSONResponse({"detected": detected[:20]})
 
 
 # ---------------------------------------------------------------------------
