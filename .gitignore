@@ -78,6 +78,10 @@ metis/agents/**/*-context.md
 metis/agents/librarian/sources.md
 metis/agents/news-radar/sources.md
 
+# Private agent: Release Coordinator (contains personal repo graph, credentials
+# patterns, and PH-specific propagation rules — never ship to GitHub)
+metis/agents/release-coordinator/
+
 # Per-user config and session state
 metis/system/config/user-preferences.json
 metis/system/config/user-config.yaml
