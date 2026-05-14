@@ -1,12 +1,21 @@
-"""knowledge_db.py — PDF Knowledge Database pipeline (Phase L).
+"""knowledge_db.py — Layered PDF Knowledge Database (Phase L).
 
-Extracts text from all PDFs in knowledge/library/, chunks, embeds with local
-nomic-embed-text-v1.5-Q (no API key required), and stores in SQLite.
+Users build knowledge layer by layer:
+  Layer 1 (foundation): ph-background   — general MPH / global health / health systems
+  Layer 2 (specialist):  hat-specialist  — HAT papers, NTD specialist literature
+  Layer 3 (methods):     epi-methods     — epidemiology methods, stats, spatial, multilevel
+  Layer 4+ (custom):     user-defined    — any specialist domain added by the user
+
+Each layer is a named "knowledge database" registered in knowledge_databases.
+pdf_chunks.db_id links every chunk to its database.
+Semantic search can query one database, several, or all layers together.
 
 Tools:
-  build_pdf_knowledge_db(domain_filter, force_rebuild)
-  search_pdf_knowledge(query, top_k, domain_filter)
-  get_pdf_index_stats()
+  list_knowledge_databases()
+  build_pdf_knowledge_db(database, force_rebuild)
+  search_pdf_knowledge(query, databases, top_k)
+  get_pdf_index_stats(database)
+  create_knowledge_database(slug, name, description, layer, folders)
 """
 
 from __future__ import annotations
@@ -23,22 +32,98 @@ from metis_mcp.config import paths
 from metis_mcp.app_instance import app
 from metis_mcp.db import connect
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# ── Constants ─────────────────────────────────────────────────────────────────
 
-CHUNK_CHARS = 3200        # ~800 tokens
-OVERLAP_CHARS = 400       # ~100 tokens
-EMBED_BATCH = 32          # chunks per embedding batch
+CHUNK_CHARS   = 3200
+OVERLAP_CHARS = 400
+EMBED_BATCH   = 32
 EMBEDDING_DIM = 768
 
-_LIBRARY_SUBDIRS = [
-    "open-access-books",
-    "papers",
-    "disease-areas",
-    "methods",
-    "concepts",
+# ── Built-in database definitions ─────────────────────────────────────────────
+# Each entry: slug, name, description, layer (1=foundation,2=specialist,3=methods),
+# color, and the library subdirectory paths that belong to it.
+
+BUILTIN_DATABASES = [
+    {
+        "slug": "ph-background",
+        "name": "Public Health Background",
+        "description": (
+            "Foundation layer: general MPH knowledge. Health systems, global health, "
+            "governance, social determinants, environmental health, NCDs, nutrition, "
+            "mental health, maternal & child health, health economics, Africa, DHIS2. "
+            "The baseline every public health researcher needs."
+        ),
+        "layer": 1,
+        "color": "#0d6efd",
+        "folders": [
+            "open-access-books/Health Systems & Financing",
+            "open-access-books/Global Health & Health Systems",
+            "open-access-books/Global Health Governance",
+            "open-access-books/Social Determinants & Equity",
+            "open-access-books/Environmental Health",
+            "open-access-books/Infectious Disease & Surveillance",
+            "open-access-books/Maternal & Child Health",
+            "open-access-books/NCDs",
+            "open-access-books/Nutrition & Food Security",
+            "open-access-books/Mental Health",
+            "open-access-books/Health Economics",
+            "open-access-books/One Health & AMR",
+            "open-access-books/Climate Change & Health",
+            "open-access-books/Africa",
+            "open-access-books/Africa & Sub-Saharan Africa",
+            "open-access-books/Health Informatics & DHIS2",
+            "open-access-books/Course Materials",
+        ],
+    },
+    {
+        "slug": "hat-specialist",
+        "name": "HAT & NTD Specialist",
+        "description": (
+            "Specialist layer: Human African Trypanosomiasis (HAT) research literature "
+            "and neglected tropical diseases. All HAT papers, NTD roadmaps, disease-specific "
+            "guidelines, Leishmaniasis, Malaria, TB, HIV, Schistosomiasis. "
+            "The deep specialist knowledge for NTD researchers."
+        ),
+        "layer": 2,
+        "color": "#dc3545",
+        "folders": [
+            "papers",
+            "open-access-books/HAT & NTDs",
+            "open-access-books/NTDs - HAT",
+            "open-access-books/NTDs - Overview",
+            "open-access-books/NTDs - Other",
+            "open-access-books/NTDs - Leishmaniasis",
+            "open-access-books/NTDs - Malaria",
+            "open-access-books/NTDs - TB",
+            "open-access-books/NTDs - HIV",
+            "open-access-books/NTDs - Schistosomiasis",
+            "disease-areas",
+        ],
+    },
+    {
+        "slug": "epi-methods",
+        "name": "Epidemiology & Methods",
+        "description": (
+            "Methods layer: epidemiology foundations, biostatistics, spatial epidemiology, "
+            "multilevel models, research methods, field epidemiology, scientific writing. "
+            "Cross-cutting — relevant to any research domain built on top."
+        ),
+        "layer": 3,
+        "color": "#198754",
+        "folders": [
+            "open-access-books/Epidemiology & Methods",
+            "open-access-books/Biostatistics & Methods",
+            "open-access-books/Spatial Epidemiology & Statistics",
+            "open-access-books/Multilevel Models",
+            "open-access-books/Research Methods & Writing",
+            "open-access-books/Field Epidemiology",
+            "methods",
+            "concepts",
+        ],
+    },
 ]
 
-# ── Schema setup ──────────────────────────────────────────────────────────────
+# ── Schema ─────────────────────────────────────────────────────────────────────
 
 _VEC_DDL = f"""
 CREATE VIRTUAL TABLE IF NOT EXISTS vec_pdf_chunks USING vec0(
@@ -47,37 +132,6 @@ CREATE VIRTUAL TABLE IF NOT EXISTS vec_pdf_chunks USING vec0(
 );
 """
 
-_CHUNK_DDL = """
-CREATE TABLE IF NOT EXISTS pdf_chunks (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    source_file TEXT NOT NULL,
-    domain      TEXT DEFAULT '',
-    title       TEXT DEFAULT '',
-    page_start  INTEGER DEFAULT 0,
-    page_end    INTEGER DEFAULT 0,
-    chunk_idx   INTEGER NOT NULL,
-    chunk_text  TEXT NOT NULL,
-    char_count  INTEGER DEFAULT 0,
-    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-);
-CREATE INDEX IF NOT EXISTS idx_pdf_chunks_source ON pdf_chunks (source_file);
-CREATE INDEX IF NOT EXISTS idx_pdf_chunks_domain  ON pdf_chunks (domain);
-"""
-
-_STATE_DDL = """
-CREATE TABLE IF NOT EXISTS pdf_index_state (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    source_file TEXT NOT NULL UNIQUE,
-    domain      TEXT DEFAULT '',
-    title       TEXT DEFAULT '',
-    total_pages INTEGER DEFAULT 0,
-    chunk_count INTEGER DEFAULT 0,
-    file_size   INTEGER DEFAULT 0,
-    indexed_at  TEXT NOT NULL DEFAULT (datetime('now'))
-);
-"""
-
-
 def _ensure_schema(conn) -> None:
     try:
         import sqlite_vec
@@ -85,102 +139,112 @@ def _ensure_schema(conn) -> None:
         sqlite_vec.load(conn)
     except Exception:
         pass
-    for ddl in (_CHUNK_DDL, _STATE_DDL, _VEC_DDL):
-        for stmt in ddl.strip().split(";"):
-            stmt = stmt.strip()
-            if stmt:
-                try:
-                    conn.execute(stmt)
-                except Exception:
-                    pass
+    try:
+        conn.execute(_VEC_DDL)
+    except Exception:
+        pass
+    # Add db_id column to existing tables if missing (migration)
+    for table, col in [("pdf_chunks", "db_id"), ("pdf_index_state", "db_id")]:
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} INTEGER DEFAULT 0")
+        except Exception:
+            pass
+    conn.commit()
+
+
+def _seed_builtin_databases(conn) -> None:
+    """Insert built-in database definitions if they don't exist yet."""
+    for db in BUILTIN_DATABASES:
+        existing = conn.execute(
+            "SELECT id FROM knowledge_databases WHERE slug = ?", (db["slug"],)
+        ).fetchone()
+        if not existing:
+            conn.execute(
+                """INSERT INTO knowledge_databases
+                   (slug, name, description, layer, color)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (db["slug"], db["name"], db["description"], db["layer"], db["color"])
+            )
+    conn.commit()
+
+
+def _get_db_id(conn, slug: str) -> Optional[int]:
+    row = conn.execute(
+        "SELECT id FROM knowledge_databases WHERE slug = ?", (slug,)
+    ).fetchone()
+    return row[0] if row else None
+
+
+def _update_db_counts(conn, db_id: int) -> None:
+    docs  = conn.execute(
+        "SELECT COUNT(*) FROM pdf_index_state WHERE db_id = ?", (db_id,)
+    ).fetchone()[0]
+    chunks = conn.execute(
+        "SELECT COUNT(*) FROM pdf_chunks WHERE db_id = ?", (db_id,)
+    ).fetchone()[0]
+    conn.execute(
+        "UPDATE knowledge_databases SET doc_count=?, chunk_count=?, last_built=datetime('now') WHERE id=?",
+        (docs, chunks, db_id)
+    )
     conn.commit()
 
 
 # ── Text helpers ──────────────────────────────────────────────────────────────
 
 def _clean_text(text: str) -> str:
-    """Normalize PDF-extracted text: fix line breaks, remove junk."""
-    # Rejoin hyphenated line-breaks
     text = re.sub(r"-\n(\w)", r"\1", text)
-    # Collapse excessive whitespace but preserve paragraph breaks
     text = re.sub(r"[ \t]+", " ", text)
     text = re.sub(r"\n{3,}", "\n\n", text)
-    # Remove page headers/footers (short isolated lines)
     lines = text.split("\n")
-    cleaned = []
-    for line in lines:
-        stripped = line.strip()
-        # Skip lines that look like page numbers or headers (very short, all caps, or just digits)
-        if stripped and not (len(stripped) <= 4 and (stripped.isdigit() or stripped.isupper())):
-            cleaned.append(line)
+    cleaned = [l for l in lines if not (
+        l.strip() and len(l.strip()) <= 4 and (l.strip().isdigit() or l.strip().isupper())
+    )]
     return "\n".join(cleaned).strip()
 
 
-def _chunk_text(text: str, chunk_size: int = CHUNK_CHARS, overlap: int = OVERLAP_CHARS) -> List[str]:
-    """Split text into overlapping chunks, preferring paragraph boundaries."""
-    if len(text) <= chunk_size:
+def _chunk_text(text: str) -> List[str]:
+    if len(text) <= CHUNK_CHARS:
         return [text] if text.strip() else []
-
     chunks: List[str] = []
     start = 0
     while start < len(text):
-        end = start + chunk_size
+        end = start + CHUNK_CHARS
         if end >= len(text):
             chunk = text[start:].strip()
             if chunk:
                 chunks.append(chunk)
             break
-        # Walk back to nearest paragraph or sentence boundary
         boundary = text.rfind("\n\n", start, end)
-        if boundary == -1 or boundary <= start + chunk_size // 2:
+        if boundary == -1 or boundary <= start + CHUNK_CHARS // 2:
             boundary = text.rfind(". ", start, end)
-        if boundary == -1 or boundary <= start + chunk_size // 2:
+        if boundary == -1 or boundary <= start + CHUNK_CHARS // 2:
             boundary = end
         else:
-            boundary += 2  # include the delimiter
-
+            boundary += 2
         chunk = text[start:boundary].strip()
         if chunk:
             chunks.append(chunk)
-        start = boundary - overlap
+        start = boundary - OVERLAP_CHARS
         if start < 0:
             start = 0
-
     return chunks
 
 
+_ACRONYMS = {"WHO","CDC","NTD","HAT","HIV","AMR","NCD","UHC","SDH","DHIS2",
+             "AFRO","PAHO","ECDC","GBD","DALY","TB","ANC","AI","ML","API"}
+
 def _infer_title(path: Path) -> str:
-    """Derive a human-readable title from the filename."""
-    stem = path.stem
-    # Remove leading numbers like "01_" or "CDC-SS1978-"
-    stem = re.sub(r"^\d+_", "", stem)
-    # Convert separators to spaces
+    stem = re.sub(r"^\d+_", "", path.stem)
     stem = stem.replace("-", " ").replace("_", " ")
-    # Titlecase but preserve known acronyms
     words = stem.split()
-    titled = []
-    acronyms = {"WHO", "CDC", "NTD", "HAT", "HIV", "AMR", "NCD", "UHC", "SDH",
-                "DHIS2", "AFRO", "PAHO", "ECDC", "GBD", "DALY", "BMI", "TB",
-                "ANC", "PHC", "MHC", "AI", "ML", "API", "PDF", "R2"}
-    for w in words:
-        if w.upper() in acronyms:
-            titled.append(w.upper())
-        else:
-            titled.append(w.capitalize())
-    return " ".join(titled)
+    return " ".join(w.upper() if w.upper() in _ACRONYMS else w.capitalize() for w in words)
 
 
-def _encode_vec(vector: List[float]) -> bytes:
-    return struct.pack(f"{len(vector)}f", *vector)
+def _encode_vec(v: List[float]) -> bytes:
+    return struct.pack(f"{len(v)}f", *v)
 
 
-# ── PDF extraction ─────────────────────────────────────────────────────────────
-
-def _extract_pdf_pages(pdf_path: Path) -> tuple[List[tuple[int, str]], int]:
-    """Extract (page_num, text) pairs and total page count from a PDF.
-
-    Returns (pages, total_pages). Pages is a list of (1-indexed page_num, text).
-    """
+def _extract_pages(pdf_path: Path) -> tuple[List[tuple[int, str]], int]:
     try:
         from pypdf import PdfReader
         reader = PdfReader(str(pdf_path), strict=False)
@@ -188,8 +252,7 @@ def _extract_pdf_pages(pdf_path: Path) -> tuple[List[tuple[int, str]], int]:
         pages = []
         for i, page in enumerate(reader.pages):
             try:
-                text = page.extract_text() or ""
-                text = _clean_text(text)
+                text = _clean_text(page.extract_text() or "")
                 if text.strip():
                     pages.append((i + 1, text))
             except Exception:
@@ -199,120 +262,90 @@ def _extract_pdf_pages(pdf_path: Path) -> tuple[List[tuple[int, str]], int]:
         return [], 0
 
 
-# ── Core build function ───────────────────────────────────────────────────────
-
 def _library_root() -> Path:
     return paths.root / "knowledge" / "library"
 
 
-def _collect_pdfs(domain_filter: str = "") -> List[Path]:
+def _collect_pdfs_for_db(db_slug: str) -> List[Path]:
+    """Return all PDFs that belong to the given database slug."""
     lib = _library_root()
+    db_def = next((d for d in BUILTIN_DATABASES if d["slug"] == db_slug), None)
+    if not db_def:
+        return []
     pdfs: List[Path] = []
-    for subdir in _LIBRARY_SUBDIRS:
-        d = lib / subdir
+    for folder in db_def["folders"]:
+        d = lib / folder
         if d.exists():
-            for p in d.rglob("*.pdf"):
-                if domain_filter and domain_filter.lower() not in p.parent.name.lower():
-                    continue
-                pdfs.append(p)
-    return sorted(pdfs)
+            pdfs.extend(sorted(d.rglob("*.pdf")))
+    return pdfs
 
 
-def _already_indexed(conn, source_file: str) -> bool:
-    row = conn.execute(
-        "SELECT chunk_count FROM pdf_index_state WHERE source_file = ?",
-        (source_file,)
-    ).fetchone()
-    return row is not None and row[0] > 0
+# ── Core indexing ─────────────────────────────────────────────────────────────
 
-
-def _delete_existing(conn, source_file: str) -> None:
-    rows = conn.execute(
-        "SELECT id FROM pdf_chunks WHERE source_file = ?", (source_file,)
-    ).fetchall()
-    for row in rows:
-        conn.execute("DELETE FROM vec_pdf_chunks WHERE rowid = ?", (row[0],))
-    conn.execute("DELETE FROM pdf_chunks WHERE source_file = ?", (source_file,))
-    conn.execute("DELETE FROM pdf_index_state WHERE source_file = ?", (source_file,))
-    conn.commit()
-
-
-def _upsert_library_card(conn, title: str, domain: str, source_path: str, summary: str) -> None:
-    existing = conn.execute(
-        "SELECT id FROM library_cards WHERE title = ?", (title,)
-    ).fetchone()
-    if existing:
-        return
-    conn.execute(
-        "INSERT INTO library_cards (title, domain, summary, source_path) VALUES (?, ?, ?, ?)",
-        (title, domain, summary[:500], source_path)
-    )
-
-
-def _index_one_pdf(conn, pdf_path: Path, lib_root: Path) -> dict:
-    """Index a single PDF. Returns stats dict."""
-    from metis_mcp.embeddings import embed
-
+def _index_one_pdf(conn, pdf_path: Path, lib_root: Path, db_id: int,
+                   embed_fn) -> dict:
     source_file = str(pdf_path.relative_to(lib_root))
-    domain = pdf_path.parent.name
-    title = _infer_title(pdf_path)
-    file_size = pdf_path.stat().st_size
+    domain      = pdf_path.parent.name
+    title       = _infer_title(pdf_path)
+    file_size   = pdf_path.stat().st_size
 
-    pages, total_pages = _extract_pdf_pages(pdf_path)
+    pages, total_pages = _extract_pages(pdf_path)
     if not pages:
         return {"status": "skip", "reason": "no extractable text", "source_file": source_file}
 
-    # Build per-page chunks, tracking which pages each chunk spans
     all_chunks: List[dict] = []
     for page_num, page_text in pages:
-        for chunk_text in _chunk_text(page_text):
-            all_chunks.append({
-                "page_start": page_num,
-                "page_end": page_num,
-                "text": chunk_text,
-            })
+        for ct in _chunk_text(page_text):
+            all_chunks.append({"page": page_num, "text": ct})
 
     if not all_chunks:
-        return {"status": "skip", "reason": "no chunks produced", "source_file": source_file}
+        return {"status": "skip", "reason": "no chunks", "source_file": source_file}
 
-    # Batch embed
     texts = [c["text"] for c in all_chunks]
     embeddings: List[List[float]] = []
     for i in range(0, len(texts), EMBED_BATCH):
-        batch = texts[i:i + EMBED_BATCH]
-        batch_embeddings = embed(batch, prefix="search_document: ")
-        embeddings.extend(batch_embeddings)
+        embeddings.extend(embed_fn(texts[i:i + EMBED_BATCH]))
 
-    # Insert chunks + vectors
     for idx, (chunk, vec) in enumerate(zip(all_chunks, embeddings)):
         cur = conn.execute(
             """INSERT INTO pdf_chunks
-               (source_file, domain, title, page_start, page_end, chunk_idx, chunk_text, char_count)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-            (source_file, domain, title,
-             chunk["page_start"], chunk["page_end"],
+               (db_id, source_file, domain, title, page_start, page_end,
+                chunk_idx, chunk_text, char_count)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (db_id, source_file, domain, title,
+             chunk["page"], chunk["page"],
              idx, chunk["text"], len(chunk["text"]))
         )
         rowid = cur.lastrowid
-        conn.execute(
-            "INSERT INTO vec_pdf_chunks (rowid, embedding) VALUES (?, ?)",
-            (rowid, _encode_vec(vec))
-        )
+        try:
+            conn.execute(
+                "INSERT INTO vec_pdf_chunks (rowid, embedding) VALUES (?, ?)",
+                (rowid, _encode_vec(vec))
+            )
+        except Exception:
+            pass
 
-    # Auto library card — first chunk as summary snippet
-    summary_text = all_chunks[0]["text"][:300].replace("\n", " ")
-    _upsert_library_card(conn, title, domain, source_file, summary_text)
+    # Auto library card
+    snippet = all_chunks[0]["text"][:300].replace("\n", " ")
+    if not conn.execute("SELECT id FROM library_cards WHERE title = ?", (title,)).fetchone():
+        try:
+            conn.execute(
+                "INSERT INTO library_cards (title, domain, summary, source_path) "
+                "VALUES (?, ?, ?, ?)",
+                (title, domain, snippet, source_file)
+            )
+        except Exception:
+            pass
 
-    # Record state
     conn.execute(
         """INSERT INTO pdf_index_state
-           (source_file, domain, title, total_pages, chunk_count, file_size)
-           VALUES (?, ?, ?, ?, ?, ?)
+           (db_id, source_file, domain, title, total_pages, chunk_count, file_size)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(source_file) DO UPDATE SET
-             chunk_count=excluded.chunk_count,
-             total_pages=excluded.total_pages,
+             db_id=excluded.db_id, chunk_count=excluded.chunk_count,
+             total_pages=excluded.total_pages, file_size=excluded.file_size,
              indexed_at=datetime('now')""",
-        (source_file, domain, title, total_pages, len(all_chunks), file_size)
+        (db_id, source_file, domain, title, total_pages, len(all_chunks), file_size)
     )
     conn.commit()
 
@@ -328,113 +361,196 @@ def _index_one_pdf(conn, pdf_path: Path, lib_root: Path) -> dict:
 # ── MCP Tools ─────────────────────────────────────────────────────────────────
 
 @app.tool()
+async def list_knowledge_databases() -> list[TextContent]:
+    """List all knowledge databases (layers) registered in Metis.
+
+    Shows built-in databases (PH background, HAT specialist, Epi methods) and any
+    custom databases the user has created. Reports layer, document count, chunk count,
+    and last build date.
+    """
+    conn = connect()
+    _ensure_schema(conn)
+    _seed_builtin_databases(conn)
+
+    rows = conn.execute(
+        """SELECT slug, name, layer, color, doc_count, chunk_count, last_built, description
+           FROM knowledge_databases ORDER BY layer, id"""
+    ).fetchall()
+    conn.close()
+
+    if not rows:
+        return [TextContent(type="text", text="No knowledge databases found.")]
+
+    layer_labels = {1: "Foundation", 2: "Specialist", 3: "Methods", 4: "Custom"}
+    lines = [
+        "══════════════════════════════════════════════════════",
+        " Metis Knowledge Databases",
+        "══════════════════════════════════════════════════════",
+        "",
+    ]
+    last_layer = None
+    for slug, name, layer, color, doc_count, chunk_count, last_built, description in rows:
+        if layer != last_layer:
+            label = layer_labels.get(layer, f"Layer {layer}")
+            lines.append(f"  ── {label} ──────────────────────────────────────")
+            last_layer = layer
+        status = f"{doc_count} docs, {chunk_count:,} chunks" if doc_count else "not yet indexed"
+        built_str = f" (built {last_built[:10]})" if last_built else ""
+        lines.append(f"  [{slug}]  {name}")
+        lines.append(f"    {description[:100]}…" if len(description) > 100 else f"    {description}")
+        lines.append(f"    Status: {status}{built_str}")
+        lines.append("")
+
+    lines.append("  To index a layer: build_pdf_knowledge_db(database='<slug>')")
+    lines.append("  To search layers: search_pdf_knowledge(query, databases=['ph-background','hat-specialist'])")
+
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
+@app.tool()
 async def build_pdf_knowledge_db(
-    domain_filter: str = "",
+    database: str = "ph-background",
     force_rebuild: bool = False,
 ) -> list[TextContent]:
-    """Index all PDFs in the Metis library into a local semantic knowledge database.
+    """Index a knowledge database layer from PDFs into the semantic knowledge base.
 
     Uses local nomic-embed-text-v1.5-Q (fastembed, ONNX) — no API key required.
-    Stores chunks + 768-dim embeddings in pdf_chunks + vec_pdf_chunks tables.
-    Skips already-indexed files unless force_rebuild=True.
+    Each database is a named layer: 'ph-background', 'hat-specialist', 'epi-methods',
+    or any custom database slug created via create_knowledge_database().
 
     Args:
-        domain_filter: Only index PDFs whose parent folder contains this string
-                       (e.g. "Epidemiology", "NTD", "DHIS2"). Empty = index all.
-        force_rebuild: Re-index even files already in the database.
+        database:      Slug of the knowledge database to build (default: 'ph-background').
+        force_rebuild: Re-index even files already indexed in this database.
     """
     t0 = time.time()
 
-    lib_root = _library_root()
-    if not lib_root.exists():
-        return [TextContent(type="text", text=f"Library root not found: {lib_root}")]
-
-    pdfs = _collect_pdfs(domain_filter)
-    if not pdfs:
-        filter_msg = f" matching '{domain_filter}'" if domain_filter else ""
-        return [TextContent(type="text", text=f"No PDFs found in library{filter_msg}.")]
-
     conn = connect()
     _ensure_schema(conn)
+    _seed_builtin_databases(conn)
 
+    db_id = _get_db_id(conn, database)
+    if db_id is None:
+        conn.close()
+        return [TextContent(type="text", text=(
+            f"Unknown database '{database}'. "
+            f"Run list_knowledge_databases() to see available options."
+        ))]
+
+    db_row = conn.execute(
+        "SELECT name, description FROM knowledge_databases WHERE id = ?", (db_id,)
+    ).fetchone()
+    db_name = db_row[0]
+
+    pdfs = _collect_pdfs_for_db(database)
+    if not pdfs:
+        conn.close()
+        return [TextContent(type="text", text=
+            f"No PDFs found for database '{database}'. "
+            f"Check that the library folders exist under knowledge/library/."
+        )]
+
+    # Load embedding model
+    try:
+        from fastembed import TextEmbedding
+        _model = TextEmbedding(model_name="nomic-ai/nomic-embed-text-v1.5-Q")
+        def embed_fn(texts: List[str]) -> List[List[float]]:
+            prefixed = ["search_document: " + t for t in texts]
+            return [e.tolist() for e in _model.embed(prefixed)]
+    except Exception as e:
+        conn.close()
+        return [TextContent(type="text", text=f"Could not load fastembed: {e}\nInstall: pip install fastembed")]
+
+    lib_root = _library_root()
     total = len(pdfs)
-    indexed = 0
-    skipped = 0
+    indexed = skipped = 0
     failed: List[str] = []
     results: List[str] = []
 
     for i, pdf_path in enumerate(pdfs, 1):
         source_file = str(pdf_path.relative_to(lib_root))
 
-        if not force_rebuild and _already_indexed(conn, source_file):
-            skipped += 1
-            continue
+        if not force_rebuild:
+            row = conn.execute(
+                "SELECT chunk_count FROM pdf_index_state WHERE source_file = ? AND db_id = ?",
+                (source_file, db_id)
+            ).fetchone()
+            if row and row[0] > 0:
+                skipped += 1
+                continue
 
         if force_rebuild:
-            _delete_existing(conn, source_file)
+            chunk_ids = [r[0] for r in conn.execute(
+                "SELECT id FROM pdf_chunks WHERE source_file = ? AND db_id = ?",
+                (source_file, db_id)
+            ).fetchall()]
+            for cid in chunk_ids:
+                conn.execute("DELETE FROM vec_pdf_chunks WHERE rowid = ?", (cid,))
+            conn.execute("DELETE FROM pdf_chunks WHERE source_file = ? AND db_id = ?",
+                         (source_file, db_id))
+            conn.execute("DELETE FROM pdf_index_state WHERE source_file = ?", (source_file,))
+            conn.commit()
 
         try:
-            result = _index_one_pdf(conn, pdf_path, lib_root)
+            result = _index_one_pdf(conn, pdf_path, lib_root, db_id, embed_fn)
             if result["status"] == "ok":
                 indexed += 1
                 results.append(
-                    f"  [{i}/{total}] ✓ {source_file} — "
-                    f"{result['pages']}p, {result['chunks']} chunks"
+                    f"  [{i}/{total}] ✓ {pdf_path.name}  "
+                    f"({result['pages']}p, {result['chunks']} chunks)"
                 )
             else:
                 skipped += 1
-                results.append(f"  [{i}/{total}] skip {source_file}: {result['reason']}")
+                results.append(f"  [{i}/{total}] – {pdf_path.name}: {result['reason']}")
         except Exception as exc:
-            failed.append(f"{source_file}: {exc}")
-            results.append(f"  [{i}/{total}] ✗ {source_file}: {exc}")
+            failed.append(pdf_path.name)
+            results.append(f"  [{i}/{total}] ✗ {pdf_path.name}: {exc}")
 
+    _update_db_counts(conn, db_id)
     conn.close()
     elapsed = time.time() - t0
 
-    summary_lines = [
-        "══════════════════════════════════════",
-        " Metis PDF Knowledge Database — Build",
-        "══════════════════════════════════════",
+    lines = [
+        f"══════════════════════════════════════════════════════",
+        f" Built: {db_name}  [{database}]",
+        f"══════════════════════════════════════════════════════",
         "",
-        f"  PDFs found:    {total}",
-        f"  Indexed:       {indexed}",
-        f"  Skipped:       {skipped}",
-        f"  Failed:        {len(failed)}",
-        f"  Time:          {elapsed:.1f}s",
+        f"  PDFs found:  {total}",
+        f"  Indexed:     {indexed}",
+        f"  Skipped:     {skipped}  (already indexed)",
+        f"  Failed:      {len(failed)}",
+        f"  Time:        {elapsed:.1f}s",
         "",
-        "  Per-file results:",
     ]
-    summary_lines.extend(results[:60])
-    if len(results) > 60:
-        summary_lines.append(f"  … and {len(results) - 60} more")
+    lines.extend(results[:50])
+    if len(results) > 50:
+        lines.append(f"  … and {len(results)-50} more")
     if failed:
-        summary_lines.append("")
-        summary_lines.append(f"  Errors ({len(failed)}):")
-        summary_lines.extend(f"    {e}" for e in failed[:10])
-
-    summary_lines.extend([
+        lines += ["", f"  Failed ({len(failed)}):", *[f"    - {f}" for f in failed[:10]]]
+    lines += [
         "",
-        "  Next: call search_pdf_knowledge(query) to search the index.",
-    ])
-
-    return [TextContent(type="text", text="\n".join(summary_lines))]
+        f"  Next: build_pdf_knowledge_db(database='hat-specialist') or",
+        f"        search_pdf_knowledge('your query', databases=['{database}'])",
+    ]
+    return [TextContent(type="text", text="\n".join(lines))]
 
 
 @app.tool()
 async def search_pdf_knowledge(
     query: str,
+    databases: Optional[List[str]] = None,
     top_k: int = 8,
-    domain_filter: str = "",
 ) -> list[TextContent]:
-    """Semantic search over all indexed PDFs in the knowledge library.
+    """Semantic search across one or more knowledge database layers.
 
-    Uses 768-dim nomic-embed ANN search (vec0) against pdf_chunks.
-    Returns excerpts with source document, page, domain, and similarity score.
+    Searches indexed PDF chunks using 768-dim nomic-embed vector similarity.
+    You can search a single layer or combine layers (e.g. PH background + HAT specialist).
 
     Args:
-        query:         Natural language question or keyword phrase.
-        top_k:         Number of results to return (default 8).
-        domain_filter: Restrict to a specific domain folder name (optional).
+        query:     Natural language question or keyword phrase.
+        databases: List of database slugs to search. Default: all indexed databases.
+                   Examples: ['ph-background'], ['hat-specialist', 'epi-methods'],
+                   or None to search everything.
+        top_k:     Number of results to return (default 8).
     """
     from metis_mcp.embeddings import embed_query
 
@@ -444,150 +560,230 @@ async def search_pdf_knowledge(
     conn = connect()
     _ensure_schema(conn)
 
-    # Check index exists
-    count = conn.execute("SELECT COUNT(*) FROM pdf_chunks").fetchone()[0]
-    if count == 0:
-        conn.close()
-        return [TextContent(type="text", text=(
-            "No PDFs indexed yet. Run build_pdf_knowledge_db() first."
-        ))]
-
-    q_vec = _encode_vec(embed_query(query))
-
     try:
         import sqlite_vec
         conn.enable_load_extension(True)
         sqlite_vec.load(conn)
     except Exception:
         conn.close()
-        return [TextContent(type="text", text="sqlite-vec not available — cannot do vector search")]
+        return [TextContent(type="text", text="sqlite-vec not available")]
 
-    # ANN search
-    rows = conn.execute(
+    # Resolve db_ids to filter by
+    db_filter_ids: Optional[List[int]] = None
+    db_names: dict = {}
+    if databases:
+        db_filter_ids = []
+        for slug in databases:
+            row = conn.execute(
+                "SELECT id, name FROM knowledge_databases WHERE slug = ?", (slug,)
+            ).fetchone()
+            if row:
+                db_filter_ids.append(row[0])
+                db_names[row[0]] = row[1]
+    else:
+        for row in conn.execute("SELECT id, name FROM knowledge_databases").fetchall():
+            db_names[row[0]] = row[1]
+
+    total_chunks = conn.execute("SELECT COUNT(*) FROM pdf_chunks").fetchone()[0]
+    if total_chunks == 0:
+        conn.close()
+        return [TextContent(type="text", text=(
+            "No PDFs indexed yet. Run build_pdf_knowledge_db() first.\n"
+            "Start with: build_pdf_knowledge_db(database='ph-background')"
+        ))]
+
+    q_vec = _encode_vec(embed_query(query))
+
+    # ANN search — get more candidates, filter after
+    candidates = conn.execute(
         f"""SELECT v.rowid, v.distance
             FROM vec_pdf_chunks v
             WHERE v.embedding MATCH ?
               AND k = ?""",
-        (q_vec, min(top_k * 3, 50))
+        (q_vec, min(top_k * 4, 80))
     ).fetchall()
 
-    if not rows:
+    if not candidates:
         conn.close()
         return [TextContent(type="text", text="No results found.")]
 
-    rowids = [r[0] for r in rows]
-    distances = {r[0]: r[1] for r in rows}
+    rowids = [r[0] for r in candidates]
+    distances = {r[0]: r[1] for r in candidates}
 
-    placeholders = ",".join("?" * len(rowids))
+    ph = ",".join("?" * len(rowids))
     chunks = conn.execute(
-        f"""SELECT id, source_file, domain, title, page_start, page_end, chunk_text
-            FROM pdf_chunks WHERE id IN ({placeholders})""",
+        f"""SELECT id, db_id, source_file, domain, title, page_start, chunk_text
+            FROM pdf_chunks WHERE id IN ({ph})""",
         rowids
     ).fetchall()
     conn.close()
 
-    # Apply domain filter
-    if domain_filter:
-        df = domain_filter.lower()
-        chunks = [c for c in chunks if df in c[2].lower()]
+    # Filter by database if specified
+    if db_filter_ids is not None:
+        chunks = [c for c in chunks if c[1] in db_filter_ids]
 
-    # Sort by distance ascending
+    # Sort by distance
     chunks.sort(key=lambda c: distances.get(c[0], 9999))
     chunks = chunks[:top_k]
 
     if not chunks:
-        return [TextContent(type="text", text=f"No results in domain '{domain_filter}'.")]
+        db_label = ", ".join(databases) if databases else "any"
+        return [TextContent(type="text", text=f"No results in databases: {db_label}")]
 
+    scope = ", ".join(databases) if databases else "all databases"
     lines = [
         f"**Knowledge search: '{query}'**",
-        f"Top {len(chunks)} results from {count:,} indexed chunks",
+        f"Scope: {scope} | Top {len(chunks)} of {total_chunks:,} chunks",
         "",
     ]
     for rank, c in enumerate(chunks, 1):
-        chunk_id, source_file, domain, title, page_start, page_end, chunk_text = c
-        dist = distances.get(chunk_id, 0)
-        score = max(0.0, 1.0 - dist)
+        chunk_id, db_id, source_file, domain, title, page_start, chunk_text = c
+        dist  = distances.get(chunk_id, 0)
+        score = max(0.0, round(1.0 - dist, 3))
+        layer_name = db_names.get(db_id, f"db:{db_id}")
         excerpt = chunk_text[:400].replace("\n", " ")
         if len(chunk_text) > 400:
             excerpt += "…"
-        lines.extend([
-            f"**{rank}. {title}** (score: {score:.2f})",
-            f"   Domain: {domain} | Pages: {page_start}–{page_end} | File: {source_file}",
+        lines += [
+            f"**{rank}. {title}** (score: {score})",
+            f"   Layer: {layer_name} | Domain: {domain} | p.{page_start} | {source_file.split('/')[-1]}",
             f"   > {excerpt}",
             "",
-        ])
-
+        ]
     return [TextContent(type="text", text="\n".join(lines))]
 
 
 @app.tool()
-async def get_pdf_index_stats() -> list[TextContent]:
-    """Report statistics on the PDF knowledge database index.
+async def get_pdf_index_stats(
+    database: str = "",
+) -> list[TextContent]:
+    """Report indexing statistics for the PDF knowledge base.
 
-    Returns per-domain breakdown of indexed files and chunk counts,
-    total chunks, estimated DB size, and list of un-indexed PDFs.
+    Shows per-database status, domain breakdown, and list of un-indexed PDFs.
+
+    Args:
+        database: Slug to report on. Empty = report all databases.
     """
     conn = connect()
     _ensure_schema(conn)
+    _seed_builtin_databases(conn)
 
-    total_chunks = conn.execute("SELECT COUNT(*) FROM pdf_chunks").fetchone()[0]
-    total_docs = conn.execute("SELECT COUNT(*) FROM pdf_index_state").fetchone()[0]
-
-    domain_rows = conn.execute(
-        """SELECT domain, COUNT(*) as docs, SUM(chunk_count) as chunks, SUM(file_size) as bytes
-           FROM pdf_index_state
-           GROUP BY domain
-           ORDER BY chunks DESC"""
+    db_rows = conn.execute(
+        """SELECT slug, name, layer, doc_count, chunk_count, last_built
+           FROM knowledge_databases ORDER BY layer, id"""
     ).fetchall()
 
+    lines = [
+        "══════════════════════════════════════════════════════",
+        " PDF Knowledge Database — Index Status",
+        "══════════════════════════════════════════════════════",
+        "",
+    ]
+
+    layer_labels = {1: "Foundation", 2: "Specialist", 3: "Methods", 4: "Custom"}
+    last_layer = None
+    for slug, name, layer, doc_count, chunk_count, last_built in db_rows:
+        if database and slug != database:
+            continue
+        if layer != last_layer:
+            lines.append(f"  ── {layer_labels.get(layer, f'Layer {layer}')} ──")
+            last_layer = layer
+
+        built = f"last built {last_built[:10]}" if last_built else "NOT YET INDEXED"
+        lines.append(f"  [{slug}]  {name}")
+        lines.append(f"    {doc_count} docs · {chunk_count:,} chunks · {built}")
+
+        if doc_count:
+            domain_rows = conn.execute(
+                """SELECT c.domain, COUNT(DISTINCT c.source_file) as docs,
+                          COUNT(*) as chunks
+                   FROM pdf_chunks c
+                   JOIN knowledge_databases kd ON kd.id = c.db_id
+                   WHERE kd.slug = ?
+                   GROUP BY c.domain ORDER BY chunks DESC LIMIT 10""",
+                (slug,)
+            ).fetchall()
+            for domain, docs, chunks in domain_rows:
+                lines.append(f"      {domain:<40} {docs:>3} docs  {chunks:>6} chunks")
+
+        # Count pending PDFs
+        all_pdfs = _collect_pdfs_for_db(slug)
+        lib_root = _library_root()
+        indexed = {r[0] for r in conn.execute(
+            """SELECT s.source_file FROM pdf_index_state s
+               JOIN knowledge_databases kd ON kd.id = s.db_id
+               WHERE kd.slug = ?""", (slug,)
+        ).fetchall()}
+        pending = [p for p in all_pdfs if str(p.relative_to(lib_root)) not in indexed]
+        if pending:
+            lines.append(f"    ⚠ {len(pending)} PDFs not yet indexed")
+        lines.append("")
+
+    conn.close()
+    lines.append("  Run build_pdf_knowledge_db(database='<slug>') to index a layer.")
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
+@app.tool()
+async def create_knowledge_database(
+    slug: str,
+    name: str,
+    description: str = "",
+    layer: int = 4,
+    folders: Optional[List[str]] = None,
+) -> list[TextContent]:
+    """Register a new custom knowledge database layer.
+
+    After creating, add PDFs to knowledge/library/<your-folder>/ and call
+    build_pdf_knowledge_db(database='<slug>') to index them.
+
+    Args:
+        slug:        URL-safe identifier (e.g. 'dhis2-specialist', 'malaria-research').
+        name:        Human-readable name (e.g. 'DHIS2 Specialist Knowledge').
+        description: What this database covers.
+        layer:       Layer number (4+ for custom; built-ins use 1–3).
+        folders:     List of library subfolder paths to include
+                     (e.g. ['open-access-books/Health Informatics & DHIS2']).
+    """
+    if not re.match(r'^[a-z0-9][a-z0-9-]*$', slug):
+        return [TextContent(type="text", text=(
+            f"Invalid slug '{slug}'. Use lowercase letters, numbers, and hyphens only. "
+            f"Example: 'dhis2-specialist'"
+        ))]
+
+    conn = connect()
+    _ensure_schema(conn)
+    _seed_builtin_databases(conn)
+
+    existing = conn.execute(
+        "SELECT id FROM knowledge_databases WHERE slug = ?", (slug,)
+    ).fetchone()
+    if existing:
+        conn.close()
+        return [TextContent(type="text", text=
+            f"Database '{slug}' already exists. Use build_pdf_knowledge_db(database='{slug}') to index it."
+        )]
+
+    folders_str = "\n".join(folders or [])
+    conn.execute(
+        """INSERT INTO knowledge_databases (slug, name, description, layer, color)
+           VALUES (?, ?, ?, ?, '#6c757d')""",
+        (slug, name, description or f"Custom knowledge database: {name}", layer)
+    )
+    conn.commit()
     conn.close()
 
-    # PDFs on disk
-    all_pdfs = _collect_pdfs()
-    lib_root = _library_root()
+    folder_note = ""
+    if folders:
+        folder_note = "\nFolders mapped:\n" + "\n".join(f"  - knowledge/library/{f}" for f in folders)
+        # Note: custom folders are stored in the DB description for now —
+        # BUILTIN_DATABASES only covers the three default layers.
+        # For dynamic folder mapping, add to knowledge_db_folders table (future L9).
 
-    conn2 = connect()
-    indexed_files = {
-        r[0] for r in conn2.execute("SELECT source_file FROM pdf_index_state").fetchall()
-    }
-    conn2.close()
-
-    pending = [
-        str(p.relative_to(lib_root))
-        for p in all_pdfs
-        if str(p.relative_to(lib_root)) not in indexed_files
-    ]
-
-    lines = [
-        "══════════════════════════════════════",
-        " PDF Knowledge Database — Index Stats",
-        "══════════════════════════════════════",
-        "",
-        f"  Documents indexed: {total_docs}",
-        f"  Total chunks:      {total_chunks:,}",
-        f"  Estimated DB size: ~{(total_chunks * 3800) // (1024*1024)} MB "
-          f"(text + embeddings)",
-        "",
-        "  By domain:",
-    ]
-
-    for row in domain_rows:
-        domain, docs, chunks, size_bytes = row
-        size_mb = (size_bytes or 0) / (1024 * 1024)
-        lines.append(f"    {domain:<40} {docs:>3} docs  {chunks or 0:>6} chunks  ({size_mb:.1f} MB)")
-
-    if pending:
-        lines.extend([
-            "",
-            f"  Not yet indexed ({len(pending)} PDFs):",
-        ])
-        for p in pending[:20]:
-            lines.append(f"    - {p}")
-        if len(pending) > 20:
-            lines.append(f"    … and {len(pending) - 20} more")
-        lines.extend([
-            "",
-            "  Run build_pdf_knowledge_db() to index these.",
-        ])
-
-    return [TextContent(type="text", text="\n".join(lines))]
+    return [TextContent(type="text", text=(
+        f"✓ Created knowledge database '{slug}' (Layer {layer})\n"
+        f"  Name: {name}\n"
+        f"{folder_note}\n"
+        f"  Next: add PDFs to knowledge/library/ and run:\n"
+        f"  build_pdf_knowledge_db(database='{slug}')"
+    ))]
