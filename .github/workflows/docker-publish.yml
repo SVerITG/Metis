@@ -7,13 +7,15 @@ on:
         description: "Image tag (e.g. 1.0, 1.1) — also tagged :latest"
         required: false
         default: "latest"
-  push:
-    branches:
-      - main
-    paths:
-      - "metis/system/mcp-server/**"
-      - "metis/system/app-py/**"
-      - "metis/system/install/docker/**"
+  # Auto-push disabled until Docker image has been manually tested end-to-end.
+  # Re-enable by uncommenting the block below.
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - "metis/system/mcp-server/**"
+  #     - "metis/system/app-py/**"
+  #     - "metis/system/install/docker/**"
 
 permissions:
   contents: read
