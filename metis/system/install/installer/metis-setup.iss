@@ -195,7 +195,7 @@ Filename: "powershell.exe"; \
 
 ; Step 2 (full): seed Statistics for Epidemiology course into SQLite
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& { $py = $env:METIS_PYTHON; if (-not $py) { $py = 'python' }; & $py '{app}\system\install\seed_epi_base.py' --db '{app}\system\app\data\metis.sqlite' --quiet }"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& {{ $py = $env:METIS_PYTHON; if (-not $py) {{ $py = 'python' }}; & $py '{app}\system\install\seed_epi_base.py' --db '{app}\system\app\data\metis.sqlite' --quiet }}"""; \
   Flags: waituntilterminated runhidden; \
   StatusMsg: "Seeding Statistics for Epidemiology course…"; \
   Components: courses/statistics
@@ -203,7 +203,7 @@ Filename: "powershell.exe"; \
 ; Step 3 (full/standard): Build PDF knowledge database — local embeddings, no API key needed
 ; Runs only when the library folder has PDFs. Skips gracefully if library is empty.
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& { $py = $env:METIS_PYTHON; if (-not $py) { $py = 'python' }; & $py '{app}\system\install\build_knowledge_db.py' --library-dir '{app}\knowledge\library' --db '{app}\system\app\data\metis.sqlite' --quiet }"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& {{ $py = $env:METIS_PYTHON; if (-not $py) {{ $py = 'python' }}; & $py '{app}\system\install\build_knowledge_db.py' --library-dir '{app}\knowledge\library' --db '{app}\system\app\data\metis.sqlite' --quiet }}"""; \
   Flags: waituntilterminated runhidden; \
   StatusMsg: "Building knowledge database (5–15 min, uses your CPU — Metis will learn from all included documents)…"; \
   Types: full standard
