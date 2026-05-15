@@ -1,0 +1,63 @@
+name: Build and push Docker image
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag (e.g. 1.0, 1.1) — also tagged :latest"
+        required: false
+        default: "latest"
+  push:
+    branches:
+      - main
+    paths:
+      - "metis/system/mcp-server/**"
+      - "metis/system/app-py/**"
+      - "metis/system/install/docker/**"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build ghcr.io/sveritg/metis
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine tags
+        id: tags
+        run: |
+          BASE="ghcr.io/sveritg/metis"
+          INPUT="${{ github.event.inputs.tag }}"
+          if [ -n "$INPUT" ] && [ "$INPUT" != "latest" ]; then
+            echo "TAGS=$BASE:$INPUT,$BASE:latest" >> "$GITHUB_OUTPUT"
+          else
+            echo "TAGS=$BASE:latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: metis/system/install/docker/Dockerfile
+          push: true
+          tags: ${{ steps.tags.outputs.TAGS }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}

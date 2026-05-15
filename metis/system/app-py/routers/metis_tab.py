@@ -76,7 +76,9 @@ async def metis_stats(request: Request):
 @router.get("/api/partial/metis/user", response_class=HTMLResponse)
 async def metis_user(request: Request):
     today = datetime.date.today().strftime("%-d %b").upper()
-    return HTMLResponse(f"STAN · RESEARCH CORTEX<div style='margin-top:4px;color:var(--m-muted-soft);font-size:11px;'>SIGNED IN · {today}</div>")
+    prefs = _read_user_prefs()
+    display = (prefs.get("display_name") or "RESEARCHER").upper()
+    return HTMLResponse(f"{display} · RESEARCH CORTEX<div style='margin-top:4px;color:var(--m-muted-soft);font-size:11px;'>SIGNED IN · {today}</div>")
 
 
 @router.get("/api/partial/metis/identity", response_class=HTMLResponse)

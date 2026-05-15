@@ -2,32 +2,35 @@ version: "3.9"
 
 # Metis Research Cortex — Docker Compose
 #
-# Quick start:
+# Quick start (pre-built image from GHCR):
 #   1. Copy .env.example to .env and fill in your API key
 #   2. Edit METIS_DATA_DIR to point to your research folder
-#   3. Run: docker-compose up -d
+#   3. docker compose up -d
 #   4. Open: http://localhost:8080
+#
+# To build locally instead of pulling from GHCR:
+#   docker compose -f docker-compose.yml up -d --build
 #
 # Your research files (PDFs, notes, database) stay on your machine.
 # The container only holds the application code.
+
+x-metis-base: &metis-base
+  image: ${METIS_IMAGE:-ghcr.io/sveritg/metis:latest}
+  restart: unless-stopped
+  env_file: .env
+  environment:
+    - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    - METIS_RC_ROOT=/metis
+    - PYTHONPATH=/app/src:/app/dashboard
+  volumes:
+    - ${METIS_DATA_DIR:-~/Documents/Metis}:/metis
 
 services:
 
   # ── MCP server (AI tools for Claude Desktop) ─────────────────────────────
   mcp:
-    build:
-      context: ../../..
-      dockerfile: metis/system/install/docker/Dockerfile
+    <<: *metis-base
     container_name: metis-mcp
-    restart: unless-stopped
-    env_file: .env
-    environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - METIS_RC_ROOT=/metis
-      - PYTHONPATH=/app/src:/app/dashboard
-    volumes:
-      # Mount your research directory here
-      - ${METIS_DATA_DIR:-~/Documents/Metis}:/metis
     command: ["mcp"]
     # MCP server communicates via stdio — no port needed
     stdin_open: true
@@ -35,30 +38,16 @@ services:
 
   # ── Dashboard (browser interface) ────────────────────────────────────────
   dashboard:
-    build:
-      context: ../../..
-      dockerfile: metis/system/install/docker/Dockerfile
+    <<: *metis-base
     container_name: metis-dashboard
-    restart: unless-stopped
     ports:
-      - "8080:8080"
-    env_file: .env
-    environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - METIS_RC_ROOT=/metis
-      - PYTHONPATH=/app/src:/app/dashboard
-    volumes:
-      - ${METIS_DATA_DIR:-~/Documents/Metis}:/metis
+      - "${DASHBOARD_PORT:-8080}:8080"
     command: ["dashboard"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-
-volumes:
-  # Named volume for SQLite database (alternative to host mount)
-  metis-db:
 
 networks:
   default:

@@ -57,6 +57,7 @@ working on their research domain, PhD planning, AI development, and personal lea
 | `/design-auditor` | Design Auditor | Audit existing UIs, reverse-engineer design decisions, prioritized improvements |
 | `/visualization-maker` | Visualization Maker | Diagrams, charts, system maps, ggplot2 figures, Plotly |
 | `/content-harvester` | Content Harvester | Extract and structure content from web, PDFs, DOCX, YouTube, GitHub |
+| `/background` | Background Maker | Build permanent specialist knowledge layers (RAG corpus) from papers, reports, web — scrubbed and indexed |
 | `/learning-architect` | Learning Architect | Curriculum design, learning paths, spaced repetition, competency maps |
 | `/epidemiologist` | Epidemiologist | Study design review, methodology challenge, Socratic questioning |
 | `/cybersecurity` | Cybersecurity | URL validation, prompt injection defense, threat intel, agent audit |
@@ -165,6 +166,7 @@ When a request arrives, route as follows:
 | Existing UI audit, design critique | Design Auditor | Frontend Designer Builder |
 | Diagrams, charts, visualizations | Visualization Maker | Frontend Designer Builder |
 | Content extraction, web scraping, PDFs | Content Harvester | Librarian |
+| Build a knowledge layer / RAG corpus for a domain | Background Maker | Content Harvester + Librarian |
 | Learning paths, curriculum, competency maps | Learning Architect | Methods Coach |
 | Study design, epi methods, surveillance | Epidemiologist | Methods Coach |
 | CSV, Excel, dataset, cleaning, missing values, duplicates, outliers, data quality | Data Analyst | Data Guardian |
