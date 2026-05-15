@@ -4,15 +4,16 @@
 Standalone script (no MCP needed). Indexes PDFs into named knowledge layers
 using local fastembed (nomic-embed-text-v1.5-Q, no API key needed).
 
-Built-in databases:
+Built-in databases (base Metis):
   ph-background   Layer 1: General MPH, global health, health systems
-  hat-specialist  Layer 2: HAT papers, NTD specialist literature
-  epi-methods     Layer 3: Epidemiology methods, biostatistics, spatial, multilevel
+  epi-methods     Layer 2: Epidemiology methods, biostatistics, spatial, multilevel
+
+Domain-specific layers (added by variant installs, e.g. Metis_PH):
+  hat-specialist  HAT/NTD specialist literature — seeded by seed_ph_database.py
 
 Usage:
-    python build_knowledge_db.py                              # index all three layers
+    python build_knowledge_db.py                              # index all layers
     python build_knowledge_db.py --database ph-background    # one layer only
-    python build_knowledge_db.py --database hat-specialist --force
     python build_knowledge_db.py --list                      # show layers + status
     python build_knowledge_db.py --library-dir /path/to/library --db /path/to/metis.sqlite
 """
@@ -38,7 +39,7 @@ DATABASES = [
         "description": (
             "Foundation layer: general MPH knowledge — health systems, global health, "
             "governance, social determinants, environmental health, NCDs, nutrition, "
-            "mental health, maternal & child health, health economics, Africa, DHIS2."
+            "mental health, maternal & child health, health economics, DHIS2."
         ),
         "layer": 1,
         "color": "#0d6efd",
@@ -56,34 +57,8 @@ DATABASES = [
             "open-access-books/Health Economics",
             "open-access-books/One Health & AMR",
             "open-access-books/Climate Change & Health",
-            "open-access-books/Africa",
-            "open-access-books/Africa & Sub-Saharan Africa",
             "open-access-books/Health Informatics & DHIS2",
             "open-access-books/Course Materials",
-        ],
-    },
-    {
-        "slug": "hat-specialist",
-        "name": "HAT & NTD Specialist",
-        "description": (
-            "Specialist layer: HAT research literature and neglected tropical diseases. "
-            "HAT papers, NTD roadmaps, disease-specific guidelines, Leishmaniasis, "
-            "Malaria, TB, HIV, Schistosomiasis."
-        ),
-        "layer": 2,
-        "color": "#dc3545",
-        "folders": [
-            "papers",
-            "open-access-books/HAT & NTDs",
-            "open-access-books/NTDs - HAT",
-            "open-access-books/NTDs - Overview",
-            "open-access-books/NTDs - Other",
-            "open-access-books/NTDs - Leishmaniasis",
-            "open-access-books/NTDs - Malaria",
-            "open-access-books/NTDs - TB",
-            "open-access-books/NTDs - HIV",
-            "open-access-books/NTDs - Schistosomiasis",
-            "disease-areas",
         ],
     },
     {
@@ -93,7 +68,7 @@ DATABASES = [
             "Methods layer: epidemiology foundations, biostatistics, spatial epidemiology, "
             "multilevel models, research methods, field epidemiology, scientific writing."
         ),
-        "layer": 3,
+        "layer": 2,
         "color": "#198754",
         "folders": [
             "open-access-books/Epidemiology & Methods",
