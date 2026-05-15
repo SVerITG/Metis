@@ -1,7 +1,7 @@
 """User profile tool — returns identity, interests, and preferences from user-preferences.json.
 
-Agents call this at the start of personalised runs to understand who Stan is,
-what research topics matter to him, and which news signals to prioritise.
+Agents call this at the start of personalised runs to understand the user's
+research topics and news signals to prioritise.
 """
 
 import json
@@ -26,12 +26,12 @@ def _read_prefs() -> dict:
 async def get_user_profile() -> list[TextContent]:
     """Return the user's identity, interests, and active model preference.
 
-    Call this at the start of any personalised run to understand who Stan is,
-    what topics matter to him, and which news signals to prioritise.
+    Call this at the start of any personalised run to understand the user's
+    topics and news signals to prioritise.
 
     Returns JSON with:
-    - display_name: Stan's name
-    - role: his professional role (e.g. "Senior researcher · public health")
+    - display_name: user's display name (set via /metis_config)
+    - role: professional role (e.g. "Senior researcher · public health")
     - interests: list of research interest tags (e.g. ["sleeping sickness", "multilevel models"])
     - news_topics: list of news monitoring topics (e.g. ["WHO surveillance", "AI governance"])
     - active_model: current default model slug (haiku / sonnet / opus)
@@ -43,7 +43,7 @@ async def get_user_profile() -> list[TextContent]:
     """
     prefs = _read_prefs()
     profile = {
-        "display_name": prefs.get("display_name") or "Stan",
+        "display_name": prefs.get("display_name") or "Researcher",
         "role": prefs.get("role") or "",
         "interests": prefs.get("interests") or [],
         "news_topics": prefs.get("news_topics") or [],

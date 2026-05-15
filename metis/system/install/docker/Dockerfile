@@ -11,8 +11,11 @@
 
 FROM python:3.11-slim
 
-LABEL maintainer="Metis Project"
-LABEL description="Metis Research Cortex — AI assistant for researchers"
+LABEL org.opencontainers.image.title="Metis Research Cortex"
+LABEL org.opencontainers.image.description="AI second-brain for researchers — MCP server + dashboard"
+LABEL org.opencontainers.image.source="https://github.com/SVerITG/Metis"
+LABEL org.opencontainers.image.url="https://github.com/SVerITG/Metis"
+LABEL org.opencontainers.image.licenses="MIT"
 
 # ── System dependencies ───────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \

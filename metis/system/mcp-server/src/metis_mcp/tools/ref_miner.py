@@ -149,7 +149,7 @@ HAT_SEED_DOIS: list[tuple[str, str]] = [
 # ---------------------------------------------------------------------------
 
 CROSSREF_BASE = "https://api.crossref.org/works"
-HEADERS = {"User-Agent": "MetisResearchCortex/1.0 (mailto:stanverschaeve@gmail.com)"}
+HEADERS = {"User-Agent": "MetisResearchCortex/1.0 (https://github.com/SVerITG/Metis)"}
 
 
 def _normalize_doi(doi: str) -> str:

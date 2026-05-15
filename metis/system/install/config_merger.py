@@ -7,7 +7,7 @@ Run after unpacking a Metis update to:
   3. Write a migration log so the user can see what changed
 
 Usage:
-    python config_merger.py --install-dir C:\\Users\\Stan\\Documents\\Metis
+    python config_merger.py --install-dir C:\\Users\\YourName\\Documents\\Metis
 
 Safe to run multiple times (idempotent).
 """

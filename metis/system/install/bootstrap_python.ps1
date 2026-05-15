@@ -21,7 +21,7 @@
     Skip internet download attempts. Requires bundled embed zip in vendor\.
 
 .EXAMPLE
-    .\bootstrap_python.ps1 -InstallDir "C:\Users\Stan\Documents\Metis"
+    .\bootstrap_python.ps1 -InstallDir "C:\Users\YourName\Documents\Metis"
 #>
 
 [CmdletBinding()]
