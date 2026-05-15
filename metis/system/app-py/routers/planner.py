@@ -190,23 +190,26 @@ async def planner_kanban(request: Request):
 
 
 # ---------------------------------------------------------------------------
-# Focus board (PhD-centric)
+# Focus board (research-centric)
 # ---------------------------------------------------------------------------
 
 
 @router.get("/api/partial/planner/focus", response_class=HTMLResponse)
 async def planner_focus(request: Request):
     phd = db_query(
-        "SELECT project_id as id, title, domain, priority, next_step "
-        "FROM projects WHERE status = 'active' AND domain LIKE '%PhD%' "
-        "ORDER BY priority DESC"
+        "SELECT project_id, title, next_step FROM projects "
+        "WHERE status = 'active' AND COALESCE(domain,'') NOT LIKE '%phd%' "
+        "  AND project_id NOT IN ('personal','phd-framework') "
+        "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END LIMIT 6"
     )
     tasks_phd = db_query(
-        "SELECT task_id as id, title, COALESCE(category,'') as project, "
-        "'medium' as priority, due_date "
-        "FROM tasks WHERE status NOT IN ('done','cancelled') "
-        "AND (COALESCE(category,'') LIKE '%PhD%' OR title LIKE '%Article%' OR title LIKE '%article%') "
-        "ORDER BY due_date NULLS LAST LIMIT 10"
+        "SELECT t.task_id as id, t.title, t.status, t.due_date "
+        "FROM tasks t JOIN projects p ON p.project_id = t.project_id "
+        "WHERE t.status NOT IN ('done','cancelled') "
+        "  AND p.status = 'active' "
+        "  AND COALESCE(p.domain,'') NOT LIKE '%phd%' "
+        "  AND t.project_id NOT IN ('personal','phd-framework') "
+        "ORDER BY CASE COALESCE(t.priority,'medium') WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END LIMIT 10"
     )
     return templates.TemplateResponse(
         request,
