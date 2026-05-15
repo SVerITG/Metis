@@ -51,6 +51,10 @@ Contributions are very much appreciated — see [Contributing](#contributing) be
 3. Drop your reference library (Zotero export or PDFs) into `inbox/`. Connect Zotero with `/metis-library-setup` if you use it.
 4. Open the dashboard. Read the morning brief. Press Ctrl+K and capture your first idea.
 
+![Metis dashboard — Today tab](../docs/screenshots/dashboard-today.png)
+
+*The Today tab — morning briefing, active project, course progress, news radar, and quick-capture. Everything runs locally, personalised to your research domain.*
+
 ---
 
 ## Under the Hood
