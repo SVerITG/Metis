@@ -1289,52 +1289,68 @@ async def today_resume(request: Request):
     except Exception:
         pass
 
-    project = None
+    project_rows = None
     try:
-        rows = db_query(
-            "SELECT title, next_step, project_id FROM projects WHERE status='active' "
-            "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END LIMIT 1"
+        project_rows = db_query(
+            "SELECT p.project_id, p.title, p.next_step, "
+            "MAX(COALESCE(t.updated_at, t.created_at)) as last_activity "
+            "FROM projects p "
+            "LEFT JOIN tasks t ON t.project_id = p.project_id "
+            "WHERE p.status='active' AND COALESCE(p.domain,'') NOT LIKE '%phd%' "
+            "  AND p.project_id NOT IN ('personal','phd-framework') "
+            "GROUP BY p.project_id "
+            "ORDER BY last_activity DESC NULLS LAST, p.created_at DESC LIMIT 3"
         )
-        if rows:
-            r = rows[0]
-            project = {
-                "title": r.get("title") or "Project",
-                "next_step": (r.get("next_step") or "")[:180],
-                "project_id": r.get("project_id") or "",
-            }
     except Exception:
         pass
+    projects = [{"title": r.get("title") or "Project",
+                 "next_step": (r.get("next_step") or "")[:180],
+                 "project_id": r.get("project_id") or ""} for r in (project_rows or [])]
 
     return templates.TemplateResponse(
         request,
         "partials/today_resume.html",
-        {"course": course, "project": project},
+        {"course": course, "projects": projects},
     )
 
 
 @router.get("/api/partial/today/idea-today", response_class=HTMLResponse)
 async def today_idea_today(request: Request):
-    """Single idea — rotates daily — to seed today's thinking."""
+    """Single idea — rotates daily — to seed today's thinking, plus cross-pollination prompt."""
+    day_idx = datetime.date.today().timetuple().tm_yday
+
+    # Today's highlighted idea (rotating)
     idea = None
     try:
-        day_idx = datetime.date.today().timetuple().tm_yday
-        rows = db_query(
-            "SELECT text, idea_type, created_at FROM ideas ORDER BY created_at DESC LIMIT 10"
-        ) or []
+        rows = db_query("SELECT text, idea_type, created_at FROM ideas ORDER BY created_at DESC LIMIT 20") or []
         if rows:
             r = rows[day_idx % len(rows)]
-            idea = {
-                "text": (r.get("text") or "")[:500],
-                "idea_type": (r.get("idea_type") or "idea").upper(),
-                "age_label": _age_label(r["created_at"]).upper() if r.get("created_at") else "RECENT",
-            }
+            idea = {"text": (r.get("text") or "")[:500],
+                    "idea_type": (r.get("idea_type") or "idea").upper(),
+                    "age_label": _age_label(r["created_at"]).upper() if r.get("created_at") else "RECENT"}
+    except Exception:
+        pass
+
+    # Cross-pollination: recent news × recent idea
+    xpoll_news = None
+    xpoll_idea = None
+    try:
+        news_rows = db_query("SELECT title, domain FROM news_briefs ORDER BY created_at DESC LIMIT 14") or []
+        if news_rows:
+            xpoll_news = news_rows[(day_idx + 3) % len(news_rows)]
+    except Exception:
+        pass
+    try:
+        idea_rows = db_query("SELECT text FROM ideas ORDER BY created_at DESC LIMIT 20") or []
+        if len(idea_rows) > 1:
+            xpoll_idea = idea_rows[(day_idx + 7) % len(idea_rows)]
     except Exception:
         pass
 
     return templates.TemplateResponse(
         request,
         "partials/today_idea_today.html",
-        {"idea": idea},
+        {"idea": idea, "xpoll_news": xpoll_news, "xpoll_idea": xpoll_idea},
     )
 
 

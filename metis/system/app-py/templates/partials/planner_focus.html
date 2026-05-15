@@ -1,15 +1,15 @@
-<!-- planner_focus.html — PhD focus board -->
+<!-- planner_focus.html — Research focus board -->
 {% if not phd and not tasks_phd %}
 <div class="text-center text-muted py-4">
-  <i class="bi bi-crosshair fs-2 mb-2 d-block"></i>
-  No PhD projects or tasks found.
+  <i class="bi bi-journals fs-2 mb-2 d-block"></i>
+  No active research projects found.
 </div>
 {% else %}
 <div class="row g-3">
-  <!-- PhD projects -->
+  <!-- Active research projects -->
   <div class="col-12 col-md-6">
     <div class="fw-semibold small mb-2 text-muted">
-      <i class="bi bi-mortarboard me-1"></i>PhD projects
+      <i class="bi bi-journals me-1"></i>Active research
     </div>
     {% if phd %}
     <div class="d-flex flex-column gap-2">
@@ -25,13 +25,13 @@
       {% endfor %}
     </div>
     {% else %}
-    <div class="text-muted small">No PhD projects found.</div>
+    <div class="text-muted small">No active research projects.</div>
     {% endif %}
   </div>
-  <!-- PhD tasks -->
+  <!-- Research tasks -->
   <div class="col-12 col-md-6">
     <div class="fw-semibold small mb-2 text-muted">
-      <i class="bi bi-check2-square me-1"></i>PhD tasks
+      <i class="bi bi-check2-square me-1"></i>Research tasks
     </div>
     {% if tasks_phd %}
     <ul class="list-group list-group-flush">
@@ -47,7 +47,7 @@
       {% endfor %}
     </ul>
     {% else %}
-    <div class="text-muted small">No PhD tasks found.</div>
+    <div class="text-muted small">No research tasks found.</div>
     {% endif %}
   </div>
 </div>
