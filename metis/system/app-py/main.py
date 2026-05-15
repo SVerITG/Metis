@@ -261,7 +261,7 @@ async def touch_planning_files():
 
 @app.get("/api/mcp/status")
 async def mcp_status():
-    """Returns 200 if the MCP server module is importable, 503 if not."""
+    """Returns 200 if the metis_mcp package is importable (i.e. venv is active)."""
     import sys
     rc_root = os.environ.get("METIS_RC_ROOT", "")
     if rc_root:
@@ -269,7 +269,7 @@ async def mcp_status():
         if mcp_src not in sys.path:
             sys.path.insert(0, mcp_src)
     try:
-        from metis_mcp.app_instance import app as _mcp  # noqa: F401
+        import metis_mcp  # noqa: F401
         return JSONResponse({"status": "ok"})
     except ImportError as exc:
         return JSONResponse({"status": "offline", "reason": str(exc)}, status_code=503)
