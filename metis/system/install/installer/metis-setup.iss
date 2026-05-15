@@ -282,6 +282,8 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ApiKey, EnvDir, EnvFile, EnvContent: String;
+  StateFile, Profile, StateContent: String;
+  HasDash, HasCourse: Boolean;
 begin
   if CurStep = ssPostInstall then
   begin
@@ -300,30 +302,28 @@ begin
     SaveStringToFile(ExpandConstant('{app}\system\config\.first-run'), '', False);
 
     // Write install-state.json reflecting chosen components
-    begin
-      var StateFile  := ExpandConstant('{app}\system\config\install-state.json');
-      var HasDash    := WizardIsComponentSelected('dashboard');
-      var HasCourse  := WizardIsComponentSelected('courses/statistics');
-      var Profile    := 'standard';
-      if HasDash and HasCourse then Profile := 'full'
-      else if not HasDash then Profile := 'mcp-only';
-      var StateContent :=
-        '{' + #13#10 +
-        '  "profile": "' + Profile + '",' + #13#10 +
-        '  "version": "' + '{#MyAppVersion}' + '",' + #13#10 +
-        '  "installed_at": "' + GetDateTimeString('yyyy/mm/dd', '-', ':') + '",' + #13#10 +
-        '  "courses_included": [' + (if HasCourse then '"statistics"' else '') + '],' + #13#10 +
-        '  "components": {' + #13#10 +
-        '    "mcp_server": true,' + #13#10 +
-        '    "dashboard": ' + (if HasDash then 'true' else 'false') + ',' + #13#10 +
-        '    "hooks": true,' + #13#10 +
-        '    "windows_task_scheduler": false,' + #13#10 +
-        '    "nssm_service": false,' + #13#10 +
-        '    "docker": false' + #13#10 +
-        '  }' + #13#10 +
-        '}' + #13#10;
-      SaveStringToFile(StateFile, StateContent, False);
-    end;
+    StateFile  := ExpandConstant('{app}\system\config\install-state.json');
+    HasDash    := WizardIsComponentSelected('dashboard');
+    HasCourse  := WizardIsComponentSelected('courses/statistics');
+    Profile    := 'standard';
+    if HasDash and HasCourse then Profile := 'full'
+    else if not HasDash then Profile := 'mcp-only';
+    StateContent :=
+      '{' + #13#10 +
+      '  "profile": "' + Profile + '",' + #13#10 +
+      '  "version": "' + '{#MyAppVersion}' + '",' + #13#10 +
+      '  "installed_at": "' + GetDateTimeString('yyyy/mm/dd', '-', ':') + '",' + #13#10 +
+      '  "courses_included": [' + (if HasCourse then '"statistics"' else '') + '],' + #13#10 +
+      '  "components": {' + #13#10 +
+      '    "mcp_server": true,' + #13#10 +
+      '    "dashboard": ' + (if HasDash then 'true' else 'false') + ',' + #13#10 +
+      '    "hooks": true,' + #13#10 +
+      '    "windows_task_scheduler": false,' + #13#10 +
+      '    "nssm_service": false,' + #13#10 +
+      '    "docker": false' + #13#10 +
+      '  }' + #13#10 +
+      '}' + #13#10;
+    SaveStringToFile(StateFile, StateContent, False);
   end;
 end;
 
