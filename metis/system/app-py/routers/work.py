@@ -994,6 +994,16 @@ async def project_launch(
                 status_code=400,
             )
 
+        # Stamp last_session_at so "Recent work" on Today reflects actual usage
+        if project_id not in ("rc-root", "", None):
+            try:
+                db_execute(
+                    "UPDATE projects SET last_session_at = ? WHERE project_id = ?",
+                    (datetime.datetime.now().isoformat(), project_id),
+                )
+            except Exception:
+                pass
+
         return JSONResponse({
             "status": "ok",
             "target": target,
