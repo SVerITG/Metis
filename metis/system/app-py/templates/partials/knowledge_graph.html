@@ -37,7 +37,7 @@
     "reading-lists":      "#f39c12",
     "unknown":            "#aaa",
   };
-  const PHD_SIZE = {"high": 14, "medium": 10, "low": 8, "none": 7};
+  const NODE_RADIUS = 10;
 
   let allNodes = [], allLinks = [];
   let simulation, svg, g, link, node, label;
@@ -90,7 +90,7 @@
       .force("link", d3.forceLink(simLinks).id(d => d.id).distance(90).strength(0.5))
       .force("charge", d3.forceManyBody().strength(-160))
       .force("center", d3.forceCenter(W / 2, H / 2))
-      .force("collision", d3.forceCollide().radius(d => (PHD_SIZE[d.phd_relevance] || 10) + 6));
+      .force("collision", d3.forceCollide().radius(NODE_RADIUS + 6));
 
     // Links
     link = g.append("g").attr("class", "links")
@@ -110,7 +110,7 @@
       .on("click", (e, d) => showDetail(d));
 
     nodeGroup.append("circle")
-      .attr("r", d => PHD_SIZE[d.phd_relevance] || 10)
+      .attr("r", NODE_RADIUS)
       .attr("fill", d => DOMAIN_COLORS[d.domain] || "#aaa")
       .attr("stroke", "#fff").attr("stroke-width", 1.5)
       .attr("fill-opacity", 0.88);
@@ -120,7 +120,7 @@
       .selectAll("text").data(simNodes).join("text")
       .text(d => d.title.length > 22 ? d.title.slice(0,20) + "…" : d.title)
       .attr("font-size", "9px").attr("fill", "#444")
-      .attr("text-anchor", "middle").attr("dy", d => (PHD_SIZE[d.phd_relevance] || 10) + 11)
+      .attr("text-anchor", "middle").attr("dy", NODE_RADIUS + 11)
       .style("pointer-events", "none").style("user-select", "none");
 
     // Tick
@@ -149,8 +149,6 @@
   function showDetail(d) {
     const panel = document.getElementById("kg-detail");
     const body = document.getElementById("kg-detail-body");
-    const phd_badge = d.phd_relevance === "high" ? "bg-danger" :
-                      d.phd_relevance === "medium" ? "bg-warning text-dark" : "bg-secondary";
     const tagHtml = (d.tags || []).map(t =>
       `<span class="badge bg-light text-dark border me-1 mb-1" style="font-size:.7rem;">${t}</span>`
     ).join("");
@@ -158,7 +156,6 @@
       <strong style="font-size:.9rem;">${d.title}</strong>
       <div class="mt-1 mb-1">
         <span class="badge" style="background:${{'concepts':'#4e8ef7','disease-areas':'#e05555','methods':'#34a853','people-organizations':'#9b59b6','reading-lists':'#f39c12'}[d.domain]||'#aaa'}; font-size:.7rem;">${d.domain}</span>
-        <span class="badge ${phd_badge} ms-1" style="font-size:.7rem;">PhD: ${d.phd_relevance}</span>
       </div>
       <div class="mb-1">${tagHtml}</div>
       <div class="text-muted" style="font-size:.72rem; word-break:break-all;">${d.id}</div>
