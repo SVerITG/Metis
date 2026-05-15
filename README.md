@@ -207,6 +207,9 @@ Course topic defined
 
 ## The Dashboard
 
+![Metis dashboard — Today tab](docs/screenshots/dashboard-today.png)
+*The Today tab — morning briefing, active project, course progress, news radar, and quick-capture in one view.*
+
 The **9-tab dashboard** runs locally at `http://127.0.0.1:8000`. No account. No cloud. Every tab is live data from your research environment.
 
 ---
