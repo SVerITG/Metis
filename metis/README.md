@@ -6,7 +6,7 @@
   <sub><b>The Research Cortex</b></sub>
 </p>
 
-<h1 align="center">Your second brain. Built for science.</h1>
+<h1 align="center">A local research companion for Claude.</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python"/>
@@ -18,27 +18,36 @@
 
 ---
 
-> **Note from the author:** I currently use Metis for all my research work, but some functionalities are still under active development. This is an open-source project built for researchers, and I would genuinely welcome any kind of feedback — not just on specific features, but on the idea itself and your experience using it. If you try it, please open an issue or start a discussion. Your perspective as a researcher matters more than a developer's.
+Every time you ask Claude a question about your work, you start from scratch. Metis fixes that. It runs on your own computer, holds your literature, meetings, ideas, and projects in one place, and hands the right pieces to Claude whenever you ask a question — so the answer is grounded in *your* research, not a generic one.
 
----
+**In one sentence:** drop your papers, notes, and meeting transcripts into Metis, ask Claude anything from the dashboard or directly in Claude Code, and get answers shaped by what you already know and are working on.
 
-## The Underlying Idea
+### What you actually get
 
-Not every researcher has the time — or the desire — to keep up with the rapidly changing landscape of AI tools. New models appear weekly. New workflows emerge daily. Meanwhile, your actual work continues: papers to read, methods to apply, meetings to run, grants to write, students to supervise.
+- A **local dashboard** with nine tabs — Today, Knowledge, Meetings, Learning, Work, Thinking, Planner, Teach, Metis — running at `http://127.0.0.1:8000`. No login. No cloud.
+- A **morning brief**, generated daily by Claude from your RSS feeds and recent papers, calibrated to your stated topics and projects.
+- A **quick-capture box** (Ctrl+K from anywhere on the dashboard, or a mobile-friendly `/capture` page on your phone). Type `i:` for idea, `t:` for task, `n:` for note, `q:` for question — it routes to the right place and immediately surfaces related items you already had.
+- A **library** that imports from Zotero, BibTeX, or a folder of PDFs, and lets you search across abstracts, full text, and semantic similarity.
+- **Twenty-something specialist agents** — a Librarian, an Epidemiologist, a Methods Coach, a Writing Partner, a Data Guardian, and so on — that you can invoke by name (`/librarian`, `/epidemiologist`) or leave to the orchestrator (`/metis`) to route for you.
+- A **Data Guardian** that scans content for patient IDs, GPS coordinates, sensitive column names, and national IDs before anything is sent to the Claude API, and refuses to send what it shouldn't.
 
-**Metis is designed for that reality.**
+### What you need to run it
 
-It is a second brain, configured for AI use from the ground up. At its core is an MCP server — a protocol that lets Claude (and any compatible AI) access your entire research universe: your notes, your literature, your meetings, your ideas, your data. Every question you ask the AI is automatically enriched with context from your field, your history, and your current work.
+- **Windows 10/11 with WSL, macOS, or Linux.** A `.exe` installer is in active testing for Windows; on macOS and Linux you run a bash script.
+- **Python 3.10 or newer.** The installer can fetch it for you on Windows.
+- **An Anthropic API key**, or a Claude Pro/Max subscription with Claude Code. The agents call Claude — Metis itself is free and local.
+- **About 30 minutes** for the first install and guided setup wizard. Less if you skip seeding the library.
 
-But Metis goes further than retrieval. It is built around a principle that most productivity tools miss: **knowledge in isolation is inert.** A paper you read last year, a meeting note from last month, an idea you captured at 2am, and a news brief from this morning — these things are related. They connect to each other in ways you have not yet seen. Metis watches all of it and surfaces those connections automatically.
+### Honest about where it is
 
-The result is not a smarter search engine. It is a system that thinks alongside you — remembering what you cannot, connecting what you have not had time to connect, and surfacing what is relevant before you know you need it.
+The author uses Metis daily for real research. Several pieces are still maturing — the Windows installer needs a clean-machine test, the Teach tab's slide and assessment buttons are stubs, the mobile PWA does not yet cache offline, and a few agents (Course Builder, Meeting Memory live mode) are marked as in progress in the table below. The core daily loop — morning brief, capture, library search, agent routing, data protection — works. If you try it and something breaks or feels off, open an issue. Researcher feedback shapes this more than developer feedback ever could.
 
-**What makes this different from using Claude directly:**
+### Quick look
 
-When you ask Claude a question without Metis, you get a general answer from a model with general knowledge. When you ask Claude through Metis, the question is placed in the context of your field, your papers, your current projects, your open questions, and your recent work. The answer is calibrated to where you actually are, not where the average user is.
-
-This matters more than it sounds. Epidemiology, ecology, economics, education research — every field has its own methods, terminology, standards, and debates. A researcher who has spent ten years in a field knows things that no general AI can know. Metis bridges that gap by making your accumulated knowledge available to the AI at the moment it needs it.
+1. Install — [Option 1 installer](#quick-start) on Windows, or `bash system/mcp-server/setup-mcp.sh` on macOS/Linux.
+2. Run `/metis_config` in Claude Code. The 13-section wizard takes ~10 minutes.
+3. Drop your reference library (Zotero export or PDFs) into `inbox/`. Connect Zotero with `/metis-library-setup` if you use it.
+4. Open the dashboard. Read the morning brief. Press Ctrl+K and capture your first idea.
 
 ---
 
