@@ -42,6 +42,8 @@ Every time you ask Claude a question about your work, you start from scratch. Me
 
 The author uses Metis daily for real research. Several pieces are still maturing — the Windows installer needs a clean-machine test, the Teach tab's slide and assessment buttons are stubs, the mobile PWA does not yet cache offline, and a few agents (Course Builder, Meeting Memory live mode) are marked as in progress in the table below. The core daily loop — morning brief, capture, library search, agent routing, data protection — works. If you try it and something breaks or feels off, open an issue. Researcher feedback shapes this more than developer feedback ever could.
 
+Contributions are very much appreciated — see [Contributing](#contributing) below. Whether you want to share how a feature worked (or didn't) in your research workflow, or you are a more experienced developer who sees something to improve in the architecture or code: both perspectives matter equally here.
+
 ### Quick look
 
 1. Install — [Option 1 installer](#quick-start) on Windows, or `bash system/mcp-server/setup-mcp.sh` on macOS/Linux.
@@ -193,13 +195,16 @@ Every morning, the News Radar compiles a briefing calibrated to your field and c
 
 Every piece of content that passes through Metis is classified before any external action is taken (see [Data Protection](#data-protection) below). Patient data is blocked unconditionally. Unpublished manuscripts require your explicit confirmation. No dataset is uploaded without your approval.
 
-### Efficient token use
+### Efficient token use — significant cost reduction in practice
 
-AI inference costs money and time. Metis manages this automatically:
-- Each task is routed to the smallest model capable of handling it (Haiku → Sonnet → Opus)
-- Context is cleared between sessions automatically
-- A token pulse in the dashboard shows usage in real time
-- A handoff brief is generated when a session approaches its context limit, so no work is lost
+AI inference costs money. Metis reduces your API spend substantially compared to sending every request directly to a high-capability model:
+
+- **Model routing**: each task goes to the *smallest model capable of handling it*. News triage and classification → Haiku. Standard writing and routing → Sonnet. Deep analysis and architecture → Opus. Most daily requests never reach Opus.
+- **Context precision**: agents receive only the context relevant to their task — not your entire conversation history. A Data Guardian check does not carry the text of your morning brief.
+- **Session handoff**: when a session approaches its context limit, Metis generates a handoff brief automatically and closes the session cleanly. No accidental context sprawl. No paying twice for the same information.
+- **Token pulse**: the dashboard shows token usage in real time so you can see what each request costs and adjust.
+
+In practice: a typical research day — morning brief, a few literature searches, a methodology question, an idea capture — stays within a modest API budget. Deep tasks (article review, methodology challenge, course building) are the only time the high-capability model is engaged.
 
 ---
 
@@ -431,13 +436,42 @@ Over time, this has two effects:
 
 ## Token Efficiency
 
+Metis routes each request to the smallest model capable of handling it:
+
 | Model | When Metis routes to it | Examples |
 |-------|------------------------|---------|
 | Haiku | Triage, formatting, classification, quick retrieval | News Radar, Meeting Memory, Data Guardian |
 | Sonnet | Standard analysis, writing, routing | Metis orchestrator, Librarian, Writing Partner |
 | Opus | Deep analysis, architecture, complex code | Software Engineer, RC Builder |
 
-A token pulse widget in the dashboard shows real-time usage. When a session approaches its context limit, Metis generates a handoff brief automatically — a portable document summarising exactly where you are and what comes next — so you can continue seamlessly in a new session.
+Most daily requests (morning brief, capture, quick questions, literature search) stay on Haiku or Sonnet. Opus is only engaged when the task genuinely requires it. A token pulse widget in the dashboard shows real-time usage per session. When a session approaches its context limit, Metis generates a handoff brief automatically so you can continue seamlessly without paying to repeat context you already established.
+
+---
+
+## Course Packages
+
+Metis ships with a growing library of structured courses that sit in `knowledge/courses/` and are available immediately after installation:
+
+| Course | Status | What it covers |
+|--------|--------|----------------|
+| **Biostatistics** | ✅ Available | Descriptive stats → probability → inference → regression → survival analysis → multilevel models (12 lessons) |
+| **Epidemiology Foundations** | ✅ Available | Study design, measures of association, bias, confounding, screening |
+| **R for Epidemiologists** | ✅ Available | RStudio, tidyverse, data cleaning, ggplot2, survival analysis in R |
+| **NTD Elimination** | ✅ Available | Elimination frameworks, WHO roadmap, case detection, surveillance |
+| **Outbreak Investigation** | ✅ Available | Field epi, attack rates, case-control in outbreak settings |
+| **Health Economics** | ✅ Available | CEA, QALY, budget impact, uncertainty, equity |
+
+### Coming Soon
+
+Three course packages are in development and will be released as standalone packages you can drop into your `knowledge/courses/` folder:
+
+| Package | What it covers |
+|---------|----------------|
+| **Sampling Strategies** | Probability and non-probability sampling, sample size, complex survey designs, weighted estimation, application in resource-limited settings |
+| **Spatial Statistics and Epidemiology** | Spatial autocorrelation, kernel density estimation, SaTScan cluster detection, LISA statistics, disease mapping, applications in R and GeoDa |
+| **Genomic Surveillance** | Pathogen sequencing in public health, phylogenetics for outbreak investigation, whole-genome sequencing pipelines, interpreting Nextstrain outputs |
+
+If you are working in one of these areas and want to contribute or pilot, open an issue.
 
 ---
 
