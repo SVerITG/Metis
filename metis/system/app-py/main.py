@@ -50,21 +50,66 @@ async def lifespan(app: FastAPI):
         start_inbox_watcher()
     except Exception as exc:
         log.warning("Inbox watcher could not start: %s", exc)
-    # Pre-generate today's morning brief in the background on startup
+    # On startup: run news scan if last scan was more than 4 hours ago,
+    # then pre-generate today's morning brief.
     try:
-        import asyncio
+        import sqlite3 as _sq3
         import threading
 
-        def _boot_brief():
+        def _hours_since_last_scan() -> float:
+            """Return hours since last successful news scan (jobs_log), or 999 if never."""
+            try:
+                import datetime as _dt
+                db_p = os.environ.get("METIS_DB") or str(
+                    Path(os.environ.get("METIS_RC_ROOT", "")) / "system" / "app" / "data" / "metis.sqlite"
+                )
+                conn = _sq3.connect(db_p, timeout=5)
+                row = conn.execute(
+                    "SELECT created_at FROM jobs_log WHERE job_type IN ('morning_scan','news_scan') "
+                    "AND status='ok' ORDER BY created_at DESC LIMIT 1"
+                ).fetchone()
+                conn.close()
+                if row and row[0]:
+                    last = _dt.datetime.fromisoformat(row[0])
+                    return (_dt.datetime.now() - last).total_seconds() / 3600
+            except Exception:
+                pass
+            return 999.0
+
+        def _boot_scan_and_brief():
+            try:
+                if _hours_since_last_scan() > 4:
+                    log.info("[startup] Running news scan (last scan >4 h ago)")
+                    from metis_mcp.tools.content_scan import scan_literature_folder, scan_news_feeds
+                    scan_news_feeds(max_per_feed=10)
+                    scan_literature_folder()
+                    # Log success so the scheduler doesn't double-scan today
+                    try:
+                        import datetime as _dt
+                        db_p = os.environ.get("METIS_DB") or str(
+                            Path(os.environ.get("METIS_RC_ROOT", "")) / "system" / "app" / "data" / "metis.sqlite"
+                        )
+                        conn = _sq3.connect(db_p, timeout=5)
+                        conn.execute(
+                            "INSERT INTO jobs_log (job_type, status, details, created_at) VALUES (?,?,?,?)",
+                            ("morning_scan", "ok", "startup scan", _dt.datetime.now().isoformat()),
+                        )
+                        conn.commit()
+                        conn.close()
+                    except Exception:
+                        pass
+            except Exception as exc:
+                log.debug("Startup news scan skipped: %s", exc)
+            # Pre-generate morning brief after scan
             try:
                 from routers.today import _get_or_generate_brief
                 _get_or_generate_brief()
             except Exception as exc:
                 log.debug("Startup brief generation skipped: %s", exc)
 
-        threading.Thread(target=_boot_brief, daemon=True, name="boot-brief").start()
+        threading.Thread(target=_boot_scan_and_brief, daemon=True, name="boot-scan").start()
     except Exception as exc:
-        log.debug("Could not start boot brief thread: %s", exc)
+        log.debug("Could not start boot scan thread: %s", exc)
     yield
     try:
         from scheduler import scheduler
