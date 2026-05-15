@@ -162,13 +162,19 @@ async def index_pdf_library(scope: str = "all") -> list[TextContent]:
         scope: "literature" = inputs/literature/ only | "zotero" = Zotero storage only | "all" = both
     """
     rc_root = Path(os.environ.get("METIS_RC_ROOT", ""))
+    # Zotero storage: use ZOTERO_ROOT env var, or standard per-OS default
     _zotero_env = os.environ.get("ZOTERO_ROOT", "")
     if _zotero_env:
         zotero_root = Path(_zotero_env)
     else:
         import platform
         _home = Path.home()
-        zotero_root = _home / "Zotero" / "storage"
+        if platform.system() == "Windows":
+            zotero_root = _home / "Zotero" / "storage"
+        elif platform.system() == "Darwin":
+            zotero_root = _home / "Zotero" / "storage"
+        else:
+            zotero_root = _home / "Zotero" / "storage"
     lit_root = rc_root / "inputs" / "literature"
 
     _ensure_table()
