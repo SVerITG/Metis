@@ -1591,6 +1591,29 @@ function removeApiKey(name) {
   .catch(function () { showToast('Could not remove key — network error.'); });
 }
 
+// ─── MCP status pill ───────────────────────────────────────────────────────
+(function () {
+  var dot = document.getElementById('mcp-dot');
+  var label = document.getElementById('mcp-label');
+  if (!dot) return;
+  fetch('/api/mcp/status')
+    .then(function (r) {
+      if (r.ok) {
+        dot.style.background = '#34c759';
+        if (label) label.title = 'MCP tools available';
+      } else {
+        dot.style.background = '#ff9500';
+        if (label) {
+          label.style.color = '#ff9500';
+          label.title = 'MCP tools unavailable — restart with: bash run.sh';
+        }
+      }
+    })
+    .catch(function () {
+      dot.style.background = 'var(--m-rule)';
+    });
+})();
+
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') {
     closeApiKeyModal();
