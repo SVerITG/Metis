@@ -282,7 +282,7 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ApiKey, EnvDir, EnvFile, EnvContent: String;
-  StateFile, Profile, StateContent: String;
+  StateFile, Profile, StateContent, CoursesStr, DashStr: String;
   HasDash, HasCourse: Boolean;
 begin
   if CurStep = ssPostInstall then
@@ -308,15 +308,17 @@ begin
     Profile    := 'standard';
     if HasDash and HasCourse then Profile := 'full'
     else if not HasDash then Profile := 'mcp-only';
+    if HasCourse then CoursesStr := '"statistics"' else CoursesStr := '';
+    if HasDash then DashStr := 'true' else DashStr := 'false';
     StateContent :=
       '{' + #13#10 +
       '  "profile": "' + Profile + '",' + #13#10 +
       '  "version": "' + '{#MyAppVersion}' + '",' + #13#10 +
       '  "installed_at": "' + GetDateTimeString('yyyy/mm/dd', '-', ':') + '",' + #13#10 +
-      '  "courses_included": [' + (if HasCourse then '"statistics"' else '') + '],' + #13#10 +
+      '  "courses_included": [' + CoursesStr + '],' + #13#10 +
       '  "components": {' + #13#10 +
       '    "mcp_server": true,' + #13#10 +
-      '    "dashboard": ' + (if HasDash then 'true' else 'false') + ',' + #13#10 +
+      '    "dashboard": ' + DashStr + ',' + #13#10 +
       '    "hooks": true,' + #13#10 +
       '    "windows_task_scheduler": false,' + #13#10 +
       '    "nssm_service": false,' + #13#10 +
