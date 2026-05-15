@@ -4,9 +4,6 @@ name: Build Windows Installer
 #   - push of a v* tag  (e.g. git tag v1.1 && git push origin v1.1)
 #   - manual run from the Actions tab (workflow_dispatch)
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       version:
