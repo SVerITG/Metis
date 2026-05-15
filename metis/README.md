@@ -3,10 +3,10 @@
   <br/><br/>
   <img src="system/app-py/static/metis-wordmark.svg" width="220" alt="Metis"/>
   <br/>
-  <sub><b>The Research Cortex</b></sub>
+  <sub><b>The Research Cortex — Public Health Edition</b></sub>
 </p>
 
-<h1 align="center">Your second brain. Built for science.</h1>
+<h1 align="center">A local research companion for Claude.</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.10+-blue?style=flat-square" alt="Python"/>
@@ -14,31 +14,61 @@
   <img src="https://img.shields.io/badge/Claude-powered-orange?style=flat-square" alt="Claude"/>
   <img src="https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square" alt="MIT"/>
   <img src="https://img.shields.io/badge/status-active-brightgreen?style=flat-square" alt="Active"/>
+  <img src="https://img.shields.io/badge/edition-public--health-teal?style=flat-square" alt="Public Health"/>
 </p>
 
 ---
 
-> **Note from the author:** I currently use Metis for all my research work, but some functionalities are still under active development. This is an open-source project built for researchers, and I would genuinely welcome any kind of feedback — not just on specific features, but on the idea itself and your experience using it. If you try it, please open an issue or start a discussion. Your perspective as a researcher matters more than a developer's.
+> **Public Health Edition.** This repository is based on [SVerITG/Metis](https://github.com/SVerITG/Metis) and comes with a pre-built knowledge layer for public health researchers: WHO guidelines, NTD surveillance frameworks, epidemiological methods references, global health policy documents, and MPH/GH curriculum materials — indexed and ready to search. If you work in global health, epidemiology, or public health, this is the recommended starting point. If you want the empty base to build your own domain layer, start with [SVerITG/Metis](https://github.com/SVerITG/Metis) instead.
 
 ---
 
-## The Underlying Idea
+Every time you ask Claude a question about your work, you start from scratch. Metis fixes that. It runs on your own computer, holds your literature, meetings, ideas, and projects in one place, and hands the right pieces to Claude whenever you ask a question — so the answer is grounded in *your* research, not a generic one.
 
-Not every researcher has the time — or the desire — to keep up with the rapidly changing landscape of AI tools. New models appear weekly. New workflows emerge daily. Meanwhile, your actual work continues: papers to read, methods to apply, meetings to run, grants to write, students to supervise.
+**In one sentence:** drop your papers, notes, and meeting transcripts into Metis, ask Claude anything from the dashboard or directly in Claude Code, and get answers shaped by what you already know and are working on.
 
-**Metis is designed for that reality.**
+### What you actually get
 
-It is a second brain, configured for AI use from the ground up. At its core is an MCP server — a protocol that lets Claude (and any compatible AI) access your entire research universe: your notes, your literature, your meetings, your ideas, your data. Every question you ask the AI is automatically enriched with context from your field, your history, and your current work.
+- A **local dashboard** with nine tabs — Today, Knowledge, Meetings, Learning, Work, Thinking, Planner, Teach, Metis — running at `http://127.0.0.1:8000`. No login. No cloud.
+- A **morning brief**, generated daily by Claude from your RSS feeds and recent papers, calibrated to your stated topics and projects.
+- A **quick-capture box** (Ctrl+K from anywhere on the dashboard, or a mobile-friendly `/capture` page on your phone). Type `i:` for idea, `t:` for task, `n:` for note, `q:` for question — it routes to the right place and immediately surfaces related items you already had.
+- A **library** that imports from Zotero, BibTeX, or a folder of PDFs, and lets you search across abstracts, full text, and semantic similarity.
+- **Twenty-something specialist agents** — a Librarian, an Epidemiologist, a Methods Coach, a Writing Partner, a Data Guardian, and so on — that you can invoke by name (`/librarian`, `/epidemiologist`) or leave to the orchestrator (`/metis`) to route for you.
+- A **Data Guardian** that scans content for patient IDs, GPS coordinates, sensitive column names, and national IDs before anything is sent to the Claude API, and refuses to send what it shouldn't.
 
-But Metis goes further than retrieval. It is built around a principle that most productivity tools miss: **knowledge in isolation is inert.** A paper you read last year, a meeting note from last month, an idea you captured at 2am, and a news brief from this morning — these things are related. They connect to each other in ways you have not yet seen. Metis watches all of it and surfaces those connections automatically.
+### What comes pre-loaded in this edition
 
-The result is not a smarter search engine. It is a system that thinks alongside you — remembering what you cannot, connecting what you have not had time to connect, and surfacing what is relevant before you know you need it.
+The Public Health Edition includes a background knowledge layer built from publicly available sources:
 
-**What makes this different from using Claude directly:**
+| Domain | What is indexed |
+|--------|----------------|
+| **NTD surveillance** | WHO NTD roadmap, HAT/sleeping sickness elimination frameworks, lymphatic filariasis surveillance guides |
+| **Epidemiological methods** | STROBE, CONSORT, PRISMA checklists; diagnostic test accuracy frameworks; multilevel modelling references |
+| **Global health policy** | WHO global health targets, Sustainable Development Goals health indicators, GPEI frameworks |
+| **Health information systems** | DHIS2 documentation, HMIS design guides, OpenMRS and FHIR references |
+| **MPH/GH curriculum** | Core competency frameworks for Masters in Public Health and Global Health programmes |
 
-When you ask Claude a question without Metis, you get a general answer from a model with general knowledge. When you ask Claude through Metis, the question is placed in the context of your field, your papers, your current projects, your open questions, and your recent work. The answer is calibrated to where you actually are, not where the average user is.
+This layer is searchable via the Knowledge tab, enriches every morning brief in the relevant domains, and is available to all agents as background context — without requiring you to load any PDFs yourself.
 
-This matters more than it sounds. Epidemiology, ecology, economics, education research — every field has its own methods, terminology, standards, and debates. A researcher who has spent ten years in a field knows things that no general AI can know. Metis bridges that gap by making your accumulated knowledge available to the AI at the moment it needs it.
+### What you need to run it
+
+- **Windows 10/11 with WSL, macOS, or Linux.** A `.exe` installer is in active testing for Windows; on macOS and Linux you run a bash script.
+- **Python 3.10 or newer.** The installer can fetch it for you on Windows.
+- **An Anthropic API key**, or a Claude Pro/Max subscription with Claude Code. The agents call Claude — Metis itself is free and local.
+- **About 30 minutes** for the first install and guided setup wizard. Less if you skip seeding the library.
+
+### Honest about where it is
+
+The author uses Metis daily for real research in epidemiology and global health. Several pieces are still maturing — the Windows installer needs a clean-machine test, the Teach tab's slide and assessment buttons are stubs, the mobile PWA does not yet cache offline, and a few agents (Course Builder, Meeting Memory live mode) are marked as in progress in the table below. The core daily loop — morning brief, capture, library search, agent routing, data protection — works. If you try it and something breaks or feels off, open an issue. Researcher feedback shapes this more than developer feedback ever could.
+
+Contributions are very much appreciated — see [Contributing](#contributing) below. Whether you want to share how a feature worked (or didn't) in your research workflow, or you are a more experienced developer who sees something to improve in the architecture or code: both perspectives matter equally here.
+
+### Quick look
+
+1. Install — [Option 1 installer](#quick-start) on Windows, or `bash system/mcp-server/setup-mcp.sh` on macOS/Linux.
+2. Run `/metis_config` in Claude Code. The 13-section wizard takes ~10 minutes.
+3. Drop your reference library (Zotero export or PDFs) into `inbox/`. Connect Zotero with `/metis-library-setup` if you use it.
+4. Open the dashboard. Read the morning brief. Press Ctrl+K and capture your first idea.
 
 ---
 
@@ -134,103 +164,49 @@ Three modes for different situations:
 - **Import**: Paste a transcript or meeting notes
 - **Dictate**: Speak a summary after the meeting
 
-Meeting Memory structures the transcript, extracts action items and decisions, and cross-references the discussion with your literature and open projects. "We discussed the sensitivity of the passive detection strategy" — Metis connects this to the three papers on case detection you have in your library, the project card you have for that study, and the idea you captured last week about the same topic.
+Meeting Memory structures the transcript, extracts action items and decisions, and cross-references the discussion with your literature and open projects.
 
 ### Local data analyst — profile and clean datasets without uploading them
 
 The Data Analyst agent profiles, cleans, and compares tabular datasets entirely on your machine — CSV, Excel, SPSS, Stata. Returns a full structured profile (shape, dtypes, null %, unique counts, distributions, top categorical values), suggests cleaning operations with rationale, applies them to a new file (the original is never modified), and diffs the before/after profiles.
 
-Critically: **no dataset path is ever URL-based, and column names are scanned against the PII pattern list before profiling**. Sensitive columns are surfaced before any analysis touches them. This makes Metis usable on patient-level CSVs that you cannot legally upload to a cloud API.
+Critically: **no dataset path is ever URL-based, and column names are scanned against the PII pattern list before profiling**. Sensitive columns are surfaced before any analysis touches them.
 
 ### Knowledge graph
 
-The Knowledge tab renders a force-directed graph (D3) of your library, ideas, and projects. Edges show co-occurrence, citation links, and cross-pollination matches. Click any node to pivot the view to its neighbours. Useful when you sense that something connects but cannot articulate the link yet.
+The Knowledge tab renders a force-directed graph (D3) of your library, ideas, and projects. Edges show co-occurrence, citation links, and cross-pollination matches.
 
 ### Semantic memory search
 
-Beyond keyword search, Metis indexes your literature, notes, ideas, and meeting transcripts as 384-dim vectors using `sqlite-vec` and BAAI's `bge-small-en` embedding model. The search bar in the Knowledge tab returns semantic matches: "papers about diagnostic accuracy in low-prevalence settings" surfaces the right work even when none of the words match exactly. Embeddings are computed and stored locally — nothing is sent to a remote vector service.
+Beyond keyword search, Metis indexes your literature, notes, ideas, and meeting transcripts as 384-dim vectors using `sqlite-vec` and BAAI's `bge-small-en` embedding model. The search bar in the Knowledge tab returns semantic matches. Embeddings are computed and stored locally — nothing is sent to a remote vector service.
 
 ### Encrypted backup and export
 
-A single MCP tool (`backup_db`) writes an AES-256-GCM encrypted snapshot of the entire Metis database to disk on demand. The passphrase is yours; the file is yours. Use this for off-site backup, for sharing a frozen state with a collaborator, or for migrating between machines without exposing the database in plain SQLite.
+A single MCP tool (`backup_db`) writes an AES-256-GCM encrypted snapshot of the entire Metis database to disk on demand.
 
 ### Project tracking with one-click launchers
 
-Each project in the Work tab has a card with status, next-step note, linked papers, linked outputs, and a launcher rail. One click opens the project in **VS Code**, **RStudio**, **Claude Code**, **Claude Desktop**, **File Explorer**, or directly to its **GitHub** page. The launcher uses the project's recorded path — no remembering which folder it was in.
+Each project in the Work tab has a card with status, next-step note, linked papers, linked outputs, and a launcher rail. One click opens the project in **VS Code**, **RStudio**, **Claude Code**, **Claude Desktop**, **File Explorer**, or directly to its **GitHub** page.
 
 ### Health check — `/metis_doctor`
 
-A one-screen self-test that verifies Python version, the SQLite database, your Anthropic API key, your `user-config.yaml`, agent and skill folders, folder-rename hygiene, MCP imports, and `.env` git safety. Run it whenever something feels off, after a `git pull`, or before sharing the repo. Each check returns OK / WARN / FAIL with a one-line plain-English explanation.
+A one-screen self-test that verifies Python version, the SQLite database, your Anthropic API key, your `user-config.yaml`, agent and skill folders, folder-rename hygiene, MCP imports, and `.env` git safety.
 
 ### Continuity across your research
 
-Research projects span years. Metis tracks the full arc:
-- Every project has a card: status, tasks, linked papers, linked outputs
-- Every article draft is tracked: which version, which agents reviewed it, what feedback was given
-- The PhD Architect maintains a bird's-eye view of how your articles align to your thesis backbone
-- Session handoffs ensure nothing is lost when you return after days or weeks away
-
-When you start a new session, Metis tells you where you left off, what is overdue, and what the next concrete step is.
-
-### Weekly focus planning
-
-Tell Metis your focus for the week — one research question, one article, one deadline. The Planner tab structures your tasks around that focus, surfacing what needs attention and putting everything else aside. Not a to-do list. A thinking tool.
+Research projects span years. Metis tracks the full arc: project cards, article drafts, agent review history, session handoffs.
 
 ### Morning briefing
 
-Every morning, the News Radar compiles a briefing calibrated to your field and current projects: new publications, relevant news, preprint activity, funding announcements. The Librarian cross-references it with what you already have. By the time you open your laptop, Metis has already read the internet and filtered it for what matters to you.
+Every morning, the News Radar compiles a briefing calibrated to your field and current projects: new publications, relevant news, preprint activity, funding announcements.
 
 ### Full data protection — nothing leaves without your permission
 
-Every piece of content that passes through Metis is classified before any external action is taken (see [Data Protection](#data-protection) below). Patient data is blocked unconditionally. Unpublished manuscripts require your explicit confirmation. No dataset is uploaded without your approval.
+Every piece of content that passes through Metis is classified before any external action is taken. Patient data is blocked unconditionally. Unpublished manuscripts require your explicit confirmation.
 
 ### Efficient token use
 
-AI inference costs money and time. Metis manages this automatically:
-- Each task is routed to the smallest model capable of handling it (Haiku → Sonnet → Opus)
-- Context is cleared between sessions automatically
-- A token pulse in the dashboard shows usage in real time
-- A handoff brief is generated when a session approaches its context limit, so no work is lost
-
----
-
-## Workflows
-
-### Morning start
-
-> You open your laptop. The dashboard is already running.
-
-Metis has checked your RSS feeds, scanned for new papers matching your topics, and checked your tracked project files for changes. The Today tab shows you a briefing — what happened overnight, what is urgent today, what is coming up this week. You review it in 5 minutes and start work knowing you have not missed anything.
-
-### Research session
-
-> You are working on an article. You open Claude Code with `/metis-research`.
-
-Metis loads the context for that article: which papers you have cited, what agent reviews have been done, what tasks are open, what your last session ended on. You write. You question. You ask Metis to challenge your methodology. The Epidemiologist agent applies the same critical lens a peer reviewer would. You get feedback before submission, not after.
-
-### Idea capture
-
-> You are reading a paper and something connects — a method from another field, a gap no one has addressed, a contradiction between this paper and one you read last year.
-
-You type it into the Reflection tab, or dictate it into Claude Desktop. Metis logs it with a timestamp and immediately cross-pollinates: it surfaces the related paper, the meeting where you discussed the adjacent topic, and the project this might affect. The connection is recorded before you close the tab.
-
-### Literature intake
-
-> Someone emails you a paper. A colleague mentions a preprint. A search turns up twenty new results.
-
-Drag the PDFs into the inbox folder, or paste DOIs into the Librarian. Metis processes them: extracts metadata, adds them to your library, checks for overlap with what you already have, and surfaces connections to your current projects. Your library stays current without manual management.
-
-### Course building
-
-> You are about to run an analysis you have never done before. You know the question but not the method.
-
-Tell Metis: "I want to do a spatial cluster analysis of disease incidence for my article on district-level risk." Metis identifies the statistical skills you need (spatial autocorrelation, SaTScan, kernel density estimation), checks what you already know, and builds a short, focused course that gets you from here to a defensible methods section. You learn exactly what you need, not a textbook chapter.
-
-### Meeting
-
-> You are in a team meeting. Three topics come up that affect your current article.
-
-After the meeting, you paste the notes into Metis or dictate a summary. Meeting Memory structures the transcript, extracts the three relevant decisions, links them to the project card, and adds follow-up tasks to your work list. Nothing gets lost in an email thread.
+Each task is routed to the smallest model capable of handling it (Haiku → Sonnet → Opus). A token pulse in the dashboard shows usage in real time. A handoff brief is generated when a session approaches its context limit.
 
 ---
 
@@ -258,8 +234,8 @@ Restart Claude Desktop and Claude Code after installation.
 
 ```bash
 # Clone
-git clone https://github.com/SVerITG/metis.git
-cd metis
+git clone https://github.com/SVerITG/Metis_PH.git
+cd Metis_PH
 
 # Install MCP server + auto-register with Claude Code and Claude Desktop
 bash system/mcp-server/setup-mcp.sh
@@ -277,23 +253,6 @@ bash system/mcp-server/setup-mcp.sh
 4. Set your research focus for the week in the Planner tab
 5. Let Metis run its first morning scan
 
-From then on: use `/metis [any request]` from Claude Code or Claude Desktop. Metis routes it to the right agent, does the work, and logs the result.
-
----
-
-## Personalising Metis
-
-See [PERSONALIZE.md](PERSONALIZE.md) for a complete guide. The short version:
-
-- **Your domain and research area** — set in `/metis_config`
-- **Your literature** — connect via `/metis-library-setup`
-- **Your news topics and RSS feeds** — set in `/metis_config` under "news"
-- **Your projects** — add via the Work tab or Claude Code
-- **Your agent team** — activate/deactivate agents in `/metis_config`
-- **Your writing style** — the Writing Partner learns from feedback over time
-
-Everything personal (your notes, ideas, outputs, project files) is stored locally and excluded from git by default. System improvements push to GitHub; your research stays private.
-
 ---
 
 ## Agent Team
@@ -303,29 +262,19 @@ Everything personal (your notes, ideas, outputs, project files) is stored locall
 | **Metis** | Orchestrator — routes requests, coordinates agents, maintains context across the session |
 | **Librarian** | Manages your literature library, searches papers, tracks new publications |
 | **PhD Architect** | Maintains thesis structure, tracks article alignment, surfaces gaps |
-| **Research Architect** | Tracks article progress, reviews drafts against the research plan |
 | **Writing Partner** | Drafts, edits, and improves written work — calibrated to your style over time |
 | **Methods Coach** | Epidemiological methods, statistics, sampling, R methodology |
 | **Epidemiologist** | Study design review, Socratic methodology challenge, peer-review simulation |
 | **Presentation Maker** | Builds slide decks from your content and agent outputs |
-| **Frontend Designer** | Design system, UI/UX standards, CSS, dashboard interface |
-| **RC Builder** | Builds and extends Metis itself — new agents, tools, MCP server features |
-| **Course Builder** 🔬 | Orchestrator for course-building: intake → curriculum → lessons → assessment. Prompt and 7-step workflow are in place; end-to-end automated pipeline is in active development |
-| **Learning Architect** | Curriculum design, competency maps, spaced repetition scheduling |
 | **News Radar** | Compiles daily briefing on your topics and field |
-| **News Aggregator** | Automated RSS collection, feed curation, signal tagging |
-| **Meeting Memory** 🟡 | Transcribes meetings; structured action-item extraction and project cross-linking are in progress |
+| **Meeting Memory** 🟡 | Transcribes meetings; structured action-item extraction in progress |
 | **Learning Coach** | Tracks skill progress, surfaces what to review, identifies gaps |
-| **Career Coach** | Career direction, job preparation, CV development |
-| **Content Harvester** | Extracts and structures content from web pages, PDFs, YouTube, GitHub |
-| **Visualization Maker** | Charts, diagrams, system maps, ggplot2 and Plotly figures |
 | **Data Analyst** | Profiles, cleans, and compares tabular datasets — local only, no upload |
 | **Data Guardian** | Intercepts before any sensitive content leaves your machine — silent, always active |
 | **Cybersecurity** | Validates internet-facing actions, defends against prompt injection |
 | **Software Engineer** | Code review, debugging, R and Python scripts, FastAPI |
-| **Design Auditor** | Audits existing UIs, reverse-engineers design decisions, prioritises improvements |
 
-All agents are plain Markdown files in `agents/`. You can read, edit, or extend any agent's skill file from the dashboard — no code required.
+All agents are plain Markdown files in `agents/`. You can read, edit, or extend any agent's skill file — no code required.
 
 ---
 
@@ -340,118 +289,7 @@ Every piece of content that passes through Metis is classified before any extern
 | **INTERNAL** | Code, metadata, aggregated outputs | **INFORM** once, then proceed |
 | **PUBLIC** | Published papers, public datasets, public URLs | OK — free to use |
 
-```
-You → Metis → Data Guardian → [BLOCKED | WARN | INFORM | OK] → API
-```
-
-The Data Guardian runs 14 PII checks: 5 regex patterns covering email addresses, phone numbers, patient/case IDs, high-precision GPS coordinates, and Belgian national IDs; plus 9 sensitive column-name signals (`patient`, `patient_id`, `case_id`, `diagnosis`, `dob`, `date_of_birth`, `test_result`, `gps_lat`, `gps_lon`). Detection is automatic and silent. You do not need to tag or label your files. The pattern set is conservative — extend it for your domain in `metis/system/mcp-server/src/metis_mcp/tools/safety.py`.
-
-**What this means in practice:**
-- Drop a CSV with patient-level data into Metis → the Data Guardian blocks it from reaching the API
-- Ask Metis to review your thesis draft → it warns you that the text will pass through the Claude API and asks for your confirmation first
-- Run an analysis on aggregated statistics → proceeds without interruption
-
-Claude's API does not use your data for model training. But data is retained on Anthropic servers for 30 days for safety monitoring. The Data Guardian ensures you are informed about this the first time it applies, so you can make an informed choice about what to send.
-
-See `system/config/red-lines.md` for the full data policy.
-
----
-
-## Constitution and red lines — the rules every agent obeys
-
-Metis is governed by an explicit, machine-readable policy. Two files anchor it:
-
-- **`system/config/constitution.md`** — 12 rules, loaded into every agent's context for `deep` and `chain` complexity runs. The rules cover **clinical safety** (cite at least one primary source for any clinical recommendation; flag limited-evidence claims), **statistical integrity** (state sample size; never imply causation from observational data outside an RCT), **data protection** (block patient-identifying output; redact secrets), **agent behaviour** (write a reflexion after deep runs; flag uncertainty explicitly; never fabricate items in lists), **routing & escalation** (ask one clarifying question if the routing is genuinely ambiguous; validate sub-agent output before passing it on), **research integrity** (full citations; no predatory journals), and **PhD protection** (any change to a thesis article must check thesis-backbone alignment first).
-
-- **`system/config/red-lines.md`** — five non-overridable rules: never send patient/medical data externally; always confirm before destructive actions; log every agent run; ask when in doubt; never leak personal or unpublished work without explicit approval.
-
-These are not suggestions. They are loaded as system context before every substantive run, and the most critical rules (no patient data, no API keys in output) are enforced at the code level by the Data Guardian and the pre-tool-use hook — agents cannot override them by reasoning their way around the rule.
-
-You can read both files. You can edit them. The change applies to every agent on the next run.
-
----
-
-## Working within your context
-
-A senior epidemiologist asks Metis a methodology question and gets an answer calibrated to epidemiology. A researcher building dashboards asks the same question framed as a UI problem and gets an answer for that. Same Metis. Different context.
-
-This is configured in `system/config/user-config.yaml`:
-
-- **`general_context`** — your one-paragraph bio. Loaded into every agent run. The Methods Coach knows you're an epidemiologist; the Writing Partner knows your target journals; the Librarian knows your domain vocabulary.
-- **`specialist_contexts`** — additional contexts you can activate when working on a specific area. *"Epidemiological dashboard development"* is a specialist context the user activates when working on a Shiny app, but not when reviewing an article draft. The Builder loads it; the Writing Partner does not.
-- **`active_contexts`** — which contexts apply right now. Switchable at any time.
-
-Each agent folder also accepts **`*-context.md` overlay files** (gitignored) where you can add domain-specific knowledge — your disease focus, your country surveillance system, your standard methods, your cohort. The agent loads any matching overlay automatically.
-
-Add or update contexts via `/add-context` from Claude Code, or directly in `/metis_config`.
-
----
-
-## Cybersecurity
-
-Metis operates agentically — agents browse the web, process RSS feeds, and handle external content. Every external boundary has an active defence.
-
-| Layer | Threat | Defence |
-|-------|--------|---------|
-| **URL allowlist** | Agents fetching from malicious domains | Only Librarian, News Radar, and News Aggregator have internet access. Every URL is validated against a domain allowlist before any request is made |
-| **Injection probe** | RSS feeds or web pages containing hidden instructions to hijack agent behaviour | External content is scanned for **13 prompt injection patterns** plus zero-width Unicode characters. The same 13-pattern list is enforced both server-side (`tools/guardrails.py`) and in the Claude Code pre-tool-use hook (`.claude/hooks/pre-tool-use.mjs`) — the lists are kept in sync. Suspicious content is annotated and flagged, not silently dropped |
-| **Agent scope enforcement** | Agents taking actions outside their defined role | Each agent declares its permitted actions. The Cybersecurity agent audits outputs for scope violations before execution |
-| **File integrity** | Imported files containing embedded instructions or encoding anomalies | Files are checked before processing |
-| **Security event log** | Undetected incidents | All security events are logged in the dashboard for review |
-
-The Cybersecurity agent itself has no internet access, preventing it from becoming an attack vector.
-
----
-
-## Self-Improving Agents
-
-Agents do not stay static. They improve over time through a **bounded Reflexion loop**:
-
-1. After completing a task, the agent writes a brief self-critique: what worked, what did not, what it would do differently
-2. When you flag an issue (incorrect output, wrong tone, missed nuance), the agent reads its own skill file and the failed output, then proposes a specific, concrete change to its instructions
-3. That proposal appears in the queue in the dashboard — you review it, approve or reject it
-4. Approved proposals are applied to the agent's skill file immediately
-
-**No agent can rewrite itself without your approval.** The loop is bounded: agents can reflect and propose, but humans decide.
-
-Over time, this has two effects:
-- **Quality** — agents become more accurate for tasks in your domain
-- **Personalisation** — agents calibrate to your standards, your terminology, your expectations
-
----
-
-## Token Efficiency
-
-| Model | When Metis routes to it | Examples |
-|-------|------------------------|---------|
-| Haiku | Triage, formatting, classification, quick retrieval | News Radar, Meeting Memory, Data Guardian |
-| Sonnet | Standard analysis, writing, routing | Metis orchestrator, Librarian, Writing Partner |
-| Opus | Deep analysis, architecture, complex code | Software Engineer, RC Builder |
-
-A token pulse widget in the dashboard shows real-time usage. When a session approaches its context limit, Metis generates a handoff brief automatically — a portable document summarising exactly where you are and what comes next — so you can continue seamlessly in a new session.
-
----
-
-## Architecture
-
-```
-metis/
-├── inbox/             Drop anything here — Librarian processes it
-├── agents/            Agent team — one skill.md per agent (plain Markdown)
-├── knowledge/         Your knowledge: literature, domains, courses
-├── projects/          Your projects with status, tasks, linked papers
-├── outputs/           Agent outputs — YYYY-MM-DD_task.md per run
-├── system/
-│   ├── app-py/        FastAPI + HTMX dashboard (9 tabs, local, port 8000)
-│   ├── mcp-server/    Python MCP server (120 tools)
-│   ├── config/        Guardrails, constitution, red-lines, token policy
-│   └── .env           Your API keys — never committed to git
-├── .claude/
-│   ├── skills/        54 slash commands (/metis, /librarian, /methods-coach, /metis_doctor, …)
-│   ├── hooks/         Pre-tool-use security hook (path patterns, injection guard)
-│   └── CLAUDE.md      Agent routing guide (loaded by Claude Code automatically)
-└── PERSONALIZE.md     How to make Metis yours
-```
+The Data Guardian runs 14 PII checks automatically. See `system/config/red-lines.md` for the full data policy.
 
 ---
 
