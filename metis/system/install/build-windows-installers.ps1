@@ -2,7 +2,7 @@
 # Compiles the 3 Metis Windows exe installers locally and uploads them to GitHub.
 #
 # Usage (from PowerShell on Windows):
-#   cd "C:\Users\sverschaeve\OneDrive - ITG\Documents\7. Software\Research Cortex\metis\system\install"
+#   cd "C:\Users\<username>\OneDrive - ITG\Documents\7. Software\Research Cortex\metis\system\install"
 #   .\build-windows-installers.ps1
 #
 # Optional — skip GitHub upload, just build the exe files:
