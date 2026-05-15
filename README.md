@@ -27,6 +27,8 @@
 
 > **Disclaimer.** The concept, architecture, and approach behind Metis are original. One of Metis's core principles is self-improvement — it actively monitors AI developments and incorporates new tools, skills, and agent patterns. Tools, skills, and agents were built drawing on publicly available techniques, documentation, and web resources, and as such individual components are often not unique. What Metis presents is a *way of working* — a coherent system designed for researchers. Use and extension are welcome under the MIT license.
 
+Contributions are very much appreciated — see [Contributing](#contributing) below. Whether you want to share how a feature worked (or didn't) in your research workflow, or you are a more experienced developer with architectural feedback or a pull request: both perspectives are equally welcome.
+
 ---
 
 ## Vision
@@ -426,6 +428,18 @@ The **Metis base** (`Metis`) ships the full architecture — MCP server, dashboa
 
 > **Want to build a domain pack?** Start from `Metis`, add your field's knowledge library, agents, and RSS feeds, and open a PR or publish your own fork.
 
+### Coming Soon — Course Packages
+
+In addition to domain editions, Metis will publish standalone **course packages** — structured, lesson-by-lesson courses you can drop into any Metis installation by copying them to `knowledge/courses/`. Each package includes lessons, exercises, and a spaced-repetition schedule. Currently in development:
+
+| Package | What it covers |
+|---------|----------------|
+| **Sampling Strategies** | Probability and non-probability sampling, sample size calculation, complex survey designs (cluster, stratified, multi-stage), weighted estimation, application in resource-limited and field settings |
+| **Spatial Statistics and Epidemiology** | Spatial autocorrelation, kernel density estimation, SaTScan cluster detection, LISA statistics, disease mapping in R and GeoDa, use cases in NTD and outbreak surveillance |
+| **Genomic Surveillance** | Pathogen sequencing in public health, phylogenetics for outbreak investigation, whole-genome sequencing pipelines, interpreting Nextstrain outputs, genomic epidemiology in low-resource settings |
+
+If you are already working in one of these areas and want to pilot or contribute, open an issue with the label `course-package`.
+
 ---
 
 # For Developers
@@ -514,11 +528,12 @@ flowchart LR
 4. `constitution.md` — 12 machine-readable rules for deep/chain runs
 5. `red-lines.md` — 5 non-overridable rules enforced at code level
 
-**Token efficiency**
-- Model routing: Haiku for summaries, Sonnet for most work, Opus for deep reasoning
-- Surgical context assembly per agent — not full history on every call
+**Token efficiency — meaningful cost reduction in practice**
+- Model routing: Haiku for triage/summaries, Sonnet for most work, Opus only for deep reasoning — most daily usage never touches Opus
+- Surgical context assembly per agent — not full history on every call; a Data Guardian check does not carry your morning brief
 - Max-turns guardrail (stops at 20, prompts `/clear`)
-- Handoff brief at session end (< 3 KB state capture for next session)
+- Handoff brief at session end (< 3 KB state capture for next session — no paying twice for context you already established)
+- Token pulse widget shows real-time usage so you see exactly what each request costs
 
 ---
 

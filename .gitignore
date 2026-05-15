@@ -121,6 +121,18 @@ metis/system/install/*.log
 # PH-specific seeding scripts
 metis/system/install/seed_ph_database.py
 
+# Demo/mockup seeding scripts (personal only)
+metis/system/install/seed_mockup_demo.py
+
+# Test suite (personal only — not published to public repos)
+metis/system/tests/
+
+# Session/build artifacts — never publish
+outputs/
+metis/system/app-py/DESIGN_BRIEF.md
+metis/system/config/install-state.json
+metis/system/design-docs/
+
 # Old R app runtime files (kept locally, not published)
 metis/system/app/History/
 metis/system/app/R/data_store.R
