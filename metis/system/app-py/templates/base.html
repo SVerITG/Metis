@@ -40,6 +40,30 @@
 </head>
 <body>
 
+<!-- MCP offline banner — injected by JS if /api/mcp/status returns non-200 -->
+<script>
+  (function () {
+    fetch('/api/mcp/status').then(function (r) {
+      if (!r.ok) {
+        var b = document.createElement('div');
+        b.id = 'mcp-offline-banner';
+        b.setAttribute('style',
+          'position:fixed;top:0;left:0;right:0;z-index:2000;background:#d97706;color:#fff;' +
+          'padding:7px 16px;font-size:13px;display:flex;align-items:center;gap:10px;' +
+          'font-family:var(--m-ui,sans-serif);');
+        b.innerHTML =
+          '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" flex-shrink="0"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5.5" x2="8" y2="8.5"/><circle cx="8" cy="11" r="0.6" fill="currentColor" stroke="none"/></svg>' +
+          '<span>MCP server offline — morning briefs, literature search, and AI features won\'t work. ' +
+          'Restart with <code style="background:rgba(0,0,0,.2);padding:1px 5px;border-radius:3px;">bash run.sh</code> in your terminal.</span>' +
+          '<button onclick="document.getElementById(\'mcp-offline-banner\').remove()" ' +
+          'style="margin-left:auto;flex-shrink:0;background:none;border:1px solid rgba(255,255,255,.5);' +
+          'color:#fff;padding:2px 10px;border-radius:3px;cursor:pointer;font-size:12px;">Dismiss</button>';
+        document.body.prepend(b);
+      }
+    }).catch(function () {});
+  })();
+</script>
+
 <!-- =====================================================================
      App shell — Archive sidebar layout
 ====================================================================== -->

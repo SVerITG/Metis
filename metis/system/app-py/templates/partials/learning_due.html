@@ -1,43 +1,52 @@
-<!-- learning_due.html — Spaced-repetition due today, editorial -->
+<!-- learning_due.html — Spaced-repetition due today, with SM-2 review + streak -->
 {% if not due %}
 <div class="kicker kicker--accent">
   <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <polyline points="3 8 7 12 13 4"/>
   </svg>
-  <span>SPACED REPETITION · CLEAR</span>
+  <span>SPACED REPETITION · CLEAR{% if streak %} · {{ streak }}-DAY STREAK{% endif %}</span>
 </div>
 <h2 style="font-family:var(--m-display);font-size:24px;font-weight:500;letter-spacing:-0.015em;margin:10px 0 8px;color:var(--m-ink);">
   Nothing due today.
 </h2>
 <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0;">
-  <em>The forgetting curve is on your side this morning.</em>
+  {% if streak %}<em>{{ streak }}-day review streak — keep it going.</em>{% else %}<em>The forgetting curve is on your side this morning.</em>{% endif %}
 </p>
 {% else %}
 <div class="kicker kicker--accent">
   <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="4" width="12" height="9"/><line x1="2" y1="7" x2="14" y2="7"/>
   </svg>
-  <span>SPACED REPETITION · {{ due | length }} CARD{% if due|length != 1 %}S{% endif %} DUE</span>
+  <span>SPACED REPETITION · {{ due | length }} CARD{% if due|length != 1 %}S{% endif %} DUE{% if streak %} · {{ streak }}-DAY STREAK{% endif %}</span>
 </div>
 <h2 style="font-family:var(--m-display);font-size:24px;font-weight:500;letter-spacing:-0.015em;margin:10px 0 14px;color:var(--m-ink);">
   {{ due | length }} review{% if due|length != 1 %}s{% endif %} for today
 </h2>
-<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;max-height:240px;overflow-y:auto;">
+<div id="sr-due-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;max-height:280px;overflow-y:auto;">
   {% for item in due %}
-  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px solid var(--m-rule-soft);">
+  <div id="sr-row-{{ item.id }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--m-rule-soft);">
     <div style="min-width:0;flex:1;">
       <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ item.topic }}</div>
       {% if item.course_title %}
-      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;margin-top:2px;">{{ item.course_title }}</div>
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;margin-top:2px;">{{ item.course_title }} · every {{ item.interval_days }}d</div>
       {% endif %}
     </div>
     <span class="chip chip--{% if item.next_review_date < today %}alert{% else %}ochre{% endif %}" style="flex-shrink:0;">
       {% if item.next_review_date < today %}OVERDUE{% else %}TODAY{% endif %}
     </span>
+    <!-- Mark done buttons (quality 3=hard, 4=ok, 5=easy) -->
+    <div style="display:flex;gap:4px;flex-shrink:0;">
+      <button title="Hard — remembered with effort" onclick="srReview({{ item.id }}, 3, this)"
+              style="font-family:var(--m-mono);font-size:10px;padding:2px 7px;border:1px solid var(--m-line);border-radius:3px;background:none;color:var(--m-muted);cursor:pointer;">Hard</button>
+      <button title="Good — got it" onclick="srReview({{ item.id }}, 4, this)"
+              style="font-family:var(--m-mono);font-size:10px;padding:2px 7px;border:1px solid var(--m-ok);border-radius:3px;background:none;color:var(--m-ok);cursor:pointer;">Good</button>
+      <button title="Easy — no effort needed" onclick="srReview({{ item.id }}, 5, this)"
+              style="font-family:var(--m-mono);font-size:10px;padding:2px 7px;border:1px solid var(--m-info);border-radius:3px;background:none;color:var(--m-info);cursor:pointer;">Easy</button>
+    </div>
   </div>
   {% endfor %}
 </div>
 <div class="tnum" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">
-  TOTAL {{ due | length }} · DUE {{ due | length }}
+  TOTAL {{ due | length }} · DUE {{ due | length }}{% if streak %} · {{ streak }}-DAY STREAK 🔥{% endif %}
 </div>
 {% endif %}

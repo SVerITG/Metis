@@ -253,3 +253,23 @@ async def touch_planning_files():
         pass
 
     return JSONResponse({"updated": updated, "date": today})
+
+
+# ---------------------------------------------------------------------------
+# MCP server status — used by the offline banner in base.html
+# ---------------------------------------------------------------------------
+
+@app.get("/api/mcp/status")
+async def mcp_status():
+    """Returns 200 if the MCP server module is importable, 503 if not."""
+    import sys
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    if rc_root:
+        mcp_src = str(Path(rc_root) / "system" / "mcp-server" / "src")
+        if mcp_src not in sys.path:
+            sys.path.insert(0, mcp_src)
+    try:
+        from metis_mcp.app_instance import app as _mcp  # noqa: F401
+        return JSONResponse({"status": "ok"})
+    except ImportError as exc:
+        return JSONResponse({"status": "offline", "reason": str(exc)}, status_code=503)
