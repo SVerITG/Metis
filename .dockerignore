@@ -1,0 +1,83 @@
+# Metis Research Cortex — Docker build exclusions
+# The build context is the repo root. Exclude personal data, large files,
+# and anything that should never end up inside the image.
+
+# ── Personal / sensitive data ────────────────────────────────────────────────
+metis/journal/
+metis/inbox/
+metis/outputs/
+metis/archive/
+metis/basket/
+metis/knowledge/library/papers/
+metis/knowledge/library/pdfs/
+metis/knowledge/library/zotero/
+metis/system/app/data/
+metis/system/app-py/data/
+
+# ── Secrets and local config ─────────────────────────────────────────────────
+**/.env
+**/.env.local
+**/secrets.*
+**/credentials.*
+**/api_keys.*
+
+# ── Python build artefacts ───────────────────────────────────────────────────
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.venv/
+**/venv/
+**/*.egg-info/
+**/dist/
+**/build/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+
+# ── R artefacts ───────────────────────────────────────────────────────────────
+**/.Rproj.user/
+**/*.Rhistory
+**/*.RData
+**/*.rds
+**/*.rdb
+**/*.rdx
+
+# ── OS / editor noise ─────────────────────────────────────────────────────────
+**/.DS_Store
+**/Thumbs.db
+**/.vscode/
+**/.idea/
+**/*.swp
+**/*~
+
+# ── Git ───────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Node (if any frontend tooling is added later) ────────────────────────────
+**/node_modules/
+
+# ── Large binary / data formats ──────────────────────────────────────────────
+**/*.csv
+**/*.xlsx
+**/*.xls
+**/*.sav
+**/*.dta
+**/*.shp
+**/*.dbf
+**/*.shx
+**/*.prj
+**/*.geo
+**/*.pop
+**/*.cas
+**/*.sqlite
+**/*.db
+**/*.pdf
+**/*.docx
+**/*.pptx
+
+# ── Logs and temp files ───────────────────────────────────────────────────────
+**/*.log
+**/tmp/
+**/temp/
