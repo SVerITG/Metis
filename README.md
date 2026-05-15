@@ -43,6 +43,8 @@ It was created by a public health researcher with no programming background — 
 
 That is the horizon. **The current version serves individual researchers.** The longer vision: a **research institute deploying its own Metis** — an AI layer tuned to the institute's literature, data systems, and workflows, available to every staff member from day one, with data protection built in from the ground up.
 
+Another possible direction is towards a kind of *"Metis OS"* — where Metis connects to cloud services, your mailbox, and your calendar, integrating them fully into the Metis ecosystem so that your entire working environment becomes part of a single, coherent intelligence layer.
+
 ### Why researchers specifically?
 
 Generic AI tools leave several researcher-specific problems unsolved:
