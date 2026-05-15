@@ -49,9 +49,6 @@ DiskSpanning=no
 ; Appearance
 WizardStyle=modern
 
-; Default install type — pre-selects in wizard (user can still change)
-DefaultType={#DefaultType}
-
 ; Windows 10 minimum
 MinVersion=10.0.17134
 
@@ -228,6 +225,16 @@ procedure InitializeWizard;
 begin
   // Welcome message override
   WizardForm.WelcomeLabel2.Caption := CustomMessage('WelcomeText');
+
+  // Pre-select components matching the compiled install type
+  // (user can still change in the wizard)
+#if DefaultType == "minimal"
+  WizardSelectComponents('');
+#elif DefaultType == "standard"
+  WizardSelectComponents('dashboard');
+#else
+  WizardSelectComponents('dashboard,courses,courses/statistics');
+#endif
 
   // API key input page — shown after component selection
   ApiKeyPage := CreateInputQueryPage(
