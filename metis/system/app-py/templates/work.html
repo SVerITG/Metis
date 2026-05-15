@@ -136,7 +136,7 @@
   </div>
 
   <!-- Task kanban board -->
-  <div class="sec-label" style="margin-bottom:16px;"><span>Tasks</span></div>
+  <div class="sec-label" style="margin-bottom:16px;"><span>Tasks by Status</span></div>
   <div hx-get="/api/partial/work/kanban"
        hx-trigger="load"
        hx-swap="outerHTML">
@@ -149,6 +149,21 @@
       </div>
       {% endfor %}
     </div>
+  </div>
+
+  <!-- All tasks — cross-project view sorted by priority -->
+  <div class="sec-label" style="margin-top:32px;margin-bottom:16px;">
+    <span>All Open Tasks · Priority View</span>
+    <button onclick="openCapture('t')"
+            style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:3px;
+                   padding:3px 10px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
+                   color:var(--m-muted);cursor:pointer;">+ Task</button>
+  </div>
+  <div hx-get="/api/partial/work/all-tasks"
+       hx-trigger="load"
+       hx-swap="outerHTML"
+       id="work-all-tasks">
+    <div class="panel panel-pad" style="opacity:.4;min-height:80px;"></div>
   </div>
 
 </div>

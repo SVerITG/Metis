@@ -255,3 +255,43 @@ Every session, check:
 - **Windows + WSL** — host OS
 - **OneDrive** — file sync
 - **GitHub** — version control (`{your-github-username}` account)
+
+---
+
+## VS Code integration
+
+Metis works alongside VS Code — Claude Code (the Metis terminal) runs in the integrated terminal panel.
+
+**Recommended setup:**
+1. Install the **Claude Code extension** from the VS Code marketplace (search "Claude Code" by Anthropic)
+2. Open your Research Cortex folder as the VS Code workspace: `File → Open Folder → …/Research Cortex/`
+3. Open the integrated terminal: `Ctrl+\`` — Claude Code starts here with Metis active
+4. The Workbench panel on the Work tab has a **VS Code** launcher button that opens any project folder directly
+
+**Session flow:** Work in VS Code for coding and writing, switch to the terminal for `/metis` requests. Agent outputs land in `outputs/reviews/` and are immediately visible on the dashboard.
+
+---
+
+## macOS install
+
+On macOS, Metis installs entirely through the Bash installer — no Python or Node knowledge required.
+
+```bash
+# From Terminal, in the Research Cortex folder:
+bash metis/system/mcp-server/setup-mcp.sh
+```
+
+This script:
+- Detects your macOS Python (uses Homebrew or system Python 3.10+)
+- Creates a venv at `~/.local/share/metis-mcp/`
+- Installs all dependencies and the MCP server package
+- Registers the server with Claude Code (`~/.claude/settings.json`) and Claude Desktop
+- Writes a launch script at `~/.local/share/metis-mcp/run.sh`
+
+**Start the dashboard:**
+```bash
+bash metis/system/app-py/run.sh
+# Open: http://127.0.0.1:8080
+```
+
+**Dashboard runs on port 8080** (not 8000). The run.sh reads your `METIS_RC_ROOT` automatically — no manual path configuration needed.
