@@ -1113,23 +1113,104 @@ window.addEventListener('load', () => {
 
 // ---------------------------------------------------------------------------
 // Teach tab course actions
+// Each button copies a ready-to-paste Claude Code prompt to the clipboard.
 // ---------------------------------------------------------------------------
 
-function _teachPrompt(action, courseId, courseTitle) {
-  const prompt = `/metis ${action} for my course "${courseTitle}"`;
+function _copyAndToast(prompt) {
   navigator.clipboard.writeText(prompt).then(() => {
-    showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Prompt copied — paste into Claude Code<br><code style="font-size:0.75rem;opacity:0.8;">${prompt}</code>`);
+    showToast(
+      '<i class="bi bi-clipboard-check toast-icon"></i>Prompt copied — paste into Claude Code'
+    );
   }).catch(() => {
-    showToast(`Use this prompt in Claude Code:<br><code>${prompt}</code>`);
+    showToast('Use this prompt in Claude Code:<br><code>' + prompt.slice(0, 80) + '…</code>');
   });
 }
 
-function openCourseChat(id, title)       { _teachPrompt('Open a teaching chat session', id, title); }
-function openCourseCowork(id, title)     { _teachPrompt('Co-work on course improvement', id, title); }
-function openCourseSlides(id, title)     { _teachPrompt('Generate a slide deck', id, title); }
-function openAssessmentBuilder(id, title){ _teachPrompt('Build an assessment', id, title); }
-function openQuestionBank(id, title)     { _teachPrompt('Build a student question bank', id, title); }
-function openGapAnalysis(id, title)      { _teachPrompt('Run a curriculum gap analysis', id, title); }
+function openCourseSlides(id, title) {
+  _copyAndToast(
+    `/presentation-maker\nCreate a lecture slide deck for my course: "${title}"\n\n` +
+    `Please ask me which module or lecture topic to create slides for, then produce a ` +
+    `complete deck with: title slide, learning objectives, content slides with speaker notes, ` +
+    `activity/discussion prompts, and a summary slide.`
+  );
+}
+
+function openTeachingBrief(id, title) {
+  _copyAndToast(
+    `/presentation-maker\nTeaching brief for a lecture in "${title}".\n\n` +
+    `Produce a one-page lecture guide for me as the instructor:\n` +
+    `- Learning objectives (3-5, Bloom taxonomy level)\n` +
+    `- Key concepts with 2-sentence explanation each\n` +
+    `- Suggested in-class activity or discussion question\n` +
+    `- Common student misconceptions to address\n` +
+    `- 3 exam-ready assessment questions with answer key`
+  );
+}
+
+function openAssessmentBuilder(id, title) {
+  _copyAndToast(
+    `/course-builder\nBuild an exam or assessment for my course "${title}".\n\n` +
+    `Ask me: difficulty level, question types (MCQ/short answer/essay), ` +
+    `Bloom taxonomy target, number of questions, and which topic to focus on. ` +
+    `Then generate the full assessment with a marking guide.`
+  );
+}
+
+function openQuestionBank(id, title) {
+  _copyAndToast(
+    `/course-builder\nBuild a student question bank for "${title}".\n\n` +
+    `Generate 20 practice questions organised by:\n` +
+    `- Difficulty: easy (recall) / medium (application) / hard (analysis)\n` +
+    `- Include model answers and common errors to watch for.\n` +
+    `Ask me which topic area to focus on first.`
+  );
+}
+
+function openGapAnalysis(id, title) {
+  _copyAndToast(
+    `/librarian\nRun a curriculum gap analysis for my course "${title}".\n\n` +
+    `Review the current learning objectives and identify:\n` +
+    `1. Missing foundational concepts students likely need\n` +
+    `2. Recent high-impact literature (last 3 years) not yet covered\n` +
+    `3. Competency gaps vs current field or professional standards\n` +
+    `Suggest specific additions with justification and estimated teaching time.`
+  );
+}
+
+function openCourseChat(id, title) {
+  _copyAndToast(
+    `/metis\nI want to work on my teaching for the course "${title}". ` +
+    `Help me with: improving slide content, discussing pedagogy, updating material ` +
+    `for a specific lecture, or thinking through how to explain a difficult concept.`
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Spaced repetition — mark card reviewed (SM-2)
+// ---------------------------------------------------------------------------
+
+function srReview(srId, quality, btn) {
+  btn.disabled = true;
+  fetch('/api/learning/review/' + srId, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quality: quality })
+  }).then(function (r) {
+    if (r.ok) return r.text();
+    throw new Error('review failed');
+  }).then(function (html) {
+    // Replace the whole due-today partial
+    const container = document.getElementById('sr-due-list');
+    if (container) {
+      const parent = container.closest('[id]') || container.parentElement;
+      parent.outerHTML = html;
+    }
+    showToast('<i class="bi bi-check-circle toast-icon"></i>Card reviewed — next review scheduled.');
+  }).catch(function () {
+    btn.disabled = false;
+    showToast('Could not save review. Try again.');
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Inline capture bar (on Today tab)

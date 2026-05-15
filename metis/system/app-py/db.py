@@ -12,10 +12,17 @@ def get_db_path() -> Path:
     """Find metis.sqlite.
 
     Search order:
-    1. METIS_RC_ROOT env var → {root}/system/app/data/metis.sqlite
-    2. Path relative to this file: ./data/metis.sqlite
+    1. METIS_DB env var — explicit override (used by run-demo.sh for demo mode)
+    2. METIS_RC_ROOT env var → {root}/system/app/data/metis.sqlite
+    3. Path relative to this file: ./data/metis.sqlite
     Raises FileNotFoundError if neither exists.
     """
+    explicit = os.environ.get("METIS_DB", "")
+    if explicit:
+        p = Path(explicit)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        return p
+
     rc_root = os.environ.get("METIS_RC_ROOT", "")
     if rc_root:
         candidate = Path(rc_root) / "system" / "app" / "data" / "metis.sqlite"

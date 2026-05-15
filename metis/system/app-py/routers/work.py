@@ -181,6 +181,40 @@ async def work_tasks(request: Request, status: str = "open"):
 
 
 # ---------------------------------------------------------------------------
+# All-tasks cross-project view
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/work/all-tasks", response_class=HTMLResponse)
+async def work_all_tasks(request: Request):
+    """All open tasks across every project, sorted by priority then due date."""
+    today = str(datetime.date.today())
+    tasks = db_query(
+        "SELECT t.task_id as id, t.title, t.status, t.due_date, "
+        "COALESCE(t.priority, 'medium') as priority, COALESCE(t.category,'') as category, "
+        "p.title as project "
+        "FROM tasks t LEFT JOIN projects p ON p.project_id = t.project_id "
+        "WHERE t.status NOT IN ('done','cancelled') "
+        "ORDER BY "
+        "  CASE COALESCE(t.priority,'medium') WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END, "
+        "  CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END, "
+        "  t.due_date LIMIT 40",
+        default=[],
+    )
+    overdue_ids = {
+        r["id"] for r in (db_query(
+            "SELECT task_id as id FROM tasks WHERE status NOT IN ('done','cancelled') "
+            "AND due_date IS NOT NULL AND due_date < ?", (today,), default=[]
+        ) or [])
+    }
+    return templates.TemplateResponse(
+        request,
+        "partials/work_all_tasks.html",
+        {"tasks": tasks, "today": today, "overdue_ids": overdue_ids},
+    )
+
+
+# ---------------------------------------------------------------------------
 # Projects list
 # ---------------------------------------------------------------------------
 
