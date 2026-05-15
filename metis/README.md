@@ -204,9 +204,41 @@ Every morning, the News Radar compiles a briefing calibrated to your field and c
 
 Every piece of content that passes through Metis is classified before any external action is taken. Patient data is blocked unconditionally. Unpublished manuscripts require your explicit confirmation.
 
-### Efficient token use
+### Efficient token use — significant cost reduction in practice
 
-Each task is routed to the smallest model capable of handling it (Haiku → Sonnet → Opus). A token pulse in the dashboard shows usage in real time. A handoff brief is generated when a session approaches its context limit.
+AI inference costs money. Metis reduces your API spend substantially:
+
+- **Model routing**: each task goes to the *smallest model capable of handling it*. News triage and classification → Haiku. Standard writing and routing → Sonnet. Deep analysis → Opus. Most daily requests never reach Opus.
+- **Context precision**: agents receive only the context relevant to their task — not your entire conversation history.
+- **Session handoff**: when a session approaches its context limit, Metis generates a handoff brief automatically and closes cleanly. No accidental context sprawl. No paying twice for the same information.
+- **Token pulse**: the dashboard shows token usage in real time.
+
+In practice: a typical research day — morning brief, a few literature searches, a methodology question, an idea capture — stays within a modest API budget.
+
+---
+
+## Course Packages
+
+Metis ships with structured courses in `knowledge/courses/` available immediately after installation:
+
+| Course | What it covers |
+|--------|----------------|
+| **Biostatistics** | Descriptive stats → regression → survival → multilevel models (12 lessons) |
+| **Epidemiology Foundations** | Study design, measures of association, bias, confounding, screening |
+| **R for Epidemiologists** | RStudio, tidyverse, ggplot2, survival analysis in R |
+| **NTD Elimination** | WHO roadmap, case detection, surveillance frameworks |
+| **Outbreak Investigation** | Field epi, attack rates, case-control in outbreak settings |
+| **Health Economics** | CEA, QALY, budget impact, uncertainty, equity |
+
+### Coming Soon
+
+Three course packages in development — drop into any Metis installation when released:
+
+| Package | What it covers |
+|---------|----------------|
+| **Sampling Strategies** | Probability and non-probability sampling, sample size, complex survey designs, weighted estimation, application in resource-limited settings |
+| **Spatial Statistics and Epidemiology** | Spatial autocorrelation, kernel density estimation, SaTScan cluster detection, disease mapping in R and GeoDa |
+| **Genomic Surveillance** | Pathogen sequencing in public health, phylogenetics for outbreak investigation, WGS pipelines, interpreting Nextstrain outputs |
 
 ---
 
