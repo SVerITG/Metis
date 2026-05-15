@@ -206,7 +206,7 @@ Filename: "powershell.exe"; \
   Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""& {{ $py = $env:METIS_PYTHON; if (-not $py) {{ $py = 'python' }}; & $py '{app}\system\install\build_knowledge_db.py' --library-dir '{app}\knowledge\library' --db '{app}\system\app\data\metis.sqlite' --quiet }}"""; \
   Flags: waituntilterminated runhidden; \
   StatusMsg: "Building knowledge database (5–15 min, uses your CPU — Metis will learn from all included documents)…"; \
-  Types: full standard
+  Components: dashboard
 
 ; Launch Claude Desktop
 Filename: "{pf}\Anthropic\Claude\Claude.exe"; \
