@@ -68,26 +68,26 @@ if (-not $ghCmd) {
 $tag  = "v$Version"
 $exes = Get-ChildItem "$DistDir\MetisSetup-*-$Version.exe" | Select-Object -ExpandProperty FullName
 
-$releaseNotes = @"
-Metis Research Cortex $Version - base release.
-
-Windows Installers:
-  MetisSetup-full-$Version.exe      - Core + dashboard + Statistics course (recommended)
-  MetisSetup-standard-$Version.exe  - Core + dashboard
-  MetisSetup-minimal-$Version.exe   - Core (MCP + agents) only
-
-Requires: Windows 10+, Python 3.10+, Anthropic API key, Claude Desktop.
-"@
+# Write release notes to a temp file (avoids here-string indentation issues)
+$notesFile = Join-Path $env:TEMP "metis-release-notes.txt"
+"Metis Research Cortex $Version - base release." | Out-File $notesFile -Encoding utf8
+""                                               | Out-File $notesFile -Append -Encoding utf8
+"Windows Installers:"                            | Out-File $notesFile -Append -Encoding utf8
+"  MetisSetup-full-$Version.exe     - Core + dashboard + Statistics course (recommended)" | Out-File $notesFile -Append -Encoding utf8
+"  MetisSetup-standard-$Version.exe - Core + dashboard"                                  | Out-File $notesFile -Append -Encoding utf8
+"  MetisSetup-minimal-$Version.exe  - Core (MCP + agents) only"                          | Out-File $notesFile -Append -Encoding utf8
+""                                               | Out-File $notesFile -Append -Encoding utf8
+"Requires: Windows 10+, Python 3.10+, Anthropic API key, Claude Desktop." | Out-File $notesFile -Append -Encoding utf8
 
 # Check if release already exists
 gh release view $tag --repo SVerITG/Metis 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "Creating GitHub Release $tag..." -ForegroundColor Yellow
-    $releaseNotes | gh release create $tag @exes `
+    gh release create $tag @exes `
         --repo SVerITG/Metis `
         --title "Metis $Version" `
-        --notes-file -
+        --notes-file $notesFile
 } else {
     Write-Host ""
     Write-Host "Release $tag exists — uploading assets..." -ForegroundColor Yellow
