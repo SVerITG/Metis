@@ -1619,16 +1619,38 @@ function mcpReconnect() {
         _mcpSetOnline();
         showToast('Metis tools connected.');
       } else {
-        return r.json().then(function (d) {
-          _mcpSetOffline();
-          if (btn) { btn.textContent = 'Reconnect'; btn.disabled = false; }
-          showToast(d.reason || 'Could not connect. Try restarting Metis from the desktop shortcut.');
-        });
+        // Reload failed — offer a full restart instead
+        _mcpSetOffline();
+        if (btn) { btn.textContent = 'Restart Metis'; btn.disabled = false; btn.onclick = mcpRestart; }
       }
     })
     .catch(function () {
       _mcpSetOffline();
       if (btn) { btn.textContent = 'Reconnect'; btn.disabled = false; }
+    });
+}
+
+function mcpRestart() {
+  var btn = document.getElementById('mcp-reconnect-btn');
+  if (btn) { btn.textContent = 'Restarting…'; btn.disabled = true; }
+  fetch('/api/restart', { method: 'POST' })
+    .then(function () {
+      // Poll /health until the server is back up, then reload the page
+      var attempts = 0;
+      var poll = setInterval(function () {
+        attempts++;
+        fetch('/health').then(function (r) {
+          if (r.ok) {
+            clearInterval(poll);
+            window.location.reload();
+          }
+        }).catch(function () { /* still restarting */ });
+        if (attempts > 30) { clearInterval(poll); if (btn) { btn.textContent = 'Reconnect'; btn.disabled = false; } }
+      }, 500);
+    })
+    .catch(function () {
+      if (btn) { btn.textContent = 'Reconnect'; btn.disabled = false; }
+      showToast('Restart failed — please close and reopen Metis from the desktop shortcut.');
     });
 }
 

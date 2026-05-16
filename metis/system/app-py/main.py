@@ -197,6 +197,25 @@ async def root(request: Request):
  )
 
 
+@app.get("/health")
+async def health():
+    return JSONResponse({"status": "ok"})
+
+
+@app.post("/api/restart")
+async def restart_dashboard():
+    """Restart the dashboard process. Returns 202 immediately; server comes back in ~3 s."""
+    import threading, os, sys
+
+    def _do_restart():
+        import time
+        time.sleep(0.6)  # Let the HTTP response be sent first
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+    threading.Thread(target=_do_restart, daemon=False, name="restart").start()
+    return JSONResponse({"status": "restarting"}, status_code=202)
+
+
 @app.get("/{tab}", response_class=HTMLResponse)
 async def tab_page(request: Request, tab: str):
     template_name = _TAB_TEMPLATES.get(tab)
