@@ -39,6 +39,12 @@
       <button onclick="toggleProjectNotes('{{ p.id }}')"
               title="Project notes"
               style="background:none;border:none;padding:2px 5px;cursor:pointer;font-family:var(--m-mono);font-size:13px;color:var(--m-muted);line-height:1;flex-shrink:0;">📝</button>
+      <!-- Untrack button -->
+      <button onclick="untrackProject({{ p.id | tojson }}, {{ p.title | tojson }})"
+              title="Hide this project (doesn't delete it)"
+              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-size:13px;color:var(--m-muted);line-height:1;flex-shrink:0;opacity:.6;"
+              onmouseenter="this.style.opacity='1';this.style.color='var(--m-danger,#e53e3e)'"
+              onmouseleave="this.style.opacity='.6';this.style.color='var(--m-muted)'">✕</button>
       <!-- Collapse toggle -->
       <button class="proj-collapse-btn"
               onclick="toggleProjectCollapse('{{ p.id }}')"
@@ -150,4 +156,9 @@
   </div>
   {% endfor %}
 </div>
+<!-- Hidden projects chip -->
+<div id="hidden-projects-zone"
+     hx-get="/api/partial/work/hidden-projects"
+     hx-trigger="load"
+     hx-swap="innerHTML"></div>
 {% endif %}

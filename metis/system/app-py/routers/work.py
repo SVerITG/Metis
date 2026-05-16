@@ -247,7 +247,8 @@ async def work_projects(request: Request):
         "SELECT project_id as id, title, description, domain, priority, next_step, status, "
         "external_path, launcher_type, github_url, launchers, dashboard_url, "
         "project_type, last_session_at "
-        "FROM projects WHERE status = 'active' ORDER BY COALESCE(display_order, 999) ASC LIMIT 20"
+        "FROM projects WHERE status = 'active' AND COALESCE(tracked, 1) = 1 "
+        "ORDER BY COALESCE(display_order, 999) ASC LIMIT 20"
     )
     for p in (projects or []):
         p["launchers_list"] = _parse_launchers(p)
@@ -274,7 +275,7 @@ async def project_create(request: Request):
     launchers_default = data.get("launchers", ["claude_code", "claude_desktop"])
     db_execute(
         "INSERT INTO projects (project_id, title, domain, status, priority, description, "
-        "external_path, launcher_type, launchers, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+        "external_path, launcher_type, launchers, github_url, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
         (project_id, title,
          data.get("domain", ""),
          "active",
@@ -283,9 +284,37 @@ async def project_create(request: Request):
          data.get("external_path", ""),
          data.get("launcher_type", "vscode"),
          json.dumps(launchers_default),
+         data.get("github_url", ""),
          now),
     )
     return JSONResponse({"status": "ok", "project_id": project_id, "title": title})
+
+
+@router.post("/api/project/untrack/{project_id}")
+async def project_untrack(project_id: str):
+    """Hide a project from the Work tab without deleting it."""
+    db_execute("UPDATE projects SET tracked = 0 WHERE project_id = ?", (project_id,))
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/api/project/track/{project_id}")
+async def project_track(project_id: str):
+    """Restore a previously untracked project."""
+    db_execute("UPDATE projects SET tracked = 1 WHERE project_id = ?", (project_id,))
+    return JSONResponse({"status": "ok"})
+
+
+@router.get("/api/partial/work/hidden-projects", response_class=HTMLResponse)
+async def hidden_projects_partial(request: Request):
+    """Small chip showing count of hidden projects with a reveal option."""
+    hidden = db_query(
+        "SELECT project_id as id, title FROM projects WHERE tracked = 0 ORDER BY title"
+    )
+    if not hidden:
+        return HTMLResponse("")
+    return templates.TemplateResponse(
+        request, "partials/work_hidden_projects.html", {"hidden": hidden}
+    )
 
 
 @router.post("/api/project/reorder")

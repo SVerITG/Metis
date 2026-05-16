@@ -514,7 +514,10 @@ async function saveProjectNotes(projectId) {
 
 function openAddProjectModal() {
   const overlay = document.getElementById('add-project-overlay');
-  if (overlay) { overlay.style.display = 'flex'; document.getElementById('np-title').focus(); }
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  npGoStep1();
+  setTimeout(() => document.getElementById('np-path')?.focus(), 80);
 }
 
 function closeAddProjectModal() {
@@ -522,23 +525,53 @@ function closeAddProjectModal() {
   if (overlay) overlay.style.display = 'none';
 }
 
-async function submitAddProject() {
+function npGoStep1() {
+  document.getElementById('np-step-1').style.display = '';
+  document.getElementById('np-step-2').style.display = 'none';
+  document.getElementById('np-step-title').textContent = 'Add Project — Where is it?';
+  document.getElementById('np-step-dot-1').style.background = 'var(--m-accent)';
+  document.getElementById('np-step-dot-2').style.background = 'var(--m-rule)';
+}
+
+function npGoStep2() {
   const title = (document.getElementById('np-title')?.value || '').trim();
   if (!title) { document.getElementById('np-title').focus(); return; }
+  document.getElementById('np-step-1').style.display = 'none';
+  document.getElementById('np-step-2').style.display = '';
+  document.getElementById('np-step-title').textContent = 'Add Project — Tell me more';
+  document.getElementById('np-step-dot-1').style.background = 'var(--m-rule)';
+  document.getElementById('np-step-dot-2').style.background = 'var(--m-accent)';
+  setTimeout(() => document.getElementById('np-desc')?.focus(), 80);
+}
+
+function npAutoTitle() {
+  const path = (document.getElementById('np-path')?.value || '').trim();
+  if (!path) return;
+  const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
+  const last = parts[parts.length - 1] || '';
+  const titleEl = document.getElementById('np-title');
+  if (titleEl && !titleEl.value) {
+    titleEl.value = last.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+}
+
+async function submitAddProject() {
+  const title = (document.getElementById('np-title')?.value || '').trim();
+  if (!title) { npGoStep1(); document.getElementById('np-title').focus(); return; }
+  const launcher = document.querySelector('input[name="np-launcher"]:checked')?.value || 'vscode';
   const typeMap = {
-    vscode: ['vscode', 'claude_code', 'claude_desktop', 'explorer'],
-    rstudio: ['rstudio', 'claude_code', 'claude_desktop', 'explorer'],
-    article: ['explorer', 'claude_desktop'],
-    none:    ['claude_code', 'claude_desktop'],
+    vscode:   ['vscode', 'claude_code', 'claude_desktop', 'explorer'],
+    rstudio:  ['rstudio', 'claude_code', 'claude_desktop', 'explorer'],
+    explorer: ['explorer', 'claude_code', 'claude_desktop'],
+    none:     ['claude_code', 'claude_desktop'],
   };
-  const npType = document.getElementById('np-type')?.value || 'vscode';
   const payload = {
     title,
-    description: document.getElementById('np-desc')?.value || '',
-    domain:      document.getElementById('np-domain')?.value || '',
+    description:   document.getElementById('np-desc')?.value || '',
     external_path: document.getElementById('np-path')?.value || '',
-    launcher_type: npType,
-    launchers:   typeMap[npType] || typeMap.vscode,
+    github_url:    document.getElementById('np-github')?.value || '',
+    launcher_type: launcher,
+    launchers:     typeMap[launcher] || typeMap.vscode,
   };
   try {
     const res = await fetch('/api/project/create', {
@@ -548,12 +581,24 @@ async function submitAddProject() {
     });
     const data = await res.json();
     if (data.status !== 'ok') throw new Error(data.message);
+
+    // Seed tasks from textarea
+    const taskLines = (document.getElementById('np-tasks')?.value || '')
+      .split('\n').map(l => l.trim()).filter(Boolean);
+    for (const line of taskLines) {
+      await fetch('/api/task/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: line, project_id: data.project_id }),
+      }).catch(() => {});
+    }
+
     closeAddProjectModal();
-    // Refresh project grid
-    htmx.ajax('GET', '/api/partial/work/projects', { target: '#project-grid', swap: 'outerHTML' });
+    htmx.ajax('GET', '/api/partial/work/projects', { target: '#projects-zone', swap: 'innerHTML' });
     showToast(`Project "${data.title}" created`);
-    // Clear form
-    ['np-title','np-desc','np-path'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    ['np-title','np-desc','np-path','np-tasks','np-github'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
   } catch(e) {
     showToast('Could not create project: ' + (e.message || 'unknown error'));
   }
@@ -1353,6 +1398,19 @@ function toggleProjectCollapse(projectId) {
   } else {
     localStorage.setItem(`proj-collapsed-${projectId}`, '1');
   }
+}
+
+async function untrackProject(projectId, title) {
+  if (!confirm(`Hide "${title}" from your dashboard?\n\nIt won't be deleted — you can show it again at the bottom of the Work tab.`)) return;
+  const card = document.querySelector(`#project-grid .project-card[data-project-id="${projectId}"]`);
+  if (card) { card.style.opacity = '0.3'; card.style.pointerEvents = 'none'; }
+  await fetch(`/api/project/untrack/${projectId}`, { method: 'POST' });
+  htmx.ajax('GET', '/api/partial/work/projects', { target: '#projects-zone', swap: 'innerHTML' });
+}
+
+async function retrackProject(projectId) {
+  await fetch(`/api/project/track/${projectId}`, { method: 'POST' });
+  htmx.ajax('GET', '/api/partial/work/projects', { target: '#projects-zone', swap: 'innerHTML' });
 }
 
 // Re-init after HTMX settles (outerHTML swaps replace the element)
