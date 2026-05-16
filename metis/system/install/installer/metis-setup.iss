@@ -155,15 +155,19 @@ Name: "{app}\system\config"
 ; Start Menu
 Name: "{group}\Metis — Open AI";        Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; \
   Tasks: startmenu; Comment: "Open Metis AI assistant"
-Name: "{group}\Metis — Dashboard";      Filename: "{app}\system\install\windows\run-tray.bat"; \
-  Tasks: startmenu; Components: dashboard; Comment: "Start Metis in the system tray"
+Name: "{group}\Metis — Dashboard";      Filename: "wscript.exe"; \
+  Parameters: """{app}\system\install\windows\launch-dashboard-silent.vbs"""; \
+  IconFilename: "{app}\system\install\windows\metis.ico"; IconIndex: 0; \
+  Tasks: startmenu; Components: dashboard; Comment: "Open Metis Research Dashboard"
 Name: "{group}\Uninstall Metis";        Filename: "{uninstallexe}"; Tasks: startmenu
 
 ; Desktop
 Name: "{autodesktop}\Metis — Open AI";      Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; \
   Tasks: desktopai
-Name: "{autodesktop}\Metis — Dashboard";    Filename: "{app}\system\install\windows\run-tray.bat"; \
-  Tasks: desktopdash; Components: dashboard; Comment: "Start Metis in the system tray"
+Name: "{autodesktop}\Metis";    Filename: "wscript.exe"; \
+  Parameters: """{app}\system\install\windows\launch-dashboard-silent.vbs"""; \
+  IconFilename: "{app}\system\install\windows\metis.ico"; IconIndex: 0; \
+  Tasks: desktopdash; Components: dashboard; Comment: "Open Metis Research Dashboard"
 
 [Run]
 ; Step 0: Python bootstrap (M11.4) — tries winget, python.org, then bundled embed
