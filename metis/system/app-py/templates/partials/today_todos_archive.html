@@ -1,47 +1,58 @@
 <div>
   <div class="sec-label" style="margin-bottom:8px;">
     To-do
-    <span class="sec-label-tail">THE DAY AT HAND</span>
+    <span class="sec-label-tail">STARRED TASKS</span>
   </div>
   <div class="panel">
     {% if tasks %}
       {% for task in tasks %}
-      <div class="todo-row {% if task.status == 'done' or task.status == 'completed' %}todo-row--done{% endif %}"
-           onclick="this.classList.toggle('todo-row--done')">
-        <span class="todo-check">
+      <div class="todo-row" data-task-id="{{ task.id }}" data-project-id="{{ task.project_id }}">
+        <!-- done toggle -->
+        <span class="todo-check" onclick="todayTaskDone('{{ task.id }}', this)"
+              style="cursor:pointer;"
+              title="Mark done">
           {% if task.status == 'done' or task.status == 'completed' %}
           <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="4 8 7 11 12 5"/>
           </svg>
           {% endif %}
         </span>
-        <span class="todo-title">{{ task.title or 'Untitled task' }}</span>
+        <!-- title + project badge -->
+        <span class="todo-title" style="flex:1;">
+          {{ task.title or 'Untitled task' }}
+          {% if task.project %}
+          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-left:6px;letter-spacing:.06em;">{{ task.project[:22] }}</span>
+          {% endif %}
+        </span>
+        <!-- status badge -->
         <span class="todo-meta">
-          {%- if task.status == 'in_progress' -%}
-            IN PROGRESS
-            {%- if task.project %} · {{ task.project[:20] }}{% endif %}
-          {%- elif task.status == 'blocked' -%}
-            BLOCKED
-          {%- elif task.project -%}
-            {{ task.project[:20] }}
-          {%- else -%}
-            —
+          {%- if task.status == 'in_progress' -%}IN PROGRESS
+          {%- elif task.status == 'blocked' -%}BLOCKED
+          {%- else -%}&mdash;
           {%- endif -%}
         </span>
+        <!-- unstar -->
+        <button onclick="todayTaskUnstar('{{ task.id }}', this)"
+                title="Remove from Today (unstar)"
+                style="background:none;border:none;padding:0 4px;cursor:pointer;
+                       font-size:11px;color:var(--m-ochre-deep,#b36a1d);opacity:.7;flex-shrink:0;line-height:1;"
+                onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.7'">&#9733;</button>
       </div>
       {% endfor %}
     {% else %}
-      <div class="empty-row">No open tasks. Add one below.</div>
+      <div class="empty-row">
+        No starred tasks yet. Star a task on the Work tab to pin it here.
+      </div>
     {% endif %}
 
-    <!-- Compose row -->
+    <!-- Quick-add row -->
     <div class="todo-compose">
       <span class="todo-check todo-check--ghost">+</span>
       <input type="text"
-             placeholder="Add to the day…"
+             placeholder="Add a task for today…"
              onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoRow(this);}"
              id="todo-compose-input">
-      <span class="todo-hint">↵</span>
+      <span class="todo-hint">&#8629;</span>
     </div>
   </div>
 </div>
@@ -54,16 +65,26 @@ function addTodoRow(input) {
   const compose = input.closest('.todo-compose');
   const row = document.createElement('div');
   row.className = 'todo-row';
-  row.onclick = function() { this.classList.toggle('todo-row--done'); };
   row.innerHTML = '<span class="todo-check"></span>'
-    + '<span class="todo-title">' + val.replace(/</g,'&lt;') + '</span>'
-    + '<span class="todo-meta">ADDED TODAY</span>';
+    + '<span class="todo-title" style="flex:1;">' + val.replace(/</g,'&lt;') + '</span>'
+    + '<span class="todo-meta">ADDED</span>';
   panel.insertBefore(row, compose);
   input.value = '';
-  fetch('/api/capture', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({prefix: 't', text: val})
-  }).catch(() => {});
+  const fd = new FormData(); fd.append('text', 't: ' + val);
+  fetch('/capture', {method:'POST', body: fd}).catch(()=>{});
+}
+
+async function todayTaskDone(taskId, checkEl) {
+  const row = checkEl.closest('.todo-row');
+  await fetch('/api/task/' + taskId + '/done', {method:'POST'});
+  if (row) { row.style.opacity='0.4'; row.style.textDecoration='line-through'; setTimeout(()=>row.remove(),600); }
+  showToast('Task done &#10003;');
+}
+
+async function todayTaskUnstar(taskId, btn) {
+  await fetch('/api/task/' + taskId + '/star', {method:'POST'});
+  const row = btn.closest('.todo-row');
+  if (row) { row.style.opacity='0.3'; setTimeout(()=>row.remove(),400); }
+  showToast('Task removed from Today');
 }
 </script>

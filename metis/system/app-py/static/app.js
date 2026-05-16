@@ -477,6 +477,20 @@ async function _refreshProjectTasks(projectId) {
   if (target) target.innerHTML = html;
 }
 
+async function miniTaskStar(taskId, projectId, btn) {
+  const res = await fetch(`/api/task/${taskId}/star`, { method: 'POST' });
+  const data = await res.json();
+  const starColor = data.starred ? 'var(--m-ochre-deep,#b36a1d)' : 'var(--m-muted)';
+  if (btn) { btn.style.color = starColor; btn.style.opacity = data.starred ? '1' : '0.4'; btn.title = data.starred ? 'Unstar' : 'Star (appears in Today)'; }
+  showToast(data.starred ? 'Task starred — will appear in Today' : 'Task unstarred');
+}
+
+async function miniTaskDelete(taskId, projectId) {
+  if (!confirm('Delete this task?')) return;
+  await fetch(`/api/task/${taskId}/delete`, { method: 'POST' });
+  await _refreshProjectTasks(projectId);
+}
+
 async function toggleProjectNotes(projectId) {
   const panel = document.getElementById(`proj-notes-${projectId}`);
   if (!panel) return;

@@ -463,7 +463,8 @@ CREATE TABLE IF NOT EXISTS personal_notes (
     title      TEXT DEFAULT '',
     tags       TEXT DEFAULT '',
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    project_id TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS projects (
@@ -491,7 +492,11 @@ CREATE TABLE IF NOT EXISTS projects (
     prompt_memory    TEXT DEFAULT '',
     last_session_at  TEXT,
     detection_source TEXT DEFAULT 'manual',
-    tracked          INTEGER DEFAULT 1
+    tracked          INTEGER DEFAULT 1,
+    started_at       TEXT,
+    completed_at     TEXT,
+    tags             TEXT DEFAULT '',
+    image_url        TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS content_packs (
@@ -598,8 +603,10 @@ CREATE TABLE IF NOT EXISTS tasks (
     owner      TEXT,
     notes      TEXT,
     created_at TEXT,
-    category   TEXT DEFAULT 'project',
-    updated_at TEXT DEFAULT NULL
+    category      TEXT DEFAULT 'project',
+    updated_at    TEXT DEFAULT NULL,
+    display_order INTEGER DEFAULT 999,
+    starred       INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS tracked_files (

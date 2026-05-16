@@ -333,9 +333,10 @@ async def project_reorder(request: Request):
 @router.get("/api/partial/work/project-tasks/{project_id}", response_class=HTMLResponse)
 async def project_tasks_partial(request: Request, project_id: str):
     all_open = db_query(
-        "SELECT task_id, title, status, category, updated_at FROM tasks "
+        "SELECT task_id, title, status, category, updated_at, starred FROM tasks "
         "WHERE project_id=? AND status NOT IN ('done','deleted') "
-        "ORDER BY CASE status WHEN 'blocked' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END, created_at DESC",
+        "ORDER BY starred DESC, COALESCE(display_order,999), "
+        "CASE status WHEN 'blocked' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END, created_at DESC",
         params=(project_id,),
     ) or []
     total_open = len(all_open)
@@ -362,7 +363,8 @@ async def project_detail_panel(request: Request, project_id: str):
     rows = db_query(
         "SELECT project_id as id, title, description, domain, priority, next_step, status, "
         "created_at, external_path, github_url, project_type, context_doc, "
-        "history_log, prompt_memory, last_session_at "
+        "history_log, prompt_memory, last_session_at, "
+        "tags, started_at, completed_at, image_url "
         "FROM projects WHERE project_id=? LIMIT 1",
         (project_id,),
     )
@@ -373,18 +375,25 @@ async def project_detail_panel(request: Request, project_id: str):
     open_tasks = db_query(
         "SELECT task_id, title, status, category, updated_at FROM tasks "
         "WHERE project_id=? AND status NOT IN ('done','deleted') "
-        "ORDER BY CASE status WHEN 'blocked' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END, created_at DESC",
+        "ORDER BY COALESCE(display_order,999), "
+        "CASE status WHEN 'blocked' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END, created_at DESC",
         (project_id,),
     ) or []
 
     done_tasks = db_query(
         "SELECT task_id, title, updated_at FROM tasks "
         "WHERE project_id=? AND status='done' "
-        "ORDER BY updated_at DESC LIMIT 8",
+        "ORDER BY updated_at DESC",
         (project_id,),
     ) or []
 
-    # Last activity: most recent task update or agent run
+    linked_notes = db_query(
+        "SELECT note_id, content, title, created_at FROM personal_notes "
+        "WHERE project_id=? ORDER BY created_at DESC LIMIT 20",
+        (project_id,),
+    ) or []
+
+    # Last activity
     last_activity = None
     try:
         act = db_query(
@@ -403,32 +412,30 @@ async def project_detail_panel(request: Request, project_id: str):
     except Exception:
         pass
 
-    # Group open tasks by category
-    from collections import defaultdict as _dd
-    by_cat: dict = _dd(list)
-    for t in open_tasks:
-        cat = (t.get("category") or "General").strip()
-        by_cat[cat].append(t)
-    grouped = [{"category": k, "tasks": v} for k, v in sorted(by_cat.items())]
-
-    # Parse history_log for the detail view
+    # Parse history_log
     history_entries = []
     try:
         import json as _json
-        history_entries = _json.loads(p.get("history_log") or "[]")[-8:]
+        history_entries = _json.loads(p.get("history_log") or "[]")[-20:]
     except Exception:
         pass
+
+    # Parse tags into list
+    tags_raw = p.get("tags") or ""
+    tags_list = [t.strip() for t in tags_raw.split(",") if t.strip()]
 
     return templates.TemplateResponse(
         request,
         "partials/work_project_detail.html",
         {
             "p": p,
-            "grouped": grouped,
+            "open_tasks": open_tasks,
             "open_count": len(open_tasks),
             "done_tasks": done_tasks,
+            "linked_notes": linked_notes,
             "last_activity": last_activity,
             "history_entries": list(reversed(history_entries)),
+            "tags_list": tags_list,
         },
     )
 
@@ -618,6 +625,148 @@ async def append_project_history(project_id: str, request: Request):
         (json.dumps(history), prompt_memory, now, project_id),
     )
     return JSONResponse({"status": "ok", "entries": len(history)})
+
+
+# ---------------------------------------------------------------------------
+# Project metadata — tags, dates, image, next-step clear
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/project/{project_id}/meta")
+async def save_project_meta(project_id: str, request: Request):
+    """Update tags, started_at, completed_at, image_url, description, next_step."""
+    data = await request.json()
+    fields = {}
+    for col in ("tags", "started_at", "completed_at", "image_url", "description", "next_step", "title"):
+        if col in data:
+            fields[col] = data[col]
+    if not fields:
+        return JSONResponse({"status": "noop"})
+    set_clause = ", ".join(f"{k}=?" for k in fields)
+    db_execute(
+        f"UPDATE projects SET {set_clause} WHERE project_id=?",
+        tuple(fields.values()) + (project_id,),
+    )
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/api/project/{project_id}/next-step/clear")
+async def clear_next_step(project_id: str):
+    """Mark the 'Next step' note as done — clear it and log to history."""
+    row = db_query(
+        "SELECT next_step, history_log FROM projects WHERE project_id=? LIMIT 1",
+        (project_id,),
+    )
+    if not row:
+        return JSONResponse({"status": "not found"}, status_code=404)
+    next_step = (row[0].get("next_step") or "").strip()
+    now = datetime.datetime.now().isoformat()
+    if next_step:
+        raw = row[0].get("history_log") or "[]"
+        try:
+            history = json.loads(raw)
+        except Exception:
+            history = []
+        history.append({"date": now[:10], "ts": now, "summary": f"[Done] {next_step}", "author": "user"})
+        db_execute(
+            "UPDATE projects SET next_step='', history_log=? WHERE project_id=?",
+            (json.dumps(history[-50:]), project_id),
+        )
+    return JSONResponse({"status": "ok"})
+
+
+# ---------------------------------------------------------------------------
+# Task reordering
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/project/{project_id}/tasks/reorder")
+async def reorder_project_tasks(project_id: str, request: Request):
+    """Save task display order. Body: {order: [task_id, ...]}"""
+    data = await request.json()
+    for i, tid in enumerate(data.get("order", [])):
+        db_execute(
+            "UPDATE tasks SET display_order=? WHERE task_id=?",
+            (i + 1, tid),
+        )
+    return JSONResponse({"status": "ok"})
+
+
+# ---------------------------------------------------------------------------
+# Task status update (status change, not just done/delete)
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/task/{task_id}/star")
+async def task_toggle_star(task_id: str):
+    current = db_scalar("SELECT starred FROM tasks WHERE task_id=?", (task_id,), default=0)
+    new_val = 0 if current else 1
+    db_execute("UPDATE tasks SET starred=? WHERE task_id=?", (new_val, task_id))
+    return JSONResponse({"status": "ok", "starred": new_val})
+
+
+@router.post("/api/task/{task_id}/status")
+async def task_set_status(task_id: str, request: Request):
+    data = await request.json()
+    status = data.get("status", "open")
+    now = datetime.datetime.now().isoformat()
+    db_execute(
+        "UPDATE tasks SET status=?, updated_at=? WHERE task_id=?",
+        (status, now, task_id),
+    )
+    return JSONResponse({"status": "ok"})
+
+
+@router.post("/api/task/{task_id}/rename")
+async def task_rename(task_id: str, request: Request):
+    data = await request.json()
+    title = (data.get("title") or "").strip()
+    if not title:
+        return JSONResponse({"status": "error"}, status_code=400)
+    db_execute("UPDATE tasks SET title=? WHERE task_id=?", (title, task_id))
+    return JSONResponse({"status": "ok"})
+
+
+# ---------------------------------------------------------------------------
+# Project-linked notes (personal_notes with project_id set)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/project/{project_id}/linked-notes", response_class=HTMLResponse)
+async def get_project_linked_notes(request: Request, project_id: str):
+    notes = db_query(
+        "SELECT note_id, content, title, created_at FROM personal_notes "
+        "WHERE project_id=? ORDER BY created_at DESC LIMIT 30",
+        (project_id,),
+    ) or []
+    return templates.TemplateResponse(
+        request,
+        "partials/work_project_linked_notes.html",
+        {"notes": notes, "project_id": project_id},
+    )
+
+
+@router.post("/api/project/{project_id}/linked-notes")
+async def add_project_linked_note(project_id: str, request: Request):
+    data = await request.json()
+    content = (data.get("content") or "").strip()
+    if not content:
+        return JSONResponse({"status": "error", "message": "content required"}, status_code=400)
+    import uuid as _uuid
+    note_id = _uuid.uuid4().hex
+    now = datetime.datetime.now().isoformat()
+    db_execute(
+        "INSERT INTO personal_notes (note_id, content, title, tags, created_at, updated_at, project_id) "
+        "VALUES (?,?,?,?,?,?,?)",
+        (note_id, content, data.get("title", ""), data.get("tags", ""), now, now, project_id),
+    )
+    return JSONResponse({"status": "ok", "note_id": note_id})
+
+
+@router.delete("/api/note/{note_id}")
+async def delete_note(note_id: str):
+    db_execute("DELETE FROM personal_notes WHERE note_id=?", (note_id,))
+    return JSONResponse({"status": "ok"})
 
 
 @router.get("/api/projects/detect")
