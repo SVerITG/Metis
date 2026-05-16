@@ -4,13 +4,14 @@ Registered under prefix /api in main.py.
 """
 
 import datetime
+import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
-from db import db_execute
+from db import db_execute, db_query
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -112,9 +113,25 @@ async def save_capture(request: Request, text: str = Form(...)):
                 (clean_text, now),
             )
         elif item_type == "note":
+            # Auto-detect project linkage: check if any active project title appears in the text
+            note_project_id = ""
+            try:
+                projects = db_query(
+                    "SELECT project_id, title FROM projects WHERE status='active' AND COALESCE(tracked,1)=1"
+                ) or []
+                text_lower = clean_text.lower()
+                for proj in projects:
+                    pname = (proj.get("title") or "").lower()
+                    if pname and len(pname) > 3 and pname in text_lower:
+                        note_project_id = proj["project_id"]
+                        break
+            except Exception:
+                pass
+            note_id = uuid.uuid4().hex
             db_execute(
-                "INSERT INTO personal_notes (content, created_at, updated_at) VALUES (?, ?, ?)",
-                (clean_text, now, now),
+                "INSERT INTO personal_notes (note_id, content, title, tags, created_at, updated_at, project_id) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (note_id, clean_text, "", "", now, now, note_project_id),
             )
         elif item_type == "journal":
             db_execute(

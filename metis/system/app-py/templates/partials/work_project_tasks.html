@@ -6,7 +6,7 @@
 {% else %}
 
 {% for t in tasks %}
-<div style="display:flex;align-items:baseline;gap:8px;padding:3px 0;border-bottom:1px solid var(--m-rule-soft);">
+<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--m-rule-soft);">
   <span style="font-family:var(--m-mono);font-size:9px;flex-shrink:0;
                color:{% if t.status == 'blocked' %}var(--m-alert){% elif t.status == 'in_progress' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
     {% if t.status == 'blocked' %}●{% elif t.status == 'in_progress' %}▸{% else %}·{% endif %}
@@ -14,10 +14,24 @@
   <span style="font-family:var(--m-display);font-size:12px;color:var(--m-ink);line-height:1.35;
                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;"
         title="{{ t.title }}">{{ t.title }}</span>
+  <!-- star -->
+  <button onclick="miniTaskStar('{{ t.task_id }}','{{ project_id }}',this)"
+          title="{% if t.starred %}Unstar{% else %}Star (appears in Today){% endif %}"
+          style="background:none;border:none;padding:0 2px;cursor:pointer;font-size:11px;flex-shrink:0;line-height:1;
+                 color:{% if t.starred %}var(--m-ochre-deep,#b36a1d){% else %}var(--m-muted){% endif %};opacity:{% if t.starred %}1{% else %}0.4{% endif %};">&#9733;</button>
+  <!-- done -->
   <button onclick="markProjectTaskDone('{{ t.task_id }}','{{ project_id }}')"
           title="Mark done"
-          style="background:none;border:none;padding:0;cursor:pointer;color:var(--m-muted);
-                 font-size:11px;flex-shrink:0;line-height:1;opacity:0.45;">✓</button>
+          style="background:none;border:none;padding:0 2px;cursor:pointer;color:var(--m-ok);
+                 font-size:11px;flex-shrink:0;line-height:1;opacity:0.5;"
+          onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.5'">&#10003;</button>
+  <!-- delete -->
+  <button onclick="miniTaskDelete('{{ t.task_id }}','{{ project_id }}')"
+          title="Delete task"
+          style="background:none;border:none;padding:0 2px;cursor:pointer;color:var(--m-muted);
+                 font-size:10px;flex-shrink:0;line-height:1;opacity:0.3;"
+          onmouseenter="this.style.opacity='1';this.style.color='#e53e3e'"
+          onmouseleave="this.style.opacity='.3';this.style.color='var(--m-muted)'">&#10005;</button>
 </div>
 {% endfor %}
 
