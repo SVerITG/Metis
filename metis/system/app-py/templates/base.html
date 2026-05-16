@@ -344,11 +344,20 @@
 
         <!-- MCP status pill -->
         <div id="mcp-status-pill"
-             title="MCP server status"
              style="display:flex;align-items:center;gap:5px;font-family:var(--m-mono);font-size:9px;
-                    letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);cursor:default;">
+                    letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);">
           <span id="mcp-dot" style="width:6px;height:6px;border-radius:50%;background:var(--m-rule);flex-shrink:0;"></span>
           <span id="mcp-label">MCP</span>
+          <button id="mcp-reconnect-btn"
+                  onclick="mcpReconnect()"
+                  style="display:none;background:none;border:1px solid var(--m-rule);border-radius:2px;
+                         padding:2px 8px;font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;
+                         color:var(--m-muted);cursor:pointer;text-transform:uppercase;
+                         transition:border-color .15s,color .15s;"
+                  onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
+                  onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'">
+            Reconnect
+          </button>
         </div>
 
         <!-- Update button -->
