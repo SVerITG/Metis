@@ -1592,26 +1592,50 @@ function removeApiKey(name) {
 }
 
 // ─── MCP status pill ───────────────────────────────────────────────────────
-(function () {
+function _mcpSetOnline() {
   var dot = document.getElementById('mcp-dot');
+  var btn = document.getElementById('mcp-reconnect-btn');
   var label = document.getElementById('mcp-label');
-  if (!dot) return;
-  fetch('/api/mcp/status')
+  if (dot) dot.style.background = '#34c759';
+  if (btn) btn.style.display = 'none';
+  if (label) { label.style.color = ''; label.title = 'Metis tools connected'; }
+}
+
+function _mcpSetOffline() {
+  var dot = document.getElementById('mcp-dot');
+  var btn = document.getElementById('mcp-reconnect-btn');
+  var label = document.getElementById('mcp-label');
+  if (dot) dot.style.background = '#ff9500';
+  if (btn) btn.style.display = '';
+  if (label) { label.style.color = '#ff9500'; label.title = 'Metis tools offline'; }
+}
+
+function mcpReconnect() {
+  var btn = document.getElementById('mcp-reconnect-btn');
+  if (btn) { btn.textContent = '…'; btn.disabled = true; }
+  fetch('/api/mcp/reload', { method: 'POST' })
     .then(function (r) {
       if (r.ok) {
-        dot.style.background = '#34c759';
-        if (label) label.title = 'MCP tools available';
+        _mcpSetOnline();
+        showToast('Metis tools connected.');
       } else {
-        dot.style.background = '#ff9500';
-        if (label) {
-          label.style.color = '#ff9500';
-          label.title = 'MCP tools unavailable — restart with: bash run.sh';
-        }
+        return r.json().then(function (d) {
+          _mcpSetOffline();
+          if (btn) { btn.textContent = 'Reconnect'; btn.disabled = false; }
+          showToast(d.reason || 'Could not connect. Try restarting Metis from the desktop shortcut.');
+        });
       }
     })
     .catch(function () {
-      dot.style.background = 'var(--m-rule)';
+      _mcpSetOffline();
+      if (btn) { btn.textContent = 'Reconnect'; btn.disabled = false; }
     });
+}
+
+(function () {
+  fetch('/api/mcp/status')
+    .then(function (r) { r.ok ? _mcpSetOnline() : _mcpSetOffline(); })
+    .catch(function () { /* server not yet ready — leave grey */ });
 })();
 
 document.addEventListener('keydown', function (e) {
