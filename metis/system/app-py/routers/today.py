@@ -1414,17 +1414,21 @@ async def today_todos_archive(request: Request):
     tasks = []
     try:
         rows = db_query(
-            "SELECT task_id, title, project_id, status, category, created_at "
-            "FROM tasks WHERE status NOT IN ('done','completed','cancelled') "
-            "ORDER BY CASE status WHEN 'in_progress' THEN 1 WHEN 'blocked' THEN 2 ELSE 3 END, "
-            "created_at DESC LIMIT 10"
+            "SELECT t.task_id, t.title, t.project_id, t.status, t.category, t.created_at, t.starred, "
+            "p.title as project_title "
+            "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+            "WHERE t.starred = 1 AND t.status NOT IN ('done','completed','cancelled','deleted') "
+            "ORDER BY CASE t.status WHEN 'in_progress' THEN 1 WHEN 'blocked' THEN 2 ELSE 3 END, "
+            "t.created_at DESC"
         ) or []
         for r in rows:
             tasks.append({
                 "id": r.get("task_id"),
                 "title": r.get("title") or "Untitled task",
-                "project": r.get("project_id") or r.get("category") or "",
+                "project": r.get("project_title") or r.get("project_id") or "",
+                "project_id": r.get("project_id") or "",
                 "status": r.get("status") or "open",
+                "starred": r.get("starred", 0),
             })
     except Exception:
         pass
