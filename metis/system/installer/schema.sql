@@ -490,7 +490,8 @@ CREATE TABLE IF NOT EXISTS projects (
     history_log      TEXT DEFAULT '[]',
     prompt_memory    TEXT DEFAULT '',
     last_session_at  TEXT,
-    detection_source TEXT DEFAULT 'manual'
+    detection_source TEXT DEFAULT 'manual',
+    tracked          INTEGER DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS content_packs (

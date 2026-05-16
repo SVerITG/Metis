@@ -24,76 +24,113 @@
                    color:var(--m-muted);cursor:pointer;">+ Project</button>
   </div>
 
-  <!-- Add Project modal -->
+  <!-- Add Project wizard modal (2 steps) -->
   <div id="add-project-overlay"
        onclick="if(event.target===this)closeAddProjectModal()"
        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;
               align-items:center;justify-content:center;">
-    <div style="background:var(--m-surface-1);border-radius:8px;padding:28px 30px;width:460px;max-width:90vw;
+    <div style="background:var(--m-surface-1);border-radius:8px;padding:28px 30px;width:500px;max-width:92vw;
                 box-shadow:0 8px 32px rgba(0,0,0,.25);">
-      <div style="font-family:var(--m-display);font-size:18px;font-weight:500;margin-bottom:20px;">New Project</div>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div>
-          <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">TITLE *</label>
-          <input id="np-title" type="text" placeholder="Project title…"
-                 style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:14px;
-                        border:1px solid var(--m-line);border-radius:3px;padding:8px 10px;
-                        background:var(--m-surface-2);color:var(--m-ink);outline:none;">
-        </div>
-        <div>
-          <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">DESCRIPTION</label>
-          <input id="np-desc" type="text" placeholder="One-line description…"
-                 style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:13px;
-                        border:1px solid var(--m-line);border-radius:3px;padding:7px 10px;
-                        background:var(--m-surface-2);color:var(--m-ink);outline:none;">
-        </div>
-        <div style="display:flex;gap:10px;">
-          <div style="flex:1;">
-            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">DOMAIN</label>
-            <select id="np-domain"
-                    style="width:100%;font-family:var(--m-mono);font-size:11px;border:1px solid var(--m-line);
-                           border-radius:3px;padding:7px 8px;background:var(--m-surface-2);color:var(--m-ink);">
-              <option value="">— select —</option>
-              <option value="ntd-research">NTD Research</option>
-              <option value="education">Education</option>
-              <option value="software">Software</option>
-              <option value="research">Research</option>
-              <option value="other">Other</option>
-            </select>
+
+      <!-- Step indicator -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;">
+        <div id="np-step-dot-1" style="width:6px;height:6px;border-radius:50%;background:var(--m-accent);flex-shrink:0;"></div>
+        <div id="np-step-dot-2" style="width:6px;height:6px;border-radius:50%;background:var(--m-rule);flex-shrink:0;"></div>
+        <div style="font-family:var(--m-display);font-size:18px;font-weight:500;flex:1;" id="np-step-title">Add Project — Where is it?</div>
+        <button onclick="closeAddProjectModal()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--m-muted);">✕</button>
+      </div>
+
+      <!-- ── STEP 1 ── -->
+      <div id="np-step-1">
+        <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);margin:0 0 16px;line-height:1.5;">
+          Paste the path to your project folder. Find it in File Explorer: navigate to the folder, then copy the path from the address bar at the top.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">FOLDER PATH</label>
+            <input id="np-path" type="text" placeholder="C:\Users\you\Documents\MyProject"
+                   oninput="npAutoTitle()"
+                   style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:11px;
+                          border:1px solid var(--m-line);border-radius:3px;padding:8px 10px;
+                          background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-top:4px;">Leave blank if this project has no folder (Claude only).</div>
           </div>
-          <div style="flex:1;">
-            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">TYPE</label>
-            <select id="np-type"
-                    style="width:100%;font-family:var(--m-mono);font-size:11px;border:1px solid var(--m-line);
-                           border-radius:3px;padding:7px 8px;background:var(--m-surface-2);color:var(--m-ink);">
-              <option value="vscode">VS Code project</option>
-              <option value="rstudio">RStudio / R project</option>
-              <option value="article">Scientific article</option>
-              <option value="none">No folder (Claude only)</option>
-            </select>
+          <div>
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">PROJECT NAME *</label>
+            <input id="np-title" type="text" placeholder="My project name…"
+                   style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:14px;
+                          border:1px solid var(--m-line);border-radius:3px;padding:8px 10px;
+                          background:var(--m-surface-2);color:var(--m-ink);outline:none;">
           </div>
         </div>
-        <div>
-          <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">FOLDER PATH (optional)</label>
-          <input id="np-path" type="text" placeholder="C:/Users/… or leave blank"
-                 style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:11px;
-                        border:1px solid var(--m-line);border-radius:3px;padding:7px 10px;
-                        background:var(--m-surface-2);color:var(--m-muted);outline:none;">
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+          <button onclick="closeAddProjectModal()"
+                  style="background:none;border:1px solid var(--m-line);border-radius:3px;
+                         padding:7px 14px;font-family:var(--m-mono);font-size:11px;cursor:pointer;color:var(--m-muted);">Cancel</button>
+          <button onclick="npGoStep2()"
+                  style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
+                         padding:7px 18px;font-family:var(--m-mono);font-size:11px;cursor:pointer;letter-spacing:0.06em;">Next →</button>
         </div>
       </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
-        <button onclick="closeAddProjectModal()"
-                style="background:none;border:1px solid var(--m-line);border-radius:3px;
-                       padding:7px 14px;font-family:var(--m-mono);font-size:11px;cursor:pointer;color:var(--m-muted);">Cancel</button>
-        <button onclick="submitAddProject()"
-                style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
-                       padding:7px 18px;font-family:var(--m-mono);font-size:11px;cursor:pointer;letter-spacing:0.06em;">Create</button>
+
+      <!-- ── STEP 2 ── -->
+      <div id="np-step-2" style="display:none;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">WHAT IS THIS PROJECT ABOUT?</label>
+            <input id="np-desc" type="text" placeholder="One sentence about the purpose…"
+                   style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:13px;
+                          border:1px solid var(--m-line);border-radius:3px;padding:7px 10px;
+                          background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+          </div>
+          <div>
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">MAIN TASKS (one per line, optional)</label>
+            <textarea id="np-tasks" rows="3" placeholder="Write a literature review&#10;Analyse the dataset&#10;Submit to journal"
+                      style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:13px;
+                             border:1px solid var(--m-line);border-radius:3px;padding:7px 10px;resize:vertical;
+                             background:var(--m-surface-2);color:var(--m-ink);outline:none;"></textarea>
+          </div>
+          <div>
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:6px;">HOW DO YOU OPEN THIS PROJECT?</label>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;" id="np-launcher-btns">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--m-mono);font-size:11px;">
+                <input type="radio" name="np-launcher" value="vscode" checked> VS Code
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--m-mono);font-size:11px;">
+                <input type="radio" name="np-launcher" value="rstudio"> RStudio
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--m-mono);font-size:11px;">
+                <input type="radio" name="np-launcher" value="explorer"> Just open the folder
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--m-mono);font-size:11px;">
+                <input type="radio" name="np-launcher" value="none"> No folder / Claude only
+              </label>
+            </div>
+          </div>
+          <div>
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">GITHUB URL (optional)</label>
+            <input id="np-github" type="text" placeholder="https://github.com/…"
+                   style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:11px;
+                          border:1px solid var(--m-line);border-radius:3px;padding:7px 10px;
+                          background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+          <button onclick="npGoStep1()"
+                  style="background:none;border:1px solid var(--m-line);border-radius:3px;
+                         padding:7px 14px;font-family:var(--m-mono);font-size:11px;cursor:pointer;color:var(--m-muted);">← Back</button>
+          <button onclick="submitAddProject()"
+                  style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
+                         padding:7px 18px;font-family:var(--m-mono);font-size:11px;cursor:pointer;letter-spacing:0.06em;">Create Project</button>
+        </div>
       </div>
+
     </div>
   </div>
-  <div hx-get="/api/partial/work/projects"
+  <div id="projects-zone"
+       hx-get="/api/partial/work/projects"
        hx-trigger="load"
-       hx-swap="outerHTML"
+       hx-swap="innerHTML"
        style="margin-bottom:32px;">
     <div class="grid grid-2">
       {% for _ in range(4) %}
