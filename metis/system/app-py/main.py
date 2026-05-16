@@ -318,3 +318,28 @@ async def mcp_status():
         return JSONResponse({"status": "ok"})
     except ImportError as exc:
         return JSONResponse({"status": "offline", "reason": str(exc)}, status_code=503)
+
+
+@app.post("/api/mcp/reload")
+async def mcp_reload():
+    """Try to connect to the MCP tools layer. Called by the Reconnect button."""
+    import sys, importlib
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    if rc_root:
+        mcp_src = str(Path(rc_root) / "system" / "mcp-server" / "src")
+        if mcp_src not in sys.path:
+            sys.path.insert(0, mcp_src)
+    try:
+        # Force re-import in case a previous attempt left a broken partial import
+        if "metis_mcp" in sys.modules:
+            importlib.reload(sys.modules["metis_mcp"])
+        else:
+            import metis_mcp  # noqa: F401
+        return JSONResponse({"status": "ok"})
+    except Exception as exc:
+        return JSONResponse(
+            {"status": "offline",
+             "reason": "Metis tools couldn't load. Make sure you opened Metis using the desktop shortcut, then try again.",
+             "detail": str(exc)},
+            status_code=503,
+        )

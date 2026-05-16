@@ -1,34 +1,34 @@
 @echo off
 :: Metis Dashboard — Windows launcher
-:: Double-click to open the Metis research dashboard in your browser.
+:: Double-click this file to start Metis and open it in your browser.
+:: No terminal knowledge required.
 
 setlocal
 
 set "SCRIPT_DIR=%~dp0"
 for %%i in ("%SCRIPT_DIR%..\..\..") do set "METIS_ROOT=%%~fi"
 
-:: Load env vars
-set "ENV_FILE=%METIS_ROOT%\system\.env"
-if exist "%ENV_FILE%" (
-    for /f "usebackq tokens=1,* delims==" %%a in ("%ENV_FILE%") do (
-        if not "%%a"=="" if not "%%b"=="" set "%%a=%%b"
-    )
-)
-
-set "METIS_RC_ROOT=%METIS_ROOT%"
-set "PYTHONPATH=%METIS_ROOT%\system\mcp-server\src"
-
-set "VENV_PYTHON=%METIS_ROOT%\system\mcp-server\.venv-win\Scripts\python.exe"
-if not exist "%VENV_PYTHON%" (
-    echo Metis dashboard: Python environment not found.
-    echo Please run the Metis installer to set up the dashboard.
-    pause
+:: Check WSL is available
+wsl --status >nul 2>&1
+if errorlevel 1 (
+    msg * "Metis requires WSL (Windows Subsystem for Linux). Please run the Metis installer first."
     exit /b 1
 )
 
-:: Open browser after a short delay
-start "" timeout /t 3 /nobreak >nul && start "" "http://127.0.0.1:8000"
+:: Convert Windows path to WSL path
+for /f "delims=" %%i in ('wsl wslpath -u "%METIS_ROOT%"') do set "WSL_ROOT=%%i"
 
-:: Launch dashboard
-cd /d "%METIS_ROOT%\system\app-py"
-"%VENV_PYTHON%" -m uvicorn app:app --host 127.0.0.1 --port 8000
+if "%WSL_ROOT%"=="" (
+    msg * "Could not locate the Metis folder in WSL. Please re-run the Metis installer."
+    exit /b 1
+)
+
+:: Kill any old instance silently
+wsl -e bash -c "pkill -f 'uvicorn main:app.*8080' 2>/dev/null; sleep 0.3" >nul 2>&1
+
+:: Start the dashboard in the background (WSL window hidden via vbs wrapper)
+start "" /b wsl -e bash "%WSL_ROOT%/system/app-py/run.sh"
+
+:: Wait for the server to be ready, then open the browser
+timeout /t 5 /nobreak >nul
+start "" "http://127.0.0.1:8080"
