@@ -1,0 +1,17 @@
+
+══════════════════════════════════════════════════
+ Metis PDF Knowledge DB — Layered Build
+ Library: /mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/Research Cortex/metis/knowledge/library
+ Database: /mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/Research Cortex/metis/system/app/data/metis.sqlite
+ Building: ph-background, epi-methods
+══════════════════════════════════════════════════
+
+  Loading embedding model (nomic-embed-text-v1.5-Q)…
+/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/Research Cortex/metis/system/install/build_knowledge_db.py:504: UserWarning: The model 'nomic-ai/nomic-embed-text-v1.5-Q' has been updated on HuggingFace. Please review the latest documentation on HF and release notes to ensure compatibility with your workflow. 
+  model = TextEmbedding(model_name="nomic-ai/nomic-embed-text-v1.5-Q")
+Fetching 5 files:   0%|          | 0/5 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Fetching 5 files:  20%|██        | 1/5 [00:00<00:02,  1.56it/s]Fetching 5 files:  40%|████      | 2/5 [01:11<02:06, 42.14s/it]Fetching 5 files: 100%|██████████| 5/5 [01:11<00:00, 14.37s/it]
+  ✓ Model ready
+
+  ── Public Health Background [ph-background] ──
+     71 PDFs in 15 folders

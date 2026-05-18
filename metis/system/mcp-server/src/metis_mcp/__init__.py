@@ -1,1 +1,0 @@
-"""Metis PKM MCP Server."""
