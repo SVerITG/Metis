@@ -4,10 +4,12 @@ routers/meetings.py — Meetings tab routes.
 
 import datetime
 import json
+import os
 import re
+import tempfile
 from pathlib import Path
 
-from fastapi import APIRouter, Form, Query, Request
+from fastapi import APIRouter, File, Form, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
@@ -687,3 +689,62 @@ async def toggle_action(action_id: int):
         f'<span style="color:{color};text-decoration:{decoration};">'
         f'{row[0].get("description","")}</span>'
     )
+
+
+# ---------------------------------------------------------------------------
+# Audio transcription — upload audio file → transcribe → store as meeting
+# ---------------------------------------------------------------------------
+
+_meeting_whisper = None
+
+
+def _get_meeting_whisper():
+    global _meeting_whisper
+    if _meeting_whisper is None:
+        from faster_whisper import WhisperModel
+        _meeting_whisper = WhisperModel("base", device="cpu", compute_type="int8")
+    return _meeting_whisper
+
+
+@router.post("/meetings/transcribe-audio")
+async def meetings_transcribe_audio(
+    audio: UploadFile = File(...),
+    title: str = Form(""),
+):
+    """Upload audio file → local transcription → store as meeting with timestamped transcript."""
+    suffix = Path(audio.filename or "audio.wav").suffix.lower() or ".wav"
+    raw = await audio.read()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(raw)
+        tmp_path = tmp.name
+    try:
+        model = _get_meeting_whisper()
+        segments, info = model.transcribe(tmp_path, beam_size=5)
+        lines = []
+        for s in segments:
+            mins, secs = divmod(int(s.start), 60)
+            lines.append(f"[{mins:02d}:{secs:02d}] {s.text.strip()}")
+        transcript = "\n".join(lines)
+        duration_minutes = int(getattr(info, "duration", 0)) // 60
+
+        now = datetime.datetime.now()
+        mtitle = title.strip() or f"Meeting {now.strftime('%Y-%m-%d %H:%M')}"
+        db_execute(
+            "INSERT INTO meetings (title, meeting_date, transcript, duration_minutes, status, created_at) "
+            "VALUES (?,?,?,?,?,?)",
+            (mtitle, now.date().isoformat(), transcript, duration_minutes, "processed",
+             now.isoformat(timespec="seconds")),
+        )
+        return JSONResponse({
+            "ok": True,
+            "title": mtitle,
+            "lines": len(lines),
+            "duration_minutes": duration_minutes,
+        })
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass

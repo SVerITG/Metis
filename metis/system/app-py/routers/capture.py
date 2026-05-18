@@ -4,11 +4,13 @@ Registered under prefix /api in main.py.
 """
 
 import datetime
+import os
+import tempfile
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Form, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, File, Form, Request, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_execute, db_query
@@ -167,3 +169,39 @@ async def save_capture(request: Request, text: str = Form(...)):
             f'<div style="color:var(--m-alert);font-family:var(--m-mono);font-size:10px;'
             f'padding:8px 0;">ERROR: {e}</div>'
         )
+
+
+# ---------------------------------------------------------------------------
+# Voice transcription — browser records WAV, we transcribe and return text
+# ---------------------------------------------------------------------------
+
+_whisper_model = None
+
+
+def _get_whisper():
+    global _whisper_model
+    if _whisper_model is None:
+        from faster_whisper import WhisperModel
+        _whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
+    return _whisper_model
+
+
+@router.post("/voice/transcribe")
+async def voice_transcribe(audio: UploadFile = File(...)):
+    """Receive browser-recorded audio (WAV), transcribe locally, delete temp file."""
+    suffix = Path(audio.filename or "audio.wav").suffix or ".wav"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(await audio.read())
+        tmp_path = tmp.name
+    try:
+        model = _get_whisper()
+        segments, _ = model.transcribe(tmp_path, beam_size=5, language="en")
+        text = " ".join(s.text.strip() for s in segments).strip()
+        return JSONResponse({"ok": True, "text": text})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
