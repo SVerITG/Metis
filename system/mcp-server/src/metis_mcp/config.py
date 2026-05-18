@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 def _infer_root() -> Path:
-    """Infer RC root from server location: metis/ (5 levels up from src/metis_mcp/config.py)."""
+    """Infer RC root from server location: repo root (5 levels up from src/metis_mcp/config.py)."""
     return Path(__file__).resolve().parent.parent.parent.parent.parent
 
 

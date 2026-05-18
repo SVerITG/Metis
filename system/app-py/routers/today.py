@@ -1790,6 +1790,17 @@ async def api_scan_content():
     results["papers_added"]  = papers_added
     results["zotero_added"]  = zotero_added
     results["summary"]       = " · ".join(results["steps"])
+
+    # Trigger brief synthesis in background after scan completes
+    import threading as _t
+    def _synthesise():
+        try:
+            from scheduler import job_brief_synthesis
+            job_brief_synthesis()
+        except Exception:
+            pass
+    _t.Thread(target=_synthesise, daemon=True, name="brief-after-scan").start()
+
     return results
 
 
