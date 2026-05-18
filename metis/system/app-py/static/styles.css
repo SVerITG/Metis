@@ -424,6 +424,15 @@ pre code { background: transparent; padding: 0; color: inherit; }
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
 .grid-main { grid-template-columns: 1.6fr 1fr; }
 
+/* Knowledge sidebar layout — named so responsive rules can target it */
+.k-layout { display: grid; grid-template-columns: 240px 1fr; gap: 32px; margin-bottom: 32px; }
+
+/* Thinking 3-col layout */
+.thinking-layout { display: grid; grid-template-columns: 220px 1fr 240px; gap: 28px; }
+
+/* Long-list overflow guard — apply to any panel that can grow unbounded */
+.list-scroll { overflow-y: auto; max-height: min(60vh, 520px); }
+
 /* Editorial body */
 .ed { font-family: var(--m-display); font-size: 16px; line-height: 1.6; color: var(--m-text); }
 .ed em { color: var(--m-accent-soft); }
@@ -622,6 +631,29 @@ textarea.form-control { resize: vertical; }
 .focus-thread, .activity-feed { background: var(--m-surface); border: 1px solid var(--m-rule); border-radius: 3px; padding: 1rem; }
 .today-news-rail { background: var(--m-surface); border: 1px solid var(--m-rule); border-radius: 3px; }
 .news-rail-header { display: flex; align-items: center; justify-content: space-between; padding: .75rem 1rem .5rem; border-bottom: 1px solid var(--m-rule-soft); }
+.news-rail-updated { font-family: var(--m-mono); font-size: .65rem; letter-spacing: .1em; text-transform: uppercase; color: var(--m-muted-soft); }
+
+/* Category chips (news rail) */
+.news-cat-chips { display: flex; flex-wrap: wrap; gap: .3rem; padding: .5rem 1rem .4rem; border-bottom: 1px solid var(--m-rule-soft); }
+.news-cat-chip {
+  display: inline-flex; align-items: center; gap: .3rem;
+  font-family: var(--m-mono); font-size: .65rem; letter-spacing: .1em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px;
+  border: 1px solid var(--m-rule); background: var(--m-surface-2); color: var(--m-muted);
+  cursor: pointer; text-decoration: none;
+  transition: border-color 120ms ease, color 120ms ease, background 120ms ease;
+}
+.news-cat-chip:hover { border-color: var(--m-accent-soft); color: var(--m-accent); background: var(--m-accent-wash); }
+.news-cat-chip.active { border-color: var(--m-accent); color: var(--m-accent); background: var(--m-accent-wash); }
+.news-cat-count {
+  background: var(--m-surface-3); color: var(--m-muted);
+  border-radius: 999px; padding: 0 5px; font-size: .6rem; font-weight: 700;
+}
+.news-cat-chip.active .news-cat-count { background: var(--m-accent-wash-2); color: var(--m-accent); }
+.news-cat-age {
+  font-size: .58rem; color: var(--m-muted-soft);
+  border-left: 1px solid var(--m-rule); padding-left: .35rem; margin-left: .05rem;
+}
 
 /* Value boxes (legacy) */
 .vbox-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: .9rem; }
@@ -818,17 +850,27 @@ textarea.form-control { resize: vertical; }
 /* ================================================================
    RESPONSIVE
    ================================================================ */
+@media (max-width: 1100px) {
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .k-layout { grid-template-columns: 200px 1fr; gap: 20px; }
+  .thinking-layout { grid-template-columns: 200px 1fr 220px; gap: 20px; }
+}
 @media (max-width: 900px) {
   .page { padding: 24px 24px 48px; }
   .topbar { padding: 0 16px; }
   .t-search { width: 140px; }
   .theme-label { display: none; }
+  .k-layout { grid-template-columns: 1fr; }
+  .thinking-layout { grid-template-columns: 1fr; }
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 700px) {
   .ledger { grid-template-columns: repeat(4,1fr); }
   .grid-main { grid-template-columns: 1fr; }
   .grid-2,.grid-3 { grid-template-columns: 1fr; }
   .vbox-strip { grid-template-columns: repeat(2,1fr); }
+  .k-layout { grid-template-columns: 1fr; }
+  .thinking-layout { grid-template-columns: 1fr; }
 }
 
 /* ================================================================
@@ -1264,9 +1306,23 @@ body.capture-open .t-capture {
 
 /* Reduce-motion accessibility */
 @media (prefers-reduced-motion: reduce) {
+  /* Page & HTMX transitions */
   .page, .htmx-settling, .tune-scan-card, .metis-toast { animation: none !important; transition: none !important; }
+  /* Interactive element transitions */
   .panel, .feed-row, .activity-row, .run-row, .project-card, .course-card { transition: none !important; }
+  /* Kicker shimmer */
   .kicker--accent::before { animation: none !important; }
+  /* Capture modal — spring bounce is most disorienting, stop it entirely */
+  #capture-overlay, #capture-modal-inner > * { animation: none !important; }
+  /* Metis section switch */
+  .metis-section[data-active="true"] { animation: none !important; }
+  /* Metis modals */
+  .metis-modal { animation: none !important; }
+  /* Infinite animations — always stop these */
+  .ledger-tier-alert .ledger-n { animation: none !important; }
+  .m-skel { animation: none !important; background: var(--m-surface-2) !important; }
+  /* Smooth scroll */
+  html { scroll-behavior: auto !important; }
 }
 
 /* ================================================================

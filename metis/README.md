@@ -89,7 +89,7 @@ Metis is not a single application. It is a layered system of components that wor
 
 **Multi-layered memory.** Metis tracks context across five layers simultaneously:
 - *Episodic* — every agent run, every session, every decision recorded with timestamp and outcome
-- *Semantic* — your literature, notes, ideas, and meetings indexed for vector search (sqlite-vec + BAAI/bge-small-en, 384-dim embeddings)
+- *Semantic* — your literature, notes, ideas, and meetings indexed for vector search (sqlite-vec + nomic-embed-text-v1.5-Q, 768-dim embeddings)
 - *Procedural* — the skill files that define how each agent thinks, edited and improved over time
 - *Working* — the context of the current session, always visible in the dashboard's token pulse
 - *Reflexive* — agent self-critiques after every run, themed weekly into self-improvement proposals you approve

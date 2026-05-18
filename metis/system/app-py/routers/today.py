@@ -614,7 +614,7 @@ async def today_news_rail(request: Request, category: str = ""):
             categories.append({
                 "domain": dom,
                 "count": cnt,
-                "age_label": _age_label(r["last_ts"]) if r.get("last_ts") else "",
+                "age_label": (_age_label(r["last_ts"]) + " ago") if r.get("last_ts") else "",
             })
     except Exception:
         pass
