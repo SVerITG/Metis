@@ -52,11 +52,7 @@ Write `system-prompt.md` the way you would brief a specialist colleague you've j
 
 ### Skills (slash commands)
 
-Skills are Claude Code slash commands that invoke specific workflows. The 11 currently missing:
-
-`/course-builder`, `/content-harvester`, `/design-auditor`, `/frontend-designer-builder`,
-`/hr-talent`, `/learning-architect`, `/news-aggregator`, `/rc-builder`,
-`/research-architect`, `/visualization-maker`, `/data-analyst`
+Skills are Claude Code slash commands that invoke specific workflows. v1.0 ships with 59 skills covering all core workflows. New skills for domain-specific or institutional workflows are welcome.
 
 Each skill lives in `.claude/skills/<slug>/skill.md`. Minimum viable skill:
 
@@ -145,15 +141,15 @@ README, CONTRIBUTING         ←→   README, CONTRIBUTING
 
 ```bash
 # Clone
-git clone https://github.com/SVerITG/Metis_pers.git
-cd Metis_pers
+git clone https://github.com/SVerITG/Metis_PH.git
+cd Metis_PH
 
 # Install MCP server (auto-registers with Claude Code + Claude Desktop)
-bash metis/system/mcp-server/setup-mcp.sh
+bash system/mcp-server/setup-mcp.sh
 
 # Start dashboard
-bash metis/system/app-py/run.sh
-# → http://127.0.0.1:8000
+bash system/app-py/run.sh
+# → http://127.0.0.1:8080
 ```
 
 ---
