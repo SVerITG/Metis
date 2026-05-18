@@ -304,7 +304,7 @@ async def course_build_request(request: Request):
     )
     title = course[0]["title"] if course else course_id
     slug = course[0]["slug"] if course else course_id
-    prompt = f"/course-builder\ncourse-slug: {slug}\nPlease walk me through the questionnaire at metis/system/config/course-builder-questionnaire.md and build this course: {title}"
+    prompt = f"/course-builder\ncourse-slug: {slug}\nPlease walk me through the questionnaire at system/config/course-builder-questionnaire.md and build this course: {title}"
     return {"status": "ok", "prompt": prompt, "title": title}
 
 
@@ -320,7 +320,7 @@ async def course_build_idea(request: Request):
 
     mlm_ref = "Statistics for Epidemiology course (id=6, slug=statistics-full)"
     mlm_path = ""  # set via user-config.yaml: course_reference_path
-    questionnaire = "metis/system/config/course-builder-questionnaire.md"
+    questionnaire = "system/config/course-builder-questionnaire.md"
 
     if adaptive:
         topic = topic_hint or title

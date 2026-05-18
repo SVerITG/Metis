@@ -6,10 +6,10 @@ dashboard is running. They are the same operations as the manual scan
 buttons — APScheduler just calls them without user interaction.
 
 Default schedule (all overridable via /api/scheduler/settings):
-  brief_synthesis   06:45 daily  — pre-generate AI morning brief
   morning_scan      07:00 daily  — news feeds + PubMed + OpenAlex
   library_index     07:30 daily  — library file inventory
   inbox_process     08:00 daily  — process pending inbox items
+  brief_synthesis   08:30 daily  — pre-generate AI morning brief (runs AFTER scans)
   evening_reflexion 20:00 daily  — aggregate reflexions for self-improvement
   weekly_summary    Sun 09:00    — generate weekly summary
   nightly_backup    23:00 daily  — copy metis.sqlite to backups/
@@ -439,11 +439,12 @@ JOB_LABELS: dict[str, str] = {
 }
 
 # Default schedule (used when no user-config entry exists)
+# Order intentional: scans first, brief synthesis last (it reads what the scans produced)
 JOB_DEFAULTS: dict[str, dict] = {
-    "brief_synthesis":   {"enabled": True, "time": "07:15"},
     "morning_scan":      {"enabled": True, "time": "07:00"},
     "library_index":     {"enabled": True, "time": "07:30"},
     "inbox_process":     {"enabled": True, "time": "08:00"},
+    "brief_synthesis":   {"enabled": True, "time": "08:30"},
     "evening_reflexion": {"enabled": True, "time": "20:00"},
     "weekly_summary":    {"enabled": True, "time": "09:00", "day": "sun"},
     "nightly_backup":    {"enabled": True, "time": "23:00"},
@@ -509,24 +510,41 @@ def setup_jobs() -> None:
 
     log.info("[scheduler] jobs registered: %s", ", ".join(registered))
 
-    # Catch-up: if morning_scan or brief_synthesis missed today (server started
-    # after their cron time), fire them once immediately in the background.
+    # Catch-up: if any morning jobs were missed (server started after their cron
+    # time), fire them sequentially in one background thread — scan first, brief last.
     import threading as _threading
     import datetime as _dt
     now_local = _dt.datetime.now()
-    settings = _load_job_settings()
-    for catch_job_id, catch_func in [("morning_scan", job_morning_scan),
-                                      ("brief_synthesis", job_brief_synthesis)]:
-        cfg = {**JOB_DEFAULTS.get(catch_job_id, {}), **settings.get(catch_job_id, {})}
+    settings_cu = _load_job_settings()
+
+    # Ordered: scans before brief synthesis so brief has fresh data
+    catchup_sequence = [
+        ("morning_scan",    job_morning_scan),
+        ("library_index",   job_library_index),
+        ("inbox_process",   job_inbox_process),
+        ("brief_synthesis", job_brief_synthesis),
+    ]
+    missed = []
+    for catch_job_id, catch_func in catchup_sequence:
+        cfg = {**JOB_DEFAULTS.get(catch_job_id, {}), **settings_cu.get(catch_job_id, {})}
         if not cfg.get("enabled", True):
             continue
         sched_h, sched_m = _parse_time(cfg.get("time", "07:00"))
         sched_today = now_local.replace(hour=sched_h, minute=sched_m,
                                         second=0, microsecond=0)
         if now_local > sched_today:
-            log.info("[scheduler] catch-up: firing %s (missed today's window)", catch_job_id)
-            _threading.Thread(target=catch_func, daemon=True,
-                              name=f"catchup-{catch_job_id}").start()
+            missed.append((catch_job_id, catch_func))
+
+    if missed:
+        def _run_catchup(jobs):
+            for jid, jfunc in jobs:
+                log.info("[scheduler] catch-up: running %s", jid)
+                try:
+                    jfunc()
+                except Exception as exc:
+                    log.warning("[scheduler] catch-up %s failed: %s", jid, exc)
+        _threading.Thread(target=_run_catchup, args=(missed,),
+                          daemon=True, name="catchup-sequence").start()
 
 
 def apply_settings_and_reschedule(new_settings: dict) -> None:
