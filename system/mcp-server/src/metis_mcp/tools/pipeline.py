@@ -495,6 +495,7 @@ async def run_metis(
     """
     _ensure_pipeline_tables()
     lines: list[str] = []
+    _auto_handoff_note: str = ""
 
     # ── Turn cap guard ─────────────────────────────────────────────────────
     # Count existing turns in this session to enforce max_turns
@@ -515,6 +516,19 @@ async def run_metis(
                     "**Partial context preserved** — call `session_bootstrap()` "
                     "to resume with recent events."
                 ))]
+            # ── 80% threshold: auto-save handoff brief ─────────────────────
+            if turn_count >= int(max_turns * 0.8):
+                try:
+                    from metis_mcp.tools.handoff import generate_handoff_brief as _gen_handoff
+                    _gen_handoff(session_id=session_id, write_to_journal=True)
+                    _auto_handoff_note = (
+                        f"\n\n> **Auto-handoff saved** — session is at "
+                        f"{turn_count}/{max_turns} turns (80%+). A handoff brief has been "
+                        f"written to `journal/`. Run `/metis_handoff` or check the Metis tab "
+                        f"to review it before this session ends."
+                    )
+                except Exception:
+                    pass
         except Exception:
             pass  # Don't block if we can't check
 
@@ -617,4 +631,7 @@ async def run_metis(
     if constitution:
         lines += ["", constitution, ""]
 
-    return [TextContent(type="text", text="\n".join(lines))]
+    output = "\n".join(lines)
+    if _auto_handoff_note:
+        output += _auto_handoff_note
+    return [TextContent(type="text", text=output)]

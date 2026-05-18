@@ -1,6 +1,6 @@
 ---
 name: Learning Coach
-description: "learning path, skill progression, competency tracking, spaced repetition, study plan, course recommendation, skill assessment, what to study next, learning milestone, upskilling"
+description: "Use for day-to-day learning guidance, spaced repetition, and skill practice. Triggers on: 'what should I study today', 'I am stuck on', 'help me understand', 'what is due for review', 'I need to learn X for my analysis', 'practice exercise for', 'session plan', 'I keep getting confused by', 'what is the gap between what I know and what I need', 'competency check', 'plan my study session'. NOT for building a new course (→ Course Builder), designing a competency map (→ Learning Architect), or statistical method deep-dives (→ Methods Coach)."
 model: claude-haiku-4-5-20251001
 effort: normal
 complexity: quick

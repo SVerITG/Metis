@@ -1,16 +1,132 @@
 {
+  "modules": [
+    {
+      "id": "module-01",
+      "title": "Core concepts",
+      "lessons": [
+        "lesson-01",
+        "lesson-02",
+        "lesson-03"
+      ]
+    },
+    {
+      "id": "module-02",
+      "title": "Statistical inference",
+      "lessons": [
+        "lesson-04",
+        "lesson-05",
+        "lesson-06"
+      ]
+    },
+    {
+      "id": "module-03",
+      "title": "Regression models",
+      "lessons": [
+        "lesson-07",
+        "lesson-08",
+        "lesson-09"
+      ]
+    },
+    {
+      "id": "module-04",
+      "title": "Survival and count models",
+      "lessons": [
+        "lesson-10",
+        "lesson-11"
+      ]
+    },
+    {
+      "id": "module-05",
+      "title": "Multilevel models",
+      "lessons": [
+        "lesson-12"
+      ]
+    }
+  ],
   "lessons": [
-    {"id": "lesson-01", "title": "Descriptive Statistics", "description": "Summarizing distributions and spotting structure", "section": "Core concepts", "order": 1},
-    {"id": "lesson-02", "title": "Probability Basics", "description": "Events, conditional probability, and Bayes intuition", "section": "Core concepts", "order": 2},
-    {"id": "lesson-03", "title": "Probability Distributions", "description": "Binomial, normal, Poisson, and sampling variation", "section": "Core concepts", "order": 3},
-    {"id": "lesson-04", "title": "Confidence Intervals", "description": "Precision, uncertainty, and interval estimation", "section": "Inference", "order": 4},
-    {"id": "lesson-05", "title": "Hypothesis Testing", "description": "Null models, p-values, and decision discipline", "section": "Inference", "order": 5},
-    {"id": "lesson-06", "title": "Chi-Square and t-Tests", "description": "Common comparisons for categorical and continuous outcomes", "section": "Inference", "order": 6},
-    {"id": "lesson-07", "title": "Correlation and Simple Regression", "description": "Linear relationships and prediction basics", "section": "Regression", "order": 7},
-    {"id": "lesson-08", "title": "Multiple Regression", "description": "Adjustment, interpretation, and model diagnostics", "section": "Regression", "order": 8},
-    {"id": "lesson-09", "title": "Logistic Regression", "description": "Binary outcomes and odds-based modeling", "section": "Regression", "order": 9},
-    {"id": "lesson-10", "title": "Survival Analysis", "description": "Time-to-event data, censoring, and hazards", "section": "Specialized models", "order": 10},
-    {"id": "lesson-11", "title": "Poisson Regression", "description": "Modeling counts, rates, and incidence", "section": "Specialized models", "order": 11},
-    {"id": "lesson-12", "title": "Introduction to Multilevel Models", "description": "Why clustering changes inference", "section": "Specialized models", "order": 12}
+    {
+      "id": "lesson-01",
+      "title": "Descriptive Statistics",
+      "description": "Summarizing distributions and spotting structure",
+      "module": "Core concepts",
+      "order": 1
+    },
+    {
+      "id": "lesson-02",
+      "title": "Probability Basics",
+      "description": "Events, conditional probability, and Bayes intuition",
+      "module": "Core concepts",
+      "order": 2
+    },
+    {
+      "id": "lesson-03",
+      "title": "Probability Distributions",
+      "description": "Binomial, normal, Poisson, and sampling variation",
+      "module": "Core concepts",
+      "order": 3
+    },
+    {
+      "id": "lesson-04",
+      "title": "Confidence Intervals",
+      "description": "Precision, uncertainty, and interval estimation",
+      "module": "Statistical inference",
+      "order": 4
+    },
+    {
+      "id": "lesson-05",
+      "title": "Hypothesis Testing",
+      "description": "Null models, p-values, and decision discipline",
+      "module": "Statistical inference",
+      "order": 5
+    },
+    {
+      "id": "lesson-06",
+      "title": "Chi-Square and t-Tests",
+      "description": "Common comparisons for categorical and continuous outcomes",
+      "module": "Statistical inference",
+      "order": 6
+    },
+    {
+      "id": "lesson-07",
+      "title": "Correlation and Simple Regression",
+      "description": "Linear relationships and prediction basics",
+      "module": "Regression models",
+      "order": 7
+    },
+    {
+      "id": "lesson-08",
+      "title": "Multiple Regression",
+      "description": "Adjustment, interpretation, and model diagnostics",
+      "module": "Regression models",
+      "order": 8
+    },
+    {
+      "id": "lesson-09",
+      "title": "Logistic Regression",
+      "description": "Binary outcomes and odds-based modeling",
+      "module": "Regression models",
+      "order": 9
+    },
+    {
+      "id": "lesson-10",
+      "title": "Survival Analysis",
+      "description": "Time-to-event data, censoring, and hazards",
+      "module": "Survival and count models",
+      "order": 10
+    },
+    {
+      "id": "lesson-11",
+      "title": "Poisson Regression",
+      "description": "Modeling counts, rates, and incidence",
+      "module": "Survival and count models",
+      "order": 11
+    },
+    {
+      "id": "lesson-12",
+      "title": "Introduction to Multilevel Models",
+      "description": "Why clustering changes inference",
+      "module": "Multilevel models",
+      "order": 12
+    }
   ]
 }

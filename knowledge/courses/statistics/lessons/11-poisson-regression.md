@@ -46,7 +46,7 @@ For example, if district A has 100,000 people and district B has 20,000 people, 
 In practice, offsets are often written as the logarithm of person-time or population.
 
 ### Section 4: Worked example - district incidence rates
-Imagine a programme models confirmed HAT case counts across districts. Predictors include:
+Imagine a programme models confirmed malaria case counts across districts. Predictors include:
 
 - screening intensity
 - distance to referral center
@@ -141,8 +141,3 @@ The main habit to build is simple: ask whether you are modeling counts, rates, o
 - [OpenIntro Statistics](https://www.openintro.org/book/os/)
 - [CRAN MASS package](https://cran.r-project.org/package=MASS)
 - [CDC Principles of Epidemiology](https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/index.html)
-
-## Links to Metis library
-- `knowledge/library/methods/biostatistics-essentials.md`
-- `knowledge/library/methods/surveillance-systems.md`
-- `knowledge/library/methods/study-designs.md`

@@ -55,28 +55,30 @@
 
   <!-- Action buttons -->
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+    {% if c.slug %}
+    <button class="btn btn--primary btn--caps"
+            onclick="openCourseReader('{{ c.slug }}')"
+            title="Open course reader">Open</button>
+    {% endif %}
     {% if c.course_url %}
-    <a href="{{ c.course_url }}" target="_blank" class="btn btn--primary btn--caps" style="text-decoration:none;">
-      Open course
+    <a href="{{ c.course_url }}" target="_blank" class="btn btn--ghost btn--caps" style="text-decoration:none;">
+      External
     </a>
     {% endif %}
     {% if c.project_id %}
-    <button class="btn {% if not c.course_url %}btn--primary{% else %}btn--ghost{% endif %} btn--caps"
+    <button class="btn btn--ghost btn--caps"
             onclick="launchProjectTarget('{{ c.project_id }}','claude_code')"
             title="Open in Claude Code">Claude Code</button>
     <button class="btn btn--ghost btn--caps"
             onclick="launchProjectTarget('{{ c.project_id }}','claude_desktop')"
             title="Open Claude Desktop">Chat</button>
-    <button class="btn btn--ghost btn--caps"
-            onclick="launchProjectTarget('{{ c.project_id }}','explorer')"
-            title="Open course folder">Folder</button>
     {% elif c.slug %}
-    <button class="btn {% if not c.course_url %}btn--primary{% else %}btn--ghost{% endif %} btn--caps"
+    <button class="btn btn--ghost btn--caps"
             onclick="buildCourse('{{ c.slug }}')">Build</button>
     {% endif %}
     <button class="btn btn--ghost btn--caps"
             onclick="toggleLessonEdit({{ c.id }})"
-            title="Edit lesson progress">Update progress</button>
+            title="Edit lesson progress">Progress</button>
   </div>
 
   <!-- Inline lesson editor (hidden by default) -->

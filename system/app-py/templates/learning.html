@@ -70,6 +70,25 @@
     {% endfor %}
   </div>
 
+  <!-- Course reader (hidden until a course is opened) -->
+  <div id="course-reader-panel"
+       style="display:none;margin-top:32px;grid-template-columns:260px 1fr;
+              border:1px solid var(--m-line);border-radius:6px;overflow:hidden;
+              min-height:600px;background:var(--m-surface-1);">
+    <!-- Left: module/lesson list -->
+    <div id="course-overview-panel"
+         style="border-right:1px solid var(--m-line);overflow-y:auto;max-height:700px;">
+      <div style="padding:40px 20px;color:var(--m-muted);font-size:13px;">Loading…</div>
+    </div>
+    <!-- Right: lesson content -->
+    <div id="lesson-reader-panel"
+         style="overflow-y:auto;max-height:700px;">
+      <div style="padding:40px 28px;color:var(--m-muted);font-size:14px;">
+        Select a lesson from the left to begin.
+      </div>
+    </div>
+  </div>
+
   <!-- Course ideas -->
   <div class="sec-label" style="margin-top:32px;margin-bottom:16px;">
     <span>Course Ideas</span>

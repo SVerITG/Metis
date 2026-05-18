@@ -35,6 +35,19 @@
   <!-- Section: Continuous scan -->
   <div class="focus-section">
     <div class="caps-label">Continuous scan</div>
+    {% if news_stale %}
+    <div class="focus-stale-warning" style="display:flex;align-items:center;gap:6px;padding:7px 10px;margin-bottom:8px;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:6px;font-size:11px;color:var(--m-warn,#f59e0b);">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>
+        {% if news_stale_hours >= 999 %}
+          No news scan has run yet — run <code>/news-radar</code> to start.
+        {% else %}
+          Last news scan was {{ news_stale_hours }}h ago — no new content in the last 24h.
+          <a href="javascript:void(0)" onclick="document.querySelector('[data-tab=today]')?.click()" style="color:inherit;text-decoration:underline;">Trigger a scan</a>
+        {% endif %}
+      </span>
+    </div>
+    {% endif %}
     <div class="focus-scan-text">{{ scan.text }}</div>
     <button class="btn-tune-scan" onclick="tuneScan()">
       <i class="bi bi-sliders"></i> Tune scan

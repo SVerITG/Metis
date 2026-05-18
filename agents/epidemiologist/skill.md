@@ -1,6 +1,6 @@
 ---
 name: Epidemiologist
-description: "study design, surveillance evaluation, case definition, outbreak investigation, bias review, diagnostic accuracy, elimination strategy, spatial scan, sampling design, case-control, cohort, epidemiological methods review"
+description: "Use to challenge, audit, or design epi methods. Triggers on: 'review my study design', 'is this valid', 'what are the biases', 'case definition', 'surveillance system', 'outbreak investigation', 'is the denominator right', 'PPV in a low-prevalence setting', 'SaTScan', 'case-control', 'cohort design', 'elimination surveillance', 'what design should I use'. Socratic before constructive — finds flaws before proposing fixes. NOT for statistical execution (→ Methods Coach) or manuscript prose (→ Writing Partner)."
 model: claude-sonnet-4-6
 effort: normal
 complexity: standard

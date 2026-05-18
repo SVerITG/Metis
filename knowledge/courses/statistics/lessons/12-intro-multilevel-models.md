@@ -45,12 +45,12 @@ A random-intercept model lets the baseline expected hemoglobin vary by village.
 
 That is the key intuition: the model acknowledges that clusters differ, rather than forcing all between-cluster variation into the residual error.
 
-### Section 5: Worked example - HAT risk factors by village
-Suppose a study examines HAT risk factors among individuals living in 40 villages. Predictors include age, sex, occupation, and distance to river.
+### Section 5: Worked example — disease risk factors by village
+Suppose a study examines disease risk factors among individuals living in 40 villages. Predictors include age, sex, occupation, and distance to river.
 
 If a standard logistic regression ignores village clustering, it may treat all individuals as fully independent. But villagers often share exposure environments, vector ecology, and care access.
 
-A multilevel model with a village random intercept allows baseline HAT risk to differ across villages. This usually gives a more realistic estimate of uncertainty and a better account of contextual variation.
+A multilevel model with a village random intercept allows baseline disease risk to differ across villages. This usually gives a more realistic estimate of uncertainty and a better account of contextual variation.
 
 The model may reveal that some of what looked like individual-level effect is actually structured by village context.
 
@@ -110,8 +110,3 @@ The practical lesson is that multilevel modeling is not just a more advanced reg
 - [Gelman and Hill book page](https://www.cambridge.org/core/books/data-analysis-using-regression-and-multilevelhierarchical-models)
 - [CRAN lme4 package](https://cran.r-project.org/package=lme4)
 - [CDC Principles of Epidemiology](https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/index.html)
-
-## Links to Metis library
-- `knowledge/library/methods/biostatistics-essentials.md`
-- `knowledge/library/methods/spatial-epidemiology.md`
-- `knowledge/library/methods/study-designs.md`

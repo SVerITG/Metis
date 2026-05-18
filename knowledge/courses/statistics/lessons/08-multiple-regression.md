@@ -141,8 +141,3 @@ The analyst should also ask whether the model answers the intended question. A t
 - [OpenIntro Statistics](https://www.openintro.org/book/os/)
 - [Causal Inference: What If](https://miguelhernan.org/whatifbook)
 - [CDC Principles of Epidemiology](https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/index.html)
-
-## Links to Metis library
-- `knowledge/library/methods/biostatistics-essentials.md`
-- `knowledge/library/methods/causal-inference.md`
-- `knowledge/library/methods/study-designs.md`

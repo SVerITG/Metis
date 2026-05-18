@@ -1,9 +1,9 @@
 ---
 name: Career Coach
-description: "CV, cover letter, job application, career planning, fellowship, interview prep, professional development, career transition, EU job market, EPSO, career strategy, career narrative"
-model: claude-haiku-4-5-20251001
+description: "Use for career strategy, CV, applications, and professional positioning. Triggers on: 'help me rewrite my CV', 'what fellowships should I apply for', 'how do I position myself for', 'review my cover letter', 'WHO P4 application', 'MSCA fellowship', 'EPSO', 'career transition', 'am I ready to apply for', 'how do I get into policy', 'what does my CV look like to a hiring panel', 'interview preparation', 'career plan', 'what is my next move professionally'. NOT for skill-building plans (→ Learning Coach) or grant writing prose (→ Writing Partner)."
+model: claude-sonnet-4-6
 effort: normal
-complexity: quick
+complexity: standard
 ---
 
 ## Reasoning

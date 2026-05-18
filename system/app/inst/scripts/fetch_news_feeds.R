@@ -102,11 +102,13 @@ feeds <- list(
     project_link = "metis-dashboard",
     url = "https://www.technologyreview.com/feed/"
   ),
-  list(
-    domain = "sleeping sickness",
-    project_link = "phd-framework",
-    url = "https://pubmed.ncbi.nlm.nih.gov/rss/search/1v2f9YhJx0m5j2mQ2O6rK6z1R9YyM9Q1Dg3u4T1b5yL6j7n8/?limit=10&utm_campaign=pubmed-2&fc=20240327120000"
-  ),
+  # Add your own PubMed RSS search here.
+  # Generate a search URL at: https://pubmed.ncbi.nlm.nih.gov/ → search → Create RSS
+  # list(
+  #   domain = "your-research-topic",
+  #   project_link = "phd-framework",
+  #   url = "https://pubmed.ncbi.nlm.nih.gov/rss/search/YOUR_SEARCH_ID/?limit=10"
+  # ),
   list(
     domain = "ai",
     project_link = "metis-dashboard",

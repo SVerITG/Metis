@@ -121,8 +121,3 @@ Another subtle issue is **non-collapsibility**: even without confounding, adjust
 - [OpenIntro Statistics](https://www.openintro.org/book/os/)
 - [STROBE statement](https://www.strobe-statement.org/)
 - [CDC Principles of Epidemiology](https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/index.html)
-
-## Links to Metis library
-- `knowledge/library/methods/biostatistics-essentials.md`
-- `knowledge/library/methods/diagnostic-test-evaluation.md`
-- `knowledge/library/methods/causal-inference.md`
