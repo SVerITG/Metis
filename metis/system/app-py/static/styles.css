@@ -1965,3 +1965,53 @@ body.capture-open .t-capture {
   flex-wrap: wrap;
   margin-bottom: 12px;
 }
+
+/* ─── Phase 1: Global polish (Claude Design v8 Archive) ─────────────────── */
+/* motion.css (loaded after) handles: surface-fade, m-edge-left, panel lift.  */
+/* This block adds only what motion.css does NOT cover.                        */
+
+/* 1.1 Focus-visible ring — keyboard navigation highlight */
+:focus-visible {
+  outline: 2px solid var(--m-accent);
+  outline-offset: 2px;
+  border-radius: var(--m-radius-sm);
+}
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  box-shadow: var(--m-shadow-focus);
+}
+
+/* 1.3 Disabled state */
+:disabled,
+[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 1.4 Skeleton shimmer — use class="m-skel" on loading placeholders */
+.m-skel {
+  background: linear-gradient(
+    90deg,
+    var(--m-surface-2) 25%,
+    var(--m-surface-3) 50%,
+    var(--m-surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: m-skel-shimmer 1.4s linear infinite;
+  border-radius: var(--m-radius-sm);
+}
+@keyframes m-skel-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .m-skel { animation: none; opacity: 0.5; }
+}
+
+/* 1.5 Nav-item active transition (gap in motion.css) */
+.nav-item {
+  transition: background-color 140ms ease, color 140ms ease;
+}

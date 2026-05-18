@@ -233,15 +233,20 @@ def job_library_index() -> None:
 
 
 def job_nightly_backup() -> None:
-    """Copy metis.sqlite to a dated backup (skips if today's backup exists)."""
+    """Safe online backup of metis.sqlite using the SQLite backup API (WAL-safe)."""
     log.info("[scheduler] nightly_backup starting")
     try:
+        import sqlite3 as _sq3
         rc = os.environ.get("METIS_RC_ROOT", "")
-        if not rc:
-            _log_job("nightly_backup", "skip", "METIS_RC_ROOT not set")
-            return
-        db_path = Path(rc) / "system" / "app" / "data" / "metis.sqlite"
-        if not db_path.exists():
+        db_path = Path(rc) / "system" / "app" / "data" / "metis.sqlite" if rc else None
+        # Fall back to db.get_db_path() if METIS_RC_ROOT not set
+        if not db_path or not db_path.exists():
+            try:
+                from db import get_db_path
+                db_path = get_db_path()
+            except Exception:
+                pass
+        if not db_path or not db_path.exists():
             _log_job("nightly_backup", "skip", "DB file not found")
             return
         backup_dir = db_path.parent / "backups"
@@ -250,7 +255,19 @@ def job_nightly_backup() -> None:
         if dst.exists():
             _log_job("nightly_backup", "skip", f"Backup {dst.name} already exists")
             return
-        shutil.copy2(str(db_path), str(dst))
+        # SQLite online backup API — safe even while the database is open and in WAL mode
+        src_conn = _sq3.connect(str(db_path))
+        dst_conn = _sq3.connect(str(dst))
+        src_conn.backup(dst_conn)
+        dst_conn.close()
+        src_conn.close()
+        # Keep only last 7 backups to avoid filling OneDrive
+        all_backups = sorted(backup_dir.glob("metis.????????.sqlite"))
+        for old in all_backups[:-7]:
+            try:
+                old.unlink()
+            except Exception:
+                pass
         _log_job("nightly_backup", "ok", f"Backed up to backups/{dst.name}")
         log.info("[scheduler] nightly_backup: %s", dst.name)
     except Exception as exc:
@@ -263,8 +280,7 @@ def job_brief_synthesis() -> None:
     log.info("[scheduler] brief_synthesis starting")
     try:
         from routers.today import _get_or_generate_brief
-        import asyncio
-        result = asyncio.run(_get_or_generate_brief())
+        result = _get_or_generate_brief()
         if result:
             _log_job("brief_synthesis", "ok", "Morning brief pre-generated.")
         else:
@@ -486,11 +502,31 @@ def setup_jobs() -> None:
             id=job_id,
             name=JOB_LABELS.get(job_id, job_id),
             replace_existing=True,
-            misfire_grace_time=3600,
+            misfire_grace_time=None,  # never discard a missed fire
+            coalesce=True,            # collapse multiple misfires into one run
         )
         registered.append(f"{job_id}@{time_str}" + (f"({day_of_week})" if day_of_week else ""))
 
     log.info("[scheduler] jobs registered: %s", ", ".join(registered))
+
+    # Catch-up: if morning_scan or brief_synthesis missed today (server started
+    # after their cron time), fire them once immediately in the background.
+    import threading as _threading
+    import datetime as _dt
+    now_local = _dt.datetime.now()
+    settings = _load_job_settings()
+    for catch_job_id, catch_func in [("morning_scan", job_morning_scan),
+                                      ("brief_synthesis", job_brief_synthesis)]:
+        cfg = {**JOB_DEFAULTS.get(catch_job_id, {}), **settings.get(catch_job_id, {})}
+        if not cfg.get("enabled", True):
+            continue
+        sched_h, sched_m = _parse_time(cfg.get("time", "07:00"))
+        sched_today = now_local.replace(hour=sched_h, minute=sched_m,
+                                        second=0, microsecond=0)
+        if now_local > sched_today:
+            log.info("[scheduler] catch-up: firing %s (missed today's window)", catch_job_id)
+            _threading.Thread(target=catch_func, daemon=True,
+                              name=f"catchup-{catch_job_id}").start()
 
 
 def apply_settings_and_reschedule(new_settings: dict) -> None:

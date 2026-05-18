@@ -17,8 +17,8 @@
     <!-- Compact feed rows -->
     {% if news_briefs %}
       {% for brief in news_briefs %}
-      <div class="feed-row feed-row--compact" data-cat="{{ (brief.domain or 'General')|upper }}"
-           style="padding:7px 0;border-bottom:1px solid var(--m-rule-soft);">
+      <div class="feed-row feed-row--compact m-edge-left" data-cat="{{ (brief.domain or 'General')|upper }}"
+           style="padding:7px 0 7px 10px;border-bottom:1px solid var(--m-rule-soft);position:relative;">
         <div style="display:flex;align-items:baseline;gap:8px;">
           {% if brief.domain %}
           <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-accent);white-space:nowrap;flex-shrink:0;">{{ (brief.domain)|upper }}</span>

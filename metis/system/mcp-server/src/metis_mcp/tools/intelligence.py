@@ -241,12 +241,15 @@ def assemble_daily_context(db_path) -> dict:
         conn.row_factory = _sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
 
-        # News briefs + literature alerts (3d) — highest priority for the brief
+        # News briefs + literature alerts (3d) — recency-first, signal breaks ties.
+        # Items from the last 24h always lead regardless of signal_strength.
+        d1 = (now - datetime.timedelta(days=1)).isoformat()
         rows = _q(conn,
             "SELECT title, summary, domain, source_type FROM news_briefs "
             "WHERE created_at >= ? ORDER BY "
+            "CASE WHEN created_at >= ? THEN 0 ELSE 1 END, "
             "CASE WHEN signal_strength='high' THEN 1 WHEN signal_strength='medium' THEN 2 ELSE 3 END, "
-            "created_at DESC LIMIT 15", (d3,))
+            "created_at DESC LIMIT 15", (d3, d1))
         if rows:
             news_items = [r for r in rows if (r["source_type"] or "news") == "news"]
             lit_items  = [r for r in rows if r["source_type"] == "article"]

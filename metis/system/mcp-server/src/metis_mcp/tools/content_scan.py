@@ -41,7 +41,7 @@ FEED_ALLOWLIST = [
     # AI & methods
     ("Anthropic News",         "https://www.anthropic.com/news/rss.xml",                                                  "AI"),
     ("arXiv cs.AI",            "https://rss.arxiv.org/rss/cs.AI",                                                         "AI,methods"),
-    ("arXiv q-bio (epi)",      "https://rss.arxiv.org/rss/q-bio.PE",                                                      "HAT,epidemiology,methods"),
+    ("arXiv q-bio (epi)",      "https://rss.arxiv.org/rss/q-bio.PE",                                                      "epidemiology,methods"),
 ]
 
 _DDL_NEWS = """
@@ -79,6 +79,42 @@ def _connect():
     return conn
 
 
+_HAT_KEYWORDS = {
+    "trypanosomiasis", "trypanosoma", "sleeping sickness", "hat surveillance",
+    "hat elimination", "hat notification", "tsetse", "gambiense", "rhodesiense",
+}
+_NTD_KEYWORDS = {
+    "neglected tropical", "ntd", "leishmaniasis", "schistosomiasis", "onchocerciasis",
+    "lymphatic filariasis", "soil-transmitted helminths", "chagas",
+}
+_DOMAIN_OVERRIDE: list[tuple[set[str], str]] = [
+    (_HAT_KEYWORDS,  "HAT"),
+    (_NTD_KEYWORDS,  "NTD"),
+    ({"malaria", "plasmodium", "artemisinin", "bed net"}, "MALARIA"),
+    ({"dhis2", "dhis 2", "health information system", "his implementation"}, "DHIS2"),
+    ({"surveillance system", "disease surveillance", "outbreak detection",
+      "epidemic intelligence", "who alert"}, "surveillance"),
+    ({"llm", "large language model", "machine learning", "neural network",
+      "artificial intelligence", "deep learning", "transformer", "gpt", "claude",
+      "gemini", "generative ai", "agentic", "agent framework"}, "AI"),
+]
+
+
+def _classify_domain(title: str, summary: str, feed_tags: str) -> str:
+    """Return the most specific domain for an article.
+
+    Checks title + summary text against keyword sets first. If a keyword matches,
+    that domain wins over the feed-level tag. Falls back to the first feed tag so
+    we never return an empty string.
+    """
+    haystack = (title + " " + summary).lower()
+    for keywords, domain in _DOMAIN_OVERRIDE:
+        if any(kw in haystack for kw in keywords):
+            return domain
+    # No keyword match — fall back to first feed tag
+    return feed_tags.split(",")[0].strip()
+
+
 def scan_news_feeds(max_per_feed: int = 10) -> dict:
     added = 0
     errors = []
@@ -98,7 +134,7 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
                     ).fetchone():
                         continue
                     summary_raw = entry.get("summary", "")[:800]
-                    primary_domain = tags.split(",")[0]
+                    primary_domain = _classify_domain(title, summary_raw, tags)
                     conn.execute(
                         """INSERT INTO news_briefs
                            (title, domain, signal_strength, summary, source_url, created_at, tags, brief_date)

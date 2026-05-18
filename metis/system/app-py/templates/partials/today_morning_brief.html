@@ -1,6 +1,6 @@
 <div class="panel" id="morning-brief" style="margin-bottom:28px;">
 
-  <!-- Collapsed header — always visible, click to expand -->
+  <!-- Collapsible header -->
   <div class="morning-brief-header"
        onclick="toggleBrief()"
        style="display:flex;align-items:center;gap:10px;padding:14px 20px;cursor:pointer;user-select:none;border-bottom:1px solid var(--m-rule-soft);">
@@ -17,19 +17,18 @@
     {% else %}
       <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">no scan yet today</span>
     {% endif %}
-    <span style="margin-left:auto;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);transition:transform 200ms;" id="brief-chevron">▸</span>
+    <span style="margin-left:auto;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);transition:transform 200ms;transform:{% if brief %}rotate(90deg){% else %}none{% endif %};" id="brief-chevron">▸</span>
   </div>
 
-  <!-- Expandable body — collapsed on page load -->
-  <div id="morning-brief-body" style="display:none;">
+  <!-- Expandable body — auto-open when AI brief is ready -->
+  <div id="morning-brief-body" style="display:{% if brief %}block{% else %}none{% endif %};">
+
     <div style="padding:24px 28px 20px;">
 
       {% if brief %}
-        <!-- AI-generated brief — full width, editorial prose -->
         <div style="font-family:var(--m-display);font-size:16px;line-height:1.75;color:var(--m-ink);max-width:none;white-space:pre-wrap;">{{ brief }}</div>
 
         {% if sources %}
-        <!-- Source links -->
         <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--m-rule-soft);">
           <div style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:10px;">SOURCES FROM THIS BRIEF</div>
           <div style="display:flex;flex-wrap:wrap;gap:6px;">
@@ -39,9 +38,7 @@
                    style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
                           background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);
                           font-family:var(--m-mono);font-size:9px;color:var(--m-text);text-decoration:none;
-                          transition:background 150ms;"
-                   onmouseover="this.style.background='var(--m-surface-3)'"
-                   onmouseout="this.style.background='var(--m-surface-2)'">
+                          transition:background 150ms;">
                   {% if s.domain %}<span style="color:var(--m-accent);letter-spacing:0.08em;">{{ s.domain|upper }}</span>{% endif %}
                   <span style="color:var(--m-muted);">{{ s.title[:55] }}{% if s.title|length > 55 %}…{% endif %}</span>
                   <svg viewBox="0 0 10 10" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5"><path d="M2 8L8 2M8 2H4M8 2V6"/></svg>
@@ -60,19 +57,16 @@
         {% endif %}
 
       {% elif fallback_headlines %}
-        <!-- No AI brief yet — show latest news signals -->
         <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-warn);margin-bottom:14px;">
           Morning scan has not run yet. Showing latest signals — AI brief will appear after 07:15.
         </div>
         <div style="display:flex;flex-direction:column;gap:8px;">
           {% for h in fallback_headlines %}
-          <div style="display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--m-rule-soft);">
+          <div class="m-edge-left" style="display:flex;align-items:baseline;gap:8px;padding:6px 8px 6px 10px;border-bottom:1px solid var(--m-rule-soft);position:relative;">
             {% if h.domain %}<span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.08em;color:var(--m-accent);flex-shrink:0;">{{ h.domain|upper }}</span>{% endif %}
             {% if h.url %}
               <a href="{{ h.url }}" target="_blank" rel="noopener"
-                 style="font-size:13px;color:var(--m-ink);text-decoration:none;line-height:1.4;"
-                 onmouseover="this.style.textDecoration='underline'"
-                 onmouseout="this.style.textDecoration='none'">{{ h.title }}</a>
+                 style="font-size:13px;color:var(--m-ink);text-decoration:none;line-height:1.4;">{{ h.title }}</a>
             {% else %}
               <span style="font-size:13px;color:var(--m-ink);line-height:1.4;">{{ h.title }}</span>
             {% endif %}
@@ -100,9 +94,7 @@
         hx-indicator="#brief-spinner"
         style="margin-left:auto;padding:5px 14px;font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;
                background:transparent;border:1px solid var(--m-rule-strong);border-radius:var(--m-radius);
-               color:var(--m-text);cursor:pointer;transition:background 150ms,border-color 150ms;"
-        onmouseover="this.style.background='var(--m-surface-2)'"
-        onmouseout="this.style.background='transparent'">
+               color:var(--m-text);cursor:pointer;transition:background 150ms,border-color 150ms;">
         UPDATE
       </button>
       <span id="brief-spinner" class="htmx-indicator"

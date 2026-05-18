@@ -554,16 +554,27 @@ async def today_news_rail(request: Request, category: str = ""):
             qrows = db_query(
                 "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
                 "FROM news_briefs WHERE (source_type IS NULL OR source_type='news') AND domain=? "
-                "ORDER BY created_at DESC LIMIT 10",
+                "ORDER BY created_at DESC LIMIT 12",
                 (category,),
             )
+            news_items = _build_news_items(qrows)
         else:
+            # Balanced view: up to 3 items per domain so no single topic dominates
             qrows = db_query(
                 "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
                 "FROM news_briefs WHERE (source_type IS NULL OR source_type='news') "
-                "ORDER BY created_at DESC LIMIT 10"
-            )
-        news_items = _build_news_items(qrows)
+                "ORDER BY created_at DESC LIMIT 120"
+            ) or []
+            seen: dict[str, int] = {}
+            balanced = []
+            for r in qrows:
+                d = r.get("domain") or "General"
+                if seen.get(d, 0) < 3:
+                    balanced.append(r)
+                    seen[d] = seen.get(d, 0) + 1
+                if len(balanced) >= 18:
+                    break
+            news_items = _build_news_items(balanced)
     except Exception:
         pass
 
@@ -795,17 +806,8 @@ def _get_or_generate_brief(force: bool = False) -> str | None:
 
     today = datetime.date.today().isoformat()
 
-    # Force regeneration — drop today's cached entry
-    if force:
-        try:
-            conn = _sqlite3.connect(db_path_str)
-            conn.execute("DELETE FROM daily_insights WHERE insight_date = ?", (today,))
-            conn.commit()
-            conn.close()
-        except Exception:
-            pass
-
-    # Check cache
+    # Check cache — also used as fallback if force-regen fails
+    cached_content: str | None = None
     try:
         conn = _sqlite3.connect(db_path_str)
         conn.row_factory = _sqlite3.Row
@@ -815,9 +817,12 @@ def _get_or_generate_brief(force: bool = False) -> str | None:
         ).fetchone()
         conn.close()
         if row and row["model"] == "claude-haiku-brief" and row["content"]:
-            return row["content"]
+            cached_content = row["content"]
     except Exception:
         pass
+
+    if not force and cached_content:
+        return cached_content
 
     # Compute how many days since the last brief was generated
     days_since_last = 1
@@ -997,7 +1002,8 @@ def _get_or_generate_brief(force: bool = False) -> str | None:
             return narrative
     except Exception:
         pass
-    return None
+    # Regeneration failed — return whatever was cached so the brief is never lost
+    return cached_content
 
 
 def _load_brief_sources(db_path_str: str) -> list[dict]:
@@ -1239,15 +1245,25 @@ async def today_ledger(request: Request):
 @router.get("/api/partial/today/news-archive", response_class=HTMLResponse)
 async def today_news_archive(request: Request):
     news_briefs = []
-    categories = set()
+    categories: list[str] = []
     try:
-        rows = db_query(
-            "SELECT rowid as brief_id, title, domain, summary, signal_strength, source_url, created_at "
-            "FROM news_briefs ORDER BY created_at DESC LIMIT 12"
+        # Fetch all domain names for the chip strip — independent of display limit
+        cat_rows = db_query(
+            "SELECT DISTINCT domain FROM news_briefs WHERE domain IS NOT NULL AND domain != '' ORDER BY domain"
         ) or []
-        for r in rows:
+        categories = sorted({(r.get("domain") or "General").upper() for r in cat_rows})
+
+        # Balanced display: up to 2 items per domain from the 120 most recent
+        pool = db_query(
+            "SELECT rowid as brief_id, title, domain, summary, signal_strength, source_url, created_at "
+            "FROM news_briefs ORDER BY created_at DESC LIMIT 120"
+        ) or []
+        seen: dict[str, int] = {}
+        for r in pool:
             domain = r.get("domain") or "General"
-            categories.add(domain.upper())
+            if seen.get(domain, 0) >= 2:
+                continue
+            seen[domain] = seen.get(domain, 0) + 1
             news_briefs.append({
                 "brief_id": r.get("brief_id"),
                 "title": r.get("title") or "Untitled",
@@ -1256,6 +1272,8 @@ async def today_news_archive(request: Request):
                 "source_url": r.get("source_url"),
                 "age_label": _age_label(r["created_at"]) if r.get("created_at") else "",
             })
+            if len(news_briefs) >= 18:
+                break
     except Exception:
         pass
 
@@ -1264,7 +1282,7 @@ async def today_news_archive(request: Request):
         "partials/today_news_archive.html",
         {
             "news_briefs": news_briefs,
-            "categories": sorted(categories),
+            "categories": categories,
         },
     )
 

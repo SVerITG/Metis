@@ -38,6 +38,16 @@ async def lifespan(app: FastAPI):
     applied = run_migrations()
     if applied:
         log.info("DB migrations applied: %s", ", ".join(applied))
+
+    # Ensure MCP tools are findable — add src to sys.path at startup
+    import sys as _sys
+    _rc = os.environ.get("METIS_RC_ROOT", "")
+    if _rc:
+        _mcp_src = str(Path(_rc) / "system" / "mcp-server" / "src")
+        if _mcp_src not in _sys.path:
+            _sys.path.insert(0, _mcp_src)
+        del _mcp_src
+    del _rc
     try:
         from scheduler import scheduler, setup_jobs
         setup_jobs()
@@ -332,10 +342,14 @@ async def mcp_status():
         mcp_src = str(Path(rc_root) / "system" / "mcp-server" / "src")
         if mcp_src not in sys.path:
             sys.path.insert(0, mcp_src)
+    # Clear a broken partial import — a module with no __file__ is a sign of a failed load
+    mod = sys.modules.get("metis_mcp")
+    if mod is not None and not getattr(mod, "__file__", None):
+        del sys.modules["metis_mcp"]
     try:
         import metis_mcp  # noqa: F401
         return JSONResponse({"status": "ok"})
-    except ImportError as exc:
+    except Exception as exc:
         return JSONResponse({"status": "offline", "reason": str(exc)}, status_code=503)
 
 
