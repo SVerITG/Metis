@@ -655,6 +655,13 @@ textarea.form-control { resize: vertical; }
   border-left: 1px solid var(--m-rule); padding-left: .35rem; margin-left: .05rem;
 }
 
+/* News slipcases (C3) */
+.today-news-rail { padding: .75rem 1rem 1rem; }
+.news-slipcases { margin-top: 4px; }
+.news-slipcase { border-bottom: 1px solid var(--m-rule-soft); }
+.news-slipcase:last-child { border-bottom: none; }
+.news-slipcase-hd:hover .slipcase-chevron { color: var(--m-ink); }
+
 /* Value boxes (legacy) */
 .vbox-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: .9rem; }
 .vbox { background: var(--m-surface); border: 1px solid var(--m-rule); border-radius: 3px; padding: 1rem 1.2rem; border-top: 2px solid var(--m-rule); }
