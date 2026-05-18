@@ -52,7 +52,7 @@ Generic AI tools leave several researcher-specific problems unsolved:
 | Challenge | What Metis does about it |
 |---|---|
 | **Context amnesia** — every session starts from zero | Persistent identity card and 5-layer memory across all sessions |
-| **Literature at scale** — hundreds of PDFs that need to talk to each other | Semantic PDF search (PaperQA2) + knowledge graph + cross-pollination |
+| **Literature at scale** — hundreds of PDFs that need to talk to each other | Layered semantic PDF index (sqlite-vec, local ONNX) + knowledge graph + cross-pollination |
 | **Long-horizon projects** — research unfolds over months and years | Persistent project memory, reflexion loop, session handoffs |
 | **Data sensitivity** — patient data, embargoed results, institutional ethics | Everything local. PII detection. AES-256 encryption. Constitution + red-lines. |
 | **Workflow fragmentation** — literature, meetings, writing, analysis, teaching in separate tools | Single interface with 30 specialist agents across all research workflows |
@@ -231,7 +231,7 @@ The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account. No 
 
 ### Knowledge — *Your entire research library, searchable and connected*
 
-- **Semantic PDF search** — ask "what do my papers say about X?" and get cited answers (PaperQA2 powered)
+- **Semantic PDF search** — ask "what do my papers say about X?" and get cited answers from a local vector index (sqlite-vec + nomic-embed-text-v1.5-Q, no external API)
 - **Literature cards** — title, abstract, your annotations, citation links, domain tags, reading status
 - **Domain notes** — structured notes per research area
 - **Knowledge graph** — visual map of connections between papers, ideas, and topics
@@ -503,7 +503,7 @@ flowchart LR
 | Dashboard | FastAPI + HTMX + Jinja2, no JavaScript framework |
 | Database | SQLite WAL mode, 46 tables |
 | Vector memory | sqlite-vec + nomic-embed-text-v1.5-Q (768 dims, local ONNX) |
-| Semantic PDF search | PaperQA2 (FutureHouse) — indexes PDF library, answers with citations |
+| Semantic PDF search | sqlite-vec + nomic-embed-text-v1.5-Q — local PDF chunk index, no external API |
 | Host OS | Windows + WSL2 (Ubuntu 20/22/24) |
 | File sync | OneDrive / Dropbox (optional, transparent) |
 
