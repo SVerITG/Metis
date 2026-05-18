@@ -794,6 +794,154 @@ async def metis_memory_overview(request: Request):
 
 
 # ---------------------------------------------------------------------------
+# Memory retrieval debugger (M5.9 / B2)
+
+@router.get("/api/partial/metis/memory-debug", response_class=HTMLResponse)
+async def metis_memory_debug(request: Request, q: str = "", layers: str = "episodic,semantic,procedural,session"):
+    """Retrieval debugger: run a query and show ranked results with scores."""
+    import struct as _struct
+
+    results: list[dict] = []
+    error: str = ""
+    has_vec = False
+
+    requested = {l.strip() for l in layers.split(",") if l.strip()}
+    # Map "session" → episodic filter
+    session_only = "session" in requested and requested == {"session"}
+
+    if q.strip():
+        from db import get_db_path
+        db_path = get_db_path()
+
+        # Try vector search via sqlite-vec
+        try:
+            import sys as _sys
+            import sqlite3 as _sqlite3
+            import sqlite_vec as _svec
+
+            def _encode(v: list) -> bytes:
+                return _struct.pack(f"{len(v)}f", *v)
+
+            conn = _sqlite3.connect(str(db_path))
+            conn.row_factory = _sqlite3.Row
+            conn.enable_load_extension(True)
+            _svec.load(conn)
+            conn.enable_load_extension(False)
+
+            # Embed query
+            _sys.path.insert(0, str(db_path.parent.parent.parent / "mcp-server" / "src"))
+            from metis_mcp.embeddings import embed_query as _eq
+            qvec = _eq(q)
+            qbytes = _encode(qvec)
+            has_vec = True
+            TOP = 8
+
+            if "episodic" in requested or "session" in requested:
+                type_filter = "AND event_type = 'session_summary'" if session_only else ""
+                rows = conn.execute(
+                    f"""SELECT e.id, e.event_type, e.content, e.metadata, e.created_at,
+                               v.distance, 'episodic' AS layer
+                          FROM vec_episodic v
+                          JOIN episodic_memory e ON e.id = v.rowid
+                         WHERE v.embedding MATCH ? AND k = ?
+                               {type_filter}
+                         ORDER BY v.distance""",
+                    (qbytes, TOP),
+                ).fetchall()
+                for r in rows:
+                    results.append({
+                        "layer": "session" if r["event_type"] == "session_summary" else "episodic",
+                        "type": r["event_type"],
+                        "content": (r["content"] or "")[:200],
+                        "score": round(1 - float(r["distance"]), 4),
+                        "date": (r["created_at"] or "")[:10],
+                        "raw_distance": round(float(r["distance"]), 4),
+                    })
+
+            if "semantic" in requested:
+                rows = conn.execute(
+                    """SELECT s.id, s.concept, s.definition, s.created_at,
+                              v.distance, 'semantic' AS layer
+                         FROM vec_semantic v
+                         JOIN semantic_memory s ON s.id = v.rowid
+                        WHERE v.embedding MATCH ? AND k = ?
+                        ORDER BY v.distance""",
+                    (qbytes, TOP),
+                ).fetchall()
+                for r in rows:
+                    results.append({
+                        "layer": "semantic",
+                        "type": "concept",
+                        "content": f"{r['concept']}: {(r['definition'] or '')[:160]}",
+                        "score": round(1 - float(r["distance"]), 4),
+                        "date": (r["created_at"] or "")[:10],
+                        "raw_distance": round(float(r["distance"]), 4),
+                    })
+
+            if "procedural" in requested:
+                rows = conn.execute(
+                    """SELECT p.id, p.procedure_name, p.steps, p.created_at,
+                              v.distance, 'procedural' AS layer
+                         FROM vec_procedural v
+                         JOIN procedural_memory p ON p.id = v.rowid
+                        WHERE v.embedding MATCH ? AND k = ?
+                        ORDER BY v.distance""",
+                    (qbytes, TOP),
+                ).fetchall()
+                for r in rows:
+                    results.append({
+                        "layer": "procedural",
+                        "type": "procedure",
+                        "content": f"{r['procedure_name']}: {(r['steps'] or '')[:160]}",
+                        "score": round(1 - float(r["distance"]), 4),
+                        "date": (r["created_at"] or "")[:10],
+                        "raw_distance": round(float(r["distance"]), 4),
+                    })
+
+            conn.close()
+
+        except Exception as exc:
+            error = str(exc)
+            has_vec = False
+
+        # Keyword fallback if vec failed
+        if not has_vec and not results:
+            try:
+                like = f"%{q}%"
+                erows = db_query(
+                    "SELECT id, event_type, content, created_at FROM episodic_memory "
+                    "WHERE content LIKE ? ORDER BY created_at DESC LIMIT 8",
+                    (like,), default=[],
+                ) or []
+                for r in erows:
+                    results.append({
+                        "layer": "session" if r.get("event_type") == "session_summary" else "episodic",
+                        "type": r.get("event_type") or "note",
+                        "content": (r.get("content") or "")[:200],
+                        "score": None,
+                        "date": (r.get("created_at") or "")[:10],
+                        "raw_distance": None,
+                    })
+            except Exception:
+                pass
+
+        # Sort by score desc
+        results.sort(key=lambda x: (x.get("score") or 0), reverse=True)
+
+    return templates.TemplateResponse(
+        request,
+        "partials/metis_memory_debug.html",
+        {
+            "q": q,
+            "layers": layers,
+            "results": results,
+            "has_vec": has_vec,
+            "error": error,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
 # Settings — theme + memory archive
 # ---------------------------------------------------------------------------
 
