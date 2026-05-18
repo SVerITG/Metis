@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-under%20development-orange" alt="Under Development"/>
+  <img src="https://img.shields.io/badge/status-v1.0-brightgreen" alt="v1.0"/>
   <a href="https://github.com/SVerITG/Metis_PH/stargazers"><img src="https://img.shields.io/github/stars/SVerITG/Metis_PH?style=flat" alt="Stars"/></a>
   <a href="https://github.com/SVerITG/Metis_PH/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" alt="Python"/>
@@ -63,7 +63,7 @@ Generic AI tools leave several researcher-specific problems unsolved:
 | **Literature at scale** — hundreds of PDFs that need to talk to each other | Layered semantic PDF index (sqlite-vec, local ONNX) + knowledge graph + cross-pollination |
 | **Long-horizon projects** — research unfolds over months and years | Persistent project memory, reflexion loop, session handoffs |
 | **Data sensitivity** — patient data, embargoed results, institutional ethics | Everything local. PII detection. AES-256 encryption. Constitution + red-lines. |
-| **Workflow fragmentation** — literature, meetings, writing, analysis, teaching in separate tools | Single interface with 30 specialist agents across all research workflows |
+| **Workflow fragmentation** — literature, meetings, writing, analysis, teaching in separate tools | Single interface with 34 specialist agents across all research workflows |
 
 ---
 
@@ -111,7 +111,7 @@ Metis is also built to fit *your* way of working. For example:
 
 | Feature | What it does |
 |---|---|
-| **30 specialist agents** | Librarian, Epidemiologist, Methods Coach, Writing Partner, Meeting Memory, Course Builder, Career Coach, and 22 more — each an expert in their domain |
+| **34 specialist agents** | Librarian, Epidemiologist, Methods Coach, Writing Partner, Meeting Memory, Course Builder, Career Coach, Critic, Memory Curator, and 25 more — each an expert in their domain |
 | **Library management** | Import PDFs, sync Zotero / Mendeley, ask "what do my papers say about X?" — cited answers from your own library (PaperQA2) |
 | **Live meeting assistant** | Follow along in real time, paste transcripts after, get structured notes, action items, and project cross-references automatically |
 | **Morning intelligence brief** | Every morning: new papers on your exact research topics, field news, surveillance alerts, and a focus recommendation — fully personalised |
@@ -307,7 +307,7 @@ The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account. No 
 - **Agent run history** — every task logged with timestamp, model, token usage
 - **Self-improvement proposals** — Metis drafts changes to its own behaviour; you review and approve before anything applies
 - **Identity card** — your profile as Metis currently understands it
-- **Agent registry** — 30 agents, their contracts, their last run
+- **Agent registry** — 34 agents, their contracts, their last run
 - **System health** — MCP server status, database stats, tool counts
 
 ---
@@ -413,10 +413,10 @@ metis/system/install/windows/install.bat
 bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/metis/system/mcp-server/setup-mcp.sh)
 ```
 
-Gives you all **30 agents** and **135 tools** inside Claude Desktop or Claude Code. Idempotent. Dashboard:
+Gives you all **34 agents** and **76+ tools** inside Claude Desktop or Claude Code. Idempotent. Dashboard:
 
 ```bash
-cd ~/Metis_PH/metis/system/app-py && bash run.sh   # → http://127.0.0.1:8000
+cd ~/Metis_PH/system/app-py && bash run.sh   # → http://127.0.0.1:8080
 ```
 
 Run the **config wizard** from the Metis tab to personalise your installation.
@@ -470,11 +470,11 @@ flowchart LR
     U([Researcher])
     subgraph Harness["AI Harness (Claude Code / Desktop)"]
         METIS[Metis\nrouter agent]
-        AGENTS[Specialist agents\n30 agents]
+        AGENTS[Specialist agents\n34 agents]
         WATCHERS{{Watchers\nData Guardian\nCybersecurity}}
     end
     subgraph Platform
-        MCP[MCP Server\n135 tools\nFastMCP]
+        MCP[MCP Server\n76+ tools\nFastMCP]
         DASH[Dashboard\nFastAPI + HTMX]
         DB[(SQLite\nWAL mode)]
     end
@@ -715,7 +715,7 @@ Four variants (Full / PH Shell / Standard / MCP-only) — all install Claude Des
 
 ## Project Status
 
-**Completed:** Phases 0–9b — foundations · 9-tab dashboard · 30 agents · CLI skills · 5-layer memory · knowledge graph · self-improvement loop · token efficiency · Zotero/Mendeley · meeting assistant · PaperQA2 PDF search · cross-pollination
+**Completed:** Phases 0–9b — foundations · 9-tab dashboard · 34 agents · CLI skills · 5-layer memory · knowledge graph · self-improvement loop · token efficiency · Zotero/Mendeley · meeting assistant · PaperQA2 PDF search · cross-pollination
 
 **In progress:** Phase 10 (automated daily tasks) · Phase 11 (.exe installer) · Phase 12 (test suite)
 
@@ -725,7 +725,7 @@ Four variants (Full / PH Shell / Standard / MCP-only) — all install Claude Des
 
 Metis is designed to grow beyond one domain and one researcher. Contributions are welcome — especially from researchers who use it and know what's missing.
 
-See [CONTRIBUTING.md](metis/CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ### Domain packs for other fields
 
@@ -810,13 +810,26 @@ A domain pack consists of: key journals + RSS feeds, specialist agents or skill 
 
 # Changelog
 
-## v0.x — Current (Metis_PH, public health edition)
+## v1.0 — May 2026
 
-All development to date has been in the public health edition. Stable and used daily.
+First stable release. See [`system/config/release-notes-v1.0.md`](system/config/release-notes-v1.0.md) for the full changelog.
+
+| What shipped |
+|---|
+| FastAPI + HTMX dashboard — 9 tabs, all live with HTMX partials |
+| 34 specialist agents, all upgraded to tier-1 prompts including Critic + Memory Curator |
+| MCP server — 76+ registered tools (FastMCP) |
+| Windows installer (Inno Setup — Full / Standard / Minimal / MCP-only variants) |
+| Statistics for Epidemiology course — 12 lessons with spaced repetition |
+| Startup eval suite + news freshness check |
+| Auto-handoff brief at 80% context turns |
+| AGPL-3.0 license |
+
+## Earlier development (Phases 0–9b)
 
 | Phase | What shipped |
 |---|---|
-| **Phase 0–5** | Foundation — MCP server, 30 agents, CLI skills, config wizard, SQLite schema (46 tables), 5-layer memory, knowledge graph, Zotero/Mendeley sync |
+| **Phase 0–5** | Foundation — MCP server, 34 agents, CLI skills, config wizard, SQLite schema (46 tables), 5-layer memory, knowledge graph, Zotero/Mendeley sync |
 | **Phase 6–7** | FastAPI + HTMX dashboard — 9 tabs, live partials, HTMX-powered search |
 | **Phase 8** | Full functionality — morning brief, news rail, meeting assistant, voice capture, PaperQA2 PDF search, cross-pollination, token guardrails, handoff brief |
 | **Phase 9** | CSS design overhaul — macOS design system, editorial layout, responsive grid, animation guards |
@@ -828,14 +841,11 @@ All development to date has been in the public health edition. Stable and used d
 | Phase | What's planned |
 |---|---|
 | **Phase 10** | Automated daily tasks (APScheduler) |
-| **Phase 11** | Windows .exe installer |
 | **Phase 12** | Test suite (unit · integration · e2e · red-line) |
-| **v1.0** | Stable release — installer + polished onboarding + full domain pack |
+| **v1.1** | Docker image · Telegram capture bot · OpenTelemetry observability |
 
 ---
 
 # License
 
 **AGPL-3.0** for the codebase — you can use, modify, and fork freely, but any version you run as a service or distribute must also be open-source under AGPL-3.0. **CC-BY-SA 4.0** for course content and learning materials.
-
-*LICENSE file ships with v1.0.*
