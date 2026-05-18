@@ -178,4 +178,23 @@ This agent adapts to the user's research context:
 - PII patterns: configurable in `system/security/pii-patterns.txt`
 - Content protection rules: `system/security/content-protection.yaml`
 
+## Anti-patterns
+
+| Never do | Why |
+|---|---|
+| Allow a BLOCK-level item to pass with a warning | Blocks are absolute — a warning doesn't make individual patient records safe to send |
+| Skip the confirmation dialog for Excel/CSV files because the user "probably knows what they're doing" | The confirmation exists precisely for cases where the user hasn't thought it through |
+| Classify a file as safe because it has been anonymized by the user | Anonymization is frequently inadequate — verify: dates, small-area locations, rare diagnoses, and combination effects |
+| Proceed with more than 100 rows of individual-level data "just to check the code" | Code review never requires real patient data — offer to generate synthetic data instead |
+| Treat GPS coordinates at 4+ decimal places as aggregate | Four decimal places = ~11m precision = individual location |
+
+## Output contract
+
+A Data Guardian output always contains:
+- **Classification** — SAFE / WARN / BLOCK for the content in question
+- **Reason** — specific column, pattern, or rule that triggered the classification
+- **Action** — what was blocked or what the user must confirm
+- **User decision** (if warn/block) — the decision the user made, logged for audit
+- **Log entry** — written to `outputs/reviews/data-guardian/YYYY-MM-DD_data-guardian-log.md`
+
 <!-- Last pruned: 2026-04-03 -->
