@@ -126,7 +126,7 @@ Once connected, your library is searchable by topic, author, journal, year, or a
 Research happens everywhere — not just at your desk. Metis provides multiple entry points:
 - **Reflection tab** in the dashboard — structured idea threads with context
 - **Claude Desktop or Claude Code** — one command to capture anything
-- **WhatsApp integration** — capture ideas from your phone; Metis logs them and cross-pollinates while you sleep
+- **Inbox folder** — drop any file in `inbox/` from any device; Metis picks it up on the next scan
 
 Every idea is stored with its connections: what papers it relates to, what meetings it appeared in, what other ideas it links to. Nothing gets lost. Everything is findable.
 

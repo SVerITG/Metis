@@ -831,7 +831,7 @@ async def knowledge_news_signals(request: Request):
     """Recent news signals from news_briefs, shown in the Knowledge tab."""
     signals: list[dict] = db_query(
         "SELECT title, domain, signal_strength, summary, source_url, created_at "
-        "FROM news_briefs ORDER BY created_at DESC LIMIT 40"
+        "FROM news_briefs ORDER BY created_at DESC LIMIT 500"
     ) or []
 
     domains: dict[str, list[dict]] = {}

@@ -59,9 +59,14 @@ def find_root() -> Path:
 ROOT = find_root()
 
 # ── constants ────────────────────────────────────────────────────────────────
-_db_candidate1 = ROOT / "system" / "app-py" / "data" / "metis.sqlite"
-_db_candidate2 = ROOT / "metis.sqlite"
-DB_PATH      = _db_candidate1 if _db_candidate1.exists() else _db_candidate2
+_db_candidate1 = ROOT / "system" / "app" / "data" / "metis.sqlite"
+_db_candidate2 = ROOT / "system" / "app-py" / "data" / "metis.sqlite"
+_db_candidate3 = ROOT / "metis.sqlite"
+DB_PATH      = (
+    _db_candidate1 if _db_candidate1.exists() else
+    _db_candidate2 if _db_candidate2.exists() else
+    _db_candidate3
+)
 AGENTS_DIR   = ROOT / "agents"
 SKILLS_DIR   = ROOT / ".claude" / "skills"
 HOOKS_DIR    = ROOT / ".claude" / "hooks"
@@ -82,7 +87,7 @@ RED_LINES    = CONFIG_DIR / "red-lines.md"
 IMPL_PROG    = CONFIG_DIR / "implementation-progress.json"
 AGENT_REG    = CONFIG_DIR / "agent-registry.json"
 APP_JS       = APP_PY / "static" / "app.js"
-DASHBOARD_URL = "http://localhost:8000"
+DASHBOARD_URL = "http://localhost:8080"
 
 REQUIRED_TABLES = [
     "ideas", "tasks", "projects", "agent_runs", "meetings",
@@ -386,8 +391,8 @@ def run_dashboard():
     # D01 — is dashboard alive?
     code, body = http_get("/")
     if code is None:
-        skip("D01", "Dashboard reachable at localhost:8000", "Dashboard",
-             f"Dashboard not running: {body}. Start with: python system/app-py/launch.py")
+        skip("D01", "Dashboard reachable at localhost:8080", "Dashboard",
+             f"Dashboard not running: {body}. Start with: bash system/app-py/run.sh")
         # Skip all subsequent HTTP tests
         for tab in TABS:
             skip(f"D-{tab}", f"Tab route: {tab}", "Dashboard", "Skipped — dashboard not running.")
@@ -396,12 +401,12 @@ def run_dashboard():
         skip("D22", "Partial routes respond 200", "Dashboard", "Skipped — dashboard not running.")
         return
     elif code != 200:
-        fail("D01", "Dashboard reachable at localhost:8000", "Dashboard",
+        fail("D01", "Dashboard reachable at localhost:8080", "Dashboard",
              f"HTTP {code} — expected 200.",
-             "Check uvicorn is running without errors: python system/app-py/launch.py", "Critical")
+             "Check uvicorn is running without errors: bash system/app-py/run.sh", "Critical")
         return
     else:
-        ok("D01", "Dashboard reachable at localhost:8000", "Dashboard",
+        ok("D01", "Dashboard reachable at localhost:8080", "Dashboard",
            f"HTTP 200 in < 5s. Response length: {len(body)} chars.")
 
     # D02-D10 — full tab routes
@@ -1264,6 +1269,495 @@ def run_git():
            "No .csv, .rds, .RData, .sqlite, or .env files in git index.")
 
 # ════════════════════════════════════════════════════════════════════════════
+# SECTION 11 — DASHBOARD v9e+ CHECKS (CSS Polish, Morning Brief, News, Scheduler)
+# ════════════════════════════════════════════════════════════════════════════
+def run_dashboard_v2():
+    """Dashboard v9e+ checks — CSS polish, morning brief, news pipeline, scheduler."""
+    print("  → Dashboard v9e+ checks...")
+
+    STATIC_DIR  = APP_PY / "static"
+    TEMPLATES   = APP_PY / "templates"
+    PARTIALS    = TEMPLATES / "partials"
+    ROUTERS_DIR = APP_PY / "routers"
+    styles_css  = STATIC_DIR / "styles.css"
+    motion_css  = STATIC_DIR / "motion.css"
+    base_html   = TEMPLATES / "base.html"
+    today_brief = PARTIALS / "today_morning_brief.html"
+    today_router = ROUTERS_DIR / "today.py"
+    sched_py    = APP_PY / "scheduler.py"
+    content_py  = APP_PY / "content_scan.py"
+    intel_py    = APP_PY / "intelligence.py"
+
+    # ── CSS checks ────────────────────────────────────────────────────────
+
+    # DV01 — styles.css has v9e focus-visible tokens
+    css = read(styles_css)
+    if "focus-visible" in css:
+        ok("DV01", "CSS: focus-visible style defined", "Dashboard v9e",
+           "styles.css contains :focus-visible rule.")
+    else:
+        warn("DV01", "CSS: focus-visible style defined", "Dashboard v9e",
+             "styles.css does not define :focus-visible.",
+             "Add :focus-visible outline style for keyboard accessibility.", "Medium")
+
+    # DV02 — m-skel skeleton class present
+    if "m-skel" in css:
+        ok("DV02", "CSS: m-skel skeleton class defined", "Dashboard v9e",
+           "styles.css contains .m-skel skeleton class.")
+    else:
+        warn("DV02", "CSS: m-skel skeleton class defined", "Dashboard v9e",
+             ".m-skel not found in styles.css.",
+             "Add .m-skel class for skeleton loading states (Phase 1 CSS block).", "Low")
+
+    # DV03 — :disabled state defined
+    if ":disabled" in css:
+        ok("DV03", "CSS: :disabled state styled", "Dashboard v9e",
+           "styles.css contains :disabled rule.")
+    else:
+        warn("DV03", "CSS: :disabled state styled", "Dashboard v9e",
+             ":disabled selector not found in styles.css.",
+             "Add button:disabled / input:disabled styles to prevent invisible disabled states.", "Low")
+
+    # DV04 — .nav-item transition defined
+    if ".nav-item" in css and "transition" in css:
+        ok("DV04", "CSS: .nav-item has transition", "Dashboard v9e",
+           ".nav-item and transition both present in styles.css.")
+    else:
+        warn("DV04", "CSS: .nav-item has transition", "Dashboard v9e",
+             ".nav-item or transition missing from styles.css.",
+             "Add transition: to .nav-item for smooth hover state.", "Low")
+
+    # DV05 — motion.css exists as a file
+    if motion_css.exists():
+        ok("DV05", "static/motion.css file exists", "Dashboard v9e",
+           f"motion.css found ({motion_css.stat().st_size} bytes).")
+    else:
+        fail("DV05", "static/motion.css file exists", "Dashboard v9e",
+             f"motion.css not found at {motion_css.relative_to(ROOT)}",
+             "Create static/motion.css with surface-fade, m-edge-left, and reduced-motion media query.", "High")
+
+    # DV06 — motion.css linked in base.html AFTER styles.css
+    base = read(base_html)
+    styles_pos  = base.find("styles.css")
+    motion_pos  = base.find("motion.css")
+    if styles_pos == -1:
+        warn("DV06", "base.html links styles.css", "Dashboard v9e",
+             "styles.css link not found in base.html.", None, "High")
+    elif motion_pos == -1:
+        fail("DV06", "motion.css loaded after styles.css in base.html", "Dashboard v9e",
+             "motion.css is not linked in base.html.",
+             "Add <link rel='stylesheet' href='/static/motion.css?v=...'>  AFTER the styles.css link.", "High")
+    elif motion_pos > styles_pos:
+        ok("DV06", "motion.css loaded after styles.css in base.html", "Dashboard v9e",
+           "motion.css link appears after styles.css in base.html — correct load order.")
+    else:
+        fail("DV06", "motion.css loaded after styles.css in base.html", "Dashboard v9e",
+             "motion.css link appears BEFORE styles.css — wrong order.",
+             "Move the motion.css <link> tag to after the styles.css <link> in base.html.", "High")
+
+    # DV07 — data-motion, data-hairline, data-lift on .app div
+    for attr in ("data-motion=\"on\"", "data-hairline=\"on\"", "data-lift=\"on\""):
+        if attr in base:
+            ok(f"DV07-{attr.split('=')[0]}", f"base.html .app div has {attr}", "Dashboard v9e",
+               f"{attr} found in base.html.")
+        else:
+            warn(f"DV07-{attr.split('=')[0]}", f"base.html .app div has {attr}", "Dashboard v9e",
+                 f"{attr} not found in base.html.",
+                 f"Add {attr} to the .app container div to enable motion.css directives.", "Medium")
+
+    # DV08 — no conflicting m-edge-left::before with opacity: in styles.css
+    if re.search(r'm-edge-left\s*::\s*before[^}]*opacity\s*:', css, re.DOTALL):
+        fail("DV08", "styles.css does not redefine m-edge-left::before opacity", "Dashboard v9e",
+             "styles.css contains .m-edge-left::before { opacity: ... } — conflicts with motion.css.",
+             "Remove opacity: definition from styles.css .m-edge-left::before. "
+             "motion.css owns this rule and uses scaleY for animation.", "Medium")
+    else:
+        ok("DV08", "styles.css does not redefine m-edge-left::before opacity", "Dashboard v9e",
+           "No conflicting m-edge-left::before opacity definition in styles.css.")
+
+    # DV09 — cache-busting ?v= parameter on styles.css link
+    if re.search(r'styles\.css\?v=', base):
+        ok("DV09", "styles.css link has cache-busting ?v= parameter", "Dashboard v9e",
+           "styles.css link in base.html includes ?v= cache-bust parameter.")
+    else:
+        warn("DV09", "styles.css link has cache-busting ?v= parameter", "Dashboard v9e",
+             "styles.css link in base.html does not include ?v= parameter.",
+             "Add ?v=9e (or similar) to the styles.css href to force browser cache refresh on deploy.", "Low")
+
+    # ── Morning Brief checks ───────────────────────────────────────────────
+
+    # DV10 — morning brief auto-opens when content exists
+    brief = read(today_brief)
+    if "display" in brief and "block" in brief and ("brief" in brief.lower() or "{% if" in brief):
+        ok("DV10", "Morning brief auto-opens when content present", "Dashboard v9e",
+           "today_morning_brief.html uses display:block conditional for auto-open.")
+    else:
+        warn("DV10", "Morning brief auto-opens when content present", "Dashboard v9e",
+             "today_morning_brief.html may not auto-open when brief content exists.",
+             "Add display:{%if brief%}block{%else%}none{%endif%} on #morning-brief-body.", "Medium")
+
+    # DV11 — morning brief is collapsible via toggleBrief
+    if "toggleBrief" in brief:
+        ok("DV11", "Morning brief is collapsible (toggleBrief)", "Dashboard v9e",
+           "toggleBrief() referenced in today_morning_brief.html.")
+    else:
+        warn("DV11", "Morning brief is collapsible (toggleBrief)", "Dashboard v9e",
+             "toggleBrief() not found in today_morning_brief.html.",
+             "Add onclick=\"toggleBrief()\" to the brief header element.", "Medium")
+
+    # DV12 — brief chevron rotates when open
+    if "rotate" in brief and "90" in brief:
+        ok("DV12", "Morning brief chevron rotates when open", "Dashboard v9e",
+           "Chevron rotation (90deg) found in today_morning_brief.html.")
+    else:
+        warn("DV12", "Morning brief chevron rotates when open", "Dashboard v9e",
+             "Chevron rotate(90deg) not found in today_morning_brief.html.",
+             "Add transform:{%if brief%}rotate(90deg){%else%}none{%endif%} to the chevron element.", "Low")
+
+    # DV13 — morning brief update button uses correct hx-post endpoint
+    if "hx-post" in brief and "morning-brief/refresh" in brief:
+        ok("DV13", "Morning brief update button uses hx-post /api/morning-brief/refresh", "Dashboard v9e",
+           "hx-post to morning-brief/refresh found in today_morning_brief.html.")
+    else:
+        warn("DV13", "Morning brief update button uses hx-post /api/morning-brief/refresh", "Dashboard v9e",
+             "hx-post to /api/morning-brief/refresh not found in today_morning_brief.html.",
+             "Wire the update button: hx-post='/api/morning-brief/refresh' hx-target='#morning-brief'.", "Medium")
+
+    # DV14 — _get_or_generate_brief does NOT delete cache before regenerating
+    today_r = read(today_router)
+    if re.search(r'DELETE.*daily_insights', today_r, re.IGNORECASE) and \
+       "_get_or_generate_brief" in today_r:
+        fail("DV14", "_get_or_generate_brief does not delete cache before regenerating", "Dashboard v9e",
+             "today.py deletes from daily_insights before attempting regeneration — risks losing cached content on API failure.",
+             "Remove the DELETE statement from _get_or_generate_brief. "
+             "Only replace cache on successful regeneration. Return cached_content as fallback.", "High")
+    else:
+        ok("DV14", "_get_or_generate_brief does not delete cache before regenerating", "Dashboard v9e",
+           "No premature cache deletion found in today.py morning brief logic.")
+
+    # DV15 — scheduler.py brief synthesis uses direct call, not asyncio.run()
+    sched = read(sched_py)
+    if sched_py.exists():
+        if "asyncio.run(" in sched and "brief" in sched.lower():
+            # Check if asyncio.run is specifically in a brief-related function
+            brief_block = re.search(
+                r'def job_brief_synthesis.*?(?=\ndef |\Z)', sched, re.DOTALL
+            )
+            if brief_block and "asyncio.run(" in brief_block.group(0):
+                fail("DV15", "job_brief_synthesis uses direct call not asyncio.run()", "Dashboard v9e",
+                     "scheduler.py job_brief_synthesis uses asyncio.run() — will fail in async context.",
+                     "Remove asyncio.run() wrapper. Call _get_or_generate_brief() directly in the scheduler job.", "High")
+            else:
+                ok("DV15", "job_brief_synthesis uses direct call not asyncio.run()", "Dashboard v9e",
+                   "asyncio.run() not found in job_brief_synthesis function.")
+        else:
+            ok("DV15", "job_brief_synthesis uses direct call not asyncio.run()", "Dashboard v9e",
+               "No asyncio.run() usage detected in scheduler.py brief synthesis.")
+    else:
+        skip("DV15", "job_brief_synthesis uses direct call not asyncio.run()", "Dashboard v9e",
+             "scheduler.py not found.")
+
+    # ── News & Content checks ─────────────────────────────────────────────
+
+    # DV16 — content_scan.py has _classify_domain() function
+    cscan = read(content_py)
+    if content_py.exists():
+        if "_classify_domain" in cscan:
+            ok("DV16", "content_scan.py has _classify_domain() function", "Dashboard v9e",
+               "_classify_domain() found in content_scan.py.")
+        else:
+            fail("DV16", "content_scan.py has _classify_domain() function", "Dashboard v9e",
+                 "_classify_domain() not found in content_scan.py.",
+                 "Implement _classify_domain() to map article text to domain tags. "
+                 "Do not use tags.split(',')[0] as a fallback — that misclassifies everything.", "Medium")
+    else:
+        skip("DV16", "content_scan.py has _classify_domain() function", "Dashboard v9e",
+             "content_scan.py not found.")
+
+    # DV17 — _classify_domain checks HAT keywords
+    if content_py.exists() and "_classify_domain" in cscan:
+        hat_keywords = ["trypanosomiasis", "sleeping sickness", "tsetse", "gambiense"]
+        missing_kw = [kw for kw in hat_keywords if kw not in cscan.lower()]
+        if not missing_kw:
+            ok("DV17", "_classify_domain checks all HAT keywords", "Dashboard v9e",
+               f"All HAT keywords present: {', '.join(hat_keywords)}")
+        else:
+            warn("DV17", "_classify_domain checks all HAT keywords", "Dashboard v9e",
+                 f"Missing HAT keywords in _classify_domain: {', '.join(missing_kw)}",
+                 f"Add these terms to _classify_domain for accurate HAT domain tagging: {', '.join(missing_kw)}", "Medium")
+    else:
+        skip("DV17", "_classify_domain checks all HAT keywords", "Dashboard v9e",
+             "content_scan.py or _classify_domain not found.")
+
+    # DV18 — intelligence.py assemble_daily_context uses two-tier ORDER BY
+    intel = read(intel_py)
+    if intel_py.exists():
+        if "created_at >= ?" in intel and "THEN 0 ELSE 1" in intel:
+            ok("DV18", "intelligence.py uses two-tier ORDER BY (24h first, then signal_strength)", "Dashboard v9e",
+               "Two-tier ORDER BY pattern confirmed in intelligence.py.")
+        else:
+            warn("DV18", "intelligence.py uses two-tier ORDER BY (24h first, then signal_strength)", "Dashboard v9e",
+                 "Two-tier ORDER BY not confirmed in intelligence.py.",
+                 "Add: ORDER BY CASE WHEN created_at >= ? THEN 0 ELSE 1 END, signal_strength DESC "
+                 "to ensure last-24h items appear before older items regardless of signal strength.", "Medium")
+    else:
+        skip("DV18", "intelligence.py uses two-tier ORDER BY", "Dashboard v9e",
+             "intelligence.py not found.")
+
+    # ── Scheduler checks ──────────────────────────────────────────────────
+
+    # DV19 — scheduler.py has no misfire_grace_time=3600
+    if sched_py.exists():
+        if "misfire_grace_time=3600" in sched:
+            fail("DV19", "scheduler.py does not use misfire_grace_time=3600", "Dashboard v9e",
+                 "misfire_grace_time=3600 found in scheduler.py — this delays misfired jobs by up to 1h.",
+                 "Remove misfire_grace_time=3600. Use misfire_grace_time=None (unlimited) or omit the parameter.", "Medium")
+        else:
+            ok("DV19", "scheduler.py does not use misfire_grace_time=3600", "Dashboard v9e",
+               "No misfire_grace_time=3600 found in scheduler.py.")
+    else:
+        skip("DV19", "scheduler.py misfire_grace_time check", "Dashboard v9e",
+             "scheduler.py not found.")
+
+    # DV20 — scheduler uses coalesce=True
+    if sched_py.exists():
+        if "coalesce=True" in sched:
+            ok("DV20", "scheduler.py uses coalesce=True on jobs", "Dashboard v9e",
+               "coalesce=True found in scheduler.py.")
+        else:
+            warn("DV20", "scheduler.py uses coalesce=True on jobs", "Dashboard v9e",
+                 "coalesce=True not found in scheduler.py.",
+                 "Add coalesce=True to add_job() calls to prevent job pile-up after downtime.", "Low")
+    else:
+        skip("DV20", "scheduler.py coalesce=True check", "Dashboard v9e",
+             "scheduler.py not found.")
+
+    # DV21 — scheduler has catch-up block for missed windows
+    if sched_py.exists():
+        if re.search(r'catch.?up|catchup', sched, re.IGNORECASE):
+            ok("DV21", "scheduler.py has startup catch-up block for missed jobs", "Dashboard v9e",
+               "catch-up / catchup logic found in scheduler.py.")
+        else:
+            warn("DV21", "scheduler.py has startup catch-up block for missed jobs", "Dashboard v9e",
+                 "No catch-up logic found in scheduler.py.",
+                 "Add startup catch-up: if current time > last scheduled run, fire morning_scan and "
+                 "brief_synthesis immediately on server start.", "Medium")
+    else:
+        skip("DV21", "scheduler.py catch-up block check", "Dashboard v9e",
+             "scheduler.py not found.")
+
+    # ── User identity checks ──────────────────────────────────────────────
+
+    # DV22 — user-config.yaml has name: Stan (not placeholder)
+    if USER_CONFIG.exists():
+        cfg_text = read(USER_CONFIG)
+        name_match = re.search(r'^\s*name\s*:\s*(.+)$', cfg_text, re.MULTILINE)
+        if name_match:
+            name_val = name_match.group(1).strip().strip('"\'')
+            if name_val in ("Researcher", "Amélie", "User", ""):
+                fail("DV22", "user-config.yaml name is set (not placeholder)", "Dashboard v9e",
+                     f"user-config.yaml name is still placeholder: '{name_val}'",
+                     "Update name: Stan in user-config.yaml.", "Medium")
+            else:
+                ok("DV22", "user-config.yaml name is set (not placeholder)", "Dashboard v9e",
+                   f"user-config.yaml name: {name_val}")
+        else:
+            warn("DV22", "user-config.yaml has name: field", "Dashboard v9e",
+                 "No 'name:' field found in user-config.yaml.",
+                 "Add 'name: Stan' under the [user] section of user-config.yaml.", "Medium")
+    else:
+        skip("DV22", "user-config.yaml name check", "Dashboard v9e",
+             f"user-config.yaml not found at {USER_CONFIG.relative_to(ROOT)}")
+
+    # DV23 — DB has user_config table with key column
+    con = db_connect()
+    if con:
+        tables = db_tables(con)
+        if "user_config" in tables:
+            cols = db_columns(con, "user_config")
+            if "key" in cols and "value" in cols:
+                ok("DV23", "DB has user_config table with key/value columns", "Dashboard v9e",
+                   f"user_config table found. Columns: {', '.join(cols)}")
+            else:
+                warn("DV23", "DB user_config table has key/value columns", "Dashboard v9e",
+                     f"user_config exists but columns are: {', '.join(cols)}",
+                     "Ensure user_config has at least 'key' and 'value' columns. "
+                     "Check DDL in db.py or MCP server initialisation.", "Medium")
+        else:
+            warn("DV23", "DB has user_config table", "Dashboard v9e",
+                 "user_config table not found in database.",
+                 "Add CREATE TABLE user_config (key TEXT PRIMARY KEY, value TEXT) "
+                 "to the DB initialisation DDL.", "Medium")
+        con.close()
+    else:
+        skip("DV23", "DB user_config table check", "Dashboard v9e", "DB not accessible.")
+
+    # ── Backup checks ─────────────────────────────────────────────────────
+
+    # DV24 — nightly backup uses .backup() not shutil.copy2
+    if sched_py.exists():
+        backup_block = re.search(
+            r'def job_nightly_backup.*?(?=\ndef |\Z)', sched, re.DOTALL
+        )
+        if backup_block:
+            block_text = backup_block.group(0)
+            if "shutil.copy2" in block_text:
+                fail("DV24", "Nightly backup uses sqlite3.Connection.backup() not shutil.copy2", "Dashboard v9e",
+                     "job_nightly_backup uses shutil.copy2 — may corrupt DB if copied while writes are in progress.",
+                     "Replace shutil.copy2 with sqlite3.Connection.backup() for a safe live backup.", "High")
+            elif ".backup(" in block_text:
+                ok("DV24", "Nightly backup uses sqlite3.Connection.backup()", "Dashboard v9e",
+                   "job_nightly_backup uses Connection.backup() — safe live backup method.")
+            else:
+                warn("DV24", "Nightly backup uses sqlite3.Connection.backup()", "Dashboard v9e",
+                     "job_nightly_backup found but backup method not confirmed.",
+                     "Verify the function uses sqlite3.Connection.backup() for safe DB copy.", "Medium")
+        else:
+            warn("DV24", "Nightly backup function exists", "Dashboard v9e",
+                 "job_nightly_backup function not found in scheduler.py.",
+                 "Add job_nightly_backup() using sqlite3.Connection.backup() for nightly DB backup.", "Medium")
+    else:
+        skip("DV24", "Nightly backup function check", "Dashboard v9e",
+             "scheduler.py not found.")
+
+    # ── Database schema checks ────────────────────────────────────────────
+
+    # DV25 — daily_insights table exists with required columns
+    con = db_connect()
+    if con:
+        tables = db_tables(con)
+        if "daily_insights" in tables:
+            cols = db_columns(con, "daily_insights")
+            required = ["insight_date", "content", "model", "generated_at"]
+            missing = [c for c in required if c not in cols]
+            if not missing:
+                ok("DV25", "daily_insights table has required columns", "Dashboard v9e",
+                   f"Columns present: {', '.join(cols)}")
+            else:
+                warn("DV25", "daily_insights table has required columns", "Dashboard v9e",
+                     f"Missing columns: {', '.join(missing)}",
+                     f"Add missing columns to daily_insights: {', '.join(missing)}", "Medium")
+        else:
+            fail("DV25", "daily_insights table exists", "Dashboard v9e",
+                 "daily_insights table not found — morning brief cannot be cached.",
+                 "Add daily_insights table DDL: (id, insight_date, content, model, generated_at). "
+                 "Run db initialisation to create it.", "High")
+        con.close()
+    else:
+        skip("DV25", "daily_insights table check", "Dashboard v9e", "DB not accessible.")
+
+    # DV26 — news_briefs table has source_type column
+    con = db_connect()
+    if con:
+        tables = db_tables(con)
+        if "news_briefs" in tables:
+            cols = db_columns(con, "news_briefs")
+            if "source_type" in cols:
+                ok("DV26", "news_briefs table has source_type column", "Dashboard v9e",
+                   f"source_type column present in news_briefs. All columns: {', '.join(cols)}")
+            else:
+                warn("DV26", "news_briefs table has source_type column", "Dashboard v9e",
+                     f"news_briefs columns: {', '.join(cols)} — source_type missing.",
+                     "Add ALTER TABLE news_briefs ADD COLUMN source_type TEXT DEFAULT 'rss' "
+                     "to distinguish RSS, arXiv, WHO, and manual entries.", "Medium")
+        else:
+            skip("DV26", "news_briefs source_type column", "Dashboard v9e",
+                 "news_briefs table not found in DB.")
+        con.close()
+    else:
+        skip("DV26", "news_briefs source_type column", "Dashboard v9e", "DB not accessible.")
+
+    # ── HTTP endpoint checks (require running dashboard) ──────────────────
+
+    # DV27 — /api/scan/content returns news_added
+    code, body = http_get("/api/scan/content")
+    if code is None:
+        skip("DV27", "POST /api/scan/content returns news_added", "Dashboard v9e", body)
+    elif code in (200, 405):  # 405 = wrong method (it's POST), means route exists
+        ok("DV27", "/api/scan/content endpoint exists", "Dashboard v9e",
+           f"HTTP {code} — endpoint reachable.")
+    else:
+        warn("DV27", "/api/scan/content endpoint exists", "Dashboard v9e",
+             f"HTTP {code}.",
+             "Ensure /api/scan/content route is registered in main.py and returns {news_added: N}.", "Medium")
+
+    # DV28 — /api/morning-brief/refresh is a POST endpoint
+    code, body = http_get("/api/morning-brief/refresh")
+    if code is None:
+        skip("DV28", "POST /api/morning-brief/refresh endpoint exists", "Dashboard v9e", body)
+    elif code in (200, 405, 422):
+        ok("DV28", "/api/morning-brief/refresh endpoint exists", "Dashboard v9e",
+           f"HTTP {code} — endpoint reachable (GET probe; real use is POST).")
+    elif code == 404:
+        fail("DV28", "POST /api/morning-brief/refresh endpoint exists", "Dashboard v9e",
+             "HTTP 404 — endpoint not found.",
+             "Add POST /api/morning-brief/refresh to today.py router.", "High")
+    else:
+        warn("DV28", "POST /api/morning-brief/refresh endpoint exists", "Dashboard v9e",
+             f"Unexpected HTTP {code}.", None, "Medium")
+
+    # DV29 — /api/scheduler/status returns JSON with running key
+    code, body = http_get("/api/scheduler/status")
+    if code is None:
+        skip("DV29", "GET /api/scheduler/status returns running key", "Dashboard v9e", body)
+    elif code == 200:
+        if "running" in body:
+            ok("DV29", "GET /api/scheduler/status returns running key", "Dashboard v9e",
+               "HTTP 200, 'running' key found in response.")
+        else:
+            warn("DV29", "GET /api/scheduler/status returns running key", "Dashboard v9e",
+                 f"HTTP 200 but 'running' key not found in response body.",
+                 "Ensure /api/scheduler/status returns JSON: {running: bool, jobs: [...]}.", "Medium")
+    else:
+        warn("DV29", "GET /api/scheduler/status returns running key", "Dashboard v9e",
+             f"HTTP {code}.", "Add GET /api/scheduler/status endpoint to main.py.", "Medium")
+
+    # DV30 — /api/mcp/status returns JSON with status key
+    code, body = http_get("/api/mcp/status")
+    if code is None:
+        skip("DV30", "GET /api/mcp/status returns status key", "Dashboard v9e", body)
+    elif code == 200:
+        if "status" in body:
+            ok("DV30", "GET /api/mcp/status returns status key", "Dashboard v9e",
+               "HTTP 200, 'status' key found in response.")
+        else:
+            warn("DV30", "GET /api/mcp/status returns status key", "Dashboard v9e",
+                 f"HTTP 200 but 'status' key not found in response body.",
+                 "Ensure /api/mcp/status returns JSON: {status: 'ok'|'error', tools: N}.", "Medium")
+    else:
+        warn("DV30", "GET /api/mcp/status returns status key", "Dashboard v9e",
+             f"HTTP {code}.", "Add GET /api/mcp/status endpoint.", "Medium")
+
+    # ── Work tab checks ───────────────────────────────────────────────────
+
+    # DV31 — work.py has project detail endpoint
+    work_r = read(ROUTERS_DIR / "work.py")
+    if re.search(r'/api/(partial/work/project|project/\{)', work_r):
+        ok("DV31", "work.py has project detail endpoint", "Dashboard v9e",
+           "Project detail endpoint found in work.py.")
+    else:
+        warn("DV31", "work.py has project detail endpoint", "Dashboard v9e",
+             "No project detail endpoint found in work.py.",
+             "Add GET /api/partial/work/project?id={project_id} to work.py router.", "Medium")
+
+    # DV32 — work.py has star / untrack / add-task / complete-task endpoints
+    work_actions = {
+        "star project":    re.search(r'star', work_r, re.IGNORECASE),
+        "untrack project": re.search(r'untrack|archive|remove', work_r, re.IGNORECASE),
+        "add task":        re.search(r'add.?task|POST.*task', work_r, re.IGNORECASE),
+        "complete task":   re.search(r'complet.*task|task.*complet|PATCH.*task|PUT.*task|task.*done|/done', work_r, re.IGNORECASE),
+    }
+    missing_actions = [k for k, v in work_actions.items() if not v]
+    if not missing_actions:
+        ok("DV32", "work.py has all project/task action endpoints", "Dashboard v9e",
+           "star, untrack, add-task, complete-task patterns found in work.py.")
+    else:
+        warn("DV32", "work.py has all project/task action endpoints", "Dashboard v9e",
+             f"Missing action patterns: {', '.join(missing_actions)}",
+             "Add missing endpoints to work.py for full project/task management.", "Medium")
+
+
+# ════════════════════════════════════════════════════════════════════════════
 # HTML REPORT GENERATOR
 # ════════════════════════════════════════════════════════════════════════════
 def generate_html(run_time: float) -> str:
@@ -1498,6 +1992,7 @@ def main():
     run_readme()
     run_database()
     run_git()
+    run_dashboard_v2()
 
     elapsed = time.time() - t0
 
