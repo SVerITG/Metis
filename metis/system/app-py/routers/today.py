@@ -535,86 +535,75 @@ def _build_news_items(qrows) -> list[dict]:
 
 
 @router.get("/api/partial/today/news-rail", response_class=HTMLResponse)
-async def today_news_rail(request: Request, category: str = ""):
-    last_updated = None
+async def today_news_rail(request: Request, category: str = "", period: str = "week"):
+    """News surface — topic slipcases with per-topic Haiku summaries."""
+    import sqlite3 as _sq3
 
+    if period not in ("week", "month"):
+        period = "week"
+    days = 7 if period == "week" else 30
+    cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
+
+    last_updated = None
     try:
-        ts_row = db_query(
-            "SELECT MAX(created_at) as last_ts FROM news_briefs"
-        ) or []
+        ts_row = db_query("SELECT MAX(created_at) as last_ts FROM news_briefs") or []
         if ts_row and ts_row[0].get("last_ts"):
             last_updated = _age_label(ts_row[0]["last_ts"]) + " ago"
     except Exception:
         pass
 
-    # General news items (source_type='news' or NULL/'news')
-    news_items: list[dict] = []
+    # Build per-topic slipcases
+    slipcases: list[dict] = []
+    all_topics: list[str] = []
     try:
-        if category:
-            qrows = db_query(
-                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
-                "FROM news_briefs WHERE (source_type IS NULL OR source_type='news') AND domain=? "
-                "ORDER BY created_at DESC LIMIT 12",
-                (category,),
-            )
-            news_items = _build_news_items(qrows)
-        else:
-            # Balanced view: up to 3 items per domain so no single topic dominates
-            qrows = db_query(
-                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
-                "FROM news_briefs WHERE (source_type IS NULL OR source_type='news') "
-                "ORDER BY created_at DESC LIMIT 120"
-            ) or []
-            seen: dict[str, int] = {}
-            balanced = []
-            for r in qrows:
-                d = r.get("domain") or "General"
-                if seen.get(d, 0) < 3:
-                    balanced.append(r)
-                    seen[d] = seen.get(d, 0) + 1
-                if len(balanced) >= 18:
-                    break
-            news_items = _build_news_items(balanced)
-    except Exception:
-        pass
-
-    # Scientific articles (source_type='article')
-    article_items: list[dict] = []
-    try:
-        if category:
-            qrows = db_query(
-                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
-                "FROM news_briefs WHERE source_type='article' AND domain=? "
-                "ORDER BY created_at DESC LIMIT 8",
-                (category,),
-            )
-        else:
-            qrows = db_query(
-                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
-                "FROM news_briefs WHERE source_type='article' "
-                "ORDER BY created_at DESC LIMIT 8"
-            )
-        article_items = _build_news_items(qrows)
-    except Exception:
-        pass
-
-    # Category chips — only from news items
-    categories: list[dict] = []
-    total_count = 0
-    try:
-        rows = db_query(
+        topic_rows = db_query(
             "SELECT domain, COUNT(*) as n, MAX(created_at) as last_ts "
-            "FROM news_briefs WHERE (source_type IS NULL OR source_type='news') "
-            "GROUP BY domain ORDER BY last_ts DESC"
+            "FROM news_briefs WHERE created_at >= ? AND domain IS NOT NULL AND domain != '' "
+            "GROUP BY domain ORDER BY last_ts DESC",
+            (cutoff,),
         ) or []
-        for r in rows:
-            dom = r.get("domain") or "General"
-            cnt = r.get("n") or 0
-            total_count += cnt
-            categories.append({
-                "domain": dom,
+        all_topics = [r["domain"] for r in topic_rows if r.get("domain")]
+
+        # Load stored summaries
+        summaries: dict[str, dict] = {}
+        try:
+            _ensure_news_summaries_table()
+            sum_rows = db_query(
+                "SELECT topic, summary, article_count, generated_at "
+                "FROM news_topic_summaries WHERE period = ?",
+                (period,),
+            ) or []
+            for sr in sum_rows:
+                summaries[sr["topic"]] = {
+                    "summary": sr.get("summary") or "",
+                    "generated_at": sr.get("generated_at") or "",
+                }
+        except Exception:
+            pass
+
+        for tr in topic_rows:
+            topic = tr["domain"]
+            cnt = tr.get("n") or 0
+            age = (_age_label(tr["last_ts"]) + " ago") if tr.get("last_ts") else ""
+
+            # Articles for this topic
+            art_rows = db_query(
+                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
+                "FROM news_briefs WHERE domain = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 10",
+                (topic, cutoff),
+            ) or []
+            items = _build_news_items(art_rows)
+
+            topic_summary = summaries.get(topic, {})
+            slipcases.append({
+                "topic": topic,
                 "count": cnt,
-                "age_label": (_age_label(r["last_ts"]) + " ago") if r.get("last_ts") else "",
+                "age_label": age,
+                "items": items,
+                "summary": topic_summary.get("summary", ""),
+                "summary_age": (_age_label(topic_summary["generated_at"]) + " ago")
+                               if topic_summary.get("generated_at") else "",
+                "open": topic == category,
             })
     except Exception:
         pass
@@ -623,11 +612,10 @@ async def today_news_rail(request: Request, category: str = ""):
         request,
         "partials/today_news_rail.html",
         {
-            "categories": categories,
-            "total_count": total_count,
-            "news_items": news_items,
-            "article_items": article_items,
-            "active_category": category,
+            "slipcases": slipcases,
+            "all_topics": all_topics,
+            "active_topic": category,
+            "period": period,
             "last_updated": last_updated,
         },
     )
@@ -771,6 +759,163 @@ async def today_token_footer(request: Request):
     return HTMLResponse(
         f'<div class="token-footer">Today: {runs_today} runs · {total_tokens:,} tokens</div>'
     )
+
+
+# ---------------------------------------------------------------------------
+# News topic summaries (C3) — Haiku-generated per-topic news digests
+# ---------------------------------------------------------------------------
+
+_NEWS_SUMMARIES_DDL = """
+CREATE TABLE IF NOT EXISTS news_topic_summaries (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    topic        TEXT NOT NULL,
+    period       TEXT NOT NULL DEFAULT 'week',
+    summary      TEXT,
+    article_count INTEGER DEFAULT 0,
+    generated_at TEXT,
+    UNIQUE(topic, period) ON CONFLICT REPLACE
+)
+"""
+
+
+def _ensure_news_summaries_table():
+    try:
+        db_execute(_NEWS_SUMMARIES_DDL)
+    except Exception:
+        pass
+
+
+def _haiku_news_summary(topic: str, titles: list[str], period: str, api_key: str) -> str:
+    """Call Haiku to summarise recent articles for a topic. Returns summary text."""
+    period_label = "this week" if period == "week" else "this month"
+    article_list = "\n".join(f"- {t}" for t in titles[:30])
+    prompt = (
+        f"Here are recent news headlines about '{topic}' from {period_label}:\n\n"
+        f"{article_list}\n\n"
+        f"Write a 2–3 sentence summary of the key developments. "
+        f"Be specific: name diseases, countries, organisations, findings. "
+        f"No headers. No bullet points. Plain prose."
+    )
+    try:
+        import httpx as _httpx
+        resp = _httpx.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                "model": "claude-haiku-4-5-20251001",
+                "max_tokens": 200,
+                "messages": [{"role": "user", "content": prompt}],
+            },
+            timeout=20.0,
+        )
+        if resp.status_code == 200:
+            return resp.json()["content"][0]["text"].strip()
+    except Exception:
+        pass
+    return ""
+
+
+@router.post("/api/news/summarize")
+async def api_news_summarize(request: Request):
+    """Generate Haiku summaries for selected topics. Body: {topics: [...], period: 'week'|'month'}"""
+    import sqlite3 as _sq3
+
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    topics: list[str] = body.get("topics") or []
+    period: str = body.get("period", "week")
+    if period not in ("week", "month"):
+        period = "week"
+
+    # API key
+    api_key = _get_api_key()
+    if not api_key:
+        return JSONResponse({"ok": False, "error": "No API key configured"}, status_code=400)
+
+    _ensure_news_summaries_table()
+    db_path = _get_db_path()
+    if not db_path:
+        return JSONResponse({"ok": False, "error": "DB not found"}, status_code=500)
+
+    days = 7 if period == "week" else 30
+    cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
+
+    # If no explicit topics, use all available
+    if not topics:
+        try:
+            rows = db_query(
+                "SELECT DISTINCT domain FROM news_briefs WHERE created_at >= ? AND domain IS NOT NULL AND domain != ''",
+                (cutoff,),
+            ) or []
+            topics = [r["domain"] for r in rows if r.get("domain")]
+        except Exception:
+            pass
+
+    generated = 0
+    errors = []
+    try:
+        conn = _sq3.connect(str(db_path))
+        conn.row_factory = _sq3.Row
+        conn.execute(_NEWS_SUMMARIES_DDL)
+
+        for topic in topics[:15]:  # cap at 15 topics per call
+            try:
+                rows = conn.execute(
+                    "SELECT title FROM news_briefs "
+                    "WHERE domain = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 30",
+                    (topic, cutoff),
+                ).fetchall()
+                titles = [r["title"] for r in rows if r["title"]]
+                if not titles:
+                    continue
+                summary = _haiku_news_summary(topic, titles, period, api_key)
+                if summary:
+                    conn.execute(
+                        "INSERT OR REPLACE INTO news_topic_summaries "
+                        "(topic, period, summary, article_count, generated_at) VALUES (?,?,?,?,?)",
+                        (topic, period, summary, len(titles),
+                         datetime.datetime.now().isoformat(timespec="seconds")),
+                    )
+                    conn.commit()
+                    generated += 1
+            except Exception as e:
+                errors.append(f"{topic}: {e!s:.60}")
+
+        conn.close()
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+    return JSONResponse({
+        "ok": True,
+        "generated": generated,
+        "topics": topics,
+        "period": period,
+        "errors": errors,
+    })
+
+
+def _get_api_key() -> str:
+    """Return the Anthropic API key from env or system .env file."""
+    key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not key:
+        try:
+            rc = os.environ.get("METIS_RC_ROOT", "")
+            env_p = (Path(rc) / "system" / ".env") if rc else None
+            if env_p and env_p.exists():
+                for line in env_p.read_text().splitlines():
+                    line = line.strip()
+                    if line.startswith("ANTHROPIC_API_KEY="):
+                        key = line.split("=", 1)[1].strip()
+                        break
+        except Exception:
+            pass
+    return key
 
 
 # ---------------------------------------------------------------------------

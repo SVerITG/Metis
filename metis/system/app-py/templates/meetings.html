@@ -22,6 +22,10 @@
               hx-get="/api/partial/meetings/import-form"
               hx-target="#meeting-import-container"
               hx-swap="innerHTML">Import Meeting</button>
+      <button class="btn btn--sec btn--caps" onclick="openAudioUpload()" title="Upload an audio file — transcribed locally, no API">
+        <svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect x="5" y="1" width="6" height="9" rx="3"/><path d="M2 8a6 6 0 0 0 12 0"/><line x1="8" y1="14" x2="8" y2="16"/></svg>
+        Process Audio
+      </button>
       <button class="btn btn--primary btn--caps"
               onclick="startLiveMeetingSetup()">
         <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor" style="margin-right:4px;"><circle cx="8" cy="8" r="5"/></svg>
@@ -120,5 +124,74 @@
 
   </div>
 </div>
+
+<!-- Audio upload modal -->
+<div id="audio-upload-overlay" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.45);align-items:center;justify-content:center;">
+  <div class="panel" style="width:480px;max-width:92vw;padding:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
+      <div class="kicker" style="margin:0;">PROCESS AUDIO</div>
+      <button onclick="closeAudioUpload()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;">✕</button>
+    </div>
+    <div style="padding:20px;">
+      <p style="font-family:var(--m-sans);font-size:13px;color:var(--m-muted);margin:0 0 16px;line-height:1.5;">
+        Upload any meeting recording. Transcribed locally (no API call, audio deleted after). WAV works natively; other formats need ffmpeg installed in WSL.
+      </p>
+      <label style="display:block;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:4px;">MEETING TITLE (optional)</label>
+      <input id="audio-meeting-title" type="text" placeholder="e.g. HAT coordination call"
+             style="width:100%;box-sizing:border-box;padding:8px 10px;font-family:var(--m-sans);font-size:13px;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;color:var(--m-ink);margin-bottom:12px;">
+      <label style="display:block;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:4px;">AUDIO FILE</label>
+      <input id="audio-file-input" type="file" accept=".wav,.mp3,.m4a,.ogg,.webm,.flac"
+             style="width:100%;box-sizing:border-box;padding:8px 10px;font-family:var(--m-sans);font-size:13px;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;color:var(--m-ink);margin-bottom:16px;">
+      <div id="audio-upload-status" style="min-height:20px;font-family:var(--m-mono);font-size:11px;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn--primary btn--caps" style="flex:1;" onclick="submitAudioUpload()">Transcribe &amp; Save</button>
+        <button class="btn btn--ghost btn--caps" onclick="closeAudioUpload()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openAudioUpload() {
+  const o = document.getElementById('audio-upload-overlay');
+  if (o) o.style.display = 'flex';
+}
+function closeAudioUpload() {
+  const o = document.getElementById('audio-upload-overlay');
+  if (o) o.style.display = 'none';
+  document.getElementById('audio-file-input').value = '';
+  document.getElementById('audio-upload-status').textContent = '';
+}
+async function submitAudioUpload() {
+  const fi = document.getElementById('audio-file-input');
+  const title = document.getElementById('audio-meeting-title').value;
+  const st = document.getElementById('audio-upload-status');
+  if (!fi.files.length) { st.textContent = 'No file selected.'; return; }
+  const file = fi.files[0];
+  st.style.color = 'var(--m-muted)';
+  st.textContent = `Transcribing ${file.name} — may take a minute…`;
+  const fd = new FormData();
+  fd.append('audio', file, file.name);
+  fd.append('title', title);
+  try {
+    const res = await fetch('/api/meetings/transcribe-audio', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.ok) {
+      st.style.color = 'var(--m-ok)';
+      st.textContent = `✓ Saved as "${data.title}" — ${data.lines} lines, ${data.duration_minutes}m`;
+      document.querySelectorAll('[hx-get*="meetings/list"]').forEach(el => {
+        if (window.htmx) htmx.trigger(el, 'load');
+      });
+      setTimeout(closeAudioUpload, 3000);
+    } else {
+      st.style.color = 'var(--m-alert)';
+      st.textContent = `Error: ${data.error}`;
+    }
+  } catch(e) {
+    st.style.color = 'var(--m-alert)';
+    st.textContent = 'Network error — check the server.';
+  }
+}
+</script>
 
 {% endblock %}
