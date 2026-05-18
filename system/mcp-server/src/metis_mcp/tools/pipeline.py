@@ -196,11 +196,48 @@ async def session_bootstrap(client: str = "code") -> list[TextContent]:
             except Exception:
                 memory_snapshot = []
 
+    # ── Implementation-plan change detector ──────────────────────────────────
+    plan_status: dict = {}
+    try:
+        plan_path = paths.root / "system" / "config" / "implementation-progress.json"
+        if plan_path.exists():
+            import time as _time
+            plan_mtime = plan_path.stat().st_mtime
+
+            # Find when the previous session ended (last_active before this one)
+            with connect(paths.db) as _con:
+                prev = _con.execute(
+                    """SELECT last_active FROM sessions
+                       WHERE computer = ? AND session_id != ?
+                       ORDER BY last_active DESC LIMIT 1""",
+                    (computer, session_id),
+                ).fetchone()
+            prev_ts = float(prev["last_active"].replace("Z", "+00:00").split("+")[0]
+                            .replace("T", " ")) if prev else 0.0
+            try:
+                import datetime as _dt
+                prev_dt = _dt.datetime.fromisoformat(prev["last_active"]) if prev else None
+                prev_epoch = prev_dt.timestamp() if prev_dt else 0.0
+            except Exception:
+                prev_epoch = 0.0
+
+            plan_data = json.loads(plan_path.read_text(encoding="utf-8"))
+            meta = plan_data.get("_meta", {})
+
+            plan_status = {
+                "last_updated": meta.get("last_updated", ""),
+                "last_phase_completed": meta.get("last_phase_completed", ""),
+                "changed_since_last_session": plan_mtime > prev_epoch and prev_epoch > 0,
+            }
+    except Exception:
+        pass
+
     result = {
         "session_id": session_id,
         "is_new": is_new,
         "computer": computer,
         "memory_snapshot": memory_snapshot,
+        "plan_status": plan_status,
     }
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
