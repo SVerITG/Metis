@@ -64,7 +64,7 @@
                hx-target="#meetings-list"
                hx-swap="innerHTML"
                name="q"
-               style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:6px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;width:180px;">
+               style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:6px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;min-width:100px;max-width:180px;flex:1;">
         <button class="btn btn--ghost btn--caps"
                 hx-get="/api/partial/meetings/list?filter=week"
                 hx-target="#meetings-list"
@@ -80,7 +80,7 @@
       </div>
 
       <!-- Meetings list -->
-      <div id="meetings-list"
+      <div id="meetings-list" class="list-scroll"
            hx-get="/api/partial/meetings/list"
            hx-trigger="load, refresh"
            hx-swap="innerHTML">

@@ -38,11 +38,11 @@
           hx-trigger="load"
           hx-swap="innerHTML">WEEK —</span>
   </div>
-  <div class="panel" style="padding:24px;margin-bottom:32px;"
+  <div class="panel" style="padding:24px;margin-bottom:32px;overflow-x:auto;"
        hx-get="/api/partial/planner/week"
        hx-trigger="load"
        hx-swap="outerHTML">
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;min-width:700px;">
       {% for d in ['MON','TUE','WED','THU','FRI','SAT','SUN'] %}
       <div style="padding:12px 10px;border:1px solid var(--m-rule);min-height:150px;border-radius:2px;opacity:.35;">
         <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:8px;">{{ d }}</div>
