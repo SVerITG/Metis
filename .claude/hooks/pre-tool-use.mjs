@@ -108,7 +108,7 @@ try {
   input = JSON.parse(raw);
 } catch {
   // If we can't read input, allow the tool to proceed
-  console.log(JSON.stringify({ decision: "allow" }));
+  console.log(JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "allow" } }));
   process.exit(0);
 }
 
@@ -129,7 +129,7 @@ if (HOOK_PROFILE === "minimal") {
       }
     }
   }
-  console.log(JSON.stringify({ decision: "allow" }));
+  console.log(JSON.stringify({ hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "allow" } }));
   process.exit(0);
 }
 
@@ -256,6 +256,12 @@ if (HOOK_PROFILE !== "minimal") {
 }
 
 // ─── Output ─────────────────────────────────────────────────────────────────
-const output = { decision };
-if (reason) output.reason = reason;
+const output = {
+  hookSpecificOutput: {
+    hookEventName: "PreToolUse",
+    permissionDecision: decision === "block" ? "deny" : "allow",
+    ...(reason ? { permissionDecisionReason: reason } : {}),
+  },
+};
 console.log(JSON.stringify(output));
+process.exit(0);
