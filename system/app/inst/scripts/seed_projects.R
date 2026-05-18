@@ -1,6 +1,6 @@
 # seed_projects.R
-# Run this once to add the three external research projects and their todos
-# to the Metis SQLite database.
+# Example seeder — run once to add sample research projects and tasks to the
+# Metis SQLite database.  Edit the data frames below to match your own projects.
 # Safe to re-run — uses INSERT OR IGNORE so existing records are not overwritten.
 
 library(DBI)
@@ -25,31 +25,32 @@ if (!"launch_cmd" %in% cols) {
 now <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
 
 # ---- Projects ----
+# Replace these with your own projects.
 projects <- data.frame(
-  project_id    = c("hat-dashboard", "hat-clustering", "multilevel-analysis"),
-  title         = c("HAT Dashboard", "HAT Risk Mapping and Clustering", "Multilevel Analysis Course"),
-  domain        = c("sleeping-sickness", "sleeping-sickness", "education"),
+  project_id    = c("research-project-1", "research-project-2", "learning-course-1"),
+  title         = c("Research Project A", "Research Project B", "Statistics Course"),
+  domain        = c("research", "research", "education"),
   status        = c("active", "active", "active"),
   priority      = c("high", "high", "medium"),
   next_step     = c(
-    "Review reactive architecture and data processing scripts",
-    "Review Risk_Mapping_Script_2025_KC.R for PhD article",
-    "Check mlm-app status and connect spatial scan material"
+    "Review data processing pipeline",
+    "Complete analysis and draft findings",
+    "Finish module 3 and move to module 4"
   ),
   external_path = c(
-    "C:\\Users\\sverschaeve\\OneDrive - ITG\\Documents\\2. HAT disease\\1. Epi Data\\7. Dashboard",
-    "C:\\Users\\sverschaeve\\OneDrive - ITG\\Documents\\2. HAT disease\\1. Epi Data\\4. Clustering",
-    "C:\\Users\\sverschaeve\\OneDrive - ITG\\Documents\\9. Education\\1. Multilevel Analysis"
+    "C:\\Users\\YourName\\Documents\\research-project-a",
+    "C:\\Users\\YourName\\Documents\\research-project-b",
+    "C:\\Users\\YourName\\Documents\\statistics-course"
   ),
   github_url    = c(
-    "https://github.com/SVerITG/HAT_Dashboard_1.0",
-    "pending",   # create on GitHub then update
-    "https://github.com/SVerITG/MLM_course"
+    "https://github.com/yourusername/research-project-a",
+    "pending",
+    "https://github.com/yourusername/statistics-course"
   ),
   launch_cmd    = c(
     NA_character_,
     NA_character_,
-    "cd mlm-app && node server.js"
+    NA_character_
   ),
   created_at    = rep(now, 3),
   stringsAsFactors = FALSE
@@ -71,54 +72,45 @@ for (i in seq_len(nrow(projects))) {
 # ---- Tasks ----
 tasks <- data.frame(
   task_id    = c(
-    "task-hatdash-reactive",
-    "task-hatdash-github",
-    "task-hatdash-paths",
-    "task-hatdash-derived",
-    "task-clustering-kc-review",
-    "task-clustering-link-phd",
-    "task-clustering-hpc-check",
-    "task-mlm-app-check",
-    "task-mlm-spatial-connect",
-    "task-mlm-github"
+    "task-proj1-data-review",
+    "task-proj1-github",
+    "task-proj1-paths",
+    "task-proj2-analysis",
+    "task-proj2-draft",
+    "task-course-module3",
+    "task-course-references"
   ),
   project_id = c(
-    "hat-dashboard", "hat-dashboard", "hat-dashboard", "hat-dashboard",
-    "hat-clustering", "hat-clustering", "hat-clustering",
-    "multilevel-analysis", "multilevel-analysis", "multilevel-analysis"
+    "research-project-1", "research-project-1", "research-project-1",
+    "research-project-2", "research-project-2",
+    "learning-course-1", "learning-course-1"
   ),
   title = c(
-    "Review reactive architecture in app.R and modules",
+    "Review data processing scripts",
     "Initialize git and push to GitHub",
-    "Check for hardcoded paths in all scripts",
-    "Review 02d_derived_datasets.R performance",
-    "Review Risk_Mapping_Script_2025_KC.R for PhD article",
-    "Link clustering outputs to passive screening article",
-    "Review HPC folder scripts and document workflow",
-    "Check mlm-app Shiny app status",
-    "Connect spatial scan statistics material",
-    "Consider GitHub for course scripts"
+    "Check for hardcoded paths in scripts",
+    "Complete main analysis",
+    "Draft findings section",
+    "Complete module 3",
+    "Compile course bibliography"
   ),
-  status   = rep("open", 10),
-  due_date = rep("", 10),
+  status   = rep("open", 7),
+  due_date = rep("", 7),
   owner    = c(
-    "Software Engineer", "Software Engineer", "Software Engineer", "Software Engineer",
-    "Software Engineer", "PhD Architect", "Software Engineer",
-    "Software Engineer", "Methods Coach", "Software Engineer"
+    "Software Engineer", "Software Engineer", "Software Engineer",
+    "Software Engineer", "Writing Partner",
+    "Software Engineer", "Librarian"
   ),
   notes = c(
-    "Check for business logic in UI layer and missing req()",
-    "Github/ folder already exists with GIT_GUIDE.md",
-    "Hardcoded paths break on other machines",
-    "Likely the heaviest script — check for slow joins",
-    "Main KC script for risk mapping — priority for elimination article",
-    "Clustering results feed the passive case finding narrative",
-    "HPC = high-performance computing scripts for SaTScan at scale",
-    "migrate_db.js present — check if app needs database setup",
-    "Spatial scan connects education and research",
-    "Makes scripts citable and shareable"
+    "Check for business logic mixed into UI layer",
+    "Set up remote and push main branch",
+    "Hardcoded paths break on other machines — use relative paths",
+    "Run full analysis pipeline and review outputs",
+    "Structure around key findings from the analysis",
+    "Write exercises and further reading for module 3",
+    "Gather foundational textbook references"
   ),
-  created_at = rep(now, 10),
+  created_at = rep(now, 7),
   stringsAsFactors = FALSE
 )
 
@@ -135,88 +127,20 @@ for (i in seq_len(nrow(tasks))) {
   }
 }
 
-# ---- Additional tasks: missing agent × project coverage ----
-# Added 2026-03-27: fills gaps identified in v4 agent audit
-
-extra_tasks <- data.frame(
-  task_id    = c(
-    "task-hatdash-ui-audit",
-    "task-hatdash-data-privacy",
-    "task-clustering-satscan-params",
-    "task-clustering-article-draft",
-    "task-mlm-slides",
-    "task-mlm-references",
-    "task-passive-screening-phd-map"
-  ),
-  project_id = c(
-    "hat-dashboard",
-    "hat-dashboard",
-    "hat-clustering",
-    "hat-clustering",
-    "multilevel-analysis",
-    "multilevel-analysis",
-    "passive-screening-drc"
-  ),
-  title = c(
-    "Audit exploration tab layout and filter cascade UX",
-    "Review data layer: ensure no individual records exposed in UI",
-    "Review SaTScan parameter choices for KC spatial scan",
-    "Draft clustering to passive screening narrative for PhD article",
-    "Create teaching slide deck for multilevel analysis module",
-    "Find key MLM textbook references for course bibliography",
-    "Map passive screening article to thesis backbone"
-  ),
-  status   = rep("open", 7),
-  due_date = rep("", 7),
-  owner    = c(
-    "Dashboard Engineer",
-    "Software Engineer",
-    "Methods Coach",
-    "Writing Partner",
-    "Presentation Maker",
-    "Librarian",
-    "PhD Architect"
-  ),
-  notes = c(
-    "Context doc: 02_agents/dashboard-engineer/hat-dashboard-context.md",
-    "Security rule: aggregate display only — no patient-level records. See 08_system/security/",
-    "Context doc: 02_agents/methods-coach/hat-clustering-context.md. Check max cluster size, space-time vs space-only, population denominator",
-    "Context doc: 02_agents/writing-partner/hat-clustering-context.md. Link KC cluster results to passive case-finding narrative",
-    "Context doc: 02_agents/presentation-maker/multilevel-analysis-course-context.md. One slide deck per module",
-    "Priority: MLM foundational texts (Snijders & Bosker, Rabe-Hesketh & Skrondal) + SaTScan original paper (Kulldorff 1997)",
-    "Context doc: 02_agents/phd-architect/hat-clustering-context.md. Define which research question passive screening article answers"
-  ),
-  created_at = rep(now, 7),
-  stringsAsFactors = FALSE
-)
-
-for (i in seq_len(nrow(extra_tasks))) {
-  existing <- DBI::dbGetQuery(
-    con,
-    paste0("SELECT task_id FROM tasks WHERE task_id = '", extra_tasks$task_id[i], "'")
-  )
-  if (nrow(existing) == 0) {
-    DBI::dbAppendTable(con, "tasks", extra_tasks[i, ])
-    cat("Inserted task:", extra_tasks$title[i], "\n")
-  } else {
-    cat("Skipped (exists):", extra_tasks$title[i], "\n")
-  }
-}
-
 # ---- Builder and News Radar coverage ----
 reactive_agent_tasks <- data.frame(
   task_id    = c("task-builder-mcp-server", "task-newsradar-rss-setup"),
-  project_id = c("metis-dashboard", "phd-framework"),
+  project_id = c("metis-dashboard", "research-project-1"),
   title      = c(
     "Scaffold MCP server for Metis data automation",
-    "Configure RSS feeds for HAT elimination and sleeping sickness monitoring"
+    "Configure RSS feeds for your research domain"
   ),
   status   = rep("open", 2),
   due_date = rep("", 2),
   owner    = c("Builder", "News Radar"),
   notes = c(
-    "Consider: local MCP server exposing metis.sqlite queries to Claude Code. See ruflo-reference for MCP patterns.",
-    "Sources: WHO HAT updates, PLoS NTD, Lancet Infectious Diseases, relevant institutional feeds. Store in 07_outputs/news/"
+    "Local MCP server exposing metis.sqlite queries to Claude Code.",
+    "Add relevant journal and institution feeds. Store output in outputs/news/"
   ),
   created_at = rep(now, 2),
   stringsAsFactors = FALSE

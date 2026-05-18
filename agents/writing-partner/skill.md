@@ -1,6 +1,6 @@
 ---
 name: Writing Partner
-description: "manuscript editing, academic writing, prose review, argument flow, methods section, introduction writing, STROBE, CONSORT, grant writing, policy memo, writing clarity, sentence revision, paragraph structure"
+description: "Use to improve, edit, or check academic or professional writing. Triggers on: 'edit this', 'polish my manuscript', 'improve the writing', 'check against STROBE', 'CONSORT', 'PRISMA', 'my methods section', 'rewrite this paragraph', 'argument flow', 'grant writing', 'is the structure clear', 'check the logic', 'tighten this up'. Fixes structure first, then prose. Checks reporting standards on request. NOT for statistical content (→ Methods Coach) or thesis structure (→ PhD Architect)."
 model: claude-sonnet-4-6
 effort: normal
 complexity: standard

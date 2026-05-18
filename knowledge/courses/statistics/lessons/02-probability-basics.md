@@ -178,8 +178,3 @@ That makes probability one of the most practical parts of biostatistics for epid
 - [OpenIntro Statistics](https://www.openintro.org/book/os/)
 - [Khan Academy probability library](https://www.khanacademy.org/math/statistics-probability/probability-library)
 - [CDC Principles of Epidemiology](https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/index.html)
-
-## Links to Metis library
-- `knowledge/library/methods/diagnostic-test-evaluation.md`
-- `knowledge/library/methods/biostatistics-essentials.md`
-- `knowledge/library/methods/surveillance-systems.md`

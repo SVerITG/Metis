@@ -33,6 +33,19 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
+
+def _open_db(path: str | Path) -> sqlite3.Connection:
+    """Open a Metis SQLite file with the vec0 extension loaded if available."""
+    conn = sqlite3.connect(str(path))
+    try:
+        import sqlite_vec
+        conn.enable_load_extension(True)
+        sqlite_vec.load(conn)
+        conn.enable_load_extension(False)
+    except Exception:
+        pass
+    return conn
+
 from mcp.types import TextContent
 
 from metis_mcp.app_instance import app
@@ -96,7 +109,7 @@ async def backup_db(
     backup_path = dest_dir / filename
 
     # Online backup
-    src_conn = sqlite3.connect(str(paths.db))
+    src_conn = _open_db(paths.db)
     bk_conn  = sqlite3.connect(str(backup_path))
     try:
         src_conn.backup(bk_conn)
@@ -265,7 +278,7 @@ async def verify_backup(backup_path: str) -> list[TextContent]:
         return [TextContent(type="text", text="ERROR: cannot verify an encrypted backup — decrypt first.")]
 
     try:
-        conn = sqlite3.connect(f"file:{bp}?mode=ro", uri=True)
+        conn = _open_db(bp)
         rows = conn.execute("PRAGMA integrity_check").fetchall()
         table_count = conn.execute(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table'"

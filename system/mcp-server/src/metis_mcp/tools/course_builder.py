@@ -307,6 +307,269 @@ async def get_course_status(slug: str = "") -> list[TextContent]:
     return [TextContent(type="text", text="\n".join(lines))]
 
 
+# ── Step 3: save_course_sources ──────────────────────────────────────────────
+
+@app.tool()
+async def save_course_sources(
+    slug: str,
+    sources: str,
+) -> list[TextContent]:
+    """Step 3 — Save harvested source metadata for a course.
+
+    Call this after the Content Harvester has collected materials. Pass a
+    JSON array of source objects. Each source is written as a YAML file in
+    `knowledge/courses/{slug}/sources/` and the build advances to Step 4.
+
+    Args:
+        slug: The course slug.
+        sources: JSON array of source dicts — each must have at least a
+                 ``title`` and one of ``url``, ``file_path``, or ``doi``.
+                 Example: '[{"title": "OpenIntro Stats", "url": "https://openintro.org/book/os/", "type": "textbook"}]'
+    """
+    try:
+        source_list = json.loads(sources)
+        if not isinstance(source_list, list):
+            raise ValueError("Expected a JSON array")
+    except (json.JSONDecodeError, ValueError) as exc:
+        return [TextContent(type="text", text=f"Invalid sources JSON: {exc}")]
+
+    now_iso = datetime.datetime.now().isoformat(timespec="seconds")
+    courses_root = paths.root / "knowledge" / "courses" / slug
+    sources_dir = courses_root / "sources"
+    sources_dir.mkdir(parents=True, exist_ok=True)
+
+    written: list[str] = []
+    for i, src in enumerate(source_list, start=1):
+        title = src.get("title", f"source-{i}")
+        fname = re.sub(r"[^\w\s-]", "", title.lower()).replace(" ", "-")[:40] + ".yaml"
+        yaml_lines = [f"title: {json.dumps(title)}"]
+        for key in ("url", "file_path", "doi", "type", "notes", "module"):
+            if src.get(key):
+                yaml_lines.append(f"{key}: {json.dumps(str(src[key]))}")
+        (sources_dir / fname).write_text("\n".join(yaml_lines) + "\n", encoding="utf-8")
+        written.append(fname)
+
+    with connect(paths.db) as conn:
+        _ensure_table(conn)
+        conn.execute(
+            "UPDATE course_builds SET status='design', step=4, sources_dir=?, updated_at=? WHERE slug=?",
+            (str(sources_dir), now_iso, slug),
+        )
+        conn.commit()
+
+    return [TextContent(type="text", text=(
+        f"Sources saved for **{slug}** — {len(written)} files in `knowledge/courses/{slug}/sources/`.\n\n"
+        f"Files: {', '.join(written)}\n\n"
+        "**Step 4 — Curriculum Design**: Delegate to Learning Architect. Ask it to read the sources "
+        f"and produce a `course.json` with modules, learning objectives, and Bloom levels. "
+        f"Then call `save_course_curriculum('{slug}', curriculum_json)`."
+    ))]
+
+
+# ── Step 4: save_course_curriculum ────────────────────────────────────────────
+
+@app.tool()
+async def save_course_curriculum(
+    slug: str,
+    curriculum_json: str,
+) -> list[TextContent]:
+    """Step 4 — Save the approved curriculum design for a course.
+
+    Call this after the Learning Architect has produced the curriculum.
+    Pass a JSON object with ``modules`` (array) and ``lessons`` (array).
+    Writes to `knowledge/courses/{slug}/course.json` and advances to Step 5.
+
+    Args:
+        slug: The course slug.
+        curriculum_json: JSON object with ``modules`` and ``lessons`` arrays.
+    """
+    try:
+        curriculum = json.loads(curriculum_json)
+        if not isinstance(curriculum, dict):
+            raise ValueError("Expected a JSON object")
+    except (json.JSONDecodeError, ValueError) as exc:
+        return [TextContent(type="text", text=f"Invalid curriculum JSON: {exc}")]
+
+    now_iso = datetime.datetime.now().isoformat(timespec="seconds")
+    courses_root = paths.root / "knowledge" / "courses" / slug
+    courses_root.mkdir(parents=True, exist_ok=True)
+    (courses_root / "lessons.json").write_text(
+        json.dumps(curriculum, indent=2), encoding="utf-8"
+    )
+
+    modules = curriculum.get("modules", [])
+    lessons = curriculum.get("lessons", [])
+
+    with connect(paths.db) as conn:
+        _ensure_table(conn)
+        conn.execute(
+            "UPDATE course_builds SET status='draft', step=5, outline_json=?, updated_at=? WHERE slug=?",
+            (json.dumps(modules), now_iso, slug),
+        )
+        conn.execute(
+            "UPDATE learning_courses SET total_modules=?, updated_at=? WHERE slug=?",
+            (len(modules), now_iso, slug),
+        )
+        conn.commit()
+
+    return [TextContent(type="text", text=(
+        f"Curriculum saved for **{slug}** — {len(modules)} modules, {len(lessons)} lessons.\n\n"
+        f"File: `knowledge/courses/{slug}/lessons.json`\n\n"
+        "**Step 5 — Draft**: For each lesson in the curriculum, call "
+        f"`save_lesson_draft('{slug}', lesson_id, content)`. "
+        "Delegate prose to Writing Partner, technical content to Methods Coach, "
+        "code examples to Software Engineer."
+    ))]
+
+
+# ── Step 5: save_lesson_draft ─────────────────────────────────────────────────
+
+@app.tool()
+async def save_lesson_draft(
+    slug: str,
+    lesson_id: str,
+    content: str,
+) -> list[TextContent]:
+    """Step 5 — Save a drafted lesson file.
+
+    Write one lesson's markdown content to disk. Call once per lesson.
+    The lesson_id must match an id in lessons.json (e.g. "lesson-01").
+
+    The lesson MUST include these sections in order:
+      ## Learning objectives
+      ## Prerequisites
+      ## Content  (with ### Section N: subsections)
+      ## Summary
+      ## Exercises
+      ## Further reading
+
+    Args:
+        slug: The course slug.
+        lesson_id: The lesson id from lessons.json (e.g. "lesson-01").
+        content: Full markdown content of the lesson.
+    """
+    lessons_dir = paths.root / "knowledge" / "courses" / slug / "lessons"
+    lessons_dir.mkdir(parents=True, exist_ok=True)
+
+    # Validate required sections
+    required = ["## Learning objectives", "## Prerequisites",
+                "## Content", "## Summary", "## Exercises", "## Further reading"]
+    missing = [s for s in required if s not in content]
+    if missing:
+        return [TextContent(type="text", text=(
+            f"Lesson draft rejected — missing required sections: {missing}\n\n"
+            "All lessons must include: Learning objectives, Prerequisites, Content "
+            "(with ### Section N: subsections), Summary, Exercises, Further reading."
+        ))]
+
+    # Determine filename from lesson_id (lesson-01 → 01-slug.md)
+    num = lesson_id.split("-")[-1] if "-" in lesson_id else lesson_id
+    # Try to get title from lessons.json for a good filename
+    title_slug = lesson_id
+    try:
+        lessons_data = json.loads((paths.root / "knowledge" / "courses" / slug / "lessons.json").read_text())
+        lesson_meta = next((l for l in lessons_data.get("lessons", []) if l["id"] == lesson_id), {})
+        raw_title = lesson_meta.get("title", lesson_id)
+        title_slug = re.sub(r"[^\w\s-]", "", raw_title.lower()).replace(" ", "-")[:30]
+    except Exception:
+        pass
+
+    filename = f"{num.zfill(2)}-{title_slug}.md"
+    out_path = lessons_dir / filename
+    out_path.write_text(content, encoding="utf-8")
+
+    now_iso = datetime.datetime.now().isoformat(timespec="seconds")
+    with connect(paths.db) as conn:
+        _ensure_table(conn)
+        conn.execute("UPDATE course_builds SET updated_at=? WHERE slug=?", (now_iso, slug))
+        conn.commit()
+
+    return [TextContent(type="text", text=(
+        f"Lesson **{lesson_id}** saved: `knowledge/courses/{slug}/lessons/{filename}` "
+        f"({len(content)} chars)"
+    ))]
+
+
+# ── Step 6: review_course ─────────────────────────────────────────────────────
+
+@app.tool()
+async def review_course(slug: str) -> list[TextContent]:
+    """Step 6 — Run quality checks on a drafted course before publishing.
+
+    Checks:
+      - All lessons in lessons.json have a corresponding file on disk
+      - Each lesson file contains the required section headers
+      - No lessons are empty (< 200 chars)
+      - lessons.json is valid JSON with modules and lessons arrays
+
+    Returns a pass/fail report. Fix any failures before calling publish_course().
+
+    Args:
+        slug: The course slug to review.
+    """
+    courses_root = paths.root / "knowledge" / "courses" / slug
+    lessons_dir = courses_root / "lessons"
+    lessons_json_path = courses_root / "lessons.json"
+
+    issues: list[str] = []
+    passes: list[str] = []
+
+    # Check lessons.json
+    if not lessons_json_path.exists():
+        return [TextContent(type="text", text=f"FAIL — `lessons.json` not found for `{slug}`.")]
+    try:
+        data = json.loads(lessons_json_path.read_text(encoding="utf-8"))
+        modules = data.get("modules", [])
+        lessons = data.get("lessons", [])
+        passes.append(f"lessons.json valid — {len(modules)} modules, {len(lessons)} lessons")
+    except Exception as exc:
+        return [TextContent(type="text", text=f"FAIL — lessons.json invalid: {exc}")]
+
+    # Check each lesson
+    required_sections = ["## Learning objectives", "## Prerequisites",
+                         "## Content", "## Summary", "## Exercises", "## Further reading"]
+    existing_files = {f.name for f in lessons_dir.glob("*.md")} if lessons_dir.exists() else set()
+
+    for lesson in lessons:
+        lid = lesson.get("id", "?")
+        num = lid.split("-")[-1].zfill(2) if "-" in lid else lid
+        # Find matching file by prefix
+        matched = [f for f in existing_files if f.startswith(num)]
+        if not matched:
+            issues.append(f"MISSING FILE — {lid} (expected file starting with `{num}-`)")
+            continue
+        path = lessons_dir / matched[0]
+        text = path.read_text(encoding="utf-8")
+        if len(text) < 200:
+            issues.append(f"TOO SHORT — {lid} ({len(text)} chars; minimum 200)")
+        missing_secs = [s for s in required_sections if s not in text]
+        if missing_secs:
+            issues.append(f"MISSING SECTIONS in {lid}: {missing_secs}")
+        else:
+            passes.append(f"OK — {lid} ({len(text)} chars)")
+
+    now_iso = datetime.datetime.now().isoformat(timespec="seconds")
+    if not issues:
+        with connect(paths.db) as conn:
+            _ensure_table(conn)
+            conn.execute(
+                "UPDATE course_builds SET status='review_passed', step=6, updated_at=? WHERE slug=?",
+                (now_iso, slug),
+            )
+            conn.commit()
+
+    report_lines = ["## Course review report", f"Course: `{slug}`", ""]
+    if passes:
+        report_lines += ["### Passed", *[f"- {p}" for p in passes], ""]
+    if issues:
+        report_lines += ["### Issues to fix", *[f"- {i}" for i in issues], ""]
+        report_lines.append("Fix the issues above, then run `review_course()` again.")
+    else:
+        report_lines.append("**All checks passed.** Call `publish_course()` to go live.")
+
+    return [TextContent(type="text", text="\n".join(report_lines))]
+
+
 @app.tool()
 async def publish_course(slug: str) -> list[TextContent]:
     """Finalise and publish a completed course build.

@@ -137,8 +137,3 @@ Simple tools are valuable, but they work best when the user stays aware of their
 - [OpenIntro Statistics](https://www.openintro.org/book/os/)
 - [Khan Academy hypothesis tests](https://www.khanacademy.org/math/statistics-probability)
 - [CDC Principles of Epidemiology](https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/index.html)
-
-## Links to Metis library
-- `knowledge/library/methods/biostatistics-essentials.md`
-- `knowledge/library/methods/study-designs.md`
-- `knowledge/library/methods/causal-inference.md`

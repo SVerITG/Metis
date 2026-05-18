@@ -3,14 +3,22 @@ routers/learning.py — Learning tab routes.
 """
 
 import datetime
+import json
+import os
 import re
 from pathlib import Path
 
+import markdown as _md
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_query, db_scalar, db_execute
+
+_RC_ROOT = Path(os.environ.get("METIS_RC_ROOT", Path(__file__).parents[4]))
+_COURSES_DIR = _RC_ROOT / "knowledge" / "courses"
+
+_md_renderer = _md.Markdown(extensions=["fenced_code", "tables", "nl2br"])
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -371,3 +379,234 @@ async def learning_competencies(request: Request):
             "skills": skills
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# Course reader — Part A
+# ---------------------------------------------------------------------------
+
+def _load_lessons_json(slug: str) -> dict:
+    p = _COURSES_DIR / slug / "lessons.json"
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _lesson_path(slug: str, lesson_id: str) -> Path | None:
+    """Resolve the markdown file for a lesson id."""
+    lessons_dir = _COURSES_DIR / slug / "lessons"
+    # Expect filename like "01-descriptive-statistics.md" matching order
+    prefix = lesson_id.split("-")[-1]  # "01", "02", …
+    if not prefix.isdigit():
+        prefix = lesson_id
+    for f in sorted(lessons_dir.glob("*.md")):
+        num = f.name.split("-")[0]
+        if num == prefix.zfill(2) or f.stem.startswith(prefix):
+            return f
+    return None
+
+
+def _lesson_seq(slug: str, lesson_id: str) -> tuple[str | None, str | None]:
+    """Return (prev_id, next_id) for a lesson within its course."""
+    data = _load_lessons_json(slug)
+    lessons = data.get("lessons", [])
+    ids = [l["id"] for l in lessons]
+    if lesson_id not in ids:
+        return None, None
+    idx = ids.index(lesson_id)
+    prev_id = ids[idx - 1] if idx > 0 else None
+    next_id = ids[idx + 1] if idx < len(ids) - 1 else None
+    return prev_id, next_id
+
+
+@router.get("/api/course/{slug}/overview", response_class=HTMLResponse)
+async def course_overview(slug: str, request: Request):
+    """Return module + lesson list for a course (sidebar/overview panel)."""
+    data = _load_lessons_json(slug)
+    course = db_query(
+        "SELECT id, title, slug, progress_pct, total_modules, completed_modules, "
+        "current_lesson, next_lesson FROM learning_courses WHERE slug=? LIMIT 1",
+        (slug,),
+        default=[],
+    )
+    course_row = course[0] if course else {}
+
+    # Annotate lessons with completion state from lesson_completions table
+    completed_ids: set[str] = set()
+    try:
+        rows = db_query(
+            "SELECT lesson_id FROM lesson_completions WHERE course_slug=?", (slug,), default=[]
+        )
+        completed_ids = {r["lesson_id"] for r in (rows or [])}
+    except Exception:
+        pass
+
+    lessons = data.get("lessons", [])
+    for lesson in lessons:
+        lesson["done"] = lesson["id"] in completed_ids
+
+    return templates.TemplateResponse(
+        request,
+        "partials/learning_course_overview.html",
+        {"course": course_row, "modules": data.get("modules", []),
+         "lessons": lessons, "slug": slug},
+    )
+
+
+@router.get("/api/course/{slug}/lesson/{lesson_id}", response_class=HTMLResponse)
+async def serve_lesson(slug: str, lesson_id: str, request: Request):
+    """Render a lesson markdown file as HTML inside the course reader."""
+    path = _lesson_path(slug, lesson_id)
+    if path is None or not path.exists():
+        return HTMLResponse("<p style='color:var(--m-danger)'>Lesson not found.</p>", status_code=404)
+
+    raw = path.read_text(encoding="utf-8")
+    _md_renderer.reset()
+    body_html = _md_renderer.convert(raw)
+
+    data = _load_lessons_json(slug)
+    lessons = data.get("lessons", [])
+    lesson_meta = next((l for l in lessons if l["id"] == lesson_id), {})
+    prev_id, next_id = _lesson_seq(slug, lesson_id)
+
+    # Check completion
+    done = False
+    try:
+        count = db_scalar(
+            "SELECT COUNT(*) FROM lesson_completions WHERE course_slug=? AND lesson_id=?",
+            (slug, lesson_id), default=0
+        )
+        done = bool(count)
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/learning_lesson_reader.html",
+        {
+            "slug": slug,
+            "lesson_id": lesson_id,
+            "lesson": lesson_meta,
+            "body_html": body_html,
+            "prev_id": prev_id,
+            "next_id": next_id,
+            "done": done,
+        },
+    )
+
+
+@router.post("/api/course/{slug}/lesson/{lesson_id}/complete", response_class=JSONResponse)
+async def complete_lesson(slug: str, lesson_id: str, request: Request):
+    """Mark a lesson as complete and update course progress."""
+    _ensure_lesson_completions_table()
+
+    # Insert completion record (ignore if already exists)
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    try:
+        db_execute(
+            "INSERT OR IGNORE INTO lesson_completions (course_slug, lesson_id, completed_at) "
+            "VALUES (?, ?, ?)",
+            (slug, lesson_id, now),
+        )
+    except Exception:
+        pass
+
+    # Recalculate progress
+    data = _load_lessons_json(slug)
+    lessons = data.get("lessons", [])
+    total = len(lessons)
+
+    completed_rows = db_query(
+        "SELECT lesson_id FROM lesson_completions WHERE course_slug=?", (slug,), default=[]
+    ) or []
+    completed_ids = {r["lesson_id"] for r in completed_rows}
+    n_done = sum(1 for l in lessons if l["id"] in completed_ids)
+    pct = round(n_done / total * 100, 1) if total else 0
+
+    # Determine next uncompleted lesson
+    next_lesson = ""
+    for lesson in lessons:
+        if lesson["id"] not in completed_ids:
+            next_lesson = lesson["title"]
+            break
+
+    # Completed modules = modules where all lessons are done
+    modules = data.get("modules", [])
+    n_modules_done = sum(
+        1 for m in modules
+        if all(lid in completed_ids for lid in m.get("lessons", []))
+    )
+
+    db_execute(
+        "UPDATE learning_courses SET completed_modules=?, progress_pct=?, "
+        "current_lesson=?, next_lesson=? WHERE slug=?",
+        (n_modules_done, pct, lesson_id, next_lesson, slug),
+    )
+
+    # Seed a spaced-rep card if not already present
+    lesson_meta = next((l for l in lessons if l["id"] == lesson_id), {})
+    _seed_spaced_rep_card(slug, lesson_meta)
+
+    _, next_id = _lesson_seq(slug, lesson_id)
+    return JSONResponse({
+        "status": "ok",
+        "progress_pct": pct,
+        "completed_lessons": n_done,
+        "total_lessons": total,
+        "next_lesson_id": next_id,
+    })
+
+
+@router.post("/api/course/{slug}/seed-spaced-rep", response_class=JSONResponse)
+async def seed_course_spaced_rep(slug: str, request: Request):
+    """Seed spaced-repetition cards for all lessons in a course (idempotent)."""
+    _ensure_lesson_completions_table()
+    data = _load_lessons_json(slug)
+    lessons = data.get("lessons", [])
+    seeded = 0
+    for lesson in lessons:
+        seeded += _seed_spaced_rep_card(slug, lesson)
+    return JSONResponse({"status": "ok", "seeded": seeded, "total": len(lessons)})
+
+
+def _ensure_lesson_completions_table() -> None:
+    try:
+        db_execute(
+            """CREATE TABLE IF NOT EXISTS lesson_completions (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               course_slug TEXT NOT NULL,
+               lesson_id TEXT NOT NULL,
+               completed_at TEXT NOT NULL,
+               UNIQUE(course_slug, lesson_id)
+            )"""
+        )
+    except Exception:
+        pass
+
+
+def _seed_spaced_rep_card(slug: str, lesson: dict) -> int:
+    """Insert a spaced-rep card for one lesson. Returns 1 if inserted, 0 if already existed."""
+    lesson_id = lesson.get("id", "")
+    title = lesson.get("title", lesson_id)
+    if not lesson_id:
+        return 0
+    today = str(datetime.date.today())
+    try:
+        existing = db_scalar(
+            "SELECT COUNT(*) FROM spaced_repetition WHERE source_id=? AND source_table=?",
+            (lesson_id, slug), default=0
+        )
+        if existing:
+            return 0
+        db_execute(
+            "INSERT INTO spaced_repetition "
+            "(front_text, back_text, source_id, source_table, next_review, interval_days, ease_factor, repetitions, created_at) "
+            "VALUES (?,?,?,?,?,1,2.5,0,datetime('now'))",
+            (title, lesson.get("description", ""), lesson_id, slug, today),
+        )
+        return 1
+    except Exception:
+        return 0

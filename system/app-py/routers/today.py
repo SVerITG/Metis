@@ -350,6 +350,29 @@ async def today_focus_thread(request: Request):
     except Exception:
         pass
 
+    # News freshness check — warn if no content ingested in >24h
+    news_stale = False
+    news_stale_hours: int = 0
+    try:
+        since_24h = (datetime.datetime.now() - datetime.timedelta(hours=24)).isoformat()
+        recent_news = db_scalar(
+            "SELECT COUNT(*) FROM news_briefs WHERE created_at >= ?", (since_24h,)
+        ) or 0
+        if recent_news == 0:
+            # Also check agent_runs for any news scan — could have run without producing briefs
+            recent_scan = db_scalar(
+                "SELECT MAX(created_at) FROM agent_runs "
+                "WHERE agent_slug IN ('news-radar','news-aggregator')"
+            )
+            if recent_scan:
+                delta = datetime.datetime.now() - datetime.datetime.fromisoformat(recent_scan)
+                news_stale_hours = int(delta.total_seconds() / 3600)
+            else:
+                news_stale_hours = 999
+            news_stale = True
+    except Exception:
+        pass
+
     return templates.TemplateResponse(
         request,
         "partials/today_focus_thread.html",
@@ -357,6 +380,8 @@ async def today_focus_thread(request: Request):
             "focus": focus,
             "scan": {"text": scan_text},
             "field_articles": field_articles,
+            "news_stale": news_stale,
+            "news_stale_hours": news_stale_hours,
         },
     )
 

@@ -1,6 +1,6 @@
 ---
 name: Librarian
-description: "literature search, find paper, reference, bibliography, evidence retrieval, annotated bibliography, systematic search, PubMed, WHO report, open-access source, citation, library gap, source metadata"
+description: "Use to find, retrieve, or annotate research sources. Triggers on: 'find papers on', 'what is the evidence for', 'I need references', 'search PubMed', 'annotated bibliography', 'who has published on', 'is there a systematic review', 'WHO guidelines on', 'citation for', 'what does the literature say', 'literature gap'. Searches local library first, then PubMed/WHO/open-access. Returns annotated list with relevance score and open-access link. NOT for analysis or writing — retrieval only."
 model: claude-sonnet-4-6
 effort: normal
 complexity: standard

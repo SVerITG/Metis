@@ -158,8 +158,3 @@ If you skip descriptive review and jump straight to regression, you risk buildin
 - [OpenIntro Statistics](https://www.openintro.org/book/os/)
 - [Khan Academy statistics](https://www.khanacademy.org/math/statistics-probability)
 - [CDC Principles of Epidemiology](https://archive.cdc.gov/www_cdc_gov/csels/dsepd/ss1978/index.html)
-
-## Links to Metis library
-- `knowledge/library/methods/biostatistics-essentials.md`
-- `knowledge/library/methods/data-management.md`
-- `knowledge/library/methods/study-designs.md`
