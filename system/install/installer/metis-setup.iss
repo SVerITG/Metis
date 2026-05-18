@@ -126,6 +126,9 @@ Source: "..\windows\run-mcp.bat";            DestDir: "{app}\system\mcp-server";
 Source: "..\windows\run-dashboard.bat";      DestDir: "{app}\system\app-py";          Flags: ignoreversion; Components: dashboard
 Source: "..\windows\run-tray.bat";           DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
 Source: "..\tray_launcher.py";               DestDir: "{app}\system\install";         Flags: ignoreversion; Components: dashboard
+; MetisTray.exe — PyInstaller bundle (built by: pyinstaller tray-launcher.spec from system/install/)
+; Only included when dist/MetisTray.exe exists. Skip silently if not yet compiled.
+Source: "..\dist\MetisTray.exe";             DestDir: "{app}\system\install\windows"; Flags: ignoreversion skipifsourcedoesntexist; Components: dashboard
 Source: "..\vendor_download.py";             DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\config_merger.py";               DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\seed_epi_base.py";               DestDir: "{app}\system\install";         Flags: ignoreversion
