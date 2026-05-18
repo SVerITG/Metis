@@ -5,6 +5,14 @@
 </p>
 
 <p align="center">
+<em>It's 7:20. You open the dashboard. The morning brief reads:</em>
+<br><br>
+<strong><em>"Two papers on HAT transmission dynamics landed overnight — one from WHO Geneva that directly challenges your working hypothesis in Article 1. The WHO surveillance feed flagged a cluster in your study area. Your open question from last week: 'what drives spillback from animal reservoirs?' — this paper has partial answers. I've cross-referenced both with your knowledge graph, connected them to Fiona's meeting note from Tuesday, and flagged three passages for your review."</em></strong>
+<br><br>
+<em>No prompt. No setup. Your research, connected — every morning.</em>
+</p>
+
+<p align="center">
   <a href="https://github.com/SVerITG/Metis">← Metis (base)</a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
   <strong>Editions:</strong>&nbsp;
@@ -81,6 +89,7 @@ Generic AI tools leave several researcher-specific problems unsolved:
 - [Future Releases](#future-releases)
 - [For Developers](#for-developers)
 - [Contributing](#contributing)
+- [Changelog](#changelog)
 - [License](#license)
 
 ---
@@ -796,6 +805,32 @@ A domain pack consists of: key journals + RSS feeds, specialist agents or skill 
 - Telegram bot for mobile idea capture — **wanted**
 - Test suite (unit + integration + e2e) — **wanted**
 - Windows `.exe` installer — in progress
+
+---
+
+# Changelog
+
+## v0.x — Current (Metis_PH, public health edition)
+
+All development to date has been in the public health edition. Stable and used daily.
+
+| Phase | What shipped |
+|---|---|
+| **Phase 0–5** | Foundation — MCP server, 30 agents, CLI skills, config wizard, SQLite schema (46 tables), 5-layer memory, knowledge graph, Zotero/Mendeley sync |
+| **Phase 6–7** | FastAPI + HTMX dashboard — 9 tabs, live partials, HTMX-powered search |
+| **Phase 8** | Full functionality — morning brief, news rail, meeting assistant, voice capture, PaperQA2 PDF search, cross-pollination, token guardrails, handoff brief |
+| **Phase 9** | CSS design overhaul — macOS design system, editorial layout, responsive grid, animation guards |
+| **Phase 9b** | Self-improvement loop — reflexion aggregation, proposal drafting, approval flow in Metis tab |
+| **Phase M** | Conversation memory — session summaries stored in episodic memory, semantic search across past sessions |
+
+## Upcoming
+
+| Phase | What's planned |
+|---|---|
+| **Phase 10** | Automated daily tasks (APScheduler) |
+| **Phase 11** | Windows .exe installer |
+| **Phase 12** | Test suite (unit · integration · e2e · red-line) |
+| **v1.0** | Stable release — installer + polished onboarding + full domain pack |
 
 ---
 
