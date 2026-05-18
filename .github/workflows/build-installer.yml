@@ -54,24 +54,38 @@ jobs:
           echo "VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Append
           Write-Host "Building version: $ver"
 
+      - name: Build MetisTray.exe (PyInstaller)
+        shell: pwsh
+        run: |
+          # Install Python build deps and PyInstaller, then bundle the tray launcher.
+          # Uses the GitHub Actions runner Python (3.x pre-installed on windows-latest).
+          python -m pip install --quiet pyinstaller pystray Pillow
+          Set-Location "system\install"
+          pyinstaller tray-launcher.spec --noconfirm --clean
+          if (Test-Path "dist\MetisTray.exe") {
+            Write-Host "MetisTray.exe built OK"
+          } else {
+            Write-Warning "MetisTray.exe not found after build — continuing without it"
+          }
+
       - name: Compile — Full installer
         shell: pwsh
         run: |
-          Set-Location "metis\system\install\installer"
+          Set-Location "system\install\installer"
           & "$env:ISCC_PATH" /DDefaultType=full /DMyAppVersion=$env:VERSION metis-setup.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Compile — Standard installer
         shell: pwsh
         run: |
-          Set-Location "metis\system\install\installer"
+          Set-Location "system\install\installer"
           & "$env:ISCC_PATH" /DDefaultType=standard /DMyAppVersion=$env:VERSION metis-setup.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Compile — Minimal installer
         shell: pwsh
         run: |
-          Set-Location "metis\system\install\installer"
+          Set-Location "system\install\installer"
           & "$env:ISCC_PATH" /DDefaultType=minimal /DMyAppVersion=$env:VERSION metis-setup.iss
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

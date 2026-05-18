@@ -154,34 +154,38 @@ if (-not $SkipPython -and -not $Stage1Only) {
 
 # ── Copy Metis files ─────────────────────────────────────────────────────────
 Write-Step "Setting up Metis research files"
-$scriptDir   = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot    = Split-Path -Parent (Split-Path -Parent $scriptDir)  # …/metis/system → …/metis
-$metisTarget = Join-Path $InstallDir "metis"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-if (-not (Test-Path $metisTarget)) {
-    # If running from the repo, copy; otherwise clone from GitHub
-    if (Test-Path (Join-Path $repoRoot "agents")) {
-        Write-Host "    Copying from installer package…" -ForegroundColor Gray
-        Copy-Item -Path $repoRoot -Destination $metisTarget -Recurse -Force
+# When called from Inno Setup, $InstallDir is already the final install root and
+# all files are already in place — no copy needed.
+# When called standalone, files need to be cloned/copied into $InstallDir directly.
+#
+# Detection: if agents/ already exists under $InstallDir, files are staged.
+$metisTarget = $InstallDir
+$filesAlreadyPresent = Test-Path (Join-Path $InstallDir "agents")
+
+if (-not $filesAlreadyPresent) {
+    # Standalone install: download from GitHub
+    Write-Host "    Downloading Metis from GitHub…" -ForegroundColor Gray
+    $gitAvail = Get-Command git -ErrorAction SilentlyContinue
+    if ($gitAvail) {
+        git clone --depth 1 https://github.com/SVerITG/Metis.git $metisTarget 2>&1 | Out-Null
     }
     else {
-        Write-Host "    Downloading Metis from GitHub…" -ForegroundColor Gray
-        $gitAvail = Get-Command git -ErrorAction SilentlyContinue
-        if ($gitAvail) {
-            git clone --depth 1 https://github.com/SVerITG/Metis_PH.git $metisTarget 2>&1 | Out-Null
-        }
-        else {
-            $zipPath = Join-Path $env:TEMP "metis.zip"
-            Invoke-WebRequest -Uri "https://github.com/SVerITG/Metis_PH/archive/refs/heads/main.zip" `
-                -OutFile $zipPath -UseBasicParsing
-            Expand-Archive -Path $zipPath -DestinationPath $env:TEMP -Force
-            Move-Item -Path (Join-Path $env:TEMP "Metis_PH-main") -Destination $metisTarget -Force
+        $zipPath = Join-Path $env:TEMP "metis.zip"
+        Invoke-WebRequest -Uri "https://github.com/SVerITG/Metis/archive/refs/heads/main.zip" `
+            -OutFile $zipPath -UseBasicParsing
+        Expand-Archive -Path $zipPath -DestinationPath $env:TEMP -Force
+        $extracted = Join-Path $env:TEMP "Metis-main"
+        if (Test-Path $extracted) {
+            Get-ChildItem $extracted | Copy-Item -Destination $metisTarget -Recurse -Force
+            Remove-Item $extracted -Recurse -Force
         }
     }
-    Write-OK "Metis files ready"
+    Write-OK "Metis files downloaded"
 }
 else {
-    Write-OK "Metis files already present (skipping copy)"
+    Write-OK "Metis files already present (skipping download)"
 }
 
 # ── Create personal folders ──────────────────────────────────────────────────
