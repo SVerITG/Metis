@@ -26,14 +26,14 @@
 <p align="center">
   <img src="https://img.shields.io/badge/status-under%20development-orange" alt="Under Development"/>
   <a href="https://github.com/SVerITG/Metis_PH/stargazers"><img src="https://img.shields.io/github/stars/SVerITG/Metis_PH?style=flat" alt="Stars"/></a>
-  <a href="https://github.com/SVerITG/Metis_PH/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"/></a>
+  <a href="https://github.com/SVerITG/Metis_PH/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" alt="Python"/>
   <img src="https://img.shields.io/badge/Claude-MCP-orange?logo=anthropic" alt="Claude MCP"/>
 </p>
 
 > **Work in progress.** Core features are stable and used daily. One-click installer and polished onboarding are still in development. Expect rough edges.
 
-> **Disclaimer.** The concept, architecture, and approach behind Metis are original. One of Metis's core principles is self-improvement — it actively monitors AI developments and incorporates new tools, skills, and agent patterns. Tools, skills, and agents were built drawing on publicly available techniques, documentation, and web resources, and as such individual components are often not unique. What Metis presents is a *way of working* — a coherent system designed for researchers. Use and extension are welcome under the MIT license.
+> **Disclaimer.** The concept, architecture, and approach behind Metis are original. One of Metis's core principles is self-improvement — it actively monitors AI developments and incorporates new tools, skills, and agent patterns. Tools, skills, and agents were built drawing on publicly available techniques, documentation, and web resources, and as such individual components are often not unique. What Metis presents is a *way of working* — a coherent system designed for researchers. Use and extension are welcome under the AGPL-3.0 license.
 
 Contributions are very much appreciated — see [Contributing](#contributing) below. Whether you want to share how a feature worked (or didn't) in your research workflow, or you are a more experienced developer with architectural feedback or a pull request: both perspectives are equally welcome.
 
@@ -836,6 +836,6 @@ All development to date has been in the public health edition. Stable and used d
 
 # License
 
-MIT for the codebase. CC-BY-SA for course content and learning materials.
+**AGPL-3.0** for the codebase — you can use, modify, and fork freely, but any version you run as a service or distribute must also be open-source under AGPL-3.0. **CC-BY-SA 4.0** for course content and learning materials.
 
 *LICENSE file ships with v1.0.*
