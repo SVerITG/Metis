@@ -178,6 +178,18 @@
         <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading memory stream…</div>
       </div>
 
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Retrieval debugger</span>
+        <span class="tail">TEST SEMANTIC SEARCH</span>
+      </div>
+      <div class="panel" style="padding:20px;margin-bottom:24px;">
+        <div hx-get="/api/partial/metis/memory-debug"
+             hx-trigger="load"
+             hx-swap="outerHTML">
+          <div style="padding:16px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading debugger…</div>
+        </div>
+      </div>
+
     </section>
 
     <!-- =================================================
