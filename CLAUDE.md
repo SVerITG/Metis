@@ -63,6 +63,8 @@ working on their research domain, PhD planning, AI development, and personal lea
 | `/cybersecurity` | Cybersecurity | URL validation, prompt injection defense, threat intel, agent audit |
 | `/data-guardian` | Data Guardian | PII protection, patient data blocking, file transmission approval |
 | `/data-analyst` | Data Analyst | Profile, clean, and compare tabular datasets (CSV/Excel/SPSS/Stata) — local only |
+| `/critic` | Critic | Verify, challenge, and quality-check outputs from other agents before acting on them |
+| `/memory-curator` | Memory Curator | Consolidate session history into permanent memory, retrieve past context, memory health check |
 
 **Phase 5 skills (automation & scaffolding):**
 
@@ -170,6 +172,8 @@ When a request arrives, route as follows:
 | Learning paths, curriculum, competency maps | Learning Architect | Methods Coach |
 | Study design, epi methods, surveillance | Epidemiologist | Methods Coach |
 | CSV, Excel, dataset, cleaning, missing values, duplicates, outliers, data quality | Data Analyst | Data Guardian |
+| Validate / challenge / quality-check an agent's output | Critic | — |
+| Consolidate session into memory, retrieve past context, memory health | Memory Curator | — |
 | Unclear | Metis | Ask one clarifying question |
 
 ---

@@ -137,7 +137,7 @@ if (registered > 0L) {
     "",
     "For each file:",
     "1. Identify entity_type (paper/report/protocol/dataset/note)",
-    "2. Tag disease relevance (sleeping sickness, HAT, general NTD, other)",
+    "2. Tag domain relevance (primary topic, sub-topic, general domain, other)",
     "3. Tag geography if relevant",
     "4. Tag method if relevant",
     "5. Suggest phd_article_link bucket (chapter-1, chapter-2, chapter-3, methods, background, to_triage)",

@@ -224,6 +224,35 @@ async function triggerJob(jobId) {
 // Course Builder — copy prompt to clipboard + notify server
 // ---------------------------------------------------------------------------
 
+async function openCourseReader(slug) {
+  const panel = document.getElementById('course-reader-panel');
+  if (!panel) return;
+  panel.style.display = 'grid';
+  htmx.ajax('GET', `/api/course/${slug}/overview`, { target: '#course-overview-panel', swap: 'innerHTML' });
+  document.getElementById('lesson-reader-panel').innerHTML =
+    '<div style="padding:40px 28px;color:var(--m-muted);font-size:14px;">Select a lesson from the left to begin.</div>';
+  panel.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function completeLesson(slug, lessonId, btn) {
+  try {
+    const res = await fetch(`/api/course/${slug}/lesson/${lessonId}/complete`, { method: 'POST' });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      if (btn) btn.textContent = '✓ Done';
+      showToast(`Lesson marked complete — ${data.progress_pct}% through the course.`);
+      if (data.next_lesson_id) {
+        htmx.ajax('GET', `/api/course/${slug}/lesson/${data.next_lesson_id}`,
+          { target: '#lesson-reader-panel', swap: 'innerHTML' });
+      }
+      htmx.ajax('GET', `/api/course/${slug}/overview`,
+        { target: '#course-overview-panel', swap: 'innerHTML' });
+    }
+  } catch (e) {
+    showToast('Could not save lesson progress.');
+  }
+}
+
 async function buildCourse(courseId) {
   try {
     const res = await fetch('/api/course/build-request', {

@@ -39,6 +39,13 @@ async def lifespan(app: FastAPI):
     if applied:
         log.info("DB migrations applied: %s", ", ".join(applied))
 
+    # Startup health check — runs after migrations so tables exist
+    try:
+        from startup_eval import run_startup_eval
+        run_startup_eval()
+    except Exception as exc:
+        log.warning("Startup eval skipped: %s", exc)
+
     # Ensure MCP tools are findable — add src to sys.path at startup
     import sys as _sys
     _rc = os.environ.get("METIS_RC_ROOT", "")
