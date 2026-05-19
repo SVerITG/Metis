@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Planner{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">SURFACE 04</div>
+      <h1 style="font-family:var(--m-display);font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0;">Planner</h1>
+    </div>
+    <div class="page-meta"
+         hx-get="/api/partial/planner/meta"
+         hx-trigger="load"
+         hx-swap="innerHTML">WEEK — · Q— · — WEEKS REMAINING</div>
+  </div>
+
+  <!-- Horizon cards -->
+  <div class="grid grid-3" style="margin-bottom:32px;"
+       hx-get="/api/partial/planner/horizon"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    {% for label in ['QUARTER · Q4', 'WEEK · 46', 'TODAY'] %}
+    <div class="panel panel-pad" style="padding:22px 24px;opacity:.4;">
+      <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:55%;margin-bottom:10px;"></div>
+      <div style="height:18px;background:var(--m-surface-3);border-radius:2px;margin-bottom:8px;"></div>
+      <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:70%;margin-bottom:16px;"></div>
+      <div style="height:2px;background:var(--m-surface-3);border-radius:1px;"></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Week at a glance -->
+  <div class="sec-label" style="margin-bottom:16px;">
+    <span>This week at a glance</span>
+    <span class="tail"
+          hx-get="/api/partial/planner/week-label"
+          hx-trigger="load"
+          hx-swap="innerHTML">WEEK —</span>
+  </div>
+  <div class="panel" style="padding:24px;margin-bottom:32px;overflow-x:auto;"
+       hx-get="/api/partial/planner/week"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;min-width:700px;">
+      {% for d in ['MON','TUE','WED','THU','FRI','SAT','SUN'] %}
+      <div style="padding:12px 10px;border:1px solid var(--m-rule);min-height:150px;border-radius:2px;opacity:.35;">
+        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:8px;">{{ d }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Intentions + Notes -->
+  <div class="grid grid-2">
+
+    <div>
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Intentions · Q4</span>
+      </div>
+      <div class="panel"
+           hx-get="/api/partial/planner/intentions"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        {% for _ in range(4) %}
+        <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}opacity:.4;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+            <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:70%;"></div>
+            <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:10%;"></div>
+          </div>
+          <div style="height:2px;background:var(--m-surface-3);border-radius:1px;"></div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <div class="sec-label" style="margin-bottom:12px;"><span>Notes from the planner</span></div>
+      <div class="panel panel-pad" style="padding:22px 24px;"
+           hx-get="/api/partial/planner/notes"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div class="ed" style="font-size:15px;margin-bottom:12px;opacity:.5;">
+          <em>Loading planner notes…</em>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+<div>
+  <div class="sec-label" style="margin-bottom:8px;">
+    News radar
+    <span class="sec-label-tail">{{ news_briefs|length }} SIGNALS</span>
+  </div>
+  <div class="panel">
+    <!-- Category chip strip -->
+    {% if categories %}
+    <div class="chip-strip">
+      <button class="chip-btn chip-btn--on" onclick="filterNews(this, 'ALL')">ALL</button>
+      {% for cat in categories %}
+      <button class="chip-btn" onclick="filterNews(this, '{{ cat|e }}')">{{ cat }}</button>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Compact feed rows -->
+    {% if news_briefs %}
+      {% for brief in news_briefs %}
+      <div class="feed-row feed-row--compact m-edge-left" data-cat="{{ (brief.domain or 'General')|upper }}"
+           style="padding:7px 0 7px 10px;border-bottom:1px solid var(--m-rule-soft);position:relative;">
+        <div style="display:flex;align-items:baseline;gap:8px;">
+          {% if brief.domain %}
+          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-accent);white-space:nowrap;flex-shrink:0;">{{ (brief.domain)|upper }}</span>
+          {% endif %}
+          {% if brief.age_label %}
+          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);white-space:nowrap;flex-shrink:0;">{{ brief.age_label }}</span>
+          {% endif %}
+          <a class="feed-title" href="{{ brief.source_url or '#' }}" target="_blank" rel="noopener"
+             style="font-size:13px;line-height:1.4;color:var(--m-ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">
+            {{ brief.title or 'Untitled' }}
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-row">No signals yet. Run the content scan to populate.</div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function filterNews(btn, cat) {
+  btn.closest('.chip-strip').querySelectorAll('.chip-btn').forEach(b => b.classList.remove('chip-btn--on'));
+  btn.classList.add('chip-btn--on');
+  const rows = btn.closest('.panel').querySelectorAll('.feed-row');
+  rows.forEach(row => {
+    row.style.display = (cat === 'ALL' || row.dataset.cat === cat) ? '' : 'none';
+  });
+}
+</script>

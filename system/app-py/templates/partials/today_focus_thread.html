@@ -1,0 +1,85 @@
+<div class="focus-thread">
+
+  {% if focus %}
+
+  <!-- Section: Resumed -->
+  <div class="focus-section">
+    <div class="caps-label">Resumed {{ focus.resumed_label }}</div>
+    <h2 class="focus-title">
+      {% if focus.project_id %}
+      <a href="/work" hx-get="/api/tab/work" hx-target="#tab-content" hx-swap="outerHTML" hx-select="#tab-content" hx-push-url="/work">
+        {{ focus.title }}
+      </a>
+      {% else %}
+      {{ focus.title }}
+      {% endif %}
+    </h2>
+    {% if focus.next_step %}
+    <div class="focus-meta">{{ focus.next_step }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Section: Best quote / most recent thought -->
+  {% if focus.quote %}
+  <div class="focus-section">
+    <div class="caps-label">Recent thought</div>
+    <blockquote class="focus-quote">
+      {{ focus.quote }}
+      {% if focus.quote_source %}
+      <div class="focus-quote-source">— {{ focus.quote_source }}</div>
+      {% endif %}
+    </blockquote>
+  </div>
+  {% endif %}
+
+  <!-- Section: Continuous scan -->
+  <div class="focus-section">
+    <div class="caps-label">Continuous scan</div>
+    {% if news_stale %}
+    <div class="focus-stale-warning" style="display:flex;align-items:center;gap:6px;padding:7px 10px;margin-bottom:8px;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:6px;font-size:11px;color:var(--m-warn,#f59e0b);">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>
+        {% if news_stale_hours >= 999 %}
+          No news scan has run yet — run <code>/news-radar</code> to start.
+        {% else %}
+          Last news scan was {{ news_stale_hours }}h ago — no new content in the last 24h.
+          <a href="javascript:void(0)" onclick="document.querySelector('[data-tab=today]')?.click()" style="color:inherit;text-decoration:underline;">Trigger a scan</a>
+        {% endif %}
+      </span>
+    </div>
+    {% endif %}
+    <div class="focus-scan-text">{{ scan.text }}</div>
+    <button class="btn-tune-scan" onclick="tuneScan()">
+      <i class="bi bi-sliders"></i> Tune scan
+    </button>
+  </div>
+
+  <!-- Section: Field articles alert -->
+  {% if field_articles %}
+  <div class="focus-section">
+    <div class="caps-label" style="color:var(--m-ok);">
+      <i class="bi bi-journal-text" style="margin-right:4px;"></i>New in your field
+    </div>
+    {% for a in field_articles %}
+    <a class="focus-field-article" href="javascript:void(0)" onclick="openNewsSummary({{ a.id }})"
+       style="display:block;padding:5px 0;border-bottom:1px solid var(--m-rule-soft);text-decoration:none;">
+      <div style="font-size:11px;color:var(--m-ink);line-height:1.4;">{{ a.title }}</div>
+      <div style="font-size:10px;color:var(--m-muted);margin-top:2px;">{{ a.time }}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% else %}
+
+  <div class="focus-section">
+    <div class="caps-label">Focus</div>
+    <div class="focus-empty">
+      No active project in focus yet.
+      Add a project in the Work tab or capture an idea to begin a thread.
+    </div>
+  </div>
+
+  {% endif %}
+
+</div>
