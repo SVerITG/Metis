@@ -11,7 +11,7 @@
 #   bash run_tests.sh --html       # generate HTML report in tests/report.html
 #
 # Prerequisites:
-#   pip install pytest pytest-html httpx fastapi pyyaml
+#   pip install pytest pytest-html httpx fastapi pyyaml markdown
 #   (all already installed in the MCP server venv)
 #
 # Run from any directory — this script finds the correct test root.

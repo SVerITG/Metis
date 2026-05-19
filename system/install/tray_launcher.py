@@ -53,7 +53,7 @@ _STARTUP_WAIT  = 4   # seconds to wait before opening browser
 # Port selection (M11.6 integrated here)
 # ---------------------------------------------------------------------------
 
-def _find_free_port(preferred: int = 8000, fallback_range: range = range(8001, 8020)) -> int:
+def _find_free_port(preferred: int = 8080, fallback_range: range = range(8081, 8091)) -> int:
     import socket
     for port in [preferred] + list(fallback_range):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -62,7 +62,7 @@ def _find_free_port(preferred: int = 8000, fallback_range: range = range(8001, 8
                 return port
             except OSError:
                 continue
-    raise RuntimeError("No free port found in range 8000–8019")
+    raise RuntimeError("No free port found in range 8080–8090")
 
 
 # ---------------------------------------------------------------------------
@@ -92,7 +92,7 @@ def _make_icon_grey() -> Image.Image:
 # ---------------------------------------------------------------------------
 
 _procs: dict[str, subprocess.Popen] = {}
-_port: int = 8000
+_port: int = 8080
 _log_dir = _LOG_DIR
 
 
