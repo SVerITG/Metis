@@ -1,7 +1,15 @@
-<h1 align="center">Metis — The Research Cortex</h1>
+<h1 align="center">Metis — The Public Health Research Cortex</h1>
 
 <p align="center">
   <em>AI built around researchers. Not a prompt box — a way of working.</em>
+</p>
+
+<p align="center">
+<em>It's 7:20. You open the dashboard. The morning brief reads:</em>
+<br><br>
+<strong><em>"Two papers on HAT transmission dynamics landed overnight — one from WHO Geneva that directly challenges a working hypothesis in your field. A WHO surveillance alert flagged a new cluster in your study area. I've cross-referenced both with your knowledge graph, connected them to your meeting note from Tuesday, and flagged three passages for your review."</em></strong>
+<br><br>
+<em>No prompt. No setup. Your research, connected — every morning.</em>
 </p>
 
 <p align="center">
@@ -16,16 +24,16 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-under%20development-orange" alt="Under Development"/>
+  <img src="https://img.shields.io/badge/status-v1.0-brightgreen" alt="v1.0"/>
   <a href="https://github.com/SVerITG/Metis_PH/stargazers"><img src="https://img.shields.io/github/stars/SVerITG/Metis_PH?style=flat" alt="Stars"/></a>
-  <a href="https://github.com/SVerITG/Metis_PH/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"/></a>
+  <a href="https://github.com/SVerITG/Metis_PH/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" alt="Python"/>
   <img src="https://img.shields.io/badge/Claude-MCP-orange?logo=anthropic" alt="Claude MCP"/>
 </p>
 
-> **Work in progress.** Core features are stable and used daily. One-click installer and polished onboarding are still in development. Expect rough edges.
+> **Work in progress.** The MCP server is fully operational and used daily. We are still actively developing some dashboard features, the one-click installer, and the pre-loaded public health knowledge layer. Expect rough edges. For the domain-agnostic base shell, see **[Metis](https://github.com/SVerITG/Metis)**.
 
-> **Disclaimer.** The concept, architecture, and approach behind Metis are original. One of Metis's core principles is self-improvement — it actively monitors AI developments and incorporates new tools, skills, and agent patterns. Tools, skills, and agents were built drawing on publicly available techniques, documentation, and web resources, and as such individual components are often not unique. What Metis presents is a *way of working* — a coherent system designed for researchers. Use and extension are welcome under the MIT license.
+> **Disclaimer.** The concept, architecture, and approach behind Metis are original. One of Metis's core principles is self-improvement — it actively monitors AI developments and incorporates new tools, skills, and agent patterns. Tools, skills, and agents were built drawing on publicly available techniques, documentation, and web resources, and as such individual components are often not unique. What Metis presents is a *way of working* — a coherent system designed for researchers. Use and extension are welcome under the AGPL-3.0 license.
 
 ---
 
@@ -51,7 +59,7 @@ Generic AI tools leave several researcher-specific problems unsolved:
 | **Literature at scale** — hundreds of PDFs that need to talk to each other | Semantic PDF search (PaperQA2) + knowledge graph + cross-pollination |
 | **Long-horizon projects** — research unfolds over months and years | Persistent project memory, reflexion loop, session handoffs |
 | **Data sensitivity** — patient data, embargoed results, institutional ethics | Everything local. PII detection. AES-256 encryption. Constitution + red-lines. |
-| **Workflow fragmentation** — literature, meetings, writing, analysis, teaching in separate tools | Single interface with 30 specialist agents across all research workflows |
+| **Workflow fragmentation** — literature, meetings, writing, analysis, teaching in separate tools | Single interface with 34 specialist agents across all research workflows |
 
 ---
 
@@ -98,7 +106,7 @@ Metis is also built to fit *your* way of working. For example:
 
 | Feature | What it does |
 |---|---|
-| **30 specialist agents** | Librarian, Epidemiologist, Methods Coach, Writing Partner, Meeting Memory, Course Builder, Career Coach, and 22 more — each an expert in their domain |
+| **34 specialist agents** | Librarian, Epidemiologist, Methods Coach, Writing Partner, Meeting Memory, Course Builder, Career Coach, and 25 more — each an expert in their domain |
 | **Library management** | Import PDFs, sync Zotero / Mendeley, ask "what do my papers say about X?" — cited answers from your own library (PaperQA2) |
 | **Live meeting assistant** | Follow along in real time, paste transcripts after, get structured notes, action items, and project cross-references automatically |
 | **Morning intelligence brief** | Every morning: new papers on your exact research topics, field news, surveillance alerts, and a focus recommendation — fully personalised |
@@ -210,7 +218,7 @@ Course topic defined
 ![Metis dashboard — Today tab](docs/screenshots/dashboard-today.png)
 *The Today tab — morning briefing, active project, course progress, news radar, and quick-capture in one view.*
 
-The **9-tab dashboard** runs locally at `http://127.0.0.1:8000`. No account. No cloud. Every tab is live data from your research environment.
+The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account. No cloud. Every tab is live data from your research environment.
 
 ---
 
@@ -399,10 +407,10 @@ metis/system/install/windows/install.bat
 bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/metis/system/mcp-server/setup-mcp.sh)
 ```
 
-Gives you all **30 agents** and **135 tools** inside Claude Desktop or Claude Code. Idempotent. Dashboard:
+Gives you all **34 agents** and **76+ tools** inside Claude Desktop or Claude Code. Idempotent. Dashboard:
 
 ```bash
-cd ~/Metis_PH/metis/system/app-py && bash run.sh   # → http://127.0.0.1:8000
+cd ~/Metis_PH/metis/system/app-py && bash run.sh   # → http://127.0.0.1:8080
 ```
 
 Run the **config wizard** from the Metis tab to personalise your installation.
@@ -415,9 +423,9 @@ Metis will ship in distinct editions, each with its own GitHub repository. The b
 
 | Repository | Status | What it is |
 |---|---|---|
-| **[Metis](https://github.com/SVerITG/Metis)** | 📋 Planned | Empty Research Cortex — full architecture, no domain content. Clone this to build your own edition. |
-| **[Metis_PH](https://github.com/SVerITG/Metis_PH)** | ▶ Current (this repo, v0.x) | Public Health & Epidemiology edition — stable, used daily |
-| **Metis_PH v1.0** | 🔧 In development | Stable installer, polished onboarding, complete domain pack |
+| **[Metis](https://github.com/SVerITG/Metis)** | ▶ Live (v1.0) | Research Cortex shell — full architecture, no domain content. Clone this to build your own edition. |
+| **[Metis_PH](https://github.com/SVerITG/Metis_PH)** | ▶ Current (this repo, v1.0) | Public Health & Epidemiology edition — MCP server operational, knowledge layer actively being built |
+| **Metis_PH v1.0** | ✅ Released | Stable release — see [release notes](system/config/release-notes-v1.0.md) |
 | **[Metis_BM](https://github.com/SVerITG/Metis_BM)** | 🧬 Placeholder | Biomedical Sciences — to be built |
 | **[Metis_CL](https://github.com/SVerITG/Metis_CL)** | 🏥 Placeholder | Clinical Sciences — to be built |
 | **Metis [Domain]** | 🌍 Community | Domain packs for other research fields as contributed |
