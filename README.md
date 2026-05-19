@@ -60,6 +60,7 @@ Generic AI tools leave several researcher-specific problems unsolved:
 | Challenge | What Metis does about it |
 |---|---|
 | **Context amnesia** — every session starts from zero | Persistent identity card and 5-layer memory across all sessions |
+| **Hallucination risk** — AI confuses editions, misquotes guidelines, invents citations | RAG retrieval from your verified library grounds every methodology and guideline answer with page-level citations |
 | **Literature at scale** — hundreds of PDFs that need to talk to each other | Layered semantic PDF index (sqlite-vec, local ONNX) + knowledge graph + cross-pollination |
 | **Long-horizon projects** — research unfolds over months and years | Persistent project memory, reflexion loop, session handoffs |
 | **Data sensitivity** — patient data, embargoed results, institutional ethics | Everything local. PII detection. AES-256 encryption. Constitution + red-lines. |
@@ -83,6 +84,7 @@ Generic AI tools leave several researcher-specific problems unsolved:
 - [Key Workflows](#key-workflows) — Morning · Literature · Meeting · Voice · Writing · Teaching
 - [The Dashboard](#the-dashboard)
 - [How Metis Knows You](#how-metis-knows-you)
+- [Knowledge Layer & Grounded Answers](#knowledge-layer--grounded-answers)
 - [Data Protection & Security](#data-protection--security)
 - [How Metis Stays Current](#how-metis-stays-current)
 - [Install](#install)
@@ -112,6 +114,7 @@ Metis is also built to fit *your* way of working. For example:
 | Feature | What it does |
 |---|---|
 | **34 specialist agents** | Librarian, Epidemiologist, Methods Coach, Writing Partner, Meeting Memory, Course Builder, Career Coach, Critic, Memory Curator, and 25 more — each an expert in their domain |
+| **Grounded answers (RAG)** | Every knowledge-intensive question is automatically grounded in your indexed document library before the agent answers — with page-level citations, not training-data guesses |
 | **Library management** | Import PDFs, sync Zotero / Mendeley, ask "what do my papers say about X?" — cited answers from your own library (PaperQA2) |
 | **Live meeting assistant** | Follow along in real time, paste transcripts after, get structured notes, action items, and project cross-references automatically |
 | **Morning intelligence brief** | Every morning: new papers on your exact research topics, field news, surveillance alerts, and a focus recommendation — fully personalised |
@@ -323,6 +326,93 @@ This creates your **identity card** — a living profile that Metis reads at the
 The identity card **grows over time**. Every agent run adds context. Every idea you capture tells Metis what you're thinking about. Reflexions after each task feed a self-improvement loop that shapes responses to *you specifically*.
 
 > A question asked after six months of use gets a meaningfully better answer than the same question on day one — not because the AI changed, but because Metis knows you better.
+
+---
+
+## Knowledge Layer & Grounded Answers
+
+Generic AI gives you answers drawn from its training — a vast but opaque blend of sources with no traceability, no edition control, and a fixed knowledge cutoff. Metis works differently.
+
+### How it works
+
+Every time you ask a knowledge-intensive question — about a statistical method, a WHO guideline, a disease burden estimate, or an epidemiological concept — Metis automatically retrieves the most relevant passages from your indexed document library *before* the specialist agent answers. This is **Retrieval-Augmented Generation (RAG)**.
+
+The retrieved passages are fed as grounding context to the agent. The agent answers based on what it can read from your library, not only what it was trained to recall. Citations include document title and page number.
+
+```
+You ask Methods Coach:
+"Which variance estimator should I use for my Poisson MLM with overdispersion?"
+
+Metis retrieves before routing:
+  → Leyland (2020) Multilevel Modelling for Public Health, p.142 — score 0.87
+  → Bates lme4 vignette, p.28 — score 0.71
+
+Methods Coach answers grounded in those passages, citing both sources.
+```
+
+Metis decides when to retrieve — you never have to prompt it. Retrieval is skipped automatically for news queries, code questions, scheduling, and conversational messages.
+
+### Why this matters for researchers
+
+| Without RAG | With Metis RAG |
+|---|---|
+| Answers drawn from training data — source unknown | Answers grounded in documents you selected and trust |
+| No edition or page reference | Cites document, edition, and page number |
+| Plausible-sounding but potentially wrong specifics | Hallucination risk drops substantially for covered topics |
+| Knowledge frozen at training cutoff | Library updated whenever you add documents |
+| Same answer regardless of your domain | Retrieves from knowledge layers tuned to your field |
+
+RAG does not eliminate hallucination entirely — if the library does not cover a topic, the model falls back on training. But for the questions that matter most in research — methodology decisions, guideline compliance, statistical procedures, policy recommendations — grounding in verified sources dramatically reduces the risk of confident errors.
+
+### Pre-loaded knowledge layers (Metis_PH)
+
+The Public Health edition ships with two indexed knowledge layers, ready to use on day one:
+
+| Layer | Documents indexed | Covers |
+|---|---|---|
+| **Public Health Background** | 34 | WHO guidelines (ANC, AMR, nutrition, DHIS2, environmental health), global health reports, social determinants, NCDs, maternal & child health, mental health |
+| **Epidemiology & Methods** | 10 | STROBE, WHO Basic Epidemiology, Leyland MLM, Bates lme4, PRISMA 2020, SaTScan, CIFOR field epidemiology, OECD DAC |
+
+All documents are open-access. All indexing and retrieval run fully locally — no text leaves your machine at any point.
+
+### Adding your own documents
+
+Adding a document to the knowledge library takes three steps — no technical knowledge needed.
+
+**Step 1 — Drop the PDF into the basket:**
+
+Open the **Basket** panel on the Metis platform (or copy the file to the `basket/` folder on your machine). The basket is a staging area Metis watches for new documents.
+
+**Step 2 — Ask Metis to add it:**
+
+```
+"I've added a new paper to my basket — please add it to the knowledge library."
+```
+
+Metis will read the document, decide which domain it belongs to (epidemiology methods, health systems, NTDs, etc.), move it to the right knowledge folder, and rebuild the index. All in one step.
+
+**Step 3 — Done.** The document is available immediately — retrieved by agents whenever relevant to your questions, and searchable in the Knowledge tab of the dashboard.
+
+You can drop multiple PDFs at once and say "process everything in my basket" — Metis handles them all together.
+
+**Building a knowledge layer from scratch:** For a topic area not yet covered, Metis can build an entire domain layer:
+
+```
+"Build a knowledge layer on health technology assessment methods."
+```
+
+Metis delegates to the Background Maker, which sources open-access documents on the topic, scrubs them for personal data, and indexes them as a named layer you can activate in any session.
+
+### Technical details
+
+| Component | Details |
+|---|---|
+| Embedding model | `nomic-embed-text-v1.5-Q` — 768-dim, ONNX, runs fully locally, no API key needed |
+| Vector store | `sqlite-vec` virtual table inside the Metis SQLite database |
+| Retrieval | Approximate nearest-neighbour search, cosine similarity |
+| Chunking | 3,200-character chunks with 400-character overlap |
+| Score threshold | Chunks below 0.4 similarity are dropped before injection |
+| Data privacy | No document text leaves your machine at any point during indexing or retrieval |
 
 ---
 

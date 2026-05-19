@@ -63,7 +63,7 @@ DATABASES = [
             "open-access-books/Global Health & Health Systems",
             "open-access-books/Global Health Governance",
             "open-access-books/Social Determinants & Equity",
-            "open-access-books/Environmental Health",
+            "open-access-books/Environmental & Occupational Health",
             "open-access-books/Infectious Disease & Surveillance",
             "open-access-books/Maternal & Child Health",
             "open-access-books/NCDs",
@@ -88,7 +88,7 @@ DATABASES = [
         "folders": [
             "open-access-books/Epidemiology & Methods",
             "open-access-books/Biostatistics & Methods",
-            "open-access-books/Spatial Epidemiology & Statistics",
+            "open-access-books/Spatial Epidemiology",
             "open-access-books/Multilevel Models",
             "open-access-books/Research Methods & Writing",
             "open-access-books/Field Epidemiology",
@@ -315,6 +315,19 @@ def _setup_schema(conn: sqlite3.Connection) -> None:
         print(f"  ⚠ sqlite-vec not loaded ({e}) — vector search disabled", flush=True)
 
     conn.executescript("""
+        CREATE TABLE IF NOT EXISTS library_cards (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            title       TEXT,
+            domain      TEXT,
+            summary     TEXT,
+            source_path TEXT,
+            authors     TEXT DEFAULT '',
+            year        INTEGER,
+            source      TEXT DEFAULT '',
+            tags        TEXT DEFAULT '',
+            status      TEXT DEFAULT 'unread',
+            created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
         CREATE TABLE IF NOT EXISTS knowledge_databases (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             slug        TEXT NOT NULL UNIQUE,
@@ -460,7 +473,10 @@ def index_database(
 
         # Recycle connection every N PDFs to release WAL memory
         if i % _CONN_RECYCLE_EVERY == 0:
-            conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            try:
+                conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
+            except Exception:
+                pass  # non-fatal
             conn.close()
             conn = _open_conn(db_path)
 
@@ -622,15 +638,18 @@ def index_database(
         if sleep_between > 0:
             time.sleep(sleep_between)
 
-    # Final WAL checkpoint + stats update
+    # Final stats update + WAL checkpoint (checkpoint is best-effort; data is safe either way)
     docs   = conn.execute("SELECT COUNT(*) FROM pdf_index_state WHERE db_id=?", (db_id,)).fetchone()[0]
     chunks = conn.execute("SELECT COUNT(*) FROM pdf_chunks WHERE db_id=?",      (db_id,)).fetchone()[0]
     conn.execute(
         "UPDATE knowledge_databases SET doc_count=?, chunk_count=?, last_built=datetime('now') WHERE id=?",
         (docs, chunks, db_id),
     )
-    conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
     conn.commit()
+    try:
+        conn.execute("PRAGMA wal_checkpoint(PASSIVE)")
+    except Exception:
+        pass  # checkpoint is non-fatal; Windows/OneDrive may hold a brief lock
     conn.close()
 
     return {"total": len(pdfs), "indexed": indexed, "skipped": skipped, "failed": len(failed)}
