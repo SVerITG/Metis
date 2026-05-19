@@ -7,7 +7,7 @@
 <p align="center">
 <em>It's 7:20. You open the dashboard. The morning brief reads:</em>
 <br><br>
-<strong><em>"Two papers on HAT transmission dynamics landed overnight — one from WHO Geneva that directly challenges your working hypothesis in Article 1. The WHO surveillance feed flagged a cluster in your study area. Your open question from last week: 'what drives spillback from animal reservoirs?' — this paper has partial answers. I've cross-referenced both with your knowledge graph, connected them to Fiona's meeting note from Tuesday, and flagged three passages for your review."</em></strong>
+<strong><em>"Two papers on your research topic landed overnight — one directly challenges a working hypothesis you noted last week. Your monitoring feed flagged a new alert in your study area. I've cross-referenced both with your knowledge graph, connected them to your meeting note from Tuesday, and flagged three passages for your review."</em></strong>
 <br><br>
 <em>No prompt. No setup. Your research, connected — every morning.</em>
 </p>
@@ -25,13 +25,13 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-v1.0-brightgreen" alt="v1.0"/>
-  <a href="https://github.com/SVerITG/Metis_PH/stargazers"><img src="https://img.shields.io/github/stars/SVerITG/Metis_PH?style=flat" alt="Stars"/></a>
-  <a href="https://github.com/SVerITG/Metis_PH/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
+  <a href="https://github.com/SVerITG/Metis/stargazers"><img src="https://img.shields.io/github/stars/SVerITG/Metis?style=flat" alt="Stars"/></a>
+  <a href="https://github.com/SVerITG/Metis/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" alt="Python"/>
   <img src="https://img.shields.io/badge/Claude-MCP-orange?logo=anthropic" alt="Claude MCP"/>
 </p>
 
-> **Work in progress.** Core features are stable and used daily. One-click installer and polished onboarding are still in development. Expect rough edges.
+> **Work in progress.** The MCP server is fully operational and used daily. We are still actively developing some dashboard features and the one-click installer. Expect rough edges. For a full working example with pre-loaded public health knowledge, see **[Metis_PH — The Public Health Research Cortex](https://github.com/SVerITG/Metis_PH)**.
 
 > **Disclaimer.** The concept, architecture, and approach behind Metis are original. One of Metis's core principles is self-improvement — it actively monitors AI developments and incorporates new tools, skills, and agent patterns. Tools, skills, and agents were built drawing on publicly available techniques, documentation, and web resources, and as such individual components are often not unique. What Metis presents is a *way of working* — a coherent system designed for researchers. Use and extension are welcome under the AGPL-3.0 license.
 
@@ -429,9 +429,9 @@ Metis will ship in distinct editions, each with its own GitHub repository. The b
 
 | Repository | Status | What it is |
 |---|---|---|
-| **[Metis](https://github.com/SVerITG/Metis)** | 📋 Planned | Empty Research Cortex — full architecture, no domain content. Clone this to build your own edition. |
-| **[Metis_PH](https://github.com/SVerITG/Metis_PH)** | ▶ Current (this repo, v0.x) | Public Health & Epidemiology edition — stable, used daily |
-| **Metis_PH v1.0** | 🔧 In development | Stable installer, polished onboarding, complete domain pack |
+| **[Metis](https://github.com/SVerITG/Metis)** | ▶ Current (this repo, v1.0) | Research Cortex shell — full architecture, no domain content pre-loaded. Clone this to build your own edition. |
+| **[Metis_PH](https://github.com/SVerITG/Metis_PH)** | ▶ Live (v1.0) | Public Health & Epidemiology edition — full architecture + pre-loaded domain knowledge |
+| **Metis_PH v1.0** | ✅ Released | Stable release — MCP server operational, knowledge layer actively being built |
 | **[Metis_BM](https://github.com/SVerITG/Metis_BM)** | 🧬 Placeholder | Biomedical Sciences — to be built |
 | **[Metis_CL](https://github.com/SVerITG/Metis_CL)** | 🏥 Placeholder | Clinical Sciences — to be built |
 | **Metis [Domain]** | 🌍 Community | Domain packs for other research fields as contributed |
