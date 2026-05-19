@@ -169,16 +169,82 @@ class _Timeout(Exception):
     pass
 
 
+def _is_valid_pdf(path: Path) -> bool:
+    """Check the file header — rejects HTML/XML files disguised as .pdf."""
+    try:
+        with open(path, "rb") as f:
+            return f.read(8).startswith(b"%PDF")
+    except Exception:
+        return False
+
+
+def _try_pymupdf(path: Path, max_pages: int) -> Tuple[List[Tuple[int, str]], int]:
+    import fitz  # PyMuPDF
+    doc = fitz.open(str(path))
+    total = len(doc)
+    if total > max_pages:
+        doc.close()
+        return [], -1
+    pages = []
+    for i in range(total):
+        try:
+            text = _clean_text(doc[i].get_text("text") or "")
+            if text.strip():
+                pages.append((i + 1, text))
+        except Exception:
+            continue
+    doc.close()
+    return pages, total
+
+
+def _try_pdfplumber(path: Path, max_pages: int) -> Tuple[List[Tuple[int, str]], int]:
+    import pdfplumber
+    with pdfplumber.open(str(path)) as pdf:
+        total = len(pdf.pages)
+        if total > max_pages:
+            return [], -1
+        pages = []
+        for i, page in enumerate(pdf.pages):
+            try:
+                text = _clean_text(page.extract_text() or "")
+                if text.strip():
+                    pages.append((i + 1, text))
+            except Exception:
+                continue
+    return pages, total
+
+
+def _try_pypdf(path: Path, max_pages: int) -> Tuple[List[Tuple[int, str]], int]:
+    from pypdf import PdfReader
+    reader = PdfReader(str(path), strict=False)
+    total = len(reader.pages)
+    if total > max_pages:
+        return [], -1
+    pages = []
+    for i, page in enumerate(reader.pages):
+        try:
+            text = _clean_text(page.extract_text() or "")
+            if text.strip():
+                pages.append((i + 1, text))
+        except Exception:
+            continue
+    return pages, total
+
+
 def _extract_pages_safe(
     pdf_path: Path,
     timeout_secs: int,
     max_pages: int,
 ) -> Tuple[List[Tuple[int, str]], int]:
-    """Extract pages with a per-PDF wall-clock timeout.
+    """Multi-strategy extraction: PyMuPDF → pdfplumber → pypdf.
 
-    Uses SIGALRM (Linux/WSL only). Falls back to a simple try/except on Windows.
     Returns (pages, total_page_count).
+    Special return codes: -1 too large, -2 timeout, -3 OOM, -4 not a PDF.
     """
+    # Reject HTML/XML files immediately — no point trying any parser
+    if not _is_valid_pdf(pdf_path):
+        return [], -4
+
     def _handler(signum, frame):
         raise _Timeout()
 
@@ -188,29 +254,42 @@ def _extract_pages_safe(
         signal.alarm(timeout_secs)
 
     try:
-        from pypdf import PdfReader
-        reader = PdfReader(str(pdf_path), strict=False)
-        total = len(reader.pages)
+        # Strategy 1: PyMuPDF — fastest, best for WHO/World Bank PDFs
+        try:
+            pages, total = _try_pymupdf(pdf_path, max_pages)
+            if total == -1:
+                return [], -1
+            if pages:
+                return pages, total
+        except Exception:
+            pass
 
-        if total > max_pages:
-            return [], -1  # signal "skipped — too large"
+        # Strategy 2: pdfplumber — better for complex column layouts and tables
+        try:
+            pages, total = _try_pdfplumber(pdf_path, max_pages)
+            if total == -1:
+                return [], -1
+            if pages:
+                return pages, total
+        except Exception:
+            pass
 
-        pages = []
-        for i, page in enumerate(reader.pages):
-            try:
-                text = _clean_text(page.extract_text() or "")
-                if text.strip():
-                    pages.append((i + 1, text))
-            except Exception:
-                continue
-        return pages, total
+        # Strategy 3: pypdf — lightweight fallback
+        try:
+            pages, total = _try_pypdf(pdf_path, max_pages)
+            if total == -1:
+                return [], -1
+            if pages:
+                return pages, total
+            # All three returned 0 text pages — likely a scanned/image-only PDF
+            return [], total
+        except Exception:
+            return [], 0
 
     except _Timeout:
-        return [], -2  # signal "timed out"
+        return [], -2
     except MemoryError:
-        return [], -3  # signal "OOM during extraction"
-    except Exception:
-        return [], 0
+        return [], -3
     finally:
         if use_alarm:
             signal.alarm(0)
@@ -409,6 +488,10 @@ def index_database(
 
         pages, total_pages = _extract_pages_safe(pdf_path, timeout_secs, max_pages)
 
+        if total_pages == -4:
+            log(f"  [{i}/{len(pdfs)}] 🚫 not a PDF (HTML/XML header)  {pdf_path.name}")
+            skipped += 1
+            continue
         if total_pages == -1:
             log(f"  [{i}/{len(pdfs)}] ⏭ skipped (>{max_pages}p)  {pdf_path.name}")
             skipped += 1
@@ -424,7 +507,7 @@ def index_database(
             gc.collect()
             continue
         if not pages:
-            log(f"  [{i}/{len(pdfs)}] ✗ no text  {pdf_path.name}")
+            log(f"  [{i}/{len(pdfs)}] ✗ no text after 3 strategies (scanned/image PDF?)  {pdf_path.name}")
             failed.append(source_file)
             continue
 
