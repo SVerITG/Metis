@@ -1,0 +1,114 @@
+<!--
+  teach_courses.html — Course cards with alerts and tools.
+  Replaces the #teach-courses-list placeholder via HTMX.
+-->
+<div id="teach-courses-list" class="row g-3">
+
+{% if not courses %}
+  <div class="col-12">
+    <div class="card p-4 text-center text-muted">
+      <i class="bi bi-easel fs-2 mb-2"></i>
+      <div>No courses added yet.</div>
+      <div class="small mt-1">Click <strong>Add course</strong> to register the first class you teach.</div>
+    </div>
+  </div>
+
+{% else %}
+  {% for course in courses %}
+  <div class="col-12 col-xl-6">
+    <div class="card h-100">
+      <div class="card-body">
+
+        <!-- Course header -->
+        <div class="d-flex align-items-start justify-content-between mb-2">
+          <div>
+            <div class="fw-semibold">{{ course.title }}</div>
+            <div class="text-muted small">
+              {% if course.code %}{{ course.code }} · {% endif %}
+              {% if course.semester %}{{ course.semester }}{% endif %}
+              {% if course.student_count %} · {{ course.student_count }} students{% endif %}
+            </div>
+          </div>
+          <span class="badge bg-primary-subtle text-primary ms-2">
+            <i class="bi bi-mortarboard"></i>
+          </span>
+        </div>
+
+        {% if course.description %}
+        <p class="text-muted small mb-3">{{ course.description }}</p>
+        {% endif %}
+
+        <!-- Alert panels (load on demand) -->
+        <div class="row g-2 mb-3">
+
+          <!-- Literature alerts -->
+          <div class="col-12 col-sm-6">
+            <div class="card bg-body-secondary border-0 p-2"
+                 id="lit-alerts-{{ course.id }}"
+                 hx-get="/api/partial/teach/lit-alerts/{{ course.id }}"
+                 hx-trigger="intersect once"
+                 hx-swap="innerHTML">
+              <div class="text-muted small placeholder-glow">
+                <i class="bi bi-book me-1"></i>
+                <span class="placeholder col-6"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- News alerts -->
+          <div class="col-12 col-sm-6">
+            <div class="card bg-body-secondary border-0 p-2"
+                 id="news-alerts-{{ course.id }}"
+                 hx-get="/api/partial/teach/news-alerts/{{ course.id }}"
+                 hx-trigger="intersect once"
+                 hx-swap="innerHTML">
+              <div class="text-muted small placeholder-glow">
+                <i class="bi bi-newspaper me-1"></i>
+                <span class="placeholder col-6"></span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Action buttons — Teaching tools (creates prompts to paste into Claude Code) -->
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-sm btn-primary"
+                  title="Create a lecture slide deck with speaker notes"
+                  onclick="openCourseSlides({{ course.id }}, '{{ course.title | e }}')">
+            <i class="bi bi-easel2 me-1"></i>Slides
+          </button>
+          <button class="btn btn-sm btn-outline-secondary"
+                  title="One-page lecture guide: objectives, key concepts, activities, assessment"
+                  onclick="openTeachingBrief({{ course.id }}, '{{ course.title | e }}')">
+            <i class="bi bi-journal-text me-1"></i>Teaching brief
+          </button>
+          <button class="btn btn-sm btn-outline-secondary"
+                  title="Build a graded exam or assessment"
+                  onclick="openAssessmentBuilder({{ course.id }}, '{{ course.title | e }}')">
+            <i class="bi bi-clipboard-check me-1"></i>Assessment
+          </button>
+          <button class="btn btn-sm btn-outline-secondary"
+                  title="Generate a student practice question bank"
+                  onclick="openQuestionBank({{ course.id }}, '{{ course.title | e }}')">
+            <i class="bi bi-question-circle me-1"></i>Q-bank
+          </button>
+          <button class="btn btn-sm btn-outline-secondary"
+                  title="Identify curriculum gaps vs recent literature and field standards"
+                  onclick="openGapAnalysis({{ course.id }}, '{{ course.title | e }}')">
+            <i class="bi bi-search me-1"></i>Gap analysis
+          </button>
+          <button class="btn btn-sm btn-outline-secondary"
+                  title="General teaching chat — pedagogy, content, explanations"
+                  onclick="openCourseChat({{ course.id }}, '{{ course.title | e }}')">
+            <i class="bi bi-chat-dots me-1"></i>Chat
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% endif %}
+
+</div>

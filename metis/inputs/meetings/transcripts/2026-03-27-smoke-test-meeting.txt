@@ -1,4 +1,0 @@
-Meeting: Smoke Test Meeting
-
-Automatic transcription requested but no local engine is installed.
-Install a local Whisper setup or upload a transcript text file from the dashboard.

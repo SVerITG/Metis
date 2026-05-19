@@ -1,0 +1,49 @@
+<!-- work_all_tasks.html — All open tasks across every project, sorted by priority -->
+{% if not tasks %}
+<div class="panel panel-pad" style="text-align:center;padding:20px;border:1px dashed var(--m-line);">
+  <p class="ed" style="margin:0;font-size:13px;color:var(--m-muted);">No open tasks across any project.</p>
+</div>
+{% else %}
+<div class="panel">
+  {% for t in tasks %}
+  <div class="todo-row{% if t.status == 'in_progress' %} todo-row--active{% endif %}"
+       data-task-id="{{ t.id }}"
+       style="grid-template-columns:28px 1fr auto auto;column-gap:14px;">
+    <span class="todo-check" onclick="markTaskDone({{ t.id }}, this)" title="Mark done"></span>
+    <div style="min-width:0;">
+      <div class="todo-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.title }}</div>
+      <div class="todo-meta" style="margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;">
+        {% if t.project %}
+        <span style="color:var(--m-muted);">{{ t.project }}</span>
+        {% endif %}
+        {% if t.due_date %}
+        <span style="color:{% if t.id in overdue_ids %}var(--m-alert){% else %}var(--m-muted){% endif %};">
+          DUE {{ t.due_date[:10] }}{% if t.id in overdue_ids %} ⚠{% endif %}
+        </span>
+        {% endif %}
+        {% if t.priority == 'high' %}
+        <span style="color:var(--m-alert);font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;">HIGH</span>
+        {% endif %}
+        {% if t.category %}
+        <span style="color:var(--m-muted-soft);font-family:var(--m-mono);font-size:10px;letter-spacing:0.08em;">{{ t.category | upper }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <span class="todo-meta">
+      {% if t.status == 'in_progress' %}<span style="color:var(--m-info);">IN PROGRESS</span>{% endif %}
+    </span>
+    <span class="todo-actions" style="display:flex;gap:4px;">
+      <button class="feed-act" title="Mark done" onclick="markTaskDone({{ t.id }}, this)">
+        <svg viewBox="0 0 16 16"><polyline points="4 8 7 11 12 5"/></svg>
+      </button>
+      <button class="feed-act feed-act-dismiss" title="Delete" onclick="deleteTask({{ t.id }}, this)">
+        <svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
+      </button>
+    </span>
+  </div>
+  {% endfor %}
+</div>
+<div class="tnum" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-top:10px;">
+  {{ tasks | length }} OPEN TASKS ACROSS ALL PROJECTS
+</div>
+{% endif %}

@@ -1,0 +1,61 @@
+<div>
+  <div class="sec-label" style="margin-bottom:8px;">
+    <span>Idea for today</span>
+    <span class="sec-label-tail">ROTATES DAILY</span>
+  </div>
+
+  {% if xpoll_news or xpoll_idea %}
+  <!-- Cross-pollination prompt -->
+  <div class="panel" style="margin-bottom:12px;">
+    <div style="padding:20px 24px;">
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-accent);margin-bottom:14px;text-transform:uppercase;">Cross-pollination &middot; Today</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+        {% if xpoll_news %}
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;color:var(--m-muted);text-transform:uppercase;padding-top:3px;white-space:nowrap;">News</span>
+          <span style="font-family:var(--m-display);font-size:13.5px;font-weight:500;color:var(--m-ink);line-height:1.4;">{{ xpoll_news.title }}</span>
+        </div>
+        {% endif %}
+        {% if xpoll_idea %}
+        <div style="display:flex;align-items:flex-start;gap:10px;">
+          <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;color:var(--m-muted);text-transform:uppercase;padding-top:3px;white-space:nowrap;">Idea</span>
+          <span style="font-size:13px;color:var(--m-text);line-height:1.5;">{{ (xpoll_idea.text or "")[:120] }}{% if (xpoll_idea.text or "") | length > 120 %}&hellip;{% endif %}</span>
+        </div>
+        {% endif %}
+      </div>
+      <div style="font-family:var(--m-display);font-size:13px;font-style:italic;color:var(--m-accent);border-top:1px solid var(--m-rule-soft);padding-top:12px;">
+        What&rsquo;s the connection?
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Today's highlighted idea -->
+  <div class="panel">
+    {% if idea %}
+    <div style="padding:20px 24px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);padding:2px 7px;border:1px solid var(--m-accent);border-radius:2px;">{{ idea.idea_type }}</span>
+        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ idea.age_label }} AGO</span>
+      </div>
+      <p class="ed" style="font-size:13.5px;line-height:1.65;color:var(--m-text);margin:0 0 14px 0;max-width:600px;">
+        {{ idea.text }}
+      </p>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn--ghost btn--caps"
+                onclick="setNavActive(document.querySelector('[data-tab=thinking]'),'thinking'); htmx.ajax('GET','/api/tab/thinking',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'})">
+          Open Thinking
+        </button>
+        <button class="btn btn--ghost btn--caps"
+                hx-get="/api/partial/today/idea-today"
+                hx-swap="outerHTML"
+                hx-target="closest div">
+          Next idea
+        </button>
+      </div>
+    </div>
+    {% elif not xpoll_news and not xpoll_idea %}
+    <div class="empty-row">No ideas captured yet. Use Ctrl+K to add one.</div>
+    {% endif %}
+  </div>
+</div>

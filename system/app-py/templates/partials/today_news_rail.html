@@ -1,0 +1,189 @@
+{# News surface — topic slipcases with Haiku summaries (C1+C3) #}
+<div class="today-news-rail" id="news-surface">
+
+  <!-- Header + controls -->
+  <div class="news-rail-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="caps-label caps-label-teal">Dispatch</div>
+      <div class="news-rail-updated">
+        {% if last_updated %}updated {{ last_updated }}{% else %}no scans yet{% endif %}
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <!-- Period selector -->
+      <div style="display:flex;gap:4px;">
+        <button class="btn btn--caps {% if period == 'week' %}btn--pri{% else %}btn--ghost{% endif %}"
+                style="padding:3px 9px;font-size:9px;"
+                hx-get="/api/partial/today/news-rail?period=week"
+                hx-target="#news-surface" hx-swap="outerHTML">Week</button>
+        <button class="btn btn--caps {% if period == 'month' %}btn--pri{% else %}btn--ghost{% endif %}"
+                style="padding:3px 9px;font-size:9px;"
+                hx-get="/api/partial/today/news-rail?period=month"
+                hx-target="#news-surface" hx-swap="outerHTML">Month</button>
+      </div>
+      <!-- Update summaries button -->
+      <button class="btn btn--sec btn--caps" style="padding:3px 10px;font-size:9px;"
+              onclick="updateNewsSummaries('{{ period }}')"
+              id="news-update-btn">
+        ✦ Update summaries
+      </button>
+    </div>
+  </div>
+
+  <!-- Topic selector for targeted update -->
+  <div id="news-topic-selector" style="display:none;padding:10px 0 12px;">
+    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:6px;">SELECT TOPICS FOR SUMMARY UPDATE:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
+      {% for topic in all_topics %}
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;
+                    font-family:var(--m-mono);font-size:10px;padding:2px 8px;
+                    border:1px solid var(--m-rule);border-radius:3px;
+                    background:var(--m-surface-2);">
+        <input type="checkbox" class="news-topic-cb" value="{{ topic }}" checked style="margin:0;"> {{ topic }}
+      </label>
+      {% endfor %}
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn--primary btn--caps" style="padding:4px 12px;font-size:10px;" onclick="runSummaryUpdate('{{ period }}')">Generate</button>
+      <button class="btn btn--ghost btn--caps" style="padding:4px 12px;font-size:10px;" onclick="document.getElementById('news-topic-selector').style.display='none'">Cancel</button>
+    </div>
+    <div id="news-summary-status" style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-top:6px;min-height:16px;"></div>
+  </div>
+
+  <!-- Topic slipcases -->
+  {% if slipcases %}
+  <div class="news-slipcases">
+    {% for sc in slipcases %}
+    <div class="news-slipcase" id="slipcase-{{ sc.topic | replace(' ','-') | lower }}">
+      <!-- Slipcase header (always visible) -->
+      <div class="news-slipcase-hd" onclick="toggleSlipcase(this)"
+           style="display:flex;align-items:center;gap:8px;padding:9px 0;cursor:pointer;
+                  border-bottom:1px solid var(--m-rule-soft);user-select:none;">
+        <svg class="slipcase-chevron" viewBox="0 0 10 10" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="flex-shrink:0;color:var(--m-muted);transition:transform .2s;{% if sc.open %}transform:rotate(90deg);{% endif %}">
+          <polyline points="3 2 7 5 3 8"/>
+        </svg>
+        <span style="font-family:var(--m-mono);font-size:10px;font-weight:700;letter-spacing:0.12em;color:var(--m-ink);">{{ sc.topic }}</span>
+        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ sc.count }}</span>
+        {% if sc.age_label %}
+        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted-soft);margin-left:auto;">{{ sc.age_label }}</span>
+        {% endif %}
+      </div>
+
+      <!-- Slipcase body (collapsible) -->
+      <div class="news-slipcase-body" style="{% if not sc.open %}display:none;{% endif %}padding-bottom:4px;">
+
+        <!-- AI summary -->
+        {% if sc.summary %}
+        <div style="margin:10px 0 8px;padding:10px 12px;background:var(--m-surface-2);
+                    border-left:2px solid var(--m-accent);border-radius:0 4px 4px 0;">
+          <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;
+                      color:var(--m-accent);margin-bottom:5px;">
+            ✦ AI DIGEST
+            {% if sc.summary_age %}<span style="color:var(--m-muted);margin-left:6px;">{{ sc.summary_age }}</span>{% endif %}
+          </div>
+          <p style="font-family:var(--m-sans);font-size:12.5px;color:var(--m-ink);
+                    line-height:1.55;margin:0;">{{ sc.summary }}</p>
+        </div>
+        {% else %}
+        <div style="margin:8px 0 6px;padding:8px 12px;background:var(--m-surface-2);
+                    border-radius:4px;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
+          No summary yet — click "Update summaries" to generate.
+        </div>
+        {% endif %}
+
+        <!-- Articles -->
+        {% if sc.items %}
+        <div style="margin-top:6px;">
+          {% for item in sc.items %}
+          <a class="news-rail-item" href="{{ item.url }}" target="_blank" rel="noopener"
+             style="text-decoration:none;display:block;">
+            <div class="news-rail-item-meta">
+              <span class="news-rail-item-time">{{ item.time }}</span>
+              {% if item.signal %}
+              <span class="news-rail-item-signal {{ item.signal_class }}">{{ item.signal }}</span>
+              {% endif %}
+            </div>
+            <h4 class="news-rail-item-title">{{ item.title }}</h4>
+            {% if item.summary %}
+            <p class="news-rail-item-summary">{{ item.summary }}</p>
+            {% endif %}
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="news-rail-empty" style="font-size:11px;padding:8px 0;">
+          No articles in selected period.
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="news-rail-empty">
+    No news yet. Click <strong>Scan for content</strong> in the dateline to fetch feeds.
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function toggleSlipcase(hd) {
+  const body = hd.nextElementSibling;
+  const chevron = hd.querySelector('.slipcase-chevron');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  if (chevron) chevron.style.transform = open ? '' : 'rotate(90deg)';
+}
+
+function updateNewsSummaries(period) {
+  const sel = document.getElementById('news-topic-selector');
+  if (sel.style.display === 'none' || !sel.style.display) {
+    sel.style.display = '';
+  } else {
+    sel.style.display = 'none';
+  }
+}
+
+async function runSummaryUpdate(period) {
+  const checks = [...document.querySelectorAll('.news-topic-cb:checked')].map(c => c.value);
+  const status = document.getElementById('news-summary-status');
+  const btn = document.querySelector('[onclick*="runSummaryUpdate"]');
+  if (!checks.length) { status.textContent = 'Select at least one topic.'; return; }
+  status.style.color = 'var(--m-muted)';
+  status.textContent = `Generating summaries for ${checks.length} topic(s)…`;
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch('/api/news/summarize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topics: checks, period }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      status.style.color = 'var(--m-ok)';
+      status.textContent = `✓ ${data.generated} summaries generated`;
+      // Reload the news rail
+      setTimeout(() => {
+        const rail = document.getElementById('news-surface');
+        if (rail && window.htmx) htmx.trigger(rail, 'refresh');
+        else if (rail) {
+          htmx.ajax('GET', `/api/partial/today/news-rail?period=${period}`, {
+            target: '#news-surface', swap: 'outerHTML'
+          });
+        }
+      }, 1200);
+    } else {
+      status.style.color = 'var(--m-alert)';
+      status.textContent = `Error: ${data.error || 'generation failed'}`;
+    }
+  } catch(e) {
+    status.style.color = 'var(--m-alert)';
+    status.textContent = 'Network error';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+</script>

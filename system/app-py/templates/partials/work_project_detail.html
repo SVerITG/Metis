@@ -1,0 +1,525 @@
+<!-- work_project_detail.html — Full project panel v2 -->
+<div class="proj-detail-overlay" id="proj-detail-overlay" onclick="if(event.target===this)closeProjectDetail()">
+<div class="proj-detail-panel" style="display:flex;flex-direction:column;height:100%;max-height:90vh;">
+
+  <!-- ── Header ── -->
+  <div style="display:flex;align-items:flex-start;gap:14px;padding:26px 32px 18px;border-bottom:1px solid var(--m-rule);flex-shrink:0;">
+    {% if p.image_url %}
+    <img src="{{ p.image_url }}" alt="" style="width:52px;height:52px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--m-rule);">
+    {% endif %}
+    <div style="flex:1;min-width:0;">
+      {% if p.domain %}
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);margin-bottom:5px;">{{ p.domain }}</div>
+      {% endif %}
+      <h2 id="pd-title-display-{{ p.id }}"
+          style="font-family:var(--m-display);font-size:22px;font-weight:500;letter-spacing:-0.02em;color:var(--m-ink);margin:0 0 4px;cursor:pointer;"
+          title="Click to rename"
+          onclick="pdStartRename('{{ p.id }}')">{{ p.title }}</h2>
+      <input id="pd-title-input-{{ p.id }}"
+             style="display:none;font-family:var(--m-display);font-size:22px;font-weight:500;border:none;border-bottom:2px solid var(--m-accent);outline:none;background:transparent;color:var(--m-ink);width:100%;margin-bottom:4px;"
+             onblur="pdSaveRename('{{ p.id }}')"
+             onkeydown="if(event.key==='Enter')pdSaveRename('{{ p.id }}');if(event.key==='Escape')pdCancelRename('{{ p.id }}')">
+      <!-- Tags -->
+      <div id="pd-tags-{{ p.id }}" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;">
+        {% for tag in tags_list %}
+        <span class="chip chip--plain" style="font-size:10px;padding:1px 7px;cursor:default;">{{ tag }}
+          <span onclick="pdRemoveTag('{{ p.id }}','{{ tag }}')" style="margin-left:4px;cursor:pointer;opacity:.6;font-size:9px;">&#10005;</span>
+        </span>
+        {% endfor %}
+        <button onclick="pdAddTagPrompt('{{ p.id }}')"
+                style="background:none;border:1px dashed var(--m-rule);border-radius:10px;padding:1px 8px;font-family:var(--m-mono);font-size:9px;color:var(--m-muted);cursor:pointer;letter-spacing:.08em;">+ tag</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+      {% if last_activity %}
+      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ last_activity[:10] }}</span>
+      {% endif %}
+      <button onclick="closeProjectDetail()"
+              style="background:none;border:none;font-size:20px;color:var(--m-muted);cursor:pointer;padding:0;line-height:1;">&#10005;</button>
+    </div>
+  </div>
+
+  <!-- ── Tabs ── -->
+  <div style="display:flex;gap:0;border-bottom:1px solid var(--m-rule);padding:0 32px;flex-shrink:0;background:var(--m-surface-1);">
+    {% for tab_id, tab_label in [('tasks','Tasks'),('notes','Notes'),('about','About'),('history','History')] %}
+    <button id="pd-tab-btn-{{ tab_id }}"
+            onclick="pdSwitchTab('{{ p.id }}','{{ tab_id }}')"
+            style="background:none;border:none;border-bottom:2px solid {% if tab_id=='tasks' %}var(--m-accent){% else %}transparent{% endif %};
+                   padding:10px 16px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;
+                   color:{% if tab_id=='tasks' %}var(--m-accent){% else %}var(--m-muted){% endif %};
+                   cursor:pointer;margin-bottom:-1px;transition:color .15s,border-color .15s;">{{ tab_label | upper }}</button>
+    {% endfor %}
+  </div>
+
+  <!-- ── Body ── -->
+  <div style="flex:1;overflow-y:auto;padding:24px 32px;display:flex;flex-direction:column;gap:22px;">
+
+    <!-- TASKS TAB -->
+    <div id="pd-panel-tasks" style="">
+
+      {% if p.next_step %}
+      <div style="display:flex;align-items:center;gap:10px;background:var(--m-accent-wash);border-radius:5px;padding:10px 14px;margin-bottom:16px;">
+        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);flex-shrink:0;">NEXT</span>
+        <span style="font-family:var(--m-display);font-size:13px;color:var(--m-accent);flex:1;line-height:1.4;">{{ p.next_step }}</span>
+        <button onclick="pdClearNextStep('{{ p.id }}')"
+                title="Mark as done"
+                style="background:none;border:1px solid var(--m-accent);border-radius:3px;padding:2px 8px;
+                       font-family:var(--m-mono);font-size:9px;color:var(--m-accent);cursor:pointer;">&#10003; Done</button>
+      </div>
+      {% endif %}
+
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);margin-bottom:10px;">
+        Open tasks <span style="color:var(--m-ink);margin-left:4px;">{{ open_count }}</span>
+      </div>
+
+      <div id="pd-task-list-{{ p.id }}" style="display:flex;flex-direction:column;gap:2px;margin-bottom:12px;">
+        {% if open_tasks %}
+          {% for t in open_tasks %}
+          <div class="pd-task-row" data-task-id="{{ t.task_id }}"
+               draggable="true"
+               style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;border:1px solid transparent;">
+            <span style="cursor:grab;color:var(--m-rule);font-size:13px;flex-shrink:0;user-select:none;" title="Drag to reorder">&#8919;</span>
+            <span style="font-size:10px;flex-shrink:0;color:{% if t.status == 'blocked' %}var(--m-alert){% elif t.status == 'in_progress' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
+              {% if t.status == 'blocked' %}&#9679;{% elif t.status == 'in_progress' %}&#9656;{% else %}&middot;{% endif %}
+            </span>
+            <span class="pd-task-title"
+                  style="flex:1;font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;cursor:pointer;"
+                  onclick="pdStartTaskRename(this,'{{ t.task_id }}','{{ p.id }}')"
+                  title="Click to rename">{{ t.title }}</span>
+            <select onchange="pdSetTaskStatus('{{ t.task_id }}','{{ p.id }}',this.value)"
+                    style="font-family:var(--m-mono);font-size:9px;border:1px solid var(--m-rule);border-radius:3px;
+                           padding:2px 4px;background:var(--m-surface-2);color:var(--m-muted);flex-shrink:0;">
+              <option value="open" {% if t.status == 'open' %}selected{% endif %}>open</option>
+              <option value="in_progress" {% if t.status == 'in_progress' %}selected{% endif %}>in progress</option>
+              <option value="blocked" {% if t.status == 'blocked' %}selected{% endif %}>blocked</option>
+            </select>
+            <button onclick="pdDetailTaskDone('{{ t.task_id }}','{{ p.id }}')"
+                    title="Mark done"
+                    style="background:none;border:none;padding:2px 5px;cursor:pointer;color:var(--m-ok);font-size:14px;flex-shrink:0;line-height:1;">&#10003;</button>
+            <button onclick="pdDetailTaskDelete('{{ t.task_id }}','{{ p.id }}')"
+                    title="Delete task"
+                    style="background:none;border:none;padding:2px 5px;cursor:pointer;color:var(--m-muted);font-size:12px;flex-shrink:0;line-height:1;opacity:.5;"
+                    onmouseenter="this.style.opacity='1';this.style.color='#e53e3e'"
+                    onmouseleave="this.style.opacity='.5';this.style.color='var(--m-muted)'">&#10005;</button>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);padding:8px 0;">No open tasks.</div>
+        {% endif %}
+      </div>
+
+      <div style="display:flex;gap:6px;align-items:center;padding-top:8px;border-top:1px solid var(--m-rule-soft);">
+        <input id="pd-new-task-{{ p.id }}" type="text" placeholder="Add a task…"
+               onkeydown="if(event.key==='Enter')pdDetailAddTask('{{ p.id }}')"
+               style="flex:1;font-family:var(--m-display);font-size:13px;border:1px solid var(--m-line);
+                      border-radius:3px;padding:6px 10px;background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+        <select id="pd-new-task-cat-{{ p.id }}"
+                style="font-family:var(--m-mono);font-size:10px;border:1px solid var(--m-line);
+                       border-radius:3px;padding:6px 7px;background:var(--m-surface-2);color:var(--m-muted);">
+          <option value="general">general</option>
+          <option value="urgent">urgent</option>
+          <option value="research">research</option>
+          <option value="writing">writing</option>
+          <option value="code">code</option>
+          <option value="review">review</option>
+        </select>
+        <button onclick="pdDetailAddTask('{{ p.id }}')"
+                style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
+                       padding:6px 14px;font-family:var(--m-mono);font-size:10px;cursor:pointer;white-space:nowrap;">Add task</button>
+      </div>
+
+      {% if done_tasks %}
+      <div style="margin-top:20px;">
+        <button onclick="pdToggleDoneArchive('{{ p.id }}')"
+                style="background:none;border:none;padding:0;cursor:pointer;font-family:var(--m-mono);
+                       font-size:9px;letter-spacing:0.16em;color:var(--m-muted);text-transform:uppercase;
+                       display:flex;align-items:center;gap:6px;">
+          <span id="pd-done-chevron-{{ p.id }}">&#9656;</span>
+          Done &amp; archived &mdash; {{ done_tasks | length }} tasks
+        </button>
+        <div id="pd-done-archive-{{ p.id }}" style="display:none;margin-top:10px;border-left:2px solid var(--m-rule-soft);padding-left:12px;">
+          {% for t in done_tasks %}
+          <div style="display:flex;align-items:baseline;gap:10px;padding:4px 0;border-bottom:1px solid var(--m-rule-soft);">
+            <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-ok);flex-shrink:0;">&#10003;</span>
+            <span style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);flex:1;text-decoration:line-through;opacity:.7;">{{ t.title }}</span>
+            {% if t.updated_at %}
+            <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);flex-shrink:0;">{{ t.updated_at[:10] }}</span>
+            {% endif %}
+            <button onclick="pdRestoreTask('{{ t.task_id }}','{{ p.id }}')"
+                    title="Restore to open"
+                    style="background:none;border:none;padding:0 3px;cursor:pointer;font-family:var(--m-mono);font-size:9px;color:var(--m-accent);opacity:.7;">&#8617;</button>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div><!-- /tasks -->
+
+    <!-- NOTES TAB -->
+    <div id="pd-panel-notes" style="display:none;">
+      <div style="margin-bottom:20px;">
+        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:8px;">NEW NOTE</div>
+        <textarea id="pd-note-input-{{ p.id }}" rows="3"
+                  placeholder="Write a note linked to this project…"
+                  style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:13px;
+                         line-height:1.6;border:1px solid var(--m-line);border-radius:4px;
+                         padding:10px 12px;background:var(--m-surface-2);color:var(--m-ink);
+                         resize:vertical;outline:none;"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+          <button onclick="pdSaveNote('{{ p.id }}')"
+                  style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
+                         padding:6px 16px;font-family:var(--m-mono);font-size:10px;cursor:pointer;">Save note</button>
+        </div>
+      </div>
+      <div id="pd-notes-list-{{ p.id }}">
+        {% if linked_notes %}
+          {% for n in linked_notes %}
+          <div class="panel panel-pad" style="padding:14px 16px;margin-bottom:10px;position:relative;" data-note-id="{{ n.note_id }}">
+            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-bottom:6px;letter-spacing:.1em;">{{ n.created_at[:10] }} &middot; NOTE</div>
+            <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.6;white-space:pre-wrap;">{{ n.content }}</div>
+            <button onclick="pdDeleteNote('{{ n.note_id }}','{{ p.id }}')"
+                    style="position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;
+                           font-size:12px;color:var(--m-muted);opacity:.5;padding:2px 4px;"
+                    onmouseenter="this.style.opacity='1'"
+                    onmouseleave="this.style.opacity='.5'">&#10005;</button>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">
+            No notes yet. Notes written here also appear in the Thinking tab.
+          </div>
+        {% endif %}
+      </div>
+    </div><!-- /notes -->
+
+    <!-- ABOUT TAB -->
+    <div id="pd-panel-about" style="display:none;">
+      <div style="display:flex;flex-direction:column;gap:18px;">
+        <div>
+          <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:6px;">DESCRIPTION</div>
+          <textarea id="pd-desc-{{ p.id }}" rows="3"
+                    style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:13px;
+                           line-height:1.6;border:1px solid var(--m-line);border-radius:4px;
+                           padding:9px 11px;background:var(--m-surface-2);color:var(--m-ink);resize:vertical;outline:none;">{{ p.description or '' }}</textarea>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:140px;">
+            <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:5px;">STARTED</div>
+            <input type="date" id="pd-started-{{ p.id }}" value="{{ p.started_at[:10] if p.started_at else '' }}"
+                   style="font-family:var(--m-mono);font-size:12px;border:1px solid var(--m-line);border-radius:3px;
+                          padding:6px 8px;background:var(--m-surface-2);color:var(--m-ink);width:100%;box-sizing:border-box;">
+          </div>
+          <div style="flex:1;min-width:140px;">
+            <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:5px;">COMPLETED / ENDED</div>
+            <input type="date" id="pd-completed-{{ p.id }}" value="{{ p.completed_at[:10] if p.completed_at else '' }}"
+                   style="font-family:var(--m-mono);font-size:12px;border:1px solid var(--m-line);border-radius:3px;
+                          padding:6px 8px;background:var(--m-surface-2);color:var(--m-ink);width:100%;box-sizing:border-box;">
+          </div>
+          <div style="flex:1;min-width:140px;">
+            <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:5px;">STATUS</div>
+            <select id="pd-status-{{ p.id }}"
+                    style="font-family:var(--m-mono);font-size:11px;border:1px solid var(--m-line);border-radius:3px;
+                           padding:6px 8px;background:var(--m-surface-2);color:var(--m-ink);width:100%;">
+              <option value="active" {% if p.status=='active' %}selected{% endif %}>Active</option>
+              <option value="paused" {% if p.status=='paused' %}selected{% endif %}>Paused</option>
+              <option value="completed" {% if p.status=='completed' %}selected{% endif %}>Completed</option>
+              <option value="archived" {% if p.status=='archived' %}selected{% endif %}>Archived</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:5px;">PROJECT IMAGE URL (optional)</div>
+          <input type="url" id="pd-image-{{ p.id }}" value="{{ p.image_url or '' }}"
+                 placeholder="https://… or leave blank"
+                 style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:11px;
+                        border:1px solid var(--m-line);border-radius:3px;padding:6px 10px;
+                        background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;margin-bottom:6px;">
+            <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);">CONTEXT FOR CLAUDE</div>
+            <button id="ctx-copy-btn-{{ p.id }}" onclick="copyProjectContext('{{ p.id }}')"
+                    style="margin-left:auto;padding:2px 9px;font-family:var(--m-mono);font-size:8.5px;
+                           letter-spacing:0.1em;background:transparent;border:1px solid var(--m-rule-strong);
+                           border-radius:var(--m-radius);color:var(--m-text);cursor:pointer;">COPY</button>
+          </div>
+          <textarea id="ctx-textarea-{{ p.id }}" rows="5"
+                    style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:13px;
+                           line-height:1.65;border:1px solid var(--m-line);border-radius:4px;
+                           padding:10px 12px;background:var(--m-surface-2);color:var(--m-ink);resize:vertical;outline:none;"
+                    placeholder="Goals, background, key decisions, stakeholders…">{{ p.context_doc or '' }}</textarea>
+        </div>
+        <div style="display:flex;gap:8px;padding-top:4px;">
+          <button onclick="pdSaveAbout('{{ p.id }}')"
+                  style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
+                         padding:7px 20px;font-family:var(--m-mono);font-size:10px;cursor:pointer;letter-spacing:.06em;">Save</button>
+          {% if p.github_url %}
+          <a class="btn btn--ghost btn--caps" href="{{ p.github_url }}" target="_blank" rel="noopener" style="padding:7px 14px;">GitHub &#8599;</a>
+          {% endif %}
+          {% if p.external_path %}
+          <button class="btn btn--ghost btn--caps"
+                  onclick="closeProjectDetail();launchProjectTarget('{{ p.id }}','explorer')"
+                  style="padding:7px 14px;">Open Folder</button>
+          {% endif %}
+        </div>
+      </div>
+    </div><!-- /about -->
+
+    <!-- HISTORY TAB -->
+    <div id="pd-panel-history" style="display:none;">
+      {% if history_entries %}
+        {% for e in history_entries %}
+        <div style="display:flex;gap:14px;padding:8px 0;border-bottom:1px solid var(--m-rule-soft);">
+          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);flex-shrink:0;min-width:74px;padding-top:3px;">{{ e.date }}</span>
+          <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.4;flex:1;">{{ e.summary }}</span>
+          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);flex-shrink:0;padding-top:3px;">{{ e.get('author','') }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">No history yet.</div>
+      {% endif %}
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--m-rule);">
+        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:6px;">LOG A SESSION NOTE</div>
+        <div style="display:flex;gap:8px;">
+          <input id="pd-history-input-{{ p.id }}" type="text" placeholder="What did you work on?"
+                 onkeydown="if(event.key==='Enter')pdLogHistory('{{ p.id }}')"
+                 style="flex:1;font-family:var(--m-display);font-size:13px;border:1px solid var(--m-line);
+                        border-radius:3px;padding:6px 10px;background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+          <button onclick="pdLogHistory('{{ p.id }}')"
+                  style="background:none;border:1px solid var(--m-line);border-radius:3px;
+                         padding:6px 14px;font-family:var(--m-mono);font-size:10px;cursor:pointer;color:var(--m-muted);">Log</button>
+        </div>
+      </div>
+    </div><!-- /history -->
+
+  </div><!-- /body -->
+</div><!-- /panel -->
+</div><!-- /overlay -->
+
+<script>
+(function(){
+  var _pid = '{{ p.id }}';
+
+  window.pdSwitchTab = function(pid, tab) {
+    ['tasks','notes','about','history'].forEach(function(t) {
+      var panel = document.getElementById('pd-panel-' + t);
+      var btn   = document.getElementById('pd-tab-btn-' + t);
+      if (!panel || !btn) return;
+      var active = (t === tab);
+      panel.style.display = active ? '' : 'none';
+      btn.style.borderBottomColor = active ? 'var(--m-accent)' : 'transparent';
+      btn.style.color = active ? 'var(--m-accent)' : 'var(--m-muted)';
+    });
+  };
+
+  window.pdStartRename = function(pid) {
+    var d = document.getElementById('pd-title-display-' + pid);
+    var i = document.getElementById('pd-title-input-' + pid);
+    if (!d || !i) return;
+    i.value = d.textContent.trim();
+    d.style.display = 'none'; i.style.display = ''; i.focus(); i.select();
+  };
+  window.pdSaveRename = function(pid) {
+    var d = document.getElementById('pd-title-display-' + pid);
+    var i = document.getElementById('pd-title-input-' + pid);
+    if (!d || !i) return;
+    var title = i.value.trim();
+    if (title && title !== d.textContent.trim()) {
+      fetch('/api/project/' + pid + '/meta', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title})});
+      d.textContent = title;
+    }
+    d.style.display = ''; i.style.display = 'none';
+  };
+  window.pdCancelRename = function(pid) {
+    var d = document.getElementById('pd-title-display-' + pid);
+    var i = document.getElementById('pd-title-input-' + pid);
+    if (d) d.style.display = ''; if (i) i.style.display = 'none';
+  };
+
+  window.pdAddTagPrompt = function(pid) {
+    var tag = prompt('New tag:');
+    if (!tag || !tag.trim()) return;
+    pdModifyTags(pid, function(tags){ tags.push(tag.trim()); return tags; });
+  };
+  window.pdRemoveTag = function(pid, tag) {
+    pdModifyTags(pid, function(tags){ return tags.filter(function(t){return t!==tag;}); });
+  };
+  function pdModifyTags(pid, fn) {
+    var chips = document.querySelectorAll('#pd-tags-' + pid + ' .chip--plain');
+    var current = Array.from(chips).map(function(c){return c.firstChild.textContent.trim();}).filter(Boolean);
+    var updated = fn(current);
+    fetch('/api/project/' + pid + '/meta', {
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({tags: updated.join(', ')})
+    }).then(function(){
+      var zone = document.getElementById('pd-tags-' + pid);
+      if (!zone) return;
+      var addBtn = zone.querySelector('button');
+      var html = updated.map(function(t){
+        return '<span class="chip chip--plain" style="font-size:10px;padding:1px 7px;">' + t.replace(/</g,'&lt;') +
+          '<span onclick="pdRemoveTag(\'' + pid + '\',\'' + t.replace(/'/g,"\\'") + '\')" style="margin-left:4px;cursor:pointer;opacity:.6;font-size:9px;">&#10005;</span></span>';
+      }).join('');
+      zone.innerHTML = html + (addBtn ? addBtn.outerHTML : '');
+    });
+  }
+
+  window.pdClearNextStep = function(pid) {
+    fetch('/api/project/' + pid + '/next-step/clear', {method:'POST'}).then(function(){
+      var banner = document.querySelector('#pd-panel-tasks [style*="accent-wash"]');
+      if (banner) banner.remove();
+      showToast('Next step cleared');
+    });
+  };
+
+  window.pdDetailTaskDone = function(taskId, pid) {
+    fetch('/api/task/' + taskId + '/done', {method:'POST'}).then(function(){
+      var row = document.querySelector('[data-task-id="' + taskId + '"]');
+      if (row) { row.style.opacity='0.3'; setTimeout(function(){ row.remove(); },400); }
+      showToast('Task done &#10003;');
+    });
+  };
+  window.pdDetailTaskDelete = function(taskId, pid) {
+    if (!confirm('Delete this task?')) return;
+    fetch('/api/task/' + taskId + '/delete', {method:'POST'}).then(function(){
+      var row = document.querySelector('[data-task-id="' + taskId + '"]');
+      if (row) row.remove();
+    });
+  };
+  window.pdSetTaskStatus = function(taskId, pid, status) {
+    fetch('/api/task/' + taskId + '/status', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:status})});
+  };
+  window.pdStartTaskRename = function(span, taskId, pid) {
+    var inp = document.createElement('input');
+    inp.value = span.textContent.trim();
+    inp.style.cssText = 'flex:1;font-family:var(--m-display);font-size:13px;border:none;border-bottom:1px solid var(--m-accent);outline:none;background:transparent;color:var(--m-ink);';
+    span.replaceWith(inp); inp.focus(); inp.select();
+    function save() {
+      var title = inp.value.trim();
+      if (title) fetch('/api/task/'+taskId+'/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title})});
+      var ns = document.createElement('span');
+      ns.className = 'pd-task-title';
+      ns.style.cssText = 'flex:1;font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;cursor:pointer;';
+      ns.title = 'Click to rename'; ns.textContent = title || inp.value;
+      ns.onclick = function(){ pdStartTaskRename(ns, taskId, pid); };
+      inp.replaceWith(ns);
+    }
+    inp.addEventListener('blur', save);
+    inp.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key==='Escape') inp.blur(); });
+  };
+  window.pdDetailAddTask = function(pid) {
+    var titleEl = document.getElementById('pd-new-task-' + pid);
+    var catEl   = document.getElementById('pd-new-task-cat-' + pid);
+    var title   = titleEl ? titleEl.value.trim() : '';
+    if (!title) { if (titleEl) titleEl.focus(); return; }
+    fetch('/api/task/create', {method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({project_id:pid, title:title, category: catEl ? catEl.value : 'general'})
+    }).then(function(){
+      if (titleEl) titleEl.value = '';
+      var el = document.getElementById('proj-detail-overlay');
+      if (el) el.remove();
+      openProjectDetail(pid);
+    });
+  };
+  window.pdRestoreTask = function(taskId, pid) {
+    fetch('/api/task/'+taskId+'/status',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'open'})}).then(function(){
+      var el = document.getElementById('proj-detail-overlay'); if (el) el.remove(); openProjectDetail(pid);
+    });
+  };
+  window.pdToggleDoneArchive = function(pid) {
+    var el  = document.getElementById('pd-done-archive-' + pid);
+    var chv = document.getElementById('pd-done-chevron-' + pid);
+    if (!el) return;
+    var open = el.style.display !== 'none';
+    el.style.display = open ? 'none' : '';
+    if (chv) chv.innerHTML = open ? '&#9656;' : '&#9662;';
+  };
+
+  (function initTaskDrag(){
+    var list = document.getElementById('pd-task-list-' + _pid);
+    if (!list) return;
+    var dragging = null;
+    list.addEventListener('dragstart', function(e){
+      dragging = e.target.closest('.pd-task-row');
+      if (dragging) { dragging.style.opacity='0.4'; e.dataTransfer.effectAllowed='move'; }
+    });
+    list.addEventListener('dragend', function(){
+      if (dragging) dragging.style.opacity='';
+      dragging = null;
+      var order = Array.from(list.querySelectorAll('.pd-task-row')).map(function(r){return r.dataset.taskId;});
+      fetch('/api/project/'+_pid+'/tasks/reorder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({order:order})});
+    });
+    list.addEventListener('dragover', function(e){
+      e.preventDefault();
+      if (!dragging) return;
+      var target = e.target.closest('.pd-task-row');
+      if (target && target !== dragging) {
+        var rect = target.getBoundingClientRect();
+        list.insertBefore(dragging, e.clientY < rect.top + rect.height/2 ? target : target.nextSibling);
+      }
+    });
+  })();
+
+  window.pdSaveNote = function(pid) {
+    var el = document.getElementById('pd-note-input-' + pid);
+    var content = el ? el.value.trim() : '';
+    if (!content) { if (el) el.focus(); return; }
+    fetch('/api/project/'+pid+'/linked-notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:content})}).then(function(){
+      if (el) el.value = '';
+      var ov = document.getElementById('proj-detail-overlay'); if (ov) ov.remove();
+      openProjectDetail(pid);
+      setTimeout(function(){ pdSwitchTab(pid,'notes'); }, 250);
+    });
+  };
+  window.pdDeleteNote = function(noteId, pid) {
+    if (!confirm('Delete this note?')) return;
+    fetch('/api/note/'+noteId,{method:'DELETE'}).then(function(){
+      var card = document.querySelector('[data-note-id="' + noteId + '"]');
+      if (card) { card.style.opacity='0'; setTimeout(function(){card.remove();},300); }
+    });
+  };
+
+  window.pdSaveAbout = function(pid) {
+    var payload = {
+      description:  (document.getElementById('pd-desc-'+pid)||{}).value||'',
+      started_at:   (document.getElementById('pd-started-'+pid)||{}).value||'',
+      completed_at: (document.getElementById('pd-completed-'+pid)||{}).value||'',
+      image_url:    (document.getElementById('pd-image-'+pid)||{}).value||'',
+    };
+    var statusEl = document.getElementById('pd-status-' + pid);
+    if (statusEl) payload.status = statusEl.value;
+    var ctx = (document.getElementById('ctx-textarea-'+pid)||{}).value||'';
+    Promise.all([
+      fetch('/api/project/'+pid+'/meta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}),
+      fetch('/api/project/'+pid+'/context',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({context_doc:ctx})}),
+    ]).then(function(){ showToast('Project saved'); });
+  };
+
+  window.pdLogHistory = function(pid) {
+    var el = document.getElementById('pd-history-input-' + pid);
+    var summary = el ? el.value.trim() : '';
+    if (!summary) return;
+    fetch('/api/project/'+pid+'/history',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({summary:summary})}).then(function(){
+      if (el) el.value = '';
+      var ov = document.getElementById('proj-detail-overlay'); if (ov) ov.remove();
+      openProjectDetail(pid);
+      setTimeout(function(){ pdSwitchTab(pid,'history'); }, 250);
+    });
+  };
+
+  window.copyProjectContext = function(pid) {
+    fetch('/api/project/'+pid+'/context').then(function(r){return r.json();}).then(function(d){
+      var lines = ['PROJECT: '+d.title];
+      if (d.domain) lines.push('Domain: '+d.domain);
+      lines.push('---');
+      if (d.context_doc) lines.push(d.context_doc);
+      if (d.prompt_memory) { lines.push('---'); lines.push(d.prompt_memory); }
+      if (d.next_step) { lines.push('---'); lines.push('NEXT STEP: '+d.next_step); }
+      navigator.clipboard.writeText(lines.join('\n')).then(function(){
+        var btn = document.getElementById('ctx-copy-btn-'+pid);
+        if (btn) { btn.textContent='COPIED!'; setTimeout(function(){btn.textContent='COPY';},2000); }
+      });
+    });
+  };
+})();
+</script>

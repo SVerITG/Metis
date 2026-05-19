@@ -1,0 +1,37 @@
+data_sensitivity:
+  compliance:
+  - GDPR
+  - DRC MoH ethics
+  embargoed_results: true
+  patient_data: true
+research:
+  field: Public health · Epidemiology
+  interests:
+  - neglected tropical diseases
+  - sleeping sickness
+  - HAT
+  - DHIS2
+  - surveillance systems
+  - multilevel models
+  - spatial epidemiology
+  - global health
+  specific_focus: HAT surveillance in DRC, DHIS2 NTD module implementation, spatial
+    disease burden
+user:
+  active_contexts:
+  - general
+  - NTD surveillance
+  - DHIS2
+  general_context: 'Senior epidemiologist specialising in neglected tropical diseases,
+    particularly human African trypanosomiasis (HAT). Based at ITG Antwerp. Three-article
+    PhD in progress: surveillance, methods, and policy.'
+  language: en
+  name: Stan
+  role: Senior Researcher
+  specialist_contexts:
+  - description: HAT, sleeping sickness, DRC disease burden analysis
+    name: NTD surveillance
+  - description: DHIS2 metadata design, tracker programs, NTD implementation
+    name: DHIS2
+  - description: Multilevel models, kriging, health facility mapping
+    name: Spatial epidemiology

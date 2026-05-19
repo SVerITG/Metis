@@ -1,0 +1,29 @@
+{
+  "display_name": "Am\u00e9lie",
+  "role": "Senior Epidemiologist \u00b7 Neglected Tropical Diseases",
+  "interests": [
+    "sleeping sickness",
+    "HAT",
+    "neglected tropical diseases",
+    "DHIS2",
+    "multilevel models",
+    "spatial epidemiology",
+    "disease burden",
+    "health information systems",
+    "West Africa"
+  ],
+  "news_topics": [
+    "WHO NTD roadmap",
+    "sleeping sickness elimination",
+    "DHIS2 updates",
+    "epidemiology methods",
+    "AI in global health",
+    "DRC health system",
+    "malaria drug resistance"
+  ],
+  "pubmed_query": "human African trypanosomiasis[Title] OR sleeping sickness[Title] OR NTD[Title/Abstract]",
+  "active_model": "sonnet",
+  "theme": "archive",
+  "density": "comfortable",
+  "theme_set_at": "2026-05-18T13:23:25.488421"
+}
