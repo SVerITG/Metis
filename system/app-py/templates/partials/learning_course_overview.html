@@ -1,0 +1,57 @@
+<!-- learning_course_overview.html — Course module + lesson list sidebar -->
+<div style="display:flex;flex-direction:column;gap:0;">
+
+  <!-- Course header -->
+  <div style="padding:16px 20px 14px;border-bottom:1px solid var(--m-line);">
+    <div class="kicker" style="margin-bottom:6px;">STATISTICS FOR EPIDEMIOLOGY</div>
+    <div style="font-family:var(--m-display);font-size:17px;font-weight:500;color:var(--m-ink);margin-bottom:10px;">
+      {{ course.title or "Statistics for Epidemiology" }}
+    </div>
+    <div style="height:3px;background:var(--m-surface-3);border-radius:2px;margin-bottom:6px;">
+      <div style="height:100%;width:{{ (course.progress_pct or 0)|int }}%;background:var(--m-accent);border-radius:2px;"></div>
+    </div>
+    <div class="todo-meta" style="margin:0;">
+      {{ course.completed_modules or 0 }} OF {{ course.total_modules or 0 }} MODULES · {{ (course.progress_pct or 0)|int }}%
+    </div>
+  </div>
+
+  <!-- Module + lesson list -->
+  {% for module in modules %}
+  {% set module_lessons = lessons | selectattr("module", "equalto", module.title) | list %}
+  <div style="padding:12px 20px 4px;border-bottom:1px solid var(--m-line);">
+    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:8px;">
+      {{ module.title | upper }}
+    </div>
+    {% for lesson in module_lessons %}
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <!-- Completion dot -->
+      <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;
+                  background:{% if lesson.done %}var(--m-accent){% else %}var(--m-surface-3){% endif %};
+                  border:1px solid {% if lesson.done %}var(--m-accent){% else %}var(--m-line){% endif %};"></div>
+      <!-- Lesson link -->
+      <button
+        class="btn btn--ghost"
+        style="text-align:left;font-size:13px;color:var(--m-ink);padding:2px 6px;flex:1;
+               {% if lesson.done %}opacity:0.6;{% endif %}"
+        hx-get="/api/course/{{ slug }}/lesson/{{ lesson.id }}"
+        hx-target="#lesson-reader-panel"
+        hx-swap="innerHTML"
+        onclick="document.getElementById('lesson-reader-panel').scrollIntoView({behavior:'smooth'})">
+        {{ lesson.title }}
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+
+  <!-- Seed spaced rep button -->
+  <div style="padding:14px 20px;">
+    <button class="btn btn--ghost btn--caps" style="width:100%;font-size:11px;"
+            hx-post="/api/course/{{ slug }}/seed-spaced-rep"
+            hx-swap="none"
+            onclick="showToast('Spaced repetition cards seeded — check the Due Today panel.')">
+      Seed review cards
+    </button>
+  </div>
+
+</div>

@@ -35,6 +35,8 @@
 
 > **Disclaimer.** The concept, architecture, and approach behind Metis are original. One of Metis's core principles is self-improvement — it actively monitors AI developments and incorporates new tools, skills, and agent patterns. Tools, skills, and agents were built drawing on publicly available techniques, documentation, and web resources, and as such individual components are often not unique. What Metis presents is a *way of working* — a coherent system designed for researchers. Use and extension are welcome under the AGPL-3.0 license.
 
+Contributions are very much appreciated — see [Contributing](#contributing) below. Whether you want to share how a feature worked (or didn't) in your research workflow, or you are a more experienced developer with architectural feedback or a pull request: both perspectives are equally welcome.
+
 ---
 
 ## Vision
@@ -49,6 +51,8 @@ It was created by a public health researcher with no programming background — 
 
 That is the horizon. **The current version serves individual researchers.** The longer vision: a **research institute deploying its own Metis** — an AI layer tuned to the institute's literature, data systems, and workflows, available to every staff member from day one, with data protection built in from the ground up.
 
+Another possible direction is towards a kind of *"Metis OS"* — where Metis connects to cloud services, your mailbox, and your calendar, integrating them fully into the Metis ecosystem so that your entire working environment becomes part of a single, coherent intelligence layer.
+
 ### Why researchers specifically?
 
 Generic AI tools leave several researcher-specific problems unsolved:
@@ -56,7 +60,7 @@ Generic AI tools leave several researcher-specific problems unsolved:
 | Challenge | What Metis does about it |
 |---|---|
 | **Context amnesia** — every session starts from zero | Persistent identity card and 5-layer memory across all sessions |
-| **Literature at scale** — hundreds of PDFs that need to talk to each other | Semantic PDF search (PaperQA2) + knowledge graph + cross-pollination |
+| **Literature at scale** — hundreds of PDFs that need to talk to each other | Layered semantic PDF index (sqlite-vec, local ONNX) + knowledge graph + cross-pollination |
 | **Long-horizon projects** — research unfolds over months and years | Persistent project memory, reflexion loop, session handoffs |
 | **Data sensitivity** — patient data, embargoed results, institutional ethics | Everything local. PII detection. AES-256 encryption. Constitution + red-lines. |
 | **Workflow fragmentation** — literature, meetings, writing, analysis, teaching in separate tools | Single interface with 34 specialist agents across all research workflows |
@@ -85,6 +89,7 @@ Generic AI tools leave several researcher-specific problems unsolved:
 - [Future Releases](#future-releases)
 - [For Developers](#for-developers)
 - [Contributing](#contributing)
+- [Changelog](#changelog)
 - [License](#license)
 
 ---
@@ -106,7 +111,7 @@ Metis is also built to fit *your* way of working. For example:
 
 | Feature | What it does |
 |---|---|
-| **34 specialist agents** | Librarian, Epidemiologist, Methods Coach, Writing Partner, Meeting Memory, Course Builder, Career Coach, and 25 more — each an expert in their domain |
+| **34 specialist agents** | Librarian, Epidemiologist, Methods Coach, Writing Partner, Meeting Memory, Course Builder, Career Coach, Critic, Memory Curator, and 25 more — each an expert in their domain |
 | **Library management** | Import PDFs, sync Zotero / Mendeley, ask "what do my papers say about X?" — cited answers from your own library (PaperQA2) |
 | **Live meeting assistant** | Follow along in real time, paste transcripts after, get structured notes, action items, and project cross-references automatically |
 | **Morning intelligence brief** | Every morning: new papers on your exact research topics, field news, surveillance alerts, and a focus recommendation — fully personalised |
@@ -215,10 +220,11 @@ Course topic defined
 
 ## The Dashboard
 
-![Metis dashboard — Today tab](docs/screenshots/dashboard-today.png)
-*The Today tab — morning briefing, active project, course progress, news radar, and quick-capture in one view.*
-
 The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account. No cloud. Every tab is live data from your research environment.
+
+![Metis dashboard — Today tab](docs/screenshots/dashboard-today.png)
+
+*The Today tab — morning briefing, active project, course progress, news radar, and quick stats. Everything personalised to your research domain.*
 
 ---
 
@@ -234,7 +240,7 @@ The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account. No 
 
 ### Knowledge — *Your entire research library, searchable and connected*
 
-- **Semantic PDF search** — ask "what do my papers say about X?" and get cited answers (PaperQA2 powered)
+- **Semantic PDF search** — ask "what do my papers say about X?" and get cited answers from a local vector index (sqlite-vec + nomic-embed-text-v1.5-Q, no external API)
 - **Literature cards** — title, abstract, your annotations, citation links, domain tags, reading status
 - **Domain notes** — structured notes per research area
 - **Knowledge graph** — visual map of connections between papers, ideas, and topics
@@ -301,7 +307,7 @@ The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account. No 
 - **Agent run history** — every task logged with timestamp, model, token usage
 - **Self-improvement proposals** — Metis drafts changes to its own behaviour; you review and approve before anything applies
 - **Identity card** — your profile as Metis currently understands it
-- **Agent registry** — 30 agents, their contracts, their last run
+- **Agent registry** — 34 agents, their contracts, their last run
 - **System health** — MCP server status, database stats, tool counts
 
 ---
@@ -410,7 +416,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/metis/
 Gives you all **34 agents** and **76+ tools** inside Claude Desktop or Claude Code. Idempotent. Dashboard:
 
 ```bash
-cd ~/Metis_PH/metis/system/app-py && bash run.sh   # → http://127.0.0.1:8080
+cd ~/Metis_PH/system/app-py && bash run.sh   # → http://127.0.0.1:8080
 ```
 
 Run the **config wizard** from the Metis tab to personalise your installation.
@@ -437,6 +443,18 @@ The **Metis base** (`Metis`) ships the full architecture — MCP server, dashboa
 
 > **Want to build a domain pack?** Start from `Metis`, add your field's knowledge library, agents, and RSS feeds, and open a PR or publish your own fork.
 
+### Coming Soon — Course Packages
+
+In addition to domain editions, Metis will publish standalone **course packages** — structured, lesson-by-lesson courses you can drop into any Metis installation by copying them to `knowledge/courses/`. Each package includes lessons, exercises, and a spaced-repetition schedule. Currently in development:
+
+| Package | What it covers |
+|---------|----------------|
+| **Sampling Strategies** | Probability and non-probability sampling, sample size calculation, complex survey designs (cluster, stratified, multi-stage), weighted estimation, application in resource-limited and field settings |
+| **Spatial Statistics and Epidemiology** | Spatial autocorrelation, kernel density estimation, SaTScan cluster detection, LISA statistics, disease mapping in R and GeoDa, use cases in NTD and outbreak surveillance |
+| **Genomic Surveillance** | Pathogen sequencing in public health, phylogenetics for outbreak investigation, whole-genome sequencing pipelines, interpreting Nextstrain outputs, genomic epidemiology in low-resource settings |
+
+If you are already working in one of these areas and want to pilot or contribute, open an issue with the label `course-package`.
+
 ---
 
 # For Developers
@@ -452,11 +470,11 @@ flowchart LR
     U([Researcher])
     subgraph Harness["AI Harness (Claude Code / Desktop)"]
         METIS[Metis\nrouter agent]
-        AGENTS[Specialist agents\n30 agents]
+        AGENTS[Specialist agents\n34 agents]
         WATCHERS{{Watchers\nData Guardian\nCybersecurity}}
     end
     subgraph Platform
-        MCP[MCP Server\n135 tools\nFastMCP]
+        MCP[MCP Server\n76+ tools\nFastMCP]
         DASH[Dashboard\nFastAPI + HTMX]
         DB[(SQLite\nWAL mode)]
     end
@@ -494,7 +512,7 @@ flowchart LR
 | Dashboard | FastAPI + HTMX + Jinja2, no JavaScript framework |
 | Database | SQLite WAL mode, 46 tables |
 | Vector memory | sqlite-vec + nomic-embed-text-v1.5-Q (768 dims, local ONNX) |
-| Semantic PDF search | PaperQA2 (FutureHouse) — indexes PDF library, answers with citations |
+| Semantic PDF search | sqlite-vec + nomic-embed-text-v1.5-Q — local PDF chunk index, no external API |
 | Host OS | Windows + WSL2 (Ubuntu 20/22/24) |
 | File sync | OneDrive / Dropbox (optional, transparent) |
 
@@ -525,11 +543,12 @@ flowchart LR
 4. `constitution.md` — 12 machine-readable rules for deep/chain runs
 5. `red-lines.md` — 5 non-overridable rules enforced at code level
 
-**Token efficiency**
-- Model routing: Haiku for summaries, Sonnet for most work, Opus for deep reasoning
-- Surgical context assembly per agent — not full history on every call
+**Token efficiency — meaningful cost reduction in practice**
+- Model routing: Haiku for triage/summaries, Sonnet for most work, Opus only for deep reasoning — most daily usage never touches Opus
+- Surgical context assembly per agent — not full history on every call; a Data Guardian check does not carry your morning brief
 - Max-turns guardrail (stops at 20, prompts `/clear`)
-- Handoff brief at session end (< 3 KB state capture for next session)
+- Handoff brief at session end (< 3 KB state capture for next session — no paying twice for context you already established)
+- Token pulse widget shows real-time usage so you see exactly what each request costs
 
 ---
 
@@ -696,7 +715,7 @@ Four variants (Full / PH Shell / Standard / MCP-only) — all install Claude Des
 
 ## Project Status
 
-**Completed:** Phases 0–9b — foundations · 9-tab dashboard · 30 agents · CLI skills · 5-layer memory · knowledge graph · self-improvement loop · token efficiency · Zotero/Mendeley · meeting assistant · PaperQA2 PDF search · cross-pollination
+**Completed:** Phases 0–9b — foundations · 9-tab dashboard · 34 agents · CLI skills · 5-layer memory · knowledge graph · self-improvement loop · token efficiency · Zotero/Mendeley · meeting assistant · PaperQA2 PDF search · cross-pollination
 
 **In progress:** Phase 10 (automated daily tasks) · Phase 11 (.exe installer) · Phase 12 (test suite)
 
@@ -706,7 +725,7 @@ Four variants (Full / PH Shell / Standard / MCP-only) — all install Claude Des
 
 Metis is designed to grow beyond one domain and one researcher. Contributions are welcome — especially from researchers who use it and know what's missing.
 
-See [CONTRIBUTING.md](metis/CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ### Domain packs for other fields
 
@@ -789,8 +808,44 @@ A domain pack consists of: key journals + RSS feeds, specialist agents or skill 
 
 ---
 
+# Changelog
+
+## v1.0 — May 2026
+
+First stable release. See [`system/config/release-notes-v1.0.md`](system/config/release-notes-v1.0.md) for the full changelog.
+
+| What shipped |
+|---|
+| FastAPI + HTMX dashboard — 9 tabs, all live with HTMX partials |
+| 34 specialist agents, all upgraded to tier-1 prompts including Critic + Memory Curator |
+| MCP server — 76+ registered tools (FastMCP) |
+| Windows installer (Inno Setup — Full / Standard / Minimal / MCP-only variants) |
+| Statistics for Epidemiology course — 12 lessons with spaced repetition |
+| Startup eval suite + news freshness check |
+| Auto-handoff brief at 80% context turns |
+| AGPL-3.0 license |
+
+## Earlier development (Phases 0–9b)
+
+| Phase | What shipped |
+|---|---|
+| **Phase 0–5** | Foundation — MCP server, 34 agents, CLI skills, config wizard, SQLite schema (46 tables), 5-layer memory, knowledge graph, Zotero/Mendeley sync |
+| **Phase 6–7** | FastAPI + HTMX dashboard — 9 tabs, live partials, HTMX-powered search |
+| **Phase 8** | Full functionality — morning brief, news rail, meeting assistant, voice capture, PaperQA2 PDF search, cross-pollination, token guardrails, handoff brief |
+| **Phase 9** | CSS design overhaul — macOS design system, editorial layout, responsive grid, animation guards |
+| **Phase 9b** | Self-improvement loop — reflexion aggregation, proposal drafting, approval flow in Metis tab |
+| **Phase M** | Conversation memory — session summaries stored in episodic memory, semantic search across past sessions |
+
+## Upcoming
+
+| Phase | What's planned |
+|---|---|
+| **Phase 10** | Automated daily tasks (APScheduler) |
+| **Phase 12** | Test suite (unit · integration · e2e · red-line) |
+| **v1.1** | Docker image · Telegram capture bot · OpenTelemetry observability |
+
+---
+
 # License
 
-MIT for the codebase. CC-BY-SA for course content and learning materials.
-
-*LICENSE file ships with v1.0.*
+**AGPL-3.0** for the codebase — you can use, modify, and fork freely, but any version you run as a service or distribute must also be open-source under AGPL-3.0. **CC-BY-SA 4.0** for course content and learning materials.

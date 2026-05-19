@@ -1,0 +1,12 @@
+<!-- work_project_linked_notes.html -->
+{% for n in notes %}
+<div class="panel panel-pad" style="padding:12px 14px;margin-bottom:8px;position:relative;" data-note-id="{{ n.note_id }}">
+  <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-bottom:4px;">{{ n.created_at[:10] }}</div>
+  <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.5;white-space:pre-wrap;">{{ n.content }}</div>
+  <button onclick="pdDeleteNote('{{ n.note_id }}','{{ project_id }}')"
+          style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:12px;color:var(--m-muted);opacity:.5;padding:2px 4px;"
+          onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.5'">&#10005;</button>
+</div>
+{% else %}
+<div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">No notes yet.</div>
+{% endfor %}

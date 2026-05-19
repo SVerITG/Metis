@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}Work{% endblock %}
+
+{% block content %}
+<div class="page" style="max-width:1320px;">
+
+  <div class="page-head">
+    <div>
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">SURFACE 05</div>
+      <h1 style="font-family:var(--m-display);font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0;">Work</h1>
+    </div>
+    <div class="page-meta"
+         hx-get="/api/partial/work/meta"
+         hx-trigger="load"
+         hx-swap="innerHTML">— PROJECTS · — TASKS · — PAUSED</div>
+  </div>
+
+  <!-- Active Projects -->
+  <div class="sec-label" style="margin-bottom:16px;">
+    <span>Active Projects</span>
+    <button onclick="openAddProjectModal()"
+            style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:3px;
+                   padding:3px 10px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
+                   color:var(--m-muted);cursor:pointer;">+ Project</button>
+  </div>
+
+  <!-- Add Project wizard modal (2 steps) -->
+  <div id="add-project-overlay"
+       onclick="if(event.target===this)closeAddProjectModal()"
+       style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;
+              align-items:center;justify-content:center;">
+    <div style="background:var(--m-surface-1);border-radius:8px;padding:28px 30px;width:500px;max-width:92vw;
+                box-shadow:0 8px 32px rgba(0,0,0,.25);">
+
+      <!-- Step indicator -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;">
+        <div id="np-step-dot-1" style="width:6px;height:6px;border-radius:50%;background:var(--m-accent);flex-shrink:0;"></div>
+        <div id="np-step-dot-2" style="width:6px;height:6px;border-radius:50%;background:var(--m-rule);flex-shrink:0;"></div>
+        <div style="font-family:var(--m-display);font-size:18px;font-weight:500;flex:1;" id="np-step-title">Add Project — Where is it?</div>
+        <button onclick="closeAddProjectModal()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--m-muted);">✕</button>
+      </div>
+
+      <!-- ── STEP 1 ── -->
+      <div id="np-step-1">
+        <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);margin:0 0 16px;line-height:1.5;">
+          Paste the path to your project folder. Find it in File Explorer: navigate to the folder, then copy the path from the address bar at the top.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">FOLDER PATH</label>
+            <input id="np-path" type="text" placeholder="C:\Users\you\Documents\MyProject"
+                   oninput="npAutoTitle()"
+                   style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:11px;
+                          border:1px solid var(--m-line);border-radius:3px;padding:8px 10px;
+                          background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-top:4px;">Leave blank if this project has no folder (Claude only).</div>
+          </div>
+          <div>
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">PROJECT NAME *</label>
+            <input id="np-title" type="text" placeholder="My project name…"
+                   style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:14px;
+                          border:1px solid var(--m-line);border-radius:3px;padding:8px 10px;
+                          background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+          <button onclick="closeAddProjectModal()"
+                  style="background:none;border:1px solid var(--m-line);border-radius:3px;
+                         padding:7px 14px;font-family:var(--m-mono);font-size:11px;cursor:pointer;color:var(--m-muted);">Cancel</button>
+          <button onclick="npGoStep2()"
+                  style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
+                         padding:7px 18px;font-family:var(--m-mono);font-size:11px;cursor:pointer;letter-spacing:0.06em;">Next →</button>
+        </div>
+      </div>
+
+      <!-- ── STEP 2 ── -->
+      <div id="np-step-2" style="display:none;">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div>
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">WHAT IS THIS PROJECT ABOUT?</label>
+            <input id="np-desc" type="text" placeholder="One sentence about the purpose…"
+                   style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:13px;
+                          border:1px solid var(--m-line);border-radius:3px;padding:7px 10px;
+                          background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+          </div>
+          <div>
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">MAIN TASKS (one per line, optional)</label>
+            <textarea id="np-tasks" rows="3" placeholder="Write a literature review&#10;Analyse the dataset&#10;Submit to journal"
+                      style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:13px;
+                             border:1px solid var(--m-line);border-radius:3px;padding:7px 10px;resize:vertical;
+                             background:var(--m-surface-2);color:var(--m-ink);outline:none;"></textarea>
+          </div>
+          <div>
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:6px;">HOW DO YOU OPEN THIS PROJECT?</label>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;" id="np-launcher-btns">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--m-mono);font-size:11px;">
+                <input type="radio" name="np-launcher" value="vscode" checked> VS Code
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--m-mono);font-size:11px;">
+                <input type="radio" name="np-launcher" value="rstudio"> RStudio
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--m-mono);font-size:11px;">
+                <input type="radio" name="np-launcher" value="explorer"> Just open the folder
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--m-mono);font-size:11px;">
+                <input type="radio" name="np-launcher" value="none"> No folder / Claude only
+              </label>
+            </div>
+          </div>
+          <div>
+            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">GITHUB URL (optional)</label>
+            <input id="np-github" type="text" placeholder="https://github.com/…"
+                   style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:11px;
+                          border:1px solid var(--m-line);border-radius:3px;padding:7px 10px;
+                          background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px;">
+          <button onclick="npGoStep1()"
+                  style="background:none;border:1px solid var(--m-line);border-radius:3px;
+                         padding:7px 14px;font-family:var(--m-mono);font-size:11px;cursor:pointer;color:var(--m-muted);">← Back</button>
+          <button onclick="submitAddProject()"
+                  style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
+                         padding:7px 18px;font-family:var(--m-mono);font-size:11px;cursor:pointer;letter-spacing:0.06em;">Create Project</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div id="projects-zone"
+       hx-get="/api/partial/work/projects"
+       hx-trigger="load"
+       hx-swap="innerHTML"
+       style="margin-bottom:32px;">
+    <div class="grid grid-2">
+      {% for _ in range(4) %}
+      <div class="panel panel-pad" style="padding:20px 22px;opacity:.4;min-height:120px;">
+        <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:60%;margin-bottom:10px;"></div>
+        <div style="height:14px;background:var(--m-surface-3);border-radius:2px;margin-bottom:6px;"></div>
+        <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:80%;"></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Workbench -->
+  <div class="panel" style="padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);padding-right:8px;border-right:1px solid var(--m-rule-soft);">Workbench</div>
+    <button class="btn btn--sec"
+            style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;"
+            onclick="launchProjectTarget('rc-root','claude_desktop')">
+      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><path d="M6 7c.5-1 2.5-1 2.5.5s-1.5 1.5-2 2v.5h3"/></svg>
+      <span style="font-family:var(--m-ui);font-size:13px;">Claude Desktop</span>
+      <span class="wb-dot wb-dot--on" style="margin-left:4px;"></span>
+    </button>
+    <button class="btn btn--sec"
+            style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;"
+            onclick="launchProjectTarget('rc-root','vscode')">
+      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="1"/><path d="M5 6l3 2-3 2"/><line x1="9" y1="10" x2="13" y2="10"/></svg>
+      <span style="font-family:var(--m-ui);font-size:13px;">VS Code</span>
+      <span class="wb-dot wb-dot--on" style="margin-left:4px;"></span>
+    </button>
+    <button class="btn btn--sec"
+            style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;opacity:0.65;"
+            onclick="launchProjectTarget('rc-root','rstudio')">
+      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><path d="M6 6h2.5a1.5 1.5 0 0 1 0 3H6v3"/><line x1="9.5" y1="9" x2="12" y2="12"/></svg>
+      <span style="font-family:var(--m-ui);font-size:13px;">RStudio</span>
+      <span class="wb-dot" style="margin-left:4px;"></span>
+    </button>
+    <div style="margin-left:auto;display:flex;gap:6px;">
+      <button class="btn btn--sec btn--caps" onclick="openCapture('t')">+ Task</button>
+    </div>
+  </div>
+
+  <!-- Task kanban board -->
+  <div class="sec-label" style="margin-bottom:16px;"><span>Tasks by Status</span></div>
+  <div hx-get="/api/partial/work/kanban"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;">
+      {% for col in ['Inbox', 'This week', 'In progress', 'Closed · this week'] %}
+      <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;opacity:.4;min-height:300px;">
+        <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+          <span>{{ col }}</span><span>—</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- All tasks — cross-project view sorted by priority -->
+  <div class="sec-label" style="margin-top:32px;margin-bottom:16px;">
+    <span>All Open Tasks · Priority View</span>
+    <button onclick="openCapture('t')"
+            style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:3px;
+                   padding:3px 10px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
+                   color:var(--m-muted);cursor:pointer;">+ Task</button>
+  </div>
+  <div hx-get="/api/partial/work/all-tasks"
+       hx-trigger="load"
+       hx-swap="outerHTML"
+       id="work-all-tasks">
+    <div class="panel panel-pad" style="opacity:.4;min-height:80px;"></div>
+  </div>
+
+</div>
+{% endblock %}

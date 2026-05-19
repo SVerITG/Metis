@@ -1,0 +1,104 @@
+{# Retrieval debugger — test a query against all memory layers #}
+<div id="memory-debugger" style="margin-top:8px;">
+  <form hx-get="/api/partial/metis/memory-debug"
+        hx-target="#memory-debugger"
+        hx-swap="outerHTML"
+        style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px;">
+
+    <div style="flex:1;min-width:220px;">
+      <label class="ms-title" style="display:block;margin-bottom:4px;">Search query</label>
+      <input type="text" name="q" value="{{ q }}"
+             placeholder="e.g. installer, session memory, dark mode…"
+             style="width:100%;box-sizing:border-box;"
+             autofocus>
+    </div>
+
+    <div>
+      <label class="ms-title" style="display:block;margin-bottom:4px;">Layers</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        {% set layer_list = [('episodic','Episodic'),('semantic','Semantic'),('procedural','Procedural'),('session','Session')] %}
+        {% for slug, label in layer_list %}
+        {% set active = slug in layers %}
+        <label style="display:flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:11px;cursor:pointer;">
+          <input type="checkbox" name="layers_cb_{{ slug }}" value="{{ slug }}"
+                 {% if active %}checked{% endif %}
+                 onchange="syncDebugLayers(this)"> {{ label }}
+        </label>
+        {% endfor %}
+        <input type="hidden" id="debug-layers-val" name="layers" value="{{ layers }}">
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn--pri btn--caps">Run</button>
+  </form>
+
+  {% if q %}
+  <div style="margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+    <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
+      {{ results|length }} result(s) for <strong style="color:var(--m-ink);">{{ q }}</strong>
+      · layers: <strong style="color:var(--m-ink);">{{ layers }}</strong>
+      {% if has_vec %}· <span style="color:var(--m-ok);">vector search</span>{% else %}· <span style="color:var(--m-alert);">keyword fallback</span>{% endif %}
+    </span>
+  </div>
+
+  {% if error %}
+  <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-alert);padding:8px 12px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:4px;margin-bottom:10px;">
+    Vector search error: {{ error }}
+  </div>
+  {% endif %}
+
+  {% if results %}
+  <div style="border:1px solid var(--m-rule);border-radius:6px;overflow:hidden;">
+    <div style="display:grid;grid-template-columns:72px 80px 1fr 60px 72px;gap:0;
+                background:var(--m-surface-2);padding:6px 14px;
+                font-family:var(--m-mono);font-size:10px;letter-spacing:0.08em;
+                color:var(--m-muted);border-bottom:1px solid var(--m-rule);">
+      <div>LAYER</div>
+      <div>TYPE</div>
+      <div>CONTENT</div>
+      <div>SCORE</div>
+      <div>DATE</div>
+    </div>
+    {% for r in results %}
+    {% set layer_colors = {'episodic':'m-info','semantic':'m-ok','procedural':'m-ochre-deep','session':'m-accent'} %}
+    {% set lc = layer_colors.get(r.layer, 'm-muted') %}
+    <div style="display:grid;grid-template-columns:72px 80px 1fr 60px 72px;gap:0;
+                padding:9px 14px;border-bottom:1px solid var(--m-rule-soft);
+                align-items:start;{% if loop.last %}border-bottom:none;{% endif %}">
+      <div style="font-family:var(--m-mono);font-size:9px;font-weight:600;letter-spacing:0.1em;color:var(--{{ lc }});padding-top:2px;">
+        {{ r.layer|upper }}
+      </div>
+      <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);padding-top:2px;">
+        {{ r.type }}
+      </div>
+      <div style="font-family:var(--m-ui);font-size:12px;color:var(--m-ink);line-height:1.5;padding-right:8px;">
+        {{ r.content }}{% if r.content|length >= 200 %}…{% endif %}
+      </div>
+      <div style="font-family:var(--m-mono);font-size:11px;padding-top:2px;
+                  {% if r.score is not none and r.score >= 0.7 %}color:var(--m-ok);{% elif r.score is not none %}color:var(--m-ink);{% else %}color:var(--m-muted);{% endif %}">
+        {% if r.score is not none %}{{ r.score }}{% else %}—{% endif %}
+      </div>
+      <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);padding-top:2px;">
+        {{ r.date or '—' }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-row">No results found across selected layers for "{{ q }}".</div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-row" style="font-family:var(--m-ui);font-size:13px;color:var(--m-muted);">
+    Enter a query above to test semantic retrieval across memory layers.
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function syncDebugLayers(cb) {
+  const parent = cb.closest('form');
+  const checked = [...parent.querySelectorAll('input[type=checkbox]:checked')].map(c => c.value);
+  parent.querySelector('#debug-layers-val').value = checked.join(',') || 'episodic';
+}
+</script>

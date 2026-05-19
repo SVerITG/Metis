@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+{% block title %}Metis{% endblock %}
+
+{% block content %}
+<div class="metis-layout">
+
+  <!-- =================================================
+       LEFT RAIL — sticky identity + section nav
+  ================================================== -->
+  <aside class="metis-side">
+
+    <!-- Identity card (always visible, loaded from /api/partial/metis/identity) -->
+    <div hx-get="/api/partial/metis/identity"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+      <div class="metis-id-card">
+        <div class="metis-id-avatar">{{ (user_name or 'R')[0]|upper }}</div>
+        <div class="metis-id-name">{{ user_name or "Researcher" }}</div>
+        <div class="metis-id-sub">research cortex</div>
+        <div style="margin-top:8px;font-family:var(--m-display);font-style:italic;font-size:12.5px;color:var(--m-muted);">Loading identity…</div>
+      </div>
+    </div>
+
+    <!-- Section nav -->
+    <nav class="metis-nav" id="metis-nav">
+      {% set settings_nav = [
+        ('overview',    'Overview',         true),
+        ('model',       'Model & usage',    false),
+        ('memory',      'Memory',           false),
+        ('improvement', 'What I learned',   false),
+        ('agents',      'Agents',           false),
+        ('automation',  'Automation',       false),
+        ('appearance',  'Appearance',       false),
+        ('integration', 'Integration',      false),
+        ('keys',        'API Keys',         false),
+        ('about',       'About Metis',      false),
+      ] %}
+      {% for sid, slabel, son in settings_nav %}
+      <div class="metis-nav-item" data-target="{{ sid }}" data-active="{{ 'true' if son else 'false' }}"
+           role="button" tabindex="0"
+           onclick="setMetisSection('{{ sid }}', this)"
+           onkeydown="if(event.key==='Enter'){this.click();}">
+        <span class="nav-dot"></span>
+        <span>{{ slabel }}</span>
+      </div>
+      {% endfor %}
+    </nav>
+
+    <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);padding:8px 4px;">
+      Metis · Archive edition · v1.1.<br>Built slowly, for one researcher.
+    </div>
+  </aside>
+
+  <!-- =================================================
+       RIGHT CONTENT — page header + 7 sections
+  ================================================== -->
+  <div class="metis-content">
+
+    <div class="page-head" style="margin-bottom:24px;">
+      <div>
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">SURFACE 09 · METIS SYSTEM</div>
+        <h1 style="font-family:var(--m-display);font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0;">Metis</h1>
+      </div>
+      <div class="page-meta"
+           hx-get="/api/partial/metis/user"
+           hx-trigger="load"
+           hx-swap="innerHTML">RESEARCH CORTEX</div>
+    </div>
+
+    <!-- =================================================
+         OVERVIEW (default section)
+    ================================================== -->
+    <section class="metis-section" data-section="overview" data-active="true">
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>At a glance</span>
+        <span class="tail">RIGHT NOW</span>
+      </div>
+      <div class="panel" id="metis-overview-stats" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/stats"
+           hx-trigger="load, every 30s"
+           hx-swap="innerHTML">
+        <div style="padding:24px;text-align:center;font-family:var(--m-display);font-style:italic;color:var(--m-muted);">Loading stats…</div>
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Recent agent runs</span>
+        <span class="tail" style="cursor:pointer;"
+              hx-get="/api/partial/metis/agent-runs"
+              hx-target="#metis-runs-body"
+              hx-swap="innerHTML">REFRESH</span>
+      </div>
+      <div class="panel" id="metis-runs-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/agent-runs"
+           hx-trigger="load, every 30s"
+           hx-swap="innerHTML">
+        <div style="padding:24px 16px;font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">Loading agent runs…</div>
+      </div>
+
+    </section>
+
+    <!-- =================================================
+         MODEL & USAGE
+    ================================================== -->
+    <section class="metis-section" data-section="model" data-active="false">
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Default model</span>
+        <span class="tail">USED FOR DASHBOARD AGENT RUNS</span>
+      </div>
+
+      <div class="metis-note" style="margin-bottom:14px;">
+        This sets which Claude model Metis uses when running agents from the dashboard. It does <em>not</em> change the model behind your Claude Code chats — that is set in your <code style="font-family:var(--m-mono);font-size:11px;">~/.claude/settings.json</code>.
+      </div>
+
+      <div class="grid grid-3" style="margin-bottom:28px;">
+        {% set models = [
+          ('Haiku',  '4.5', 'Fast, lightweight — good for quick lookups, tagging, and small answers.', 'haiku',  'haiku',  false),
+          ('Sonnet', '4.6', 'Balanced — recommended for most research tasks.',                          'sonnet', 'sonnet', true),
+          ('Opus',   '4.1', 'Most capable — use for deep analysis and complex writing.',                'opus',   'opus',   false),
+        ] %}
+        {% for mname, mver, muse, mchip, mslug, mon in models %}
+        <div class="panel panel-pad{% if mon %} model-card-on{% endif %}" style="padding:22px 24px;cursor:pointer;"
+             onclick="setActiveModel('{{ mslug }}', this.querySelector('button'))">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+            <div style="font-family:var(--m-display);font-size:22px;font-weight:500;color:var(--m-ink);">{{ mname }}</div>
+            <span class="chip chip--{{ mchip }} chip--plain">{{ mver }}</span>
+          </div>
+          <div style="font-size:13px;color:var(--m-text);margin:0;min-height:64px;line-height:1.55;">{{ muse }}</div>
+          <button class="btn btn--ghost btn--caps" style="margin-top:14px;padding:0;border:none;background:transparent;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:{% if mon %}var(--m-accent){% else %}var(--m-muted){% endif %};"
+                  onclick="event.stopPropagation();setActiveModel('{{ mslug }}', this)">
+            {{ '· SELECTED' if mon else 'USE' }}
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Token monitor</span>
+        <span class="tail" style="cursor:pointer;"
+              hx-get="/api/partial/metis/token-monitor"
+              hx-target="#metis-token-monitor-body"
+              hx-swap="innerHTML">REFRESH</span>
+      </div>
+      <div class="panel" id="metis-token-monitor-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/token-monitor"
+           hx-trigger="load, every 60s"
+           hx-swap="innerHTML">
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading token usage…</div>
+      </div>
+
+    </section>
+
+    <!-- =================================================
+         MEMORY
+    ================================================== -->
+    <section class="metis-section" data-section="memory" data-active="false">
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Memory overview</span>
+        <span class="tail">WHAT METIS IS HOLDING</span>
+      </div>
+      <div class="panel" id="metis-memory-overview-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/memory-overview"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading memory overview…</div>
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Memory stream</span>
+        <span class="tail" id="memory-stream-tail">RECENT FIRST</span>
+      </div>
+      <div class="panel" id="metis-memory-stream-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/memory-stream"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading memory stream…</div>
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Retrieval debugger</span>
+        <span class="tail">TEST SEMANTIC SEARCH</span>
+      </div>
+      <div class="panel" style="padding:20px;margin-bottom:24px;">
+        <div hx-get="/api/partial/metis/memory-debug"
+             hx-trigger="load"
+             hx-swap="outerHTML">
+          <div style="padding:16px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading debugger…</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- =================================================
+         WHAT I LEARNED (self-improvement)
+    ================================================== -->
+    <section class="metis-section" data-section="improvement" data-active="false">
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>What I&rsquo;ve learned</span>
+        <span class="tail">REFLEXIONS → DRAFTS → APPLIED</span>
+      </div>
+      <div class="panel" id="metis-improvement-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/improvement"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading reflexion themes…</div>
+      </div>
+
+    </section>
+
+    <!-- =================================================
+         AGENTS
+    ================================================== -->
+    <section class="metis-section" data-section="agents" data-active="false">
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Specialist agents</span>
+        <span class="tail" style="cursor:pointer;"
+              hx-get="/api/partial/metis/agent-directory"
+              hx-target="#metis-agent-directory-body"
+              hx-swap="innerHTML">REFRESH</span>
+      </div>
+      <div class="panel" id="metis-agent-directory-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/agent-directory"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading agent registry…</div>
+      </div>
+
+    </section>
+
+    <!-- =================================================
+         AUTOMATION
+    ================================================== -->
+    <section class="metis-section" data-section="automation" data-active="false">
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Scheduled jobs</span>
+        <span class="tail">RUNS WHILE DASHBOARD IS OPEN</span>
+      </div>
+      <div class="metis-note" style="margin-bottom:14px;">
+        These jobs run automatically in the background every day at the times shown below. You can change the time, turn any job off, or trigger it manually right now with the Run button. Changes take effect immediately &mdash; no restart needed.
+      </div>
+      <div class="panel" id="metis-automation-panel" style="padding:14px 18px;margin-bottom:24px;"
+           hx-get="/api/partial/today/automation"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:18px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading scheduler&hellip;</div>
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Recent runs</span>
+        <span class="tail" style="cursor:pointer;"
+              hx-get="/api/partial/metis/automation-log"
+              hx-target="#metis-automation-log-body"
+              hx-swap="innerHTML">REFRESH</span>
+      </div>
+      <div class="panel" id="metis-automation-log-body" style="padding:4px 14px;margin-bottom:24px;"
+           hx-get="/api/partial/metis/automation-log"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:18px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading job log&hellip;</div>
+      </div>
+
+    </section>
+
+    <!-- =================================================
+         APPEARANCE
+    ================================================== -->
+    <section class="metis-section" data-section="appearance" data-active="false">
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Theme</span>
+        <span class="tail">PERSISTED ACROSS SESSIONS</span>
+      </div>
+      <div class="panel" style="padding:18px 22px;margin-bottom:24px;" id="theme-swatches">
+
+        <div class="theme-group-label">Light themes</div>
+        <div class="theme-swatch-row">
+          <button class="theme-swatch" data-theme="archive" data-group="light" data-active="true"
+                  onclick="applyTheme('archive')">
+            <div class="theme-swatch-preview">
+              <span style="background:#f5f2ea;"></span>
+              <span style="background:#fbf8f0;"></span>
+              <span style="background:#2d4a3a;"></span>
+            </div>
+            <div class="theme-swatch-name">Archive</div>
+            <div class="theme-swatch-meta">WARM · GREEN</div>
+          </button>
+          <button class="theme-swatch" data-theme="fieldwork" data-group="light" data-active="false"
+                  onclick="applyTheme('fieldwork')">
+            <div class="theme-swatch-preview">
+              <span style="background:#f0eff8;"></span>
+              <span style="background:#f7f6fb;"></span>
+              <span style="background:#2d4480;"></span>
+            </div>
+            <div class="theme-swatch-name">Fieldwork</div>
+            <div class="theme-swatch-meta">COOL · COBALT</div>
+          </button>
+          <button class="theme-swatch" data-theme="paper" data-group="light" data-active="false"
+                  onclick="applyTheme('paper')">
+            <div class="theme-swatch-preview">
+              <span style="background:#f9f4e8;"></span>
+              <span style="background:#fdf9f0;"></span>
+              <span style="background:#8b4513;"></span>
+            </div>
+            <div class="theme-swatch-name">Paper</div>
+            <div class="theme-swatch-meta">AGED · SIENNA</div>
+          </button>
+        </div>
+
+        <div class="theme-group-label">Dark themes</div>
+        <div class="theme-swatch-row">
+          <button class="theme-swatch" data-theme="observatory" data-group="dark" data-active="false"
+                  onclick="applyTheme('observatory')">
+            <div class="theme-swatch-preview">
+              <span style="background:#15130f;"></span>
+              <span style="background:#211d18;"></span>
+              <span style="background:#d99a4c;"></span>
+            </div>
+            <div class="theme-swatch-name">Observatory</div>
+            <div class="theme-swatch-meta">WARM · AMBER</div>
+          </button>
+          <button class="theme-swatch" data-theme="midnight" data-group="dark" data-active="false"
+                  onclick="applyTheme('midnight')">
+            <div class="theme-swatch-preview">
+              <span style="background:#0d1117;"></span>
+              <span style="background:#161c24;"></span>
+              <span style="background:#5b9bd8;"></span>
+            </div>
+            <div class="theme-swatch-name">Midnight</div>
+            <div class="theme-swatch-meta">DEEP · COBALT</div>
+          </button>
+          <button class="theme-swatch" data-theme="cavern" data-group="dark" data-active="false"
+                  onclick="applyTheme('cavern')">
+            <div class="theme-swatch-preview">
+              <span style="background:#0f1614;"></span>
+              <span style="background:#161e1c;"></span>
+              <span style="background:#3dbfaf;"></span>
+            </div>
+            <div class="theme-swatch-name">Cavern</div>
+            <div class="theme-swatch-meta">FOREST · TEAL</div>
+          </button>
+        </div>
+
+        <div class="metis-note" style="margin-top:6px;">
+          Pick one light and one dark theme. The toggle button in the top bar switches between your chosen pair.
+        </div>
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;"><span>Display family</span></div>
+      <div class="panel" style="margin-bottom:24px;">
+        <div class="metis-setting-row">
+          <div>
+            <div class="ms-title">Primary display typeface</div>
+            <div class="ms-help">Newsreader is set as the primary display font. Editing this is not yet supported.</div>
+          </div>
+          <div class="ms-control">
+            <div style="display:inline-flex;align-items:center;padding:6px 12px;background:var(--m-surface);border:1px solid var(--m-rule-strong);border-radius:2px;font-family:var(--m-display);font-size:14px;color:var(--m-ink);">Newsreader</div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- =================================================
+         INTEGRATION
+    ================================================== -->
+    <section class="metis-section" data-section="integration" data-active="false">
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Claude Code &amp; Desktop</span>
+        <span class="tail">HOW METIS LOADS</span>
+      </div>
+      <div class="panel" id="metis-integration-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/integration"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading integration status…</div>
+      </div>
+
+    </section>
+
+    <!-- =================================================
+         API KEYS
+    ================================================== -->
+    <section class="metis-section" data-section="keys" data-active="false">
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>API keys</span>
+        <span class="tail">STORED IN system/.env</span>
+      </div>
+      <div class="metis-note" style="margin-bottom:14px;">
+        These keys are stored in a plain file on your local machine and are never sent anywhere except the service that uses them. The Anthropic key is used by the dashboard's agent runner. Zotero keys power the library sync. You can add additional keys for any service Metis integrates with.
+      </div>
+      <div class="panel" id="metis-api-keys-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/api-keys"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:18px 22px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);">Loading keys…</div>
+      </div>
+
+    </section>
+
+    <!-- =================================================
+         ABOUT METIS
+    ================================================== -->
+    <section class="metis-section" data-section="about" data-active="false">
+
+      <div class="sec-label" style="margin-bottom:12px;"><span>System</span></div>
+      <div class="panel" id="metis-system-info-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/system-info"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading system info…</div>
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Consent ledger</span>
+        <span class="tail">DATA ACCESS LOG</span>
+      </div>
+      <div class="panel" id="metis-consent-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/consent"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading consent ledger…</div>
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;"><span>Network</span></div>
+      <div class="panel" style="padding:18px 22px;margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">Network policy</div>
+          <span hx-get="/api/partial/metis/network-policy" hx-trigger="load" hx-swap="innerHTML">…</span>
+        </div>
+        <div style="font-size:12px;color:var(--m-muted);margin-top:6px;">Configured in <code style="font-family:var(--m-mono);font-size:11px;">system/config/network-policy.json</code>.</div>
+      </div>
+
+    </section>
+
+  </div>
+</div>
+
+{# Identity edit modal — included once, lives in DOM from page load #}
+{% include "partials/metis_identity_edit_modal.html" %}
+
+{# API key replace/add modal #}
+{% include "partials/metis_api_key_modal.html" %}
+
+<script>
+function setMetisSection(id, el) {
+  // Toggle nav active state
+  document.querySelectorAll('#metis-nav .metis-nav-item').forEach(function (item) {
+    item.dataset.active = (item.dataset.target === id) ? 'true' : 'false';
+  });
+  // Toggle section visibility
+  document.querySelectorAll('.metis-section').forEach(function (sec) {
+    sec.dataset.active = (sec.dataset.section === id) ? 'true' : 'false';
+  });
+  // Scroll content area to top
+  var scroll = document.getElementById('tab-content');
+  if (scroll) scroll.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+{% endblock %}

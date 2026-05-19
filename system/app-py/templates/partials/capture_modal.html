@@ -1,0 +1,194 @@
+<div style="position:fixed;top:0;left:0;right:0;z-index:900;display:flex;justify-content:center;padding-top:72px;">
+  <div class="panel m-drawer-top" style="width:540px;max-width:92vw;padding:0;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;border-bottom:1px solid var(--m-rule-soft);">
+      <div class="kicker" style="margin:0;">
+        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><line x1="8" y1="11" x2="8.01" y2="11"/></svg>
+        QUICK CAPTURE
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <!-- Mic button -->
+        <button id="capture-mic-btn"
+                type="button"
+                onclick="toggleCaptureMic()"
+                title="Record voice memo"
+                style="background:none;border:1px solid var(--m-rule);border-radius:50%;width:28px;height:28px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--m-muted);flex-shrink:0;transition:all .15s;">
+          <svg id="capture-mic-icon" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="1" width="6" height="9" rx="3"/>
+            <path d="M2 8a6 6 0 0 0 12 0"/>
+            <line x1="8" y1="14" x2="8" y2="16"/>
+          </svg>
+        </button>
+        <span id="capture-rec-label" style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-alert);display:none;"></span>
+        <button onclick="closeCapture()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;padding:2px 6px;" aria-label="Close">ESC</button>
+      </div>
+    </div>
+
+    <!-- Prefix chips -->
+    <div style="display:flex;gap:6px;padding:10px 20px 0;flex-wrap:wrap;">
+      <span class="chip chip--accent" style="cursor:pointer;" onclick="setPrefixMode('i:')">i: idea</span>
+      <span class="chip chip--muted" style="cursor:pointer;" onclick="setPrefixMode('n:')">n: note</span>
+      <span class="chip chip--ochre" style="cursor:pointer;" onclick="setPrefixMode('t:')">t: task</span>
+      <span class="chip chip--muted" style="cursor:pointer;" onclick="setPrefixMode('q:')">q: question</span>
+      <span class="chip chip--muted" style="cursor:pointer;" onclick="setPrefixMode('j:')">j: journal</span>
+    </div>
+
+    <!-- Form -->
+    <form hx-post="/api/capture"
+          hx-target="#capture-feedback"
+          hx-swap="innerHTML"
+          style="padding:12px 20px 16px;">
+
+      <textarea id="capture-text"
+                name="text"
+                rows="3"
+                autofocus
+                required
+                style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:10px 12px;font-family:var(--m-sans);font-size:14px;color:var(--m-ink);resize:vertical;line-height:1.5;outline:none;"
+                placeholder="Type or tap 🎤 to speak your idea, note, task, or question…"></textarea>
+
+      <!-- Live type badge -->
+      <div id="capture-type-badge" style="min-height:20px;margin-top:6px;"></div>
+
+      <!-- Feedback + cross-pollination results -->
+      <div id="capture-feedback" style="margin-top:2px;"></div>
+
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button type="submit" class="btn btn--primary btn--caps" style="flex:1;">Save</button>
+        <button type="button" class="btn btn--ghost btn--caps" onclick="closeCapture()">Cancel</button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<script>
+function setPrefixMode(prefix) {
+  const ta = document.getElementById('capture-text');
+  if (!ta) return;
+  const bare = ta.value.replace(/^[a-z]+:\s*/, '');
+  ta.value = prefix + ' ' + bare;
+  ta.selectionStart = ta.selectionEnd = ta.value.length;
+  ta.focus();
+}
+
+// ── Voice capture ──────────────────────────────────────────────────────────
+let _micStream = null, _mediaRec = null, _recChunks = [];
+
+async function toggleCaptureMic() {
+  if (_mediaRec && _mediaRec.state === 'recording') {
+    _mediaRec.stop();
+    return;
+  }
+  const btn = document.getElementById('capture-mic-btn');
+  const lbl = document.getElementById('capture-rec-label');
+  const icon = document.getElementById('capture-mic-icon');
+  try {
+    _micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(e) {
+    showToast && showToast('Microphone access denied');
+    return;
+  }
+  _recChunks = [];
+  // Prefer WAV so faster-whisper can transcribe without ffmpeg
+  const mimeType = MediaRecorder.isTypeSupported('audio/wav') ? 'audio/wav' : 'audio/webm;codecs=opus';
+  _mediaRec = new MediaRecorder(_micStream, { mimeType });
+  _mediaRec.ondataavailable = e => { if (e.data.size > 0) _recChunks.push(e.data); };
+  _mediaRec.onstop = () => _finishCaptureMic(mimeType);
+  _mediaRec.start(200);
+  // UI: recording state
+  btn.style.borderColor = 'var(--m-alert)';
+  btn.style.color = 'var(--m-alert)';
+  icon.innerHTML = '<rect x="4" y="4" width="8" height="8" rx="1" fill="currentColor" stroke="none"/>';
+  lbl.textContent = '● REC';
+  lbl.style.display = '';
+  // Auto-stop at 3 minutes
+  setTimeout(() => { if (_mediaRec && _mediaRec.state === 'recording') _mediaRec.stop(); }, 180000);
+}
+
+async function _finishCaptureMic(mimeType) {
+  const btn = document.getElementById('capture-mic-btn');
+  const lbl = document.getElementById('capture-rec-label');
+  const icon = document.getElementById('capture-mic-icon');
+  // Restore button
+  btn.style.borderColor = '';
+  btn.style.color = '';
+  icon.innerHTML = '<rect x="5" y="1" width="6" height="9" rx="3"/><path d="M2 8a6 6 0 0 0 12 0"/><line x1="8" y1="14" x2="8" y2="16"/>';
+  lbl.textContent = 'Transcribing…';
+  _micStream && _micStream.getTracks().forEach(t => t.stop());
+  const blob = new Blob(_recChunks, { type: mimeType });
+  // Convert to WAV via AudioContext so faster-whisper doesn't need ffmpeg
+  try {
+    const wavBlob = await _toWav(blob);
+    const fd = new FormData();
+    fd.append('audio', wavBlob, 'capture.wav');
+    const res = await fetch('/api/voice/transcribe', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.ok && data.text) {
+      const ta = document.getElementById('capture-text');
+      if (ta) {
+        const existing = ta.value.trim();
+        ta.value = existing ? existing + ' ' + data.text : data.text;
+        ta.dispatchEvent(new Event('input'));
+        ta.focus();
+      }
+      lbl.textContent = '✓ Done';
+      setTimeout(() => { lbl.style.display = 'none'; }, 2000);
+    } else {
+      lbl.textContent = 'Failed';
+      setTimeout(() => { lbl.style.display = 'none'; }, 3000);
+    }
+  } catch(e) {
+    lbl.textContent = 'Error';
+    setTimeout(() => { lbl.style.display = 'none'; }, 3000);
+  }
+}
+
+// Convert any audio blob → 16kHz mono WAV (no ffmpeg needed on server)
+async function _toWav(blob) {
+  const arrayBuf = await blob.arrayBuffer();
+  const ctx = new OfflineAudioContext(1, 1, 16000);
+  let audioData;
+  try {
+    const decoded = await new AudioContext().decodeAudioData(arrayBuf);
+    const samples = decoded.duration * 16000;
+    const offCtx = new OfflineAudioContext(1, Math.ceil(samples), 16000);
+    const src = offCtx.createBufferSource();
+    src.buffer = decoded;
+    src.connect(offCtx.destination);
+    src.start(0);
+    audioData = await offCtx.startRendering();
+  } catch(e) {
+    // fallback: return original blob as-is (server may still handle it)
+    return blob;
+  }
+  const pcm = audioData.getChannelData(0);
+  return _pcmToWavBlob(pcm, 16000);
+}
+
+function _pcmToWavBlob(pcmData, sampleRate) {
+  const numSamples = pcmData.length;
+  const buf = new ArrayBuffer(44 + numSamples * 2);
+  const view = new DataView(buf);
+  const writeStr = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + numSamples * 2, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);       // PCM
+  view.setUint16(22, 1, true);       // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  view.setUint32(40, numSamples * 2, true);
+  for (let i = 0; i < numSamples; i++) {
+    const s = Math.max(-1, Math.min(1, pcmData[i]));
+    view.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+</script>

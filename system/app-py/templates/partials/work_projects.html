@@ -1,0 +1,166 @@
+<!-- work_projects.html — Project cards with drag-reorder + collapse + per-type launchers -->
+{% if not projects %}
+<div class="panel panel-pad" style="text-align:center;padding:24px 22px;border:1px dashed var(--m-line);">
+  <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 8px;">
+    <strong>No active projects yet.</strong>
+  </p>
+  <p class="ed" style="font-size:13px;color:var(--m-muted);margin:0;">
+    Run <code>/new-project</code> in Claude Code to scaffold one, or <code>/metis</code> with any project request.
+  </p>
+</div>
+{% else %}
+<div class="grid grid-2" id="project-grid">
+  {% for p in projects %}
+  <div class="panel panel-pad project-card"
+       data-project-id="{{ p.id }}"
+       draggable="true"
+       style="padding:0;display:flex;flex-direction:column;cursor:default;transition:opacity .15s,outline .1s;">
+
+    <!-- ── Header row (always visible) ── -->
+    <div class="proj-header"
+         style="display:flex;align-items:center;gap:8px;padding:16px 18px 12px;border-bottom:1px solid var(--m-rule-soft);">
+      <!-- Drag handle -->
+      <span class="proj-drag-handle"
+            title="Drag to reorder"
+            style="cursor:grab;color:var(--m-muted);font-size:15px;line-height:1;flex-shrink:0;user-select:none;">⠿</span>
+      <!-- Title (clickable → detail panel) -->
+      <div onclick="openProjectDetail('{{ p.id }}')"
+           style="flex:1;font-family:var(--m-display);font-size:16px;font-weight:500;color:var(--m-ink);line-height:1.2;cursor:pointer;"
+           title="Open project details">{{ p.title }}</div>
+      <!-- Domain chip -->
+      {% if p.domain %}
+      <span class="chip chip--info" style="flex-shrink:0;font-size:10px;">{{ p.domain[:16] }}</span>
+      {% endif %}
+      <!-- Type / article badge -->
+      {% if p.launcher_type == 'article' or p.project_type == 'article' %}
+      <span class="chip" style="flex-shrink:0;font-size:10px;background:var(--m-ochre-wash,#fff8ee);color:var(--m-ochre-deep,#b36a1d);border:1px solid var(--m-ochre-soft,#e8c97a);">ARTICLE</span>
+      {% elif p.project_type and p.project_type != 'research' %}
+      <span class="chip chip--plain" style="flex-shrink:0;font-size:10px;">{{ p.project_type | upper }}</span>
+      {% endif %}
+      <!-- Notes toggle -->
+      <button onclick="toggleProjectNotes('{{ p.id }}')"
+              title="Project notes"
+              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-family:var(--m-mono);font-size:13px;color:var(--m-muted);line-height:1;flex-shrink:0;">📝</button>
+      <!-- Untrack button -->
+      <button onclick="untrackProject({{ p.id | tojson }}, {{ p.title | tojson }})"
+              title="Hide this project (doesn't delete it)"
+              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-size:13px;color:var(--m-muted);line-height:1;flex-shrink:0;opacity:.6;"
+              onmouseenter="this.style.opacity='1';this.style.color='var(--m-danger,#e53e3e)'"
+              onmouseleave="this.style.opacity='.6';this.style.color='var(--m-muted)'">✕</button>
+      <!-- Collapse toggle -->
+      <button class="proj-collapse-btn"
+              onclick="toggleProjectCollapse('{{ p.id }}')"
+              title="Collapse / expand"
+              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-family:var(--m-mono);font-size:16px;color:var(--m-muted);line-height:1;flex-shrink:0;">−</button>
+    </div>
+
+    <!-- ── Collapsible body ── -->
+    <div class="proj-body" style="display:flex;flex-direction:column;gap:10px;padding:14px 18px 16px;">
+
+      <!-- Description -->
+      {% if p.description %}
+      <div class="ed" style="font-size:13px;color:var(--m-muted);margin:0;line-height:1.5;
+                              overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">
+        {{ p.description }}
+      </div>
+      {% endif %}
+
+      <!-- Last session indicator -->
+      {% if p.last_session_at %}
+      <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
+        Last session · {{ p.last_session_at[:10] }}
+      </div>
+      {% endif %}
+
+      <!-- Next step -->
+      {% if p.next_step %}
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-accent);
+                  padding:6px 10px;background:var(--m-accent-wash);border-radius:4px;">
+        NEXT → {{ p.next_step[:120] }}{% if p.next_step|length > 120 %}…{% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Task list (lazy-loaded, auto-refreshes every 90 s) -->
+      <div id="proj-tasks-{{ p.id }}"
+           hx-get="/api/partial/work/project-tasks/{{ p.id }}"
+           hx-trigger="intersect once, every 90s"
+           hx-swap="innerHTML"
+           style="min-height:20px;">
+        <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">Loading tasks…</div>
+      </div>
+
+      <!-- Launcher rail (driven by launchers_list from DB) -->
+      <div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:10px;border-top:1px solid var(--m-rule-soft);">
+
+        {% set ll = p.launchers_list %}
+
+        {% if 'rstudio' in ll %}
+        <button class="btn btn--sec btn--caps proj-launch"
+                onclick="launchProjectTarget('{{ p.id }}','rstudio')"
+                title="Open in RStudio">RStudio</button>
+        {% endif %}
+
+        {% if 'vscode' in ll %}
+        <button class="btn btn--sec btn--caps proj-launch"
+                onclick="launchProjectTarget('{{ p.id }}','vscode')"
+                title="Open in VS Code">VS Code</button>
+        {% endif %}
+
+        {% if 'claude_code' in ll %}
+        <button class="btn btn--primary btn--caps proj-launch"
+                onclick="launchProjectTarget('{{ p.id }}','claude_code')"
+                title="Continue in Claude Code">Claude Code</button>
+        {% endif %}
+
+        {% if 'claude_desktop' in ll %}
+        <button class="btn btn--ghost btn--caps proj-launch"
+                onclick="launchProjectTarget('{{ p.id }}','claude_desktop')"
+                title="Open Claude Desktop">Chat</button>
+        {% endif %}
+
+        {% if 'explorer' in ll and p.external_path %}
+        <button class="btn btn--ghost btn--caps proj-launch"
+                onclick="launchProjectTarget('{{ p.id }}','explorer')"
+                title="Open in File Explorer">Open Folder</button>
+        {% endif %}
+
+        {% if 'dashboard' in ll %}
+        <button class="btn btn--ghost btn--caps proj-launch"
+                onclick="launchProjectTarget('{{ p.id }}','dashboard')"
+                title="Open dashboard in browser (start app first: source('launch_dashboard.R') in RStudio)"
+                style="background:var(--m-surface-3);border-color:var(--m-line);">📊 Dashboard</button>
+        {% endif %}
+
+        {% if 'course_launcher' in ll %}
+        <button class="btn btn--ghost btn--caps proj-launch"
+                onclick="launchProjectTarget('{{ p.id }}','vscode')"
+                title="Open course folder">Open Course</button>
+        {% endif %}
+
+        {% if p.github_url %}
+        <a class="btn btn--ghost btn--caps proj-launch"
+           href="{{ p.github_url }}" target="_blank" rel="noopener">GitHub</a>
+        {% endif %}
+
+        <!-- Refresh tasks -->
+        <button class="btn btn--ghost proj-launch"
+                hx-get="/api/partial/work/project-tasks/{{ p.id }}"
+                hx-target="#proj-tasks-{{ p.id }}"
+                hx-swap="innerHTML"
+                title="Refresh tasks"
+                style="margin-left:auto;padding:4px 8px;font-size:13px;">↻</button>
+      </div>
+
+      <!-- Notes panel (lazy-loaded, hidden by default) -->
+      <div id="proj-notes-{{ p.id }}" style="display:none;"></div>
+
+    </div><!-- /.proj-body -->
+  </div>
+  {% endfor %}
+</div>
+<!-- Hidden projects chip -->
+<div id="hidden-projects-zone"
+     hx-get="/api/partial/work/hidden-projects"
+     hx-trigger="load"
+     hx-swap="innerHTML"></div>
+{% endif %}

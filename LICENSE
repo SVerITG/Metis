@@ -4,38 +4,50 @@ Metis Research Cortex
 This repository is dual-licensed:
 
   - Code (Python, JavaScript, R, shell scripts, configuration, agent skill
-    files, dashboard templates, tests): MIT License (see below).
+    files, dashboard templates, tests): GNU Affero General Public License v3
+    (AGPL-3.0) — see full text below.
 
-  - Course content authored under metis/knowledge/courses/ and any
-    documentation explicitly marked as "course material" or "lesson":
+  - Course content authored under knowledge/courses/ and any documentation
+    explicitly marked as "course material" or "lesson":
     Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0).
     See https://creativecommons.org/licenses/by-sa/4.0/ for the full text.
 
-Personal research data (the contents of metis/journal/, metis/inbox/,
-metis/projects/active/, metis/outputs/reviews/, metis/knowledge/library/,
-agent *-context.md files, and anything covered by .gitignore) belongs to
-the user who created it and is not redistributed by this repository.
+Personal research data (the contents of journal/, inbox/, projects/active/,
+outputs/reviews/, knowledge/library/, agent *-context.md files, and anything
+covered by .gitignore) belongs to the user who created it and is not
+redistributed by this repository.
 
 --------------------------------------------------------------------------------
-MIT License
+GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3, 19 November 2007
 --------------------------------------------------------------------------------
 
-Copyright (c) 2026 Metis contributors
+Copyright (C) 2026 Metis contributors
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+--------------------------------------------------------------------------------
+Additional permission under GNU AGPL version 3 section 7
+--------------------------------------------------------------------------------
+
+If you modify this Program, or any covered work, by linking or combining it
+with libraries or tools that are licensed under terms that are incompatible
+with the AGPL (including the MIT License, Apache License 2.0, or BSD licenses),
+you may convey the resulting work under the AGPL provided that you comply with
+the conditions of that license and that the combined work as a whole remains
+licensed under the AGPL.
+
+--------------------------------------------------------------------------------
+Full license text: https://www.gnu.org/licenses/agpl-3.0.txt
+--------------------------------------------------------------------------------
