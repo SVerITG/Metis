@@ -29,6 +29,10 @@ wsl -e bash -c "pkill -f 'uvicorn main:app.*8080' 2>/dev/null; sleep 0.3" >nul 2
 :: Start the dashboard in the background (WSL window hidden via vbs wrapper)
 start "" /b wsl -e bash "%WSL_ROOT%/system/app-py/run.sh"
 
-:: Wait for the server to be ready, then open the browser
+:: Wait for run.sh to write the port file, then open browser on the correct port
 timeout /t 5 /nobreak >nul
-start "" "http://127.0.0.1:8080"
+set "PORT=8080"
+if exist "%METIS_ROOT%\system\app-py\.metis-port" (
+    for /f %%p in (%METIS_ROOT%\system\app-py\.metis-port) do set "PORT=%%p"
+)
+start "" "http://127.0.0.1:%PORT%"

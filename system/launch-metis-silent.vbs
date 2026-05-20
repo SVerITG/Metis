@@ -30,8 +30,17 @@ WshShell.Run "wsl.exe -- bash " & Chr(34) & wslDir & "/app-py/run.sh" & Chr(34),
 ' Wait for uvicorn to bind (adjust if your machine is slower)
 WScript.Sleep 4000
 
-' Open dashboard in default browser
-WshShell.Run "http://127.0.0.1:8080", 1, False
+' Read the port actually selected by run.sh (written to .metis-port before exec)
+Dim port
+port = "8080"
+Dim oPort
+Set oPort = WshShell.Exec("wsl.exe -- cat " & Chr(34) & wslDir & "/app-py/.metis-port" & Chr(34))
+Dim portOut
+portOut = Trim(oPort.StdOut.ReadAll())
+If portOut <> "" Then port = portOut
+
+' Open dashboard in default browser on the correct port
+WshShell.Run "http://127.0.0.1:" & port, 1, False
 
 Set WshShell = Nothing
 Set fso      = Nothing

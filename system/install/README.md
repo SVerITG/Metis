@@ -8,7 +8,7 @@ All installation paths. Choose the one that fits you.
 
 ### Windows — one double-click
 
-**Download `MetisSetup.exe`** from the [latest release](https://github.com/SVerITG/Metis_PH/releases/latest).
+**Download `MetisSetup.exe`** from the [latest release](https://github.com/SVerITG/Metis/releases/latest).
 
 Double-click it. Follow the three screens. Takes about 8 minutes.
 
@@ -50,7 +50,7 @@ install.bat
 ### Linux / WSL / macOS — one command
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/metis/system/mcp-server/setup-mcp.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis/main/system/mcp-server/setup-mcp.sh)
 ```
 
 Detects Ubuntu 20/22/24 and macOS. Creates a venv, installs all dependencies,
@@ -58,15 +58,15 @@ registers with Claude Code and Claude Desktop. Idempotent.
 
 Dashboard:
 ```bash
-cd ~/Metis_PH/metis/system/app-py && bash run.sh
-# → http://127.0.0.1:8000
+cd ~/Metis/system/app-py && bash run.sh
+# → http://127.0.0.1:8080
 ```
 
 ### Manual install (any OS)
 
 ```bash
-git clone https://github.com/SVerITG/Metis_PH.git
-cd Metis_PH/metis/system/mcp-server
+git clone https://github.com/SVerITG/Metis.git
+cd Metis/system/mcp-server
 
 # Create venv and install
 python3 -m venv .venv
@@ -82,7 +82,7 @@ export ANTHROPIC_API_KEY="sk-ant-..."
 python -m metis_mcp.server
 
 # In a second terminal — run dashboard
-cd ../app-py && uvicorn app:app --host 127.0.0.1 --port 8000
+cd ../app-py && bash run.sh   # or: uvicorn main:app --host 0.0.0.0 --port 8080
 ```
 
 ### Register with Claude Desktop (Windows + WSL)
@@ -136,8 +136,8 @@ cd ../app-py && uvicorn app:app --host 127.0.0.1 --port 8000
 
 ```bash
 # Clone the repo
-git clone https://github.com/SVerITG/Metis_PH.git
-cd Metis_PH/metis/system/install/docker
+git clone https://github.com/SVerITG/Metis.git
+cd Metis/system/install/docker
 
 # Configure
 cp .env.example .env
@@ -147,7 +147,7 @@ cp .env.example .env
 docker-compose up -d
 
 # Dashboard
-open http://localhost:8000
+open http://localhost:8080
 ```
 
 **MCP server inside Docker** — for Claude Desktop to reach the MCP server inside Docker,
