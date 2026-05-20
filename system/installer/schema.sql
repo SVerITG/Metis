@@ -683,3 +683,12 @@ CREATE TABLE IF NOT EXISTS user_config (
     value      TEXT NOT NULL DEFAULT '',
     updated_at TEXT
 );
+
+CREATE TABLE IF NOT EXISTS session_summaries (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT,
+    summary    TEXT NOT NULL,
+    key_topics TEXT,
+    decisions  TEXT,
+    created_at TEXT NOT NULL
+);
