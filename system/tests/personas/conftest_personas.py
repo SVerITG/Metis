@@ -16,8 +16,8 @@ from pathlib import Path
 
 import pytest
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
-METIS_ROOT = REPO_ROOT / "metis"
+# Research Cortex root: system/tests/personas/ → parents[3] = RC root
+METIS_ROOT = Path(__file__).resolve().parents[3]
 AGENTS_DIR = METIS_ROOT / "agents"
 MCP_TOOLS_DIR = METIS_ROOT / "system" / "mcp-server" / "src" / "metis_mcp" / "tools"
 DASHBOARD_DIR = METIS_ROOT / "system" / "app-py"
