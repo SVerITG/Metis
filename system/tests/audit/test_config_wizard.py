@@ -28,8 +28,8 @@ import pytest
 # Paths
 # ---------------------------------------------------------------------------
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
-METIS_ROOT = REPO_ROOT / "metis"
+# Research Cortex root: system/tests/audit/ -> parents[3] = RC root
+METIS_ROOT = Path(__file__).resolve().parents[3]
 CONFIG_DIR = METIS_ROOT / "system" / "config"
 INSTALL_DIR = METIS_ROOT / "system" / "install"
 MCP_TOOLS_DIR = METIS_ROOT / "system" / "mcp-server" / "src" / "metis_mcp" / "tools"

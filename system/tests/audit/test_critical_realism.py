@@ -35,8 +35,8 @@ import pytest
 # Paths
 # ---------------------------------------------------------------------------
 
-REPO_ROOT = Path(__file__).resolve().parents[4]
-METIS_ROOT = REPO_ROOT / "metis"
+# Research Cortex root: system/tests/audit/ -> parents[3] = RC root
+METIS_ROOT = Path(__file__).resolve().parents[3]
 DASHBOARD_DIR = METIS_ROOT / "system" / "app-py"
 TEMPLATES_DIR = DASHBOARD_DIR / "templates"
 PARTIALS_DIR = TEMPLATES_DIR / "partials"
