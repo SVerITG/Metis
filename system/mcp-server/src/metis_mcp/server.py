@@ -14,7 +14,6 @@ from metis_mcp.tools import (  # noqa: E402, F401
     agents,
     literature,
     notes,
-    research,
     projects,
     reviews,
     tasks,

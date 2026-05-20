@@ -112,10 +112,16 @@
                 title="Continue in Claude Code">Claude Code</button>
         {% endif %}
 
-        {% if 'claude_desktop' in ll %}
+        {% if 'claude_chat' in ll or 'claude_desktop' in ll %}
         <button class="btn btn--ghost btn--caps proj-launch"
-                onclick="launchProjectTarget('{{ p.id }}','claude_desktop')"
-                title="Open Claude Desktop">Chat</button>
+                onclick="launchProjectTarget('{{ p.id }}','claude_chat')"
+                title="Open in Claude Chat">Chat</button>
+        {% endif %}
+
+        {% if 'claude_cowork' in ll %}
+        <button class="btn btn--ghost btn--caps proj-launch"
+                onclick="launchProjectTarget('{{ p.id }}','claude_cowork')"
+                title="Open in Claude Cowork (copies project path to clipboard)">Cowork</button>
         {% endif %}
 
         {% if 'explorer' in ll and p.external_path %}

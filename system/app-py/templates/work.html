@@ -148,9 +148,26 @@
     <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);padding-right:8px;border-right:1px solid var(--m-rule-soft);">Workbench</div>
     <button class="btn btn--sec"
             style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;"
-            onclick="launchProjectTarget('rc-root','claude_desktop')">
+            onclick="launchProjectTarget('rc-root','claude_chat')"
+            title="Open Claude Desktop — Chat">
       <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><path d="M6 7c.5-1 2.5-1 2.5.5s-1.5 1.5-2 2v.5h3"/></svg>
-      <span style="font-family:var(--m-ui);font-size:13px;">Claude Desktop</span>
+      <span style="font-family:var(--m-ui);font-size:13px;">Chat</span>
+      <span class="wb-dot wb-dot--on" style="margin-left:4px;"></span>
+    </button>
+    <button class="btn btn--sec"
+            style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;"
+            onclick="launchProjectTarget('rc-root','claude_cowork')"
+            title="Open Claude Desktop — Cowork (copies RC path to clipboard)">
+      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="7" height="7" rx="1"/><path d="M7 5V4a2 2 0 0 1 4 0v7"/><line x1="10" y1="8" x2="14" y2="8"/></svg>
+      <span style="font-family:var(--m-ui);font-size:13px;">Cowork</span>
+      <span class="wb-dot wb-dot--on" style="margin-left:4px;"></span>
+    </button>
+    <button class="btn btn--sec"
+            style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;"
+            onclick="launchProjectTarget('rc-root','claude_code')"
+            title="Open Claude Code — Terminal in Research Cortex root">
+      <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 6 9 3 12"/><line x1="9" y1="12" x2="13" y2="12"/></svg>
+      <span style="font-family:var(--m-ui);font-size:13px;">Code</span>
       <span class="wb-dot wb-dot--on" style="margin-left:4px;"></span>
     </button>
     <button class="btn btn--sec"

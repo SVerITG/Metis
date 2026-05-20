@@ -37,7 +37,32 @@ fi
 
 cd "$APP_DIR"
 
-pkill -f "uvicorn main:app.*8080" 2>/dev/null || true
+# Kill any previous Metis instance (on any port)
+pkill -f "uvicorn main:app" 2>/dev/null || true
 sleep 0.5
 
-exec "$PYTHON" -m uvicorn main:app --host 0.0.0.0 --port 8080
+# Auto-pick first free port in range 8080–8090
+PORT=$("$PYTHON" - <<'PYEOF'
+import socket
+for p in range(8080, 8091):
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(('', p))
+        s.close()
+        print(p)
+        break
+    except OSError:
+        continue
+else:
+    print(8080)
+PYEOF
+)
+
+export METIS_PORT="$PORT"
+echo "Starting Metis dashboard on http://localhost:${PORT}"
+
+# Write selected port to a file so the desktop shortcut can open the correct URL
+echo "$PORT" > "$APP_DIR/.metis-port"
+
+exec "$PYTHON" -m uvicorn main:app --host 0.0.0.0 --port "$PORT"
