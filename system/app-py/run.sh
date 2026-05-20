@@ -62,4 +62,7 @@ PYEOF
 export METIS_PORT="$PORT"
 echo "Starting Metis dashboard on http://localhost:${PORT}"
 
+# Write selected port to a file so the desktop shortcut can open the correct URL
+echo "$PORT" > "$APP_DIR/.metis-port"
+
 exec "$PYTHON" -m uvicorn main:app --host 0.0.0.0 --port "$PORT"

@@ -84,3 +84,84 @@ Health Systems semantic layer is weak. WHO World Health Reports (2000, 2008, 201
 - Find PDF mirrors via WHO IRIS DSpace API
 
 ---
+
+---
+
+### F-INSTALL-01 — First-run wizard auto-trigger
+**Priority:** High
+**Identified:** 2026-05-20 (master test protocol)
+
+When the dashboard starts and no `user_config` row exists in the DB, display an inline welcome banner or redirect to `/setup`. Without this, new users see a completely empty dashboard with no guidance and no next step. Highest single-point drop-off risk.
+
+---
+
+### F-INSTALL-02 — VBS port hardcoding
+**Priority:** Medium
+**Identified:** 2026-05-20
+
+`system/launch-metis-silent.vbs` hardcodes `http://127.0.0.1:8080`. `run.sh` auto-selects 8080–8090 and exports `METIS_PORT`. The VBS should read `METIS_PORT` from the bash script output or use a fixed-port strategy (always 8080, kill any process on 8080 before starting).
+
+---
+
+### F-INSTALL-03 — macOS Homebrew support in setup-mcp.sh
+**Priority:** Medium
+**Identified:** 2026-05-20
+
+`setup-mcp.sh` targets Ubuntu only. macOS users (Persona 5: Thomas Weber) must follow CLAUDE.md manually. Add Darwin/Homebrew detection: `if [[ "$(uname)" == "Darwin" ]]; then ... brew install python3 ...`.
+
+---
+
+### F-INSTALL-04 — docker-compose.yml at repository root
+**Priority:** Low
+**Identified:** 2026-05-20
+
+Docker compose file is at `system/install/docker/docker-compose.yml`. Docker users expect `docker compose up` at the repository root. Add a root-level `docker-compose.yml` (or symlink) that delegates to the install path.
+
+---
+
+### F-INSTALL-05 — WSL not-installed guidance in Windows installer
+**Priority:** Medium
+**Identified:** 2026-05-20
+
+If WSL is not installed when `install.bat` runs, the error is cryptic. Add a pre-check: `wsl --status` or check for `wsl.exe`, and if absent, print: "WSL not found. Install it: Start → PowerShell as Admin → wsl --install".
+
+---
+
+### F-AGENT-01 — Missing skill.md: dhis2-expert
+**Priority:** Medium
+**Identified:** 2026-05-20
+
+`agents/dhis2-expert/system-prompt.md` exists but `.claude/skills/dhis2-expert/skill.md` is absent. Users cannot invoke the DHIS2 expert via `/dhis2-expert`. Create skill stub.
+
+---
+
+### F-AGENT-02 — Missing skill.md: critic
+**Priority:** Medium
+**Identified:** 2026-05-20
+
+`agents/critic/system-prompt.md` exists but `.claude/skills/critic/skill.md` is absent. Create skill stub.
+
+---
+
+### F-AGENT-03 — Missing skill.md: memory-curator
+**Priority:** Medium
+**Identified:** 2026-05-20
+
+`agents/memory-curator/system-prompt.md` exists but `.claude/skills/memory-curator/skill.md` is absent. Create skill stub.
+
+---
+
+### F-MCP-01 — localAgentModeTrustedFolders points to old PKM path
+**Priority:** Low
+**Identified:** 2026-05-20
+
+`claude_desktop_config.json` `localAgentModeTrustedFolders` still references the old PKM path. Should point to the Research Cortex root folder.
+
+---
+
+### F-TEST-01 — MCP tools with zero test coverage
+**Priority:** Low
+**Identified:** 2026-05-20
+
+These MCP tools have no unit or integration tests: `backup.py`, voice capture tools (P2 persona), `pipeline.py`, `observability.py`, `subset_loader.py`, `tray_launcher.py`. The `write_reflexion()` → reflexion_log → self-improvement proposal chain also has no test.
+

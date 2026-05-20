@@ -60,9 +60,10 @@ CREATE TABLE IF NOT EXISTS meetings (
     summary TEXT, decisions TEXT, action_items TEXT, status TEXT, created_at TEXT
 );
 CREATE TABLE IF NOT EXISTS projects (
-    project_id TEXT PRIMARY KEY, title TEXT, description TEXT,
-    domain TEXT, type TEXT, status TEXT DEFAULT 'active',
-    external_path TEXT, created_at TEXT
+    project_id TEXT PRIMARY KEY, title TEXT, domain TEXT,
+    status TEXT DEFAULT 'active', priority TEXT, next_step TEXT,
+    created_at TEXT, external_path TEXT, github_url TEXT,
+    launch_cmd TEXT, launcher_type TEXT, launcher_path TEXT
 );
 CREATE TABLE IF NOT EXISTS daily_insights (
     id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT UNIQUE,
@@ -133,15 +134,12 @@ def _seed_persona_db(conn: sqlite3.Connection, persona_slug: str) -> None:
        'Cross-sectional survey across 8 countries.',
        'PubMed','article','{today}','{today}');
 
-    INSERT OR IGNORE INTO projects VALUES
-      ('proj-001','Article 1 — HAT Surveillance Senegal',
-       'Retrospective analysis of HAT incidence 2015-2023',
-       'NTD','RStudio','active',
-       'C:/Users/YourName/Documents/research/article1','{today}'),
-      ('proj-002','PhD Thesis — Backbone',
-       'Three-article structure: surveillance, methods, policy',
-       'Research','VS Code','active',
-       'C:/Users/YourName/Documents/phd','{today}');
+    INSERT OR IGNORE INTO projects (project_id, title, domain, status, external_path, created_at, launcher_type)
+    VALUES
+      ('proj-001','Article 1 — HAT Surveillance Senegal','NTD','active',
+       'C:/Users/YourName/Documents/research/article1','{today}','rstudio'),
+      ('proj-002','PhD Thesis — Backbone','Research','active',
+       'C:/Users/YourName/Documents/phd','{today}','vscode');
 
     INSERT OR IGNORE INTO learning_courses VALUES
       (1,'Statistics for Epidemiology','statistics','statistics-epidemiology',

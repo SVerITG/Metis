@@ -43,7 +43,7 @@ working on their research domain, PhD planning, AI development, and personal lea
 | `/methods-coach` | Methods Coach | Epidemiological methods, statistics, sampling, R methodology |
 | `/dhis2-expert` | DHIS2 Expert | DHIS2 server, metadata, tracker programs, dashboards, app development, NTD implementations |
 | `/software-engineer` | Software Engineer | Code review, debugging, Python/R scripts, FastAPI |
-| `/frontend-designer` | Frontend Designer Builder | UI/UX decisions, design system, visualization design, web interfaces |
+| `/frontend-designer-builder` | Frontend Designer Builder | UI/UX decisions, design system, visualization design, web interfaces |
 | `/meeting-memory` | Meeting Memory | Transcribe, structure, and brief meeting notes |
 | `/news-radar` | News Radar | What happened in the world, brief generation |
 | `/builder` | Builder | Build new apps, tools, MCP servers |
@@ -57,7 +57,7 @@ working on their research domain, PhD planning, AI development, and personal lea
 | `/design-auditor` | Design Auditor | Audit existing UIs, reverse-engineer design decisions, prioritized improvements |
 | `/visualization-maker` | Visualization Maker | Diagrams, charts, system maps, ggplot2 figures, Plotly |
 | `/content-harvester` | Content Harvester | Extract and structure content from web, PDFs, DOCX, YouTube, GitHub |
-| `/background` | Background Maker | Build permanent specialist knowledge layers (RAG corpus) from papers, reports, web — scrubbed and indexed |
+| `/background-maker` | Background Maker | Build permanent specialist knowledge layers (RAG corpus) from papers, reports, web — scrubbed and indexed |
 | `/learning-architect` | Learning Architect | Curriculum design, learning paths, spaced repetition, competency maps |
 | `/epidemiologist` | Epidemiologist | Study design review, methodology challenge, Socratic questioning |
 | `/cybersecurity` | Cybersecurity | URL validation, prompt injection defense, threat intel, agent audit |
