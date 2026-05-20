@@ -21,9 +21,7 @@ End If
 ' Run the batch silently (windowStyle=0 = hidden)
 WshShell.Run Chr(34) & batPath & Chr(34), 0, False
 
-' Wait for uvicorn to bind, then open browser
-WScript.Sleep 6000
-WshShell.Run "http://127.0.0.1:8080", 1, False
+' run-dashboard.bat handles the wait and browser open — no duplicate needed here
 
 Set WshShell = Nothing
 Set fso      = Nothing

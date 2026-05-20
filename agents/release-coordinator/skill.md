@@ -197,11 +197,56 @@ After code changes, verify these files are consistent:
 
 | File | What to check |
 |---|---|
-| `metis/system/install/installer/metis-setup.iss` | `[Files]` section lists all new agents and skills |
-| `metis/system/install/docker/Dockerfile` | pip install commands match `requirements.txt` and `pyproject.toml` |
-| `metis/system/install/docker/docker-entrypoint.sh` | Module name in entrypoint matches `main.py` app entry |
-| `metis/system/mcp-server/setup-mcp.sh` | Package list matches `pyproject.toml` `[project.dependencies]` |
-| `metis/CLAUDE.md` agent table | Lists all agent slugs present in `metis/agents/` |
+| `system/install/installer/metis-setup.iss` | `[Files]` section lists all new agents and skills |
+| `system/install/docker/Dockerfile` | pip install commands match `requirements.txt` and `pyproject.toml` |
+| `system/install/docker/docker-entrypoint.sh` | Module name in entrypoint matches `main.py` app entry |
+| `system/mcp-server/setup-mcp.sh` | Package list matches `pyproject.toml` `[project.dependencies]` |
+| `CLAUDE.md` agent table | Lists all agent slugs present in `agents/` — slugs must match dir names exactly |
+| `system/install/windows/run-dashboard.bat` | Port reads from `.metis-port` file (not hardcoded 8080) |
+| `system/install/windows/launch-dashboard-silent.vbs` | No duplicate browser open (bat handles it) |
+| `system/install/README.md` | No `Metis_PH` refs; port is 8080 not 8000; repo URLs point to `SVerITG/Metis` |
+
+### Launcher file parity rule
+
+There are **two parallel launcher chains** that must stay behaviourally consistent:
+
+| Chain | Who uses it |
+|---|---|
+| `system/launch-metis-silent.vbs` → `system/app-py/run.sh` | Existing users (shortcut created by setup-mcp.sh) |
+| `system/install/windows/launch-dashboard-silent.vbs` → `system/install/windows/run-dashboard.bat` → `system/app-py/run.sh` | New installs via MetisSetup.exe |
+
+**When modifying either chain:** check the other and apply equivalent changes. Specifically:
+- `run.sh` writes `system/app-py/.metis-port` — both chains rely on this file for the browser URL
+- Any change to how `run.sh` starts uvicorn must be reflected in both bat and VBS files
+- Any change to the kill-old-instance logic must appear in both chains
+
+### Schema sync rule
+
+Before every release, run:
+```python
+import sqlite3, re
+schema = open('system/installer/schema.sql').read()
+schema_tables = set(re.findall(r'CREATE TABLE IF NOT EXISTS (\w+)', schema))
+conn = sqlite3.connect('system/app/data/metis-DL29GY3.sqlite')  # use current hostname db
+live_tables = set(r[0] for r in conn.execute(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'vec_%'"
+).fetchall())
+missing = live_tables - schema_tables
+if missing:
+    print('MISSING FROM SCHEMA:', missing)
+```
+
+Any table in the live DB but absent from `schema.sql` means fresh installs won't have it. Add the `CREATE TABLE IF NOT EXISTS` statement to `schema.sql` before releasing.
+
+### CLAUDE.md slug integrity rule
+
+Every `/agent-slug` in the CLAUDE.md invocation table must exactly match a directory name under `agents/` AND a directory under `.claude/skills/`. Check both:
+```bash
+for slug in $(grep "^| \`/" CLAUDE.md | sed "s/.*\`\/\([^'\`]*\)\`.*/\1/"); do
+  [ -d "agents/$slug" ] || echo "MISSING agents/$slug"
+  [ -f ".claude/skills/$slug/skill.md" ] || echo "MISSING .claude/skills/$slug/skill.md"
+done
+```
 
 ---
 
