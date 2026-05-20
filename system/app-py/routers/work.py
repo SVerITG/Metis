@@ -231,14 +231,14 @@ def _parse_launchers(p: dict) -> list:
     lt = p.get("launcher_type") or ""
     has_path = bool(p.get("external_path"))
     if lt == "article":
-        return ["explorer", "claude_desktop"] if has_path else ["claude_desktop"]
+        return ["explorer", "claude_chat", "claude_cowork"] if has_path else ["claude_chat", "claude_cowork"]
     if lt == "rstudio":
-        return ["rstudio", "claude_code", "claude_desktop", "explorer"]
+        return ["rstudio", "claude_code", "claude_chat", "claude_cowork", "explorer"]
     if lt == "vscode":
-        return ["vscode", "claude_code", "claude_desktop", "explorer"]
+        return ["vscode", "claude_code", "claude_chat", "claude_cowork", "explorer"]
     if has_path:
-        return ["claude_code", "claude_desktop", "explorer"]
-    return ["claude_code", "claude_desktop"]
+        return ["claude_code", "claude_chat", "claude_cowork", "explorer"]
+    return ["claude_code", "claude_chat", "claude_cowork"]
 
 
 @router.get("/api/partial/work/projects", response_class=HTMLResponse)
@@ -1061,7 +1061,24 @@ async def project_launch(
         elif target == "explorer":
             _run_windows_cmd(["explorer", _windows_to_cmd(win_path)])
 
-        elif target == "claude_desktop":
+        elif target in ("claude_desktop", "claude_chat"):
+            # Open Claude Desktop chat interface.
+            # claude:// protocol handler opens the app; no path param needed for chat.
+            _run_windows_cmd(["start", "", "claude://"])
+
+        elif target == "claude_cowork":
+            # Open Claude Desktop in cowork mode.
+            # Copies project path to clipboard so user can paste it into a new cowork space.
+            if win_path:
+                try:
+                    import subprocess as _sp
+                    _sp.run(
+                        ["powershell.exe", "-NoProfile", "-Command",
+                         f"Set-Clipboard -Value '{win_path}'"],
+                        check=False,
+                    )
+                except Exception:
+                    pass
             _run_windows_cmd(["start", "", "claude://"])
 
         elif target == "claude_code":
