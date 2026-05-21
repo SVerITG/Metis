@@ -88,6 +88,13 @@
   --t-tracking-tight: -0.015em; --t-tracking-hero: -0.025em;
   --t-tracking-label: 0.14em;  --t-tracking-label-lg: 0.18em;
 
+  /* ── Missing variable aliases (undefined in components) ── */
+  --m-line:         var(--m-rule);
+  --m-surface-1:    var(--m-surface);
+  --m-surface-soft: var(--m-surface-2);
+  --m-sans:         var(--m-ui);
+  --m-danger:       var(--m-alert);
+
   /* ── Legacy aliases so existing tab templates still work ── */
   --serif:  var(--m-display);
   --sans:   var(--m-ui);
@@ -355,12 +362,14 @@ pre code { background: transparent; padding: 0; color: inherit; }
 .scroll::-webkit-scrollbar-track { background: transparent; }
 
 /* Page wrapper */
-.page { padding: 40px 56px 64px; max-width: 1280px; margin: 0 auto; }
+.page { padding: 40px 56px 64px; max-width: 1600px; margin: 0 auto; }
+@media (min-width: 1920px) { .page { max-width: 1920px; padding: 40px 80px 64px; } }
+@media (min-width: 2560px) { .page { max-width: 2400px; padding: 40px 100px 64px; } }
 
 /* ================================================================
    PAGE ELEMENTS
    ================================================================ */
-.page-head { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 18px; border-bottom: 1px solid var(--m-rule-strong); margin-bottom: 32px; }
+/* .page-head base rule consolidated below (see "PageHead — Archive surface heading") */
 .page-head .eyebrow { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--m-muted); margin-bottom: 4px; }
 .page-head h1 { font-family: var(--m-display); font-size: 34px; font-weight: 500; letter-spacing: -0.025em; color: var(--m-ink); margin: 0; }
 .page-head h1 em { font-style: italic; color: var(--m-accent-soft); font-weight: 400; }
@@ -466,6 +475,9 @@ pre code { background: transparent; padding: 0; color: inherit; }
 .feed-row:last-child { border-bottom: none; }
 .feed-row:hover { background: var(--m-surface-2); }
 .feed-row--out { opacity: 0; transform: translateX(6px); pointer-events: none; }
+/* Compact feed rows (used in Today overview panels) use block layout, not grid */
+.feed-row--compact { display: block; padding: 8px 0 8px 10px; }
+.feed-row--compact .feed-title { font-size: 13px; font-weight: 500; line-height: 1.4; grid-area: unset; }
 .feed-meta { grid-area: meta; display: flex; align-items: center; gap: 8px; font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.16em; color: var(--m-muted); margin-bottom: 6px; }
 .feed-cat { color: var(--m-accent); text-transform: uppercase; }
 .feed-dot { color: var(--m-muted-soft); }
@@ -857,7 +869,11 @@ textarea.form-control { resize: vertical; }
 /* ================================================================
    RESPONSIVE
    ================================================================ */
+@media (max-width: 1366px) and (min-width: 1101px) {
+  .grid-main { grid-template-columns: 1.35fr 1fr; }
+}
 @media (max-width: 1100px) {
+  .grid-main { grid-template-columns: 1fr 1fr; }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
   .k-layout { grid-template-columns: 200px 1fr; gap: 20px; }
   .thinking-layout { grid-template-columns: 200px 1fr 220px; gap: 20px; }
@@ -867,6 +883,7 @@ textarea.form-control { resize: vertical; }
   .topbar { padding: 0 16px; }
   .t-search { width: 140px; }
   .theme-label { display: none; }
+  .grid-main { grid-template-columns: 1fr; }
   .k-layout { grid-template-columns: 1fr; }
   .thinking-layout { grid-template-columns: 1fr; }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
@@ -878,6 +895,16 @@ textarea.form-control { resize: vertical; }
   .vbox-strip { grid-template-columns: repeat(2,1fr); }
   .k-layout { grid-template-columns: 1fr; }
   .thinking-layout { grid-template-columns: 1fr; }
+}
+
+/* today-quad: default stacked layout (2 × .grid-main rows, each 2-col) */
+.today-quad { display: block; }
+
+/* Ultra-wide (2560px+): merge both Today grid-main sections into a 4-col row */
+@media (min-width: 2560px) {
+  .today-quad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .today-quad .grid-main { display: contents; }
+  .today-quad .grid-main[style*="margin-bottom"] { margin-bottom: 0; }
 }
 
 /* ================================================================
@@ -893,6 +920,8 @@ textarea.form-control { resize: vertical; }
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--m-rule-strong);
   margin-bottom: 28px;
 }
 .page-eyebrow {

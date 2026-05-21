@@ -15,20 +15,6 @@
 }
 .lib-chip:hover { background: var(--m-surface-3); }
 .lib-chip.active { background: var(--m-accent); color: #fff; border-color: var(--m-accent); }
-.lib-type-btn {
-  padding: 4px 10px;
-  font-family: var(--m-mono);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  border: 1px solid var(--m-rule);
-  border-radius: 2px;
-  cursor: pointer;
-  white-space: nowrap;
-  background: var(--m-surface-2);
-  color: var(--m-muted);
-}
-.lib-type-btn.active { background: var(--m-ink); color: var(--m-surface-1); border-color: var(--m-ink); }
 .lib-field-label {
   font-family: var(--m-mono);
   font-size: 9px;
@@ -40,8 +26,8 @@
 .lib-input {
   width: 100%;
   font-family: var(--m-ui);
-  font-size: 12px;
-  padding: 7px 10px;
+  font-size: 13px;
+  padding: 8px 12px;
   background: var(--m-surface-2);
   border: 1px solid var(--m-rule);
   border-radius: var(--m-radius);
@@ -53,7 +39,7 @@
   font-family: var(--m-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
-  padding: 7px 10px;
+  padding: 8px 10px;
   background: var(--m-surface-2);
   border: 1px solid var(--m-rule);
   border-radius: var(--m-radius);
@@ -65,24 +51,24 @@
 
 <div id="lib-browser-section">
   <div class="sec-label" style="margin-bottom:12px;">
-    <span>Zotero Library</span>
-    <span class="tail">{{ total }} PAPERS INDEXED</span>
+    <span>HAT Literature Library</span>
+    <span class="tail">{{ total }} PAPERS</span>
   </div>
 
   <div class="panel" style="overflow:hidden;">
 
-    <!-- ── Row 1: main search + search-in + sort ── -->
+    <!-- ── Row 1: Search + Sort ── -->
     <div style="padding:14px 20px 10px;border-bottom:1px solid var(--m-rule-soft);
                 display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
 
       <!-- Search bar -->
-      <div style="flex:1;min-width:200px;">
+      <div style="flex:1;min-width:220px;">
         <div class="lib-field-label">Search</div>
         <input
           id="lib-q"
           name="q"
           type="search"
-          placeholder="Search library…"
+          placeholder="Search title, author, abstract…"
           value="{{ q }}"
           autocomplete="off"
           hx-get="/api/partial/knowledge/library-table"
@@ -90,35 +76,22 @@
           hx-target="#lib-table-area"
           hx-swap="outerHTML"
           hx-include="#lib-hidden-fields"
-          class="lib-input" style="font-size:13px;padding:8px 12px;">
-      </div>
-
-      <!-- Search in -->
-      <div style="min-width:110px;">
-        <div class="lib-field-label">Search in</div>
-        <select id="lib-search-in" name="search_in" class="lib-select"
-                onchange="_refreshLibTable()">
-          <option value="all"     {% if search_in == 'all'     %}selected{% endif %}>All fields</option>
-          <option value="title"   {% if search_in == 'title'   %}selected{% endif %}>Title</option>
-          <option value="authors" {% if search_in == 'authors' %}selected{% endif %}>Authors</option>
-          <option value="abstract"{% if search_in == 'abstract'%}selected{% endif %}>Abstract</option>
-        </select>
+          class="lib-input">
       </div>
 
       <!-- Sort -->
-      <div style="min-width:120px;">
+      <div style="min-width:160px;">
         <div class="lib-field-label">Sort by</div>
         <select id="lib-sort" name="sort" class="lib-select"
                 onchange="_refreshLibTable()">
-          <option value="newest" {% if active_sort == 'newest' %}selected{% endif %}>Newest first</option>
-          <option value="oldest" {% if active_sort == 'oldest' %}selected{% endif %}>Oldest first</option>
-          <option value="author" {% if active_sort == 'author' %}selected{% endif %}>Author A–Z</option>
-          <option value="title"  {% if active_sort == 'title'  %}selected{% endif %}>Title A–Z</option>
-          <option value="added"  {% if active_sort == 'added'  %}selected{% endif %}>Recently added</option>
+          <option value="newest"  {% if active_sort == 'newest'  %}selected{% endif %}>Newest first</option>
+          <option value="oldest"  {% if active_sort == 'oldest'  %}selected{% endif %}>Oldest first</option>
+          <option value="title"   {% if active_sort == 'title'   %}selected{% endif %}>Title A–Z</option>
+          <option value="author"  {% if active_sort == 'author'  %}selected{% endif %}>Author A–Z</option>
+          <option value="added"   {% if active_sort == 'added'   %}selected{% endif %}>Recently added</option>
         </select>
       </div>
 
-      <!-- Clear filters -->
       {% if active_filter_count %}
       <div style="align-self:flex-end;">
         <button onclick="clearLibFilters()"
@@ -131,114 +104,64 @@
       {% endif %}
     </div>
 
-    <!-- ── Row 2: Author / Year / Journal ── -->
-    <div style="padding:10px 20px;border-bottom:1px solid var(--m-rule-soft);
-                display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
-
-      <!-- Author -->
-      <div style="flex:2;min-width:150px;">
-        <div class="lib-field-label">Author</div>
-        <input id="lib-author" name="author" type="search"
-               placeholder="Last name or initials…"
-               value="{{ author }}"
-               autocomplete="off"
-               hx-get="/api/partial/knowledge/library-table"
-               hx-trigger="keyup changed delay:400ms"
-               hx-target="#lib-table-area"
-               hx-swap="outerHTML"
-               hx-include="#lib-hidden-fields"
-               class="lib-input">
-      </div>
-
-      <!-- Year range -->
-      <div style="min-width:80px;">
-        <div class="lib-field-label">Year from</div>
-        <input id="lib-year-from" name="year_from" type="number"
-               placeholder="1990"
-               value="{{ year_from }}"
-               min="1900" max="2030" step="1"
-               oninput="_refreshLibTable()"
-               class="lib-input" style="width:85px;">
-      </div>
-      <div style="min-width:80px;">
-        <div class="lib-field-label">Year to</div>
-        <input id="lib-year-to" name="year_to" type="number"
-               placeholder="{{ year_to or '' }}"
-               value="{{ year_to }}"
-               min="1900" max="2030" step="1"
-               oninput="_refreshLibTable()"
-               class="lib-input" style="width:85px;">
-      </div>
-
-      <!-- Journal -->
-      <div style="flex:3;min-width:180px;">
-        <div class="lib-field-label">Journal / Source</div>
-        <input id="lib-journal" name="journal_q" type="search"
-               placeholder="e.g. PLOS Neglected…"
-               value="{{ journal_q }}"
-               list="lib-journal-list"
-               autocomplete="off"
-               hx-get="/api/partial/knowledge/library-table"
-               hx-trigger="keyup changed delay:400ms"
-               hx-target="#lib-table-area"
-               hx-swap="outerHTML"
-               hx-include="#lib-hidden-fields"
-               class="lib-input">
-        <datalist id="lib-journal-list">
-          {% for j in top_journals %}
-          <option value="{{ j }}">
-          {% endfor %}
-        </datalist>
-      </div>
-    </div>
-
-    <!-- ── Row 3: Type pills ── -->
-    <div style="padding:8px 20px;border-bottom:1px solid var(--m-rule-soft);
-                display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-right:6px;">TYPE</span>
-      <button class="lib-type-btn{% if not active_type %} active{% endif %}"
-              data-type="" onclick="setLibType('')">All</button>
-      {% for itype in item_types %}
-      <button class="lib-type-btn{% if active_type == itype %} active{% endif %}"
-              data-type="{{ itype }}" onclick="setLibType('{{ itype }}')">
-        {% if itype == 'journalArticle' %}Article
-        {% elif itype == 'book' %}Book
-        {% elif itype == 'bookSection' %}Chapter
-        {% elif itype == 'report' %}Report
-        {% elif itype == 'preprint' %}Preprint
-        {% elif itype == 'webpage' %}Web
-        {% elif itype == 'blogPost' %}Blog
-        {% elif itype == 'document' %}Doc
-        {% else %}{{ itype }}{% endif %}
-      </button>
-      {% endfor %}
-    </div>
-
-    <!-- ── Row 4: Collection chips ── -->
+    <!-- ── Row 2: Item type chips ── -->
+    {% if item_types %}
     <div style="padding:8px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-right:6px;">COLLECTION</span>
-      <button class="lib-chip{% if not active_collection %} active{% endif %}"
-              data-col="" onclick="setLibCollection('')">All</button>
-      {% for col, count in collections %}
-      <button class="lib-chip{% if active_collection == col %} active{% endif %}"
-              data-col="{{ col | e }}" onclick="setLibCollection(this.dataset.col)">
-        {{ col }}&nbsp;<span style="opacity:.55;">({{ count }})</span>
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-right:6px;">TYPE</span>
+      <button class="lib-chip{% if not active_type %} active{% endif %}"
+              data-type="" onclick="setLibType('')">All</button>
+      {% for itype, count in item_types %}
+      <button class="lib-chip{% if active_type == itype %} active{% endif %}"
+              data-type="{{ itype | e }}" onclick="setLibType(this.dataset.type)">
+        {% if itype == 'journalArticle' %}Articles
+        {% elif itype == 'book' %}Books
+        {% elif itype == 'report' %}Reports
+        {% elif itype == 'bookSection' %}Chapters
+        {% elif itype == 'preprint' %}Preprints
+        {% else %}{{ itype }}{% endif %}&nbsp;<span style="opacity:.55;">({{ count }})</span>
       </button>
       {% endfor %}
     </div>
+    {% endif %}
 
-    <!-- Hidden fields carrying all current filter state -->
+    <!-- Hidden fields carrying filter state -->
     <div id="lib-hidden-fields" style="display:none;">
-      <input type="hidden" id="lib-col-hidden"    name="collection"  value="{{ active_collection }}">
-      <input type="hidden" id="lib-type-hidden"   name="item_type"   value="{{ active_type }}">
-      <input type="hidden" id="lib-sort-hidden"   name="sort"        value="{{ active_sort }}">
-      <input type="hidden" id="lib-si-hidden"     name="search_in"   value="{{ search_in }}">
-      <input type="hidden" id="lib-yf-hidden"     name="year_from"   value="{{ year_from }}">
-      <input type="hidden" id="lib-yt-hidden"     name="year_to"     value="{{ year_to }}">
+      <input type="hidden" id="lib-type-hidden" name="item_type" value="{{ active_type }}">
+      <input type="hidden" id="lib-sort-hidden" name="sort"      value="{{ active_sort }}">
     </div>
 
-    <!-- ── Table area (swapped on filter/search) ── -->
+    <!-- ── Table area ── -->
     {% include "partials/knowledge_library_table.html" %}
 
   </div><!-- /.panel -->
 </div><!-- /#lib-browser-section -->
+
+<script>
+function setLibType(val) {
+  document.getElementById('lib-type-hidden').value = val;
+  document.querySelectorAll('.lib-chip[data-type]').forEach(b => {
+    b.classList.toggle('active', b.dataset.type === val);
+  });
+  _refreshLibTable();
+}
+function clearLibFilters() {
+  document.getElementById('lib-q').value = '';
+  document.getElementById('lib-type-hidden').value = '';
+  document.querySelectorAll('.lib-chip[data-type]').forEach(b => {
+    b.classList.toggle('active', b.dataset.type === '');
+  });
+  _refreshLibTable();
+}
+function _refreshLibTable() {
+  var q    = document.getElementById('lib-q').value;
+  var sort = document.getElementById('lib-sort').value;
+  var type = document.getElementById('lib-type-hidden').value;
+  document.getElementById('lib-sort-hidden').value = sort;
+  htmx.ajax('GET',
+    '/api/partial/knowledge/library-table?q=' + encodeURIComponent(q) +
+    '&sort=' + encodeURIComponent(sort) +
+    '&item_type=' + encodeURIComponent(type),
+    {target: '#lib-table-area', swap: 'outerHTML'}
+  );
+}
+</script>

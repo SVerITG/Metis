@@ -110,8 +110,23 @@ def _get_zotero_client():
         )
 
     if group_id:
-        return pyz.Zotero(group_id, "group", api_key)
-    return pyz.Zotero(user_id, "user", api_key)
+        zot = pyz.Zotero(group_id, "group", api_key)
+    else:
+        zot = pyz.Zotero(user_id, "user", api_key)
+
+    # Corporate proxy SSL bypass — ITG Antwerp uses an intercepting proxy with
+    # a self-signed CA. Replace pyzotero's default httpx.Client with one that
+    # has verify=False but keeps the same auth headers.
+    try:
+        import httpx
+        zot.client = httpx.Client(
+            verify=False,
+            headers=zot.default_headers(),
+        )
+    except Exception:
+        pass
+
+    return zot
 
 
 def _item_to_row(item: dict) -> dict:

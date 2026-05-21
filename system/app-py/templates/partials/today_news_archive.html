@@ -14,27 +14,60 @@
     </div>
     {% endif %}
 
-    <!-- Compact feed rows -->
+    <!-- Feed rows with signal badges + summaries -->
     {% if news_briefs %}
       {% for brief in news_briefs %}
       <div class="feed-row feed-row--compact m-edge-left" data-cat="{{ (brief.domain or 'General')|upper }}"
-           style="padding:7px 0 7px 10px;border-bottom:1px solid var(--m-rule-soft);position:relative;">
-        <div style="display:flex;align-items:baseline;gap:8px;">
+           style="padding:8px 0 8px 10px;border-bottom:1px solid var(--m-rule-soft);position:relative;">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;">
+          {% if brief.signal %}
+          <span class="signal-dot signal-dot-{{ brief.signal }}"
+                aria-label="{{ brief.signal|capitalize }} signal"
+                title="{{ brief.signal }} signal"></span>
+          {% endif %}
           {% if brief.domain %}
           <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-accent);white-space:nowrap;flex-shrink:0;">{{ (brief.domain)|upper }}</span>
           {% endif %}
           {% if brief.age_label %}
           <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);white-space:nowrap;flex-shrink:0;">{{ brief.age_label }}</span>
           {% endif %}
-          <a class="feed-title" href="{{ brief.source_url or '#' }}" target="_blank" rel="noopener"
-             style="font-size:13px;line-height:1.4;color:var(--m-ink);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">
-            {{ brief.title or 'Untitled' }}
-          </a>
         </div>
+        <a class="feed-title" href="{{ brief.source_url or '#' }}" target="_blank" rel="noopener"
+           style="font-size:13px;line-height:1.4;color:var(--m-ink);text-decoration:none;display:block;margin-bottom:{% if brief.summary %}3px{% else %}0{% endif %};">
+          {{ brief.title or 'Untitled' }}
+        </a>
+        {% if brief.summary %}
+        <div style="font-size:11.5px;color:var(--m-muted);line-height:1.45;margin-bottom:4px;">
+          {{ brief.summary }}{% if brief.summary|length >= 160 %}…{% endif %}
+        </div>
+        {% endif %}
+        <button onclick="searchLibraryFor({{ brief.title | tojson }})"
+                style="background:none;border:none;padding:0;font-family:var(--m-mono);font-size:9px;
+                       color:var(--m-muted);cursor:pointer;letter-spacing:0.08em;
+                       transition:color 120ms;"
+                onmouseover="this.style.color='var(--m-accent)'"
+                onmouseout="this.style.color='var(--m-muted)'"
+                title="Search your library for related papers">
+          Search library →
+        </button>
       </div>
       {% endfor %}
     {% else %}
-      <div class="empty-row">No signals yet. Run the content scan to populate.</div>
+      <div class="empty-row" style="padding:20px;text-align:center;">
+        <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-bottom:8px;">No signals yet</div>
+        <div style="font-size:12px;color:var(--m-muted);">Run a content scan to populate the news radar.</div>
+      </div>
+    {% endif %}
+
+    {% if total_count and total_count > news_briefs|length %}
+    <div style="padding:8px 16px 10px;border-top:1px solid var(--m-rule-soft);text-align:right;">
+      <a hx-get="/api/tab/news" hx-target="#tab-content" hx-swap="innerHTML" hx-push-url="/news"
+         onclick="setNavActive(document.querySelector('.nav-item[data-tab=\'news\']'),'news')"
+         style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);
+                text-decoration:none;cursor:pointer;border:none;">
+        ALL {{ total_count }} SIGNALS →
+      </a>
+    </div>
     {% endif %}
   </div>
 </div>
@@ -47,5 +80,17 @@ function filterNews(btn, cat) {
   rows.forEach(row => {
     row.style.display = (cat === 'ALL' || row.dataset.cat === cat) ? '' : 'none';
   });
+}
+
+function searchLibraryFor(title) {
+  // Extract the first 4-5 meaningful words as search query
+  const words = (title || '').replace(/[^\w\s]/g, ' ').split(/\s+/).filter(w => w.length > 3);
+  const query = words.slice(0, 4).join(' ');
+  const input = document.getElementById('global-search-input');
+  if (input) {
+    input.value = query;
+    input.dispatchEvent(new Event('keyup', {bubbles: true}));
+    input.focus();
+  }
 }
 </script>

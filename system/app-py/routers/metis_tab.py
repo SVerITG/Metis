@@ -346,19 +346,21 @@ async def metis_memory_stream(
     cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
     type_norm = (type or "all").strip().lower()
 
-    # Episodic memory (discovery/decision/implementation/issue/note)
+    # Memory entries (discovery/decision/implementation/issue/note/idea)
     if type_norm in {"discovery", "decision", "implementation", "issue", "note", "idea"}:
         raw_episodic = db_query(
-            "SELECT id, event_type, content, metadata, created_at "
-            "FROM episodic_memory WHERE created_at >= ? AND event_type = ? "
+            "SELECT entry_id AS id, entry_type AS event_type, "
+            "COALESCE(title, summary, '') AS content, topics AS metadata, created_at "
+            "FROM memory_entries WHERE created_at >= ? AND entry_type = ? "
             "ORDER BY created_at DESC LIMIT ?",
             (cutoff, type_norm, limit),
             default=[],
         ) or []
     else:
         raw_episodic = db_query(
-            "SELECT id, event_type, content, metadata, created_at "
-            "FROM episodic_memory WHERE created_at >= ? ORDER BY created_at DESC LIMIT ?",
+            "SELECT entry_id AS id, entry_type AS event_type, "
+            "COALESCE(title, summary, '') AS content, topics AS metadata, created_at "
+            "FROM memory_entries WHERE created_at >= ? ORDER BY created_at DESC LIMIT ?",
             (cutoff, limit),
             default=[],
         ) or []
@@ -759,20 +761,20 @@ async def metis_agent_directory(request: Request):
 async def metis_memory_overview(request: Request):
     """Stats + filter chips + archive setting for the memory surface."""
     total_memories = db_scalar(
-        "SELECT COUNT(*) FROM episodic_memory", default=0
+        "SELECT COUNT(*) FROM memory_entries", default=0
     ) or 0
     week_cutoff = (datetime.datetime.now() - datetime.timedelta(days=7)).isoformat()
     week_count = db_scalar(
-        "SELECT COUNT(*) FROM episodic_memory WHERE created_at >= ?",
+        "SELECT COUNT(*) FROM memory_entries WHERE created_at >= ?",
         (week_cutoff,),
         default=0,
     ) or 0
     oldest = db_scalar(
-        "SELECT MIN(created_at) FROM episodic_memory", default=""
+        "SELECT MIN(created_at) FROM memory_entries", default=""
     ) or ""
 
     by_type_rows = db_query(
-        "SELECT event_type, COUNT(*) AS n FROM episodic_memory GROUP BY event_type",
+        "SELECT entry_type AS event_type, COUNT(*) AS n FROM memory_entries GROUP BY entry_type",
         default=[],
     ) or []
     by_type = {(r.get("event_type") or "note"): int(r.get("n") or 0) for r in by_type_rows}
