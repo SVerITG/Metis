@@ -1040,7 +1040,7 @@ def _get_or_generate_brief(force: bool = False) -> str | None:
     if not ctx.get("context"):
         return None
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    api_key = _get_api_key()
     if not api_key:
         return None
 
@@ -1428,21 +1428,24 @@ async def today_news_archive(request: Request):
             "SELECT rowid as brief_id, title, domain, summary, signal_strength, source_url, created_at "
             "FROM news_briefs ORDER BY created_at DESC LIMIT 120"
         ) or []
+        total_count = len(pool)
         seen: dict[str, int] = {}
         for r in pool:
             domain = r.get("domain") or "General"
             if seen.get(domain, 0) >= 2:
                 continue
             seen[domain] = seen.get(domain, 0) + 1
+            sig = (r.get("signal_strength") or "").lower()
             news_briefs.append({
                 "brief_id": r.get("brief_id"),
                 "title": r.get("title") or "Untitled",
                 "domain": domain,
-                "summary": (r.get("summary") or "")[:200],
+                "summary": (r.get("summary") or "")[:160],
                 "source_url": r.get("source_url"),
                 "age_label": _age_label(r["created_at"]) if r.get("created_at") else "",
+                "signal": sig if sig in ("high", "medium", "low") else "",
             })
-            if len(news_briefs) >= 18:
+            if len(news_briefs) >= 10:
                 break
     except Exception:
         pass
@@ -1453,6 +1456,7 @@ async def today_news_archive(request: Request):
         {
             "news_briefs": news_briefs,
             "categories": categories,
+            "total_count": total_count if "total_count" in locals() else len(news_briefs),
         },
     )
 
@@ -1491,9 +1495,35 @@ async def today_resume(request: Request):
         )
     except Exception:
         pass
-    projects = [{"title": r.get("title") or "Project",
-                 "next_step": (r.get("next_step") or "")[:180],
-                 "project_id": r.get("project_id") or ""} for r in (project_rows or [])]
+
+    # For each project, fetch the most recently completed task
+    _last_tasks: dict[str, str] = {}
+    try:
+        for row in (project_rows or []):
+            pid = (row.get("project_id") or "")
+            if not pid:
+                continue
+            t = db_query(
+                "SELECT title FROM tasks WHERE project_id=? AND status='done' "
+                "ORDER BY COALESCE(updated_at, created_at) DESC LIMIT 1",
+                (pid,),
+            )
+            if t and t[0].get("title"):
+                _last_tasks[pid] = t[0]["title"]
+    except Exception:
+        pass
+
+    projects = []
+    for r in (project_rows or []):
+        pid = r.get("project_id") or ""
+        last_act = r.get("last_activity") or ""
+        projects.append({
+            "title": r.get("title") or "Project",
+            "next_step": (r.get("next_step") or "")[:180],
+            "project_id": pid,
+            "last_task": _last_tasks.get(pid, ""),
+            "last_activity_label": _age_label(last_act) if last_act else "",
+        })
 
     return templates.TemplateResponse(
         request,
@@ -1549,24 +1579,39 @@ async def today_library_archive(request: Request):
         # Show most recently added papers (Zotero sync or manual adds)
         since_week = (datetime.datetime.now() - datetime.timedelta(days=30)).isoformat()
         rows = db_query(
-            "SELECT id, title, authors, year, source, tags, abstract, created_at "
+            "SELECT id, title, authors, year, source, tags, abstract, doi, url, created_at "
             "FROM literature_metadata WHERE created_at >= ? ORDER BY created_at DESC LIMIT 6",
             (since_week,),
         ) or []
         if not rows:
             rows = db_query(
-                "SELECT id, title, authors, year, source, tags, abstract, created_at "
+                "SELECT id, title, authors, year, source, tags, abstract, doi, url, created_at "
                 "FROM literature_metadata ORDER BY created_at DESC LIMIT 6"
             ) or []
         for r in rows:
+            raw_authors = r.get("authors") or ""
+            author_parts = [a.strip() for a in raw_authors.split(",") if a.strip()]
+            if len(author_parts) > 2:
+                authors_display = f"{author_parts[0]} et al."
+            elif author_parts:
+                authors_display = ", ".join(author_parts[:2])
+            else:
+                authors_display = ""
+            doi = r.get("doi") or ""
+            url = r.get("url") or ""
+            item_url = f"https://doi.org/{doi}" if doi else url
             items.append({
                 "title": r.get("title") or "Untitled",
-                "authors": r.get("authors") or "",
+                "authors": authors_display,
+                "year": r.get("year") or "",
                 "domain": r.get("source") or "",
                 "card_type": r.get("source") or "ARTICLE",
-                "abstract": (r.get("abstract") or "")[:200],
+                "abstract": (r.get("abstract") or "")[:160],
                 "source": r.get("source") or "ARTICLE",
+                "doi": doi,
+                "url": item_url,
                 "created_at": r.get("created_at") or "",
+                "age_label": _age_label(r["created_at"]) if r.get("created_at") else "",
             })
     except Exception:
         pass

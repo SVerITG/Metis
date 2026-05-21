@@ -1,0 +1,92 @@
+<div style="padding:8px 0;">
+
+  {% macro section_header(label, count) %}
+  <div style="padding:8px 20px 4px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;
+              color:var(--m-muted);text-transform:uppercase;border-bottom:1px solid var(--m-rule-soft);">
+    {{ label }} <span style="color:var(--m-accent);">{{ count }}</span>
+  </div>
+  {% endmacro %}
+
+  {% if papers %}
+  {{ section_header("Papers", papers|length) }}
+  {% for p in papers %}
+  <a href="/tab/knowledge"
+     onclick="document.getElementById('search-results-drop').style.display='none';"
+     style="display:block;padding:9px 20px;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);
+            transition:background 120ms;">
+    <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;margin-bottom:2px;">
+      {{ p.title or 'Untitled' }}
+    </div>
+    <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
+      {% if p.authors %}{{ (p.authors or '')[:60] }}{% if (p.authors or '')|length > 60 %}…{% endif %}{% endif %}
+      {% if p.year %} · {{ p.year }}{% endif %}
+    </div>
+  </a>
+  {% endfor %}
+  {% endif %}
+
+  {% if projects %}
+  {{ section_header("Projects", projects|length) }}
+  {% for p in projects %}
+  <a href="/tab/work"
+     onclick="document.getElementById('search-results-drop').style.display='none';"
+     style="display:block;padding:9px 20px;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);
+            transition:background 120ms;">
+    <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;margin-bottom:2px;">
+      {{ p.title or 'Untitled' }}
+    </div>
+    {% if p.description %}
+    <div style="font-size:11px;color:var(--m-muted);">{{ (p.description or '')[:80] }}{% if (p.description or '')|length > 80 %}…{% endif %}</div>
+    {% endif %}
+  </a>
+  {% endfor %}
+  {% endif %}
+
+  {% if news %}
+  {{ section_header("News", news|length) }}
+  {% for n in news %}
+  <a href="{{ n.source_url or '#' }}" target="_blank" rel="noopener"
+     onclick="document.getElementById('search-results-drop').style.display='none';"
+     style="display:block;padding:9px 20px;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);
+            transition:background 120ms;">
+    <div style="display:flex;align-items:baseline;gap:8px;">
+      {% if n.domain %}
+      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-accent);letter-spacing:0.1em;flex-shrink:0;">
+        {{ n.domain|upper }}
+      </span>
+      {% endif %}
+      <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;">
+        {{ n.title or 'Untitled' }}
+      </span>
+    </div>
+  </a>
+  {% endfor %}
+  {% endif %}
+
+  {% if tasks %}
+  {{ section_header("Tasks", tasks|length) }}
+  {% for t in tasks %}
+  <a href="/tab/work"
+     onclick="document.getElementById('search-results-drop').style.display='none';"
+     style="display:block;padding:9px 20px;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);
+            transition:background 120ms;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);
+                   background:var(--m-surface-2);border:1px solid var(--m-rule);
+                   border-radius:2px;padding:2px 6px;flex-shrink:0;">
+        {{ (t.status or 'open')|upper }}
+      </span>
+      <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);">{{ t.title }}</span>
+    </div>
+  </a>
+  {% endfor %}
+  {% endif %}
+
+  <div style="padding:8px 20px;font-family:var(--m-mono);font-size:9px;color:var(--m-muted-soft);text-align:right;">
+    Press Esc to close
+  </div>
+</div>
+
+<style>
+#search-results-drop a:hover { background: var(--m-surface-2); }
+</style>

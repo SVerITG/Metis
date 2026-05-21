@@ -104,7 +104,7 @@ async def work_kanban(request: Request):
     return templates.TemplateResponse(
         request,
         "partials/work_kanban.html",
-        {"inbox": inbox, "this_week": this_week, "in_progress": in_progress, "closed": closed},
+        {"inbox": inbox, "this_week": this_week, "in_progress": in_progress, "closed": closed, "today": today},
     )
 
 

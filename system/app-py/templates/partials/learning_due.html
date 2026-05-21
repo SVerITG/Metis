@@ -9,9 +9,18 @@
 <h2 style="font-family:var(--m-display);font-size:24px;font-weight:500;letter-spacing:-0.015em;margin:10px 0 8px;color:var(--m-ink);">
   Nothing due today.
 </h2>
-<p class="ed" style="font-size:14px;color:var(--m-muted);margin:0;">
-  {% if streak %}<em>{{ streak }}-day review streak — keep it going.</em>{% else %}<em>The forgetting curve is on your side this morning.</em>{% endif %}
+<p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 12px;">
+  {% if streak %}<em>{{ streak }}-day review streak — check back tomorrow.</em>{% else %}<em>No cards due. Add a course to start building your review deck.</em>{% endif %}
 </p>
+<a href="/tab/learning"
+   style="display:inline-flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:10px;
+          letter-spacing:0.12em;color:var(--m-accent);text-decoration:none;
+          border:1px solid var(--m-accent);border-radius:2px;padding:4px 12px;
+          transition:background 140ms ease;"
+   onmouseover="this.style.background='var(--m-accent-wash)'"
+   onmouseout="this.style.background='transparent'">
+  GO TO COURSES →
+</a>
 {% else %}
 <div class="kicker kicker--accent">
   <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">

@@ -17,11 +17,11 @@
     {% else %}
       <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">no scan yet today</span>
     {% endif %}
-    <span style="margin-left:auto;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);transition:transform 200ms;transform:{% if brief %}rotate(90deg){% else %}none{% endif %};" id="brief-chevron">▸</span>
+    <span style="margin-left:auto;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);transition:transform 200ms;transform:{% if brief or fallback_headlines %}rotate(90deg){% else %}none{% endif %};" id="brief-chevron">▸</span>
   </div>
 
-  <!-- Expandable body — auto-open when AI brief is ready -->
-  <div id="morning-brief-body" style="display:{% if brief %}block{% else %}none{% endif %};">
+  <!-- Expandable body — auto-open when AI brief is ready or fallback headlines exist -->
+  <div id="morning-brief-body" style="display:{% if brief or fallback_headlines %}block{% else %}none{% endif %};">
 
     <div style="padding:24px 28px 20px;">
 

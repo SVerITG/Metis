@@ -156,39 +156,49 @@ else
 fi
 
 # ── Auto-register with Claude Code ──────────────────────────────────────────
+# Claude Code stores MCP servers in ~/.claude.json (per-project) via `claude mcp add`.
+# ~/.claude/settings.json is used only for permissions (tool auto-approval).
 CC_SETTINGS="$HOME/.claude/settings.json"
 mkdir -p "$HOME/.claude"
 
-if [ -f "$CC_SETTINGS" ]; then
-  python3 - <<PYEOF
-import json, sys
+# Register the server via the CLI (writes to ~/.claude.json for this project)
+if command -v claude >/dev/null 2>&1; then
+  # Remove old registration first to avoid duplicates, then re-add
+  claude mcp remove metis-rc 2>/dev/null || true
+  if claude mcp add metis-rc "$RUN_SCRIPT" 2>/dev/null; then
+    echo "  Claude Code: registered metis-rc via claude mcp add"
+  else
+    echo "  Claude Code: mcp add failed — you may need to run: claude mcp add metis-rc $RUN_SCRIPT"
+  fi
+else
+  echo "  Claude Code CLI not found — skipping auto-registration"
+  echo "  Once installed, run: claude mcp add metis-rc $RUN_SCRIPT"
+fi
+
+# Write permissions to settings.json so MCP tools are auto-approved
+python3 - <<PYEOF
+import json, os
 
 path = "$CC_SETTINGS"
-with open(path) as f:
-    s = json.load(f)
+os.makedirs(os.path.dirname(path), exist_ok=True)
 
-s.setdefault("mcpServers", {})["metis-rc"] = {"command": "$RUN_SCRIPT"}
+s = {}
+if os.path.exists(path):
+    with open(path) as f:
+        s = json.load(f)
+
+# Remove legacy mcpServers key (now handled by claude mcp add)
+s.pop("mcpServers", None)
+
+# Ensure mcp__metis-rc__* tools are auto-approved
 s.setdefault("permissions", {}).setdefault("allow", [])
 if "mcp__metis-rc__*" not in s["permissions"]["allow"]:
     s["permissions"]["allow"].append("mcp__metis-rc__*")
 
 with open(path, "w") as f:
     json.dump(s, f, indent=2)
-print("  Claude Code: updated ~/.claude/settings.json")
+print("  Claude Code: permissions updated in ~/.claude/settings.json")
 PYEOF
-else
-  python3 - <<PYEOF
-import json
-path = "$CC_SETTINGS"
-s = {
-  "mcpServers": {"metis-rc": {"command": "$RUN_SCRIPT"}},
-  "permissions": {"allow": ["mcp__metis-rc__*"]}
-}
-with open(path, "w") as f:
-    json.dump(s, f, indent=2)
-print("  Claude Code: created ~/.claude/settings.json")
-PYEOF
-fi
 
 # ── Auto-register with Claude Desktop (Windows) ──────────────────────────────
 WIN_USER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r\n')
@@ -228,17 +238,25 @@ fi
 
 # ── Create Windows desktop shortcut ─────────────────────────────────────────
 BAT_PATH=$(wslpath -w "$METIS_RC_ROOT/system/launch-metis.bat" 2>/dev/null || true)
+ICO_PATH=$(wslpath -w "$METIS_RC_ROOT/system/install/windows/metis-brain.ico" 2>/dev/null || true)
+WORK_PATH=$(wslpath -w "$METIS_RC_ROOT/system" 2>/dev/null || true)
 if [ -n "$BAT_PATH" ]; then
   powershell.exe -Command "
 \$ws = New-Object -ComObject WScript.Shell
-foreach (\$dest in @(
-  [System.Environment]::GetFolderPath('Desktop') + '\Metis.lnk',
-  [System.Environment]::GetFolderPath('Programs') + '\Metis.lnk'
-)) {
+\$desktopRoot = [System.Environment]::GetFolderPath('Desktop')
+# OneDrive may redirect Desktop — find actual .lnk location
+\$desktopOneDrive = [System.Environment]::GetFolderPath('UserProfile') + '\OneDrive - ITG\Desktop'
+\$dests = @()
+if (Test-Path \$desktopOneDrive) { \$dests += \$desktopOneDrive + '\Metis.lnk' }
+\$dests += \$desktopRoot + '\Metis.lnk'
+\$dests += [System.Environment]::GetFolderPath('Programs') + '\Metis.lnk'
+foreach (\$dest in \$dests) {
   \$sc = \$ws.CreateShortcut(\$dest)
   \$sc.TargetPath = '$BAT_PATH'
+  \$sc.WorkingDirectory = '$WORK_PATH'
+  \$sc.IconLocation = '$ICO_PATH,0'
   \$sc.Description = 'Metis Research Cortex Dashboard'
-  \$sc.WindowStyle = 1
+  \$sc.WindowStyle = 7
   \$sc.Save()
 }
 Write-Host '  Shortcuts: Desktop + Start Menu created'
