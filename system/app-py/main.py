@@ -147,6 +147,13 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+# Inject user name into every template so today.html greeting JS can use it
+try:
+    from routers.today import _user_name as _get_metis_user_name
+    templates.env.globals["_metis_user_name"] = _get_metis_user_name
+except Exception:
+    templates.env.globals["_metis_user_name"] = lambda: "Researcher"
+
 # ---------------------------------------------------------------------------
 # Register routers
 # ---------------------------------------------------------------------------

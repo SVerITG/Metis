@@ -24,6 +24,9 @@
   <!-- HTMX — served locally -->
   <script src="/static/htmx.min.js"></script>
 
+  <!-- User identity — available to all page scripts -->
+  <script>window.METIS_USER_NAME = {{ _metis_user_name() | tojson }};</script>
+
   <!-- Theme: restore before first paint to avoid flash -->
   <script>
     (function () {
@@ -82,7 +85,7 @@
 
     <!-- Surfaces nav section -->
     <div class="nav-sec">
-      <div class="nav-label"><span>Surfaces</span><span>X</span></div>
+      <div class="nav-label"><span>Surfaces</span></div>
 
       <!-- 01 Today -->
       <div class="nav-item {% if active_tab == 'today' %}active{% endif %}"
@@ -94,7 +97,7 @@
            hx-push-url="/today"
            onclick="setNavActive(this,'today')"
            role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter'){this.click();}">
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
           <path d="M2 11 h12"/>
           <path d="M4.5 11 A 3.5 3.5 0 0 1 11.5 11"/>
@@ -119,7 +122,7 @@
            hx-push-url="/news"
            onclick="setNavActive(this,'news')"
            role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter'){this.click();}">
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
           <path d="M8 11 a4 4 0 0 0 0-6"/>
           <path d="M8 11 a4 4 0 0 1 0-6"/>
@@ -142,7 +145,7 @@
            hx-push-url="/thinking"
            onclick="setNavActive(this,'thinking')"
            role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter'){this.click();}">
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
           <circle cx="5" cy="5.5" r="2.2"/>
           <circle cx="11" cy="10.5" r="2.2"/>
@@ -163,7 +166,7 @@
            hx-push-url="/planner"
            onclick="setNavActive(this,'planner')"
            role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter'){this.click();}">
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
           <rect x="2.5" y="3.5" width="11" height="10"/>
           <line x1="2.5" y1="6.5" x2="13.5" y2="6.5"/>
@@ -188,7 +191,7 @@
            hx-push-url="/work"
            onclick="setNavActive(this,'work')"
            role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter'){this.click();}">
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
           <rect x="2" y="2.5" width="3.2" height="11"/>
           <rect x="6.4" y="2.5" width="3.2" height="7.5"/>
@@ -209,7 +212,7 @@
            hx-push-url="/meetings"
            onclick="setNavActive(this,'meetings')"
            role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter'){this.click();}">
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
           <circle cx="8" cy="8" r="5.5"/>
           <polyline points="8 4.5 8 8 10.5 9.5"/>
@@ -229,7 +232,7 @@
            hx-push-url="/learning"
            onclick="setNavActive(this,'learning')"
            role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter'){this.click();}">
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
           <path d="M2 5 L8 2.5 L14 5 L8 7.5 Z"/>
           <path d="M4.5 6.5 V10 C 4.5 11, 5 11.5, 6 12 L 8 13 L 10 12 C 11 11.5, 11.5 11, 11.5 10 V 6.5"/>
@@ -250,7 +253,7 @@
            hx-push-url="/teach"
            onclick="setNavActive(this,'teach')"
            role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter'){this.click();}">
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
           <path d="M12.5 2.5 L5 10 L3 13 L6 11 L13.5 3.5 Z"/>
           <line x1="5" y1="10" x2="6" y2="11"/>
@@ -271,7 +274,7 @@
            hx-push-url="/knowledge"
            onclick="setNavActive(this,'knowledge')"
            role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter'){this.click();}">
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
           <rect x="2.5" y="2.5" width="3" height="11"/>
           <rect x="6" y="3.5" width="3" height="10"/>
@@ -299,7 +302,7 @@
            hx-push-url="/metis"
            onclick="setNavActive(this,'metis')"
            role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter'){this.click();}">
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
           <path d="M10 12 C 8 12.5, 6 11.5, 5.5 9.5 C 5 9.5, 4 9, 4 8 C 4 7, 4.5 6.5, 5.5 6.5 C 5.5 5, 7 4, 8.5 4.2 C 9 3.5, 10 3.5, 10.5 4 C 11.5 4, 12.5 5, 12.5 6.2 C 13 7, 13 8.5, 12.2 9.5 C 12.5 11, 11.5 12, 10 12 Z"/>
           <path d="M8.5 4.5 C 8.8 6, 8.5 8, 9 10 C 9.3 11, 9.7 11.5, 10 12" opacity="0.7"/>
@@ -333,32 +336,69 @@
 
       <div style="display:flex;align-items:center;gap:16px;margin-left:auto;">
 
-        <!-- Search (visual, will be wired later) -->
-        <div class="t-search" style="cursor:default;">
-          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Global search -->
+        <div class="t-search" style="position:relative;" id="global-search-wrap">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
             <circle cx="7" cy="7" r="4.5"/>
             <line x1="10.2" y1="10.2" x2="13" y2="13"/>
           </svg>
-          <span>Find across the archive…</span>
+          <input id="global-search-input"
+                 type="search"
+                 placeholder="Find across the archive…"
+                 autocomplete="off"
+                 style="background:transparent;border:none;outline:none;font-family:var(--m-mono);font-size:12px;color:var(--m-ink);width:100%;min-width:0;"
+                 hx-get="/api/search"
+                 hx-trigger="keyup changed delay:350ms, focus[this.value.length>1]"
+                 hx-target="#search-results-drop"
+                 hx-swap="innerHTML"
+                 name="q"
+                 onkeydown="if(event.key==='Escape'){this.value='';document.getElementById('search-results-drop').innerHTML='';this.blur();}"
+          />
         </div>
+        <!-- Search results dropdown — anchored to the search wrapper, not the viewport -->
+        <div id="search-results-drop"
+             style="display:none;position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);
+                    width:min(680px,90vw);max-height:70vh;overflow-y:auto;
+                    background:var(--m-surface);border:1px solid var(--m-rule);border-radius:4px;
+                    box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:9999;">
+        </div>
+        <script>
+        (function(){
+          // Show/hide dropdown based on content
+          const obs = new MutationObserver(() => {
+            const drop = document.getElementById('search-results-drop');
+            if (drop) drop.style.display = drop.innerHTML.trim() ? 'block' : 'none';
+          });
+          document.addEventListener('DOMContentLoaded', () => {
+            const drop = document.getElementById('search-results-drop');
+            if (drop) obs.observe(drop, {childList:true, subtree:true});
+            // Close on outside click
+            document.addEventListener('click', e => {
+              if (!document.getElementById('global-search-wrap')?.contains(e.target) &&
+                  !drop?.contains(e.target)) {
+                if (drop) drop.style.display = 'none';
+              }
+            });
+          });
+        })();
+        </script>
 
-        <!-- MCP status pill -->
-        <div id="mcp-status-pill"
-             style="display:flex;align-items:center;gap:5px;font-family:var(--m-mono);font-size:9px;
-                    letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);">
-          <span id="mcp-dot" style="width:6px;height:6px;border-radius:50%;background:var(--m-rule);flex-shrink:0;"></span>
+        <!-- MCP toggle button -->
+        <button id="mcp-toggle-btn"
+                onclick="mcpToggle()"
+                aria-label="Metis MCP tools — click to reconnect if offline"
+                title="Metis MCP tools — click to reconnect if offline"
+                style="display:inline-flex;align-items:center;gap:6px;
+                       background:none;border:1px solid var(--m-rule);border-radius:2px;
+                       padding:4px 10px;font-family:var(--m-mono);font-size:9px;
+                       letter-spacing:0.14em;text-transform:uppercase;
+                       color:var(--m-muted);cursor:pointer;
+                       transition:border-color .15s,color .15s;">
+          <span id="mcp-dot" style="width:6px;height:6px;border-radius:50%;background:var(--m-rule);flex-shrink:0;transition:background .3s;"></span>
           <span id="mcp-label">MCP</span>
-          <button id="mcp-reconnect-btn"
-                  onclick="mcpReconnect()"
-                  style="display:none;background:none;border:1px solid var(--m-rule);border-radius:2px;
-                         padding:2px 8px;font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;
-                         color:var(--m-muted);cursor:pointer;text-transform:uppercase;
-                         transition:border-color .15s,color .15s;"
-                  onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
-                  onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'">
-            Reconnect
-          </button>
-        </div>
+          <!-- Hidden compat refs -->
+          <button id="mcp-reconnect-btn" style="display:none;" onclick="mcpReconnect()"></button>
+        </button>
 
         <!-- Update button -->
         <button id="update-btn"
@@ -457,6 +497,7 @@
   };
 
   function setNavActive(el, tabId) {
+    if (!el) return;
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     el.classList.add('active');
     const crumb = document.getElementById('crumb-here');
@@ -466,7 +507,26 @@
   function toggleSidebar() {
     const app = document.getElementById('app-shell');
     app.dataset.side = app.dataset.side === 'rail' ? 'expanded' : 'rail';
+    // If user manually expands on a narrow screen, clear the auto-collapse flag
+    if (app.dataset.side === 'expanded') _sidebarAutoCollapsed = false;
   }
+
+  // Auto-collapse sidebar on narrow viewports (≤1024px)
+  var _sidebarAutoCollapsed = false;
+  function _syncSidebarWidth() {
+    var app = document.getElementById('app-shell');
+    if (!app) return;
+    var narrow = window.innerWidth <= 1024;
+    if (narrow && app.dataset.side !== 'rail') {
+      app.dataset.side = 'rail';
+      _sidebarAutoCollapsed = true;
+    } else if (!narrow && _sidebarAutoCollapsed && app.dataset.side === 'rail') {
+      app.dataset.side = 'expanded';
+      _sidebarAutoCollapsed = false;
+    }
+  }
+  document.addEventListener('DOMContentLoaded', _syncSidebarWidth);
+  window.addEventListener('resize', _syncSidebarWidth);
 
   // 6-theme system: 3 light (archive, fieldwork, paper) + 3 dark (observatory, midnight, cavern).
   // Toggle switches between the user's chosen light theme and chosen dark theme.
@@ -524,6 +584,28 @@
       }
     } catch (e) {}
   })();
+
+  // HTMX global error handler — replace failed zones with a non-blocking error notice
+  document.addEventListener('htmx:responseError', function(evt) {
+    var el = evt.detail.elt;
+    if (!el) return;
+    var target = evt.detail.target || el;
+    target.innerHTML =
+      '<div style="padding:16px 20px;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);' +
+      'display:flex;align-items:center;gap:10px;border:1px solid var(--m-rule-soft);border-radius:3px;">' +
+      '<span style="color:var(--m-warn);">⚠</span> Could not load this section. ' +
+      '<button onclick="htmx.trigger(this.closest(\'[hx-get],[hx-post]\') || document.body, \'load\')" ' +
+      'style="background:none;border:1px solid var(--m-rule);border-radius:2px;padding:2px 8px;' +
+      'font-family:var(--m-mono);font-size:9px;color:var(--m-muted);cursor:pointer;">Retry</button></div>';
+  });
+  document.addEventListener('htmx:sendError', function(evt) {
+    var target = evt.detail.target || evt.detail.elt;
+    if (!target) return;
+    target.innerHTML =
+      '<div style="padding:16px 20px;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);' +
+      'display:flex;align-items:center;gap:10px;border:1px solid var(--m-rule-soft);border-radius:3px;">' +
+      '<span style="color:var(--m-warn);">⚠</span> Network error — dashboard may be offline.</div>';
+  });
 </script>
 
 </body>

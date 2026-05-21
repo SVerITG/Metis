@@ -1,42 +1,42 @@
 <div class="ledger" id="today-ledger" style="grid-template-columns:repeat(8,1fr);">
   <a href="#" class="ledger-cell"
-     onclick="setNavActive(document.querySelector('[data-tab=knowledge]'),'knowledge'); htmx.ajax('GET','/api/tab/knowledge',{target:'#tab-content',swap:'outerHTML'}); return false;">
+     onclick="setNavActive(document.querySelector('[data-tab=knowledge]'),'knowledge'); htmx.ajax('GET','/api/tab/knowledge',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
     <div class="ledger-n tnum">{{ stats.article_count or 0 }}</div>
     <div class="ledger-l">ARTICLES</div>
   </a>
   <a href="#" class="ledger-cell"
-     onclick="setNavActive(document.querySelector('[data-tab=knowledge]'),'knowledge'); htmx.ajax('GET','/api/tab/knowledge',{target:'#tab-content',swap:'outerHTML'}); return false;">
+     onclick="setNavActive(document.querySelector('[data-tab=knowledge]'),'knowledge'); htmx.ajax('GET','/api/tab/knowledge',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
     <div class="ledger-n tnum">{{ stats.book_count or 0 }}</div>
     <div class="ledger-l">BOOKS</div>
   </a>
   <a href="#" class="ledger-cell"
-     onclick="setNavActive(document.querySelector('[data-tab=thinking]'),'thinking'); htmx.ajax('GET','/api/tab/thinking',{target:'#tab-content',swap:'outerHTML'}); return false;">
+     onclick="setNavActive(document.querySelector('[data-tab=thinking]'),'thinking'); htmx.ajax('GET','/api/tab/thinking',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
     <div class="ledger-n tnum">{{ stats.idea_count or 0 }}</div>
     <div class="ledger-l">IDEAS</div>
   </a>
   <a href="#" class="ledger-cell"
-     onclick="setNavActive(document.querySelector('[data-tab=thinking]'),'thinking'); htmx.ajax('GET','/api/tab/thinking',{target:'#tab-content',swap:'outerHTML'}); return false;">
+     onclick="setNavActive(document.querySelector('[data-tab=thinking]'),'thinking'); htmx.ajax('GET','/api/tab/thinking',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
     <div class="ledger-n tnum">{{ stats.thread_count or 0 }}</div>
     <div class="ledger-l">THREADS</div>
   </a>
   <a href="#" class="ledger-cell"
-     onclick="setNavActive(document.querySelector('[data-tab=work]'),'work'); htmx.ajax('GET','/api/tab/work',{target:'#tab-content',swap:'outerHTML'}); return false;">
+     onclick="setNavActive(document.querySelector('[data-tab=work]'),'work'); htmx.ajax('GET','/api/tab/work',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
     <div class="ledger-n tnum">{{ stats.project_count or 0 }}</div>
     <div class="ledger-l">PROJECTS</div>
   </a>
   <a href="#" class="ledger-cell"
-     onclick="setNavActive(document.querySelector('[data-tab=metis]'),'metis'); htmx.ajax('GET','/api/tab/metis',{target:'#tab-content',swap:'outerHTML'}); return false;">
+     onclick="setNavActive(document.querySelector('[data-tab=metis]'),'metis'); htmx.ajax('GET','/api/tab/metis',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
     <div class="ledger-n tnum">{{ stats.agent_count or 0 }}</div>
     <div class="ledger-l">AGENTS</div>
   </a>
   <a href="#" class="ledger-cell"
-     onclick="setNavActive(document.querySelector('[data-tab=learning]'),'learning'); htmx.ajax('GET','/api/tab/learning',{target:'#tab-content',swap:'outerHTML'}); return false;">
+     onclick="setNavActive(document.querySelector('[data-tab=learning]'),'learning'); htmx.ajax('GET','/api/tab/learning',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
     <div class="ledger-n tnum">{{ stats.course_count or 0 }}</div>
     <div class="ledger-l">COURSES</div>
   </a>
   <a href="#" class="ledger-cell ledger-cell--token ledger-tier-{{ stats.token_tier or 'muted' }}"
      title="Today's total agent-run tokens. Amber > 500k, red > 1M."
-     onclick="setNavActive(document.querySelector('[data-tab=metis]'),'metis'); htmx.ajax('GET','/api/tab/metis',{target:'#tab-content',swap:'outerHTML'}); return false;">
+     onclick="setNavActive(document.querySelector('[data-tab=metis]'),'metis'); htmx.ajax('GET','/api/tab/metis',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
     <div class="ledger-n tnum">{{ stats.token_label }}</div>
     <div class="ledger-l">TOKENS · TODAY</div>
   </a>

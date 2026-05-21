@@ -4,10 +4,11 @@ routers/knowledge.py — Knowledge tab routes.
 
 import json
 import os
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_query, db_scalar, get_db_path
@@ -35,6 +36,59 @@ async def knowledge_tab_partial(request: Request):
 # ---------------------------------------------------------------------------
 # Stats
 # ---------------------------------------------------------------------------
+
+
+@router.get("/api/search", response_class=HTMLResponse)
+async def global_search(request: Request, q: str = ""):
+    """Global search across papers, projects, news, and tasks."""
+    q = q.strip()
+    if len(q) < 2:
+        return HTMLResponse("")
+    like = f"%{q}%"
+    papers, projects, news, tasks = [], [], [], []
+    try:
+        papers = db_query(
+            "SELECT id, title, authors, year FROM literature_metadata "
+            "WHERE title LIKE ? OR authors LIKE ? ORDER BY created_at DESC LIMIT 7",
+            (like, like),
+        ) or []
+    except Exception:
+        pass
+    try:
+        projects = db_query(
+            "SELECT id, title, description FROM projects "
+            "WHERE title LIKE ? OR description LIKE ? ORDER BY updated_at DESC LIMIT 5",
+            (like, like),
+        ) or []
+    except Exception:
+        pass
+    try:
+        news = db_query(
+            "SELECT rowid as id, title, domain, source_url FROM news_briefs "
+            "WHERE title LIKE ? ORDER BY created_at DESC LIMIT 5",
+            (like,),
+        ) or []
+    except Exception:
+        pass
+    try:
+        tasks = db_query(
+            "SELECT task_id, title, status FROM tasks "
+            "WHERE title LIKE ? ORDER BY created_at DESC LIMIT 5",
+            (like,),
+        ) or []
+    except Exception:
+        pass
+    total = len(papers) + len(projects) + len(news) + len(tasks)
+    if total == 0:
+        return HTMLResponse(
+            f'<div style="padding:20px 24px;font-family:var(--m-mono);font-size:11px;'
+            f'color:var(--m-muted);">No results for <em style="color:var(--m-ink);">{q}</em></div>'
+        )
+    return templates.TemplateResponse(
+        request,
+        "partials/search_results.html",
+        {"q": q, "papers": papers, "projects": projects, "news": news, "tasks": tasks},
+    )
 
 
 @router.get("/api/partial/knowledge/stats", response_class=HTMLResponse)
@@ -376,6 +430,190 @@ _SORT_MAP = {
     "added":   "created_at DESC",
 }
 
+# ---------------------------------------------------------------------------
+# PDF match cache  (literature_metadata.id → library_inventory relative_path)
+# ---------------------------------------------------------------------------
+
+_lit_pdf_cache: dict[int, str] = {}   # lit_id -> relative_path
+_lib_pdf_base: Path | None = None     # base directory for library_inventory paths
+_LIB_STOPWORDS = frozenset(
+    "a an the and or of in to is on for with at by as from its be are that this "
+    "1 2 3 4 5 6 7 8 9 0 study results using".split()
+)
+
+
+def _word_set(text: str) -> frozenset[str]:
+    # Normalize dashes, underscores, and dots as spaces before tokenizing
+    text = re.sub(r"[-_.]", " ", text)
+    words = re.sub(r"[^\w\s]", " ", text.lower()).split()
+    return frozenset(w for w in words if w not in _LIB_STOPWORDS and len(w) > 1 and not w.isdigit())
+
+
+def _get_lib_base() -> Path | None:
+    global _lib_pdf_base
+    if _lib_pdf_base is not None:
+        return _lib_pdf_base
+    # 1. Try env var
+    env_path = os.environ.get("METIS_LIBRARY_PATH", "")
+    if env_path and Path(env_path).is_dir():
+        _lib_pdf_base = Path(env_path)
+        return _lib_pdf_base
+    # 2. Try user-preferences.json
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    if rc_root:
+        prefs_path = Path(rc_root) / "system" / "config" / "user-preferences.json"
+        try:
+            prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+            lib_path = prefs.get("library_path", "")
+            if lib_path and Path(lib_path).is_dir():
+                _lib_pdf_base = Path(lib_path)
+                return _lib_pdf_base
+        except Exception:
+            pass
+    return None
+
+
+def _ensure_pdf_cache() -> None:
+    global _lit_pdf_cache
+    if _lit_pdf_cache:
+        return
+    lib_rows = db_query("SELECT relative_path, basename FROM library_inventory") or []
+    if not lib_rows:
+        return
+    # Build word-set index for library entries
+    lib_index: list[tuple[frozenset, str]] = []
+    for r in lib_rows:
+        name = (r.get("basename") or "").replace(".pdf", "").replace(".PDF", "")
+        if name:
+            lib_index.append((_word_set(name), r["relative_path"]))
+
+    lit_rows = db_query("SELECT id, title FROM literature_metadata") or []
+    for r in lit_rows:
+        lit_id = r.get("id")
+        title = (r.get("title") or "").replace("-", " ").replace("_", " ")
+        if not lit_id or not title:
+            continue
+        lit_words = _word_set(title)
+        if not lit_words:
+            continue
+        best_score = 0.0
+        best_path = ""
+        for lib_words, rel_path in lib_index:
+            if not lib_words:
+                continue
+            intersection = len(lit_words & lib_words)
+            union = len(lit_words | lib_words)
+            score = intersection / union if union else 0.0
+            if score > best_score:
+                best_score = score
+                best_path = rel_path
+        if best_score >= 0.28 and best_path:
+            _lit_pdf_cache[lit_id] = best_path
+
+
+# Run cache build at import time (non-blocking — errors are silently swallowed)
+# Cache matches Zotero paper titles → local PDF filenames via Jaccard similarity.
+try:
+    _ensure_pdf_cache()
+except Exception:
+    pass
+
+
+def _rebuild_pdf_cache() -> int:
+    """Force-rebuild the PDF match cache. Returns number of matches found."""
+    global _lit_pdf_cache
+    _lit_pdf_cache = {}
+    try:
+        _ensure_pdf_cache()
+    except Exception:
+        pass
+    return len(_lit_pdf_cache)
+
+
+# ---------------------------------------------------------------------------
+# Seeded library browser  (library_seeded + library_inventory fallback)
+# Uses real paper titles and direct PDF paths — no fuzzy matching needed.
+# ---------------------------------------------------------------------------
+
+def _fetch_seeded_items(
+    q: str = "",
+    collection: str = "",
+    phd_filter: str = "",
+    sort: str = "title",
+    per_page: int = 500,
+    offset: int = 0,
+) -> tuple[list[dict], int]:
+    """Return items from library_seeded (rich metadata) plus any inventory-only PDFs."""
+    lib_base = _get_lib_base()
+
+    where_parts: list[str] = ["extension = 'pdf'"]
+    params: list = []
+
+    if q and len(q.strip()) >= 2:
+        like = f"%{q.strip()}%"
+        where_parts.append(
+            "(basename LIKE ? OR disease LIKE ? OR surveillance_mode LIKE ? OR relevance_note LIKE ?)"
+        )
+        params.extend([like, like, like, like])
+
+    if collection:
+        where_parts.append("top_folder = ?")
+        params.append(collection)
+
+    if phd_filter:
+        where_parts.append("phd_article_link LIKE ?")
+        params.append(f"%{phd_filter}%")
+
+    where_sql = "WHERE " + " AND ".join(where_parts)
+    order_map = {
+        "title": "basename ASC",
+        "folder": "top_folder ASC, basename ASC",
+        "added": "modified_date DESC",
+        "status": "status ASC, basename ASC",
+    }
+    order = order_map.get(sort, "basename ASC")
+
+    total_seeded = db_scalar(f"SELECT COUNT(*) FROM library_seeded {where_sql}", tuple(params), default=0)
+
+    rows = db_query(
+        f"SELECT relative_path, basename, top_folder, disease, method, surveillance_mode, "
+        f"elimination_phase, phd_article_link, relevance_note, status, modified_date "
+        f"FROM library_seeded {where_sql} ORDER BY {order} "
+        f"LIMIT {per_page} OFFSET {offset}",
+        tuple(params),
+    ) or []
+
+    items: list[dict] = []
+    for r in rows:
+        basename = r.get("basename") or ""
+        title = basename[:-4] if basename.lower().endswith(".pdf") else basename
+        rel_path = r.get("relative_path") or ""
+        tags = [t for t in [
+            r.get("top_folder") or "",
+            r.get("disease") or "",
+            r.get("surveillance_mode") or "",
+            r.get("elimination_phase") or "",
+        ] if t][:4]
+        pdf_exists = lib_base and (lib_base / rel_path).exists() if rel_path else False
+        items.append({
+            "id": rel_path,
+            "title": title,
+            "authors": r.get("phd_article_link") or "",
+            "year": (r.get("modified_date") or "")[:4],
+            "source": r.get("disease") or r.get("surveillance_mode") or "",
+            "collection_tags": tags,
+            "item_type": r.get("status") or "paper",
+            "doi": "",
+            "url": "",
+            "abstract": r.get("relevance_note") or "",
+            "has_abstract": bool((r.get("relevance_note") or "").strip()),
+            "pdf_url": f"/api/library/pdf/seeded/{rel_path}" if pdf_exists else "",
+            "phd_link": r.get("phd_article_link") or "",
+            "method": r.get("method") or "",
+        })
+
+    return items, total_seeded
+
 
 def _fetch_library_items(
     q: str = "",
@@ -466,15 +704,20 @@ def _fetch_library_items(
         p,
     ) or []
 
+    _ensure_pdf_cache()
+    lib_base_available = _get_lib_base() is not None
+
     items: list[dict] = []
     for r in rows:
         col_str = r.get("collection") or ""
         col_tags = [t.strip() for t in col_str.split(",") if t.strip()] if col_str else []
         src = r.get("source") or r.get("journal") or ""
         abstract = r.get("abstract") or ""
+        lit_id = r.get("id")
+        pdf_rel = _lit_pdf_cache.get(lit_id, "") if lib_base_available else ""
         items.append(
             {
-                "id": r.get("id"),
+                "id": lit_id,
                 "title": r.get("title") or "Untitled",
                 "authors": r.get("authors") or "",
                 "year": r.get("year") or "",
@@ -485,6 +728,7 @@ def _fetch_library_items(
                 "url": r.get("url") or "",
                 "abstract": abstract,
                 "has_abstract": bool(abstract.strip()),
+                "pdf_url": f"/api/library/pdf/{lit_id}" if pdf_rel else "",
             }
         )
 
@@ -495,69 +739,35 @@ def _fetch_library_items(
 async def knowledge_library_browser_panel(
     request: Request,
     q: str = "",
-    search_in: str = "all",
-    author: str = "",
-    year_from: str = "",
-    year_to: str = "",
-    journal_q: str = "",
-    collection: str = "",
     item_type: str = "",
     sort: str = "newest",
 ):
-    """Full library browser: collection chips + search + table. Initial load."""
-    coll_rows = db_query(
-        "SELECT collection FROM literature_metadata "
-        "WHERE collection IS NOT NULL AND collection != ''"
-    ) or []
-    tag_counts: dict[str, int] = {}
-    for r in coll_rows:
-        for tag in (r.get("collection") or "").split(","):
-            tag = tag.strip()
-            if tag:
-                tag_counts[tag] = tag_counts.get(tag, 0) + 1
-    collections = sorted(tag_counts.items(), key=lambda x: (-x[1], x[0]))
-
+    """Full library browser using Zotero-synced literature_metadata."""
+    # Item type chips
     type_rows = db_query(
-        "SELECT DISTINCT item_type FROM literature_metadata "
-        "WHERE item_type IS NOT NULL AND item_type != '' ORDER BY item_type"
+        "SELECT item_type, COUNT(*) as cnt FROM literature_metadata "
+        "WHERE library_source='zotero' AND item_type != '' "
+        "GROUP BY item_type ORDER BY cnt DESC"
     ) or []
-    item_types = [r.get("item_type", "") for r in type_rows if r.get("item_type")]
-
-    # Top journals for the journal quick-select
-    journal_rows = db_query(
-        "SELECT journal, COUNT(*) as cnt FROM literature_metadata "
-        "WHERE journal IS NOT NULL AND journal != '' "
-        "GROUP BY journal ORDER BY cnt DESC LIMIT 12"
-    ) or []
-    top_journals = [r.get("journal", "") for r in journal_rows if r.get("journal")]
+    item_types = [(r.get("item_type", ""), r.get("cnt", 0)) for r in type_rows if r.get("item_type")]
 
     items, total = _fetch_library_items(
-        q=q, search_in=search_in, author=author,
-        year_from=year_from, year_to=year_to,
-        journal_q=journal_q, collection=collection,
-        item_type=item_type, sort=sort,
+        q=q, item_type=item_type, sort=sort, per_page=300
     )
-
-    active_filter_count = sum(bool(v) for v in [q, author, year_from, year_to, journal_q, collection, item_type])
+    # Exclude manual/garbage entries from browser display
+    items = [i for i in items if i.get("title") and not i["title"].startswith(("19", "20"))]
+    active_filter_count = sum(bool(v) for v in [q, item_type])
 
     return templates.TemplateResponse(
         request,
         "partials/knowledge_library_browser.html",
         {
-            "collections": collections,
+            "item_types": item_types,
             "items": items,
             "total": total,
             "q": q,
-            "search_in": search_in,
-            "author": author,
-            "year_from": year_from,
-            "year_to": year_to,
-            "journal_q": journal_q,
-            "active_collection": collection,
             "active_type": item_type,
             "active_sort": sort,
-            "item_types": item_types,
-            "top_journals": top_journals,
             "active_filter_count": active_filter_count,
         },
     )
@@ -567,23 +777,13 @@ async def knowledge_library_browser_panel(
 async def knowledge_library_table_partial(
     request: Request,
     q: str = "",
-    search_in: str = "all",
-    author: str = "",
-    year_from: str = "",
-    year_to: str = "",
-    journal_q: str = "",
-    collection: str = "",
     item_type: str = "",
     sort: str = "newest",
 ):
     """Table rows only — swapped in for live search/filter updates."""
-    items, total = _fetch_library_items(
-        q=q, search_in=search_in, author=author,
-        year_from=year_from, year_to=year_to,
-        journal_q=journal_q, collection=collection,
-        item_type=item_type, sort=sort,
-    )
-    active_filter_count = sum(bool(v) for v in [q, author, year_from, year_to, journal_q, collection, item_type])
+    items, total = _fetch_library_items(q=q, item_type=item_type, sort=sort, per_page=300)
+    items = [i for i in items if i.get("title") and not i["title"].startswith(("19", "20"))]
+    active_filter_count = sum(bool(v) for v in [q, item_type])
     return templates.TemplateResponse(
         request,
         "partials/knowledge_library_table.html",
@@ -591,12 +791,46 @@ async def knowledge_library_table_partial(
             "items": items,
             "total": total,
             "q": q,
-            "collection": collection,
+            "collection": "",
             "item_type": item_type,
             "sort": sort,
             "active_filter_count": active_filter_count,
+            "library_mode": "seeded",
         },
     )
+
+
+@router.get("/api/library/pdf/seeded/{rel_path:path}", response_class=FileResponse)
+async def serve_seeded_pdf(rel_path: str):
+    """Serve a PDF from the local library by its relative path (library_seeded)."""
+    from fastapi import HTTPException
+    base = _get_lib_base()
+    if base is None:
+        raise HTTPException(status_code=503, detail="Library path not configured")
+    full_path = (base / rel_path).resolve()
+    # Path traversal guard
+    if not str(full_path).startswith(str(base.resolve())):
+        raise HTTPException(status_code=400, detail="Invalid path")
+    if not full_path.exists():
+        raise HTTPException(status_code=404, detail="PDF file not found on disk")
+    return FileResponse(str(full_path), media_type="application/pdf")
+
+
+@router.get("/api/library/pdf/{item_id}", response_class=FileResponse)
+async def serve_library_pdf(item_id: int):
+    """Serve a PDF from the local library for a given literature_metadata id."""
+    from fastapi import HTTPException
+    _ensure_pdf_cache()
+    rel_path = _lit_pdf_cache.get(item_id, "")
+    if not rel_path:
+        raise HTTPException(status_code=404, detail="No PDF found for this paper")
+    base = _get_lib_base()
+    if base is None:
+        raise HTTPException(status_code=503, detail="Library path not configured")
+    full_path = base / rel_path
+    if not full_path.exists():
+        raise HTTPException(status_code=404, detail="PDF file not found on disk")
+    return FileResponse(str(full_path), media_type="application/pdf")
 
 
 @router.get("/api/partial/knowledge/sources", response_class=HTMLResponse)

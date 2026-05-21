@@ -438,13 +438,14 @@ async function markTaskDone(taskId, btn) {
   try {
     const res = await fetch(`/api/task/${taskId}/done`, { method: 'POST' });
     if (!res.ok) throw new Error();
-    const row = btn.closest('.list-group-item, tr, .task-row');
+    const row = btn.closest('.list-group-item, tr, .task-row, .todo-row, [data-task-id]');
     if (row) {
-      row.style.opacity = '0.5';
+      row.style.opacity = '0.4';
       row.style.textDecoration = 'line-through';
-      setTimeout(() => row.remove(), 600);
+      row.style.pointerEvents = 'none';
+      setTimeout(() => row.remove(), 500);
     }
-    showToast('<i class="bi bi-check2 toast-icon"></i>Task marked done');
+    showToast('Task marked done ✓');
   } catch {
     showToast('Could not update task');
   }
@@ -1692,23 +1693,41 @@ function removeApiKey(name) {
   .catch(function () { showToast('Could not remove key — network error.'); });
 }
 
-// ─── MCP status pill ───────────────────────────────────────────────────────
+// ─── MCP toggle button ─────────────────────────────────────────────────────
+var _mcpOnline = false;
+
 function _mcpSetOnline() {
-  var dot = document.getElementById('mcp-dot');
-  var btn = document.getElementById('mcp-reconnect-btn');
+  _mcpOnline = true;
+  var dot   = document.getElementById('mcp-dot');
   var label = document.getElementById('mcp-label');
-  if (dot) dot.style.background = '#34c759';
-  if (btn) btn.style.display = 'none';
-  if (label) { label.style.color = ''; label.title = 'Metis tools connected'; }
+  var tbtn  = document.getElementById('mcp-toggle-btn');
+  var rbtn  = document.getElementById('mcp-reconnect-btn');
+  if (dot)   { dot.style.background = '#34c759'; }
+  if (label) { label.textContent = 'MCP ON'; label.style.color = ''; }
+  if (tbtn)  { tbtn.style.borderColor = 'var(--m-rule)'; tbtn.title = 'Metis MCP online — click to restart'; }
+  if (rbtn)  { rbtn.style.display = 'none'; }
 }
 
 function _mcpSetOffline() {
-  var dot = document.getElementById('mcp-dot');
-  var btn = document.getElementById('mcp-reconnect-btn');
+  _mcpOnline = false;
+  var dot   = document.getElementById('mcp-dot');
   var label = document.getElementById('mcp-label');
-  if (dot) dot.style.background = '#ff9500';
-  if (btn) btn.style.display = '';
-  if (label) { label.style.color = '#ff9500'; label.title = 'Metis tools offline'; }
+  var tbtn  = document.getElementById('mcp-toggle-btn');
+  var rbtn  = document.getElementById('mcp-reconnect-btn');
+  if (dot)   { dot.style.background = '#ff9500'; }
+  if (label) { label.textContent = 'MCP OFF'; label.style.color = '#ff9500'; }
+  if (tbtn)  { tbtn.style.borderColor = '#ff9500'; tbtn.title = 'Metis MCP offline — click to reconnect'; }
+  if (rbtn)  { rbtn.style.display = 'none'; }
+}
+
+function mcpToggle() {
+  if (_mcpOnline) {
+    // Already online — offer restart
+    if (!confirm('Restart the Metis MCP server?')) return;
+    mcpRestart();
+  } else {
+    mcpReconnect();
+  }
 }
 
 function mcpReconnect() {

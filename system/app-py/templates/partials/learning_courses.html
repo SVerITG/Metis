@@ -26,8 +26,8 @@
   {% else %}
   <div class="todo-meta" style="margin:0;">{{ (c.progress_pct or 0)|int }}% COMPLETE</div>
   {% endif %}
-  <div style="height:3px;background:var(--m-surface-3);border-radius:2px;">
-    <div style="height:100%;width:{{ (c.progress_pct or 0)|int }}%;background:var(--m-accent);border-radius:2px;transition:width 600ms ease;"></div>
+  <div style="height:7px;background:var(--m-surface-3);border-radius:4px;" role="progressbar" aria-valuenow="{{ (c.progress_pct or 0)|int }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ c.title }} progress">
+    <div style="height:100%;width:{{ (c.progress_pct or 0)|int }}%;background:var(--m-accent);border-radius:4px;transition:width 600ms ease;min-width:{% if (c.progress_pct or 0)|int > 0 %}4px{% else %}0{% endif %};"></div>
   </div>
 
   <!-- Last completed lesson -->
