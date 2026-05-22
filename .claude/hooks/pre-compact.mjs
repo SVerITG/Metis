@@ -18,11 +18,10 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import { execSync } from "child_process";
 
-const RC_ROOT = process.env.METIS_RC_ROOT || "";
+const RC_ROOT = process.env.METIS_RC_ROOT || process.cwd();
 const HOOK_PROFILE = (process.env.METIS_HOOK_PROFILE || "standard").toLowerCase();
 
 if (HOOK_PROFILE === "minimal") process.exit(0);
-if (!RC_ROOT) process.exit(0);
 
 let input = {};
 try {
@@ -66,7 +65,7 @@ try {
 
   // Also persist to SQLite session_summaries table if db is reachable
   const dbPath = join(RC_ROOT, "system", "app", "data", "metis.sqlite");
-  if (existsSync(dbPath) && summary !== "(no summary available)") {
+  if (existsSync(dbPath)) {
     try {
       const escapedSummary = summary.replace(/'/g, "''");
       const sql = `

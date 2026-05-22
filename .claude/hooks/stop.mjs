@@ -19,8 +19,8 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 
-const RC_ROOT = process.env.METIS_RC_ROOT || "";
-const DASHBOARD_URL = process.env.METIS_DASHBOARD_URL || "http://127.0.0.1:8000";
+const RC_ROOT = process.env.METIS_RC_ROOT || process.cwd();
+const DASHBOARD_URL = process.env.METIS_DASHBOARD_URL || "http://127.0.0.1:8080";
 const HOOK_PROFILE = (process.env.METIS_HOOK_PROFILE || "standard").toLowerCase();
 
 if (HOOK_PROFILE === "minimal") process.exit(0);
@@ -125,11 +125,71 @@ async function touchPlanningFiles() {
   return updated;
 }
 
+async function consolidateSession() {
+  // Try to read the handoff brief that was just written, so we capture
+  // actual session content rather than just tool-call counts.
+  let briefContent = "";
+  let briefTempFile = "";
+  try {
+    if (RC_ROOT) {
+      const { readdirSync, statSync } = await import("fs");
+      const sessionDir = join(RC_ROOT, "journal", "sessions");
+      const todayPrefix = `handoff-${date}`;
+      const files = readdirSync(sessionDir)
+        .filter(f => f.startsWith(todayPrefix) && f.endsWith(".md"))
+        .map(f => ({ name: f, mtime: statSync(join(sessionDir, f)).mtimeMs }))
+        .sort((a, b) => b.mtime - a.mtime);
+      if (files.length > 0) {
+        briefContent = readFileSync(join(sessionDir, files[0].name), "utf8");
+        // Write to a temp file so the Python fallback can read it without
+        // shell-escaping the content
+        briefTempFile = join(sessionDir, `.brief-tmp-${date}.txt`);
+        writeFileSync(briefTempFile, briefContent);
+      }
+    }
+  } catch {
+    // Cannot read brief — proceed without
+  }
+
+  // ── Try dashboard API first ────────────────────────────────────────────────
+  try {
+    const res = await fetch(`${DASHBOARD_URL}/api/session/consolidate`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ brief_content: briefContent }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.ok) {
+      try { if (briefTempFile && existsSync(briefTempFile)) { const { unlinkSync } = await import("fs"); unlinkSync(briefTempFile); } } catch {}
+      return await res.json().catch(() => ({}));
+    }
+  } catch {
+    // Dashboard not running — fall through to Python fallback
+  }
+
+  // ── Python fallback: write directly to SQLite without the dashboard ────────
+  try {
+    const { spawnSync } = await import("child_process");
+    const metisVenv = process.env.METIS_MCP_VENV
+      || join(process.env.HOME || "/home", ".local", "share", "metis-mcp", ".venv");
+    const python = join(metisVenv, "bin", "python3");
+    const script = join(RC_ROOT, "system", "mcp-server", "src", "metis_mcp", "_consolidate_session.py");
+    const args = briefTempFile ? [script, RC_ROOT, briefTempFile] : [script, RC_ROOT];
+    spawnSync(python, args, { timeout: 12000 });
+  } catch {
+    // Python also unavailable — silent
+  } finally {
+    try { if (briefTempFile && existsSync(briefTempFile)) { const { unlinkSync } = await import("fs"); unlinkSync(briefTempFile); } } catch {}
+  }
+  return null;
+}
+
 // Run async and wait briefly so the hook doesn't outlive the process
 (async () => {
   const [result] = await Promise.all([
     tryDashboardHandoff(),
     touchPlanningFiles(),
+    consolidateSession(),
   ]);
   writeMarker(result);
   process.exit(0);
