@@ -49,6 +49,36 @@ from typing import Generator, List, Optional, Tuple
 
 DATABASES = [
     {
+        "slug": "hat-specialist",
+        "name": "HAT/NTD Specialist Literature",
+        "description": (
+            "Specialist layer: HAT/NTD research corpus — diagnostics, screening & surveillance, "
+            "statistics & modelling, methodology, epidemiology, elimination, WHO Atlas, clinical."
+        ),
+        "layer": 3,
+        "color": "#dc3545",
+        "folders": [
+            "Diagnostics",
+            "Screening & Surveillance",
+            "Statistics & Mathematical Modelling",
+            "Methodology",
+            "Epidemiology",
+            "WHO Atlas",
+            "Elimination",
+            "Integration",
+            "Clinical & Treatment",
+            "History",
+            "Overview",
+            "Burden",
+            "Vector & Vector Control",
+            "Determinants and risks",
+            "Community",
+            "Health Economics",
+            "PNLTHA",
+            "Multi-NTD",
+        ],
+    },
+    {
         "slug": "ph-background",
         "name": "Public Health Background",
         "description": (
@@ -447,9 +477,12 @@ def index_database(
     slug = db_def["slug"]
     name = db_def["name"]
 
+    # Support per-database library_dir override (e.g. HAT corpus at a different path)
+    effective_dir = Path(db_def["library_dir_override"]) if db_def.get("library_dir_override") else library_dir
+
     pdfs: List[Path] = []
     for folder in db_def["folders"]:
-        d = library_dir / folder
+        d = effective_dir / folder
         if d.exists():
             pdfs.extend(sorted(d.rglob("*.pdf")))
 
@@ -466,7 +499,7 @@ def index_database(
     failed: List[str] = []
 
     for i, pdf_path in enumerate(pdfs, 1):
-        source_file = str(pdf_path.relative_to(library_dir))
+        source_file = str(pdf_path.relative_to(effective_dir))
         domain      = pdf_path.parent.name
         title       = _infer_title(pdf_path)
         file_size   = pdf_path.stat().st_size
@@ -733,6 +766,24 @@ def main() -> None:
         print(f"Unknown slug '{args.database}'. Options: "
               + ", ".join(d["slug"] for d in DATABASES), file=sys.stderr)
         sys.exit(1)
+
+    # For hat-specialist: if --library-dir was not explicitly set, read from user-preferences.json
+    for db_def in to_build:
+        if db_def["slug"] == "hat-specialist" and args.library_dir is None:
+            prefs_path = Path(rc_root) / "system" / "config" / "user-preferences.json" if rc_root else None
+            if prefs_path and prefs_path.exists():
+                try:
+                    import json as _json_prefs
+                    prefs = _json_prefs.loads(prefs_path.read_text(encoding="utf-8"))
+                    hat_lib = prefs.get("library_path", "")
+                    if hat_lib and Path(hat_lib).exists():
+                        db_def = dict(db_def)
+                        db_def["library_dir_override"] = hat_lib
+                        to_build[to_build.index(next(d for d in to_build if d["slug"] == "hat-specialist"))] = db_def
+                        if verbose:
+                            print(f"  HAT library path: {hat_lib}")
+                except Exception as e:
+                    print(f"  Warning: could not read user-preferences.json: {e}", file=sys.stderr)
 
     if verbose:
         print(f"\n══════════════════════════════════════════════════")
