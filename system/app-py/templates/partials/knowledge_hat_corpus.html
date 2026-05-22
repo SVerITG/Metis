@@ -1,0 +1,103 @@
+<div id="hat-corpus-section">
+  <div class="sec-label" style="margin-bottom:12px;">
+    <span>HAT Research Corpus</span>
+    <span class="tail">{{ total }} PAPERS · {{ seeded_count }} ANNOTATED · {{ triage_count }} TO TRIAGE</span>
+    <button hx-post="/api/knowledge/build-hat-index"
+            hx-target="#hat-index-status"
+            hx-swap="innerHTML"
+            hx-confirm="This will index all HAT corpus PDFs for semantic search (10–40 min, runs in background). Continue?"
+            style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;
+                   padding:3px 10px;background:transparent;border:1px solid var(--m-rule);border-radius:2px;
+                   color:var(--m-muted);cursor:pointer;margin-left:12px;"
+            onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
+            onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'">
+      INDEX FOR SEMANTIC SEARCH
+    </button>
+    <span id="hat-index-status" style="font-family:var(--m-mono);font-size:10px;margin-left:8px;"></span>
+  </div>
+
+  <div class="panel" style="overflow:hidden;">
+
+    <!-- ── Row 1: Search + Sort ── -->
+    <div style="padding:14px 20px 10px;border-bottom:1px solid var(--m-rule-soft);
+                display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+      <div style="flex:1;min-width:220px;">
+        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Search</div>
+        <input
+          id="hat-q"
+          name="q"
+          type="search"
+          placeholder="Search title, disease, method, note…"
+          value="{{ q }}"
+          autocomplete="off"
+          hx-get="/api/partial/knowledge/hat-corpus-table"
+          hx-trigger="keyup changed delay:350ms"
+          hx-target="#hat-table-area"
+          hx-swap="outerHTML"
+          hx-include="#hat-hidden-fields"
+          style="width:100%;font-family:var(--m-ui);font-size:13px;padding:8px 12px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
+      </div>
+
+      <div style="min-width:160px;">
+        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Sort by</div>
+        <select id="hat-sort" name="sort"
+                style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.08em;padding:8px 10px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;cursor:pointer;"
+                onchange="_refreshHatTable()">
+          <option value="title"  {% if active_sort == 'title'  %}selected{% endif %}>Title A–Z</option>
+          <option value="folder" {% if active_sort == 'folder' %}selected{% endif %}>Folder</option>
+          <option value="added"  {% if active_sort == 'added'  %}selected{% endif %}>Recently added</option>
+          <option value="status" {% if active_sort == 'status' %}selected{% endif %}>Status</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ── Row 2: Collection chips ── -->
+    {% if collections %}
+    <div style="padding:8px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-right:6px;">FOLDER</span>
+      <button style="padding:3px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;border:1px solid var(--m-rule);border-radius:2px;cursor:pointer;white-space:nowrap;background:{% if not active_collection %}var(--m-accent){% else %}var(--m-surface-2){% endif %};color:{% if not active_collection %}#fff{% else %}var(--m-muted){% endif %};"
+              data-coll="" onclick="setHatCollection('')">All</button>
+      {% for coll, count in collections %}
+      <button style="padding:3px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;border:1px solid var(--m-rule);border-radius:2px;cursor:pointer;white-space:nowrap;background:{% if active_collection == coll %}var(--m-accent){% else %}var(--m-surface-2){% endif %};color:{% if active_collection == coll %}#fff{% else %}var(--m-muted){% endif %};"
+              data-coll="{{ coll | e }}" onclick="setHatCollection(this.dataset.coll)">
+        {{ coll }}&nbsp;<span style="opacity:.55;">({{ count }})</span>
+      </button>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Hidden fields carrying filter state -->
+    <div id="hat-hidden-fields" style="display:none;">
+      <input type="hidden" id="hat-coll-hidden" name="collection" value="{{ active_collection }}">
+      <input type="hidden" id="hat-sort-hidden" name="sort" value="{{ active_sort }}">
+    </div>
+
+    <!-- ── Table area ── -->
+    {% include "partials/knowledge_hat_corpus_table.html" %}
+
+  </div><!-- /.panel -->
+</div><!-- /#hat-corpus-section -->
+
+<script>
+function setHatCollection(val) {
+  document.getElementById('hat-coll-hidden').value = val;
+  document.querySelectorAll('[data-coll]').forEach(function(b) {
+    var active = b.dataset.coll === val;
+    b.style.background = active ? 'var(--m-accent)' : 'var(--m-surface-2)';
+    b.style.color = active ? '#fff' : 'var(--m-muted)';
+  });
+  _refreshHatTable();
+}
+function _refreshHatTable() {
+  var q    = document.getElementById('hat-q').value;
+  var sort = document.getElementById('hat-sort').value;
+  var coll = document.getElementById('hat-coll-hidden').value;
+  document.getElementById('hat-sort-hidden').value = sort;
+  htmx.ajax('GET',
+    '/api/partial/knowledge/hat-corpus-table?q=' + encodeURIComponent(q) +
+    '&sort=' + encodeURIComponent(sort) +
+    '&collection=' + encodeURIComponent(coll),
+    {target: '#hat-table-area', swap: 'outerHTML'}
+  );
+}
+</script>

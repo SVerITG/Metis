@@ -24,6 +24,9 @@
              el.style.borderLeft='2px solid var(--m-accent)';
              el.style.background='var(--m-accent-wash)';
              el.style.color='var(--m-ink)';
+             htmx.ajax('GET',
+               '/api/partial/knowledge/cards?domain=' + encodeURIComponent(el.dataset.slipcase),
+               {target: '#knowledge-cards-area', swap: 'outerHTML'});
            })(this)"
            data-slipcase="{{ domain.name }}">
         <span>{{ domain.name | replace('-', ' ') | title }}</span>

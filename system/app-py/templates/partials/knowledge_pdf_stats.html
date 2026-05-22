@@ -1,39 +1,47 @@
 <!-- knowledge_pdf_stats.html — PDF index stats panel -->
-<div class="d-flex align-items-center justify-content-between mb-2">
-  <span class="text-muted small">
-    <strong>{{ total_docs }}</strong> documents &nbsp;·&nbsp; <strong>{{ "{:,}".format(total_chunks) }}</strong> indexed chunks
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+  <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">
+    <span style="color:var(--m-ink);font-weight:600;">{{ total_docs }}</span> DOCUMENTS
+    &nbsp;·&nbsp;
+    <span style="color:var(--m-ink);font-weight:600;">{{ "{:,}".format(total_chunks) }}</span> INDEXED CHUNKS
   </span>
-  <button class="btn btn-outline-primary btn-sm" style="font-size:0.72rem;"
+  <button style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
+                 padding:5px 12px;background:transparent;border:1px solid var(--m-rule);
+                 border-radius:2px;color:var(--m-muted);cursor:pointer;white-space:nowrap;
+                 transition:border-color .15s,color .15s;"
+          onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
+          onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'"
           hx-post="/api/knowledge/build-index"
           hx-target="#pdf-index-status"
           hx-swap="innerHTML"
           hx-confirm="This will index all PDFs in your library using local AI embeddings. It may take 5–20 minutes. Continue?">
-    Rebuild index
+    REBUILD INDEX
   </button>
 </div>
+
 {% if rows %}
-<table class="table table-sm table-hover mb-0" style="font-size:0.78rem;">
+<table style="width:100%;border-collapse:collapse;">
   <thead>
-    <tr>
-      <th class="text-muted fw-normal">Domain</th>
-      <th class="text-muted fw-normal text-end">Docs</th>
-      <th class="text-muted fw-normal text-end">Chunks</th>
+    <tr style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;border-bottom:1px solid var(--m-rule);">
+      <th style="padding:6px 0;text-align:left;font-weight:400;">Domain</th>
+      <th style="padding:6px 10px;text-align:right;font-weight:400;">Docs</th>
+      <th style="padding:6px 0 6px 10px;text-align:right;font-weight:400;">Chunks</th>
     </tr>
   </thead>
   <tbody>
     {% for r in rows %}
-    <tr>
-      <td>{{ r.domain or '(unknown)' }}</td>
-      <td class="text-end">{{ r.docs }}</td>
-      <td class="text-end text-muted">{{ "{:,}".format(r.chunks or 0) }}</td>
+    <tr style="border-bottom:1px solid var(--m-rule-soft);">
+      <td style="padding:7px 0;font-family:var(--m-display);font-size:13px;color:var(--m-ink);">{{ r.domain or '(unknown)' }}</td>
+      <td style="padding:7px 10px;text-align:right;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{{ r.docs }}</td>
+      <td style="padding:7px 0 7px 10px;text-align:right;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{{ "{:,}".format(r.chunks or 0) }}</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 {% else %}
-<p class="text-muted small mb-0">
-  No PDFs indexed yet. Run <code>build_pdf_knowledge_db()</code> in Metis,
-  or click <em>Rebuild index</em> above.
-</p>
+<div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">
+  No PDFs indexed yet. Click <em>Rebuild index</em> above, or ask Metis to run <code>build_pdf_knowledge_db()</code>.
+</div>
 {% endif %}
-<div id="pdf-index-status" class="mt-2"></div>
+
+<div id="pdf-index-status" style="margin-top:10px;font-family:var(--m-mono);font-size:11px;"></div>
