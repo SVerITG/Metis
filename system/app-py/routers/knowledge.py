@@ -399,22 +399,33 @@ async def knowledge_slipcases(request: Request):
 
 
 @router.get("/api/partial/knowledge/cards", response_class=HTMLResponse)
-async def knowledge_cards(request: Request):
-    """3-column index card grid from library_cards."""
-    cards = db_query(
-        "SELECT id, title, domain, summary, tags, created_at "
-        "FROM library_cards ORDER BY created_at DESC LIMIT 12"
-    )
-    total_cards = db_scalar("SELECT COUNT(*) FROM library_cards", default=0)
-    first_domain = None
-    try:
-        row = db_query(
-            "SELECT domain, COUNT(*) as cnt FROM library_cards GROUP BY domain ORDER BY cnt DESC LIMIT 1"
+async def knowledge_cards(request: Request, domain: str = ""):
+    """3-column index card grid from library_cards, optionally filtered by domain."""
+    if domain:
+        cards = db_query(
+            "SELECT id, title, domain, summary, tags, created_at "
+            "FROM library_cards WHERE domain = ? ORDER BY created_at DESC LIMIT 12",
+            (domain,),
         )
-        if row:
-            first_domain = row[0].get("domain")
-    except Exception:
-        pass
+        total_cards = db_scalar(
+            "SELECT COUNT(*) FROM library_cards WHERE domain = ?", (domain,), default=0
+        )
+        first_domain = domain
+    else:
+        cards = db_query(
+            "SELECT id, title, domain, summary, tags, created_at "
+            "FROM library_cards ORDER BY created_at DESC LIMIT 12"
+        )
+        total_cards = db_scalar("SELECT COUNT(*) FROM library_cards", default=0)
+        first_domain = None
+        try:
+            row = db_query(
+                "SELECT domain, COUNT(*) as cnt FROM library_cards GROUP BY domain ORDER BY cnt DESC LIMIT 1"
+            )
+            if row:
+                first_domain = row[0].get("domain")
+        except Exception:
+            pass
     return templates.TemplateResponse(
         request,
         "partials/knowledge_cards.html",
@@ -515,6 +526,75 @@ def _ensure_pdf_cache() -> None:
 # Cache matches Zotero paper titles → local PDF filenames via Jaccard similarity.
 try:
     _ensure_pdf_cache()
+except Exception:
+    pass
+
+# Ensure is_read column exists in literature_metadata (migration)
+try:
+    import sqlite3 as _sq3
+    _db = get_db_path()
+    if _db and Path(_db).exists():
+        with _sq3.connect(str(_db)) as _c:
+            cols = {r[1] for r in _c.execute("PRAGMA table_info(literature_metadata)")}
+            if "is_read" not in cols:
+                _c.execute("ALTER TABLE literature_metadata ADD COLUMN is_read INTEGER DEFAULT 0")
+                _c.commit()
+except Exception:
+    pass
+
+# Create unified library_items_view across all three silos
+try:
+    import sqlite3 as _sq3v
+    _dbv = get_db_path()
+    if _dbv and Path(_dbv).exists():
+        with _sq3v.connect(str(_dbv)) as _cv:
+            _cv.execute("""
+                CREATE VIEW IF NOT EXISTS library_items_view AS
+                SELECT
+                  'card'           AS source_type,
+                  CAST(id AS TEXT) AS item_key,
+                  title,
+                  domain           AS collection,
+                  summary          AS abstract,
+                  NULL             AS authors,
+                  NULL             AS year,
+                  NULL             AS doi,
+                  NULL             AS method,
+                  status,
+                  created_at
+                FROM library_cards
+                UNION ALL
+                SELECT
+                  'seeded'         AS source_type,
+                  relative_path    AS item_key,
+                  REPLACE(REPLACE(basename,'.pdf',''),'.PDF','') AS title,
+                  top_folder       AS collection,
+                  relevance_note   AS abstract,
+                  phd_article_link AS authors,
+                  NULL             AS year,
+                  NULL             AS doi,
+                  method,
+                  status,
+                  NULL             AS created_at
+                FROM library_seeded WHERE extension='pdf'
+                UNION ALL
+                SELECT
+                  'zotero'         AS source_type,
+                  CAST(id AS TEXT) AS item_key,
+                  title,
+                  collection,
+                  abstract,
+                  authors,
+                  year,
+                  doi,
+                  NULL             AS method,
+                  'zotero'         AS status,
+                  created_at
+                FROM literature_metadata
+                WHERE library_source='zotero'
+                  AND title IS NOT NULL AND title!='' AND title!='[No title found]'
+            """)
+            _cv.commit()
 except Exception:
     pass
 
@@ -697,7 +777,7 @@ def _fetch_library_items(
 
     rows = db_query(
         f"SELECT id, title, authors, year, source, journal, collection, "
-        f"item_type, doi, url, abstract "
+        f"item_type, doi, url, abstract, COALESCE(is_read, 0) as is_read "
         f"FROM literature_metadata {where_sql} "
         f"ORDER BY {order} "
         f"LIMIT {per_page} OFFSET {offset}",
@@ -729,10 +809,65 @@ def _fetch_library_items(
                 "abstract": abstract,
                 "has_abstract": bool(abstract.strip()),
                 "pdf_url": f"/api/library/pdf/{lit_id}" if pdf_rel else "",
+                "is_read": bool(r.get("is_read", 0)),
             }
         )
 
     return items, total or 0
+
+
+@router.get("/api/partial/knowledge/hat-corpus", response_class=HTMLResponse)
+async def knowledge_hat_corpus(
+    request: Request,
+    q: str = "",
+    collection: str = "",
+    sort: str = "title",
+):
+    """HAT/NTD research corpus browser — reads from library_seeded."""
+    items, total = _fetch_seeded_items(q=q, collection=collection, sort=sort, per_page=200)
+    # Collection filter chips
+    collection_rows = db_query(
+        "SELECT top_folder, COUNT(*) as cnt FROM library_seeded "
+        "WHERE extension='pdf' GROUP BY top_folder ORDER BY cnt DESC LIMIT 10"
+    ) or []
+    collections = [(r.get("top_folder", ""), r.get("cnt", 0)) for r in collection_rows if r.get("top_folder")]
+    # Status summary
+    seeded_count = db_scalar(
+        "SELECT COUNT(*) FROM library_seeded WHERE status='seeded' AND extension='pdf'", default=0
+    ) or 0
+    triage_count = db_scalar(
+        "SELECT COUNT(*) FROM library_seeded WHERE status='to_triage' AND extension='pdf'", default=0
+    ) or 0
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_hat_corpus.html",
+        {
+            "items": items,
+            "total": total,
+            "q": q,
+            "active_collection": collection,
+            "active_sort": sort,
+            "collections": collections,
+            "seeded_count": seeded_count,
+            "triage_count": triage_count,
+        },
+    )
+
+
+@router.get("/api/partial/knowledge/hat-corpus-table", response_class=HTMLResponse)
+async def knowledge_hat_corpus_table(
+    request: Request,
+    q: str = "",
+    collection: str = "",
+    sort: str = "title",
+):
+    """Table rows only — swapped in for HAT corpus live search/filter."""
+    items, total = _fetch_seeded_items(q=q, collection=collection, sort=sort, per_page=200)
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_hat_corpus_table.html",
+        {"items": items, "total": total, "q": q},
+    )
 
 
 @router.get("/api/partial/knowledge/library-browser", response_class=HTMLResponse)
@@ -779,11 +914,16 @@ async def knowledge_library_table_partial(
     q: str = "",
     item_type: str = "",
     sort: str = "newest",
+    year_from: str = "",
+    year_to: str = "",
 ):
     """Table rows only — swapped in for live search/filter updates."""
-    items, total = _fetch_library_items(q=q, item_type=item_type, sort=sort, per_page=300)
+    items, total = _fetch_library_items(
+        q=q, item_type=item_type, sort=sort, per_page=300,
+        year_from=year_from, year_to=year_to,
+    )
     items = [i for i in items if i.get("title") and not i["title"].startswith(("19", "20"))]
-    active_filter_count = sum(bool(v) for v in [q, item_type])
+    active_filter_count = sum(bool(v) for v in [q, item_type, year_from, year_to])
     return templates.TemplateResponse(
         request,
         "partials/knowledge_library_table.html",
@@ -897,6 +1037,11 @@ async def knowledge_sync_status(request: Request):
             sync_info = row[0]
     except Exception:
         pass
+    duplicate_count = 0
+    try:
+        duplicate_count = db_scalar("SELECT COUNT(*) FROM library_duplicates", default=0) or 0
+    except Exception:
+        pass
     last = (sync_info.get("last_synced") or "")[:16].replace("T", " ")
     return templates.TemplateResponse(
         request,
@@ -906,6 +1051,7 @@ async def knowledge_sync_status(request: Request):
             "manual_count": manual_count,
             "last_synced": last or "Never",
             "version": sync_info.get("last_version") or 0,
+            "duplicate_count": duplicate_count,
         },
     )
 
@@ -1223,3 +1369,326 @@ async def knowledge_memory_search(request: Request, q: str = ""):
         "partials/knowledge_memory_search.html",
         {"results": results, "q": q},
     )
+
+
+# ---------------------------------------------------------------------------
+# Recently added strip
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/knowledge/recently-added", response_class=HTMLResponse)
+async def knowledge_recently_added(request: Request):
+    """Horizontal strip of 6 most recently added library items."""
+    import datetime as _dt
+    items = []
+    try:
+        rows = db_query(
+            "SELECT title, authors, year, created_at FROM literature_metadata "
+            "WHERE title IS NOT NULL AND title != '' AND library_source='zotero' "
+            "ORDER BY created_at DESC LIMIT 6"
+        ) or []
+        now = _dt.datetime.now()
+        for r in rows:
+            created = r.get("created_at") or ""
+            try:
+                dt = _dt.datetime.fromisoformat(created[:19])
+                delta = now - dt
+                if delta.days == 0:
+                    age = "today"
+                elif delta.days == 1:
+                    age = "1d ago"
+                elif delta.days < 7:
+                    age = f"{delta.days}d ago"
+                elif delta.days < 31:
+                    age = f"{delta.days // 7}w ago"
+                else:
+                    age = f"{delta.days // 30}mo ago"
+            except Exception:
+                age = created[:10] if created else "—"
+            title = r.get("title") or "Untitled"
+            short_title = title[:48] + "…" if len(title) > 50 else title
+            items.append({"title": short_title, "age": age, "year": r.get("year") or ""})
+    except Exception:
+        pass
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_recently_added.html",
+        {"items": items},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Unified search  (library_cards + literature_metadata + episodic_memory)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/knowledge/unified-search", response_class=HTMLResponse)
+async def knowledge_unified_search(request: Request, q: str = ""):
+    """Fan-out search across all three library silos + episodic memory."""
+    if not q or len(q.strip()) < 2:
+        return HTMLResponse(
+            '<div style="font-family:var(--m-display);font-style:italic;font-size:13px;'
+            'color:var(--m-muted);padding:12px 0;">Type at least 2 characters to search across your entire library.</div>'
+        )
+    like = f"%{q.strip()}%"
+
+    # 1. Library cards (open-access books)
+    cards = db_query(
+        "SELECT title, domain, summary FROM library_cards "
+        "WHERE title LIKE ? OR summary LIKE ? OR tags LIKE ? "
+        "ORDER BY created_at DESC LIMIT 6",
+        (like, like, like),
+    ) or []
+
+    # 2. Zotero / literature_metadata
+    papers = db_query(
+        "SELECT id, title, authors, year, source, doi, abstract FROM literature_metadata "
+        "WHERE title IS NOT NULL AND title != '' "
+        "AND (title LIKE ? OR authors LIKE ? OR abstract LIKE ? OR tags LIKE ?) "
+        "ORDER BY created_at DESC LIMIT 10",
+        (like, like, like, like),
+    ) or []
+    _ensure_pdf_cache()
+    for p in papers:
+        lit_id = p.get("id")
+        pdf_rel = _lit_pdf_cache.get(lit_id, "") if lit_id else ""
+        p["pdf_url"] = f"/api/library/pdf/{lit_id}" if pdf_rel else ""
+
+    # 3. Seeded HAT corpus
+    seeded = db_query(
+        "SELECT REPLACE(REPLACE(basename,'.pdf',''),'.PDF','') as title, "
+        "top_folder, method, relevance_note FROM library_seeded "
+        "WHERE (basename LIKE ? OR relevance_note LIKE ? OR top_folder LIKE ?) "
+        "AND extension='pdf' "
+        "ORDER BY basename LIMIT 6",
+        (like, like, like),
+    ) or []
+
+    # 4. Episodic memory (keyword fallback)
+    memory = db_query(
+        "SELECT content, event_type, created_at FROM episodic_memory "
+        "WHERE content LIKE ? ORDER BY created_at DESC LIMIT 5",
+        (like,),
+    ) or []
+
+    total = len(cards) + len(papers) + len(seeded) + len(memory)
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_unified_search.html",
+        {"cards": cards, "papers": papers, "seeded": seeded, "memory": memory,
+         "q": q, "total": total},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Coverage gap detector  (Zotero vs. OpenAlex)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/knowledge/coverage-gap", response_class=HTMLResponse)
+async def knowledge_coverage_gap_panel(request: Request):
+    """Coverage gap detector UI panel."""
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_coverage_gap.html",
+        {"results": None, "query": "", "error": None},
+    )
+
+
+@router.post("/api/knowledge/gap-check", response_class=HTMLResponse)
+async def knowledge_gap_check(request: Request):
+    """Compare OpenAlex search results against local Zotero collection.
+
+    Returns papers found on OpenAlex that are NOT already in literature_metadata.
+    """
+    import json as _json
+    import urllib.parse
+    import urllib.request
+
+    form = await request.form()
+    query = (form.get("query") or "").strip()
+    max_results = int(form.get("max_results") or 20)
+
+    if not query:
+        return templates.TemplateResponse(
+            request,
+            "partials/knowledge_coverage_gap.html",
+            {"results": None, "query": query, "error": "Please enter a search query."},
+        )
+
+    # Fetch from OpenAlex
+    try:
+        params = urllib.parse.urlencode({
+            "search": query,
+            "per-page": max_results,
+            "sort": "cited_by_count:desc",
+            "select": "id,title,doi,publication_date,primary_location,authorships,"
+                      "cited_by_count,abstract_inverted_index",
+            "mailto": "metis@research-cortex.local",
+        })
+        url = f"https://api.openalex.org/works?{params}"
+        req = urllib.request.Request(url, headers={"User-Agent": "MetisRC/1.0"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = _json.loads(resp.read())
+        oa_works = data.get("results", [])
+    except Exception as e:
+        return templates.TemplateResponse(
+            request,
+            "partials/knowledge_coverage_gap.html",
+            {"results": None, "query": query, "error": f"OpenAlex error: {e}"},
+        )
+
+    # Load existing DOIs + title word-sets from literature_metadata
+    existing_dois: set[str] = set()
+    existing_title_words: list[frozenset] = []
+    try:
+        rows = db_query("SELECT doi, title FROM literature_metadata WHERE doi != '' OR title != ''") or []
+        for r in rows:
+            doi = (r.get("doi") or "").strip().lower().replace("https://doi.org/", "")
+            if doi:
+                existing_dois.add(doi)
+            t = r.get("title") or ""
+            if t:
+                existing_title_words.append(_word_set(t))
+    except Exception:
+        pass
+
+    # Also check library_seeded (HAT corpus)
+    try:
+        seeded_rows = db_query("SELECT basename FROM library_seeded WHERE extension='pdf'") or []
+        for r in seeded_rows:
+            name = (r.get("basename") or "").replace(".pdf", "").replace(".PDF", "")
+            if name:
+                existing_title_words.append(_word_set(name))
+    except Exception:
+        pass
+
+    def _reconstruct_abstract(inv: dict | None) -> str:
+        if not inv:
+            return ""
+        positions: list[tuple[int, str]] = []
+        for word, pos_list in (inv or {}).items():
+            for p in pos_list:
+                positions.append((p, word))
+        positions.sort(key=lambda x: x[0])
+        return " ".join(w for _, w in positions[:100])
+
+    missing = []
+    for work in oa_works:
+        title = (work.get("title") or "").strip()
+        if not title:
+            continue
+        doi_raw = (work.get("doi") or "").replace("https://doi.org/", "").lower().strip()
+
+        # Check by DOI first (exact)
+        if doi_raw and doi_raw in existing_dois:
+            continue
+
+        # Check by title similarity (Jaccard)
+        work_words = _word_set(title)
+        already_have = False
+        for existing in existing_title_words:
+            if not existing or not work_words:
+                continue
+            overlap = len(work_words & existing) / len(work_words | existing)
+            if overlap >= 0.4:
+                already_have = True
+                break
+        if already_have:
+            continue
+
+        # Get journal
+        journal = ""
+        try:
+            pl = work.get("primary_location") or {}
+            src = pl.get("source") or {}
+            journal = (src.get("display_name") or "")[:60]
+        except Exception:
+            pass
+
+        # Authors (first 3)
+        author_names = []
+        for a in (work.get("authorships") or [])[:3]:
+            name = (a.get("author") or {}).get("display_name", "")
+            if name:
+                author_names.append(name.split()[-1])  # last name only
+        authors_str = "; ".join(author_names)
+
+        abstract = _reconstruct_abstract(work.get("abstract_inverted_index"))
+
+        missing.append({
+            "title": title,
+            "authors": authors_str,
+            "year": (work.get("publication_date") or "")[:4],
+            "journal": journal,
+            "doi": doi_raw,
+            "doi_url": f"https://doi.org/{doi_raw}" if doi_raw else "",
+            "citations": work.get("cited_by_count") or 0,
+            "abstract": abstract[:300] if abstract else "",
+        })
+
+    # Sort by citation count
+    missing.sort(key=lambda x: x["citations"], reverse=True)
+
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_coverage_gap.html",
+        {"results": missing, "query": query,
+         "error": None, "checked": len(oa_works)},
+    )
+
+
+# ---------------------------------------------------------------------------
+# HAT corpus semantic index trigger
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/knowledge/build-hat-index", response_class=HTMLResponse)
+async def knowledge_build_hat_index(request: Request):
+    """Trigger HAT corpus PDF indexing as a background subprocess."""
+    import subprocess
+    import sys
+
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    if not rc_root:
+        return HTMLResponse(
+            '<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">METIS_RC_ROOT not set.</span>'
+        )
+    script = Path(rc_root) / "system" / "install" / "build_knowledge_db.py"
+    if not script.exists():
+        return HTMLResponse(
+            f'<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">build_knowledge_db.py not found at {script}</span>'
+        )
+
+    # Read library path from user-preferences
+    lib_path = ""
+    try:
+        prefs_path = Path(rc_root) / "system" / "config" / "user-preferences.json"
+        prefs = json.loads(prefs_path.read_text(encoding="utf-8"))
+        lib_path = prefs.get("library_path", "")
+    except Exception:
+        pass
+
+    if not lib_path or not Path(lib_path).exists():
+        return HTMLResponse(
+            '<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">HAT library path not found in user-preferences.json → library_path</span>'
+        )
+
+    db_path = Path(rc_root) / "system" / "app" / "data" / "metis.sqlite"
+    try:
+        subprocess.Popen(
+            [sys.executable, str(script), "--database", "hat-specialist",
+             "--library-dir", lib_path, "--db", str(db_path), "--batch-size", "2"],
+            env={**os.environ, "METIS_RC_ROOT": rc_root},
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return HTMLResponse(
+            '<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-ok);">'
+            'HAT indexing started in background (10–40 min depending on corpus size). '
+            'Refresh the PDF stats panel when done.</span>'
+        )
+    except Exception as e:
+        return HTMLResponse(
+            f'<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">Failed to start: {e}</span>'
+        )

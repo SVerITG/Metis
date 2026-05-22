@@ -3,12 +3,18 @@
             gap:16px;padding:9px 16px;margin-bottom:12px;
             background:var(--m-surface-2);border-radius:var(--m-radius);
             border:1px solid var(--m-rule-soft);">
-  <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:flex;gap:20px;flex-wrap:wrap;">
+  <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:flex;gap:20px;flex-wrap:wrap;align-items:center;">
     <span>{{ zotero_count }} ZOTERO PAPERS</span>
     {% if manual_count %}<span>· {{ manual_count }} MANUAL</span>{% endif %}
     <span style="color:var(--m-rule);">·</span>
     <span>SYNCED {{ last_synced }}</span>
     {% if version %}<span style="opacity:.6;">v{{ version }}</span>{% endif %}
+    {% if duplicate_count %}
+    <span style="color:var(--m-rule);">·</span>
+    <span style="color:var(--m-warn, #b45309);padding:1px 7px;border:1px solid currentColor;border-radius:2px;font-size:9px;">
+      {{ duplicate_count }} DUPLICATES DETECTED
+    </span>
+    {% endif %}
   </div>
   <button id="zotero-sync-btn"
           onclick="syncZoteroLibrary()"

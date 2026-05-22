@@ -92,6 +92,28 @@
         </select>
       </div>
 
+      <!-- Year from -->
+      <div style="width:74px;">
+        <div class="lib-field-label">From</div>
+        <input id="lib-year-from" name="year_from" type="number" min="1980" max="2030"
+               placeholder="2000"
+               style="width:100%;font-family:var(--m-mono);font-size:11px;padding:8px 8px;
+                      background:var(--m-surface-2);border:1px solid var(--m-rule);
+                      border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
+               onchange="_refreshLibTable()">
+      </div>
+
+      <!-- Year to -->
+      <div style="width:74px;">
+        <div class="lib-field-label">To</div>
+        <input id="lib-year-to" name="year_to" type="number" min="1980" max="2030"
+               placeholder="2026"
+               style="width:100%;font-family:var(--m-mono);font-size:11px;padding:8px 8px;
+                      background:var(--m-surface-2);border:1px solid var(--m-rule);
+                      border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
+               onchange="_refreshLibTable()">
+      </div>
+
       {% if active_filter_count %}
       <div style="align-self:flex-end;">
         <button onclick="clearLibFilters()"
@@ -156,11 +178,15 @@ function _refreshLibTable() {
   var q    = document.getElementById('lib-q').value;
   var sort = document.getElementById('lib-sort').value;
   var type = document.getElementById('lib-type-hidden').value;
+  var yf   = (document.getElementById('lib-year-from') || {}).value || '';
+  var yt   = (document.getElementById('lib-year-to')   || {}).value || '';
   document.getElementById('lib-sort-hidden').value = sort;
   htmx.ajax('GET',
     '/api/partial/knowledge/library-table?q=' + encodeURIComponent(q) +
     '&sort=' + encodeURIComponent(sort) +
-    '&item_type=' + encodeURIComponent(type),
+    '&item_type=' + encodeURIComponent(type) +
+    '&year_from=' + encodeURIComponent(yf) +
+    '&year_to='   + encodeURIComponent(yt),
     {target: '#lib-table-area', swap: 'outerHTML'}
   );
 }

@@ -21,7 +21,7 @@
     </thead>
     <tbody>
       {% for item in items %}
-      <tr style="border-bottom:1px solid var(--m-rule-soft);"
+      <tr style="border-bottom:1px solid var(--m-rule-soft);border-left:{% if item.is_read %}2px solid transparent{% else %}2px solid var(--m-accent){% endif %};"
           onmouseover="this.style.background='var(--m-surface-2)'"
           onmouseout="this.style.background=''">
 

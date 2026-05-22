@@ -1,43 +1,37 @@
-<!-- knowledge_stats.html — replaces the stats skeleton row -->
-<div class="row g-2 mb-3">
-  <div class="col-6 col-md-2">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-primary">{{ cards }}</div>
-      <div class="text-muted small">Library cards</div>
-    </div>
+<!-- knowledge_stats.html — stat tiles using Metis design tokens -->
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
+
+  <div class="panel" style="flex:1;min-width:120px;padding:16px 20px;text-align:center;">
+    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-accent);letter-spacing:-0.02em;">{{ cards }}</div>
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);margin-top:4px;">Library cards</div>
   </div>
-  <div class="col-6 col-md-2">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-info">{{ domains }}</div>
-      <div class="text-muted small">Domains</div>
-    </div>
+
+  <div class="panel" style="flex:1;min-width:120px;padding:16px 20px;text-align:center;">
+    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-ink);letter-spacing:-0.02em;">{{ domains }}</div>
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);margin-top:4px;">Domains</div>
   </div>
-  <div class="col-6 col-md-2">
-    <div class="card p-3 text-center">
-      <div class="fw-bold fs-4 text-warning">{{ lit }}</div>
-      <div class="text-muted small">Literature items</div>
-    </div>
+
+  <div class="panel" style="flex:1;min-width:120px;padding:16px 20px;text-align:center;">
+    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-ink);letter-spacing:-0.02em;">{{ lit }}</div>
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);margin-top:4px;">Literature items</div>
   </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      {% if pdf_docs %}
-      <div class="fw-bold fs-4 text-success">{{ pdf_docs }}</div>
-      <div class="text-muted small">PDFs indexed</div>
-      {% else %}
-      <div class="fw-bold fs-4 text-body-tertiary">—</div>
-      <div class="text-muted small">PDFs indexed</div>
-      {% endif %}
-    </div>
+
+  <div class="panel" style="flex:1;min-width:140px;padding:16px 20px;text-align:center;">
+    {% if pdf_docs %}
+    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-ok);letter-spacing:-0.02em;">{{ pdf_docs }}</div>
+    {% else %}
+    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-muted);letter-spacing:-0.02em;">—</div>
+    {% endif %}
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);margin-top:4px;">PDFs indexed</div>
   </div>
-  <div class="col-6 col-md-3">
-    <div class="card p-3 text-center">
-      {% if pdf_chunks %}
-      <div class="fw-bold fs-4 text-success">{{ "{:,}".format(pdf_chunks) }}</div>
-      <div class="text-muted small">Searchable chunks</div>
-      {% else %}
-      <div class="fw-bold fs-4 text-body-tertiary">—</div>
-      <div class="text-muted small">Searchable chunks</div>
-      {% endif %}
-    </div>
+
+  <div class="panel" style="flex:1;min-width:140px;padding:16px 20px;text-align:center;">
+    {% if pdf_chunks %}
+    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-ok);letter-spacing:-0.02em;">{{ "{:,}".format(pdf_chunks) }}</div>
+    {% else %}
+    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-muted);letter-spacing:-0.02em;">—</div>
+    {% endif %}
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);margin-top:4px;">Searchable chunks</div>
   </div>
+
 </div>
