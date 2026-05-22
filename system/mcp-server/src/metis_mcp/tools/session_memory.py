@@ -115,6 +115,94 @@ async def search_session_memory(
 
 
 @app.tool()
+async def commit_session_decisions(
+    decisions: list[str],
+    summary: str = "",
+    key_topics: list[str] | None = None,
+    session_id: str | None = None,
+) -> dict:
+    """Commit key decisions from this session to permanent memory.
+
+    This is the mandatory recording checkpoint — call it at the end of every
+    agent-routed session, before delivering the final result to the user.
+    Unlike save_session_summary (which accepts any summary), this tool enforces
+    that at least one concrete decision is captured, and writes each decision
+    separately to episodic_memory for future retrieval.
+
+    Args:
+        decisions: 1-5 plain-English decisions made this session. Be specific:
+            "Chose logistic regression over mixed model due to data sparsity in
+            Zone de Santé X" not "made a modelling decision".
+        summary: 1-3 sentence summary of the session context (optional but useful).
+        key_topics: Topic tags e.g. ["DHIS2", "HAT surveillance", "tracker design"].
+        session_id: Optional session identifier.
+    """
+    if not decisions:
+        return {"ok": False, "error": "No decisions provided — pass at least one."}
+
+    now = datetime.now(timezone.utc).isoformat()
+    today = now[:10]
+    sid = session_id or today
+    full_summary = summary or f"Session {today}: {len(decisions)} decision(s) recorded."
+    topics_json = json.dumps(key_topics or [])
+    decisions_json = json.dumps(decisions)
+
+    stored_summary = False
+    stored_episodic = 0
+
+    try:
+        with sqlite3.connect(_db_path()) as conn:
+            _ensure_table(conn)
+
+            # Ensure episodic_memory table exists (mirrors vector_memory DDL without vec)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS episodic_memory (
+                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id TEXT    DEFAULT '',
+                    event_type TEXT    DEFAULT 'decision',
+                    content    TEXT    NOT NULL,
+                    metadata   TEXT    DEFAULT '{}',
+                    created_at TEXT    NOT NULL
+                )
+            """)
+
+            # 1. Write consolidated row to session_summaries
+            conn.execute(
+                """INSERT INTO session_summaries
+                   (session_id, summary, key_topics, decisions, created_at)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (sid, full_summary, topics_json, decisions_json, now),
+            )
+            stored_summary = True
+
+            # 2. Write each decision individually to episodic_memory
+            for decision in decisions:
+                meta = json.dumps({
+                    "session_id": sid,
+                    "topics": key_topics or [],
+                    "source": "commit_session_decisions",
+                })
+                conn.execute(
+                    """INSERT INTO episodic_memory
+                       (session_id, event_type, content, metadata, created_at)
+                       VALUES (?, 'decision', ?, ?, ?)""",
+                    (sid, decision, meta, now),
+                )
+                stored_episodic += 1
+
+            conn.commit()
+
+        return {
+            "ok": True,
+            "summary_saved": stored_summary,
+            "decisions_saved": stored_episodic,
+            "message": f"{stored_episodic} decision(s) committed to permanent memory.",
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+@app.tool()
 async def list_recent_sessions(limit: int = 20) -> list[dict]:
     """List the most recent session summaries in reverse chronological order.
 
