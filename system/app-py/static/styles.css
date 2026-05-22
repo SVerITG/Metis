@@ -184,17 +184,10 @@
   color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="archive"]) {
-    --m-bg:#15130f; --m-surface:#1c1915; --m-surface-2:#211d18; --m-surface-3:#26221c;
-    --m-ink:#f3ead6; --m-text:#d9cfba; --m-muted:#8a8075; --m-muted-soft:#6d6458;
-    --m-rule:rgba(243,234,214,.12); --m-rule-soft:rgba(243,234,214,.06); --m-rule-strong:rgba(243,234,214,.28);
-    --m-accent:#d99a4c; --m-accent-hover:#e5a855; --m-accent-soft:#e0b07a;
-    --m-accent-wash:rgba(217,154,76,.12); --m-accent-wash-2:rgba(217,154,76,.22); --m-on-accent:#15130f;
-    --m-ochre:#d99a4c; --m-ok:#a9c89a; --m-warn:#e0b07a; --m-alert:#e28570; --m-info:#92b3c5;
-    color-scheme: dark;
-  }
-}
+/* prefers-color-scheme media query removed — Metis always defaults to light (Archive).
+   Dark mode is applied only when the user explicitly selects a dark theme via the picker.
+   The [data-theme="observatory"], [data-theme="midnight"], [data-theme="cavern"] rules
+   above handle all dark styling. */
 
 /* ================================================================
    BASE
