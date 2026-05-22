@@ -33,6 +33,16 @@
       {% else %}
         <div style="font-family:var(--m-sans);font-size:13px;color:var(--m-muted);font-style:italic;">No action items.</div>
       {% endif %}
+      <div style="margin-top:12px;">
+        <button class="btn btn--ghost btn--caps"
+                hx-post="/api/meeting/{{ meeting.id }}/create-tasks"
+                hx-target="#action-items-result-{{ meeting.id }}"
+                hx-swap="innerHTML"
+                style="font-size:10px;">
+          Create tasks from action items
+        </button>
+        <div id="action-items-result-{{ meeting.id }}"></div>
+      </div>
     </div>
 
   </div>

@@ -165,3 +165,88 @@ If WSL is not installed when `install.bat` runs, the error is cryptic. Add a pre
 
 These MCP tools have no unit or integration tests: `backup.py`, voice capture tools (P2 persona), `pipeline.py`, `observability.py`, `subset_loader.py`, `tray_launcher.py`. The `write_reflexion()` → reflexion_log → self-improvement proposal chain also has no test.
 
+---
+
+### F-R1 — Zotero not-configured inline banner
+**Priority:** High
+**Identified:** 2026-05-22 (comprehensive audit)
+
+When Knowledge tab loads and `ZOTERO_USER_ID` matches the placeholder pattern, show a one-line inline banner: "Zotero not configured — enter your User ID in Metis tab → Integrations." Currently fails silently with a 400 error on sync click.
+
+---
+
+### F-R2 — Inbox audio file auto-transcription
+**Priority:** High
+**Identified:** 2026-05-22
+
+`scan_inbox()` does not detect audio files. Add detection for `.m4a`/`.mp3`/`.wav` in `inbox/` that auto-calls `transcribe_voice()` and routes to idea or journal. Makes the phone voice-note drop flow genuinely hands-free.
+
+---
+
+### F-R3 — Windows morning notification
+**Priority:** Medium
+**Identified:** 2026-05-22
+
+When the 07:30 morning brief APScheduler job completes, send a Windows toast notification. Twilio is already installed. Alternative: PowerShell `BurntToast` call from `run.sh` or a post-job hook.
+
+---
+
+### F-R4 — Meeting → task auto-create button
+**Priority:** Medium
+**Identified:** 2026-05-22
+
+Meeting cross-reference surfaces action items but does not create tasks. Add "Auto-create tasks from this meeting" button in meeting detail view. Calls `create_task()` for each detected action item from the cross-reference brief.
+
+---
+
+### F-R6 — PaperQA2 ph_library scope
+**Priority:** Medium
+**Identified:** 2026-05-22
+
+`ask_library()` only indexes `inputs/literature/`. The 35-PDF PH background library (`knowledge/library/`) should be queryable via `ask_library(scope="ph_library")`. Wire both scopes in `paperqa_search.py`.
+
+---
+
+### F-R7 — PhD progress widget on Today tab
+**Priority:** Medium
+**Identified:** 2026-05-22
+
+No dashboard surface for thesis progress. Add a PhD widget showing: Article 1/2/3 status, next milestone due, days since last commit. Reads from `research_milestones` table and `00_center/` folder.
+
+---
+
+### F-R8 — DHIS2 live API connector MCP tool
+**Priority:** Medium
+**Identified:** 2026-05-22
+
+DHIS2 Expert answers API questions conceptually but has no live connector. Add `dhis2_query(endpoint, params)` MCP tool for authenticated API calls to configured DHIS2 instance. Enables live metadata validation and data quality checks.
+
+---
+
+### F-R10 — Reflexion log widget in Metis tab
+**Priority:** Low
+**Identified:** 2026-05-22
+
+`write_reflexion()` is called after every agent run but the reflexion log is not surfaced in the dashboard. Add "Session quality" widget in Metis tab: last 5 reflexions + pending improvement proposals.
+
+---
+
+### F-R11 — Mobile capture QR code on Today tab
+**Priority:** Low
+**Identified:** 2026-05-22
+
+The `/capture` PWA page exists but is not linked anywhere in the main dashboard. Add a QR code to Today tab that opens the capture page, making on-the-go capture discoverable.
+
+---
+
+## Fixed This Session (2026-05-22)
+
+- Restored `research.py` MCP tool from git history + added to server.py imports
+- Restored `knowledge/library/methods/` (14 reference files) from git history
+- Installed `background-maker` skill.md to `.claude/skills/`
+- Fixed `monkeypatch` fixture scope in 3 test files (104 tests now pass)
+- Fixed `agent_runs` schema mismatch in conftest + 3 test DDLs (9 tests fixed)
+- Installed `faster-whisper` (voice capture now functional)
+- Installed `python-pptx` (Teach tab PPTX generation now functional)
+- Renamed duplicate `get_user_profile` → `get_user_config` in config_tools.py
+

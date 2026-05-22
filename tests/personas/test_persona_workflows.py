@@ -368,7 +368,7 @@ _PERSONA_IDS = [p["id"] for p in PERSONAS]
 # ---------------------------------------------------------------------------
 
 _BASE_DDL = """
-CREATE TABLE IF NOT EXISTS agent_runs (id INTEGER PRIMARY KEY, agent_slug TEXT, task_summary TEXT, output_path TEXT, created_at TEXT, run_id TEXT);
+CREATE TABLE IF NOT EXISTS agent_runs (run_id INTEGER PRIMARY KEY AUTOINCREMENT, agent_slug TEXT NOT NULL DEFAULT '', task_summary TEXT NOT NULL DEFAULT '', input_path TEXT DEFAULT '', output_path TEXT DEFAULT '', status TEXT DEFAULT 'completed', created_at TEXT NOT NULL DEFAULT '', input_tokens INTEGER DEFAULT 0, output_tokens INTEGER DEFAULT 0, model TEXT DEFAULT '');
 CREATE TABLE IF NOT EXISTS news_briefs (brief_id INTEGER PRIMARY KEY, title TEXT, summary TEXT, domain TEXT, source_url TEXT, source_type TEXT, created_at TEXT, signal_strength INTEGER, surprise_flag INTEGER, brief_date TEXT);
 CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY, title TEXT, status TEXT, priority TEXT, created_at TEXT, project_id TEXT, due_date TEXT, description TEXT);
 CREATE TABLE IF NOT EXISTS library_cards (id INTEGER PRIMARY KEY, title TEXT, authors TEXT, year INTEGER, domain TEXT, tags TEXT, created_at TEXT);
@@ -437,7 +437,7 @@ def _seed_persona(conn: sqlite3.Connection, seed: dict) -> None:
     conn.commit()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def persona_clients(tmp_path_factory, monkeypatch):
     """Build one TestClient per persona, each with its own temp SQLite DB."""
     clients: dict[str, Any] = {}

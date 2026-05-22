@@ -30,13 +30,16 @@ for _p in [str(_APP_PY), str(_MCP_SRC)]:
 
 _CORE_DDL = """
 CREATE TABLE IF NOT EXISTS agent_runs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    run_id TEXT,
-    agent_slug TEXT,
-    task_summary TEXT,
-    output_path TEXT,
-    input_path TEXT,
-    created_at TEXT
+    run_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agent_slug TEXT NOT NULL DEFAULT '',
+    task_summary TEXT NOT NULL DEFAULT '',
+    input_path TEXT DEFAULT '',
+    output_path TEXT DEFAULT '',
+    status TEXT DEFAULT 'completed',
+    created_at TEXT NOT NULL DEFAULT '',
+    input_tokens INTEGER DEFAULT 0,
+    output_tokens INTEGER DEFAULT 0,
+    model TEXT DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS memory_entries (
     entry_id TEXT PRIMARY KEY,

@@ -50,11 +50,13 @@ def _save_config(data: dict) -> None:
 
 
 @app.tool()
-async def get_user_profile() -> list[TextContent]:
-    """Return the current Metis user profile from user-config.yaml.
+async def get_user_config() -> list[TextContent]:
+    """Return the full Metis user configuration from user-config.yaml.
 
-    Returns the full YAML content as formatted text. Creates the file
-    with defaults if it doesn't exist yet.
+    Returns the complete YAML content (research interests, data sensitivity,
+    specialist contexts, etc.). For a lightweight profile summary (name,
+    interests, news_topics), use get_user_profile() instead.
+    Creates the config file with defaults if it does not exist yet.
     """
     if not _YAML_AVAILABLE:
         return [TextContent(type="text", text="pyyaml not installed — run: pip install pyyaml")]

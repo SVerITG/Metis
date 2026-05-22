@@ -7,6 +7,7 @@ import json
 import os
 import re
 import tempfile
+import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, Query, Request, UploadFile
@@ -688,6 +689,100 @@ async def toggle_action(action_id: int):
         f'style="margin-right:8px;cursor:pointer;"> '
         f'<span style="color:{color};text-decoration:{decoration};">'
         f'{row[0].get("description","")}</span>'
+    )
+
+
+# ---------------------------------------------------------------------------
+# Create tasks from meeting action items
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/meeting/{meeting_id}/create-tasks", response_class=HTMLResponse)
+async def meeting_create_tasks(request: Request, meeting_id: int):
+    """Parse action items from a meeting and insert them as tasks."""
+    # Fetch meeting row
+    rows = db_query(
+        "SELECT meeting_id, title, meeting_date, action_items, transcript "
+        "FROM meetings WHERE meeting_id = ?",
+        (meeting_id,),
+    )
+    if not rows:
+        return HTMLResponse(
+            '<div style="font-family:var(--m-mono);font-size:10px;color:var(--m-alert);padding:10px 0;">'
+            "Meeting not found.</div>"
+        )
+    meeting = rows[0]
+    mtitle = meeting.get("title") or "Untitled meeting"
+    mdate = (meeting.get("meeting_date") or "")[:10]
+
+    # Prefer structured meeting_actions rows if they exist
+    existing_actions = db_query(
+        "SELECT description FROM meeting_actions WHERE meeting_id = ? AND status != 'done'",
+        (meeting_id,),
+    ) or []
+
+    if existing_actions:
+        action_texts = [r["description"] for r in existing_actions if r.get("description")]
+    else:
+        # Fall back to parsing action_items JSON or transcript text
+        action_items_raw = meeting.get("action_items") or ""
+        action_texts = []
+        if action_items_raw:
+            try:
+                parsed = json.loads(action_items_raw)
+                if isinstance(parsed, list):
+                    action_texts = [str(a).strip() for a in parsed if str(a).strip()]
+            except Exception:
+                action_texts = [
+                    line.strip() for line in str(action_items_raw).splitlines()
+                    if line.strip()
+                ]
+        # If still empty, try parsing transcript
+        if not action_texts and meeting.get("transcript"):
+            extracted = _extract_structure(meeting["transcript"])
+            action_texts = extracted.get("actions", [])
+
+    if not action_texts:
+        return HTMLResponse(
+            '<div style="font-family:var(--m-sans);font-size:13px;color:var(--m-muted);'
+            'font-style:italic;padding:10px 0;">'
+            "No action items found in this meeting’s notes. "
+            "Add a meeting report first.</div>"
+        )
+
+    now = datetime.datetime.now().isoformat(timespec="seconds")
+    notes_prefix = f"Auto-created from meeting: {mtitle} ({mdate})"
+    created = 0
+    for text in action_texts:
+        title = text[:200]
+        if not title:
+            continue
+        task_id = uuid.uuid4().hex[:12]
+        try:
+            db_execute(
+                "INSERT INTO tasks (task_id, project_id, title, status, notes, created_at, updated_at, category) "
+                "VALUES (?, NULL, ?, 'open', ?, ?, ?, 'meeting')",
+                (task_id, title, notes_prefix, now, now),
+            )
+            created += 1
+        except Exception:
+            pass
+
+    if created == 0:
+        return HTMLResponse(
+            '<div style="font-family:var(--m-sans);font-size:13px;color:var(--m-alert);padding:10px 0;">'
+            "Could not create tasks — an error occurred.</div>"
+        )
+
+    plural = "task" if created == 1 else "tasks"
+    return HTMLResponse(
+        f'<div style="display:flex;align-items:center;gap:12px;padding:10px 0;">'
+        f'<span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;'
+        f'color:var(--m-ok);">&#10003; {created} {plural.upper()} CREATED</span>'
+        f'<a href="/tab/work" style="font-family:var(--m-mono);font-size:10px;'
+        f'letter-spacing:0.12em;color:var(--m-accent);text-decoration:underline;">'
+        f'VIEW IN WORK TAB →</a>'
+        f'</div>'
     )
 
 

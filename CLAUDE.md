@@ -1,7 +1,7 @@
 # Metis Second Brain — Claude Code Configuration
 
 This is the Metis second-brain system for a Senior Researcher / Public Health Methodologist
-working on their research domain, PhD planning, AI development, and personal learning.
+working on their research domain, AI development, and personal learning.
 
 **Owner:** [User] — address by their configured name (see `system/config/user-config.yaml`)
 **Root:** This folder
@@ -83,7 +83,7 @@ working on their research domain, PhD planning, AI development, and personal lea
 | `/metis_handoff` | Metis Handoff | Generate portable context brief for switching AI, hitting token limits, or continuing on another device |
 | `/metis_ideas` | Metis Ideas | Quick idea capture with automatic connection detection |
 | `/metis_notes` | Metis Notes | Add or view personal notes and journal entries |
-| `/metis_weekly` | Metis Weekly | Generate weekly summary: ideas, papers, meetings, projects, PhD progress |
+| `/metis_weekly` | Metis Weekly | Generate weekly summary: ideas, papers, meetings, projects, active research |
 | `/metis_research` | Metis Research | Research session: load article context, check tracked files, suggest next steps |
 | `/metis_status` | Metis Status | Quick project + task status overview — blocked, overdue, in progress |
 
@@ -185,11 +185,6 @@ When a request arrives, route as follows:
 - **My Dataset Analysis** — local git initialized, push pending
 - **My Statistics Course** — `{your-github-username}/my-statistics-course`
 
-### PhD
-- Topic: (to be defined — update this with your thesis topic)
-- Three articles in progress — need to be aligned to the thesis backbone
-- Most time-pressured priority
-
 ### Key paths
 - Literature: `inputs/literature/[your-topic]/`
 - Code staging: `inputs/code/` (copy scripts here for review)
@@ -241,7 +236,7 @@ Every session, check:
 2. **Read the relevant project's PLANNING.md** (paths above) — this is the fastest way to understand where things stand.
 3. What is new in `inbox/`?
 4. What tasks are overdue or blocked?
-5. What does the PhD need this week?
+5. What are the most pressing research priorities this week?
 6. Is there anything uncommitted or unpushed in the git projects?
 7. What should the user be aware of that they have not asked about?
 
