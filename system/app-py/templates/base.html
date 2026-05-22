@@ -25,17 +25,17 @@
   <script src="/static/htmx.min.js"></script>
 
   <!-- User identity — available to all page scripts -->
-  <script>window.METIS_USER_NAME = {{ _metis_user_name() | tojson }};</script>
+  <script>window.METIS_USER_NAME = {{ (_metis_user_name() if _metis_user_name is defined else 'Researcher') | tojson }};</script>
 
   <!-- Theme: restore before first paint to avoid flash -->
+  <!-- Default to 'archive' (light) so system dark-mode preference never fires automatically -->
   <script>
     (function () {
       var VALID = ['archive','fieldwork','paper','observatory','midnight','cavern'];
       try {
         var t = localStorage.getItem('metis-theme');
-        if (t && VALID.indexOf(t) !== -1) {
-          document.documentElement.dataset.theme = (t === 'archive') ? '' : t;
-        }
+        var resolved = (t && VALID.indexOf(t) !== -1) ? t : 'archive';
+        document.documentElement.dataset.theme = (resolved === 'archive') ? '' : resolved;
       } catch (e) {}
     })();
   </script>
