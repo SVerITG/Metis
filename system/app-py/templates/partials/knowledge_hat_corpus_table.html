@@ -1,0 +1,92 @@
+<div id="hat-table-area">
+
+  <div style="padding:9px 20px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);border-bottom:1px solid var(--m-rule-soft);">
+    {% if q %}
+    {{ total }} PAPER{% if total != 1 %}S{% endif %} MATCHING &ldquo;{{ q }}&rdquo;
+    {% else %}
+    {{ total }} PAPERS IN CORPUS
+    {% endif %}
+  </div>
+
+  {% if items %}
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;border-bottom:1px solid var(--m-rule);">
+        <th style="padding:8px 20px 8px 20px;text-align:left;font-weight:400;width:120px;">Folder</th>
+        <th style="padding:8px 10px;text-align:left;font-weight:400;">Title</th>
+        <th style="padding:8px 10px;text-align:left;font-weight:400;width:110px;">Method</th>
+        <th style="padding:8px 10px;text-align:left;font-weight:400;width:70px;">Status</th>
+        <th style="padding:8px 20px;text-align:right;font-weight:400;width:60px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr style="border-bottom:1px solid var(--m-rule-soft);"
+          onmouseover="this.style.background='var(--m-surface-2)'"
+          onmouseout="this.style.background=''">
+
+        <!-- Folder -->
+        <td style="padding:11px 20px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);vertical-align:top;white-space:nowrap;">
+          {% if item.collection_tags %}{{ item.collection_tags[0] | upper }}{% else %}—{% endif %}
+        </td>
+
+        <!-- Title + tags -->
+        <td style="padding:11px 10px;vertical-align:top;">
+          <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;">
+            {{ item.title }}
+          </div>
+          {% if item.abstract %}
+          <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);margin-top:4px;line-height:1.5;">
+            {{ item.abstract | truncate(140, True, '…') }}
+          </div>
+          {% endif %}
+          {% if item.collection_tags | length > 1 %}
+          <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;">
+            {% for tag in item.collection_tags[1:] %}
+            <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:1px 5px;border:1px solid var(--m-rule);border-radius:2px;color:var(--m-muted);">{{ tag | upper }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </td>
+
+        <!-- Method -->
+        <td style="padding:11px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.08em;color:var(--m-muted);vertical-align:top;">
+          {{ item.method | upper if item.method else '—' }}
+        </td>
+
+        <!-- Status -->
+        <td style="padding:11px 10px;vertical-align:top;">
+          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;padding:2px 6px;border-radius:2px;
+                       background:{% if item.item_type == 'seeded' %}var(--m-ok-wash, rgba(22,163,74,.08)){% else %}var(--m-surface-2){% endif %};
+                       color:{% if item.item_type == 'seeded' %}var(--m-ok){% else %}var(--m-muted){% endif %};">
+            {{ item.item_type | upper }}
+          </span>
+        </td>
+
+        <!-- Actions -->
+        <td style="padding:11px 20px;text-align:right;vertical-align:top;white-space:nowrap;">
+          {% if item.pdf_url %}
+          <a href="{{ item.pdf_url }}" target="_blank" rel="noopener"
+             style="display:inline-block;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+                    color:var(--m-ok);text-decoration:none;padding:2px 6px;
+                    border:1px solid var(--m-ok);border-radius:2px;transition:background 140ms,color 140ms;"
+             onmouseover="this.style.background='var(--m-ok)';this.style.color='#fff'"
+             onmouseout="this.style.background='';this.style.color='var(--m-ok)'"
+             title="Open local PDF">PDF ↗</a>
+          {% endif %}
+        </td>
+
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% else %}
+  <div style="padding:52px 24px;text-align:center;">
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.22em;color:var(--m-muted);margin-bottom:12px;">HAT CORPUS</div>
+    <div style="font-family:var(--m-display);font-size:18px;font-weight:500;color:var(--m-ink);margin-bottom:8px;">No papers match your filters.</div>
+    <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">Try broadening your search or removing the folder filter.</div>
+  </div>
+  {% endif %}
+
+</div><!-- /#hat-table-area -->

@@ -31,7 +31,8 @@
     </div>
 
     <!-- Index cards main area -->
-    <div hx-get="/api/partial/knowledge/cards"
+    <div id="knowledge-cards-area"
+         hx-get="/api/partial/knowledge/cards"
          hx-trigger="load"
          hx-swap="outerHTML">
       <div>
@@ -52,6 +53,11 @@
       <div style="height:36px;background:var(--m-surface-2);border-radius:var(--m-radius);opacity:.4;margin-bottom:12px;"></div>
     </div>
 
+    <!-- Recently added strip -->
+    <div hx-get="/api/partial/knowledge/recently-added"
+         hx-trigger="load"
+         hx-swap="outerHTML"></div>
+
     <!-- Browser panel -->
     <div hx-get="/api/partial/knowledge/library-browser"
          hx-trigger="load"
@@ -63,25 +69,72 @@
     </div>
   </div>
 
-  <!-- ===== Memory search ===== -->
+  <!-- ===== HAT Research Corpus ===== -->
+  <div style="margin-top:32px;">
+    <div hx-get="/api/partial/knowledge/hat-corpus"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+      <div>
+        <div class="sec-label" style="margin-bottom:8px;"><span>HAT Research Corpus</span></div>
+        <div class="panel" style="height:200px;opacity:.4;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PDF Fulltext Search ===== -->
   <div style="margin-top:32px;">
     <div class="sec-label" style="margin-bottom:12px;">
-      <span>Memory search</span>
-      <span class="tail">SEMANTIC · WHAT METIS KNOWS</span>
+      <span>PDF Fulltext Search</span>
+      <span class="tail">KEYWORD · INDEXED DOCUMENTS</span>
     </div>
     <div class="panel" style="padding:16px 20px;">
       <input type="search"
-             id="memory-search-input"
-             placeholder="Search what Metis has observed and learned…"
+             id="pdf-search-input"
+             placeholder="Search across all indexed PDFs…"
              style="width:100%;font-family:var(--m-ui);font-size:14px;padding:10px 14px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
-             hx-get="/api/partial/knowledge/memory-search"
+             hx-get="/api/partial/knowledge/pdf-search"
              hx-trigger="keyup changed delay:400ms"
-             hx-target="#memory-search-results"
-             hx-include="[id='memory-search-input']"
+             hx-target="#pdf-search-results"
+             hx-include="[id='pdf-search-input']"
              name="q"
              autocomplete="off">
-      <div id="memory-search-results" style="margin-top:8px;min-height:40px;">
-        <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">Type to search episodic memory, observations, and reflexions.</div>
+      <div id="pdf-search-results" style="margin-top:8px;min-height:40px;">
+        <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">Type to search indexed PDF content by keyword.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Coverage Gap Detector ===== -->
+  <div style="margin-top:32px;">
+    <div hx-get="/api/partial/knowledge/coverage-gap"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+      <div>
+        <div class="sec-label" style="margin-bottom:8px;"><span>Coverage Gap Detector</span></div>
+        <div class="panel" style="height:120px;opacity:.4;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Unified Search ===== -->
+  <div style="margin-top:32px;">
+    <div class="sec-label" style="margin-bottom:12px;">
+      <span>Unified Search</span>
+      <span class="tail">PAPERS · HAT CORPUS · CARDS · MEMORY</span>
+    </div>
+    <div class="panel" style="padding:16px 20px;">
+      <input type="search"
+             id="unified-search-input"
+             placeholder="Search across all of your library and memory…"
+             style="width:100%;font-family:var(--m-ui);font-size:14px;padding:10px 14px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
+             hx-get="/api/partial/knowledge/unified-search"
+             hx-trigger="keyup changed delay:400ms"
+             hx-target="#unified-search-results"
+             hx-include="[id='unified-search-input']"
+             name="q"
+             autocomplete="off">
+      <div id="unified-search-results" style="margin-top:8px;min-height:40px;">
+        <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">Search Zotero papers, HAT corpus, knowledge cards, and episodic memory at once.</div>
       </div>
     </div>
   </div>

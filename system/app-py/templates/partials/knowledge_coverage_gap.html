@@ -1,0 +1,104 @@
+<div id="coverage-gap-section">
+  <div class="sec-label" style="margin-bottom:12px;">
+    <span>Coverage Gap Detector</span>
+    <span class="tail">ZOTERO vs. OPENALEX · MISSING PAPERS</span>
+  </div>
+
+  <div class="panel" style="overflow:hidden;">
+
+    <!-- Query form -->
+    <form hx-post="/api/knowledge/gap-check"
+          hx-target="#coverage-gap-section"
+          hx-swap="outerHTML"
+          style="padding:16px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+      <div style="flex:1;min-width:260px;">
+        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Search OpenAlex for</div>
+        <input name="query" type="text"
+               value="{{ query or 'HAT gHAT surveillance DRC elimination' }}"
+               placeholder="e.g. HAT surveillance DRC elimination"
+               style="width:100%;font-family:var(--m-ui);font-size:13px;padding:8px 12px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
+      </div>
+      <div style="min-width:100px;">
+        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Max results</div>
+        <select name="max_results"
+                style="font-family:var(--m-mono);font-size:10px;padding:8px 10px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;cursor:pointer;">
+          <option value="20">20</option>
+          <option value="50">50</option>
+        </select>
+      </div>
+      <button type="submit"
+              style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
+                     padding:8px 16px;background:var(--m-accent);border:none;border-radius:2px;
+                     color:#fff;cursor:pointer;white-space:nowrap;align-self:flex-end;">
+        CHECK GAPS
+      </button>
+    </form>
+
+    {% if error %}
+    <div style="padding:16px 20px;font-family:var(--m-mono);font-size:11px;color:var(--m-warn, #b45309);">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    {% if results is not none %}
+
+    <!-- Summary line -->
+    <div style="padding:9px 20px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);border-bottom:1px solid var(--m-rule-soft);">
+      {% if results %}
+      <span style="color:var(--m-warn, #b45309);font-weight:600;">{{ results | length }} POTENTIALLY MISSING</span>
+      from {{ checked }} OpenAlex results for &ldquo;{{ query }}&rdquo; · sorted by citation count
+      {% else %}
+      <span style="color:var(--m-ok);">ALL {{ checked }} PAPERS FOUND IN YOUR LIBRARY</span> — no gaps detected for &ldquo;{{ query }}&rdquo;
+      {% endif %}
+    </div>
+
+    {% if results %}
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;border-bottom:1px solid var(--m-rule);">
+          <th style="padding:8px 20px 8px 20px;text-align:left;font-weight:400;width:52px;">Year</th>
+          <th style="padding:8px 10px;text-align:left;font-weight:400;">Title / Authors</th>
+          <th style="padding:8px 10px;text-align:left;font-weight:400;width:140px;">Journal</th>
+          <th style="padding:8px 20px;text-align:right;font-weight:400;width:70px;">Cited</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in results %}
+        <tr style="border-bottom:1px solid var(--m-rule-soft);"
+            onmouseover="this.style.background='var(--m-surface-2)'"
+            onmouseout="this.style.background=''">
+          <td style="padding:11px 20px;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);vertical-align:top;">{{ p.year or '—' }}</td>
+          <td style="padding:11px 10px;vertical-align:top;">
+            <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;">
+              {% if p.doi_url %}
+              <a href="{{ p.doi_url }}" target="_blank" rel="noopener"
+                 style="color:inherit;text-decoration:none;"
+                 onmouseover="this.style.color='var(--m-accent)'"
+                 onmouseout="this.style.color='var(--m-ink)'">{{ p.title }}</a>
+              {% else %}{{ p.title }}{% endif %}
+            </div>
+            {% if p.authors %}
+            <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);margin-top:3px;">{{ p.authors }}</div>
+            {% endif %}
+            {% if p.abstract %}
+            <div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);margin-top:5px;line-height:1.5;max-width:580px;">{{ p.abstract }}…</div>
+            {% endif %}
+          </td>
+          <td style="padding:11px 10px;font-family:var(--m-display);font-size:12px;color:var(--m-muted);vertical-align:top;">{{ p.journal }}</td>
+          <td style="padding:11px 20px;text-align:right;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);vertical-align:top;">
+            {% if p.citations %}{{ p.citations }}{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    {% else %}
+    <div style="padding:24px 20px;font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">
+      Enter a search query above and click Check Gaps. Metis will compare OpenAlex results against your Zotero collection and HAT corpus to surface papers you might be missing.
+    </div>
+    {% endif %}
+
+  </div><!-- /.panel -->
+</div><!-- /#coverage-gap-section -->
