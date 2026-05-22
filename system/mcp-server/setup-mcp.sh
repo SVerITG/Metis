@@ -43,77 +43,95 @@ echo "Installing Metis with profile: $METIS_PROFILE"
 # ── Config ──────────────────────────────────────────────────────────────────
 VENV_DIR="$HOME/.local/share/metis-mcp/.venv"
 RUN_SCRIPT="$HOME/.local/share/metis-mcp/run.sh"
+LOCAL_SRC="$HOME/.local/share/metis-mcp/src-install"
 METIS_RC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SRC_DIR="$METIS_RC_ROOT/system/mcp-server"
 
-# ── Detect Python ────────────────────────────────────────────────────────────
-# Prefer Python 3.12, fall back to 3.11, 3.10, 3.9
-PYTHON=""
-for candidate in python3.12 python3.11 python3.10 python3.9 python3; do
-  if command -v "$candidate" >/dev/null 2>&1; then
-    VER=$("$candidate" -c "import sys; print('%d.%d' % sys.version_info[:2])" 2>/dev/null)
-    MAJOR=${VER%%.*}; MINOR=${VER#*.}
-    if [ "$MAJOR" -ge 3 ] && [ "$MINOR" -ge 9 ]; then
-      PYTHON="$candidate"
-      break
-    fi
-  fi
-done
+mkdir -p "$HOME/.local/share/metis-mcp"
 
-if [ -z "$PYTHON" ]; then
-  echo "ERROR: Python 3.9+ not found. Install it first:"
-  echo "  Ubuntu 22.04: sudo apt install python3.12"
-  echo "  Ubuntu 20.04: sudo apt install python3.10"
-  exit 1
+# ── Install uv (preferred — no sudo, no python3.X-venv package needed) ───────
+# uv manages its own Python and venv, so it works on any OS/distro without
+# requiring OS-level venv packages or sudo.
+UV="$HOME/.local/bin/uv"
+if ! command -v uv >/dev/null 2>&1 && [ ! -x "$UV" ]; then
+  echo "Installing uv (Python package manager)..."
+  # -k: bypass corporate SSL inspection proxies (self-signed cert in chain)
+  if curl -LsSf --retry 3 https://astral.sh/uv/install.sh | sh 2>/dev/null; then
+    echo "  uv installed"
+  else
+    curl -LsSfk --retry 3 https://astral.sh/uv/install.sh | sh 2>/dev/null && echo "  uv installed (SSL bypass)" || true
+  fi
+  # Source env so uv is on PATH for the rest of this script
+  [ -f "$HOME/.local/bin/env" ] && source "$HOME/.local/bin/env"
 fi
 
-PYTHON_PATH=$(command -v "$PYTHON")
-echo "Using Python: $PYTHON_PATH ($($PYTHON --version))"
+# Ensure uv is on PATH
+[ -f "$HOME/.local/bin/env" ] && source "$HOME/.local/bin/env"
+UV=$(command -v uv 2>/dev/null || echo "$HOME/.local/bin/uv")
 
-# ── Install Python 3.12 if missing and on Ubuntu 22+ ─────────────────────────
-if ! command -v python3.12 >/dev/null 2>&1; then
-  if grep -q "22.04\|24.04" /etc/os-release 2>/dev/null; then
-    echo "Installing python3.12 via deadsnakes PPA..."
-    sudo apt-get update -q
-    sudo apt-get install -y software-properties-common
-    sudo add-apt-repository -y ppa:deadsnakes/ppa
-    sudo apt-get update -q
-    sudo apt-get install -y python3.12 python3.12-venv
-    PYTHON_PATH=$(command -v python3.12)
-  fi
+if [ -x "$UV" ]; then
+  echo "Using uv: $UV ($($UV --version))"
+  USE_UV=1
+else
+  echo "uv not available — falling back to python3 + pip"
+  USE_UV=0
 fi
 
 # ── Create venv ──────────────────────────────────────────────────────────────
-mkdir -p "$HOME/.local/share/metis-mcp"
-
-if [ -d "$VENV_DIR" ]; then
-  echo "Existing venv found at $VENV_DIR — updating packages only."
-  VENV_PYTHON="$VENV_DIR/bin/python3"
-  if [ ! -f "$VENV_PYTHON" ]; then
+if [ "$USE_UV" = "1" ]; then
+  # uv can download Python itself if needed — no OS packages required
+  if [ -d "$VENV_DIR" ] && [ ! -f "$VENV_DIR/bin/python3" ]; then
     echo "Venv appears broken — recreating..."
     rm -rf "$VENV_DIR"
   fi
-fi
-
-if [ ! -d "$VENV_DIR" ]; then
-  echo "Creating venv at $VENV_DIR..."
-  "$PYTHON_PATH" -m venv "$VENV_DIR"
-fi
-
-# ── Upgrade pip inside venv ──────────────────────────────────────────────────
-"$VENV_DIR/bin/pip" install --quiet --upgrade pip setuptools wheel
-
-# ── Install dependencies ─────────────────────────────────────────────────────
-echo "Installing requirements..."
-if [ -f "$SRC_DIR/requirements.txt" ]; then
-  "$VENV_DIR/bin/pip" install --quiet -r "$SRC_DIR/requirements.txt"
+  if [ -d "$VENV_DIR" ]; then
+    echo "Existing venv found — updating packages only."
+  else
+    echo "Creating venv at $VENV_DIR (Python 3.12)..."
+    "$UV" venv "$VENV_DIR" --python 3.12
+  fi
 else
-  "$VENV_DIR/bin/pip" install --quiet -e "$SRC_DIR"
+  # Fallback: system Python + venv
+  PYTHON=""
+  for candidate in python3.12 python3.11 python3.10 python3.9 python3; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      VER=$("$candidate" -c "import sys; print('%d.%d' % sys.version_info[:2])" 2>/dev/null)
+      MAJOR=${VER%%.*}; MINOR=${VER#*.}
+      if [ "$MAJOR" -ge 3 ] && [ "$MINOR" -ge 9 ]; then
+        PYTHON="$candidate"; break
+      fi
+    fi
+  done
+  [ -z "$PYTHON" ] && echo "ERROR: Python 3.9+ not found." && exit 1
+  PYTHON_PATH=$(command -v "$PYTHON")
+  echo "Using Python: $PYTHON_PATH ($($PYTHON --version))"
+  if [ -d "$VENV_DIR" ] && [ ! -f "$VENV_DIR/bin/python3" ]; then
+    rm -rf "$VENV_DIR"
+  fi
+  [ ! -d "$VENV_DIR" ] && "$PYTHON_PATH" -m venv "$VENV_DIR"
+  "$VENV_DIR/bin/pip" install --quiet --upgrade pip setuptools wheel
 fi
 
-# ── Install package in editable mode ─────────────────────────────────────────
-echo "Installing metis-mcp-server (editable)..."
-"$VENV_DIR/bin/pip" install --quiet -e "$SRC_DIR"
+# ── Install package ───────────────────────────────────────────────────────────
+# The source lives on OneDrive (NTFS). Setuptools can't write temp files there
+# (fchmod/chmod not permitted on NTFS), so we copy to a local path first.
+echo "Copying source to local filesystem for install..."
+rm -rf "$LOCAL_SRC"
+mkdir -p "$LOCAL_SRC"
+cp -r "$SRC_DIR/src" "$LOCAL_SRC/"
+cp "$SRC_DIR/pyproject.toml" "$LOCAL_SRC/"
+[ -f "$SRC_DIR/requirements.txt" ] && cp "$SRC_DIR/requirements.txt" "$LOCAL_SRC/"
+
+echo "Installing requirements..."
+if [ "$USE_UV" = "1" ]; then
+  [ -f "$LOCAL_SRC/requirements.txt" ] && "$UV" pip install --python "$VENV_DIR/bin/python3" -r "$LOCAL_SRC/requirements.txt" --quiet
+  echo "Installing metis-mcp-server..."
+  "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC"
+else
+  [ -f "$LOCAL_SRC/requirements.txt" ] && "$VENV_DIR/bin/pip" install --quiet -r "$LOCAL_SRC/requirements.txt"
+  echo "Installing metis-mcp-server..."
+  "$VENV_DIR/bin/pip" install --quiet "$LOCAL_SRC"
+fi
 
 # ── Install dashboard (app-py) dependencies into same venv ───────────────────
 # Skipped on 'light' profile — dashboard not included.
@@ -121,7 +139,11 @@ if [ "$METIS_PROFILE" != "light" ]; then
   APP_REQ="$METIS_RC_ROOT/system/app-py/requirements.txt"
   if [ -f "$APP_REQ" ]; then
     echo "Installing dashboard dependencies..."
-    "$VENV_DIR/bin/pip" install --quiet -r "$APP_REQ"
+    if [ "$USE_UV" = "1" ]; then
+      "$UV" pip install --python "$VENV_DIR/bin/python3" -r "$APP_REQ" --quiet
+    else
+      "$VENV_DIR/bin/pip" install --quiet -r "$APP_REQ"
+    fi
     echo "  Dashboard deps installed"
   fi
 else
