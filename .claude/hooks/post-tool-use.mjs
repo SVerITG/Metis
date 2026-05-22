@@ -15,7 +15,7 @@
 import { readFileSync, appendFileSync, mkdirSync } from "fs";
 import { join } from "path";
 
-const RC_ROOT = process.env.METIS_RC_ROOT || "";
+const RC_ROOT = process.env.METIS_RC_ROOT || process.cwd();
 const HOOK_PROFILE = (process.env.METIS_HOOK_PROFILE || "standard").toLowerCase();
 
 // Minimal profile: skip session logging entirely
