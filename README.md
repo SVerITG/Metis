@@ -233,9 +233,11 @@ The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account. No 
 
 ### Today — *Your morning command centre*
 
-- **Morning briefing** — a paragraph written by Metis each day: new papers on your specific research topics, field-wide news, surveillance updates, and connections to what you were thinking about last week. Fully personalised to your configured domain and interests.
-- **Task priorities** — what's due today, what's overdue, what's in progress
-- **Focus suggestion** — Metis reads your open threads and recommends where to put your energy today
+- **Session handoff strip** — top of the page shows what happened in your last session: summary, key decisions, time since last session
+- **Actionable ledger** — 7 live metrics: UNREAD papers · HAT PAPERS · OPEN TASKS · BLOCKED · IDEAS · SESSIONS (7D) · TOKENS (today)
+- **Morning briefing** — a paragraph written by Metis each day: new papers on your specific research topics, field-wide news, surveillance updates, and connections to what you were thinking about last week. Adapts text for morning, afternoon, or evening. Fully personalised to your configured domain and interests.
+- **Priority task queue** — three tiers with visual dividers: 🔴 BLOCKED → ⭐ STARRED → OLDEST OPEN
+- **2×2 research grid** — Active Research (resume) · Priority Tasks (top), New Science (library with unread indicators) · News + Idea (bottom)
 - **Overnight news rail** — field-specific articles from your monitored feeds, categorised by topic
 - **Quick capture** (`Ctrl+K`) — add ideas, notes, tasks, or open questions without leaving the tab
 
@@ -245,9 +247,11 @@ The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account. No 
 
 - **Semantic PDF search** — ask "what do my papers say about X?" and get cited answers from a local vector index (sqlite-vec + nomic-embed-text-v1.5-Q, no external API)
 - **Literature cards** — title, abstract, your annotations, citation links, domain tags, reading status
-- **Domain notes** — structured notes per research area
+- **HAT corpus browser** — specialist layer for Human African Trypanosomiasis literature: 168 items, indexed and searchable by topic
+- **Coverage gap analysis** — visual map of which methods areas your library covers and what's missing
+- **Unified search** — single query across PDFs, library cards, HAT corpus, and notes simultaneously
+- **Recently added strip** — last 10 documents added across all sources
 - **Knowledge graph** — visual map of connections between papers, ideas, and topics
-- **Live search** across all content types simultaneously
 
 ---
 
@@ -805,7 +809,7 @@ Four variants (Full / PH Shell / Standard / MCP-only) — all install Claude Des
 
 ## Project Status
 
-**Completed:** Phases 0–9b — foundations · 9-tab dashboard · 34 agents · CLI skills · 5-layer memory · knowledge graph · self-improvement loop · token efficiency · Zotero/Mendeley · meeting assistant · PaperQA2 PDF search · cross-pollination
+**Completed:** Phases 0–9b + Post-v1.0 — foundations · 9-tab dashboard · 34 agents · CLI skills · 5-layer memory · knowledge graph · self-improvement loop · token efficiency · Zotero/Mendeley · meeting assistant · PaperQA2 PDF search · cross-pollination · session handoff strip · real subagent orchestration · Release Coordinator proactive guardian · HAT corpus knowledge layer · research timeline recording
 
 **In progress:** Phase 10 (automated daily tasks) · Phase 11 (.exe installer) · Phase 12 (test suite)
 
@@ -899,6 +903,19 @@ A domain pack consists of: key journals + RSS feeds, specialist agents or skill 
 ---
 
 # Changelog
+
+## Post-v1.0 improvements — May 2026
+
+| What changed |
+|---|
+| **Today surface deep restructure** — session handoff strip (last session context at top), 7-metric actionable ledger, three-tier priority task queue (blocked → starred → oldest), 2×2 research quadrant layout, HAT corpus in library archive with unread indicators, time-of-day adaptive morning brief |
+| **Metis real subagent orchestration** — Metis now spawns real isolated subagents via the Agent tool, with independent token tracking per subagent |
+| **Release Coordinator** — redesigned as a proactive git guardian with `status` / `commit` / `push` / `audit` commands, commit theme taxonomy, installer currency checks, and personal data scan gating on every commit |
+| **MCP tools** — `consolidate_session_memory`, `record_research_finding`, `query_research_timeline` added; session memory expanded |
+| **Knowledge surface** — HAT corpus browser with 168 items, unified search across all sources, coverage gap analysis, recently-added strip |
+| **Installer** — HAT specialist knowledge layer added to knowledge DB builder; `sentence-transformers` dependency for local embeddings |
+| **Hooks** — `stop.mjs` portable paths (no hardcoded usernames); session consolidation fallback via Python |
+| **Gitignore** — comprehensive fix: post-restructure bare rules enforce personal data boundaries that were broken since the `metis/` → root restructure |
 
 ## v1.0 — May 2026
 
