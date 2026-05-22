@@ -7,10 +7,7 @@
   <!-- ===== PageHead ===== -->
   <div class="page-head">
     <div>
-      <div class="page-eyebrow" id="today-eyebrow">
-        {%- set today_str = '' -%}
-        Loading date…
-      </div>
+      <div class="page-eyebrow" id="today-eyebrow">Loading date…</div>
       <h1 class="page-title" id="today-title">Good morning.</h1>
     </div>
     <div class="page-meta" id="today-meta" style="white-space:pre-line;">—</div>
@@ -36,6 +33,11 @@
   })();
   </script>
 
+  <!-- ===== Session Handoff strip ===== -->
+  <div hx-get="/api/partial/today/session-handoff"
+       hx-trigger="load"
+       hx-swap="outerHTML"></div>
+
   <!-- ===== Morning Brief ===== -->
   <div hx-get="/api/partial/today/morning-brief"
        hx-trigger="load"
@@ -47,86 +49,84 @@
     </div>
   </div>
 
-  <!-- ===== Resume card ===== -->
-  <div hx-get="/api/partial/today/resume"
-       hx-trigger="load"
-       hx-swap="outerHTML">
-    <div style="margin-bottom:28px;opacity:.4;">
-      <div class="sec-label" style="margin-bottom:10px;"><span>Where you left off</span></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-        <div class="panel panel-pad" style="height:80px;"></div>
-        <div class="panel panel-pad" style="height:80px;"></div>
-      </div>
-    </div>
-  </div>
-
   <!-- ===== Ledger ===== -->
   <div hx-get="/api/partial/today/ledger"
        hx-trigger="load"
        hx-swap="outerHTML">
     <div class="ledger" style="opacity:.4;">
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">ARTICLES</div></div>
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">BOOKS</div></div>
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">UNREAD</div></div>
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">HAT PAPERS</div></div>
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">OPEN TASKS</div></div>
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">BLOCKED</div></div>
       <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">IDEAS</div></div>
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">THREADS</div></div>
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">PROJECTS</div></div>
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">AGENTS</div></div>
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">COURSES</div></div>
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">SESSIONS · 7D</div></div>
+      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">TOKENS · TODAY</div></div>
     </div>
   </div>
 
-  <!-- ===== News + Library + To-do + Idea (2-col normal, 4-col ultra-wide) ===== -->
+  <!-- ===== 2 × 2 Quadrant ===== -->
   <div class="today-quad">
 
-  <!-- News radar + Library freshly filed -->
-  <div class="grid grid-main" style="margin-bottom:32px;">
+    <!-- Row 1: Active Research · Priority Tasks -->
+    <div class="grid grid-main" style="margin-bottom:32px;">
 
-    <!-- News radar -->
-    <div hx-get="/api/partial/today/news-archive"
-         hx-trigger="load"
-         hx-swap="outerHTML">
-      <div>
-        <div class="sec-label" style="margin-bottom:8px;">News radar</div>
-        <div class="panel" style="height:200px;opacity:.4;"></div>
+      <!-- Active Research (resume) -->
+      <div hx-get="/api/partial/today/resume"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div>
+          <div class="sec-label" style="margin-bottom:8px;">Active Research</div>
+          <div class="panel panel-pad" style="height:120px;opacity:.4;"></div>
+        </div>
       </div>
+
+      <!-- Priority Tasks -->
+      <div hx-get="/api/partial/today/todos-archive"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div>
+          <div class="sec-label" style="margin-bottom:8px;">Priority Tasks</div>
+          <div class="panel" style="height:120px;opacity:.4;"></div>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Library freshly filed -->
-    <div hx-get="/api/partial/today/library-archive"
-         hx-trigger="load"
-         hx-swap="outerHTML">
-      <div>
-        <div class="sec-label" style="margin-bottom:8px;">Library — freshly filed</div>
-        <div class="panel" style="height:200px;opacity:.4;"></div>
+    <!-- Row 2: New Science · News + Idea -->
+    <div class="grid grid-main">
+
+      <!-- New Science (library) -->
+      <div hx-get="/api/partial/today/library-archive"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div>
+          <div class="sec-label" style="margin-bottom:8px;">New Science</div>
+          <div class="panel" style="height:200px;opacity:.4;"></div>
+        </div>
       </div>
-    </div>
 
-  </div>
-
-  <!-- ===== To-do + From your notebook ===== -->
-  <div class="grid grid-main">
-
-    <!-- To-do -->
-    <div hx-get="/api/partial/today/todos-archive"
-         hx-trigger="load"
-         hx-swap="outerHTML">
+      <!-- News + Idea (stacked) -->
       <div>
-        <div class="sec-label" style="margin-bottom:8px;">To-do</div>
-        <div class="panel" style="height:180px;opacity:.4;"></div>
+        <div hx-get="/api/partial/today/news-archive"
+             hx-trigger="load"
+             hx-swap="outerHTML">
+          <div>
+            <div class="sec-label" style="margin-bottom:8px;">News Radar</div>
+            <div class="panel" style="height:120px;opacity:.4;"></div>
+          </div>
+        </div>
+        <div style="margin-top:20px;"
+             hx-get="/api/partial/today/idea-today"
+             hx-trigger="load"
+             hx-swap="outerHTML">
+          <div>
+            <div class="sec-label" style="margin-bottom:8px;">Idea for today</div>
+            <div class="panel" style="height:80px;opacity:.4;"></div>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- Idea for today -->
-    <div hx-get="/api/partial/today/idea-today"
-         hx-trigger="load"
-         hx-swap="outerHTML">
-      <div>
-        <div class="sec-label" style="margin-bottom:8px;">Idea for today</div>
-        <div class="panel" style="height:180px;opacity:.4;"></div>
-      </div>
     </div>
-
-  </div>
 
   </div><!-- /.today-quad -->
 

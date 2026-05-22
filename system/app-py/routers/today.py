@@ -1211,6 +1211,14 @@ def _get_db_path() -> str:
 
 @router.get("/api/partial/today/morning-brief", response_class=HTMLResponse)
 async def today_morning_brief(request: Request):
+    hour = datetime.datetime.now().hour
+    if hour < 12:
+        time_of_day = "morning"
+    elif hour < 17:
+        time_of_day = "afternoon"
+    else:
+        time_of_day = "evening"
+
     open_threads = 0
     try:
         open_threads = db_scalar(
@@ -1231,8 +1239,7 @@ async def today_morning_brief(request: Request):
         if db_path:
             sources = _load_brief_sources(db_path)
 
-    # Fallback when AI brief unavailable
-    fallback_headlines: list[str] = []
+    fallback_headlines: list[dict] = []
     if not ai_brief:
         try:
             rows = db_query(
@@ -1257,6 +1264,7 @@ async def today_morning_brief(request: Request):
             "sources": sources,
             "fallback_headlines": fallback_headlines,
             "open_threads": open_threads,
+            "time_of_day": time_of_day,
         },
     )
 
@@ -1264,6 +1272,9 @@ async def today_morning_brief(request: Request):
 @router.post("/api/morning-brief/refresh", response_class=HTMLResponse)
 async def morning_brief_refresh(request: Request):
     """Force regenerate the morning brief and return the updated partial."""
+    hour = datetime.datetime.now().hour
+    time_of_day = "morning" if hour < 12 else "afternoon" if hour < 17 else "evening"
+
     open_threads = 0
     try:
         open_threads = db_scalar(
@@ -1309,6 +1320,7 @@ async def morning_brief_refresh(request: Request):
             "sources": sources,
             "fallback_headlines": fallback_headlines,
             "open_threads": open_threads,
+            "time_of_day": time_of_day,
         },
     )
 
@@ -1316,71 +1328,59 @@ async def morning_brief_refresh(request: Request):
 @router.get("/api/partial/today/ledger", response_class=HTMLResponse)
 async def today_ledger(request: Request):
     stats = {}
+
+    # Unread papers (actionable — needs reading)
     try:
-        stats["article_count"] = db_scalar(
-            "SELECT COUNT(*) FROM literature_metadata WHERE source NOT IN ('book','Book') OR source IS NULL"
+        stats["unread_count"] = db_scalar(
+            "SELECT COUNT(*) FROM literature_metadata "
+            "WHERE (is_read IS NULL OR is_read=0) AND title IS NOT NULL AND title!=''",
+            default=0,
         ) or 0
     except Exception:
-        stats["article_count"] = 0
+        stats["unread_count"] = 0
 
+    # HAT corpus size (core research literature)
     try:
-        stats["book_count"] = db_scalar(
-            "SELECT COUNT(*) FROM library_cards WHERE card_type IN ('book','Book')"
+        stats["hat_count"] = db_scalar(
+            "SELECT COUNT(*) FROM library_seeded WHERE extension='pdf'", default=0
         ) or 0
-        if stats["book_count"] == 0:
-            stats["book_count"] = db_scalar(
-                "SELECT COUNT(*) FROM literature_metadata WHERE source IN ('book','Book')"
-            ) or 0
     except Exception:
-        stats["book_count"] = 0
+        stats["hat_count"] = 0
 
+    # Open + in-progress tasks
     try:
-        stats["idea_count"] = db_scalar("SELECT COUNT(*) FROM ideas") or 0
+        stats["open_tasks"] = db_scalar(
+            "SELECT COUNT(*) FROM tasks WHERE status IN ('open','in_progress')", default=0
+        ) or 0
+    except Exception:
+        stats["open_tasks"] = 0
+
+    # Blocked tasks (needs its own signal)
+    try:
+        stats["blocked_count"] = db_scalar(
+            "SELECT COUNT(*) FROM tasks WHERE status='blocked'", default=0
+        ) or 0
+    except Exception:
+        stats["blocked_count"] = 0
+
+    # Ideas captured
+    try:
+        stats["idea_count"] = db_scalar("SELECT COUNT(*) FROM ideas", default=0) or 0
     except Exception:
         stats["idea_count"] = 0
 
+    # Sessions this week (activity rhythm)
     try:
-        stats["thread_count"] = db_scalar(
-            "SELECT COUNT(DISTINCT project_id) FROM tasks WHERE status='in_progress'"
+        week_ago = (datetime.datetime.now() - datetime.timedelta(days=7)).isoformat()
+        stats["sessions_week"] = db_scalar(
+            "SELECT COUNT(*) FROM session_summaries WHERE created_at >= ?",
+            (week_ago,),
+            default=0,
         ) or 0
     except Exception:
-        stats["thread_count"] = 0
+        stats["sessions_week"] = 0
 
-    try:
-        stats["project_count"] = db_scalar(
-            "SELECT COUNT(*) FROM projects WHERE status='active'"
-        ) or 0
-    except Exception:
-        stats["project_count"] = 0
-
-    try:
-        import json as _json
-        from pathlib import Path as _Path
-
-        registry_path = (
-            _Path(__file__).parent.parent.parent / "config" / "agent-registry.json"
-        )
-        if not registry_path.exists():
-            rc_root = __import__("os").environ.get("METIS_RC_ROOT", "")
-            if rc_root:
-                registry_path = _Path(rc_root) / "system" / "config" / "agent-registry.json"
-        if registry_path.exists():
-            data = _json.loads(registry_path.read_text())
-            agents = data.get("agents", data) if isinstance(data, dict) else data
-            stats["agent_count"] = len(agents) if isinstance(agents, list) else len(agents)
-        else:
-            stats["agent_count"] = db_scalar("SELECT COUNT(DISTINCT agent_slug) FROM agent_runs") or 0
-    except Exception:
-        stats["agent_count"] = 0
-
-    try:
-        stats["course_count"] = db_scalar(
-            "SELECT COUNT(*) FROM learning_courses WHERE status='active'"
-        ) or 0
-    except Exception:
-        stats["course_count"] = 0
-
-    # Phase 8.13 — token pulse (tokens used today across all agent runs)
+    # Token pulse (today's usage)
     try:
         today_iso = datetime.date.today().isoformat()
         tokens_today = db_scalar(
@@ -1393,10 +1393,10 @@ async def today_ledger(request: Request):
         tokens_today = 0
     stats["tokens_today"] = tokens_today
     if tokens_today >= 1_000_000:
-        stats["token_tier"] = "alert"   # red
+        stats["token_tier"] = "alert"
         stats["token_label"] = f"{tokens_today / 1_000_000:.1f}M"
     elif tokens_today >= 500_000:
-        stats["token_tier"] = "warn"    # amber
+        stats["token_tier"] = "warn"
         stats["token_label"] = f"{tokens_today // 1000}K"
     elif tokens_today >= 1000:
         stats["token_tier"] = "ok"
@@ -1409,6 +1409,50 @@ async def today_ledger(request: Request):
         request,
         "partials/today_ledger.html",
         {"stats": stats},
+    )
+
+
+@router.get("/api/partial/today/session-handoff", response_class=HTMLResponse)
+async def today_session_handoff(request: Request):
+    """Last session context strip — surfaces recent decisions and open threads."""
+    import json as _json
+    sessions = []
+    try:
+        rows = db_query(
+            "SELECT session_id, summary, decisions, key_topics, created_at "
+            "FROM session_summaries ORDER BY created_at DESC LIMIT 2"
+        ) or []
+        for r in rows:
+            decisions = []
+            try:
+                raw = r.get("decisions") or "[]"
+                decisions = _json.loads(raw) if isinstance(raw, str) else (raw or [])
+                decisions = [d for d in decisions if d and len(d) > 8][:4]
+            except Exception:
+                pass
+            summary_text = (r.get("summary") or "").strip()
+            # Trim to first 280 chars, stopping at a sentence boundary
+            if len(summary_text) > 280:
+                cut = summary_text.rfind(". ", 0, 280)
+                summary_text = summary_text[:cut + 1] if cut > 40 else summary_text[:280] + "…"
+            created = r.get("created_at") or ""
+            sessions.append({
+                "session_id": r.get("session_id") or "",
+                "summary": summary_text,
+                "decisions": decisions,
+                "age_label": _age_label(created) if created else "",
+                "date": created[:10] if created else "",
+            })
+    except Exception:
+        pass
+
+    if not sessions:
+        return HTMLResponse("")
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_session_handoff.html",
+        {"sessions": sessions},
     )
 
 
@@ -1576,17 +1620,19 @@ async def today_idea_today(request: Request):
 async def today_library_archive(request: Request):
     items = []
     try:
-        # Show most recently added papers (Zotero sync or manual adds)
-        since_week = (datetime.datetime.now() - datetime.timedelta(days=30)).isoformat()
+        # Zotero / literature_metadata — most recent with unread flag
+        since_month = (datetime.datetime.now() - datetime.timedelta(days=30)).isoformat()
         rows = db_query(
-            "SELECT id, title, authors, year, source, tags, abstract, doi, url, created_at "
-            "FROM literature_metadata WHERE created_at >= ? ORDER BY created_at DESC LIMIT 6",
-            (since_week,),
+            "SELECT id, title, authors, year, source, tags, abstract, doi, url, created_at, "
+            "COALESCE(is_read, 0) as is_read "
+            "FROM literature_metadata WHERE created_at >= ? ORDER BY created_at DESC LIMIT 4",
+            (since_month,),
         ) or []
         if not rows:
             rows = db_query(
-                "SELECT id, title, authors, year, source, tags, abstract, doi, url, created_at "
-                "FROM literature_metadata ORDER BY created_at DESC LIMIT 6"
+                "SELECT id, title, authors, year, source, tags, abstract, doi, url, created_at, "
+                "COALESCE(is_read, 0) as is_read "
+                "FROM literature_metadata ORDER BY created_at DESC LIMIT 4"
             ) or []
         for r in rows:
             raw_authors = r.get("authors") or ""
@@ -1612,6 +1658,35 @@ async def today_library_archive(request: Request):
                 "url": item_url,
                 "created_at": r.get("created_at") or "",
                 "age_label": _age_label(r["created_at"]) if r.get("created_at") else "",
+                "is_read": bool(r.get("is_read", 0)),
+                "silo": "zotero",
+            })
+    except Exception:
+        pass
+
+    # HAT corpus — recent additions (by rowid as proxy for recency)
+    try:
+        hat_rows = db_query(
+            "SELECT basename, top_folder, method, relevance_note, status "
+            "FROM library_seeded WHERE extension='pdf' ORDER BY rowid DESC LIMIT 3"
+        ) or []
+        for r in hat_rows:
+            title = (r.get("basename") or "").replace(".pdf", "").replace(".PDF", "")
+            status = r.get("status") or "to_triage"
+            items.append({
+                "title": title[:120],
+                "authors": "",
+                "year": "",
+                "domain": r.get("top_folder") or "HAT",
+                "card_type": "HAT CORPUS",
+                "abstract": r.get("relevance_note") or r.get("method") or "",
+                "source": "HAT",
+                "doi": "",
+                "url": "",
+                "created_at": "",
+                "age_label": "",
+                "is_read": status not in ("to_triage",),
+                "silo": "hat",
             })
     except Exception:
         pass
@@ -1620,7 +1695,7 @@ async def today_library_archive(request: Request):
         try:
             rows = db_query(
                 "SELECT id, title, authors, domain, card_type, content, created_at "
-                "FROM library_cards ORDER BY created_at DESC LIMIT 6"
+                "FROM library_cards ORDER BY created_at DESC LIMIT 4"
             ) or []
             for r in rows:
                 items.append({
@@ -1631,6 +1706,8 @@ async def today_library_archive(request: Request):
                     "content": (r.get("content") or "")[:200],
                     "source": r.get("card_type") or "NOTE",
                     "created_at": r.get("created_at") or "",
+                    "is_read": True,
+                    "silo": "card",
                 })
         except Exception:
             pass
@@ -1646,23 +1723,62 @@ async def today_library_archive(request: Request):
 async def today_todos_archive(request: Request):
     tasks = []
     try:
-        rows = db_query(
-            "SELECT t.task_id, t.title, t.project_id, t.status, t.category, t.created_at, t.starred, "
-            "p.title as project_title "
-            "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
-            "WHERE t.starred = 1 AND t.status NOT IN ('done','completed','cancelled','deleted') "
-            "ORDER BY CASE t.status WHEN 'in_progress' THEN 1 WHEN 'blocked' THEN 2 ELSE 3 END, "
-            "t.created_at DESC"
-        ) or []
-        for r in rows:
-            tasks.append({
+        def _fmt_task(r, section):
+            return {
                 "id": r.get("task_id"),
                 "title": r.get("title") or "Untitled task",
                 "project": r.get("project_title") or r.get("project_id") or "",
                 "project_id": r.get("project_id") or "",
                 "status": r.get("status") or "open",
-                "starred": r.get("starred", 0),
-            })
+                "starred": bool(r.get("starred", 0)),
+                "section": section,
+            }
+
+        # Tier 1: blocked (highest urgency)
+        blocked = db_query(
+            "SELECT t.task_id, t.title, t.project_id, t.status, t.category, t.created_at, t.starred, "
+            "p.title as project_title "
+            "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+            "WHERE t.status = 'blocked' "
+            "ORDER BY t.created_at ASC LIMIT 4"
+        ) or []
+        blocked_ids = {r["task_id"] for r in blocked}
+
+        # Tier 2: starred non-blocked
+        starred = db_query(
+            "SELECT t.task_id, t.title, t.project_id, t.status, t.category, t.created_at, t.starred, "
+            "p.title as project_title "
+            "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+            "WHERE t.starred = 1 AND t.status NOT IN ('done','completed','cancelled','deleted','blocked') "
+            "ORDER BY CASE t.status WHEN 'in_progress' THEN 1 ELSE 2 END, t.created_at DESC LIMIT 4"
+        ) or []
+        starred_ids = {r["task_id"] for r in starred}
+        all_ids = blocked_ids | starred_ids
+
+        # Tier 3: oldest open (fills remaining slots up to 6 total)
+        oldest = []
+        remaining = max(0, 6 - len(blocked) - len(starred))
+        if remaining > 0:
+            oldest_rows = db_query(
+                "SELECT t.task_id, t.title, t.project_id, t.status, t.category, t.created_at, t.starred, "
+                "p.title as project_title "
+                "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+                "WHERE t.status IN ('open','in_progress') AND t.starred = 0 "
+                "ORDER BY t.created_at ASC LIMIT ?",
+                (remaining + 4,),
+            ) or []
+            for r in oldest_rows:
+                if r["task_id"] not in all_ids:
+                    oldest.append(r)
+                    if len(oldest) >= remaining:
+                        break
+
+        for r in blocked:
+            tasks.append(_fmt_task(r, "blocked"))
+        for r in starred:
+            tasks.append(_fmt_task(r, "starred"))
+        for r in oldest:
+            tasks.append(_fmt_task(r, "open"))
     except Exception:
         pass
 
@@ -1889,6 +2005,121 @@ async def api_handoff_generate():
     except Exception as e:
         return JSONResponse(
             {"status": "error", "message": f"Could not generate handoff: {e}"},
+            status_code=500,
+        )
+
+
+# ---------------------------------------------------------------------------
+# /api/session/consolidate — auto-summarise session from JSONL log
+# ---------------------------------------------------------------------------
+
+
+@router.post("/api/session/consolidate")
+async def api_session_consolidate(request: Request):
+    """Read today's JSONL session log and write a structured summary to SQLite.
+
+    Called automatically by the stop hook at session end. Accepts optional
+    brief_content (the handoff brief markdown) so that the stored summary
+    contains real session content, not just tool-call counts.
+    """
+    import collections
+    import json
+    import sqlite3
+
+    body: dict = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    brief_content: str = body.get("brief_content", "")
+
+    rc_root = os.environ.get("METIS_RC_ROOT", str(Path(__file__).parent.parent.parent))
+    today = datetime.date.today().isoformat()
+    jsonl_path = Path(rc_root) / "journal" / "sessions" / f"session-{today}.jsonl"
+
+    tool_calls: list[dict] = []
+    if jsonl_path.exists():
+        for line in jsonl_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line:
+                try:
+                    tool_calls.append(json.loads(line))
+                except json.JSONDecodeError:
+                    pass
+
+    if not tool_calls and not brief_content:
+        return JSONResponse({"status": "skipped", "reason": "no tool calls and no brief"})
+
+    tools_used = [t.get("tool", "") for t in tool_calls]
+    agents = sorted(set(t["agent"] for t in tool_calls if t.get("agent")))
+    top_tools = collections.Counter(tools_used).most_common(5)
+
+    # Build summary: prefer handoff brief content (rich) over tool-count summary (thin)
+    if brief_content and len(brief_content) > 100:
+        # Truncate to first 2000 chars of the brief — captures "What happened" section
+        summary = brief_content[:2000].strip()
+    else:
+        summary_parts = [f"Session on {today}: {len(tool_calls)} tool calls."]
+        if agents:
+            summary_parts.append(f"Agents active: {', '.join(agents)}.")
+        if top_tools:
+            summary_parts.append(
+                "Most used tools: " + ", ".join(f"{t}×{n}" for t, n in top_tools) + "."
+            )
+        summary = " ".join(summary_parts)
+
+    # Extract bullet-point decisions from brief (lines starting with "- " under a
+    # ## What happened or ## Decisions section)
+    extracted_decisions: list[str] = []
+    if brief_content:
+        in_section = False
+        for line in brief_content.splitlines():
+            if any(h in line.lower() for h in ["## what happened", "## decision", "## key decision"]):
+                in_section = True
+                continue
+            if in_section and line.startswith("##"):
+                in_section = False
+            if in_section and line.strip().startswith("- ") and len(line.strip()) > 10:
+                extracted_decisions.append(line.strip()[2:].strip())
+        extracted_decisions = extracted_decisions[:10]  # cap at 10
+
+    try:
+        db_path = _get_db_path()
+        with sqlite3.connect(db_path) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS session_summaries (
+                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id TEXT,
+                    summary    TEXT NOT NULL,
+                    key_topics TEXT,
+                    decisions  TEXT,
+                    created_at TEXT NOT NULL
+                )
+            """)
+            conn.execute(
+                """INSERT INTO session_summaries
+                   (session_id, summary, key_topics, decisions, created_at)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (
+                    today,
+                    summary,
+                    json.dumps(agents),
+                    json.dumps(extracted_decisions),
+                    datetime.datetime.utcnow().isoformat(),
+                ),
+            )
+            conn.commit()
+        return JSONResponse({
+            "status": "ok",
+            "summary": summary[:200],
+            "tool_calls": len(tool_calls),
+            "agents": agents,
+            "decisions_extracted": len(extracted_decisions),
+            "has_brief": bool(brief_content),
+        })
+    except Exception as e:
+        return JSONResponse(
+            {"status": "error", "message": f"Could not save session summary: {e}"},
             status_code=500,
         )
 

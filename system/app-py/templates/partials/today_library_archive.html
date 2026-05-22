@@ -1,25 +1,30 @@
 <div>
   <div class="sec-label" style="margin-bottom:8px;">
     New science
-    <span class="sec-label-tail">RECENTLY FILED</span>
+    <span class="sec-label-tail">ZOTERO · HAT CORPUS</span>
   </div>
   <div class="panel">
     {% if items %}
       {% for item in items %}
-      <div class="feed-row m-edge-left" style="padding:8px 0 8px 10px;border-bottom:1px solid var(--m-rule-soft);position:relative;">
+      <div class="feed-row" style="padding:8px 0 8px 10px;border-bottom:1px solid var(--m-rule-soft);position:relative;
+                                   border-left:{% if not item.is_read and item.silo == 'zotero' %}2px solid var(--m-accent){% else %}2px solid transparent{% endif %};">
         <!-- Type + domain + age -->
         <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap;">
-          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-accent);">
+          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:{% if item.silo == 'hat' %}var(--m-warn,#b45309){% else %}var(--m-accent){% endif %};">
             {{ (item.source or item.card_type or 'ARTICLE')|upper }}
           </span>
           {% if item.domain and item.domain != item.source %}
           <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ item.domain|upper }}</span>
           {% endif %}
+          {% if not item.is_read and item.silo == 'zotero' %}
+          <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 5px;
+                       border:1px solid var(--m-accent);border-radius:1px;color:var(--m-accent);">UNREAD</span>
+          {% endif %}
           {% if item.age_label %}
           <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted-soft);margin-left:auto;">{{ item.age_label }}</span>
           {% endif %}
         </div>
-        <!-- Title (linked if DOI/URL available) -->
+        <!-- Title -->
         {% if item.url %}
         <a href="{{ item.url }}" target="_blank" rel="noopener"
            style="display:block;font-size:13px;color:var(--m-ink);line-height:1.4;margin-bottom:3px;font-weight:500;text-decoration:none;"
@@ -36,7 +41,7 @@
           {{ item.authors }}{% if item.year %} · {{ item.year }}{% endif %}
         </div>
         {% endif %}
-        <!-- Abstract -->
+        <!-- Abstract or relevance note -->
         {% if item.abstract %}
         <div style="font-size:11.5px;color:var(--m-muted);line-height:1.45;">
           {{ item.abstract }}{% if item.abstract|length >= 160 %}…{% endif %}
