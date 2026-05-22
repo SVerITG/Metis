@@ -150,3 +150,68 @@ metis/system/app/R/mod_news.R
 # Legacy personal items
 resume.docx
 Prompt.docx
+
+# ── Post-restructure rules (repo root promoted from metis/ in commit 98d5e93) ─
+# The metis/ prefixed rules above no longer match after the restructure.
+# These bare rules enforce the same exclusions at the new root.
+
+# Personal research content
+journal/
+inbox/
+inputs/literature/
+inputs/meetings/
+outputs/
+projects/active/
+archive/
+basket/
+
+# Library content — PDFs and local paths
+knowledge/library/papers/
+knowledge/library/open-access-books/
+knowledge/library/disease-areas/
+knowledge/library/reading-lists/
+knowledge/library/people-organizations/
+knowledge/library/ph-background/
+knowledge/library/DOWNLOAD-RESULTS*.txt
+knowledge/library/MANUAL-DOWNLOADS-COMPLETE.md
+knowledge/library/download-library-*.sh
+
+# Database files
+system/app/data/
+system/app-py/data/
+
+# Personal agent overlay files
+agents/**/*-context.md
+agents/librarian/sources.md
+agents/news-radar/sources.md
+
+# Private agent (personal repo graph, credential patterns)
+agents/release-coordinator/
+
+# Per-user config
+system/config/user-preferences.json
+system/config/user-config.yaml
+system/config/session-log.md
+system/config/SETUP*.md
+system/config/claude-project-instructions.md
+system/config/implementation-progress.json
+system/config/thinking-profile.yaml
+system/config/metis-persona.md
+system/config/eval-report.md
+system/config/eval-results.json
+system/config/implementation-plan.md
+system/config/feature-backlog.md
+system/config/install-state.json
+
+# Runtime / machine-local artifacts
+system/app-py/.metis-port
+system/app-py/eval-results.json
+system/app-py/DESIGN_BRIEF.md
+system/install/seed_ph_database.py
+system/install/seed_mockup_demo.py
+system/install/*.log
+system/tests/
+system/design-docs/
+
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json
