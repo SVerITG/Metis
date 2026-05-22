@@ -1,38 +1,39 @@
-<div class="ledger" id="today-ledger" style="grid-template-columns:repeat(8,1fr);">
+<div class="ledger" id="today-ledger" style="grid-template-columns:repeat(7,1fr);">
   <a href="#" class="ledger-cell"
+     title="Unread papers in Zotero library"
      onclick="setNavActive(document.querySelector('[data-tab=knowledge]'),'knowledge'); htmx.ajax('GET','/api/tab/knowledge',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum">{{ stats.article_count or 0 }}</div>
-    <div class="ledger-l">ARTICLES</div>
+    <div class="ledger-n tnum" style="{% if stats.unread_count %}color:var(--m-accent);{% endif %}">{{ stats.unread_count if stats.unread_count else '—' }}</div>
+    <div class="ledger-l">UNREAD</div>
   </a>
   <a href="#" class="ledger-cell"
+     title="HAT Research Corpus PDFs"
      onclick="setNavActive(document.querySelector('[data-tab=knowledge]'),'knowledge'); htmx.ajax('GET','/api/tab/knowledge',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum">{{ stats.book_count or 0 }}</div>
-    <div class="ledger-l">BOOKS</div>
+    <div class="ledger-n tnum">{{ stats.hat_count if stats.hat_count else '—' }}</div>
+    <div class="ledger-l">HAT PAPERS</div>
   </a>
   <a href="#" class="ledger-cell"
+     title="Open and in-progress tasks"
+     onclick="setNavActive(document.querySelector('[data-tab=work]'),'work'); htmx.ajax('GET','/api/tab/work',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
+    <div class="ledger-n tnum">{{ stats.open_tasks if stats.open_tasks else '—' }}</div>
+    <div class="ledger-l">OPEN TASKS</div>
+  </a>
+  <a href="#" class="ledger-cell{% if stats.blocked_count %} ledger-tier-warn{% endif %}"
+     title="Blocked tasks needing attention"
+     onclick="setNavActive(document.querySelector('[data-tab=work]'),'work'); htmx.ajax('GET','/api/tab/work',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
+    <div class="ledger-n tnum" style="{% if stats.blocked_count %}color:var(--m-warn,#b45309);{% endif %}">{{ stats.blocked_count if stats.blocked_count else '—' }}</div>
+    <div class="ledger-l" style="{% if stats.blocked_count %}color:var(--m-warn,#b45309);{% endif %}">BLOCKED</div>
+  </a>
+  <a href="#" class="ledger-cell"
+     title="Captured ideas"
      onclick="setNavActive(document.querySelector('[data-tab=thinking]'),'thinking'); htmx.ajax('GET','/api/tab/thinking',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum">{{ stats.idea_count or 0 }}</div>
+    <div class="ledger-n tnum">{{ stats.idea_count if stats.idea_count else '—' }}</div>
     <div class="ledger-l">IDEAS</div>
   </a>
   <a href="#" class="ledger-cell"
-     onclick="setNavActive(document.querySelector('[data-tab=thinking]'),'thinking'); htmx.ajax('GET','/api/tab/thinking',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum">{{ stats.thread_count or 0 }}</div>
-    <div class="ledger-l">THREADS</div>
-  </a>
-  <a href="#" class="ledger-cell"
-     onclick="setNavActive(document.querySelector('[data-tab=work]'),'work'); htmx.ajax('GET','/api/tab/work',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum">{{ stats.project_count or 0 }}</div>
-    <div class="ledger-l">PROJECTS</div>
-  </a>
-  <a href="#" class="ledger-cell"
+     title="Sessions in the last 7 days"
      onclick="setNavActive(document.querySelector('[data-tab=metis]'),'metis'); htmx.ajax('GET','/api/tab/metis',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum">{{ stats.agent_count or 0 }}</div>
-    <div class="ledger-l">AGENTS</div>
-  </a>
-  <a href="#" class="ledger-cell"
-     onclick="setNavActive(document.querySelector('[data-tab=learning]'),'learning'); htmx.ajax('GET','/api/tab/learning',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum">{{ stats.course_count or 0 }}</div>
-    <div class="ledger-l">COURSES</div>
+    <div class="ledger-n tnum">{{ stats.sessions_week if stats.sessions_week else '—' }}</div>
+    <div class="ledger-l">SESSIONS · 7D</div>
   </a>
   <a href="#" class="ledger-cell ledger-cell--token ledger-tier-{{ stats.token_tier or 'muted' }}"
      title="Today's total agent-run tokens. Amber > 500k, red > 1M."

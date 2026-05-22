@@ -11,11 +11,21 @@
     <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);">MORNING BRIEFING</span>
     <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">·</span>
     {% if brief %}
-      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">AI brief ready</span>
+      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
+        {%- if time_of_day == 'morning' -%}brief ready · start your research day
+        {%- elif time_of_day == 'afternoon' -%}brief ready · afternoon check-in
+        {%- else -%}brief ready · end of day review
+        {%- endif -%}
+      </span>
     {% elif fallback_headlines %}
       <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">scan pending — showing latest signals</span>
     {% else %}
-      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">no scan yet today</span>
+      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
+        {%- if time_of_day == 'morning' -%}no scan yet — click Update to generate
+        {%- elif time_of_day == 'afternoon' -%}no scan yet today
+        {%- else -%}no scan today — run /news-radar to generate
+        {%- endif -%}
+      </span>
     {% endif %}
     <span style="margin-left:auto;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);transition:transform 200ms;transform:{% if brief or fallback_headlines %}rotate(90deg){% else %}none{% endif %};" id="brief-chevron">▸</span>
   </div>

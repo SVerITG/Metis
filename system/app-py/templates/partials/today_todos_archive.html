@@ -1,47 +1,62 @@
 <div>
   <div class="sec-label" style="margin-bottom:8px;">
-    To-do
-    <span class="sec-label-tail">STARRED TASKS</span>
+    Priority Tasks
+    <span class="sec-label-tail">BLOCKED · STARRED · OPEN</span>
   </div>
   <div class="panel">
     {% if tasks %}
+      {% set ns = namespace(last_section='') %}
       {% for task in tasks %}
-      <div class="todo-row" data-task-id="{{ task.id }}" data-project-id="{{ task.project_id }}">
-        <!-- done toggle -->
-        <span class="todo-check" onclick="todayTaskDone('{{ task.id }}', this)"
-              style="cursor:pointer;"
-              title="Mark done">
-          {% if task.status == 'done' or task.status == 'completed' %}
-          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="4 8 7 11 12 5"/>
-          </svg>
+        {% if task.section != ns.last_section %}
+          {% set ns.last_section = task.section %}
+          <div style="padding:3px 12px;background:var(--m-surface-2);border-bottom:1px solid var(--m-rule-soft);">
+            {% if task.section == 'blocked' %}
+            <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;color:var(--m-warn,#b45309);">BLOCKED</span>
+            {% elif task.section == 'starred' %}
+            <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;color:var(--m-muted);">STARRED</span>
+            {% else %}
+            <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;color:var(--m-muted);">OLDEST OPEN</span>
+            {% endif %}
+          </div>
+        {% endif %}
+        <div class="todo-row" data-task-id="{{ task.id }}" data-project-id="{{ task.project_id }}"
+             style="border-left:{% if task.section == 'blocked' %}2px solid var(--m-warn,#b45309){% elif task.section == 'starred' %}2px solid var(--m-ochre-deep,#b36a1d){% else %}2px solid transparent{% endif %};">
+          <!-- done toggle -->
+          <span class="todo-check" onclick="todayTaskDone('{{ task.id }}', this)"
+                style="cursor:pointer;" title="Mark done">
+            {% if task.status == 'done' or task.status == 'completed' %}
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="4 8 7 11 12 5"/>
+            </svg>
+            {% endif %}
+          </span>
+          <!-- title + project badge -->
+          <span class="todo-title" style="flex:1;">
+            {{ task.title or 'Untitled task' }}
+            {% if task.project %}
+            <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-left:6px;letter-spacing:.06em;">{{ task.project[:22] }}</span>
+            {% endif %}
+          </span>
+          <!-- status badge -->
+          <span class="todo-meta" style="{% if task.status == 'blocked' %}color:var(--m-warn,#b45309);{% endif %}">
+            {%- if task.status == 'in_progress' -%}IN PROGRESS
+            {%- elif task.status == 'blocked' -%}BLOCKED
+            {%- else -%}&mdash;
+            {%- endif -%}
+          </span>
+          {% if task.starred %}
+          <!-- unstar -->
+          <button onclick="todayTaskUnstar('{{ task.id }}', this)"
+                  title="Remove from Today (unstar)"
+                  style="background:none;border:none;padding:0 4px;cursor:pointer;
+                         font-size:11px;color:var(--m-ochre-deep,#b36a1d);opacity:.7;flex-shrink:0;line-height:1;"
+                  onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.7'">&#9733;</button>
           {% endif %}
-        </span>
-        <!-- title + project badge -->
-        <span class="todo-title" style="flex:1;">
-          {{ task.title or 'Untitled task' }}
-          {% if task.project %}
-          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-left:6px;letter-spacing:.06em;">{{ task.project[:22] }}</span>
-          {% endif %}
-        </span>
-        <!-- status badge -->
-        <span class="todo-meta">
-          {%- if task.status == 'in_progress' -%}IN PROGRESS
-          {%- elif task.status == 'blocked' -%}BLOCKED
-          {%- else -%}&mdash;
-          {%- endif -%}
-        </span>
-        <!-- unstar -->
-        <button onclick="todayTaskUnstar('{{ task.id }}', this)"
-                title="Remove from Today (unstar)"
-                style="background:none;border:none;padding:0 4px;cursor:pointer;
-                       font-size:11px;color:var(--m-ochre-deep,#b36a1d);opacity:.7;flex-shrink:0;line-height:1;"
-                onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.7'">&#9733;</button>
-      </div>
+        </div>
       {% endfor %}
     {% else %}
       <div class="empty-row">
-        No starred tasks yet. Star a task on the Work tab to pin it here.
+        No blocked or starred tasks. All clear.
       </div>
     {% endif %}
 
@@ -65,6 +80,7 @@ function addTodoRow(input) {
   const compose = input.closest('.todo-compose');
   const row = document.createElement('div');
   row.className = 'todo-row';
+  row.style.borderLeft = '2px solid transparent';
   row.innerHTML = '<span class="todo-check"></span>'
     + '<span class="todo-title" style="flex:1;">' + val.replace(/</g,'&lt;') + '</span>'
     + '<span class="todo-meta">ADDED</span>';
