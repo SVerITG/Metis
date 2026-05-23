@@ -442,6 +442,21 @@ async def metis_improvement(request: Request, days: int = 14):
     except Exception:
         learned = []
 
+    # Recent reflexion entries — the raw "went_well / could_improve" text Metis
+    # has been recording. Surfacing these lets the user see the actual session
+    # quality signal, not only the keyword themes.
+    recent_reflexions: list[dict] = []
+    try:
+        rrows = db_query(
+            "SELECT reflexion_id as id, agent_slug, went_well, could_improve, "
+            "missing_context, tool_wishes, created_at "
+            "FROM reflexion_log ORDER BY reflexion_id DESC LIMIT 5",
+            default=[],
+        ) or []
+        recent_reflexions = [dict(r) for r in rrows]
+    except Exception:
+        recent_reflexions = []
+
     return templates.TemplateResponse(
         request,
         "partials/metis_improvement.html",
@@ -449,6 +464,7 @@ async def metis_improvement(request: Request, days: int = 14):
             "themes": themes,
             "proposals": proposals,
             "learned": learned,
+            "recent_reflexions": recent_reflexions,
             "days": days,
         },
     )

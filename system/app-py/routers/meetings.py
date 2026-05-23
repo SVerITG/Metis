@@ -612,16 +612,34 @@ async def meetings_live_assist(request: Request):
     connections we've surfaced in recent meetings, and an invitation to start
     a new one.
     """
-    today = datetime.date.today().isoformat()
+    now = datetime.datetime.now()
+    today = now.date().isoformat()
 
     # 'Live' = a meeting filed today with meeting_type='live'
+    # We also try to detect any meeting started in the last 60 minutes,
+    # regardless of meeting_type, since a recording session is the truest signal.
     live_today = db_query(
-        "SELECT meeting_id, title, attendees, meeting_date FROM meetings "
+        "SELECT meeting_id, title, attendees, meeting_date, created_at, "
+        "duration_minutes, status FROM meetings "
         "WHERE meeting_type = 'live' AND meeting_date = ? "
         "ORDER BY meeting_id DESC LIMIT 1",
         (today,),
     ) or []
     live = live_today[0] if live_today else None
+
+    # Elapsed minutes — "started" is approximated from created_at where present
+    elapsed_min = None
+    fresh = False
+    if live:
+        try:
+            created_raw = (live.get("created_at") or "").replace("Z", "")
+            if created_raw:
+                started = datetime.datetime.fromisoformat(created_raw[:19])
+                elapsed_min = int((now - started).total_seconds() // 60)
+                fresh = elapsed_min is not None and elapsed_min <= 60
+        except Exception:
+            elapsed_min = None
+            fresh = True  # filed today is a fair "fresh" signal
 
     # Last few connections: derive from the most recent live meetings by
     # cross-pollinating their title + transcript snippet.
@@ -649,7 +667,12 @@ async def meetings_live_assist(request: Request):
     return templates.TemplateResponse(
         request,
         "partials/meetings_live_assist.html",
-        {"live": live, "connections": connections},
+        {
+            "live": live,
+            "live_fresh": fresh,
+            "elapsed_min": elapsed_min,
+            "connections": connections,
+        },
     )
 
 
@@ -884,7 +907,7 @@ async def meeting_create_tasks(request: Request, meeting_id: int):
     if created == 0:
         return HTMLResponse(
             '<div style="font-family:var(--m-sans);font-size:13px;color:var(--m-alert);padding:10px 0;">'
-            "Could not create tasks — an error occurred.</div>"
+            "I couldn't create tasks — an error occurred.</div>"
         )
 
     plural = "task" if created == 1 else "tasks"

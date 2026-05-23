@@ -55,15 +55,20 @@
 
   <!-- Action buttons -->
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+    {% if c.course_url %}
+    {# Course has an external URL — make that the primary, opens a new tab reliably #}
+    <button class="btn btn--primary btn--caps"
+            onclick="openCourseExternal('{{ c.course_url|e }}','{{ c.title|e }}')"
+            title="Open the course in a new browser tab">Open</button>
     {% if c.slug %}
+    <button class="btn btn--ghost btn--caps"
+            onclick="openCourseReader('{{ c.slug }}')"
+            title="Open the in-app reader (lessons + progress)">In-app</button>
+    {% endif %}
+    {% elif c.slug %}
     <button class="btn btn--primary btn--caps"
             onclick="openCourseReader('{{ c.slug }}')"
             title="Open course reader">Open</button>
-    {% endif %}
-    {% if c.course_url %}
-    <a href="{{ c.course_url }}" target="_blank" class="btn btn--ghost btn--caps" style="text-decoration:none;">
-      External
-    </a>
     {% endif %}
     {% if c.project_id %}
     <button class="btn btn--ghost btn--caps"

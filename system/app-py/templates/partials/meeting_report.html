@@ -160,7 +160,9 @@ function openReportInClaude() {
   const prompt = `I have a meeting transcript from "${title}". Please write a polished, professional meeting report from it. Include an executive summary, decisions, action items with owners, and key discussion points.\n\nRaw transcript:\n${transcript}\n\nAuto-extracted decisions: ${decisions.join('; ')}\nAuto-extracted actions: ${actions.join('; ')}`;
 
   navigator.clipboard.writeText(prompt).then(() => {
-    alert('Prompt copied to clipboard. Paste it in Claude Desktop or Claude.ai for a polished AI-written report.');
+    if (window.showToast) {
+      showToast("Prompt copied — paste it in Claude Desktop or claude.ai to get the polished report.");
+    }
   });
 }
 </script>

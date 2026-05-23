@@ -249,3 +249,17 @@ Run `status` first. Then execute: <user command or 'status only'>
 - **No matching agent:** Route to HR/Talent to assess the gap.
 - **Impossible request:** Acknowledge the limit simply and move to what can be done.
 - **User asks to commit or push directly:** Always route to Release Coordinator. Never bypass the scan gate.
+
+
+## Self-improvement notes (draft — review before keeping)
+
+_Auto-drafted on 2026-05-23 from 3 reflexions over the last 14 days._
+
+- **Recurring weaknesses to address**: `test` (4), `library` (2), `migration` (2)
+- **Context I keep wishing I had**: `agent` (3), `test` (3), `dashboard` (2)
+- **Tools I keep wishing I had**: `tool` (3), `git` (3), `directory` (2)
+
+Recent verbatim examples:
+  - The three silos problem (library_cards, library_seeded, literature_metadata) was identified but the unification path requires schema migration — a fuller propos
+  - The git staging required several manual retries due to gitignore rules and missing file paths — a staging helper that knows the project's ignore patterns would 
+  - The fixture scope bug in the test suite had been present since at least the 2026-05-20 test run (the test report said 342 passed, but it was run with the system

@@ -139,7 +139,7 @@
        style="margin-bottom:32px;">
     <div class="grid grid-2">
       {% for _ in range(4) %}
-      <div class="panel panel-pad" style="padding:20px 22px;opacity:.4;min-height:120px;">
+      <div class="panel panel-pad skeleton" style="padding:20px 22px;min-height:120px;">
         <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:60%;margin-bottom:10px;"></div>
         <div style="height:14px;background:var(--m-surface-3);border-radius:2px;margin-bottom:6px;"></div>
         <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:80%;"></div>
@@ -201,7 +201,7 @@
        hx-swap="outerHTML">
     <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;">
       {% for col in ['Inbox', 'This week', 'In progress', 'Closed · this week'] %}
-      <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;opacity:.4;min-height:300px;">
+      <div class="skeleton" style="border-radius:3px;padding:12px;min-height:300px;">
         <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
           <span>{{ col }}</span><span>—</span>
         </div>
@@ -222,7 +222,7 @@
        hx-trigger="load"
        hx-swap="outerHTML"
        id="work-all-tasks">
-    <div class="panel panel-pad" style="opacity:.4;min-height:80px;"></div>
+    <div class="panel panel-pad skeleton" style="min-height:80px;"></div>
   </div>
 
 </div>

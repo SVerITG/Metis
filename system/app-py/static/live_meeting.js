@@ -103,7 +103,11 @@ class LiveMeetingSession {
   _startBrowserSpeech() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      alert('Live transcription requires Chrome or Edge. Firefox does not support the Web Speech API.');
+      if (window.showToast) {
+        showToast("Live transcription needs Chrome or Edge — Firefox doesn't have the browser feature I use. Paste a transcript instead?");
+      } else {
+        console.warn('Live transcription requires Chrome or Edge.');
+      }
       return false;
     }
 
@@ -116,7 +120,9 @@ class LiveMeetingSession {
     this.recognition.onresult = (e) => this._onResult(e);
     this.recognition.onerror = (e) => {
       if (e.error === 'not-allowed') {
-        alert('Microphone access denied. Allow microphone access and try again.');
+        if (window.showToast) {
+          showToast("I need microphone access. Click the camera/mic icon in your browser's address bar, set it to Allow, then try Start listening again.");
+        }
         this.stop();
       }
     };
@@ -135,7 +141,9 @@ class LiveMeetingSession {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (e) {
-      alert('Microphone access denied. Allow microphone access and try again.');
+      if (window.showToast) {
+        showToast("I need microphone access. Click the camera/mic icon in your browser's address bar, set it to Allow, then try Start listening again.");
+      }
       this.stop();
       return;
     }
@@ -495,7 +503,10 @@ async function beginLiveMeeting() {
   const lang     = langEl     ? langEl.value           : 'en-US';
   const chosenMode = modeSelEl ? modeSelEl.value       : 'server';
   const speakers = [...speakerEls].map(e => e.value.trim()).filter(Boolean);
-  if (!speakers.length) { alert('Add at least one participant name.'); return; }
+  if (!speakers.length) {
+    if (window.showToast) showToast('Add at least one participant name before we start.');
+    return;
+  }
 
   // Determine whether to use server Whisper based on the user's choice
   let serverWhisper = false;
@@ -597,7 +608,7 @@ function saveLiveSessionRaw() {
   fd.append('transcript', lm.getTranscriptText());
   fetch('/api/meeting/import', { method: 'POST', body: fd })
     .then(r => r.text())
-    .then(() => alert('Transcript saved to Meetings.'));
+    .then(() => { if (window.showToast) showToast('Transcript saved to Meetings.'); });
 }
 
 function closeLiveSession() {

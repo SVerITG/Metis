@@ -21,7 +21,7 @@
        hx-trigger="load"
        hx-swap="outerHTML">
     {% for label in ['QUARTER · Q4', 'WEEK · 46', 'TODAY'] %}
-    <div class="panel panel-pad" style="padding:22px 24px;opacity:.4;">
+    <div class="panel panel-pad skeleton" style="padding:22px 24px;">
       <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:55%;margin-bottom:10px;"></div>
       <div style="height:18px;background:var(--m-surface-3);border-radius:2px;margin-bottom:8px;"></div>
       <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:70%;margin-bottom:16px;"></div>
@@ -39,7 +39,7 @@
        hx-get="/api/partial/planner/focus-board"
        hx-trigger="load"
        hx-swap="innerHTML">
-    <div class="panel panel-pad" style="padding:18px 22px;opacity:.4;">
+    <div class="panel panel-pad skeleton" style="padding:18px 22px;">
       <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Surfacing your top three projects…</p>
     </div>
   </div>
@@ -77,7 +77,7 @@
            hx-trigger="load"
            hx-swap="outerHTML">
         {% for _ in range(4) %}
-        <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}opacity:.4;">
+        <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
           <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
             <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:70%;"></div>
             <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:10%;"></div>

@@ -5,7 +5,7 @@
   <span class="badge bg-primary">{{ edge_count }} links</span>
   {% if edge_count == 0 %}
   <div class="alert alert-warning py-1 px-2 mb-0 small">
-    No links indexed yet. Run <code>kg_index_notes()</code> via the MCP server to build the graph.
+    No connections mapped yet. Tell me to <code>build the knowledge graph</code> in Claude Code and I'll wire your notes together.
   </div>
   {% endif %}
   <div class="ms-auto d-flex gap-2">
@@ -53,7 +53,7 @@
       renderGraph(allNodes, allLinks);
     } catch(e) {
       document.getElementById("kg-container").innerHTML =
-        '<div class="p-3 text-danger">Failed to load graph data: ' + e + '</div>';
+        '<div class="p-3 text-danger">I couldn\'t load the graph data: ' + e + '</div>';
     }
   }
 

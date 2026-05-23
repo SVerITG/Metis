@@ -1,59 +1,264 @@
+{#-
+  New Science — redesigned 2026-05-23
+  Goal: compact, scannable, two silos visually separated, abstracts on-demand.
+-#}
+{% set zotero_items = items | selectattr("silo", "equalto", "zotero") | list %}
+{% set hat_items    = items | selectattr("silo", "equalto", "hat") | list %}
+{% set card_items   = items | selectattr("silo", "equalto", "card") | list %}
+{% set unread_count = zotero_items | rejectattr("is_read") | list | length %}
+
 <div>
-  <div class="sec-label" style="margin-bottom:8px;">
-    New science
-    <span class="sec-label-tail">ZOTERO · HAT CORPUS</span>
+  <div class="sec-label" style="margin-bottom:8px;display:flex;align-items:baseline;gap:8px;">
+    <span>New science</span>
+    <span class="sec-label-tail">
+      {% if zotero_items %}{{ zotero_items|length }} ZOTERO{% if unread_count %} · {{ unread_count }} UNREAD{% endif %}{% endif %}
+      {% if zotero_items and hat_items %} · {% endif %}
+      {% if hat_items %}{{ hat_items|length }} HAT CORPUS{% endif %}
+    </span>
+    <a href="/knowledge" style="margin-left:auto;font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;color:var(--m-muted);text-decoration:none;">
+      OPEN LIBRARY →
+    </a>
   </div>
-  <div class="panel">
-    {% if items %}
-      {% for item in items %}
-      <div class="feed-row" style="padding:8px 0 8px 10px;border-bottom:1px solid var(--m-rule-soft);position:relative;
-                                   border-left:{% if not item.is_read and item.silo == 'zotero' %}2px solid var(--m-accent){% else %}2px solid transparent{% endif %};">
-        <!-- Type + domain + age -->
-        <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px;flex-wrap:wrap;">
-          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:{% if item.silo == 'hat' %}var(--m-warn,#b45309){% else %}var(--m-accent){% endif %};">
-            {{ (item.source or item.card_type or 'ARTICLE')|upper }}
-          </span>
-          {% if item.domain and item.domain != item.source %}
-          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ item.domain|upper }}</span>
-          {% endif %}
-          {% if not item.is_read and item.silo == 'zotero' %}
-          <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 5px;
-                       border:1px solid var(--m-accent);border-radius:1px;color:var(--m-accent);">UNREAD</span>
-          {% endif %}
-          {% if item.age_label %}
-          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted-soft);margin-left:auto;">{{ item.age_label }}</span>
-          {% endif %}
+
+  <div class="panel" style="overflow:hidden;">
+
+    {% if not items %}
+      {# True empty state — Metis voice #}
+      <div style="padding:28px 22px;display:flex;gap:14px;align-items:flex-start;">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--m-muted)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.55;margin-top:2px;">
+          <path d="M4 4h12a4 4 0 0 1 4 4v12"/><path d="M4 4v16h16"/><path d="M8 9h8M8 13h6"/>
+        </svg>
+        <div>
+          <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);margin-bottom:3px;">Your library is quiet.</div>
+          <div style="font-size:12px;color:var(--m-muted);line-height:1.55;">Sync your Zotero library on the Metis tab → Integrations, or drop a PDF into the basket and ask me to add it.</div>
         </div>
-        <!-- Title -->
-        {% if item.url %}
-        <a href="{{ item.url }}" target="_blank" rel="noopener"
-           style="display:block;font-size:13px;color:var(--m-ink);line-height:1.4;margin-bottom:3px;font-weight:500;text-decoration:none;"
-           onmouseover="this.style.color='var(--m-accent)'"
-           onmouseout="this.style.color='var(--m-ink)'">{{ item.title or 'Untitled' }}</a>
-        {% else %}
-        <div style="font-size:13px;color:var(--m-ink);line-height:1.4;margin-bottom:3px;font-weight:500;">
-          {{ item.title or 'Untitled' }}
+      </div>
+    {% endif %}
+
+    {# ---------- ZOTERO column ---------- #}
+    {% if zotero_items %}
+    <div class="lib-group">
+      <div class="lib-group-head">
+        <span class="lib-group-dot lib-group-dot--zotero"></span>
+        <span class="lib-group-label">Zotero · last 30 days</span>
+        <span class="lib-group-count">{{ zotero_items|length }}</span>
+      </div>
+      {% for item in zotero_items %}
+      <div class="lib-row{% if item.is_read %} lib-row--read{% endif %}">
+        <div class="lib-row-main">
+          {% if item.url %}
+            <a class="lib-row-title" href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title }}</a>
+          {% else %}
+            <span class="lib-row-title">{{ item.title }}</span>
+          {% endif %}
+          <div class="lib-row-meta">
+            {% if item.authors %}<span class="lib-row-authors">{{ item.authors }}{% if item.year %} · {{ item.year }}{% endif %}</span>{% endif %}
+            {% if not item.is_read %}<span class="lib-chip lib-chip--unread">unread</span>{% endif %}
+            {% if item.age_label %}<span class="lib-row-age">{{ item.age_label }}</span>{% endif %}
+          </div>
         </div>
-        {% endif %}
-        <!-- Authors + year -->
-        {% if item.authors %}
-        <div style="font-size:11px;font-style:italic;color:var(--m-muted);margin-bottom:3px;">
-          {{ item.authors }}{% if item.year %} · {{ item.year }}{% endif %}
-        </div>
-        {% endif %}
-        <!-- Abstract or relevance note -->
         {% if item.abstract %}
-        <div style="font-size:11.5px;color:var(--m-muted);line-height:1.45;">
-          {{ item.abstract }}{% if item.abstract|length >= 160 %}…{% endif %}
-        </div>
+        <details class="lib-row-abstract-details">
+          <summary class="lib-row-abstract-toggle">show abstract</summary>
+          <div class="lib-row-abstract">{{ item.abstract }}{% if item.abstract|length >= 199 %}…{% endif %}</div>
+        </details>
         {% endif %}
       </div>
       {% endfor %}
-    {% else %}
-      <div class="empty-row" style="padding:20px;text-align:center;">
-        <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-bottom:8px;">Library inbox clear</div>
-        <div style="font-size:12px;color:var(--m-muted);">No papers added recently. Sync your Zotero library to populate.</div>
-      </div>
+    </div>
     {% endif %}
+
+    {# ---------- HAT CORPUS column ---------- #}
+    {% if hat_items %}
+    <div class="lib-group">
+      <div class="lib-group-head">
+        <span class="lib-group-dot lib-group-dot--hat"></span>
+        <span class="lib-group-label">HAT corpus · recently added</span>
+        <span class="lib-group-count">{{ hat_items|length }}</span>
+      </div>
+      {% for item in hat_items %}
+      <div class="lib-row">
+        <div class="lib-row-main">
+          <span class="lib-row-title">{{ item.title }}</span>
+          <div class="lib-row-meta">
+            {% if item.domain %}<span class="lib-row-domain">{{ item.domain }}</span>{% endif %}
+          </div>
+        </div>
+        {% if item.abstract %}
+        <details class="lib-row-abstract-details">
+          <summary class="lib-row-abstract-toggle">show notes</summary>
+          <div class="lib-row-abstract">{{ item.abstract }}</div>
+        </details>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# ---------- CARDS fallback ---------- #}
+    {% if card_items %}
+    <div class="lib-group">
+      <div class="lib-group-head">
+        <span class="lib-group-dot lib-group-dot--card"></span>
+        <span class="lib-group-label">Library cards</span>
+        <span class="lib-group-count">{{ card_items|length }}</span>
+      </div>
+      {% for item in card_items %}
+      <div class="lib-row">
+        <div class="lib-row-main">
+          <span class="lib-row-title">{{ item.title }}</span>
+          <div class="lib-row-meta">
+            {% if item.domain %}<span class="lib-row-domain">{{ item.domain }}</span>{% endif %}
+            {% if item.card_type %}<span class="lib-row-domain">{{ item.card_type }}</span>{% endif %}
+          </div>
+        </div>
+        {% if item.content %}
+        <details class="lib-row-abstract-details">
+          <summary class="lib-row-abstract-toggle">show note</summary>
+          <div class="lib-row-abstract">{{ item.content }}</div>
+        </details>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
   </div>
 </div>
+
+<style>
+/* Scoped library row styles — compact, scannable, abstract on-demand */
+.lib-group {
+  border-bottom: 1px solid var(--m-rule-soft);
+}
+.lib-group:last-child { border-bottom: none; }
+
+.lib-group-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 8px;
+  background: var(--m-surface-2);
+  border-bottom: 1px solid var(--m-rule-soft);
+}
+.lib-group-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.lib-group-dot--zotero { background: var(--m-accent); }
+.lib-group-dot--hat    { background: var(--m-warn, #b45309); }
+.lib-group-dot--card   { background: var(--m-muted); }
+.lib-group-label {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--m-ink);
+  flex: 1;
+}
+.lib-group-count {
+  font-family: var(--m-mono);
+  font-size: 9.5px;
+  color: var(--m-muted);
+}
+
+.lib-row {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--m-rule-soft);
+  transition: background 120ms;
+}
+.lib-row:last-child { border-bottom: none; }
+.lib-row:hover { background: var(--m-surface-2); }
+.lib-row--read { opacity: 0.62; }
+.lib-row--read:hover { opacity: 1; }
+
+.lib-row-main {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.lib-row-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--m-ink);
+  line-height: 1.4;
+  text-decoration: none;
+  flex: 1 1 60%;
+  min-width: 0;
+}
+.lib-row-title:hover { color: var(--m-accent); }
+
+.lib-row-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--m-muted);
+  flex-wrap: wrap;
+}
+.lib-row-authors {
+  font-style: italic;
+}
+.lib-row-domain {
+  font-family: var(--m-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+}
+.lib-row-age {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  color: var(--m-muted);
+}
+
+.lib-chip {
+  font-family: var(--m-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+.lib-chip--unread {
+  background: var(--m-accent);
+  color: white;
+  font-weight: 600;
+}
+
+.lib-row-abstract-details {
+  margin-top: 4px;
+}
+.lib-row-abstract-toggle {
+  font-family: var(--m-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.lib-row-abstract-toggle::-webkit-details-marker { display: none; }
+.lib-row-abstract-toggle::before {
+  content: "▸  ";
+  display: inline-block;
+  transition: transform 150ms;
+  color: var(--m-muted);
+}
+.lib-row-abstract-details[open] .lib-row-abstract-toggle::before {
+  transform: rotate(90deg);
+}
+.lib-row-abstract-details[open] .lib-row-abstract-toggle {
+  color: var(--m-accent);
+}
+.lib-row-abstract {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--m-muted);
+  line-height: 1.55;
+  padding-left: 14px;
+  border-left: 2px solid var(--m-rule-soft);
+}
+</style>

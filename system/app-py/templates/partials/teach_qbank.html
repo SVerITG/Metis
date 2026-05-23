@@ -1,30 +1,44 @@
-{# partials/teach_qbank.html — Question bank placeholder #}
+{# partials/teach_qbank.html — Question bank per course #}
 <div class="panel">
   <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
     <span class="kicker kicker--accent" style="margin:0;">Q-BANK</span>
     <div style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);margin-top:4px;">
-      Generated questions across your courses, ready to use for self-assessment.
+      Generated questions across your courses, ready to drill whenever you want.
     </div>
   </div>
 
   {% if not has_table or total == 0 %}
   <div style="padding:24px 20px;">
     <p style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.6;margin:0 0 8px;">
-      No questions generated yet.
+      No question banks yet.
     </p>
     <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.6;margin:0;">
-      When a course has questions generated — multiple choice, short answer, recall prompts — I'll show them here so you can drill on them whenever you want.
+      When a course is built with
+      <code style="font-family:var(--m-mono);font-size:12px;background:var(--m-surface-2);padding:1px 5px;border-radius:3px;">/course-builder</code>,
+      generated questions appear here.
     </p>
   </div>
   {% else %}
-  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
-    <div style="font-family:var(--m-display);font-size:18px;color:var(--m-ink);">{{ total }}</div>
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">QUESTION{% if total != 1 %}S{% endif %} ON FILE</div>
+  <div style="padding:16px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;align-items:baseline;gap:14px;">
+    <div style="font-family:var(--m-display);font-size:28px;color:var(--m-ink);line-height:1;">{{ total }}</div>
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">
+      QUESTION{% if total != 1 %}S{% endif %} ON FILE &middot; {{ rows | length }} COURSE{% if rows | length != 1 %}S{% endif %}
+    </div>
   </div>
   {% for r in rows %}
-  <div style="padding:10px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;justify-content:space-between;align-items:baseline;gap:12px;">
-    <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);">{{ r.title }}</span>
-    <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">{{ r.n }} Q</span>
+  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:{% if r.sample %}6px{% else %}0{% endif %};">
+      <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;">{{ r.title }}</span>
+      <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.10em;color:var(--m-accent);background:var(--m-surface-2);
+                   border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);padding:3px 9px;flex-shrink:0;">
+        {{ r.n }} Q
+      </span>
+    </div>
+    {% if r.sample %}
+    <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);line-height:1.5;">
+      &ldquo;{{ r.sample }}&rdquo;
+    </div>
+    {% endif %}
   </div>
   {% endfor %}
   {% endif %}

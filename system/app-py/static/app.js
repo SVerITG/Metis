@@ -234,6 +234,24 @@ async function openCourseReader(slug) {
   panel.scrollIntoView({ behavior: 'smooth' });
 }
 
+// Open a course's external URL in a new browser tab.
+// Called synchronously from an onclick so popup blockers allow it.
+// Falls back to navigating the current tab if the popup is blocked.
+function openCourseExternal(url, title) {
+  if (!url) {
+    showToast('No external URL set for this course.');
+    return;
+  }
+  const win = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!win || win.closed || typeof win.closed === 'undefined') {
+    // Popup blocked — fall back to a direct navigation
+    showToast(`Opening ${title || 'course'}…`);
+    window.location.href = url;
+  } else {
+    showToast(`Opened <strong>${title || 'course'}</strong> in a new tab.`);
+  }
+}
+
 async function completeLesson(slug, lessonId, btn) {
   try {
     const res = await fetch(`/api/course/${slug}/lesson/${lessonId}/complete`, { method: 'POST' });
@@ -249,7 +267,7 @@ async function completeLesson(slug, lessonId, btn) {
         { target: '#course-overview-panel', swap: 'innerHTML' });
     }
   } catch (e) {
-    showToast('Could not save lesson progress.');
+    showToast('I couldn't save your lesson progress — try again.');
   }
 }
 
@@ -267,7 +285,7 @@ async function buildCourse(courseId) {
       showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — prompt copied for <strong>${data.title || courseId}</strong>`);
     }
   } catch (e) {
-    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not load course prompt');
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't load that course prompt — try again, or check the Metis tab.');
   }
 }
 
@@ -297,7 +315,7 @@ async function buildCourseIdea(slug, title) {
       showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — paste prompt to build <strong>${data.title}</strong>`);
     }
   } catch (e) {
-    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not prepare course prompt');
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't prepare the prompt — try again.');
   }
 }
 
@@ -310,7 +328,7 @@ async function buildAdaptiveCourse(topicSlug, topicTitle) {
       showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — paste prompt to start adaptive course on <strong>${topicTitle}</strong>`);
     }
   } catch (e) {
-    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not prepare adaptive course prompt');
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't prepare adaptive course prompt');
   }
 }
 
@@ -339,7 +357,7 @@ async function launchWithQuestion(btn, slug, title) {
       showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — prompt includes your research question`);
     }
   } catch (e) {
-    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not prepare course prompt');
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't prepare the prompt — try again.');
   }
 }
 
@@ -420,7 +438,7 @@ function openNewsSummary(briefId) {
     .then(html => {
       host.innerHTML = html;
     })
-    .catch(() => showToast('Could not load news detail.'));
+    .catch(() => showToast('I couldn't load that news item — refresh the page if it keeps happening.'));
 }
 
 function closeNewsModal(event) {
@@ -447,7 +465,7 @@ async function markTaskDone(taskId, btn) {
     }
     showToast('Task marked done — nice work.');
   } catch {
-    showToast('Could not update task');
+    showToast('I couldn't update that task — try again.');
   }
 }
 
@@ -460,7 +478,7 @@ async function deleteTask(taskId, btn) {
     if (row) row.remove();
     showToast('Task deleted');
   } catch {
-    showToast('Could not delete task');
+    showToast('I couldn't delete task');
   }
 }
 
@@ -471,7 +489,7 @@ async function markProjectTaskDone(taskId, projectId) {
     await _refreshProjectTasks(projectId);
     showToast('Task done ✓');
   } catch {
-    showToast('Could not update task');
+    showToast('I couldn't update that task — try again.');
   }
 }
 
@@ -495,7 +513,7 @@ async function submitQuickTask(projectId) {
     document.getElementById(`task-add-${projectId}`).style.display = 'none';
     showToast('Task added');
   } catch {
-    showToast('Could not add task');
+    showToast('I couldn't add that task — try again.');
   }
 }
 
@@ -548,7 +566,7 @@ async function saveProjectNotes(projectId) {
     const indicator = document.getElementById(`notes-saved-${projectId}`);
     if (indicator) { indicator.textContent = 'SAVED'; setTimeout(() => indicator.textContent = '', 2000); }
   } catch {
-    showToast('Could not save notes');
+    showToast('I couldn't save notes');
   }
 }
 
@@ -644,7 +662,7 @@ async function submitAddProject() {
       const el = document.getElementById(id); if (el) el.value = '';
     });
   } catch(e) {
-    showToast('Could not create project: ' + (e.message || 'unknown error'));
+    showToast('I couldn't create that project: ' + (e.message || 'unknown error'));
   }
 }
 
@@ -773,7 +791,7 @@ async function setActiveModel(slug, btn) {
       document.querySelectorAll('.model-card-on').forEach(el => el.classList.remove('model-card-on'));
       if (btn) btn.closest('.panel')?.classList.add('model-card-on');
     } else {
-      showToast('<i class="bi bi-info-circle toast-icon"></i>' + (data.message || 'Could not change model.'));
+      showToast('<i class="bi bi-info-circle toast-icon"></i>' + (data.message || 'I couldn't change the model — check that it's available.'));
     }
   } catch (e) {
     showToast('<i class="bi bi-info-circle toast-icon"></i>Note: setting saved locally only.');
@@ -792,7 +810,7 @@ function openMetisRename() {
     document.querySelectorAll('[hx-get="/api/partial/metis/identity"]').forEach(el => {
       if (window.htmx && htmx.trigger) htmx.trigger(el, 'load');
     });
-  }).catch(() => showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not save.'));
+  }).catch(() => showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't save.'));
 }
 
 function openMetisKeys() {
@@ -867,10 +885,10 @@ async function saveMetisIdentity() {
       const card = document.getElementById('metis-identity-card')?.parentElement;
       if (card && window.htmx) htmx.ajax('GET', '/api/partial/metis/identity', { target: card, swap: 'innerHTML' });
     } else {
-      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Could not save.'));
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'I couldn't save.'));
     }
   } catch (e) {
-    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not save identity.');
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't save identity.');
   }
 }
 
@@ -914,10 +932,10 @@ async function saveMemoryArchive(value) {
       const label = (parseInt(value, 10) === 0) ? 'never archive' : (value + ' days');
       showToast('<i class="bi bi-archive toast-icon"></i>Archive setting saved — ' + label + '.');
     } else {
-      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Could not save.'));
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'I couldn't save.'));
     }
   } catch (e) {
-    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not save archive setting.');
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't save archive setting.');
   }
 }
 
@@ -983,7 +1001,7 @@ async function scheduleMorningBrief() {
     } else {
       showToast(
         '<i class="bi bi-exclamation-circle toast-icon"></i>' +
-        (data.message || 'Could not register schedule. Try /schedule from Claude Code.'),
+        (data.message || 'I couldn't register schedule. Try /schedule from Claude Code.'),
         7000
       );
     }
@@ -1006,11 +1024,20 @@ async function runMetisDoctor() {
       const icon = c.ok ? '✓' : (c.severity === 'warn' ? '⚠' : '✗');
       return icon + ' ' + c.name + (c.detail ? ' — ' + c.detail : '');
     });
-    const summary =
-      'Metis Doctor — ' + (data.status || '?').toUpperCase() + '\n\n' +
-      lines.join('\n') +
-      '\n\n' + (data.summary || '');
-    window.alert(summary);
+    // Doctor report is multi-line — render as a modal panel instead of an OS alert.
+    const reportHtml =
+      '<div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-accent);margin-bottom:10px;">METIS DOCTOR · ' +
+      (data.status || '?').toUpperCase() + '</div>' +
+      '<div style="font-family:var(--m-sans);font-size:13px;line-height:1.7;color:var(--m-ink);">' +
+      lines.map(l => '<div>' + l.replace(/</g,'&lt;') + '</div>').join('') +
+      '</div>' +
+      (data.summary ? '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--m-rule-soft);font-size:12px;color:var(--m-muted);">' + data.summary + '</div>' : '');
+    if (window.openModal) {
+      openModal(reportHtml, { title: 'Doctor report' });
+    } else if (window.showToast) {
+      showToast('Doctor: ' + (data.status || '?').toUpperCase() + ' — see console for details.');
+      console.log(reportHtml.replace(/<[^>]+>/g, ''));
+    }
   } catch (e) {
     showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Doctor unreachable.');
   }
@@ -1053,7 +1080,7 @@ async function promoteProposal(pid) {
       const el = document.getElementById('metis-improvement-body');
       if (el) htmx.ajax('GET', '/api/partial/metis/improvement', { target: el, swap: 'innerHTML' });
     } else {
-      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Could not promote.'));
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'I couldn't promote.'));
     }
   } catch (e) {
     showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Promotion failed.');
@@ -1067,7 +1094,7 @@ async function previewProposal(pid) {
     const res = await fetch('/api/improvement/preview/' + pid);
     const data = await res.json();
     if (data.status !== 'ok') {
-      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Could not load preview.'));
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'I couldn't load preview.'));
       return;
     }
     const summary =
@@ -1124,7 +1151,7 @@ async function rejectProposal(pid) {
       const el = document.getElementById('metis-improvement-body');
       if (el) htmx.ajax('GET', '/api/partial/metis/improvement', { target: el, swap: 'innerHTML' });
     } else {
-      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Could not reject.'));
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'I couldn't reject.'));
     }
   } catch (e) {
     showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Rejection failed.');
@@ -1297,7 +1324,7 @@ function srReview(srId, quality, btn) {
     showToast('<i class="bi bi-check-circle toast-icon"></i>Card reviewed — next review scheduled.');
   }).catch(function () {
     btn.disabled = false;
-    showToast('Could not save review. Try again.');
+    showToast('I couldn't save review. Try again.');
   });
 }
 
@@ -1611,10 +1638,10 @@ function setClaudeCodeMode(mode) {
       htmx.ajax('GET', '/api/partial/metis/integration', { target: '#metis-integration-body', swap: 'innerHTML' });
       showToast(mode === 'background' ? 'Background layer activated — restart Claude Code to apply.' : 'Reverted to invoke mode.');
     } else {
-      showToast('Error: ' + (d.message || 'Could not update CLAUDE.md.'));
+      showToast((d.message || 'I couldn't update CLAUDE.md.'));
     }
   })
-  .catch(function () { showToast('Could not reach the dashboard — is it running?'); });
+  .catch(function () { showToast('I couldn't reach the dashboard — is it running?'); });
 }
 
 function copyDesktopPrompt() {
@@ -1672,10 +1699,10 @@ function saveApiKey() {
       htmx.ajax('GET', '/api/partial/metis/api-keys', { target: '#metis-api-keys-body', swap: 'innerHTML' });
       showToast('Key saved.');
     } else {
-      showToast('Error: ' + (d.message || 'Could not save key.'));
+      showToast((d.message || "I couldn't save your API key."));
     }
   })
-  .catch(function () { showToast('Could not save key — network error.'); });
+  .catch(function () { showToast('I couldn't save key — network error.'); });
 }
 
 function removeApiKey(name) {
@@ -1687,10 +1714,10 @@ function removeApiKey(name) {
       htmx.ajax('GET', '/api/partial/metis/api-keys', { target: '#metis-api-keys-body', swap: 'innerHTML' });
       showToast('Key removed.');
     } else {
-      showToast('Error: ' + (d.message || 'Could not remove key.'));
+      showToast((d.message || 'I couldn't remove key.'));
     }
   })
-  .catch(function () { showToast('Could not remove key — network error.'); });
+  .catch(function () { showToast('I couldn't remove key — network error.'); });
 }
 
 // ─── MCP toggle button ─────────────────────────────────────────────────────

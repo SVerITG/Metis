@@ -15,14 +15,25 @@
     </div>
   </div>
 
-  <!-- ===== News Radar ===== -->
+  <!-- ===== Topic slipcases — the rich, multi-topic view ===== -->
+  <div hx-get="/api/partial/today/news-rail?period=week"
+       hx-trigger="load"
+       hx-swap="outerHTML"
+       style="margin-bottom:32px;">
+    <div>
+      <div class="sec-label" style="margin-bottom:8px;">Topic dispatch <span class="sec-label-tail">SLIPCASES · WEEK</span></div>
+      <div class="panel skeleton skeleton-box" style="height:280px;"></div>
+    </div>
+  </div>
+
+  <!-- ===== Flat news radar (compact recent feed) ===== -->
   <div hx-get="/api/partial/today/news-archive"
        hx-trigger="load"
        hx-swap="outerHTML"
        style="margin-bottom:28px;">
     <div>
-      <div class="sec-label" style="margin-bottom:8px;">News radar <span class="sec-label-tail">—</span></div>
-      <div class="panel" style="height:200px;opacity:.4;"></div>
+      <div class="sec-label" style="margin-bottom:8px;">Latest signals <span class="sec-label-tail">RECENT FEED</span></div>
+      <div class="panel skeleton skeleton-box" style="height:200px;"></div>
     </div>
   </div>
 
@@ -32,7 +43,7 @@
        hx-swap="outerHTML">
     <div>
       <div class="sec-label" style="margin-bottom:8px;">New in library <span class="sec-label-tail">—</span></div>
-      <div class="panel" style="height:200px;opacity:.4;"></div>
+      <div class="panel skeleton skeleton-box" style="height:200px;"></div>
     </div>
   </div>
 

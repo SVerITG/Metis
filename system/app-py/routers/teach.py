@@ -19,8 +19,11 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_execute, db_query, db_scalar
+from models import model_for
 
-_CLAUDE_MODEL = "claude-haiku-4-5-20251001"  # fast + cheap for bulk slide generation
+# Resolved from system/config/models.yaml — primary + fallback chain.
+# Update the YAML to swap models without code changes.
+_CLAUDE_MODEL = model_for("slides")
 
 
 def _get_api_key() -> str:
@@ -618,7 +621,7 @@ async def teach_gap_analysis(request: Request):
     """For each active course, compare its topic keywords against the library."""
     courses = db_query(
         "SELECT id, title, slug, category FROM learning_courses "
-        "WHERE status = 'active' ORDER BY title LIMIT 8",
+        "WHERE status = 'active' ORDER BY title LIMIT 3",
         default=[],
     ) or []
 
@@ -640,7 +643,7 @@ async def teach_gap_analysis(request: Request):
             keywords = [k["keyword"] for k in kws if k.get("keyword")]
         # Fall back to title words when no topics are seeded
         if not keywords:
-            keywords = [w for w in (c.get("title") or "").split() if len(w) > 3][:6]
+            keywords = [w for w in (c.get("title") or "").split() if len(w) > 3][:8]
 
         covered: list[str] = []
         gaps: list[str] = []
@@ -656,11 +659,21 @@ async def teach_gap_analysis(request: Request):
             else:
                 gaps.append(kw)
 
+        total = len(covered) + len(gaps)
+        covered_pct = int(round((len(covered) / total) * 100)) if total else 0
+        gap_pct = 100 - covered_pct if total else 0
+
         course_rows.append({
             "title": c.get("title") or "Untitled course",
             "category": c.get("category") or "",
             "covered": covered,
             "gaps": gaps,
+            "top_gaps": gaps[:3],
+            "covered_n": len(covered),
+            "gaps_n": len(gaps),
+            "total": total,
+            "covered_pct": covered_pct,
+            "gap_pct": gap_pct,
         })
 
     return templates.TemplateResponse(
@@ -690,7 +703,7 @@ async def teach_qbank(request: Request):
             default=[],
         ) or []
         total = db_scalar("SELECT COUNT(*) FROM course_questions", default=0) or 0
-        # Resolve course titles
+        # Resolve course titles + first question text as a teaser
         for r in rows:
             t = db_query(
                 "SELECT title FROM learning_courses WHERE id=? LIMIT 1",
@@ -698,6 +711,24 @@ async def teach_qbank(request: Request):
                 default=[],
             )
             r["title"] = (t[0]["title"] if t else "(unknown course)")
+            # Try a few likely column names for the question body
+            sample_text = ""
+            for col in ("question_text", "question", "prompt", "text"):
+                try:
+                    s = db_query(
+                        f"SELECT {col} AS body FROM course_questions WHERE course_id=? "
+                        f"ORDER BY rowid ASC LIMIT 1",
+                        (r.get("course_id"),),
+                        default=[],
+                    ) or []
+                    if s and s[0].get("body"):
+                        sample_text = s[0]["body"]
+                        break
+                except Exception:
+                    continue
+            if len(sample_text) > 80:
+                sample_text = sample_text[:80].rsplit(" ", 1)[0] + "..."
+            r["sample"] = sample_text
 
     return templates.TemplateResponse(
         request,

@@ -3,7 +3,7 @@
   <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
     <span class="kicker kicker--accent" style="margin:0;">GAP ANALYSIS</span>
     <div style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);margin-top:4px;">
-      For each active course, which topics your library already covers — and which don't have papers yet.
+      For each active course, which topics your library already covers &mdash; and which don't have papers yet.
     </div>
   </div>
 
@@ -13,42 +13,57 @@
       No active courses yet.
     </p>
     <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.6;margin:0;">
-      Once you have one, I'll show you which topics aren't covered well by your library so you know what to read next.
+      Once you have an active course on the Learning tab, I'll show you which topics your library doesn't cover well.
     </p>
   </div>
   {% else %}
   {% for c in courses %}
-  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
-    <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.4;margin-bottom:8px;">
-      {{ c.title }}
-      {% if c.category %}
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-left:6px;">{{ c.category | upper }}</span>
+  <div style="padding:16px 20px;border-bottom:1px solid var(--m-rule-soft);">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-bottom:10px;">
+      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);line-height:1.3;flex:1;min-width:0;">
+        {{ c.title }}
+        {% if c.category %}
+        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-left:6px;">{{ c.category | upper }}</span>
+        {% endif %}
+      </div>
+      {% if c.total %}
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.10em;color:var(--m-muted);flex-shrink:0;">
+        {{ c.covered_n }}/{{ c.total }} COVERED
+      </div>
       {% endif %}
     </div>
 
-    {% if c.covered %}
-    <div style="margin-bottom:8px;">
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-ok);">COVERED</span>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
-        {% for kw in c.covered %}
-        <span style="font-family:var(--m-mono);font-size:10px;padding:3px 8px;border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);color:var(--m-ink);background:var(--m-surface-2);">{{ kw }}</span>
-        {% endfor %}
-      </div>
+    {% if c.total %}
+    {# coverage bar #}
+    <div style="display:flex;height:8px;width:100%;border-radius:4px;overflow:hidden;background:var(--m-surface-3);margin-bottom:10px;"
+         title="{{ c.covered_pct }}% covered &middot; {{ c.gap_pct }}% gap">
+      {% if c.covered_pct > 0 %}
+      <span style="display:block;width:{{ c.covered_pct }}%;background:var(--m-accent);"></span>
+      {% endif %}
+      {% if c.gap_pct > 0 %}
+      <span style="display:block;width:{{ c.gap_pct }}%;background:var(--m-surface-3);"></span>
+      {% endif %}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:10px;">
+      <span style="color:var(--m-accent);">{{ c.covered_pct }}% IN LIBRARY</span>
+      <span>{{ c.gap_pct }}% GAP</span>
     </div>
     {% endif %}
 
-    {% if c.gaps %}
-    <div>
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-warn,#b45309);">GAPS</span>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
-        {% for kw in c.gaps %}
-        <span style="font-family:var(--m-mono);font-size:10px;padding:3px 8px;border:1px dashed var(--m-line);border-radius:var(--m-radius-pill);color:var(--m-muted);">{{ kw }}</span>
-        {% endfor %}
-      </div>
+    {% if c.top_gaps %}
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-right:4px;">TOP GAPS</span>
+      {% for kw in c.top_gaps %}
+      <span style="font-family:var(--m-mono);font-size:10px;padding:3px 8px;border:1px dashed var(--m-line);border-radius:var(--m-radius-pill);color:var(--m-muted);background:var(--m-surface);">
+        {{ kw }}
+      </span>
+      {% endfor %}
     </div>
-    {% endif %}
-
-    {% if not c.covered and not c.gaps %}
+    {% elif c.covered_n %}
+    <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);">
+      Your library covers every topic we know about for this course.
+    </div>
+    {% else %}
     <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);">
       No topic keywords seeded for this course yet.
     </div>

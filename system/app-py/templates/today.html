@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% from "partials/_section.html" import section, skeleton_block, skeleton_box %}
 {% block title %}Today{% endblock %}
 
 {% block content %}
 <div class="page">
 
-  <!-- ===== PageHead ===== -->
+  <!-- ===== Page header ===== -->
   <div class="page-head">
     <div>
       <div class="page-eyebrow" id="today-eyebrow"></div>
@@ -33,102 +34,79 @@
   })();
   </script>
 
-  <!-- ===== Session Handoff strip ===== -->
+  {# ── Load strategy: stagger HTMX so the page doesn't waterfall 7 skeletons.
+       Wave 1 (immediate): the things the user reads first — continuity, brief, ledger.
+       Wave 2 (+200ms):    main content rows — resume, todos, library, idea.
+       Wave 3 (+500ms):    deferred — news strip at the bottom.
+       Skeleton placeholders animate during the wait so the page never looks broken. -#}
+
+  <!-- ===== Continuity strip (from last session) ===== -->
   <div hx-get="/api/partial/today/session-handoff"
        hx-trigger="load"
        hx-swap="outerHTML"></div>
 
-  <!-- ===== Morning Brief ===== -->
+  <!-- ===== Morning brief — full-width hero (no kicker, the panel speaks for itself) ===== -->
   <div hx-get="/api/partial/today/morning-brief"
        hx-trigger="load"
        hx-swap="outerHTML">
-    <div class="panel panel-pad" style="padding:32px 40px;margin-bottom:28px;">
-      <div style="height:18px;background:var(--m-surface-3);border-radius:2px;width:240px;margin-bottom:16px;"></div>
-      <div style="height:72px;background:var(--m-surface-3);border-radius:2px;width:100%;margin-bottom:14px;"></div>
-      <div style="height:32px;background:var(--m-surface-3);border-radius:2px;width:280px;"></div>
+    {# Skeleton: looks like the real thing, animated, never broken-looking #}
+    <div class="panel" style="margin-bottom:28px;padding:24px 32px;">
+      <div class="skeleton skeleton-bar w-30" style="margin-bottom:16px;"></div>
+      <div class="skeleton skeleton-bar w-100" style="height:14px;margin-bottom:8px;"></div>
+      <div class="skeleton skeleton-bar w-100" style="height:14px;margin-bottom:8px;"></div>
+      <div class="skeleton skeleton-bar w-70"  style="height:14px;"></div>
     </div>
   </div>
 
-  <!-- ===== Ledger ===== -->
+  <!-- ===== Actionable ledger strip ===== -->
   <div hx-get="/api/partial/today/ledger"
        hx-trigger="load"
        hx-swap="outerHTML">
-    <div class="ledger" style="opacity:.4;">
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">UNREAD</div></div>
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">HAT PAPERS</div></div>
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">OPEN TASKS</div></div>
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">BLOCKED</div></div>
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">IDEAS</div></div>
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">SESSIONS · 7D</div></div>
-      <div class="ledger-cell"><div class="ledger-n tnum">—</div><div class="ledger-l">TOKENS · TODAY</div></div>
+    <div class="ledger">
+      <div class="ledger-cell"><div class="skeleton skeleton-bar w-50" style="height:22px;margin-bottom:6px;"></div><div class="ledger-l">UNREAD</div></div>
+      <div class="ledger-cell"><div class="skeleton skeleton-bar w-50" style="height:22px;margin-bottom:6px;"></div><div class="ledger-l">HAT PAPERS</div></div>
+      <div class="ledger-cell"><div class="skeleton skeleton-bar w-50" style="height:22px;margin-bottom:6px;"></div><div class="ledger-l">OPEN TASKS</div></div>
+      <div class="ledger-cell"><div class="skeleton skeleton-bar w-50" style="height:22px;margin-bottom:6px;"></div><div class="ledger-l">BLOCKED</div></div>
+      <div class="ledger-cell"><div class="skeleton skeleton-bar w-50" style="height:22px;margin-bottom:6px;"></div><div class="ledger-l">IDEAS</div></div>
+      <div class="ledger-cell"><div class="skeleton skeleton-bar w-50" style="height:22px;margin-bottom:6px;"></div><div class="ledger-l">SESSIONS · 7D</div></div>
+      <div class="ledger-cell"><div class="skeleton skeleton-bar w-50" style="height:22px;margin-bottom:6px;"></div><div class="ledger-l">TOKENS · TODAY</div></div>
     </div>
   </div>
 
-  <!-- ===== 2 × 2 Quadrant ===== -->
-  <div class="today-quad">
+  <!-- ===== Continue / Priority row (wave 2 — +200ms) ===== -->
+  <div class="grid grid-main" style="margin-bottom:var(--m-space-6);margin-top:var(--m-space-6);">
 
-    <!-- Row 1: Active Research · Priority Tasks -->
-    <div class="grid grid-main" style="margin-bottom:32px;">
-
-      <!-- Active Research (resume) -->
-      <div hx-get="/api/partial/today/resume"
-           hx-trigger="load"
-           hx-swap="outerHTML">
-        <div>
-          <div class="sec-label" style="margin-bottom:8px;">Active Research</div>
-          <div class="panel panel-pad" style="height:120px;opacity:.4;"></div>
-        </div>
-      </div>
-
-      <!-- Priority Tasks -->
-      <div hx-get="/api/partial/today/todos-archive"
-           hx-trigger="load"
-           hx-swap="outerHTML">
-        <div>
-          <div class="sec-label" style="margin-bottom:8px;">Priority Tasks</div>
-          <div class="panel" style="height:120px;opacity:.4;"></div>
-        </div>
-      </div>
-
+    <div hx-get="/api/partial/today/resume" hx-trigger="load delay:200ms" hx-swap="outerHTML">
+      <div class="sec-label" style="margin-bottom:8px;">Continue where you left off</div>
+      {{ skeleton_box(size="md") }}
     </div>
 
-    <!-- Row 2: New Science · News + Idea -->
-    <div class="grid grid-main">
-
-      <!-- New Science (library) -->
-      <div hx-get="/api/partial/today/library-archive"
-           hx-trigger="load"
-           hx-swap="outerHTML">
-        <div>
-          <div class="sec-label" style="margin-bottom:8px;">New Science</div>
-          <div class="panel" style="height:200px;opacity:.4;"></div>
-        </div>
-      </div>
-
-      <!-- Idea + News (stacked — idea first: your thinking above external feeds) -->
-      <div>
-        <div hx-get="/api/partial/today/idea-today"
-             hx-trigger="load"
-             hx-swap="outerHTML">
-          <div>
-            <div class="sec-label" style="margin-bottom:8px;">Idea for today</div>
-            <div class="panel" style="height:80px;opacity:.4;"></div>
-          </div>
-        </div>
-        <div style="margin-top:20px;"
-             hx-get="/api/partial/today/news-archive"
-             hx-trigger="load"
-             hx-swap="outerHTML">
-          <div>
-            <div class="sec-label" style="margin-bottom:8px;">News Radar</div>
-            <div class="panel" style="height:120px;opacity:.4;"></div>
-          </div>
-        </div>
-      </div>
-
+    <div hx-get="/api/partial/today/todos-archive" hx-trigger="load delay:200ms" hx-swap="outerHTML">
+      <div class="sec-label" style="margin-bottom:8px;">What needs your attention</div>
+      {{ skeleton_box(size="md") }}
     </div>
 
-  </div><!-- /.today-quad -->
+  </div>
+
+  <!-- ===== Library + Idea row (wave 2 — +350ms) ===== -->
+  <div class="grid grid-main" style="margin-bottom:var(--m-space-6);">
+
+    <div hx-get="/api/partial/today/library-archive" hx-trigger="load delay:350ms" hx-swap="outerHTML">
+      <div class="sec-label" style="margin-bottom:8px;">New in your library</div>
+      {{ skeleton_box(size="md") }}
+    </div>
+
+    <div hx-get="/api/partial/today/idea-today" hx-trigger="load delay:350ms" hx-swap="outerHTML">
+      <div class="sec-label" style="margin-bottom:8px;">Today's thinking prompt</div>
+      {{ skeleton_box(size="sm") }}
+    </div>
+
+  </div>
+
+  <!-- ===== News — compact strip (wave 3 — +500ms, deferred) ===== -->
+  <div hx-get="/api/partial/today/news-archive" hx-trigger="load delay:500ms" hx-swap="outerHTML">
+    {{ skeleton_box(size="sm") }}
+  </div>
 
 </div><!-- /.page -->
 
