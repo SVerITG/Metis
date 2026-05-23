@@ -396,52 +396,141 @@ async def learning_competencies(request: Request):
 
 @router.get("/api/partial/learning/velocity", response_class=HTMLResponse)
 async def learning_velocity(request: Request):
-    """Show how many lessons have been completed in the recent windows."""
+    """Show how many lessons have been completed in recent windows + streak + spark."""
     today = datetime.date.today()
 
-    def _count_since(days: int) -> int:
-        cutoff = (today - datetime.timedelta(days=days)).isoformat()
-        # Prefer course_progress if present and seeded; fall back to lesson_completions
+    # Which completion tables exist?
+    completion_sources: list[tuple[str, str]] = []
+    for table, ts_col in (("course_progress", "completed_at"),
+                          ("lesson_completions", "completed_at")):
+        if db_scalar(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+            (table,), default=None,
+        ):
+            completion_sources.append((table, ts_col))
+
+    has_sr = bool(db_scalar(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='spaced_repetition'",
+        default=None,
+    ))
+
+    def _count_on(date_iso: str) -> int:
+        """Count completions on a single calendar day."""
         total = 0
-        for table, ts_col in (("course_progress", "completed_at"),
-                              ("lesson_completions", "completed_at")):
-            has_table = db_scalar(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
-                (table,),
-                default=None,
-            )
-            if not has_table:
-                continue
+        for table, ts_col in completion_sources:
             try:
                 n = db_scalar(
-                    f"SELECT COUNT(*) FROM {table} WHERE {ts_col} >= ?",
-                    (cutoff,),
-                    default=0,
+                    f"SELECT COUNT(*) FROM {table} WHERE date({ts_col}) = ?",
+                    (date_iso,), default=0,
                 ) or 0
                 total += n
             except Exception:
                 continue
-        # Also include reviewed spaced-rep cards as a proxy for "lesson touched"
-        try:
-            sr = db_scalar(
-                "SELECT COUNT(*) FROM spaced_repetition WHERE reviewed_at >= ?",
-                (cutoff,),
-                default=0,
-            ) or 0
-            total += sr
-        except Exception:
-            pass
+        if has_sr:
+            try:
+                n = db_scalar(
+                    "SELECT COUNT(*) FROM spaced_repetition WHERE date(reviewed_at) = ?",
+                    (date_iso,), default=0,
+                ) or 0
+                total += n
+            except Exception:
+                pass
         return total
 
-    d7  = _count_since(7)
+    def _count_since(days: int) -> int:
+        cutoff = (today - datetime.timedelta(days=days)).isoformat()
+        total = 0
+        for table, ts_col in completion_sources:
+            try:
+                n = db_scalar(
+                    f"SELECT COUNT(*) FROM {table} WHERE {ts_col} >= ?",
+                    (cutoff,), default=0,
+                ) or 0
+                total += n
+            except Exception:
+                continue
+        if has_sr:
+            try:
+                n = db_scalar(
+                    "SELECT COUNT(*) FROM spaced_repetition WHERE reviewed_at >= ?",
+                    (cutoff,), default=0,
+                ) or 0
+                total += n
+            except Exception:
+                pass
+        return total
+
+    def _count_all() -> int:
+        total = 0
+        for table, _ in completion_sources:
+            try:
+                n = db_scalar(f"SELECT COUNT(*) FROM {table}", default=0) or 0
+                total += n
+            except Exception:
+                continue
+        if has_sr:
+            try:
+                n = db_scalar(
+                    "SELECT COUNT(*) FROM spaced_repetition WHERE reviewed_at IS NOT NULL",
+                    default=0,
+                ) or 0
+                total += n
+            except Exception:
+                pass
+        return total
+
+    # 14-day sparkline (oldest first)
+    spark_days = []
+    for offset in range(13, -1, -1):
+        d = today - datetime.timedelta(days=offset)
+        spark_days.append({"date": d.isoformat(), "count": _count_on(d.isoformat())})
+    max_count = max((s["count"] for s in spark_days), default=0)
+
+    d7 = _count_since(7)
     d30 = _count_since(30)
-    d90 = _count_since(90)
-    any_data = bool(d7 or d30 or d90)
+    d_all = _count_all()
+
+    # Trend: last 7 vs prior 7
+    prior7 = 0
+    for offset in range(7, 14):
+        d = today - datetime.timedelta(days=offset)
+        prior7 += _count_on(d.isoformat())
+    if d7 > prior7:
+        trend_glyph = "&#9650;"   # ▲
+        trend_label = "up vs last week"
+    elif d7 < prior7:
+        trend_glyph = "&#9660;"   # ▼
+        trend_label = "down vs last week"
+    else:
+        trend_glyph = "&rarr;"
+        trend_label = "steady"
+
+    # Streak = consecutive days back from today with >=1 completion
+    streak = 0
+    for offset in range(0, 365):
+        d = today - datetime.timedelta(days=offset)
+        if _count_on(d.isoformat()) > 0:
+            streak += 1
+        else:
+            break
+
+    any_data = bool(d7 or d30 or d_all or max_count)
 
     return templates.TemplateResponse(
         request,
         "partials/learning_velocity.html",
-        {"d7": d7, "d30": d30, "d90": d90, "any_data": any_data},
+        {
+            "d7": d7,
+            "d30": d30,
+            "d_all": d_all,
+            "prior7": prior7,
+            "streak": streak,
+            "trend_glyph": trend_glyph,
+            "trend_label": trend_label,
+            "spark_days": spark_days,
+            "max_count": max_count,
+            "any_data": any_data,
+        },
     )
 
 

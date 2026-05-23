@@ -368,7 +368,7 @@ async def list_knowledge_databases() -> list[TextContent]:
     custom databases the user has created. Reports layer, document count, chunk count,
     and last build date.
     """
-    conn = connect()
+    conn = connect(paths.db)
     _ensure_schema(conn)
     _seed_builtin_databases(conn)
 
@@ -424,7 +424,7 @@ async def build_pdf_knowledge_db(
     """
     t0 = time.time()
 
-    conn = connect()
+    conn = connect(paths.db)
     _ensure_schema(conn)
     _seed_builtin_databases(conn)
 
@@ -557,7 +557,7 @@ async def search_pdf_knowledge(
     if not query.strip():
         return [TextContent(type="text", text="query cannot be empty")]
 
-    conn = connect()
+    conn = connect(paths.db)
     _ensure_schema(conn)
 
     try:
@@ -664,7 +664,7 @@ async def get_pdf_index_stats(
     Args:
         database: Slug to report on. Empty = report all databases.
     """
-    conn = connect()
+    conn = connect(paths.db)
     _ensure_schema(conn)
     _seed_builtin_databases(conn)
 
@@ -751,7 +751,7 @@ async def create_knowledge_database(
             f"Example: 'dhis2-specialist'"
         ))]
 
-    conn = connect()
+    conn = connect(paths.db)
     _ensure_schema(conn)
     _seed_builtin_databases(conn)
 

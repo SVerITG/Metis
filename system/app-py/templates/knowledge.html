@@ -37,7 +37,27 @@
              autofocus
              onkeyup="if(window.htmx){var sem=document.getElementById('unified-search-semantic-trigger');if(sem)htmx.trigger(sem,'refresh');}">
       <div id="unified-search-results" style="margin-top:8px;min-height:40px;">
-        <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">Find papers, notes, and what you've read — all at once.</div>
+        <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px 0 6px;">Find papers, notes, and what you've read — all at once.</div>
+        {# Ghost-button quick queries — gives the empty search a place to start #}
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+          {% set quick_queries = [
+            ('HAT epidemiology', 'HAT epidemiology'),
+            ('Recent papers', 'recent'),
+            ('My unread', 'unread'),
+            ('Multilevel models', 'multilevel'),
+            ('Surveillance methods', 'surveillance'),
+            ('DRC', 'DRC')
+          ] %}
+          {% for label, q in quick_queries %}
+          <button type="button"
+                  onclick="(function(){var el=document.getElementById('unified-search-input');if(!el)return;el.value='{{ q }}';el.dispatchEvent(new Event('keyup'));el.focus();})()"
+                  style="background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:14px;padding:4px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.06em;color:var(--m-muted);cursor:pointer;transition:all 120ms;"
+                  onmouseover="this.style.color='var(--m-ink)';this.style.borderColor='var(--m-accent)';this.style.background='var(--m-surface)';"
+                  onmouseout="this.style.color='var(--m-muted)';this.style.borderColor='var(--m-rule-soft)';this.style.background='var(--m-surface-2)';">
+            {{ label }}
+          </button>
+          {% endfor %}
+        </div>
       </div>
 
       <!-- Semantic / deep-search companion -->
@@ -67,7 +87,7 @@
          hx-swap="outerHTML">
       <div>
         <div class="sec-label" style="margin-bottom:8px;">Slipcases</div>
-        <div class="panel list-scroll" style="opacity:.4;min-height:180px;"></div>
+        <div class="panel list-scroll skeleton" style="min-height:180px;"></div>
       </div>
     </div>
 
@@ -78,7 +98,7 @@
          hx-swap="outerHTML">
       <div>
         <div class="sec-label" style="margin-bottom:8px;">Index cards</div>
-        <div class="panel" style="height:320px;opacity:.4;"></div>
+        <div class="panel skeleton skeleton-box" style="height:320px;"></div>
       </div>
     </div>
 
@@ -91,7 +111,7 @@
          hx-get="/api/partial/knowledge/sync-status"
          hx-trigger="load"
          hx-swap="outerHTML">
-      <div style="height:36px;background:var(--m-surface-2);border-radius:var(--m-radius);opacity:.4;margin-bottom:12px;"></div>
+      <div class="skeleton" style="height:36px;border-radius:var(--m-radius);margin-bottom:12px;"></div>
     </div>
 
     <!-- Recently added strip -->
@@ -105,7 +125,7 @@
          hx-swap="outerHTML">
       <div>
         <div class="sec-label" style="margin-bottom:8px;"><span>Zotero Library</span></div>
-        <div class="panel" style="height:200px;opacity:.4;"></div>
+        <div class="panel skeleton skeleton-box" style="height:200px;"></div>
       </div>
     </div>
   </div>
@@ -117,7 +137,7 @@
          hx-swap="outerHTML">
       <div>
         <div class="sec-label" style="margin-bottom:8px;"><span>HAT Research Corpus</span></div>
-        <div class="panel" style="height:200px;opacity:.4;"></div>
+        <div class="panel skeleton skeleton-box" style="height:200px;"></div>
       </div>
     </div>
   </div>
@@ -164,7 +184,7 @@
            hx-trigger="intersect once"
            hx-swap="outerHTML">
         <div>
-          <div class="panel" style="height:120px;opacity:.4;"></div>
+          <div class="panel skeleton skeleton-box" style="height:120px;"></div>
         </div>
       </div>
     </details>

@@ -100,6 +100,37 @@ async def project_instructions():
     return PlainTextResponse("Instructions file not found.", status_code=404)
 
 
+@router.get("/api/partial/api-key-status", response_class=HTMLResponse)
+async def api_key_status(request: Request):
+    """Top-of-dashboard banner if ANTHROPIC_API_KEY is missing.
+
+    Without a key, the morning brief generator, RAG retrieval, and any
+    Claude-backed agent will silently fail. Surface this prominently.
+    """
+    import os as _os
+    key = _os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if key and key.startswith("sk-ant-") and len(key) > 40:
+        return HTMLResponse("")  # key looks valid → no banner
+    return HTMLResponse("""
+<div style="background:linear-gradient(180deg,#fef7e0,#fbeec0);border-bottom:1px solid #d4b659;
+     padding:10px 24px;display:flex;align-items:center;gap:14px;font-family:var(--m-display);font-size:13px;color:#5b4a17;">
+  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="#7a5a13" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+    <path d="M8 1.5L1.5 13.5h13z"/><line x1="8" y1="6" x2="8" y2="9.5"/><circle cx="8" cy="11.5" r=".7" fill="#7a5a13"/>
+  </svg>
+  <div style="flex:1;line-height:1.5;">
+    <strong>I'm running without an API key.</strong>
+    The morning brief, retrieval, and Claude-backed agents need
+    <code style="font-family:var(--m-mono);font-size:12px;background:rgba(0,0,0,.06);padding:1px 5px;border-radius:3px;">ANTHROPIC_API_KEY</code>
+    to work. Get a key at <a href="https://console.anthropic.com" target="_blank" rel="noopener" style="color:#5b4a17;text-decoration:underline;">console.anthropic.com</a>, then set it as a Windows user env variable (Start → Edit environment variables for your account → New).
+  </div>
+  <button onclick="this.parentElement.style.display='none'"
+          style="background:transparent;border:1px solid #b8983e;color:#5b4a17;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;padding:6px 12px;border-radius:3px;cursor:pointer;flex-shrink:0;">
+    HIDE
+  </button>
+</div>
+""")
+
+
 @router.get("/api/partial/welcome-banner", response_class=HTMLResponse)
 async def welcome_banner(request: Request):
     """Return first-run onboarding modal if no user is configured, else empty.

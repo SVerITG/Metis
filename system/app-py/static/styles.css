@@ -2129,6 +2129,21 @@ details summary { outline: none; }
   line-height: 1.5;
 }
 
+/* ---------- <= 1400px : 1080p laptop (1366×768) — addresses cramped Thinking 3-col ---------- */
+@media (max-width: 1400px) {
+  /* Thinking tab: drop the 240px marginalia rail; keep threads + dialogue */
+  .thinking-layout {
+    grid-template-columns: 220px 1fr;
+  }
+  .thinking-layout > :nth-child(3) {
+    display: none;
+  }
+  .thinking-layout > :nth-child(3).m-collapse-note {
+    display: block;
+    grid-column: 1 / -1;
+  }
+}
+
 /* ---------- <= 1024px : tablet landscape ---------- */
 @media (max-width: 1024px) {
   .page { padding: 32px 32px 56px; }
@@ -2241,3 +2256,181 @@ details summary { outline: none; }
   /* Surface collapse notes everywhere on phone */
   .m-collapse-note { display: block; }
 }
+
+/* ===========================================================================
+   Live meeting recording indicator pulse (referenced from live_meeting.js)
+   =========================================================================== */
+@keyframes lm-pulse {
+  0%   { opacity: 1;   transform: scale(1); }
+  50%  { opacity: 0.4; transform: scale(0.85); }
+  100% { opacity: 1;   transform: scale(1); }
+}
+
+
+/* ============================================================================
+   v9k — Editorial design system extension (additive, no existing rules touched)
+
+   This block adds the missing pieces called out in the 2026-05-23 visual audit:
+   spacing scale, page max-width, skeleton shimmer, shadow tokens, and the
+   .section component class used by partials/_section.html.
+   ============================================================================ */
+:root {
+  /* Spacing scale (4px base) */
+  --m-space-1: 4px;
+  --m-space-2: 8px;
+  --m-space-3: 12px;
+  --m-space-4: 16px;
+  --m-space-5: 24px;
+  --m-space-6: 32px;
+  --m-space-7: 48px;
+  --m-space-8: 64px;
+
+  /* Page max width — prevents sprawl on 4K monitors */
+  --m-max-content: 1280px;
+
+  /* Subtle shadow tokens */
+  --m-shadow-sm: 0 1px 2px rgba(15,20,18,0.04), 0 1px 0 rgba(15,20,18,0.02);
+  --m-shadow-md: 0 4px 12px rgba(15,20,18,0.06), 0 1px 3px rgba(15,20,18,0.04);
+  --m-shadow-lg: 0 16px 40px rgba(15,20,18,0.10), 0 4px 12px rgba(15,20,18,0.05);
+}
+
+/* Page wrapper width discipline — keeps dashboards readable on wide screens */
+.page,
+.page-wide {
+  max-width: var(--m-max-content);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* --------------------------------------------------------------------------
+   .section — the reusable section container used by the _section.html macro
+   -------------------------------------------------------------------------- */
+.section {
+  margin-bottom: var(--m-space-6);
+}
+.section + .section {
+  margin-top: 0;
+}
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--m-space-3);
+  margin-bottom: var(--m-space-3);
+  padding: 0;
+}
+.section-eyebrow {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--m-accent);
+  flex-shrink: 0;
+}
+.section-title {
+  font-family: var(--m-display);
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--m-ink);
+  margin: 0;
+  flex: 1;
+}
+.section-title--lg { font-size: 24px; letter-spacing: -0.015em; }
+.section-title--sm { font-size: 16px; }
+
+.section-tail {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  flex-shrink: 0;
+}
+.section-action {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--m-space-2);
+}
+.section-body {
+  /* No padding by default — the panel inside provides its own */
+}
+.section-body.is-padded {
+  background: var(--m-surface);
+  border: 1px solid var(--m-line);
+  border-radius: var(--m-radius, 6px);
+  padding: var(--m-space-4) var(--m-space-5);
+}
+
+/* --------------------------------------------------------------------------
+   .skeleton — replaces the broken-looking opacity:.4 placeholders
+   -------------------------------------------------------------------------- */
+@keyframes m-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--m-surface-2) 0%,
+    var(--m-surface-3) 50%,
+    var(--m-surface-2) 100%
+  );
+  background-size: 200% 100%;
+  animation: m-shimmer 1.8s ease-in-out infinite;
+  border-radius: var(--m-radius, 6px);
+  opacity: 1;          /* override .4 boxes */
+}
+.skeleton-bar    { height: 12px; margin-bottom: 8px; }
+.skeleton-bar:last-child { margin-bottom: 0; }
+.skeleton-bar--lg { height: 18px; }
+.skeleton-bar--xl { height: 28px; }
+.skeleton-bar.w-30 { width: 30%; }
+.skeleton-bar.w-50 { width: 50%; }
+.skeleton-bar.w-70 { width: 70%; }
+.skeleton-bar.w-90 { width: 90%; }
+.skeleton-bar.w-100 { width: 100%; }
+.skeleton-box  {
+  width: 100%;
+}
+.skeleton-box--sm { height: 80px; }
+.skeleton-box--md { height: 140px; }
+.skeleton-box--lg { height: 220px; }
+
+/* --------------------------------------------------------------------------
+   Interaction conventions — hover + focus
+   -------------------------------------------------------------------------- */
+.is-interactive {
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+.is-interactive:hover {
+  background: var(--m-surface-2);
+  border-color: var(--m-rule-soft);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--m-accent);
+  outline-offset: 2px;
+  border-radius: var(--m-radius, 6px);
+}
+
+/* --------------------------------------------------------------------------
+   Spacing utilities — for cases the macro doesn't cover
+   -------------------------------------------------------------------------- */
+.p-3 { padding: var(--m-space-3); }
+.p-4 { padding: var(--m-space-4); }
+.p-5 { padding: var(--m-space-5); }
+.py-3 { padding-top: var(--m-space-3); padding-bottom: var(--m-space-3); }
+.py-4 { padding-top: var(--m-space-4); padding-bottom: var(--m-space-4); }
+.px-4 { padding-left: var(--m-space-4); padding-right: var(--m-space-4); }
+.px-5 { padding-left: var(--m-space-5); padding-right: var(--m-space-5); }
+.gap-2 { gap: var(--m-space-2); }
+.gap-3 { gap: var(--m-space-3); }
+.gap-4 { gap: var(--m-space-4); }
+.mb-3 { margin-bottom: var(--m-space-3); }
+.mb-4 { margin-bottom: var(--m-space-4); }
+.mb-5 { margin-bottom: var(--m-space-5); }

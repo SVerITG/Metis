@@ -1,4 +1,4 @@
-{# partials/thinking_brainstorm.html — Brainstorm launcher #}
+{# partials/thinking_brainstorm.html — Recent brainstorm sessions #}
 <div class="panel">
   <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;align-items:center;gap:10px;">
     <span class="kicker kicker--accent" style="margin:0;">BRAINSTORM</span>
@@ -11,7 +11,9 @@
       No brainstorms yet.
     </p>
     <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.6;margin:0 0 16px;">
-      When you have something you want to think through, type <code style="font-family:var(--m-mono);font-size:12px;background:var(--m-surface-2);padding:1px 5px;border-radius:3px;">/metis_brainstorm</code> in Claude Code. I'll pull in anything in your library, meetings, and notes that connects, then we'll walk through it together.
+      When you start a brainstorm in Claude Code with
+      <code style="font-family:var(--m-mono);font-size:12px;background:var(--m-surface-2);padding:1px 5px;border-radius:3px;">/metis_brainstorm</code>,
+      sessions appear here. I'll pull in anything in your library, meetings, and notes that connects, then we'll walk through it together.
     </p>
     <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">
       ONCE YOU'VE RUN A SESSION, IT'LL APPEAR HERE.
@@ -20,23 +22,45 @@
   {% else %}
   <div>
     {% for s in sessions %}
-    <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
-      <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.4;margin-bottom:4px;">
-        {{ s.topic }}
+    <div class="brainstorm-row"
+         style="padding:16px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;align-items:flex-start;gap:14px;transition:background 120ms ease;cursor:default;"
+         onmouseover="this.style.background='var(--m-surface-2)';"
+         onmouseout="this.style.background='transparent';">
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);line-height:1.35;margin-bottom:6px;">
+          {{ s.topic }}
+        </div>
+        {% if s.summary %}
+        <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);line-height:1.5;margin-bottom:8px;">
+          {{ s.summary }}
+        </div>
+        {% endif %}
+        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">
+          {{ s.started_at }}{% if s.session_uuid %} &middot; {{ s.session_uuid[:8] }}{% endif %}
+        </div>
       </div>
-      {% if s.summary %}
-      <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);line-height:1.5;margin-bottom:6px;">
-        {{ s.summary }}
-      </div>
-      {% endif %}
-      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);">
-        {{ s.created_at }}{% if s.session_uuid %} · {{ s.session_uuid[:8] }}{% endif %}
+      <div style="flex-shrink:0;">
+        <span style="display:inline-block;font-family:var(--m-mono);font-size:10px;letter-spacing:0.10em;
+                     color:var(--m-accent);background:var(--m-surface-2);
+                     border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);
+                     padding:4px 10px;">
+          {{ s.message_count }} {% if s.message_count == 1 %}MSG{% else %}MSGS{% endif %}
+        </span>
       </div>
     </div>
     {% endfor %}
   </div>
-  <div style="padding:14px 20px;border-top:1px solid var(--m-rule-soft);font-family:var(--m-display);font-size:12px;color:var(--m-muted);">
-    To start another, type <code style="font-family:var(--m-mono);font-size:11px;background:var(--m-surface-2);padding:1px 5px;border-radius:3px;">/metis_brainstorm</code> in Claude Code.
+  <div style="padding:14px 20px;border-top:1px solid var(--m-rule-soft);display:flex;justify-content:space-between;align-items:center;">
+    <span style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);">
+      The three most recent — older ones live in the Threads view.
+    </span>
+    <span class="brainstorm-start"
+          title="Run /metis_brainstorm in Claude Code to start a new session"
+          style="font-family:var(--m-display);font-size:12px;color:var(--m-accent);cursor:help;
+                 border-bottom:1px dotted var(--m-accent);padding-bottom:1px;"
+          onclick="this.title='Type /metis_brainstorm in Claude Code';">
+      Start a new one &rarr;
+    </span>
   </div>
   {% endif %}
 </div>

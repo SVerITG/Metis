@@ -251,7 +251,7 @@ The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account. No 
 - **Coverage gap analysis** — visual map of which methods areas your library covers and what's missing
 - **Unified search** — single query across PDFs, library cards, HAT corpus, and notes simultaneously
 - **Recently added strip** — last 10 documents added across all sources
-- **Knowledge graph** — visual map of connections between papers, ideas, and topics
+- **Knowledge graph (data layer)** — note links, communities, and shortest-path queries via the `kg_*` MCP tools. The interactive visualisation lives on the roadmap; the underlying graph is real and queryable today
 
 ---
 
@@ -268,9 +268,9 @@ The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account. No 
 ### Learning — *Know what you know. Review what you're forgetting.*
 
 - **Courses you're taking** — progress bars, completion tracking, module structure
-- **Spaced repetition** — Metis surfaces exactly what needs review today, based on forgetting curves
-- **Competency map** — visual overview of your skills and knowledge gaps
-- **Learning velocity stats** — how fast are you actually progressing?
+- **Spaced repetition** — cards generated from your courses with a due-today list. Full SM-2 scheduling is on the roadmap; the current build surfaces cards from the `spaced_repetition` table and lets you mark them reviewed
+- **Competency map** — your tracked skill levels by domain, with a coverage view
+- **Learning velocity** — lessons completed in the last 7 / 30 / 90 days, plus a 14-day sparkline of activity
 
 ---
 

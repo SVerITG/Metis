@@ -1,0 +1,70 @@
+# Metis — model registry
+#
+# Single source of truth for every Claude model ID used by Metis. Code reads
+# from this file via `system/app-py/lib/models.py` (or `metis_mcp.config.models`)
+# so model deprecations can be handled in one place — no code change required.
+#
+# Each role has a `primary` model and a `fallback` chain. If the primary is
+# deprecated / unavailable, the loader walks down the chain and uses the first
+# model that responds successfully on a probe call.
+#
+# When Anthropic announces a new model, edit this file only:
+#   1. Add the new model ID at the top of the relevant `fallback:` list
+#   2. Optionally promote it to `primary` after testing
+#   3. Restart the dashboard — no code rebuild
+
+# ---------------------------------------------------------------------------
+# Roles — each maps a use case to a model + fallback chain
+# ---------------------------------------------------------------------------
+
+roles:
+
+  # Fast, cheap synthesis: morning brief, lesson generation, fact extraction.
+  # Latency matters more than depth; Haiku is the right fit.
+  haiku_synthesis:
+    primary: claude-haiku-4-5-20251001
+    fallback:
+      - claude-haiku-4-5
+      - claude-haiku-3-5
+
+  # Main work model: routing decisions, agent responses, document review.
+  # Balance of speed + quality. The "default" if a caller doesn't specify a role.
+  sonnet_default:
+    primary: claude-sonnet-4-6
+    fallback:
+      - claude-sonnet-4-5
+      - claude-3-5-sonnet-latest
+
+  # Deep reasoning, methodology challenge, long-form synthesis.
+  # Used sparingly because it's slow + expensive.
+  opus_deep:
+    primary: claude-opus-4-6
+    fallback:
+      - claude-opus-4-5
+      - claude-3-opus-latest
+
+# ---------------------------------------------------------------------------
+# Aliases — short names callers can use instead of role names
+# ---------------------------------------------------------------------------
+aliases:
+  brief:        haiku_synthesis    # morning brief
+  extract:      haiku_synthesis    # LLM fact extraction in stop hook
+  slides:       haiku_synthesis    # teach.py slide bulk gen
+  quick:        haiku_synthesis    # pipeline.py "quick" complexity tier
+  standard:     sonnet_default     # pipeline.py "standard" tier
+  default:      sonnet_default     # generic fallback
+  deep:         opus_deep          # pipeline.py "deep" / "chain"
+  chain:        opus_deep
+  paperqa:      haiku_synthesis    # paperqa_search.py LLM + summary_llm
+  proposals:    haiku_synthesis    # improvement.py proposal drafts
+  cache:        sonnet_default     # cache_helpers.py default
+
+# ---------------------------------------------------------------------------
+# Probe schedule — how often to test model availability
+# ---------------------------------------------------------------------------
+availability:
+  # When the loader runs, cache successful model picks for this many minutes.
+  # On expiry, re-probe so a deprecated primary triggers fallback automatically.
+  cache_minutes: 60
+  # On API error (e.g. 404 model_not_found), advance to next in chain.
+  advance_on_error: true

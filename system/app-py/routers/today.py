@@ -17,6 +17,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_execute, db_query, db_scalar
+from models import model_for  # Resolves Claude model IDs from system/config/models.yaml
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -736,7 +737,7 @@ async def today_scan(request: Request):
             else:
                 scan_results.append({"type": "ok", "message": "Research Cortex is clean"})
         except Exception:
-            scan_results.append({"type": "info", "message": "Could not run git status"})
+            scan_results.append({"type": "info", "message": "I couldn't run git status"})
 
     if not scan_results:
         scan_results.append({"type": "ok", "message": "Nothing to report"})
@@ -833,7 +834,7 @@ def _haiku_news_summary(topic: str, titles: list[str], period: str, api_key: str
                 "content-type": "application/json",
             },
             json={
-                "model": "claude-haiku-4-5-20251001",
+                "model": model_for("brief"),
                 "max_tokens": 200,
                 "messages": [{"role": "user", "content": prompt}],
             },
@@ -1096,7 +1097,7 @@ def _get_or_generate_brief(force: bool = False) -> str | None:
                 "content-type": "application/json",
             },
             json={
-                "model": "claude-haiku-4-5-20251001",
+                "model": model_for("brief"),
                 "max_tokens": 800,
                 "system": [
                     {
@@ -1230,13 +1231,35 @@ async def today_morning_brief(request: Request):
         pass
 
     ai_brief = None
+    brief_date_label = None
     try:
         ai_brief = _get_or_generate_brief()
     except Exception:
         pass
 
+    # If today's brief failed to generate, fall back to the most recent cached
+    # brief from any date — the user gets continuity instead of empty space.
+    if not ai_brief:
+        try:
+            import sqlite3 as _sqlite
+            db_path = _get_db_path()
+            if db_path:
+                _conn = _sqlite.connect(db_path)
+                _conn.row_factory = _sqlite.Row
+                _last = _conn.execute(
+                    "SELECT insight_date, content FROM daily_insights "
+                    "WHERE model = 'claude-haiku-brief' AND content IS NOT NULL "
+                    "ORDER BY insight_date DESC LIMIT 1"
+                ).fetchone()
+                _conn.close()
+                if _last and _last["content"]:
+                    ai_brief = _last["content"]
+                    brief_date_label = _last["insight_date"]
+        except Exception:
+            pass
+
     sources: list[dict] = []
-    if ai_brief:
+    if ai_brief and not brief_date_label:
         db_path = _get_db_path()
         if db_path:
             sources = _load_brief_sources(db_path)
@@ -1263,6 +1286,7 @@ async def today_morning_brief(request: Request):
         "partials/today_morning_brief.html",
         {
             "brief": ai_brief,
+            "brief_date_label": brief_date_label,  # set when brief is from earlier than today
             "sources": sources,
             "fallback_headlines": fallback_headlines,
             "open_threads": open_threads,
@@ -1429,9 +1453,14 @@ async def today_session_handoff(request: Request):
         ) or []
         for r in rows:
             raw_summary = (r.get("summary") or "").strip()
-            # Skip stop-hook marker entries (raw file pointers, not real session summaries)
-            if (raw_summary.startswith("#") or "Handoff brief:" in raw_summary
-                    or "Stop reason:" in raw_summary or len(raw_summary) < 20):
+            # Skip ONLY the stop-hook 3-line marker (its hallmarks are the two
+            # specific phrases below). Real handoff briefs also start with "#"
+            # but contain ## subsections — those are valid content.
+            is_marker = (
+                ("Handoff brief:" in raw_summary and "Stop reason:" in raw_summary)
+                or len(raw_summary) < 80
+            )
+            if is_marker:
                 continue
             decisions = []
             try:
@@ -1470,16 +1499,18 @@ async def today_session_handoff(request: Request):
 async def today_news_archive(request: Request):
     news_briefs = []
     try:
-        # Balanced display: up to 2 items per domain from the 120 most recent
+        # Compact Today-page rail: just the 4 most relevant signals, one per
+        # domain so it doesn't crowd the bottom row. Full archive lives on the
+        # News tab — this is just a glance.
         pool = db_query(
             "SELECT rowid as brief_id, title, domain, summary, signal_strength, source_url, created_at "
-            "FROM news_briefs ORDER BY created_at DESC LIMIT 120"
+            "FROM news_briefs ORDER BY created_at DESC LIMIT 80"
         ) or []
         total_count = len(pool)
         seen: dict[str, int] = {}
         for r in pool:
             domain = r.get("domain") or "General"
-            if seen.get(domain, 0) >= 2:
+            if seen.get(domain, 0) >= 1:
                 continue
             seen[domain] = seen.get(domain, 0) + 1
             sig = (r.get("signal_strength") or "").lower()
@@ -1487,12 +1518,12 @@ async def today_news_archive(request: Request):
                 "brief_id": r.get("brief_id"),
                 "title": r.get("title") or "Untitled",
                 "domain": domain,
-                "summary": (r.get("summary") or "")[:160],
+                "summary": (r.get("summary") or "")[:100],
                 "source_url": r.get("source_url"),
                 "age_label": _age_label(r["created_at"]) if r.get("created_at") else "",
                 "signal": sig if sig in ("high", "medium", "low") else "",
             })
-            if len(news_briefs) >= 10:
+            if len(news_briefs) >= 4:
                 break
     except Exception:
         pass
@@ -2013,7 +2044,7 @@ async def api_handoff_generate():
         return JSONResponse(result)
     except Exception as e:
         return JSONResponse(
-            {"status": "error", "message": f"Could not generate handoff: {e}"},
+            {"status": "error", "message": f"I couldn't generate handoff: {e}"},
             status_code=500,
         )
 
@@ -2077,6 +2108,53 @@ async def api_session_consolidate(request: Request):
             )
         summary = " ".join(summary_parts)
 
+    # LLM enrichment — if the API key is set and the SDK is installed, ask
+    # Claude Haiku to extract a 2-sentence prose summary + a structured
+    # topics+decisions list from the brief. Heuristic results below are kept
+    # as a safety net.
+    llm_summary: str | None = None
+    llm_topics: list[str] = []
+    llm_decisions: list[str] = []
+    try:
+        if brief_content and len(brief_content) > 200 and os.environ.get("ANTHROPIC_API_KEY"):
+            from anthropic import Anthropic
+            client = Anthropic()
+            prompt = (
+                "You are summarising a researcher's session handoff brief for their "
+                "long-term memory. Read the brief below and return a JSON object with "
+                "exactly three keys:\n"
+                '  "summary": one-or-two-sentence prose summary of what happened (≤ 250 chars)\n'
+                '  "topics":  a JSON array of 3–6 short topic strings (project names, themes)\n'
+                '  "decisions": a JSON array of 3–8 short decision strings (≤ 120 chars each, '
+                'concrete next steps or outcomes)\n\n'
+                "Respond with ONLY the JSON. No commentary.\n\n"
+                "BRIEF:\n" + brief_content[:6000]
+            )
+            msg = client.messages.create(
+                model=model_for("brief"),
+                max_tokens=800,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            text = "".join(b.text for b in msg.content if hasattr(b, "text")).strip()
+            # Strip markdown fences if Haiku wrapped its JSON
+            if text.startswith("```"):
+                text = text.split("```", 2)[1] if "```" in text[3:] else text
+                if text.startswith("json\n"):
+                    text = text[5:]
+            parsed = json.loads(text)
+            llm_summary = (parsed.get("summary") or "").strip()
+            llm_topics = [t.strip() for t in parsed.get("topics", []) if t and isinstance(t, str)][:6]
+            llm_decisions = [d.strip() for d in parsed.get("decisions", []) if d and isinstance(d, str)][:8]
+    except Exception:
+        # Any failure here — silent. Heuristic extraction below still runs.
+        llm_summary = None
+        llm_topics = []
+        llm_decisions = []
+
+    if llm_summary:
+        # Prepend the LLM's prose to the truncated brief
+        summary = llm_summary + ("\n\n" + summary if summary else "")
+
     # Extract bullet-point content from any handoff-brief section.
     # Real briefs use headings like "Active projects", "Open tasks",
     # "Recent agent runs", "What happened", "Decisions". Capture bullets
@@ -2118,9 +2196,9 @@ async def api_session_consolidate(request: Request):
         extracted_decisions = extracted_decisions[:10]
         extracted_topics = extracted_topics[:8]
 
-    # key_topics: prefer real topics from the brief; fall back to agent slugs
-    # only if the brief produced none.
-    topics_payload = extracted_topics if extracted_topics else agents
+    # Priority order: LLM extraction > heuristic extraction > agent slugs.
+    topics_payload = llm_topics or extracted_topics or agents
+    decisions_payload = llm_decisions or extracted_decisions
 
     try:
         db_path = _get_db_path()
@@ -2143,7 +2221,7 @@ async def api_session_consolidate(request: Request):
                     today,
                     summary,
                     json.dumps(topics_payload),
-                    json.dumps(extracted_decisions),
+                    json.dumps(decisions_payload),
                     datetime.datetime.utcnow().isoformat(),
                 ),
             )
@@ -2159,7 +2237,7 @@ async def api_session_consolidate(request: Request):
         })
     except Exception as e:
         return JSONResponse(
-            {"status": "error", "message": f"Could not save session summary: {e}"},
+            {"status": "error", "message": f"I couldn't save session summary: {e}"},
             status_code=500,
         )
 

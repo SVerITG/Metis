@@ -227,14 +227,40 @@ async def planner_focus(request: Request):
 
 @router.get("/api/partial/planner/focus-board", response_class=HTMLResponse)
 async def planner_focus_board(request: Request):
-    """Top 3 active projects with their open task count."""
+    """Top 3 active projects with their open task count + last-touched stamp."""
     projects = db_query(
-        "SELECT project_id, title, domain, priority, next_step "
+        "SELECT project_id, title, domain, priority, next_step, "
+        "       last_session_at, created_at "
         "FROM projects WHERE status = 'active' "
         "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END, "
-        "         updated_at DESC NULLS LAST LIMIT 3",
+        "         COALESCE(last_session_at, created_at) DESC LIMIT 3",
         default=[],
     ) or []
+
+    today = datetime.date.today()
+
+    def _touched_label(stamp: str) -> str:
+        if not stamp:
+            return ""
+        try:
+            d = datetime.date.fromisoformat(stamp[:10])
+            delta = (today - d).days
+            if delta <= 0:
+                return "today"
+            if delta == 1:
+                return "yesterday"
+            if delta < 7:
+                return f"{delta} days ago"
+            if delta < 30:
+                w = delta // 7
+                return f"{w} week{'s' if w != 1 else ''} ago"
+            if delta < 365:
+                m = delta // 30
+                return f"{m} month{'s' if m != 1 else ''} ago"
+            y = delta // 365
+            return f"{y} year{'s' if y != 1 else ''} ago"
+        except Exception:
+            return stamp[:10]
 
     cards = []
     for p in projects:
@@ -244,6 +270,7 @@ async def planner_focus_board(request: Request):
             (pid,),
             default=0,
         ) or 0
+        last = p.get("last_session_at") or p.get("created_at") or ""
         cards.append({
             "id": pid,
             "title": p.get("title") or "Untitled project",
@@ -251,6 +278,7 @@ async def planner_focus_board(request: Request):
             "priority": p.get("priority") or "medium",
             "next_step": p.get("next_step") or "",
             "open_tasks": open_tasks,
+            "touched_label": _touched_label(last),
         })
 
     return templates.TemplateResponse(

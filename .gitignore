@@ -221,3 +221,7 @@ system/design-docs/
 
 # Inbox staging area for code review — transient personal files
 inputs/code/
+
+# Apply_proposal creates timestamped backups — never committed
+*.bak.20*
+skill.md.bak.*

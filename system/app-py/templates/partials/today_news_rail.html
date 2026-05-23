@@ -92,9 +92,9 @@
         {% endif %}
 
         <!-- Articles -->
-        {% if sc.items %}
+        {% if sc['items'] %}
         <div style="margin-top:6px;">
-          {% for item in sc.items %}
+          {% for item in sc['items'] %}
           <a class="news-rail-item" href="{{ item.url }}" target="_blank" rel="noopener"
              style="text-decoration:none;display:block;">
             <div class="news-rail-item-meta">
@@ -177,7 +177,7 @@ async function runSummaryUpdate(period) {
       }, 1200);
     } else {
       status.style.color = 'var(--m-alert)';
-      status.textContent = `Error: ${data.error || 'generation failed'}`;
+      status.textContent = `I couldn't generate that — ${data.error || 'something went wrong, try again'}`;
     }
   } catch(e) {
     status.style.color = 'var(--m-alert)';

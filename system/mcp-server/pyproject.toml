@@ -25,6 +25,10 @@ dependencies = [
     # Phase 10 — Zotero/library connector
     "pyzotero>=1.5",
     "scikit-learn>=1.4",
+    # Phase 12 — Claude API access for morning brief, LLM fact extraction,
+    # and any agent that talks to Anthropic directly. Pinned so fresh installs
+    # never silently lose this capability.
+    "anthropic>=0.40",
     # Optional integrations (comment out if not needed)
     "google-genai>=1.0",
     "twilio>=9.0",
