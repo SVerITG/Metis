@@ -215,3 +215,9 @@ system/design-docs/
 
 # Claude Code local settings (machine-specific)
 .claude/settings.local.json
+
+# Claude Code agent worktrees — transient per-agent branches, never committed
+.claude/worktrees/
+
+# Inbox staging area for code review — transient personal files
+inputs/code/

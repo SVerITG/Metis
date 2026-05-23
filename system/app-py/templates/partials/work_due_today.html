@@ -1,0 +1,45 @@
+{% if overdue or due_today %}
+<div id="work-due-today" style="margin-bottom:28px;">
+  <div class="sec-label" style="margin-bottom:10px;">
+    <span>Due Today</span>
+    {% if overdue %}
+    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-alert);">{{ overdue|length }} OVERDUE</span>
+    {% endif %}
+  </div>
+  <div class="panel">
+    {% for task in overdue %}
+    <div class="todo-row" style="border-left:2px solid var(--m-alert);">
+      <span class="todo-check" onclick="workTaskDone('{{ task.id }}', this)" style="cursor:pointer;" title="Mark done"></span>
+      <span class="todo-title" style="flex:1;">
+        {{ task.title or 'Untitled task' }}
+        {% if task.project %}<span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-left:6px;">{{ task.project[:22] }}</span>{% endif %}
+      </span>
+      <span class="todo-meta" style="color:var(--m-alert);">OVERDUE · {{ task.due_date }}</span>
+    </div>
+    {% endfor %}
+    {% for task in due_today %}
+    <div class="todo-row" style="border-left:2px solid var(--m-accent);">
+      <span class="todo-check" onclick="workTaskDone('{{ task.id }}', this)" style="cursor:pointer;" title="Mark done"></span>
+      <span class="todo-title" style="flex:1;">
+        {{ task.title or 'Untitled task' }}
+        {% if task.project %}<span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-left:6px;">{{ task.project[:22] }}</span>{% endif %}
+      </span>
+      <span class="todo-meta">TODAY</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+async function workTaskDone(taskId, checkEl) {
+  const row = checkEl.closest('.todo-row');
+  await fetch('/api/task/' + taskId + '/done', {method:'POST'});
+  if (row) { row.style.opacity = '0.3'; row.style.textDecoration = 'line-through'; setTimeout(() => row.remove(), 500); }
+  const panel = document.querySelector('#work-due-today .panel');
+  if (panel && panel.querySelectorAll('.todo-row').length <= 1) {
+    const section = document.getElementById('work-due-today');
+    if (section) { section.style.opacity = '0'; setTimeout(() => section.remove(), 400); }
+  }
+}
+</script>
+{% endif %}

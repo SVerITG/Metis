@@ -43,10 +43,42 @@ Step 1 — Read the specialist's skill file:
 Read("agents/{slug}/skill.md")   ← e.g. agents/epidemiologist/skill.md
 ```
 
-Step 2 — Pre-fetch knowledge if the topic is methodology, epi concepts, or statistics:
+Step 1b — **Memory recall (always, before routing).** Call:
 ```
-search_pdf_knowledge(query="<topic>", k=5)
+surface_relevant_context(query="<the user's request, condensed to a topic phrase>", limit=5)
 ```
+
+This searches across episodic memory, semantic memory, the research timeline, past meetings, ideas, and prior agent runs. It is the difference between a stateless AI conversation and a persistent research brain. Skip ONLY for:
+- Pure routing / status calls ("what agent handles X?", "is project Y blocked?")
+- Trivial Q&A that needs no continuity ("what time is it?")
+
+For everything else — substantive tasks, research questions, writing, analysis — recall is mandatory. The output goes into the subagent prompt as `[MEMORY CONTEXT]` (see Step 4 template). If `surface_relevant_context` returns nothing relevant or fails, omit the section but do not block.
+
+Step 2 — Pre-fetch knowledge if applicable (RAG orchestration):
+
+**When to run retrieval — knowledge-eligible queries:**
+| Query type | Databases to search |
+|---|---|
+| Epidemiological methods, study design, surveillance, sampling, statistics, biostatistics, MLM/multilevel, spatial scan | `epi-methods` |
+| Public health guidelines, WHO/CDC recommendations, health systems, health economics, NTD/HAT background | `ph-background` |
+| HAT-specific: sleeping sickness, diagnostic sensitivity, mAECT, OBI, DRC surveillance | `hat-specialist` |
+| Any query touching two categories above | search both databases |
+
+**When to SKIP retrieval — do not call `search_pdf_knowledge()`:**
+- Conversational / meta: "how are you", "what did we do", "explain yourself"
+- Routing or status: "route this to", "what agent should", "status of project X"
+- News / scheduling: "what happened today", "set up a cron", "morning brief"
+- Code / software / DHIS2 implementation questions (no books cover those)
+- Idea capture, journaling, quick lookups
+
+**How to call it:**
+```
+search_pdf_knowledge(query="<specific topic phrase>", databases=["epi-methods"], k=5)
+# or for dual coverage:
+search_pdf_knowledge(query="<topic>", databases=["epi-methods", "ph-background"], k=4)
+```
+
+If the call returns no results or fails → continue without it, do not block.
 
 Step 3 — Tell the user in one sentence who's handling it.
 
@@ -65,8 +97,11 @@ $METIS_RC_ROOT
 [TASK]
 <user's request, verbatim or paraphrased>
 
-[KNOWLEDGE CONTEXT]  ← include only if search returned relevant results
-<paste top RAG results here>
+[MEMORY CONTEXT]  ← include only if surface_relevant_context returned anything relevant; omit the section entirely if nothing relevant
+<paste top 3–5 memory results: brief snippet + source type (episodic / research_timeline / past meeting / prior agent run) + date>
+
+[KNOWLEDGE CONTEXT]  ← include only if search_pdf_knowledge returned relevant results; omit section entirely if no results
+<paste top RAG results here — title, source, excerpt per result>
 
 [OUTPUT REQUIREMENTS]
 - Save output to: outputs/reviews/{slug}/YYYY-MM-DD_{topic-slug}.md

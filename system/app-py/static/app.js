@@ -148,10 +148,10 @@ async function launchPrompt(key) {
         }, 500);
       }
     } else {
-      showToast(`<i class="bi bi-exclamation-triangle"></i>${data.message || 'Launch failed'}. Prompt copied — paste manually.`);
+      showToast(`<i class="bi bi-exclamation-triangle"></i>${data.message || `I couldn't open ${cfg.target} — try again, or check that it's installed`}. Prompt copied — paste manually.`);
     }
   } catch (e) {
-    showToast(`<i class="bi bi-exclamation-triangle"></i>Launch failed: ${e}. Prompt copied to clipboard.`);
+    showToast(`<i class="bi bi-exclamation-triangle"></i>I couldn't open ${cfg.target} — try again, or check that it's installed. Prompt copied to clipboard.`);
   }
 }
 
@@ -239,7 +239,7 @@ async function completeLesson(slug, lessonId, btn) {
     const res = await fetch(`/api/course/${slug}/lesson/${lessonId}/complete`, { method: 'POST' });
     const data = await res.json();
     if (data.status === 'ok') {
-      if (btn) btn.textContent = '✓ Done';
+      if (btn) btn.textContent = 'Marked complete';
       showToast(`Lesson marked complete — ${data.progress_pct}% through the course.`);
       if (data.next_lesson_id) {
         htmx.ajax('GET', `/api/course/${slug}/lesson/${data.next_lesson_id}`,
@@ -445,7 +445,7 @@ async function markTaskDone(taskId, btn) {
       row.style.pointerEvents = 'none';
       setTimeout(() => row.remove(), 500);
     }
-    showToast('Task marked done ✓');
+    showToast('Task marked done — nice work.');
   } catch {
     showToast('Could not update task');
   }

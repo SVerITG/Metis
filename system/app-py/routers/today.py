@@ -5,7 +5,9 @@ Layout: dateline → hero (greeting + stats) → 2-col canvas (focus / activity)
 """
 
 import datetime
+import html as _html
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -1329,11 +1331,13 @@ async def morning_brief_refresh(request: Request):
 async def today_ledger(request: Request):
     stats = {}
 
-    # Unread papers (actionable — needs reading)
+    # Papers added in last 7 days (new science signal, not anxiety number)
     try:
+        week_ago_iso = (datetime.datetime.now() - datetime.timedelta(days=7)).isoformat()
         stats["unread_count"] = db_scalar(
             "SELECT COUNT(*) FROM literature_metadata "
-            "WHERE (is_read IS NULL OR is_read=0) AND title IS NOT NULL AND title!=''",
+            "WHERE created_at >= ? AND title IS NOT NULL AND title!=''",
+            (week_ago_iso,),
             default=0,
         ) or 0
     except Exception:
@@ -1418,31 +1422,37 @@ async def today_session_handoff(request: Request):
     import json as _json
     sessions = []
     try:
+        # Fetch more rows so we can skip raw marker entries (pending handoffs with no real summary)
         rows = db_query(
             "SELECT session_id, summary, decisions, key_topics, created_at "
-            "FROM session_summaries ORDER BY created_at DESC LIMIT 2"
+            "FROM session_summaries ORDER BY created_at DESC LIMIT 10"
         ) or []
         for r in rows:
+            raw_summary = (r.get("summary") or "").strip()
+            # Skip stop-hook marker entries (raw file pointers, not real session summaries)
+            if (raw_summary.startswith("#") or "Handoff brief:" in raw_summary
+                    or "Stop reason:" in raw_summary or len(raw_summary) < 20):
+                continue
             decisions = []
             try:
                 raw = r.get("decisions") or "[]"
                 decisions = _json.loads(raw) if isinstance(raw, str) else (raw or [])
-                decisions = [d for d in decisions if d and len(d) > 8][:4]
+                decisions = [d for d in decisions if d and len(d) > 8][:3]
             except Exception:
                 pass
-            summary_text = (r.get("summary") or "").strip()
-            # Trim to first 280 chars, stopping at a sentence boundary
-            if len(summary_text) > 280:
-                cut = summary_text.rfind(". ", 0, 280)
-                summary_text = summary_text[:cut + 1] if cut > 40 else summary_text[:280] + "…"
+            # Trim to first 240 chars at a sentence boundary
+            if len(raw_summary) > 240:
+                cut = raw_summary.rfind(". ", 0, 240)
+                raw_summary = raw_summary[:cut + 1] if cut > 40 else raw_summary[:240] + "…"
             created = r.get("created_at") or ""
             sessions.append({
                 "session_id": r.get("session_id") or "",
-                "summary": summary_text,
+                "summary": raw_summary,
                 "decisions": decisions,
                 "age_label": _age_label(created) if created else "",
                 "date": created[:10] if created else "",
             })
+            break  # Only show the single most recent real session
     except Exception:
         pass
 
@@ -1459,14 +1469,7 @@ async def today_session_handoff(request: Request):
 @router.get("/api/partial/today/news-archive", response_class=HTMLResponse)
 async def today_news_archive(request: Request):
     news_briefs = []
-    categories: list[str] = []
     try:
-        # Fetch all domain names for the chip strip — independent of display limit
-        cat_rows = db_query(
-            "SELECT DISTINCT domain FROM news_briefs WHERE domain IS NOT NULL AND domain != '' ORDER BY domain"
-        ) or []
-        categories = sorted({(r.get("domain") or "General").upper() for r in cat_rows})
-
         # Balanced display: up to 2 items per domain from the 120 most recent
         pool = db_query(
             "SELECT rowid as brief_id, title, domain, summary, signal_strength, source_url, created_at "
@@ -1493,6 +1496,9 @@ async def today_news_archive(request: Request):
                 break
     except Exception:
         pass
+
+    # Categories derived from actually-displayed items only — no empty tabs
+    categories = sorted({b["domain"].upper() for b in news_briefs if b.get("domain")})
 
     return templates.TemplateResponse(
         request,
@@ -1646,13 +1652,16 @@ async def today_library_archive(request: Request):
             doi = r.get("doi") or ""
             url = r.get("url") or ""
             item_url = f"https://doi.org/{doi}" if doi else url
+            raw_abstract = _html.unescape(r.get("abstract") or "")
+            clean_abstract = re.sub(r"<[^>]+>", " ", raw_abstract)
+            clean_abstract = re.sub(r"\s+", " ", clean_abstract).strip()
             items.append({
                 "title": r.get("title") or "Untitled",
                 "authors": authors_display,
                 "year": r.get("year") or "",
                 "domain": r.get("source") or "",
                 "card_type": r.get("source") or "ARTICLE",
-                "abstract": (r.get("abstract") or "")[:160],
+                "abstract": clean_abstract[:200],
                 "source": r.get("source") or "ARTICLE",
                 "doi": doi,
                 "url": item_url,
@@ -2068,20 +2077,50 @@ async def api_session_consolidate(request: Request):
             )
         summary = " ".join(summary_parts)
 
-    # Extract bullet-point decisions from brief (lines starting with "- " under a
-    # ## What happened or ## Decisions section)
+    # Extract bullet-point content from any handoff-brief section.
+    # Real briefs use headings like "Active projects", "Open tasks",
+    # "Recent agent runs", "What happened", "Decisions". Capture bullets
+    # from any of those — the previous regex only checked three exact
+    # heading phrases that briefs never emit, so the field was always empty.
+    DECISION_HEADINGS = (
+        "what happened", "decision", "key decision",
+        "active project", "open task", "recent agent run",
+        "next step", "follow-up", "follow up", "outcome",
+    )
     extracted_decisions: list[str] = []
+    extracted_topics: list[str] = []
     if brief_content:
-        in_section = False
+        in_decision_section = False
+        in_projects_section = False
         for line in brief_content.splitlines():
-            if any(h in line.lower() for h in ["## what happened", "## decision", "## key decision"]):
-                in_section = True
+            stripped = line.strip()
+            low = stripped.lower()
+            if stripped.startswith("##"):
+                # Reset both flags on every new ##
+                in_decision_section = any(h in low for h in DECISION_HEADINGS)
+                in_projects_section = "active project" in low or "project" in low
                 continue
-            if in_section and line.startswith("##"):
-                in_section = False
-            if in_section and line.strip().startswith("- ") and len(line.strip()) > 10:
-                extracted_decisions.append(line.strip()[2:].strip())
-        extracted_decisions = extracted_decisions[:10]  # cap at 10
+            if in_decision_section and stripped.startswith("- ") and len(stripped) > 4:
+                item = stripped[2:].strip()
+                # Remove markdown bold/italic syntax markers so the stored text reads naturally
+                item = item.replace("**", "").replace("__", "").lstrip("*_ ").rstrip()
+                if item and item not in extracted_decisions:
+                    extracted_decisions.append(item)
+            if in_projects_section and stripped.startswith("- "):
+                # Project bullets often start with **Name** — extract just the title
+                txt = stripped[2:].strip()
+                # First bold span = project name, fall back to whole line
+                bold_match = txt.split("**")
+                topic = bold_match[1] if len(bold_match) >= 3 else txt.split(" — ")[0]
+                topic = topic.strip().rstrip(":").strip()
+                if topic and topic not in extracted_topics:
+                    extracted_topics.append(topic)
+        extracted_decisions = extracted_decisions[:10]
+        extracted_topics = extracted_topics[:8]
+
+    # key_topics: prefer real topics from the brief; fall back to agent slugs
+    # only if the brief produced none.
+    topics_payload = extracted_topics if extracted_topics else agents
 
     try:
         db_path = _get_db_path()
@@ -2103,7 +2142,7 @@ async def api_session_consolidate(request: Request):
                 (
                     today,
                     summary,
-                    json.dumps(agents),
+                    json.dumps(topics_payload),
                     json.dumps(extracted_decisions),
                     datetime.datetime.utcnow().isoformat(),
                 ),
@@ -2114,6 +2153,7 @@ async def api_session_consolidate(request: Request):
             "summary": summary[:200],
             "tool_calls": len(tool_calls),
             "agents": agents,
+            "topics_extracted": len(extracted_topics),
             "decisions_extracted": len(extracted_decisions),
             "has_brief": bool(brief_content),
         })

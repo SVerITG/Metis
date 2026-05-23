@@ -197,7 +197,7 @@ function _submit(mode) {
       _showOutput(data, title);
       htmx.ajax('GET', '/api/partial/teach/past-builds', { target: '#teach-past-builds', swap: 'outerHTML' });
     })
-    .catch(() => { btn.disabled = false; stat.textContent = 'Build failed.'; });
+    .catch(() => { btn.disabled = false; stat.textContent = 'Something went wrong building that — try again, or check the Metis tab for details.'; });
 }
 
 function _showOutput(data, title) {
@@ -206,7 +206,7 @@ function _showOutput(data, title) {
   panel.style.display = 'block';
   document.getElementById('teach-output-label').textContent = title;
   document.getElementById('teach-output-body').innerHTML =
-    data.html || '<em style="color:var(--m-muted)">No output returned.</em>';
+    data.html || '<em style="color:var(--m-muted)">The build didn\'t produce anything yet — adjust your selections and try again.</em>';
 
   const aiChip = data.ai_generated
     ? `<span id="teach-mode-chip" style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:2px 6px;background:var(--m-accent);color:#fff;border-radius:2px;margin-left:8px;">AI</span>`

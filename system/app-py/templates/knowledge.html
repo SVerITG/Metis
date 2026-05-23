@@ -17,6 +17,30 @@
     </div>
   </div>
 
+  <!-- ===== Unified Search (first — primary interaction) ===== -->
+  <div style="margin-bottom:28px;">
+    <div class="sec-label" style="margin-bottom:12px;">
+      <span>Search</span>
+      <span class="tail">PAPERS · HAT CORPUS · CARDS · MEMORY</span>
+    </div>
+    <div class="panel" style="padding:16px 20px;">
+      <input type="search"
+             id="unified-search-input"
+             placeholder="Search across all of your library and memory…"
+             style="width:100%;font-family:var(--m-ui);font-size:14px;padding:10px 14px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
+             hx-get="/api/partial/knowledge/unified-search"
+             hx-trigger="keyup changed delay:400ms"
+             hx-target="#unified-search-results"
+             hx-include="[id='unified-search-input']"
+             name="q"
+             autocomplete="off"
+             autofocus>
+      <div id="unified-search-results" style="margin-top:8px;min-height:40px;">
+        <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">Find papers, notes, and what you've read — all at once.</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== Slipcases sidebar + Index cards main ===== -->
   <div class="k-layout">
 
@@ -104,39 +128,29 @@
     </div>
   </div>
 
-  <!-- ===== Coverage Gap Detector ===== -->
+  <!-- ===== Coverage Gap Detector (collapsed by default) ===== -->
   <div style="margin-top:32px;">
-    <div hx-get="/api/partial/knowledge/coverage-gap"
-         hx-trigger="load"
-         hx-swap="outerHTML">
-      <div>
-        <div class="sec-label" style="margin-bottom:8px;"><span>Coverage Gap Detector</span></div>
-        <div class="panel" style="height:120px;opacity:.4;"></div>
+    <details>
+      <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:0;user-select:none;">
+        <div class="sec-label" style="margin-bottom:0;pointer-events:none;">
+          <span>Coverage Gap Detector</span>
+          <span class="tail">CLICK TO EXPAND</span>
+        </div>
+        <svg id="gap-chevron" viewBox="0 0 16 16" width="10" height="10" fill="none"
+             stroke="var(--m-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+             style="margin-left:auto;flex-shrink:0;transition:transform 200ms;">
+          <polyline points="4 6 8 10 12 6"/>
+        </svg>
+      </summary>
+      <div style="margin-top:12px;"
+           hx-get="/api/partial/knowledge/coverage-gap"
+           hx-trigger="intersect once"
+           hx-swap="outerHTML">
+        <div>
+          <div class="panel" style="height:120px;opacity:.4;"></div>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- ===== Unified Search ===== -->
-  <div style="margin-top:32px;">
-    <div class="sec-label" style="margin-bottom:12px;">
-      <span>Unified Search</span>
-      <span class="tail">PAPERS · HAT CORPUS · CARDS · MEMORY</span>
-    </div>
-    <div class="panel" style="padding:16px 20px;">
-      <input type="search"
-             id="unified-search-input"
-             placeholder="Search across all of your library and memory…"
-             style="width:100%;font-family:var(--m-ui);font-size:14px;padding:10px 14px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
-             hx-get="/api/partial/knowledge/unified-search"
-             hx-trigger="keyup changed delay:400ms"
-             hx-target="#unified-search-results"
-             hx-include="[id='unified-search-input']"
-             name="q"
-             autocomplete="off">
-      <div id="unified-search-results" style="margin-top:8px;min-height:40px;">
-        <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">Search Zotero papers, HAT corpus, knowledge cards, and episodic memory at once.</div>
-      </div>
-    </div>
+    </details>
   </div>
 
 </div><!-- /.page -->

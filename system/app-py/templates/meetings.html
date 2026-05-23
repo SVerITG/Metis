@@ -93,8 +93,16 @@
 
     </div>
 
-    <!-- Right: week ahead + follow-ups -->
+    <!-- Right: follow-ups first (most actionable), then week ahead, then stats -->
     <div>
+      <div class="sec-label" style="margin-bottom:12px;"><span>Open follow-ups</span></div>
+      <div class="panel panel-pad" style="padding:16px 20px;margin-bottom:18px;"
+           hx-get="/api/partial/meetings/follow-ups"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div class="ed" style="font-size:14px;opacity:.5;"><em>Looking up open follow-ups…</em></div>
+      </div>
+
       <div class="sec-label" style="margin-bottom:12px;"><span>Week ahead</span></div>
       <div class="panel" style="margin-bottom:18px;"
            hx-get="/api/partial/meetings/week-ahead"
@@ -106,15 +114,7 @@
         </div>
       </div>
 
-      <div class="sec-label" style="margin-bottom:12px;"><span>Open follow-ups</span></div>
-      <div class="panel panel-pad" style="padding:16px 20px;"
-           hx-get="/api/partial/meetings/follow-ups"
-           hx-trigger="load"
-           hx-swap="outerHTML">
-        <div class="ed" style="font-size:14px;opacity:.5;"><em>Loading…</em></div>
-      </div>
-
-      <div class="sec-label" style="margin-top:20px;margin-bottom:12px;"><span>Stats</span></div>
+      <div class="sec-label" style="margin-bottom:12px;"><span>Stats</span></div>
       <div hx-get="/api/partial/meetings/stats"
            hx-trigger="load"
            hx-swap="outerHTML">

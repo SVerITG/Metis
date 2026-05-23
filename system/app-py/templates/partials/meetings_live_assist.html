@@ -1,0 +1,62 @@
+{# partials/meetings_live_assist.html — Read-only status for the live meeting assistant #}
+<div class="panel">
+  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;align-items:center;gap:10px;">
+    <span class="kicker kicker--accent" style="margin:0;">LIVE ASSIST</span>
+    {% if live %}
+    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-ok);">SESSION ACTIVE</span>
+    {% else %}
+    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">STANDING BY</span>
+    {% endif %}
+  </div>
+
+  {% if live %}
+  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
+    <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.4;margin-bottom:4px;">
+      {{ live.title }}
+    </div>
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);">
+      {% if live.attendees %}{{ live.attendees[:80] }} · {% endif %}{{ live.meeting_date }}
+    </div>
+  </div>
+  {% else %}
+  <div style="padding:18px 20px;">
+    <p style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.6;margin:0 0 10px;">
+      Nothing is live right now.
+    </p>
+    <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.6;margin:0;">
+      When you start a meeting, I'll listen along and surface anything in your library, notes, or past meetings that connects to what's being said.
+    </p>
+  </div>
+  {% endif %}
+
+  {% if connections %}
+  <div style="padding:14px 20px;border-top:1px solid var(--m-rule-soft);">
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">
+      RECENT CONNECTIONS
+    </div>
+    {% for c in connections %}
+    <div style="padding:6px 0;display:flex;gap:10px;align-items:baseline;">
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-accent);width:54px;flex-shrink:0;">
+        {{ c.source | upper }}
+      </span>
+      <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.4;">
+        {{ c.title }}
+        {% if c.from_meeting %}
+        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);"> · from “{{ c.from_meeting }}”</span>
+        {% endif %}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div style="padding:14px 20px;border-top:1px solid var(--m-rule-soft);display:flex;justify-content:flex-end;">
+    <button class="btn btn--primary"
+            hx-get="/api/partial/meetings/live-setup"
+            hx-target="#meeting-live-pane"
+            hx-swap="innerHTML"
+            style="font-size:12px;">
+      Start a new live meeting
+    </button>
+  </div>
+</div>

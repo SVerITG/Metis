@@ -85,9 +85,30 @@
         </div>
 
       {% else %}
-        <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);letter-spacing:0.08em;">
-          No morning scan yet. Click Update to generate the first brief.
+        <div style="display:flex;align-items:center;gap:14px;padding:8px 0;">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--m-muted)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.5;">
+            <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 13.5"/>
+          </svg>
+          <div>
+            <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);margin-bottom:3px;">No brief yet today.</div>
+            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);letter-spacing:0.08em;" id="brief-countdown-msg">
+              Generates automatically at 07:15 — or click Update now.
+            </div>
+          </div>
         </div>
+        <script>
+        (function() {
+          var el = document.getElementById('brief-countdown-msg');
+          if (!el) return;
+          var now = new Date();
+          var target = new Date(now); target.setHours(7,15,0,0);
+          if (now >= target) { return; }
+          var diff = Math.round((target - now) / 60000);
+          var h = Math.floor(diff / 60), m = diff % 60;
+          var label = h > 0 ? h + 'h ' + m + 'm' : m + 'm';
+          el.textContent = 'Brief generates at 07:15 — ' + label + ' from now. Or click Update.';
+        })();
+        </script>
       {% endif %}
 
     </div>

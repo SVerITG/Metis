@@ -147,13 +147,77 @@ def _extract_structure(text: str) -> dict:
     return {"actions": actions, "decisions": decisions, "follow_ups": follow_ups}
 
 
-def _surface_connections(text: str, max_results: int = 6) -> list[dict]:
-    """Return cross-pollination matches as list of dicts."""
+def _fast_keyword_connections(text: str, max_results: int = 6) -> list[dict]:
+    """Keyword-only SQL cross-pollination — no embedding model required."""
+    import re as _re
+    stopwords = {"about", "after", "before", "between", "could", "should",
+                 "would", "their", "there", "which", "where", "these", "those",
+                 "with", "from", "have", "been", "this", "that", "into", "also",
+                 "when", "then", "than", "they", "were", "what", "your", "just"}
+    words = _re.findall(r"\b[a-zA-Z]{4,}\b", text.lower())
+    keywords = [w for w in words if w not in stopwords][:8]
+    if not keywords:
+        return []
     try:
-        from metis_mcp.tools.ideas import _cross_pollinate_core  # type: ignore
-        return _cross_pollinate_core(text, max_results=max_results) or []
+        from db import _connect
+        db_path = None
+        rc_root = os.environ.get("METIS_RC_ROOT")
+        if rc_root:
+            db_path = Path(rc_root) / "system" / "app" / "data" / "metis.sqlite"
+        if not db_path or not db_path.exists():
+            return []
+        import sqlite3
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        results: list[dict] = []
+        like_conds = " OR ".join(["title LIKE ?" for _ in keywords])
+        params = [f"%{k}%" for k in keywords]
+        for table, col, source in [
+            ("literature_metadata", "title", "library"),
+            ("meetings",           "title", "meeting"),
+            ("news_briefs",        "title", "news"),
+            ("ideas",              "content", "idea"),
+        ]:
+            try:
+                q = f"SELECT title, '{source}' as source FROM {table} WHERE "
+                if table == "ideas":
+                    q = f"SELECT content as title, '{source}' as source FROM {table} WHERE "
+                    like_conds2 = " OR ".join(["content LIKE ?" for _ in keywords])
+                    rows = conn.execute(q + like_conds2 + " LIMIT ?", params + [max_results]).fetchall()
+                else:
+                    rows = conn.execute(q + like_conds + " LIMIT ?", params + [max_results]).fetchall()
+                for r in rows:
+                    results.append({"title": (r["title"] or "")[:100], "source": source})
+                    if len(results) >= max_results:
+                        break
+            except Exception:
+                continue
+        conn.close()
+        seen: set[str] = set()
+        unique = []
+        for r in results:
+            k = r["title"][:40].lower()
+            if k not in seen:
+                seen.add(k)
+                unique.append(r)
+            if len(unique) >= max_results:
+                break
+        return unique
     except Exception:
         return []
+
+
+def _surface_connections(text: str, max_results: int = 6) -> list[dict]:
+    """Return cross-pollination matches — tries MCP vector+keyword first, SQL-only fallback."""
+    try:
+        from metis_mcp.tools.ideas import _cross_pollinate_core  # type: ignore
+        result = _cross_pollinate_core(text, max_results=max_results) or []
+        if result:
+            return result
+    except Exception as e:
+        import sys
+        print(f"[live-meeting] _cross_pollinate_core failed: {e}", file=sys.stderr, flush=True)
+    return _fast_keyword_connections(text, max_results=max_results)
 
 
 # ---------------------------------------------------------------------------
@@ -538,6 +602,55 @@ async def meeting_live_connections(text: str = Form("")):
 # ---------------------------------------------------------------------------
 # Live session endpoints
 # ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/meetings/live-assist", response_class=HTMLResponse)
+async def meetings_live_assist(request: Request):
+    """Read-only status pane for the live meeting assistant.
+
+    Shows whether a live session is active, the last few cross-pollination
+    connections we've surfaced in recent meetings, and an invitation to start
+    a new one.
+    """
+    today = datetime.date.today().isoformat()
+
+    # 'Live' = a meeting filed today with meeting_type='live'
+    live_today = db_query(
+        "SELECT meeting_id, title, attendees, meeting_date FROM meetings "
+        "WHERE meeting_type = 'live' AND meeting_date = ? "
+        "ORDER BY meeting_id DESC LIMIT 1",
+        (today,),
+    ) or []
+    live = live_today[0] if live_today else None
+
+    # Last few connections: derive from the most recent live meetings by
+    # cross-pollinating their title + transcript snippet.
+    recent_live = db_query(
+        "SELECT title, transcript FROM meetings "
+        "WHERE meeting_type = 'live' AND transcript IS NOT NULL AND transcript != '' "
+        "ORDER BY meeting_id DESC LIMIT 3",
+    ) or []
+
+    connections: list[dict] = []
+    for m in recent_live:
+        seed = ((m.get("title") or "") + " " + (m.get("transcript") or ""))[:400]
+        try:
+            for c in _fast_keyword_connections(seed, max_results=1) or []:
+                connections.append({
+                    "title": c.get("title", "")[:80],
+                    "source": c.get("source", ""),
+                    "from_meeting": (m.get("title") or "")[:60],
+                })
+        except Exception:
+            continue
+        if len(connections) >= 3:
+            break
+
+    return templates.TemplateResponse(
+        request,
+        "partials/meetings_live_assist.html",
+        {"live": live, "connections": connections},
+    )
 
 
 @router.get("/api/partial/meetings/live-setup", response_class=HTMLResponse)
