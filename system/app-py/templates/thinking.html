@@ -81,6 +81,15 @@
           <div style="height:11px;background:var(--m-surface-3);border-radius:2px;"></div>
         </div>
       </div>
+
+      <div class="sec-label" style="margin-top:24px;margin-bottom:12px;"><span>What you're brainstorming about</span></div>
+      <div hx-get="/api/partial/thinking/brainstorm"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div class="panel panel-pad" style="padding:18px 20px;opacity:.4;">
+          <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Pulling your active brainstorm threads…</p>
+        </div>
+      </div>
     </div>
 
   </div>
