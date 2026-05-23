@@ -470,6 +470,18 @@ No change to agent behaviour ever happens without your review. The system propos
 
 ## Install
 
+> ### Before you start — get your Anthropic API key
+>
+> Metis uses Anthropic's Claude as its language model. You'll need an **API key** — a long string that starts with `sk-ant-…`. It's free to sign up; you only pay for actual usage (most days are a few cents).
+>
+> 1. Go to **[console.anthropic.com](https://console.anthropic.com)** and create an account (2 minutes).
+> 2. Click **API Keys** → **Create Key**. Copy the key somewhere safe.
+> 3. Keep that tab open — the installer will ask for it once.
+>
+> The key stays on your computer. It is never uploaded, shared, or committed to git.
+
+---
+
 ### For Researchers — Windows one-click installer
 
 No terminal. No Python. No technical knowledge needed. Download, double-click, answer three questions.
@@ -478,16 +490,16 @@ No terminal. No Python. No technical knowledge needed. Download, double-click, a
 
 Four installer variants — choose what fits your work:
 
-| Installer | Includes | Best for |
-|---|---|---|
-| **Full** | AI assistant + dashboard + RStudio launcher + MLM statistics course | Everything, from day one |
-| **Full without course** | AI assistant + dashboard + RStudio launcher | Full Metis, add courses later |
-| **Full without RStudio** | AI assistant + dashboard (no R integration) | Non-R researchers |
-| **MCP only** | AI assistant in Claude Desktop only — no dashboard, no R | Background file organisation, lightest footprint |
+| Variant | Use it if… |
+|---|---|
+| **Full setup with everything** | You want Metis, the dashboard, and the included statistics course. The complete experience. |
+| **Essentials only (faster install)** | You want Metis + the dashboard. Skip the bundled course (you can add it later). |
+| **No R integration** | You don't use R or RStudio for analysis. |
+| **Light mode (AI only, no dashboard)** | You want Metis inside Claude Desktop and nothing else. Smallest footprint. |
 
 All variants install Claude Desktop, configure Metis automatically, and launch the **13-section config wizard** on first open. Takes about 8 minutes.
 
-**Requirements:** Windows 10 or 11 · Internet connection · [Anthropic API key](https://console.anthropic.com)
+**Requirements:** Windows 10 or 11 · Internet connection · [Anthropic API key](https://console.anthropic.com) (see banner above)
 
 ---
 

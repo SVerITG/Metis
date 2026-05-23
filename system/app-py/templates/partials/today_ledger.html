@@ -1,44 +1,56 @@
-<div class="ledger" id="today-ledger" style="grid-template-columns:repeat(7,1fr);">
+<div class="ledger" id="today-ledger">
+  {% if stats.unread_count %}
   <a href="#" class="ledger-cell"
-     title="Unread papers in Zotero library"
+     title="Papers added to your library in the last 7 days"
      onclick="setNavActive(document.querySelector('[data-tab=knowledge]'),'knowledge'); htmx.ajax('GET','/api/tab/knowledge',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum" style="{% if stats.unread_count %}color:var(--m-accent);{% endif %}">{{ stats.unread_count if stats.unread_count else '—' }}</div>
-    <div class="ledger-l">UNREAD</div>
+    <div class="ledger-n tnum" style="color:var(--m-accent);">{{ stats.unread_count }}</div>
+    <div class="ledger-l">NEW · 7D</div>
   </a>
+  {% endif %}
+  {% if stats.hat_count %}
   <a href="#" class="ledger-cell"
      title="HAT Research Corpus PDFs"
      onclick="setNavActive(document.querySelector('[data-tab=knowledge]'),'knowledge'); htmx.ajax('GET','/api/tab/knowledge',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum">{{ stats.hat_count if stats.hat_count else '—' }}</div>
+    <div class="ledger-n tnum">{{ stats.hat_count }}</div>
     <div class="ledger-l">HAT PAPERS</div>
   </a>
+  {% endif %}
+  {% if stats.open_tasks %}
   <a href="#" class="ledger-cell"
      title="Open and in-progress tasks"
      onclick="setNavActive(document.querySelector('[data-tab=work]'),'work'); htmx.ajax('GET','/api/tab/work',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum">{{ stats.open_tasks if stats.open_tasks else '—' }}</div>
+    <div class="ledger-n tnum">{{ stats.open_tasks }}</div>
     <div class="ledger-l">OPEN TASKS</div>
   </a>
-  <a href="#" class="ledger-cell{% if stats.blocked_count %} ledger-tier-warn{% endif %}"
+  {% endif %}
+  {% if stats.blocked_count %}
+  <a href="#" class="ledger-cell ledger-tier-warn"
      title="Blocked tasks needing attention"
      onclick="setNavActive(document.querySelector('[data-tab=work]'),'work'); htmx.ajax('GET','/api/tab/work',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum" style="{% if stats.blocked_count %}color:var(--m-warn,#b45309);{% endif %}">{{ stats.blocked_count if stats.blocked_count else '—' }}</div>
-    <div class="ledger-l" style="{% if stats.blocked_count %}color:var(--m-warn,#b45309);{% endif %}">BLOCKED</div>
+    <div class="ledger-n tnum" style="color:var(--m-warn,#b45309);">{{ stats.blocked_count }}</div>
+    <div class="ledger-l" style="color:var(--m-warn,#b45309);">BLOCKED</div>
   </a>
+  {% endif %}
+  {% if stats.idea_count %}
   <a href="#" class="ledger-cell"
      title="Captured ideas"
      onclick="setNavActive(document.querySelector('[data-tab=thinking]'),'thinking'); htmx.ajax('GET','/api/tab/thinking',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum">{{ stats.idea_count if stats.idea_count else '—' }}</div>
+    <div class="ledger-n tnum">{{ stats.idea_count }}</div>
     <div class="ledger-l">IDEAS</div>
   </a>
+  {% endif %}
   <a href="#" class="ledger-cell"
      title="Sessions in the last 7 days"
      onclick="setNavActive(document.querySelector('[data-tab=metis]'),'metis'); htmx.ajax('GET','/api/tab/metis',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum">{{ stats.sessions_week if stats.sessions_week else '—' }}</div>
+    <div class="ledger-n tnum">{{ stats.sessions_week or '—' }}</div>
     <div class="ledger-l">SESSIONS · 7D</div>
   </a>
+  {% if stats.token_label and stats.token_label != '—' %}
   <a href="#" class="ledger-cell ledger-cell--token ledger-tier-{{ stats.token_tier or 'muted' }}"
      title="Today's total agent-run tokens. Amber > 500k, red > 1M."
      onclick="setNavActive(document.querySelector('[data-tab=metis]'),'metis'); htmx.ajax('GET','/api/tab/metis',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
     <div class="ledger-n tnum">{{ stats.token_label }}</div>
     <div class="ledger-l">TOKENS · TODAY</div>
   </a>
+  {% endif %}
 </div>

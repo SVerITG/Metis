@@ -15,6 +15,11 @@
          hx-swap="innerHTML">— PROJECTS · — TASKS · — PAUSED</div>
   </div>
 
+  <!-- Due Today / Overdue strip -->
+  <div hx-get="/api/partial/work/due-today"
+       hx-trigger="load"
+       hx-swap="outerHTML"></div>
+
   <!-- Active Projects -->
   <div class="sec-label" style="margin-bottom:16px;">
     <span>Active Projects</span>

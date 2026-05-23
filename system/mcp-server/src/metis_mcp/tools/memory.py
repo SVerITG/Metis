@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS memory_entries (
 )
 """
 
-_MEMORY_DIR = "01_control-room/memory"
+_MEMORY_DIR = "journal"
 
 
 def _memory_root() -> Path:
@@ -39,7 +39,7 @@ async def search_memory(
     """Search the memory palace by keyword.
 
     Searches the memory_entries table (title, summary, topics) and performs a
-    filesystem grep across 01_control-room/memory/**/*.md files.
+    filesystem grep across journal/**/*.md files.
 
     Args:
         query: Search keyword or phrase.
@@ -133,7 +133,7 @@ async def add_memory_entry(
     """Add a new memory entry to the memory palace.
 
     Inserts into the memory_entries table. If detail is provided, also writes
-    a markdown file under 01_control-room/memory/{entry_type}s/.
+    a markdown file under journal/{entry_type}s/.
 
     Args:
         title: Short title for the entry.

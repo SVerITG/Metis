@@ -1481,6 +1481,137 @@ async def knowledge_unified_search(request: Request, q: str = ""):
 
 
 # ---------------------------------------------------------------------------
+# Unified search — semantic path (sqlite-vec on memory + pdf_chunks)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/knowledge/unified-search-semantic", response_class=HTMLResponse)
+async def knowledge_unified_search_semantic(request: Request, q: str = ""):
+    """Semantic counterpart to /api/partial/knowledge/unified-search.
+
+    Tries the local sqlite-vec layer over episodic/semantic memory and PDF
+    chunks. If embeddings or vec tables aren't available, falls back gracefully
+    to the keyword path.
+    """
+    if not q or len(q.strip()) < 2:
+        return HTMLResponse(
+            '<div style="font-family:var(--m-display);font-style:italic;font-size:13px;'
+            'color:var(--m-muted);padding:12px 0;">Type at least 2 characters to search semantically across your library.</div>'
+        )
+
+    q = q.strip()
+    semantic_hits: list[dict] = []
+    used_semantic = False
+
+    try:
+        from metis_mcp.embeddings import embed_one  # type: ignore
+        import struct
+        import sqlite_vec  # type: ignore
+        import sqlite3
+
+        query_vec = embed_one(q)
+        blob = struct.pack(f"{len(query_vec)}f", *query_vec)
+
+        try:
+            db_path = get_db_path()
+        except Exception:
+            db_path = None
+
+        if db_path:
+            con = sqlite3.connect(str(db_path))
+            con.row_factory = sqlite3.Row
+            try:
+                con.enable_load_extension(True)
+                sqlite_vec.load(con)
+                con.enable_load_extension(False)
+            except Exception:
+                con.close()
+                con = None
+
+            if con is not None:
+                # 1. PDF chunks
+                try:
+                    rows = con.execute(
+                        "SELECT c.text, c.page, c.pdf_path, v.distance "
+                        "FROM vec_pdf_chunks v JOIN pdf_chunks c ON c.id = v.rowid "
+                        "ORDER BY v.distance ASC LIMIT 8",
+                        (blob,),
+                    ).fetchall()
+                    for r in rows:
+                        row = dict(r)
+                        semantic_hits.append({
+                            "kind": "pdf",
+                            "title": (Path(row.get("pdf_path") or "").name)[:80] or "PDF chunk",
+                            "snippet": (row.get("text") or "")[:200],
+                            "score": round(1 - float(row.get("distance") or 1), 3),
+                            "extra": f"p. {row.get('page')}" if row.get("page") else "",
+                        })
+                    used_semantic = True
+                except Exception:
+                    pass
+
+                # 2. Episodic memory
+                try:
+                    rows = con.execute(
+                        "SELECT e.content, e.event_type, e.created_at, v.distance "
+                        "FROM vec_episodic v JOIN episodic_memory e ON e.id = v.rowid "
+                        "ORDER BY v.distance ASC LIMIT 6",
+                        (blob,),
+                    ).fetchall()
+                    for r in rows:
+                        row = dict(r)
+                        semantic_hits.append({
+                            "kind": "memory",
+                            "title": (row.get("event_type") or "memory").upper(),
+                            "snippet": (row.get("content") or "")[:200],
+                            "score": round(1 - float(row.get("distance") or 1), 3),
+                            "extra": (row.get("created_at") or "")[:10],
+                        })
+                    used_semantic = True
+                except Exception:
+                    pass
+
+                con.close()
+    except Exception:
+        used_semantic = False
+
+    # Graceful fallback if retrieval is unavailable
+    if not used_semantic:
+        like = f"%{q}%"
+        rows = db_query(
+            "SELECT title, abstract FROM literature_metadata "
+            "WHERE title LIKE ? OR abstract LIKE ? ORDER BY created_at DESC LIMIT 8",
+            (like, like),
+            default=[],
+        ) or []
+        for r in rows:
+            semantic_hits.append({
+                "kind": "paper",
+                "title": (r.get("title") or "")[:80],
+                "snippet": (r.get("abstract") or "")[:200],
+                "score": None,
+                "extra": "",
+            })
+
+    # Rank by score where present
+    def _sort_key(h):
+        return -(h.get("score") or 0)
+    semantic_hits.sort(key=_sort_key)
+    semantic_hits = semantic_hits[:12]
+
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_unified_search_semantic.html",
+        {
+            "hits": semantic_hits,
+            "q": q,
+            "used_semantic": used_semantic,
+            "total": len(semantic_hits),
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
 # Coverage gap detector  (Zotero vs. OpenAlex)
 # ---------------------------------------------------------------------------
 

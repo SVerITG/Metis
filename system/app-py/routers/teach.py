@@ -609,6 +609,104 @@ def _save_build(build: dict):
 
 
 # ---------------------------------------------------------------------------
+# Gap analysis — what topics aren't covered by the library yet
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/teach/gap-analysis", response_class=HTMLResponse)
+async def teach_gap_analysis(request: Request):
+    """For each active course, compare its topic keywords against the library."""
+    courses = db_query(
+        "SELECT id, title, slug, category FROM learning_courses "
+        "WHERE status = 'active' ORDER BY title LIMIT 8",
+        default=[],
+    ) or []
+
+    # Check if course_topics table is present and seeded
+    topics_table = db_scalar(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='course_topics'",
+        default=None,
+    )
+
+    course_rows = []
+    for c in courses:
+        keywords: list[str] = []
+        if topics_table:
+            kws = db_query(
+                "SELECT keyword FROM course_topics WHERE course_id = ? LIMIT 30",
+                (c.get("id"),),
+                default=[],
+            ) or []
+            keywords = [k["keyword"] for k in kws if k.get("keyword")]
+        # Fall back to title words when no topics are seeded
+        if not keywords:
+            keywords = [w for w in (c.get("title") or "").split() if len(w) > 3][:6]
+
+        covered: list[str] = []
+        gaps: list[str] = []
+        for kw in keywords:
+            like = f"%{kw}%"
+            n = db_scalar(
+                "SELECT COUNT(*) FROM literature_metadata WHERE title LIKE ? OR abstract LIKE ?",
+                (like, like),
+                default=0,
+            ) or 0
+            if n > 0:
+                covered.append(f"{kw} ({n})")
+            else:
+                gaps.append(kw)
+
+        course_rows.append({
+            "title": c.get("title") or "Untitled course",
+            "category": c.get("category") or "",
+            "covered": covered,
+            "gaps": gaps,
+        })
+
+    return templates.TemplateResponse(
+        request,
+        "partials/teach_gap_analysis.html",
+        {"courses": course_rows},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Q-bank — placeholder until question generation lands
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/teach/qbank", response_class=HTMLResponse)
+async def teach_qbank(request: Request):
+    """Show question counts per course, or a friendly placeholder if no Q-bank yet."""
+    has_table = db_scalar(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='course_questions'",
+        default=None,
+    )
+    rows = []
+    total = 0
+    if has_table:
+        rows = db_query(
+            "SELECT course_id, COUNT(*) as n FROM course_questions GROUP BY course_id ORDER BY n DESC LIMIT 10",
+            default=[],
+        ) or []
+        total = db_scalar("SELECT COUNT(*) FROM course_questions", default=0) or 0
+        # Resolve course titles
+        for r in rows:
+            t = db_query(
+                "SELECT title FROM learning_courses WHERE id=? LIMIT 1",
+                (r.get("course_id"),),
+                default=[],
+            )
+            r["title"] = (t[0]["title"] if t else "(unknown course)")
+
+    return templates.TemplateResponse(
+        request,
+        "partials/teach_qbank.html",
+        {"rows": rows, "total": total, "has_table": bool(has_table)},
+    )
+
+
+# ---------------------------------------------------------------------------
 # Legacy endpoints kept for backward compat (return empty gracefully)
 # ---------------------------------------------------------------------------
 

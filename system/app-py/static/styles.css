@@ -2100,3 +2100,144 @@ select:focus-visible {
 .nav-item {
   transition: background-color 140ms ease, color 140ms ease;
 }
+
+/* details/summary chevron rotation */
+details[open] #gap-chevron { transform: rotate(180deg); }
+details summary::-webkit-details-marker { display: none; }
+details summary { outline: none; }
+
+/* ================================================================
+   RESPONSIVE — Tablet / Phone (v9i, additive only)
+   Three breakpoints layered on top of existing rules:
+   <=1024px tablet landscape, <=800px tablet portrait, <=600px phone.
+   ================================================================ */
+
+/* Helper element rendered when a section is hidden on small screens.
+   Templates can include <p class="m-collapse-note">...</p>; it stays
+   hidden on desktop and surfaces only when the matching breakpoint hits. */
+.m-collapse-note {
+  display: none;
+  font-family: var(--m-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--m-muted);
+  background: var(--m-accent-wash);
+  border-left: 2px solid var(--m-accent-soft);
+  padding: 8px 12px;
+  margin: 0 0 16px;
+  border-radius: 2px;
+  line-height: 1.5;
+}
+
+/* ---------- <= 1024px : tablet landscape ---------- */
+@media (max-width: 1024px) {
+  .page { padding: 32px 32px 56px; }
+  .topbar { padding: 0 20px; }
+
+  /* Collapse 3-col grids to 2-col on tablet landscape */
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .grid-main { grid-template-columns: 1.2fr 1fr; }
+
+  /* Today canvas: drop the 320px right rail down to a row span */
+  .today-canvas { grid-template-columns: 1fr 1fr; }
+  .today-canvas > :last-child { grid-column: 1 / -1; }
+
+  /* Knowledge / thinking sidebars shrink */
+  .k-layout { grid-template-columns: 200px 1fr; gap: 22px; }
+  .thinking-layout { grid-template-columns: 200px 1fr; gap: 22px; }
+  .thinking-layout > :nth-child(3) { display: none; }
+  .thinking-layout > :nth-child(3).m-collapse-note { display: block; grid-column: 1 / -1; }
+
+  /* Metis tab — narrow the identity rail */
+  .metis-layout { grid-template-columns: 240px 1fr; gap: 22px; }
+}
+
+/* ---------- <= 800px : tablet portrait ---------- */
+@media (max-width: 800px) {
+  .page { padding: 24px 20px 48px; max-width: 100%; }
+  .topbar { padding: 0 14px; height: 48px; min-height: 48px; }
+  .t-search { width: 120px; }
+  .theme-label { display: none; }
+
+  /* Collapse the master sidebar into a slim 56px rail automatically.
+     The existing data-side="rail" rules already style this state — we
+     just force it via attribute selector at this width. */
+  .app { grid-template-columns: 56px 1fr !important; }
+  .app .side { padding: 18px 6px 14px; }
+  .app .brand .b-text,
+  .app .nav-label,
+  .app .nav-item .n-label,
+  .app .nav-item .n-meta,
+  .app .side-foot .sf-text { opacity: 0; width: 0; pointer-events: none; overflow: hidden; }
+  .app .brand { justify-content: center; padding: 0 0 6px; }
+  .app .nav-item { padding: 8px 0; justify-content: center; }
+
+  /* All multi-col grids collapse to single column */
+  .grid-2, .grid-3, .grid-main { grid-template-columns: 1fr !important; }
+  .today-canvas { grid-template-columns: 1fr; }
+  .k-layout { grid-template-columns: 1fr; gap: 18px; }
+  .thinking-layout { grid-template-columns: 1fr; gap: 18px; }
+  .metis-layout { grid-template-columns: 1fr; gap: 20px; padding: 0 12px; }
+  .metis-layout .metis-side { position: static; }
+
+  /* Surface any persona-voice collapse notes inside these layouts */
+  .k-layout > .m-collapse-note,
+  .metis-layout > .m-collapse-note { display: block; }
+
+  /* Kanban (Planner) — keep horizontal scroll but tighten cards */
+  .kanban-board { gap: .55rem; padding-bottom: .5rem; }
+  .kanban-col { min-width: 180px; padding: .45rem; }
+
+  /* Ledger from 7-col to 4-col grid (avoid sub-30px cells) */
+  .ledger { grid-template-columns: repeat(4, 1fr); }
+  .ledger-cell { padding: 14px 12px 12px; }
+  .ledger-cell:nth-child(4) { border-right: none; }
+
+  /* Modals shrink to viewport */
+  .metis-modal { width: min(100%, 520px); padding: 22px 20px; }
+  .metis-modal-overlay { padding: 14px; }
+
+  /* Hide the 220px workbench right-rails where present (work, teach, knowledge);
+     templates can add a persona note alongside. */
+  .grid[style*="1.55fr 1fr"] { grid-template-columns: 1fr !important; }
+}
+
+/* ---------- <= 600px : phone ---------- */
+@media (max-width: 600px) {
+  .page { padding: 16px 12px 40px; }
+  .page-head h1 { font-size: 26px; }
+  .page-head .page-meta { display: none; }
+  .topbar { padding: 0 10px; gap: 8px; }
+  .topbar .crumbs { font-size: 10px; letter-spacing: 0.12em; }
+  .t-search { display: none; }
+
+  /* Phones: hide the sidebar entirely; nav surfaces via topbar / tabs */
+  .app { grid-template-columns: 1fr !important; }
+  .app .side { display: none; }
+
+  /* Tighten ledger further — 2 columns, second border off */
+  .ledger { grid-template-columns: repeat(2, 1fr); }
+  .ledger-cell { padding: 12px 10px 10px; border-bottom: 1px solid var(--m-rule-soft); }
+  .ledger-cell:nth-child(2n) { border-right: none; }
+  .ledger-cell:nth-last-child(-n+2) { border-bottom: none; }
+  .ledger-n { font-size: 22px; }
+
+  /* Kanban: stack columns instead of horizontal scroll */
+  .kanban-board { flex-direction: column; overflow-x: visible; }
+  .kanban-col { width: 100%; min-width: 0; }
+
+  /* Cards & spacing */
+  .card { padding: 14px; }
+  .vbox-strip { grid-template-columns: 1fr !important; }
+
+  /* Modals fill width with safe gutter */
+  .metis-modal { width: 100%; padding: 18px 16px; border-radius: 2px; }
+  .metis-modal-overlay { padding: 8px; }
+
+  /* Secondary nav pills wrap */
+  .nav-pills { flex-wrap: wrap; gap: 4px; }
+  .nav-pills .nav-link { font-size: .78rem; padding: 4px 8px; }
+
+  /* Surface collapse notes everywhere on phone */
+  .m-collapse-note { display: block; }
+}

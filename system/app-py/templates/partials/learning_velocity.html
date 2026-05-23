@@ -1,0 +1,44 @@
+{# partials/learning_velocity.html — Learning pace across recent windows #}
+<div class="panel">
+  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
+    <span class="kicker kicker--accent" style="margin:0;">VELOCITY</span>
+    <div style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);margin-top:4px;">
+      How many lessons you've completed in the recent windows.
+    </div>
+  </div>
+
+  {% if not any_data %}
+  <div style="padding:24px 20px;">
+    <p style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.6;margin:0 0 8px;">
+      Nothing tracked yet.
+    </p>
+    <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.6;margin:0;">
+      Tell me about your learning by completing your first lesson — I'll start tracking how fast you're moving.
+    </p>
+  </div>
+  {% else %}
+  <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;">
+    <div>
+      <div style="font-family:var(--m-display);font-size:28px;color:var(--m-ink);line-height:1;">{{ d7 }}</div>
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">LAST 7 DAYS</div>
+    </div>
+    <div>
+      <div style="font-family:var(--m-display);font-size:28px;color:var(--m-ink);line-height:1;">{{ d30 }}</div>
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">LAST 30 DAYS</div>
+    </div>
+    <div>
+      <div style="font-family:var(--m-display);font-size:28px;color:var(--m-ink);line-height:1;">{{ d90 }}</div>
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">LAST 90 DAYS</div>
+    </div>
+  </div>
+  <div style="padding:0 20px 16px;font-family:var(--m-display);font-size:12px;color:var(--m-muted);line-height:1.5;">
+    {% if d7 == 0 and d30 > 0 %}
+    A quieter week — that's fine. The 30-day total still looks healthy.
+    {% elif d7 > 0 and d30 / 4 < d7 %}
+    You've picked up the pace this week.
+    {% elif d7 > 0 %}
+    Steady progress.
+    {% endif %}
+  </div>
+  {% endif %}
+</div>

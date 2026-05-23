@@ -176,13 +176,37 @@ def scan_literature_folder() -> dict:
     return {"papers_added": added}
 
 
+AUDIO_EXTS = {".m4a", ".mp3", ".wav", ".ogg", ".flac", ".aac", ".opus", ".webm"}
+DOC_EXTS   = {".pdf", ".docx", ".doc", ".txt", ".md", ".csv", ".xlsx"}
+
+
 def _scan_inbox() -> dict:
-    """Count files in inbox/ that haven't been processed."""
+    """Count and categorise files in inbox/ that haven't been processed."""
     inbox = paths.root / "inbox"
     if not inbox.exists():
-        return {"inbox_items": 0}
+        return {"inbox_items": 0, "audio": [], "docs": [], "other": []}
     items = [f for f in inbox.iterdir() if f.is_file() and not f.name.startswith(".")]
-    return {"inbox_items": len(items), "files": [f.name for f in items[:10]]}
+    audio = [f for f in items if f.suffix.lower() in AUDIO_EXTS]
+    docs  = [f for f in items if f.suffix.lower() in DOC_EXTS]
+    other = [f for f in items if f not in audio and f not in docs]
+    return {
+        "inbox_items": len(items),
+        "audio": [str(f) for f in audio],
+        "docs":  [f.name for f in docs],
+        "other": [f.name for f in other],
+        "files": [f.name for f in items[:10]],
+    }
+
+
+def _transcribe_inbox_audio(audio_path: str, model_size: str = "base") -> str | None:
+    """Transcribe a single audio file with faster-whisper. Returns text or None."""
+    try:
+        from faster_whisper import WhisperModel  # type: ignore
+        model = WhisperModel(model_size, device="cpu", compute_type="int8")
+        segments, _ = model.transcribe(audio_path, beam_size=3)
+        return " ".join(seg.text.strip() for seg in segments).strip() or None
+    except Exception:
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -220,18 +244,98 @@ async def scan_literature() -> list[TextContent]:
 
 
 @app.tool()
-async def scan_inbox() -> list[TextContent]:
-    """Report unprocessed files sitting in the inbox/ folder."""
+async def scan_inbox(auto_transcribe_audio: bool = True) -> list[TextContent]:
+    """Scan the inbox/ folder and auto-transcribe any audio files to ideas.
+
+    Detects audio files (.m4a, .mp3, .wav, .ogg, .flac, .aac) and, when
+    auto_transcribe_audio=True (default), transcribes each one with faster-whisper
+    and captures the transcript as an idea. The audio file is moved to
+    inbox/processed/ after successful transcription.
+
+    Non-audio files are listed but left for manual review.
+
+    Args:
+        auto_transcribe_audio: When True (default), automatically transcribe
+            audio files found in the inbox. Set to False to just list them.
+    """
+    import os
+    import shutil
     result = _scan_inbox()
     n = result["inbox_items"]
     if n == 0:
         return [TextContent(type="text", text="Inbox is clear.")]
-    files = result.get("files", [])
-    lines = [f"Inbox: {n} unprocessed item(s)."]
-    for f in files:
-        lines.append(f"  · {f}")
-    if n > 10:
-        lines.append(f"  · ... and {n - 10} more")
+
+    lines: list[str] = [f"Inbox: {n} item(s) found."]
+    audio_paths = result.get("audio", [])
+    docs  = result.get("docs", [])
+    other = result.get("other", [])
+
+    # ── Audio files: auto-transcribe ─────────────────────────────────────────
+    transcribed, failed = 0, 0
+    if audio_paths and auto_transcribe_audio:
+        lines.append(f"\n🎙 Audio files ({len(audio_paths)}) — transcribing with Whisper:")
+        processed_dir = paths.root / "inbox" / "processed"
+        processed_dir.mkdir(exist_ok=True)
+
+        for audio_path_str in audio_paths:
+            audio_path = Path(audio_path_str)
+            fname = audio_path.name
+            text = _transcribe_inbox_audio(str(audio_path))
+            if text:
+                # Capture as idea via cross-pollination
+                try:
+                    from metis_mcp.tools.ideas import _cross_pollinate_core
+                    from metis_mcp.db import connect
+                    now = datetime.now().isoformat()
+                    with connect(paths.db) as conn:
+                        conn.execute(
+                            "INSERT INTO ideas (content, tags, created_at) VALUES (?, ?, ?)",
+                            (text, f"voice-note,inbox,auto-transcribed", now),
+                        )
+                    connections = _cross_pollinate_core(text[:400], max_results=3) or []
+                except Exception:
+                    connections = []
+
+                conn_summary = ""
+                if connections:
+                    conn_summary = " → " + ", ".join(c.get("title", "")[:40] for c in connections[:2])
+
+                lines.append(f"  ✓ {fname}: \"{text[:80]}…\"{conn_summary}")
+                transcribed += 1
+
+                # Move to processed/
+                try:
+                    shutil.move(str(audio_path), str(processed_dir / fname))
+                except Exception:
+                    pass
+            else:
+                lines.append(f"  ✗ {fname}: transcription failed (faster-whisper not installed or empty audio)")
+                failed += 1
+
+    elif audio_paths:
+        lines.append(f"\n🎙 Audio files ({len(audio_paths)}) — set auto_transcribe_audio=True to process:")
+        for p in audio_paths:
+            lines.append(f"  · {Path(p).name}")
+
+    # ── Documents ─────────────────────────────────────────────────────────────
+    if docs:
+        lines.append(f"\n📄 Documents ({len(docs)}) — route manually:")
+        for f in docs[:5]:
+            lines.append(f"  · {f}")
+        if len(docs) > 5:
+            lines.append(f"  · … and {len(docs) - 5} more")
+
+    # ── Other ─────────────────────────────────────────────────────────────────
+    if other:
+        lines.append(f"\n📦 Other ({len(other)}):")
+        for f in other[:5]:
+            lines.append(f"  · {f}")
+
+    if transcribed:
+        lines.append(f"\n✓ {transcribed} voice note(s) captured as ideas. Audio moved to inbox/processed/.")
+    if failed:
+        lines.append(f"⚠ {failed} audio file(s) could not be transcribed — install faster-whisper if missing.")
+
     return [TextContent(type="text", text="\n".join(lines))]
 
 

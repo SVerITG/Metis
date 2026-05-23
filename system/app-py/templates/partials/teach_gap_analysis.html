@@ -1,0 +1,59 @@
+{# partials/teach_gap_analysis.html — Per-course library coverage vs gaps #}
+<div class="panel">
+  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
+    <span class="kicker kicker--accent" style="margin:0;">GAP ANALYSIS</span>
+    <div style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);margin-top:4px;">
+      For each active course, which topics your library already covers — and which don't have papers yet.
+    </div>
+  </div>
+
+  {% if not courses %}
+  <div style="padding:24px 20px;">
+    <p style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.6;margin:0 0 8px;">
+      No active courses yet.
+    </p>
+    <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.6;margin:0;">
+      Once you have one, I'll show you which topics aren't covered well by your library so you know what to read next.
+    </p>
+  </div>
+  {% else %}
+  {% for c in courses %}
+  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
+    <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.4;margin-bottom:8px;">
+      {{ c.title }}
+      {% if c.category %}
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-left:6px;">{{ c.category | upper }}</span>
+      {% endif %}
+    </div>
+
+    {% if c.covered %}
+    <div style="margin-bottom:8px;">
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-ok);">COVERED</span>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+        {% for kw in c.covered %}
+        <span style="font-family:var(--m-mono);font-size:10px;padding:3px 8px;border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);color:var(--m-ink);background:var(--m-surface-2);">{{ kw }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if c.gaps %}
+    <div>
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-warn,#b45309);">GAPS</span>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+        {% for kw in c.gaps %}
+        <span style="font-family:var(--m-mono);font-size:10px;padding:3px 8px;border:1px dashed var(--m-line);border-radius:var(--m-radius-pill);color:var(--m-muted);">{{ kw }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if not c.covered and not c.gaps %}
+    <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);">
+      No topic keywords seeded for this course yet.
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>

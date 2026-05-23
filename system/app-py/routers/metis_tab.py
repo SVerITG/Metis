@@ -1509,3 +1509,56 @@ async def remove_content_pack(pack_id: str):
     """Remove a content pack record (does not delete seeded rows)."""
     db_execute("DELETE FROM content_packs WHERE pack_id = ?", (pack_id,))
     return JSONResponse({"status": "ok", "pack_id": pack_id, "removed": True})
+
+
+# ---------------------------------------------------------------------------
+# Launcher endpoints — open external applications via PowerShell on Windows
+# ---------------------------------------------------------------------------
+
+import subprocess  # noqa: E402  (placed here to keep existing imports clean)
+
+
+def _ps_launch(cmd: str):
+    """Fire-and-forget PowerShell command to launch a Windows app."""
+    try:
+        subprocess.Popen(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", cmd],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return True
+    except Exception:
+        return False
+
+
+@router.post("/api/launcher/claude-code")
+async def launcher_claude_code():
+    ok = _ps_launch("Start-Process 'wt.exe' -ArgumentList 'new-tab' -ErrorAction SilentlyContinue")
+    return JSONResponse({"status": "ok" if ok else "hint",
+                         "hint": "Open a terminal and run: claude"})
+
+
+@router.post("/api/launcher/claude-desktop")
+async def launcher_claude_desktop():
+    ok = _ps_launch("Start-Process 'Claude' -ErrorAction SilentlyContinue")
+    return JSONResponse({"status": "ok" if ok else "error"})
+
+
+@router.post("/api/launcher/rstudio")
+async def launcher_rstudio():
+    ok = _ps_launch(
+        "Get-Command rstudio -ErrorAction SilentlyContinue | "
+        "ForEach-Object { Start-Process $_.Source } ; "
+        "if (-not $?) { Start-Process 'C:\\Program Files\\RStudio\\rstudio.exe' -ErrorAction SilentlyContinue }"
+    )
+    return JSONResponse({"status": "ok" if ok else "error"})
+
+
+@router.post("/api/launcher/vscode")
+async def launcher_vscode():
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    if rc_root:
+        ok = _ps_launch(f"code '{rc_root}'")
+    else:
+        ok = _ps_launch("Start-Process 'Code' -ErrorAction SilentlyContinue")
+    return JSONResponse({"status": "ok" if ok else "error"})

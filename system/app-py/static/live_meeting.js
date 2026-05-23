@@ -164,10 +164,10 @@ class LiveMeetingSession {
 
     mr.start();
     this._setInterimWhisper('recording');
-    // Record 25-second chunks
+    // Record 8-second chunks for responsive transcription
     this.chunkInterval = setTimeout(() => {
       if (mr.state === 'recording') mr.stop();
-    }, 25000);
+    }, 8000);
   }
 
   _bestMime() {
@@ -231,9 +231,15 @@ class LiveMeetingSession {
     const el = document.getElementById('lm-interim');
     if (!el) return;
     if (state === 'recording') {
-      el.innerHTML = `<span style="color:var(--m-muted);font-style:italic;font-family:var(--m-sans);font-size:12px;">● recording chunk…</span>`;
+      el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;color:var(--m-muted);font-family:var(--m-sans);font-size:12px;">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--m-alert);animation:lm-pulse 1s infinite;"></span>
+        Recording… transcript appears every 8 seconds
+      </span>`;
     } else if (state === 'transcribing') {
-      el.innerHTML = `<span style="color:var(--m-accent);font-style:italic;font-family:var(--m-sans);font-size:12px;">⟳ transcribing…</span>`;
+      el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;color:var(--m-accent);font-family:var(--m-sans);font-size:12px;">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--m-accent);animation:lm-pulse 0.5s infinite;"></span>
+        Transcribing…
+      </span>`;
     } else {
       el.innerHTML = '';
     }
@@ -480,34 +486,46 @@ function startLiveMeetingSetup() {
 }
 
 async function beginLiveMeeting() {
-  const titleEl = document.getElementById('lm-setup-title');
-  const langEl = document.getElementById('lm-setup-lang');
+  const titleEl   = document.getElementById('lm-setup-title');
+  const langEl    = document.getElementById('lm-setup-lang');
+  const modeSelEl = document.getElementById('lm-setup-mode');
   const speakerEls = document.querySelectorAll('.lm-setup-speaker');
-  const title = titleEl ? titleEl.value.trim() || 'Meeting' : 'Meeting';
-  const lang = langEl ? langEl.value : 'en-US';
+
+  const title    = titleEl    ? titleEl.value.trim()  || 'Meeting' : 'Meeting';
+  const lang     = langEl     ? langEl.value           : 'en-US';
+  const chosenMode = modeSelEl ? modeSelEl.value       : 'server';
   const speakers = [...speakerEls].map(e => e.value.trim()).filter(Boolean);
   if (!speakers.length) { alert('Add at least one participant name.'); return; }
 
-  const serverWhisper = await _checkServerWhisper();
+  // Determine whether to use server Whisper based on the user's choice
+  let serverWhisper = false;
+  if (chosenMode === 'server') {
+    serverWhisper = await _checkServerWhisper();
+    if (!serverWhisper) {
+      // Whisper not available — fall through to browser
+      console.warn('[live-meeting] Server Whisper unavailable, falling back to browser speech.');
+    }
+  }
 
-  // Replace setup with the live session panel
-  const html = await fetch('/api/partial/meetings/live-session?' + new URLSearchParams({ title, speakers: speakers.join(',') })).then(r => r.text());
+  // Replace setup modal with the live session panel
+  const html = await fetch(
+    '/api/partial/meetings/live-session?' + new URLSearchParams({ title, speakers: speakers.join(',') })
+  ).then(r => r.text());
   document.getElementById('meeting-import-container').innerHTML = html;
 
-  // Show which transcription mode is active
+  // Show mode label in status bar
   const modeEl = document.getElementById('lm-mode');
   if (modeEl) {
-    let modeLabel, modeColor;
-    if (!serverWhisper) {
-      modeLabel = 'Web Speech API (browser)'; modeColor = 'var(--m-muted)';
-    } else if (_serverDiarize()) {
-      modeLabel = 'WhisperX + diarization'; modeColor = 'var(--m-ok)';
+    let label, col;
+    if (serverWhisper && _serverDiarize()) {
+      label = 'WhisperX + diarization'; col = 'var(--m-ok)';
+    } else if (serverWhisper) {
+      label = _serverMode() === 'whisperx' ? 'WhisperX' : 'Whisper · 8s chunks'; col = 'var(--m-ok)';
     } else {
-      modeLabel = _serverMode() === 'whisperx' ? 'WhisperX (server)' : 'faster-whisper (server)';
-      modeColor = 'var(--m-ok)';
+      label = 'Browser speech (instant)'; col = 'var(--m-muted)';
     }
-    modeEl.textContent = modeLabel;
-    modeEl.style.color = modeColor;
+    modeEl.textContent = label;
+    modeEl.style.color = col;
   }
 
   // Init session
