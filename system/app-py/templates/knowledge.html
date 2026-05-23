@@ -34,9 +34,26 @@
              hx-include="[id='unified-search-input']"
              name="q"
              autocomplete="off"
-             autofocus>
+             autofocus
+             onkeyup="if(window.htmx){var sem=document.getElementById('unified-search-semantic-trigger');if(sem)htmx.trigger(sem,'refresh');}">
       <div id="unified-search-results" style="margin-top:8px;min-height:40px;">
         <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">Find papers, notes, and what you've read — all at once.</div>
+      </div>
+
+      <!-- Semantic / deep-search companion -->
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--m-rule-soft);">
+        <div class="sec-label" style="margin-bottom:8px;">
+          <span>Semantic matches</span>
+          <span class="tail">MEANING · NOT JUST KEYWORDS</span>
+        </div>
+        <div id="unified-search-semantic-trigger"
+             hx-get="/api/partial/knowledge/unified-search-semantic"
+             hx-trigger="refresh delay:600ms from:#unified-search-input"
+             hx-include="[id='unified-search-input']"
+             hx-swap="innerHTML"
+             hx-target="this">
+          <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px 0;">Type above — semantic matches will surface alongside the keyword results.</div>
+        </div>
       </div>
     </div>
   </div>

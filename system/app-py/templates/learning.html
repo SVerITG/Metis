@@ -12,6 +12,17 @@
     <div class="page-meta" hx-get="/api/partial/learning/meta" hx-trigger="load" hx-swap="innerHTML">— COURSES · — DUE TODAY</div>
   </div>
 
+  <!-- Velocity strip -->
+  <div class="sec-label" style="margin-bottom:12px;"><span>How fast you're moving</span></div>
+  <div style="margin-bottom:28px;"
+       hx-get="/api/partial/learning/velocity"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="panel panel-pad" style="padding:18px 22px;opacity:.4;">
+      <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Measuring your pace this week…</p>
+    </div>
+  </div>
+
   <!-- Spaced repetition panel + Streak panel -->
   <div class="grid grid-3" style="margin-bottom:32px;">
 

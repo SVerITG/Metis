@@ -56,6 +56,17 @@
         <div class="panel" style="padding:28px 32px;margin-bottom:18px;opacity:.4;min-height:120px;"></div>
       </div>
 
+      <!-- Live assist status pane -->
+      <div class="sec-label" style="margin-bottom:12px;"><span>Live assist</span></div>
+      <div style="margin-bottom:18px;"
+           hx-get="/api/partial/meetings/live-assist"
+           hx-trigger="load, every 30s"
+           hx-swap="innerHTML">
+        <div class="panel panel-pad" style="padding:14px 18px;opacity:.4;">
+          <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Checking whether a live meeting is running…</p>
+        </div>
+      </div>
+
       <!-- Meeting detail panel (appears when row is clicked) -->
       <div id="meeting-detail-panel"></div>
 
