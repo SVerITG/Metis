@@ -26,24 +26,40 @@
   </div>
 </div>
 
-{# Daily trend — last 7 days #}
+{# Daily trend — last 7 days. Falls back to run counts when tokens are all 0 #}
+{% set all_tokens_zero = (by_day | selectattr('tokens', 'gt', 0) | list | length) == 0 %}
+{% set any_runs = (by_day | selectattr('runs', 'gt', 0) | list | length) > 0 %}
+{% set max_runs = namespace(val=1) %}
+{% for d in by_day %}{% if d.runs > max_runs.val %}{% set max_runs.val = d.runs %}{% endif %}{% endfor %}
+
 <div style="padding:14px 22px 6px;border-bottom:1px solid var(--m-rule-soft);">
   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
-    <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">Daily trend</div>
-    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">LAST 7 DAYS · TOKENS</span>
+    <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">Daily activity</div>
+    {% if all_tokens_zero %}
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">LAST 7 DAYS · RUNS</span>
+    {% else %}
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">LAST 7 DAYS · TOKENS</span>
+    {% endif %}
   </div>
-  {% set all_zero = (by_day | selectattr('tokens', 'gt', 0) | list | length) == 0 %}
-  {% if all_zero %}
+  {% if not any_runs and all_tokens_zero %}
     <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);padding:4px 0 10px;">
-      No agent runs recorded yet. Runs launched via <code style="font-family:var(--m-mono);font-size:10px;">/metis</code> in Claude Code will appear here.
+      No agent runs yet. Start one with <code style="font-family:var(--m-mono);font-size:10px;">/metis</code> in Claude Code — activity will appear here.
     </div>
   {% else %}
     <div class="token-day-strip">
       {% for d in by_day %}
-      <div class="token-day-col" data-today="{{ 'true' if d.is_today else 'false' }}" title="{{ d.day }}: {{ d.tokens }} tokens, {{ d.runs }} runs">
-        <div class="token-day-bar" style="height: {{ [d.pct, 4] | max }}%;"></div>
-        <div class="token-day-label">{{ d.label }}</div>
-      </div>
+      {% if all_tokens_zero %}
+        {% set bar_pct = (d.runs / max_runs.val * 100) if max_runs.val > 0 else 0 %}
+        <div class="token-day-col" data-today="{{ 'true' if d.is_today else 'false' }}" title="{{ d.day }}: {{ d.runs }} run{{ 's' if d.runs != 1 else '' }}">
+          <div class="token-day-bar" style="height: {{ [bar_pct, 4] | max if d.runs > 0 else 0 }}%;"></div>
+          <div class="token-day-label">{{ d.label }}</div>
+        </div>
+      {% else %}
+        <div class="token-day-col" data-today="{{ 'true' if d.is_today else 'false' }}" title="{{ d.day }}: {{ d.tokens }} tokens, {{ d.runs }} runs">
+          <div class="token-day-bar" style="height: {{ [d.pct, 4] | max if d.tokens > 0 else 0 }}%;"></div>
+          <div class="token-day-label">{{ d.label }}</div>
+        </div>
+      {% endif %}
       {% endfor %}
     </div>
   {% endif %}
@@ -55,13 +71,16 @@
     <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">LAST {{ days }}D · TOP 12</span>
   </div>
   {% if by_agent %}
+    {% set max_runs_a = namespace(val=1) %}{% for a in by_agent %}{% if a.runs > max_runs_a.val %}{% set max_runs_a.val = a.runs %}{% endif %}{% endfor %}
     {% for a in by_agent %}
+    {% set show_runs = a.total == 0 %}
+    {% set bar_w = (a.runs / max_runs_a.val * 100) if show_runs else a.pct %}
     <div class="token-bar-row">
-      <div class="token-bar-name" title="{{ a.agent_slug }} · {{ a.runs }} runs">{{ a.agent_slug }}</div>
+      <div class="token-bar-name" title="{{ a.agent_slug }} · {{ a.runs }} run{{ 's' if a.runs != 1 else '' }}">{{ a.agent_slug }}</div>
       <div class="token-bar-track">
-        <div class="token-bar-fill" style="width: {{ a.pct }}%;"></div>
+        <div class="token-bar-fill" style="width: {{ bar_w }}%;"></div>
       </div>
-      <div class="token-bar-value">{{ fmt_tokens(a.total) }}</div>
+      <div class="token-bar-value">{% if show_runs %}{{ a.runs }}r{% else %}{{ fmt_tokens(a.total) }}{% endif %}</div>
     </div>
     {% endfor %}
   {% else %}

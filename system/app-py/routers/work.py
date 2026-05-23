@@ -181,6 +181,36 @@ async def work_tasks(request: Request, status: str = "open"):
 
 
 # ---------------------------------------------------------------------------
+# Due today / overdue strip
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/work/due-today", response_class=HTMLResponse)
+async def work_due_today(request: Request):
+    today = str(datetime.date.today())
+    rows = db_query(
+        "SELECT t.task_id as id, t.title, t.status, t.due_date, "
+        "COALESCE(t.priority,'medium') as priority, "
+        "p.title as project "
+        "FROM tasks t LEFT JOIN projects p ON p.project_id = t.project_id "
+        "WHERE t.status NOT IN ('done','cancelled') "
+        "AND t.due_date IS NOT NULL AND t.due_date <= ? "
+        "ORDER BY t.due_date, "
+        "CASE COALESCE(t.priority,'medium') WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END "
+        "LIMIT 10",
+        (today,),
+        default=[],
+    ) or []
+    overdue = [r for r in rows if r["due_date"] < today]
+    due_today = [r for r in rows if r["due_date"] == today]
+    return templates.TemplateResponse(
+        request,
+        "partials/work_due_today.html",
+        {"overdue": overdue, "due_today": due_today, "today": today},
+    )
+
+
+# ---------------------------------------------------------------------------
 # All-tasks cross-project view
 # ---------------------------------------------------------------------------
 

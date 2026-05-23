@@ -7,7 +7,7 @@
   <!-- ===== PageHead ===== -->
   <div class="page-head">
     <div>
-      <div class="page-eyebrow" id="today-eyebrow">Loading date…</div>
+      <div class="page-eyebrow" id="today-eyebrow"></div>
       <h1 class="page-title" id="today-title">Good morning.</h1>
     </div>
     <div class="page-meta" id="today-meta" style="white-space:pre-line;">—</div>
@@ -105,23 +105,23 @@
         </div>
       </div>
 
-      <!-- News + Idea (stacked) -->
+      <!-- Idea + News (stacked — idea first: your thinking above external feeds) -->
       <div>
-        <div hx-get="/api/partial/today/news-archive"
-             hx-trigger="load"
-             hx-swap="outerHTML">
-          <div>
-            <div class="sec-label" style="margin-bottom:8px;">News Radar</div>
-            <div class="panel" style="height:120px;opacity:.4;"></div>
-          </div>
-        </div>
-        <div style="margin-top:20px;"
-             hx-get="/api/partial/today/idea-today"
+        <div hx-get="/api/partial/today/idea-today"
              hx-trigger="load"
              hx-swap="outerHTML">
           <div>
             <div class="sec-label" style="margin-bottom:8px;">Idea for today</div>
             <div class="panel" style="height:80px;opacity:.4;"></div>
+          </div>
+        </div>
+        <div style="margin-top:20px;"
+             hx-get="/api/partial/today/news-archive"
+             hx-trigger="load"
+             hx-swap="outerHTML">
+          <div>
+            <div class="sec-label" style="margin-bottom:8px;">News Radar</div>
+            <div class="panel" style="height:120px;opacity:.4;"></div>
           </div>
         </div>
       </div>

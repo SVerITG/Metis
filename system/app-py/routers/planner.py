@@ -221,6 +221,46 @@ async def planner_focus(request: Request):
 
 
 # ---------------------------------------------------------------------------
+# Focus board — top 3 active projects with open task counts
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/planner/focus-board", response_class=HTMLResponse)
+async def planner_focus_board(request: Request):
+    """Top 3 active projects with their open task count."""
+    projects = db_query(
+        "SELECT project_id, title, domain, priority, next_step "
+        "FROM projects WHERE status = 'active' "
+        "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END, "
+        "         updated_at DESC NULLS LAST LIMIT 3",
+        default=[],
+    ) or []
+
+    cards = []
+    for p in projects:
+        pid = p.get("project_id")
+        open_tasks = db_scalar(
+            "SELECT COUNT(*) FROM tasks WHERE project_id = ? AND status NOT IN ('done','cancelled')",
+            (pid,),
+            default=0,
+        ) or 0
+        cards.append({
+            "id": pid,
+            "title": p.get("title") or "Untitled project",
+            "domain": p.get("domain") or "",
+            "priority": p.get("priority") or "medium",
+            "next_step": p.get("next_step") or "",
+            "open_tasks": open_tasks,
+        })
+
+    return templates.TemplateResponse(
+        request,
+        "partials/planner_focus_board.html",
+        {"cards": cards},
+    )
+
+
+# ---------------------------------------------------------------------------
 # Timeline (simple project list with due dates)
 # ---------------------------------------------------------------------------
 

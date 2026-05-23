@@ -369,15 +369,79 @@ async def course_build_idea(request: Request):
 
 @router.get("/api/partial/learning/competencies", response_class=HTMLResponse)
 async def learning_competencies(request: Request):
-    skills = db_query(
-        "SELECT topic as name, level, domain FROM learning_competencies ORDER BY domain, level DESC LIMIT 20"
+    raw = db_query(
+        "SELECT topic as name, level, domain FROM learning_competencies ORDER BY domain LIMIT 20"
     )
+    level_map = {"beginner": 1, "novice": 2, "intermediate": 3, "advanced": 4, "expert": 5}
+    skills = []
+    for r in raw:
+        d = dict(r)
+        lvl = d.get("level")
+        if isinstance(lvl, str):
+            d["level"] = level_map.get(lvl.strip().lower(), 1)
+        elif lvl is None:
+            d["level"] = 0
+        skills.append(d)
     return templates.TemplateResponse(
         request,
         "partials/learning_competencies.html",
-        {
-            "skills": skills
-        },
+        {"skills": skills},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Velocity — lessons completed in last 7 / 30 / 90 days
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/learning/velocity", response_class=HTMLResponse)
+async def learning_velocity(request: Request):
+    """Show how many lessons have been completed in the recent windows."""
+    today = datetime.date.today()
+
+    def _count_since(days: int) -> int:
+        cutoff = (today - datetime.timedelta(days=days)).isoformat()
+        # Prefer course_progress if present and seeded; fall back to lesson_completions
+        total = 0
+        for table, ts_col in (("course_progress", "completed_at"),
+                              ("lesson_completions", "completed_at")):
+            has_table = db_scalar(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                (table,),
+                default=None,
+            )
+            if not has_table:
+                continue
+            try:
+                n = db_scalar(
+                    f"SELECT COUNT(*) FROM {table} WHERE {ts_col} >= ?",
+                    (cutoff,),
+                    default=0,
+                ) or 0
+                total += n
+            except Exception:
+                continue
+        # Also include reviewed spaced-rep cards as a proxy for "lesson touched"
+        try:
+            sr = db_scalar(
+                "SELECT COUNT(*) FROM spaced_repetition WHERE reviewed_at >= ?",
+                (cutoff,),
+                default=0,
+            ) or 0
+            total += sr
+        except Exception:
+            pass
+        return total
+
+    d7  = _count_since(7)
+    d30 = _count_since(30)
+    d90 = _count_since(90)
+    any_data = bool(d7 or d30 or d90)
+
+    return templates.TemplateResponse(
+        request,
+        "partials/learning_velocity.html",
+        {"d7": d7, "d30": d30, "d90": d90, "any_data": any_data},
     )
 
 

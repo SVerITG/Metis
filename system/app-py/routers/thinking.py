@@ -49,14 +49,38 @@ async def thinking_threads(request: Request):
     threads = db_query(
         "SELECT id, content, tags, created_at FROM ideas WHERE tags NOT LIKE '%archived%' ORDER BY created_at DESC LIMIT 12"
     ) or []
+    today = datetime.date.today()
     items = ""
     for t in threads:
         title = (t.get("content") or "")[:45]
-        date = (t.get("created_at") or "")[:10]
+        date_str = (t.get("created_at") or "")[:10]
+        # compute age in days
+        age_label = ""
+        age_color = "var(--m-muted)"
+        try:
+            d = datetime.date.fromisoformat(date_str)
+            age = (today - d).days
+            if age >= 30:
+                age_label = f"{age}d"
+                age_color = "var(--m-alert)"
+            elif age >= 14:
+                age_label = f"{age}d"
+                age_color = "var(--m-warn,#b45309)"
+            elif age >= 7:
+                age_label = f"{age}d"
+        except Exception:
+            pass
+        staleness = (
+            f'<span style="font-family:var(--m-mono);font-size:9px;color:{age_color};'
+            f'margin-left:6px;letter-spacing:0.08em;">{age_label}</span>'
+            if age_label else ""
+        )
         items += (
             f'<div style="padding:12px 16px;border-bottom:1px solid var(--m-rule-soft);'
             f'cursor:pointer;font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.3;">'
-            f'{title}<br><span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">{date}</span></div>'
+            f'{title}<br>'
+            f'<span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">{date_str}</span>'
+            f'{staleness}</div>'
         )
     if not items:
         items = '<div style="padding:24px 16px;font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">No open threads.</div>'
@@ -170,6 +194,34 @@ async def thinking_questions(request: Request):
 # ---------------------------------------------------------------------------
 # Brainstorm sessions (Phase 8)
 # ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/thinking/brainstorm", response_class=HTMLResponse)
+async def thinking_brainstorm(request: Request):
+    """Brainstorm launcher — recent sessions plus invitation to start a new one."""
+    sessions: list[dict] = []
+    has_table = db_scalar(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='brainstorm_sessions'",
+        default=None,
+    )
+    if has_table:
+        rows = db_query(
+            "SELECT session_uuid, topic, summary, created_at "
+            "FROM brainstorm_sessions ORDER BY created_at DESC LIMIT 8",
+            default=[],
+        ) or []
+        for r in rows:
+            sessions.append({
+                "session_uuid": r.get("session_uuid") or "",
+                "topic": r.get("topic") or "Untitled brainstorm",
+                "summary": (r.get("summary") or "")[:160],
+                "created_at": (r.get("created_at") or "")[:16],
+            })
+    return templates.TemplateResponse(
+        request,
+        "partials/thinking_brainstorm.html",
+        {"sessions": sessions},
+    )
 
 
 @router.get("/api/partial/thinking/brainstorm-sessions", response_class=HTMLResponse)

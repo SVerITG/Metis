@@ -60,20 +60,42 @@ def main() -> None:
             parts.append("Tools: " + ", ".join(f"{t}×{n}" for t, n in top_tools) + ".")
         summary = " ".join(parts)
 
-    # ── Extract decisions from brief ──────────────────────────────────────────
+    # ── Extract topics + decisions from brief ─────────────────────────────────
+    # Real handoff briefs use sections like "Active projects", "Open tasks",
+    # "Recent agent runs", not "## What happened" — so match broadly.
+    DECISION_HEADINGS = (
+        "what happened", "decision", "key decision",
+        "active project", "open task", "recent agent run",
+        "next step", "follow-up", "follow up", "outcome",
+    )
     extracted: list[str] = []
+    extracted_topics: list[str] = []
     if brief_content:
-        in_section = False
+        in_decision = False
+        in_projects = False
         for line in brief_content.splitlines():
-            lower = line.lower()
-            if any(h in lower for h in ["## what happened", "## decision", "## key decision"]):
-                in_section = True
+            stripped = line.strip()
+            low = stripped.lower()
+            if stripped.startswith("##"):
+                in_decision = any(h in low for h in DECISION_HEADINGS)
+                in_projects = "active project" in low or "project" in low
                 continue
-            if in_section and line.startswith("##"):
-                in_section = False
-            if in_section and line.strip().startswith("- ") and len(line.strip()) > 10:
-                extracted.append(line.strip()[2:].strip())
+            if in_decision and stripped.startswith("- ") and len(stripped) > 4:
+                item = stripped[2:].strip()
+                item = item.replace("**", "").replace("__", "").lstrip("*_ ").rstrip()
+                if item and item not in extracted:
+                    extracted.append(item)
+            if in_projects and stripped.startswith("- "):
+                txt = stripped[2:].strip()
+                bold = txt.split("**")
+                topic = bold[1] if len(bold) >= 3 else txt.split(" — ")[0]
+                topic = topic.strip().rstrip(":").strip()
+                if topic and topic not in extracted_topics:
+                    extracted_topics.append(topic)
         extracted = extracted[:10]
+        extracted_topics = extracted_topics[:8]
+
+    topics_payload = extracted_topics if extracted_topics else agents
 
     # ── Write to SQLite ───────────────────────────────────────────────────────
     db_path = root / "system" / "app" / "data" / "metis.sqlite"
@@ -96,7 +118,7 @@ def main() -> None:
                 """INSERT INTO session_summaries
                    (session_id, summary, key_topics, decisions, created_at)
                    VALUES (?, ?, ?, ?, ?)""",
-                (today, summary, json.dumps(agents), json.dumps(extracted), now),
+                (today, summary, json.dumps(topics_payload), json.dumps(extracted), now),
             )
 
             # Also write each extracted decision to episodic_memory

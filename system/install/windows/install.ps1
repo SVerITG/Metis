@@ -286,6 +286,9 @@ $claudeConfigJson = @"
 "@
 $claudeConfigJson | Set-Content -Path $claudeConfig -Encoding UTF8
 Write-OK "Claude Desktop configured"
+Write-Host "    Heads up: when you first open Claude Desktop, it may ask you to sign in" -ForegroundColor Gray
+Write-Host "    or paste your API key one more time. That's Claude Desktop's own sign-in" -ForegroundColor Gray
+Write-Host "    (separate from the key Metis uses for tools). Same key works for both." -ForegroundColor Gray
 
 # ── Write global CLAUDE.md ───────────────────────────────────────────────────
 Write-Step "Setting up Metis AI instructions"
@@ -357,19 +360,32 @@ if (-not $Stage1Only) {
 Write-Host @"
 
   ╔══════════════════════════════════════════════════════════╗
-  ║                  Installation complete!                  ║
+  ║                  Installation complete                   ║
   ╚══════════════════════════════════════════════════════════╝
 
-  What to do next:
-    1. Double-click  "Metis — Open AI"  on your desktop
-    2. Start typing — Metis will guide you through setup
-       (takes about 10 minutes the first time)
+  You now have two new shortcuts on your desktop:
 
-  Your research files are in:
+    Metis — Open AI       opens Claude Desktop with Metis ready to talk
+    Metis — Dashboard     opens the research dashboard in your browser
+
+  --- Your first 10 minutes ---
+
+  1. Open the Dashboard first ("Metis — Dashboard").
+     A welcome screen will introduce you and walk you through setup.
+
+  2. Then open the AI ("Metis — Open AI") and type:
+       /metis  Tell me what you can do for my research
+     Metis will respond and route you wherever you need to go.
+
+  If Claude Desktop asks for your API key on first launch, paste the same
+  one you gave the installer. It's a separate sign-in (Claude's own), and
+  the same key works.
+
+  Your Metis folder lives at:
     $InstallDir
 
-  To open the dashboard later:
-    Double-click  "Metis — Dashboard"  on your desktop
+  Anything goes wrong? See the README at:
+    https://github.com/SVerITG/Metis_PH
 
 "@ -ForegroundColor Green
 

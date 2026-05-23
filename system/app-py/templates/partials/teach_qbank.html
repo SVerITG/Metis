@@ -1,0 +1,31 @@
+{# partials/teach_qbank.html — Question bank placeholder #}
+<div class="panel">
+  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
+    <span class="kicker kicker--accent" style="margin:0;">Q-BANK</span>
+    <div style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);margin-top:4px;">
+      Generated questions across your courses, ready to use for self-assessment.
+    </div>
+  </div>
+
+  {% if not has_table or total == 0 %}
+  <div style="padding:24px 20px;">
+    <p style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.6;margin:0 0 8px;">
+      No questions generated yet.
+    </p>
+    <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.6;margin:0;">
+      When a course has questions generated — multiple choice, short answer, recall prompts — I'll show them here so you can drill on them whenever you want.
+    </p>
+  </div>
+  {% else %}
+  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
+    <div style="font-family:var(--m-display);font-size:18px;color:var(--m-ink);">{{ total }}</div>
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">QUESTION{% if total != 1 %}S{% endif %} ON FILE</div>
+  </div>
+  {% for r in rows %}
+  <div style="padding:10px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;justify-content:space-between;align-items:baseline;gap:12px;">
+    <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);">{{ r.title }}</span>
+    <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">{{ r.n }} Q</span>
+  </div>
+  {% endfor %}
+  {% endif %}
+</div>

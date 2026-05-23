@@ -9,26 +9,44 @@
   ================================================== -->
   <aside class="metis-side">
 
-    <!-- Identity card (always visible, loaded from /api/partial/metis/identity) -->
-    <div hx-get="/api/partial/metis/identity"
-         hx-trigger="load"
-         hx-swap="innerHTML">
-      <div class="metis-id-card">
-        <div class="metis-id-avatar">{{ (user_name or 'R')[0]|upper }}</div>
-        <div class="metis-id-name">{{ user_name or "Researcher" }}</div>
-        <div class="metis-id-sub">research cortex</div>
-        <div style="margin-top:8px;font-family:var(--m-display);font-style:italic;font-size:12.5px;color:var(--m-muted);">Loading identity…</div>
+    <!-- Identity card — compact chip with expand toggle -->
+    <div id="metis-id-wrap">
+      <!-- Collapsed chip (always shown) -->
+      <div id="metis-id-chip"
+           style="display:flex;align-items:center;gap:8px;padding:8px 4px;cursor:pointer;user-select:none;"
+           onclick="toggleMetisIdentity()"
+           title="Show / hide identity">
+        <div class="metis-id-avatar" style="width:28px;height:28px;font-size:12px;flex-shrink:0;">{{ (user_name or 'R')[0]|upper }}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:var(--m-display);font-size:13px;font-weight:500;color:var(--m-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ user_name or "Researcher" }}</div>
+          <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);">RESEARCH CORTEX</div>
+        </div>
+        <svg id="metis-id-chevron" viewBox="0 0 16 16" width="10" height="10" fill="none"
+             stroke="var(--m-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+             style="flex-shrink:0;transition:transform 200ms;">
+          <polyline points="4 6 8 10 12 6"/>
+        </svg>
+      </div>
+      <!-- Expanded identity (hidden by default) -->
+      <div id="metis-id-expanded" style="display:none;"
+           hx-get="/api/partial/metis/identity"
+           hx-trigger="revealed"
+           hx-swap="innerHTML">
+        <div style="padding:4px;font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);">One moment…</div>
       </div>
     </div>
+
+    <div style="height:1px;background:var(--m-rule-soft);margin:6px 0 10px;"></div>
 
     <!-- Section nav -->
     <nav class="metis-nav" id="metis-nav">
       {% set settings_nav = [
-        ('overview',    'Overview',         true),
+        ('howto',       'How to use',       true),
+        ('overview',    'Overview',         false),
+        ('agents',      'Agents',           false),
         ('model',       'Model & usage',    false),
         ('memory',      'Memory',           false),
         ('improvement', 'What I learned',   false),
-        ('agents',      'Agents',           false),
         ('automation',  'Automation',       false),
         ('appearance',  'Appearance',       false),
         ('integration', 'Integration',      false),
@@ -67,21 +85,161 @@
            hx-swap="innerHTML">RESEARCH CORTEX</div>
     </div>
 
-    <!-- Identity callout — clarifies this tab is settings/system, not chat -->
-    <div class="metis-note" style="display:flex;gap:10px;align-items:flex-start;margin-bottom:28px;padding:12px 16px;">
-      <svg viewBox="0 0 16 16" width="14" height="14" style="flex-shrink:0;margin-top:1px;" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="8" cy="8" r="6"/><line x1="8" y1="7" x2="8" y2="11"/><circle cx="8" cy="5" r=".5" fill="currentColor" stroke="none"/>
-      </svg>
-      <div style="font-size:13px;line-height:1.55;">
-        <strong style="font-weight:500;color:var(--m-ink);">Settings &amp; system overview.</strong>
-        To chat with Metis or run a research task, open <strong style="font-weight:500;">Claude Code</strong> in your terminal and type <code style="font-family:var(--m-mono);font-size:11px;">/metis</code>, or open <strong style="font-weight:500;">Claude Desktop</strong>.
+    <!-- =================================================
+         HOW TO USE (default section)
+    ================================================== -->
+    <section class="metis-section" data-section="howto" data-active="true">
+
+      <div class="sec-label" style="margin-bottom:16px;">
+        <span>Open Metis</span>
+        <span class="tail">LAUNCH THE RIGHT TOOL</span>
       </div>
-    </div>
+
+      <!-- Launcher buttons -->
+      <div class="grid grid-3" style="margin-bottom:28px;gap:12px;">
+
+        <!-- Claude Code -->
+        <div class="panel panel-pad" style="padding:20px 22px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="width:32px;height:32px;border-radius:4px;background:var(--m-accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="5 3 1 8 5 13"/><polyline points="11 3 15 8 11 13"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-family:var(--m-display);font-size:14px;font-weight:500;color:var(--m-ink);">Claude Code</div>
+              <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);">TERMINAL · RESEARCH AI</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--m-text);line-height:1.55;margin-bottom:12px;">
+            Your primary research interface. Type <code style="font-family:var(--m-mono);background:var(--m-surface);padding:1px 5px;border-radius:2px;">/metis</code> followed by any request — writing, literature, methods, data.
+          </div>
+          <button class="btn btn--primary btn--caps"
+                  onclick="openClaudeCode()"
+                  style="width:100%;justify-content:center;">
+            Open Claude Code
+          </button>
+        </div>
+
+        <!-- Claude Desktop -->
+        <div class="panel panel-pad" style="padding:20px 22px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="width:32px;height:32px;border-radius:4px;background:var(--m-ochre,#c47b2a);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="12" height="9" rx="1.5"/><path d="M5 14h6"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-family:var(--m-display);font-size:14px;font-weight:500;color:var(--m-ink);">Claude Desktop</div>
+              <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);">DESKTOP APP · CHAT UI</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--m-text);line-height:1.55;margin-bottom:12px;">
+            Chat-first interface. Good for exploratory conversations, brainstorming, and when you want a clean visual chat window.
+          </div>
+          <button class="btn btn--sec btn--caps"
+                  onclick="openClaudeDesktop()"
+                  style="width:100%;justify-content:center;">
+            Open Claude Desktop
+          </button>
+        </div>
+
+        <!-- RStudio / VS Code -->
+        <div class="panel panel-pad" style="padding:20px 22px;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div style="width:32px;height:32px;border-radius:4px;background:var(--m-ok,#2d7d46);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 4h12v8H2z"/><path d="M5 8h6M8 5v6"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-family:var(--m-display);font-size:14px;font-weight:500;color:var(--m-ink);">Code editors</div>
+              <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);">RSTUDIO · VS CODE</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--m-text);line-height:1.55;margin-bottom:12px;">
+            Statistical analysis and scripting. RStudio for R work; VS Code has Claude Code built in if installed.
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn--ghost btn--caps" onclick="openRStudio()" style="flex:1;justify-content:center;">RStudio</button>
+            <button class="btn btn--ghost btn--caps" onclick="openVSCode()" style="flex:1;justify-content:center;">VS Code</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Claude Code guide -->
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Claude Code is simple</span>
+        <span class="tail">HOW IT WORKS</span>
+      </div>
+
+      <div class="metis-note" style="margin-bottom:16px;padding:14px 18px;">
+        <div style="font-size:13px;line-height:1.65;color:var(--m-text);">
+          Claude Code is just a terminal where you talk to AI. You don't need to know any programming or terminal commands — just type plain English. The <strong style="color:var(--m-ink);">/commands</strong> are shortcuts that activate specific agents or workflows. You can also just type anything without a slash and it works fine.
+        </div>
+      </div>
+
+      <!-- Command reference -->
+      <div class="panel" style="margin-bottom:24px;overflow:hidden;">
+        <div style="padding:12px 18px 10px;border-bottom:1px solid var(--m-rule-soft);">
+          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);">MOST USEFUL COMMANDS</span>
+        </div>
+        <div style="padding:4px 0;">
+          {% set cmds = [
+            ('/metis',              'Route anything to the right agent — just describe what you want after the command',           'key'),
+            ('/metis_status',       'Quick overview of all projects, tasks, and what is blocked or overdue',                       'key'),
+            ('/metis_weekly',       'Weekly summary — papers read, meetings, ideas, project progress',                             'key'),
+            ('/metis_ideas',        'Capture an idea quickly — Metis will find connections to your research',                      'key'),
+            ('/metis_research',     'Start a research session on a project — loads context and suggests next steps',               'key'),
+            ('/librarian',          'Search your literature library directly',                                                      'key'),
+            ('/course-builder',     'Build a complete course end-to-end from a topic',                                             'key'),
+          ] %}
+          {% for cmd, desc, kind in cmds %}
+          <div style="display:flex;align-items:baseline;gap:12px;padding:8px 18px;border-bottom:1px solid var(--m-rule-soft);">
+            <code style="font-family:var(--m-mono);font-size:11px;color:var(--m-accent);flex-shrink:0;min-width:150px;">{{ cmd }}</code>
+            <span style="font-family:var(--m-display);font-size:12px;color:var(--m-text);line-height:1.4;">{{ desc }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        <div style="padding:10px 18px;background:var(--m-surface);">
+          <span style="font-family:var(--m-display);font-size:12px;font-style:italic;color:var(--m-muted);">You don't need a command — just type what you need. Example: "Help me write the methods section."</span>
+        </div>
+      </div>
+
+      <!-- Example prompts -->
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>Try these</span>
+        <span class="tail">CLICK TO COPY</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px;">
+        {% set examples = [
+          ("I have a meeting tomorrow about HAT screening in Angola. Help me prepare.", "Meeting prep"),
+          ("Find recent papers on passive surveillance sensitivity — focus on 2022 onwards.", "Literature search"),
+          ("I need to write the methods section for my risk mapping article.", "Writing"),
+          ("What tasks are overdue this week? What should I focus on?", "Planning"),
+          ("Explain the difference between sensitivity and specificity for my Framework article.", "Concepts"),
+          ("Review my R script for data cleaning — is there anything I should improve?", "Code review"),
+        ] %}
+        {% for prompt, label in examples %}
+        <div class="panel panel-pad"
+             style="padding:12px 14px;cursor:pointer;transition:background 120ms;"
+             onclick="copyPromptToClipboard(this)"
+             data-prompt="{{ prompt }}"
+             title="Click to copy to clipboard">
+          <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:4px;">{{ label }}</div>
+          <div style="font-family:var(--m-display);font-size:12px;color:var(--m-ink);line-height:1.45;">{{ prompt }}</div>
+          <div class="prompt-copy-hint" style="font-family:var(--m-mono);font-size:9px;color:var(--m-accent);margin-top:4px;display:none;">COPIED</div>
+        </div>
+        {% endfor %}
+      </div>
+
+    </section>
 
     <!-- =================================================
-         OVERVIEW (default section)
+         OVERVIEW
     ================================================== -->
-    <section class="metis-section" data-section="overview" data-active="true">
+    <section class="metis-section" data-section="overview" data-active="false">
 
       <div class="sec-label" style="margin-bottom:12px;">
         <span>At a glance</span>
@@ -91,22 +249,36 @@
            hx-get="/api/partial/metis/stats"
            hx-trigger="load, every 30s"
            hx-swap="innerHTML">
-        <div style="padding:24px;text-align:center;font-family:var(--m-display);font-style:italic;color:var(--m-muted);">Loading stats…</div>
+        <div style="padding:24px;text-align:center;font-family:var(--m-display);font-style:italic;color:var(--m-muted);">Counting things up…</div>
       </div>
 
-      <div class="sec-label" style="margin-bottom:12px;">
-        <span>Recent agent runs</span>
-        <span class="tail" style="cursor:pointer;"
-              hx-get="/api/partial/metis/agent-runs"
-              hx-target="#metis-runs-body"
-              hx-swap="innerHTML">REFRESH</span>
-      </div>
-      <div class="panel" id="metis-runs-body" style="margin-bottom:24px;"
-           hx-get="/api/partial/metis/agent-runs"
-           hx-trigger="load, every 30s"
-           hx-swap="innerHTML">
-        <div style="padding:24px 16px;font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">Loading agent runs…</div>
-      </div>
+      <details id="metis-runs-details">
+        <summary style="list-style:none;cursor:pointer;user-select:none;margin-bottom:12px;" onclick="metisRunsToggle(this)">
+          <div class="sec-label" style="margin-bottom:0;pointer-events:none;display:flex;align-items:center;">
+            <span>Recent agent runs</span>
+            <span class="tail" style="cursor:pointer;"
+                  onclick="event.stopPropagation();htmx.ajax('GET','/api/partial/metis/agent-runs',{target:'#metis-runs-body',swap:'innerHTML'})">REFRESH</span>
+            <svg id="metis-runs-chevron" viewBox="0 0 16 16" width="10" height="10" fill="none"
+                 stroke="var(--m-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                 style="margin-left:auto;flex-shrink:0;transition:transform 200ms;">
+              <polyline points="4 6 8 10 12 6"/>
+            </svg>
+          </div>
+        </summary>
+        <div class="panel" id="metis-runs-body" style="margin-bottom:24px;"
+             hx-get="/api/partial/metis/agent-runs"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+          <div style="padding:24px 16px;font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">Looking up recent agent activity…</div>
+        </div>
+      </details>
+      <script>
+      function metisRunsToggle(summary) {
+        var det = document.getElementById('metis-runs-details');
+        var chev = document.getElementById('metis-runs-chevron');
+        if (chev) chev.style.transform = det.open ? '' : 'rotate(180deg)';
+      }
+      </script>
 
     </section>
 
@@ -157,7 +329,7 @@
            hx-get="/api/partial/metis/token-monitor"
            hx-trigger="load, every 60s"
            hx-swap="innerHTML">
-        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading token usage…</div>
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Tallying token usage…</div>
       </div>
 
     </section>
@@ -175,7 +347,7 @@
            hx-get="/api/partial/metis/memory-overview"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading memory overview…</div>
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Pulling together what I remember…</div>
       </div>
 
       <div class="sec-label" style="margin-bottom:12px;">
@@ -186,7 +358,7 @@
            hx-get="/api/partial/metis/memory-stream"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading memory stream…</div>
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Replaying the memory stream…</div>
       </div>
 
       <div class="sec-label" style="margin-bottom:12px;">
@@ -197,7 +369,7 @@
         <div hx-get="/api/partial/metis/memory-debug"
              hx-trigger="load"
              hx-swap="outerHTML">
-          <div style="padding:16px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading debugger…</div>
+          <div style="padding:16px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Opening the debugger…</div>
         </div>
       </div>
 
@@ -216,7 +388,7 @@
            hx-get="/api/partial/metis/improvement"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading reflexion themes…</div>
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Surfacing what I've been reflecting on…</div>
       </div>
 
     </section>
@@ -237,7 +409,7 @@
            hx-get="/api/partial/metis/agent-directory"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading agent registry…</div>
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Listing the agents…</div>
       </div>
 
     </section>
@@ -258,7 +430,7 @@
            hx-get="/api/partial/today/automation"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div style="padding:18px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading scheduler&hellip;</div>
+        <div style="padding:18px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Checking the scheduler…</div>
       </div>
 
       <div class="sec-label" style="margin-bottom:12px;">
@@ -272,7 +444,7 @@
            hx-get="/api/partial/metis/automation-log"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div style="padding:18px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading job log&hellip;</div>
+        <div style="padding:18px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Fetching the job history…</div>
       </div>
 
     </section>
@@ -389,7 +561,7 @@
            hx-get="/api/partial/metis/integration"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading integration status…</div>
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Checking what's connected…</div>
       </div>
 
     </section>
@@ -401,7 +573,7 @@
 
       <div class="sec-label" style="margin-bottom:12px;">
         <span>API keys</span>
-        <span class="tail">STORED IN system/.env</span>
+        <span class="tail">STORED SECURELY ON THIS COMPUTER</span>
       </div>
       <div class="metis-note" style="margin-bottom:14px;">
         These keys are stored in a plain file on your local machine and are never sent anywhere except the service that uses them. The Anthropic key is used by the dashboard's agent runner. Zotero keys power the library sync. You can add additional keys for any service Metis integrates with.
@@ -410,7 +582,7 @@
            hx-get="/api/partial/metis/api-keys"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div style="padding:18px 22px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);">Loading keys…</div>
+        <div style="padding:18px 22px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);">Looking up your keys…</div>
       </div>
 
     </section>
@@ -425,7 +597,7 @@
            hx-get="/api/partial/metis/system-info"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading system info…</div>
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Reading the system details…</div>
       </div>
 
       <div class="sec-label" style="margin-bottom:12px;">
@@ -436,7 +608,7 @@
            hx-get="/api/partial/metis/consent"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading consent ledger…</div>
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Opening the consent ledger…</div>
       </div>
 
       <div class="sec-label" style="margin-bottom:12px;"><span>Network</span></div>
@@ -461,17 +633,60 @@
 
 <script>
 function setMetisSection(id, el) {
-  // Toggle nav active state
   document.querySelectorAll('#metis-nav .metis-nav-item').forEach(function (item) {
     item.dataset.active = (item.dataset.target === id) ? 'true' : 'false';
   });
-  // Toggle section visibility
   document.querySelectorAll('.metis-section').forEach(function (sec) {
     sec.dataset.active = (sec.dataset.section === id) ? 'true' : 'false';
   });
-  // Scroll content area to top
   var scroll = document.getElementById('tab-content');
   if (scroll) scroll.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleMetisIdentity() {
+  var expanded = document.getElementById('metis-id-expanded');
+  var chevron  = document.getElementById('metis-id-chevron');
+  if (!expanded) return;
+  var open = expanded.style.display !== 'none';
+  expanded.style.display = open ? 'none' : 'block';
+  if (chevron) chevron.style.transform = open ? '' : 'rotate(180deg)';
+  if (!open) htmx.trigger(expanded, 'revealed');
+}
+
+function openClaudeCode() {
+  // Try to focus existing terminal window or open a new one
+  // On Windows/WSL, this opens the Windows Terminal with the Claude Code session
+  fetch('/api/launcher/claude-code', { method: 'POST' })
+    .then(r => r.json())
+    .then(d => { if (d.hint) console.log(d.hint); })
+    .catch(() => {});
+  // Fallback: show tip
+  var tip = document.getElementById('claude-code-tip');
+  if (tip) { tip.style.display = 'block'; setTimeout(() => tip.style.display = 'none', 4000); }
+}
+
+function openClaudeDesktop() {
+  fetch('/api/launcher/claude-desktop', { method: 'POST' })
+    .catch(() => {});
+}
+
+function openRStudio() {
+  fetch('/api/launcher/rstudio', { method: 'POST' })
+    .catch(() => {});
+}
+
+function openVSCode() {
+  fetch('/api/launcher/vscode', { method: 'POST' })
+    .catch(() => {});
+}
+
+function copyPromptToClipboard(el) {
+  var text = el.getAttribute('data-prompt');
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(function() {
+    var hint = el.querySelector('.prompt-copy-hint');
+    if (hint) { hint.style.display = 'block'; setTimeout(() => hint.style.display = 'none', 1800); }
+  });
 }
 </script>
 {% endblock %}
