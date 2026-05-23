@@ -20,6 +20,7 @@ from mcp.types import TextContent
 from metis_mcp.app_instance import app
 from metis_mcp.config import paths
 from metis_mcp.db import connect
+from metis_mcp.models import model_for
 
 
 # Words too generic to be useful as a "theme"
@@ -110,7 +111,7 @@ def _theme_from(texts: list[str], top_n: int = 3) -> list[tuple[str, int]]:
                     "content-type": "application/json",
                 },
                 json={
-                    "model": "claude-haiku-4-5-20251001",
+                    "model": model_for("brief"),
                     "max_tokens": 256,
                     "messages": [{
                         "role": "user",

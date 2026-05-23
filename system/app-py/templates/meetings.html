@@ -53,7 +53,7 @@
       <div hx-get="/api/partial/meetings/upcoming"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div class="panel" style="padding:28px 32px;margin-bottom:18px;opacity:.4;min-height:120px;"></div>
+        <div class="panel skeleton" style="padding:28px 32px;margin-bottom:18px;min-height:120px;"></div>
       </div>
 
       <!-- Live assist status pane -->
@@ -62,7 +62,7 @@
            hx-get="/api/partial/meetings/live-assist"
            hx-trigger="load, every 30s"
            hx-swap="innerHTML">
-        <div class="panel panel-pad" style="padding:14px 18px;opacity:.4;">
+        <div class="panel panel-pad skeleton" style="padding:14px 18px;">
           <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Checking whether a live meeting is running…</p>
         </div>
       </div>
@@ -99,7 +99,7 @@
            hx-get="/api/partial/meetings/list"
            hx-trigger="load, refresh"
            hx-swap="innerHTML">
-        <div class="panel" style="padding:20px;opacity:.4;min-height:80px;"></div>
+        <div class="panel skeleton" style="padding:20px;min-height:80px;"></div>
       </div>
 
     </div>
@@ -119,7 +119,7 @@
            hx-get="/api/partial/meetings/week-ahead"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div style="padding:14px 18px;opacity:.4;">
+        <div style="padding:14px 18px;">
           <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:50%;margin-bottom:6px;"></div>
           <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:80%;"></div>
         </div>
@@ -129,7 +129,7 @@
       <div hx-get="/api/partial/meetings/stats"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div class="panel panel-pad" style="padding:18px 20px;opacity:.4;"></div>
+        <div class="panel panel-pad skeleton" style="padding:18px 20px;"></div>
       </div>
     </div>
 
@@ -196,7 +196,7 @@ async function submitAudioUpload() {
       setTimeout(closeAudioUpload, 3000);
     } else {
       st.style.color = 'var(--m-alert)';
-      st.textContent = `Error: ${data.error}`;
+      st.textContent = `I couldn't process that file — ${data.error}`;
     }
   } catch(e) {
     st.style.color = 'var(--m-alert)';

@@ -11,7 +11,7 @@ Usage:
 
     # Then pass to the Anthropic client:
     client.messages.create(
-        model="claude-sonnet-4-6",
+        model=model_for("default"),
         system=system_blocks,
         messages=[...],
     )
@@ -28,6 +28,7 @@ from pathlib import Path
 import yaml
 
 from metis_mcp.config import paths
+from metis_mcp.models import model_for
 
 
 def _cache_block(text: str) -> dict:

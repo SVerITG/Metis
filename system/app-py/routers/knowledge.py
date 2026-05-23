@@ -299,7 +299,7 @@ async def knowledge_build_index(request: Request):
             '</span>'
         )
     except Exception as e:
-        return HTMLResponse(f'<span class="text-danger small">Failed to start: {e}</span>')
+        return HTMLResponse(f'<span class="text-danger small">I couldn't start the indexer: {e}</span>')
 
 
 # ---------------------------------------------------------------------------
@@ -1599,11 +1599,58 @@ async def knowledge_unified_search_semantic(request: Request, q: str = ""):
     semantic_hits.sort(key=_sort_key)
     semantic_hits = semantic_hits[:12]
 
+    # Highlight query terms in each snippet and group by source kind
+    import re as _re
+    terms = [t for t in _re.findall(r"\w{3,}", q.lower()) if t]
+    pat = None
+    if terms:
+        pat = _re.compile("(" + "|".join(_re.escape(t) for t in terms) + ")", _re.IGNORECASE)
+
+    label_map = {
+        "pdf": "Papers",
+        "paper": "Papers",
+        "memory": "Past sessions",
+        "idea": "Ideas",
+        "note": "Notes",
+    }
+    grouped: dict[str, list[dict]] = {}
+    for h in semantic_hits:
+        kind = (h.get("kind") or "other").lower()
+        group = label_map.get(kind, kind.title() or "Other")
+        snippet = h.get("snippet") or ""
+        if pat and snippet:
+            snippet_html = pat.sub(r"<mark>\1</mark>", snippet)
+        else:
+            snippet_html = snippet
+        # Score is 0..1 (cosine-ish). Normalise to 0..100 width.
+        raw = h.get("score")
+        try:
+            pct = max(0, min(100, int(round(float(raw) * 100)))) if raw is not None else None
+        except Exception:
+            pct = None
+        grouped.setdefault(group, []).append({
+            **h,
+            "snippet_html": snippet_html,
+            "score_pct": pct,
+            "score_label": (f"{pct}% match" if pct is not None else "—"),
+        })
+
+    # Preserve a sensible group order
+    group_order = ["Papers", "Past sessions", "Ideas", "Notes"]
+    grouped_ordered = []
+    for name in group_order:
+        if name in grouped:
+            grouped_ordered.append((name, grouped[name]))
+    for name, items in grouped.items():
+        if name not in group_order:
+            grouped_ordered.append((name, items))
+
     return templates.TemplateResponse(
         request,
         "partials/knowledge_unified_search_semantic.html",
         {
             "hits": semantic_hits,
+            "groups": grouped_ordered,
             "q": q,
             "used_semantic": used_semantic,
             "total": len(semantic_hits),
@@ -1821,5 +1868,5 @@ async def knowledge_build_hat_index(request: Request):
         )
     except Exception as e:
         return HTMLResponse(
-            f'<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">Failed to start: {e}</span>'
+            f'<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">I couldn't start the indexer: {e}</span>'
         )

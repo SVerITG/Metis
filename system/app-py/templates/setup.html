@@ -137,7 +137,7 @@ async function resetWizard() {
   } catch(e) {
     btn.textContent = "Re-run wizard in Claude";
     btn.disabled = false;
-    showToast("Could not reset wizard — is the dashboard running?", "error");
+    showToast("I couldn't reset wizard — is the dashboard running?", "error");
   }
 }
 
@@ -148,7 +148,7 @@ async function copyProjectInstructions() {
     await navigator.clipboard.writeText(text);
     showToast("Claude Project instructions copied to clipboard.");
   } catch(e) {
-    showToast("Could not copy — check browser clipboard permissions.", "error");
+    showToast("I couldn't copy — check browser clipboard permissions.", "error");
   }
 }
 

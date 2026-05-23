@@ -17,6 +17,7 @@ from mcp.types import TextContent
 
 from metis_mcp.config import paths
 from metis_mcp.app_instance import app
+from metis_mcp.models import model_for
 
 
 def _get_api_key() -> str:
@@ -114,8 +115,8 @@ async def index_library_pdfs(
         ))]
 
     settings = Settings(
-        llm="claude-haiku-4-5-20251001",
-        summary_llm="claude-haiku-4-5-20251001",
+        llm=model_for("paperqa"),
+        summary_llm=model_for("paperqa"),
     )
 
     docs = Docs()
@@ -190,8 +191,8 @@ async def ask_library(
         return [TextContent(type="text", text=f"Failed to load index: {exc}")]
 
     settings = Settings(
-        llm="claude-haiku-4-5-20251001",
-        summary_llm="claude-haiku-4-5-20251001",
+        llm=model_for("paperqa"),
+        summary_llm=model_for("paperqa"),
     )
 
     try:

@@ -12,7 +12,8 @@
     <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">·</span>
     {% if brief %}
       <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
-        {%- if time_of_day == 'morning' -%}brief ready · start your research day
+        {%- if brief_date_label -%}showing brief from {{ brief_date_label }} · today's hasn't run yet
+        {%- elif time_of_day == 'morning' -%}brief ready · start your research day
         {%- elif time_of_day == 'afternoon' -%}brief ready · afternoon check-in
         {%- else -%}brief ready · end of day review
         {%- endif -%}

@@ -31,6 +31,7 @@ from metis_mcp.app_instance import app
 
 # Import PII patterns from safety module (no circular dependency)
 from metis_mcp.tools.safety import (  # noqa: E402
+from metis_mcp.models import model_for
     _EMAIL_RE,
     _PHONE_RE,
     _PATIENT_ID_RE,
@@ -380,10 +381,10 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
 # ── Stage 6: Token budget allocation ──────────────────────────────────────────
 
 _BUDGET_MAP = {
-    "quick":    {"model": "claude-haiku-4-5-20251001", "max_tokens": 1024},
-    "standard": {"model": "claude-sonnet-4-6",          "max_tokens": 4096},
-    "deep":     {"model": "claude-opus-4-6",            "max_tokens": 8192},
-    "chain":    {"model": "claude-opus-4-6",            "max_tokens": 8192},
+    "quick":    {"model": model_for("brief"), "max_tokens": 1024},
+    "standard": {"model": model_for("default"),          "max_tokens": 4096},
+    "deep":     {"model": model_for("deep"),            "max_tokens": 8192},
+    "chain":    {"model": model_for("deep"),            "max_tokens": 8192},
 }
 
 

@@ -1,0 +1,48 @@
+{#-
+  _section.html — single source of truth for page sections.
+
+  Every dashboard panel should pass through this macro. It guarantees:
+    - consistent header (eyebrow / title / tail / action)
+    - consistent spacing and typography from the design tokens
+    - one place to evolve the look of every section at once
+
+  Usage:
+    {% from "partials/_section.html" import section %}
+    {% call section(title="Morning brief", eyebrow="OPEN UP", tail="updated 2 min ago") %}
+      <div class="...">  ... content ...  </div>
+    {% endcall %}
+
+  All keyword args are optional except `title`. `padded=True` wraps the body in
+  a bordered, padded panel — set False if the content already provides its own
+  panel/styling.
+-#}
+
+{% macro section(title, eyebrow=None, tail=None, action=None, padded=True, body_class="", size="md") %}
+<section class="section">
+  <header class="section-head">
+    {% if eyebrow %}<span class="section-eyebrow">{{ eyebrow }}</span>{% endif %}
+    <h2 class="section-title{% if size == 'lg' %} section-title--lg{% elif size == 'sm' %} section-title--sm{% endif %}">{{ title }}</h2>
+    {% if tail %}<span class="section-tail">{{ tail }}</span>{% endif %}
+    {% if action %}<div class="section-action">{{ action|safe }}</div>{% endif %}
+  </header>
+  <div class="section-body{% if padded %} is-padded{% endif %}{% if body_class %} {{ body_class }}{% endif %}">
+    {{ caller() }}
+  </div>
+</section>
+{% endmacro %}
+
+
+{#- Skeleton placeholder — drop into a section body while HTMX is loading. -#}
+{% macro skeleton_block(rows=3, sizes=["w-90", "w-70", "w-50"]) %}
+<div class="skeleton-stack">
+  {% for s in sizes[:rows] %}
+  <div class="skeleton skeleton-bar {{ s }}"></div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+
+{#- Skeleton box — generic loading placeholder for chart/grid areas. -#}
+{% macro skeleton_box(size="md") %}
+<div class="skeleton skeleton-box skeleton-box--{{ size }}"></div>
+{% endmacro %}

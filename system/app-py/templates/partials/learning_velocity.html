@@ -1,10 +1,18 @@
-{# partials/learning_velocity.html — Learning pace across recent windows #}
+{# partials/learning_velocity.html — Sparkline + streak + 3 windows #}
 <div class="panel">
-  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
-    <span class="kicker kicker--accent" style="margin:0;">VELOCITY</span>
-    <div style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);margin-top:4px;">
-      How many lessons you've completed in the recent windows.
+  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;align-items:baseline;justify-content:space-between;gap:10px;">
+    <div>
+      <span class="kicker kicker--accent" style="margin:0;">VELOCITY</span>
+      <div style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);margin-top:4px;">
+        Your learning pace, with a 14-day spark and a streak count.
+      </div>
     </div>
+    {% if any_data %}
+    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-accent);flex-shrink:0;"
+         title="{{ trend_label }}">
+      {{ trend_glyph | safe }} {{ trend_label | upper }}
+    </div>
+    {% endif %}
   </div>
 
   {% if not any_data %}
@@ -13,32 +21,92 @@
       Nothing tracked yet.
     </p>
     <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.6;margin:0;">
-      Tell me about your learning by completing your first lesson — I'll start tracking how fast you're moving.
+      Complete your first lesson on the Learning tab and I'll start showing your pace here.
     </p>
   </div>
   {% else %}
-  <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;">
-    <div>
-      <div style="font-family:var(--m-display);font-size:28px;color:var(--m-ink);line-height:1;">{{ d7 }}</div>
-      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">LAST 7 DAYS</div>
+
+  {# ---- 14-day sparkline ---- #}
+  <div style="padding:18px 20px 6px;">
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:8px;">
+      LAST 14 DAYS
     </div>
+    {% set bar_w = 16 %}
+    {% set gap = 4 %}
+    {% set chart_h = 48 %}
+    {% set total_w = 14 * bar_w + 13 * gap %}
+    <svg viewBox="0 0 {{ total_w }} {{ chart_h + 14 }}"
+         width="100%"
+         preserveAspectRatio="none"
+         style="display:block;max-width:100%;">
+      <line x1="0" y1="{{ chart_h }}" x2="{{ total_w }}" y2="{{ chart_h }}"
+            stroke="var(--m-rule-soft)" stroke-width="1"/>
+      {% for d in spark_days %}
+        {% set x = loop.index0 * (bar_w + gap) %}
+        {% if max_count > 0 and d.count > 0 %}
+          {% set h = ((d.count / max_count) * (chart_h - 4)) | round(1) %}
+          {% if h < 2 %}{% set h = 2 %}{% endif %}
+        {% else %}
+          {% set h = 0 %}
+        {% endif %}
+        {% if h > 0 %}
+        <rect x="{{ x }}" y="{{ chart_h - h }}" width="{{ bar_w }}" height="{{ h }}"
+              rx="1.5"
+              fill="var(--m-accent)"
+              opacity="{{ 0.55 + (d.count / max_count) * 0.45 if max_count else 0.6 }}">
+          <title>{{ d.date }}: {{ d.count }}</title>
+        </rect>
+        {% else %}
+        <rect x="{{ x }}" y="{{ chart_h - 2 }}" width="{{ bar_w }}" height="2"
+              fill="var(--m-surface-3)">
+          <title>{{ d.date }}: 0</title>
+        </rect>
+        {% endif %}
+      {% endfor %}
+      {# tiny axis labels: leftmost = -13d, rightmost = today #}
+      <text x="0" y="{{ chart_h + 11 }}"
+            font-family="var(--m-mono)" font-size="8" fill="var(--m-muted)"
+            letter-spacing="0.1em">-13D</text>
+      <text x="{{ total_w }}" y="{{ chart_h + 11 }}"
+            text-anchor="end"
+            font-family="var(--m-mono)" font-size="8" fill="var(--m-muted)"
+            letter-spacing="0.1em">TODAY</text>
+    </svg>
+  </div>
+
+  {# ---- Streak ---- #}
+  <div style="padding:14px 20px;border-top:1px solid var(--m-rule-soft);display:flex;align-items:baseline;gap:14px;">
+    <div style="font-family:var(--m-display);font-size:40px;color:var(--m-accent);line-height:1;">{{ streak }}</div>
     <div>
-      <div style="font-family:var(--m-display);font-size:28px;color:var(--m-ink);line-height:1;">{{ d30 }}</div>
-      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">LAST 30 DAYS</div>
-    </div>
-    <div>
-      <div style="font-family:var(--m-display);font-size:28px;color:var(--m-ink);line-height:1;">{{ d90 }}</div>
-      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">LAST 90 DAYS</div>
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;color:var(--m-muted);">
+        DAY STREAK
+      </div>
+      <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);margin-top:3px;">
+        {% if streak == 0 %}
+        Pick a lesson today to start one.
+        {% elif streak == 1 %}
+        Today counts &mdash; keep it going.
+        {% else %}
+        {{ streak }} consecutive day{% if streak != 1 %}s{% endif %} with at least one completion.
+        {% endif %}
+      </div>
     </div>
   </div>
-  <div style="padding:0 20px 16px;font-family:var(--m-display);font-size:12px;color:var(--m-muted);line-height:1.5;">
-    {% if d7 == 0 and d30 > 0 %}
-    A quieter week — that's fine. The 30-day total still looks healthy.
-    {% elif d7 > 0 and d30 / 4 < d7 %}
-    You've picked up the pace this week.
-    {% elif d7 > 0 %}
-    Steady progress.
-    {% endif %}
+
+  {# ---- Three windows ---- #}
+  <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;border-top:1px solid var(--m-rule-soft);">
+    <div>
+      <div style="font-family:var(--m-display);font-size:26px;color:var(--m-ink);line-height:1;">{{ d7 }}</div>
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">THIS WEEK</div>
+    </div>
+    <div>
+      <div style="font-family:var(--m-display);font-size:26px;color:var(--m-ink);line-height:1;">{{ d30 }}</div>
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">THIS MONTH</div>
+    </div>
+    <div>
+      <div style="font-family:var(--m-display);font-size:26px;color:var(--m-ink);line-height:1;">{{ d_all }}</div>
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">ALL TIME</div>
+    </div>
   </div>
   {% endif %}
 </div>

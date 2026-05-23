@@ -17,7 +17,7 @@
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <!-- Archive design system — loaded after Bootstrap so it overrides -->
-  <link rel="stylesheet" href="/static/styles.css?v=9i">
+  <link rel="stylesheet" href="/static/styles.css?v=9k">
   <!-- Archive micro-animations -->
   <link rel="stylesheet" href="/static/motion.css">
 
@@ -460,6 +460,9 @@
 
       </div>
     </div><!-- /.topbar -->
+
+    <!-- API key status banner (visible only when ANTHROPIC_API_KEY is missing) -->
+    <div hx-get="/api/partial/api-key-status" hx-trigger="load" hx-swap="outerHTML"></div>
 
     <!-- First-run welcome banner (HTMX-loaded; renders empty if user is already configured) -->
     <div hx-get="/api/partial/welcome-banner" hx-trigger="load" hx-swap="outerHTML"></div>

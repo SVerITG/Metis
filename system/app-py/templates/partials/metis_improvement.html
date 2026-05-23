@@ -20,6 +20,39 @@
   </div>
 </div>
 
+{# Recent reflexion log — raw signal feeding the loop #}
+{% if recent_reflexions %}
+<div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
+  <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);margin-bottom:10px;">
+    Recent reflexions
+    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);margin-left:8px;">LAST {{ recent_reflexions|length }} · NEWEST FIRST</span>
+  </div>
+  {% for r in recent_reflexions %}
+  <div style="padding:12px 0;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px;">
+      <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-accent);">{{ r.agent_slug }}</span>
+      <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">{{ (r.created_at or '')[:16] }}</span>
+    </div>
+    {% if r.went_well %}
+    <div style="font-size:12.5px;line-height:1.6;color:var(--m-ink);margin-bottom:6px;">
+      <span style="font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;color:var(--m-ok);margin-right:6px;">+ WENT WELL</span>{{ r.went_well[:280] }}{% if r.went_well|length > 280 %}…{% endif %}
+    </div>
+    {% endif %}
+    {% if r.could_improve %}
+    <div style="font-size:12.5px;line-height:1.6;color:var(--m-ink);margin-bottom:6px;">
+      <span style="font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;color:var(--m-ochre-deep);margin-right:6px;">~ COULD IMPROVE</span>{{ r.could_improve[:280] }}{% if r.could_improve|length > 280 %}…{% endif %}
+    </div>
+    {% endif %}
+    {% if r.tool_wishes %}
+    <div style="font-size:12.5px;line-height:1.6;color:var(--m-muted);font-style:italic;">
+      <span style="font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;color:var(--m-info);margin-right:6px;font-style:normal;">→ TOOL WISH</span>{{ r.tool_wishes[:200] }}{% if r.tool_wishes|length > 200 %}…{% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
 {% if learned %}
 <div>
   {% for L in learned %}

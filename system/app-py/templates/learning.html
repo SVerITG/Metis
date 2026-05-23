@@ -18,7 +18,7 @@
        hx-get="/api/partial/learning/velocity"
        hx-trigger="load"
        hx-swap="innerHTML">
-    <div class="panel panel-pad" style="padding:18px 22px;opacity:.4;">
+    <div class="panel panel-pad skeleton" style="padding:18px 22px;">
       <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Measuring your pace this week…</p>
     </div>
   </div>
@@ -38,7 +38,7 @@
         <span>SPACED REPETITION · ONE MOMENT…</span>
       </div>
       <h2 style="font-family:var(--m-display);font-size:24px;font-weight:500;letter-spacing:-0.015em;margin:10px 0 8px;color:var(--m-ink);">Looking up what's due today…</h2>
-      <div style="height:52px;background:var(--m-surface-3);border-radius:2px;opacity:.4;margin-bottom:14px;"></div>
+      <div class="skeleton" style="height:52px;border-radius:2px;margin-bottom:14px;"></div>
       <div class="tnum" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">NEW · — &nbsp;&nbsp; LEARNING · — &nbsp;&nbsp; REVIEW · —</div>
     </div>
 
@@ -72,7 +72,7 @@
        hx-trigger="load"
        hx-swap="outerHTML">
     {% for _ in range(3) %}
-    <div class="panel panel-pad" style="padding:20px 22px;opacity:.4;">
+    <div class="panel panel-pad skeleton" style="padding:20px 22px;">
       <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:40%;margin-bottom:8px;"></div>
       <div style="height:16px;background:var(--m-surface-3);border-radius:2px;margin-bottom:4px;"></div>
       <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:60%;margin-bottom:16px;"></div>
@@ -108,7 +108,7 @@
   <div hx-get="/api/partial/learning/placeholder-courses"
        hx-trigger="load"
        hx-swap="outerHTML">
-    <div class="panel" style="opacity:.4;min-height:100px;"></div>
+    <div class="panel skeleton" style="min-height:100px;"></div>
   </div>
 
 </div>

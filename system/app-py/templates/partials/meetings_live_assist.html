@@ -1,36 +1,50 @@
-{# partials/meetings_live_assist.html — Read-only status for the live meeting assistant #}
+{# partials/meetings_live_assist.html — Live meeting status with visual indicator #}
 <div class="panel">
   <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;align-items:center;gap:10px;">
     <span class="kicker kicker--accent" style="margin:0;">LIVE ASSIST</span>
-    {% if live %}
+    {% if live and live_fresh %}
     <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-ok);">SESSION ACTIVE</span>
     {% else %}
     <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">STANDING BY</span>
     {% endif %}
   </div>
 
-  {% if live %}
-  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
-    <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.4;margin-bottom:4px;">
-      {{ live.title }}
+  {# ---- Big status circle ---- #}
+  <div style="padding:22px 20px;display:flex;align-items:center;gap:18px;border-bottom:1px solid var(--m-rule-soft);">
+    {% if live and live_fresh %}
+    <div style="position:relative;width:48px;height:48px;flex-shrink:0;">
+      <span style="position:absolute;inset:0;border-radius:50%;background:var(--m-ok);
+                   box-shadow:0 0 0 0 var(--m-ok);
+                   animation:metis-live-pulse 1.6s ease-out infinite;"></span>
+      <span style="position:absolute;inset:0;border-radius:50%;background:var(--m-ok);"></span>
     </div>
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);">
-      {% if live.attendees %}{{ live.attendees[:80] }} · {% endif %}{{ live.meeting_date }}
+    <div style="flex:1;min-width:0;">
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.18em;color:var(--m-ok);margin-bottom:4px;">
+        LIVE NOW
+      </div>
+      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);line-height:1.35;">
+        {{ live.title }}
+      </div>
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-top:4px;">
+        {% if elapsed_min is not none %}{{ elapsed_min }} MIN ELAPSED{% else %}STARTED TODAY{% endif %}{% if live.attendees %} &middot; {{ live.attendees[:60] }}{% endif %}
+      </div>
     </div>
+    {% else %}
+    <div style="width:48px;height:48px;flex-shrink:0;border-radius:50%;
+                background:var(--m-surface-3);border:1px solid var(--m-rule-soft);"></div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.18em;color:var(--m-muted);margin-bottom:4px;">
+        NO LIVE MEETING
+      </div>
+      <div style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.5;">
+        Start a meeting from the Meetings tab and I'll surface connections to your library here in real time.
+      </div>
+    </div>
+    {% endif %}
   </div>
-  {% else %}
-  <div style="padding:18px 20px;">
-    <p style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.6;margin:0 0 10px;">
-      Nothing is live right now.
-    </p>
-    <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.6;margin:0;">
-      When you start a meeting, I'll listen along and surface anything in your library, notes, or past meetings that connects to what's being said.
-    </p>
-  </div>
-  {% endif %}
 
   {% if connections %}
-  <div style="padding:14px 20px;border-top:1px solid var(--m-rule-soft);">
+  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
     <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">
       RECENT CONNECTIONS
     </div>
@@ -42,7 +56,7 @@
       <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.4;">
         {{ c.title }}
         {% if c.from_meeting %}
-        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);"> · from “{{ c.from_meeting }}”</span>
+        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);"> &middot; from &ldquo;{{ c.from_meeting }}&rdquo;</span>
         {% endif %}
       </span>
     </div>
@@ -50,7 +64,7 @@
   </div>
   {% endif %}
 
-  <div style="padding:14px 20px;border-top:1px solid var(--m-rule-soft);display:flex;justify-content:flex-end;">
+  <div style="padding:14px 20px;display:flex;justify-content:flex-end;">
     <button class="btn btn--primary"
             hx-get="/api/partial/meetings/live-setup"
             hx-target="#meeting-live-pane"
@@ -60,3 +74,11 @@
     </button>
   </div>
 </div>
+
+<style>
+@keyframes metis-live-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(50,160,90,0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(50,160,90,0); }
+  100% { box-shadow: 0 0 0 0 rgba(50,160,90,0); }
+}
+</style>

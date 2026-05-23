@@ -205,17 +205,40 @@ async def thinking_brainstorm(request: Request):
         default=None,
     )
     if has_table:
+        # Pull the 3 most recent. Use sources_used as a proxy for "messages
+        # exchanged" — older schemas don't have message_count.
         rows = db_query(
-            "SELECT session_uuid, topic, summary, created_at "
-            "FROM brainstorm_sessions ORDER BY created_at DESC LIMIT 8",
+            "SELECT session_id, session_uuid, topic, summary, sources_used, "
+            "created_at FROM brainstorm_sessions ORDER BY created_at DESC LIMIT 3",
             default=[],
         ) or []
         for r in rows:
+            # Try a few possible companion tables for an accurate count
+            sid = r.get("session_uuid") or r.get("session_id")
+            msg_count = 0
+            for tbl, col in (("brainstorm_turns", "session_uuid"),
+                             ("brainstorm_turns", "session_id")):
+                try:
+                    n = db_scalar(
+                        f"SELECT COUNT(*) FROM {tbl} WHERE {col} = ?",
+                        (sid,),
+                        default=0,
+                    ) or 0
+                    if n:
+                        msg_count = n
+                        break
+                except Exception:
+                    continue
+            # Fall back to length of sources_used JSON list if no turns table
+            if not msg_count:
+                src = r.get("sources_used") or ""
+                msg_count = src.count(",") + 1 if src else 0
             sessions.append({
                 "session_uuid": r.get("session_uuid") or "",
                 "topic": r.get("topic") or "Untitled brainstorm",
                 "summary": (r.get("summary") or "")[:160],
-                "created_at": (r.get("created_at") or "")[:16],
+                "started_at": (r.get("created_at") or "")[:10],
+                "message_count": msg_count,
             })
     return templates.TemplateResponse(
         request,
@@ -269,6 +292,6 @@ async def note_from_latest_idea():
         )
     except Exception as e:
         return JSONResponse(
-            {"status": "error", "message": f"Could not save note: {e}"},
+            {"status": "error", "message": f"I couldn't save note: {e}"},
             status_code=500,
         )

@@ -126,23 +126,21 @@ async function touchPlanningFiles() {
 }
 
 async function consolidateSession() {
-  // Try to read the handoff brief that was just written, so we capture
-  // actual session content rather than just tool-call counts.
+  // Read the AUTO-GENERATED handoff brief that lives at
+  // journal/YYYY-MM-DD_session_handoff_auto.md — that's the real brief with
+  // Active Projects / Open Tasks / Recent agent runs sections.
+  //
+  // (We used to read the stop-hook MARKER file at journal/sessions/handoff-*.md
+  //  which is just a 3-line pointer and contained nothing extractable.)
   let briefContent = "";
   let briefTempFile = "";
   try {
     if (RC_ROOT) {
-      const { readdirSync, statSync } = await import("fs");
-      const sessionDir = join(RC_ROOT, "journal", "sessions");
-      const todayPrefix = `handoff-${date}`;
-      const files = readdirSync(sessionDir)
-        .filter(f => f.startsWith(todayPrefix) && f.endsWith(".md"))
-        .map(f => ({ name: f, mtime: statSync(join(sessionDir, f)).mtimeMs }))
-        .sort((a, b) => b.mtime - a.mtime);
-      if (files.length > 0) {
-        briefContent = readFileSync(join(sessionDir, files[0].name), "utf8");
-        // Write to a temp file so the Python fallback can read it without
-        // shell-escaping the content
+      const { existsSync } = await import("fs");
+      const autoBriefPath = join(RC_ROOT, "journal", `${date}_session_handoff_auto.md`);
+      if (existsSync(autoBriefPath)) {
+        briefContent = readFileSync(autoBriefPath, "utf8");
+        const sessionDir = join(RC_ROOT, "journal", "sessions");
         briefTempFile = join(sessionDir, `.brief-tmp-${date}.txt`);
         writeFileSync(briefTempFile, briefContent);
       }

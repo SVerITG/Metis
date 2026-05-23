@@ -1,4 +1,4 @@
-{# partials/planner_focus_board.html — Top 3 active projects with open task counts #}
+{# partials/planner_focus_board.html — Top 3 active projects, focus cards #}
 <div class="panel">
   <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
     <span class="kicker kicker--accent" style="margin:0;">FOCUS BOARD</span>
@@ -10,10 +10,10 @@
   {% if not cards %}
   <div style="padding:24px 20px;">
     <p style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.6;margin:0 0 8px;">
-      Your focus board will fill in as soon as you have an active project.
+      Add your first active project on the Work tab and it'll appear here.
     </p>
     <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.6;margin:0 0 14px;">
-      Want to add one? Head to the Work tab and start a project — I'll surface it here as soon as you do.
+      Once it's in, I'll show you the next action, open tasks, and when you last touched it.
     </p>
     <a href="/tab/work"
        style="display:inline-block;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;
@@ -22,24 +22,41 @@
     </a>
   </div>
   {% else %}
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0;">
     {% for c in cards %}
-    <div style="padding:16px 20px;border-right:1px solid var(--m-rule-soft);border-bottom:1px solid var(--m-rule-soft);">
-      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:{% if c.priority == 'high' %}var(--m-alert){% elif c.priority == 'medium' %}var(--m-accent){% else %}var(--m-muted){% endif %};margin-bottom:8px;">
-        {{ c.priority | upper }}{% if c.domain %} · {{ c.domain | upper }}{% endif %}
+    <a href="/tab/work#project-{{ c.id }}"
+       class="focus-card"
+       style="display:block;padding:18px 20px;border-right:1px solid var(--m-rule-soft);border-bottom:1px solid var(--m-rule-soft);
+              text-decoration:none;color:inherit;position:relative;
+              border-left:3px solid transparent;
+              transition:background 140ms ease, border-left-color 140ms ease;"
+       onmouseover="this.style.background='var(--m-surface-2)';this.style.borderLeftColor='var(--m-accent)';"
+       onmouseout="this.style.background='transparent';this.style.borderLeftColor='transparent';">
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;
+                  color:{% if c.priority == 'high' %}var(--m-alert){% elif c.priority == 'medium' %}var(--m-accent){% else %}var(--m-muted){% endif %};
+                  margin-bottom:8px;">
+        {{ c.priority | upper }}{% if c.domain %} &middot; {{ c.domain | upper }}{% endif %}
       </div>
-      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);line-height:1.3;margin-bottom:10px;">
+      <div style="font-family:var(--m-display);font-size:17px;color:var(--m-ink);line-height:1.3;margin-bottom:10px;">
         {{ c.title }}
       </div>
       {% if c.next_step %}
-      <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);line-height:1.5;margin-bottom:10px;">
-        Next: {{ c.next_step[:120] }}
+      <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);line-height:1.5;margin-bottom:12px;">
+        Next: {{ c.next_step[:100] }}{% if c.next_step | length > 100 %}&hellip;{% endif %}
       </div>
       {% endif %}
-      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">
-        {{ c.open_tasks }} OPEN TASK{% if c.open_tasks != 1 %}S{% endif %}
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.10em;color:var(--m-muted);">
+        <span>
+          {{ c.open_tasks }} OPEN TASK{% if c.open_tasks != 1 %}S{% endif %}
+        </span>
+        {% if c.touched_label %}
+        <span>{{ c.touched_label | upper }}</span>
+        {% endif %}
       </div>
-    </div>
+      <div style="margin-top:12px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);">
+        OPEN IN WORK &rarr;
+      </div>
+    </a>
     {% endfor %}
   </div>
   {% endif %}
