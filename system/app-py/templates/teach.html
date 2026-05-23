@@ -140,6 +140,24 @@
         </div>
       </div>
 
+      <div class="sec-label" style="margin-bottom:12px;margin-top:24px;"><span>Where your teaching has gaps</span></div>
+      <div hx-get="/api/partial/teach/gap-analysis"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div class="panel panel-pad" style="opacity:.4;">
+          <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Looking for under-covered topics…</p>
+        </div>
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;margin-top:24px;"><span>Question bank</span></div>
+      <div hx-get="/api/partial/teach/qbank"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div class="panel panel-pad" style="opacity:.4;">
+          <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Pulling reusable assessment items…</p>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

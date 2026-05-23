@@ -30,6 +30,20 @@
     {% endfor %}
   </div>
 
+  <!-- Focus board: top 3 projects + open task counts -->
+  <div class="sec-label" style="margin-bottom:16px;">
+    <span>What you're focused on right now</span>
+    <span class="tail">TOP 3 · OPEN TASKS</span>
+  </div>
+  <div style="margin-bottom:32px;"
+       hx-get="/api/partial/planner/focus-board"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="panel panel-pad" style="padding:18px 22px;opacity:.4;">
+      <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Surfacing your top three projects…</p>
+    </div>
+  </div>
+
   <!-- Week at a glance -->
   <div class="sec-label" style="margin-bottom:16px;">
     <span>This week at a glance</span>
