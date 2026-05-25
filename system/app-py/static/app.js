@@ -267,7 +267,7 @@ async function completeLesson(slug, lessonId, btn) {
         { target: '#course-overview-panel', swap: 'innerHTML' });
     }
   } catch (e) {
-    showToast('I couldn't save your lesson progress — try again.');
+    showToast("I couldn't save your lesson progress — try again.");
   }
 }
 
@@ -285,7 +285,7 @@ async function buildCourse(courseId) {
       showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — prompt copied for <strong>${data.title || courseId}</strong>`);
     }
   } catch (e) {
-    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't load that course prompt — try again, or check the Metis tab.');
+    showToast("<i class=\"bi bi-exclamation-circle toast-icon\"></i>I couldn't load that course prompt — try again, or check the Metis tab.");
   }
 }
 
@@ -315,7 +315,7 @@ async function buildCourseIdea(slug, title) {
       showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — paste prompt to build <strong>${data.title}</strong>`);
     }
   } catch (e) {
-    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't prepare the prompt — try again.');
+    showToast("<i class=\"bi bi-exclamation-circle toast-icon\"></i>I couldn't prepare the prompt — try again.");
   }
 }
 
@@ -328,7 +328,7 @@ async function buildAdaptiveCourse(topicSlug, topicTitle) {
       showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — paste prompt to start adaptive course on <strong>${topicTitle}</strong>`);
     }
   } catch (e) {
-    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't prepare adaptive course prompt');
+    showToast("<i class=\"bi bi-exclamation-circle toast-icon\"></i>I couldn't prepare adaptive course prompt");
   }
 }
 
@@ -357,7 +357,7 @@ async function launchWithQuestion(btn, slug, title) {
       showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — prompt includes your research question`);
     }
   } catch (e) {
-    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't prepare the prompt — try again.');
+    showToast("<i class=\"bi bi-exclamation-circle toast-icon\"></i>I couldn't prepare the prompt — try again.");
   }
 }
 
@@ -438,7 +438,7 @@ function openNewsSummary(briefId) {
     .then(html => {
       host.innerHTML = html;
     })
-    .catch(() => showToast('I couldn't load that news item — refresh the page if it keeps happening.'));
+    .catch(() => showToast("I couldn't load that news item — refresh the page if it keeps happening."));
 }
 
 function closeNewsModal(event) {
@@ -465,7 +465,7 @@ async function markTaskDone(taskId, btn) {
     }
     showToast('Task marked done — nice work.');
   } catch {
-    showToast('I couldn't update that task — try again.');
+    showToast("I couldn't update that task — try again.");
   }
 }
 
@@ -478,7 +478,7 @@ async function deleteTask(taskId, btn) {
     if (row) row.remove();
     showToast('Task deleted');
   } catch {
-    showToast('I couldn't delete task');
+    showToast("I couldn't delete task");
   }
 }
 
@@ -489,7 +489,7 @@ async function markProjectTaskDone(taskId, projectId) {
     await _refreshProjectTasks(projectId);
     showToast('Task done ✓');
   } catch {
-    showToast('I couldn't update that task — try again.');
+    showToast("I couldn't update that task — try again.");
   }
 }
 
@@ -513,7 +513,7 @@ async function submitQuickTask(projectId) {
     document.getElementById(`task-add-${projectId}`).style.display = 'none';
     showToast('Task added');
   } catch {
-    showToast('I couldn't add that task — try again.');
+    showToast("I couldn't add that task — try again.");
   }
 }
 
@@ -566,7 +566,7 @@ async function saveProjectNotes(projectId) {
     const indicator = document.getElementById(`notes-saved-${projectId}`);
     if (indicator) { indicator.textContent = 'SAVED'; setTimeout(() => indicator.textContent = '', 2000); }
   } catch {
-    showToast('I couldn't save notes');
+    showToast("I couldn't save notes");
   }
 }
 
@@ -662,7 +662,7 @@ async function submitAddProject() {
       const el = document.getElementById(id); if (el) el.value = '';
     });
   } catch(e) {
-    showToast('I couldn't create that project: ' + (e.message || 'unknown error'));
+    showToast("I couldn't create that project: " + (e.message || 'unknown error'));
   }
 }
 
@@ -791,7 +791,7 @@ async function setActiveModel(slug, btn) {
       document.querySelectorAll('.model-card-on').forEach(el => el.classList.remove('model-card-on'));
       if (btn) btn.closest('.panel')?.classList.add('model-card-on');
     } else {
-      showToast('<i class="bi bi-info-circle toast-icon"></i>' + (data.message || 'I couldn't change the model — check that it's available.'));
+      showToast('<i class="bi bi-info-circle toast-icon"></i>' + (data.message || "I couldn't change the model — check that it's available."));
     }
   } catch (e) {
     showToast('<i class="bi bi-info-circle toast-icon"></i>Note: setting saved locally only.');
@@ -810,7 +810,7 @@ function openMetisRename() {
     document.querySelectorAll('[hx-get="/api/partial/metis/identity"]').forEach(el => {
       if (window.htmx && htmx.trigger) htmx.trigger(el, 'load');
     });
-  }).catch(() => showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't save.'));
+  }).catch(() => showToast("<i class=\"bi bi-exclamation-circle toast-icon\"></i>I couldn't save."));
 }
 
 function openMetisKeys() {
@@ -885,10 +885,10 @@ async function saveMetisIdentity() {
       const card = document.getElementById('metis-identity-card')?.parentElement;
       if (card && window.htmx) htmx.ajax('GET', '/api/partial/metis/identity', { target: card, swap: 'innerHTML' });
     } else {
-      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'I couldn't save.'));
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || "I couldn't save."));
     }
   } catch (e) {
-    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't save identity.');
+    showToast("<i class=\"bi bi-exclamation-circle toast-icon\"></i>I couldn't save identity.");
   }
 }
 
@@ -932,10 +932,10 @@ async function saveMemoryArchive(value) {
       const label = (parseInt(value, 10) === 0) ? 'never archive' : (value + ' days');
       showToast('<i class="bi bi-archive toast-icon"></i>Archive setting saved — ' + label + '.');
     } else {
-      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'I couldn't save.'));
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || "I couldn't save."));
     }
   } catch (e) {
-    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>I couldn't save archive setting.');
+    showToast("<i class=\"bi bi-exclamation-circle toast-icon\"></i>I couldn't save archive setting.");
   }
 }
 
@@ -1001,7 +1001,7 @@ async function scheduleMorningBrief() {
     } else {
       showToast(
         '<i class="bi bi-exclamation-circle toast-icon"></i>' +
-        (data.message || 'I couldn't register schedule. Try /schedule from Claude Code.'),
+        (data.message || "I couldn't register schedule. Try /schedule from Claude Code."),
         7000
       );
     }
@@ -1080,7 +1080,7 @@ async function promoteProposal(pid) {
       const el = document.getElementById('metis-improvement-body');
       if (el) htmx.ajax('GET', '/api/partial/metis/improvement', { target: el, swap: 'innerHTML' });
     } else {
-      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'I couldn't promote.'));
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || "I couldn't promote."));
     }
   } catch (e) {
     showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Promotion failed.');
@@ -1094,7 +1094,7 @@ async function previewProposal(pid) {
     const res = await fetch('/api/improvement/preview/' + pid);
     const data = await res.json();
     if (data.status !== 'ok') {
-      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'I couldn't load preview.'));
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || "I couldn't load preview."));
       return;
     }
     const summary =
@@ -1151,7 +1151,7 @@ async function rejectProposal(pid) {
       const el = document.getElementById('metis-improvement-body');
       if (el) htmx.ajax('GET', '/api/partial/metis/improvement', { target: el, swap: 'innerHTML' });
     } else {
-      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'I couldn't reject.'));
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || "I couldn't reject."));
     }
   } catch (e) {
     showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Rejection failed.');
@@ -1324,7 +1324,7 @@ function srReview(srId, quality, btn) {
     showToast('<i class="bi bi-check-circle toast-icon"></i>Card reviewed — next review scheduled.');
   }).catch(function () {
     btn.disabled = false;
-    showToast('I couldn't save review. Try again.');
+    showToast("I couldn't save review. Try again.");
   });
 }
 
@@ -1638,10 +1638,10 @@ function setClaudeCodeMode(mode) {
       htmx.ajax('GET', '/api/partial/metis/integration', { target: '#metis-integration-body', swap: 'innerHTML' });
       showToast(mode === 'background' ? 'Background layer activated — restart Claude Code to apply.' : 'Reverted to invoke mode.');
     } else {
-      showToast((d.message || 'I couldn't update CLAUDE.md.'));
+      showToast((d.message || "I couldn't update CLAUDE.md."));
     }
   })
-  .catch(function () { showToast('I couldn't reach the dashboard — is it running?'); });
+  .catch(function () { showToast("I couldn't reach the dashboard — is it running?"); });
 }
 
 function copyDesktopPrompt() {
@@ -1702,7 +1702,7 @@ function saveApiKey() {
       showToast((d.message || "I couldn't save your API key."));
     }
   })
-  .catch(function () { showToast('I couldn't save key — network error.'); });
+  .catch(function () { showToast("I couldn't save key — network error."); });
 }
 
 function removeApiKey(name) {
@@ -1714,10 +1714,10 @@ function removeApiKey(name) {
       htmx.ajax('GET', '/api/partial/metis/api-keys', { target: '#metis-api-keys-body', swap: 'innerHTML' });
       showToast('Key removed.');
     } else {
-      showToast((d.message || 'I couldn't remove key.'));
+      showToast((d.message || "I couldn't remove key."));
     }
   })
-  .catch(function () { showToast('I couldn't remove key — network error.'); });
+  .catch(function () { showToast("I couldn't remove key — network error."); });
 }
 
 // ─── MCP toggle button ─────────────────────────────────────────────────────
