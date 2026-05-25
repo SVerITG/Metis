@@ -99,18 +99,21 @@
     </div>
     <div style="font-size:12px;color:var(--m-muted);line-height:1.7;">
       {% if a.could_improve_themes %}
-        <div><span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-ochre-deep);">COULD IMPROVE</span>
-          {% for t, c in a.could_improve_themes %}<code style="font-family:var(--m-mono);font-size:11px;color:var(--m-ink);">{{ t }}</code><span style="color:var(--m-muted);">·{{ c }}</span>{{ '  ' if not loop.last else '' }}{% endfor %}
+        <div class="theme-pill-row">
+          <span class="theme-pill-label" style="color:var(--m-ochre-deep);">COULD IMPROVE</span>
+          {% for t, c in a.could_improve_themes %}<span class="theme-pill">{{ t }}<span class="theme-pill-count">{{ c }}</span></span>{% endfor %}
         </div>
       {% endif %}
       {% if a.missing_context_themes %}
-        <div><span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-info);">MISSING CONTEXT</span>
-          {% for t, c in a.missing_context_themes %}<code style="font-family:var(--m-mono);font-size:11px;color:var(--m-ink);">{{ t }}</code><span style="color:var(--m-muted);">·{{ c }}</span>{{ '  ' if not loop.last else '' }}{% endfor %}
+        <div class="theme-pill-row">
+          <span class="theme-pill-label" style="color:var(--m-info);">MISSING CONTEXT</span>
+          {% for t, c in a.missing_context_themes %}<span class="theme-pill">{{ t }}<span class="theme-pill-count">{{ c }}</span></span>{% endfor %}
         </div>
       {% endif %}
       {% if a.tool_wishes_themes %}
-        <div><span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-accent);">TOOL WISHES</span>
-          {% for t, c in a.tool_wishes_themes %}<code style="font-family:var(--m-mono);font-size:11px;color:var(--m-ink);">{{ t }}</code><span style="color:var(--m-muted);">·{{ c }}</span>{{ '  ' if not loop.last else '' }}{% endfor %}
+        <div class="theme-pill-row">
+          <span class="theme-pill-label" style="color:var(--m-accent);">TOOL WISHES</span>
+          {% for t, c in a.tool_wishes_themes %}<span class="theme-pill">{{ t }}<span class="theme-pill-count">{{ c }}</span></span>{% endfor %}
         </div>
       {% endif %}
     </div>

@@ -299,7 +299,7 @@ async def knowledge_build_index(request: Request):
             '</span>'
         )
     except Exception as e:
-        return HTMLResponse(f'<span class="text-danger small">I couldn't start the indexer: {e}</span>')
+        return HTMLResponse(f'<span class="text-danger small">I couldn\'t start the indexer: {e}</span>')
 
 
 # ---------------------------------------------------------------------------
@@ -1868,5 +1868,5 @@ async def knowledge_build_hat_index(request: Request):
         )
     except Exception as e:
         return HTMLResponse(
-            f'<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">I couldn't start the indexer: {e}</span>'
+            f"<span style=\"font-family:var(--m-mono);font-size:11px;color:var(--m-warn);\">I couldn't start the indexer: {e}</span>"
         )
