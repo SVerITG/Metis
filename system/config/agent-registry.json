@@ -1,7 +1,7 @@
 {
   "_meta": {
     "version": "1.0",
-    "last_updated": "2026-04-07",
+    "last_updated": "2026-05-26",
     "purpose": "Machine-readable registry of all Research Cortex agents. Single source of truth for trust tiers, permission constraints, allowed paths, and output conventions. Derived from Claude Code architecture principles (metadata-first design, permission tiers, type constraints).",
     "trust_tiers": {
       "gate-keeper": "Blocking or veto authority over other agents. No internet. Operates locally only. Cannot be overridden by user for SENSITIVE data blocks.",
@@ -21,7 +21,9 @@
       "internet": false,
       "internet_requires_approval": true,
       "internet_scope": null,
-      "allowed_paths": ["*"],
+      "allowed_paths": [
+        "*"
+      ],
       "forbidden_actions": [
         "delete_files_without_approval",
         "send_data_externally",
@@ -42,8 +44,15 @@
         "create_draft_notes_and_tasks"
       ],
       "output_path": "outputs/reviews/",
-      "complexity_levels": ["quick", "standard", "deep", "chain"],
-      "chains_with": ["all"]
+      "complexity_levels": [
+        "quick",
+        "standard",
+        "deep",
+        "chain"
+      ],
+      "chains_with": [
+        "all"
+      ]
     },
     {
       "slug": "cybersecurity",
@@ -77,19 +86,22 @@
         "write_security_log"
       ],
       "output_path": "outputs/reviews/cybersecurity/",
-      "chains_with": ["data-guardian", "metis"]
+      "chains_with": [
+        "data-guardian",
+        "metis"
+      ]
     },
     {
       "slug": "data-guardian",
       "name": "Data Guardian",
       "invocation": "/data-guardian",
       "trust_tier": "gate-keeper",
-      "description": "Data privacy enforcer. Detects PII and medical data, classifies data sensitivity, blocks transmission of SENSITIVE data. Has blocking authority — SENSITIVE data blocks are never overridden.",
+      "description": "Data privacy enforcer. Detects PII and medical data, classifies data sensitivity, blocks transmission of SENSITIVE data. Has blocking authority \u2014 SENSITIVE data blocks are never overridden.",
       "internet": false,
       "internet_requires_approval": false,
       "internet_scope": null,
       "blocking_scope": {
-        "SENSITIVE": "Always blocks — no user override. Covers patient records, individual case data, medical identifiers.",
+        "SENSITIVE": "Always blocks \u2014 no user override. Covers patient records, individual case data, medical identifiers.",
         "CONFIDENTIAL": "Blocks until user explicitly confirms.",
         "data_files": "Blocks Excel/.csv/database files from leaving local machine until user confirms.",
         "original_content": "Warns once, proceeds if user acknowledges."
@@ -113,7 +125,10 @@
         "alert_user_on_pii_detection"
       ],
       "output_path": "outputs/reviews/data-guardian/",
-      "chains_with": ["cybersecurity", "metis"]
+      "chains_with": [
+        "cybersecurity",
+        "metis"
+      ]
     },
     {
       "slug": "librarian",
@@ -153,7 +168,11 @@
         "identify_duplicates"
       ],
       "output_path": "outputs/reviews/librarian/",
-      "chains_with": ["phd-architect", "epidemiologist", "methods-coach"]
+      "chains_with": [
+        "phd-architect",
+        "epidemiologist",
+        "methods-coach"
+      ]
     },
     {
       "slug": "news-radar",
@@ -186,7 +205,10 @@
         "tag_news_items_with_topics"
       ],
       "output_path": "outputs/reviews/news-radar/",
-      "chains_with": ["news-aggregator", "metis"]
+      "chains_with": [
+        "news-aggregator",
+        "metis"
+      ]
     },
     {
       "slug": "news-aggregator",
@@ -219,14 +241,17 @@
         "tag_signals"
       ],
       "output_path": "outputs/reviews/news-aggregator/",
-      "chains_with": ["news-radar", "metis"]
+      "chains_with": [
+        "news-radar",
+        "metis"
+      ]
     },
     {
       "slug": "epidemiologist",
       "name": "Epidemiologist",
       "invocation": "/epidemiologist",
       "trust_tier": "read-advise",
-      "description": "Methodology challenger. Reviews study design, challenges analytical choices through Socratic questioning. Advisory only — does not produce final statistical outputs or modify analysis files.",
+      "description": "Methodology challenger. Reviews study design, challenges analytical choices through Socratic questioning. Advisory only \u2014 does not produce final statistical outputs or modify analysis files.",
       "internet": false,
       "internet_requires_approval": true,
       "internet_scope": null,
@@ -252,14 +277,18 @@
         "challenge_methodology_via_questions"
       ],
       "output_path": "outputs/reviews/epidemiologist/",
-      "chains_with": ["methods-coach", "phd-architect", "writing-partner"]
+      "chains_with": [
+        "methods-coach",
+        "phd-architect",
+        "writing-partner"
+      ]
     },
     {
       "slug": "methods-coach",
       "name": "Methods Coach",
       "invocation": "/methods-coach",
       "trust_tier": "read-advise",
-      "description": "Statistical and epidemiological methods advisor. Advises on analysis approaches, R methodology, sampling. Advisory only — does not write or execute analysis code.",
+      "description": "Statistical and epidemiological methods advisor. Advises on analysis approaches, R methodology, sampling. Advisory only \u2014 does not write or execute analysis code.",
       "internet": false,
       "internet_requires_approval": true,
       "internet_scope": null,
@@ -284,7 +313,11 @@
         "write_methods_advice_output"
       ],
       "output_path": "outputs/reviews/methods-coach/",
-      "chains_with": ["epidemiologist", "phd-architect", "software-engineer"]
+      "chains_with": [
+        "epidemiologist",
+        "phd-architect",
+        "software-engineer"
+      ]
     },
     {
       "slug": "phd-architect",
@@ -321,14 +354,19 @@
         "write_review_output"
       ],
       "output_path": "outputs/reviews/phd-architect/",
-      "chains_with": ["epidemiologist", "methods-coach", "writing-partner", "librarian"]
+      "chains_with": [
+        "epidemiologist",
+        "methods-coach",
+        "writing-partner",
+        "librarian"
+      ]
     },
     {
       "slug": "writing-partner",
       "name": "Writing Partner",
       "invocation": "/writing-partner",
       "trust_tier": "write-local",
-      "description": "Academic writing specialist. Drafts text, improves writing, structures arguments. Operates on output files and drafts — does not commit to git or modify source data.",
+      "description": "Academic writing specialist. Drafts text, improves writing, structures arguments. Operates on output files and drafts \u2014 does not commit to git or modify source data.",
       "internet": false,
       "internet_requires_approval": true,
       "internet_scope": null,
@@ -353,7 +391,11 @@
         "write_review_output"
       ],
       "output_path": "outputs/reviews/writing-partner/",
-      "chains_with": ["epidemiologist", "phd-architect", "methods-coach"]
+      "chains_with": [
+        "epidemiologist",
+        "phd-architect",
+        "methods-coach"
+      ]
     },
     {
       "slug": "meeting-memory",
@@ -383,7 +425,9 @@
         "log_action_items"
       ],
       "output_path": "outputs/reviews/meeting-memory/",
-      "chains_with": ["metis"]
+      "chains_with": [
+        "metis"
+      ]
     },
     {
       "slug": "software-engineer",
@@ -419,25 +463,29 @@
         "update_patterns_md"
       ],
       "output_path": "outputs/reviews/software-engineer/",
-      "chains_with": ["dashboard-engineer", "ux-engineer", "builder", "rc-builder"]
+      "chains_with": [
+        "dashboard-engineer",
+        "ux-engineer",
+        "builder",
+        "rc-builder"
+      ]
     },
     {
       "slug": "dashboard-engineer",
       "name": "Dashboard Engineer",
       "invocation": "/dashboard-engineer",
       "trust_tier": "write-local",
-      "description": "UI/UX implementation specialist for the Metis dashboard. Makes visual and layout decisions for R Shiny modules. Does not modify database schema or business logic.",
+      "description": "Epidemiological indicator and health data dashboard specialist. Designs and implements surveillance indicators (coverage, positivity rate, burden, completeness), builds FastAPI + HTMX partials, and translates public health data into actionable dashboard views. Distinct from Frontend Designer Builder: this agent owns indicator logic and epi interpretation, not visual design system.",
       "internet": false,
       "internet_requires_approval": true,
       "internet_scope": null,
       "allowed_paths": [
-        "system/app/",
+        "system/app-py/",
         "outputs/reviews/dashboard-engineer/"
       ],
       "forbidden_actions": [
         "modify_database_schema",
         "delete_dashboard_files_without_confirmation",
-        "modify_data_store_r_logic",
         "external_internet_access"
       ],
       "requires_approval_before": [
@@ -446,12 +494,18 @@
         "changing_tab_structure"
       ],
       "can_act_without_approval": [
-        "edit_shiny_modules",
+        "edit_dashboard_partials",
         "edit_css",
         "write_review_output"
       ],
       "output_path": "outputs/reviews/dashboard-engineer/",
-      "chains_with": ["ux-engineer", "software-engineer", "builder"]
+      "chains_with": [
+        "epidemiologist",
+        "frontend-designer-builder",
+        "software-engineer",
+        "data-guardian",
+        "visualization-maker"
+      ]
     },
     {
       "slug": "ux-engineer",
@@ -481,7 +535,10 @@
         "audit_accessibility"
       ],
       "output_path": "outputs/reviews/ux-engineer/",
-      "chains_with": ["dashboard-engineer", "software-engineer"]
+      "chains_with": [
+        "dashboard-engineer",
+        "software-engineer"
+      ]
     },
     {
       "slug": "builder",
@@ -513,7 +570,11 @@
         "write_review_output"
       ],
       "output_path": "outputs/reviews/builder/",
-      "chains_with": ["software-engineer", "dashboard-engineer", "ux-engineer"]
+      "chains_with": [
+        "software-engineer",
+        "dashboard-engineer",
+        "ux-engineer"
+      ]
     },
     {
       "slug": "rc-builder",
@@ -549,7 +610,12 @@
         "write_session_report"
       ],
       "output_path": "outputs/reviews/implementation/",
-      "chains_with": ["software-engineer", "dashboard-engineer", "ux-engineer", "metis"]
+      "chains_with": [
+        "software-engineer",
+        "dashboard-engineer",
+        "ux-engineer",
+        "metis"
+      ]
     },
     {
       "slug": "presentation-maker",
@@ -577,7 +643,10 @@
         "write_review_output"
       ],
       "output_path": "outputs/reviews/presentation-maker/",
-      "chains_with": ["writing-partner", "epidemiologist"]
+      "chains_with": [
+        "writing-partner",
+        "epidemiologist"
+      ]
     },
     {
       "slug": "learning-coach",
@@ -606,7 +675,10 @@
         "write_learning_review"
       ],
       "output_path": "outputs/reviews/learning-coach/",
-      "chains_with": ["edu-expert", "methods-coach"]
+      "chains_with": [
+        "edu-expert",
+        "methods-coach"
+      ]
     },
     {
       "slug": "career-coach",
@@ -631,7 +703,9 @@
         "write_career_advice_output"
       ],
       "output_path": "outputs/reviews/career-coach/",
-      "chains_with": ["metis"]
+      "chains_with": [
+        "metis"
+      ]
     },
     {
       "slug": "edu-expert",
@@ -645,7 +719,7 @@
       "standards_enforced": [
         "Every module has explicit learning objectives (verb + measurable outcome)",
         "Jump-in navigation: learner can start at any module",
-        "One concept per slide/section — no wall-of-text",
+        "One concept per slide/section \u2014 no wall-of-text",
         "Key concepts revisited across modules (spaced repetition)"
       ],
       "allowed_paths": [
@@ -666,14 +740,17 @@
         "write_review_output"
       ],
       "output_path": "outputs/reviews/edu-expert/",
-      "chains_with": ["learning-coach", "methods-coach"]
+      "chains_with": [
+        "learning-coach",
+        "methods-coach"
+      ]
     },
     {
       "slug": "hr-talent",
       "name": "HR / Talent Spotter",
       "invocation": "/hr-talent",
       "trust_tier": "read-advise",
-      "description": "Capability gap detector. Activated when no agent matches a task, or when agent output quality is flagged. Proposes new skill stubs or agent updates — never creates files directly.",
+      "description": "Capability gap detector. Activated when no agent matches a task, or when agent output quality is flagged. Proposes new skill stubs or agent updates \u2014 never creates files directly.",
       "internet": false,
       "internet_requires_approval": true,
       "internet_scope": null,
@@ -695,7 +772,9 @@
         "write_gap_report_to_output_path"
       ],
       "output_path": "outputs/reviews/hr-talent/",
-      "chains_with": ["metis"]
+      "chains_with": [
+        "metis"
+      ]
     },
     {
       "slug": "research-architect",
@@ -730,14 +809,18 @@
         "write_review_output"
       ],
       "output_path": "outputs/reviews/research-architect/",
-      "chains_with": ["phd-architect", "epidemiologist", "methods-coach"]
+      "chains_with": [
+        "phd-architect",
+        "epidemiologist",
+        "methods-coach"
+      ]
     },
     {
       "slug": "course-builder",
       "name": "Course Builder",
       "invocation": "/course-builder",
       "trust_tier": "write-local",
-      "description": "End-to-end course creation orchestrator. Runs a 7-step workflow: intake questionnaire → scope plan → harvest sources → curriculum design → draft modules → review loop → publish. Delegates to Content Harvester, Learning Architect, Methods Coach, Epidemiologist, Writing Partner, Visualization Maker. Output goes to knowledge/courses/{slug}/.",
+      "description": "End-to-end course creation orchestrator. Runs a 7-step workflow: intake questionnaire \u2192 scope plan \u2192 harvest sources \u2192 curriculum design \u2192 draft modules \u2192 review loop \u2192 publish. Delegates to Content Harvester, Learning Architect, Methods Coach, Epidemiologist, Writing Partner, Visualization Maker. Output goes to knowledge/courses/{slug}/.",
       "internet": false,
       "internet_requires_approval": true,
       "internet_scope": null,
@@ -764,7 +847,14 @@
       ],
       "output_path": "knowledge/courses/",
       "model": "claude-sonnet-4-6",
-      "chains_with": ["content-harvester", "learning-architect", "methods-coach", "epidemiologist", "writing-partner", "visualization-maker"]
+      "chains_with": [
+        "content-harvester",
+        "learning-architect",
+        "methods-coach",
+        "epidemiologist",
+        "writing-partner",
+        "visualization-maker"
+      ]
     },
     {
       "slug": "data-analyst",
@@ -779,7 +869,9 @@
         "inputs/",
         "outputs/data-cleaning/"
       ],
-      "read_access": ["*"],
+      "read_access": [
+        "*"
+      ],
       "forbidden_actions": [
         "modify_original_source_files",
         "send_data_externally",
@@ -797,7 +889,268 @@
         "write_audit_log"
       ],
       "output_path": "outputs/data-cleaning/",
-      "chains_with": ["data-guardian", "methods-coach", "software-engineer"]
+      "chains_with": [
+        "data-guardian",
+        "methods-coach",
+        "software-engineer"
+      ]
+    },
+    {
+      "slug": "background-maker",
+      "name": "Background Maker",
+      "invocation": "/background-maker",
+      "trust_tier": "write-external",
+      "description": "Builds permanent specialist knowledge layers (RAG corpus) from papers, reports, and web sources \u2014 scrubbed, chunked, and indexed for semantic search.",
+      "internet": true,
+      "internet_requires_approval": true,
+      "internet_scope": "Approved academic and institutional sources for knowledge corpus building",
+      "allowed_paths": [
+        "knowledge/",
+        "outputs/reviews/background-maker/"
+      ],
+      "forbidden_actions": [
+        "delete_existing_knowledge_bases",
+        "index_patient_data"
+      ],
+      "output_path": "outputs/reviews/background-maker/",
+      "chains_with": [
+        "content-harvester",
+        "librarian"
+      ]
+    },
+    {
+      "slug": "content-harvester",
+      "name": "Content Harvester",
+      "invocation": "/content-harvester",
+      "trust_tier": "write-external",
+      "description": "Extracts and structures content from web pages, PDFs, DOCX files, YouTube, and GitHub repositories into Metis-ready source material.",
+      "internet": true,
+      "internet_requires_approval": true,
+      "internet_scope": "Any URL approved by user per-session",
+      "allowed_paths": [
+        "inputs/",
+        "outputs/reviews/content-harvester/"
+      ],
+      "forbidden_actions": [
+        "access_basket_private",
+        "store_patient_data"
+      ],
+      "output_path": "outputs/reviews/content-harvester/",
+      "chains_with": [
+        "librarian",
+        "background-maker"
+      ]
+    },
+    {
+      "slug": "critic",
+      "name": "Critic",
+      "invocation": "/critic",
+      "trust_tier": "read-advise",
+      "description": "Verifies, challenges, and quality-checks outputs from other agents before Stan acts on them. Advisory only \u2014 does not create files without approval.",
+      "internet": false,
+      "internet_requires_approval": false,
+      "internet_scope": null,
+      "allowed_paths": [
+        "outputs/reviews/critic/"
+      ],
+      "forbidden_actions": [
+        "modify_source_files",
+        "approve_own_output"
+      ],
+      "output_path": "outputs/reviews/critic/",
+      "chains_with": [
+        "metis",
+        "epidemiologist",
+        "librarian"
+      ]
+    },
+    {
+      "slug": "design-auditor",
+      "name": "Design Auditor",
+      "invocation": "/design-auditor",
+      "trust_tier": "read-advise",
+      "description": "Audits existing UIs, reverse-engineers design decisions, and produces prioritised improvement lists. Read-only \u2014 proposes changes, does not implement.",
+      "internet": false,
+      "internet_requires_approval": false,
+      "internet_scope": null,
+      "allowed_paths": [
+        "system/app/",
+        "outputs/reviews/design-auditor/"
+      ],
+      "forbidden_actions": [
+        "modify_templates_directly"
+      ],
+      "output_path": "outputs/reviews/design-auditor/",
+      "chains_with": [
+        "frontend-designer-builder"
+      ]
+    },
+    {
+      "slug": "dhis2-expert",
+      "name": "DHIS2 Expert",
+      "invocation": "/dhis2-expert",
+      "trust_tier": "write-local",
+      "description": "Handles all DHIS2 platform questions \u2014 configuration, data model design, tracker programs, server administration, API integration, analytics, and NTD implementations.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": "DHIS2 documentation and community resources only",
+      "allowed_paths": [
+        "outputs/reviews/dhis2-expert/",
+        "inputs/"
+      ],
+      "forbidden_actions": [
+        "direct_server_modifications_without_approval"
+      ],
+      "output_path": "outputs/reviews/dhis2-expert/",
+      "chains_with": [
+        "software-engineer",
+        "epidemiologist"
+      ]
+    },
+    {
+      "slug": "frontend-designer-builder",
+      "name": "Frontend Designer Builder",
+      "invocation": "/frontend-designer-builder",
+      "trust_tier": "write-local",
+      "description": "Handles UI/UX decisions, design system, CSS, visualisation design, and web interfaces for the Metis dashboard and other tools.",
+      "internet": false,
+      "internet_requires_approval": false,
+      "internet_scope": null,
+      "allowed_paths": [
+        "system/app/",
+        "outputs/reviews/frontend-designer-builder/"
+      ],
+      "forbidden_actions": [
+        "push_to_remote_without_release_coordinator"
+      ],
+      "output_path": "outputs/reviews/frontend-designer-builder/",
+      "chains_with": [
+        "software-engineer",
+        "design-auditor"
+      ]
+    },
+    {
+      "slug": "learning-architect",
+      "name": "Learning Architect",
+      "invocation": "/learning-architect",
+      "trust_tier": "write-local",
+      "description": "Designs curriculum, learning paths, spaced repetition schedules, and competency maps. Structures courses before content is drafted.",
+      "internet": false,
+      "internet_requires_approval": false,
+      "internet_scope": null,
+      "allowed_paths": [
+        "knowledge/courses/",
+        "outputs/reviews/learning-architect/"
+      ],
+      "forbidden_actions": [],
+      "output_path": "outputs/reviews/learning-architect/",
+      "chains_with": [
+        "course-builder",
+        "methods-coach"
+      ]
+    },
+    {
+      "slug": "memory-curator",
+      "name": "Memory Curator",
+      "invocation": "/memory-curator",
+      "trust_tier": "write-local",
+      "description": "Consolidates session history into permanent memory, retrieves past context on request, and runs memory health checks.",
+      "internet": false,
+      "internet_requires_approval": false,
+      "internet_scope": null,
+      "allowed_paths": [
+        "system/app/data/",
+        "outputs/reviews/memory-curator/"
+      ],
+      "forbidden_actions": [
+        "delete_memory_without_approval"
+      ],
+      "output_path": "outputs/reviews/memory-curator/",
+      "chains_with": [
+        "metis"
+      ]
+    },
+    {
+      "slug": "release-coordinator",
+      "name": "Release Coordinator",
+      "invocation": "/release-coordinator",
+      "trust_tier": "gate-keeper",
+      "description": "Proactive git guardian. Monitors repo state, groups changes into coherent commits, scans for personal data before any push, keeps installers in sync, and gates all remote pushes.",
+      "internet": false,
+      "internet_requires_approval": false,
+      "internet_scope": null,
+      "allowed_paths": [
+        "*"
+      ],
+      "forbidden_actions": [
+        "push_without_scan",
+        "bypass_personal_data_check"
+      ],
+      "output_path": "outputs/reviews/release-coordinator/",
+      "chains_with": [
+        "metis"
+      ]
+    },
+    {
+      "slug": "visualization-maker",
+      "name": "Visualization Maker",
+      "invocation": "/visualization-maker",
+      "trust_tier": "write-local",
+      "description": "Creates diagrams, charts, system maps, ggplot2 figures, and Plotly visualisations for research outputs and the dashboard.",
+      "internet": false,
+      "internet_requires_approval": false,
+      "internet_scope": null,
+      "allowed_paths": [
+        "outputs/reviews/visualization-maker/",
+        "outputs/figures/"
+      ],
+      "forbidden_actions": [],
+      "output_path": "outputs/reviews/visualization-maker/",
+      "chains_with": [
+        "presentation-maker",
+        "frontend-designer-builder"
+      ]
+    },
+    {
+      "slug": "biostatistician",
+      "name": "Biostatistician",
+      "invocation": "/biostatistician",
+      "trust_tier": "write-local",
+      "description": "R package development, simulation studies, and sample size / power calculations. Implements custom estimators, runs Monte Carlo studies, and builds CRAN-ready packages. Always seeds stochastic code, always presents power as a curve, always reports Monte Carlo standard errors.",
+      "internet": false,
+      "internet_requires_approval": true,
+      "internet_scope": null,
+      "allowed_paths": [
+        "outputs/reviews/biostatistician/",
+        "inputs/code/"
+      ],
+      "read_access": [
+        "knowledge/domains/",
+        "inputs/",
+        "knowledge/library/"
+      ],
+      "forbidden_actions": [
+        "produce_single_number_power_without_sensitivity",
+        "write_unseeded_simulation_code",
+        "skip_bias_check_for_new_estimator",
+        "external_internet_access"
+      ],
+      "requires_approval_before": [
+        "internet_access"
+      ],
+      "can_act_without_approval": [
+        "read_any_local_file",
+        "write_biostat_output",
+        "run_r_code_review"
+      ],
+      "output_path": "outputs/reviews/biostatistician/",
+      "model": "claude-sonnet-4-6",
+      "chains_with": [
+        "epidemiologist",
+        "methods-coach",
+        "software-engineer",
+        "critic"
+      ]
     }
   ]
 }
