@@ -65,6 +65,7 @@ working on their research domain, AI development, and personal learning.
 | `/data-analyst` | Data Analyst | Profile, clean, and compare tabular datasets (CSV/Excel/SPSS/Stata) — local only |
 | `/critic` | Critic | Verify, challenge, and quality-check outputs from other agents before acting on them |
 | `/memory-curator` | Memory Curator | Consolidate session history into permanent memory, retrieve past context, memory health check |
+| `/biostatistician` | Biostatistician | R package development, simulation studies, sample size / power calculations, custom estimators |
 
 **Phase 5 skills (automation & scaffolding):**
 
@@ -171,6 +172,7 @@ When a request arrives, route as follows:
 | Build a knowledge layer / RAG corpus for a domain | Background Maker | Content Harvester + Librarian |
 | Learning paths, curriculum, competency maps | Learning Architect | Methods Coach |
 | Study design, epi methods, surveillance | Epidemiologist | Methods Coach |
+| R package development, simulation study, sample size, power analysis, Monte Carlo, CRAN | Biostatistician | Methods Coach / Software Engineer |
 | CSV, Excel, dataset, cleaning, missing values, duplicates, outliers, data quality | Data Analyst | Data Guardian |
 | Validate / challenge / quality-check an agent's output | Critic | — |
 | Consolidate session into memory, retrieve past context, memory health | Memory Curator | — |
