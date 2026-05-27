@@ -47,6 +47,8 @@ Spawn these as parallel sub-agents in a single message (use the `Agent` tool wit
 
 Each stream returns a report. You synthesise.
 
+**IMPORTANT — Logging Explore streams:** Explore subagents do NOT have MCP tool access and cannot call `log_agent_run`. After all streams complete, the orchestrating session (you, not the subagents) must call `log_agent_run` once per stream, with the stream slug and a brief summary of what it found. Do this before writing the drift heatmap. Stream slugs: `metis-audit-vision`, `metis-audit-features`, `metis-audit-workflow`, `metis-audit-memory`, `metis-audit-install`, `metis-audit-ui`, `metis-audit-security`.
+
 ## Step 4 — Build the drift heatmap
 
 This is the centrepiece. Section I of the master prompt. A table:
@@ -70,22 +72,19 @@ Three artifacts, all mandatory:
 
 The personal memory file must be self-contained — readable months later without context.
 
-## Step 6 — Record findings into the research timeline
+## Step 6 — Record findings into semantic memory
 
 For the top 3 systemic observations, call:
 
 ```
-record_research_finding(
-  entity="metis-self-reflexion",
-  claim="<observation>",
-  evidence="<from which section / which check>",
-  confidence="medium|high",
-  source_type="session",
-  source_ref="self-reflexion YYYY-MM-DD"
+store_semantic_memory(
+  content="[Self-reflexion YYYY-MM-DD] <observation in 2-3 sentences>",
+  tags=["metis-audit", "drift", "<section-tag>"],
+  source="self-reflexion YYYY-MM-DD"
 )
 ```
 
-This way drift becomes part of the long-term research timeline rather than a one-off note.
+This way drift becomes part of the long-term memory rather than a one-off note. Use `search_memory(query="metis audit drift")` in future sessions to retrieve these.
 
 ## Step 7 — Reflexion
 
