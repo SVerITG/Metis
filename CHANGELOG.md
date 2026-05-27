@@ -12,7 +12,7 @@ All notable changes to Metis are documented here.
 - **7 new dashboard partials** — Knowledge topic coverage, teaching courses, morning brief, agent directory, and more.
 - **Memory loop** — Session bootstrap, working memory, model registry, and persona discipline are now fully wired.
 - **Comprehensive eval toolkit** — `tests/functional/run_metis_promises.sh` harness, promise registry, self-reflexion skill.
-- **Knowledge tab** — HAT corpus browser, unified search, coverage gap analysis, recently-added strip.
+- **Knowledge tab** — knowledge layer browser, unified search, coverage gap analysis, recently-added strip.
 - **Research timeline** — `record_research_finding()`, `query_research_timeline()`, `list_research_entities()` for tracking evolving beliefs over time.
 - **Session consolidation** — `consolidate_session_memory()` distils session history into persistent episodic memory.
 

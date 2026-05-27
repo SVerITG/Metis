@@ -106,12 +106,12 @@ class TestConsolidateSessionMemory:
         _seed_runs(db_conn, [
             {
                 "slug": "epidemiologist",
-                "summary": "Reviewed cohort study design for HAT surveillance in Uganda",
-                "output": "outputs/reviews/epidemiologist/2026-01-01_hat.md",
+                "summary": "Reviewed cohort study design for disease surveillance in a field setting",
+                "output": "outputs/reviews/epidemiologist/2026-01-01_cohort.md",
             },
             {
                 "slug": "methods-coach",
-                "summary": "Explained mixed-effects models for longitudinal HAT data",
+                "summary": "Explained mixed-effects models for longitudinal epidemiology data",
                 "output": "outputs/reviews/methods-coach/2026-01-01_mlm.md",
             },
         ])
@@ -139,7 +139,7 @@ class TestConsolidateSessionMemory:
         _seed_runs(db_conn, [
             {
                 "slug": "epidemiologist",
-                "summary": "Reviewed cohort design for sleeping sickness surveillance study 2026",
+                "summary": "Reviewed cohort design for vector-borne disease surveillance study 2026",
                 "output": "outputs/reviews/epidemiologist/2026-01-01_cohort.md",
             }
         ])
@@ -181,7 +181,7 @@ class TestConsolidateSessionMemory:
 class TestSurfaceRelevantContext:
     def test_returns_no_entries_message_when_empty(self, tmp_db):
         import asyncio
-        result = asyncio.run(surface_relevant_context(topic="sleeping sickness"))
+        result = asyncio.run(surface_relevant_context(topic="disease surveillance"))
         text = _text(result)
         assert "No memory entries found" in text
 
@@ -190,16 +190,16 @@ class TestSurfaceRelevantContext:
             {
                 "id": "mem-001",
                 "topics": "methods,phd",
-                "title": "[epidemiologist] Reviewed HAT surveillance cohort design",
-                "summary": "Discussed sampling strategy for sleeping sickness surveillance in Uganda. "
+                "title": "[epidemiologist] Reviewed disease surveillance cohort design",
+                "summary": "Discussed sampling strategy for vector-borne disease surveillance. "
                            "Recommended cluster randomization with village as primary sampling unit.",
             }
         ])
         import asyncio
-        result = asyncio.run(surface_relevant_context(topic="sleeping sickness"))
+        result = asyncio.run(surface_relevant_context(topic="disease surveillance"))
         text = _text(result)
         assert "Relevant past context" in text
-        assert "HAT" in text or "surveillance" in text
+        assert "surveillance" in text
 
     def test_finds_by_tags(self, tmp_db, db_conn):
         _seed_memory_entries(db_conn, [
@@ -271,7 +271,7 @@ class TestMemoryHealthReport:
             {"id": "m2", "type": "session", "topics": "methods", "title": "Session entry 2",
              "summary": "Second session memory about statistics."},
             {"id": "m3", "type": "reference", "topics": "literature", "title": "Reference entry 1",
-             "summary": "Paper on HAT surveillance methods."},
+             "summary": "Paper on domain-specific surveillance methods."},
         ])
         import asyncio
         result = asyncio.run(memory_health_report())

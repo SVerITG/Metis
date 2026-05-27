@@ -1086,8 +1086,8 @@ def _get_or_generate_brief(force: bool = False) -> str | None:
         "Write exactly three paragraphs, 270-320 words total:\n\n"
         "Paragraph 1 — THE LEAD: The single most important development in global health, "
         "science, or AI since the last brief. State what happened and why it matters. "
-        f"If it touches {name}'s specific interests — NTDs, sleeping sickness, HAT, surveillance "
-        "systems, DHIS2, epidemiology methods, AI in research — draw that connection explicitly "
+        f"If it touches {name}'s specific interests — NTDs, disease surveillance, "
+        "health information systems, epidemiology methods, AI in research — draw that connection explicitly "
         "and plainly. Don't hint: say it directly.\n\n"
         "Paragraph 2 — THE REST: Two or three other notable developments, grouped thematically. "
         "Cross-reference items when they are connected. Be specific — name papers, organizations, "
@@ -1387,7 +1387,7 @@ async def today_ledger(request: Request):
     except Exception:
         stats["unread_count"] = 0
 
-    # HAT corpus size (core research literature)
+    # Domain corpus size (core research literature)
     try:
         stats["hat_count"] = db_scalar(
             "SELECT COUNT(*) FROM library_seeded WHERE extension='pdf'", default=0
@@ -1724,7 +1724,7 @@ async def today_library_archive(request: Request):
     except Exception:
         pass
 
-    # HAT corpus — recent additions (by rowid as proxy for recency)
+    # Domain corpus — recent additions (by rowid as proxy for recency)
     try:
         hat_rows = db_query(
             "SELECT basename, top_folder, method, relevance_note, status "
@@ -1737,10 +1737,10 @@ async def today_library_archive(request: Request):
                 "title": title[:120],
                 "authors": "",
                 "year": "",
-                "domain": r.get("top_folder") or "HAT",
-                "card_type": "HAT CORPUS",
+                "domain": r.get("top_folder") or "Domain",
+                "card_type": "DOMAIN CORPUS",
                 "abstract": r.get("relevance_note") or r.get("method") or "",
-                "source": "HAT",
+                "source": "Domain",
                 "doi": "",
                 "url": "",
                 "created_at": "",

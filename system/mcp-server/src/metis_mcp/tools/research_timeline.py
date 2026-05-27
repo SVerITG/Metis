@@ -60,7 +60,7 @@ async def record_research_finding(
 
     Args:
         entity: What this claim is about. Use a consistent name across sessions
-            (e.g. "RDT sensitivity in low-burden areas", "HAT elimination DRC",
+            (e.g. "RDT sensitivity in low-burden areas", "Disease X elimination study",
             "DHIS2 tracker performance").
         claim: Your current belief or finding in 1-3 sentences.
         evidence: What supports this claim — paper citation, data result, meeting

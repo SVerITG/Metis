@@ -2,7 +2,7 @@
 
 Users build knowledge layer by layer:
   Layer 1 (foundation): ph-background   — general MPH / global health / health systems
-  Layer 2 (specialist):  hat-specialist  — HAT papers, NTD specialist literature
+  Layer 2 (specialist):  hat-specialist  — Metis_PH specialist layer (HAT/NTD papers when populated)
   Layer 3 (methods):     epi-methods     — epidemiology methods, stats, spatial, multilevel
   Layer 4+ (custom):     user-defined    — any specialist domain added by the user
 
@@ -86,6 +86,7 @@ BUILTIN_DATABASES = [
         "slug": "hat-specialist",
         "name": "HAT & NTD Specialist",
         "description": (
+            "Metis_PH specialist layer. "
             "Specialist layer: Human African Trypanosomiasis (HAT) research literature "
             "and neglected tropical diseases. All HAT papers, NTD roadmaps, disease-specific "
             "guidelines, Leishmaniasis, Malaria, TB, HIV, Schistosomiasis. "

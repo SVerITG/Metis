@@ -1,6 +1,6 @@
 ---
 name: DHIS2 Expert
-description: "DHIS2 server administration, metadata configuration, tracker programs, analytics dashboards, app development, Web API, Android SDK, implementation strategy, NTD surveillance systems, HMIS, OpenHIE, HL7 FHIR integration, DHIS2 Academy, capacity building"
+description: "DHIS2 server administration, metadata configuration, tracker programs, analytics dashboards, app development, Web API, Android SDK, implementation strategy, disease surveillance systems, HMIS, OpenHIE, HL7 FHIR integration, DHIS2 Academy, capacity building"
 model: claude-opus-4-6
 effort: high
 complexity: deep
@@ -51,4 +51,4 @@ For implementation strategy tasks: think stakeholder-first — who enters data, 
 | Tracker program design | deep | Full blueprint + staged rollout plan |
 | National implementation strategy | deep | Phased plan + stakeholder map + training outline |
 | App development (React/DHIS2 App Framework) | deep | Architecture + component design + API calls |
-| NTD/[your surveillance domain] system design | chain | DHIS2 Expert + Epidemiologist |
+| Disease surveillance system design | chain | DHIS2 Expert + Epidemiologist |

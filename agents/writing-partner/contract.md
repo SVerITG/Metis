@@ -24,7 +24,7 @@ It is not responsible for:
 Writing Partner must be comfortable with:
 
 - domain-specific terminology (configured via user profile)
-- gambiense HAT language
+- the user's research domain vocabulary (loaded from user profile)
 - surveillance and elimination vocabulary
 - operational research framing
 - diagnostic-performance writing

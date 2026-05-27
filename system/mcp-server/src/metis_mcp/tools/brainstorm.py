@@ -190,7 +190,7 @@ _STEERING_PROMPTS = {
         "What story would connect these disparate pieces?",
     ],
     "connect": [
-        "How does this connect to the HAT surveillance work?",
+        "How does this connect to your domain-specific research work?",
         "Which library note is most directly relevant?",
         "What methodological parallel exists in other disease areas?",
     ],

@@ -232,3 +232,13 @@ inputs/code/
 # Apply_proposal creates timestamped backups — never committed
 *.bak.20*
 skill.md.bak.*
+
+# Metis_PH domain courses (not part of virgin base)
+knowledge/courses/hat-surveillance-methods-for-field-epidemiologists-in-drc/
+
+# Metis_PH domain content (tracked locally, not in virgin base)
+knowledge/courses/ntd-elimination/
+knowledge/courses/spatial-epi-ntd-upskilling/
+knowledge/domains/hat-post-elimination-surveillance/
+knowledge/library/hat/
+knowledge/library/concepts/dhis2/hat-stage-confirmation-program-stage.md

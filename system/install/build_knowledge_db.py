@@ -9,7 +9,7 @@ Built-in databases (base Metis):
   epi-methods     Layer 2: Epidemiology methods, biostatistics, spatial, multilevel
 
 Domain-specific layers (added by variant installs, e.g. Metis_PH):
-  hat-specialist  HAT/NTD specialist literature — seeded by seed_ph_database.py
+  hat-specialist  Metis_PH specialist literature — seeded by seed_ph_database.py
 
 Usage:
     python3 build_knowledge_db.py                              # index all layers
@@ -50,9 +50,9 @@ from typing import Generator, List, Optional, Tuple
 DATABASES = [
     {
         "slug": "hat-specialist",
-        "name": "HAT/NTD Specialist Literature",
+        "name": "Specialist Literature (Metis_PH)",
         "description": (
-            "Specialist layer: HAT/NTD research corpus — diagnostics, screening & surveillance, "
+            "Metis_PH specialist layer: domain research corpus — diagnostics, screening & surveillance, "
             "statistics & modelling, methodology, epidemiology, elimination, WHO Atlas, clinical."
         ),
         "layer": 3,
@@ -781,7 +781,7 @@ def main() -> None:
                         db_def["library_dir_override"] = hat_lib
                         to_build[to_build.index(next(d for d in to_build if d["slug"] == "hat-specialist"))] = db_def
                         if verbose:
-                            print(f"  HAT library path: {hat_lib}")
+                            print(f"  Domain library path: {hat_lib}")
                 except Exception as e:
                     print(f"  Warning: could not read user-preferences.json: {e}", file=sys.stderr)
 

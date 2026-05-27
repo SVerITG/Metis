@@ -88,7 +88,7 @@ updated: "2026-03-30"
 
 - **Food-borne outbreak investigations:** Cohort or case-control studies using 2x2 tables remain the clearest examples of how analytic epidemiology can identify a specific vehicle quickly.
 - **Mpox and other cross-border events:** Recent multinational responses have shown the importance of combining field teams, rapid risk assessment, and coordinated data management across jurisdictions.
-- **HAT cluster follow-up:** In elimination settings, a suspected cluster may require desk-based surveillance review, facility verification, and targeted field assessment rather than a large classical outbreak deployment.
+- **Disease cluster follow-up in elimination settings:** In elimination programmes, a suspected cluster may require desk-based surveillance review, facility verification, and targeted field assessment rather than a large classical outbreak deployment.
 - **Healthcare-associated outbreaks:** Modern field investigations often rely on patient movement data, laboratory confirmation, and repeated communication with facilities while control measures are already being implemented.
 
 ## Key References

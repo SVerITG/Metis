@@ -83,7 +83,7 @@ TECHNICAL
 
 INTELLIGENCE & LEARNING
 ────────────────────────
-/news-radar         Curated news brief — HAT, AI, public health, methods.
+/news-radar         Curated news brief — your domain, AI, public health, methods.
                     Curates signals, does not dump headlines.
                     Last run: [date]
 
@@ -105,7 +105,7 @@ SAFETY & DATA
                     Last run: [date]
 
 /data-guardian      PII protection, patient data blocking.
-                    Automatically invoked when HAT patient data is detected.
+                    Automatically invoked when patient or sensitive data is detected.
                     Last run: [date]
 
 ──────────────────────────────────────────────────────────────

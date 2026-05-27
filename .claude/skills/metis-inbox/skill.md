@@ -52,8 +52,8 @@ FILES IN inbox/  (n items)
   ❓ misc-thoughts.md              → Unclear — what is this for?
 
 INBOX TASKS  (n open)
-  · "Review HAT script" → Assign to hat-dashboard? [y/skip]
-  · "Check citation"    → Assign to phd-framework?  [y/skip]
+  · "Review analysis script" → Assign to [project-slug]? [y/skip]
+  · "Check citation"         → Assign to phd-framework?  [y/skip]
 
 ACTIONS
   Reply with: y [number] to route, skip [number] to leave, or clear [number] to dismiss.

@@ -98,7 +98,7 @@ updated: "2026-03-29"
 
 ### Active Surveillance
 - **Design:** Regular outreach to identify cases (house-to-house, facility visits, mobile teams)
-- **When to use:** Elimination programmes (HAT, polio); outbreak response; high-priority diseases
+- **When to use:** Elimination programmes (e.g. vector-borne diseases, polio); outbreak response; high-priority diseases
 - **Strengths:** More complete case finding; higher sensitivity
 - **Limitations:** Expensive; resource-intensive; not sustainable long-term at scale
 

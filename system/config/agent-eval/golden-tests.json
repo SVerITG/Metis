@@ -16,11 +16,11 @@
       "agent": "librarian",
       "id": "lib-001",
       "tags": ["smoke"],
-      "input": "Find recent papers on NTD elimination surveillance 2022-2024",
-      "required_keys": ["HAT", "diagnosis", "Trypanosoma"],
+      "input": "Find recent papers on vector-borne disease surveillance 2022-2024",
+      "required_keys": ["disease", "diagnosis", "surveillance"],
       "forbidden_keys": ["I cannot", "I don't have access"],
       "min_length": 200,
-      "notes": "Core use case — should always return relevant HAT literature"
+      "notes": "Core use case — should always return relevant literature for the user's domain"
     },
     {
       "agent": "librarian",
@@ -36,7 +36,7 @@
       "agent": "epidemiologist",
       "id": "epi-001",
       "tags": ["smoke"],
-      "input": "I want to use convenience sampling for my HAT prevalence study. Is that OK?",
+      "input": "I want to use convenience sampling for my disease prevalence study. Is that OK?",
       "required_keys": ["bias", "representative", "sampling"],
       "forbidden_keys": ["That's fine", "Sure, go ahead"],
       "min_length": 300,

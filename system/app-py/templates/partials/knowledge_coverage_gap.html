@@ -14,8 +14,8 @@
       <div style="flex:1;min-width:260px;">
         <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Search OpenAlex for</div>
         <input name="query" type="text"
-               value="{{ query or 'HAT gHAT surveillance DRC elimination' }}"
-               placeholder="e.g. HAT surveillance DRC elimination"
+               value="{{ query or '' }}"
+               placeholder="e.g. disease surveillance elimination"
                style="width:100%;font-family:var(--m-ui);font-size:13px;padding:8px 12px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
       </div>
       <div style="min-width:100px;">
@@ -96,7 +96,7 @@
 
     {% else %}
     <div style="padding:24px 20px;font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">
-      Enter a search query above and click Check Gaps. Metis will compare OpenAlex results against your Zotero collection and HAT corpus to surface papers you might be missing.
+      Enter a search query above and click Check Gaps. Metis will compare OpenAlex results against your Zotero collection and domain corpus to surface papers you might be missing.
     </div>
     {% endif %}
 

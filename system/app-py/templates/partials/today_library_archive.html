@@ -13,7 +13,7 @@
     <span class="sec-label-tail">
       {% if zotero_items %}{{ zotero_items|length }} ZOTERO{% if unread_count %} · {{ unread_count }} UNREAD{% endif %}{% endif %}
       {% if zotero_items and hat_items %} · {% endif %}
-      {% if hat_items %}{{ hat_items|length }} HAT CORPUS{% endif %}
+      {% if hat_items %}{{ hat_items|length }} DOMAIN CORPUS{% endif %}
     </span>
     <a href="/knowledge" style="margin-left:auto;font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;color:var(--m-muted);text-decoration:none;">
       OPEN LIBRARY →
@@ -68,12 +68,12 @@
     </div>
     {% endif %}
 
-    {# ---------- HAT CORPUS column ---------- #}
+    {# ---------- DOMAIN CORPUS column ---------- #}
     {% if hat_items %}
     <div class="lib-group">
       <div class="lib-group-head">
         <span class="lib-group-dot lib-group-dot--hat"></span>
-        <span class="lib-group-label">HAT corpus · recently added</span>
+        <span class="lib-group-label">Domain corpus · recently added</span>
         <span class="lib-group-count">{{ hat_items|length }}</span>
       </div>
       {% for item in hat_items %}

@@ -21,7 +21,7 @@
   <div style="margin-bottom:28px;">
     <div class="sec-label" style="margin-bottom:12px;">
       <span>Search</span>
-      <span class="tail">PAPERS · HAT CORPUS · CARDS · MEMORY</span>
+      <span class="tail">PAPERS · DOMAIN CORPUS · CARDS · MEMORY</span>
     </div>
     <div class="panel" style="padding:16px 20px;">
       <input type="search"
@@ -41,7 +41,7 @@
         {# Ghost-button quick queries — gives the empty search a place to start #}
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
           {% set quick_queries = [
-            ('HAT epidemiology', 'HAT epidemiology'),
+            ('Research domain', 'Research domain'),
             ('Recent papers', 'recent'),
             ('My unread', 'unread'),
             ('Multilevel models', 'multilevel'),
@@ -130,13 +130,13 @@
     </div>
   </div>
 
-  <!-- ===== HAT Research Corpus ===== -->
+  <!-- ===== Knowledge Corpus ===== -->
   <div style="margin-top:32px;">
     <div hx-get="/api/partial/knowledge/hat-corpus"
          hx-trigger="load"
          hx-swap="outerHTML">
       <div>
-        <div class="sec-label" style="margin-bottom:8px;"><span>HAT Research Corpus</span></div>
+        <div class="sec-label" style="margin-bottom:8px;"><span>Knowledge Corpus</span></div>
         <div class="panel skeleton skeleton-box" style="height:200px;"></div>
       </div>
     </div>

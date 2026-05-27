@@ -32,16 +32,12 @@ For each section:
 
 Writing Partner must preserve domain-consistent language for:
 
-- gambiense human African [your research topic]
-- [your research domain]
-- active screening
-- passive screening
+- the user's configured research domain terminology (loaded from user profile)
+- active screening and passive screening (where applicable to the domain)
 - detection coverage
 - quality assurance
-- elimination of transmission
-- post-elimination surveillance
-- screen-and-treat
-- sero-suspect and confirmation pathways where relevant
+- elimination of transmission and post-elimination surveillance (where applicable)
+- any domain-specific diagnostic or case-finding pathways
 
 ## 4. Methods-writing workflow
 
