@@ -1,6 +1,6 @@
 [project]
 name = "metis-mcp-server"
-version = "0.2.0"
+version = "1.0.0"
 description = "MCP server for the Metis Research Context"
 requires-python = ">=3.10"
 dependencies = [
