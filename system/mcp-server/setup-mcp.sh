@@ -267,10 +267,13 @@ if [ -n "$BAT_PATH" ]; then
   powershell.exe -Command "
 \$ws = New-Object -ComObject WScript.Shell
 \$desktopRoot = [System.Environment]::GetFolderPath('Desktop')
-# OneDrive may redirect Desktop — find actual .lnk location
-\$desktopOneDrive = [System.Environment]::GetFolderPath('UserProfile') + '\OneDrive - ITG\Desktop'
+\$userProfile = [System.Environment]::GetFolderPath('UserProfile')
 \$dests = @()
-if (Test-Path \$desktopOneDrive) { \$dests += \$desktopOneDrive + '\Metis.lnk' }
+# OneDrive may redirect Desktop — scan all OneDrive* folders under UserProfile
+Get-ChildItem \$userProfile -Directory -Filter 'OneDrive*' -ErrorAction SilentlyContinue | ForEach-Object {
+  \$od = \$_.FullName + '\Desktop'
+  if (Test-Path \$od) { \$dests += \$od + '\Metis.lnk' }
+}
 \$dests += \$desktopRoot + '\Metis.lnk'
 \$dests += [System.Environment]::GetFolderPath('Programs') + '\Metis.lnk'
 foreach (\$dest in \$dests) {
