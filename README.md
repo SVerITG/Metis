@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="Metis_github.png"/>
+    <img src="Metis_github.png" alt="Metis — Research Cortex" width="420"/>
+  </picture>
+</p>
+
 <h1 align="center">Metis — The Public Health Research Cortex</h1>
 
 <p align="center">
