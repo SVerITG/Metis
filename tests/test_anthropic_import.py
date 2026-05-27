@@ -44,7 +44,7 @@ def test_anthropic_client_instantiates() -> None:
 
     # Pass a synthetic key so we don't depend on the environment.
     # We never actually call the API; this just confirms the constructor signature.
-    client = Anthropic(api_key="sk-ant-test-placeholder-for-import-test")
+    client = Anthropic(api_key="test-key-not-real-000000000000000000")
     assert client is not None
 
 
