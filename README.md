@@ -125,7 +125,7 @@ Metis is also built to fit *your* way of working. For example:
 | **Self-improvement loop** | Metis reviews its own performance, drafts behaviour improvements, and waits for your approval before anything changes |
 | **Persistent AI identity** | A growing profile of your domain, interests, and projects — the more you use it, the better every response gets |
 | **9-tab research dashboard** | Today · Knowledge · Meetings · Learning · Work · Thinking · Planner · Teach · Metis — running locally in your browser |
-| **Local & private** | Everything runs on your machine. Your documents, database, and meeting notes stay fully local. A small set of external services receive outbound data by design: Claude API (text you send for analysis), PubMed/OpenAlex (daily search queries), Zotero (library metadata), CrossRef (DOI resolution), and optionally HuggingFace (model downloads) and Google Drive. See the Privacy section for the full table. |
+| **Local & private** | Everything runs on your machine. Your documents, database, and meeting notes stay fully local. A small set of external services receive outbound data by design: Claude API (text you send for analysis), PubMed/OpenAlex (daily search queries), Zotero (library metadata), CrossRef (DOI resolution), and optionally HuggingFace (model downloads). See the Privacy section for the full table. |
 
 ---
 
@@ -441,7 +441,6 @@ Everything. The database, your PDFs, your meeting notes, your ideas, your agent 
 | **Zotero Web API** | Library metadata: titles, authors, abstracts, tags, collections | Daily sync | Yes — requires API key setup |
 | **CrossRef** | DOI queries for citation resolution | On demand (library tools) | Yes — automatic when DOIs present |
 | **HuggingFace Hub** | Model name only — downloads embedding / diarization models on first use | First run | Yes — disable diarization to skip |
-| **Google Drive** | File metadata and content you explicitly export | On demand | Yes — requires OAuth setup |
 | **Gemini API** | Text you send (same scope as Claude API) | On demand | Yes — experimental, requires API key |
 
 Everything else — documents, voice recordings, PDF text, patient-adjacent data, meeting notes — stays on disk and never leaves.
