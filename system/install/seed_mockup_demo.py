@@ -1,10 +1,11 @@
 """
 seed_mockup_demo.py — Populate Metis with realistic demo data for screenshots.
 
-Researcher persona: Dr. Amélie Fontaine
-  Role: Senior Epidemiologist, Institut de Médecine Tropicale (IMT Lyon)
-  Focus: HAT surveillance · DHIS2 · multilevel spatial models
-  Projects: HAT surveillance DRC, DHIS2 facility mapping, PhD thesis, malaria resistance
+Researcher persona: Dr. Amara Diallo
+  Role: Senior Epidemiologist — Outbreak Response, WHO Africa Regional Office
+  Focus: Ebola Virus Disease surveillance · DHIS2 · genomic epidemiology
+  Projects: EVD surveillance DRC, DHIS2 case notification tracker,
+            field investigation methods, genomics collaboration
 
 Usage:
     python seed_mockup_demo.py                          # seed live DB
@@ -22,8 +23,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_DB = REPO_ROOT / "metis" / "system" / "app" / "data" / "metis.sqlite"
-CONFIG_DIR = REPO_ROOT / "metis" / "system" / "config"
+DEFAULT_DB = REPO_ROOT / "system" / "app-py" / "data" / "metis.sqlite"
+CONFIG_DIR = REPO_ROOT / "system" / "config"
 
 TODAY = datetime.now()
 D = lambda d: (TODAY - timedelta(days=d)).strftime("%Y-%m-%d")
@@ -36,44 +37,44 @@ def seed(conn: sqlite3.Connection):
 
     # ── User config ────────────────────────────────────────────────────────────
     prefs = {
-        "display_name": "Amélie",
-        "role": "Senior Epidemiologist · Neglected Tropical Diseases",
-        "interests": ["sleeping sickness", "HAT", "neglected tropical diseases",
-                      "DHIS2", "multilevel models", "spatial epidemiology",
-                      "disease burden", "health information systems", "West Africa"],
-        "news_topics": ["WHO NTD roadmap", "sleeping sickness elimination",
-                        "DHIS2 updates", "epidemiology methods", "AI in global health",
-                        "DRC health system", "malaria drug resistance"],
-        "pubmed_query": "human African trypanosomiasis[Title] OR sleeping sickness[Title] OR NTD[Title/Abstract]",
+        "display_name": "Amara",
+        "role": "Senior Epidemiologist · Outbreak Response",
+        "interests": ["Ebola virus disease", "viral haemorrhagic fevers", "outbreak investigation",
+                      "DHIS2", "genomic epidemiology", "contact tracing",
+                      "ring vaccination", "health information systems", "DRC"],
+        "news_topics": ["WHO outbreak alerts", "Ebola DRC", "DHIS2 updates",
+                        "epidemiology methods", "AI in global health",
+                        "VHF surveillance", "genomic sequencing outbreak"],
+        "pubmed_query": "Ebola virus disease[Title] OR EVD surveillance[Title/Abstract] OR viral haemorrhagic fever[Title]",
         "active_model": "sonnet",
-        "theme": "light",
+        "theme": "dark",
         "density": "comfortable",
     }
 
     user_config = {
         "user": {
-            "name": "Amélie Fontaine",
+            "name": "Amara",
             "role": "Senior Epidemiologist",
             "language": "en",
             "general_context": (
-                "Senior epidemiologist specialising in neglected tropical diseases, "
-                "particularly human African trypanosomiasis (HAT). Based at IMT Lyon. "
-                "Three-article PhD in progress: surveillance (article 1 submitted), "
-                "methods (article 2 in preparation), policy (article 3 planned)."
+                "Senior epidemiologist specialising in outbreak response, "
+                "particularly Ebola Virus Disease (EVD) in Central Africa. "
+                "Based at WHO Africa Regional Office. Leads field investigations, "
+                "DHIS2 case notification systems, and genomic surveillance analysis."
             ),
-            "active_contexts": ["general", "NTD surveillance", "DHIS2"],
+            "active_contexts": ["general", "EVD surveillance", "DHIS2"],
             "specialist_contexts": [
-                {"name": "NTD surveillance", "description": "HAT, sleeping sickness, DRC disease burden analysis"},
-                {"name": "DHIS2", "description": "DHIS2 metadata design, tracker programs, NTD implementation"},
-                {"name": "Spatial epidemiology", "description": "Multilevel models, kriging, health facility mapping"},
+                {"name": "EVD surveillance", "description": "Ebola outbreak investigation, ring vaccination, case-fatality analysis"},
+                {"name": "DHIS2", "description": "DHIS2 case notification tracker, metadata design, NTD/VHF implementation"},
+                {"name": "Genomic epidemiology", "description": "Phylogenetics, transmission cluster analysis, sequencing pipelines"},
             ],
         },
         "research": {
-            "field": "Public health · Epidemiology",
-            "interests": ["neglected tropical diseases", "HAT", "DHIS2", "multilevel models", "spatial epidemiology"],
-            "specific_focus": "HAT surveillance in DRC, DHIS2 NTD module implementation, spatial disease burden",
+            "field": "Public health · Outbreak epidemiology",
+            "interests": ["Ebola virus disease", "outbreak response", "DHIS2", "genomic surveillance"],
+            "specific_focus": "EVD outbreak analysis in DRC, DHIS2 case notification systems, genomic cluster detection",
         },
-        "data_sensitivity": {"patient_data": True, "embargoed_results": True, "compliance": ["GDPR", "DRC MoH ethics"]},
+        "data_sensitivity": {"patient_data": True, "embargoed_results": True, "compliance": ["GDPR", "WHO data sharing policy"]},
     }
 
     prefs_path = CONFIG_DIR / "user-preferences.json"
@@ -85,97 +86,96 @@ def seed(conn: sqlite3.Connection):
         with config_path.open("w") as f:
             yaml.dump(user_config, f, default_flow_style=False, allow_unicode=True)
     except ImportError:
-        pass  # yaml not installed — skip
+        pass
 
     # ── Projects ───────────────────────────────────────────────────────────────
     projects = [
         {
-            "project_id": "proj-HAT-001",
-            "title": "Article 1 — HAT Surveillance DRC 2015–2023",
-            "description": "Retrospective analysis of HAT incidence trends in DRC. 8 health zones, 3,400 cases. R/INLA spatial model. Submitted to Lancet ID.",
-            "domain": "Neglected Tropical Diseases",
+            "project_id": "proj-EVD-001",
+            "title": "EVD Outbreak Analysis — Equateur Province 2025",
+            "description": "Retrospective analysis of the 2025 Equateur EVD outbreak. 47 confirmed cases, 31 deaths (CFR 66%). Spatial and genomic analysis to characterise transmission chains and identify index case source.",
+            "domain": "Outbreak Response",
             "status": "active",
             "priority": "high",
-            "next_step": "Revise Figure 3 — reviewer asked for district-level breakdown by year",
-            "external_path": "C:/Users/Amelie/Documents/research/article1-HAT-DRC",
-            "github_url": "https://github.com/amefontaine/hat-drc-surveillance",
+            "next_step": "Finalise transmission tree — 3 unlinked clusters require genomic confirmation",
+            "external_path": "C:/Users/Amara/Documents/research/evd-equateur-2025",
+            "github_url": "https://github.com/amaradiallo-who/evd-equateur-2025",
             "launcher_type": "rstudio",
             "launchers": json.dumps([
-                {"label": "Open in RStudio", "type": "rstudio", "path": "C:/Users/Amelie/Documents/research/article1-HAT-DRC/analysis.Rproj"},
-                {"label": "Open Folder", "type": "folder", "path": "C:/Users/Amelie/Documents/research/article1-HAT-DRC"},
-                {"label": "GitHub", "type": "github", "url": "https://github.com/amefontaine/hat-drc-surveillance"},
-            ]),
-            "created_at": DT(180),
-        },
-        {
-            "project_id": "proj-DHIS2-002",
-            "title": "DHIS2 NTD Module — DRC Ministry of Health",
-            "description": "Implementation of DHIS2 tracker program for HAT passive surveillance across 5 provinces. Aggregate reporting + case-level tracker.",
-            "domain": "Health Information Systems",
-            "status": "active",
-            "priority": "high",
-            "next_step": "Finalize metadata mapping for health facility coordinates — 247 facilities pending GPS entry",
-            "external_path": "C:/Users/Amelie/Documents/dhis2-ntd-drc",
-            "github_url": "https://github.com/amefontaine/dhis2-ntd-tracker",
-            "launcher_type": "vscode",
-            "launchers": json.dumps([
-                {"label": "Open in VS Code", "type": "vscode", "path": "C:/Users/Amelie/Documents/dhis2-ntd-drc"},
-                {"label": "DHIS2 Dev Instance", "type": "url", "url": "http://localhost:8080/dhis-web-app"},
-                {"label": "Open Folder", "type": "folder", "path": "C:/Users/Amelie/Documents/dhis2-ntd-drc"},
+                {"label": "Open in RStudio", "type": "rstudio", "path": "C:/Users/Amara/Documents/research/evd-equateur-2025/analysis.Rproj"},
+                {"label": "Open Folder", "type": "folder", "path": "C:/Users/Amara/Documents/research/evd-equateur-2025"},
+                {"label": "GitHub", "type": "github", "url": "https://github.com/amaradiallo-who/evd-equateur-2025"},
             ]),
             "created_at": DT(90),
         },
         {
-            "project_id": "proj-PHD-003",
-            "title": "PhD Thesis — NTD Burden & Surveillance Systems",
-            "description": "Three-article PhD. Article 1 submitted (Lancet ID). Article 2 in preparation: multilevel model of HAT risk factors. Article 3 planned: policy implications of elimination.",
-            "domain": "Research",
+            "project_id": "proj-DHIS2-002",
+            "title": "DHIS2 EVD Case Notification Tracker — DRC Scale-up",
+            "description": "Implementation of a DHIS2 real-time case notification tracker for EVD across 8 provinces. Replaces paper-based weekly reporting. Integrates with national HMIS.",
+            "domain": "Health Information Systems",
             "status": "active",
             "priority": "high",
-            "next_step": "Write Article 2 methods section — INLA model specification for spatial random effects",
-            "external_path": "C:/Users/Amelie/Documents/phd-thesis",
-            "github_url": "",
+            "next_step": "Pilot test the mobile data entry form with field teams in Mbandaka health zone",
+            "external_path": "C:/Users/Amara/Documents/dhis2-evd-tracker",
+            "github_url": "https://github.com/amaradiallo-who/dhis2-evd-tracker",
             "launcher_type": "vscode",
             "launchers": json.dumps([
-                {"label": "Open Thesis Folder", "type": "folder", "path": "C:/Users/Amelie/Documents/phd-thesis"},
-                {"label": "Article 2 Draft", "type": "vscode", "path": "C:/Users/Amelie/Documents/phd-thesis/article2"},
-                {"label": "Overleaf", "type": "url", "url": "https://www.overleaf.com/project/hat-article2"},
-            ]),
-            "created_at": DT(730),
-        },
-        {
-            "project_id": "proj-MAL-004",
-            "title": "Malaria Drug Resistance — West Africa Sentinel Sites",
-            "description": "Multi-country analysis of P. falciparum artemisinin partial resistance markers. 14 sentinel sites, 6 countries. Collaboration with NMCP partners.",
-            "domain": "Malaria",
-            "status": "active",
-            "priority": "medium",
-            "next_step": "Data cleaning script: harmonise site codes across 6 country datasets",
-            "external_path": "C:/Users/Amelie/Documents/malaria-resistance-wa",
-            "github_url": "https://github.com/amefontaine/malaria-resistance-wa",
-            "launcher_type": "rstudio",
-            "launchers": json.dumps([
-                {"label": "Open in RStudio", "type": "rstudio", "path": "C:/Users/Amelie/Documents/malaria-resistance-wa/analysis.Rproj"},
-                {"label": "Open Folder", "type": "folder", "path": "C:/Users/Amelie/Documents/malaria-resistance-wa"},
+                {"label": "Open in VS Code", "type": "vscode", "path": "C:/Users/Amara/Documents/dhis2-evd-tracker"},
+                {"label": "DHIS2 Dev Instance", "type": "url", "url": "http://localhost:8080/dhis-web-app"},
+                {"label": "Open Folder", "type": "folder", "path": "C:/Users/Amara/Documents/dhis2-evd-tracker"},
             ]),
             "created_at": DT(60),
         },
         {
-            "project_id": "proj-TEACH-005",
-            "title": "Course: Epidemiology for Digital Health",
-            "description": "New graduate course for MPH students. 9 modules: disease burden, surveillance design, DHIS2, spatial methods, policy translation. First delivery: March 2027.",
-            "domain": "Teaching",
+            "project_id": "proj-GEN-003",
+            "title": "Genomic Surveillance — EVD Transmission Clusters",
+            "description": "Whole-genome sequencing of 38 EVD isolates from the 2025 Equateur outbreak. Phylogenetic analysis to resolve transmission clusters and date the introduction event. Collaboration with INRB and Africa CDC.",
+            "domain": "Genomic Epidemiology",
             "status": "active",
-            "priority": "low",
-            "next_step": "Draft Module 4 outline: spatial epidemiology methods with QGIS exercises",
-            "external_path": "C:/Users/Amelie/Documents/courses/epi-digital-health",
+            "priority": "high",
+            "next_step": "Run BEAST2 analysis on the 38-genome alignment — check convergence diagnostics",
+            "external_path": "C:/Users/Amara/Documents/research/evd-genomics-2025",
             "github_url": "",
             "launcher_type": "vscode",
             "launchers": json.dumps([
-                {"label": "Open Course Folder", "type": "folder", "path": "C:/Users/Amelie/Documents/courses/epi-digital-health"},
-                {"label": "VS Code", "type": "vscode", "path": "C:/Users/Amelie/Documents/courses/epi-digital-health"},
+                {"label": "VS Code", "type": "vscode", "path": "C:/Users/Amara/Documents/research/evd-genomics-2025"},
+                {"label": "Open Folder", "type": "folder", "path": "C:/Users/Amara/Documents/research/evd-genomics-2025"},
+            ]),
+            "created_at": DT(45),
+        },
+        {
+            "project_id": "proj-METH-004",
+            "title": "Ring Vaccination Effectiveness — Pooled Analysis",
+            "description": "Multi-outbreak pooled analysis of rVSV-ZEBOV ring vaccination effectiveness across 4 DRC outbreaks (2018–2025). 6,400 vaccinated contacts. Estimating waning immunity and optimal ring radius.",
+            "domain": "Vaccine Epidemiology",
+            "status": "active",
+            "priority": "medium",
+            "next_step": "Harmonise vaccine administration dates across outbreak datasets — 3 country formats differ",
+            "external_path": "C:/Users/Amara/Documents/research/ring-vaccination-pooled",
+            "github_url": "https://github.com/amaradiallo-who/ring-vax-pooled",
+            "launcher_type": "rstudio",
+            "launchers": json.dumps([
+                {"label": "Open in RStudio", "type": "rstudio", "path": "C:/Users/Amara/Documents/research/ring-vaccination-pooled/analysis.Rproj"},
+                {"label": "Open Folder", "type": "folder", "path": "C:/Users/Amara/Documents/research/ring-vaccination-pooled"},
             ]),
             "created_at": DT(30),
+        },
+        {
+            "project_id": "proj-TEACH-005",
+            "title": "Course: Field Investigation of Viral Haemorrhagic Fevers",
+            "description": "New WHO AFRO online course for national rapid response teams. 8 modules: case definitions, contact tracing, safe burial, ring vaccination, lab coordination, genomics basics, DHIS2 reporting, after-action review.",
+            "domain": "Teaching",
+            "status": "active",
+            "priority": "low",
+            "next_step": "Draft Module 5 content: coordinating laboratory specimen transport under BSL-3 protocols",
+            "external_path": "C:/Users/Amara/Documents/courses/vhf-field-investigation",
+            "github_url": "",
+            "launcher_type": "vscode",
+            "launchers": json.dumps([
+                {"label": "Open Course Folder", "type": "folder", "path": "C:/Users/Amara/Documents/courses/vhf-field-investigation"},
+                {"label": "VS Code", "type": "vscode", "path": "C:/Users/Amara/Documents/courses/vhf-field-investigation"},
+            ]),
+            "created_at": DT(20),
         },
     ]
 
@@ -190,26 +190,26 @@ def seed(conn: sqlite3.Connection):
 
     # ── Tasks ─────────────────────────────────────────────────────────────────
     tasks = [
-        # Article 1
-        {"task_id": "task-001", "project_id": "proj-HAT-001", "title": "Revise Figure 3 — district breakdown by year", "status": "open", "due_date": D(0), "category": "writing", "notes": "Reviewer 2 asked for year-stratified map. Use ggplot2 facet_wrap."},
-        {"task_id": "task-002", "project_id": "proj-HAT-001", "title": "Update supplement table S3 with 2023 data", "status": "open", "due_date": D(2), "category": "analysis", "notes": ""},
-        {"task_id": "task-003", "project_id": "proj-HAT-001", "title": "Respond to Reviewer 1 comments on case definition", "status": "open", "due_date": FUTURE(3), "category": "writing", "notes": "Reviewer wants CATT sensitivity noted in limitations"},
-        {"task_id": "task-004", "project_id": "proj-HAT-001", "title": "Re-run INLA model with updated 2022–2023 data", "status": "done", "due_date": D(5), "category": "analysis"},
+        # EVD analysis
+        {"task_id": "task-001", "project_id": "proj-EVD-001", "title": "Finalise transmission tree — resolve 3 unlinked clusters", "status": "open", "due_date": D(0), "category": "analysis", "notes": "Awaiting genomic sequences from INRB for clusters B, C, and D"},
+        {"task_id": "task-002", "project_id": "proj-EVD-001", "title": "Calculate attack rate by household size and case generation", "status": "open", "due_date": D(2), "category": "analysis"},
+        {"task_id": "task-003", "project_id": "proj-EVD-001", "title": "Draft manuscript — methods section (transmission analysis)", "status": "open", "due_date": FUTURE(7), "category": "writing", "notes": "Target: NEJM or Lancet — check open call for rapid communications"},
+        {"task_id": "task-004", "project_id": "proj-EVD-001", "title": "Debrief with MoH DRC — preliminary findings presentation", "status": "done", "due_date": D(4), "category": "meeting"},
         # DHIS2
-        {"task_id": "task-005", "project_id": "proj-DHIS2-002", "title": "GPS entry for 247 remaining health facilities", "status": "open", "due_date": FUTURE(7), "category": "data", "notes": "Coordinate with Ministry GIS unit"},
-        {"task_id": "task-006", "project_id": "proj-DHIS2-002", "title": "Test case notification form with health zone supervisors", "status": "open", "due_date": FUTURE(14), "category": "testing"},
-        {"task_id": "task-007", "project_id": "proj-DHIS2-002", "title": "Write DHIS2 metadata maintenance SOP", "status": "open", "due_date": FUTURE(21), "category": "documentation"},
-        {"task_id": "task-008", "project_id": "proj-DHIS2-002", "title": "Train district data managers — Kinshasa workshop", "status": "open", "due_date": FUTURE(30), "category": "training"},
-        # PhD
-        {"task_id": "task-009", "project_id": "proj-PHD-003", "title": "Write Article 2 methods section — INLA specification", "status": "open", "due_date": FUTURE(10), "category": "writing", "notes": "Focus on spatial random effect justification"},
-        {"task_id": "task-010", "project_id": "proj-PHD-003", "title": "Meet with supervisor — Article 2 outline review", "status": "open", "due_date": FUTURE(5), "category": "meeting"},
-        {"task_id": "task-011", "project_id": "proj-PHD-003", "title": "Register Article 1 preprint on medRxiv", "status": "done", "due_date": D(3), "category": "dissemination"},
-        # Malaria
-        {"task_id": "task-012", "project_id": "proj-MAL-004", "title": "Harmonise site codes across 6 country datasets", "status": "open", "due_date": FUTURE(4), "category": "data"},
-        {"task_id": "task-013", "project_id": "proj-MAL-004", "title": "Literature search: artemisinin resistance markers 2022–2025", "status": "open", "due_date": FUTURE(7), "category": "research"},
+        {"task_id": "task-005", "project_id": "proj-DHIS2-002", "title": "Pilot mobile form with field teams — Mbandaka health zone", "status": "open", "due_date": FUTURE(5), "category": "testing", "notes": "Coordinate with zonal health officer"},
+        {"task_id": "task-006", "project_id": "proj-DHIS2-002", "title": "Configure automated data quality alerts for case notification lag", "status": "open", "due_date": FUTURE(10), "category": "development"},
+        {"task_id": "task-007", "project_id": "proj-DHIS2-002", "title": "Write DHIS2 data entry SOP for rapid response teams", "status": "open", "due_date": FUTURE(14), "category": "documentation"},
+        {"task_id": "task-008", "project_id": "proj-DHIS2-002", "title": "Train DHIS2 focal points — 3-day workshop", "status": "open", "due_date": FUTURE(21), "category": "training"},
+        # Genomics
+        {"task_id": "task-009", "project_id": "proj-GEN-003", "title": "Run BEAST2 on 38-genome alignment — check convergence", "status": "open", "due_date": FUTURE(3), "category": "analysis"},
+        {"task_id": "task-010", "project_id": "proj-GEN-003", "title": "Annotate phylogenetic tree with epidemiological metadata", "status": "open", "due_date": FUTURE(8), "category": "analysis"},
+        {"task_id": "task-011", "project_id": "proj-GEN-003", "title": "Preprint submission — bioRxiv genomic epidemiology", "status": "open", "due_date": FUTURE(21), "category": "dissemination"},
+        # Ring vaccination
+        {"task_id": "task-012", "project_id": "proj-METH-004", "title": "Harmonise vaccine administration date formats — 4 outbreak datasets", "status": "open", "due_date": FUTURE(4), "category": "data"},
+        {"task_id": "task-013", "project_id": "proj-METH-004", "title": "Literature search: rVSV-ZEBOV waning immunity evidence 2020–2025", "status": "open", "due_date": FUTURE(6), "category": "research"},
         # Teaching
-        {"task_id": "task-014", "project_id": "proj-TEACH-005", "title": "Draft Module 4 outline: spatial epidemiology + QGIS", "status": "open", "due_date": FUTURE(14), "category": "teaching"},
-        {"task_id": "task-015", "project_id": "proj-TEACH-005", "title": "Curate reading list for Module 1: disease burden", "status": "done", "due_date": D(7), "category": "teaching"},
+        {"task_id": "task-014", "project_id": "proj-TEACH-005", "title": "Draft Module 5: lab specimen transport under BSL-3", "status": "open", "due_date": FUTURE(14), "category": "teaching"},
+        {"task_id": "task-015", "project_id": "proj-TEACH-005", "title": "Curate case study bank for Module 2: contact tracing exercises", "status": "done", "due_date": D(5), "category": "teaching"},
     ]
 
     for t in tasks:
@@ -224,79 +224,87 @@ def seed(conn: sqlite3.Connection):
     meetings = [
         {
             "meeting_id": "meet-001",
-            "title": "HAT Consortium Call — Q2 Progress Review",
-            "meeting_date": D(2),
-            "domain": "NTD",
-            "project": "proj-HAT-001",
-            "meeting_type": "consortium",
-            "attendees": "Dr. Fontaine, Dr. Büscher (ITM Antwerp), Prof. Lutumba (INRB Kinshasa), Dr. Priotto (DNDi), Dr. Simarro (WHO)",
-            "transcript": """WHO confirmed that DRC HAT notifications dropped below 1,000 for the first time in 2024. The consortium reviewed the spatial clustering analysis from Article 1. Prof. Lutumba raised concerns about underreporting in Bandundu province — health zones with no cases since 2020 may reflect surveillance gaps, not true elimination.
+            "title": "EVD Outbreak Review — Equateur 2025 Transmission Analysis",
+            "meeting_date": D(3),
+            "domain": "Outbreak Response",
+            "project": "proj-EVD-001",
+            "meeting_type": "technical",
+            "attendees": "Dr. Diallo (WHO AFRO), Dr. Nkemdirim (INRB), Dr. Osei (Africa CDC), Dr. Martins (MSF), WHO HQ VHF team",
+            "transcript": """WHO HQ confirmed that 47 confirmed EVD cases have been verified for the Equateur event. Three distinct transmission clusters identified based on contact tracing data — genomic data pending for two of them.
 
-Key discussion: should the 2030 elimination target apply uniformly or be zone-stratified? Dr. Priotto suggested a risk-stratification framework (high/medium/low) that would prioritise active surveillance resources. Dr. Simarro presented the WHO updated roadmap draft.
+Dr. Nkemdirim (INRB) reported that whole-genome sequencing is complete for 38 samples. Phylogenetic analysis suggests the outbreak originated from a single introduction event approximately 3 weeks before the index case was detected. Closest match is to a 2022 Equateur lineage, raising questions about reservoir persistence vs re-introduction.
 
-Amélie presented the INLA model preliminary results. Reviewer questions focused on denominator data quality.""",
-            "decisions": "1. Adopt risk-stratification framework for 2026–2030 surveillance plan\n2. Amélie to lead methods section for consortium surveillance protocol update\n3. Next call: 3 months, full review of Article 2 draft",
-            "action_items": "- Amélie: update Article 1 revision based on consortium feedback by June 5\n- Dr. Büscher: share ITM prevalence data for supplementary table\n- Dr. Priotto: circulate DNDi risk-stratification framework draft\n- Dr. Simarro: send WHO roadmap chapter on surveillance targets",
+Dr. Osei (Africa CDC) presented the ring vaccination coverage data: 94% of tier-1 contacts vaccinated within 72 hours. Two vaccination rings overlapped — possible over-counting. Amara flagged this as a key uncertainty for the effectiveness analysis.
+
+Key discussion: whether to publish a rapid communication before the outbreak is declared over. WHO HQ guidance: only if genomic analysis is complete and findings would inform response.""",
+            "decisions": "1. Await BEAST2 results before submission decision\n2. Amara to lead transmission analysis manuscript\n3. Ring overlap correction to be applied before effectiveness calculation\n4. Next review: 10 days",
+            "action_items": "- Amara: finalise transmission tree and resolve unlinked clusters using genomic data\n- Dr. Nkemdirim: share BEAST2-ready alignment and metadata\n- Dr. Osei: send corrected ring vaccination denominator\n- Dr. Martins: confirm safe burial protocol adherence rates for each cluster",
             "duration_minutes": 90,
             "status": "filed",
-            "created_at": DT(2),
+            "created_at": DT(3),
         },
         {
             "meeting_id": "meet-002",
-            "title": "PhD Supervision — Article 2 Scope",
-            "meeting_date": D(5),
-            "domain": "Research",
-            "project": "proj-PHD-003",
-            "meeting_type": "supervision",
-            "attendees": "Dr. Fontaine, Prof. Boelaert (IMT/UA promoter), Dr. Van Damme (co-promoter)",
-            "transcript": """Prof. Boelaert reviewed the Article 2 outline. Strong interest in the methodological contribution — comparing INLA Besag model to standard GLM for HAT risk factors.
-
-Discussion on whether to include household survey data (DHS) as a covariate or keep analysis to passive surveillance. Van Damme argued for passive surveillance only to avoid ecological fallacy. Boelaert suggested a sensitivity analysis including DHS.
-
-Timeline: aim for methods section draft by July, results by October, submission December.""",
-            "decisions": "1. Article 2 scope: passive surveillance data + DHS sensitivity analysis\n2. Methods section draft target: July 15\n3. Consider special issue submission: PLoS NTD 'Surveillance Methods' collection",
-            "action_items": "- Amélie: draft INLA model specification and DAG by June 10\n- Prof. Boelaert: share 2018 DRC DHS data extract\n- Check PLoS NTD special issue deadline",
-            "duration_minutes": 60,
-            "status": "filed",
-            "created_at": DT(5),
-        },
-        {
-            "meeting_id": "meet-003",
-            "title": "DHIS2 Implementation Review — DRC Ministry of Health",
-            "meeting_date": D(8),
+            "title": "DHIS2 EVD Tracker — Field Pilot Readiness",
+            "meeting_date": D(6),
             "domain": "Health Information Systems",
             "project": "proj-DHIS2-002",
             "meeting_type": "stakeholder",
-            "attendees": "Dr. Fontaine, Mr. Kabila (MoH NTD Programme Director), Ms. Nsimba (Data Manager), WHO-AFRO DHIS2 advisor",
-            "transcript": """Ministry confirmed budget allocation for DHIS2 training: $45,000 for Q3 workshops in Kinshasa, Lubumbashi, and Kisangani.
+            "attendees": "Dr. Diallo (WHO AFRO), Mr. Basoko (MoH DRC DHIS2 focal point), Ms. Kabanga (Zonal Health Officer, Mbandaka), WHO DHIS2 advisor",
+            "transcript": """Pilot readiness confirmed for Mbandaka health zone. Three rapid response team members trained on mobile data entry. Mr. Basoko raised compatibility with the national HMIS — confirmed the EVD tracker uses standard WHO data elements compatible with existing aggregation.
 
-GPS entry for health facilities behind schedule — 247 of 890 facilities still missing coordinates. Mr. Kabila requested a 3-week extension. Agreed, new deadline June 28.
+Key issue: the paper-based notification form has 22 fields vs the DHIS2 tracker's 18 fields. Four fields (GPS coordinates of exposure site, contact's occupation, healthcare worker status, traditional healer exposure) are missing from the DHIS2 form. Ms. Kabanga argued these are operationally critical for ring vaccination targeting.
 
-WHO advisor raised compatibility with national HMIS — confirmed DHIS2 NTD module will use standard data elements, compatible with existing HMIS aggregation. The tracker program was demonstrated. Ms. Nsimba flagged that the paper form has more fields than the DHIS2 form — discrepancy needs resolution.""",
-            "decisions": "1. GPS deadline extended to June 28\n2. Training schedule confirmed: Kinshasa Aug 5–7, Lubumbashi Aug 19–21, Kisangani Sep 2–4\n3. Paper vs digital form discrepancy: Amélie to propose harmonised form by June 15",
-            "action_items": "- Amélie: resolve paper/digital form discrepancy, propose harmonised version by June 15\n- Mr. Kabila: assign GPS entry officers to remaining 247 facilities\n- MS Nsimba: send list of all current data elements in paper form",
-            "duration_minutes": 120,
+Decision: add the 4 missing fields to the DHIS2 tracker. Amara to propose updated metadata by Friday. WHO DHIS2 advisor confirmed this can be done without breaking the existing aggregate reporting.
+
+Data quality alert configuration: set threshold at 48-hour lag for case notification — any health zone exceeding this triggers automated WhatsApp alert to zonal focal point.""",
+            "decisions": "1. Add 4 missing fields to DHIS2 tracker metadata\n2. 48-hour notification lag threshold for automated alerts\n3. Pilot proceeds in Mbandaka next week",
+            "action_items": "- Amara: propose updated DHIS2 metadata with 4 additional fields by Friday\n- Mr. Basoko: confirm HMIS compatibility after metadata update\n- Ms. Kabanga: identify 3 RRT members for pilot data entry training",
+            "duration_minutes": 75,
             "status": "filed",
-            "created_at": DT(8),
+            "created_at": DT(6),
+        },
+        {
+            "meeting_id": "meet-003",
+            "title": "Genomics Consortium — Sequencing Update and BEAST2 Plan",
+            "meeting_date": D(1),
+            "domain": "Genomic Epidemiology",
+            "project": "proj-GEN-003",
+            "meeting_type": "consortium",
+            "attendees": "Dr. Diallo (WHO AFRO), Dr. Nkemdirim (INRB), Dr. Park (Wellcome Sanger), Dr. Fall (Institut Pasteur Dakar), Africa CDC genomics team",
+            "transcript": """38 genomes QC-passed and aligned. Coverage >90% for 35 samples. Three samples flagged: two with <70% genome coverage, one with suspected lab contamination marker. Dr. Nkemdirim recommends excluding the contaminated sample and including the two low-coverage genomes with a note.
+
+Dr. Park proposed using BEAST2 with a strict molecular clock and exponential population growth model as a first pass. Amara suggested also running a relaxed clock given the reservoir uncertainty. Agreed to run both and compare.
+
+Root-to-tip regression: strong temporal signal (R² = 0.87). Date of introduction estimate: 28 ± 9 days before the reported index case. This is consistent with the field investigation timeline.
+
+Dr. Fall proposed submitting a preprint before peer-reviewed submission — Africa CDC genomics has a fast-turnaround review process.""",
+            "decisions": "1. Exclude 1 contaminated sample, include 2 low-coverage with caveats\n2. Run both strict and relaxed clock BEAST2 models\n3. Preprint submission target: 3 weeks after BEAST2 convergence",
+            "action_items": "- Amara: run BEAST2 models, share preliminary trees within 5 days\n- Dr. Park: review clock model outputs before preprint\n- Dr. Fall: confirm Institut Pasteur co-authorship and data sharing terms",
+            "duration_minutes": 60,
+            "status": "filed",
+            "created_at": DT(1),
         },
         {
             "meeting_id": "meet-004",
-            "title": "Malaria Resistance Consortium — Data Sharing Protocol",
-            "meeting_date": D(1),
-            "domain": "Malaria",
-            "project": "proj-MAL-004",
+            "title": "Ring Vaccination Pooled Analysis — Data Harmonisation",
+            "meeting_date": D(8),
+            "domain": "Vaccine Epidemiology",
+            "project": "proj-METH-004",
             "meeting_type": "consortium",
-            "attendees": "Dr. Fontaine, Dr. Ouédraogo (IRSS Burkina), Dr. Asamoah (KCCR Ghana), Dr. Fall (PNLP Senegal), Dr. Coulibaly (INRSP Mali), Prof. Barnes (LSHTM)",
-            "transcript": """Consortium agreed on a common data dictionary after 3 months of discussion. Key issue resolved: site code standardisation — will use WHO SPAR codes + country prefix. This unblocks Amélie's analysis.
+            "attendees": "Dr. Diallo (WHO AFRO), Dr. Henao-Restrepo (WHO IVB), Dr. Camacho (LSHTM), Dr. Tchatchouang (Africa CDC), Merck global health team",
+            "transcript": """Four outbreak datasets shared via secure WHO transfer. Dataset formats differ significantly: Equateur 2018 uses day-of-exposure dates, Kivu 2019–2020 uses registration dates, Equateur 2022 and 2025 use first-contact dates. Amara flagged this as a critical harmonisation problem — the vaccine effectiveness window calculation depends entirely on which date is used.
 
-Pfkelch13 validation status: 4 of 6 country datasets have WHO-validated results. Ghana and Mali pending lab confirmation for 2024 samples.
+Dr. Camacho presented a sensitivity analysis plan: run effectiveness estimate under all three date conventions and report the range. Dr. Henao-Restrepo agreed this is the most honest approach given the data quality variation.
 
-Prof. Barnes proposed a pooled analysis for WHO pre-qualification of the K13 445 mutation as a partial resistance marker. Timeline: 6 months. Amélie invited to lead statistical analysis plan.""",
-            "decisions": "1. Site codes: WHO SPAR + country prefix (immediate)\n2. Pooled K13 analysis: Amélie leads statistical analysis plan\n3. Data sharing portal: OSF project created, all datasets uploaded by July 31",
-            "action_items": "- Amélie: clean and upload DRC dataset to OSF by June 20\n- Dr. Ouédraogo: send updated Burkina metadata\n- Prof. Barnes: circulate pooled analysis protocol draft",
-            "duration_minutes": 75,
+Waning immunity: only the Kivu 2019–2020 dataset has >18 months of follow-up. Insufficient for robust waning estimates — Amara to flag this as a major limitation.
+
+Timeline: pooled analysis manuscript target is 6 months. Lancet or NEJM as primary target.""",
+            "decisions": "1. Report vaccine effectiveness under all 3 date conventions\n2. Flag waning analysis as exploratory (limited follow-up)\n3. Target: Lancet or NEJM submission in 6 months",
+            "action_items": "- Amara: harmonise date variables across 4 datasets and run primary VE estimate\n- Dr. Camacho: build sensitivity analysis R code for date convention comparison\n- Dr. Henao-Restrepo: confirm WHO authorship and data use agreement",
+            "duration_minutes": 80,
             "status": "filed",
-            "created_at": DT(1),
+            "created_at": DT(8),
         },
     ]
 
@@ -312,16 +320,16 @@ Prof. Barnes proposed a pooled analysis for WHO pre-qualification of the K13 445
 
     # ── Library Cards ──────────────────────────────────────────────────────────
     library_cards = [
-        {"title": "Systematic review of HAT treatment outcomes 2010–2024", "domain": "NTD", "tags": "HAT,treatment,eflornithine,NIFURTIMOX,systematic-review", "summary": "Meta-analysis of 23 RCTs. NECT (nifurtimox-eflornithine combination) superior to monotherapy. Stage 2 cure rates: 94.2% (NECT) vs 88.1% (eflornithine alone). Fexinidazole oral treatment shows comparable efficacy in recent trials."},
-        {"title": "Mapping HAT transmission risk in DRC using spatial random effects", "domain": "NTD", "tags": "HAT,spatial,INLA,DRC,risk-mapping", "summary": "Bayesian geostatistical model (INLA-SPDE) identified 12 high-transmission clusters along major river systems. Population at risk: 4.2M. Underreporting adjustment doubled estimated incidence in remote zones."},
-        {"title": "WHO Roadmap for NTD control 2021–2030 — surveillance targets", "domain": "NTD", "tags": "WHO,NTD,roadmap,targets,elimination,surveillance", "summary": "Updated milestones for HAT elimination: <1 case/10,000 population in all endemic health zones by 2030. Requires shift from passive to active surveillance in 340 remaining endemic zones."},
-        {"title": "DHIS2 for national disease surveillance: lessons from 12 LMIC deployments", "domain": "Health Information Systems", "tags": "DHIS2,surveillance,LMIC,implementation,data-quality", "summary": "Comparative study of DHIS2 NTD modules across 12 countries. Key success factors: dedicated national data manager, mobile data entry for field teams, automated data quality alerts. Timeliness improved by 67% vs paper systems."},
-        {"title": "Bayesian hierarchical models for disease burden estimation", "domain": "Statistics", "tags": "INLA,bayesian,multilevel,disease-burden,R-INLA", "summary": "Comprehensive guide to R-INLA for spatial epidemiology. Covers BYM2 model for areal data, SPDE for point-referenced data, temporal extensions. Benchmark against MCMC shows 40× speedup with comparable accuracy."},
-        {"title": "Artemisinin partial resistance in P. falciparum: global surveillance 2022–2024", "domain": "Malaria", "tags": "malaria,artemisinin,resistance,Pfkelch13,surveillance", "summary": "K13 mutations validated as partial resistance markers now detected in 8 African countries. WHO urgent review triggered. C580Y dominant in Southeast Asia; multiple mutations in Africa. ACT treatment failures: 12–26% in affected sites."},
-        {"title": "Multilevel modelling in population health — applied examples", "domain": "Statistics", "tags": "multilevel,MLM,epidemiology,methods,textbook", "summary": "Applied textbook covering 2-level and 3-level models. HAT chapters co-authored by IMT team. Stata and R examples throughout. Strong on contextual effects and cross-level interactions."},
-        {"title": "OpenStreetMap for health facility mapping in sub-Saharan Africa", "domain": "GIS", "tags": "OSM,mapping,health-facilities,GIS,DHIS2", "summary": "Systematic comparison of OSM vs official facility lists in 6 countries. OSM coverage: 68–94% of verified facilities. Completeness higher in urban areas. Recommended as first-pass data source for DHIS2 facility imports."},
-        {"title": "Measuring disease burden in low-income settings: methodological challenges", "domain": "Epidemiology", "tags": "disease-burden,DALYs,methods,surveillance,underreporting", "summary": "Reviews four approaches to burden estimation under surveillance gaps: capture-recapture, multiplier methods, Bayesian modelling, expert elicitation. Recommends triangulation. Specific guidance for NTDs with passive-only surveillance."},
-        {"title": "Field evaluation of RDTs for HAT stage 1 screening", "domain": "NTD", "tags": "HAT,rapid-diagnostic-test,RDT,screening,sensitivity", "summary": "Head-to-head evaluation of three HAT RDTs (HAT Sero-K-SeT, SD-Bioline HAT 2.0, rHAT Sero-Strip) in DRC active surveillance campaign. HAT Sero-K-SeT: sensitivity 95.3%, specificity 99.1%. Best performer in field conditions."},
+        {"title": "Ebola virus disease — transmission dynamics and outbreak investigation methods", "domain": "Outbreak Response", "tags": "EVD,Ebola,transmission,outbreak,epidemiology", "summary": "Comprehensive review of EVD transmission dynamics across 12 DRC outbreaks 2014–2024. Serial interval: 7–12 days (mean 8.4). Secondary attack rate among household contacts: 11–17%. Healthcare worker exposure consistently accounts for 10–15% of cases when PPE protocols are not enforced. Key finding: early case detection (<5 days from symptom onset to isolation) reduces secondary attack rate by 60%."},
+        {"title": "rVSV-ZEBOV ring vaccination — Lancet trial and subsequent effectiveness evidence", "domain": "Vaccine Epidemiology", "tags": "rVSV-ZEBOV,Ebola,ring-vaccination,effectiveness,Ervebo", "summary": "Pooled analysis of ring vaccination across 2018–2023 DRC outbreaks. Overall vaccine effectiveness: 97.5% (95% CI 86–99.5%) in per-protocol analysis. Effectiveness lower in healthcare workers (91%) vs community contacts (99%). Waning: limited evidence beyond 12 months from initial data. R code and dataset on OSF."},
+        {"title": "BEAST2: Bayesian evolutionary analysis for genomic epidemiology", "domain": "Genomic Epidemiology", "tags": "BEAST2,phylogenetics,molecular-clock,Bayesian,genomics", "summary": "Tutorial and benchmark for BEAST2 in outbreak genomic analysis. Covers strict vs relaxed molecular clock selection, population growth models, and convergence diagnostics (ESS >200). Applied example: dating introduction events in Ebola outbreaks. BEAST2 2.7+ required for improved relaxed clock implementation. Companion R package EpiEstim integrates phylogenetic dates with Rt estimation."},
+        {"title": "DHIS2 for real-time outbreak surveillance — implementation lessons", "domain": "Health Information Systems", "tags": "DHIS2,surveillance,outbreak,real-time,implementation", "summary": "Review of DHIS2 deployments for outbreak surveillance in 8 African countries. Mobile data entry reduces reporting lag from 72 hours (paper) to 8 hours. Key success factors: offline functionality for field teams, automated data quality alerts, weekly refresher training. EVD-specific: tracker program with contact tracing linkage outperforms event-based aggregate reporting for ring vaccination targeting."},
+        {"title": "Whole-genome sequencing in outbreak response — operational guide", "domain": "Genomic Epidemiology", "tags": "WGS,sequencing,outbreak,operational,Nanopore,Ebola", "summary": "Field-deployable sequencing protocols for outbreak response using Oxford Nanopore. Target: 24-hour turnaround from sample to phylogenetic tree. Minimum coverage: 90% genome at 20× depth. QC thresholds: exclude samples with <70% coverage for molecular clock analysis, include with caveats for tree topology. Validated in multiple EVD and MPOX deployments."},
+        {"title": "Contact tracing performance and ring vaccination coverage in EVD outbreaks", "domain": "Outbreak Response", "tags": "contact-tracing,ring-vaccination,EVD,coverage,performance", "summary": "Analysis of contact tracing completeness across 6 DRC EVD outbreaks. Mean contact listing rate: 73% (range 51–89%). Tier-1 contact vaccination within 72 hours achieved in 87% of events when ring vaccination team was pre-positioned. Key predictor of poor coverage: urban settings (OR 0.34, 95% CI 0.19–0.60 vs rural). Implications for ring radius definitions in peri-urban outbreaks."},
+        {"title": "Phylogeography of Zaire ebolavirus — reservoir persistence vs re-introduction", "domain": "Genomic Epidemiology", "tags": "Zaire-ebolavirus,phylogeography,reservoir,introduction,DRC", "summary": "Bayesian phylogeographic analysis of 847 EVD genomes from 1976–2024 DRC outbreaks. Evidence for independent reservoir introductions rather than sustained human-to-human chains between outbreaks. Equateur lineage shows geographic clustering suggesting local reservoir. Implications: surveillance of animal-human interface important even during inter-outbreak periods."},
+        {"title": "Measuring case fatality ratio in real-time during EVD outbreaks", "domain": "Outbreak Response", "tags": "CFR,case-fatality,EVD,real-time,bias,estimation", "summary": "Methodological analysis of CFR estimation under different ascertainment assumptions. Naive CFR overestimates early in outbreaks due to unresolved cases. Recommended: use confirmed deaths / (confirmed deaths + confirmed recovered) once >80% of cases are resolved. Adjustment factor for healthcare access varies 2–4× across settings. R package cfr available on CRAN."},
+        {"title": "Safe and dignified burial practices — impact on EVD transmission", "domain": "Outbreak Response", "tags": "safe-burial,EVD,transmission,funeral,intervention", "summary": "Systematic review of safe and dignified burial (SDB) impact on EVD transmission. SDB reduces funeral-associated transmission from 27% to <5% of all cases when adherence >85%. Key barrier: community acceptance — SDB acceptability lowest in first 72 hours after death. Trained community volunteers as intermediaries increases acceptance by 40%."},
+        {"title": "R package EpiNow2 — real-time Rt estimation with reporting delays", "domain": "Statistics", "tags": "EpiNow2,Rt,reproduction-number,R,real-time,outbreak", "summary": "EpiNow2 provides Bayesian Rt estimation accounting for reporting delays and right-truncation. Validated on EVD, COVID-19, and MPOX data. Key inputs: case timeseries, serial interval distribution, reporting delay distribution. Outputs daily Rt with credible intervals. GitHub: epiforecasts/EpiNow2. Recommended over EpiEstim for real-time use due to delay correction."},
     ]
 
     for i, card in enumerate(library_cards, start=1):
@@ -332,14 +340,14 @@ Prof. Barnes proposed a pooled analysis for WHO pre-qualification of the K13 445
 
     # ── Ideas ──────────────────────────────────────────────────────────────────
     ideas = [
-        {"text": "i: Use capture-recapture with health zone treatment data as second list — more rigorous than current multiplier method for underreporting estimate", "project_id": "proj-HAT-001", "idea_type": "research", "tags": "HAT,methodology,capture-recapture,underreporting", "domain": "NTD", "phd_relevance": 4},
-        {"text": "i: Could the DHIS2 facility location data feed directly into the INLA spatial model for Article 2? Would save manual coordinate extraction step", "project_id": "proj-DHIS2-002", "idea_type": "method", "tags": "DHIS2,spatial,integration,INLA", "domain": "Health Information Systems", "phd_relevance": 3},
-        {"text": "i: Risk stratification from Article 1 results could directly inform DRC Ministry targeting of active surveillance resources — policy article opportunity", "project_id": "proj-PHD-003", "idea_type": "research", "tags": "policy,risk-stratification,surveillance,HAT", "domain": "NTD", "phd_relevance": 5},
-        {"text": "q: What happens to spatial autocorrelation estimates in INLA when health zone boundaries changed mid-period (2018 administrative reform)?", "project_id": "proj-PHD-003", "idea_type": "question", "tags": "INLA,spatial,administrative-boundaries,methods", "domain": "Statistics", "phd_relevance": 4},
-        {"text": "i: The K13 mutation diversity across West Africa sites might map onto treatment pathway differences — ask Dr. Fall if Senegal has disaggregated by treatment line", "project_id": "proj-MAL-004", "idea_type": "research", "tags": "malaria,K13,West-Africa,treatment", "domain": "Malaria", "phd_relevance": 1},
-        {"text": "i: Module 3 of the digital health course could use the DRC DHIS2 implementation as a live case study — students configure a test instance", "project_id": "proj-TEACH-005", "idea_type": "teaching", "tags": "DHIS2,teaching,case-study,digital-health", "domain": "Teaching", "phd_relevance": 0},
-        {"text": "n: Reviewer 2 on Article 1 is likely Boillot (LMU Munich) — the specific question about CATT threshold matches his 2022 paper exactly", "project_id": "proj-HAT-001", "idea_type": "note", "tags": "peer-review,CATT,HAT", "domain": "NTD", "phd_relevance": 2},
-        {"text": "i: Fasciola hepatica prevalence data released last week from West Africa — potentially useful as comparator burden calculation in the introductory framing", "project_id": "proj-PHD-003", "idea_type": "literature", "tags": "fasciola,NTD,burden,West-Africa", "domain": "NTD", "phd_relevance": 2},
+        {"text": "i: Could the phylogeographic clustering in Equateur outbreaks be used to define high-risk zones for pre-positioned ring vaccination teams? Would need to overlay with bat roost distribution data", "project_id": "proj-GEN-003", "idea_type": "research", "tags": "phylogeography,ring-vaccination,pre-positioning,bat-reservoir", "domain": "Genomic Epidemiology"},
+        {"text": "i: DHIS2 tracker could flag cases as 'contact of known case' vs 'community case' automatically based on contact tracing linkage — this would enable real-time chain of transmission monitoring without manual re-coding", "project_id": "proj-DHIS2-002", "idea_type": "method", "tags": "DHIS2,contact-tracing,linkage,automation", "domain": "Health Information Systems"},
+        {"text": "i: The ring radius for vaccination is currently fixed at 3 generations — but our Equateur data suggests urban settings have fundamentally different contact network structure. Worth modelling optimal radius by setting type", "project_id": "proj-METH-004", "idea_type": "research", "tags": "ring-vaccination,contact-network,urban,optimal-radius", "domain": "Vaccine Epidemiology"},
+        {"text": "q: If two vaccination rings overlap, how do we attribute the prevented case to a specific ring? This is the double-counting problem in the pooled VE analysis — need a principled method", "project_id": "proj-METH-004", "idea_type": "question", "tags": "ring-vaccination,overlap,attribution,VE", "domain": "Statistics"},
+        {"text": "i: The 4-field gap between paper and DHIS2 form could be an opportunity — add an optional 'extended investigation' module triggered when healthcare worker exposure is suspected", "project_id": "proj-DHIS2-002", "idea_type": "method", "tags": "DHIS2,HCW,extended-form,adaptive", "domain": "Health Information Systems"},
+        {"text": "i: Module 3 of the VHF course could use the DHIS2 EVD tracker as a live configuration exercise — students build a simplified tracker from scratch using test instance", "project_id": "proj-TEACH-005", "idea_type": "teaching", "tags": "DHIS2,teaching,case-study,VHF", "domain": "Teaching"},
+        {"text": "n: The BEAST2 relaxed clock estimate gives a much wider introduction date CI (±21 days vs ±9 days for strict clock) — this is scientifically more honest but may be harder to communicate to policy audience", "project_id": "proj-GEN-003", "idea_type": "note", "tags": "BEAST2,molecular-clock,communication,policy", "domain": "Genomic Epidemiology"},
+        {"text": "i: EpiNow2 Rt estimates could be integrated into the DHIS2 dashboard as an automated indicator — triggers alert when Rt crosses 1.0 for 3 consecutive days", "project_id": "proj-DHIS2-002", "idea_type": "method", "tags": "EpiNow2,Rt,DHIS2,alert,automation", "domain": "Health Information Systems"},
     ]
 
     for i, idea in enumerate(ideas, start=1):
@@ -349,17 +357,17 @@ Prof. Barnes proposed a pooled analysis for WHO pre-qualification of the K13 445
              phd_relevance, feasibility)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 3)
         """, (f"idea-{100+i}", idea["text"], idea.get("project_id"), idea["idea_type"],
-              idea["tags"], DT(i), idea["domain"], idea.get("phd_relevance", 2)))
+              idea["tags"], DT(i), idea["domain"], 0))
 
     # ── News Briefs ─────────────────────────────────────────────────────────────
     news = [
-        {"title": "WHO confirms HAT notifications below 1,000 globally for first time in 2024", "domain": "NTD", "signal_strength": "high", "summary": "WHO NTD department confirmed global HAT notifications dropped to 848 in 2024 — a historic milestone and the first time below 1,000. DRC accounts for 73% of remaining cases. WHO states the 2030 elimination target remains achievable but requires sustained surveillance investment.", "source_url": "https://www.who.int/news/item/hat-milestone-2024", "source_type": "news", "surprise_flag": 1},
-        {"title": "New INLA spatial model for malaria risk — comparison with geostatistical benchmark", "domain": "Statistics", "signal_strength": "medium", "summary": "Open-access paper in Spatial and Spatio-temporal Epidemiology compares R-INLA SPDE approach to geostatistical Gaussian process models for malaria risk mapping. INLA 15× faster with 2% lower WAIC. Code on GitHub. Directly applicable to Article 2 methods.", "source_url": "https://doi.org/10.1016/j.sste.2025.100651", "source_type": "article", "surprise_flag": 0},
-        {"title": "DHIS2 Academy: NTD Module certification now available online", "domain": "Health Information Systems", "signal_strength": "medium", "summary": "DHIS2 Academy launched a new online certification track for NTD surveillance module implementation. 12-hour course, covers aggregate + tracker programs. Free for public health professionals.", "source_url": "https://academy.dhis2.org/ntd", "source_type": "news", "surprise_flag": 0},
-        {"title": "P. falciparum K13 C469Y mutation validated as partial resistance marker — WHO urgent review", "domain": "Malaria", "signal_strength": "high", "summary": "WHO malaria threat response team published urgent review confirming C469Y as a validated partial resistance marker. Detected in Uganda, Rwanda, and DRC in 2024 samples. Updates previous classification from 'not validated' to 'validated'.", "source_url": "https://www.who.int/publications/i/item/k13-c469y-review", "source_type": "news", "surprise_flag": 1},
-        {"title": "Lancet Infectious Diseases: open call for HAT elimination supplement", "domain": "NTD", "signal_strength": "high", "summary": "Lancet ID announced a special supplement on HAT elimination, open call for contributions. Deadline: September 30. Topics include: surveillance systems, treatment access, operational research, policy. Directly relevant to Article 1 revised submission and PhD Article 3.", "source_url": "https://www.thelancet.com/journals/laninf/article/hat-elimination-supplement", "source_type": "news", "surprise_flag": 1},
-        {"title": "OpenAlex: 47 new HAT surveillance papers indexed this week", "domain": "NTD", "signal_strength": "low", "summary": "Weekly OpenAlex scan returned 47 papers tagged with 'human African trypanosomiasis' + 'surveillance' published in the last 7 days. Top citation: Büscher et al. on passive surveillance performance in DRC focus area.", "source_url": "https://openalex.org/works?filter=concepts.id:C2778793908", "source_type": "article", "surprise_flag": 0},
-        {"title": "PubMed alert: R-INLA 24.9.0 released — new features for spatial models", "domain": "Statistics", "signal_strength": "medium", "summary": "R-INLA version 24.9.0 adds improved support for non-stationary spatial models and new PC priors for spatial range parameter. Release notes include worked example for disease surveillance. Run update.packages() to upgrade.", "source_url": "https://www.r-inla.org/news", "source_type": "article", "surprise_flag": 0},
+        {"title": "WHO declares end of Equateur EVD outbreak — 47 confirmed cases, 31 deaths", "domain": "Outbreak Response", "signal_strength": "high", "summary": "WHO and DRC Ministry of Health declared the end of the Equateur Province EVD outbreak today after 42 days with no new confirmed cases. 47 total confirmed cases, CFR 66%. Ring vaccination covered 94% of tier-1 contacts. Full after-action review scheduled for next month.", "source_url": "https://www.who.int/news/item/evd-equateur-2025-end", "source_type": "news", "surprise_flag": 1},
+        {"title": "BEAST2 v2.7.6 released — improved relaxed clock convergence diagnostics", "domain": "Genomic Epidemiology", "signal_strength": "medium", "summary": "BEAST2 2.7.6 includes improved MCMC convergence diagnostics for relaxed clock models, reduced burn-in requirement, and a new ESS threshold warning for low-coverage genomes. Release notes recommend re-running existing analyses from v2.7.4 due to a fixed bug in the relaxed clock rate estimator.", "source_url": "https://www.beast2.org/2025/05/release-notes-v276", "source_type": "article", "surprise_flag": 1},
+        {"title": "DHIS2 Academy: Outbreak Surveillance Tracker certification now available", "domain": "Health Information Systems", "signal_strength": "medium", "summary": "DHIS2 Academy launched a new certification track specifically for outbreak surveillance tracker implementation. Covers contact tracing linkage, ring vaccination modules, and real-time data quality monitoring. Free for public health practitioners. Completion in approximately 10 hours.", "source_url": "https://academy.dhis2.org/outbreak-tracker", "source_type": "news", "surprise_flag": 0},
+        {"title": "New Marburg outbreak confirmed in Tanzania — genome sequences released", "domain": "Outbreak Response", "signal_strength": "high", "summary": "WHO confirmed a new Marburg virus disease cluster in Tanzania (8 cases, 5 deaths). INRB and Institut Pasteur have released the first 3 genome sequences. Phylogenetic analysis in progress. WHO is deploying a field team. Amara flagged this for monitoring — response methods overlap with EVD protocols.", "source_url": "https://www.who.int/emergencies/disease-outbreak-news/item/marburg-tanzania-2025", "source_type": "news", "surprise_flag": 1},
+        {"title": "EpiNow2 v2.0 released — native DHIS2 data connector and improved delay estimation", "domain": "Statistics", "signal_strength": "medium", "summary": "EpiNow2 v2.0 adds a direct DHIS2 API connector for pulling case timeseries, improved reporting delay estimation using a mixture model, and a Shiny dashboard for real-time Rt monitoring. Now on CRAN. The DHIS2 connector is directly relevant to the EVD tracker automation idea.", "source_url": "https://epiforecasts.io/EpiNow2/news/index.html", "source_type": "article", "surprise_flag": 0},
+        {"title": "OpenAlex: 23 new EVD surveillance papers indexed this week", "domain": "Outbreak Response", "signal_strength": "low", "summary": "Weekly OpenAlex scan returned 23 papers tagged with 'Ebola virus disease' + 'surveillance' published in the last 7 days. Top citation: a modelling study estimating the optimal ring vaccination radius in urban vs rural settings — directly relevant to the pooled VE analysis.", "source_url": "https://openalex.org/works?filter=concepts.id:C2909456852", "source_type": "article", "surprise_flag": 0},
+        {"title": "Africa CDC: genomic surveillance capacity in Central Africa expanded to 6 new labs", "domain": "Genomic Epidemiology", "signal_strength": "medium", "summary": "Africa CDC announced funding for 6 new genomic surveillance laboratories in Central Africa, including a new node in Equateur Province DRC. Nanopore sequencing capacity being deployed. Target: 48-hour turnaround from sample to phylogenetic tree by 2026. Amara's consortium is a named technical partner.", "source_url": "https://africacdc.org/news-item/genomic-surveillance-expansion-2025", "source_type": "news", "surprise_flag": 0},
     ]
 
     for i, n in enumerate(news, start=1):
@@ -372,13 +380,12 @@ Prof. Barnes proposed a pooled analysis for WHO pre-qualification of the K13 445
               n["summary"], n["source_url"], n["source_type"], n["surprise_flag"], DT(i//3)))
 
     # ── Daily Insight (Morning Brief) ──────────────────────────────────────────
-    brief_text = """**Today's standout:** WHO confirmed global HAT notifications fell below 1,000 for the first time in 2024. This directly validates the surveillance trend you described in Article 1 and strengthens your elimination timeline argument. Worth adding a sentence to your revision cover letter.
+    brief_text = """**Today's standout:** WHO declared the end of the Equateur EVD outbreak — 47 cases, CFR 66%, ring vaccination coverage 94%. This validates your transmission chain analysis and gives you a clean final case count for the manuscript. Prioritise finalising the transmission tree today so the methods section can be drafted against resolved data.
 
-**This week's signals:** The Lancet ID call for HAT elimination supplement is open (deadline September 30) — Article 1 revised submission could fit this perfectly. A new R-INLA 24.9.0 release includes non-stationary spatial model support, worth testing for Article 2. The K13 C469Y validation news is urgent for the malaria project — update your resistance classification table.
+**This week's signals:** BEAST2 v2.7.6 has a bug fix in the relaxed clock estimator — re-run your analysis before submitting the genomics preprint. The new EpiNow2 DHIS2 connector is worth testing for the automated Rt alert you sketched last week. The Marburg cluster in Tanzania is worth monitoring — response methods overlap and Africa CDC may ask for support.
 
-**Research thread to pick up:** You have three items overdue or due today: the Figure 3 revision, the supplement table S3 update, and the harmonised DHIS2 form draft (due June 15). The DHIS2 item unblocks training preparation, so prioritise it over the manuscript revision this morning."""
+**Tasks overdue or due today:** Transmission tree finalisation (overdue — awaiting INRB sequences), attack rate calculation (2 days overdue). The DHIS2 pilot in Mbandaka is due in 5 days — confirm field team training is scheduled."""
 
-    # daily_insights schema uses insight_date + content + generated_at
     conn.execute("""
         INSERT OR REPLACE INTO daily_insights (id, insight_date, content, generated_at)
         VALUES (1, ?, ?, ?)
@@ -386,14 +393,14 @@ Prof. Barnes proposed a pooled analysis for WHO pre-qualification of the K13 445
 
     # ── Agent Runs ─────────────────────────────────────────────────────────────
     agent_runs = [
-        {"agent_slug": "librarian", "task_summary": "Literature search: HAT surveillance DRC 2020–2025", "input_path": "inputs/searches/hat-drc-2025.md", "output_path": "outputs/reviews/librarian/2026-05-13_hat-surveillance-drc.md", "status": "completed", "input_tokens": 1240, "output_tokens": 3890, "model": "claude-sonnet-4-6", "created_at": DT(2)},
-        {"agent_slug": "epidemiologist", "task_summary": "Methodology review: INLA model for Article 2 spatial analysis", "input_path": "inputs/code/article2-inla-draft.R", "output_path": "outputs/reviews/epidemiologist/2026-05-11_article2-inla-review.md", "status": "completed", "input_tokens": 2100, "output_tokens": 4200, "model": "claude-opus-4-7", "created_at": DT(4)},
-        {"agent_slug": "writing-partner", "task_summary": "Methods section revision: Article 1 response to reviewers", "input_path": "inputs/drafts/article1-methods-v3.md", "output_path": "outputs/reviews/writing-partner/2026-05-10_article1-methods-revision.md", "status": "completed", "input_tokens": 3400, "output_tokens": 5600, "model": "claude-sonnet-4-6", "created_at": DT(5)},
-        {"agent_slug": "dhis2-expert", "task_summary": "DHIS2 tracker metadata review: NTD passive surveillance program", "input_path": "inputs/dhis2/ntd-tracker-metadata.json", "output_path": "outputs/reviews/dhis2-expert/2026-05-09_ntd-tracker-review.md", "status": "completed", "input_tokens": 4200, "output_tokens": 6100, "model": "claude-sonnet-4-6", "created_at": DT(6)},
-        {"agent_slug": "meeting-memory", "task_summary": "HAT Consortium Call Q2 — structured brief + action items", "input_path": "inputs/meetings/hat-consortium-q2-2026.txt", "output_path": "outputs/reviews/meeting-memory/2026-05-13_hat-consortium-q2.md", "status": "completed", "input_tokens": 2800, "output_tokens": 3400, "model": "claude-haiku-4-5", "created_at": DT(2)},
-        {"agent_slug": "data-analyst", "task_summary": "Profile and harmonise malaria resistance dataset: 6 country merge", "input_path": "inputs/code/malaria-merge-v2.csv", "output_path": "outputs/reviews/data-analyst/2026-05-12_malaria-profile.md", "status": "completed", "input_tokens": 1800, "output_tokens": 2900, "model": "claude-sonnet-4-6", "created_at": DT(3)},
-        {"agent_slug": "news-radar", "task_summary": "Morning brief: NTD + malaria + DHIS2 signals", "input_path": "", "output_path": "outputs/reviews/news-radar/2026-05-15_morning-brief.md", "status": "completed", "input_tokens": 890, "output_tokens": 1200, "model": "claude-haiku-4-5", "created_at": DT(0, 7)},
-        {"agent_slug": "course-builder", "task_summary": "Course outline: Epidemiology for Digital Health — Module 1–4 draft", "input_path": "", "output_path": "outputs/reviews/course-builder/2026-05-08_epi-digital-health-outline.md", "status": "completed", "input_tokens": 2200, "output_tokens": 4800, "model": "claude-sonnet-4-6", "created_at": DT(7)},
+        {"agent_slug": "librarian", "task_summary": "Literature search: rVSV-ZEBOV ring vaccination effectiveness 2018–2025", "input_path": "inputs/searches/ring-vax-evd-2025.md", "output_path": "outputs/reviews/librarian/2026-05-13_ring-vax-effectiveness.md", "status": "completed", "input_tokens": 1240, "output_tokens": 3890, "model": "claude-sonnet-4-6", "created_at": DT(2)},
+        {"agent_slug": "epidemiologist", "task_summary": "Methodology review: transmission tree and secondary attack rate estimation", "input_path": "inputs/code/transmission-tree-v2.R", "output_path": "outputs/reviews/epidemiologist/2026-05-11_transmission-tree-review.md", "status": "completed", "input_tokens": 2100, "output_tokens": 4200, "model": "claude-opus-4-7", "created_at": DT(4)},
+        {"agent_slug": "writing-partner", "task_summary": "Methods section draft: outbreak investigation and transmission analysis", "input_path": "inputs/drafts/manuscript-methods-v1.md", "output_path": "outputs/reviews/writing-partner/2026-05-10_manuscript-methods.md", "status": "completed", "input_tokens": 3400, "output_tokens": 5600, "model": "claude-sonnet-4-6", "created_at": DT(5)},
+        {"agent_slug": "dhis2-expert", "task_summary": "DHIS2 tracker metadata design: EVD case notification with contact tracing linkage", "input_path": "inputs/dhis2/evd-tracker-metadata-draft.json", "output_path": "outputs/reviews/dhis2-expert/2026-05-09_evd-tracker-review.md", "status": "completed", "input_tokens": 4200, "output_tokens": 6100, "model": "claude-sonnet-4-6", "created_at": DT(6)},
+        {"agent_slug": "meeting-memory", "task_summary": "EVD Outbreak Review meeting — structured brief and action items", "input_path": "inputs/meetings/evd-outbreak-review-2026-05-12.txt", "output_path": "outputs/reviews/meeting-memory/2026-05-13_evd-outbreak-review.md", "status": "completed", "input_tokens": 2800, "output_tokens": 3400, "model": "claude-haiku-4-5", "created_at": DT(2)},
+        {"agent_slug": "data-analyst", "task_summary": "Profile ring vaccination dataset: harmonise 4 outbreak date conventions", "input_path": "inputs/data/ring-vax-pooled-raw.csv", "output_path": "outputs/reviews/data-analyst/2026-05-12_ring-vax-profile.md", "status": "completed", "input_tokens": 1800, "output_tokens": 2900, "model": "claude-sonnet-4-6", "created_at": DT(3)},
+        {"agent_slug": "news-radar", "task_summary": "Morning brief: EVD + VHF + genomic surveillance signals", "input_path": "", "output_path": "outputs/reviews/news-radar/2026-05-15_morning-brief.md", "status": "completed", "input_tokens": 890, "output_tokens": 1200, "model": "claude-haiku-4-5", "created_at": DT(0, 7)},
+        {"agent_slug": "course-builder", "task_summary": "VHF field investigation course — module outline 1–4", "input_path": "", "output_path": "outputs/reviews/course-builder/2026-05-08_vhf-course-outline.md", "status": "completed", "input_tokens": 2200, "output_tokens": 4800, "model": "claude-sonnet-4-6", "created_at": DT(7)},
     ]
 
     for i, run in enumerate(agent_runs, start=1):
@@ -408,10 +415,10 @@ Prof. Barnes proposed a pooled analysis for WHO pre-qualification of the K13 445
 
     # ── Learning Courses ────────────────────────────────────────────────────────
     courses = [
-        {"title": "Bayesian Spatial Epidemiology with R-INLA", "category": "statistics", "slug": "bayesian-spatial-inla", "progress_pct": 67, "total_modules": 9, "completed_modules": 6, "status": "active", "project_id": "proj-PHD-003"},
-        {"title": "DHIS2 Tracker Programs — Advanced Configuration", "category": "health-informatics", "slug": "dhis2-tracker-advanced", "progress_pct": 33, "total_modules": 6, "completed_modules": 2, "status": "active", "project_id": "proj-DHIS2-002"},
-        {"title": "Applied Multilevel Models in Epidemiology", "category": "statistics", "slug": "multilevel-models-epi", "progress_pct": 100, "total_modules": 8, "completed_modules": 8, "status": "completed"},
-        {"title": "Scientific Writing for Public Health — Revision Strategies", "category": "writing", "slug": "scientific-writing-ph", "progress_pct": 0, "total_modules": 5, "completed_modules": 0, "status": "active", "project_id": "proj-PHD-003"},
+        {"title": "Genomic Epidemiology — BEAST2 and Phylogeography", "category": "genomics", "slug": "genomic-epi-beast2", "progress_pct": 55, "total_modules": 8, "completed_modules": 4, "status": "active", "project_id": "proj-GEN-003"},
+        {"title": "DHIS2 Tracker Programs — Outbreak Surveillance", "category": "health-informatics", "slug": "dhis2-tracker-outbreak", "progress_pct": 40, "total_modules": 6, "completed_modules": 2, "status": "active", "project_id": "proj-DHIS2-002"},
+        {"title": "Applied Survival Analysis and Time-to-Event Methods", "category": "statistics", "slug": "survival-analysis-r", "progress_pct": 100, "total_modules": 7, "completed_modules": 7, "status": "completed"},
+        {"title": "Scientific Writing for Rapid Communications in Outbreak Response", "category": "writing", "slug": "rapid-comms-writing", "progress_pct": 20, "total_modules": 4, "completed_modules": 1, "status": "active", "project_id": "proj-EVD-001"},
     ]
 
     for i, c in enumerate(courses, start=1):
@@ -426,7 +433,7 @@ Prof. Barnes proposed a pooled analysis for WHO pre-qualification of the K13 445
 
     conn.commit()
     print(f"✓ Demo data seeded successfully.")
-    print(f"  Researcher: Dr. Amélie Fontaine — Senior Epidemiologist, IMT Lyon")
+    print(f"  Researcher: Dr. Amara Diallo — Senior Epidemiologist, WHO AFRO")
     print(f"  Projects: {len(projects)} active")
     print(f"  Tasks: {len(tasks)} (including overdue + upcoming)")
     print(f"  Meetings: {len(meetings)} (with full transcripts)")
@@ -436,7 +443,7 @@ Prof. Barnes proposed a pooled analysis for WHO pre-qualification of the K13 445
     print(f"  Agent runs: {len(agent_runs)}")
     print(f"  Learning courses: {len(courses)}")
     print(f"\n  User config and preferences written to system/config/")
-    print(f"\n  Open http://127.0.0.1:8000 and start the dashboard to take screenshots.")
+    print(f"\n  Open http://127.0.0.1:8080 and start the dashboard to take screenshots.")
 
 
 def main():
@@ -459,7 +466,6 @@ def main():
             ("projects", "project_id", "proj-"),
             ("tasks", "task_id", "task-"),
             ("meetings", "meeting_id", "meet-"),
-            # agent_runs.run_id is INTEGER — skip prefix delete for it
             ("ideas", "idea_id", "idea-"),
         ]:
             try:

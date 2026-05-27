@@ -213,6 +213,12 @@ system/install/*.log
 system/tests/
 system/design-docs/
 
+# Session memory and control-room state (personal activity logs)
+01_control-room/
+
+# Local workflow scripts with machine-specific paths
+system/config/workflows/
+
 # Claude Code local settings (machine-specific)
 .claude/settings.local.json
 
