@@ -446,6 +446,131 @@ Timeline: pooled analysis manuscript target is 6 months. Lancet or NEJM as prima
     print(f"\n  Open http://127.0.0.1:8080 and start the dashboard to take screenshots.")
 
 
+def generate_linelist(output_path: Path):
+    """Generate a synthetic EpiRHandbook-style EVD case linelist (~150 rows)."""
+    import csv
+    import random
+
+    rng = random.Random(42)  # fixed seed → reproducible output
+
+    HEALTH_ZONES  = ["Mbandaka", "Bikoro", "Wangata", "Itipo"]
+    ZONE_WEIGHTS  = [0.35, 0.30, 0.20, 0.15]
+    OUTBREAK_START = TODAY - timedelta(days=90)
+    SERIAL_MEAN    = 8
+    SERIAL_SD      = 2
+
+    cases: list[dict] = []
+
+    # Generation 0 — index case
+    index = {
+        "case_id": "EVD-EQ-001",
+        "generation": 0,
+        "date_onset": OUTBREAK_START,
+        "source_case_id": "",
+        "health_zone": "Bikoro",
+        "gender": "male",
+        "age": 42,
+        "healthcare_worker": "no",
+        "contact_of_known_case": "no",
+        "ring_vaccinated": "no",
+        "outcome": "Died",
+    }
+    cases.append(index)
+
+    counter        = 2
+    current_gen    = [index]
+
+    for gen in range(1, 9):
+        if len(cases) >= 150 or not current_gen:
+            break
+        next_gen = []
+        r_eff = max(0.4, 2.0 - gen * 0.28)
+
+        for source in current_gen:
+            if len(cases) >= 150:
+                break
+            n_sec = rng.choices([0, 1, 1, 2, 3], weights=[20, 30, 25, 15, 10])[0]
+            if rng.random() > r_eff / 2:
+                n_sec = max(0, n_sec - 1)
+
+            for _ in range(n_sec):
+                if len(cases) >= 150:
+                    break
+                interval = max(5, int(rng.gauss(SERIAL_MEAN, SERIAL_SD)))
+                onset    = source["date_onset"] + timedelta(days=interval)
+                if onset > TODAY:
+                    continue
+
+                zone = source["health_zone"] if rng.random() < 0.65 else rng.choices(HEALTH_ZONES, weights=ZONE_WEIGHTS)[0]
+                hcw  = "yes" if rng.random() < 0.13 else "no"
+                known_contact = "yes" if rng.random() < 0.76 else "no"
+
+                ring_prob     = min(0.92, 0.08 + gen * 0.11)
+                ring_vax      = "yes" if (known_contact == "yes" and rng.random() < ring_prob) else "no"
+
+                cfr = 0.66
+                if ring_vax == "yes":
+                    cfr = 0.22
+                if hcw == "yes":
+                    cfr = min(0.85, cfr + 0.10)
+                outcome = "Died" if rng.random() < cfr else "Recovered"
+
+                c = {
+                    "case_id": f"EVD-EQ-{counter:03d}",
+                    "generation": gen,
+                    "date_onset": onset,
+                    "source_case_id": source["case_id"],
+                    "health_zone": zone,
+                    "gender": rng.choice(["male", "female"]),
+                    "age": max(1, int(rng.gauss(35, 14))),
+                    "healthcare_worker": hcw,
+                    "contact_of_known_case": known_contact,
+                    "ring_vaccinated": ring_vax,
+                    "outcome": outcome,
+                }
+                cases.append(c)
+                next_gen.append(c)
+                counter += 1
+        current_gen = next_gen
+
+    rows = []
+    for c in cases:
+        onset      = c["date_onset"]
+        hosp_date  = onset + timedelta(days=rng.randint(2, 5))
+        out_date   = hosp_date + timedelta(days=rng.randint(5, 12))
+        resolved   = out_date <= TODAY
+        rows.append({
+            "case_id":              c["case_id"],
+            "generation":           c["generation"],
+            "date_onset":           onset.strftime("%Y-%m-%d"),
+            "date_hospitalisation": hosp_date.strftime("%Y-%m-%d"),
+            "date_outcome":         out_date.strftime("%Y-%m-%d") if resolved else "",
+            "outcome":              c["outcome"] if resolved else "",
+            "gender":               c["gender"],
+            "age":                  c["age"],
+            "health_zone":          c["health_zone"],
+            "province":             "Equateur",
+            "healthcare_worker":    c["healthcare_worker"],
+            "ring_vaccinated":      c["ring_vaccinated"],
+            "contact_of_known_case": c["contact_of_known_case"],
+            "source_case_id":       c["source_case_id"],
+        })
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "case_id", "generation", "date_onset", "date_hospitalisation",
+        "date_outcome", "outcome", "gender", "age", "health_zone",
+        "province", "healthcare_worker", "ring_vaccinated",
+        "contact_of_known_case", "source_case_id",
+    ]
+    with open(output_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print(f"✓ Linelist written: {output_path} ({len(rows)} cases)")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Seed Metis with demo data for screenshots.")
     parser.add_argument("--db", type=str, default=str(DEFAULT_DB), help="Path to SQLite database")
