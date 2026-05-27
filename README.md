@@ -35,7 +35,7 @@
 
 > **Disclaimer.** The concept, architecture, and approach behind Metis are original. One of Metis's core principles is self-improvement — it actively monitors AI developments and incorporates new tools, skills, and agent patterns. Tools, skills, and agents were built drawing on publicly available techniques, documentation, and web resources, and as such individual components are often not unique. What Metis presents is a *way of working* — a coherent system designed for researchers. Use and extension are welcome under the AGPL-3.0 license.
 
-Contributions are very much appreciated — see [Contributing](#contributing) below. Whether you want to share how a feature worked (or didn't) in your research workflow, or you are a more experienced developer with architectural feedback or a pull request: both perspectives are equally welcome.
+Contributions are very much appreciated — see [Contributing](#contributing) below. Whether you want to share how a feature worked (or didn't) in your research workflow, you have ideas about how to improve Metis to adapt it to your workflow, or you are a more experienced developer with architectural feedback or a pull request: both perspectives are equally welcome.
 
 ---
 
@@ -123,7 +123,7 @@ Metis is also built to fit *your* way of working. For example:
 | **Self-improvement loop** | Metis reviews its own performance, drafts behaviour improvements, and waits for your approval before anything changes |
 | **Persistent AI identity** | A growing profile of your domain, interests, and projects — the more you use it, the better every response gets |
 | **9-tab research dashboard** | Today · Knowledge · Meetings · Learning · Work · Thinking · Planner · Teach · Metis — running locally in your browser |
-| **Local & private** | Everything runs on your machine. **Your data never leaves.** |
+| **Local & private** | Everything runs on your machine. Your documents, database, and meeting notes stay fully local. A small set of external services receive outbound data by design: Claude API (text you send for analysis), PubMed/OpenAlex (daily search queries), Zotero (library metadata), CrossRef (DOI resolution), and optionally HuggingFace (model downloads) and Google Drive. See the Privacy section for the full table. |
 
 ---
 
@@ -251,7 +251,7 @@ The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account. No 
 - **Coverage gap analysis** — visual map of which methods areas your library covers and what's missing
 - **Unified search** — single query across PDFs, library cards, HAT corpus, and notes simultaneously
 - **Recently added strip** — last 10 documents added across all sources
-- **Knowledge graph (data layer)** — note links, communities, and shortest-path queries via the `kg_*` MCP tools. The interactive visualisation lives on the roadmap; the underlying graph is real and queryable today
+- **Knowledge graph** — visual map of connections between papers, ideas, and topics
 
 ---
 
@@ -268,9 +268,9 @@ The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account. No 
 ### Learning — *Know what you know. Review what you're forgetting.*
 
 - **Courses you're taking** — progress bars, completion tracking, module structure
-- **Spaced repetition** — cards generated from your courses with a due-today list. Full SM-2 scheduling is on the roadmap; the current build surfaces cards from the `spaced_repetition` table and lets you mark them reviewed
-- **Competency map** — your tracked skill levels by domain, with a coverage view
-- **Learning velocity** — lessons completed in the last 7 / 30 / 90 days, plus a 14-day sparkline of activity
+- **Spaced repetition** — Metis surfaces exactly what needs review today, based on forgetting curves
+- **Competency map** — visual overview of your skills and knowledge gaps
+- **Learning velocity stats** — how fast are you actually progressing?
 
 ---
 
@@ -428,7 +428,21 @@ Patient data, embargoed results, unpublished findings, ethics documents — thes
 
 ### What stays local
 
-Everything. The database, your PDFs, your meeting notes, your ideas, your agent history — all on your machine. The MCP server runs in a local Python process. The dashboard runs locally. Nothing is transmitted except the text you actively choose to send to Claude's API.
+Everything. The database, your PDFs, your meeting notes, your ideas, your agent history — all on your machine. The MCP server runs in a local Python process. The dashboard runs locally.
+
+**External services that receive outbound data:**
+
+| Service | What leaves your machine | When | Optional? |
+|---|---|---|---|
+| **Anthropic Claude API** | Text you send for analysis (briefings, reviews, course generation) | On demand | Required for AI features |
+| **PubMed / OpenAlex** | Your configured research search keywords (e.g. "neglected tropical diseases") | Daily morning scan | Yes — disable in preferences |
+| **Zotero Web API** | Library metadata: titles, authors, abstracts, tags, collections | Daily sync | Yes — requires API key setup |
+| **CrossRef** | DOI queries for citation resolution | On demand (library tools) | Yes — automatic when DOIs present |
+| **HuggingFace Hub** | Model name only — downloads embedding / diarization models on first use | First run | Yes — disable diarization to skip |
+| **Google Drive** | File metadata and content you explicitly export | On demand | Yes — requires OAuth setup |
+| **Gemini API** | Text you send (same scope as Claude API) | On demand | Yes — experimental, requires API key |
+
+Everything else — documents, voice recordings, PDF text, patient-adjacent data, meeting notes — stays on disk and never leaves.
 
 ### Security layers
 
@@ -440,7 +454,7 @@ Everything. The database, your PDFs, your meeting notes, your ideas, your agent 
 | **Constitution** | 12 machine-readable rules governing agent behaviour — applied to every deep or chained run |
 | **Red lines** | 5 non-overridable rules enforced at code level — **no override possible**, even by Metis itself |
 | **AES-256-GCM** | All backups encrypted at rest |
-| **Ollama (optional)** | Local LLM for PII screening — sensitive documents never sent to the API at all |
+| **Ollama (planned)** | Local LLM for offline PII screening — not yet implemented; all processing currently uses the Anthropic API |
 
 ### What this means for you
 
@@ -519,7 +533,7 @@ metis/system/install/windows/install.bat
 bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/metis/system/mcp-server/setup-mcp.sh)
 ```
 
-Gives you all **34 agents** and **76+ tools** inside Claude Desktop or Claude Code. Idempotent. Dashboard:
+Gives you all **34 agents** and **165+ tools** inside Claude Desktop or Claude Code. Idempotent. Dashboard:
 
 ```bash
 cd ~/Metis_PH/system/app-py && bash run.sh   # → http://127.0.0.1:8080
@@ -580,7 +594,7 @@ flowchart LR
         WATCHERS{{Watchers\nData Guardian\nCybersecurity}}
     end
     subgraph Platform
-        MCP[MCP Server\n76+ tools\nFastMCP]
+        MCP[MCP Server\n165+ tools\nFastMCP]
         DASH[Dashboard\nFastAPI + HTMX]
         DB[(SQLite\nWAL mode)]
     end
@@ -804,7 +818,7 @@ Four variants (Full / PH Shell / Standard / MCP-only) — all install Claude Des
 | R + RStudio | R statistical analysis |
 | Quarto | Course Builder (lesson rendering) |
 | Zotero | Reference manager sync |
-| Ollama (optional) | Local LLM for offline PII screening |
+| Ollama (planned) | Local LLM for offline PII screening — not yet implemented |
 
 ---
 

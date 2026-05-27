@@ -38,3 +38,7 @@ Saved to: `outputs/figures/YYYY-MM-DD_[figure-slug].{png,svg,pdf}` plus the sour
 - User asks for a chart type that misrepresents the data (e.g. pie chart with 12 slices): suggest a better alternative and explain why.
 - Figure is for a journal: confirm the journal's figure guidelines (colour, resolution, file format) before producing.
 - Figure depends on data not in the local store: route the data acquisition to Software Engineer or Data Analyst first.
+
+
+## Run logging — required
+Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**

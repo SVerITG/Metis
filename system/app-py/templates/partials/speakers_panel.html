@@ -1,0 +1,168 @@
+{# partials/speakers_panel.html — enrolled voice profiles #}
+<div id="speakers-panel" class="panel" style="padding:0;margin-bottom:18px;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
+    <span class="kicker kicker--accent" style="margin:0;">VOICE PROFILES</span>
+    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">{{ speakers | length }} ENROLLED</span>
+  </div>
+
+  {% if not available %}
+  <div style="padding:16px 20px;font-family:var(--m-sans);font-size:13px;color:var(--m-muted);line-height:1.6;">
+    <strong style="color:var(--m-warn);">resemblyzer not installed.</strong>
+    Voice recognition is unavailable. Run:<br>
+    <code style="font-family:var(--m-mono);font-size:11px;background:var(--m-surface-2);padding:2px 6px;border-radius:3px;">
+      python3 -m pip install resemblyzer
+    </code>
+    in the Metis venv.
+  </div>
+  {% else %}
+
+  {% if speakers %}
+  <div style="padding:10px 20px;">
+    {% for sp in speakers %}
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--m-rule-soft);">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--m-accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="font-family:var(--m-mono);font-size:11px;color:#fff;font-weight:600;">{{ sp.name[0].upper() }}</span>
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">{{ sp.name }}</div>
+        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);">
+          {{ sp.sample_count }} SAMPLE{% if sp.sample_count != 1 %}S{% endif %}
+          &middot; UPDATED {{ (sp.updated_at or '')[:10] }}
+        </div>
+      </div>
+      <button onclick="deleteSpeaker({{ sp.id }}, '{{ sp.name }}')"
+              style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;padding:4px 8px;"
+              title="Remove {{ sp.name }}">✕</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="padding:20px;font-family:var(--m-display);font-size:13px;color:var(--m-muted);font-style:italic;line-height:1.6;">
+    No voices enrolled yet. Add someone below — 10–30 seconds of their speech is enough.
+  </div>
+  {% endif %}
+
+  {# Enroll form #}
+  <div style="padding:14px 20px;border-top:1px solid var(--m-rule-soft);">
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">ENROLL NEW VOICE</div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px;">
+      <input id="spk-enroll-name" type="text" placeholder="Full name (e.g. Stan)"
+             style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;width:100%;box-sizing:border-box;">
+    </div>
+    <div style="margin-bottom:8px;">
+      <label style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);display:block;margin-bottom:4px;">
+        AUDIO SAMPLE — WAV, MP3, M4A &middot; at least 10 seconds of speech
+      </label>
+      <input id="spk-enroll-file" type="file" accept=".wav,.mp3,.m4a,.ogg,.flac,.webm"
+             style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:12px;color:var(--m-ink);width:100%;box-sizing:border-box;">
+    </div>
+    <div id="spk-enroll-status" style="min-height:18px;font-family:var(--m-mono);font-size:10px;margin-bottom:8px;"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn--primary btn--caps" style="flex:1;" onclick="enrollSpeaker()">Save Voice</button>
+      <button class="btn btn--ghost btn--caps" onclick="recordSpeakerSample()">
+        <svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><rect x="5" y="1" width="6" height="9" rx="3"/><path d="M2 8a6 6 0 0 0 12 0"/><line x1="8" y1="14" x2="8" y2="16"/></svg>
+        Record
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<div id="spk-record-area" style="display:none;padding:14px 20px;background:var(--m-surface);border:1px solid var(--m-line);border-radius:4px;margin-bottom:18px;">
+  <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:8px;">RECORDING VOICE SAMPLE</div>
+  <div id="spk-record-status" style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);margin-bottom:10px;">Press Start, speak for 15–30 seconds, press Stop.</div>
+  <div style="display:flex;gap:8px;">
+    <button class="btn btn--primary btn--caps" id="spk-rec-start" onclick="startSpeakerRecording()">Start Recording</button>
+    <button class="btn btn--sec btn--caps" id="spk-rec-stop" onclick="stopSpeakerRecording()" style="display:none;">Stop</button>
+    <button class="btn btn--ghost btn--caps" onclick="cancelSpeakerRecording()">Cancel</button>
+  </div>
+</div>
+
+<script>
+let _spkRecorder = null;
+let _spkChunks = [];
+let _spkRecTimerEl = null;
+let _spkRecSecs = 0;
+
+function enrollSpeaker() {
+  const name = (document.getElementById('spk-enroll-name').value || '').trim();
+  const fi = document.getElementById('spk-enroll-file');
+  const st = document.getElementById('spk-enroll-status');
+  if (!name) { st.style.color='var(--m-warn)'; st.textContent='Enter a name first.'; return; }
+  if (!fi.files.length) { st.style.color='var(--m-warn)'; st.textContent='Select an audio file first.'; return; }
+  st.style.color='var(--m-muted)'; st.textContent='Processing…';
+  const fd = new FormData();
+  fd.append('name', name);
+  fd.append('audio', fi.files[0], fi.files[0].name);
+  fetch('/api/speakers/enroll', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) {
+        st.style.color = 'var(--m-ok)';
+        st.textContent = data.updated
+          ? `✓ Updated ${data.name} (${data.sample_count} samples).`
+          : `✓ ${data.name} enrolled.`;
+        fi.value = '';
+        // Refresh the panel
+        setTimeout(() => {
+          htmx.ajax('GET', '/api/partial/speakers', {target:'#speakers-panel', swap:'outerHTML'});
+        }, 1200);
+      } else {
+        st.style.color='var(--m-alert)'; st.textContent = data.error || 'Enrollment failed.';
+      }
+    })
+    .catch(() => { st.style.color='var(--m-alert)'; st.textContent='Network error.'; });
+}
+
+function deleteSpeaker(id, name) {
+  if (!confirm(`Remove voice profile for ${name}?`)) return;
+  fetch(`/api/speakers/${id}`, { method: 'DELETE' })
+    .then(() => htmx.ajax('GET', '/api/partial/speakers', {target:'#speakers-panel', swap:'outerHTML'}));
+}
+
+function recordSpeakerSample() {
+  document.getElementById('spk-record-area').style.display = 'block';
+}
+function cancelSpeakerRecording() {
+  if (_spkRecorder && _spkRecorder.state === 'recording') _spkRecorder.stop();
+  _spkRecorder = null;
+  document.getElementById('spk-record-area').style.display = 'none';
+}
+async function startSpeakerRecording() {
+  _spkChunks = [];
+  _spkRecSecs = 0;
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(e) {
+    document.getElementById('spk-record-status').textContent = 'Microphone access denied.';
+    return;
+  }
+  _spkRecorder = new MediaRecorder(stream);
+  _spkRecorder.ondataavailable = e => { if(e.data.size>0) _spkChunks.push(e.data); };
+  _spkRecorder.onstop = () => {
+    clearInterval(_spkRecTimerEl);
+    stream.getTracks().forEach(t => t.stop());
+    const blob = new Blob(_spkChunks, { type: 'audio/webm' });
+    const file = new File([blob], 'voice-sample.webm', { type: 'audio/webm' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('spk-enroll-file').files = dt.files;
+    document.getElementById('spk-record-status').textContent = `Recorded ${_spkRecSecs}s. Click "Save Voice" to enroll.`;
+    document.getElementById('spk-rec-start').style.display = 'inline-flex';
+    document.getElementById('spk-rec-stop').style.display = 'none';
+  };
+  _spkRecorder.start();
+  document.getElementById('spk-rec-start').style.display = 'none';
+  document.getElementById('spk-rec-stop').style.display = 'inline-flex';
+  _spkRecTimerEl = setInterval(() => {
+    _spkRecSecs++;
+    document.getElementById('spk-record-status').textContent = `Recording… ${_spkRecSecs}s`;
+  }, 1000);
+}
+function stopSpeakerRecording() {
+  if (_spkRecorder && _spkRecorder.state === 'recording') _spkRecorder.stop();
+}
+</script>

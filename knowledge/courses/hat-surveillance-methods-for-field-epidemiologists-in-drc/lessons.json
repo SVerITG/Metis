@@ -1,0 +1,118 @@
+{
+  "modules": [
+    {
+      "module": 1,
+      "section": "Foundations",
+      "title": "gHAT and the DRC Surveillance Landscape",
+      "bloom_level": "Understand",
+      "hours": 0.75
+    },
+    {
+      "module": 2,
+      "section": "Detection",
+      "title": "Passive Surveillance and Health-Facility Detection",
+      "bloom_level": "Apply",
+      "hours": 1.0
+    },
+    {
+      "module": 3,
+      "section": "Detection",
+      "title": "Active Case Finding with Mobile Teams",
+      "bloom_level": "Apply",
+      "hours": 1.0
+    },
+    {
+      "module": 4,
+      "section": "Detection",
+      "title": "Case Definitions, Diagnostic Algorithms, and Test Performance",
+      "bloom_level": "Analyze",
+      "hours": 1.0
+    },
+    {
+      "module": 5,
+      "section": "Data systems",
+      "title": "Data Flow, DHIS2, and the National HAT Atlas",
+      "bloom_level": "Apply",
+      "hours": 1.0
+    },
+    {
+      "module": 6,
+      "section": "Vector",
+      "title": "Vector Surveillance and Integrated Tsetse Control",
+      "bloom_level": "Apply",
+      "hours": 1.0
+    },
+    {
+      "module": 7,
+      "section": "Analysis",
+      "title": "Analysing and Mapping Surveillance Data in R",
+      "bloom_level": "Analyze",
+      "hours": 1.25
+    },
+    {
+      "module": 8,
+      "section": "Endgame",
+      "title": "Surveillance in the Elimination Endgame: Verification and Reintroduction Risk",
+      "bloom_level": "Evaluate",
+      "hours": 1.0
+    }
+  ],
+  "lessons": [
+    {
+      "id": "lesson-01",
+      "title": "gHAT and the DRC Surveillance Landscape",
+      "description": "Disease cycle, the DRC burden, and how PNLTHA is organised across health zones",
+      "section": "Foundations",
+      "order": 1
+    },
+    {
+      "id": "lesson-02",
+      "title": "Passive Surveillance and Health-Facility Detection",
+      "description": "Applying the case definition and RDT-to-confirmation algorithm at a fixed facility",
+      "section": "Detection",
+      "order": 2
+    },
+    {
+      "id": "lesson-03",
+      "title": "Active Case Finding with Mobile Teams",
+      "description": "Planning a screening round and computing coverage and yield",
+      "section": "Detection",
+      "order": 3
+    },
+    {
+      "id": "lesson-04",
+      "title": "Case Definitions, Diagnostic Algorithms, and Test Performance",
+      "description": "Sensitivity, specificity, and predictive value as prevalence falls",
+      "section": "Detection",
+      "order": 4
+    },
+    {
+      "id": "lesson-05",
+      "title": "Data Flow, DHIS2, and the National HAT Atlas",
+      "description": "Tracing the pipeline from village to DHIS2 and the WHO HAT Atlas; auditing a reporting chain",
+      "section": "Data systems",
+      "order": 5
+    },
+    {
+      "id": "lesson-06",
+      "title": "Vector Surveillance and Integrated Tsetse Control",
+      "description": "Designing a tiny-target tsetse deployment with entomological monitoring",
+      "section": "Vector",
+      "order": 6
+    },
+    {
+      "id": "lesson-07",
+      "title": "Analysing and Mapping Surveillance Data in R",
+      "description": "Health-zone incidence, choropleth, and time trend in tidyverse R",
+      "section": "Analysis",
+      "order": 7
+    },
+    {
+      "id": "lesson-08",
+      "title": "Surveillance in the Elimination Endgame: Verification and Reintroduction Risk",
+      "description": "Evaluating an evidence package against WHO EPHP criteria and judging reintroduction risk",
+      "section": "Endgame",
+      "order": 8
+    }
+  ]
+}

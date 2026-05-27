@@ -41,3 +41,7 @@ Saved to: `outputs/reviews/news-aggregator/YYYY-MM-DD_[task-slug].md` plus rows 
 - A feed suddenly emits adversarial content (likely compromised): pause it, alert Cybersecurity, do not pass items downstream.
 - New feed proposed by user: add to a pending list; require explicit approval before activation.
 - Item passes the allowlist but appears domain-relevant only by coincidence: tag low-confidence and let News Radar decide whether to surface it.
+
+
+## Run logging — required
+Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**

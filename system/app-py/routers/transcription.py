@@ -110,15 +110,26 @@ async def transcription_status():
 
     mode = "whisperx" if wx_available else "faster-whisper"
     diarize = bool(HF_TOKEN and wx_available)
+
+    # Check voice-profile recognition availability
+    voice_profiles = False
+    try:
+        from routers.speakers import _get_encoder
+        _get_encoder()
+        voice_profiles = True
+    except Exception:
+        pass
+
     return JSONResponse({
         "available": True,
         "model": WHISPER_MODEL,
         "mode": mode,
         "diarization": diarize,
+        "voice_profiles": voice_profiles,
         "note": (
-            f"WhisperX + diarization ready." if diarize else
-            f"WhisperX ready (no HF_TOKEN — diarization disabled)." if wx_available else
-            f"faster-whisper ready (plain transcription)."
+            "WhisperX + diarization ready." if diarize else
+            "WhisperX ready (no HF_TOKEN — diarization disabled)." if wx_available else
+            "faster-whisper ready (plain transcription)."
         ),
     })
 
@@ -240,11 +251,25 @@ async def _transcribe_faster_whisper(tmp_path, lang, speaker):
         })
         full_parts.append(text)
 
+    # Attempt voice-profile identification on the whole chunk.
+    # Falls back silently if resemblyzer is not installed or no profiles exist.
+    identified_speaker = speaker
+    try:
+        from routers.speakers import identify_speaker
+        match = identify_speaker(tmp_path)
+        if match:
+            identified_speaker = match["name"]
+            for seg in seg_list:
+                seg["speaker"] = identified_speaker
+                seg["speaker_confidence"] = match["similarity"]
+    except Exception:
+        pass
+
     return JSONResponse({
         "text": " ".join(full_parts),
         "language": info.language,
         "language_probability": round(info.language_probability, 2),
         "segments": seg_list,
-        "speaker": speaker,
+        "speaker": identified_speaker,
         "mode": "faster-whisper",
     })

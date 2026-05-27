@@ -16,10 +16,41 @@ _GPS_RE = re.compile(
     r"-?\d{1,3}\.\d{5,},?\s*-?\d{1,3}\.\d{5,}"
 )
 _BELGIAN_NID_RE = re.compile(r"\b\d{2}\.\d{2}\.\d{2}-\d{3}\.\d{2}\b")
+# Date of birth (explicit label + date value)
+_DOB_RE = re.compile(
+    r"\b(?:dob|date[\s_]?of[\s_]?birth|born|n[eé][e]?|naissance)\s*[:=]?\s*\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}",
+    re.IGNORECASE,
+)
+# Passport number (letter prefix + digits)
+_PASSPORT_RE = re.compile(
+    r"\b(?:passport|passeport)[\s_]?(?:no|n°|#|number|num)?\s*[:=]?\s*[A-Z]{1,2}\d{6,8}\b",
+    re.IGNORECASE,
+)
+# Medical record / dossier number
+_MRN_RE = re.compile(
+    r"\b(?:mrn|medical[\s_]?record(?:[\s_]?(?:no|#|number))?|dossier[\s_]?(?:no|#|médical|medical)?|numéro[\s_]?dossier)\s*[:=]?\s*[\dA-Z\-]{4,15}\b",
+    re.IGNORECASE,
+)
+# HAT / PNLTHA case registration numbers (DRC sleeping-sickness programme)
+_HAT_CASE_RE = re.compile(
+    r"\b(?:hat[\s_-]?(?:case|id|n°|no|#|patient)|pnltha[\s_-]?\d+|cas[\s_-]?hat|hat[\s_-]?dossier)\s*[:=]?\s*[\dA-Z\-]{3,20}\b",
+    re.IGNORECASE,
+)
+# DRC national ID card (16-digit number)
+_DRC_NID_RE = re.compile(r"\b\d{16}\b")
+# Name fields with associated identifier-type values
+_NAME_ID_RE = re.compile(
+    r"\b(?:nom|prenom|prénom|surname|firstname|first[\s_]name|last[\s_]name)\s*[:=]\s*[A-Za-zÀ-ÿ]{2,}",
+    re.IGNORECASE,
+)
 
 _SENSITIVE_COLUMNS = {
     "patient", "patient_id", "case_id", "diagnosis", "dob",
     "date_of_birth", "test_result", "gps_lat", "gps_lon",
+    # Added: name fields, record numbers, identity numbers
+    "nom", "prenom", "prénom", "surname", "firstname", "first_name", "last_name",
+    "mrn", "record_number", "dossier", "passport_number", "nid", "national_id",
+    "hat_case_id", "hat_patient_id",
 }
 
 

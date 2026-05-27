@@ -43,3 +43,7 @@ Saved to: `outputs/reviews/research-architect/YYYY-MM-DD_[article-slug].md`
 - Multiple articles in flight: ask which article to focus on this session.
 - The article is blocked on a dataset that hasn't arrived: surface the dependency, do not invent content.
 - The user wants to switch target journals mid-revision: warn about reporting-standard delta before agreeing.
+
+
+## Run logging — required
+Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**

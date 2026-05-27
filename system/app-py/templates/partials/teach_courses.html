@@ -6,10 +6,17 @@
 
 {% if not courses %}
   <div class="col-12">
-    <div class="card p-4 text-center text-muted">
-      <i class="bi bi-easel fs-2 mb-2"></i>
-      <div>No courses added yet.</div>
-      <div class="small mt-1">Click <strong>Add course</strong> to register the first class you teach.</div>
+    <div class="panel panel-pad" style="text-align:center;padding:48px 32px;border:1px dashed var(--m-line);background:var(--m-surface-soft);">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--m-accent)" stroke-width="1.5"
+           stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:14px;display:block;margin-left:auto;margin-right:auto;">
+        <rect x="2" y="3" width="20" height="14" rx="2"/>
+        <line x1="8" y1="21" x2="16" y2="21"/>
+        <line x1="12" y1="17" x2="12" y2="21"/>
+      </svg>
+      <h3 class="ed" style="font-size:18px;margin:0 0 8px;">No courses yet</h3>
+      <p class="ed" style="font-size:14px;color:var(--m-muted);max-width:400px;margin:0 auto;">
+        Use the course builder to create your first course, or import an existing one from the intake form above.
+      </p>
     </div>
   </div>
 

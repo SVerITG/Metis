@@ -165,13 +165,30 @@
     </div>
   </div>
 
-  <!-- ===== Coverage Gap Detector (collapsed by default) ===== -->
+  <!-- ===== Research Landscape: Topic Coverage Map ===== -->
   <div style="margin-top:32px;">
+    <div class="sec-label" style="margin-bottom:12px;">
+      <span>Research Landscape</span>
+      <span class="tail">TOPIC COVERAGE · GOOD · PARTIAL · GAP</span>
+    </div>
+    <div hx-get="/api/partial/knowledge/topic-coverage"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+        {% for _ in range(6) %}
+        <div class="panel skeleton skeleton-box" style="height:96px;"></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Coverage Gap Detector — OpenAlex (collapsed) ===== -->
+  <div style="margin-top:28px;">
     <details>
       <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:0;user-select:none;">
         <div class="sec-label" style="margin-bottom:0;pointer-events:none;">
           <span>Coverage Gap Detector</span>
-          <span class="tail">CLICK TO EXPAND</span>
+          <span class="tail">ZOTERO VS. OPENALEX · CLICK TO EXPAND</span>
         </div>
         <svg id="gap-chevron" viewBox="0 0 16 16" width="10" height="10" fill="none"
              stroke="var(--m-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"

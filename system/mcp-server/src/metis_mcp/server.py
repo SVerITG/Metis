@@ -81,6 +81,23 @@ if _os.environ.get("METIS_TOOL_SUBSETS") == "1":
 
 
 def run():
+    # Apply any pending schema migrations BEFORE serving tools.
+    # See metis_mcp/migrations.py — this is what prevented us from ever
+    # repeating the brainstorm_sessions title-vs-topic drift from R8 (2026-05-25).
+    try:
+        from metis_mcp.migrations import run_on_default_db
+        result = run_on_default_db()
+        import logging as _logging
+        log = _logging.getLogger("metis")
+        if result["applied"]:
+            log.info("Schema migrations applied: %s", ", ".join(result["applied"]))
+        if result["errors"]:
+            log.warning("Schema migrations skipped with errors: %s", result["errors"])
+    except Exception as _exc:
+        # Don't block server start if migrations module fails to import.
+        import logging as _logging
+        _logging.getLogger("metis").warning("Schema migration check failed: %s", _exc)
+
     app.run()
 
 

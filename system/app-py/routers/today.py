@@ -928,18 +928,35 @@ async def api_news_summarize(request: Request):
     })
 
 
+def _get_brief_mode() -> str:
+    """Return brief generation mode: 'auto' | 'auto+manual' | 'manual'."""
+    try:
+        import json as _json
+        rc = os.environ.get("METIS_RC_ROOT", "")
+        prefs_path = Path(rc) / "system" / "config" / "user-preferences.json" if rc else None
+        if prefs_path and prefs_path.exists():
+            mode = _json.loads(prefs_path.read_text()).get("brief_mode", "auto")
+            if mode in ("auto", "auto+manual", "manual"):
+                return mode
+    except Exception:
+        pass
+    return "auto"
+
+
 def _get_api_key() -> str:
-    """Return the Anthropic API key from env or system .env file."""
+    """Return the Anthropic API key from env or system/.env file."""
     key = os.environ.get("ANTHROPIC_API_KEY", "")
     if not key:
+        # Try system/.env (uncommented lines only)
         try:
             rc = os.environ.get("METIS_RC_ROOT", "")
             env_p = (Path(rc) / "system" / ".env") if rc else None
             if env_p and env_p.exists():
                 for line in env_p.read_text().splitlines():
                     line = line.strip()
-                    if line.startswith("ANTHROPIC_API_KEY="):
+                    if line.startswith("ANTHROPIC_API_KEY=") and not line.startswith("#"):
                         key = line.split("=", 1)[1].strip()
+                        os.environ["ANTHROPIC_API_KEY"] = key  # cache for subsequent calls
                         break
         except Exception:
             pass
@@ -1033,7 +1050,7 @@ def _get_or_generate_brief(force: bool = False) -> str | None:
 
     # Assemble context
     try:
-        sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent /
+        sys.path.insert(0, str(Path(__file__).parent.parent.parent /
                                "mcp-server" / "src"))
         from metis_mcp.tools.intelligence import assemble_daily_context
         ctx = assemble_daily_context(db_path_str)
@@ -1286,11 +1303,12 @@ async def today_morning_brief(request: Request):
         "partials/today_morning_brief.html",
         {
             "brief": ai_brief,
-            "brief_date_label": brief_date_label,  # set when brief is from earlier than today
+            "brief_date_label": brief_date_label,
             "sources": sources,
             "fallback_headlines": fallback_headlines,
             "open_threads": open_threads,
             "time_of_day": time_of_day,
+            "brief_mode": _get_brief_mode(),
         },
     )
 
@@ -1343,10 +1361,12 @@ async def morning_brief_refresh(request: Request):
         "partials/today_morning_brief.html",
         {
             "brief": ai_brief,
+            "brief_date_label": None,
             "sources": sources,
             "fallback_headlines": fallback_headlines,
             "open_threads": open_threads,
             "time_of_day": time_of_day,
+            "brief_mode": _get_brief_mode(),
         },
     )
 

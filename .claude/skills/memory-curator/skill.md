@@ -26,3 +26,7 @@ Saved to: `outputs/reviews/memory-curator/YYYY-MM-DD_consolidation.md`
 - User asks "what did we find about X": search memory_entries and agent_runs before reporting no result
 - Duplicate memory entries detected: keep the most recent, flag the earlier for deletion — do not delete automatically
 - Called mid-session (not at end): consolidate what exists so far, note that the session is ongoing
+
+
+## Run logging — required
+Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**

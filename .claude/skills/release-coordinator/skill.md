@@ -16,6 +16,7 @@ When invoked as `/release-coordinator` from Claude Code:
 4. Identify the command from the user's message: `status`, `commit`, `push`, `audit`, `scan`, `release`, `sync`, `verify`, or `changelog`.
 5. Execute the command per the spec in `skill.md`. Do not summarise or interpret — follow the spec exactly.
 6. Output the status block, detail section, and action required section as defined.
+7. Log the run: call `mcp__metis-rc__log_agent_run` with `agent_slug="release-coordinator"`, a one-line task summary (e.g. "Ran status check + committed 3 files"), and `output_path=""`. **This is mandatory and must not be skipped.**
 
 ## What this agent does
 

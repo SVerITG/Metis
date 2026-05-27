@@ -109,7 +109,7 @@ else
     rm -rf "$VENV_DIR"
   fi
   [ ! -d "$VENV_DIR" ] && "$PYTHON_PATH" -m venv "$VENV_DIR"
-  "$VENV_DIR/bin/pip" install --quiet --upgrade pip setuptools wheel
+  "$VENV_DIR/bin/pip" install --upgrade pip setuptools wheel
 fi
 
 # ── Install package ───────────────────────────────────────────────────────────
@@ -122,16 +122,17 @@ cp -r "$SRC_DIR/src" "$LOCAL_SRC/"
 cp "$SRC_DIR/pyproject.toml" "$LOCAL_SRC/"
 [ -f "$SRC_DIR/requirements.txt" ] && cp "$SRC_DIR/requirements.txt" "$LOCAL_SRC/"
 
-echo "Installing requirements..."
+echo "Installing MCP server requirements..."
 if [ "$USE_UV" = "1" ]; then
-  [ -f "$LOCAL_SRC/requirements.txt" ] && "$UV" pip install --python "$VENV_DIR/bin/python3" -r "$LOCAL_SRC/requirements.txt" --quiet
-  echo "Installing metis-mcp-server..."
+  [ -f "$LOCAL_SRC/requirements.txt" ] && "$UV" pip install --python "$VENV_DIR/bin/python3" -r "$LOCAL_SRC/requirements.txt"
+  echo "Installing metis-mcp-server package..."
   "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC"
 else
-  [ -f "$LOCAL_SRC/requirements.txt" ] && "$VENV_DIR/bin/pip" install --quiet -r "$LOCAL_SRC/requirements.txt"
-  echo "Installing metis-mcp-server..."
-  "$VENV_DIR/bin/pip" install --quiet "$LOCAL_SRC"
+  [ -f "$LOCAL_SRC/requirements.txt" ] && "$VENV_DIR/bin/pip" install -r "$LOCAL_SRC/requirements.txt"
+  echo "Installing metis-mcp-server package..."
+  "$VENV_DIR/bin/pip" install "$LOCAL_SRC"
 fi
+echo "  MCP server installed"
 
 # ── Install dashboard (app-py) dependencies into same venv ───────────────────
 # Skipped on 'light' profile — dashboard not included.
@@ -140,9 +141,9 @@ if [ "$METIS_PROFILE" != "light" ]; then
   if [ -f "$APP_REQ" ]; then
     echo "Installing dashboard dependencies..."
     if [ "$USE_UV" = "1" ]; then
-      "$UV" pip install --python "$VENV_DIR/bin/python3" -r "$APP_REQ" --quiet
+      "$UV" pip install --python "$VENV_DIR/bin/python3" -r "$APP_REQ"
     else
-      "$VENV_DIR/bin/pip" install --quiet -r "$APP_REQ"
+      "$VENV_DIR/bin/pip" install -r "$APP_REQ"
     fi
     echo "  Dashboard deps installed"
   fi
@@ -308,6 +309,70 @@ cat > "$INSTALL_STATE" <<STATEEOF
 }
 STATEEOF
 echo "  install-state.json written"
+
+# ── Install Metis git hooks (persona linter pre-commit) ─────────────────────
+echo ""
+echo "── Installing git hooks ──"
+if [ -f "$METIS_RC_ROOT/tools/install-hooks.sh" ] && [ -d "$METIS_RC_ROOT/.git" ]; then
+    bash "$METIS_RC_ROOT/tools/install-hooks.sh" 2>&1 | sed 's/^/  /' || echo "  (hook install failed — non-fatal)"
+else
+    echo "  (no .git/ or no tools/install-hooks.sh — skipping)"
+fi
+
+# ── Apply schema migrations to any existing metis.sqlite ────────────────────
+echo ""
+echo "── Applying schema migrations ──"
+VENV_PYTHON="$VENV_DIR/bin/python3"
+if [ -f "$METIS_RC_ROOT/system/app/data/metis.sqlite" ] && [ -x "$VENV_PYTHON" ]; then
+    METIS_RC_ROOT="$METIS_RC_ROOT" "$VENV_PYTHON" -m metis_mcp.migrations 2>&1 | sed 's/^/  /' || echo "  (migration run failed — non-fatal; MCP startup will retry)"
+else
+    echo "  (no metis.sqlite yet — first MCP start will run migrations)"
+fi
+
+# ── Post-install validation ─────────────────────────────────────────────────
+echo ""
+echo "── Post-install validation ──"
+_PASS=0
+_FAIL=0
+
+# 1. anthropic SDK import test
+if [ -x "$VENV_PYTHON" ] && [ -f "$METIS_RC_ROOT/tests/test_anthropic_import.py" ]; then
+    if "$VENV_PYTHON" "$METIS_RC_ROOT/tests/test_anthropic_import.py" >/dev/null 2>&1; then
+        echo "  ✓ Anthropic SDK importable + at supported version"
+        _PASS=$((_PASS + 1))
+    else
+        echo "  ✗ Anthropic SDK test FAILED — Claude-backed features will not work"
+        _FAIL=$((_FAIL + 1))
+    fi
+fi
+
+# 2. Persona linter (errors-only — warns are non-blocking)
+if [ -f "$METIS_RC_ROOT/tests/persona_linter.py" ]; then
+    if python3 "$METIS_RC_ROOT/tests/persona_linter.py" --errors-only >/dev/null 2>&1; then
+        echo "  ✓ Persona linter — no errors on user-facing strings"
+        _PASS=$((_PASS + 1))
+    else
+        echo "  ⚠ Persona linter found errors (non-blocking; review tests/persona_linter.py output)"
+    fi
+fi
+
+# 3. Promise harness (only if dashboard happens to be running)
+if [ "$METIS_PROFILE" != "light" ] && command -v curl >/dev/null 2>&1; then
+    if curl -s -o /dev/null -w "%{http_code}" --max-time 2 "http://127.0.0.1:8080/" 2>/dev/null | grep -q "200"; then
+        if [ -f "$METIS_RC_ROOT/tests/functional/run_metis_promises.sh" ]; then
+            _RES=$(bash "$METIS_RC_ROOT/tests/functional/run_metis_promises.sh" 2>&1 | grep "^RESULT" | head -1)
+            [ -n "$_RES" ] && echo "  $_RES"
+            _PASS=$((_PASS + 1))
+        fi
+    else
+        echo "  · Promise harness skipped (dashboard not running)"
+        echo "    Start it with: bash system/app-py/run.sh"
+        echo "    Then verify:   bash tests/functional/run_metis_promises.sh"
+    fi
+fi
+
+echo ""
+echo "  → $_PASS validation checks passed, $_FAIL failed"
 
 echo ""
 echo "════════════════════════════════════════════════════════════════════"

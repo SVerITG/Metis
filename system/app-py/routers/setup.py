@@ -122,6 +122,9 @@ async def api_key_status(request: Request):
     The morning brief, retrieval, and Claude-backed agents need
     <code style="font-family:var(--m-mono);font-size:12px;background:rgba(0,0,0,.06);padding:1px 5px;border-radius:3px;">ANTHROPIC_API_KEY</code>
     to work. Get a key at <a href="https://console.anthropic.com" target="_blank" rel="noopener" style="color:#5b4a17;text-decoration:underline;">console.anthropic.com</a>, then set it as a Windows user env variable (Start → Edit environment variables for your account → New).
+    <div style="margin-top:6px;font-size:11.5px;color:#7a5a13;font-style:italic;">
+      Already set it? Close and reopen Claude Code — the WSL session inherits the value at startup, not while it's running.
+    </div>
   </div>
   <button onclick="this.parentElement.style.display='none'"
           style="background:transparent;border:1px solid #b8983e;color:#5b4a17;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;padding:6px 12px;border-radius:3px;cursor:pointer;flex-shrink:0;">

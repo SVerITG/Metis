@@ -1659,6 +1659,134 @@ async def knowledge_unified_search_semantic(request: Request, q: str = ""):
 
 
 # ---------------------------------------------------------------------------
+# Topic Coverage Map  (visual grid: good / partial / gap per research topic)
+# ---------------------------------------------------------------------------
+
+# Canonical topic definitions for the research landscape.
+# Each entry: (label, keywords_for_lit_search, description_for_card)
+_TOPIC_DEFINITIONS: list[tuple[str, list[str], str]] = [
+    ("HAT Epidemiology",      ["HAT", "sleeping sickness", "trypanosomiasis"], "Incidence, prevalence, spatial distribution"),
+    ("Surveillance Systems",  ["surveillance", "reporting system", "sentinel"], "Active/passive surveillance design & evaluation"),
+    ("Elimination & Control", ["elimination", "control", "elimination programme"], "WHO targets, control strategies, validation"),
+    ("Diagnostics",           ["diagnostic", "RDT", "CATT", "mAECT", "Loofs", "HAT-Rdt"], "Diagnostic tools, sensitivity & specificity"),
+    ("Spatial Epidemiology",  ["spatial", "geograph", "mapping", "GIS"], "Disease mapping, spatial modelling, hotspots"),
+    ("Multilevel Methods",    ["multilevel", "mixed model", "random effect", "hierarchical"], "Clustered data, nested designs"),
+    ("NTD Programmes",        ["NTD", "neglected tropical", "ESPEN", "integrated"], "Integrated NTD programmes & reporting"),
+    ("DHIS2 / Health Info",   ["DHIS2", "health information system", "OpenMRS"], "Health information systems implementation"),
+    ("Mathematical Modelling",["model", "mathematical model", "transmission model", "stochastic"], "Transmission dynamics, intervention impact"),
+    ("Vector Control",        ["tsetse", "vector", "trap", "insecticid"], "Vector biology & control interventions"),
+    ("Drug Treatment",        ["pentamidine", "melarsoprol", "fexinidazole", "acoziborole", "treatment"], "Therapeutics, treatment outcomes"),
+    ("Post-Elimination",      ["post-elimination", "post elimination", "zero case", "maintenance"], "Zero-case maintenance, resurgence risk"),
+]
+
+_GOOD_THRESHOLD    = 12   # ≥12 papers → good
+_PARTIAL_THRESHOLD = 3    # 3–11 → partial; <3 → gap
+
+
+def _coverage_level(count: int) -> str:
+    if count >= _GOOD_THRESHOLD:
+        return "good"
+    if count >= _PARTIAL_THRESHOLD:
+        return "partial"
+    return "gap"
+
+
+@router.get("/api/partial/knowledge/topic-coverage", response_class=HTMLResponse)
+async def knowledge_topic_coverage(request: Request):
+    """Visual topic coverage grid: research landscape at a glance."""
+
+    # Pull user-configured topics from DB (for any custom additions)
+    user_topic_rows = db_query(
+        "SELECT topic, description FROM user_topics WHERE active = 1 ORDER BY id"
+    ) or []
+
+    # Merge canonical topics with any user-defined ones not already covered
+    canonical_labels = {label.lower() for label, _, _ in _TOPIC_DEFINITIONS}
+    topic_defs: list[tuple[str, list[str], str]] = list(_TOPIC_DEFINITIONS)
+    for r in user_topic_rows:
+        label = (r.get("topic") or "").strip()
+        if label and label.lower() not in canonical_labels:
+            desc = (r.get("description") or "").replace(",", " ").strip()
+            keywords = [kw.strip() for kw in desc.split() if len(kw.strip()) > 2][:4]
+            topic_defs.append((label.title(), keywords or [label], desc))
+
+    # Count papers per topic
+    total_papers_scalar = db_scalar("SELECT COUNT(*) FROM literature_metadata", default=0) or 0
+    seeded_total = db_scalar("SELECT COUNT(*) FROM library_seeded WHERE extension='pdf'", default=0) or 0
+    total_papers = (total_papers_scalar or 0) + (seeded_total or 0)
+
+    topics: list[dict] = []
+    for label, keywords, description in topic_defs:
+        # Build LIKE conditions for literature_metadata
+        where_clauses = " OR ".join(
+            "(title LIKE ? OR tags LIKE ? OR abstract LIKE ?)" for _ in keywords
+        )
+        params_lit: list = []
+        for kw in keywords:
+            like = f"%{kw}%"
+            params_lit.extend([like, like, like])
+
+        lit_count = 0
+        seeded_count = 0
+        try:
+            if where_clauses:
+                lit_count = db_scalar(
+                    f"SELECT COUNT(*) FROM literature_metadata WHERE {where_clauses}",
+                    tuple(params_lit),
+                    default=0,
+                ) or 0
+        except Exception:
+            pass
+
+        try:
+            if keywords:
+                seeded_where = " OR ".join("(basename LIKE ? OR relevance_note LIKE ?)" for _ in keywords)
+                params_seeded: list = []
+                for kw in keywords:
+                    like = f"%{kw}%"
+                    params_seeded.extend([like, like])
+                seeded_count = db_scalar(
+                    f"SELECT COUNT(*) FROM library_seeded WHERE extension='pdf' AND ({seeded_where})",
+                    tuple(params_seeded),
+                    default=0,
+                ) or 0
+        except Exception:
+            pass
+
+        paper_count = lit_count + seeded_count
+        level = _coverage_level(paper_count)
+
+        # Source breakdown pills (max 2)
+        sources: list[tuple[str, int]] = []
+        if lit_count:
+            sources.append(("zotero", lit_count))
+        if seeded_count:
+            sources.append(("corpus", seeded_count))
+
+        # Coverage bar fill percentage (capped at 100, scaled so 40 papers = full bar)
+        bar_pct = min(100, int(paper_count * 100 / 40)) if paper_count else 0
+
+        topics.append({
+            "label": label,
+            "description": description,
+            "paper_count": paper_count,
+            "level": level,
+            "sources": sources,
+            "bar_pct": bar_pct,
+        })
+
+    # Sort: gap first, then partial, then good — worst coverage at the top
+    _level_order = {"gap": 0, "partial": 1, "good": 2}
+    topics.sort(key=lambda t: (_level_order.get(t["level"], 3), -t["paper_count"]))
+
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_topic_coverage.html",
+        {"topics": topics, "total_papers": total_papers},
+    )
+
+
+# ---------------------------------------------------------------------------
 # Coverage gap detector  (Zotero vs. OpenAlex)
 # ---------------------------------------------------------------------------
 

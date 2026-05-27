@@ -250,9 +250,11 @@ async def brainstorm_turn(
 
         if not session_uuid:
             session_uuid = uuid.uuid4().hex[:16]
+            # Write to BOTH title (new column) and topic (legacy NOT NULL column)
+            # so the row satisfies the existing schema without a destructive migration.
             conn.execute(
-                "INSERT INTO brainstorm_sessions (session_uuid, title) VALUES (?, ?)",
-                (session_uuid, topic[:80]),
+                "INSERT INTO brainstorm_sessions (session_uuid, title, topic) VALUES (?, ?, ?)",
+                (session_uuid, topic[:80], topic[:200]),
             )
             conn.commit()
 

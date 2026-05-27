@@ -1,14 +1,14 @@
-{# Agent directory — full cards with description, when-to-use, slash command.
-   Inputs: agents[] from agent-registry.json, agent_count #}
+{# Agent directory — full cards with description, when-to-use, slash command, run history.
+   Inputs: agents[] from agent-registry.json (enriched with run_count, last_run), agent_count #}
 <div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
   <div style="display:flex;align-items:baseline;justify-content:space-between;">
     <div>
       <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">Agent registry</div>
       <div style="font-size:12.5px;color:var(--m-muted);margin-top:2px;">
-        {{ agent_count }} specialist{{ '' if agent_count == 1 else 's' }} available · invoke any one with the slash command shown.
+        {{ agent_count }} specialist{{ '' if agent_count == 1 else 's' }} available · invoke any one with the slash command shown · run count shows how often each agent has been used.
       </div>
     </div>
-    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">FROM AGENT-REGISTRY.JSON</span>
+    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">AGENT-REGISTRY.JSON</span>
   </div>
 </div>
 
@@ -19,12 +19,23 @@
   <div class="agent-card-grid">
     {% for a in agents %}
     {% set initial = (a.name or a.slug or '?')[0] | upper %}
+    {% set is_warm = a.run_count > 0 %}
     <div class="agent-card">
       <div class="agent-card-head">
-        <div class="agent-card-avatar">{{ initial }}</div>
+        <div class="agent-card-avatar" style="{% if is_warm %}border:2px solid var(--m-accent);{% endif %}">{{ initial }}</div>
         <div style="min-width:0;flex:1;">
           <div class="agent-card-name">{{ a.name or a.slug }}</div>
           <div class="agent-card-cmd">{{ a.invocation or ('/' ~ (a.slug or '')) }}{% if a.trust_tier %} · {{ a.trust_tier }}{% endif %}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:8px;">
+          {% if is_warm %}
+            <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-accent);font-weight:600;">{{ a.run_count }} run{{ '' if a.run_count == 1 else 's' }}</div>
+            {% if a.last_run %}
+            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);letter-spacing:0.08em;">{{ a.last_run }}</div>
+            {% endif %}
+          {% else %}
+            <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);opacity:0.6;">NEVER USED</div>
+          {% endif %}
         </div>
       </div>
       {% if a.description %}

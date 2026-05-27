@@ -23,17 +23,19 @@ export METIS_RC_ROOT="$METIS_ROOT"
 export PYTHONPATH="$SITE_PKG:$MCP_SRC:$APP_DIR"
 export PATH="$HOME/.local/bin:$PATH"
 
-# AI features — inherit from Windows environment automatically (no manual config needed).
-# If ANTHROPIC_API_KEY is already set in this shell, it is used as-is.
-# Otherwise, try to read it from the Windows user environment via PowerShell.
+# AI features — set ANTHROPIC_API_KEY in system/.env (next to this file's parent folder).
+# WSL interop is disabled on this machine so Windows environment variables are not
+# visible to WSL processes. The key must be in system/.env or exported before launch.
 if [ -z "${ANTHROPIC_API_KEY}" ]; then
-    _win_key=$(powershell.exe -NoProfile -NonInteractive -Command \
-        "[Environment]::GetEnvironmentVariable('ANTHROPIC_API_KEY','User')" 2>/dev/null | tr -d '\r\n')
-    [ -n "$_win_key" ] && export ANTHROPIC_API_KEY="$_win_key"
-    unset _win_key
+    _env_file="$METIS_ROOT/system/.env"
+    if [ -f "$_env_file" ]; then
+        _file_key=$(grep -m1 '^ANTHROPIC_API_KEY=' "$_env_file" | cut -d= -f2-)
+        [ -n "$_file_key" ] && export ANTHROPIC_API_KEY="$_file_key"
+        unset _file_key
+    fi
+    unset _env_file
 fi
-# To set the key permanently in Windows: Start → "Edit the system environment variables"
-# → Environment Variables → User variables → New → ANTHROPIC_API_KEY = sk-ant-...
+# To set the key: add ANTHROPIC_API_KEY=sk-ant-... to system/.env (one line, no quotes).
 
 cd "$APP_DIR"
 

@@ -1,6 +1,6 @@
 [project]
 name = "metis-mcp-server"
-version = "0.1.0"
+version = "0.2.0"
 description = "MCP server for the Metis Research Context"
 requires-python = ">=3.10"
 dependencies = [
@@ -41,6 +41,9 @@ voice = [
     "sounddevice>=0.4",
     "numpy>=1.24",
     "scipy>=1.10",
+    "webrtcvad-wheels>=2.0.14",
+    "resemblyzer>=0.1.1.2",
+    "soundfile>=0.12",
 ]
 
 [project.scripts]

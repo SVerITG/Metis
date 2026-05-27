@@ -41,3 +41,7 @@ Saved to: `outputs/reviews/data-analyst/YYYY-MM-DD_[dataset-slug].md`
 - File format is not in the supported list: call `list_supported_formats()` to confirm, then suggest a conversion path.
 - User wants statistical inference, not data quality work: route to Methods Coach.
 - Cleaning would drop more than 20% of rows: confirm with user before proceeding — defaults change behaviour silently otherwise.
+
+
+## Run logging — required
+Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**
