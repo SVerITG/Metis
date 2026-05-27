@@ -7,7 +7,7 @@ description: >-
   capacity (RDT, CATT, LAMP, trypanolysis), vector surveillance, reactive response
   protocols, mathematical modelling of resurgence risk, DRC-specific operational
   evidence, and integration with DHIS2 NTD reporting.
-owner: stan
+owner: metis
 created: 2026-05-26
 last_updated: 2026-05-26
 status: scoped
@@ -55,8 +55,8 @@ safety_gates:
   - check_patient_data_exposure
   - injection_probe
 notes: |
-  Scope was informed by Stan's 2026-05-26 passive-surveillance study design session,
-  which flagged the 80% healthcare-seeking assumption as the primary vulnerability
-  of a passive-only design and pointed toward a sentinel-zone hybrid. The layer is
-  deliberately operational + methodological — it should serve Article work, study
-  design reviews (Epidemiologist), and DHIS2 NTD module decisions.
+  Scope covers the operational and methodological question of sustaining surveillance
+  confidence after the EPHP milestone. The 80% healthcare-seeking assumption is a
+  primary vulnerability of passive-only designs — the layer is built to support
+  sentinel-zone hybrid evaluations, study design reviews (Epidemiologist), and
+  DHIS2 NTD module decisions.

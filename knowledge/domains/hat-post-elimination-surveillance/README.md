@@ -1,6 +1,6 @@
 # Layer: hat-post-elimination-surveillance
 
-Permanent searchable knowledge layer on **post-elimination surveillance for human African trypanosomiasis** (gambiense + rhodesiense HAT). Built for Stan (HAT surveillance in DRC, ITG Antwerp).
+Permanent searchable knowledge layer on **post-elimination surveillance for human African trypanosomiasis** (gambiense + rhodesiense HAT).
 
 ## What this layer covers
 

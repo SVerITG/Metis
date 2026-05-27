@@ -15,7 +15,7 @@
 set -uo pipefail
 
 BASE="${METIS_BASE:-http://127.0.0.1:8080}"
-RC_ROOT="${METIS_RC_ROOT:-/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/Research Cortex}"
+RC_ROOT="${METIS_RC_ROOT:?METIS_RC_ROOT must be set — e.g. export METIS_RC_ROOT=/path/to/research-cortex}"
 DATE="$(date +%Y-%m-%d)"
 OUT_DIR="$RC_ROOT/outputs/reviews/metis-evaluation"
 OUT_FILE="$OUT_DIR/${DATE}_promise-check.md"

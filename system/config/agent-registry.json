@@ -946,7 +946,7 @@
       "name": "Critic",
       "invocation": "/critic",
       "trust_tier": "read-advise",
-      "description": "Verifies, challenges, and quality-checks outputs from other agents before Stan acts on them. Advisory only \u2014 does not create files without approval.",
+      "description": "Verifies, challenges, and quality-checks outputs from other agents before the user acts on them. Advisory only \u2014 does not create files without approval.",
       "internet": false,
       "internet_requires_approval": false,
       "internet_scope": null,
