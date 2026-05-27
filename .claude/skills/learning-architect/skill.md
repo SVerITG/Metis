@@ -41,3 +41,7 @@ Saved to: `outputs/reviews/learning-architect/YYYY-MM-DD_[course-or-path-slug].m
 - Topic is highly procedural (e.g. R syntax): heavy weight on Apply and Create, light on Remember.
 - Topic is conceptual (e.g. study design): heavy weight on Analyse and Evaluate, scaffold towards Create.
 - Spaced-repetition schedule conflicts with a course deadline: explicit trade-off — fewer cards, or longer schedule.
+
+
+## Run logging — required
+Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**

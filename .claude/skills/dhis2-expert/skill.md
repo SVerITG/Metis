@@ -25,3 +25,7 @@ Saved to: `outputs/reviews/dhis2-expert/YYYY-MM-DD_<topic>.md`
 - User asks about building a custom DHIS2 app: handle DHIS2 API layer, chain to Software Engineer for frontend code
 - User asks about tracker configuration for HAT/NTDs: handle directly — this is a primary use case
 - Multiple DHIS2 instances or environments: always clarify which instance before giving configuration advice
+
+
+## Run logging — required
+Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**

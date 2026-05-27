@@ -14,7 +14,7 @@ When invoked as `/news-radar` from Claude Code:
 2. Read `agents/news-radar/system-prompt.md` and `agents/news-radar/contract.md` — these define your role, responsibilities, and output contract.
 3. Act as this agent for the duration of the task.
 4. Write output to `outputs/reviews/news-radar/YYYY-MM-DD_[task-slug].md`.
-5. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
+5. Log the run: call `mcp__metis-rc__log_agent_run` — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**
 6. If the task requires collaboration, announce which other agent(s) you are routing to.
 7. Write reflexion: call `write_reflexion(session_id=..., agent_slug="news-radar", went_well=..., could_improve=..., missing_context=..., tool_wishes=...)`
 

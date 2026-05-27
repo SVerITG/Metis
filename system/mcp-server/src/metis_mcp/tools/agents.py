@@ -139,6 +139,24 @@ async def log_agent_run(
             )
             conn.commit()
 
+            # Also write to session_events when this run is part of a pipeline session.
+            # This closes the loop for /metis calls: run_metis writes turn + routing events,
+            # the executing agent then calls log_agent_run which writes the result event.
+            if session_id:
+                try:
+                    conn.execute(
+                        """INSERT INTO session_events (session_id, event_type, content, created_at)
+                           VALUES (?, 'result', ?, ?)""",
+                        (
+                            session_id,
+                            f"[{agent_slug}] {task_summary[:500]}",
+                            datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                        ),
+                    )
+                    conn.commit()
+                except Exception:
+                    pass  # session_events write is best-effort — don't fail the log
+
         return [
             TextContent(
                 type="text",
@@ -196,7 +214,7 @@ async def get_agent_runs(
     for r in rows:
         tokens = (r["input_tokens"] or 0) + (r["output_tokens"] or 0)
         tok_str = f" · {tokens:,} tok" if tokens else ""
-        model_str = f" · {r['model']}" if r.get("model") else ""
+        model_str = f" · {r['model']}" if r["model"] else ""
         lines.append(
             f"[{r['agent_slug']}] {(r['task_summary'] or '')[:80]}\n"
             f"  {(r['created_at'] or '')[:16]} · {r['status']}{tok_str}{model_str}"

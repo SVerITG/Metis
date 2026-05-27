@@ -17,25 +17,32 @@
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <!-- Archive design system — loaded after Bootstrap so it overrides -->
-  <link rel="stylesheet" href="/static/styles.css?v=9l">
+  <link rel="stylesheet" href="/static/styles.css?v=9m">
   <!-- Archive micro-animations -->
   <link rel="stylesheet" href="/static/motion.css">
 
   <!-- HTMX — served locally -->
   <script src="/static/htmx.min.js"></script>
+  <!-- Live meeting JS — loaded globally so it survives HTMX tab swaps -->
+  <script src="/static/live_meeting.js" defer></script>
 
   <!-- User identity — available to all page scripts -->
   <script>window.METIS_USER_NAME = {{ (_metis_user_name() if _metis_user_name is defined else 'Researcher') | tojson }};</script>
 
   <!-- Theme: restore before first paint to avoid flash -->
-  <!-- Default to 'archive' (light) so system dark-mode preference never fires automatically -->
+  <!-- Respects OS dark-mode preference on first visit; user selection persists via localStorage -->
   <script>
     (function () {
       var VALID = ['archive','fieldwork','paper','observatory','midnight','cavern'];
       try {
         var t = localStorage.getItem('metis-theme');
-        var resolved = (t && VALID.indexOf(t) !== -1) ? t : 'archive';
-        document.documentElement.dataset.theme = (resolved === 'archive') ? '' : resolved;
+        if (t && VALID.indexOf(t) !== -1) {
+          document.documentElement.dataset.theme = (t === 'archive') ? '' : t;
+        } else {
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var def = prefersDark ? 'observatory' : 'archive';
+          document.documentElement.dataset.theme = (def === 'archive') ? '' : def;
+        }
       } catch (e) {}
     })();
   </script>
@@ -328,13 +335,13 @@
     <!-- Topbar -->
     <div class="topbar">
 
-      <div class="crumbs">
+      <div class="crumbs" style="flex-shrink:0;">
         <span>Metis</span>
         <span class="sep">/</span>
         <span class="here" id="crumb-here">{{ active_tab|title if active_tab else 'Today' }}</span>
       </div>
 
-      <div style="display:flex;align-items:center;gap:16px;margin-left:auto;">
+      <div class="topbar-controls" style="display:flex;align-items:center;gap:16px;margin-left:auto;min-width:0;flex-shrink:1;overflow:hidden;">
 
         <!-- Global search -->
         <div class="t-search" style="position:relative;" id="global-search-wrap">

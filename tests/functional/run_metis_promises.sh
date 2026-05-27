@@ -231,6 +231,62 @@ except Exception:
 fi
 
 # ============================================================================
+# Section 9 — Agent contract check (structural integrity + run coverage)
+# ============================================================================
+section "Agent contract check"
+contract_script="$RC_ROOT/tests/functional/test_agent_contracts.py"
+if [[ ! -f "$contract_script" ]]; then
+  log WARN "Agent contract test not found at $contract_script"
+else
+  # Parse JSON output from the contract test so we can fold results into the harness
+  contract_json=$(python3 "$contract_script" --json 2>/dev/null)
+  if [[ -z "$contract_json" ]]; then
+    log WARN "Agent contract test returned no output (registry missing?)"
+  else
+    total_agents=$(echo "$contract_json" | python3 -c "import sys,json; a=json.load(sys.stdin); print(len(a))")
+    fail_agents=$(echo "$contract_json" | python3 -c "import sys,json; a=json.load(sys.stdin); print(sum(1 for r in a if r['status']=='FAIL' and not r['retired']))")
+    warn_agents=$(echo "$contract_json" | python3 -c "import sys,json; a=json.load(sys.stdin); print(sum(1 for r in a if r['status']=='WARN' and not r['retired']))")
+    pass_agents=$(echo "$contract_json" | python3 -c "import sys,json; a=json.load(sys.stdin); print(sum(1 for r in a if r['status']=='PASS' and not r['retired']))")
+    never_run=$(echo "$contract_json" | python3 -c "import sys,json; a=json.load(sys.stdin); print(sum(1 for r in a if not r['retired'] and r['run_count']==0))")
+    active_agents=$(echo "$contract_json" | python3 -c "import sys,json; a=json.load(sys.stdin); print(sum(1 for r in a if not r['retired']))")
+
+    if (( fail_agents > 0 )); then
+      # Report each failing agent individually
+      echo "$contract_json" | python3 -c "
+import sys, json
+agents = json.load(sys.stdin)
+for a in agents:
+    if a['status'] == 'FAIL' and not a['retired']:
+        for level, msg in a['issues']:
+            if level == 'FAIL':
+                print(f\"FAIL:/{a['slug']}: {msg}\")
+" | while IFS= read -r line; do
+        log FAIL "${line#FAIL:}"
+      done
+    fi
+
+    if (( pass_agents > 0 )); then
+      log PASS "$pass_agents/$active_agents active agents pass all contract checks"
+    fi
+
+    if (( warn_agents > 0 )); then
+      log WARN "$warn_agents active agent(s) have warnings (model missing / never run / stale)"
+    fi
+
+    # Run coverage — separate signal from structural issues
+    if (( never_run == 0 )); then
+      log PASS "Agent run coverage: all $active_agents active agents have been invoked at least once"
+    elif (( never_run == active_agents )); then
+      log FAIL "Agent run coverage: 0/$active_agents agents have ever run — routing is broken or agents have never been used"
+    else
+      invoked=$(( active_agents - never_run ))
+      pct=$(( invoked * 100 / active_agents ))
+      log WARN "Agent run coverage: $invoked/$active_agents agents invoked ($pct%) — $never_run have never run"
+    fi
+  fi
+fi
+
+# ============================================================================
 # Render report
 # ============================================================================
 TOTAL=$((PASS+FAIL+WARN))

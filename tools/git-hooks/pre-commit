@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Metis pre-commit — persona linter (warns + errors)
+# Skip with: git commit --no-verify
+python3 tests/persona_linter.py --staged --errors-only

@@ -26,3 +26,7 @@ Saved to: `outputs/reviews/critic/YYYY-MM-DD_<topic>.md`
 - No original question available: ask for it before proceeding — Critic cannot assess alignment without knowing what the question was
 - Output is from an external source (paper, report): Critic can still assess internal consistency and claim support, but cannot assess routing alignment
 - Multiple outputs to check: address each separately; do not average the verdict
+
+
+## Run logging — required
+Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**

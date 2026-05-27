@@ -40,3 +40,7 @@ Saved to: `outputs/reviews/frontend-designer-builder/YYYY-MM-DD_[surface-slug].m
 - Change conflicts with existing design tokens: propose a token update and flag every other surface that uses the same token.
 - User wants a wholly new tab: confirm the URL slug, write the router stub, and surface the first partial — do not silently extend the navbar.
 - Change requires JavaScript heavier than HTMX + tiny vanilla helpers: pause and ask the user before adding a framework dependency.
+
+
+## Run logging — required
+Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**

@@ -325,7 +325,7 @@ pre code { background: transparent; padding: 0; color: inherit; }
 .main { display: flex; flex-direction: column; overflow: hidden; background: var(--m-bg); transition: background-color 220ms ease; }
 
 /* Topbar */
-.topbar { height: 52px; min-height: 52px; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--m-rule); background: var(--m-bg); gap: 16px; flex-shrink: 0; transition: background-color 220ms ease, border-color 220ms ease; }
+.topbar { height: 52px; min-height: 52px; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--m-rule); background: var(--m-bg); gap: 16px; flex-shrink: 0; flex-wrap: nowrap; overflow: hidden; transition: background-color 220ms ease, border-color 220ms ease; }
 .topbar .crumbs { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--m-muted); }
 .topbar .crumbs .sep { margin: 0 8px; color: var(--m-muted-soft); }
 .topbar .crumbs .here { color: var(--m-ink); }
@@ -2144,10 +2144,27 @@ details summary { outline: none; }
   }
 }
 
+/* ---------- <= 1200px : topbar progressive disclosure starts ----------
+   At this width, sidebar (220px) + crumbs + full control cluster (~560px)
+   exceeds 1200px so we begin shedding low-priority topbar elements.
+   -------------------------------------------------------------------- */
+@media (max-width: 1200px) {
+  /* Shrink the search box and hide the trust badge — lowest priority item */
+  .t-search { width: 160px; }
+  .t-trust { display: none; }
+  /* Tighten the control cluster gap */
+  .topbar-controls { gap: 10px; }
+}
+
 /* ---------- <= 1024px : tablet landscape ---------- */
 @media (max-width: 1024px) {
   .page { padding: 32px 32px 56px; }
   .topbar { padding: 0 20px; }
+  /* Hide the Update button label text — keep it icon-only via shrinkage */
+  .topbar-controls { gap: 8px; }
+  .t-search { width: 120px; }
+  /* Hide the MCP badge entirely — it's only useful when debugging */
+  #mcp-toggle-btn { display: none; }
 
   /* Collapse 3-col grids to 2-col on tablet landscape */
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
@@ -2171,7 +2188,10 @@ details summary { outline: none; }
 @media (max-width: 800px) {
   .page { padding: 24px 20px 48px; max-width: 100%; }
   .topbar { padding: 0 14px; height: 48px; min-height: 48px; }
-  .t-search { width: 120px; }
+  /* Topbar: hide Update button and search; keep theme toggle + capture */
+  .t-search { display: none; }
+  #update-btn, #update-spinner { display: none !important; }
+  .topbar-controls { gap: 8px; }
   .theme-label { display: none; }
 
   /* Collapse the master sidebar into a slim 56px rail automatically.
@@ -2222,9 +2242,12 @@ details summary { outline: none; }
   .page { padding: 16px 12px 40px; }
   .page-head h1 { font-size: 26px; }
   .page-head .page-meta { display: none; }
-  .topbar { padding: 0 10px; gap: 8px; }
+  .topbar { padding: 0 10px; gap: 6px; }
   .topbar .crumbs { font-size: 10px; letter-spacing: 0.12em; }
-  .t-search { display: none; }
+  /* Topbar: icon-only Capture button on phones */
+  .t-capture { padding: 6px 8px; letter-spacing: 0; font-size: 0; gap: 0; }
+  .t-capture svg { width: 14px; height: 14px; }
+  .topbar-controls { gap: 6px; }
 
   /* Phones: hide the sidebar entirely; nav surfaces via topbar / tabs */
   .app { grid-template-columns: 1fr !important; }

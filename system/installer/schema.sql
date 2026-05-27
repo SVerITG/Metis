@@ -692,3 +692,12 @@ CREATE TABLE IF NOT EXISTS session_summaries (
     decisions  TEXT,
     created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS speakers (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    embedding   BLOB,
+    sample_count INTEGER DEFAULT 1,
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+);

@@ -22,6 +22,7 @@ from routers import (
     metis_tab,
     planner,
     setup,
+    speakers,
     teach,
     thinking,
     today,
@@ -171,6 +172,7 @@ app.include_router(teach.router)
 app.include_router(metis_tab.router)
 app.include_router(capture.router, prefix="/api")
 app.include_router(transcription.router)
+app.include_router(speakers.router)
 app.include_router(jobs.router)
 app.include_router(setup.router)
 

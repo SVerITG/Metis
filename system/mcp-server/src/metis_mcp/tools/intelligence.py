@@ -83,8 +83,8 @@ async def generate_daily_insight() -> list[TextContent]:
             ).fetchone()
             if _table_exists:
                 cur = conn.execute(
-                    "SELECT agent_slug, task_summary, timestamp FROM agent_runs "
-                    "WHERE timestamp >= ? ORDER BY timestamp DESC LIMIT 30",
+                    "SELECT agent_slug, task_summary, created_at FROM agent_runs "
+                    "WHERE created_at >= ? ORDER BY created_at DESC LIMIT 30",
                     (d7,),
                 )
                 rows = cur.fetchall()
@@ -324,7 +324,7 @@ def assemble_daily_context(db_path) -> dict:
         # Recent agent runs (7d) — brief log of what was worked on
         rows = _q(conn,
             "SELECT agent_slug, task_summary FROM agent_runs "
-            "WHERE timestamp >= ? ORDER BY timestamp DESC LIMIT 8", (d7,))
+            "WHERE created_at >= ? ORDER BY created_at DESC LIMIT 8", (d7,))
         if rows:
             lines = ["## Recent AI Activity"]
             for r in rows:

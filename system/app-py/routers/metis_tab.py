@@ -748,7 +748,7 @@ async def metis_token_monitor(request: Request, days: int = 7):
 
 @router.get("/api/partial/metis/agent-directory", response_class=HTMLResponse)
 async def metis_agent_directory(request: Request):
-    """Read agent-registry.json and return rich agent cards."""
+    """Read agent-registry.json and return rich agent cards with run history."""
     agents: list[dict] = []
     rc_root = os.environ.get("METIS_RC_ROOT", "")
     if rc_root:
@@ -761,6 +761,23 @@ async def metis_agent_directory(request: Request):
                 agents = data.get("agents", [])
             except Exception:
                 pass
+
+    # Merge in run history so the template can show warm/dormant status
+    try:
+        run_rows = db_query(
+            "SELECT agent_slug, COUNT(*) as runs, MAX(created_at) as last_run "
+            "FROM agent_runs GROUP BY agent_slug"
+        )
+        run_map = {r["agent_slug"]: r for r in run_rows}
+    except Exception:
+        run_map = {}
+
+    for a in agents:
+        slug = a.get("slug", "")
+        stats = run_map.get(slug)
+        a["run_count"] = stats["runs"] if stats else 0
+        a["last_run"] = (stats["last_run"] or "")[:10] if stats else ""
+
     return templates.TemplateResponse(
         request,
         "partials/metis_agent_directory.html",
