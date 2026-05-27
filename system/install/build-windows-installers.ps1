@@ -80,21 +80,21 @@ $notesFile = Join-Path $env:TEMP "metis-release-notes.txt"
 "Requires: Windows 10+, Python 3.10+, Anthropic API key, Claude Desktop." | Out-File $notesFile -Append -Encoding utf8
 
 # Check if release already exists
-gh release view $tag --repo <your-github-username>/Metis 2>$null | Out-Null
+gh release view $tag --repo SVerITG/Metis 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "Creating GitHub Release $tag..." -ForegroundColor Yellow
     gh release create $tag @exes `
-        --repo <your-github-username>/Metis `
+        --repo SVerITG/Metis `
         --title "Metis $Version" `
         --notes-file $notesFile
 } else {
     Write-Host ""
     Write-Host "Release $tag exists — uploading assets..." -ForegroundColor Yellow
     foreach ($exe in $exes) {
-        gh release upload $tag $exe --repo <your-github-username>/Metis --clobber
+        gh release upload $tag $exe --repo SVerITG/Metis --clobber
     }
 }
 
 Write-Host ""
-Write-Host "Done. https://github.com/<your-github-username>/Metis/releases/tag/$tag" -ForegroundColor Green
+Write-Host "Done. https://github.com/SVerITG/Metis/releases/tag/$tag" -ForegroundColor Green

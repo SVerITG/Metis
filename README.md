@@ -13,27 +13,27 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/<your-github-username>/Metis">← Metis (base)</a>
+  <a href="https://github.com/SVerITG/Metis">← Metis (base)</a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
   <strong>Editions:</strong>&nbsp;
-  <a href="https://github.com/<your-github-username>/Metis_PH"><b>Metis_PH</b> — Public Health &amp; Epidemiology</a>
+  <a href="https://github.com/SVerITG/Metis_PH"><b>Metis_PH</b> — Public Health &amp; Epidemiology</a>
   &nbsp;·&nbsp;
-  <a href="https://github.com/<your-github-username>/Metis_BM"><b>Metis_BM</b> — Biomedical Sciences <em>(Coming Soon)</em></a>
+  <a href="https://github.com/SVerITG/Metis_BM"><b>Metis_BM</b> — Biomedical Sciences <em>(Coming Soon)</em></a>
   &nbsp;·&nbsp;
-  <a href="https://github.com/<your-github-username>/Metis_CL"><b>Metis_CL</b> — Clinical Sciences <em>(Coming Soon)</em></a>
+  <a href="https://github.com/SVerITG/Metis_CL"><b>Metis_CL</b> — Clinical Sciences <em>(Coming Soon)</em></a>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-v1.0-brightgreen" alt="v1.0"/>
-  <a href="https://github.com/<your-github-username>/Metis_PH/stargazers"><img src="https://img.shields.io/github/stars/<your-github-username>/Metis_PH?style=flat" alt="Stars"/></a>
-  <a href="https://github.com/<your-github-username>/Metis_PH/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
+  <a href="https://github.com/SVerITG/Metis_PH/stargazers"><img src="https://img.shields.io/github/stars/SVerITG/Metis_PH?style=flat" alt="Stars"/></a>
+  <a href="https://github.com/SVerITG/Metis_PH/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" alt="Python"/>
   <img src="https://img.shields.io/badge/Claude-MCP-orange?logo=anthropic" alt="Claude MCP"/>
 </p>
 
-> **New to Metis?** This repository (`<your-github-username>/Metis`) is an intentionally empty shell — no pre-configured workspace, no demo data. If you want to explore what Metis actually looks and feels like before committing to setup, start with **[Metis_PH](https://github.com/<your-github-username>/Metis_PH)** instead. It ships with a full demo workspace — a realistic outbreak response researcher persona, complete with projects, meetings, literature, tasks, and a synthetic case linelist — so you can try every feature from the first open.
+> **New to Metis?** This repository (`SVerITG/Metis`) is an intentionally empty shell — no pre-configured workspace, no demo data. If you want to explore what Metis actually looks and feels like before committing to setup, start with **[Metis_PH](https://github.com/SVerITG/Metis_PH)** instead. It ships with a full demo workspace — a realistic outbreak response researcher persona, complete with projects, meetings, literature, tasks, and a synthetic case linelist — so you can try every feature from the first open.
 
-> **Work in progress.** The MCP server is fully operational and used daily. We are still actively developing some dashboard features, the one-click installer, and the pre-loaded public health knowledge layer. Expect rough edges. For the domain-agnostic base shell, see **[Metis](https://github.com/<your-github-username>/Metis)**.
+> **Work in progress.** The MCP server is fully operational and used daily. We are still actively developing some dashboard features, the one-click installer, and the pre-loaded public health knowledge layer. Expect rough edges. For the domain-agnostic base shell, see **[Metis](https://github.com/SVerITG/Metis)**.
 
 > **Disclaimer.** The concept, architecture, and approach behind Metis are original. One of Metis's core principles is self-improvement — it actively monitors AI developments and incorporates new tools, skills, and agent patterns. Tools, skills, and agents were built drawing on publicly available techniques, documentation, and web resources, and as such individual components are often not unique. What Metis presents is a *way of working* — a coherent system designed for researchers. Use and extension are welcome under the AGPL-3.0 license.
 
@@ -501,7 +501,7 @@ No change to agent behaviour ever happens without your review. The system propos
 
 No terminal. No Python. No technical knowledge needed. Download, double-click, answer three questions.
 
-> **[Download the latest MetisSetup.exe →](https://github.com/<your-github-username>/Metis_PH/releases/latest)**
+> **[Download the latest MetisSetup.exe →](https://github.com/SVerITG/Metis_PH/releases/latest)**
 
 Four installer variants — choose what fits your work:
 
@@ -531,7 +531,7 @@ metis/system/install/windows/install.bat
 ### For Developers — Linux / WSL / macOS
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/<your-github-username>/Metis_PH/main/metis/system/mcp-server/setup-mcp.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/metis/system/mcp-server/setup-mcp.sh)
 ```
 
 Gives you all **34 agents** and **165+ tools** inside Claude Desktop or Claude Code. Idempotent. Dashboard:
@@ -550,11 +550,11 @@ Metis will ship in distinct editions, each with its own GitHub repository. The b
 
 | Repository | Status | What it is |
 |---|---|---|
-| **[Metis](https://github.com/<your-github-username>/Metis)** | ▶ Live (v1.0) | Research Cortex shell — full architecture, no domain content. Clone this to build your own edition. |
-| **[Metis_PH](https://github.com/<your-github-username>/Metis_PH)** | ▶ Current (this repo, v1.0) | Public Health & Epidemiology edition — MCP server operational, knowledge layer actively being built |
+| **[Metis](https://github.com/SVerITG/Metis)** | ▶ Live (v1.0) | Research Cortex shell — full architecture, no domain content. Clone this to build your own edition. |
+| **[Metis_PH](https://github.com/SVerITG/Metis_PH)** | ▶ Current (this repo, v1.0) | Public Health & Epidemiology edition — MCP server operational, knowledge layer actively being built |
 | **Metis_PH v1.0** | ✅ Released | Stable release — see [release notes](system/config/release-notes-v1.0.md) |
-| **[Metis_BM](https://github.com/<your-github-username>/Metis_BM)** | 🧬 Placeholder | Biomedical Sciences — to be built |
-| **[Metis_CL](https://github.com/<your-github-username>/Metis_CL)** | 🏥 Placeholder | Clinical Sciences — to be built |
+| **[Metis_BM](https://github.com/SVerITG/Metis_BM)** | 🧬 Placeholder | Biomedical Sciences — to be built |
+| **[Metis_CL](https://github.com/SVerITG/Metis_CL)** | 🏥 Placeholder | Clinical Sciences — to be built |
 | **Metis [Domain]** | 🌍 Community | Domain packs for other research fields as contributed |
 | **Metis Institute Edition** | 🏛 Future | Multi-user, shared knowledge base, institutional deployment |
 
@@ -678,7 +678,7 @@ flowchart LR
 ### Option 1 — Single command (Linux, macOS, WSL)
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/<your-github-username>/Metis_PH/main/metis/system/mcp-server/setup-mcp.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/metis/system/mcp-server/setup-mcp.sh)
 ```
 
 Detects Ubuntu 20/22/24, Debian, macOS (Homebrew). Creates venv, installs all dependencies, registers with Claude Code and Claude Desktop. Idempotent — safe to re-run.
@@ -689,7 +689,7 @@ Open **Windows Terminal → Ubuntu** (or any WSL distro) and run:
 
 ```bash
 # 1. Clone
-git clone https://github.com/<your-github-username>/Metis_PH.git ~/Metis_PH
+git clone https://github.com/SVerITG/Metis_PH.git ~/Metis_PH
 
 # 2. Install MCP server + register with Claude Code and Claude Desktop
 cd ~/Metis_PH/metis/system/mcp-server && bash setup-mcp.sh
@@ -704,7 +704,7 @@ Claude Desktop on Windows picks up the WSL MCP server automatically via `wsl.exe
 ### Option 3 — Manual (any platform)
 
 ```bash
-git clone https://github.com/<your-github-username>/Metis_PH.git
+git clone https://github.com/SVerITG/Metis_PH.git
 cd Metis_PH/metis/system/mcp-server
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[voice]"
@@ -742,7 +742,7 @@ For the MCP-only Docker image, point Claude Desktop at the container — see `.e
 
 No terminal. No Python. Download, double-click, answer three questions.
 
-> **[Download the latest MetisSetup.exe →](https://github.com/<your-github-username>/Metis_PH/releases/latest)**
+> **[Download the latest MetisSetup.exe →](https://github.com/SVerITG/Metis_PH/releases/latest)**
 
 Four variants (Full / PH Shell / Standard / MCP-only) — all install Claude Desktop and launch the config wizard on first run.
 

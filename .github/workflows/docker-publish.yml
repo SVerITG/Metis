@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   build-and-push:
-    name: Build ghcr.io/<your-github-username>/metis
+    name: Build ghcr.io/${{ github.repository_owner }}/metis
     runs-on: ubuntu-latest
 
     steps:
@@ -43,7 +43,7 @@ jobs:
       - name: Determine tags
         id: tags
         run: |
-          BASE="ghcr.io/<your-github-username>/metis"
+          BASE="ghcr.io/${{ github.repository_owner }}/metis"
           INPUT="${{ github.event.inputs.tag }}"
           if [ -n "$INPUT" ] && [ "$INPUT" != "latest" ]; then
             echo "TAGS=$BASE:$INPUT,$BASE:latest" >> "$GITHUB_OUTPUT"
