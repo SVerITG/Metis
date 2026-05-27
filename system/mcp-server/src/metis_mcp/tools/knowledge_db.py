@@ -26,11 +26,20 @@ import time
 from pathlib import Path
 from typing import List, Optional
 
+import sqlite3
+
 from mcp.types import TextContent
 
 from metis_mcp.config import paths
 from metis_mcp.app_instance import app
-from metis_mcp.db import connect
+
+
+def _connect():
+    """Open a plain SQLite connection with WAL mode for long-running indexing operations."""
+    conn = sqlite3.connect(str(paths.db))
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    return conn
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -57,10 +66,9 @@ BUILTIN_DATABASES = [
         "color": "#0d6efd",
         "folders": [
             "open-access-books/Health Systems & Financing",
-            "open-access-books/Global Health & Health Systems",
             "open-access-books/Global Health Governance",
             "open-access-books/Social Determinants & Equity",
-            "open-access-books/Environmental Health",
+            "open-access-books/Environmental & Occupational Health",
             "open-access-books/Infectious Disease & Surveillance",
             "open-access-books/Maternal & Child Health",
             "open-access-books/NCDs",
@@ -69,10 +77,9 @@ BUILTIN_DATABASES = [
             "open-access-books/Health Economics",
             "open-access-books/One Health & AMR",
             "open-access-books/Climate Change & Health",
-            "open-access-books/Africa",
             "open-access-books/Africa & Sub-Saharan Africa",
             "open-access-books/Health Informatics & DHIS2",
-            "open-access-books/Course Materials",
+            "open-access-books/Health Security",
         ],
     },
     {
@@ -113,8 +120,7 @@ BUILTIN_DATABASES = [
         "folders": [
             "open-access-books/Epidemiology & Methods",
             "open-access-books/Biostatistics & Methods",
-            "open-access-books/Spatial Epidemiology & Statistics",
-            "open-access-books/Multilevel Models",
+            "open-access-books/Spatial Epidemiology",
             "open-access-books/Research Methods & Writing",
             "open-access-books/Field Epidemiology",
             "methods",
@@ -246,18 +252,12 @@ def _encode_vec(v: List[float]) -> bytes:
 
 def _extract_pages(pdf_path: Path) -> tuple[List[tuple[int, str]], int]:
     try:
-        from pypdf import PdfReader
-        reader = PdfReader(str(pdf_path), strict=False)
-        total = len(reader.pages)
-        pages = []
-        for i, page in enumerate(reader.pages):
-            try:
-                text = _clean_text(page.extract_text() or "")
-                if text.strip():
-                    pages.append((i + 1, text))
-            except Exception:
-                continue
-        return pages, total
+        from pdfminer.high_level import extract_text
+        full_text = extract_text(str(pdf_path))
+        if not full_text or not full_text.strip():
+            return [], 0
+        cleaned = _clean_text(full_text)
+        return [(1, cleaned)], 1
     except Exception:
         return [], 0
 
@@ -368,7 +368,7 @@ async def list_knowledge_databases() -> list[TextContent]:
     custom databases the user has created. Reports layer, document count, chunk count,
     and last build date.
     """
-    conn = connect(paths.db)
+    conn = _connect()
     _ensure_schema(conn)
     _seed_builtin_databases(conn)
 
@@ -424,7 +424,7 @@ async def build_pdf_knowledge_db(
     """
     t0 = time.time()
 
-    conn = connect(paths.db)
+    conn = _connect()
     _ensure_schema(conn)
     _seed_builtin_databases(conn)
 
@@ -557,7 +557,7 @@ async def search_pdf_knowledge(
     if not query.strip():
         return [TextContent(type="text", text="query cannot be empty")]
 
-    conn = connect(paths.db)
+    conn = _connect()
     _ensure_schema(conn)
 
     try:
@@ -664,7 +664,7 @@ async def get_pdf_index_stats(
     Args:
         database: Slug to report on. Empty = report all databases.
     """
-    conn = connect(paths.db)
+    conn = _connect()
     _ensure_schema(conn)
     _seed_builtin_databases(conn)
 
@@ -751,7 +751,7 @@ async def create_knowledge_database(
             f"Example: 'dhis2-specialist'"
         ))]
 
-    conn = connect(paths.db)
+    conn = _connect()
     _ensure_schema(conn)
     _seed_builtin_databases(conn)
 

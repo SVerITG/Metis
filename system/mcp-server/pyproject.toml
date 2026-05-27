@@ -20,6 +20,8 @@ dependencies = [
     "pandas>=2.0",
     "openpyxl>=3.1",
     "pyreadstat>=1.2",
+    # Phase L — PDF knowledge indexing (replaces pypdf)
+    "pdfminer-six>=20240706",
     # Phase 8.8 — content scan
     "feedparser>=6.0",
     # Phase 10 — Zotero/library connector
