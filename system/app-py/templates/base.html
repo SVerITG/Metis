@@ -468,6 +468,9 @@
       </div>
     </div><!-- /.topbar -->
 
+    <!-- Demo mode banner (renders empty outside demo mode) -->
+    <div hx-get="/api/partial/demo-banner" hx-trigger="load" hx-swap="outerHTML"></div>
+
     <!-- API key status banner (visible only when ANTHROPIC_API_KEY is missing) -->
     <div hx-get="/api/partial/api-key-status" hx-trigger="load" hx-swap="outerHTML"></div>
 
