@@ -80,7 +80,7 @@ def _ensure_tables(conn):
 # Name heuristic: 2+ consecutive CAPITALIZED words not at sentence start
 _NAME_RE = re.compile(r"(?<!\.\s)(?<!\n)(?<![.!?]\s)(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)")
 
-# HAT-context institution patterns
+# Research-context institution patterns
 _INSTITUTION_RE = re.compile(
     r"\b(?:ITM|ITG|MSF|DNDi|WHO|CDC|PNLTHA|Ministry of Health|Ministère de la Santé)\b",
     re.IGNORECASE,

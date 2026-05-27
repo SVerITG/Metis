@@ -18,11 +18,11 @@ The `metis-rc` MCP server is registered globally. **Always call the MCP tools im
 
 **Usage:** `/metis_news` or `/metis_news [domain]`
 
-Domain filters: `HAT` · `AI` · `public-health` · `methods` · `all`
+Domain filters: use any domain tag from your `news_topics` config, or `AI` · `public-health` · `methods` · `all`
 
 Examples:
 - `/metis_news` — top 6 most recent briefs across all domains
-- `/metis_news HAT` — only HAT-tagged news
+- `/metis_news [your-domain]` — only news tagged with your domain
 - `/metis_news AI` — only AI-tagged news
 
 **Step 1 — Pull news briefs**
@@ -51,9 +51,9 @@ If no briefs exist or last scan > 24h ago: suggest running `/news-radar` or clic
 ─── News signals — [YYYY-MM-DD HH:MM] ─────────────────────
 Last scan: [time ago] via [content-scan / news-radar]
 
-[HAT]
-  · [Title truncated to 70 chars]  (who.int · 2h) [MEDIUM]
-  · [Title]  (plosntds.org · 1d)
+[YOUR-DOMAIN]
+  · [Title truncated to 70 chars]  (source.org · 2h) [MEDIUM]
+  · [Title]  (source.org · 1d)
 
 [AI]
   · [Title]  (anthropic.com · 3h) [HIGH]

@@ -11,7 +11,7 @@ Used by Metis before routing to any specialist agent.
 |---|---|---|
 | `epi-methods` | Multilevel models, mixed effects, spatial scan statistics, biostatistics, sampling theory, study design, R methodology | "multilevel", "MLM", "lme4", "random effects", "spatial scan", "SaTScan", "sampling", "confidence interval", "regression", "prevalence", "incidence", "study design", "bias", "confounding" |
 | `ph-background` | WHO guidelines, CDC recommendations, health systems, health economics, NTD program management, public health policy | "WHO", "CDC", "guideline", "recommendation", "health system", "health economics", "NTD", "neglected tropical", "program", "policy" |
-| `hat-specialist` | Human African Trypanosomiasis — diagnosis, mAECT, OBI, trypanolysis, surveillance DRC, RDT sensitivity/specificity, passive/active screening | "HAT", "sleeping sickness", "trypanosomiasis", "mAECT", "OBI", "trypanolysis", "gambiense", "rhodesiense", "DRC surveillance", "passive screening", "active screening" |
+| `hat-specialist` | Metis_PH specialist layer — domain-specific terminology for the user's configured specialist domain (Metis_PH: HAT/NTD vocabulary when populated) | Domain-specific terminology for the user's configured specialist domain (Metis_PH: HAT/NTD vocabulary) |
 
 ---
 
@@ -21,8 +21,8 @@ Used by Metis before routing to any specialist agent.
 |---|---|---|
 | Epidemiologist | Any epi-methods signal | `epi-methods` |
 | Methods Coach | Any statistical/methods signal | `epi-methods` |
-| PhD Architect | If article topic matches epi/HAT | `epi-methods` + `hat-specialist` |
-| Writing Partner | If writing about methods or HAT | `hat-specialist` (for HAT text) |
+| PhD Architect | If article topic matches epi/specialist domain | `epi-methods` + `hat-specialist` |
+| Writing Partner | If writing about methods or specialist domain | `hat-specialist` (for domain text) |
 | Librarian | Only if user asks "what does the literature say about X" — not for catalogue tasks | by topic |
 | News Radar | Never | — |
 | DHIS2 Expert | Never | — |
@@ -37,7 +37,7 @@ Used by Metis before routing to any specialist agent.
 # Standard retrieval
 search_pdf_knowledge(query=topic_phrase, databases=[db_id], k=5)
 
-# Dual coverage (epi + HAT)
+# Dual coverage (epi + specialist domain)
 search_pdf_knowledge(query=topic_phrase, databases=["epi-methods", "hat-specialist"], k=4)
 
 # Broad public health question

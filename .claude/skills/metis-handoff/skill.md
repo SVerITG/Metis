@@ -38,7 +38,7 @@ Produce the following block verbatim (filled in with real data). The user will c
 ═══════════════════════════════════════════════════
 
 ## WHO YOU ARE TALKING TO
-Senior Researcher / [your role] working on [your research domain]. PhD student. Active projects: [My Research Project], [My Dataset Analysis], [My Statistics Course], Metis PKM system.
+Researcher / [your role] working on [your research domain]. Active projects: [list from get_project_status()], Metis PKM system.
 
 ## ACTIVE PROJECTS
 {list each project: ID | title | status | open task count}

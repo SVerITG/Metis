@@ -15,7 +15,7 @@ version: "3.9"
 # The container only holds the application code.
 
 x-metis-base: &metis-base
-  image: ${METIS_IMAGE:-ghcr.io/sveritg/metis:latest}
+  image: ${METIS_IMAGE:-ghcr.io/<your-github-username>/metis:latest}
   restart: unless-stopped
   env_file: .env
   environment:

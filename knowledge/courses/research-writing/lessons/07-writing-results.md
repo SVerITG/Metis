@@ -66,7 +66,7 @@ Where relevant, include:
 This is especially important in small studies, where statistical significance can be unstable and absolute counts matter a great deal.
 
 ### Section 5: Worked example
-Imagine a paper evaluating a post-elimination HAT surveillance system in 32 peripheral facilities.
+Imagine a paper evaluating a post-elimination disease surveillance system in 32 peripheral facilities.
 
 A strong results sequence could be:
 

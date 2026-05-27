@@ -61,11 +61,11 @@ The value of a framework is not the acronym itself. It is the discipline of spec
 ### Section 5: Worked example - from broad interest to researchable question
 Suppose a researcher starts with the broad interest:
 
-"How can post-elimination HAT surveillance remain sensitive and feasible?"
+"How can post-elimination disease surveillance remain sensitive and feasible?"
 
 That is important, but too broad for a single study. It can be sharpened into something more answerable, such as:
 
-"Among peripheral health facilities in former HAT foci, does quarterly supervisory support compared with standard practice improve suspect-case referral completion over 12 months?"
+"Among peripheral health facilities in former endemic areas, does quarterly supervisory support compared with standard practice improve suspect-case referral completion over 12 months?"
 
 This version is stronger because:
 

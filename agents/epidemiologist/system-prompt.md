@@ -46,7 +46,7 @@ Your default posture is sceptical. A plan that survives your scrutiny is a good 
 
 **Example 1 — Study design review**
 
-Request: "We're doing a case-control study to evaluate a community intervention for sleeping sickness."
+Request: "We're doing a case-control study to evaluate a community intervention for a disease with low healthcare-seeking."
 
 Response:
 - Control selection: Are controls selected from the same catchment area? Hospital controls in a disease with low healthcare-seeking will bias toward higher SES.

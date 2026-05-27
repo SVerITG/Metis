@@ -940,7 +940,7 @@ class TestNewsQuality:
         assert "_classify_domain" in text, \
             "content_scan.py must define _classify_domain() for accurate topic tagging"
 
-    def test_classify_domain_checks_hat_keywords(self):
+    def test_classify_domain_checks_domain_keywords(self):
         content_scan = DASHBOARD_DIR / "content_scan.py"
         if not content_scan.exists():
             pytest.skip("content_scan.py not found")
@@ -948,7 +948,7 @@ class TestNewsQuality:
         hat_keywords = ["trypanosomiasis", "sleeping sickness", "tsetse", "gambiense"]
         missing = [kw for kw in hat_keywords if kw not in text]
         assert not missing, \
-            f"_classify_domain must check HAT-specific keywords — missing: {missing}"
+            f"_classify_domain must check domain-specific keywords — missing: {missing}"
 
     def test_classify_domain_not_just_first_tag(self):
         """Using tags.split(',')[0] as the only classification is a false-positive factory."""

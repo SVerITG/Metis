@@ -48,18 +48,18 @@ DAILY WORKFLOW COMMANDS  (all start with /metis_)
 /metis_phd          PhD article status, thesis alignment, next milestone, and
                     open methodological questions. Optional: /metis_phd article-1
 
-/metis_literature   Library search and stats. E.g. /metis_literature HAT 2024
+/metis_literature   Library search and stats. E.g. /metis_literature [topic] 2024
                     No query = recent additions + library summary.
 
 /metis_capture      One-command capture. Prefix routes to the right table:
                     i: idea  n: note  t: task  q: question
-                    E.g. /metis_capture i: What if vector density drives threshold?
+                    E.g. /metis_capture i: What if sample size affects detection threshold?
 
 /metis_inbox        Scan inbox/ folder + inbox tasks. Proposes routing to
                     agents. Waits for your confirm before acting.
 
-/metis_news         Latest news signals. Optional domain filter: HAT / AI /
-                    public-health / methods. E.g. /metis_news HAT
+/metis_news         Latest news signals. Optional domain filter: [your-domain] /
+                    AI / public-health / methods. E.g. /metis_news [your-domain]
 
 /metis_agents       Agent directory: what each agent does, when to use them,
                     and their last run date.

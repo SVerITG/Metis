@@ -169,11 +169,11 @@ if (-not $filesAlreadyPresent) {
     Write-Host "    Downloading Metis from GitHub…" -ForegroundColor Gray
     $gitAvail = Get-Command git -ErrorAction SilentlyContinue
     if ($gitAvail) {
-        git clone --depth 1 https://github.com/SVerITG/Metis.git $metisTarget 2>&1 | Out-Null
+        git clone --depth 1 https://github.com/<your-github-username>/Metis.git $metisTarget 2>&1 | Out-Null
     }
     else {
         $zipPath = Join-Path $env:TEMP "metis.zip"
-        Invoke-WebRequest -Uri "https://github.com/SVerITG/Metis/archive/refs/heads/main.zip" `
+        Invoke-WebRequest -Uri "https://github.com/<your-github-username>/Metis/archive/refs/heads/main.zip" `
             -OutFile $zipPath -UseBasicParsing
         Expand-Archive -Path $zipPath -DestinationPath $env:TEMP -Force
         $extracted = Join-Path $env:TEMP "Metis-main"
@@ -385,7 +385,7 @@ Write-Host @"
     $InstallDir
 
   Anything goes wrong? See the README at:
-    https://github.com/SVerITG/Metis_PH
+    https://github.com/<your-github-username>/Metis_PH
 
 "@ -ForegroundColor Green
 

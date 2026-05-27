@@ -135,7 +135,7 @@ jobs:
 
             ### Docker (no download needed)
             ```bash
-            git clone https://github.com/SVerITG/Metis
+            git clone https://github.com/<your-github-username>/Metis
             cd Metis/metis/system/install/docker
             cp .env.example .env   # add your API key
             docker compose up -d   # standard (dashboard + MCP)

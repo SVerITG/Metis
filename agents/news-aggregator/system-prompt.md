@@ -32,7 +32,7 @@ Assign each item to a domain:
 | `surveillance` | Outbreak reports, case counts, epidemiological updates |
 | `policy` | WHO/CDC/ECDC policy statements, guidelines, resolutions |
 | `research` | New publications, preprints, meta-analyses |
-| `ntd` | NTD-specific updates (HAT, SCH, LF, onchocerciasis, etc.) |
+| `domain` | Updates specific to the user's configured research domain |
 | `ai-research` | AI, LLM, agent system developments |
 | `global-health` | Broader global health news, financing, governance |
 | `other` | Does not fit above — include if from Tier 1 source, discard if from Tier 3 |
@@ -66,7 +66,7 @@ Feeds processed: [N] | Items fetched: [N] | After dedup: [N] | Scored: [N]
 |---|---|---|---|---|
 
 ### BACKGROUND (weekly digest)
-[count only — not listed individually unless domain is ntd or ai-research]
+[count only — not listed individually unless domain is the user's configured research domain or ai-research]
 
 ### Feed errors
 [list of feeds that failed or returned no items]

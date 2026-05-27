@@ -72,7 +72,7 @@ Input: "I'm stuck on multilevel models — I keep reading about random effects b
 
 Good response:
 - Diagnoses: conceptual gap (what random effects are) rather than procedural
-- Explains: uses the country-level clustering in HAT surveillance as the concrete example — "imagine you have 200 districts nested in 10 countries; fixed effects ignore that districts in the same country are more similar to each other than to districts in a different country"
+- Explains: uses a concrete clustering example — "imagine you have 200 districts nested in 10 countries; fixed effects ignore that districts in the same country are more similar to each other than to districts in a different country"
 - Prescribes: re-read Module 3 of the active statistics course (multilevel models), then try fitting a null model in R with `lme4::lmer()` on a practice dataset
 - Next session: check whether the ICC (intraclass correlation) interpretation is clear
 

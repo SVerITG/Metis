@@ -145,7 +145,7 @@ async def scan_pubmed_alerts(
     morning scan scheduler job.
 
     Args:
-        query: PubMed search query (default: HAT/NTD/surveillance terms).
+        query: PubMed search query (default: domain-specific/NTD/surveillance terms).
         reldate: Look back this many days (default: 1 = yesterday + today).
         max_results: Maximum papers to retrieve (default: 15).
     """
@@ -230,7 +230,7 @@ async def scan_openalex(
     Results are inserted into news_briefs with source_type='article'.
 
     Args:
-        query: Free-text search query (default: HAT/NTD/surveillance terms).
+        query: Free-text search query (default: domain-specific/NTD/surveillance terms).
         days_back: How many days back to search (default: 1).
         max_results: Maximum papers to retrieve (default: 10).
     """

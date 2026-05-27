@@ -22,10 +22,10 @@ Prefix routing (same as the dashboard capture modal):
 - No prefix → treated as a note, saved to `personal_notes`
 
 Examples:
-- `/metis_capture i: What if the elimination threshold depends on vector density?`
-- `/metis_capture t: Review HAT clustering script for Article 2 methods section`
-- `/metis_capture n: HAT passive screening in DRC shows plateau effect since 2020`
-- `/metis_capture q: Is CATT sensitivity adequate for post-elimination surveillance?`
+- `/metis_capture i: What if the elimination threshold depends on population density?`
+- `/metis_capture t: Review clustering script for Article 2 methods section`
+- `/metis_capture n: Passive screening in the study region shows plateau effect since 2020`
+- `/metis_capture q: Is the diagnostic test sensitivity adequate for post-elimination surveillance?`
 
 **Step 1 — Parse prefix**
 Extract the prefix (first 2 characters before `: `). Default to `n:` if none present.

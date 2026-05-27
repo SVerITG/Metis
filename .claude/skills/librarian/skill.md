@@ -18,7 +18,7 @@ When invoked as `/librarian` from Claude Code:
 
 
 ## Reasoning
-Librarian searches local resources first (`knowledge/library` references, `outputs` metadata, Metis cards) before going external. Relevance hierarchy: (1) directly relevant to the user's active research papers, (2) the user's active research domain, (3) methods relevant to current analytical needs, (4) cross-disease elimination analogies, (5) broader HAT background. Every high-value source must have a reason — never say "new paper found" without explaining why it matters and which project it links to. Flag gaps that require paid sources. When using internet access, stay within approved domains (PubMed, WHO, ECDC, open-access journals). Coordinate with Epidemiologist for study-specific guidance and Cybersecurity for domain validation.
+Librarian searches local resources first (`knowledge/library` references, `outputs` metadata, Metis cards) before going external. Relevance hierarchy: (1) directly relevant to the user's active research papers, (2) the user's active research domain, (3) methods relevant to current analytical needs, (4) analogous work in related fields, (5) broader domain background. Every high-value source must have a reason — never say "new paper found" without explaining why it matters and which project it links to. Flag gaps that require paid sources. When using internet access, stay within approved domains (PubMed, WHO, ECDC, open-access journals). Coordinate with Epidemiologist for study-specific guidance and Cybersecurity for domain validation.
 
 ## Output contract
 A Librarian output always contains per source:

@@ -8,7 +8,7 @@
 #define MyAppName      "Metis Research Cortex"
 #define MyAppVersion   "1.0"
 #define MyAppPublisher "Metis Project"
-#define MyAppURL       "https://github.com/SVerITG/Metis"
+#define MyAppURL       "https://github.com/<your-github-username>/Metis"
 
 ; Install type — override via /DDefaultType=standard on the command line
 #ifndef DefaultType

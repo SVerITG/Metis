@@ -823,7 +823,7 @@ async def knowledge_hat_corpus(
     collection: str = "",
     sort: str = "title",
 ):
-    """HAT/NTD research corpus browser — reads from library_seeded."""
+    """Domain knowledge corpus browser — reads from library_seeded."""
     items, total = _fetch_seeded_items(q=q, collection=collection, sort=sort, per_page=200)
     # Collection filter chips
     collection_rows = db_query(
@@ -861,7 +861,7 @@ async def knowledge_hat_corpus_table(
     collection: str = "",
     sort: str = "title",
 ):
-    """Table rows only — swapped in for HAT corpus live search/filter."""
+    """Table rows only — swapped in for domain corpus live search/filter."""
     items, total = _fetch_seeded_items(q=q, collection=collection, sort=sort, per_page=200)
     return templates.TemplateResponse(
         request,
@@ -1454,7 +1454,7 @@ async def knowledge_unified_search(request: Request, q: str = ""):
         pdf_rel = _lit_pdf_cache.get(lit_id, "") if lit_id else ""
         p["pdf_url"] = f"/api/library/pdf/{lit_id}" if pdf_rel else ""
 
-    # 3. Seeded HAT corpus
+    # 3. Seeded domain corpus
     seeded = db_query(
         "SELECT REPLACE(REPLACE(basename,'.pdf',''),'.PDF','') as title, "
         "top_folder, method, relevance_note FROM library_seeded "
@@ -1665,7 +1665,7 @@ async def knowledge_unified_search_semantic(request: Request, q: str = ""):
 # Canonical topic definitions for the research landscape.
 # Each entry: (label, keywords_for_lit_search, description_for_card)
 _TOPIC_DEFINITIONS: list[tuple[str, list[str], str]] = [
-    ("HAT Epidemiology",      ["HAT", "sleeping sickness", "trypanosomiasis"], "Incidence, prevalence, spatial distribution"),
+    ("Domain Epidemiology",   ["HAT", "sleeping sickness", "trypanosomiasis"], "Incidence, prevalence, spatial distribution"),
     ("Surveillance Systems",  ["surveillance", "reporting system", "sentinel"], "Active/passive surveillance design & evaluation"),
     ("Elimination & Control", ["elimination", "control", "elimination programme"], "WHO targets, control strategies, validation"),
     ("Diagnostics",           ["diagnostic", "RDT", "CATT", "mAECT", "Loofs", "HAT-Rdt"], "Diagnostic tools, sensitivity & specificity"),
@@ -1859,7 +1859,7 @@ async def knowledge_gap_check(request: Request):
     except Exception:
         pass
 
-    # Also check library_seeded (HAT corpus)
+    # Also check library_seeded (domain corpus)
     try:
         seeded_rows = db_query("SELECT basename FROM library_seeded WHERE extension='pdf'") or []
         for r in seeded_rows:
@@ -1945,13 +1945,13 @@ async def knowledge_gap_check(request: Request):
 
 
 # ---------------------------------------------------------------------------
-# HAT corpus semantic index trigger
+# Domain corpus semantic index trigger
 # ---------------------------------------------------------------------------
 
 
 @router.post("/api/knowledge/build-hat-index", response_class=HTMLResponse)
 async def knowledge_build_hat_index(request: Request):
-    """Trigger HAT corpus PDF indexing as a background subprocess."""
+    """Trigger domain corpus PDF indexing as a background subprocess."""
     import subprocess
     import sys
 
@@ -1977,7 +1977,7 @@ async def knowledge_build_hat_index(request: Request):
 
     if not lib_path or not Path(lib_path).exists():
         return HTMLResponse(
-            '<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">HAT library path not found in user-preferences.json → library_path</span>'
+            '<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">Library path not found in user-preferences.json → library_path</span>'
         )
 
     db_path = Path(rc_root) / "system" / "app" / "data" / "metis.sqlite"
@@ -1991,7 +1991,7 @@ async def knowledge_build_hat_index(request: Request):
         )
         return HTMLResponse(
             '<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-ok);">'
-            'HAT indexing started in background (10–40 min depending on corpus size). '
+            'Indexing started in background (10–40 min depending on corpus size). '
             'Refresh the PDF stats panel when done.</span>'
         )
     except Exception as e:

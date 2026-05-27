@@ -16,7 +16,7 @@ curl -s http://127.0.0.1:8080/api/transcription/status
 # → {"available":true,"model":"base","mode":"faster-whisper", ...}
 
 # Cross-pollination ready (no audio needed)
-curl -s -X POST -d "text=HAT surveillance Angola" http://127.0.0.1:8080/api/meeting/live-connections | head -c 200
+curl -s -X POST -d "text=Disease surveillance field study" http://127.0.0.1:8080/api/meeting/live-connections | head -c 200
 # → HTML with "CONNECTIONS SURFACED"
 ```
 
@@ -34,7 +34,7 @@ If any of the three fail, **do not attempt the manual steps below** — fix the 
 | 4 | Leave mode as **Whisper — accurate, all browsers** | Backend will run | Hint card says "Transcribes every 8 seconds via the local Whisper model" |
 | 5 | Click **Start Listening** | Mic permission prompt fires | Browser asks for microphone access |
 | 6 | Click **Allow** | Live session pane appears | Setup modal swaps to the live transcript panel; red **recording dot pulses** (not static) |
-| 7 | Speak for ~10 seconds, say "HAT surveillance in Angola" | First Whisper chunk uploads | Within 8–12s, transcript text appears in the centre pane |
+| 7 | Speak for ~10 seconds, say something from your research domain | First Whisper chunk uploads | Within 8–12s, transcript text appears in the centre pane |
 | 8 | Watch the right pane | Cross-pollination fires | "CONNECTIONS SURFACED" panel populates with links to your library / past meetings |
 | 9 | Click **Pause** | Recording halts | Pulse stops, "PAUSED" label appears |
 | 10 | Click **Stop and save** | Transcript saved | Toast appears: "Transcript saved to Meetings." Meeting appears in the meetings list. |

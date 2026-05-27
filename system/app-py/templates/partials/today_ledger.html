@@ -9,10 +9,10 @@
   {% endif %}
   {% if stats.hat_count %}
   <a href="#" class="ledger-cell"
-     title="HAT Research Corpus PDFs"
+     title="Domain knowledge corpus PDFs"
      onclick="setNavActive(document.querySelector('[data-tab=knowledge]'),'knowledge'); htmx.ajax('GET','/api/tab/knowledge',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
     <div class="ledger-n tnum">{{ stats.hat_count }}</div>
-    <div class="ledger-l">HAT PAPERS</div>
+    <div class="ledger-l">DOMAIN PAPERS</div>
   </a>
   {% endif %}
   {% if stats.open_tasks %}

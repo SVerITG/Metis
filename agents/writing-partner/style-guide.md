@@ -10,8 +10,8 @@
 
 ## Domain language preferences
 
-- use `gambiense human African [your research topic]` or `gHAT` consistently when appropriate
-- avoid switching terms casually between disease labels without purpose
+- use the user's configured disease or topic terminology consistently (loaded from user profile)
+- avoid switching terms casually between disease labels or topic labels without purpose
 - preserve distinctions between active and passive surveillance
 - preserve distinctions between elimination, elimination of transmission, and post-elimination surveillance
 - be explicit when discussing diagnostic specificity, sensitivity, or quality assurance

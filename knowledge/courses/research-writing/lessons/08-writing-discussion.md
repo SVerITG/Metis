@@ -37,7 +37,7 @@ Many effective discussions follow a predictable structure:
 
 This structure works because it keeps interpretation anchored to evidence. The opening should usually state the central result directly rather than reintroduce the topic.
 
-For example: "In this evaluation of post-elimination HAT surveillance, reporting completeness was moderate, but timeliness and diagnostic readiness were uneven across districts." That sentence gives the reader a map for the rest of the section.
+For example: "In this evaluation of post-elimination disease surveillance, reporting completeness was moderate, but timeliness and diagnostic readiness were uneven across districts." That sentence gives the reader a map for the rest of the section.
 
 ### Section 3: Compare, do not merely cite
 Comparison with prior literature is not a ritual citation exercise. Its purpose is to help readers position the study. Ask whether your results are consistent, partly consistent, or in tension with prior work, and then explain why that might be.
@@ -60,7 +60,7 @@ For instance, if facility registers were incomplete in remote districts, that li
 In other words, limitations are analytic. They are not simply acknowledgments of imperfection.
 
 ### Section 5: Worked example
-Imagine a manuscript showing that peripheral HAT surveillance remained functional after elimination of reported cases, but with serious weaknesses in specimen referral and supervision.
+Imagine a manuscript showing that peripheral Disease X surveillance remained functional after elimination of reported cases, but with serious weaknesses in specimen referral and supervision.
 
 A strong discussion might:
 
@@ -86,7 +86,7 @@ Precision in language matters. Terms such as "was associated with," "suggests," 
 ### Section 7: End with a conclusion that earns its confidence
 The final paragraph should not suddenly become more confident than the rest of the discussion. A useful ending briefly restates the central finding, the practical implication, and the remaining uncertainty.
 
-For example: "Post-elimination HAT surveillance in the assessed districts retained basic reporting structures, but weaknesses in referral logistics and supervision may reduce its capacity to detect rare cases quickly. Strengthening these operational links is likely to matter more than adding new reporting forms."
+For example: "Post-elimination Disease X surveillance in the assessed districts retained basic reporting structures, but weaknesses in referral logistics and supervision may reduce its capacity to detect rare cases quickly. Strengthening these operational links is likely to matter more than adding new reporting forms."
 
 That conclusion is concrete, proportionate, and useful to decision-makers.
 

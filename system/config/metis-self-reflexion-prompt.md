@@ -89,7 +89,7 @@ Run each workflow as a real user would. Each workflow is a sequence of dashboard
 ### C.3 Live meeting workflow
 1. Click "Start Live Meeting" — does the setup modal render?
 2. Choose Whisper mode — does it actually record and transcribe every 8s?
-3. Speak HAT-relevant words — do cross-pollination connections surface live?
+3. Speak domain-relevant words — do cross-pollination connections surface live?
 4. Stop → does a structured note get saved with action items + project links?
 
 ### C.4 Voice capture workflow

@@ -147,7 +147,7 @@ check_endpoint "Planner focus board"           "/api/partial/planner/focus-board
 # Section 4 — Cross-pollination (live meeting + ideas)
 # ============================================================================
 section "Cross-pollination workflow"
-check_endpoint_post "Meeting live-connections" "/api/meeting/live-connections" '{"text":"HAT surveillance passive screening DRC"}'
+check_endpoint_post "Meeting live-connections" "/api/meeting/live-connections" '{"text":"Disease surveillance passive screening field study"}'
 
 # ============================================================================
 # Section 5 — Database health

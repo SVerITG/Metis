@@ -41,7 +41,7 @@ Implication: *What this means for the PhD or the research.*
 End every turn with exactly 3 numbered steering questions the user can pick:
 1. An **expand** question (broader territory)
 2. A **challenge** question (counter-argument or weakness)
-3. A **connect** question (cross-domain link to HAT/library/methods)
+3. A **connect** question (cross-domain link to research domain/library/methods)
 
 Label each with its steering mode in brackets: `[expand]`, `[challenge]`, `[connect]`
 

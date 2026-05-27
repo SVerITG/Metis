@@ -16,7 +16,7 @@ Quick CLI access to the Metis literature library — search papers, check Zotero
 
 Examples:
 - `/metis_literature` — recent additions, library stats
-- `/metis_literature HAT passive screening` — search for papers matching these terms
+- `/metis_literature [your topic] screening` — search for papers matching these terms
 - `/metis_literature 2024 surveillance` — filter by year and topic
 
 **Step 1 — Pull library data**
@@ -59,7 +59,7 @@ Tip: use /librarian to run a full systematic search
 
 Library cards:   n total · last added [date]
 Literature refs: n total
-Top domains:     HAT (n) · methods (n) · AI (n)
+Top domains:     [domain1] (n) · methods (n) · AI (n)
 
 RECENT ADDITIONS
   [Title] — [Authors] ([Year])

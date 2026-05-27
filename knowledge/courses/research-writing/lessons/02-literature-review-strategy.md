@@ -63,9 +63,9 @@ Once search results are assembled, screening should be structured. Typical stage
 Even when the review is not a formal systematic review, explicit inclusion reasoning improves quality. It helps prevent a literature review from becoming a selective list of papers that support the author's preferred conclusion.
 
 ### Section 6: Worked example - surveillance review strategy
-Suppose the question concerns sustainable post-elimination surveillance for HAT. A useful review strategy might combine:
+Suppose the question concerns sustainable post-elimination disease surveillance. A useful review strategy might combine:
 
-- disease terms such as sleeping sickness or HAT
+- disease terms such as the study disease
 - surveillance terms such as case-based, passive, active, event-based, or elimination surveillance
 - context terms such as elimination, post-elimination, or verification
 - regional terms if the review is focused geographically

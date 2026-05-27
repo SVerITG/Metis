@@ -39,12 +39,12 @@
 </div>
 {% endif %}
 
-<!-- ── HAT corpus ── -->
+<!-- ── Domain corpus ── -->
 {% if seeded %}
 <div style="margin-bottom:20px;">
   <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
               color:var(--m-ok);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--m-rule-soft);">
-    HAT CORPUS — {{ seeded | length }} PAPER{% if seeded | length != 1 %}S{% endif %}
+    DOMAIN CORPUS — {{ seeded | length }} PAPER{% if seeded | length != 1 %}S{% endif %}
   </div>
   {% for s in seeded %}
   <div style="padding:7px 0;border-bottom:1px solid var(--m-rule-soft);">
