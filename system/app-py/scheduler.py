@@ -6,13 +6,14 @@ dashboard is running. They are the same operations as the manual scan
 buttons — APScheduler just calls them without user interaction.
 
 Default schedule (all overridable via /api/scheduler/settings):
-  morning_scan      07:00 daily  — news feeds + PubMed + OpenAlex
-  library_index     07:30 daily  — library file inventory
-  inbox_process     08:00 daily  — process pending inbox items
-  brief_synthesis   08:30 daily  — pre-generate AI morning brief (runs AFTER scans)
-  evening_reflexion 20:00 daily  — aggregate reflexions for self-improvement
-  weekly_summary    Sun 09:00    — generate weekly summary
-  nightly_backup    23:00 daily  — copy metis.sqlite to backups/
+  morning_scan        07:00 daily  — news feeds + PubMed + OpenAlex
+  library_index       07:30 daily  — library file inventory
+  inbox_process       08:00 daily  — process pending inbox items
+  brief_synthesis     08:30 daily  — pre-generate AI morning brief (runs AFTER scans)
+  evening_reflexion   20:00 daily  — aggregate reflexions for self-improvement
+  memory_consolidation 22:00 daily — distil recent agent runs into memory_entries
+  weekly_summary      Sun 09:00    — generate weekly summary
+  nightly_backup      23:00 daily  — copy metis.sqlite to backups/
 """
 
 import asyncio
@@ -276,8 +277,21 @@ def job_nightly_backup() -> None:
 
 
 def job_brief_synthesis() -> None:
-    """Pre-generate AI morning brief at 06:45 so it's ready when the dashboard opens."""
+    """Pre-generate AI morning brief — respects brief_mode setting."""
     log.info("[scheduler] brief_synthesis starting")
+    # Honour brief_mode: skip scheduled synthesis when set to 'manual'
+    try:
+        import json as _json
+        _rc = os.environ.get("METIS_RC_ROOT", "")
+        _prefs_path = Path(_rc) / "system" / "config" / "user-preferences.json" if _rc else None
+        if _prefs_path and _prefs_path.exists():
+            _mode = _json.loads(_prefs_path.read_text()).get("brief_mode", "auto")
+            if _mode == "manual":
+                _log_job("brief_synthesis", "skip", "Manual mode — generate from the Today tab when ready")
+                log.info("[scheduler] brief_synthesis skipped (manual mode)")
+                return
+    except Exception:
+        pass
     try:
         from routers.today import _get_or_generate_brief
         result = _get_or_generate_brief()
@@ -361,6 +375,27 @@ def job_evening_reflexion() -> None:
         log.error("[scheduler] evening_reflexion failed: %s", exc)
 
 
+def job_memory_consolidation() -> None:
+    """Distil recent agent runs into structured memory entries (episodic → memory_entries)."""
+    log.info("[scheduler] memory_consolidation starting")
+    try:
+        import asyncio
+        from metis_mcp.tools.memory_curator import consolidate_session_memory
+        result = asyncio.run(consolidate_session_memory(n_runs=50, min_quality="high"))
+        text = result[0].text if result else ""
+        # Extract the "Entries written" count from the report header
+        for line in text.splitlines():
+            if "Entries written:" in line or "Runs reviewed:" in line:
+                _log_job("memory_consolidation", "ok", line.strip())
+                log.info("[scheduler] memory_consolidation: %s", line.strip())
+                return
+        _log_job("memory_consolidation", "ok", "Consolidation complete.")
+        log.info("[scheduler] memory_consolidation done")
+    except Exception as exc:
+        _log_job("memory_consolidation", "error", str(exc)[:300])
+        log.error("[scheduler] memory_consolidation failed: %s", exc)
+
+
 def job_weekly_summary() -> None:
     """Generate a weekly summary of ideas, meetings, papers, and progress."""
     log.info("[scheduler] weekly_summary starting")
@@ -418,36 +453,40 @@ Open the Metis tab for agent run history, or run `/metis-weekly` for a full narr
 
 # Exported map so the jobs router can trigger them by name
 JOB_FUNCS: dict[str, callable] = {
-    "brief_synthesis":   job_brief_synthesis,
-    "morning_scan":      job_morning_scan,
-    "library_index":     job_library_index,
-    "inbox_process":     job_inbox_process,
-    "evening_reflexion": job_evening_reflexion,
-    "weekly_summary":    job_weekly_summary,
-    "nightly_backup":    job_nightly_backup,
+    "brief_synthesis":       job_brief_synthesis,
+    "morning_scan":          job_morning_scan,
+    "library_index":         job_library_index,
+    "inbox_process":         job_inbox_process,
+    "evening_reflexion":     job_evening_reflexion,
+    "memory_consolidation":  job_memory_consolidation,
+    "weekly_summary":        job_weekly_summary,
+    "nightly_backup":        job_nightly_backup,
 }
 
 # Human-readable labels for the UI
 JOB_LABELS: dict[str, str] = {
-    "brief_synthesis":   "Morning brief synthesis",
-    "morning_scan":      "Morning scan (news + papers)",
-    "library_index":     "Library index",
-    "inbox_process":     "Inbox processing",
-    "evening_reflexion": "Evening reflexion",
-    "weekly_summary":    "Weekly summary",
-    "nightly_backup":    "Nightly DB backup",
+    "brief_synthesis":      "Morning brief synthesis",
+    "morning_scan":         "Morning scan (news + papers)",
+    "library_index":        "Library index",
+    "inbox_process":        "Inbox processing",
+    "evening_reflexion":    "Evening reflexion",
+    "memory_consolidation": "Nightly memory consolidation",
+    "weekly_summary":       "Weekly summary",
+    "nightly_backup":       "Nightly DB backup",
 }
 
 # Default schedule (used when no user-config entry exists)
 # Order intentional: scans first, brief synthesis last (it reads what the scans produced)
+# Memory consolidation runs at 22:00 — after the day's work, before the 23:00 backup.
 JOB_DEFAULTS: dict[str, dict] = {
-    "morning_scan":      {"enabled": True, "time": "07:00"},
-    "library_index":     {"enabled": True, "time": "07:30"},
-    "inbox_process":     {"enabled": True, "time": "08:00"},
-    "brief_synthesis":   {"enabled": True, "time": "08:30"},
-    "evening_reflexion": {"enabled": True, "time": "20:00"},
-    "weekly_summary":    {"enabled": True, "time": "09:00", "day": "sun"},
-    "nightly_backup":    {"enabled": True, "time": "23:00"},
+    "morning_scan":         {"enabled": True, "time": "07:00"},
+    "library_index":        {"enabled": True, "time": "07:30"},
+    "inbox_process":        {"enabled": True, "time": "08:00"},
+    "brief_synthesis":      {"enabled": True, "time": "08:30"},
+    "evening_reflexion":    {"enabled": True, "time": "20:00"},
+    "memory_consolidation": {"enabled": True, "time": "22:00"},
+    "weekly_summary":       {"enabled": True, "time": "09:00", "day": "sun"},
+    "nightly_backup":       {"enabled": True, "time": "23:00"},
 }
 
 

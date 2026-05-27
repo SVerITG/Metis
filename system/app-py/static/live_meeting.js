@@ -16,8 +16,9 @@ async function _checkServerWhisper() {
   }
   return _serverStatus.available === true;
 }
-function _serverMode()       { return _serverStatus?.mode || 'browser'; }
-function _serverDiarize()    { return _serverStatus?.diarization === true; }
+function _serverMode()          { return _serverStatus?.mode || 'browser'; }
+function _serverDiarize()       { return _serverStatus?.diarization === true; }
+function _serverVoiceProfiles() { return _serverStatus?.voice_profiles === true; }
 
 class LiveMeetingSession {
   constructor() {
@@ -202,7 +203,11 @@ class LiveMeetingSession {
         // WhisperX diarization: group consecutive same-speaker segments
         this._addDiarizedSegments(data.segments);
       } else if (data.text && data.text.trim()) {
-        this._addServerText(data.text.trim(), data.speaker || this.currentSpeaker);
+        this._addServerText(
+          data.text.trim(),
+          data.speaker || this.currentSpeaker,
+          data.segments?.[0]?.speaker_confidence
+        );
       }
     } catch (e) {
       this._setInterimWhisper('');
@@ -253,8 +258,17 @@ class LiveMeetingSession {
     }
   }
 
-  _addServerText(text, speaker) {
-    // Server Whisper returns completed text — treat as final
+  _addServerText(text, speaker, confidence) {
+    // If server identified a different speaker than currently active, switch to them
+    if (speaker && speaker !== 'Speaker' && speaker !== this.currentSpeaker) {
+      const idx = this.speakers.indexOf(speaker);
+      if (idx !== -1) {
+        this._commitPending();
+        this.currentSpeakerIndex = idx;
+        this._updateSpeakerButtons();
+        this._autoIdentified = { speaker, confidence };
+      }
+    }
     this.pendingText += (this.pendingText ? ' ' : '') + text;
     this.wordCount += text.split(/\s+/).length;
     this._commitPending();
@@ -331,7 +345,11 @@ class LiveMeetingSession {
       text,
       ts: this._elapsed(),
       idx: this.segments.length,
+      autoIdentified: this._autoIdentified?.speaker === this.currentSpeaker
+        ? this._autoIdentified.confidence
+        : null,
     };
+    this._autoIdentified = null;
     this.segments.push(seg);
     this.pendingText = '';
     this.wordCount = 0;
@@ -354,18 +372,21 @@ class LiveMeetingSession {
     const body = document.getElementById('lm-transcript-body');
     if (!body) return;
     const col = this.speakerColors[seg.speaker] || 'var(--m-muted)';
+    const autoTag = seg.autoIdentified
+      ? `<span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;color:var(--m-ok);margin-left:4px;" title="Auto-identified (${Math.round((seg.autoIdentified)*100)}% confidence)">▲ AUTO</span>`
+      : '';
     const div = document.createElement('div');
     div.id = `lm-seg-${seg.idx}`;
     div.style.cssText = 'margin-bottom:14px;';
     div.innerHTML = `
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:3px;">
         <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:${col};font-weight:600;">${seg.speaker.toUpperCase()}</span>
+        ${autoTag}
         <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">${seg.ts}</span>
       </div>
       <div style="font-family:var(--m-sans);font-size:14px;color:var(--m-ink);line-height:1.65;">${this._esc(seg.text)}</div>`;
     body.appendChild(div);
     body.scrollTop = body.scrollHeight;
-    // Clear interim
     this._renderInterim();
   }
 
@@ -530,6 +551,8 @@ async function beginLiveMeeting() {
     let label, col;
     if (serverWhisper && _serverDiarize()) {
       label = 'WhisperX + diarization'; col = 'var(--m-ok)';
+    } else if (serverWhisper && _serverVoiceProfiles()) {
+      label = 'Whisper + voice ID'; col = 'var(--m-ok)';
     } else if (serverWhisper) {
       label = _serverMode() === 'whisperx' ? 'WhisperX' : 'Whisper · 8s chunks'; col = 'var(--m-ok)';
     } else {

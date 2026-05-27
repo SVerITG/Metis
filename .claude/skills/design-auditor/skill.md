@@ -40,3 +40,7 @@ Saved to: `outputs/reviews/design-auditor/YYYY-MM-DD_[surface-slug].md`
 - User asks for a "new design" rather than an audit: route to Frontend Designer Builder.
 - Audit reveals the surface is fundamentally the wrong shape (e.g. a table where a kanban would fit): flag this as a Blocker even if the user did not ask for it.
 - A surface looks fine but the underlying data is the real problem: route to Software Engineer.
+
+
+## Run logging — required
+Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**

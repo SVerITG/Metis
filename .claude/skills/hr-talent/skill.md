@@ -46,3 +46,7 @@ Saved to: `outputs/reviews/hr-talent/YYYY-MM-DD_[gap-slug].md`
 - The gap is one-off but high-stakes: propose a one-time chain run with two existing agents rather than spinning up a new specialist.
 - The gap is recurring but small: extend an existing agent's skill rather than creating a new one.
 - The user explicitly asks for a new agent: still apply the framework — sometimes the user wants a hammer when a wrench fits.
+
+
+## Run logging — required
+Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**

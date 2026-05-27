@@ -117,6 +117,30 @@ async def save_scheduler_settings(request: Request):
     return JSONResponse({"status": "ok", "saved": list(cleaned.keys())})
 
 
+@router.post("/api/scheduler/brief-mode")
+async def save_brief_mode(request: Request):
+    """Persist brief_mode ('auto' | 'auto+manual' | 'manual') to user-preferences.json."""
+    import json, os
+    from pathlib import Path
+    try:
+        body = await request.json()
+        mode = body.get("mode", "auto")
+        if mode not in ("auto", "auto+manual", "manual"):
+            return JSONResponse({"status": "error", "message": "Invalid mode"}, status_code=400)
+        rc = os.environ.get("METIS_RC_ROOT", "")
+        if not rc:
+            return JSONResponse({"status": "error", "message": "METIS_RC_ROOT not set"}, status_code=500)
+        prefs_path = Path(rc) / "system" / "config" / "user-preferences.json"
+        prefs = {}
+        if prefs_path.exists():
+            prefs = json.loads(prefs_path.read_text())
+        prefs["brief_mode"] = mode
+        prefs_path.write_text(json.dumps(prefs, indent=2, ensure_ascii=False))
+        return JSONResponse({"status": "ok", "brief_mode": mode})
+    except Exception as exc:
+        return JSONResponse({"status": "error", "message": str(exc)}, status_code=500)
+
+
 @router.get("/api/partial/metis/automation-log", response_class=HTMLResponse)
 async def automation_log_partial():
     """HTMX partial: recent job run log for the Metis → Automation section."""
@@ -166,12 +190,23 @@ async def automation_log_partial():
 @router.get("/api/partial/today/automation", response_class=HTMLResponse)
 async def automation_status_partial():
     """HTMX partial: scheduler job status strip with settings controls."""
-    import datetime
+    import datetime, json, os
+    from pathlib import Path
     from scheduler import get_job_status, scheduler, JOB_DEFAULTS, JOB_LABELS, _load_job_settings
 
     jobs = get_job_status()
     running = scheduler.running
     saved = _load_job_settings()
+
+    # Load brief_mode from user-preferences
+    brief_mode = "auto"
+    try:
+        rc = os.environ.get("METIS_RC_ROOT", "")
+        prefs_path = Path(rc) / "system" / "config" / "user-preferences.json" if rc else None
+        if prefs_path and prefs_path.exists():
+            brief_mode = json.loads(prefs_path.read_text()).get("brief_mode", "auto")
+    except Exception:
+        pass
 
     def _fmt_next(iso: str | None) -> str:
         if not iso:
@@ -189,6 +224,18 @@ async def automation_status_partial():
         except Exception:
             return (iso or "")[:16]
 
+    def _pill(val: str, label: str, current: str) -> str:
+        active = val == current
+        bg = "var(--m-accent)" if active else "transparent"
+        col = "var(--m-bg)" if active else "var(--m-muted)"
+        border = "var(--m-accent)" if active else "var(--m-line)"
+        return (
+            f'<button style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.08em;'
+            f'padding:2px 7px;border:1px solid {border};border-radius:3px;'
+            f'background:{bg};color:{col};cursor:pointer;flex-shrink:0;"'
+            f' onclick="setBriefMode(\'{val}\')">{label}</button>'
+        )
+
     # Build job rows — include all defaults even if not yet registered
     job_map = {j["id"]: j for j in jobs}
     rows_html = ""
@@ -205,7 +252,28 @@ async def automation_status_partial():
         time_val = cfg.get("time", "07:00")
         label = JOB_LABELS.get(job_id, job_id)
 
-        rows_html += f"""
+        if job_id == "brief_synthesis":
+            # 3-way mode control instead of ON/OFF
+            mode_pills = (
+                _pill("auto", "AUTO", brief_mode)
+                + _pill("auto+manual", "AUTO+MANUAL", brief_mode)
+                + _pill("manual", "MANUAL", brief_mode)
+            )
+            rows_html += f"""
+<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--m-rule-soft);">
+  <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:{dot_col};flex-shrink:0;"></span>
+  <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.10em;color:var(--m-ink);min-width:180px;flex-shrink:0;">{label}</span>
+  <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);min-width:52px;">{next_lbl}</span>
+  <span style="font-size:11px;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">{last_msg}</span>
+  <input type="time" value="{time_val}"
+         style="font-family:var(--m-mono);font-size:10px;padding:2px 4px;background:var(--m-surface);border:1px solid var(--m-line);border-radius:3px;color:var(--m-ink);width:72px;"
+         onchange="updateJobTime('{job_id}', this.value)" title="Scheduled time (used in Auto modes)">
+  <div style="display:flex;gap:3px;flex-shrink:0;">{mode_pills}</div>
+  <button style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;padding:2px 6px;border:1px solid var(--m-line);border-radius:3px;background:transparent;color:var(--m-muted);cursor:pointer;flex-shrink:0;"
+          onclick="triggerJob('{job_id}')" title="Run now">RUN</button>
+</div>"""
+        else:
+            rows_html += f"""
 <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--m-rule-soft);">
   <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:{dot_col};flex-shrink:0;"></span>
   <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.10em;color:var(--m-ink);min-width:180px;flex-shrink:0;">{label}</span>
@@ -235,13 +303,15 @@ async def automation_status_partial():
   </div>
   {rows_html if JOB_DEFAULTS else '<p style="font-size:12px;color:var(--m-muted);margin:0;">No jobs registered.</p>'}
   <p style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-top:8px;letter-spacing:0.08em;">
-    Changes to time/on-off are saved and applied immediately — no restart needed.
+    Changes are saved and applied immediately — no restart needed.
+    Morning Brief mode: <strong>Auto</strong> = Claude API called on schedule ·
+    <strong>Auto+Manual</strong> = same, plus on-demand button ·
+    <strong>Manual</strong> = Claude API only called when you click Generate.
   </p>
 </div>
 
 <script>
 (function() {{
-  // In-memory settings state (keyed by job_id)
   if (!window._jobSettings) window._jobSettings = {{}};
 
   window.updateJobTime = function(jobId, timeVal) {{
@@ -255,8 +325,18 @@ async def automation_status_partial():
     if (!window._jobSettings[jobId]) window._jobSettings[jobId] = {{}};
     window._jobSettings[jobId].enabled = enabled;
     _saveJobSettings();
-    // Refresh panel to update button label/color
     htmx.trigger('#automation-panel', 'refresh');
+  }};
+
+  window.setBriefMode = function(mode) {{
+    fetch('/api/scheduler/brief-mode', {{
+      method: 'POST',
+      headers: {{'content-type': 'application/json'}},
+      body: JSON.stringify({{mode}}),
+    }}).then(r => r.json()).then(d => {{
+      if (d.status === 'ok') htmx.trigger('#automation-panel', 'refresh');
+      else console.warn('Brief mode save failed:', d);
+    }}).catch(e => console.warn('Brief mode error:', e));
   }};
 
   function _saveJobSettings() {{

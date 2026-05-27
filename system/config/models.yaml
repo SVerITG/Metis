@@ -22,7 +22,7 @@ roles:
   # Fast, cheap synthesis: morning brief, lesson generation, fact extraction.
   # Latency matters more than depth; Haiku is the right fit.
   haiku_synthesis:
-    primary: claude-haiku-4-5-20251001
+    primary: claude-haiku-4-5
     fallback:
       - claude-haiku-4-5
       - claude-haiku-3-5

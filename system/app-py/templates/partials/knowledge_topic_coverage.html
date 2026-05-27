@@ -1,0 +1,98 @@
+<div id="topic-coverage-panel">
+
+  <!-- ── Legend ── -->
+  <div style="display:flex;align-items:center;gap:20px;margin-bottom:16px;flex-wrap:wrap;">
+    <span style="display:flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">
+      <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--m-ok);"></span>GOOD COVERAGE
+    </span>
+    <span style="display:flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">
+      <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--m-warn);"></span>PARTIAL
+    </span>
+    <span style="display:flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">
+      <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--m-alert);"></span>GAP
+    </span>
+    <span style="margin-left:auto;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);">
+      {{ topics | length }} TOPICS · {{ total_papers }} SOURCES INDEXED
+    </span>
+  </div>
+
+  <!-- ── Card grid ── -->
+  {% if topics %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+    {% for t in topics %}
+    {% set level = t.level %}
+    {% if level == 'good' %}
+      {% set border_color = 'var(--m-ok)' %}
+      {% set badge_bg = 'var(--m-ok-wash)' %}
+      {% set badge_fg = 'var(--m-ok)' %}
+      {% set badge_text = 'GOOD' %}
+    {% elif level == 'partial' %}
+      {% set border_color = 'var(--m-warn)' %}
+      {% set badge_bg = 'var(--m-warn-wash)' %}
+      {% set badge_fg = 'var(--m-warn)' %}
+      {% set badge_text = 'PARTIAL' %}
+    {% else %}
+      {% set border_color = 'var(--m-alert)' %}
+      {% set badge_bg = 'var(--m-alert-wash)' %}
+      {% set badge_fg = 'var(--m-alert)' %}
+      {% set badge_text = 'GAP' %}
+    {% endif %}
+
+    <div style="background:var(--m-surface);border:1px solid var(--m-rule-soft);border-left:3px solid {{ border_color }};border-radius:var(--m-radius);padding:14px 16px;position:relative;transition:box-shadow 150ms ease,transform 150ms ease;cursor:default;"
+         onmouseover="this.style.boxShadow='var(--m-shadow)';this.style.transform='translateY(-1px)'"
+         onmouseout="this.style.boxShadow='';this.style.transform=''">
+
+      <!-- Badge + count row -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
+        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;padding:2px 7px;background:{{ badge_bg }};color:{{ badge_fg }};border-radius:2px;">
+          {{ badge_text }}
+        </span>
+        <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
+          {{ t.paper_count }}
+        </span>
+      </div>
+
+      <!-- Topic name -->
+      <div style="font-family:var(--m-display);font-size:15px;font-weight:500;color:var(--m-ink);line-height:1.25;margin-bottom:6px;">
+        {{ t.label }}
+      </div>
+
+      <!-- Description / keywords -->
+      {% if t.description %}
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;color:var(--m-muted);line-height:1.45;margin-bottom:10px;">
+        {{ t.description | truncate(70, True, '…') }}
+      </div>
+      {% endif %}
+
+      <!-- Coverage bar -->
+      <div style="height:3px;background:var(--m-surface-2);border-radius:2px;overflow:hidden;">
+        <div style="height:100%;width:{{ t.bar_pct }}%;background:{{ border_color }};border-radius:2px;transition:width 400ms ease;"></div>
+      </div>
+
+      <!-- Source breakdown pill row -->
+      {% if t.sources %}
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">
+        {% for src_label, src_count in t.sources %}
+        <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 6px;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">
+          {{ src_label }} {{ src_count }}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <!-- Empty state -->
+  <div class="panel" style="padding:28px 24px;text-align:center;">
+    <div style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">
+      No topics configured. Add research topics in Metis to enable coverage mapping.
+    </div>
+    <div style="margin-top:12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">
+      Try: /metis add a topic for HAT surveillance
+    </div>
+  </div>
+  {% endif %}
+
+</div>

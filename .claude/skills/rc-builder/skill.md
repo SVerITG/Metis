@@ -43,3 +43,7 @@ Saved to: `outputs/reviews/rc-builder/YYYY-MM-DD_[task-slug].md`
 - Change affects the public API (MCP tool surface): note in the summary that any external consumer must restart their MCP client.
 - Change touches the constitution or red-lines: refuse to proceed without explicit user approval — these are policy, not code.
 - Change is suggested by a self-improvement proposal: load the proposal from `self_improvement_proposals` and reference its ID in the change summary.
+
+
+## Run logging — required
+Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**

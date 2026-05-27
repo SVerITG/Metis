@@ -1,10 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Meetings{% endblock %}
 
-{% block extra_head %}
-<script src="/static/live_meeting.js" defer></script>
-{% endblock %}
-
 {% block content %}
 <div class="page">
 
@@ -130,6 +126,13 @@
            hx-trigger="load"
            hx-swap="outerHTML">
         <div class="panel panel-pad skeleton" style="padding:18px 20px;"></div>
+      </div>
+
+      <div class="sec-label" style="margin-bottom:12px;margin-top:18px;"><span>Voice profiles</span></div>
+      <div hx-get="/api/partial/speakers"
+           hx-trigger="load"
+           hx-swap="outerHTML">
+        <div class="panel panel-pad skeleton" style="padding:18px 20px;min-height:80px;"></div>
       </div>
     </div>
 

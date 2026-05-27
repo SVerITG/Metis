@@ -13,7 +13,7 @@ When invoked as `/data-guardian` from Claude Code:
 1. Read `agents/data-guardian/system-prompt.md` and `agents/data-guardian/contract.md` — these define your role, responsibilities, and output contract.
 2. Act as this agent for the duration of the task.
 3. Write output to `outputs/reviews/data-guardian/YYYY-MM-DD_[task-slug].md`.
-4. Log the run: call `log_agent_run` MCP tool if available, otherwise log directly via Python to the `agent_runs` table in `metis.sqlite`.
+4. Log the run: call `mcp__metis-rc__log_agent_run` — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**
 5. If the task requires collaboration, announce which other agent(s) you are routing to.
 
 
