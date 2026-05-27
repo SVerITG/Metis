@@ -53,9 +53,9 @@ All agents have been fully rewritten with structured system prompts covering rol
 
 ---
 
-### MCP Server — 76+ Registered Tools
+### MCP Server — 165+ Registered Tools
 
-The Metis MCP server (FastMCP, Python 3.10+) registers 76+ tools across 15 functional modules:
+The Metis MCP server (FastMCP, Python 3.10+) registers 165+ tools across 15 functional modules:
 
 | Module | Tools |
 |---|---|
