@@ -31,6 +31,8 @@
   <img src="https://img.shields.io/badge/Claude-MCP-orange?logo=anthropic" alt="Claude MCP"/>
 </p>
 
+> **New to Metis?** This repository (`SVerITG/Metis`) is an intentionally empty shell — no pre-configured workspace, no demo data. If you want to explore what Metis actually looks and feels like before committing to setup, start with **[Metis_PH](https://github.com/SVerITG/Metis_PH)** instead. It ships with a full demo workspace — a realistic outbreak response researcher persona, complete with projects, meetings, literature, tasks, and a synthetic case linelist — so you can try every feature from the first open.
+
 > **Work in progress.** The MCP server is fully operational and used daily. We are still actively developing some dashboard features, the one-click installer, and the pre-loaded public health knowledge layer. Expect rough edges. For the domain-agnostic base shell, see **[Metis](https://github.com/SVerITG/Metis)**.
 
 > **Disclaimer.** The concept, architecture, and approach behind Metis are original. One of Metis's core principles is self-improvement — it actively monitors AI developments and incorporates new tools, skills, and agent patterns. Tools, skills, and agents were built drawing on publicly available techniques, documentation, and web resources, and as such individual components are often not unique. What Metis presents is a *way of working* — a coherent system designed for researchers. Use and extension are welcome under the AGPL-3.0 license.
