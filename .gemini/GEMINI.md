@@ -31,16 +31,14 @@ bash system/mcp-server/setup-mcp.sh  # first time
 
 Configure Gemini to use this server as an MCP endpoint. The server exposes 76+ tools covering:
 literature search, idea capture, project management, meeting memory, self-improvement, security,
-PubMed/OpenAlex monitoring, inbox processing, and more.
+PubMed/OpenAlex monitoring, inbox processing, and more. (165+ tools total)
 
 ---
 
 ## the user's profile
 
-- **Role:** Senior researcher · epidemiology · public health
-- **Domain:** Sleeping sickness (HAT), neglected tropical diseases, surveillance systems, DHIS2
-- **Interests:** Multilevel models, spatial epidemiology, health information systems, AI in research
-- **News monitoring:** WHO surveillance, NTDs, global health policy, AI governance, epi methods
+Configure your profile via `/metis_config` or by editing `system/config/user-config.yaml`.
+The profile drives agent routing, literature search focus, and morning brief personalisation.
 
 ---
 
