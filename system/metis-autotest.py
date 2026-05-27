@@ -1474,19 +1474,19 @@ def run_dashboard_v2():
         skip("DV16", "content_scan.py has _classify_domain() function", "Dashboard v9e",
              "content_scan.py not found.")
 
-    # DV17 — _classify_domain checks HAT keywords
+    # DV17 — _classify_domain checks domain-specific keywords (HAT/NTD when Metis_PH is active)
     if content_py.exists() and "_classify_domain" in cscan:
         hat_keywords = ["trypanosomiasis", "sleeping sickness", "tsetse", "gambiense"]
         missing_kw = [kw for kw in hat_keywords if kw not in cscan.lower()]
         if not missing_kw:
-            ok("DV17", "_classify_domain checks all HAT keywords", "Dashboard v9e",
-               f"All HAT keywords present: {', '.join(hat_keywords)}")
+            ok("DV17", "_classify_domain checks domain-specific keywords", "Dashboard v9e",
+               f"All domain keywords present: {', '.join(hat_keywords)}")
         else:
-            warn("DV17", "_classify_domain checks all HAT keywords", "Dashboard v9e",
-                 f"Missing HAT keywords in _classify_domain: {', '.join(missing_kw)}",
-                 f"Add these terms to _classify_domain for accurate HAT domain tagging: {', '.join(missing_kw)}", "Medium")
+            warn("DV17", "_classify_domain checks domain-specific keywords", "Dashboard v9e",
+                 f"Missing domain keywords in _classify_domain: {', '.join(missing_kw)}",
+                 f"Add these terms to _classify_domain for accurate domain tagging: {', '.join(missing_kw)}", "Medium")
     else:
-        skip("DV17", "_classify_domain checks all HAT keywords", "Dashboard v9e",
+        skip("DV17", "_classify_domain checks domain-specific keywords", "Dashboard v9e",
              "content_scan.py or _classify_domain not found.")
 
     # DV18 — intelligence.py assemble_daily_context uses two-tier ORDER BY
@@ -1548,7 +1548,7 @@ def run_dashboard_v2():
 
     # ── User identity checks ──────────────────────────────────────────────
 
-    # DV22 — user-config.yaml has name: Stan (not placeholder)
+    # DV22 — user-config.yaml has name set (not placeholder)
     if USER_CONFIG.exists():
         cfg_text = read(USER_CONFIG)
         name_match = re.search(r'^\s*name\s*:\s*(.+)$', cfg_text, re.MULTILINE)
@@ -1557,14 +1557,14 @@ def run_dashboard_v2():
             if name_val in ("Researcher", "Amélie", "User", ""):
                 fail("DV22", "user-config.yaml name is set (not placeholder)", "Dashboard v9e",
                      f"user-config.yaml name is still placeholder: '{name_val}'",
-                     "Update name: Stan in user-config.yaml.", "Medium")
+                     "Update the name: field in user-config.yaml with your actual name.", "Medium")
             else:
                 ok("DV22", "user-config.yaml name is set (not placeholder)", "Dashboard v9e",
                    f"user-config.yaml name: {name_val}")
         else:
             warn("DV22", "user-config.yaml has name: field", "Dashboard v9e",
                  "No 'name:' field found in user-config.yaml.",
-                 "Add 'name: Stan' under the [user] section of user-config.yaml.", "Medium")
+                 "Add 'name: <your name>' under the [user] section of user-config.yaml.", "Medium")
     else:
         skip("DV22", "user-config.yaml name check", "Dashboard v9e",
              f"user-config.yaml not found at {USER_CONFIG.relative_to(ROOT)}")

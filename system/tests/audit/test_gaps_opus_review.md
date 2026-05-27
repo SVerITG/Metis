@@ -223,8 +223,8 @@ cache is warm, fail the test.
 
 ### Nothing tests the cross-pollination *output* — only that the code runs
 
-`_cross_pollinate_core("HAT surveillance in conflict zones")` should return
-the seeded HAT paper from the persona fixture. No test seeds two ideas, two
+`_cross_pollinate_core("disease surveillance in conflict zones")` should return
+the seeded domain paper from the persona fixture. No test seeds two ideas, two
 papers, and one meeting, then asserts the right matches come back. The
 feature is the centrepiece of the product per the README. It is not exercised.
 
@@ -267,7 +267,7 @@ A README is the single most important onboarding artefact. No test asserts:
 | Fresh install, never opened Claude Code before | None |
 | Install while VPN is on and proxy blocks GitHub | None |
 | User clones the repo on a Mac with Python installed via pyenv | None |
-| User runs Metis from a path containing a space ("OneDrive - ITG") | None — even though this is the maintainer's own path |
+| User runs Metis from a path containing a space (e.g. "My Documents/Research Cortex") | None |
 | User has Zotero installed but never configured the API key | None |
 | User captures 5000 ideas — does the cross-pollination still complete in <1s? | None |
 | User uploads a 50MB PDF to inbox/ | None |

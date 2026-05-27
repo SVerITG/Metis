@@ -124,7 +124,7 @@ If no PDF library is installed, falls back to parsing the filename (works well f
 
 ```csv
 filepath,filename,title,authors,year,doi,abstract,source,warnings
-/papers/jones2022.pdf,jones2022.pdf,Passive surveillance of HAT in DRC,...,Jones, A; Smith, B,2022,10.1016/j.pntd.2022.01.001,Background: Human African trypanosomiasis...,pdf_meta,
+/papers/jones2022.pdf,jones2022.pdf,Passive surveillance of neglected tropical disease in sub-Saharan Africa,...,Jones, A; Smith, B,2022,10.1016/j.pntd.2022.01.001,Background: Neglected tropical disease surveillance...,pdf_meta,
 ```
 
 ---

@@ -4,7 +4,7 @@
 
 | Field | Required | Description |
 |---|---|---|
-| `topic` | yes | Domain or topic to build a background for (e.g. "health economics", "NTD epidemiology") |
+| `topic` | yes | Domain or topic to build a background for (e.g. "health economics", "disease epidemiology") |
 | `depth` | no | `survey` (default) / `deep` / `exhaustive` |
 | `layer_name` | no | Custom slug for the layer (auto-derived from topic if not given) |
 | `source_types` | no | `papers,reports,web,rss` (default: all) |

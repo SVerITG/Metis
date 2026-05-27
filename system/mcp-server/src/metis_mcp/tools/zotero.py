@@ -114,9 +114,9 @@ def _get_zotero_client():
     else:
         zot = pyz.Zotero(user_id, "user", api_key)
 
-    # Corporate proxy SSL bypass — ITG Antwerp uses an intercepting proxy with
-    # a self-signed CA. Replace pyzotero's default httpx.Client with one that
-    # has verify=False but keeps the same auth headers.
+    # Corporate proxy SSL bypass — some institutional networks use an intercepting
+    # proxy with a self-signed CA. Replace pyzotero's default httpx.Client with
+    # one that has verify=False but keeps the same auth headers.
     try:
         import httpx
         zot.client = httpx.Client(

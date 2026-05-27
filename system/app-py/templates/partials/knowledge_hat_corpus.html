@@ -1,11 +1,11 @@
 <div id="hat-corpus-section">
   <div class="sec-label" style="margin-bottom:12px;">
-    <span>HAT Research Corpus</span>
+    <span>Knowledge Corpus</span>
     <span class="tail">{{ total }} PAPERS · {{ seeded_count }} ANNOTATED · {{ triage_count }} TO TRIAGE</span>
     <button hx-post="/api/knowledge/build-hat-index"
             hx-target="#hat-index-status"
             hx-swap="innerHTML"
-            hx-confirm="This will index all HAT corpus PDFs for semantic search (10–40 min, runs in background). Continue?"
+            hx-confirm="This will index all knowledge corpus PDFs for semantic search (10–40 min, runs in background). Continue?"
             style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;
                    padding:3px 10px;background:transparent;border:1px solid var(--m-rule);border-radius:2px;
                    color:var(--m-muted);cursor:pointer;margin-left:12px;"

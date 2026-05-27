@@ -7,8 +7,8 @@ This is the content pack for the "full" base install. It registers:
   - Spaced-repetition topics per lesson
   - A content_packs record (pack_id: statistics-course)
 
-The PH content pack (HAT/NTD library cards, epi literature, domain
-knowledge) is in seed_ph_database.py and is only for Metis_PH.
+The PH content pack (Metis_PH: specialist/NTD library cards, epi literature,
+domain knowledge) is in seed_ph_database.py and is only for Metis_PH.
 
 Toggle off: DELETE FROM content_packs WHERE pack_id = 'statistics-course'
             DELETE FROM learning_courses WHERE slug = 'statistics-for-epidemiology'

@@ -66,7 +66,7 @@ Useful specificity includes:
 This does not mean listing every keystroke. It means reporting the decisions that shape interpretation. If different reasonable options existed, readers need to know which option was chosen and why.
 
 ### Section 5: Worked example
-Imagine a paper evaluating the sensitivity and timeliness of post-elimination sleeping sickness surveillance in peripheral health facilities.
+Imagine a paper evaluating the sensitivity and timeliness of post-elimination disease surveillance in peripheral health facilities.
 
 A weak methods paragraph might read:
 
@@ -74,7 +74,7 @@ A weak methods paragraph might read:
 
 That sentence hides nearly everything important.
 
-A stronger version would specify that the study used a cross-sectional mixed-methods surveillance evaluation in health facilities across named districts from January 2023 to December 2025. It would state how facilities were sampled, whether referral hospitals were included, how suspected and confirmed HAT cases were defined, which registers were reviewed, how completeness and timeliness were calculated, whether laboratory and facility records were reconciled, and how interviews with focal persons were analyzed. It would also report whether CDC surveillance attributes or WHO elimination indicators were used as the evaluation framework.
+A stronger version would specify that the study used a cross-sectional mixed-methods surveillance evaluation in health facilities across the study districts over the study period. It would state how facilities were sampled, whether referral hospitals were included, how suspected and confirmed Disease X cases were defined, which registers were reviewed, how completeness and timeliness were calculated, whether laboratory and facility records were reconciled, and how interviews with focal persons were analyzed. It would also report which surveillance performance framework was used.
 
 The difference is not style. The difference is that the second version allows appraisal, replication, and informed criticism.
 

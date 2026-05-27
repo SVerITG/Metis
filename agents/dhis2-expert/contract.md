@@ -9,7 +9,7 @@ DHIS2 Expert handles all questions involving the DHIS2 platform — configuratio
 - Tracker program design: program rules, program indicators, enrollment logic
 - API queries: curl, Python, R examples for DHIS2 Web API
 - Server administration: upgrade paths, performance, user management
-- NTD and HAT-specific DHIS2 implementations
+- Disease surveillance program DHIS2 implementations (NTD, malaria, TB, maternal health, etc.)
 - DHIS2 Android Capture App configuration
 - Data quality checks against DHIS2 instances
 

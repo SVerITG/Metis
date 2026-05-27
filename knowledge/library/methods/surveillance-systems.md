@@ -119,7 +119,7 @@ Key attributes to evaluate:
 - **Integration dilemma:** Vertical programmes efficient pre-elimination but unsustainable; integration into routine systems risks losing sensitivity
 - **Population movement:** Cross-border importation risk; need regional coordination
 - **Diagnostics:** May need higher-performance diagnostics as prevalence drops (higher PPV threshold)
-- **HAT example:** Transition from active screening (mobile teams) to passive surveillance + integration into peripheral health facilities; RDT deployment critical
+- **Example (elimination-phase disease):** Transition from active screening (mobile teams) to passive surveillance integrated into peripheral health facilities; rapid diagnostic deployment critical
 
 ---
 

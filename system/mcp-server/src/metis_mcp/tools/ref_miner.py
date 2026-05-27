@@ -1,5 +1,5 @@
 """
-ref_miner.py — Backward citation chasing for HAT literature.
+ref_miner.py — Backward citation chasing for domain literature.
 
 For each seed DOI, fetches its reference list via CrossRef, checks which
 DOIs are already in the Zotero library (literature_metadata), and returns
@@ -7,7 +7,7 @@ the missing ones with full metadata.
 
 MCP tools exposed:
   - mine_references   : run the full pipeline for one or more seed DOIs
-  - mine_hat_corpus   : run against the built-in HAT influential-article list
+  - mine_hat_corpus   : run against the built-in specialist-domain influential-article list
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from metis_mcp.config import paths
 from mcp.types import TextContent
 
 # ---------------------------------------------------------------------------
-# Seed list — influential HAT articles for backward chaining
+# Seed list — influential domain articles for backward chaining (HAT/NTD when Metis_PH is active)
 # ---------------------------------------------------------------------------
 
 BROAD_SEED_DOIS: list[tuple[str, str]] = [
@@ -149,7 +149,7 @@ HAT_SEED_DOIS: list[tuple[str, str]] = [
 # ---------------------------------------------------------------------------
 
 CROSSREF_BASE = "https://api.crossref.org/works"
-HEADERS = {"User-Agent": "MetisResearchCortex/1.0 (https://github.com/SVerITG/Metis)"}
+HEADERS = {"User-Agent": "MetisResearchCortex/1.0 (https://github.com/<your-github-username>/Metis)"}
 
 
 def _normalize_doi(doi: str) -> str:
@@ -277,7 +277,7 @@ def _format_report(results: dict, existing_count: int) -> str:
                 all_missing[m["doi"]] = m
 
     lines = [
-        "# HAT Reference Mining Report",
+        "# Domain Reference Mining Report",
         "",
         f"**Seeds analysed:** {len(results)}  ",
         f"**Already in library:** {existing_count}  ",
@@ -347,13 +347,13 @@ async def mine_hat_corpus(
     scope: str = "hat",
     max_seeds: int = 100,
 ) -> list[TextContent]:
-    """Mine reference lists of influential HAT and global health articles.
+    """Mine reference lists of influential specialist-domain and global health articles.
 
     Checks each reference against your Zotero library and reports missing papers.
     Uses CrossRef API (free, no key needed). Takes 5–15 minutes for full corpus.
 
     Args:
-        scope:     "hat" = HAT articles only | "broad" = NTD/global health only | "all" = everything
+        scope:     "hat" = specialist-domain articles only | "broad" = NTD/global health only | "all" = everything
         max_seeds: Maximum number of seed articles to process (default 100).
     """
     import os

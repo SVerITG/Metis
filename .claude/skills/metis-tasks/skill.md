@@ -17,7 +17,7 @@ A filtered task list from the CLI — equivalent to the Work tab's task panel. S
 Filters accepted:
 - `/metis_tasks blocked` — only blocked tasks
 - `/metis_tasks overdue` — tasks past their due date
-- `/metis_tasks [project-slug]` — tasks for a specific project (e.g. `hat-dashboard`)
+- `/metis_tasks [project-slug]` — tasks for a specific project (e.g. `my-research-project`)
 - `/metis_tasks all` — everything including completed (last 7 days)
 
 **Step 1 — Pull tasks**
@@ -47,19 +47,19 @@ For each task, show:
 ─── Tasks — [YYYY-MM-DD] ──────────────────────────────────
 
 BLOCKED  (n)
-  !! [hat-dashboard] Fix reactive trigger in map module  ← due 2026-04-20 [OVERDUE]
+  !! [my-research-project] Fix reactive trigger in map module  ← due 2026-04-20 [OVERDUE]
   ·  [phd-framework] Resolve thesis spine alignment
 
 IN PROGRESS  (n)
-  !! [multilevel-analysis] Fix ML4 inline output
+  !! [analysis-project] Fix inline output for model 4
 
 OPEN — HIGH  (n)
-  !! [hat-dashboard] Review HAT clustering script output
+  !! [my-research-project] Review clustering script output
   !! [phd-framework] Write Article 1 intro section
 
 OPEN — MEDIUM / LOW  (n)
   ·  [metis-system] Seed phd-framework external_path
-  ·  [passive-screening-drc] Consolidate passive screening notes
+  ·  [field-study] Consolidate screening notes
 
 ─────────────────────────────────────────────────────────
 n total open tasks · n blocked · Last updated: HH:MM

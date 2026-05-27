@@ -1,10 +1,107 @@
+# Metis User Configuration — Example
+# ─────────────────────────────────────────────────────────────────────────────
+# Copy this file to user-config.yaml and fill in your details.
+# user-config.yaml is gitignored — it stays local to your machine and is
+# never committed to the repository.
+#
+# The easiest way to generate this file is to run /metis_config, which walks
+# you through every section interactively. Edit this file directly if you want
+# to make quick changes between sessions.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Who you are ───────────────────────────────────────────────────────────────
 user:
-  # Your name — used in greetings and briefings
-  name: Your Name
-  # Your role — used for context in agent responses
-  role: Researcher
-  language: en
-  general_context: ''
+  name: "Your Name"                        # How Metis addresses you in every response
+  role: "Researcher"                       # Your professional role
+                                           # e.g. "PhD Student", "Senior Researcher",
+                                           #      "Policy Analyst", "Lecturer"
+  language: "en"                           # Interface language — en / fr / es / nl / ...
+  general_context: ""                      # One or two sentences describing your background
+                                           # e.g. "Epidemiologist specialising in vector-borne
+                                           #        diseases, based at [University]."
   active_contexts:
-    - general
-  specialist_contexts: []
+    - general                              # Always include "general"
+    # Add specialist context names here once you have created them (see below)
+    # - clinical medicine
+    # - health economics
+
+  # Specialist contexts let Metis load domain-specific knowledge when relevant.
+  # Add one entry per domain. The name must match an entry in active_contexts.
+  specialist_contexts:
+    []
+    # Uncomment and fill in when ready:
+    # - name: "infectious disease"
+    #   description: "Malaria, TB, HIV — epidemiology and burden estimation"
+    # - name: "health systems"
+    #   description: "DHIS2, routine health information, facility mapping"
+    # - name: "spatial analysis"
+    #   description: "Geostatistics, kriging, disease mapping"
+
+# ── Your research domain ──────────────────────────────────────────────────────
+research:
+  field: "Your Research Field"             # Primary discipline
+                                           # e.g. "Public Health · Epidemiology"
+                                           #      "Clinical Medicine"
+                                           #      "Environmental Science"
+                                           #      "Health Economics"
+  interests:
+    - "your main research interest"        # Use specific terms (e.g. "multilevel models")
+    - "another research interest"          # These are used to filter news, papers, and suggestions
+    # Add as many as you like
+  specific_focus: ""                       # One sentence: what you are working on right now
+                                           # e.g. "Burden estimation for a neglected disease in [region]"
+
+# ── News and literature monitoring ───────────────────────────────────────────
+# Used by News Radar (/news-radar) and the morning briefing (/metis-morning).
+# The wizard also writes matching fields to user-preferences.json for the
+# get_user_profile() MCP tool. Keep the two files in sync.
+news_monitoring:
+  topics:
+    - "your field: key developments"       # e.g. "WHO NTD roadmap"
+    - "methodology updates"                # e.g. "causal inference methods"
+    - "AI in research"                     # or remove if not relevant
+  journals: []                             # Specific journals to track closely
+                                           # e.g. ["Lancet", "PLOS Medicine", "BMC Infectious Diseases"]
+  pubmed_query: ""                         # Optional PubMed search string for automated alerts
+  openalex_query: ""                       # Optional OpenAlex search string
+
+# ── Working style ─────────────────────────────────────────────────────────────
+style:
+  response_length: "detailed"             # short | detailed — how verbose Metis should be
+  paper_summary: "brief"                  # brief | detailed — when the Librarian returns a paper
+  writing_style: "formal"                 # formal | clear-direct | mixed
+  statistical_methods: []                 # Methods you use regularly
+                                          # e.g. ["multilevel models", "survival analysis", "GIS"]
+  tools: []                               # Software tools you use
+                                          # e.g. ["R", "Python", "STATA", "ArcGIS", "DHIS2"]
+
+# ── Teaching (optional) ───────────────────────────────────────────────────────
+teaching:
+  courses: []                             # Course names or topics you teach
+                                          # e.g. ["Epidemiological Methods", "Global Health"]
+  monitor_literature: false               # true = include teaching topics in literature alerts
+
+# ── Data sensitivity ─────────────────────────────────────────────────────────
+# Controls the Data Guardian (/data-guardian) and PII protection layer.
+# Set patient_data: true if you work with clinical records or identifiable data.
+# Metis will block those files from being sent to any AI model.
+data_sensitivity:
+  patient_data: false                     # true = strict PII blocking enabled
+  embargoed_results: false                # true = unpublished results marked as confidential
+  compliance: []                          # Applicable regulations
+                                          # e.g. [GDPR, HIPAA, "institutional ethics approval"]
+
+# ── Active projects ───────────────────────────────────────────────────────────
+# Each entry points to a PLANNING.md file for a project you are currently working on.
+# Metis reads these at the start of each session to understand where things stand.
+projects: []
+# Uncomment and fill in when ready:
+# projects:
+#   - name: "Article 1 — Burden estimation"
+#     planning_md: "/path/to/project/PLANNING.md"
+#     status: "in progress"
+#     deadline: "2026-09-01"
+#   - name: "PhD thesis"
+#     planning_md: "/path/to/thesis/PLANNING.md"
+#     status: "in progress"
+#     deadline: null

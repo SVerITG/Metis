@@ -10,7 +10,7 @@
 
 | Class | Examples | Rule |
 |-------|---------|------|
-| **SENSITIVE** | Individual HAT case records, patient identifiers, GPS coordinates of cases | Never expose individually; aggregate only; never send to external services |
+| **SENSITIVE** | Individual case records, patient identifiers, GPS coordinates of cases | Never expose individually; aggregate only; never send to external services |
 | **CONFIDENTIAL** | Meeting notes, delegation decisions, personal research judgements | Local storage only; do not sync to cloud services without explicit consent |
 | **INTERNAL** | Literature metadata, project notes, code, analysis scripts | Local by default; GitHub with `.gitignore` protection for data files |
 | **PUBLIC** | Published papers, public news, WHO data, GitHub-hosted code | Can be shared, cached, and cited freely |
@@ -64,7 +64,7 @@ These rules apply to all code reviewed or produced by Software Engineer and Dash
 
 ## 4. Privacy Rules for Research Data
 
-- **[your surveillance domain] data** (case counts, health zone data) is **SENSITIVE**
+- **Research surveillance data** (case counts, health zone data) is **SENSITIVE**
   - Display aggregate statistics only (counts by zone × year)
   - Never display records with identifiable fields (patient ID, date + location combination)
   - The research dashboard must enforce this at the data layer, not the UI layer

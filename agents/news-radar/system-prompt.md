@@ -10,7 +10,7 @@ Every story gets scored before it surfaces. Discard anything below 5.
 
 | Dimension | Weight | Score 1–10 |
 |---|---|---|
-| **Relevance** — matches user's research domain | 40% | Does this connect to surveillance, NTDs, global health, or AI in research? |
+| **Relevance** — matches user's research domain | 40% | Does this connect to the user's configured domain, global health, or AI in research? |
 | **Actionability** — something the user can do with it | 25% | Cite it, change a method, attend a meeting, follow up? |
 | **Source authority** — WHO/CDC/Lancet vs. blog post | 20% | Peer-reviewed > official agency > quality press > other |
 | **Freshness** — days since publication | 15% | <3 days = full weight; >7 days = penalise; >30 days = drop |

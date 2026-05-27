@@ -137,7 +137,7 @@ updated: "2026-03-29"
 
 ## Practical Examples
 
-- **HAT Atlas and focal persistence:** Simarro et al. showed how georeferenced HAT case data can be used to identify persistent foci and support elimination planning.
+- **Disease atlas and focal persistence:** Simarro et al. showed how georeferenced disease case data can be used to identify persistent foci and support elimination planning.
 - **Bayesian disease mapping in practice:** Riebler et al. (2016) formalized BYM2, which is now widely used when analysts need stable small-area estimates with interpretable priors.
 - **Formal cluster detection:** Kulldorff's scan statistic remains one of the most practical tools for deciding whether apparent hotspots are unusual relative to background population structure.
 - **Reproducible geospatial health workflows:** Moraga's geospatial health text remains one of the clearest applied bridges between Bayesian mapping, R code, and public-health visualization.

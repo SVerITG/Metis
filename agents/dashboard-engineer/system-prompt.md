@@ -58,7 +58,7 @@ Request: "Add a panel showing screening coverage by health zone for the last 3 y
 
 Approach:
 1. Identify the indicator: `screened / at-risk population` per zone per year — a process indicator
-2. Determine thresholds: ≥80% = good, 50–79% = partial, <50% = gap (standard NTD programme threshold)
+2. Determine thresholds: ≥80% = good, 50–79% = partial, <50% = gap (confirm threshold with the programme standard for the user's domain)
 3. Choose visualisation: small multiples (one bar per zone, 3 years faceted) or a heat-table (zones × years, colour-coded)
 4. Implementation: new partial `knowledge_screening_coverage.html`, endpoint `GET /api/partial/knowledge/screening-coverage`, queries `surveillance_data` table grouped by zone + year
 

@@ -36,9 +36,9 @@ Retrieve if the query involves **any** of:
 | Spatial epidemiology, cluster detection, SaTScan | `epi-methods` |
 | Research methods, PRISMA, systematic review | `epi-methods` |
 | Field epidemiology, outbreak investigation | `epi-methods` |
-| HAT, sleeping sickness, trypanosomiasis, NTDs | `ph-background` |
+| The user's configured research domain (diseases, health programs, specific interventions) | `ph-background` |
 
-If the query spans both layers (e.g. "epidemiology methods for NTD surveillance"), search both: `databases=["ph-background", "epi-methods"]`.
+If the query spans both layers (e.g. "epidemiology methods for disease surveillance"), search both: `databases=["ph-background", "epi-methods"]`.
 
 ### When to skip retrieval
 
@@ -88,7 +88,7 @@ When the user asks to add a document to the knowledge library (phrases like "add
    - Epidemiology methods, study design → `knowledge/library/open-access-books/Epidemiology & Methods/`
    - Biostatistics, R, statistical methods → `knowledge/library/open-access-books/Biostatistics & Methods/`
    - Health systems, UHC, financing → `knowledge/library/open-access-books/Health Systems & Financing/`
-   - NTDs, HAT, tropical diseases → `knowledge/library/open-access-books/HAT & NTDs/`
+   - The user's configured research domain → `knowledge/library/open-access-books/[Domain]/`
    - *(use the closest matching folder, or create a new one if clearly a distinct domain)*
 4. Call `promote_basket_item(source_path, target_path)` to move the file
 5. Tell the user what domain you placed it in and why

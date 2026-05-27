@@ -32,7 +32,7 @@ High-value runs meet at least one criterion:
 For each high-value run, extract:
 - **What was done** — one sentence
 - **Key finding or decision** — the output's core conclusion
-- **Topics** — 2-4 comma-separated tags from: phd, statistics, methods, hat, ntd, surveillance, writing, code, metis, learning, global-health, ai
+- **Topics** — 2-4 comma-separated tags from: phd, statistics, methods, domain, surveillance, writing, code, metis, learning, global-health, ai
 - **Links** — output file path, any referenced papers or datasets
 
 ### Step 3 — Check for duplicates

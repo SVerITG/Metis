@@ -40,13 +40,13 @@
 
 | Path | Intention | Status | Evidence |
 |------|-----------|--------|----------|
-| Windows `.exe` installer | One-click install, no Python knowledge | 🟡 | `metis-setup.iss` complete; Inno Setup compile pending (requires Stan on Windows) |
+| Windows `.exe` installer | One-click install, no Python knowledge | 🟡 | `metis-setup.iss` complete; Inno Setup compile pending (requires testing on a Windows machine) |
 | Bash install (Linux/macOS) | `setup-mcp.sh` with profile selector | ✅ | `setup-mcp.sh` with light/standard/full profiles; `install-state.json` written |
 | Docker | `docker compose up -d` | 🟡 | `Dockerfile` + `docker-compose.yml` written; GHCR push workflow exists; not yet runtime-tested |
 | Manual (claude.ai Projects) | `CLAUDE.md` self-contained | ✅ | `claude-project-wizard.md` + `claude-project-instructions.md` |
 | Bundle Python (offline Windows) | `download_vendor_python.ps1` | ✅ | 4-strategy Python cascade in `bootstrap_python.ps1` |
 | Tray launcher | System tray icon on Windows | ✅ | `tray_launcher.py` wired into installer + `install.ps1` |
-| Clean-VM test | Verify `.exe` on fresh machine | ⚠️ | Requires Stan — all code is done |
+| Clean-VM test | Verify `.exe` on fresh machine | ⚠️ | Requires manual test on a clean Windows VM — all code is done |
 | Code signing | `.exe` trusted by Windows Defender | ⚠️ | Not yet signed — may trigger Defender warning on install |
 
 ---
@@ -404,7 +404,7 @@
 
 | Gap | Affected Personas | Effort |
 |-----|------------------|--------|
-| Windows `.exe` compile + clean-VM test | Personas 1, 2, 4, 6, 7, 9 | Stan-side action |
+| Windows `.exe` compile + clean-VM test | Personas 1, 2, 4, 6, 7, 9 | User-side action |
 | PaperQA2 index run (API key in `.env`) | All library users | XS — 5 min setup |
 | Morning scan Windows autostart e2e test | All Windows users | S — verify schtasks |
 

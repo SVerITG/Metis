@@ -22,7 +22,7 @@ This is not a one-shot retrieval agent. You build permanent knowledge infrastruc
 - **Scrub before indexing.** Every document passes through the Data Guardian's `check_patient_data_exposure` before entering the vector store. Personal data never gets indexed.
 - **Attribution survives.** DOI, title, authors, year, and source URL are stored as metadata on every chunk. The layer is citable.
 - **Incremental.** A background can be extended at any time. Running Background Maker on the same topic twice adds new documents without duplicating existing ones.
-- **Domain-agnostic core, domain-specific overlay.** Generic layers (e.g. "epidemiology-methods") go in `knowledge/domains/`. User-specific layers (e.g. "my-NTD-corpus") go in `knowledge/library/backgrounds/[user]/`.
+- **Domain-agnostic core, domain-specific overlay.** Generic layers (e.g. "epidemiology-methods") go in `knowledge/domains/`. User-specific layers (e.g. "my-research-corpus") go in `knowledge/library/backgrounds/[user]/`.
 
 ---
 
@@ -30,7 +30,7 @@ This is not a one-shot retrieval agent. You build permanent knowledge infrastruc
 
 ### Step 1 — Define scope
 Parse the user's request into:
-- `domain`: broad category (e.g. "health economics", "NTD epidemiology")
+- `domain`: broad category (e.g. "health economics", "disease epidemiology")
 - `topic_cluster`: 3–8 specific sub-topics or key terms
 - `source_types`: which sources to include (papers, reports, databases, course material, Wikipedia pages)
 - `depth`: `survey` (50–100 docs), `deep` (200–500 docs), `exhaustive` (500+, long-running)
@@ -113,7 +113,7 @@ Write a `README.md` with a one-paragraph summary of what the layer contains and 
 | Layer name | What it covers | How to activate |
 |---|---|---|
 | `health-economics` | CEA, DALY/QALY methods, HTA, burden estimation | `/background use health-economics` |
-| `ntd-epidemiology` | NTD surveillance, HAT, SCH, LF epidemiology papers | `/background use ntd-epidemiology` |
+| `disease-epidemiology` | Disease surveillance, burden, epidemiology papers (name the layer after your domain) | `/background use disease-epidemiology` |
 | `multilevel-methods` | MLM, mixed models, R lme4/brms, hierarchical Bayes | `/background use multilevel-methods` |
 | `dhis2-technical` | DHIS2 API, metadata, tracker, FHIR integration | `/background use dhis2-technical` |
 | `global-health-policy` | WHO strategy docs, Lancet Commission reports, SDG indicators | `/background use global-health-policy` |

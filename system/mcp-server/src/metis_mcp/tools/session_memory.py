@@ -134,7 +134,7 @@ async def commit_session_decisions(
             "Chose logistic regression over mixed model due to data sparsity in
             Zone de Santé X" not "made a modelling decision".
         summary: 1-3 sentence summary of the session context (optional but useful).
-        key_topics: Topic tags e.g. ["DHIS2", "HAT surveillance", "tracker design"].
+        key_topics: Topic tags e.g. ["DHIS2", "domain surveillance", "tracker design"].
         session_id: Optional session identifier.
     """
     if not decisions:

@@ -271,7 +271,7 @@ async def store_procedural_memory(
     workflows that worked well, or step-by-step patterns for recurring tasks.
 
     Args:
-        procedure_name: Short name for this procedure (e.g. 'HAT literature search').
+        procedure_name: Short name for this procedure (e.g. 'Domain literature search').
         steps: Markdown-formatted steps for the procedure.
         trigger_context: What situation should trigger using this procedure.
     """

@@ -13,8 +13,8 @@ FROM python:3.11-slim
 
 LABEL org.opencontainers.image.title="Metis Research Cortex"
 LABEL org.opencontainers.image.description="AI second-brain for researchers — MCP server + dashboard"
-LABEL org.opencontainers.image.source="https://github.com/SVerITG/Metis"
-LABEL org.opencontainers.image.url="https://github.com/SVerITG/Metis"
+LABEL org.opencontainers.image.source="https://github.com/<your-github-username>/Metis"
+LABEL org.opencontainers.image.url="https://github.com/<your-github-username>/Metis"
 LABEL org.opencontainers.image.licenses="MIT"
 
 # ── System dependencies ───────────────────────────────────────────────────────

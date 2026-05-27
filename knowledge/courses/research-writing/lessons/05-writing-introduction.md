@@ -53,12 +53,12 @@ This means the author should prefer:
 Long exhaustive background sections often weaken introductions because they bury the central argument. Brevity and relevance usually make the logic stronger.
 
 ### Section 5: Worked example - surveillance paper introduction
-Imagine a paper on sustainable post-elimination HAT surveillance. A strong introduction might move through four steps:
+Imagine a paper on sustainable post-elimination disease surveillance. A strong introduction might move through four steps:
 
 1. elimination success creates a new surveillance challenge
 2. rare-event detection is operationally fragile once cases decline
 3. existing evidence says relatively little about how to maintain sensitivity sustainably in peripheral systems
-4. this study evaluates whether a defined surveillance support strategy improves referral and verification performance in former HAT foci
+4. this study evaluates whether a defined surveillance support strategy improves referral and verification performance in former endemic areas
 
 That structure gives the reader a reason to care and a clear understanding of what the paper will contribute.
 

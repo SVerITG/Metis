@@ -57,7 +57,7 @@ If a reviewer says the confounder strategy is weak, you may need either:
 The distinction matters. Cosmetic wording changes do not solve analytic problems, and unnecessary re-analysis can waste time when the real issue is presentation.
 
 ### Section 5: Worked example
-Imagine reviewers question whether a post-elimination HAT surveillance evaluation overstates system sensitivity because the study included mostly accessible facilities.
+Imagine reviewers question whether a post-elimination disease surveillance evaluation overstates system sensitivity because the study included mostly accessible facilities.
 
 A weak response would be:
 

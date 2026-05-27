@@ -62,13 +62,15 @@ One row per major promise. Pull `git log` for first-seen dates. This is what ans
 Three artifacts, all mandatory:
 
 1. **Personal memory file** at:
-   `~/.claude/projects/-mnt-c-Users-sverschaeve-OneDrive---ITG-Documents-7--Software-Research-Cortex/memory/evaluations/YYYY-MM-DD_self-reflexion.md`
+   `~/.claude/projects/{project-hash}/memory/evaluations/YYYY-MM-DD_self-reflexion.md`
+   *(The project hash is a machine-specific slug derived from your METIS_RC_ROOT path.
+   Use `ls ~/.claude/projects/` to find the correct folder on your machine.)*
 
 2. **Project-side mirror** at:
    `outputs/reviews/metis-evaluation/YYYY-MM-DD_self-reflexion.md`
 
 3. **Index update** — append a row to:
-   `~/.claude/projects/.../memory/evaluations/INDEX.md`
+   `~/.claude/projects/{project-hash}/memory/evaluations/INDEX.md`
 
 The personal memory file must be self-contained — readable months later without context.
 

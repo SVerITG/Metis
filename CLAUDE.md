@@ -1,7 +1,6 @@
 # Metis Second Brain — Claude Code Configuration
 
-This is the Metis second-brain system for a Senior Researcher / Public Health Methodologist
-working on their research domain, AI development, and personal learning.
+This is the Metis Research Cortex — a local AI second-brain for researchers in any field.
 
 **Owner:** [User] — address by their configured name (see `system/config/user-config.yaml`)
 **Root:** This folder

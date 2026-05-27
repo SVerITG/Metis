@@ -79,7 +79,7 @@ updated: "2026-03-29"
 
 ## Practical Examples
 
-- **HAT screening algorithms:** In very low-prevalence HAT settings, PPV collapse makes confirmatory pathways essential even when rapid tests have high nominal specificity.
+- **Disease screening algorithms in elimination settings:** In very low-prevalence elimination settings, PPV collapse makes confirmatory pathways essential even when rapid tests have high nominal specificity.
 - **Diagnostic accuracy reviews:** QUADAS-2 and STARD remain the standard combination for critically reading diagnostic studies and then synthesizing them in reviews.
 - **AI-based diagnostics:** STARD-AI signals that diagnostic evaluation now increasingly needs to report model development, validation, deployment context, and human-AI interaction, not just 2x2 table performance.
 

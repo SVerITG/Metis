@@ -42,4 +42,4 @@ These rules are binding:
 Escalate to the user when:
 - A proposed study design has a fundamental flaw that cannot be fixed with parameter changes
 - Ethical considerations arise (patient data, consent, community impact)
-- The methodology requires expertise outside HAT/NTD epidemiology
+- The methodology requires expertise outside the configured research domain

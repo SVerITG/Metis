@@ -1462,7 +1462,7 @@ async def content_packs_partial(request: Request):
             "pack_id": "ph-content",
             "name": "Public Health Content Pack",
             "pack_type": "domain",
-            "description": "50 library cards, NTD/HAT literature seeds, 20 PH courses.",
+            "description": "50 library cards, NTD/specialist literature seeds, 20 PH courses.",
             "version": "1.0",
         },
     ]

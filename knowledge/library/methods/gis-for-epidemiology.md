@@ -89,7 +89,7 @@ updated: "2026-03-30"
 
 ## Practical Examples
 
-- **HAT atlas workflows:** Georeferenced HAT case and health-facility data are a clear example of GIS supporting focal surveillance, service accessibility analysis, and elimination planning.
+- **Disease atlas workflows:** Georeferenced disease case and health-facility data are a clear example of GIS supporting focal surveillance, service accessibility analysis, and elimination planning.
 - **Environmental covariates for vector-borne disease:** Satellite-derived rainfall, land cover, and temperature rasters are routinely linked to case data to explain vector distribution or transmission suitability.
 - **Facility mapping for service gaps:** Joining facility coordinates to administrative boundaries is a practical way to identify diagnostic deserts, referral bottlenecks, and under-covered districts.
 - **Wastewater surveillance siting:** GIS is increasingly used to decide where environmental sampling points best complement clinical surveillance and population coverage.

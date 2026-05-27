@@ -104,7 +104,7 @@ class TestPersona01PhDStudent:
 
     def test_capture_modal_route(self, dashboard_client, tmp_db):
         r = dashboard_client.post("/api/capture", data={
-            "text": "i: what if HAT re-emergence correlates with conflict zones?",
+            "text": "i: what if disease re-emergence correlates with conflict zones?",
         })
         assert r.status_code not in (500,), "Capture modal should not crash"
 
@@ -359,7 +359,7 @@ class TestPersona05EarlyCareerResearcher:
     def test_cross_pollination_on_idea_capture(self, dashboard_client, tmp_db):
         """Ideas captured should trigger cross-pollination via brainstorm tool."""
         r = dashboard_client.post("/api/capture", data={
-            "text": "i: multilevel models might apply to HAT case clustering",
+            "text": "i: multilevel models might apply to disease case clustering",
         })
         assert r.status_code not in (500,)
 
@@ -521,7 +521,7 @@ class TestPersona08Developer:
     def test_docker_image_labels_correct(self):
         dockerfile = METIS_ROOT / "system" / "install" / "docker" / "Dockerfile"
         content = dockerfile.read_text()
-        assert "ghcr.io/sveritg/metis" in content or "opencontainers" in content, \
+        assert "ghcr.io/<your-github-username>/metis" in content or "opencontainers" in content, \
             "Dockerfile must have GHCR OCI labels"
 
     def test_ghcr_workflow_exists(self):

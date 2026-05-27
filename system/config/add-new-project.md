@@ -12,7 +12,7 @@ Copy this template to `04_projects/active/[project-name].md`:
 ---
 project_id: your-project-id        # lowercase, hyphens, no spaces
 title: Your Project Title
-domain: sleeping-sickness           # or: education, software, phd, personal
+domain: your-domain                 # or: education, software, phd, personal
 status: active                      # active | planned | blocked | done
 priority: high                      # high | medium | low
 external_path: C:\full\windows\path\to\project
@@ -94,16 +94,16 @@ git commit -m "Initial commit: scripts and configuration"
 
 ## Step 3 — Create the GitHub repository
 
-1. Go to https://github.com/SVerITG
+1. Go to https://github.com/<your-github-username>
 2. Click **New repository**
-3. Name it (e.g. `HAT_Clustering`)
+3. Name it (e.g. `My_Research_Project`)
 4. Set to **Private** (for research data projects) or Public (for teaching)
 5. Do NOT initialise with README (you already have one)
 6. Click **Create repository**
-7. Copy the SSH URL: `git@github.com:SVerITG/HAT_Clustering.git`
+7. Copy the SSH URL: `git@github.com:<your-github-username>/My_Research_Project.git`
 
 ```bash
-git remote add origin git@github.com:SVerITG/HAT_Clustering.git
+git remote add origin git@github.com:<your-github-username>/My_Research_Project.git
 git push -u origin main
 ```
 
@@ -116,12 +116,12 @@ Open `inst/scripts/seed_projects.R` in the Metis dashboard folder, add a row to 
 ```r
 project_id    = "your-project-id",
 title         = "Your Project Title",
-domain        = "sleeping-sickness",
+domain        = "your-domain",
 status        = "active",
 priority      = "high",
 next_step     = "First thing to do",
 external_path = "C:\\full\\windows\\path",
-github_url    = "https://github.com/SVerITG/your-repo",
+github_url    = "https://github.com/<your-github-username>/your-repo",
 ```
 
 And add tasks in the `tasks` data.frame. Then run the script.
@@ -146,8 +146,8 @@ The Metis dashboard Control Room will show a **red dot** when commits or pushes 
 
 ## Existing projects
 
+Update this table with your own projects as you add them.
+
 | Project | GitHub | Branch |
 |---|---|---|
-| HAT Dashboard | https://github.com/SVerITG/HAT_Dashboard_1.0 | `server` (active) |
-| HAT Clustering | — create repo, then push — | `main` |
-| MLM Course | https://github.com/SVerITG/MLM_course | `main` |
+| My Research Project | https://github.com/<your-github-username>/my-research-project | `main` |

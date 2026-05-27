@@ -107,10 +107,10 @@ def _seed_persona_db(conn: sqlite3.Connection, persona_slug: str) -> None:
        '','outputs/reviews/news-radar/2026-05-15_brief.md',80,160,240,'completed','{today} 07:00:00');
 
     INSERT OR IGNORE INTO library_cards VALUES
-      ('card-001','Systematic review of HAT treatment outcomes',
-       'Lutumba P et al.',2023,'neglected-tropical-diseases',
-       'Lancet Infect Dis','NTD,HAT,treatment',
-       'Review of 12 trials; eflornithine-NIFURTIMOX combination most effective.',
+      ('card-001','Systematic review of vector-borne disease treatment outcomes',
+       'Example Author et al.',2023,'neglected-tropical-diseases',
+       'Lancet Infect Dis','NTD,vector-borne,treatment',
+       'Review of 12 trials; combination treatment most effective.',
        'reading','{today}'),
       ('card-002','Multilevel modelling in public health',
        'Rabe-Hesketh S, Skrondal A',2022,'statistics',
@@ -119,15 +119,15 @@ def _seed_persona_db(conn: sqlite3.Connection, persona_slug: str) -> None:
        'unread','{today}');
 
     INSERT OR IGNORE INTO literature_metadata VALUES
-      (1,'Sleeping sickness transmission dynamics','Büscher P et al.',
+      (1,'Disease X transmission dynamics','Example Author et al.',
        2021,'PLoS Negl Trop Dis','10.1371/journal.pntd.0009353',
-       'NTD,HAT,transmission','{today}'),
+       'NTD,vector-borne,transmission','{today}'),
       (2,'OpenStreetMap for health facility mapping','Friesen J et al.',
        2020,'IJHG','10.1186/s12942-020-00218-9',
        'GIS,mapping,health facilities','{today}');
 
     INSERT OR IGNORE INTO news_briefs VALUES
-      (1,'WHO updates HAT elimination targets for 2030',
+      (1,'WHO updates disease elimination targets for 2030',
        'New milestones published in revised roadmap.',
        'WHO','news','{today}','{today}'),
       (2,'New fasciola hepatica prevalence data from West Africa',
@@ -136,7 +136,7 @@ def _seed_persona_db(conn: sqlite3.Connection, persona_slug: str) -> None:
 
     INSERT OR IGNORE INTO projects (project_id, title, domain, status, external_path, created_at, launcher_type)
     VALUES
-      ('proj-001','Article 1 — HAT Surveillance Senegal','NTD','active',
+      ('proj-001','Article 1 — Disease Surveillance Study','NTD','active',
        'C:/Users/YourName/Documents/research/article1','{today}','rstudio'),
       ('proj-002','PhD Thesis — Backbone','Research','active',
        'C:/Users/YourName/Documents/phd','{today}','vscode');
@@ -149,7 +149,7 @@ def _seed_persona_db(conn: sqlite3.Connection, persona_slug: str) -> None:
 
     INSERT OR IGNORE INTO daily_insights VALUES
       (1,'{today}',
-       'Three surveillance papers published this week on HAT in central Africa. The WHO roadmap revision sets stricter 2030 targets. Your Article 1 methods section needs the case-definition paragraph reviewed.',
+       'Three surveillance papers published this week on vector-borne disease in sub-Saharan Africa. The WHO roadmap revision sets stricter 2030 targets. Your Article 1 methods section needs the case-definition paragraph reviewed.',
        '{today}');
     """)
 

@@ -58,7 +58,7 @@ Pre-specification reduces the temptation to:
 This does not mean a protocol can never be amended. It means changes should be explicit, dated, and justified rather than hidden inside the final paper.
 
 ### Section 5: Worked example - surveillance evaluation protocol
-Imagine a team plans a surveillance evaluation of post-elimination HAT detection. A weak protocol might say only that the system will be assessed for "performance."
+Imagine a team plans a surveillance evaluation of post-elimination disease detection. A weak protocol might say only that the system will be assessed for "performance."
 
 A stronger protocol would specify:
 

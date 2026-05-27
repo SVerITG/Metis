@@ -80,7 +80,7 @@ async def index_library_pdfs(
     Args:
         force_reindex: Rebuild from scratch even if an index already exists.
         topic_filter: If given, only index PDFs whose parent folder name
-                      contains this string (e.g. "HAT", "NTD", "Epidemiology").
+                      contains this string (e.g. "NTD", "Epidemiology", "Methods").
     """
     try:
         from paperqa import Docs, Settings

@@ -74,11 +74,11 @@ Search limitations: [what might be missing — e.g., non-English literature, gre
 
 **Example 1 — Targeted retrieval**
 
-Request: "Find evidence on the performance of rapid diagnostic tests for sleeping sickness in post-elimination settings."
+Request: "Find evidence on the performance of rapid diagnostic tests in post-elimination settings for a low-prevalence disease."
 
-Search query used: `("rapid diagnostic test" OR "RDT" OR "lateral flow assay") AND ("trypanosomiasis" OR "HAT" OR "sleeping sickness") AND ("elimination" OR "post-elimination" OR "low prevalence") — PubMed 2015–2026`
+Search query used: `("rapid diagnostic test" OR "RDT" OR "lateral flow assay") AND ("[disease]" OR "[disease synonym]") AND ("elimination" OR "post-elimination" OR "low prevalence") — PubMed 2015–2026`
 
-Output: 6 sources, HIGH relevance: Büscher et al. 2018 (CATT sensitivity meta-analysis), Bessell et al. 2020 (RDT specificity in low-prevalence DRC), WHO 2022 elimination targets report. Gaps: No prospective studies in post-elimination settings; all evidence from pre-elimination contexts.
+Output: 6 sources, HIGH relevance: examples include a sensitivity meta-analysis, an RDT specificity study in a low-prevalence setting, and a WHO elimination targets report. Gaps: No prospective studies in post-elimination settings; all evidence from pre-elimination contexts.
 
 **Example 2 — Synthesis for PhD**
 

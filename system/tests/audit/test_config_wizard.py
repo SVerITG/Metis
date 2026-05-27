@@ -197,7 +197,7 @@ class TestFirstRunTrigger:
     """The first-run wizard trigger must work correctly."""
 
     def test_claude_md_checks_first_run_marker(self):
-        global_claude = Path("/home/sverschaeve/.claude/CLAUDE.md")
+        global_claude = Path.home() / ".claude" / "CLAUDE.md"
         if not global_claude.exists():
             pytest.skip("Global CLAUDE.md not present in this environment")
         text = global_claude.read_text(encoding="utf-8")

@@ -11,7 +11,7 @@ Each persona:
   - Checks that content is rendered correctly for their context
 
 Personas:
-  1. PhD epidemiologist (core user — HAT/NTD focus)
+  1. PhD epidemiologist (core user — NTD/epidemiology focus)
   2. Clinical research nurse (meetings + tasks, minimal stats)
   3. Biostatistician (stats-heavy, methods learning)
   4. MPH student (learning-first, new to research tools)
@@ -51,7 +51,7 @@ PERSONAS: list[dict[str, Any]] = [
     {
         "id": "phd_epidemiologist",
         "name": "PhD Epidemiologist",
-        "description": "Senior researcher, HAT/NTD focus, active PhD, daily dashboard user",
+        "description": "Senior researcher, NTD/epidemiology focus, active PhD, daily dashboard user",
         "tabs": ["/", "/today", "/knowledge", "/learning", "/work", "/planner"],
         "partials": [
             "/api/partial/today/dateline",
@@ -62,20 +62,20 @@ PERSONAS: list[dict[str, Any]] = [
             "tasks": [
                 ("Write methods section for Article 1", "open", "high"),
                 ("Reply to reviewers for Journal of Tropical Medicine", "open", "high"),
-                ("Update HAT surveillance literature review", "in_progress", "medium"),
+                ("Update disease surveillance literature review", "in_progress", "medium"),
                 ("Attend PhD committee meeting", "open", "low"),
-                ("Run multilevel model for district-level HAT data", "done", "high"),
+                ("Run multilevel model for district-level disease data", "done", "high"),
             ],
             "projects": [
-                ("proj-hat-001", "HAT Surveillance Uganda", "active", "Mapping sleeping sickness transmission zones"),
+                ("proj-ntd-001", "Disease Surveillance Study", "active", "Mapping vector-borne disease transmission zones"),
                 ("proj-phd-001", "PhD Article 1", "active", "Methods and results for first article"),
             ],
             "news_briefs": [
-                ("WHO issues new HAT elimination targets for 2030", "high", "ntd"),
+                ("WHO issues new disease elimination targets for 2030", "high", "ntd"),
                 ("New lancet paper on NTD control programmes in DRC", "medium", "ntd"),
             ],
             "library_cards": [
-                ("Spatial distribution of HAT in Uganda", "Picado et al.", 2022, "epidemiology"),
+                ("Spatial distribution of vector-borne disease", "Example Author et al.", 2022, "epidemiology"),
                 ("Bayesian multilevel models for surveillance data", "Gelman et al.", 2019, "statistics"),
             ],
             "learning_courses": [
@@ -201,7 +201,7 @@ PERSONAS: list[dict[str, Any]] = [
             "news_briefs": [
                 ("GAVI board approves new malaria vaccine funding", "high", "global_health"),
                 ("WHO emergency committee convenes on mpox outbreak", "high", "surveillance"),
-                ("DRC reports sustained decline in HAT cases", "medium", "ntd"),
+                ("DRC reports sustained decline in NTD cases", "medium", "ntd"),
             ],
         },
     },
@@ -275,7 +275,7 @@ PERSONAS: list[dict[str, Any]] = [
         "partials": ["/api/partial/today/focus-thread"],
         "seed": {
             "tasks": [
-                ("Configure DHIS2 tracker program for HAT case management", "in_progress", "high"),
+                ("Configure DHIS2 tracker program for NTD case management", "in_progress", "high"),
                 ("Write SQL views for malaria indicator verification", "open", "high"),
                 ("Test DHIS2 API integration with mobile app", "in_progress", "medium"),
                 ("Document data element naming conventions", "done", "low"),
@@ -283,7 +283,7 @@ PERSONAS: list[dict[str, Any]] = [
                 ("Review DHIS2 2.42 upgrade release notes", "open", "medium"),
             ],
             "projects": [
-                ("proj-dhis2-hat", "DHIS2 HAT Case Management", "active", "Tracker program for HAT diagnosis and treatment"),
+                ("proj-dhis2-ntd", "DHIS2 NTD Case Management", "active", "Tracker program for NTD diagnosis and treatment"),
                 ("proj-dhis2-malaria", "DHIS2 Malaria Dashboards", "active", "National malaria programme analytics"),
             ],
             "library_cards": [
@@ -291,7 +291,7 @@ PERSONAS: list[dict[str, Any]] = [
                 ("FHIR R4 Implementation Guide", "HL7", 2023, "interoperability"),
             ],
             "ideas": [
-                ("Use DHIS2 event capture for field-level HAT screening data"),
+                ("Use DHIS2 event capture for field-level NTD screening data"),
                 ("Investigate DHIS2 to FHIR conversion for cross-border data sharing"),
             ],
         },
