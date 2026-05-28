@@ -223,8 +223,8 @@ def job_library_index() -> None:
     """Library file inventory scan."""
     log.info("[scheduler] library_index starting")
     try:
-        from metis_mcp.tools.library import scan_library_folder
-        r = scan_library_folder()
+        from metis_mcp.tools.content_scan import scan_literature_folder
+        r = scan_literature_folder()
         msg = f"Indexed {r.get('files_indexed', '?')} files."
         _log_job("library_index", "ok", msg)
         log.info("[scheduler] library_index done: %s", msg)
