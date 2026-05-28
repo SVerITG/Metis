@@ -11,9 +11,10 @@ dependencies = [
     "uvicorn[standard]>=0.29.0",
     "python-multipart>=0.0.9",
     "httpx>=0.28.0",
-    # Phase 5 — multi-layered vector memory
+    # Phase 5 — vector memory (fastembed is optional — see [embedding] extra)
     "sqlite-vec>=0.1.9",
-    "fastembed>=0.8.0",
+    "onnxruntime>=1.20",
+    "tokenizers>=0.20",
     # Phase 6 — encryption
     "cryptography>=42.0",
     # Phase 7 / data analyst
@@ -38,13 +39,16 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+# Neural embedding — pulls ~200 MB of ONNX models (no GPU needed).
+# Install with: pip install "metis-mcp-server[embedding]"
+embedding = ["fastembed>=0.8.0"]
+# Voice capture — faster-whisper for local transcription (no GPU needed).
+# resemblyzer removed: it requires PyTorch GPU and is not used in any tool.
 voice = [
     "faster-whisper>=1.0",
     "sounddevice>=0.4",
     "numpy>=1.24",
     "scipy>=1.10",
-    "webrtcvad-wheels>=2.0.14",
-    "resemblyzer>=0.1.1.2",
     "soundfile>=0.12",
 ]
 

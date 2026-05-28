@@ -1,7 +1,7 @@
 #!/bin/bash
 # Metis dashboard launcher — paths derived at runtime, no hardcoded user paths.
 # run.sh lives at: system/app-py/run.sh
-# METIS_ROOT is two levels up: app-py/ -> system/ -> metis/
+# METIS_ROOT is two levels up: app-py/ -> system/ -> repo root
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 METIS_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
@@ -19,7 +19,7 @@ PYTHON="$VENV_DIR/bin/python3"
 PY_VER=$("$PYTHON" -c "import sys; print('%d.%d' % sys.version_info[:2])" 2>/dev/null)
 SITE_PKG="$VENV_DIR/lib/python${PY_VER}/site-packages"
 
-export METIS_RC_ROOT="$METIS_ROOT"
+export METIS_RC_ROOT="${METIS_RC_ROOT:-$METIS_ROOT}"
 export PYTHONPATH="$SITE_PKG:$MCP_SRC:$APP_DIR"
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -64,7 +64,11 @@ PYEOF
 export METIS_PORT="$PORT"
 echo "Starting Metis dashboard on http://localhost:${PORT}"
 
-# Write selected port to a file so the desktop shortcut can open the correct URL
-echo "$PORT" > "$APP_DIR/.metis-port"
+# Write selected port to a file so the desktop shortcut can open the correct URL.
+# Use METIS_RC_ROOT-relative path so Docker containers (read-only code mount) can write it.
+_PORT_FILE="${METIS_RC_ROOT}/system/app-py/.metis-port"
+mkdir -p "$(dirname "$_PORT_FILE")"
+echo "$PORT" > "$_PORT_FILE"
+unset _PORT_FILE
 
 exec "$PYTHON" -m uvicorn main:app --host 0.0.0.0 --port "$PORT"
