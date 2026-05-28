@@ -107,6 +107,19 @@ Generic AI tools leave several researcher-specific problems unsolved:
 
 ## Introduction
 
+### What Metis is — at three levels
+
+**The lightest form — MCP server only:**
+Install Metis as a background service that runs alongside any Claude conversation. It monitors your sessions, maintains a persistent memory you can recall at any point, and keeps the AI aware of your context and history without you having to re-explain it. No dashboard, no app — just an invisible layer that makes every Claude session aware of what you have been working on. This is the smallest footprint and the fastest way to start.
+
+**With the dashboard — your research hub:**
+Add the web dashboard for full visibility across your research life. The dashboard surfaces connections between papers, ideas, and meetings you would otherwise miss; gives you a place to off-load tasks, notes, and open questions; and organises your work across projects. It is built around *cross-pollination* — your ideas, literature, and project activity linking automatically — and *brain off-loading* — moving the cognitive weight of tracking your work out of your head and into the system.
+
+**The longer vision — Metis OS:**
+The natural endpoint is a layer that connects to everything in your working life: email, calendar, data repositories, institutional systems — a unified intelligence operating system for researchers. This is still in development.
+
+---
+
 Every AI conversation starts from zero. No memory of your papers, your projects, or your last session. You spend ten minutes re-explaining your context — and when the window closes, it's gone.
 
 **Metis builds a persistent research brain** underneath every AI conversation. It knows your literature, your meetings, your ideas, your open tasks. When you ask a question, the answer comes in the context of everything you're actually working on.
@@ -504,50 +517,56 @@ No change to agent behaviour ever happens without your review. The system propos
 
 ---
 
-### For Researchers — Windows one-click installer
+### For Researchers
 
-No terminal. No Python. No technical knowledge needed. Download, double-click, answer three questions.
-
-> **[Download the latest MetisSetup.exe →](https://github.com/SVerITG/Metis_PH/releases/latest)**
-
-Four installer variants — choose what fits your work:
-
-| Variant | Use it if… |
-|---|---|
-| **Full setup with everything** | You want Metis, the dashboard, and the included statistics course. The complete experience. |
-| **Essentials only (faster install)** | You want Metis + the dashboard. Skip the bundled course (you can add it later). |
-| **No R integration** | You don't use R or RStudio for analysis. |
-| **Light mode (AI only, no dashboard)** | You want Metis inside Claude Desktop and nothing else. Smallest footprint. |
-
-All variants install Claude Desktop, configure Metis automatically, and launch the **13-section config wizard** on first open. Takes about 8 minutes.
-
-**Requirements:** Windows 10 or 11 · Internet connection · [Anthropic API key](https://console.anthropic.com) (see banner above)
+No terminal. No Python. No technical knowledge required.
 
 ---
 
-### For Researchers — manual Windows install
+**Windows**
 
-If the `.exe` doesn't work (corporate machines, restricted policies), run the PowerShell script directly:
+> **[Download MetisSetup.exe →](https://github.com/SVerITG/Metis_PH/releases/latest)**
 
+Double-click the installer. The wizard asks three things:
+
+1. **Full or AI only** — Full gives you the AI assistant + 9-tab research dashboard (~15 min). AI only is faster (~5 min) and you can add the dashboard later.
+2. **Demo workspace** — Pre-loads realistic example projects, meetings, literature, and tasks so you can explore every feature immediately. Recommended for first-time users. You can clear it whenever you like.
+3. **Your Anthropic API key** — Paste it once; the installer stores it on your computer only, never uploaded.
+
+Everything else is automatic. Claude Desktop opens at the end with Metis ready to go.
+
+**Requirements:** Windows 10 or 11 · Internet connection · [Anthropic API key](https://console.anthropic.com)
+
+If the `.exe` doesn't work (corporate restrictions), run this instead from the Metis folder:
 ```
-metis/system/install/windows/install.bat
+system\install\windows\install.bat
 ```
 
 ---
 
-### For Developers — Linux / WSL / macOS
+**macOS**
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/metis/system/mcp-server/setup-mcp.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/system/mcp-server/setup-mcp.sh)
 ```
 
-Gives you all **34 agents** and **165+ tools** inside Claude Desktop or Claude Code. Idempotent. Dashboard:
+The script asks the same two questions (Full or AI only, demo workspace) and does the rest automatically. Registers Metis with both Claude Desktop and Claude Code.
+
+---
+
+**Linux / WSL**
 
 ```bash
-cd ~/Metis_PH/system/app-py && bash run.sh   # → http://127.0.0.1:8080
+bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/system/mcp-server/setup-mcp.sh)
 ```
 
-Run the **config wizard** from the Metis tab to personalise your installation.
+Same script, same two questions. Detects Ubuntu 20/22/24, Debian, and any WSL distro automatically.
+
+---
+
+### For Developers
+
+Docker, manual install, and all profile options — see [Installation Options](#installation-options) below.
 
 ---
 
@@ -682,13 +701,22 @@ flowchart LR
 
 ## Installation Options
 
+*For researchers on Windows, macOS, and Linux — see [For Researchers](#for-researchers) above. The options below are for developers who want more control.*
+
 ### Option 1 — Single command (Linux, macOS, WSL)
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/metis/system/mcp-server/setup-mcp.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/system/mcp-server/setup-mcp.sh)
 ```
 
 Detects Ubuntu 20/22/24, Debian, macOS (Homebrew). Creates venv, installs all dependencies, registers with Claude Code and Claude Desktop. Idempotent — safe to re-run.
+
+For specific profiles without the interactive menu:
+```bash
+METIS_PROFILE=light    bash <(curl -fsSL ...)   # MCP server only (~5 min)
+METIS_PROFILE=standard bash <(curl -fsSL ...)   # MCP + dashboard (~15 min)
+METIS_PROFILE=full     bash <(curl -fsSL ...)   # Standard + Windows scheduler (~25 min)
+```
 
 ### Option 2 — WSL on Windows (recommended for developers on Windows)
 
@@ -699,10 +727,10 @@ Open **Windows Terminal → Ubuntu** (or any WSL distro) and run:
 git clone https://github.com/SVerITG/Metis_PH.git ~/Metis_PH
 
 # 2. Install MCP server + register with Claude Code and Claude Desktop
-cd ~/Metis_PH/metis/system/mcp-server && bash setup-mcp.sh
+cd ~/Metis_PH/system/mcp-server && bash setup-mcp.sh
 
 # 3. Start the dashboard
-cd ~/Metis_PH/metis/system/app-py && bash run.sh
+cd ~/Metis_PH/system/app-py && bash run.sh
 # → http://127.0.0.1:8080
 ```
 
@@ -712,12 +740,12 @@ Claude Desktop on Windows picks up the WSL MCP server automatically via `wsl.exe
 
 ```bash
 git clone https://github.com/SVerITG/Metis_PH.git
-cd Metis_PH/metis/system/mcp-server
+cd Metis_PH/system/mcp-server
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[voice]"
 
 # Set env vars and start
-export METIS_RC_ROOT="$(pwd)/../../.."
+export METIS_RC_ROOT="$(pwd)/../.."
 export ANTHROPIC_API_KEY="sk-ant-..."
 
 # MCP server (register path in Claude settings)
@@ -733,25 +761,17 @@ uvicorn main:app --host 127.0.0.1 --port 8080
 
 ```bash
 # Copy env file and fill in your API key + data directory
-cp metis/system/install/docker/.env.example metis/system/install/docker/.env
+cp system/install/docker/.env.example system/install/docker/.env
 
 # Full: MCP server + dashboard
-docker compose -f metis/system/install/docker/docker-compose.yml up -d
+docker compose -f system/install/docker/docker-compose.yml up -d
 # → http://localhost:8080
 
 # Light: MCP tools only (no dashboard, for Claude Desktop only)
-docker compose -f metis/system/install/docker/docker-compose.light.yml up -d
+docker compose -f system/install/docker/docker-compose.light.yml up -d
 ```
 
 For the MCP-only Docker image, point Claude Desktop at the container — see `.env.example` for the config snippet.
-
-### Option 5 — Windows .exe installer
-
-No terminal. No Python. Download, double-click, answer three questions.
-
-> **[Download the latest MetisSetup.exe →](https://github.com/SVerITG/Metis_PH/releases/latest)**
-
-Four variants (Full / PH Shell / Standard / MCP-only) — all install Claude Desktop and launch the config wizard on first run.
 
 ---
 
