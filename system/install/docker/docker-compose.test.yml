@@ -1,0 +1,156 @@
+# docker-compose.test.yml — Full Metis platform test matrix
+#
+# Runs all installer variants in parallel — one command, all platforms.
+#
+# ── Usage ────────────────────────────────────────────────────────────────────
+#
+#   Start all:
+#     docker compose -f system/install/docker/docker-compose.test.yml up --build
+#
+#   Start one variant only:
+#     docker compose -f system/install/docker/docker-compose.test.yml up --build ubuntu22-full
+#
+#   Check results:
+#     docker compose -f system/install/docker/docker-compose.test.yml ps
+#     docker logs metis-ubuntu22-light   # inspect MCP-only output
+#
+#   Reset everything (wipe all data volumes):
+#     docker compose -f system/install/docker/docker-compose.test.yml down -v
+#
+# ── Platform matrix ──────────────────────────────────────────────────────────
+#
+#   ubuntu24-full   Ubuntu 24.04 + full profile  → dashboard at :8080  (current confirmed LTS)
+#   ubuntu24-light  Ubuntu 24.04 + light profile → MCP server only (no dashboard)
+#   ubuntu22-full   Ubuntu 22.04 + full profile  → dashboard at :8081  (older LTS, EOL 2027)
+#   debian-full     Debian 12    + full profile  → dashboard at :8082
+#
+#   ubuntu26: Docker Hub image not yet available — add when ubuntu:26.04 tag is published
+#
+#   macOS:  Cannot be Docker-tested (different kernel). Test natively with:
+#             bash system/mcp-server/setup-mcp.sh
+#
+#   Windows .exe:  Test in Windows Sandbox (see Release Coordinator → test-containers)
+#
+# ── What is isolated ─────────────────────────────────────────────────────────
+#   ✓ All personal data (user-config, database, projects, journal)
+#   ✓ Each variant gets its own data volume — they never share state
+#   ✓ Code is mounted read-only — cannot corrupt your working repo
+#
+# ── What is shared (read-only) ───────────────────────────────────────────────
+#   • The Metis codebase from your repo
+#   • Venv volumes are shared between same-distro services to save install time
+
+services:
+
+  # ── Ubuntu 24.04 / Full — current confirmed LTS (dashboard + MCP) ────────
+  ubuntu24-full:
+    build:
+      context: ../../..
+      dockerfile: system/install/docker/Dockerfile.test
+      args:
+        BASE_IMAGE: ubuntu:24.04
+    container_name: metis-ubuntu24-full
+    volumes:
+      - type: bind
+        source: ../../..
+        target: /opt/metis
+        read_only: true
+      - ubuntu24-venv:/root/.local/share/metis-mcp
+      - ubuntu24-full-data:/opt/metis-data
+    ports:
+      - "8080:8080"
+    environment:
+      METIS_RC_ROOT: /opt/metis-data
+      METIS_PROFILE: standard
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/api/setup/status"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+
+  # ── Ubuntu 24.04 / Light — MCP server only ───────────────────────────────
+  ubuntu24-light:
+    build:
+      context: ../../..
+      dockerfile: system/install/docker/Dockerfile.test
+      args:
+        BASE_IMAGE: ubuntu:24.04
+    container_name: metis-ubuntu24-light
+    volumes:
+      - type: bind
+        source: ../../..
+        target: /opt/metis
+        read_only: true
+      - ubuntu24-venv:/root/.local/share/metis-mcp   # shares venv with full — no reinstall
+      - ubuntu24-light-data:/opt/metis-data
+    environment:
+      METIS_RC_ROOT: /opt/metis-data
+      METIS_PROFILE: light
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+
+  # ── Ubuntu 22.04 / Full — older LTS still in use (EOL Apr 2027) ─────────
+  ubuntu22-full:
+    build:
+      context: ../../..
+      dockerfile: system/install/docker/Dockerfile.test
+      args:
+        BASE_IMAGE: ubuntu:22.04
+    container_name: metis-ubuntu22-full
+    volumes:
+      - type: bind
+        source: ../../..
+        target: /opt/metis
+        read_only: true
+      - ubuntu22-venv:/root/.local/share/metis-mcp
+      - ubuntu22-full-data:/opt/metis-data
+    ports:
+      - "8081:8080"
+    environment:
+      METIS_RC_ROOT: /opt/metis-data
+      METIS_PROFILE: standard
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/api/setup/status"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+
+  # ── Debian 12 / Full — common server distro ──────────────────────────────
+  debian-full:
+    build:
+      context: ../../..
+      dockerfile: system/install/docker/Dockerfile.test
+      args:
+        BASE_IMAGE: debian:12
+    container_name: metis-debian-full
+    volumes:
+      - type: bind
+        source: ../../..
+        target: /opt/metis
+        read_only: true
+      - debian-venv:/root/.local/share/metis-mcp
+      - debian-full-data:/opt/metis-data
+    ports:
+      - "8082:8080"
+    environment:
+      METIS_RC_ROOT: /opt/metis-data
+      METIS_PROFILE: standard
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/api/setup/status"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+
+volumes:
+  ubuntu24-venv:
+  ubuntu24-full-data:
+  ubuntu24-light-data:
+  ubuntu22-venv:
+  ubuntu22-full-data:
+  debian-venv:
+  debian-full-data:
