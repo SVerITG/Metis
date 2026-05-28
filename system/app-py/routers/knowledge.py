@@ -1665,18 +1665,18 @@ async def knowledge_unified_search_semantic(request: Request, q: str = ""):
 # Canonical topic definitions for the research landscape.
 # Each entry: (label, keywords_for_lit_search, description_for_card)
 _TOPIC_DEFINITIONS: list[tuple[str, list[str], str]] = [
-    ("Domain Epidemiology",   ["HAT", "sleeping sickness", "trypanosomiasis"], "Incidence, prevalence, spatial distribution"),
-    ("Surveillance Systems",  ["surveillance", "reporting system", "sentinel"], "Active/passive surveillance design & evaluation"),
-    ("Elimination & Control", ["elimination", "control", "elimination programme"], "WHO targets, control strategies, validation"),
-    ("Diagnostics",           ["diagnostic", "RDT", "CATT", "mAECT", "Loofs", "HAT-Rdt"], "Diagnostic tools, sensitivity & specificity"),
-    ("Spatial Epidemiology",  ["spatial", "geograph", "mapping", "GIS"], "Disease mapping, spatial modelling, hotspots"),
-    ("Multilevel Methods",    ["multilevel", "mixed model", "random effect", "hierarchical"], "Clustered data, nested designs"),
-    ("NTD Programmes",        ["NTD", "neglected tropical", "ESPEN", "integrated"], "Integrated NTD programmes & reporting"),
-    ("DHIS2 / Health Info",   ["DHIS2", "health information system", "OpenMRS"], "Health information systems implementation"),
-    ("Mathematical Modelling",["model", "mathematical model", "transmission model", "stochastic"], "Transmission dynamics, intervention impact"),
-    ("Vector Control",        ["tsetse", "vector", "trap", "insecticid"], "Vector biology & control interventions"),
-    ("Drug Treatment",        ["pentamidine", "melarsoprol", "fexinidazole", "acoziborole", "treatment"], "Therapeutics, treatment outcomes"),
-    ("Post-Elimination",      ["post-elimination", "post elimination", "zero case", "maintenance"], "Zero-case maintenance, resurgence risk"),
+    ("Infectious Diseases",       ["infectious disease", "infection", "pathogen", "epidemic", "outbreak"], "Burden, transmission, and outbreak dynamics"),
+    ("Surveillance Systems",      ["surveillance", "reporting system", "sentinel", "monitoring"], "Active/passive surveillance design & evaluation"),
+    ("Elimination & Control",     ["elimination", "control", "eradication", "prevention programme"], "WHO targets, control strategies, validation"),
+    ("Diagnostics",               ["diagnostic", "RDT", "sensitivity", "specificity", "test accuracy"], "Diagnostic tools, accuracy, and deployment"),
+    ("Spatial Epidemiology",      ["spatial", "geograph", "mapping", "GIS", "geospatial"], "Disease mapping, spatial modelling, hotspots"),
+    ("Multilevel Methods",        ["multilevel", "mixed model", "random effect", "hierarchical"], "Clustered data, nested designs"),
+    ("NTD & Tropical Diseases",   ["NTD", "neglected tropical", "ESPEN", "tropical disease", "parasitic"], "Neglected tropical disease programmes & reporting"),
+    ("Health Information Systems",["DHIS2", "health information system", "HIS", "OpenMRS", "HMIS"], "Health information systems implementation"),
+    ("Mathematical Modelling",    ["model", "mathematical model", "transmission model", "stochastic"], "Transmission dynamics, intervention impact"),
+    ("Health Systems",            ["health system", "health financing", "UHC", "coverage", "access"], "Health system strengthening & universal coverage"),
+    ("Maternal & Child Health",   ["maternal", "child health", "MCH", "RMNCH", "neonatal", "nutrition"], "Maternal, newborn, and child health outcomes"),
+    ("Environmental & One Health",["environment", "climate", "WASH", "water sanitation", "One Health", "zoonotic"], "Environment-health linkages & One Health"),
 ]
 
 _GOOD_THRESHOLD    = 12   # ≥12 papers → good
