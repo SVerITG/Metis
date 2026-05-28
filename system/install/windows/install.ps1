@@ -169,11 +169,11 @@ if (-not $filesAlreadyPresent) {
     Write-Host "    Downloading Metis from GitHub…" -ForegroundColor Gray
     $gitAvail = Get-Command git -ErrorAction SilentlyContinue
     if ($gitAvail) {
-        git clone --depth 1 https://github.com/<your-github-username>/Metis.git $metisTarget 2>&1 | Out-Null
+        git clone --depth 1 https://github.com/SVerITG/Metis_PH.git $metisTarget 2>&1 | Out-Null
     }
     else {
         $zipPath = Join-Path $env:TEMP "metis.zip"
-        Invoke-WebRequest -Uri "https://github.com/<your-github-username>/Metis/archive/refs/heads/main.zip" `
+        Invoke-WebRequest -Uri "https://github.com/SVerITG/Metis_PH/archive/refs/heads/main.zip" `
             -OutFile $zipPath -UseBasicParsing
         Expand-Archive -Path $zipPath -DestinationPath $env:TEMP -Force
         $extracted = Join-Path $env:TEMP "Metis-main"
@@ -246,7 +246,7 @@ set "METIS_RC_ROOT=$metisTarget"
 set "PYTHONPATH=$mcpSrc\src"
 for /f "delims=" %%i in ('type "$metisTarget\system\.env"') do set %%i
 cd /d "$dashDir"
-"$venvPath\Scripts\python.exe" -m uvicorn app:app --host 127.0.0.1 --port 8000 --reload
+"$venvPath\Scripts\python.exe" -m uvicorn main:app --host 127.0.0.1 --port 8080
 "@ | Set-Content -Path $runDashBat -Encoding ASCII
     Write-OK "Dashboard launcher created"
 }
@@ -289,6 +289,32 @@ Write-OK "Claude Desktop configured"
 Write-Host "    Heads up: when you first open Claude Desktop, it may ask you to sign in" -ForegroundColor Gray
 Write-Host "    or paste your API key one more time. That's Claude Desktop's own sign-in" -ForegroundColor Gray
 Write-Host "    (separate from the key Metis uses for tools). Same key works for both." -ForegroundColor Gray
+
+# ── Auto-register with Claude Code via WSL (if available) ───────────────────
+if (-not $Stage1Only) {
+    Write-Step "Registering with Claude Code (WSL)"
+    $wslExe = Get-Command wsl -ErrorAction SilentlyContinue
+    if ($wslExe) {
+        # Convert Windows path to WSL path
+        $wslMetisRoot = wsl wslpath -u $metisTarget.Replace('\', '/')
+        $wslSetupScript = "$wslMetisRoot/system/mcp-server/setup-mcp.sh"
+        # Run setup-mcp.sh in WSL with the light profile (MCP + Claude Code registration only)
+        $wslResult = wsl bash -c "METIS_PROFILE=light bash '$wslSetupScript'" 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-OK "Claude Code (WSL): Metis MCP server registered"
+        }
+        else {
+            Write-Warn "Claude Code (WSL) registration did not complete automatically."
+            Write-Host "    To register manually, open a WSL terminal and run:" -ForegroundColor Gray
+            Write-Host "    bash '$wslSetupScript'" -ForegroundColor Gray
+        }
+    }
+    else {
+        Write-Warn "WSL not found — Claude Code registration skipped."
+        Write-Host "    If you use Claude Code later, open a WSL terminal and run:" -ForegroundColor Gray
+        Write-Host "    bash system/mcp-server/setup-mcp.sh" -ForegroundColor Gray
+    }
+}
 
 # ── Write global CLAUDE.md ───────────────────────────────────────────────────
 Write-Step "Setting up Metis AI instructions"
@@ -385,7 +411,11 @@ Write-Host @"
     $InstallDir
 
   Anything goes wrong? See the README at:
-    https://github.com/<your-github-username>/Metis_PH
+    https://github.com/SVerITG/Metis_PH
+
+  Using Claude Code (WSL terminal)?
+  Run this once in your WSL terminal to add MCP tools there too:
+    bash '$InstallDir\system\mcp-server\setup-mcp.sh'
 
 "@ -ForegroundColor Green
 
