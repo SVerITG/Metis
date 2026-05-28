@@ -83,12 +83,46 @@ async def setup_page(request: Request):
     })
 
 
+@router.post("/api/setup/configure", response_class=JSONResponse)
+async def configure(request: Request):
+    """
+    Receive wizard answers from the browser, process with Claude API,
+    write user-config.yaml + metis-persona.md + project stubs.
+    """
+    try:
+        answers = await request.json()
+    except Exception:
+        return JSONResponse({"ok": False, "error": "Invalid JSON body"}, status_code=400)
+
+    required = ["name", "role", "field"]
+    missing = [k for k in required if not str(answers.get(k, "")).strip()]
+    if missing:
+        return JSONResponse(
+            {"ok": False, "error": f"Missing required fields: {', '.join(missing)}"},
+            status_code=422,
+        )
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip() or answers.get("api_key", "")
+
+    # Import processor — lives alongside the installer scripts
+    try:
+        import importlib.util
+        processor_path = _METIS_ROOT / "system" / "install" / "process_wizard_answers.py"
+        spec = importlib.util.spec_from_file_location("process_wizard_answers", processor_path)
+        mod  = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        result = mod.process(answers, _METIS_ROOT, api_key or None)
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)}, status_code=500)
+
+    return JSONResponse(result)
+
+
 @router.post("/api/setup/reset-wizard", response_class=JSONResponse)
 async def reset_wizard():
-    """Re-create the .first-run marker so the wizard runs again on next Claude open."""
     _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     _FIRST_RUN.touch()
-    return {"ok": True, "message": "First-run marker created. Open Claude to start the wizard."}
+    return {"ok": True, "message": "Wizard reset."}
 
 
 @router.get("/api/setup/status", response_class=JSONResponse)
@@ -233,7 +267,9 @@ async def welcome_banner(request: Request):
   </div>
 </div>
 <script>
-  if (sessionStorage.getItem('metisWelcomeDismissed') === '1') {
+  // Auto-dismiss overlay on the setup page — the wizard is right behind it
+  if (sessionStorage.getItem('metisWelcomeDismissed') === '1' ||
+      window.location.pathname === '/setup') {
     var ov = document.getElementById('first-run-overlay');
     if (ov) ov.remove();
   }

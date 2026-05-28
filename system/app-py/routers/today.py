@@ -1074,8 +1074,8 @@ def _get_or_generate_brief(force: bool = False) -> str | None:
         period_desc = f"the last {days_since_last // 7} week{'s' if days_since_last >= 14 else ''}"
 
     field_str = research_field or "public health and epidemiology"
-    interests_str = ", ".join(interests[:8]) if interests else "neglected tropical diseases, sleeping sickness, global health, surveillance, DHIS2"
-    topics_str = ", ".join(news_topics[:6]) if news_topics else "WHO surveillance, NTDs, global health emergencies, AI in science"
+    interests_str = ", ".join(interests[:8]) if interests else "global health, infectious diseases, epidemiology, public health surveillance, health systems"
+    topics_str = ", ".join(news_topics[:6]) if news_topics else "WHO surveillance, global health emergencies, disease control, AI in research"
 
     system_preamble = (
         f"You are writing the daily research intelligence brief for {name}, "
