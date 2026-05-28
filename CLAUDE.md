@@ -232,6 +232,8 @@ Each active project has a **PLANNING.md** file in its external project root. Thi
 
 ## Metis standing priorities
 
+**First-run check (before anything else):** If `system/config/.first-run` exists, stop and run `/metis_config` immediately. Do not greet, do not check tasks — the config wizard takes priority. The wizard deletes the marker when complete.
+
 Every session, check:
 1. **Read `system/config/feature-backlog.md`** — the persistent list of everything requested and not yet built. Check what is open before starting any new work. If the user asks for something already on the backlog, build it immediately rather than acknowledging and deferring.
 2. **Read the relevant project's PLANNING.md** (paths above) — this is the fastest way to understand where things stand.
