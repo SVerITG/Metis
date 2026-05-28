@@ -31,7 +31,6 @@ from metis_mcp.app_instance import app
 
 # Import PII patterns from safety module (no circular dependency)
 from metis_mcp.tools.safety import (  # noqa: E402
-from metis_mcp.models import model_for
     _EMAIL_RE,
     _PHONE_RE,
     _PATIENT_ID_RE,
@@ -39,6 +38,7 @@ from metis_mcp.models import model_for
     _BELGIAN_NID_RE,
     _classify,
 )
+from metis_mcp.models import model_for
 
 # ── Table DDL (created on first use) ─────────────────────────────────────────
 

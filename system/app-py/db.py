@@ -25,9 +25,11 @@ def get_db_path() -> Path:
 
     rc_root = os.environ.get("METIS_RC_ROOT", "")
     if rc_root:
-        candidate = Path(rc_root) / "system" / "app" / "data" / "metis.sqlite"
-        if candidate.exists():
-            return candidate
+        # When METIS_RC_ROOT is set (e.g. Docker containers), always use it.
+        # Create the directory so migrations can initialise the DB on first start.
+        candidate = Path(rc_root) / "system" / "app-py" / "data" / "metis.sqlite"
+        candidate.parent.mkdir(parents=True, exist_ok=True)
+        return candidate
 
     local_candidate = Path(__file__).parent / "data" / "metis.sqlite"
     if local_candidate.exists():
