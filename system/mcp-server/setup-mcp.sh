@@ -10,30 +10,99 @@
 
 set -euo pipefail
 
+# ── Prerequisites: ensure curl and python3 are available ─────────────────────
+_need_curl=0
+_need_python=0
+command -v curl    >/dev/null 2>&1 || _need_curl=1
+command -v python3 >/dev/null 2>&1 || _need_python=1
+
+if [ "$_need_curl" = "1" ] || [ "$_need_python" = "1" ]; then
+  if command -v apt-get >/dev/null 2>&1; then
+    echo "Installing prerequisites (curl, python3)…"
+    PKGS=""
+    [ "$_need_curl"   = "1" ] && PKGS="$PKGS curl"
+    [ "$_need_python" = "1" ] && PKGS="$PKGS python3 python3-pip"
+    if [ "$(id -u)" = "0" ]; then
+      apt-get update -qq && apt-get install -y $PKGS
+    else
+      sudo apt-get update -qq && sudo apt-get install -y $PKGS
+    fi
+  elif command -v brew >/dev/null 2>&1; then
+    echo "Installing prerequisites via Homebrew…"
+    [ "$_need_curl"   = "1" ] && brew install curl
+    [ "$_need_python" = "1" ] && brew install python3
+  else
+    echo "ERROR: curl and/or python3 are missing and no package manager was found."
+    echo ""
+    echo "  Ubuntu/Debian:  sudo apt-get install -y curl python3"
+    echo "  macOS:          brew install python3   (see https://brew.sh)"
+    echo "  Other:          install curl and python3 from your distro's package manager"
+    exit 1
+  fi
+fi
+unset _need_curl _need_python
+
 # ── Install profile ──────────────────────────────────────────────────────────
-# Choose how much of Metis to install:
-#   light    — MCP server only. Works with Claude Desktop + Claude Code. ~5 min.
-#   standard — MCP server + Python dashboard (9-tab UI). ~15 min. (DEFAULT)
-#   full     — Standard + Windows Task Scheduler automation + daily scan. ~25 min.
-#
-# Override via environment: METIS_PROFILE=light bash setup-mcp.sh
+# Researcher path (interactive, no METIS_PROFILE set): 2 choices + demo option.
+# Developer override via environment:
+#   METIS_PROFILE=light    bash setup-mcp.sh   — MCP server only (~5 min)
+#   METIS_PROFILE=standard bash setup-mcp.sh   — MCP + dashboard (~15 min)
+#   METIS_PROFILE=full     bash setup-mcp.sh   — standard + scheduler (~25 min)
 METIS_PROFILE="${METIS_PROFILE:-}"
+SEED_DEMO=0
 
 if [ -z "$METIS_PROFILE" ] && [ -t 0 ]; then
   echo ""
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "  Metis Install Profile"
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "  [1] light    — MCP server only (~5 min)"
-  echo "  [2] standard — MCP server + dashboard (~15 min)  [DEFAULT]"
-  echo "  [3] full     — Standard + Windows scheduler (~25 min)"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  Welcome to Metis"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
-  read -rp "  Choose profile [1/2/3, Enter for standard]: " PROFILE_CHOICE
+  echo "  What would you like to install?"
+  echo ""
+  echo "  [1]  Full — AI assistant + research dashboard  (RECOMMENDED)"
+  echo "       About 15 minutes. Complete Metis: Claude AI with tools"
+  echo "       and the 9-tab research dashboard."
+  echo ""
+  echo "  [2]  AI only — no dashboard"
+  echo "       About 5 minutes. Just the AI with Metis tools."
+  echo "       You can add the dashboard later."
+  echo ""
+  echo "  [D]  Developer — show all install options"
+  echo ""
+  read -rp "  Choose [1/2/D, Enter for Full]: " PROFILE_CHOICE
   case "$PROFILE_CHOICE" in
-    1) METIS_PROFILE="light" ;;
-    3) METIS_PROFILE="full" ;;
+    2) METIS_PROFILE="light" ;;
+    [Dd]*)
+      echo ""
+      echo "  Developer options:"
+      echo "  [L] light    — MCP server only (~5 min)"
+      echo "  [S] standard — MCP server + dashboard (~15 min)  [DEFAULT]"
+      echo "  [F] full     — Standard + Windows Task Scheduler (~25 min)"
+      echo ""
+      read -rp "  Choose [L/S/F, Enter for standard]: " DEV_CHOICE
+      case "$DEV_CHOICE" in
+        [Ll]) METIS_PROFILE="light" ;;
+        [Ff]) METIS_PROFILE="full" ;;
+        *)    METIS_PROFILE="standard" ;;
+      esac
+      ;;
     *) METIS_PROFILE="standard" ;;
   esac
+
+  # ── Demo workspace (standard/full only) ──────────────────────────────────
+  SEED_SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/system/install/seed_ph_database.py"
+  if [ "$METIS_PROFILE" != "light" ] && [ -f "$SEED_SCRIPT" ]; then
+    echo ""
+    echo "  Start with a demo workspace?"
+    echo "  Pre-loads example projects, meetings, literature, and tasks so you"
+    echo "  can explore every feature right away. You can clear it at any time."
+    echo ""
+    read -rp "  Load demo content? [Y/n]: " DEMO_CHOICE
+    if [ "$DEMO_CHOICE" != "n" ] && [ "$DEMO_CHOICE" != "N" ]; then
+      SEED_DEMO=1
+    fi
+  fi
+
 elif [ -z "$METIS_PROFILE" ]; then
   METIS_PROFILE="standard"
 fi
@@ -44,8 +113,14 @@ echo "Installing Metis with profile: $METIS_PROFILE"
 VENV_DIR="$HOME/.local/share/metis-mcp/.venv"
 RUN_SCRIPT="$HOME/.local/share/metis-mcp/run.sh"
 LOCAL_SRC="$HOME/.local/share/metis-mcp/src-install"
-METIS_RC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SRC_DIR="$METIS_RC_ROOT/system/mcp-server"
+
+# _CODE_ROOT: where the Metis source lives — always derived from script location.
+# METIS_RC_ROOT: where user config and data live — can be overridden by env var
+#   (e.g. Docker containers set METIS_RC_ROOT=/opt/metis-data to keep data
+#   separate from the read-only code mount at /opt/metis).
+_CODE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+METIS_RC_ROOT="${METIS_RC_ROOT:-$_CODE_ROOT}"
+SRC_DIR="$_CODE_ROOT/system/mcp-server"
 
 mkdir -p "$HOME/.local/share/metis-mcp"
 
@@ -132,12 +207,25 @@ else
   echo "Installing metis-mcp-server package..."
   "$VENV_DIR/bin/pip" install "$LOCAL_SRC"
 fi
+
+# If a transitive dependency pulled in GPU torch, swap it for the CPU-only build.
+# CPU torch is ~200 MB vs ~2 GB for CUDA — researchers don't need GPU acceleration.
+if "$VENV_DIR/bin/python3" -c "import torch" 2>/dev/null; then
+  echo "Replacing GPU torch with CPU-only build (~200 MB)..."
+  if [ "$USE_UV" = "1" ]; then
+    "$UV" pip install --python "$VENV_DIR/bin/python3" \
+      --index-url https://download.pytorch.org/whl/cpu torch
+  else
+    "$VENV_DIR/bin/pip" install \
+      --index-url https://download.pytorch.org/whl/cpu torch
+  fi
+fi
 echo "  MCP server installed"
 
 # ── Install dashboard (app-py) dependencies into same venv ───────────────────
 # Skipped on 'light' profile — dashboard not included.
 if [ "$METIS_PROFILE" != "light" ]; then
-  APP_REQ="$METIS_RC_ROOT/system/app-py/requirements.txt"
+  APP_REQ="$_CODE_ROOT/system/app-py/requirements.txt"
   if [ -f "$APP_REQ" ]; then
     echo "Installing dashboard dependencies..."
     if [ "$USE_UV" = "1" ]; then
@@ -178,6 +266,71 @@ else
   exit 1
 fi
 
+# ── Install Claude Code CLI if missing ──────────────────────────────────────
+if ! command -v claude >/dev/null 2>&1; then
+  echo ""
+  echo "── Installing Claude Code CLI ──"
+  _installed_node=0
+
+  # Ensure Node.js / npm is available
+  if ! command -v npm >/dev/null 2>&1; then
+    if command -v apt-get >/dev/null 2>&1; then
+      echo "  Installing Node.js (LTS)..."
+      if [ "$(id -u)" = "0" ]; then
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - 2>/dev/null
+        apt-get install -y nodejs 2>/dev/null && _installed_node=1
+      else
+        curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo bash - 2>/dev/null
+        sudo apt-get install -y nodejs 2>/dev/null && _installed_node=1
+      fi
+    elif command -v brew >/dev/null 2>&1; then
+      brew install node 2>/dev/null && _installed_node=1
+    fi
+  else
+    _installed_node=1
+  fi
+
+  if [ "$_installed_node" = "1" ] && command -v npm >/dev/null 2>&1; then
+    echo "  Installing Claude Code CLI..."
+    npm install -g @anthropic-ai/claude-code 2>&1 | sed 's/^/    /' \
+      && echo "  Claude Code CLI installed" \
+      || echo "  npm install failed — install manually: npm install -g @anthropic-ai/claude-code"
+  else
+    echo "  Node.js not found — install Claude Code CLI manually:"
+    echo "  https://docs.anthropic.com/en/docs/claude-code/getting-started"
+  fi
+  unset _installed_node
+fi
+
+# ── Install Claude Desktop if missing (macOS only) ──────────────────────────
+_OS="$(uname -s)"
+if [ "$_OS" = "Darwin" ] && [ ! -d "/Applications/Claude.app" ]; then
+  echo ""
+  echo "── Claude Desktop ──"
+  if command -v brew >/dev/null 2>&1; then
+    echo "  Installing Claude Desktop via Homebrew..."
+    brew install --cask claude 2>&1 | sed 's/^/  /' \
+      || echo "  Homebrew install failed. Download from: https://claude.ai/download"
+  else
+    echo "  Download Claude Desktop from: https://claude.ai/download"
+    echo "  (install Homebrew first for automatic install: https://brew.sh)"
+  fi
+elif [ "$_OS" = "Linux" ] && grep -qi microsoft /proc/version 2>/dev/null && [ ! -f "/.dockerenv" ]; then
+  # WSL: Claude Desktop is a Windows app — check for it on the Windows side
+  _WIN_USER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r\n')
+  _CD_EXE="/mnt/c/Users/$_WIN_USER/AppData/Local/AnthropicClaude/claude.exe"
+  _CD_EXE2="/mnt/c/Program Files/Anthropic/Claude/Claude.exe"
+  if [ ! -f "$_CD_EXE" ] && [ ! -f "$_CD_EXE2" ]; then
+    echo ""
+    echo "── Claude Desktop ──"
+    echo "  Claude Desktop is not installed on this Windows machine."
+    echo "  Download from: https://claude.ai/download"
+    echo "  Metis connects to Claude Desktop automatically after install."
+  fi
+  unset _WIN_USER _CD_EXE _CD_EXE2
+fi
+unset _OS
+
 # ── Auto-register with Claude Code ──────────────────────────────────────────
 # Claude Code stores MCP servers in ~/.claude.json (per-project) via `claude mcp add`.
 # ~/.claude/settings.json is used only for permissions (tool auto-approval).
@@ -187,8 +340,8 @@ mkdir -p "$HOME/.claude"
 # Register the server via the CLI (writes to ~/.claude.json for this project)
 if command -v claude >/dev/null 2>&1; then
   # Remove old registration first to avoid duplicates, then re-add
-  claude mcp remove metis-rc 2>/dev/null || true
-  if claude mcp add metis-rc "$RUN_SCRIPT" 2>/dev/null; then
+  claude mcp remove metis-rc >/dev/null 2>&1 || true
+  if claude mcp add metis-rc "$RUN_SCRIPT" >/dev/null 2>&1; then
     echo "  Claude Code: registered metis-rc via claude mcp add"
   else
     echo "  Claude Code: mcp add failed — you may need to run: claude mcp add metis-rc $RUN_SCRIPT"
@@ -223,8 +376,8 @@ with open(path, "w") as f:
 print("  Claude Code: permissions updated in ~/.claude/settings.json")
 PYEOF
 
-# ── Auto-register with Claude Desktop (Windows) ──────────────────────────────
-WIN_USER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r\n')
+# ── Auto-register with Claude Desktop (Windows/WSL only — skipped in Docker) ─
+[ -f "/.dockerenv" ] && WIN_USER="" || WIN_USER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r\n')
 CD_CONFIG="/mnt/c/Users/$WIN_USER/AppData/Roaming/Claude/claude_desktop_config.json"
 
 if [ -f "$CD_CONFIG" ]; then
@@ -259,8 +412,8 @@ if [ ! -f "$DB_PATH" ] && [ -f "$INIT_SCRIPT" ]; then
   "$VENV_DIR/bin/python3" "$INIT_SCRIPT"
 fi
 
-# ── Create Windows desktop shortcut ─────────────────────────────────────────
-BAT_PATH=$(wslpath -w "$METIS_RC_ROOT/system/launch-metis.bat" 2>/dev/null || true)
+# ── Create Windows desktop shortcut (WSL only — skipped inside Docker) ──────
+[ -f "/.dockerenv" ] && BAT_PATH="" || BAT_PATH=$(wslpath -w "$METIS_RC_ROOT/system/launch-metis.bat" 2>/dev/null || true)
 ICO_PATH=$(wslpath -w "$METIS_RC_ROOT/system/install/windows/metis-brain.ico" 2>/dev/null || true)
 WORK_PATH=$(wslpath -w "$METIS_RC_ROOT/system" 2>/dev/null || true)
 if [ -n "$BAT_PATH" ]; then
@@ -289,6 +442,11 @@ Write-Host '  Shortcuts: Desktop + Start Menu created'
 " 2>/dev/null || echo "  Shortcuts: could not create (PowerShell unavailable)"
 fi
 
+# ── Write first-run marker (triggers config wizard on first Claude Code open) ─
+mkdir -p "$METIS_RC_ROOT/system/config"
+touch "$METIS_RC_ROOT/system/config/.first-run"
+echo "  First-run marker written — config wizard will start on next Claude Code open"
+
 # ── Write install-state.json ─────────────────────────────────────────────────
 INSTALL_STATE="$METIS_RC_ROOT/system/config/install-state.json"
 DASHBOARD_INSTALLED="false"
@@ -313,11 +471,28 @@ cat > "$INSTALL_STATE" <<STATEEOF
 STATEEOF
 echo "  install-state.json written"
 
+# ── Seed demo workspace if requested ─────────────────────────────────────────
+if [ "$SEED_DEMO" = "1" ]; then
+  SEED_SCRIPT_PATH="$_CODE_ROOT/system/install/seed_ph_database.py"
+  DB_PATH="$METIS_RC_ROOT/system/app/data/metis.sqlite"
+  echo ""
+  echo "── Loading demo workspace ──"
+  if [ -f "$SEED_SCRIPT_PATH" ]; then
+    if "$VENV_DIR/bin/python3" "$SEED_SCRIPT_PATH" --db "$DB_PATH" --quiet 2>&1 | sed 's/^/  /'; then
+      echo "  Demo workspace loaded"
+    else
+      echo "  Demo seed encountered an issue — non-fatal, continuing"
+    fi
+  else
+    echo "  seed_ph_database.py not found — skipping demo seed"
+  fi
+fi
+
 # ── Install Metis git hooks (persona linter pre-commit) ─────────────────────
 echo ""
 echo "── Installing git hooks ──"
-if [ -f "$METIS_RC_ROOT/tools/install-hooks.sh" ] && [ -d "$METIS_RC_ROOT/.git" ]; then
-    bash "$METIS_RC_ROOT/tools/install-hooks.sh" 2>&1 | sed 's/^/  /' || echo "  (hook install failed — non-fatal)"
+if [ -f "$_CODE_ROOT/tools/install-hooks.sh" ] && [ -d "$_CODE_ROOT/.git" ]; then
+    bash "$_CODE_ROOT/tools/install-hooks.sh" 2>&1 | sed 's/^/  /' || echo "  (hook install failed — non-fatal)"
 else
     echo "  (no .git/ or no tools/install-hooks.sh — skipping)"
 fi
@@ -378,7 +553,29 @@ echo ""
 echo "  → $_PASS validation checks passed, $_FAIL failed"
 
 echo ""
-echo "════════════════════════════════════════════════════════════════════"
-echo "  Setup complete (profile: $METIS_PROFILE)."
-echo "  Restart Claude Code and Claude Desktop for changes to take effect."
-echo "════════════════════════════════════════════════════════════════════"
+# ── Run setup wizard ─────────────────────────────────────────────────────────
+# Always run the terminal wizard unless already configured.
+# For full installs, the dashboard wizard is a second path (first-visit banner);
+# the terminal wizard runs first so Metis is configured before anything opens.
+WIZARD_SCRIPT="$_CODE_ROOT/system/install/terminal_wizard.py"
+USER_CONFIG="$METIS_RC_ROOT/system/config/user-config.yaml"
+
+if [ -f "$WIZARD_SCRIPT" ] && [ ! -f "$USER_CONFIG" ]; then
+  echo ""
+  "$VENV_DIR/bin/python3" "$WIZARD_SCRIPT" \
+    --metis-root "$METIS_RC_ROOT" \
+    --skip-if-configured \
+    ${ANTHROPIC_API_KEY:+--api-key "$ANTHROPIC_API_KEY"}
+  if [ "$METIS_PROFILE" != "light" ]; then
+    echo ""
+    echo "  Dashboard also available: bash system/app-py/run.sh"
+    echo "  Then open: http://localhost:8080"
+  fi
+else
+  echo ""
+  echo "════════════════════════════════════════════════════════════════════"
+  echo "  Metis installed successfully."
+  echo "  Open Claude Code in this folder to start."
+  echo "  Run /metis_config to personalise Metis to your work."
+  echo "════════════════════════════════════════════════════════════════════"
+fi

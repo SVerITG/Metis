@@ -16,9 +16,8 @@ sse-starlette==3.3.4
 pydantic==2.13.3
 pydantic-settings==2.14.0
 pydantic_core==2.46.3
-# Phase 5 — vector memory
+# Phase 5 — vector memory (fastembed moved to [embedding] optional; no GPU required)
 sqlite-vec==0.1.9
-fastembed==0.8.0
 onnxruntime==1.24.4
 tokenizers==0.22.2
 # Phase 6 — encryption

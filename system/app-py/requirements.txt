@@ -7,7 +7,7 @@ apscheduler>=3.10.4,<4.0
 httpx>=0.27.0
 markdown>=3.5
 anthropic>=0.40
-# Voice recognition — live meeting speaker identification
+# Voice activity detection (lightweight — no GPU required)
 webrtcvad-wheels>=2.0.14
-resemblyzer>=0.1.1.2
 soundfile>=0.12
+# resemblyzer removed: requires PyTorch GPU (~2 GB), not used in production code
