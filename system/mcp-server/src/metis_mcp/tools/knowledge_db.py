@@ -2,9 +2,8 @@
 
 Users build knowledge layer by layer:
   Layer 1 (foundation): ph-background   — general MPH / global health / health systems
-  Layer 2 (specialist):  hat-specialist  — Metis_PH specialist layer (HAT/NTD papers when populated)
-  Layer 3 (methods):     epi-methods     — epidemiology methods, stats, spatial, multilevel
-  Layer 4+ (custom):     user-defined    — any specialist domain added by the user
+  Layer 2 (methods):    epi-methods     — epidemiology methods, stats, spatial, multilevel
+  Layer 3+ (custom):    user-defined    — any specialist domain added via create_knowledge_database()
 
 Each layer is a named "knowledge database" registered in knowledge_databases.
 pdf_chunks.db_id links every chunk to its database.
@@ -83,32 +82,6 @@ BUILTIN_DATABASES = [
         ],
     },
     {
-        "slug": "hat-specialist",
-        "name": "HAT & NTD Specialist",
-        "description": (
-            "Metis_PH specialist layer. "
-            "Specialist layer: Human African Trypanosomiasis (HAT) research literature "
-            "and neglected tropical diseases. All HAT papers, NTD roadmaps, disease-specific "
-            "guidelines, Leishmaniasis, Malaria, TB, HIV, Schistosomiasis. "
-            "The deep specialist knowledge for NTD researchers."
-        ),
-        "layer": 2,
-        "color": "#dc3545",
-        "folders": [
-            "papers",
-            "open-access-books/HAT & NTDs",
-            "open-access-books/NTDs - HAT",
-            "open-access-books/NTDs - Overview",
-            "open-access-books/NTDs - Other",
-            "open-access-books/NTDs - Leishmaniasis",
-            "open-access-books/NTDs - Malaria",
-            "open-access-books/NTDs - TB",
-            "open-access-books/NTDs - HIV",
-            "open-access-books/NTDs - Schistosomiasis",
-            "disease-areas",
-        ],
-    },
-    {
         "slug": "epi-methods",
         "name": "Epidemiology & Methods",
         "description": (
@@ -116,7 +89,7 @@ BUILTIN_DATABASES = [
             "multilevel models, research methods, field epidemiology, scientific writing. "
             "Cross-cutting — relevant to any research domain built on top."
         ),
-        "layer": 3,
+        "layer": 2,
         "color": "#198754",
         "folders": [
             "open-access-books/Epidemiology & Methods",
