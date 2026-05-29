@@ -157,10 +157,44 @@
 
       <!-- Step 4: Projects -->
       <div class="wpage" id="wpage-4" style="display:none;">
-        <h2 style="margin:0 0 0.5rem;font-size:1.1rem;">Your active projects</h2>
-        <p style="color:var(--m-muted,#6b7280);font-size:0.875rem;margin:0 0 1.25rem;">
-          Metis will create a project card for each one. You can add more later.
+        <h2 style="margin:0 0 0.25rem;font-size:1.1rem;">Your active projects</h2>
+        <p style="color:var(--m-muted,#6b7280);font-size:0.875rem;margin:0 0 0.75rem;">
+          Add as many projects as you like. For each one Metis will create a tracking record,
+          write a <code>CLAUDE.md</code> into the project folder, and register it in Claude Desktop.
         </p>
+
+        <!-- Categories -->
+        <div style="margin-bottom:1rem;">
+          <label class="field-label">Categories (comma-separated — create your own)</label>
+          <input id="categories-input" class="field-input"
+                 value="Article, Grant, Teaching, Software, Review"
+                 placeholder="Article, Grant, Teaching, Software, Review">
+          <div class="field-hint">Used to group projects. Edit freely — new categories are created on the fly.</div>
+        </div>
+
+        <!-- Folder scan preference -->
+        <div style="margin-bottom:1rem;">
+          <label class="field-label">When adding a project folder, how should Metis detect what it's about?</label>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-top:0.4rem;">
+            {% for val, title, desc in [
+              ('names','File names only','Fast, no content read'),
+              ('content','Read README/notes','More accurate, reads first 400 chars'),
+              ('none','I will describe it','Skip scan, type description manually')
+            ] %}
+            <label style="border:1px solid var(--m-line,#e5e7eb);border-radius:5px;
+                          padding:0.6rem;cursor:pointer;font-size:0.82rem;"
+                   onmouseover="this.style.borderColor='var(--m-accent,#16a34a)'"
+                   onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='var(--m-line,#e5e7eb)'">
+              <input type="radio" name="scan_type" value="{{ val }}"
+                     {% if val == 'names' %}checked{% endif %}
+                     onchange="document.querySelectorAll('[name=scan_type]').forEach(r=>{r.parentElement.style.borderColor=r.checked?'var(--m-accent,#16a34a)':'var(--m-line,#e5e7eb)'})">
+              <div style="font-weight:500;margin:0.25rem 0 0.1rem;">{{ title }}</div>
+              <div style="color:var(--m-muted,#6b7280);font-size:0.78rem;">{{ desc }}</div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+
         <div id="project-list" style="display:grid;gap:0.75rem;">
           <!-- project rows injected by JS -->
         </div>
@@ -263,18 +297,75 @@
     }
 
     var _projectCount = 0;
+
+    function _getCategories() {
+      var raw = (document.getElementById('categories-input') || {}).value || 'Article,Grant,Teaching,Software,Review';
+      return raw.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+    }
+
     function addProject() {
       _projectCount++;
+      var n = _projectCount;
+      var cats = _getCategories();
+      var catOptions = cats.map(function(c) {
+        return '<option value="' + c + '">' + c + '</option>';
+      }).join('');
       var row = document.createElement('div');
       row.className = 'project-row';
-      row.style.cssText = 'display:grid;grid-template-columns:1fr auto;gap:0.5rem;align-items:center;';
+      row.style.cssText = 'border:1px solid var(--m-line,#e5e7eb);border-radius:6px;padding:0.875rem;position:relative;';
       row.innerHTML =
-        '<input name="project_' + _projectCount + '" class="field-input" ' +
-        '       placeholder="Project name — e.g. Malaria prevalence survey, systematic review">' +
         '<button type="button" onclick="this.parentElement.remove()" ' +
-        '        style="background:transparent;border:none;color:var(--m-muted);cursor:pointer;' +
-        '               font-size:1.1rem;padding:0 0.25rem;" title="Remove">×</button>';
+        '        style="position:absolute;top:0.5rem;right:0.5rem;background:transparent;border:none;' +
+        '               color:var(--m-muted);cursor:pointer;font-size:1.1rem;padding:0 0.25rem;" title="Remove">×</button>' +
+        '<div style="display:grid;grid-template-columns:2fr 1fr;gap:0.75rem;margin-bottom:0.5rem;">' +
+          '<div>' +
+            '<label class="field-label">Project name</label>' +
+            '<input name="project_name_' + n + '" class="field-input" ' +
+            '       placeholder="e.g. Malaria prevalence survey">' +
+          '</div>' +
+          '<div>' +
+            '<label class="field-label">Category</label>' +
+            '<select name="project_cat_' + n + '" class="field-input">' +
+              catOptions +
+              '<option value="__new__">+ New category…</option>' +
+            '</select>' +
+          '</div>' +
+        '</div>' +
+        '<div style="margin-bottom:0.5rem;">' +
+          '<label class="field-label">Project folder path (optional)</label>' +
+          '<input name="project_folder_' + n + '" class="field-input" ' +
+          '       placeholder="e.g. C:\\Users\\you\\Documents\\malaria-study">' +
+          '<div class="field-hint">Leave blank if folder not set up yet. Paste the Windows path.</div>' +
+        '</div>' +
+        '<div id="proj-desc-wrap-' + n + '">' +
+          '<label class="field-label" id="proj-desc-label-' + n + '">Description (auto-filled when folder is set)</label>' +
+          '<textarea name="project_desc_' + n + '" class="field-input" rows="1" ' +
+          '          placeholder="What is this project about?"></textarea>' +
+        '</div>';
+
       document.getElementById('project-list').appendChild(row);
+
+      // Handle "new category" option
+      var sel = row.querySelector('[name="project_cat_' + n + '"]');
+      sel.addEventListener('change', function() {
+        if (this.value === '__new__') {
+          var newCat = prompt('New category name:');
+          if (newCat && newCat.trim()) {
+            var opt = document.createElement('option');
+            opt.value = newCat.trim();
+            opt.textContent = newCat.trim();
+            this.insertBefore(opt, this.querySelector('[value="__new__"]'));
+            this.value = newCat.trim();
+            // Also add to categories input
+            var ci = document.getElementById('categories-input');
+            if (ci && !ci.value.includes(newCat.trim())) {
+              ci.value = ci.value + ', ' + newCat.trim();
+            }
+          } else {
+            this.value = this.options[0].value;
+          }
+        }
+      });
     }
 
     document.getElementById('wizard-form').addEventListener('submit', async function(e) {
@@ -284,13 +375,25 @@
       var fd = new FormData(e.target);
       fd.forEach(function(v, k) { data[k] = v; });
 
-      // Collect project names into a single newline-separated string
+      // Collect structured project data
       var projects = [];
-      e.target.querySelectorAll('[name^="project_"]').forEach(function(inp) {
-        var v = inp.value.trim();
-        if (v) projects.push(v);
-      });
-      data['projects'] = projects.join('\n');
+      var seen = new Set();
+      var i = 1;
+      while (true) {
+        var nameEl   = e.target.querySelector('[name="project_name_' + i + '"]');
+        if (!nameEl) break;
+        var name   = nameEl.value.trim();
+        var cat    = (e.target.querySelector('[name="project_cat_' + i + '"]') || {}).value || '';
+        var folder = (e.target.querySelector('[name="project_folder_' + i + '"]') || {}).value || '';
+        var desc   = (e.target.querySelector('[name="project_desc_' + i + '"]') || {}).value || '';
+        if (name && !seen.has(name)) {
+          seen.add(name);
+          projects.push({ name: name, category: cat, folder: folder, description: desc });
+        }
+        i++;
+      }
+      data['projects'] = projects;
+      data['scan_type'] = (e.target.querySelector('[name="scan_type"]:checked') || {}).value || 'names';
 
       document.getElementById('wizard-processing').style.display = '';
       document.getElementById('wizard-error').style.display = 'none';

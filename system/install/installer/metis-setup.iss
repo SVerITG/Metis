@@ -66,7 +66,8 @@ Name: "startmenu";   Description: "Create Start Menu folder";               Grou
 [Files]
 ; ── Agents and skills ────────────────────────────────────────────────────────
 Source: "{#RepoRoot}\agents\*";  DestDir: "{app}\agents";  Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*-context.md"
-Source: "{#RepoRoot}\.claude\*"; DestDir: "{app}\.claude"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#RepoRoot}\.claude\*"; DestDir: "{app}\.claude"; Flags: ignoreversion recursesubdirs createallsubdirs; \
+  Excludes: "worktrees\*,projects\*,worktrees,projects"
 
 ; ── Knowledge base ────────────────────────────────────────────────────────────
 Source: "{#RepoRoot}\knowledge\course-template\*";  DestDir: "{app}\knowledge\course-template"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -163,28 +164,29 @@ Filename: "powershell.exe"; \
 
 ; Step 2 — Demo workspace (only when user chose demo on the wizard page)
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$py = $env:METIS_PYTHON; if (-not $py) { $py = 'python' }; & $py '{app}\system\install\seed_ph_database.py' --db '{app}\system\app\data\metis.sqlite' --quiet"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$py = $env:METIS_PYTHON; if (-not $py) {{ $py = 'python' }}; & $py '{app}\system\install\seed_ph_database.py' --db '{app}\system\app\data\metis.sqlite' --quiet"""; \
   Flags: waituntilterminated runhidden; \
   StatusMsg: "Loading demo workspace…"; \
   Check: ShouldSeedDemo
 
 ; Step 3 — Build PDF knowledge index (dashboard only, skips gracefully if library is empty)
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$py = $env:METIS_PYTHON; if (-not $py) { $py = 'python' }; & $py '{app}\system\install\build_knowledge_db.py' --library-dir '{app}\knowledge\library' --db '{app}\system\app\data\metis.sqlite' --quiet"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$py = $env:METIS_PYTHON; if (-not $py) {{ $py = 'python' }}; & $py '{app}\system\install\build_knowledge_db.py' --library-dir '{app}\knowledge\library' --db '{app}\system\app\data\metis.sqlite' --quiet"""; \
   Flags: waituntilterminated runhidden; \
   StatusMsg: "Building knowledge database (5–15 min — Metis reads all included documents)…"; \
   Components: dashboard
 
 ; Step 4 — Process wizard answers through Claude API → writes metis-persona.md + project stubs
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$py = $env:METIS_PYTHON; if (-not $py) { $py = 'python' }; & $py '{app}\system\install\process_wizard_answers.py' --answers '{app}\system\wizard-answers.json' --metis-root '{app}' --quiet"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$py = $env:METIS_PYTHON; if (-not $py) {{ $py = 'python' }}; & $py '{app}\system\install\process_wizard_answers.py' --answers '{app}\system\wizard-answers.json' --metis-root '{app}' --quiet"""; \
   Flags: waituntilterminated runhidden; \
   StatusMsg: "Personalising Metis to your research profile…"
 
-; Final — offer to launch Claude Desktop (Metis starts automatically)
-Filename: "{pf}\Anthropic\Claude\Claude.exe"; \
+; Final — offer to launch Claude Desktop only if it is actually installed
+Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; \
   Description: "Launch Claude Desktop — Metis starts automatically"; \
-  Flags: postinstall nowait skipifsilent
+  Flags: postinstall nowait skipifsilent; \
+  Check: FileExists(ExpandConstant('{commonpf}\Anthropic\Claude\Claude.exe'))
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}\system\mcp-server\.venv-win"
@@ -230,11 +232,15 @@ begin
   ApiKeyPage := CreateInputQueryPage(
     DemoPage.ID,
     'Anthropic API Key',
-    'Required to connect Metis to Claude AI.',
-    'Your key is stored only on this computer and is never uploaded or shared.' + #13#10 +
-    'Get a free key at: https://console.anthropic.com' + #13#10 + #13#10 +
+    'Connect Metis to Claude AI.',
+    'How to get your free API key:' + #13#10 +
+    '  1. Open: https://console.anthropic.com' + #13#10 +
+    '  2. Sign up or log in (free account)' + #13#10 +
+    '  3. Click "API Keys" → "Create Key"' + #13#10 +
+    '  4. Copy the key and paste it below' + #13#10 + #13#10 +
+    'Your key stays on this computer — it is never uploaded or shared.' + #13#10 +
     'The key looks like:  sk-ant-api03-…');
-  ApiKeyPage.Add('Paste your API key here:', False);
+  ApiKeyPage.Add('Paste your Anthropic API key here:', False);
 
   { ── About you page ─────────────────────────────────────────────────────── }
   AboutPage := CreateInputQueryPage(
@@ -277,9 +283,14 @@ begin
     StylePage.ID,
     'Your Active Projects',
     'What are you currently working on?',
-    'Metis will create a project card for each one so it can track your work.' + #13#10 +
-    'Enter one project per line. You can add more later.');
-  ProjectsPage.Add('Project 1:', False);
+    'Enter your projects below. For each one Metis will:' + #13#10 +
+    '  • Create a project tracking record in the dashboard' + #13#10 +
+    '  • Write a CLAUDE.md in the project folder (if a path is given)' + #13#10 +
+    '  • Register it in Claude Desktop automatically' + #13#10 + #13#10 +
+    'Format: Project Name | Category | C:\path\to\folder' + #13#10 +
+    'Categories: Article, Grant, Teaching, Software, Review, or any custom name.' + #13#10 +
+    'The folder path and category are optional — name alone is fine.');
+  ProjectsPage.Add('Project 1 (Name | Category | Folder):', False);
   ProjectsPage.Add('Project 2 (optional):', False);
   ProjectsPage.Add('Project 3 (optional):', False);
 end;
@@ -352,16 +363,19 @@ begin
       StyleStr := 'direct';
     end;
 
-    { Build project list (non-empty entries only) }
-    ProjectLines := '';
+    { Build project list as JSON array of objects (name|category|folder format) }
+    ProjectLines := '[';
     for i := 0 to 2 do
     begin
       if Trim(ProjectsPage.Values[i]) <> '' then
       begin
-        if ProjectLines <> '' then ProjectLines := ProjectLines + '\n';
-        ProjectLines := ProjectLines + Trim(ProjectsPage.Values[i]);
+        { Split on | — up to 3 parts: name, category, folder }
+        { Simple approach: store raw pipe-delimited string, Python will parse }
+        if ProjectLines <> '[' then ProjectLines := ProjectLines + ',';
+        ProjectLines := ProjectLines + '"' + Trim(ProjectsPage.Values[i]) + '"';
       end;
     end;
+    ProjectLines := ProjectLines + ']';
 
     { Write .env }
     EnvDir  := ExpandConstant('{app}\system');
