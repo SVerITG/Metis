@@ -57,6 +57,7 @@ from metis_mcp.tools import (  # noqa: E402, F401
     research,
     research_timeline,
     project_tracker,
+    dhis2,
 )
 
 

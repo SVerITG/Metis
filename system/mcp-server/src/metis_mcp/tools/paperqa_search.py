@@ -4,8 +4,12 @@ Indexes PDFs from knowledge/library/ using PaperQA2 (paper-qa) with
 Claude Haiku via LiteLLM. Persists the Docs index as a pickle between calls.
 
 Tools exposed:
-  index_library_pdfs(force_reindex, topic_filter) — build/rebuild the PDF index
-  ask_library(question, top_k)                     — answer with citations
+  index_library_pdfs(force_reindex, topic_filter, scope) — build/rebuild the PDF index
+  ask_library(question, top_k, scope)                     — answer with citations
+
+Scopes:
+  "default"    → knowledge/library/ (all PDFs) — index saved as docs.pkl
+  "ph_library" → knowledge/library/ph-background/ — index saved as docs_ph_library.pkl
 """
 
 from __future__ import annotations
@@ -48,26 +52,36 @@ def _pdf_is_readable(path: Path) -> bool:
     except Exception:
         return False
 
-_INDEX_PATH: Path | None = None
+
+_SCOPE_DIRS = {
+    "default": ("knowledge", "library"),
+    "ph_library": ("knowledge", "library", "ph-background"),
+}
+
+_SCOPE_INDEX_NAMES = {
+    "default": "docs.pkl",
+    "ph_library": "docs_ph_library.pkl",
+}
 
 
-def _index_path() -> Path:
+def _library_dir(scope: str = "default") -> Path:
+    parts = _SCOPE_DIRS.get(scope, _SCOPE_DIRS["default"])
+    return paths.root.joinpath(*parts)
+
+
+def _index_path_for_scope(scope: str = "default") -> Path:
     global _INDEX_PATH
-    if _INDEX_PATH is None:
-        d = paths.root / "system" / "app" / "data" / "paperqa_index"
-        d.mkdir(parents=True, exist_ok=True)
-        _INDEX_PATH = d / "docs.pkl"
-    return _INDEX_PATH
-
-
-def _library_dir() -> Path:
-    return paths.root / "knowledge" / "library"
+    d = paths.root / "system" / "app" / "data" / "paperqa_index"
+    d.mkdir(parents=True, exist_ok=True)
+    name = _SCOPE_INDEX_NAMES.get(scope, f"docs_{scope}.pkl")
+    return d / name
 
 
 @app.tool()
 async def index_library_pdfs(
     force_reindex: bool = False,
     topic_filter: str = "",
+    scope: str = "default",
 ) -> list[TextContent]:
     """Build or rebuild a PaperQA2 index over the user's PDF library.
 
@@ -81,17 +95,19 @@ async def index_library_pdfs(
         force_reindex: Rebuild from scratch even if an index already exists.
         topic_filter: If given, only index PDFs whose parent folder name
                       contains this string (e.g. "NTD", "Epidemiology", "Methods").
+        scope: Which library to index. "default" = knowledge/library/ (all PDFs).
+               "ph_library" = knowledge/library/ph-background/ (public health background).
     """
     try:
         from paperqa import Docs, Settings
     except ImportError:
         return [TextContent(type="text", text="paper-qa not installed. Run: pip install paper-qa")]
 
-    lib_dir = _library_dir()
+    lib_dir = _library_dir(scope)
     if not lib_dir.exists():
         return [TextContent(type="text", text=f"Library directory not found: {lib_dir}")]
 
-    idx = _index_path()
+    idx = _index_path_for_scope(scope)
     if idx.exists() and not force_reindex:
         import os as _os
         size_mb = _os.path.getsize(idx) / 1_048_576
@@ -155,6 +171,7 @@ async def index_library_pdfs(
 async def ask_library(
     question: str,
     top_k: int = 5,
+    scope: str = "default",
 ) -> list[TextContent]:
     """Answer a question using the user's indexed PDF library via PaperQA2.
 
@@ -164,16 +181,19 @@ async def ask_library(
     Args:
         question: Natural language question to answer from the library.
         top_k: Number of source passages to retrieve before synthesis (default 5).
+        scope: Which index to query. "default" = full library. "ph_library" = PH background only.
+               Build the index first with index_library_pdfs(scope=<scope>).
     """
     try:
         from paperqa import Docs, Settings
     except ImportError:
         return [TextContent(type="text", text="paper-qa not installed. Run: pip install paper-qa")]
 
-    idx = _index_path()
+    idx = _index_path_for_scope(scope)
     if not idx.exists():
+        hint = f"index_library_pdfs(scope='{scope}')" if scope != "default" else "index_library_pdfs()"
         return [TextContent(type="text", text=(
-            "No index found. Run index_library_pdfs() first to build the PDF index."
+            f"No index found for scope '{scope}'. Run {hint} first to build the PDF index."
         ))]
 
     api_key = _get_api_key()

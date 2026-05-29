@@ -103,6 +103,50 @@
 
   </div>
 
+  <!-- ===== Research progress + Capture row (wave 3 — +400ms) ===== -->
+  <div class="grid grid-main" style="margin-bottom:var(--m-space-6);">
+
+    <div hx-get="/api/partial/today/research-progress" hx-trigger="load delay:400ms" hx-swap="outerHTML">
+      <div class="sec-label" style="margin-bottom:8px;">Research progress</div>
+      {{ skeleton_box(size="md") }}
+    </div>
+
+    <!-- Mobile capture shortcut -->
+    <div>
+      <div class="sec-label" style="margin-bottom:8px;">
+        <span>Capture on the go</span>
+        <span class="tail">PHONE-FRIENDLY</span>
+      </div>
+      <div class="panel" style="padding:20px;text-align:center;">
+        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:12px;">OPEN ON YOUR PHONE</div>
+        <div id="capture-url-display"
+             style="font-family:var(--m-mono);font-size:11px;color:var(--m-accent);margin-bottom:14px;word-break:break-all;"></div>
+        <a id="capture-open-link" href="/capture" target="_blank"
+           style="display:inline-block;font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;
+                  padding:6px 16px;border:1px solid var(--m-accent);border-radius:2px;
+                  color:var(--m-accent);text-decoration:none;transition:background .15s;"
+           onmouseover="this.style.background='var(--m-accent)';this.style.color='var(--m-bg)'"
+           onmouseout="this.style.background='transparent';this.style.color='var(--m-accent)'">
+          OPEN CAPTURE PAGE
+        </a>
+        <script>
+        (function() {
+          var host = window.location.hostname + ':' + window.location.port;
+          var url = window.location.protocol + '//' + host + '/capture';
+          var el = document.getElementById('capture-url-display');
+          var link = document.getElementById('capture-open-link');
+          if (el) el.textContent = url;
+          if (link) link.href = url;
+        })();
+        </script>
+        <div style="margin-top:12px;font-family:var(--m-display);font-style:italic;font-size:11px;color:var(--m-muted);">
+          Voice notes, ideas, and quick captures<br>land directly in your inbox.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
   <!-- ===== News — compact strip (wave 3 — +500ms, deferred) ===== -->
   <div hx-get="/api/partial/today/news-archive" hx-trigger="load delay:500ms" hx-swap="outerHTML">
     {{ skeleton_box(size="sm") }}
