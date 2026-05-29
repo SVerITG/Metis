@@ -1,0 +1,86 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  WELCOME TO METIS — READ THIS BEFORE YOU BEGIN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+  WHAT IS METIS?
+  ──────────────
+  Metis is an AI research companion that runs alongside Claude. It
+  gives every AI conversation a persistent memory of your domain,
+  your papers, your projects, and your working history.
+
+  The longer you use it, the better every response gets — not because
+  the AI changes, but because Metis knows you better.
+
+  You don't need to follow developments in AI. Metis does that for
+  you. Every week it reviews its own performance, identifies where it
+  could do better, and proposes improvements. You approve them. Your
+  research stays your focus.
+
+
+  WHAT THIS INSTALLER DOES
+  ─────────────────────────
+  Step 1  Sets up Python (required to run Metis)
+  Step 2  Installs Metis packages — may take 5-15 minutes
+  Step 3  Loads demo content (if you chose the demo option)
+  Step 4  Builds your knowledge index from included documents
+  Step 5  Personalises Metis to your research profile
+  Step 6  Registers Metis with Claude Desktop and Claude Code
+
+
+  WHAT IS AN MCP SERVER?
+  ────────────────────────
+  MCP (Model Context Protocol) is an open standard from Anthropic.
+  Metis uses it to give Claude a persistent connection to your
+  research world — your papers, your projects, your notes, your
+  meeting history. The MCP server is a small background process.
+  You will never interact with it directly — it just works.
+
+
+  HOW YOU WILL KNOW METIS IS WORKING
+  ────────────────────────────────────
+  Once installed, open Claude Desktop or Claude Code. Metis will:
+
+    • Remember what you were working on in your last session
+    • Know your research domain and your terminology
+    • Route your questions to the right specialist automatically
+      (Epidemiologist, Writing Partner, Librarian, Methods Coach,
+       and 30+ more)
+    • Cross-reference your ideas with your literature automatically
+    • Build a morning brief of new papers overnight
+
+
+  YOUR DATA IS PROTECTED
+  ────────────────────────
+  Everything stays on your machine:
+    ✓  Your PDF library and indexed documents
+    ✓  Your meeting notes and transcripts
+    ✓  Your ideas, journal, and task lists
+    ✓  Your project files and folder contents
+    ✓  Your API key (stored in a local .env file only)
+    ✓  All voice recordings
+
+  What leaves your machine (and when):
+    →  Text you send to Claude for analysis
+       (same as typing in Claude Desktop directly)
+    →  Your configured research search terms, sent to PubMed/OpenAlex
+       once per day for the morning brief (optional, can be disabled)
+    →  Zotero library metadata if you enable sync (optional)
+
+  When project folders are scanned, you choose exactly what Metis
+  reads: file names only, README/notes, or nothing (you describe it).
+  Metis never reads patient data — it is detected and blocked.
+
+
+  TOKEN USAGE AND COSTS
+  ──────────────────────
+  Metis uses the Anthropic API (your API key). Each agent run shows
+  exactly what it cost — which specialist was used, how many tokens,
+  at what rate. The dashboard has a live token pulse showing your
+  daily usage. Most daily research tasks cost a few cents.
+  You stay in full control of what runs and when.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Click Next to continue with the installation.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
