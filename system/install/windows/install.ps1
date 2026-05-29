@@ -311,8 +311,10 @@ if (-not $Stage1Only) {
     }
     else {
         Write-Warn "WSL not found — Claude Code registration skipped."
-        Write-Host "    If you use Claude Code later, open a WSL terminal and run:" -ForegroundColor Gray
-        Write-Host "    bash system/mcp-server/setup-mcp.sh" -ForegroundColor Gray
+        Write-Host "    To install WSL: open PowerShell as Administrator and run:" -ForegroundColor Gray
+        Write-Host "      wsl --install" -ForegroundColor Cyan
+        Write-Host "    Then restart your computer, open a WSL terminal, and run:" -ForegroundColor Gray
+        Write-Host "      bash system/mcp-server/setup-mcp.sh" -ForegroundColor Gray
     }
 }
 

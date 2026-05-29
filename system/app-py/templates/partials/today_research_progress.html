@@ -1,0 +1,54 @@
+<div>
+  <div class="sec-label" style="margin-bottom:8px;">
+    <span>Research progress</span>
+    {% if active_projects %}<span class="tail">{{ active_projects }} ACTIVE PROJECT{{ 's' if active_projects != 1 else '' }}</span>{% endif %}
+  </div>
+  <div class="panel" style="padding:16px 20px;">
+
+    {% if days_since_commit is not none %}
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--m-rule-soft);">
+      <div style="font-size:22px;font-weight:600;font-family:var(--m-display);color:{% if days_since_commit == 0 %}var(--m-accent){% elif days_since_commit <= 2 %}var(--m-accent){% elif days_since_commit <= 7 %}var(--m-warn,#b45309){% else %}var(--m-danger,#b91c1c){% endif %};">
+        {{ days_since_commit if days_since_commit > 0 else '&lt;1' }}
+      </div>
+      <div>
+        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);">DAYS SINCE LAST COMMIT</div>
+        {% if last_commit_msg %}
+        <div style="font-family:var(--m-sans);font-size:11px;color:var(--m-ink-soft);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;" title="{{ last_commit_msg }}">{{ last_commit_msg }}</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if milestones %}
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      {% for m in milestones %}
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:
+          {% if m.status == 'done' %}var(--m-accent)
+          {% elif m.status == 'active' %}var(--m-warn,#b45309)
+          {% else %}var(--m-rule){% endif %};"></div>
+        <div style="flex:1;min-width:0;">
+          <span style="font-family:var(--m-sans);font-size:12px;color:var(--m-ink);
+                       {% if m.status == 'done' %}text-decoration:line-through;color:var(--m-muted);{% endif %}">
+            {{ m.article_title }}
+          </span>
+        </div>
+        {% if m.target_date %}
+        <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);flex-shrink:0;">{{ m.target_date[:7] }}</div>
+        {% endif %}
+        <div style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;color:var(--m-muted);
+                    padding:1px 5px;border:1px solid var(--m-rule-soft);border-radius:2px;flex-shrink:0;
+                    {% if m.status == 'done' %}color:var(--m-accent);border-color:var(--m-accent);opacity:.6;{% endif %}">
+          {{ (m.status or 'planned')|upper }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);text-align:center;padding:8px 0;">
+      No milestones tracked yet — add them via <code style="font-size:11px;">/metis</code>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
