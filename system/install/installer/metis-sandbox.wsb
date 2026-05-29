@@ -1,0 +1,9 @@
+<Configuration>
+  <MappedFolders>
+    <MappedFolder>
+      <HostFolder>C:\Users\sverschaeve\OneDrive - ITG\Documents\7. Software\Research Cortex\system\install\installer\dist</HostFolder>
+      <SandboxFolder>C:\Metis-Installer</SandboxFolder>
+      <ReadOnly>true</ReadOnly>
+    </MappedFolder>
+  </MappedFolders>
+</Configuration>
