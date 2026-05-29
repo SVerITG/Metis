@@ -39,6 +39,7 @@ DiskSpanning=no
 WizardStyle=modern
 MinVersion=10.0.17134
 InfoBeforeFile=metis-info.txt
+InfoAfterFile=metis-after.txt
 
 UninstallDisplayName={#MyAppName}
 CreateUninstallRegKey=yes
@@ -94,6 +95,7 @@ Source: "{#RepoRoot}\system\app-py\*"; DestDir: "{app}\system\app-py"; \
 ; ── Windows launcher and install scripts ──────────────────────────────────────
 Source: "..\windows\install.ps1";               DestDir: "{app}\system\install\windows"; Flags: ignoreversion
 Source: "..\windows\launch-dashboard-silent.vbs"; DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
+Source: "..\windows\launch-dashboard.ps1";      DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
 Source: "..\windows\metis.ico";                 DestDir: "{app}\system\install\windows"; Flags: ignoreversion
 Source: "..\windows\metis-brain.ico";           DestDir: "{app}\system\install\windows"; Flags: ignoreversion
 Source: "..\bootstrap_python.ps1";              DestDir: "{app}\system\install";         Flags: ignoreversion
@@ -132,18 +134,18 @@ Name: "{app}\system\config"
 [Icons]
 ; Start Menu
 Name: "{group}\Metis — Open AI";    Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; Tasks: startmenu
-Name: "{group}\Metis — Dashboard";  Filename: "wscript.exe"; \
-  Parameters: """{app}\system\install\windows\launch-dashboard-silent.vbs"""; \
-  IconFilename: "{app}\system\install\windows\metis.ico"; IconIndex: 0; \
+Name: "{group}\Metis — Dashboard";  Filename: "powershell.exe"; \
+  Parameters: "-WindowStyle Hidden -ExecutionPolicy Bypass -File ""{app}\system\install\windows\launch-dashboard.ps1"""; \
+  IconFilename: "{app}\system\install\windows\metis-brain.ico"; IconIndex: 0; \
   Tasks: startmenu; Components: dashboard
 Name: "{group}\Uninstall Metis";    Filename: "{uninstallexe}"; Tasks: startmenu
 
 ; Desktop — Claude shortcut only created if Claude Desktop is installed
 Name: "{autodesktop}\Metis — Open AI"; Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; Tasks: desktopai; \
   Check: FileExists(ExpandConstant('{commonpf}\Anthropic\Claude\Claude.exe'))
-Name: "{autodesktop}\Metis";           Filename: "wscript.exe"; \
-  Parameters: """{app}\system\install\windows\launch-dashboard-silent.vbs"""; \
-  IconFilename: "{app}\system\install\windows\metis.ico"; IconIndex: 0; \
+Name: "{autodesktop}\Metis";           Filename: "powershell.exe"; \
+  Parameters: "-WindowStyle Hidden -ExecutionPolicy Bypass -File ""{app}\system\install\windows\launch-dashboard.ps1"""; \
+  IconFilename: "{app}\system\install\windows\metis-brain.ico"; IconIndex: 0; \
   Tasks: desktopdash; Components: dashboard
 
 [Run]
@@ -432,62 +434,7 @@ begin
   end;
 end;
 
-procedure CurPageChanged(CurPageID: Integer);
-var
-  HasDash: Boolean;
-  NextSteps: String;
-begin
-  if CurPageID = wpFinished then
-  begin
-    HasDash := WizardIsComponentSelected('dashboard');
-
-    NextSteps :=
-      '✓  Metis is installed.' + #13#10 + #13#10 +
-      '══════════════════════════════════════════════' + #13#10 +
-      '  YOUR NEXT STEPS' + #13#10 +
-      '══════════════════════════════════════════════' + #13#10 + #13#10 +
-      '① Install Claude Desktop (free — 2 minutes)' + #13#10 +
-      '   https://claude.ai/download' + #13#10 +
-      '   Open it once — Metis registers automatically.' + #13#10 + #13#10;
-
-    if HasDash then
-      NextSteps := NextSteps +
-        '② Start the Metis Dashboard' + #13#10 +
-        '   Double-click "Metis — Dashboard" on your desktop,' + #13#10 +
-        '   or open your browser to:  http://localhost:8080' + #13#10 + #13#10 +
-        '③ Complete your setup wizard' + #13#10 +
-        '   Opens automatically at: http://localhost:8080/setup' + #13#10 +
-        '   Also starts in Claude Desktop on first open.' + #13#10 + #13#10
-    else
-      NextSteps := NextSteps +
-        '② Open Claude Desktop — your setup wizard starts automatically.' + #13#10 +
-        '   It takes about 3 minutes and personalises Metis to your work.' + #13#10 + #13#10;
-
-    if DemoPage.SelectedValueIndex = 0 then
-      NextSteps := NextSteps +
-        '── Demo workspace loaded ──────────────────────────────────' + #13#10 +
-        'Explore every feature right away — realistic projects, meetings,' + #13#10 +
-        'literature, and tasks are pre-loaded. Clear it any time from the' + #13#10 +
-        'Metis tab → Configuration.' + #13#10 + #13#10;
-
-    NextSteps := NextSteps +
-      '══════════════════════════════════════════════' + #13#10 +
-      '  WANT TO LEARN MORE?' + #13#10 +
-      '══════════════════════════════════════════════' + #13#10 + #13#10 +
-      'Claude Desktop (required):' + #13#10 +
-      '  https://claude.ai/download' + #13#10 + #13#10 +
-      'Claude Code (for developers and power users):' + #13#10 +
-      '  https://docs.anthropic.com/en/docs/claude-code/getting-started' + #13#10 + #13#10 +
-      'Metis documentation and source code:' + #13#10 +
-      '  https://github.com/SVerITG/Metis_PH' + #13#10 + #13#10 +
-      'Get your Anthropic API key (if you need a new one):' + #13#10 +
-      '  https://console.anthropic.com' + #13#10 + #13#10 +
-      'Questions or feedback → open an issue:' + #13#10 +
-      '  https://github.com/SVerITG/Metis_PH/issues';
-
-    WizardForm.FinishedLabel.Caption := NextSteps;
-  end;
-end;
+{ CurPageChanged removed — next steps now shown via InfoAfterFile=metis-after.txt }
 
 function InitializeSetup: Boolean;
 begin
