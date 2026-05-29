@@ -19,6 +19,29 @@
 <em>No prompt. No setup. Your research, connected — every morning.</em>
 </p>
 
+<br>
+
+<table width="100%" cellspacing="0" cellpadding="0" border="0">
+<tr>
+<td width="33%" valign="top" align="center" style="padding:0 12px;">
+<p><strong>☁️ Light — MCP server only</strong></p>
+<p><em>You ask Claude Desktop to build a monitoring dashboard for your Leishmaniasis project.</em></p>
+<p><em>Metis recalls the surveillance dashboard you built for a different NTD eighteen months ago, your preferred layout and colour conventions, and the standard epidemiological indicators you always include. Without any prompting from you, the Epidemiology Agent and Dashboard Maker collaborate to deliver a dashboard built to your exact style — in your domain, to your standards.</em></p>
+</td>
+<td width="33%" valign="top" align="center" style="padding:0 12px;">
+<p><strong>📊 With dashboard — your research hub</strong></p>
+<p><em>It's 7:20. You open the dashboard. The morning brief reads:</em></p>
+<p><em>"Three papers matching your configured topics landed overnight — one directly challenges a working hypothesis in your field. I've cross-referenced all three with your knowledge graph and connected them to your meeting note from Tuesday…"</em></p>
+<p><em>No prompt. No setup. Your research, connected — every morning.</em></p>
+</td>
+<td width="33%" valign="top" align="center" style="padding:0 12px;">
+<p><strong>🌐 Metis OS — the full picture <em>(in development)</em></strong></p>
+<p><em>Thursday. Your calendar shows a 14:30 meeting with a colleague who studies Lepra diagnostics. Yesterday you captured a quick idea about rapid field tests. Four months ago you met this person about a related topic — Metis has that transcript. Three Lepra papers came out this week.</em></p>
+<p><em>Before you leave your desk, a briefing note appears: your idea, your colleague's recent work, your April meeting notes, and this week's literature — all connected. You return from the meeting unsure about the diagnostics. You ask Metis to build you a five-day, 30-minute-per-session course on Lepra diagnostics from the latest research. By evening, the course outline is ready.</em></p>
+</td>
+</tr>
+</table>
+
 <p align="center">
   <a href="https://github.com/SVerITG/Metis">← Metis (base)</a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
