@@ -188,6 +188,7 @@ The script asks two questions (Full or AI only, demo workspace) and does the res
 | **Data protection** | Five security layers. Patient data and embargoed results are detected and blocked before anything reaches the AI. Everything runs on your machine. |
 | **Cross-pollination** | Every idea, paper, meeting, and task is automatically connected to everything else in your research universe. Metis surfaces links across time — a paper from last year, a meeting note from March, a question you logged at a conference — without you searching for any of it. |
 | **Token tracking** | Every agent run shows exactly what it cost — which specialist was used, how many tokens, what model. The dashboard Today tab has a live token pulse so you always know your daily usage. Most daily tasks stay under a few cents. |
+| **Tool subset loading** | Metis registers 170+ MCP tools, but exposing all of them to Claude on every session wastes context. By default, Metis loads only the tools relevant to the current agent — 90 tools for News Radar, 107 for the Librarian, ~65 for a general session. Each tool definition costs tokens; loading fewer means more room for actual work and lower per-session cost. Disable with `METIS_TOOL_SUBSETS=0` to see all tools. |
 | **Metis evolves — you don't have to** | Every week, Metis reviews its own session logs, identifies where it underperformed, and drafts behaviour improvements. You approve or reject them. New AI capabilities get incorporated automatically. You focus on your research; Metis stays current with the field. |
 | **Grows with you** | Every agent run adds to your profile. A question asked after six months of use gets a meaningfully better answer than the same question on day one — not because the AI changed, but because Metis knows you better. |
 
@@ -367,7 +368,7 @@ flowchart LR
         WATCHERS{{Watchers\nData Guardian · Cybersecurity}}
     end
     subgraph Platform
-        MCP[MCP Server\n165+ tools\nFastMCP]
+        MCP[MCP Server\n170+ tools\nFastMCP]
         DASH[Dashboard\nFastAPI + HTMX]
         DB[(SQLite\nWAL mode)]
     end
@@ -638,7 +639,7 @@ Open an issue with label `course-package` to pilot or contribute.
 
 | Area | Status |
 |---|---|
-| MCP server (165+ tools) | ✅ Operational, used daily |
+| MCP server (170+ tools) | ✅ Operational, used daily |
 | 34 specialist agents | ✅ Operational, used daily |
 | 9-tab dashboard | ✅ Operational, some features in active development |
 | Windows .exe installer | 🔧 In refinement |
@@ -707,7 +708,7 @@ First stable release. See [`system/config/release-notes-v1.0.md`](system/config/
 |---|
 | FastAPI + HTMX dashboard — 9 tabs |
 | 34 specialist agents |
-| MCP server — 165+ registered tools |
+| MCP server — 170+ registered tools |
 | Windows installer (Inno Setup) |
 | Statistics for Epidemiology course — 12 lessons with spaced repetition |
 | Startup eval suite + news freshness check |

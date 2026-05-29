@@ -7,7 +7,6 @@ the missing ones with full metadata.
 
 MCP tools exposed:
   - mine_references   : run the full pipeline for one or more seed DOIs
-  - mine_hat_corpus   : run against the built-in specialist-domain influential-article list
 """
 
 from __future__ import annotations
@@ -338,69 +337,6 @@ def _format_ris(all_missing: dict[str, dict]) -> str:
 # ---------------------------------------------------------------------------
 # MCP tools
 # ---------------------------------------------------------------------------
-
-ALL_SEEDS = HAT_SEED_DOIS + BROAD_SEED_DOIS
-
-
-@app.tool()
-async def mine_hat_corpus(
-    scope: str = "hat",
-    max_seeds: int = 100,
-) -> list[TextContent]:
-    """Mine reference lists of influential specialist-domain and global health articles.
-
-    Checks each reference against your Zotero library and reports missing papers.
-    Uses CrossRef API (free, no key needed). Takes 5–15 minutes for full corpus.
-
-    Args:
-        scope:     "hat" = specialist-domain articles only | "broad" = NTD/global health only | "all" = everything
-        max_seeds: Maximum number of seed articles to process (default 100).
-    """
-    import os
-    from pathlib import Path
-
-    if scope == "hat":
-        pool = HAT_SEED_DOIS
-    elif scope == "broad":
-        pool = BROAD_SEED_DOIS
-    else:
-        pool = ALL_SEEDS
-
-    existing = _library_dois()
-    seeds = [doi for doi, _ in pool[:max_seeds]]
-
-    results = _mine_dois(seeds, existing)
-
-    report = _format_report(results, len(existing))
-
-    all_missing: dict[str, dict] = {}
-    for data in results.values():
-        for m in data.get("missing", []):
-            if m["doi"] not in all_missing:
-                all_missing[m["doi"]] = m
-
-    ris = _format_ris(all_missing)
-
-    # Save outputs
-    out_dir = Path(os.environ.get("METIS_RC_ROOT", "")) / "outputs" / "reviews" / "librarian"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    import datetime
-    today = datetime.date.today().isoformat()
-    report_path = out_dir / f"{today}_hat-reference-mining.md"
-    ris_path = out_dir / f"{today}_hat-missing-references.ris"
-    report_path.write_text(report, encoding="utf-8")
-    ris_path.write_text(ris, encoding="utf-8")
-
-    summary = (
-        f"Reference mining complete.\n"
-        f"Seeds: {len(results)} · Existing library: {len(existing)} DOIs\n"
-        f"Missing papers found: {len(all_missing)}\n"
-        f"Report: {report_path}\n"
-        f"RIS for Zotero import: {ris_path}\n\n"
-        + report[:3000]
-    )
-    return [TextContent(type="text", text=summary)]
-
 
 @app.tool()
 async def mine_references(dois: str, label: str = "") -> list[TextContent]:
