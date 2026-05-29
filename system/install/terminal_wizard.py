@@ -143,12 +143,66 @@ def run_wizard(metis_root: Path, api_key: str | None) -> dict:
 
     # ── Section 4: Projects ───────────────────────────────────────────────────
     _banner("4 / 4  Your active projects")
-    projects_text = _ask_multiline(
-        "List your active projects:",
-        hint="e.g.  Malaria prevalence survey in rural communities\n  "
-             "     Systematic review on vaccine effectiveness\n  "
-             "     Health facility mapping project",
+    print("  Add your active projects one by one. Press Enter with an empty name to finish.")
+    print("  For each project you can optionally give a folder path — Metis will")
+    print("  create a CLAUDE.md there and register it in Claude Desktop.\n")
+
+    default_categories = ["Article", "Grant", "Teaching", "Software", "Review"]
+    print(f"  Default categories: {', '.join(default_categories)}")
+    cats_raw = _ask("  Add or remove categories (comma-separated, Enter to keep defaults)", default="")
+    if cats_raw.strip():
+        custom = [c.strip() for c in cats_raw.split(",") if c.strip()]
+        categories = list(dict.fromkeys(default_categories + custom))
+    else:
+        categories = default_categories
+    print(f"  Categories: {', '.join(categories)}\n")
+
+    scan_type = _ask_choice(
+        "How should Metis detect project purpose from folder contents?",
+        [
+            ("names",   "File names only (fast)"),
+            ("content", "Read README/notes (more accurate)"),
+            ("none",    "I will describe each project manually"),
+        ],
+        default="names",
     )
+
+    projects = []
+    project_num = 0
+    while True:
+        project_num += 1
+        print(f"\n  ── Project {project_num} ──")
+        pname = _ask("  Project name (Enter to finish)", required=False)
+        if not pname:
+            break
+        cat_display = " / ".join(f"[{i+1}] {c}" for i, c in enumerate(categories))
+        print(f"  Category: {cat_display} / [N] New")
+        cat_choice = input("  Choose [1-{}/N, Enter for 1]: ".format(len(categories))).strip()
+        if cat_choice.upper() == "N":
+            new_cat = input("  New category name: ").strip()
+            if new_cat:
+                categories.append(new_cat)
+                category = new_cat
+            else:
+                category = categories[0]
+        else:
+            try:
+                idx = int(cat_choice) - 1
+                category = categories[idx] if 0 <= idx < len(categories) else categories[0]
+            except (ValueError, IndexError):
+                category = categories[0]
+        folder = _ask("  Folder path (optional, e.g. /mnt/c/Users/you/my-project)")
+        description = ""
+        if scan_type == "none":
+            description = _ask("  Describe this project (1-2 sentences)")
+        projects.append({
+            "name": pname,
+            "category": category,
+            "folder": folder,
+            "description": description,
+        })
+        print(f"  Added: {pname} [{category}]")
+
     short_term_goals = _ask(
         "\n  What are you trying to accomplish in the next 3 months?"
     )
@@ -169,7 +223,8 @@ def run_wizard(metis_root: Path, api_key: str | None) -> dict:
         "feedback_style": feedback_style,
         "challenge_level": challenge_level,
         "output_length": output_length,
-        "projects": projects_text,
+        "projects": projects,
+        "scan_type": scan_type,
         "short_term_goals": short_term_goals,
         "challenges": challenges,
     }

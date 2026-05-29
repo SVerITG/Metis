@@ -207,15 +207,36 @@ def _basic_topics(answers: dict) -> list:
     return list(dict.fromkeys(tags))[:12]
 
 
-def _parse_projects_text(text: str) -> list:
+def _parse_projects_text(text) -> list:
+    """Parse projects from text, list-of-strings, or list-of-dicts."""
+    if isinstance(text, list):
+        result = []
+        for item in text:
+            if isinstance(item, dict):
+                result.append(item)
+            elif isinstance(item, str) and item.strip():
+                parts = [p.strip() for p in item.split("|")]
+                result.append({
+                    "name": parts[0],
+                    "category": parts[1] if len(parts) > 1 else "",
+                    "folder": parts[2] if len(parts) > 2 else "",
+                    "description": "",
+                })
+        return result
+    if not text or not isinstance(text, str):
+        return []
     projects = []
     for line in text.strip().split("\n"):
-        name = line.strip().lstrip("-•*123456789. ").strip()
-        if name:
-            projects.append({
-                "name": name, "status": "active",
-                "question": "", "tools": "", "next": "",
-            })
+        line = line.strip().lstrip("-•*123456789. ").strip()
+        if not line:
+            continue
+        parts = [p.strip() for p in line.split("|")]
+        projects.append({
+            "name": parts[0],
+            "category": parts[1] if len(parts) > 1 else "",
+            "folder": parts[2] if len(parts) > 2 else "",
+            "description": "",
+        })
     return projects
 
 
@@ -278,36 +299,155 @@ goals:
     return path
 
 
-def write_project_stubs(metis_root: Path, projects: list) -> list:
+def write_project_stubs(metis_root: Path, projects: list, scan_type: str = "names") -> list:
+    """Write project records: SQLite entry + CLAUDE.md in project folder + planning card."""
     if not projects:
         return []
-    projects_dir = metis_root / "projects" / "active"
-    projects_dir.mkdir(parents=True, exist_ok=True)
+
     written = []
+    db_path = metis_root / "system" / "app-py" / "data" / "metis.sqlite"
+
     for p in projects:
+        # Support both old format (name string) and new format (dict with category/folder)
+        if isinstance(p, str):
+            p = {"name": p}
         name = p.get("name", "").strip()
         if not name:
             continue
-        slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:40]
-        path = projects_dir / f"{slug}.md"
-        if path.exists():
-            continue
-        content = (
-            f"# {name}\n\n"
-            f"**Status:** {p.get('status', 'active')}  \n"
-            f"**Created:** {datetime.now().strftime('%Y-%m-%d')}\n\n"
-            "## Research question\n"
-            f"{p.get('question', '')}\n\n"
-            "## Tools & methods\n"
-            f"{p.get('tools', '')}\n\n"
-            "## Next step\n"
-            f"{p.get('next', '')}\n\n"
-            "## Notes\n\n"
-            "## Planning\n"
-        )
-        path.write_text(content, encoding="utf-8")
-        written.append(path)
+
+        category = p.get("category", "").strip()
+        folder_path = p.get("folder", "").strip()
+        description = p.get("description", "").strip()
+        slug = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:60]
+        now = datetime.now().strftime("%Y-%m-%d")
+
+        # ── Write SQLite record ───────────────────────────────────────────────
+        if db_path.exists():
+            try:
+                import sqlite3
+                conn = sqlite3.connect(str(db_path))
+                conn.row_factory = sqlite3.Row
+                existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(projects)")}
+                for col, defn in [("category", "TEXT DEFAULT ''"), ("last_scanned", "TEXT"),
+                                   ("scan_summary", "TEXT DEFAULT ''"), ("claude_desktop_linked", "INTEGER DEFAULT 0")]:
+                    if col not in existing_cols:
+                        conn.execute(f"ALTER TABLE projects ADD COLUMN {col} {defn}")
+                exists = conn.execute("SELECT 1 FROM projects WHERE project_id=?", (slug,)).fetchone()
+                if not exists:
+                    conn.execute(
+                        """INSERT INTO projects
+                           (project_id, title, description, domain, category, external_path,
+                            status, priority, next_step, created_at, source)
+                           VALUES (?,?,?,?,?,?,'active','medium','',?,'installer')""",
+                        (slug, name, description, category, category, folder_path or None, now),
+                    )
+                conn.commit()
+                conn.close()
+            except Exception:
+                pass
+
+        # ── Write CLAUDE.md in project folder ────────────────────────────────
+        folder = None
+        if folder_path:
+            for candidate in [Path(folder_path), Path(re.sub(r"^([A-Za-z]):[/\\]", lambda m: f"/mnt/{m.group(1).lower()}/", folder_path).replace("\\", "/"))]:
+                if candidate.exists():
+                    folder = candidate
+                    break
+
+        if folder:
+            # Auto-detect description from folder if not provided
+            if not description and scan_type != "none":
+                description = _scan_folder_for_description(folder, scan_type)
+
+            claude_md = folder / "CLAUDE.md"
+            content = "\n".join([
+                f"# {name}",
+                "",
+                f"**Category:** {category or 'Research'}  ",
+                f"**Project ID:** `{slug}`  ",
+                f"**Status:** active",
+                "",
+                "## About this project",
+                description or f"{name} — added via Metis setup wizard.",
+                "",
+                "## Current focus",
+                "",
+                "## Open tasks",
+                "",
+                "## Metis integration",
+                "The Metis MCP server (`metis-rc`) tracks this project. Use:",
+                f"- `create_task(title=..., project_id=\"{slug}\")` — add a task",
+                f"- `scan_project_folder(project_id=\"{slug}\")` — refresh dashboard",
+                "- `update_project_memory(...)` — log session progress",
+                "",
+                "_Auto-generated by Metis installer. Re-run scan to refresh._",
+            ])
+            try:
+                claude_md.write_text(content, encoding="utf-8")
+            except OSError:
+                pass
+
+        # ── Write planning card ───────────────────────────────────────────────
+        projects_dir = metis_root / "projects" / "active"
+        projects_dir.mkdir(parents=True, exist_ok=True)
+        card_path = projects_dir / f"{slug}.md"
+        if not card_path.exists():
+            card_content = (
+                f"# {name}\n\n"
+                f"**Category:** {category or 'Research'}  \n"
+                f"**Status:** active  \n"
+                f"**Created:** {now}\n"
+            )
+            if folder_path:
+                card_content += f"**Folder:** `{folder_path}`\n"
+            card_content += "\n## Description\n" + (description or "") + "\n\n## Next step\n\n## Notes\n"
+            card_path.write_text(card_content, encoding="utf-8")
+            written.append(card_path)
+
     return written
+
+
+def _scan_folder_for_description(folder: Path, scan_type: str) -> str:
+    """Quick folder scan to infer project description."""
+    if scan_type == "none":
+        return ""
+    # Read README/PLANNING if content scan requested
+    if scan_type == "content":
+        for fname in ["README.md", "PLANNING.md", "CLAUDE.md"]:
+            fp = folder / fname
+            if fp.exists():
+                try:
+                    text = fp.read_text(encoding="utf-8", errors="ignore")[:600]
+                    text = re.sub(r"#+\s*", "", text).strip()[:300]
+                    if text:
+                        return text
+                except Exception:
+                    pass
+    # Name-based inference
+    name = folder.name.lower()
+    hints = []
+    if any(w in name for w in ["article", "paper", "manuscript"]):
+        hints.append("scientific article")
+    elif any(w in name for w in ["thesis", "phd"]):
+        hints.append("thesis chapter")
+    elif any(w in name for w in ["grant", "proposal"]):
+        hints.append("grant/proposal")
+    elif any(w in name for w in ["course", "teach"]):
+        hints.append("teaching material")
+    elif any(w in name for w in ["review", "systematic"]):
+        hints.append("systematic review")
+    ext_counts: dict[str, int] = {}
+    try:
+        for f in folder.rglob("*"):
+            if f.is_file():
+                ext_counts[f.suffix.lower()] = ext_counts.get(f.suffix.lower(), 0) + 1
+    except Exception:
+        pass
+    if ext_counts.get(".r", 0) + ext_counts.get(".rmd", 0) > 2:
+        hints.append("R-based analysis")
+    if ext_counts.get(".py", 0) > 2:
+        hints.append("Python project")
+    return ", ".join(hints) if hints else ""
 
 
 def remove_first_run_marker(metis_root: Path):
@@ -346,9 +486,17 @@ def process(answers: dict, metis_root: Path, api_key: str | None = None) -> dict
         projects = _parse_projects_text(answers.get("projects", ""))
         result["warning"] = "No API key — basic config written. Run /metis_config to calibrate."
 
+    scan_type = answers.get("scan_type", "names")
+    # Projects may come as structured list (from browser wizard) or parsed text (from Claude/terminal)
+    raw_projects = answers.get("projects", "")
+    if isinstance(raw_projects, list):
+        structured_projects = raw_projects  # already [{name, category, folder, description}, ...]
+    else:
+        structured_projects = projects  # parsed from Claude or text
+
     result["persona_path"] = str(write_persona(metis_root, persona, answers))
     result["config_path"] = str(write_user_config(metis_root, answers, topics))
-    result["projects"] = [str(p) for p in write_project_stubs(metis_root, projects)]
+    result["projects"] = [str(p) for p in write_project_stubs(metis_root, structured_projects, scan_type)]
     result["ai_used"] = ai_used
     result["topics"] = topics
     remove_first_run_marker(metis_root)
