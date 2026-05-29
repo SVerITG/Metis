@@ -16,20 +16,20 @@ from metis_mcp.config import paths
 FEED_ALLOWLIST = [
     # Disease surveillance & outbreak monitoring
     ("WHO outbreak news",      "https://www.who.int/feeds/entity/csr/don/en/rss.xml",                                    "surveillance,public-health"),
-    ("ProMED-mail",            "https://promedmail.org/feed/",                                                            "surveillance,HAT,public-health"),
+    ("ProMED-mail",            "https://promedmail.org/feed/",                                                            "surveillance,infectious-disease,public-health"),
     ("ECDC Threat Reports",    "https://www.ecdc.europa.eu/en/rss.xml",                                                  "surveillance,public-health"),
     ("Africa CDC",             "https://africacdc.org/feed/",                                                             "surveillance,public-health,africa"),
-    # NTD & infectious disease research
-    ("PLOS NTDs",              "https://journals.plos.org/plosntds/feed/atom",                                            "HAT,ntd,public-health"),
+    # Infectious disease & NTD research
+    ("PLOS NTDs",              "https://journals.plos.org/plosntds/feed/atom",                                            "ntd,tropical-medicine,public-health"),
     ("CDC EID journal",        "https://wwwnc.cdc.gov/eid/rss/ahead-of-print.xml",                                       "methods,surveillance"),
-    ("Lancet Inf. Diseases",   "https://www.thelancet.com/rssFeed/laninf_current.xml",                                   "HAT,public-health,methods"),
-    ("MSF Science",            "https://www.msf.org/rss.xml",                                                            "HAT,public-health,field-research"),
+    ("Lancet Inf. Diseases",   "https://www.thelancet.com/rssFeed/laninf_current.xml",                                   "infectious-disease,public-health,methods"),
+    ("MSF Science",            "https://www.msf.org/rss.xml",                                                            "field-research,public-health,tropical-medicine"),
     ("Eurosurveillance",       "https://www.eurosurveillance.org/content/rss.xml",                                       "surveillance,methods,public-health"),
     # Global health research
     ("PLOS Medicine",          "https://journals.plos.org/plosmedicine/feed/atom",                                        "public-health,methods"),
     ("BMJ Global Health",      "https://gh.bmj.com/rss/current.xml",                                                     "public-health,methods"),
     ("Nature Medicine",        "https://www.nature.com/nm.rss",                                                           "methods,biomedical"),
-    ("Tropical Med & IH",      "https://onlinelibrary.wiley.com/action/showFeed?jc=13653156&type=etoc&feed=rss",         "HAT,methods,public-health"),
+    ("Tropical Med & IH",      "https://onlinelibrary.wiley.com/action/showFeed?jc=13653156&type=etoc&feed=rss",         "tropical-medicine,methods,public-health"),
     # Global health policy
     ("IHP Newsletter",         "https://www.internationalhealthpolicies.org/feed/",                                       "policy,public-health"),
     ("DEVEX Global Health",    "https://www.devex.com/news/rss.xml",                                                     "policy,public-health"),
@@ -79,17 +79,17 @@ def _connect():
     return conn
 
 
-_HAT_KEYWORDS = {
-    "trypanosomiasis", "trypanosoma", "sleeping sickness", "hat surveillance",
-    "hat elimination", "hat notification", "tsetse", "gambiense", "rhodesiense",
+_TRYPANOSOMIASIS_KEYWORDS = {
+    "trypanosomiasis", "trypanosoma", "sleeping sickness", "tsetse",
+    "gambiense", "rhodesiense",
 }
 _NTD_KEYWORDS = {
     "neglected tropical", "ntd", "leishmaniasis", "schistosomiasis", "onchocerciasis",
     "lymphatic filariasis", "soil-transmitted helminths", "chagas",
 }
 _DOMAIN_OVERRIDE: list[tuple[set[str], str]] = [
-    (_HAT_KEYWORDS,  "HAT"),
-    (_NTD_KEYWORDS,  "NTD"),
+    (_TRYPANOSOMIASIS_KEYWORDS, "NTD"),
+    (_NTD_KEYWORDS,             "NTD"),
     ({"malaria", "plasmodium", "artemisinin", "bed net"}, "MALARIA"),
     ({"dhis2", "dhis 2", "health information system", "his implementation"}, "DHIS2"),
     ({"surveillance system", "disease surveillance", "outbreak detection",
