@@ -48,7 +48,7 @@ CreateUninstallRegKey=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
-english.WelcomeText=Welcome to Metis — your AI research companion.%n%nMetis works alongside Claude to give every AI conversation a persistent memory of your domain, your papers, your projects, and your working history. The longer you use it, the better every response gets.%n%nEverything runs on your computer. Your research files never leave your machine.%n%n────────────────────────────────────────────%n%nWhat this installer does:%n  1. Installs the Metis MCP server — a small background%n     program that connects Claude to your research world%n  2. (Optional) Installs the 9-tab research dashboard%n  3. Asks you a few questions to personalise Metis to you%n%nYou will need a free Anthropic API key from console.anthropic.com%n(takes 2 minutes — instructions on the next page).
+english.WelcomeText=Welcome to Metis — your AI research companion.%n%nMetis gives every Claude conversation a persistent memory of your domain, your papers, your projects, and your working history. The longer you use it, the better every response gets — because Metis knows you better, not because the AI changed.%n%nYou don't need to follow developments in AI. Metis does that for you.%n%nEverything runs on your computer. Your files never leave your machine.%n%n────────────────────────────────────────────%n%nThis installer will:%n  1. Install the Metis AI core (MCP server + 34 specialist agents)%n  2. Optionally install the 9-tab research dashboard%n  3. Ask you a few questions to personalise Metis to your work%n%nInstallation takes 5–15 minutes depending on your connection.%nYou will need a free Anthropic API key — instructions are on the next page.
 
 ; ── Component descriptions shown in wizard ───────────────────────────────────
 [Types]
@@ -200,14 +200,18 @@ Type: filesandordirs; Name: "{app}\system\mcp-server\.venv-win"
 Type: files;          Name: "{userappdata}\Claude\claude_desktop_config.json.metis-backup"
 
 [Code]
+{ ── Page variables ──────────────────────────────────────────────────────── }
 var
-  ApiKeyPage:   TInputQueryWizardPage;
-  DemoPage:     TInputOptionWizardPage;
-  AboutPage:    TInputQueryWizardPage;
-  ResearchPage: TInputQueryWizardPage;
-  StylePage:    TInputOptionWizardPage;
-  ProjectsPage: TInputQueryWizardPage;
+  McpConsentPage: TInputOptionWizardPage;
+  DemoPage:       TInputOptionWizardPage;
+  ApiKeyPage:     TInputQueryWizardPage;
+  AboutPage:      TInputQueryWizardPage;
+  ResearchPage:   TInputQueryWizardPage;
+  StylePage:      TInputOptionWizardPage;
+  ProjectsPage:   TInputQueryWizardPage;
+  FoldersPage:    TInputDirWizardPage;
 
+{ ── Pascal helpers ──────────────────────────────────────────────────────── }
 function ShouldSeedDemo: Boolean;
 begin
   Result := (DemoPage.SelectedValueIndex = 0);
@@ -218,145 +222,306 @@ begin
   Result := Trim(ApiKeyPage.Values[0]);
 end;
 
+{ Escape a string for JSON — replace backslashes and double-quotes }
+function JsonEsc(S: String): String;
+var
+  i: Integer;
+  C: Char;
+  R: String;
+begin
+  R := '';
+  for i := 1 to Length(S) do
+  begin
+    C := S[i];
+    if C = '\' then R := R + '\\'
+    else if C = '"' then R := R + '\"'
+    else R := R + C;
+  end;
+  Result := R;
+end;
+
+{ ── Wizard initialisation ───────────────────────────────────────────────── }
 procedure InitializeWizard;
 begin
   WizardForm.WelcomeLabel2.Caption := CustomMessage('WelcomeText');
 
-  { ── Demo workspace page ────────────────────────────────────────────────── }
-  { Educational overview shown on InfoBefore page (metis-info.txt) }
-  DemoPage := CreateInputOptionPage(
+  { ═══════════════════════════════════════════════════════════════════════
+    PAGE 1 — MCP SERVER AUTHORISATION
+    Shown right after the component selection page.
+    Explains what the MCP server is and asks for explicit consent.
+    ═══════════════════════════════════════════════════════════════════════ }
+  McpConsentPage := CreateInputOptionPage(
     wpSelectComponents,
+    'Authorise Background Component',
+    'The MCP server — what it does and what you are authorising.',
+    'Metis works by installing a small background program called an MCP server' + #13#10 +
+    '(MCP = Model Context Protocol, an open standard from Anthropic).' + #13#10 +
+    'This program sits between Claude and your research files. When you ask Claude' + #13#10 +
+    'a question, the MCP server retrieves the right context from your notes,' + #13#10 +
+    'papers, and history — and returns it to Claude on your behalf.' + #13#10 +
+    '' + #13#10 +
+    'What the MCP server CAN do:' + #13#10 +
+    '  ✓  Read and write files in your Metis research folder' + #13#10 +
+    '  ✓  Connect to Claude when you open Claude Desktop or Claude Code' + #13#10 +
+    '  ✓  Build and maintain your personal knowledge base locally' + #13#10 +
+    '  ✓  Run lightweight background scans (news, papers) on a schedule' + #13#10 +
+    '' + #13#10 +
+    'What the MCP server CANNOT do:' + #13#10 +
+    '  ✗  Access files outside your Metis folder without your permission' + #13#10 +
+    '  ✗  Send your research data to any server (everything stays local)' + #13#10 +
+    '  ✗  Run without Claude being open (it is not a persistent background service)' + #13#10 +
+    '' + #13#10 +
+    'You can remove the MCP server at any time: Windows Settings → Apps → Metis' + #13#10 +
+    'or by running the Metis uninstaller.',
+    False, False);
+  McpConsentPage.Add(
+    'I understand what the MCP server does and authorise its installation');
+  McpConsentPage.CheckListBox.Checked[0] := True;
+
+  { ═══════════════════════════════════════════════════════════════════════
+    PAGE 2 — DEMO WORKSPACE
+    ═══════════════════════════════════════════════════════════════════════ }
+  DemoPage := CreateInputOptionPage(
+    McpConsentPage.ID,
     'Demo Workspace',
-    'Would you like to start with a demo workspace?',
-    'A demo workspace pre-loads a realistic example: projects, meetings, ' +
-    'literature, and tasks — so you can explore every feature right away.' + #13#10 +
-    'You can clear it and replace it with your own work at any time.',
+    'Start with example content so you can explore every feature right away?',
+    'A demo workspace pre-loads a realistic research scenario:' + #13#10 +
+    '  • 3 example projects (surveillance study, literature review, grant)' + #13#10 +
+    '  • Sample meeting notes with action items' + #13#10 +
+    '  • A small example literature library' + #13#10 +
+    '  • Some open tasks and ideas' + #13#10 +
+    '' + #13#10 +
+    'This lets you try every dashboard tab immediately without having to add' + #13#10 +
+    'your own content first.' + #13#10 +
+    '' + #13#10 +
+    'You can clear the demo content and replace it with your own work at any time' + #13#10 +
+    'from the Metis dashboard (Settings → Clear demo content).',
     True, False);
-  DemoPage.Add('Yes — start with demo content  (recommended for first-time users)');
+  DemoPage.Add('Yes — load demo content  (recommended for first-time users)');
   DemoPage.Add('No  — start with a blank workspace');
   DemoPage.SelectedValueIndex := 0;
 
-  { ── API key page ────────────────────────────────────────────────────────── }
+  { ═══════════════════════════════════════════════════════════════════════
+    PAGE 3 — ANTHROPIC API KEY
+    ═══════════════════════════════════════════════════════════════════════ }
   ApiKeyPage := CreateInputQueryPage(
     DemoPage.ID,
     'Anthropic API Key',
-    'Connect Metis to Claude AI.',
-    'How to get your free API key:' + #13#10 +
-    '  1. Open: https://console.anthropic.com' + #13#10 +
-    '  2. Sign up or log in (free account)' + #13#10 +
-    '  3. Click "API Keys" → "Create Key"' + #13#10 +
-    '  4. Copy the key and paste it below' + #13#10 + #13#10 +
-    'Your key stays on this computer — it is never uploaded or shared.' + #13#10 +
-    'The key looks like:  sk-ant-api03-…');
+    'Connect Metis to Claude AI — takes 2 minutes.',
+    'Metis uses the Anthropic API to power its 34 specialist agents' + #13#10 +
+    '(Epidemiologist, Writing Partner, Librarian, Methods Coach, and more).' + #13#10 +
+    'You need a free API key from Anthropic to use them.' + #13#10 +
+    '' + #13#10 +
+    'HOW TO GET YOUR FREE API KEY' + #13#10 +
+    '  1. Open your browser and go to:  https://console.anthropic.com' + #13#10 +
+    '  2. Sign up or log in (free — no credit card needed to start)' + #13#10 +
+    '  3. Click "API Keys" in the left sidebar, then "Create Key"' + #13#10 +
+    '  4. Copy the key and paste it in the box below' + #13#10 +
+    '' + #13#10 +
+    'COSTS' + #13#10 +
+    '  Most daily research tasks cost a few cents. Metis shows you exactly' + #13#10 +
+    '  what each agent run costs — there are no hidden charges.' + #13#10 +
+    '  You can set a monthly spending limit in the Anthropic console.' + #13#10 +
+    '' + #13#10 +
+    'SECURITY' + #13#10 +
+    '  Your key is stored only on this computer in a local .env file.' + #13#10 +
+    '  It is never uploaded, shared, or sent anywhere except to Anthropic''s' + #13#10 +
+    '  own API when you run an agent.' + #13#10 +
+    '' + #13#10 +
+    'The key looks like:   sk-ant-api03-…');
   ApiKeyPage.Add('Paste your Anthropic API key here:', False);
 
-  { ── About you page ─────────────────────────────────────────────────────── }
+  { ═══════════════════════════════════════════════════════════════════════
+    PAGE 4 — ABOUT YOU
+    ═══════════════════════════════════════════════════════════════════════ }
   AboutPage := CreateInputQueryPage(
     ApiKeyPage.ID,
     'About You',
-    'Help Metis get to know you.',
-    'Metis uses your answers to personalise how it communicates with you,' + #13#10 +
-    'what it explains, and how it challenges your thinking.' + #13#10 + #13#10 +
-    'This takes 2 minutes and makes a real difference.');
+    'Help Metis get to know you — this takes about 1 minute.',
+    'Metis will use your answers to:' + #13#10 +
+    '  • Address you by name in every conversation' + #13#10 +
+    '  • Calibrate how it communicates (technical depth, terminology)' + #13#10 +
+    '  • Understand your institutional context when reviewing documents' + #13#10 +
+    '  • Route questions to the most relevant specialist agent' + #13#10 +
+    '' + #13#10 +
+    'You can update any of this later by typing  /metis_config  in Claude.' + #13#10 +
+    '' + #13#10 +
+    'Your name and institution never leave this computer — they are used' + #13#10 +
+    'only to personalise how Metis talks to you.');
   AboutPage.Add('Your full name:', False);
-  AboutPage.Add('Institution or organisation:', False);
-  AboutPage.Add('Your role or title:', False);
+  AboutPage.Add('Institution or organisation (optional):', False);
+  AboutPage.Add('Your role or title (e.g. PhD researcher, epidemiologist, professor):', False);
 
-  { ── Research page ──────────────────────────────────────────────────────── }
+  { ═══════════════════════════════════════════════════════════════════════
+    PAGE 5 — YOUR RESEARCH
+    ═══════════════════════════════════════════════════════════════════════ }
   ResearchPage := CreateInputQueryPage(
     AboutPage.ID,
-    'Your Research',
-    'What do you work on?',
-    'Metis will calibrate its domain knowledge, literature alerts, and' + #13#10 +
-    'terminology to your field.');
+    'Your Research Domain',
+    'Tell Metis what field you work in.',
+    'Metis uses your field and topics to:' + #13#10 +
+    '  • Set up daily literature alerts (PubMed, OpenAlex)' + #13#10 +
+    '  • Load the right specialist agents by default' + #13#10 +
+    '  • Use accurate domain terminology in responses' + #13#10 +
+    '  • Build a tailored morning brief every day' + #13#10 +
+    '' + #13#10 +
+    'EXAMPLES' + #13#10 +
+    '  Primary field:     Epidemiology / Global Health / Spatial statistics' + #13#10 +
+    '  Key topics:        NTDs, HAT surveillance, vector control, DRC' + #13#10 +
+    '  Tools:             R, QGIS, DHIS2, SaTScan' + #13#10 +
+    '' + #13#10 +
+    'You can refine these any time via  /metis_config  in Claude.');
   ResearchPage.Add('Primary research field:', False);
   ResearchPage.Add('Key topics (comma-separated):', False);
-  ResearchPage.Add('Tools and software you use daily:', False);
+  ResearchPage.Add('Tools and software you use regularly (comma-separated):', False);
 
-  { ── Working style page ─────────────────────────────────────────────────── }
+  { ═══════════════════════════════════════════════════════════════════════
+    PAGE 6 — WORKING STYLE
+    ═══════════════════════════════════════════════════════════════════════ }
   StylePage := CreateInputOptionPage(
     ResearchPage.ID,
-    'Working Style',
-    'How should Metis communicate with you?',
-    'Choose the feedback approach that fits how you work.' + #13#10 +
-    'You can change this any time.',
+    'Communication Style',
+    'How should Metis give you feedback?',
+    'Metis will review your methods, critique your writing, and challenge your' + #13#10 +
+    'thinking. Choose the approach that works best for you.' + #13#10 +
+    '' + #13#10 +
+    'This affects how agents like the Epidemiologist, Writing Partner, and' + #13#10 +
+    'Methods Coach communicate with you — not what they know.' + #13#10 +
+    '' + #13#10 +
+    'You can change this at any time from the Metis tab → Appearance.',
     True, False);
-  StylePage.Add('Supportive — always encouraging, soften critique');
-  StylePage.Add('Direct — honest and clear, skip the padding  (recommended)');
-  StylePage.Add('Blunt — no hedging, challenge everything');
+  StylePage.Add('Supportive — always encouraging; critiques are wrapped in positive framing');
+  StylePage.Add('Direct — honest and clear; calls out problems without softening  (recommended)');
+  StylePage.Add('Blunt — no hedging; challenges assumptions; short and straight');
   StylePage.SelectedValueIndex := 1;
 
-  { ── Projects page ──────────────────────────────────────────────────────── }
-  { Data privacy info covered in metis-info.txt shown at wizard start }
+  { ═══════════════════════════════════════════════════════════════════════
+    PAGE 7 — ACTIVE PROJECTS (names + categories)
+    ═══════════════════════════════════════════════════════════════════════ }
   ProjectsPage := CreateInputQueryPage(
     StylePage.ID,
     'Your Active Projects',
     'Tell Metis what you are currently working on.',
-    'Enter up to 3 projects below. You can add more after install' + #13#10 +
-    'from the Metis dashboard (http://localhost:8080/setup).' + #13#10 + #13#10 +
-    'Format options (all parts are optional — name alone is fine):' + #13#10 +
-    '  Just a name:       HAT Surveillance Study' + #13#10 +
-    '  With category:     HAT Surveillance Study | Article' + #13#10 +
-    '  With folder:       HAT Surveillance Study | Article | C:\docs\hat-study' + #13#10 + #13#10 +
-    'Categories: Article, Grant, Teaching, Software, Review, or create your own.' + #13#10 +
-    'Folder: right-click the folder in Explorer → Copy as path, then paste here.' + #13#10 + #13#10 +
-    'For each project Metis will: create a tracking record, write a CLAUDE.md' + #13#10 +
-    'into the folder (so Claude understands it immediately), and register it' + #13#10 +
-    'in Claude Desktop automatically.');
-  ProjectsPage.Add('Project 1:', False);
-  ProjectsPage.Add('Project 2 (optional):', False);
-  ProjectsPage.Add('Project 3 (optional):', False);
+    'Metis creates a tracking record for each project:' + #13#10 +
+    '  • Writes a CLAUDE.md into the project folder — so Claude understands' + #13#10 +
+    '    the project the moment you open it' + #13#10 +
+    '  • Registers the project in Claude Desktop automatically' + #13#10 +
+    '  • Adds it to the dashboard for task tracking and progress updates' + #13#10 +
+    '' + #13#10 +
+    'FORMAT:   Project name | Category' + #13#10 +
+    '  Just a name:         HAT Surveillance Study' + #13#10 +
+    '  With category:       HAT Surveillance Study | Article' + #13#10 +
+    '' + #13#10 +
+    'Categories: Article, Grant, Teaching, Software, Review — or create your own.' + #13#10 +
+    '' + #13#10 +
+    'Folders are selected on the next page.' + #13#10 +
+    'You can add unlimited projects later from the dashboard (localhost:8080/setup).');
+  ProjectsPage.Add('Project 1  (name | category):', False);
+  ProjectsPage.Add('Project 2  (optional):', False);
+  ProjectsPage.Add('Project 3  (optional):', False);
+
+  { ═══════════════════════════════════════════════════════════════════════
+    PAGE 8 — PROJECT FOLDERS  (folder browse with native OS dialog)
+    ═══════════════════════════════════════════════════════════════════════ }
+  FoldersPage := CreateInputDirPage(
+    ProjectsPage.ID,
+    'Project Folders',
+    'Select the folder on your computer for each project (optional).',
+    'Metis will scan each folder you select to understand what work you' + #13#10 +
+    'have already done — commits, modified files, and notes.' + #13#10 +
+    '' + #13#10 +
+    'Click the "..." button to browse for the folder on your computer.' + #13#10 +
+    '' + #13#10 +
+    'Tip: this is the root folder of the project — for example:' + #13#10 +
+    '  C:\Users\YourName\Documents\HAT-Surveillance' + #13#10 +
+    '' + #13#10 +
+    'Leave a field blank if the project has no local folder yet,' + #13#10 +
+    'or if you prefer to add the folder later from the dashboard.',
+    True,
+    'The folder you entered does not exist. Leave it blank to skip it, or create the folder first.');
+  FoldersPage.Add('Project 1 folder (optional):');
+  FoldersPage.Add('Project 2 folder (optional):');
+  FoldersPage.Add('Project 3 folder (optional):');
 end;
 
+{ ── Validation on Next ──────────────────────────────────────────────────── }
 function NextButtonClick(CurPageID: Integer): Boolean;
 var
   ApiKey: String;
 begin
   Result := True;
-  if CurPageID = ApiKeyPage.ID then
+
+  if CurPageID = McpConsentPage.ID then
+  begin
+    if not McpConsentPage.CheckListBox.Checked[0] then
+    begin
+      MsgBox(
+        'Please tick the authorisation checkbox to continue.' + #13#10 +
+        'You can remove the MCP server at any time from Windows Settings → Apps.',
+        mbInformation, MB_OK);
+      Result := False;
+    end;
+  end
+
+  else if CurPageID = ApiKeyPage.ID then
   begin
     ApiKey := Trim(ApiKeyPage.Values[0]);
     if Length(ApiKey) < 20 then
     begin
       MsgBox(
-        'Please enter a valid Anthropic API key before continuing.' + #13#10 +
-        'Get one free at https://console.anthropic.com',
+        'Please enter a valid Anthropic API key before continuing.' + #13#10 + #13#10 +
+        'Get one free at: https://console.anthropic.com' + #13#10 +
+        '(sign up → API Keys → Create Key)',
         mbError, MB_OK);
       Result := False;
     end
     else if Copy(ApiKey, 1, 7) <> 'sk-ant-' then
     begin
       if MsgBox(
-        'This key does not look like an Anthropic key (should start with sk-ant-).' + #13#10 +
+        'This key does not look like an Anthropic key.' + #13#10 +
+        'Valid Anthropic keys start with  sk-ant-' + #13#10 + #13#10 +
         'Continue anyway?',
         mbConfirmation, MB_YESNO) = IDNO then
         Result := False;
     end;
   end
+
   else if CurPageID = AboutPage.ID then
   begin
-    if (Trim(AboutPage.Values[0]) = '') or (Trim(AboutPage.Values[2]) = '') then
+    if Trim(AboutPage.Values[0]) = '' then
     begin
-      MsgBox('Please enter your name and role before continuing.', mbError, MB_OK);
+      MsgBox('Please enter your name before continuing.', mbError, MB_OK);
+      Result := False;
+    end
+    else if Trim(AboutPage.Values[2]) = '' then
+    begin
+      MsgBox('Please enter your role or title before continuing.', mbError, MB_OK);
       Result := False;
     end;
   end
+
   else if CurPageID = ResearchPage.ID then
   begin
     if Trim(ResearchPage.Values[0]) = '' then
     begin
-      MsgBox('Please enter your primary research field before continuing.', mbError, MB_OK);
+      MsgBox(
+        'Please enter your primary research field before continuing.' + #13#10 +
+        'Example: Epidemiology, Public Health, Global Health, Biostatistics',
+        mbError, MB_OK);
       Result := False;
     end;
   end;
 end;
 
+{ ── Write config files after install ────────────────────────────────────── }
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ApiKey, EnvDir, EnvFile, EnvContent: String;
   StateFile, Profile, DashStr, DemoStr, StateContent: String;
   AnswersFile, AnswersContent, StyleStr: String;
   ProjectLines: String;
+  ProjName, ProjCat, ProjFolder: String;
+  PipeParts: TStringList;
   HasDash: Boolean;
   i: Integer;
 begin
@@ -376,21 +541,33 @@ begin
       StyleStr := 'direct';
     end;
 
-    { Build project list as JSON array of objects (name|category|folder format) }
+    { Build project list as JSON array.
+      Each entry combines the name|category from ProjectsPage and the
+      folder path from FoldersPage into a single JSON object. }
     ProjectLines := '[';
+    PipeParts := TStringList.Create;
+    PipeParts.Delimiter := '|';
     for i := 0 to 2 do
     begin
       if Trim(ProjectsPage.Values[i]) <> '' then
       begin
-        { Split on | — up to 3 parts: name, category, folder }
-        { Simple approach: store raw pipe-delimited string, Python will parse }
-        if ProjectLines <> '[' then ProjectLines := ProjectLines + ',';
-        ProjectLines := ProjectLines + '"' + Trim(ProjectsPage.Values[i]) + '"';
+        PipeParts.DelimitedText := ProjectsPage.Values[i];
+        ProjName := Trim(PipeParts[0]);
+        if PipeParts.Count > 1 then ProjCat := Trim(PipeParts[1])
+        else ProjCat := '';
+        ProjFolder := Trim(FoldersPage.Values[i]);
+
+        if ProjectLines <> '[' then ProjectLines := ProjectLines + ',' + #13#10;
+        ProjectLines := ProjectLines +
+          '  {"name":"' + JsonEsc(ProjName) + '"' +
+          ',"category":"' + JsonEsc(ProjCat) + '"' +
+          ',"folder":"' + JsonEsc(ProjFolder) + '"}';
       end;
     end;
-    ProjectLines := ProjectLines + ']';
+    PipeParts.Free;
+    ProjectLines := ProjectLines + #13#10 + ']';
 
-    { Write .env }
+    { Write system/.env }
     EnvDir  := ExpandConstant('{app}\system');
     ForceDirectories(EnvDir);
     EnvFile    := EnvDir + '\.env';
@@ -398,31 +575,32 @@ begin
                   'METIS_RC_ROOT=' + ExpandConstant('{app}') + #13#10;
     SaveStringToFile(EnvFile, EnvContent, False);
 
-    { Write wizard answers as JSON for process_wizard_answers.py }
-    AnswersFile := EnvDir + '\wizard-answers.json';
+    { Write system/wizard-answers.json for process_wizard_answers.py }
+    AnswersFile    := EnvDir + '\wizard-answers.json';
     AnswersContent :=
       '{' + #13#10 +
-      '  "name": "' + Trim(AboutPage.Values[0]) + '",' + #13#10 +
-      '  "institution": "' + Trim(AboutPage.Values[1]) + '",' + #13#10 +
-      '  "role": "' + Trim(AboutPage.Values[2]) + '",' + #13#10 +
-      '  "field": "' + Trim(ResearchPage.Values[0]) + '",' + #13#10 +
-      '  "topics": "' + Trim(ResearchPage.Values[1]) + '",' + #13#10 +
-      '  "tools": "' + Trim(ResearchPage.Values[2]) + '",' + #13#10 +
+      '  "name": "'        + JsonEsc(Trim(AboutPage.Values[0]))    + '",' + #13#10 +
+      '  "institution": "' + JsonEsc(Trim(AboutPage.Values[1]))    + '",' + #13#10 +
+      '  "role": "'        + JsonEsc(Trim(AboutPage.Values[2]))    + '",' + #13#10 +
+      '  "field": "'       + JsonEsc(Trim(ResearchPage.Values[0])) + '",' + #13#10 +
+      '  "topics": "'      + JsonEsc(Trim(ResearchPage.Values[1])) + '",' + #13#10 +
+      '  "tools": "'       + JsonEsc(Trim(ResearchPage.Values[2])) + '",' + #13#10 +
       '  "feedback_style": "' + StyleStr + '",' + #13#10 +
       '  "challenge_level": "balanced",' + #13#10 +
       '  "output_length": "concise",' + #13#10 +
-      '  "projects": "' + ProjectLines + '",' + #13#10 +
+      '  "projects": ' + ProjectLines + ',' + #13#10 +
       '  "language": "English"' + #13#10 +
       '}' + #13#10;
     SaveStringToFile(AnswersFile, AnswersContent, False);
 
-    { install-state.json }
+    { Write system/config/install-state.json }
     StateFile    := ExpandConstant('{app}\system\config\install-state.json');
     StateContent :=
       '{' + #13#10 +
-      '  "profile": "' + Profile + '",' + #13#10 +
-      '  "version": "' + '{#MyAppVersion}' + '",' + #13#10 +
+      '  "profile": "'  + Profile + '",' + #13#10 +
+      '  "version": "'  + '{#MyAppVersion}' + '",' + #13#10 +
       '  "demo_workspace": ' + DemoStr + ',' + #13#10 +
+      '  "mcp_consent": true,' + #13#10 +
       '  "installed_at": "' + GetDateTimeString('yyyy/mm/dd hh:nn:ss', '-', ':') + '",' + #13#10 +
       '  "components": {' + #13#10 +
       '    "mcp_server": true,' + #13#10 +
@@ -434,14 +612,13 @@ begin
   end;
 end;
 
-{ CurPageChanged removed — next steps now shown via InfoAfterFile=metis-after.txt }
-
+{ ── Windows version guard ────────────────────────────────────────────────── }
 function InitializeSetup: Boolean;
 begin
   Result := True;
   if not (GetWindowsVersion >= $0A000000) then
   begin
-    MsgBox('Metis requires Windows 10 or later.', mbError, MB_OK);
+    MsgBox('Metis requires Windows 10 (version 1803) or later.', mbError, MB_OK);
     Result := False;
   end;
 end;
