@@ -2,7 +2,7 @@
 ; Compile:       ISCC.exe metis-setup.iss  →  MetisSetup-1.0.exe
 ; GitHub Actions compiles automatically on every v* tag push.
 
-#define MyAppName      "Metis Research Cortex"
+#define MyAppName      "Metis — Public Health Research Cortex"
 #define MyAppVersion   "1.0"
 #define MyAppPublisher "Metis Project"
 #define MyAppURL       "https://github.com/SVerITG/Metis_PH"
