@@ -56,6 +56,7 @@ from metis_mcp.tools import (  # noqa: E402, F401
     memory_curator,
     research,
     research_timeline,
+    project_tracker,
 )
 
 
