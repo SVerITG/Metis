@@ -2362,3 +2362,67 @@ async def register_morning_schedule():
         "message": "Morning brief scheduled. First run tomorrow at 07:00.",
         "results": results,
     })
+
+
+# ---------------------------------------------------------------------------
+# /api/partial/today/research-progress — PhD / research project progress widget
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/today/research-progress", response_class=HTMLResponse)
+async def today_research_progress(request: Request):
+    """Research progress widget: article milestones + days since last commit."""
+    milestones: list[dict] = []
+    try:
+        rows = db_query(
+            "SELECT milestone_id, article_title, target_date, status, notes "
+            "FROM research_milestones ORDER BY target_date ASC LIMIT 6"
+        )
+        milestones = [dict(r) for r in (rows or [])]
+    except Exception:
+        pass
+
+    # Days since last git commit in any tracked research project
+    days_since_commit: int | None = None
+    last_commit_msg: str = ""
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    if rc_root:
+        try:
+            result = subprocess.run(
+                ["git", "-C", rc_root, "log", "--oneline", "-1", "--format=%ar|%s"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                parts = result.stdout.strip().split("|", 1)
+                rel_time = parts[0].strip()
+                last_commit_msg = parts[1].strip() if len(parts) > 1 else ""
+                # Parse "N days ago" → integer
+                import re as _re
+                m = _re.match(r"(\d+)\s+day", rel_time)
+                if m:
+                    days_since_commit = int(m.group(1))
+                elif "hour" in rel_time or "minute" in rel_time or "second" in rel_time:
+                    days_since_commit = 0
+        except Exception:
+            pass
+
+    # Active research projects count
+    active_projects = 0
+    try:
+        active_projects = db_scalar(
+            "SELECT COUNT(*) FROM projects WHERE status='active' AND domain NOT IN ('software','personal')",
+            default=0,
+        ) or 0
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_research_progress.html",
+        {
+            "milestones": milestones,
+            "days_since_commit": days_since_commit,
+            "last_commit_msg": last_commit_msg,
+            "active_projects": active_projects,
+        },
+    )

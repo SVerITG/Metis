@@ -276,6 +276,40 @@ def job_nightly_backup() -> None:
         log.error("[scheduler] nightly_backup failed: %s", exc)
 
 
+def _notify_windows(title: str, message: str) -> None:
+    """Send a Windows toast notification via PowerShell BurntToast (if available).
+
+    Falls back to a silent no-op on non-Windows or when PowerShell is absent.
+    The notification fires in the Windows Action Center — no popup window, no focus steal.
+    """
+    import subprocess, shutil
+    try:
+        ps = shutil.which("powershell.exe") or shutil.which("pwsh.exe")
+        if not ps:
+            return
+        # Try BurntToast first; fall back to basic Windows notification API
+        script = (
+            f"if (Get-Module -ListAvailable -Name BurntToast -ErrorAction SilentlyContinue) {{"
+            f"  Import-Module BurntToast -ErrorAction SilentlyContinue;"
+            f"  New-BurntToastNotification -Text '{title}','{message}' -ErrorAction SilentlyContinue"
+            f"}} else {{"
+            f"  Add-Type -AssemblyName System.Windows.Forms -ErrorAction SilentlyContinue;"
+            f"  $notify = New-Object System.Windows.Forms.NotifyIcon;"
+            f"  $notify.Icon = [System.Drawing.SystemIcons]::Information;"
+            f"  $notify.Visible = $true;"
+            f"  $notify.ShowBalloonTip(5000, '{title}', '{message}', [System.Windows.Forms.ToolTipIcon]::Info);"
+            f"  Start-Sleep -Seconds 1;"
+            f"  $notify.Dispose()"
+            f"}}"
+        )
+        subprocess.Popen(
+            [ps, "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", script],
+            creationflags=0x08000000 if os.name == "nt" else 0,  # CREATE_NO_WINDOW on Windows
+        )
+    except Exception:
+        pass
+
+
 def job_brief_synthesis() -> None:
     """Pre-generate AI morning brief — respects brief_mode setting."""
     log.info("[scheduler] brief_synthesis starting")
@@ -297,6 +331,7 @@ def job_brief_synthesis() -> None:
         result = _get_or_generate_brief()
         if result:
             _log_job("brief_synthesis", "ok", "Morning brief pre-generated.")
+            _notify_windows("Metis — Morning Brief Ready", "Your morning brief is ready. Open the dashboard to read it.")
         else:
             _log_job("brief_synthesis", "skip", "Brief already cached or no context available.")
     except Exception as exc:

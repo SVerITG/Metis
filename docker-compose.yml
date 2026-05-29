@@ -1,0 +1,12 @@
+# Metis Research Cortex — Quick Start
+#
+# From the repository root:
+#   1. Copy system/install/docker/.env.example to system/install/docker/.env
+#   2. Edit METIS_DATA_DIR to point to your research folder
+#   3. docker compose up -d
+#   4. Open: http://localhost:8080
+#
+# Full configuration in system/install/docker/docker-compose.yml
+
+include:
+  - system/install/docker/docker-compose.yml

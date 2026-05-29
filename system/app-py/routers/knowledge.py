@@ -1043,6 +1043,23 @@ async def knowledge_sync_status(request: Request):
     except Exception:
         pass
     last = (sync_info.get("last_synced") or "")[:16].replace("T", " ")
+
+    # Detect unconfigured Zotero — ZOTERO_USER_ID absent or still the placeholder
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    env_path = Path(rc_root) / "system" / ".env" if rc_root else None
+    if env_path and env_path.exists():
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, _, v = line.partition("=")
+                os.environ.setdefault(k.strip(), v.strip())
+    user_id = os.environ.get("ZOTERO_USER_ID", "")
+    zotero_unconfigured = (
+        not user_id
+        or user_id.strip() in ("", "your_zotero_user_id", "YOUR_ZOTERO_USER_ID", "0")
+        or user_id.strip().startswith("your_")
+    )
+
     return templates.TemplateResponse(
         request,
         "partials/knowledge_sync_status.html",
@@ -1052,6 +1069,7 @@ async def knowledge_sync_status(request: Request):
             "last_synced": last or "Never",
             "version": sync_info.get("last_version") or 0,
             "duplicate_count": duplicate_count,
+            "zotero_unconfigured": zotero_unconfigured,
         },
     )
 
