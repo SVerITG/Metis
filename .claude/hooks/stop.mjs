@@ -182,12 +182,38 @@ async function consolidateSession() {
   return null;
 }
 
+async function notifyProjectActivity() {
+  // Detect if cwd matches a registered Metis project folder and ping the dashboard.
+  try {
+    const cwd = process.cwd();
+    const res = await fetch(`${DASHBOARD_URL}/api/project/session-end`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ cwd, stop_reason: stopReason, ts: now.toISOString() }),
+      signal: AbortSignal.timeout(4000),
+    });
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (data.project_id) {
+        // Also trigger a lightweight folder scan for the active project
+        fetch(`${DASHBOARD_URL}/api/project/scan/${data.project_id}`, {
+          method: "POST",
+          signal: AbortSignal.timeout(15000),
+        }).catch(() => {});
+      }
+    }
+  } catch {
+    // Dashboard not running or project not matched — silent
+  }
+}
+
 // Run async and wait briefly so the hook doesn't outlive the process
 (async () => {
   const [result] = await Promise.all([
     tryDashboardHandoff(),
     touchPlanningFiles(),
     consolidateSession(),
+    notifyProjectActivity(),
   ]);
   writeMarker(result);
   process.exit(0);

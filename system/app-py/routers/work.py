@@ -320,6 +320,109 @@ async def project_create(request: Request):
     return JSONResponse({"status": "ok", "project_id": project_id, "title": title})
 
 
+@router.post("/api/project/scan/{project_id}")
+async def project_scan(project_id: str):
+    """Scan a single project folder for activity and refresh its CLAUDE.md."""
+    try:
+        import sys as _sys
+        rc = os.environ.get("METIS_RC_ROOT", "")
+        if rc:
+            mcp_src = str(Path(rc) / "system" / "mcp-server" / "src")
+            if mcp_src not in _sys.path:
+                _sys.path.insert(0, mcp_src)
+        from metis_mcp.tools.project_tracker import scan_project_folder
+        result = await scan_project_folder(project_id)
+        return JSONResponse({"ok": True, "summary": result[0].text if result else ""})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@router.post("/api/project/scan-all")
+async def project_scan_all():
+    """Scan all active project folders. Called by the dashboard Update button."""
+    try:
+        import sys as _sys
+        rc = os.environ.get("METIS_RC_ROOT", "")
+        if rc:
+            mcp_src = str(Path(rc) / "system" / "mcp-server" / "src")
+            if mcp_src not in _sys.path:
+                _sys.path.insert(0, mcp_src)
+        from metis_mcp.tools.project_tracker import update_all_projects
+        result = await update_all_projects()
+        return JSONResponse({"ok": True, "summary": result[0].text if result else ""})
+    except Exception as e:
+        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
+
+
+@router.post("/api/project/create-full")
+async def project_create_full(request: Request):
+    """Create a project with full integration: DB, CLAUDE.md, Claude Desktop."""
+    data = await request.json()
+    title = (data.get("title") or data.get("name") or "").strip()
+    if not title:
+        return JSONResponse({"status": "error", "message": "Title required"}, status_code=400)
+    try:
+        import sys as _sys
+        rc = os.environ.get("METIS_RC_ROOT", "")
+        if rc:
+            mcp_src = str(Path(rc) / "system" / "mcp-server" / "src")
+            if mcp_src not in _sys.path:
+                _sys.path.insert(0, mcp_src)
+        from metis_mcp.tools.project_tracker import create_project_full
+        result = await create_project_full(
+            title=title,
+            folder_path=data.get("folder", ""),
+            category=data.get("category", ""),
+            description=data.get("description", ""),
+            scan_type=data.get("scan_type", "names"),
+            link_claude_desktop_auto=data.get("link_claude_desktop", True),
+        )
+        return JSONResponse({"status": "ok", "message": result[0].text if result else ""})
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+@router.post("/api/project/session-end")
+async def project_session_end(request: Request):
+    """Called by the Claude Code stop hook. Detects which project was active from cwd."""
+    data = await request.json()
+    cwd = (data.get("cwd") or "").strip().rstrip("/\\")
+    ts = data.get("ts", datetime.datetime.now().isoformat())
+
+    if not cwd:
+        return JSONResponse({"ok": False, "reason": "no cwd"})
+
+    # Normalise: convert WSL /mnt/c/... → C:/... for comparison
+    def normalise(p: str) -> str:
+        import re as _re
+        m = _re.match(r"^/mnt/([a-zA-Z])/(.*)", p)
+        if m:
+            return (m.group(1).upper() + ":/" + m.group(2)).rstrip("/\\")
+        return p.rstrip("/\\")
+
+    cwd_norm = normalise(cwd)
+
+    rows = db_query(
+        "SELECT project_id, title, external_path FROM projects "
+        "WHERE status='active' AND external_path IS NOT NULL AND external_path != ''"
+    )
+    matched_id = None
+    for row in rows:
+        ep = normalise(row["external_path"])
+        if cwd_norm == ep or cwd_norm.startswith(ep + "/") or cwd_norm.startswith(ep + "\\"):
+            matched_id = row["project_id"]
+            break
+
+    if not matched_id:
+        return JSONResponse({"ok": True, "project_id": None, "reason": "no project matched"})
+
+    db_execute(
+        "UPDATE projects SET last_session_at = ? WHERE project_id = ?",
+        (ts, matched_id),
+    )
+    return JSONResponse({"ok": True, "project_id": matched_id})
+
+
 @router.post("/api/project/untrack/{project_id}")
 async def project_untrack(project_id: str):
     """Hide a project from the Work tab without deleting it."""

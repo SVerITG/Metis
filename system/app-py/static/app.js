@@ -1593,6 +1593,14 @@ async function runMetisUpdate() {
     if (libTable) {
       htmx.ajax('GET', '/api/partial/knowledge/sync-status', { target: '#lib-sync-bar', swap: 'outerHTML' });
     }
+    // Scan all project folders for activity
+    try {
+      await fetch('/api/project/scan-all', { method: 'POST' });
+      const workArea = document.getElementById('work-projects-list');
+      if (workArea) {
+        htmx.ajax('GET', '/api/partial/work/projects', { target: '#work-projects-list', swap: 'outerHTML' });
+      }
+    } catch (_) {}
   } catch (e) {
     showToast('Update failed: ' + e.message);
   } finally {
