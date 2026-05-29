@@ -1,0 +1,56 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  METIS IS INSTALLED — YOUR NEXT STEPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+  ① INSTALL CLAUDE DESKTOP  (free — required)
+  ─────────────────────────────────────────────
+  Metis connects to Claude Desktop automatically on first open.
+
+  Download from:   https://claude.ai/download
+
+  Once installed, open Claude Desktop — Metis will register itself
+  and your setup wizard will start on the first conversation.
+
+
+  ② START THE METIS DASHBOARD  (if you chose Full install)
+  ──────────────────────────────────────────────────────────
+  Double-click "Metis" on your desktop, or start it manually:
+
+    Documents\Metis\system\install\windows\run-dashboard.bat
+
+  Then open in your browser:   http://localhost:8080
+
+  Your setup wizard is also available at:   http://localhost:8080/setup
+
+
+  ③ COMPLETE YOUR SETUP WIZARD
+  ─────────────────────────────
+  The wizard personalises Metis to your research domain, your
+  working style, and your projects. It takes about 3 minutes.
+
+  • In Claude Desktop:  it starts automatically on first open
+  • In the dashboard:   go to http://localhost:8080/setup
+  • Any time later:     type  /metis_config  in Claude
+
+
+  ④ LEARN CLAUDE DESKTOP AND CLAUDE CODE
+  ────────────────────────────────────────
+  Claude Desktop — conversational AI for research (no coding):
+    https://claude.ai/download
+
+  Claude Code — for developers and power users:
+    https://docs.anthropic.com/en/docs/claude-code/getting-started
+
+  Metis works with both. Claude Desktop is the natural starting point.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  USEFUL LINKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Documentation:      https://github.com/SVerITG/Metis_PH
+  Get API key:        https://console.anthropic.com
+  Questions / bugs:   https://github.com/SVerITG/Metis_PH/issues
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
