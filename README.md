@@ -8,7 +8,8 @@
 <h1 align="center">Metis — The Research Cortex</h1>
 
 <p align="center">
-  <em>AI built around researchers. Not a prompt box — a way of working.</em>
+  <em>AI built around researchers. Not a prompt box — a way of working.</em><br>
+  <em>Everything you know, connected. Every idea, linked to everything else.</em>
 </p>
 
 <p align="center">
@@ -25,15 +26,15 @@
 <tr>
 <td width="33%" valign="top" align="center">
 <p><strong>☁️ Light</strong><br><em>MCP server only</em></p>
-<p><em>You ask Claude to build a dashboard for your Leishmaniasis project. Metis recalls the surveillance tool you built eighteen months ago, your preferred layout, and your standard epidemiological indicators. The Epidemiology Agent and Dashboard Maker deliver exactly what you need — in your style, no re-explaining required.</em></p>
+<p><em>You ask Claude to build a monitoring dashboard for your Leishmaniasis project. Metis recalls the surveillance tool you built eighteen months ago, your preferred layout, and your standard epidemiological indicators. The Epidemiology Agent and Dashboard Maker deliver exactly what you need — in your style, to your domain standards — without any re-explaining.</em></p>
 </td>
 <td width="33%" valign="top" align="center">
-<p><strong>📊 With dashboard</strong><br><em>Your research hub</em></p>
-<p><em>Papers, ideas, meetings, and tasks — all in one place, all connected. Cross-pollination surfaces links you'd never find manually. The morning brief knows what you're working on. The dashboard tracks everything so you don't have to.</em></p>
+<p><strong>🔗 Cross-pollination</strong><br><em>The moment everything connects</em></p>
+<p><em>You capture a quick idea about a novel surveillance approach. Within seconds, Metis surfaces three things you'd forgotten existed: a methodology paper from fourteen months ago that used a similar approach, a meeting note from March where your field partner described the same barrier, and an open question you logged after a conference. You hadn't connected any of it. Metis did. The grant section writes itself.</em></p>
 </td>
 <td width="33%" valign="top" align="center">
 <p><strong>🌐 Metis OS</strong><br><em>The full picture — in development</em></p>
-<p><em>Your calendar shows a meeting with a Lepra diagnostics colleague. Yesterday you captured an idea about rapid field tests. Metis has your April transcript with this person and this week's new papers. A briefing appears before you leave. After the meeting, you ask Metis for a five-day course on Lepra diagnostics from the latest research. By evening, it's ready.</em></p>
+<p><em>Your calendar shows a meeting with a Lepra diagnostics colleague. Yesterday you captured an idea about rapid field tests. Metis has your April transcript with this person and this week's new papers. A briefing appears before you leave. After the meeting, you ask for a five-day course on Lepra diagnostics from the latest research. By evening, it's ready.</em></p>
 </td>
 </tr>
 </table>
@@ -108,7 +109,9 @@ Every AI conversation starts from zero. You spend ten minutes re-explaining your
 
 Not just your name — your domain, your literature, your projects, your preferred working style, your open questions, your meeting notes from last month, and the paper you added to your library yesterday. The longer you use Metis, the better every response gets. Not because the AI changes — because Metis knows you better.
 
-This is genuinely new ground. The individual components — local language models, retrieval-augmented generation, agent routing, vector search — all exist independently. What Metis presents is a coherent integration of all of them, purpose-built for the specific demands of research work: long timelines, sensitive data, deep literature, and knowledge that accumulates over years. A system that grows *with* you, rather than starting from zero every session. To our knowledge, nothing quite like this exists as a unified, locally-running, researcher-facing system.
+**The core mechanism is cross-pollination.** Every time you capture an idea, add a paper, record a meeting, or complete a task, Metis connects it to everything else in your research universe. A paper you indexed a year ago surfaces when you're writing a grant today. A meeting note from March links to the idea you captured this morning. An open question from six months ago connects to a new paper that just came out. These connections happen automatically, in the background, without you having to search for them. This is what makes Metis a *research companion* rather than a search tool — it thinks across your entire body of work so you don't have to hold it all in your head.
+
+This is genuinely new ground. The individual components — local language models, retrieval-augmented generation, agent routing, vector search — all exist independently. What Metis presents is a coherent integration of all of them, purpose-built for the specific demands of research work: long timelines, sensitive data, deep literature, and knowledge that accumulates over years. A system that grows *with* you, and surfaces connections *for* you — rather than starting from zero every session. To our knowledge, nothing quite like this exists as a unified, locally-running, researcher-facing system.
 
 ### Three levels — choose your entry point
 
@@ -181,6 +184,7 @@ The script asks two questions (Full or AI only, demo workspace) and does the res
 | **Voice capture** | Record anywhere, transcribe locally (no API, no upload), route to ideas, journal, or notes |
 | **9-tab dashboard** | Today · Knowledge · Meetings · Learning · Work · Thinking · Planner · Teach · Metis — all live, all local |
 | **Data protection** | Five security layers. Patient data and embargoed results are detected and blocked before anything reaches the AI. Everything runs on your machine. |
+| **Cross-pollination** | Every idea, paper, meeting, and task is automatically connected to everything else in your research universe. Metis surfaces links across time — a paper from last year, a meeting note from March, a question you logged at a conference — without you searching for any of it. |
 | **Grows with you** | Every agent run adds to your profile. A question asked after six months of use gets a meaningfully better answer than the same question on day one. |
 
 ---
