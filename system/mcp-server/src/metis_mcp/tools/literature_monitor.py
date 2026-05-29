@@ -37,15 +37,68 @@ CREATE TABLE IF NOT EXISTS news_briefs (
 """
 
 _DEFAULT_PUBMED_QUERY = (
-    "neglected tropical diseases[Title/Abstract] OR NTD[Title/Abstract] "  # configured via user-preferences.json
-    "OR trypanosoma brucei[Title/Abstract] OR HAT[Title/Abstract] "
-    "OR neglected tropical diseases[Title/Abstract]"
+    "global health[Title/Abstract] OR public health surveillance[Title/Abstract] "
+    "OR epidemiology methods[Title/Abstract]"
+    # Override via user-preferences.json: {"pubmed_query": "your search terms"}
 )
 
 _DEFAULT_OPENALEX_QUERY = (
-    "neglected tropical diseases OR surveillance[Title/Abstract] "  # configured via user-preferences.json
-    "OR HAT epidemiology OR surveillance public health"
+    "global health OR epidemiology OR public health surveillance"
+    # Override via user-preferences.json: {"openalex_query": "your search terms"}
 )
+
+
+def _user_pubmed_query() -> str:
+    """Return user-configured PubMed query, falling back to field+topics from user-config."""
+    try:
+        import json, yaml
+        prefs_path = paths.config / "user-preferences.json"
+        if prefs_path.exists():
+            q = json.loads(prefs_path.read_text()).get("pubmed_query", "")
+            if q:
+                return q
+        cfg_path = paths.config / "user-config.yaml"
+        if cfg_path.exists():
+            cfg = yaml.safe_load(cfg_path.read_text()) or {}
+            field = cfg.get("research_field") or cfg.get("field", "")
+            topics = cfg.get("topics", "")
+            if field or topics:
+                parts = []
+                if field:
+                    parts.append(f"{field}[Title/Abstract]")
+                if topics:
+                    for t in str(topics).split(",")[:3]:
+                        t = t.strip()
+                        if t:
+                            parts.append(f"{t}[Title/Abstract]")
+                if parts:
+                    return " OR ".join(parts)
+    except Exception:
+        pass
+    return _DEFAULT_PUBMED_QUERY
+
+
+def _user_openalex_query() -> str:
+    """Return user-configured OpenAlex query, falling back to field+topics from user-config."""
+    try:
+        import json, yaml
+        prefs_path = paths.config / "user-preferences.json"
+        if prefs_path.exists():
+            q = json.loads(prefs_path.read_text()).get("openalex_query", "")
+            if q:
+                return q
+        cfg_path = paths.config / "user-config.yaml"
+        if cfg_path.exists():
+            cfg = yaml.safe_load(cfg_path.read_text()) or {}
+            field = cfg.get("research_field") or cfg.get("field", "")
+            topics = cfg.get("topics", "")
+            if field or topics:
+                parts = [p.strip() for p in f"{field},{topics}".split(",") if p.strip()]
+                if parts:
+                    return " OR ".join(parts[:4])
+    except Exception:
+        pass
+    return _DEFAULT_OPENALEX_QUERY
 
 
 def _insert_article(con, title: str, summary: str, url: str, domain: str, tags: str) -> bool:
@@ -134,7 +187,7 @@ def _pubmed_esummary(pmids: list[str]) -> list[dict]:
 
 @app.tool()
 async def scan_pubmed_alerts(
-    query: str = _DEFAULT_PUBMED_QUERY,
+    query: str = "",
     reldate: int = 1,
     max_results: int = 15,
 ) -> list[TextContent]:
@@ -145,10 +198,14 @@ async def scan_pubmed_alerts(
     morning scan scheduler job.
 
     Args:
-        query: PubMed search query (default: domain-specific/NTD/surveillance terms).
+        query: PubMed search query. Defaults to the query in user-preferences.json
+               (pubmed_query field), then to your configured research field from
+               user-config.yaml, then to a generic global-health fallback.
         reldate: Look back this many days (default: 1 = yesterday + today).
         max_results: Maximum papers to retrieve (default: 15).
     """
+    if not query:
+        query = _user_pubmed_query()
     import sqlite3
 
     try:
@@ -220,7 +277,7 @@ def _reconstruct_abstract(inverted_index: dict | None) -> str:
 
 @app.tool()
 async def scan_openalex(
-    query: str = _DEFAULT_OPENALEX_QUERY,
+    query: str = "",
     days_back: int = 1,
     max_results: int = 10,
 ) -> list[TextContent]:
@@ -230,10 +287,14 @@ async def scan_openalex(
     Results are inserted into news_briefs with source_type='article'.
 
     Args:
-        query: Free-text search query (default: domain-specific/NTD/surveillance terms).
+        query: Free-text search query. Defaults to the query in user-preferences.json
+               (openalex_query field), then to your configured research topics from
+               user-config.yaml, then to a generic global-health fallback.
         days_back: How many days back to search (default: 1).
         max_results: Maximum papers to retrieve (default: 10).
     """
+    if not query:
+        query = _user_openalex_query()
     import sqlite3
 
     from_date = (

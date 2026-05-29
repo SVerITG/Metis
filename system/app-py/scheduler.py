@@ -131,23 +131,10 @@ def job_morning_scan() -> None:
 
     # PubMed daily alerts
     try:
-        from metis_mcp.tools.literature_monitor import _pubmed_esearch, _pubmed_esummary, _insert_article
+        from metis_mcp.tools.literature_monitor import _pubmed_esearch, _pubmed_esummary, _insert_article, _user_pubmed_query
         import sqlite3 as _sq, asyncio as _a
         from metis_mcp.config import paths as _p
-        # Default query — override via user-preferences.json pubmed_query field
-        _prefs = {}
-        try:
-            import json as _json
-            _pref_path = _p.config / "user-preferences.json"
-            if _pref_path.exists():
-                _prefs = _json.loads(_pref_path.read_text())
-        except Exception:
-            pass
-        _pubmed_query = _prefs.get(
-            "pubmed_query",
-            "neglected tropical diseases[Title/Abstract] OR NTD[Title/Abstract] "
-            "OR global health[Title/Abstract] OR epidemiology surveillance[Title/Abstract]",
-        )
+        _pubmed_query = _user_pubmed_query()
         pmids = _pubmed_esearch(_pubmed_query, reldate=1, max_results=15)
         summaries = _pubmed_esummary(pmids) if pmids else []
         pub_added = 0
@@ -170,23 +157,12 @@ def job_morning_scan() -> None:
 
     # OpenAlex daily alerts
     try:
-        from metis_mcp.tools.literature_monitor import _openalex_search, _reconstruct_abstract, _insert_article
+        from metis_mcp.tools.literature_monitor import _openalex_search, _reconstruct_abstract, _insert_article, _user_openalex_query
         import sqlite3 as _sq
         from metis_mcp.config import paths as _p
         import datetime as _dt
         from_date = (_dt.date.today() - _dt.timedelta(days=1)).isoformat()
-        _alex_prefs = {}
-        try:
-            import json as _json2
-            _apref_path = _p.config / "user-preferences.json"
-            if _apref_path.exists():
-                _alex_prefs = _json2.loads(_apref_path.read_text())
-        except Exception:
-            pass
-        _alex_query = _alex_prefs.get(
-            "openalex_query",
-            "neglected tropical diseases OR global health OR epidemiology surveillance",
-        )
+        _alex_query = _user_openalex_query()
         items = _openalex_search(_alex_query, from_date=from_date, max_results=10)
         alex_added = 0
         if items:
