@@ -204,8 +204,8 @@ var
   ResearchPage:    TInputQueryWizardPage;
   StylePage:       TInputOptionWizardPage;
   ProjectsPage:    TInputQueryWizardPage;
-  WhatMetisPage:   TOutputMsgWizardPage;
-  DataPrivacyPage: TOutputMsgWizardPage;
+  WhatMetisPage:   TOutputMsgMemoWizardPage;
+  DataPrivacyPage: TOutputMsgMemoWizardPage;
 
 function ShouldSeedDemo: Boolean;
 begin
@@ -222,10 +222,11 @@ begin
   WizardForm.WelcomeLabel2.Caption := CustomMessage('WelcomeText');
 
   { ── What Metis is doing — educational page shown before install questions ── }
-  WhatMetisPage := CreateOutputMsgWizardPage(
+  WhatMetisPage := CreateOutputMsgMemoWizardPage(
     wpSelectComponents,
     'How Metis Works — What to Expect',
     'A quick overview before we ask you a few questions.',
+    '',
     'WHAT IS AN MCP SERVER?' + #13#10 +
     'MCP (Model Context Protocol) is an open standard from Anthropic.' + #13#10 +
     'Metis uses it to give Claude a persistent connection to your research' + #13#10 +
@@ -254,7 +255,8 @@ begin
     '  Step 3  Loads demo data (if you chose the demo option)' + #13#10 +
     '  Step 4  Builds your knowledge index from included documents' + #13#10 +
     '  Step 5  Personalises Metis to your research profile' + #13#10 +
-    '  Step 6  Registers Metis with Claude Desktop and Claude Code');
+    '  Step 6  Registers Metis with Claude Desktop and Claude Code',
+    0);
 
   { ── Demo workspace page ────────────────────────────────────────────────── }
   DemoPage := CreateInputOptionPage(
@@ -320,10 +322,11 @@ begin
   StylePage.SelectedValueIndex := 1;
 
   { ── Data privacy page ──────────────────────────────────────────────────── }
-  DataPrivacyPage := CreateOutputMsgWizardPage(
+  DataPrivacyPage := CreateOutputMsgMemoWizardPage(
     StylePage.ID,
     'Your Data is Protected — Here is How',
     'Before you add your projects, understand exactly what Metis touches.',
+    '',
     'WHAT STAYS ON YOUR MACHINE — ALWAYS' + #13#10 +
     '  ✓  Your PDF library and all indexed documents' + #13#10 +
     '  ✓  Your meeting notes and transcripts' + #13#10 +
@@ -352,7 +355,8 @@ begin
     'For each project folder you provide, Metis writes a CLAUDE.md file.' + #13#10 +
     'This is a plain text file that tells Claude what the project is about.' + #13#10 +
     'Claude Desktop and Claude Code read it automatically when you open' + #13#10 +
-    'the folder. You can edit or delete it at any time — it is yours.');
+    'the folder. You can edit or delete it at any time — it is yours.',
+    0);
 
   { ── Projects page ──────────────────────────────────────────────────────── }
   ProjectsPage := CreateInputQueryPage(
