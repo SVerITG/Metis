@@ -70,16 +70,18 @@ from metis_mcp.tools import (  # noqa: E402, F401
 #   METIS_TOOL_SUBSETS=1 METIS_AGENT_SUBSET=librarian python -m metis_mcp.server
 import os as _os
 
-if _os.environ.get("METIS_TOOL_SUBSETS") == "1":
-    _agent = _os.environ.get("METIS_AGENT_SUBSET", "").strip()
-    if _agent:
-        from metis_mcp.subset_loader import apply_tool_subset
-        _removed = apply_tool_subset(app, _agent)
-        if _removed:
-            import logging as _logging
-            _logging.getLogger("metis").info(
-                "Tool subset active: agent=%s, %d tools removed", _agent, _removed
-            )
+# Tool subset loading — active by default when METIS_TOOL_SUBSETS=1 (set in run.sh).
+# Pass METIS_TOOL_SUBSETS=0 to load all tools (developer / debug mode).
+# When METIS_AGENT_SUBSET is not set, the "_default" subset from tool-subsets.json is used.
+if _os.environ.get("METIS_TOOL_SUBSETS", "0") == "1":
+    _agent = _os.environ.get("METIS_AGENT_SUBSET", "_default").strip() or "_default"
+    from metis_mcp.subset_loader import apply_tool_subset
+    _removed = apply_tool_subset(app, _agent)
+    import logging as _logging
+    _logging.getLogger("metis").info(
+        "Tool subset active: agent=%s, %d tools removed, %d exposed",
+        _agent, _removed, len(app._tool_manager._tools),
+    )
 
 
 def run():
