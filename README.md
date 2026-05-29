@@ -105,9 +105,11 @@ It runs entirely on your machine. Your data never leaves.
 
 Every AI conversation starts from zero. You spend ten minutes re-explaining your context, and when the session ends, it's gone. Generic AI tools are powerful but stateless — they know everything about the world and nothing about you.
 
-**Metis is built on one idea: the AI should know you.**
+**Metis is built on one idea: the AI should know you. And it should keep getting better — on its own.**
 
 Not just your name — your domain, your literature, your projects, your preferred working style, your open questions, your meeting notes from last month, and the paper you added to your library yesterday. The longer you use Metis, the better every response gets. Not because the AI changes — because Metis knows you better.
+
+**You don't need to follow developments in AI.** Metis does that for you. Every week, Metis reviews its own performance across all your sessions, identifies where it could have done better, drafts improvements to its own behaviour, and waits for your approval before applying them. New AI capabilities, better models, more efficient methods — Metis monitors the field and self-updates. As a researcher, you focus on your research. Metis handles keeping itself current.
 
 **The core mechanism is cross-pollination.** Every time you capture an idea, add a paper, record a meeting, or complete a task, Metis connects it to everything else in your research universe. A paper you indexed a year ago surfaces when you're writing a grant today. A meeting note from March links to the idea you captured this morning. An open question from six months ago connects to a new paper that just came out. These connections happen automatically, in the background, without you having to search for them. This is what makes Metis a *research companion* rather than a search tool — it thinks across your entire body of work so you don't have to hold it all in your head.
 
@@ -185,7 +187,9 @@ The script asks two questions (Full or AI only, demo workspace) and does the res
 | **9-tab dashboard** | Today · Knowledge · Meetings · Learning · Work · Thinking · Planner · Teach · Metis — all live, all local |
 | **Data protection** | Five security layers. Patient data and embargoed results are detected and blocked before anything reaches the AI. Everything runs on your machine. |
 | **Cross-pollination** | Every idea, paper, meeting, and task is automatically connected to everything else in your research universe. Metis surfaces links across time — a paper from last year, a meeting note from March, a question you logged at a conference — without you searching for any of it. |
-| **Grows with you** | Every agent run adds to your profile. A question asked after six months of use gets a meaningfully better answer than the same question on day one. |
+| **Token tracking** | Every agent run shows exactly what it cost — which specialist was used, how many tokens, what model. The dashboard Today tab has a live token pulse so you always know your daily usage. Most daily tasks stay under a few cents. |
+| **Metis evolves — you don't have to** | Every week, Metis reviews its own session logs, identifies where it underperformed, and drafts behaviour improvements. You approve or reject them. New AI capabilities get incorporated automatically. You focus on your research; Metis stays current with the field. |
+| **Grows with you** | Every agent run adds to your profile. A question asked after six months of use gets a meaningfully better answer than the same question on day one — not because the AI changed, but because Metis knows you better. |
 
 ---
 
@@ -327,17 +331,22 @@ Everything else — your documents, voice recordings, PDF text, meeting notes, p
 
 ---
 
-### How Metis Stays Current
+### How Metis Stays Current — So You Don't Have To
 
-Metis doesn't just run tasks — it reflects on them and improves over time.
+AI is moving fast. New models, new capabilities, new research tools appear every month. Most researchers don't have time to follow it. **Metis is designed to handle this for you.**
 
-After every agent run:
-1. **Reflexion logged** — what went well, what could improve, what was missing
-2. **Weekly:** themes extracted across all runs
-3. **Improvement proposal drafted** — a proposed change to agent behaviour, with rationale
-4. **You review it** in the Metis tab — approve, reject, or edit before anything changes
+After every agent run, Metis logs a reflexion — what went well, what fell short, what context was missing. Every week it aggregates these into themes. Every week it drafts behaviour improvements with a clear rationale. You review the proposals in the Metis tab — one click to approve, reject, or edit — and the approved changes are written to disk.
 
-No change to agent behaviour ever happens without your review. The system proposes; you decide.
+This means Metis gets better at working *with you specifically*, week after week. It also means that as new AI developments become available and get integrated into Metis, you receive the improvements without having to do anything. **Your job is your research. Metis's job is to stay sharp.**
+
+The self-improvement loop in detail:
+1. **After every agent run** — reflexion logged: what went well, what could improve, what was missing
+2. **Weekly** — themes extracted across all sessions; patterns identified
+3. **Proposal drafted** — a concrete proposed change to agent behaviour, with reasoning
+4. **You review** in the Metis tab — approve, reject, or edit before anything applies
+5. **Applied with backup** — the update is written with a timestamped rollback point
+
+No change to Metis's behaviour ever happens without your explicit approval. The system proposes; you decide.
 
 ---
 
