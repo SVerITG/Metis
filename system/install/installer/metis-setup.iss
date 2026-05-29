@@ -46,17 +46,17 @@ CreateUninstallRegKey=yes
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
-english.WelcomeText=This will install Metis on your computer.%n%nMetis is an AI research companion that works alongside Claude. Everything runs on your computer — your research files never leave your machine.%n%nYou will need an Anthropic API key (free from console.anthropic.com).
+english.WelcomeText=Welcome to Metis — your AI research companion.%n%nMetis works alongside Claude to give every AI conversation a persistent memory of your domain, your papers, your projects, and your working history. The longer you use it, the better every response gets.%n%nEverything runs on your computer. Your research files never leave your machine.%n%n────────────────────────────────────────────%n%nWhat this installer does:%n  1. Installs the Metis MCP server — a small background%n     program that connects Claude to your research world%n  2. (Optional) Installs the 9-tab research dashboard%n  3. Asks you a few questions to personalise Metis to you%n%nYou will need a free Anthropic API key from console.anthropic.com%n(takes 2 minutes — instructions on the next page).
 
 ; ── Component descriptions shown in wizard ───────────────────────────────────
 [Types]
-Name: "full";    Description: "Full — AI assistant + research dashboard (recommended)"
-Name: "minimal"; Description: "AI only — AI assistant without dashboard (fastest, ~5 min)"
-Name: "custom";  Description: "Custom installation"; Flags: iscustom
+Name: "full";    Description: "Full install — AI assistant + 9-tab research dashboard  (recommended)"
+Name: "minimal"; Description: "AI only — just the AI assistant, no dashboard  (fastest, ~5 min)"
+Name: "custom";  Description: "Custom — choose what to include"; Flags: iscustom
 
 [Components]
-Name: "core";      Description: "Metis core (34 agents, skills, config)";       Types: full minimal custom; Flags: fixed
-Name: "dashboard"; Description: "Research dashboard (9-tab browser interface)"; Types: full custom
+Name: "core";      Description: "Metis AI assistant (34 specialist agents, MCP server, persistent memory)"; Types: full minimal custom; Flags: fixed
+Name: "dashboard"; Description: "Research dashboard — 9 tabs: papers, meetings, ideas, projects, tasks, learning"; Types: full custom
 
 [Tasks]
 Name: "desktopai";   Description: "Shortcut on desktop: Open Metis AI";    GroupDescription: "Shortcuts:"
@@ -91,12 +91,15 @@ Source: "{#RepoRoot}\system\app-py\*"; DestDir: "{app}\system\app-py"; \
   Excludes: "*.pyc,__pycache__,.venv*,*.sqlite"
 
 ; ── Windows launcher and install scripts ──────────────────────────────────────
-Source: "..\windows\install.ps1";        DestDir: "{app}\system\install\windows"; Flags: ignoreversion
-Source: "..\bootstrap_python.ps1";       DestDir: "{app}\system\install";         Flags: ignoreversion
-Source: "..\download_vendor_python.ps1"; DestDir: "{app}\system\install";         Flags: ignoreversion
-Source: "..\windows\run-mcp.bat";        DestDir: "{app}\system\mcp-server";      Flags: ignoreversion
-Source: "..\windows\run-dashboard.bat";  DestDir: "{app}\system\app-py";          Flags: ignoreversion; Components: dashboard
-Source: "..\windows\run-tray.bat";       DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
+Source: "..\windows\install.ps1";               DestDir: "{app}\system\install\windows"; Flags: ignoreversion
+Source: "..\windows\launch-dashboard-silent.vbs"; DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
+Source: "..\windows\metis.ico";                 DestDir: "{app}\system\install\windows"; Flags: ignoreversion
+Source: "..\windows\metis-brain.ico";           DestDir: "{app}\system\install\windows"; Flags: ignoreversion
+Source: "..\bootstrap_python.ps1";              DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\download_vendor_python.ps1";        DestDir: "{app}\system\install";         Flags: ignoreversion
+Source: "..\windows\run-mcp.bat";               DestDir: "{app}\system\mcp-server";      Flags: ignoreversion
+Source: "..\windows\run-dashboard.bat";         DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
+Source: "..\windows\run-tray.bat";              DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
 Source: "..\tray_launcher.py";           DestDir: "{app}\system\install";         Flags: ignoreversion; Components: dashboard
 Source: "..\dist\MetisTray.exe";         DestDir: "{app}\system\install\windows"; Flags: ignoreversion skipifsourcedoesntexist; Components: dashboard
 Source: "..\vendor_download.py";         DestDir: "{app}\system\install";         Flags: ignoreversion
@@ -134,8 +137,9 @@ Name: "{group}\Metis — Dashboard";  Filename: "wscript.exe"; \
   Tasks: startmenu; Components: dashboard
 Name: "{group}\Uninstall Metis";    Filename: "{uninstallexe}"; Tasks: startmenu
 
-; Desktop
-Name: "{autodesktop}\Metis — Open AI"; Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; Tasks: desktopai
+; Desktop — Claude shortcut only created if Claude Desktop is installed
+Name: "{autodesktop}\Metis — Open AI"; Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; Tasks: desktopai; \
+  Check: FileExists(ExpandConstant('{commonpf}\Anthropic\Claude\Claude.exe'))
 Name: "{autodesktop}\Metis";           Filename: "wscript.exe"; \
   Parameters: """{app}\system\install\windows\launch-dashboard-silent.vbs"""; \
   IconFilename: "{app}\system\install\windows\metis.ico"; IconIndex: 0; \
@@ -194,12 +198,14 @@ Type: files;          Name: "{userappdata}\Claude\claude_desktop_config.json.met
 
 [Code]
 var
-  ApiKeyPage:    TInputQueryWizardPage;
-  DemoPage:      TInputOptionWizardPage;
-  AboutPage:     TInputQueryWizardPage;
-  ResearchPage:  TInputQueryWizardPage;
-  StylePage:     TInputOptionWizardPage;
-  ProjectsPage:  TInputQueryWizardPage;
+  ApiKeyPage:      TInputQueryWizardPage;
+  DemoPage:        TInputOptionWizardPage;
+  AboutPage:       TInputQueryWizardPage;
+  ResearchPage:    TInputQueryWizardPage;
+  StylePage:       TInputOptionWizardPage;
+  ProjectsPage:    TInputQueryWizardPage;
+  WhatMetisPage:   TOutputMsgWizardPage;
+  DataPrivacyPage: TOutputMsgWizardPage;
 
 function ShouldSeedDemo: Boolean;
 begin
@@ -215,9 +221,44 @@ procedure InitializeWizard;
 begin
   WizardForm.WelcomeLabel2.Caption := CustomMessage('WelcomeText');
 
+  { ── What Metis is doing — educational page shown before install questions ── }
+  WhatMetisPage := CreateOutputMsgWizardPage(
+    wpSelectComponents,
+    'How Metis Works — What to Expect',
+    'A quick overview before we ask you a few questions.',
+    'WHAT IS AN MCP SERVER?' + #13#10 +
+    'MCP (Model Context Protocol) is an open standard from Anthropic.' + #13#10 +
+    'Metis uses it to give Claude a persistent connection to your research' + #13#10 +
+    'world — your papers, your projects, your notes, your meeting history.' + #13#10 +
+    'The MCP server is a small background process that runs silently.' + #13#10 +
+    'You will never interact with it directly — it just works.' + #13#10 + #13#10 +
+    '────────────────────────────────────────────────────────────' + #13#10 + #13#10 +
+    'HOW YOU WILL KNOW METIS IS WORKING' + #13#10 +
+    'Once installed, open Claude Desktop or Claude Code. Metis will:' + #13#10 +
+    '  • Remember what you were working on in your last session' + #13#10 +
+    '  • Know your research domain and your terminology' + #13#10 +
+    '  • Route your questions to the right specialist (Epidemiologist,' + #13#10 +
+    '    Writing Partner, Librarian, Methods Coach, and 30+ others)' + #13#10 +
+    '  • Cross-reference your ideas with your literature automatically' + #13#10 +
+    '  • Build a morning brief of new papers and field news overnight' + #13#10 + #13#10 +
+    '────────────────────────────────────────────────────────────' + #13#10 + #13#10 +
+    'WHAT THE DASHBOARD ADDS (if you chose Full install)' + #13#10 +
+    'The research dashboard opens in your browser at http://localhost:8080.' + #13#10 +
+    'It is your research hub — 9 tabs covering papers, meetings, ideas,' + #13#10 +
+    'projects, tasks, learning, and more. It reads the same database as' + #13#10 +
+    'the MCP server, so everything is always in sync.' + #13#10 + #13#10 +
+    '────────────────────────────────────────────────────────────' + #13#10 + #13#10 +
+    'WHAT HAPPENS DURING INSTALL' + #13#10 +
+    '  Step 1  Sets up Python (required to run the MCP server)' + #13#10 +
+    '  Step 2  Installs Metis packages (may take 5-15 minutes)' + #13#10 +
+    '  Step 3  Loads demo data (if you chose the demo option)' + #13#10 +
+    '  Step 4  Builds your knowledge index from included documents' + #13#10 +
+    '  Step 5  Personalises Metis to your research profile' + #13#10 +
+    '  Step 6  Registers Metis with Claude Desktop and Claude Code');
+
   { ── Demo workspace page ────────────────────────────────────────────────── }
   DemoPage := CreateInputOptionPage(
-    wpSelectComponents,
+    WhatMetisPage.ID,
     'Demo Workspace',
     'Would you like to start with a demo workspace?',
     'A demo workspace pre-loads a realistic example: projects, meetings, ' +
@@ -278,19 +319,58 @@ begin
   StylePage.Add('Blunt — no hedging, challenge everything');
   StylePage.SelectedValueIndex := 1;
 
+  { ── Data privacy page ──────────────────────────────────────────────────── }
+  DataPrivacyPage := CreateOutputMsgWizardPage(
+    StylePage.ID,
+    'Your Data is Protected — Here is How',
+    'Before you add your projects, understand exactly what Metis touches.',
+    'WHAT STAYS ON YOUR MACHINE — ALWAYS' + #13#10 +
+    '  ✓  Your PDF library and all indexed documents' + #13#10 +
+    '  ✓  Your meeting notes and transcripts' + #13#10 +
+    '  ✓  Your ideas, journal entries, and task lists' + #13#10 +
+    '  ✓  Your project files and folder contents' + #13#10 +
+    '  ✓  Your API key and credentials (stored in a local .env file)' + #13#10 +
+    '  ✓  All voice recordings' + #13#10 + #13#10 +
+    '────────────────────────────────────────────────────────────' + #13#10 + #13#10 +
+    'WHAT LEAVES YOUR MACHINE (and when)' + #13#10 +
+    '  → Anthropic Claude API: text you send for analysis' + #13#10 +
+    '    (same as typing in Claude Desktop directly)' + #13#10 +
+    '  → PubMed / OpenAlex: your configured research search terms' + #13#10 +
+    '    (sent once per day for the morning brief — optional)' + #13#10 +
+    '  → Zotero: library metadata if you enable sync (optional)' + #13#10 + #13#10 +
+    '────────────────────────────────────────────────────────────' + #13#10 + #13#10 +
+    'WHEN PROJECT FOLDERS ARE SCANNED' + #13#10 +
+    'If you give Metis a folder path for a project, it can scan it.' + #13#10 +
+    'You choose what it reads:' + #13#10 +
+    '  • "File names only" — sees file and folder names, nothing else' + #13#10 +
+    '  • "Read notes" — also reads README.md and PLANNING.md' + #13#10 +
+    '  • "I will describe it" — no scan at all, you type the description' + #13#10 + #13#10 +
+    'Metis NEVER reads patient data files — they are detected and blocked.' + #13#10 +
+    'Metis NEVER reads files outside your configured project folders.' + #13#10 + #13#10 +
+    '────────────────────────────────────────────────────────────' + #13#10 + #13#10 +
+    'YOUR CLAUDE.md FILE' + #13#10 +
+    'For each project folder you provide, Metis writes a CLAUDE.md file.' + #13#10 +
+    'This is a plain text file that tells Claude what the project is about.' + #13#10 +
+    'Claude Desktop and Claude Code read it automatically when you open' + #13#10 +
+    'the folder. You can edit or delete it at any time — it is yours.');
+
   { ── Projects page ──────────────────────────────────────────────────────── }
   ProjectsPage := CreateInputQueryPage(
-    StylePage.ID,
+    DataPrivacyPage.ID,
     'Your Active Projects',
-    'What are you currently working on?',
-    'Enter your projects below. For each one Metis will:' + #13#10 +
-    '  • Create a project tracking record in the dashboard' + #13#10 +
-    '  • Write a CLAUDE.md in the project folder (if a path is given)' + #13#10 +
-    '  • Register it in Claude Desktop automatically' + #13#10 + #13#10 +
-    'Format: Project Name | Category | C:\path\to\folder' + #13#10 +
-    'Categories: Article, Grant, Teaching, Software, Review, or any custom name.' + #13#10 +
-    'The folder path and category are optional — name alone is fine.');
-  ProjectsPage.Add('Project 1 (Name | Category | Folder):', False);
+    'Tell Metis what you are currently working on.',
+    'Enter up to 3 projects below. You can add more after install' + #13#10 +
+    'from the Metis dashboard (http://localhost:8080/setup).' + #13#10 + #13#10 +
+    'Format options (all parts are optional — name alone is fine):' + #13#10 +
+    '  Just a name:       HAT Surveillance Study' + #13#10 +
+    '  With category:     HAT Surveillance Study | Article' + #13#10 +
+    '  With folder:       HAT Surveillance Study | Article | C:\docs\hat-study' + #13#10 + #13#10 +
+    'Categories: Article, Grant, Teaching, Software, Review, or create your own.' + #13#10 +
+    'Folder: right-click the folder in Explorer → Copy as path, then paste here.' + #13#10 + #13#10 +
+    'For each project Metis will: create a tracking record, write a CLAUDE.md' + #13#10 +
+    'into the folder (so Claude understands it immediately), and register it' + #13#10 +
+    'in Claude Desktop automatically.');
+  ProjectsPage.Add('Project 1:', False);
   ProjectsPage.Add('Project 2 (optional):', False);
   ProjectsPage.Add('Project 3 (optional):', False);
 end;
@@ -418,6 +498,63 @@ begin
       '  }' + #13#10 +
       '}' + #13#10;
     SaveStringToFile(StateFile, StateContent, False);
+  end;
+end;
+
+procedure CurPageChanged(CurPageID: Integer);
+var
+  HasDash: Boolean;
+  NextSteps: String;
+begin
+  if CurPageID = wpFinished then
+  begin
+    HasDash := WizardIsComponentSelected('dashboard');
+
+    NextSteps :=
+      '✓  Metis is installed.' + #13#10 + #13#10 +
+      '══════════════════════════════════════════════' + #13#10 +
+      '  YOUR NEXT STEPS' + #13#10 +
+      '══════════════════════════════════════════════' + #13#10 + #13#10 +
+      '① Install Claude Desktop (free — 2 minutes)' + #13#10 +
+      '   https://claude.ai/download' + #13#10 +
+      '   Open it once — Metis registers automatically.' + #13#10 + #13#10;
+
+    if HasDash then
+      NextSteps := NextSteps +
+        '② Start the Metis Dashboard' + #13#10 +
+        '   Double-click "Metis — Dashboard" on your desktop,' + #13#10 +
+        '   or open your browser to:  http://localhost:8080' + #13#10 + #13#10 +
+        '③ Complete your setup wizard' + #13#10 +
+        '   Opens automatically at: http://localhost:8080/setup' + #13#10 +
+        '   Also starts in Claude Desktop on first open.' + #13#10 + #13#10
+    else
+      NextSteps := NextSteps +
+        '② Open Claude Desktop — your setup wizard starts automatically.' + #13#10 +
+        '   It takes about 3 minutes and personalises Metis to your work.' + #13#10 + #13#10;
+
+    if DemoPage.SelectedValueIndex = 0 then
+      NextSteps := NextSteps +
+        '── Demo workspace loaded ──────────────────────────────────' + #13#10 +
+        'Explore every feature right away — realistic projects, meetings,' + #13#10 +
+        'literature, and tasks are pre-loaded. Clear it any time from the' + #13#10 +
+        'Metis tab → Configuration.' + #13#10 + #13#10;
+
+    NextSteps := NextSteps +
+      '══════════════════════════════════════════════' + #13#10 +
+      '  WANT TO LEARN MORE?' + #13#10 +
+      '══════════════════════════════════════════════' + #13#10 + #13#10 +
+      'Claude Desktop (required):' + #13#10 +
+      '  https://claude.ai/download' + #13#10 + #13#10 +
+      'Claude Code (for developers and power users):' + #13#10 +
+      '  https://docs.anthropic.com/en/docs/claude-code/getting-started' + #13#10 + #13#10 +
+      'Metis documentation and source code:' + #13#10 +
+      '  https://github.com/SVerITG/Metis_PH' + #13#10 + #13#10 +
+      'Get your Anthropic API key (if you need a new one):' + #13#10 +
+      '  https://console.anthropic.com' + #13#10 + #13#10 +
+      'Questions or feedback → open an issue:' + #13#10 +
+      '  https://github.com/SVerITG/Metis_PH/issues';
+
+    WizardForm.FinishedLabel.Caption := NextSteps;
   end;
 end;
 

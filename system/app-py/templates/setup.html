@@ -158,67 +158,196 @@
       <!-- Step 4: Projects -->
       <div class="wpage" id="wpage-4" style="display:none;">
         <h2 style="margin:0 0 0.25rem;font-size:1.1rem;">Your active projects</h2>
-        <p style="color:var(--m-muted,#6b7280);font-size:0.875rem;margin:0 0 0.75rem;">
-          Add as many projects as you like. For each one Metis will create a tracking record,
-          write a <code>CLAUDE.md</code> into the project folder, and register it in Claude Desktop.
+        <p style="color:var(--m-muted,#6b7280);font-size:0.875rem;margin:0 0 1.25rem;line-height:1.6;">
+          Tell Metis what you're working on. For each project it will create a tracking record,
+          write context into the project folder so Claude understands it immediately,
+          and register it in Claude Desktop. You can add as many as you like — more can be added after setup too.
         </p>
 
-        <!-- Categories -->
-        <div style="margin-bottom:1rem;">
-          <label class="field-label">Categories (comma-separated — create your own)</label>
-          <input id="categories-input" class="field-input"
-                 value="Article, Grant, Teaching, Software, Review"
-                 placeholder="Article, Grant, Teaching, Software, Review">
-          <div class="field-hint">Used to group projects. Edit freely — new categories are created on the fly.</div>
+        <!-- Project cards list -->
+        <div id="project-cards" style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1rem;">
+          <!-- cards injected by JS -->
         </div>
 
-        <!-- Folder scan preference -->
-        <div style="margin-bottom:1rem;">
-          <label class="field-label">When adding a project folder, how should Metis detect what it's about?</label>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-top:0.4rem;">
-            {% for val, title, desc in [
-              ('names','File names only','Fast, no content read'),
-              ('content','Read README/notes','More accurate, reads first 400 chars'),
-              ('none','I will describe it','Skip scan, type description manually')
-            ] %}
-            <label style="border:1px solid var(--m-line,#e5e7eb);border-radius:5px;
-                          padding:0.6rem;cursor:pointer;font-size:0.82rem;"
-                   onmouseover="this.style.borderColor='var(--m-accent,#16a34a)'"
-                   onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='var(--m-line,#e5e7eb)'">
-              <input type="radio" name="scan_type" value="{{ val }}"
-                     {% if val == 'names' %}checked{% endif %}
-                     onchange="document.querySelectorAll('[name=scan_type]').forEach(r=>{r.parentElement.style.borderColor=r.checked?'var(--m-accent,#16a34a)':'var(--m-line,#e5e7eb)'})">
-              <div style="font-weight:500;margin:0.25rem 0 0.1rem;">{{ title }}</div>
-              <div style="color:var(--m-muted,#6b7280);font-size:0.78rem;">{{ desc }}</div>
-            </label>
-            {% endfor %}
-          </div>
-        </div>
-
-        <div id="project-list" style="display:grid;gap:0.75rem;">
-          <!-- project rows injected by JS -->
-        </div>
-        <button type="button" onclick="addProject()"
-                style="margin-top:0.75rem;background:transparent;border:1px dashed var(--m-line,#e5e7eb);
-                       border-radius:6px;padding:0.6rem 1.25rem;cursor:pointer;
-                       font-family:var(--m-mono,monospace);font-size:11px;letter-spacing:0.12em;
-                       color:var(--m-muted,#6b7280);width:100%;">
-          + ADD PROJECT
+        <!-- Add Project button -->
+        <button type="button" onclick="openProjectModal()"
+                style="width:100%;padding:0.875rem;background:transparent;
+                       border:2px dashed var(--m-line,#e5e7eb);border-radius:8px;
+                       cursor:pointer;font-family:var(--m-mono,monospace);font-size:11px;
+                       letter-spacing:0.14em;color:var(--m-muted,#6b7280);
+                       transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:0.5rem;"
+                onmouseover="this.style.borderColor='var(--m-accent,#16a34a)';this.style.color='var(--m-accent,#16a34a)'"
+                onmouseout="this.style.borderColor='var(--m-line,#e5e7eb)';this.style.color='var(--m-muted,#6b7280)'">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/>
+          </svg>
+          ADD A PROJECT
         </button>
 
+        <div style="margin-top:0.75rem;padding:0.75rem;background:var(--m-surface-2,#f9fafb);
+                    border-radius:6px;font-size:0.8rem;color:var(--m-muted,#6b7280);line-height:1.5;">
+          💡 <strong>Tip:</strong> To find a folder path in Windows Explorer, right-click the folder and choose
+          <em>Copy as path</em>. Paste it in the folder field below.
+        </div>
+
         <!-- Processing indicator -->
-        <div id="wizard-processing" style="display:none;margin-top:1.5rem;padding:1.25rem;
-             background:var(--m-surface-2,#f9fafb);border-radius:6px;text-align:center;">
-          <div style="font-family:var(--m-mono,monospace);font-size:11px;letter-spacing:0.14em;
-                      color:var(--m-accent,#16a34a);margin-bottom:0.5rem;">CALIBRATING METIS</div>
-          <div style="color:var(--m-muted,#6b7280);font-size:0.875rem;">
-            Claude is processing your answers and generating your personalised configuration…
+        <div id="wizard-processing" style="display:none;margin-top:1.5rem;padding:1.5rem;
+             background:linear-gradient(135deg,rgba(22,163,74,0.04),rgba(22,163,74,0.08));
+             border:1px solid rgba(22,163,74,0.2);border-radius:8px;text-align:center;">
+          <div style="font-family:var(--m-mono,monospace);font-size:10px;letter-spacing:0.2em;
+                      color:var(--m-accent,#16a34a);margin-bottom:0.75rem;">CALIBRATING METIS</div>
+          <div style="font-size:0.9rem;font-weight:500;margin-bottom:0.375rem;">
+            Building your personalised profile…
+          </div>
+          <div style="color:var(--m-muted,#6b7280);font-size:0.8rem;line-height:1.5;">
+            Claude is reading your answers and generating a calibrated persona —
+            tuned to your domain, your working style, and your projects.
+            This takes about 15 seconds.
           </div>
         </div>
 
         <div id="wizard-error" style="display:none;margin-top:1rem;padding:0.875rem;
              background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;
              color:#dc2626;font-size:0.875rem;"></div>
+      </div>
+
+      <!-- ── Project modal ──────────────────────────────────────────────── -->
+      <div id="project-modal" style="display:none;position:fixed;inset:0;z-index:1000;
+           background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);
+           align-items:center;justify-content:center;padding:1.5rem;">
+        <div style="background:var(--m-surface,#fff);border-radius:10px;width:100%;max-width:560px;
+                    max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+
+          <!-- Modal header -->
+          <div style="padding:1.5rem 1.5rem 1rem;border-bottom:1px solid var(--m-line,#e5e7eb);
+                      display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-family:var(--m-mono,monospace);font-size:9px;letter-spacing:0.2em;
+                          color:var(--m-accent,#16a34a);margin-bottom:0.25rem;">NEW PROJECT</div>
+              <h3 style="margin:0;font-size:1.05rem;">Add a project to Metis</h3>
+            </div>
+            <button onclick="closeProjectModal()" type="button"
+                    style="background:transparent;border:none;cursor:pointer;
+                           color:var(--m-muted,#6b7280);font-size:1.25rem;line-height:1;padding:0.25rem;">×</button>
+          </div>
+
+          <!-- Modal body -->
+          <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1.1rem;">
+
+            <!-- Name -->
+            <div>
+              <label class="field-label">Project name *</label>
+              <input id="modal-name" class="field-input" placeholder="e.g. Malaria prevalence survey, HAT surveillance study">
+            </div>
+
+            <!-- Category + Priority row -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.875rem;">
+              <div>
+                <label class="field-label">Category</label>
+                <div style="display:flex;gap:0.5rem;">
+                  <select id="modal-category" class="field-input" style="flex:1;">
+                    <option value="Article">Article</option>
+                    <option value="Grant">Grant</option>
+                    <option value="Teaching">Teaching</option>
+                    <option value="Software">Software</option>
+                    <option value="Review">Review</option>
+                    <option value="__new__">+ New category…</option>
+                  </select>
+                </div>
+                <input id="modal-new-cat" class="field-input" placeholder="New category name"
+                       style="display:none;margin-top:0.375rem;">
+              </div>
+              <div>
+                <label class="field-label">Priority</label>
+                <select id="modal-priority" class="field-input">
+                  <option value="high">🔴 Main work — top priority</option>
+                  <option value="medium" selected>🟡 Active — regular attention</option>
+                  <option value="low">🟢 Side project — occasional</option>
+                  <option value="someday">⚪ Exploring — no deadline</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Folder path -->
+            <div>
+              <label class="field-label">Project folder on your computer (optional)</label>
+              <div style="display:flex;gap:0.5rem;">
+                <input id="modal-folder" class="field-input" style="flex:1;"
+                       placeholder="e.g. C:\Users\you\Documents\malaria-study">
+                <button type="button" onclick="pickFolder()"
+                        style="padding:0.5rem 0.875rem;background:var(--m-surface-2,#f9fafb);
+                               border:1px solid var(--m-line,#e5e7eb);border-radius:4px;
+                               cursor:pointer;font-size:0.875rem;white-space:nowrap;
+                               color:var(--m-ink,#111);" title="Browse for folder">
+                  📂 Browse
+                </button>
+              </div>
+              <div class="field-hint">
+                Metis will write a <code>CLAUDE.md</code> here so Claude understands the project.
+                In Windows Explorer: right-click the folder → <em>Copy as path</em>, then paste above.
+              </div>
+              <!-- Hidden folder picker -->
+              <input type="file" id="folder-picker" webkitdirectory style="display:none;"
+                     onchange="handleFolderPick(this)">
+            </div>
+
+            <!-- Scan type -->
+            <div>
+              <label class="field-label">How should Metis understand this project?</label>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-top:0.375rem;">
+                <label id="scan-label-names" class="scan-opt"
+                       style="border:1px solid var(--m-accent,#16a34a);border-radius:6px;
+                              padding:0.6rem;cursor:pointer;text-align:center;">
+                  <input type="radio" name="modal-scan" value="names" checked style="display:none;">
+                  <div style="font-size:1.1rem;margin-bottom:0.2rem;">🗂️</div>
+                  <div style="font-weight:500;font-size:0.82rem;">File names</div>
+                  <div style="color:var(--m-muted);font-size:0.75rem;">Quick scan</div>
+                </label>
+                <label id="scan-label-content" class="scan-opt"
+                       style="border:1px solid var(--m-line,#e5e7eb);border-radius:6px;
+                              padding:0.6rem;cursor:pointer;text-align:center;">
+                  <input type="radio" name="modal-scan" value="content" style="display:none;">
+                  <div style="font-size:1.1rem;margin-bottom:0.2rem;">📄</div>
+                  <div style="font-weight:500;font-size:0.82rem;">Read notes</div>
+                  <div style="color:var(--m-muted);font-size:0.75rem;">Reads README</div>
+                </label>
+                <label id="scan-label-none" class="scan-opt"
+                       style="border:1px solid var(--m-line,#e5e7eb);border-radius:6px;
+                              padding:0.6rem;cursor:pointer;text-align:center;">
+                  <input type="radio" name="modal-scan" value="none" style="display:none;">
+                  <div style="font-size:1.1rem;margin-bottom:0.2rem;">✏️</div>
+                  <div style="font-weight:500;font-size:0.82rem;">I'll describe</div>
+                  <div style="color:var(--m-muted);font-size:0.75rem;">Type it below</div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Description (shown when scan=none or always optional) -->
+            <div id="modal-desc-wrap">
+              <label class="field-label">Brief description <span id="desc-hint" style="font-weight:400;color:var(--m-muted);">(optional — Metis will auto-detect if a folder is set)</span></label>
+              <textarea id="modal-desc" class="field-input" rows="2"
+                        placeholder="e.g. Longitudinal cohort study examining HAT case detection rates across three provinces in DRC"></textarea>
+            </div>
+
+          </div>
+
+          <!-- Modal footer -->
+          <div style="padding:1rem 1.5rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;
+                      border-top:1px solid var(--m-line,#e5e7eb);">
+            <button type="button" onclick="closeProjectModal()"
+                    style="padding:0.6rem 1.25rem;background:transparent;
+                           border:1px solid var(--m-line,#e5e7eb);border-radius:4px;cursor:pointer;
+                           font-family:var(--m-mono,monospace);font-size:11px;letter-spacing:0.12em;">
+              CANCEL
+            </button>
+            <button type="button" onclick="saveProject()"
+                    style="padding:0.6rem 1.5rem;background:var(--m-accent,#16a34a);color:white;
+                           border:none;border-radius:4px;cursor:pointer;
+                           font-family:var(--m-mono,monospace);font-size:11px;letter-spacing:0.12em;">
+              ADD PROJECT →
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Nav buttons -->
@@ -291,82 +420,192 @@
       document.getElementById('btn-next').style.display = _step < _total ? '' : 'none';
       document.getElementById('btn-submit').style.display = _step === _total ? '' : 'none';
 
-      if (_step === _total && document.querySelectorAll('.project-row').length === 0) {
-        addProject();
+      if (_step === _total) {
+        renderProjectCards();
       }
     }
 
-    var _projectCount = 0;
+    // ── Project modal ─────────────────────────────────────────────────────────
+    var _projects = [];
+    var _editIndex = -1;
 
-    function _getCategories() {
-      var raw = (document.getElementById('categories-input') || {}).value || 'Article,Grant,Teaching,Software,Review';
-      return raw.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+    function openProjectModal(editIdx) {
+      _editIndex = (editIdx !== undefined) ? editIdx : -1;
+      var modal = document.getElementById('project-modal');
+      modal.style.display = 'flex';
+      // Reset / pre-fill
+      if (_editIndex >= 0) {
+        var p = _projects[_editIndex];
+        document.getElementById('modal-name').value     = p.name || '';
+        document.getElementById('modal-folder').value   = p.folder || '';
+        document.getElementById('modal-desc').value     = p.description || '';
+        document.getElementById('modal-priority').value = p.priority || 'medium';
+        // Category
+        var catSel = document.getElementById('modal-category');
+        var found = false;
+        for (var i = 0; i < catSel.options.length; i++) {
+          if (catSel.options[i].value === p.category) { catSel.selectedIndex = i; found = true; break; }
+        }
+        if (!found && p.category) {
+          var opt = new Option(p.category, p.category);
+          catSel.insertBefore(opt, catSel.querySelector('[value="__new__"]'));
+          catSel.value = p.category;
+        }
+        // Scan type
+        var scanVal = p.scan_type || 'names';
+        document.querySelectorAll('[name="modal-scan"]').forEach(function(r) { r.checked = r.value === scanVal; });
+        updateScanHighlight(scanVal);
+      } else {
+        document.getElementById('modal-name').value     = '';
+        document.getElementById('modal-folder').value   = '';
+        document.getElementById('modal-desc').value     = '';
+        document.getElementById('modal-priority').value = 'medium';
+        document.getElementById('modal-category').value = 'Article';
+        document.getElementById('modal-new-cat').style.display = 'none';
+        document.querySelectorAll('[name="modal-scan"]').forEach(function(r) { r.checked = r.value === 'names'; });
+        updateScanHighlight('names');
+      }
+      setTimeout(function() { document.getElementById('modal-name').focus(); }, 100);
     }
 
-    function addProject() {
-      _projectCount++;
-      var n = _projectCount;
-      var cats = _getCategories();
-      var catOptions = cats.map(function(c) {
-        return '<option value="' + c + '">' + c + '</option>';
-      }).join('');
-      var row = document.createElement('div');
-      row.className = 'project-row';
-      row.style.cssText = 'border:1px solid var(--m-line,#e5e7eb);border-radius:6px;padding:0.875rem;position:relative;';
-      row.innerHTML =
-        '<button type="button" onclick="this.parentElement.remove()" ' +
-        '        style="position:absolute;top:0.5rem;right:0.5rem;background:transparent;border:none;' +
-        '               color:var(--m-muted);cursor:pointer;font-size:1.1rem;padding:0 0.25rem;" title="Remove">×</button>' +
-        '<div style="display:grid;grid-template-columns:2fr 1fr;gap:0.75rem;margin-bottom:0.5rem;">' +
-          '<div>' +
-            '<label class="field-label">Project name</label>' +
-            '<input name="project_name_' + n + '" class="field-input" ' +
-            '       placeholder="e.g. Malaria prevalence survey">' +
-          '</div>' +
-          '<div>' +
-            '<label class="field-label">Category</label>' +
-            '<select name="project_cat_' + n + '" class="field-input">' +
-              catOptions +
-              '<option value="__new__">+ New category…</option>' +
-            '</select>' +
-          '</div>' +
-        '</div>' +
-        '<div style="margin-bottom:0.5rem;">' +
-          '<label class="field-label">Project folder path (optional)</label>' +
-          '<input name="project_folder_' + n + '" class="field-input" ' +
-          '       placeholder="e.g. C:\\Users\\you\\Documents\\malaria-study">' +
-          '<div class="field-hint">Leave blank if folder not set up yet. Paste the Windows path.</div>' +
-        '</div>' +
-        '<div id="proj-desc-wrap-' + n + '">' +
-          '<label class="field-label" id="proj-desc-label-' + n + '">Description (auto-filled when folder is set)</label>' +
-          '<textarea name="project_desc_' + n + '" class="field-input" rows="1" ' +
-          '          placeholder="What is this project about?"></textarea>' +
-        '</div>';
+    function closeProjectModal() {
+      document.getElementById('project-modal').style.display = 'none';
+    }
 
-      document.getElementById('project-list').appendChild(row);
+    function updateScanHighlight(val) {
+      ['names','content','none'].forEach(function(v) {
+        var el = document.getElementById('scan-label-' + v);
+        if (el) el.style.borderColor = (v === val) ? 'var(--m-accent,#16a34a)' : 'var(--m-line,#e5e7eb)';
+      });
+      var descHint = document.getElementById('desc-hint');
+      if (descHint) descHint.textContent = val === 'none' ? '(required — describe what this project is about)' : '(optional — Metis will auto-detect if a folder is set)';
+    }
 
-      // Handle "new category" option
-      var sel = row.querySelector('[name="project_cat_' + n + '"]');
-      sel.addEventListener('change', function() {
-        if (this.value === '__new__') {
-          var newCat = prompt('New category name:');
-          if (newCat && newCat.trim()) {
-            var opt = document.createElement('option');
-            opt.value = newCat.trim();
-            opt.textContent = newCat.trim();
-            this.insertBefore(opt, this.querySelector('[value="__new__"]'));
-            this.value = newCat.trim();
-            // Also add to categories input
-            var ci = document.getElementById('categories-input');
-            if (ci && !ci.value.includes(newCat.trim())) {
-              ci.value = ci.value + ', ' + newCat.trim();
-            }
-          } else {
-            this.value = this.options[0].value;
-          }
+    document.addEventListener('change', function(e) {
+      if (e.target.name === 'modal-scan') updateScanHighlight(e.target.value);
+      if (e.target.id === 'modal-category') {
+        var newCatInput = document.getElementById('modal-new-cat');
+        if (e.target.value === '__new__') {
+          newCatInput.style.display = '';
+          newCatInput.focus();
+        } else {
+          newCatInput.style.display = 'none';
         }
+      }
+    });
+
+    function pickFolder() {
+      var picker = document.getElementById('folder-picker');
+      if (picker) picker.click();
+    }
+
+    function handleFolderPick(input) {
+      if (input.files && input.files.length > 0) {
+        // Extract directory path from the first file's webkitRelativePath
+        var rel = input.files[0].webkitRelativePath;
+        // The folder name is the first component — we can't get full OS path from browser security
+        var folderName = rel.split('/')[0];
+        document.getElementById('modal-folder').value = folderName;
+        document.getElementById('modal-folder').title = 'Folder selected: ' + folderName + ' (paste the full path for best results)';
+      }
+    }
+
+    function saveProject() {
+      var name = (document.getElementById('modal-name').value || '').trim();
+      if (!name) {
+        document.getElementById('modal-name').focus();
+        document.getElementById('modal-name').style.borderColor = '#dc2626';
+        return;
+      }
+      document.getElementById('modal-name').style.borderColor = '';
+
+      var catSel = document.getElementById('modal-category');
+      var newCatInput = document.getElementById('modal-new-cat');
+      var category = catSel.value === '__new__'
+        ? (newCatInput.value.trim() || 'Other')
+        : catSel.value;
+
+      // Add new category to select if created
+      if (catSel.value === '__new__' && newCatInput.value.trim()) {
+        var opt = new Option(category, category);
+        catSel.insertBefore(opt, catSel.querySelector('[value="__new__"]'));
+        catSel.value = category;
+        newCatInput.value = '';
+        newCatInput.style.display = 'none';
+      }
+
+      var scanType = 'names';
+      document.querySelectorAll('[name="modal-scan"]').forEach(function(r) { if (r.checked) scanType = r.value; });
+
+      var project = {
+        name:        name,
+        category:    category,
+        folder:      (document.getElementById('modal-folder').value || '').trim(),
+        description: (document.getElementById('modal-desc').value || '').trim(),
+        priority:    document.getElementById('modal-priority').value || 'medium',
+        scan_type:   scanType,
+      };
+
+      if (_editIndex >= 0) {
+        _projects[_editIndex] = project;
+      } else {
+        _projects.push(project);
+      }
+
+      renderProjectCards();
+      closeProjectModal();
+    }
+
+    var _priorityLabels = {
+      high: '🔴 Main work', medium: '🟡 Active', low: '🟢 Side project', someday: '⚪ Exploring'
+    };
+
+    function renderProjectCards() {
+      var container = document.getElementById('project-cards');
+      if (!container) return;
+      container.innerHTML = '';
+      _projects.forEach(function(p, idx) {
+        var card = document.createElement('div');
+        card.style.cssText = 'border:1px solid var(--m-line,#e5e7eb);border-radius:8px;padding:0.875rem 1rem;' +
+          'display:flex;align-items:flex-start;gap:0.875rem;background:var(--m-surface,#fff);';
+        card.innerHTML =
+          '<div style="width:36px;height:36px;border-radius:6px;background:var(--m-surface-2,#f9fafb);' +
+          '     display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;">' +
+          (p.category === 'Article' ? '📄' : p.category === 'Grant' ? '💰' : p.category === 'Teaching' ? '📚' :
+           p.category === 'Software' ? '💻' : p.category === 'Review' ? '🔍' : '📁') +
+          '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-weight:500;font-size:0.9rem;margin-bottom:0.2rem;">' + _escHtml(p.name) + '</div>' +
+            '<div style="font-size:0.78rem;color:var(--m-muted,#6b7280);display:flex;gap:0.75rem;flex-wrap:wrap;">' +
+              '<span>' + _escHtml(p.category) + '</span>' +
+              '<span>' + (_priorityLabels[p.priority] || p.priority) + '</span>' +
+              (p.folder ? '<span style="font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;" title="' + _escHtml(p.folder) + '">📂 ' + _escHtml(p.folder.split(/[/\\]/).pop()) + '</span>' : '') +
+            '</div>' +
+            (p.description ? '<div style="font-size:0.8rem;color:var(--m-muted,#6b7280);margin-top:0.25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _escHtml(p.description) + '</div>' : '') +
+          '</div>' +
+          '<div style="display:flex;gap:0.375rem;flex-shrink:0;">' +
+            '<button type="button" onclick="openProjectModal(' + idx + ')" ' +
+            '        style="padding:0.3rem 0.6rem;background:transparent;border:1px solid var(--m-line,#e5e7eb);' +
+            '               border-radius:4px;cursor:pointer;font-size:0.75rem;color:var(--m-muted);">Edit</button>' +
+            '<button type="button" onclick="_projects.splice(' + idx + ',1);renderProjectCards()" ' +
+            '        style="padding:0.3rem 0.5rem;background:transparent;border:1px solid var(--m-line,#e5e7eb);' +
+            '               border-radius:4px;cursor:pointer;font-size:0.75rem;color:#dc2626;">×</button>' +
+          '</div>';
+        container.appendChild(card);
       });
     }
+
+    function _escHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('project-modal').addEventListener('click', function(e) {
+      if (e.target === this) closeProjectModal();
+    });
+
+    // Legacy addProject kept for compatibility — now opens modal
+    function addProject() { openProjectModal(); }
 
     document.getElementById('wizard-form').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -375,25 +614,10 @@
       var fd = new FormData(e.target);
       fd.forEach(function(v, k) { data[k] = v; });
 
-      // Collect structured project data
-      var projects = [];
-      var seen = new Set();
-      var i = 1;
-      while (true) {
-        var nameEl   = e.target.querySelector('[name="project_name_' + i + '"]');
-        if (!nameEl) break;
-        var name   = nameEl.value.trim();
-        var cat    = (e.target.querySelector('[name="project_cat_' + i + '"]') || {}).value || '';
-        var folder = (e.target.querySelector('[name="project_folder_' + i + '"]') || {}).value || '';
-        var desc   = (e.target.querySelector('[name="project_desc_' + i + '"]') || {}).value || '';
-        if (name && !seen.has(name)) {
-          seen.add(name);
-          projects.push({ name: name, category: cat, folder: folder, description: desc });
-        }
-        i++;
-      }
-      data['projects'] = projects;
-      data['scan_type'] = (e.target.querySelector('[name="scan_type"]:checked') || {}).value || 'names';
+      // Collect structured project data from _projects array
+      data['projects'] = _projects;
+      // scan_type is per-project; use 'names' as global default for any without explicit type
+      data['scan_type'] = 'names';
 
       document.getElementById('wizard-processing').style.display = '';
       document.getElementById('wizard-error').style.display = 'none';
