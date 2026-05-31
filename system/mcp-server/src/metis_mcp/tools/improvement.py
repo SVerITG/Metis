@@ -324,7 +324,119 @@ def draft_self_improvement_proposal(agent_slug: str,
     }
 
 
+# ── Consolidation: reflexion themes → semantic memory ────────────────────────
+
+
+def consolidate_reflexions(days: int = 14, min_count: int = 3,
+                           prune_working_days: int = 7) -> dict:
+    """Distil recurring reflexion themes into semantic memory + prune working memory.
+
+    Closes the loop the 2026-05-30 self-reflexion flagged: reflexions were logged
+    but never fed back into the searchable semantic layer, and working_memory
+    grew without bound. This is the nightly consolidation step.
+
+    For every (agent, theme) that recurs >= min_count times across could_improve /
+    missing_context / tool_wishes, writes ONE semantic_memory node (deduped by
+    concept, so re-running nightly is idempotent). Then deletes working_memory
+    rows older than prune_working_days.
+
+    Returns a summary dict. Embedding is best-effort (skipped if fastembed absent).
+    """
+    agg = aggregate_reflexions(days=days)
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    written, skipped, pruned = 0, 0, 0
+
+    # Best-effort embedding
+    def _embed(text: str):
+        try:
+            from metis_mcp.embeddings import embed_document
+            return embed_document(text)
+        except Exception:
+            return None
+
+    try:
+        from metis_mcp.tools.vector_memory import _encode_vec  # type: ignore
+    except Exception:
+        _encode_vec = None
+
+    with connect(paths.db) as con:
+        existing = {
+            r[0] for r in con.execute(
+                "SELECT concept FROM semantic_memory WHERE source_type='reflexion'"
+            ).fetchall()
+        }
+        for a in agg.get("agents", []):
+            slug = a.get("agent_slug", "?")
+            for category, label in (
+                ("could_improve_themes", "could improve"),
+                ("missing_context_themes", "often lacks context on"),
+                ("tool_wishes_themes", "wants tooling for"),
+            ):
+                for theme, count in a.get(category, []):
+                    if count < min_count:
+                        continue
+                    concept = f"self-improvement: {slug} · {theme}"
+                    if concept in existing:
+                        skipped += 1
+                        continue
+                    definition = (
+                        f"Across recent sessions, the {slug} agent repeatedly "
+                        f"{label} '{theme}' ({count}× in {days} days). "
+                        f"Consider addressing this in the agent's skill or context."
+                    )
+                    cur = con.execute(
+                        """INSERT INTO semantic_memory
+                           (concept, definition, related_concepts, source_type, source_id, created_at, updated_at)
+                           VALUES (?, ?, ?, 'reflexion', ?, ?, ?)""",
+                        (concept, definition, slug, f"reflexion:{slug}", now, now),
+                    )
+                    vec = _embed(f"{concept}: {definition}")
+                    if vec is not None and _encode_vec is not None:
+                        try:
+                            con.execute(
+                                "INSERT INTO vec_semantic (rowid, embedding) VALUES (?, ?)",
+                                (cur.lastrowid, _encode_vec(vec)),
+                            )
+                        except Exception:
+                            pass
+                    existing.add(concept)
+                    written += 1
+
+        # Prune stale working memory
+        try:
+            cutoff = (datetime.datetime.now(datetime.timezone.utc)
+                      - datetime.timedelta(days=prune_working_days)).isoformat()
+            cur = con.execute("DELETE FROM working_memory WHERE created_at < ?", (cutoff,))
+            pruned = cur.rowcount or 0
+        except Exception:
+            pruned = 0
+        con.commit()
+
+    return {
+        "semantic_written": written,
+        "semantic_skipped_existing": skipped,
+        "working_memory_pruned": pruned,
+        "agents_reviewed": len(agg.get("agents", [])),
+    }
+
+
 # ── MCP tool wrappers ────────────────────────────────────────────────────────
+
+
+@app.tool()
+async def consolidate_reflexions_tool(days: int = 14, min_count: int = 3) -> list[TextContent]:
+    """Distil recurring reflexion themes into semantic memory and prune working memory.
+
+    Runs the nightly self-improvement consolidation: every theme an agent raised
+    >= min_count times in the last `days` becomes a searchable semantic-memory
+    node (deduped), and working_memory older than 7 days is pruned. Idempotent.
+    """
+    r = consolidate_reflexions(days=days, min_count=min_count)
+    return [TextContent(type="text", text=(
+        f"Consolidation complete — {r['semantic_written']} new semantic node(s) from "
+        f"{r['agents_reviewed']} agent(s), {r['semantic_skipped_existing']} already known, "
+        f"{r['working_memory_pruned']} stale working-memory row(s) pruned."
+    ))]
 
 
 @app.tool()

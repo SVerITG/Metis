@@ -375,11 +375,15 @@ def job_evening_reflexion() -> None:
     try:
         # aggregate_reflexions() is SYNCHRONOUS and returns a dict — it must NOT be
         # wrapped in asyncio.run() (that raises "a coroutine was expected").
-        from metis_mcp.tools.improvement import aggregate_reflexions
+        from metis_mcp.tools.improvement import aggregate_reflexions, consolidate_reflexions
         result = aggregate_reflexions()
         agents = result.get("agents", []) if isinstance(result, dict) else []
         total = (result.get("totals", {}) or {}).get("reflexions", 0) if isinstance(result, dict) else 0
-        msg = f"Aggregated {total} reflexion(s) across {len(agents)} agent(s)."
+        # Close the loop: distil recurring themes into semantic memory + prune working memory.
+        cons = consolidate_reflexions()
+        msg = (f"Aggregated {total} reflexion(s) across {len(agents)} agent(s); "
+               f"consolidated {cons['semantic_written']} new semantic node(s), "
+               f"pruned {cons['working_memory_pruned']} stale working-memory row(s).")
         _log_job("evening_reflexion", "ok", msg)
         log.info("[scheduler] evening_reflexion done: %s", msg)
     except Exception as exc:
