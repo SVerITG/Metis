@@ -115,9 +115,67 @@ def _classify_domain(title: str, summary: str, feed_tags: str) -> str:
     return feed_tags.split(",")[0].strip()
 
 
+# High-authority sources — a hit here lifts the signal one level.
+_AUTHORITY_SOURCES = {
+    "who outbreak news", "lancet inf. diseases", "nature medicine",
+    "plos medicine", "plos ntds", "eurosurveillance", "cdc eid journal",
+    "africa cdc", "ecdc threat reports", "bmj global health",
+}
+# Words that mark a genuinely high-signal development (not routine coverage).
+_URGENCY_WORDS = {
+    "outbreak", "emergency", "alert", "elimination", "eliminated", "breakthrough",
+    "first case", "resurgence", "epidemic", "pandemic", "recall", "withdrawn",
+    "approval", "approved", "vaccine", "resistance", "novel", "emerging",
+}
+
+
+def _user_topics() -> set[str]:
+    """Lower-cased research topics/field from user-config.yaml, for relevance scoring."""
+    try:
+        import yaml
+        cfg_path = paths.config / "user-config.yaml"
+        if cfg_path.exists():
+            cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+            research = cfg.get("research", {}) if isinstance(cfg.get("research"), dict) else {}
+            topics = research.get("topics") or cfg.get("topics") or []
+            if isinstance(topics, str):
+                topics = [t.strip() for t in topics.split(",")]
+            field = research.get("field") or cfg.get("field") or ""
+            out = {str(t).strip().lower() for t in topics if str(t).strip()}
+            if field:
+                out.add(str(field).strip().lower())
+            return out
+    except Exception:
+        pass
+    return set()
+
+
+def _score_signal(title: str, summary: str, feed_name: str, user_topics: set[str]) -> str:
+    """Heuristic signal strength: 'high' | 'medium' | 'low'.
+
+    Replaces the old hardcoded 'medium'. Combines source authority, urgency
+    vocabulary, and relevance to the user's configured research topics so the
+    stored value is meaningful even before an agent re-scores at read time.
+    """
+    haystack = (title + " " + summary).lower()
+    score = 0
+    if feed_name.lower() in _AUTHORITY_SOURCES:
+        score += 1
+    if any(w in haystack for w in _URGENCY_WORDS):
+        score += 2  # an outbreak / approval / elimination is a strong signal on its own
+    if user_topics and any(t in haystack for t in user_topics):
+        score += 2  # direct relevance to the researcher's own topics matters most
+    if score >= 3:
+        return "high"
+    if score >= 1:
+        return "medium"
+    return "low"
+
+
 def scan_news_feeds(max_per_feed: int = 10) -> dict:
     added = 0
     errors = []
+    user_topics = _user_topics()
     with _connect() as conn:
         conn.execute(_DDL_NEWS)
         conn.commit()
@@ -135,11 +193,12 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
                         continue
                     summary_raw = entry.get("summary", "")[:800]
                     primary_domain = _classify_domain(title, summary_raw, tags)
+                    signal = _score_signal(title, summary_raw, name, user_topics)
                     conn.execute(
                         """INSERT INTO news_briefs
                            (title, domain, signal_strength, summary, source_url, created_at, tags, brief_date)
                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                        (title, primary_domain, "medium", summary_raw, link,
+                        (title, primary_domain, signal, summary_raw, link,
                          datetime.now().isoformat(), tags, datetime.now().date().isoformat()),
                     )
                     added += 1
