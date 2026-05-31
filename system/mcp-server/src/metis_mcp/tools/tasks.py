@@ -18,10 +18,75 @@ CREATE TABLE IF NOT EXISTS tasks (
     status TEXT DEFAULT 'open',
     notes TEXT DEFAULT '',
     due_date TEXT DEFAULT '',
+    recurrence TEXT DEFAULT '',
+    parent_task_id TEXT DEFAULT '',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 )
 """
+
+_VALID_RECURRENCE = {"", "daily", "weekly", "monthly", "yearly"}
+
+
+def _ensure_task_columns(conn) -> None:
+    """Add recurrence / parent_task_id columns to an existing tasks table."""
+    conn.execute(_TASKS_DDL)
+    existing = {r[1] for r in conn.execute("PRAGMA table_info(tasks)")}
+    if "recurrence" not in existing:
+        conn.execute("ALTER TABLE tasks ADD COLUMN recurrence TEXT DEFAULT ''")
+    if "parent_task_id" not in existing:
+        conn.execute("ALTER TABLE tasks ADD COLUMN parent_task_id TEXT DEFAULT ''")
+
+
+def _next_due(due_date: str, recurrence: str) -> str:
+    """Advance a YYYY-MM-DD due date by one recurrence period. Empty if not derivable."""
+    if recurrence not in _VALID_RECURRENCE or not recurrence:
+        return ""
+    try:
+        d = datetime.date.fromisoformat(due_date[:10])
+    except Exception:
+        d = datetime.date.today()
+    if recurrence == "daily":
+        d = d + datetime.timedelta(days=1)
+    elif recurrence == "weekly":
+        d = d + datetime.timedelta(weeks=1)
+    elif recurrence == "monthly":
+        month = d.month + 1
+        year = d.year + (month - 1) // 12
+        month = ((month - 1) % 12) + 1
+        day = min(d.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28,
+                          31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
+        d = datetime.date(year, month, day)
+    elif recurrence == "yearly":
+        d = d.replace(year=d.year + 1)
+    return d.isoformat()
+
+
+def spawn_next_occurrence(conn, task_id: str) -> str | None:
+    """If task_id is recurring, create its next occurrence. Returns new id or None.
+
+    Call this when a recurring task is marked done so the series continues.
+    """
+    row = conn.execute(
+        "SELECT title, project_id, owner, notes, due_date, recurrence, parent_task_id "
+        "FROM tasks WHERE task_id = ?", (task_id,)
+    ).fetchone()
+    if not row:
+        return None
+    recurrence = (row[5] if not isinstance(row, dict) else row["recurrence"]) or ""
+    if recurrence not in _VALID_RECURRENCE or not recurrence:
+        return None
+    title, project_id, owner, notes, due_date = row[0], row[1], row[2], row[3], row[4]
+    new_due = _next_due(due_date, recurrence)
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    new_id = f"{project_id}-{_slugify(title)}-{new_due or now[:10]}"
+    conn.execute(
+        """INSERT OR REPLACE INTO tasks
+           (task_id, title, project_id, owner, status, notes, due_date, recurrence, parent_task_id, created_at, updated_at)
+           VALUES (?, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?)""",
+        (new_id, title, project_id, owner, notes, new_due, recurrence, task_id, now, now),
+    )
+    return new_id
 
 
 def _slugify(text: str) -> str:
@@ -113,6 +178,8 @@ async def create_task(
     owner: str = "Metis",
     notes: str = "",
     due_date: str = "",
+    recurrence: str = "",
+    parent_task_id: str = "",
 ) -> list[TextContent]:
     """Create a new task in the SQLite database.
 
@@ -122,28 +189,42 @@ async def create_task(
         owner: Who is responsible (default "Metis").
         notes: Additional details or context.
         due_date: Optional due date in YYYY-MM-DD format.
+        recurrence: Optional repeat — "daily", "weekly", "monthly", or "yearly".
+                    When a recurring task is completed, the next occurrence is created automatically.
+        parent_task_id: Optional parent task — set this to make this a subtask.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    recurrence = (recurrence or "").strip().lower()
+    if recurrence not in _VALID_RECURRENCE:
+        return [TextContent(type="text", text=(
+            f"Invalid recurrence '{recurrence}'. Use one of: daily, weekly, monthly, yearly (or leave empty)."
+        ))]
 
     now = datetime.datetime.now(datetime.timezone.utc).isoformat()
     task_id = f"{project_id}-{_slugify(title)}"
 
     try:
         with connect(paths.db) as conn:
-            conn.execute(_TASKS_DDL)
+            _ensure_task_columns(conn)
             conn.execute(
                 """INSERT INTO tasks
-                   (task_id, title, project_id, owner, status, notes, due_date, created_at, updated_at)
-                   VALUES (?, ?, ?, ?, 'open', ?, ?, ?, ?)""",
-                (task_id, title, project_id, owner, notes, due_date, now, now),
+                   (task_id, title, project_id, owner, status, notes, due_date, recurrence, parent_task_id, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?)""",
+                (task_id, title, project_id, owner, notes, due_date, recurrence, parent_task_id, now, now),
             )
             conn.commit()
 
+        extra = ""
+        if recurrence:
+            extra += f"\n- Repeats: {recurrence}"
+        if parent_task_id:
+            extra += f"\n- Subtask of: {parent_task_id}"
         return [
             TextContent(
                 type="text",
-                text=f"Task created: **{task_id}**\n- Title: {title}\n- Project: {project_id}\n- Owner: {owner}",
+                text=f"Task created: **{task_id}**\n- Title: {title}\n- Project: {project_id}\n- Owner: {owner}{extra}",
             )
         ]
     except Exception as e:

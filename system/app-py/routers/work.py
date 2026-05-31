@@ -578,14 +578,65 @@ async def project_detail_panel(request: Request, project_id: str):
 # ---------------------------------------------------------------------------
 
 
-@router.post("/api/task/{task_id}/done")
-async def task_mark_done(task_id: int):
+def _next_due(due_date: str, recurrence: str) -> str:
+    """Advance a YYYY-MM-DD date by one recurrence period. Empty if not derivable."""
     try:
+        d = datetime.date.fromisoformat((due_date or "")[:10])
+    except Exception:
+        d = datetime.date.today()
+    if recurrence == "daily":
+        d += datetime.timedelta(days=1)
+    elif recurrence == "weekly":
+        d += datetime.timedelta(weeks=1)
+    elif recurrence == "monthly":
+        m = d.month + 1
+        y = d.year + (m - 1) // 12
+        m = ((m - 1) % 12) + 1
+        leap = y % 4 == 0 and (y % 100 != 0 or y % 400 == 0)
+        dim = [31, 29 if leap else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1]
+        d = datetime.date(y, m, min(d.day, dim))
+    elif recurrence == "yearly":
+        d = d.replace(year=d.year + 1)
+    else:
+        return ""
+    return d.isoformat()
+
+
+@router.post("/api/task/{task_id}/done")
+async def task_mark_done(task_id: str):
+    try:
+        now = datetime.datetime.now().isoformat()
         db_execute(
             "UPDATE tasks SET status = 'done', updated_at = ? WHERE task_id = ?",
-            (datetime.datetime.now().isoformat(), task_id),
+            (now, task_id),
         )
-        return JSONResponse({"status": "ok", "task_id": task_id})
+        # If this was a recurring task, spawn the next occurrence so the series continues.
+        spawned = None
+        try:
+            rows = db_query(
+                "SELECT title, project_id, owner, notes, due_date, "
+                "COALESCE(recurrence,'') AS recurrence FROM tasks WHERE task_id = ?",
+                (task_id,),
+            )
+            if rows:
+                r = rows[0]
+                rec = (r.get("recurrence") or "").strip().lower()
+                if rec in ("daily", "weekly", "monthly", "yearly"):
+                    new_due = _next_due(r.get("due_date", ""), rec)
+                    import re as _re
+                    slug = _re.sub(r"-+", "-", _re.sub(r"[^\w\s-]", "", (r["title"] or "").lower()).replace(" ", "-")).strip("-")[:60]
+                    new_id = f"{r['project_id']}-{slug}-{new_due or now[:10]}"
+                    db_execute(
+                        "INSERT OR REPLACE INTO tasks "
+                        "(task_id, title, project_id, owner, status, notes, due_date, recurrence, parent_task_id, created_at, updated_at) "
+                        "VALUES (?, ?, ?, ?, 'open', ?, ?, ?, ?, ?, ?)",
+                        (new_id, r["title"], r["project_id"], r.get("owner") or "Metis",
+                         r.get("notes") or "", new_due, rec, task_id, now, now),
+                    )
+                    spawned = new_id
+        except Exception:
+            pass  # recurrence is best-effort; never block the completion
+        return JSONResponse({"status": "ok", "task_id": task_id, "spawned": spawned})
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
