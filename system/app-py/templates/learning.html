@@ -51,12 +51,15 @@
         <span>STREAK</span>
       </div>
       <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin:14px 0 10px;">
-        {% for i in range(40) %}
-        <div style="aspect-ratio:1/1;background:{% if i < 22 %}var(--m-accent){% elif i == 22 %}var(--m-ochre){% else %}var(--m-surface-3){% endif %};opacity:{% if i < 22 %}{{ (0.4 + (i/22)*0.6)|round(2) }}{% else %}1{% endif %};border-radius:1px;"></div>
+        {% for c in streak_cells %}
+        <div title="{{ c.date }}{% if c.active %} · reviewed{% endif %}"
+             style="aspect-ratio:1/1;border-radius:1px;
+                    background:{% if c.active %}var(--m-accent){% else %}var(--m-surface-3){% endif %};
+                    {% if c.is_today %}outline:1.5px solid var(--m-ochre);outline-offset:1px;{% endif %}"></div>
         {% endfor %}
       </div>
       <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">
-        Keep the habit. <em>Don't gamify it.</em>
+        {% if streak_has_data %}Keep the habit. <em>Don't gamify it.</em>{% else %}No reviews yet — your daily review activity will fill in here.{% endif %}
       </div>
     </div>
 

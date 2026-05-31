@@ -1,4 +1,4 @@
-<div id="today-session-handoff" style="margin-bottom:20px;">
+<div id="today-session-handoff" {% if sessions %}style="margin-bottom:20px;"{% endif %}>
   {% for session in sessions %}
   <div class="panel" style="padding:14px 20px;{% if not loop.last %}margin-bottom:8px;{% endif %}border-left:3px solid var(--m-accent);">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:{% if session.summary or session.decisions %}10px{% else %}0{% endif %};">
