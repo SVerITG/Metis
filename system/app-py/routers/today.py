@@ -1779,6 +1779,115 @@ async def today_library_archive(request: Request):
     )
 
 
+# ---------------------------------------------------------------------------
+# F-UP1 — Proactive paper surfacing: papers relevant to your ACTIVE work
+# ---------------------------------------------------------------------------
+
+_SURFACE_STOPWORDS = {
+    "the", "and", "for", "with", "from", "this", "that", "your", "you", "are",
+    "was", "were", "will", "into", "onto", "over", "under", "study", "review",
+    "project", "analysis", "data", "draft", "article", "paper", "research",
+    "work", "next", "step", "task", "using", "based", "new", "use", "via",
+    "a", "an", "of", "in", "on", "to", "is", "it", "as", "by", "or", "at",
+}
+
+
+def _salient_terms() -> list[str]:
+    """Terms describing the user's active work: project titles + next steps + topics."""
+    import yaml as _yaml
+    terms: dict[str, int] = {}
+
+    def _add(text: str, weight: int = 1):
+        # 3+ chars so domain acronyms (hat, ntd, drc) survive; stopwords filter noise.
+        for w in re.findall(r"[a-zA-Z][a-zA-Z\-]{2,}", (text or "").lower()):
+            if w in _SURFACE_STOPWORDS:
+                continue
+            terms[w] = terms.get(w, 0) + weight
+
+    try:
+        rows = db_query(
+            "SELECT title, next_step, domain FROM projects WHERE status='active'"
+        ) or []
+        for r in rows:
+            _add(r.get("title"), 3)
+            _add(r.get("next_step"), 2)
+            _add(r.get("domain"), 1)
+    except Exception:
+        pass
+    # User-configured research topics (strong signal)
+    try:
+        rc = os.environ.get("METIS_RC_ROOT", "")
+        cfg_path = Path(rc) / "system" / "config" / "user-config.yaml" if rc else None
+        if cfg_path and cfg_path.exists():
+            cfg = _yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+            research = cfg.get("research", {}) if isinstance(cfg.get("research"), dict) else {}
+            topics = research.get("topics") or cfg.get("topics") or []
+            if isinstance(topics, str):
+                topics = topics.split(",")
+            for t in topics:
+                _add(str(t), 3)
+            _add(str(research.get("field") or ""), 2)
+    except Exception:
+        pass
+    # Most-weighted terms first
+    return [t for t, _ in sorted(terms.items(), key=lambda kv: -kv[1])][:25]
+
+
+@router.get("/api/partial/today/relevant-papers", response_class=HTMLResponse)
+async def today_relevant_papers(request: Request):
+    """Surface library papers relevant to the user's current active work.
+
+    This is the 'librarian who walks up to your desk' behaviour: it matches
+    active-project context + research topics against the library and shows the
+    top matches — proactively, without the user searching.
+    """
+    terms = _salient_terms()
+    items: list[dict] = []
+    if terms:
+        try:
+            rows = db_query(
+                "SELECT id, title, authors, year, abstract, tags, doi, url, "
+                "COALESCE(is_read,0) AS is_read FROM literature_metadata "
+                "WHERE COALESCE(title,'') != '' LIMIT 1500"
+            ) or []
+            # Word-boundary patterns so short acronyms (hat, ntd) don't match
+            # "what"/"into" etc.
+            term_pats = [(t, re.compile(r"\b" + re.escape(t) + r"\b")) for t in terms]
+            scored = []
+            for r in rows:
+                hay = " ".join([
+                    (r.get("title") or ""), (r.get("abstract") or ""), (r.get("tags") or ""),
+                ]).lower()
+                matched = [t for t, pat in term_pats if pat.search(hay)]
+                if not matched:
+                    continue
+                score = len(matched) + (1 if not r.get("is_read") else 0)
+                scored.append((score, matched, r))
+            scored.sort(key=lambda x: -x[0])
+            for score, matched, r in scored[:4]:
+                raw_authors = r.get("authors") or ""
+                parts = [a.strip() for a in raw_authors.split(",") if a.strip()]
+                authors_display = (f"{parts[0]} et al." if len(parts) > 2
+                                   else ", ".join(parts[:2]) if parts else "")
+                doi = r.get("doi") or ""
+                items.append({
+                    "title": r.get("title") or "Untitled",
+                    "authors": authors_display,
+                    "year": r.get("year") or "",
+                    "url": (f"https://doi.org/{doi}" if doi else (r.get("url") or "")),
+                    "why": ", ".join(matched[:3]),
+                    "is_read": bool(r.get("is_read", 0)),
+                })
+        except Exception:
+            pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_relevant_papers.html",
+        {"items": items, "terms": terms[:6]},
+    )
+
+
 @router.get("/api/partial/today/todos-archive", response_class=HTMLResponse)
 async def today_todos_archive(request: Request):
     tasks = []
