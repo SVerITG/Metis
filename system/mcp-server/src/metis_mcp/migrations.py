@@ -57,6 +57,17 @@ MIGRATIONS: list[tuple[str, str, str]] = [
         "ALTER TABLE brainstorm_sessions ADD COLUMN action_items TEXT DEFAULT NULL",
         "brainstorm_sessions",
     ),
+    # ── 2026-05-30: recurring tasks + subtasks ──
+    (
+        "20260530_tasks_add_recurrence",
+        "ALTER TABLE tasks ADD COLUMN recurrence TEXT DEFAULT ''",
+        "tasks",
+    ),
+    (
+        "20260530_tasks_add_parent_task_id",
+        "ALTER TABLE tasks ADD COLUMN parent_task_id TEXT DEFAULT ''",
+        "tasks",
+    ),
     # Future migrations append here. Never modify or delete an existing entry —
     # only add new ones. To revert, write a forward-only "down" migration.
 ]
