@@ -227,3 +227,85 @@ async def ask_library(
     if refs:
         output += f"\n\n**References:**\n{refs}"
     return [TextContent(type="text", text=output)]
+
+
+_DEFAULT_EXTRACT_FIELDS = [
+    "Population / setting studied",
+    "Study design",
+    "Sample size",
+    "Primary outcome measured",
+    "Key finding or effect size",
+    "Stated limitations",
+]
+
+
+@app.tool()
+async def extract_structured(
+    topic: str,
+    fields: str = "",
+    scope: str = "default",
+) -> list[TextContent]:
+    """Extract a structured, cited evidence brief on a topic from the PDF library.
+
+    Elicit-style structured extraction: runs a fixed question set over the indexed
+    library (PaperQA2) and assembles a markdown table — one row per field, each
+    answer carrying its citations. Useful for systematic-review scaffolding.
+
+    Args:
+        topic: The subject to extract on (e.g. "HAT passive screening sensitivity").
+        fields: Optional comma-separated fields to extract. Default set covers
+                population, design, sample size, outcome, finding, limitations.
+        scope: Which index to query ("default" or "ph_library"). Build it first
+               with index_library_pdfs().
+    """
+    try:
+        from paperqa import Docs, Settings
+    except ImportError:
+        return [TextContent(type="text", text="paper-qa not installed. Run: pip install paper-qa")]
+
+    idx = _index_path_for_scope(scope)
+    if not idx.exists():
+        hint = f"index_library_pdfs(scope='{scope}')" if scope != "default" else "index_library_pdfs()"
+        return [TextContent(type="text", text=f"No index found for scope '{scope}'. Run {hint} first.")]
+
+    api_key = _get_api_key()
+    if not api_key:
+        return [TextContent(type="text", text="ANTHROPIC_API_KEY not set. Add it to metis/system/.env.")]
+
+    field_list = [f.strip() for f in fields.split(",") if f.strip()] or _DEFAULT_EXTRACT_FIELDS
+
+    try:
+        import pickle
+        with open(idx, "rb") as f:
+            docs: Docs = pickle.load(f)
+    except Exception as exc:
+        return [TextContent(type="text", text=f"Failed to load index: {exc}")]
+
+    settings = Settings(llm=model_for("paperqa"), summary_llm=model_for("paperqa"))
+
+    rows = []
+    all_refs: set = set()
+    for field in field_list:
+        q = (f"Regarding '{topic}': what is the {field.lower()}? "
+             f"Answer in one or two sentences. If the library does not say, reply 'Not reported'.")
+        try:
+            answer = await docs.aquery(q, settings=settings)
+            ans = (getattr(answer, "answer", None) or "Not reported").strip()
+            ans = " ".join(ans.split())  # collapse whitespace for table cell
+            refs = getattr(answer, "references", None) or ""
+            if refs:
+                for line in refs.splitlines():
+                    line = line.strip()
+                    if line:
+                        all_refs.add(line)
+        except Exception as exc:
+            ans = f"(query failed: {exc})"
+        rows.append((field, ans[:400]))
+
+    out = [f"## Structured extraction — {topic}", "",
+           "| Field | Finding |", "|---|---|"]
+    for field, ans in rows:
+        out.append(f"| {field} | {ans.replace('|', '/')} |")
+    if all_refs:
+        out += ["", "**Sources:**"] + [f"- {r}" for r in sorted(all_refs)[:15]]
+    return [TextContent(type="text", text="\n".join(out))]
