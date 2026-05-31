@@ -103,6 +103,12 @@
 
   </div>
 
+  <!-- ===== Proactive paper surfacing (wave 2 — +450ms) ===== -->
+  <div hx-get="/api/partial/today/relevant-papers" hx-trigger="load delay:450ms" hx-swap="outerHTML" style="margin-bottom:var(--m-space-6);">
+    <div class="sec-label" style="margin-bottom:8px;">Relevant to your active work</div>
+    {{ skeleton_box(size="md") }}
+  </div>
+
   <!-- ===== Research progress + Capture row (wave 3 — +400ms) ===== -->
   <div class="grid grid-main" style="margin-bottom:var(--m-space-6);">
 

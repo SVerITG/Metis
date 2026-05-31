@@ -1,0 +1,44 @@
+<div>
+  <div class="sec-label" style="margin-bottom:8px;display:flex;align-items:baseline;gap:8px;">
+    <span>Relevant to your active work</span>
+    {% if items %}<span class="sec-label-tail">FROM YOUR LIBRARY</span>{% endif %}
+    <a href="/knowledge" style="margin-left:auto;font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;color:var(--m-muted);text-decoration:none;">OPEN LIBRARY →</a>
+  </div>
+
+  <div class="panel" style="overflow:hidden;">
+    {% if not items %}
+      <div style="padding:22px;display:flex;gap:14px;align-items:flex-start;">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--m-muted)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.55;margin-top:2px;">
+          <circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="21" y2="21"/>
+        </svg>
+        <div>
+          <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);margin-bottom:3px;">Nothing to surface yet.</div>
+          <div style="font-size:12px;color:var(--m-muted);line-height:1.55;">
+            Once you have active projects and papers in your library, Metis will surface the papers that connect to what you're working on right now.
+          </div>
+        </div>
+      </div>
+    {% else %}
+      {% for it in items %}
+      <div style="padding:13px 18px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}display:flex;gap:12px;align-items:flex-start;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            {% if it.url %}
+            <a href="{{ it.url }}" target="_blank" style="font-family:var(--m-display);font-size:13.5px;font-weight:500;color:var(--m-ink);text-decoration:none;line-height:1.35;">{{ it.title }}</a>
+            {% else %}
+            <span style="font-family:var(--m-display);font-size:13.5px;font-weight:500;color:var(--m-ink);line-height:1.35;">{{ it.title }}</span>
+            {% endif %}
+            {% if not it.is_read %}<span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;color:var(--m-accent);border:1px solid var(--m-accent);border-radius:2px;padding:1px 4px;flex-shrink:0;">UNREAD</span>{% endif %}
+          </div>
+          <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-top:3px;">
+            {% if it.authors %}{{ it.authors }}{% if it.year %} · {{ it.year }}{% endif %}{% elif it.year %}{{ it.year }}{% endif %}
+          </div>
+          <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;color:var(--m-ochre,#9a6b00);margin-top:5px;">
+            ↳ matches your work: {{ it.why }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+</div>
