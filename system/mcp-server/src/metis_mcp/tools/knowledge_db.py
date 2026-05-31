@@ -129,6 +129,11 @@ def _ensure_schema(conn) -> None:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} INTEGER DEFAULT 0")
         except Exception:
             pass
+    # Folder mapping for custom databases (newline-separated library subfolders)
+    try:
+        conn.execute("ALTER TABLE knowledge_databases ADD COLUMN folders TEXT DEFAULT ''")
+    except Exception:
+        pass
     conn.commit()
 
 
@@ -225,15 +230,34 @@ def _encode_vec(v: List[float]) -> bytes:
 
 
 def _extract_pages(pdf_path: Path) -> tuple[List[tuple[int, str]], int]:
+    """Extract text per page. Tries PyMuPDF (fast, robust, per-page) first, then
+    falls back to pdfminer. Many WHO PDFs return empty from pdfminer's single-shot
+    extract_text() — PyMuPDF handles those, so this is what rescues the documents
+    that were silently skipped before (e.g. the gHAT elimination criteria)."""
+    # ── Primary: PyMuPDF, page by page (keeps real page numbers for provenance) ──
+    try:
+        import fitz  # PyMuPDF
+        doc = fitz.open(str(pdf_path))
+        pages: List[tuple[int, str]] = []
+        for i, page in enumerate(doc, 1):
+            txt = page.get_text("text") or ""
+            if txt.strip():
+                pages.append((i, _clean_text(txt)))
+        total = doc.page_count
+        doc.close()
+        if pages:
+            return pages, total
+    except Exception:
+        pass
+    # ── Fallback: pdfminer single-shot ──
     try:
         from pdfminer.high_level import extract_text
         full_text = extract_text(str(pdf_path))
-        if not full_text or not full_text.strip():
-            return [], 0
-        cleaned = _clean_text(full_text)
-        return [(1, cleaned)], 1
+        if full_text and full_text.strip():
+            return [(1, _clean_text(full_text))], 1
     except Exception:
-        return [], 0
+        pass
+    return [], 0
 
 
 def _library_root() -> Path:
@@ -241,13 +265,31 @@ def _library_root() -> Path:
 
 
 def _collect_pdfs_for_db(db_slug: str) -> List[Path]:
-    """Return all PDFs that belong to the given database slug."""
+    """Return all PDFs that belong to the given database slug.
+
+    Builtin databases use their hardcoded folder list; custom databases read
+    their folder mapping from the knowledge_databases.folders column (set by
+    create_knowledge_database).
+    """
     lib = _library_root()
     db_def = next((d for d in BUILTIN_DATABASES if d["slug"] == db_slug), None)
-    if not db_def:
-        return []
+    folders: List[str] = []
+    if db_def:
+        folders = db_def["folders"]
+    else:
+        # Custom database — read folders persisted in the DB row.
+        try:
+            conn = _connect()
+            row = conn.execute(
+                "SELECT folders FROM knowledge_databases WHERE slug = ?", (db_slug,)
+            ).fetchone()
+            conn.close()
+            if row and row[0]:
+                folders = [f.strip() for f in str(row[0]).splitlines() if f.strip()]
+        except Exception:
+            folders = []
     pdfs: List[Path] = []
-    for folder in db_def["folders"]:
+    for folder in folders:
         d = lib / folder
         if d.exists():
             pdfs.extend(sorted(d.rglob("*.pdf")))
@@ -740,9 +782,9 @@ async def create_knowledge_database(
 
     folders_str = "\n".join(folders or [])
     conn.execute(
-        """INSERT INTO knowledge_databases (slug, name, description, layer, color)
-           VALUES (?, ?, ?, ?, '#6c757d')""",
-        (slug, name, description or f"Custom knowledge database: {name}", layer)
+        """INSERT INTO knowledge_databases (slug, name, description, layer, color, folders)
+           VALUES (?, ?, ?, ?, '#6c757d', ?)""",
+        (slug, name, description or f"Custom knowledge database: {name}", layer, folders_str)
     )
     conn.commit()
     conn.close()
@@ -750,9 +792,6 @@ async def create_knowledge_database(
     folder_note = ""
     if folders:
         folder_note = "\nFolders mapped:\n" + "\n".join(f"  - knowledge/library/{f}" for f in folders)
-        # Note: custom folders are stored in the DB description for now —
-        # BUILTIN_DATABASES only covers the three default layers.
-        # For dynamic folder mapping, add to knowledge_db_folders table (future L9).
 
     return [TextContent(type="text", text=(
         f"✓ Created knowledge database '{slug}' (Layer {layer})\n"
