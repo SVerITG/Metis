@@ -144,16 +144,39 @@ def _extract_wikilinks(text: str) -> list[str]:
 # ---------------------------------------------------------------------------
 
 @app.tool()
-async def kg_index_notes() -> list[TextContent]:
-    """Scan all knowledge/library/ .md files, parse YAML frontmatter, and
-    populate the note_links table with bidirectional related-concept edges.
+def _obsidian_vault() -> "Path | None":
+    """Configured Obsidian vault path, from METIS_OBSIDIAN_VAULT or user-config.yaml."""
+    import os as _os
+    p = _os.environ.get("METIS_OBSIDIAN_VAULT", "").strip()
+    if not p:
+        try:
+            import yaml as _yaml
+            cfg = paths.config / "user-config.yaml"
+            if cfg.exists():
+                data = _yaml.safe_load(cfg.read_text(encoding="utf-8")) or {}
+                p = ((data.get("integrations") or {}).get("obsidian_vault")
+                     or data.get("obsidian_vault") or "")
+        except Exception:
+            p = ""
+    if not p:
+        return None
+    vp = Path(p)
+    return vp if vp.exists() and vp.is_dir() else None
 
-    Re-running this tool is safe — it uses REPLACE semantics so existing
-    links are updated in place. Returns a summary of indexed notes and edges.
+
+async def kg_index_notes() -> list[TextContent]:
+    """Index .md notes into the knowledge graph: knowledge/library/ plus, if
+    configured, an external Obsidian vault. Parses YAML frontmatter `related:`
+    and `[[wikilinks]]` from note bodies into bidirectional note_links edges.
+
+    Configure a vault via METIS_OBSIDIAN_VAULT env var or `obsidian_vault:` in
+    user-config.yaml. Re-running is safe (REPLACE semantics).
     """
     library_root = paths.library
     if not library_root.exists():
         return [TextContent(type="text", text="ERROR: knowledge/library/ directory not found")]
+
+    vault_root = _obsidian_vault()
 
     with connect(paths.db) as conn:
         _ensure_table(conn)
@@ -164,21 +187,29 @@ async def kg_index_notes() -> list[TextContent]:
         edges = 0
         wiki_edges = 0
         skipped = []
+        vault_notes = 0
 
-        md_files = sorted(library_root.rglob("*.md"))
+        # Collect (root, path-prefix) sources. Vault files get a 'vault:' prefix
+        # on their rel_path to avoid collisions with library paths.
+        sources = [(library_root, "")]
+        if vault_root:
+            sources.append((vault_root, "vault:"))
 
         # ── Pass 1: build a resolution index so [[wikilinks]] and related: paths
         #    can be matched by title, filename stem, or relative path. ──────────
         files = []  # (rel_path, text, fm, title)
         title_index: dict[str, tuple[str, str]] = {}  # key -> (rel_path, title)
-        for md_file in md_files:
-            rel_path = str(md_file.relative_to(library_root))
-            text = md_file.read_text(encoding="utf-8", errors="replace")
-            fm = _parse_frontmatter(text)
-            title = (fm.get("title") if fm else None) or md_file.stem.replace("-", " ").title()
-            files.append((rel_path, text, fm, title))
-            for key in {title.lower(), md_file.stem.lower(), rel_path.lower()}:
-                title_index.setdefault(key, (rel_path, title))
+        for root, prefix in sources:
+            for md_file in sorted(root.rglob("*.md")):
+                rel_path = prefix + str(md_file.relative_to(root))
+                text = md_file.read_text(encoding="utf-8", errors="replace")
+                fm = _parse_frontmatter(text)
+                title = (fm.get("title") if fm else None) or md_file.stem.replace("-", " ").title()
+                files.append((rel_path, text, fm, title))
+                if prefix:
+                    vault_notes += 1
+                for key in {title.lower(), md_file.stem.lower(), rel_path.lower()}:
+                    title_index.setdefault(key, (rel_path, title))
 
         def _resolve(target: str) -> tuple[str, str]:
             """Resolve a link target to (path, title); fall back to the raw string."""
@@ -229,8 +260,9 @@ async def kg_index_notes() -> list[TextContent]:
 
         conn.commit()
 
+    vault_note = f" · {vault_notes} from Obsidian vault" if vault_root else ""
     lines = [
-        f"Knowledge graph indexed: {indexed} notes, "
+        f"Knowledge graph indexed: {indexed} notes{vault_note}, "
         f"{(edges + wiki_edges) * 2} directed edges "
         f"({edges} related: + {wiki_edges} [[wikilink]] bidirectional pairs)",
         "",
