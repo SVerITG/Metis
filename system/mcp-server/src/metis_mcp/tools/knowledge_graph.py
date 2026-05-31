@@ -106,6 +106,40 @@ def _parse_frontmatter(text: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Wikilink parser — [[Target]] / [[Target|alias]] from note bodies
+# ---------------------------------------------------------------------------
+
+import re as _re
+
+_WIKILINK_RE = _re.compile(r"\[\[([^\]\|]+)(?:\|[^\]]+)?\]\]")
+
+
+def _strip_frontmatter(text: str) -> str:
+    """Return the note body with any leading YAML frontmatter removed."""
+    if text.startswith("---"):
+        end = text.find("\n---", 3)
+        if end != -1:
+            nl = text.find("\n", end + 1)
+            return text[nl + 1:] if nl != -1 else ""
+    return text
+
+
+def _extract_wikilinks(text: str) -> list[str]:
+    """Extract [[wikilink]] targets from a note body (ignores ``code`` fences)."""
+    body = _strip_frontmatter(text)
+    # Drop fenced code blocks so example [[...]] inside code aren't treated as links
+    body = _re.sub(r"```.*?```", "", body, flags=_re.DOTALL)
+    seen, out = set(), []
+    for m in _WIKILINK_RE.findall(body):
+        t = m.strip()
+        key = t.lower()
+        if t and key not in seen:
+            seen.add(key)
+            out.append(t)
+    return out
+
+
+# ---------------------------------------------------------------------------
 # M5.8.2 + M5.8.3a — kg_index_notes
 # ---------------------------------------------------------------------------
 
@@ -128,55 +162,77 @@ async def kg_index_notes() -> list[TextContent]:
 
         indexed = 0
         edges = 0
+        wiki_edges = 0
         skipped = []
 
-        for md_file in sorted(library_root.rglob("*.md")):
+        md_files = sorted(library_root.rglob("*.md"))
+
+        # ── Pass 1: build a resolution index so [[wikilinks]] and related: paths
+        #    can be matched by title, filename stem, or relative path. ──────────
+        files = []  # (rel_path, text, fm, title)
+        title_index: dict[str, tuple[str, str]] = {}  # key -> (rel_path, title)
+        for md_file in md_files:
             rel_path = str(md_file.relative_to(library_root))
             text = md_file.read_text(encoding="utf-8", errors="replace")
             fm = _parse_frontmatter(text)
+            title = (fm.get("title") if fm else None) or md_file.stem.replace("-", " ").title()
+            files.append((rel_path, text, fm, title))
+            for key in {title.lower(), md_file.stem.lower(), rel_path.lower()}:
+                title_index.setdefault(key, (rel_path, title))
 
-            if not fm:
-                skipped.append(rel_path)
-                continue
+        def _resolve(target: str) -> tuple[str, str]:
+            """Resolve a link target to (path, title); fall back to the raw string."""
+            t = target.strip().strip('"').strip("'")
+            hit = title_index.get(t.lower())
+            if hit:
+                return hit
+            return (t, t)
 
-            title = fm.get("title", md_file.stem.replace("-", " ").title())
-            related = fm.get("related", [])
+        def _add_pair(src_path, src_title, tgt_path, tgt_title, link_type):
+            conn.execute(
+                """INSERT OR REPLACE INTO note_links
+                   (source_path, target_path, link_type, source_title, target_title)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (src_path, tgt_path, link_type, src_title, tgt_title),
+            )
+            conn.execute(
+                """INSERT OR REPLACE INTO note_links
+                   (source_path, target_path, link_type, source_title, target_title)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (tgt_path, src_path, link_type, tgt_title, src_title),
+            )
+
+        # ── Pass 2: emit edges from both related: frontmatter and [[wikilinks]] ──
+        for rel_path, text, fm, title in files:
+            related = (fm.get("related", []) if fm else [])
             if isinstance(related, str):
                 related = [related]
+            wikilinks = _extract_wikilinks(text)
 
+            # A note counts as indexed if it has frontmatter OR any link.
+            if not fm and not wikilinks:
+                skipped.append(rel_path)
+                continue
             indexed += 1
 
             for target in related:
-                target_clean = target.strip().strip('"').strip("'")
-                # Resolve target title
-                target_file = library_root / target_clean
-                target_title = target_clean
-                if target_file.exists():
-                    t_text = target_file.read_text(encoding="utf-8", errors="replace")
-                    t_fm = _parse_frontmatter(t_text)
-                    if t_fm:
-                        target_title = t_fm.get("title", target_clean)
-
-                # Insert forward link
-                conn.execute(
-                    """INSERT OR REPLACE INTO note_links
-                       (source_path, target_path, link_type, source_title, target_title)
-                       VALUES (?, ?, 'related', ?, ?)""",
-                    (rel_path, target_clean, title, target_title),
-                )
-                # Insert back link
-                conn.execute(
-                    """INSERT OR REPLACE INTO note_links
-                       (source_path, target_path, link_type, source_title, target_title)
-                       VALUES (?, ?, 'related', ?, ?)""",
-                    (target_clean, rel_path, target_title, title),
-                )
+                tgt_path, tgt_title = _resolve(target)
+                _add_pair(rel_path, title, tgt_path, tgt_title, "related")
                 edges += 1
+
+            for target in wikilinks:
+                tgt_path, tgt_title = _resolve(target)
+                if tgt_path == rel_path:
+                    continue  # skip self-links
+                _add_pair(rel_path, title, tgt_path, tgt_title, "wikilink")
+                wiki_edges += 1
 
         conn.commit()
 
     lines = [
-        f"Knowledge graph indexed: {indexed} notes, {edges * 2} directed edges ({edges} bidirectional pairs)",
+        f"Knowledge graph indexed: {indexed} notes, "
+        f"{(edges + wiki_edges) * 2} directed edges "
+        f"({edges} related: + {wiki_edges} [[wikilink]] bidirectional pairs)",
         "",
     ]
     if skipped:
