@@ -624,3 +624,112 @@ async def configure_library_provider(
         )]
 
     return [TextContent(type="text", text="\n".join(lines_out))]
+
+
+# ---------------------------------------------------------------------------
+# Citation export — BibTeX (universal: imports into Word, LaTeX, Zotero, etc.)
+# ---------------------------------------------------------------------------
+
+def _bibtex_key(authors: str, year, title: str, used: set) -> str:
+    """Generate a unique BibTeX cite key like Garcia2002."""
+    first_author = (authors or "").split(",")[0].split(" and ")[0].strip()
+    last = first_author.split()[-1] if first_author else "anon"
+    last = re.sub(r"[^A-Za-z]", "", last) or "anon"
+    yr = str(year or "").strip()[:4] or "n.d."
+    base = f"{last}{yr}"
+    key, suffix = base, ord("a")
+    while key in used:
+        key = base + chr(suffix)
+        suffix += 1
+    used.add(key)
+    return key
+
+
+def _bibtex_escape(s: str) -> str:
+    return (s or "").replace("{", "").replace("}", "").replace("\\", "").strip()
+
+
+@app.tool()
+async def export_citations(
+    query: str = "",
+    tag: str = "",
+    collection: str = "",
+    fmt: str = "bibtex",
+    limit: int = 500,
+) -> list[TextContent]:
+    """Export library references as a citation file (BibTeX).
+
+    Closes the "no citation-style export" gap: produces a .bib you can import
+    into Word (via Zotero/Mendeley), LaTeX/Overleaf, or any reference manager,
+    and use for cite-while-you-write.
+
+    Args:
+        query: Optional keyword filter over title/authors/journal. Empty = all.
+        tag: Optional tag filter (substring match on the tags field).
+        collection: Optional collection-name filter.
+        fmt: Output format — currently "bibtex" (RIS available via mine_references).
+        limit: Max records to export (default 500).
+
+    Writes the file to outputs/exports/ and returns its path + a preview.
+    """
+    if fmt.lower() not in ("bibtex", "bib"):
+        return [TextContent(type="text", text="Only 'bibtex' is supported here. For RIS, use the reference-mining export.")]
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    clauses, params = [], []
+    if query:
+        clauses.append("(title LIKE ? OR authors LIKE ? OR journal LIKE ?)")
+        params += [f"%{query}%", f"%{query}%", f"%{query}%"]
+    if tag:
+        clauses.append("tags LIKE ?"); params.append(f"%{tag}%")
+    if collection:
+        clauses.append("collection LIKE ?"); params.append(f"%{collection}%")
+    where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+
+    with connect(paths.db) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            f"SELECT title, authors, year, doi, journal, item_type, url, abstract "
+            f"FROM literature_metadata{where} ORDER BY year DESC, title LIMIT ?",
+            (*params, limit),
+        ).fetchall()
+
+    if not rows:
+        return [TextContent(type="text", text="No matching references to export.")]
+
+    used_keys: set = set()
+    entries = []
+    for r in rows:
+        d = dict(r)
+        key = _bibtex_key(d.get("authors", ""), d.get("year"), d.get("title", ""), used_keys)
+        etype = {"journalArticle": "article", "book": "book", "report": "techreport",
+                 "conferencePaper": "inproceedings"}.get(d.get("item_type") or "", "article")
+        fields = [f'  title = {{{_bibtex_escape(d.get("title"))}}}']
+        if d.get("authors") and d["authors"] != "unknown":
+            authors = d["authors"].replace(";", " and ")
+            fields.append(f'  author = {{{_bibtex_escape(authors)}}}')
+        if d.get("year"):
+            fields.append(f'  year = {{{str(d["year"])[:4]}}}')
+        if d.get("journal"):
+            fields.append(f'  journal = {{{_bibtex_escape(d["journal"])}}}')
+        if d.get("doi"):
+            fields.append(f'  doi = {{{d["doi"].strip()}}}')
+        if d.get("url"):
+            fields.append(f'  url = {{{d["url"].strip()}}}')
+        entries.append(f"@{etype}{{{key},\n" + ",\n".join(fields) + "\n}")
+
+    bib = "\n\n".join(entries) + "\n"
+    out_dir = paths.root / "outputs" / "exports"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    out_path = out_dir / f"library-export-{stamp}.bib"
+    out_path.write_text(bib, encoding="utf-8")
+
+    preview = "\n\n".join(entries[:2])
+    return [TextContent(type="text", text=(
+        f"Exported {len(entries)} reference(s) to BibTeX.\n"
+        f"File: {out_path}\n\n"
+        f"Import into Word (via Zotero/Mendeley), Overleaf, or any reference manager.\n\n"
+        f"Preview:\n{preview}"
+    ))]
