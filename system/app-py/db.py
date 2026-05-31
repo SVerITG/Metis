@@ -26,10 +26,20 @@ def get_db_path() -> Path:
     rc_root = os.environ.get("METIS_RC_ROOT", "")
     if rc_root:
         # When METIS_RC_ROOT is set (e.g. Docker containers), always use it.
-        # Create the directory so migrations can initialise the DB on first start.
-        candidate = Path(rc_root) / "system" / "app-py" / "data" / "metis.sqlite"
-        candidate.parent.mkdir(parents=True, exist_ok=True)
-        return candidate
+        # CANONICAL path is system/app/data/metis.sqlite — the same file the MCP
+        # server uses (metis_mcp.config.paths.db) and the installer initialises.
+        # (Previously this pointed at system/app-py/data, which split the dashboard
+        # onto a separate empty DB while all real data lived in app/data.)
+        canonical = Path(rc_root) / "system" / "app" / "data" / "metis.sqlite"
+        if canonical.exists():
+            return canonical
+        # Legacy fallback: a pre-fix install that wrote real data to app-py/data.
+        legacy = Path(rc_root) / "system" / "app-py" / "data" / "metis.sqlite"
+        if legacy.exists():
+            return legacy
+        # Neither exists yet → initialise at the canonical location.
+        canonical.parent.mkdir(parents=True, exist_ok=True)
+        return canonical
 
     local_candidate = Path(__file__).parent / "data" / "metis.sqlite"
     if local_candidate.exists():
