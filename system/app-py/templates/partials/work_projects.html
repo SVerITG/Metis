@@ -4,9 +4,10 @@
   <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 8px;">
     <strong>No active projects yet.</strong>
   </p>
-  <p class="ed" style="font-size:13px;color:var(--m-muted);margin:0;">
-    Run <code>/new-project</code> in Claude Code to scaffold one, or <code>/metis</code> with any project request.
+  <p class="ed" style="font-size:13px;color:var(--m-muted);margin:0 0 12px;">
+    Add a project to track its tasks, progress, and notes in one place.
   </p>
+  <button class="btn btn--primary btn--caps" onclick="openAddProjectModal()">+ Add your first project</button>
 </div>
 {% else %}
 <div class="grid grid-2" id="project-grid">
@@ -133,7 +134,7 @@
         {% if 'dashboard' in ll %}
         <button class="btn btn--ghost btn--caps proj-launch"
                 onclick="launchProjectTarget('{{ p.id }}','dashboard')"
-                title="Open dashboard in browser (start app first: source('launch_dashboard.R') in RStudio)"
+                title="Open this project's dashboard in your browser (start the app first if it isn't running)"
                 style="background:var(--m-surface-3);border-color:var(--m-line);">📊 Dashboard</button>
         {% endif %}
 

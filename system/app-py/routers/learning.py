@@ -26,18 +26,47 @@ templates = Jinja2Templates(
 )
 
 
+def _streak_cells(days: int = 40) -> list[dict]:
+    """Return a real review-activity map for the last `days` days.
+
+    Each cell: {"date": iso, "active": bool, "is_today": bool}. Driven by
+    spaced_repetition.reviewed_at — no hardcoded placeholder data.
+    """
+    today = datetime.date.today()
+    active_days: set[str] = set()
+    try:
+        rows = db_query(
+            "SELECT DISTINCT date(reviewed_at) AS d FROM spaced_repetition "
+            "WHERE reviewed_at IS NOT NULL AND reviewed_at != ''"
+        )
+        active_days = {r["d"] for r in (rows or []) if r.get("d")}
+    except Exception:
+        active_days = set()
+    cells = []
+    for i in range(days - 1, -1, -1):
+        d = today - datetime.timedelta(days=i)
+        iso = d.isoformat()
+        cells.append({"date": iso, "active": iso in active_days, "is_today": i == 0})
+    return cells
+
+
+def _learning_context(active_tab: str = "learning") -> dict:
+    cells = _streak_cells()
+    return {
+        "active_tab": active_tab,
+        "streak_cells": cells,
+        "streak_has_data": any(c["active"] for c in cells),
+    }
+
+
 @router.get("/tab/learning", response_class=HTMLResponse)
 async def learning_tab(request: Request):
-    return templates.TemplateResponse(
-     request, "learning.html", {"active_tab": "learning"}
- )
+    return templates.TemplateResponse(request, "learning.html", _learning_context())
 
 
 @router.get("/api/tab/learning", response_class=HTMLResponse)
 async def learning_tab_partial(request: Request):
-    return templates.TemplateResponse(
-     request, "learning.html", {"active_tab": "learning"}
- )
+    return templates.TemplateResponse(request, "learning.html", _learning_context())
 
 
 # ---------------------------------------------------------------------------

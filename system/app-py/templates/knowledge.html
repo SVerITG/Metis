@@ -148,6 +148,13 @@
       <span>PDF Fulltext Search</span>
       <span class="tail">KEYWORD · INDEXED DOCUMENTS</span>
     </div>
+    <!-- Index status + build control (so the search box is never a dead end) -->
+    <div class="panel" style="padding:14px 20px;margin-bottom:12px;"
+         hx-get="/api/partial/knowledge/pdf-stats"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+      <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">Checking your PDF index…</div>
+    </div>
     <div class="panel" style="padding:16px 20px;">
       <input type="search"
              id="pdf-search-input"

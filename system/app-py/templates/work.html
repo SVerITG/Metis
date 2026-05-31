@@ -58,7 +58,7 @@
                    style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:11px;
                           border:1px solid var(--m-line);border-radius:3px;padding:8px 10px;
                           background:var(--m-surface-2);color:var(--m-ink);outline:none;">
-            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-top:4px;">Leave blank if this project has no folder (Claude only).</div>
+            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-top:4px;">Leave blank if this project has no folder on your computer yet.</div>
           </div>
           <div>
             <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">PROJECT NAME *</label>
@@ -108,7 +108,7 @@
                 <input type="radio" name="np-launcher" value="explorer"> Just open the folder
               </label>
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--m-mono);font-size:11px;">
-                <input type="radio" name="np-launcher" value="none"> No folder / Claude only
+                <input type="radio" name="np-launcher" value="none"> No folder yet
               </label>
             </div>
           </div>
@@ -189,9 +189,6 @@
       <span style="font-family:var(--m-ui);font-size:13px;">RStudio</span>
       <span class="wb-dot" style="margin-left:4px;"></span>
     </button>
-    <div style="margin-left:auto;display:flex;gap:6px;">
-      <button class="btn btn--sec btn--caps" onclick="openCapture('t')">+ Task</button>
-    </div>
   </div>
 
   <!-- Task kanban board -->

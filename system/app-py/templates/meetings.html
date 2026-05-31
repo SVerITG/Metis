@@ -188,7 +188,7 @@ async function submitAudioUpload() {
   fd.append('audio', file, file.name);
   fd.append('title', title);
   try {
-    const res = await fetch('/api/meetings/transcribe-audio', { method: 'POST', body: fd });
+    const res = await fetch('/meetings/transcribe-audio', { method: 'POST', body: fd });
     const data = await res.json();
     if (data.ok) {
       st.style.color = 'var(--m-ok)';
