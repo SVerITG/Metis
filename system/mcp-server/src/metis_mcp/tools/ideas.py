@@ -411,6 +411,60 @@ async def add_journal_entry(
 
 
 @app.tool()
+async def daily_note(text: str = "") -> list[TextContent]:
+    """Append to (or read) today's daily note — one rolling note per day.
+
+    Unlike add_journal_entry (which creates a new row each time), daily_note
+    keeps a single entry per calendar day and appends timestamped lines to it —
+    the Reflect/Tana "daily note" pattern for fast, low-friction capture.
+
+    Args:
+        text: Line to append. Leave empty to just read today's note so far.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    stamp = now.strftime("%H:%M")
+    try:
+        with connect(paths.db) as conn:
+            conn.execute(_JOURNAL_DDL)
+            # entry_id is a TEXT PRIMARY KEY that the insert path leaves NULL, so
+            # use rowid as the stable row identifier for the append UPDATE.
+            row = conn.execute(
+                "SELECT rowid, content FROM journal_entries "
+                "WHERE date(created_at) = ? AND tags LIKE '%daily-note%' "
+                "ORDER BY rowid DESC LIMIT 1",
+                (today,),
+            ).fetchone()
+
+            if not text:
+                if row:
+                    return [TextContent(type="text", text=row[1])]
+                return [TextContent(type="text", text=f"No daily note yet for {today}. Add a line with daily_note(text=...).")]
+
+            line = f"- {stamp} · {text.strip()}"
+            if row:
+                new_content = f"{row[1]}\n{line}"
+                conn.execute(
+                    "UPDATE journal_entries SET content = ? WHERE rowid = ?",
+                    (new_content, row[0]),
+                )
+            else:
+                new_content = f"# Daily note — {today}\n{line}"
+                conn.execute(
+                    "INSERT INTO journal_entries (content, mood, energy_score, image_path, tags, created_at) "
+                    "VALUES (?, '', 0, '', 'daily-note', ?)",
+                    (new_content, now.isoformat()),
+                )
+            conn.commit()
+        return [TextContent(type="text", text=f"Added to today's note ({stamp}):\n{line}")]
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error updating daily note: {e}")]
+
+
+@app.tool()
 async def get_journal(
     date_from: str = "",
     limit: int = 10,
