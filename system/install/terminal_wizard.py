@@ -25,7 +25,7 @@ def _banner(text: str):
     print("━" * width)
 
 
-def _ask(prompt: str, default: str = "", required: bool = False) -> str:
+def _ask(prompt: str, default: str = "", required: bool = False, min_len: int = 0) -> str:
     display = f"  {prompt}"
     if default:
         display += f" [{default}]"
@@ -38,6 +38,11 @@ def _ask(prompt: str, default: str = "", required: bool = False) -> str:
             sys.exit(0)
         if not val and default:
             return default
+        # Reject obvious placeholder input (e.g. a single letter) for identity
+        # fields — this is what produced the "jon is a k working in ntd" persona.
+        if val and min_len and len(val) < min_len:
+            print(f"  (please enter at least {min_len} characters — that looks like a placeholder)")
+            continue
         if val or not required:
             return val
         print("  (required — please enter a value)")
@@ -92,15 +97,15 @@ def run_wizard(metis_root: Path, api_key: str | None) -> dict:
 
     # ── Section 1: Who are you ────────────────────────────────────────────────
     _banner("1 / 4  About you")
-    name         = _ask("Your name", required=True)
+    name         = _ask("Your name", required=True, min_len=2)
     institution  = _ask("Institution or organisation")
-    role         = _ask("Your role or title", required=True)
+    role         = _ask("Your role or title", required=True, min_len=2)
     email        = _ask("Email (optional — used in outputs only)")
     language     = _ask("Preferred language for Metis responses", default="English")
 
     # ── Section 2: Research ───────────────────────────────────────────────────
     _banner("2 / 4  Your research")
-    field   = _ask("Primary research field", required=True)
+    field   = _ask("Primary research field", required=True, min_len=3)
     topics  = _ask(
         "Key research topics (comma-separated)",
         required=True

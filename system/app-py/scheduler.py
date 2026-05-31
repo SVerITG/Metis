@@ -370,17 +370,18 @@ def job_inbox_process() -> None:
 
 
 def job_evening_reflexion() -> None:
-    """Aggregate today's reflexions and generate self-improvement proposals."""
+    """Aggregate today's reflexions into themes for the self-improvement loop."""
     log.info("[scheduler] evening_reflexion starting")
     try:
+        # aggregate_reflexions() is SYNCHRONOUS and returns a dict — it must NOT be
+        # wrapped in asyncio.run() (that raises "a coroutine was expected").
         from metis_mcp.tools.improvement import aggregate_reflexions
-        import asyncio
-        result = asyncio.run(aggregate_reflexions())
-        # result is a list of TextContent — extract text
-        text = result[0].text if result else ""
-        count_line = next((l for l in text.splitlines() if "reflexion" in l.lower()), text[:80])
-        _log_job("evening_reflexion", "ok", count_line or "Reflexions aggregated.")
-        log.info("[scheduler] evening_reflexion done")
+        result = aggregate_reflexions()
+        agents = result.get("agents", []) if isinstance(result, dict) else []
+        total = (result.get("totals", {}) or {}).get("reflexions", 0) if isinstance(result, dict) else 0
+        msg = f"Aggregated {total} reflexion(s) across {len(agents)} agent(s)."
+        _log_job("evening_reflexion", "ok", msg)
+        log.info("[scheduler] evening_reflexion done: %s", msg)
     except Exception as exc:
         _log_job("evening_reflexion", "error", str(exc)[:300])
         log.error("[scheduler] evening_reflexion failed: %s", exc)
