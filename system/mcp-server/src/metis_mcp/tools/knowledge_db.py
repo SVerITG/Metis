@@ -101,6 +101,24 @@ BUILTIN_DATABASES = [
             "concepts",
         ],
     },
+    {
+        # Public-Health-edition layer (Metis_PH). NTD program knowledge + general
+        # HAT awareness — roadmaps, global reports, malaria, disease factsheets.
+        # The DEEP, personal HAT corpus lives in the separate local 'hat-specialist'
+        # custom database (never shipped). See project_knowledge_layer_architecture.
+        "slug": "ntd",
+        "name": "Neglected Tropical Diseases",
+        "description": (
+            "Specialist PH layer: neglected tropical disease program knowledge — WHO NTD "
+            "roadmaps and targets, the global NTD report, malaria, and general HAT/sleeping-"
+            "sickness awareness. The baseline NTD reference frame for the public-health edition."
+        ),
+        "layer": 3,
+        "color": "#dc3545",
+        "folders": [
+            "open-access-books/NTDs",
+        ],
+    },
 ]
 
 # ── Schema ─────────────────────────────────────────────────────────────────────
