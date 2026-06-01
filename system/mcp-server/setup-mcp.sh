@@ -516,6 +516,18 @@ echo "── Post-install validation ──"
 _PASS=0
 _FAIL=0
 
+# 0. MCP server smoke test — the authoritative "does the server actually work" check
+if [ -f "$_CODE_ROOT/tools/test-mcp.sh" ]; then
+    if METIS_RC_ROOT="$METIS_RC_ROOT" bash "$_CODE_ROOT/tools/test-mcp.sh" >/tmp/metis-mcp-smoke.log 2>&1; then
+        echo "  ✓ MCP server smoke test: HEALTHY ($(grep -c '✓' /tmp/metis-mcp-smoke.log) checks)"
+        _PASS=$((_PASS + 1))
+    else
+        echo "  ✗ MCP server smoke test FAILED — see /tmp/metis-mcp-smoke.log"
+        grep '✗' /tmp/metis-mcp-smoke.log | sed 's/^/      /'
+        _FAIL=$((_FAIL + 1))
+    fi
+fi
+
 # 1. anthropic SDK import test
 if [ -x "$VENV_PYTHON" ] && [ -f "$METIS_RC_ROOT/tests/test_anthropic_import.py" ]; then
     if "$VENV_PYTHON" "$METIS_RC_ROOT/tests/test_anthropic_import.py" >/dev/null 2>&1; then
