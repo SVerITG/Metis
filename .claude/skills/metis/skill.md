@@ -61,8 +61,12 @@ Step 2 — Pre-fetch knowledge if applicable (RAG orchestration):
 |---|---|
 | Epidemiological methods, study design, surveillance, sampling, statistics, biostatistics, MLM/multilevel, spatial scan | `epi-methods` |
 | Public health guidelines, WHO/CDC recommendations, health systems, health economics, domain background | `ph-background` |
-| Domain-specific research topic (from user profile `interests`) | `domain-specialist` |
+| NTD programs, roadmaps/targets, malaria, schistosomiasis, general sleeping-sickness awareness | `ntd` |
+| Deep/clinical HAT: treatment, fexinidazole, gHAT elimination verification, HAT surveillance specifics | `hat-specialist` |
+| HAT query, unsure if deep or general | `["hat-specialist", "ntd"]` |
 | Any query touching two categories above | search both databases |
+
+Available layers: `ph-background` (foundation), `epi-methods` (methods — Methods Coach), `ntd` (NTD + general HAT), `hat-specialist` (personal deep HAT). See `system/config/rag-routing-rules.md`.
 
 **When to SKIP retrieval — do not call `search_pdf_knowledge()`:**
 - Conversational / meta: "how are you", "what did we do", "explain yourself"
