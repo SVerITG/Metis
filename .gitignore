@@ -247,3 +247,6 @@ system/config/.first-run
 # MCP server runtime health snapshot (written each server start)
 system/config/mcp-health.json
 metis/system/config/mcp-health.json
+
+# Stray nested dir (local DB + system copy — never publish)
+/metis/
