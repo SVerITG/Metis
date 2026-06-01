@@ -39,25 +39,37 @@ fi
 
 cd "$APP_DIR"
 
-# Kill any previous Metis instance (on any port)
+# Kill any previous Metis instance and free the preferred port. A short sleep is
+# not enough — the old process can keep 8080 bound for a few seconds, which used to
+# make the launcher silently land on 8081 (or fail to bind). Actively wait for 8080
+# to free, prefer it, and only fall back if it is genuinely still occupied.
 pkill -f "uvicorn main:app" 2>/dev/null || true
-sleep 0.5
+# Best-effort: free port 8080 specifically (a wedged process from a crash).
+command -v fuser >/dev/null 2>&1 && fuser -k 8080/tcp 2>/dev/null || true
 
-# Auto-pick first free port in range 8080–8090
 PORT=$("$PYTHON" - <<'PYEOF'
-import socket
-for p in range(8080, 8091):
+import socket, time
+def free(p):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(('', p))
-        s.close()
-        print(p)
-        break
+        s.bind(('', p)); return True
     except OSError:
-        continue
+        return False
+    finally:
+        s.close()
+# Wait up to ~8s for the preferred port 8080 to free after killing the old server.
+for _ in range(40):
+    if free(8080):
+        print(8080); break
+    time.sleep(0.2)
 else:
-    print(8080)
+    # 8080 genuinely occupied by something else — fall back to the next free port.
+    for p in range(8081, 8091):
+        if free(p):
+            print(p); break
+    else:
+        print(8080)
 PYEOF
 )
 
