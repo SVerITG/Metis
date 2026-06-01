@@ -44,8 +44,28 @@ def _connect():
 
 CHUNK_CHARS   = 3200
 OVERLAP_CHARS = 400
-EMBED_BATCH   = 32
+# Embedding attention cost is O(batch * seq^2), and fastembed pads every batch to
+# the LONGEST sequence in it — so one long chunk blows up the whole batch's matrix
+# (batch=8 measured 13.5 GB; batch=32 hit 31 GB and OOM-crashed WSL). batch=1
+# processes one sequence at a time, capping peak attention to ~1-3 GB regardless of
+# content. Slower, but memory-bounded and crash-proof — the right tradeoff for a
+# one-time background index.
+EMBED_BATCH   = 1
 EMBEDDING_DIM = 768
+
+# ── Memory-safety caps (added 2026-06-01 after an OOM that killed indexing) ──
+# A pathological PDF extraction can produce millions of chars / chunks; holding
+# all chunks + all embeddings in memory ballooned the process to 31 GB and the
+# kernel OOM-killed it. These bound memory to O(EMBED_BATCH) regardless of doc.
+MAX_PAGE_CHARS      = 400_000   # truncate any single page beyond this (likely garbage)
+MAX_CHUNKS_PER_DOC  = 8_000     # ~25 MB of text — more than any real book chapter set
+COMMIT_EVERY_BATCHES = 8        # flush WAL periodically during long docs
+# Hard cap on the text handed to the embedding model. nomic-embed's context is
+# 8192 tokens (~32k chars); attention cost is O(seq^2), so a single giant chunk
+# would balloon onnxruntime's resident memory. 8000 chars (~2000 tokens) is well
+# within context and keeps every embed cheap. Chunks are already <=CHUNK_CHARS,
+# so this is a no-op for normal docs and a hard guarantee against a bad one.
+EMBED_MAX_CHARS     = 4_000   # ~1000 tokens; with EMBED_BATCH=8 keeps attention tiny
 
 # ── Built-in database definitions ─────────────────────────────────────────────
 # Each entry: slug, name, description, layer (1=foundation,2=specialist,3=methods),
@@ -327,40 +347,57 @@ def _index_one_pdf(conn, pdf_path: Path, lib_root: Path, db_id: int,
     if not pages:
         return {"status": "skip", "reason": "no extractable text", "source_file": source_file}
 
+    # ── Build the chunk list with HARD CAPS so a pathological PDF can't OOM us ──
     all_chunks: List[dict] = []
+    truncated = False
     for page_num, page_text in pages:
+        if len(page_text) > MAX_PAGE_CHARS:
+            page_text = page_text[:MAX_PAGE_CHARS]  # a single huge "page" = bad extraction
         for ct in _chunk_text(page_text):
             all_chunks.append({"page": page_num, "text": ct})
+            if len(all_chunks) >= MAX_CHUNKS_PER_DOC:
+                truncated = True
+                break
+        if truncated:
+            break
 
     if not all_chunks:
         return {"status": "skip", "reason": "no chunks", "source_file": source_file}
 
-    texts = [c["text"] for c in all_chunks]
-    embeddings: List[List[float]] = []
-    for i in range(0, len(texts), EMBED_BATCH):
-        embeddings.extend(embed_fn(texts[i:i + EMBED_BATCH]))
+    snippet = all_chunks[0]["text"][:300].replace("\n", " ")
+    n_chunks = len(all_chunks)
 
-    for idx, (chunk, vec) in enumerate(zip(all_chunks, embeddings)):
-        cur = conn.execute(
-            """INSERT INTO pdf_chunks
-               (db_id, source_file, domain, title, page_start, page_end,
-                chunk_idx, chunk_text, char_count)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (db_id, source_file, domain, title,
-             chunk["page"], chunk["page"],
-             idx, chunk["text"], len(chunk["text"]))
-        )
-        rowid = cur.lastrowid
-        try:
-            conn.execute(
-                "INSERT INTO vec_pdf_chunks (rowid, embedding) VALUES (?, ?)",
-                (rowid, _encode_vec(vec))
+    # ── STREAM: embed one batch, insert it, then DISCARD it. Peak memory is
+    #    O(EMBED_BATCH), not O(whole document) — this is the OOM fix. ──────────
+    batches = 0
+    for i in range(0, n_chunks, EMBED_BATCH):
+        batch = all_chunks[i:i + EMBED_BATCH]
+        # Truncate each chunk to a model-safe length before embedding (guards
+        # against a pathological giant chunk OOM-ing onnxruntime's attention).
+        vecs = embed_fn([c["text"][:EMBED_MAX_CHARS] for c in batch])
+        for j, (chunk, vec) in enumerate(zip(batch, vecs)):
+            cur = conn.execute(
+                """INSERT INTO pdf_chunks
+                   (db_id, source_file, domain, title, page_start, page_end,
+                    chunk_idx, chunk_text, char_count)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (db_id, source_file, domain, title,
+                 chunk["page"], chunk["page"],
+                 i + j, chunk["text"], len(chunk["text"]))
             )
-        except Exception:
-            pass
+            try:
+                conn.execute(
+                    "INSERT INTO vec_pdf_chunks (rowid, embedding) VALUES (?, ?)",
+                    (cur.lastrowid, _encode_vec(vec))
+                )
+            except Exception:
+                pass
+        batches += 1
+        if batches % COMMIT_EVERY_BATCHES == 0:
+            conn.commit()  # flush WAL so memory/disk stay bounded on long docs
+        del batch, vecs  # free promptly
 
     # Auto library card
-    snippet = all_chunks[0]["text"][:300].replace("\n", " ")
     if not conn.execute("SELECT id FROM library_cards WHERE title = ?", (title,)).fetchone():
         try:
             conn.execute(
@@ -379,7 +416,7 @@ def _index_one_pdf(conn, pdf_path: Path, lib_root: Path, db_id: int,
              db_id=excluded.db_id, chunk_count=excluded.chunk_count,
              total_pages=excluded.total_pages, file_size=excluded.file_size,
              indexed_at=datetime('now')""",
-        (db_id, source_file, domain, title, total_pages, len(all_chunks), file_size)
+        (db_id, source_file, domain, title, total_pages, n_chunks, file_size)
     )
     conn.commit()
 
@@ -388,7 +425,8 @@ def _index_one_pdf(conn, pdf_path: Path, lib_root: Path, db_id: int,
         "source_file": source_file,
         "domain": domain,
         "pages": total_pages,
-        "chunks": len(all_chunks),
+        "chunks": n_chunks,
+        "truncated": truncated,
     }
 
 
