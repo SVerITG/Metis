@@ -258,6 +258,18 @@ Every session, check:
 - **OneDrive** — file sync
 - **GitHub** — version control (`{your-github-username}` account)
 
+### ⚠️ Applying MCP server code changes (important)
+
+The MCP server runs an **installed copy** of the package in the venv (`~/.local/share/metis-mcp/.venv/.../site-packages/metis_mcp/`), **not** the source in `system/mcp-server/src/`. Editing a tool's source does **nothing** to the running server until you reinstall **and** reconnect:
+
+```bash
+bash tools/reinstall-mcp.sh     # reinstall package from current source
+# then reconnect: Claude Code → /mcp → reconnect 'metis-rc'  (Claude Desktop → quit & reopen)
+bash tools/test-mcp.sh          # smoke-test the server on this system (exit 0 = healthy)
+```
+
+The dashboard (`system/app-py/`) reads source directly, so dashboard edits take effect on restart with no reinstall. The server self-checks at every start and writes `system/config/mcp-health.json`; it warns in its logs if it detects stale installed code.
+
 ---
 
 ## VS Code integration
