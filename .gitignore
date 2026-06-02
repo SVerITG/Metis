@@ -250,3 +250,6 @@ metis/system/config/mcp-health.json
 
 # Stray nested dir (local DB + system copy — never publish)
 /metis/
+
+# Local Windows Sandbox configs — contain the user's absolute host path
+*.local.wsb
