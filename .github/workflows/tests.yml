@@ -1,0 +1,57 @@
+name: Tests
+
+# Runs the Python test suite — including the automated RAG-grounding test, which
+# verifies the knowledge layer retrieves the right cited source and gives a weak
+# signal for fabricated questions (the core trust claim). Triggers on pushes and
+# PRs that touch code/tests, plus manual runs.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'system/mcp-server/**'
+      - 'system/app-py/**'
+      - 'tests/**'
+      - '.github/workflows/tests.yml'
+  pull_request:
+    paths:
+      - 'system/mcp-server/**'
+      - 'system/app-py/**'
+      - 'tests/**'
+
+jobs:
+  pytest:
+    name: pytest (incl. RAG grounding)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Cache fastembed model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/fastembed
+          key: fastembed-nomic-v1.5-q
+
+      - name: Install package (with embedding + dev extras)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "system/mcp-server/.[embedding,dev]"
+
+      - name: Run tests
+        env:
+          METIS_RC_ROOT: ${{ github.workspace }}
+        run: |
+          # Hermetic, high-value suites: RAG grounding (the core trust claim),
+          # red-line security enforcement, and agent-contract integrity.
+          # NOTE: tests/integration/ (memory_curator) + one db_helpers test are
+          # excluded until their paths.db-vs-METIS_DB isolation is fixed — they
+          # leak to the real DB rather than the temp fixture.
+          pytest tests/test_rag_grounding.py tests/red_lines tests/functional \
+                 -m "not e2e" --tb=short
