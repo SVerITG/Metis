@@ -58,12 +58,17 @@ if [ "$PROFILE" = "light" ]; then
     echo "══════════════════════════════════════════════════════════"
     echo ""
 
-    # Verify MCP server imports and report tool count, then run as server
+    # Verify MCP server imports, report tool + prompt counts, then run as server
     "$VENV_DIR/bin/python3" -c "
+import asyncio
 import metis_mcp.server
 from metis_mcp.app_instance import app
 tools = list(app._tool_manager._tools.keys()) if hasattr(app, '_tool_manager') else []
-print(f'  MCP server OK — {len(tools)} tools registered')
+prompts = asyncio.run(app.list_prompts())
+pnames = {p.name for p in prompts}
+assert 'search_pdf_knowledge' in tools, 'knowledge layer tool missing — subset too narrow'
+assert 'metis' in pnames, 'metis router prompt missing — Desktop routing broken'
+print(f'  MCP server OK — {len(tools)} tools, {len(prompts)} prompts registered')
 "
     echo "  ✓ MCP server verified"
     echo "  Starting MCP server process..."
