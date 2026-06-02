@@ -8,7 +8,7 @@
 - system/token-guardrails.md
 - system/red-lines.md
 - system/mcp-server/src/metis_mcp/config.py
-- Current app.R structure
+- Current dashboard structure (`system/app-py/` — FastAPI + HTMX)
 
 ## Output
 - Implementation in the correct files/locations

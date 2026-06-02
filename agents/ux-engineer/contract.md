@@ -28,7 +28,7 @@ UX Engineer has veto authority on UI changes that violate:
 ## Coordination
 
 - **Dashboard Engineer**: collaborates on visualization design decisions
-- **Software Engineer**: provides CSS/HTML guidance for R Shiny modules
+- **Software Engineer**: provides CSS/HTML guidance for the FastAPI/HTMX dashboard templates
 - **Metis**: routes UI/UX-related requests
 
 ## Inspiration
