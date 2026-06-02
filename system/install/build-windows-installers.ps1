@@ -1,11 +1,15 @@
 # build-windows-installers.ps1
-# Compiles the 3 Metis Windows exe installers locally and uploads them to GitHub.
+# Compiles the Metis Windows installer locally and (optionally) uploads it to GitHub.
+#
+# The installer is a SINGLE type-selectable exe — full / minimal / custom are
+# chosen inside the wizard, not built as separate files (see metis-setup.iss:
+# "Single output file — choices are made inside the wizard, not via separate builds").
 #
 # Usage (from PowerShell on Windows):
 #   cd "%METIS_RC_ROOT%\system\install"
 #   .\build-windows-installers.ps1
 #
-# Optional — skip GitHub upload, just build the exe files:
+# Optional — skip GitHub upload, just build the exe:
 #   .\build-windows-installers.ps1 -SkipUpload
 
 param(
@@ -31,25 +35,25 @@ if (-not (Test-Path $iscc)) {
 }
 Write-Host "Using ISCC: $iscc" -ForegroundColor Cyan
 
-# ── 2. Compile three variants ─────────────────────────────────────────────────
-$types = @("full", "standard", "minimal")
-foreach ($type in $types) {
-    Write-Host ""
-    Write-Host "Compiling $type installer..." -ForegroundColor Yellow
-    & $iscc /DDefaultType=$type /DMyAppVersion=$Version $IssFile
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "ISCC failed for type=$type (exit code $LASTEXITCODE)"
-        exit $LASTEXITCODE
-    }
+# ── 2. Compile the installer ──────────────────────────────────────────────────
+Write-Host ""
+Write-Host "Compiling installer (version $Version)..." -ForegroundColor Yellow
+& $iscc /DMyAppVersion=$Version $IssFile
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "ISCC failed (exit code $LASTEXITCODE)"
+    exit $LASTEXITCODE
 }
 
-# ── 3. List output files ──────────────────────────────────────────────────────
-Write-Host ""
-Write-Host "Built installers:" -ForegroundColor Green
-Get-ChildItem "$DistDir\*.exe" | ForEach-Object {
-    $mb = [math]::Round($_.Length / 1MB, 1)
-    Write-Host "  $($_.Name)  ($mb MB)"
+# ── 3. Locate output ──────────────────────────────────────────────────────────
+$exe = Join-Path $DistDir "MetisSetup-$Version.exe"
+if (-not (Test-Path $exe)) {
+    Write-Error "Expected output not found: $exe"
+    exit 1
 }
+$mb = [math]::Round((Get-Item $exe).Length / 1MB, 1)
+Write-Host ""
+Write-Host "Built installer:" -ForegroundColor Green
+Write-Host "  MetisSetup-$Version.exe  ($mb MB)"
 
 if ($SkipUpload) {
     Write-Host ""
@@ -65,35 +69,32 @@ if (-not $ghCmd) {
     exit 0
 }
 
-$tag  = "v$Version"
-$exes = Get-ChildItem "$DistDir\MetisSetup-*-$Version.exe" | Select-Object -ExpandProperty FullName
+$tag = "v$Version"
 
-# Write release notes to a temp file (avoids here-string indentation issues)
+# Release notes (temp file avoids here-string indentation issues)
 $notesFile = Join-Path $env:TEMP "metis-release-notes.txt"
-"Metis Research Cortex $Version - base release." | Out-File $notesFile -Encoding utf8
-""                                               | Out-File $notesFile -Append -Encoding utf8
-"Windows Installers:"                            | Out-File $notesFile -Append -Encoding utf8
-"  MetisSetup-full-$Version.exe     - Core + dashboard + Statistics course (recommended)" | Out-File $notesFile -Append -Encoding utf8
-"  MetisSetup-standard-$Version.exe - Core + dashboard"                                  | Out-File $notesFile -Append -Encoding utf8
-"  MetisSetup-minimal-$Version.exe  - Core (MCP + agents) only"                          | Out-File $notesFile -Append -Encoding utf8
-""                                               | Out-File $notesFile -Append -Encoding utf8
-"Requires: Windows 10+, Python 3.10+, Anthropic API key, Claude Desktop." | Out-File $notesFile -Append -Encoding utf8
+"Metis Research Cortex $Version - base release."                          | Out-File $notesFile -Encoding utf8
+""                                                                        | Out-File $notesFile -Append -Encoding utf8
+"Windows Installer:"                                                      | Out-File $notesFile -Append -Encoding utf8
+"  MetisSetup-$Version.exe - one installer, pick your scope in the wizard:" | Out-File $notesFile -Append -Encoding utf8
+"    Full    - AI assistant + 9-tab research dashboard (recommended)"     | Out-File $notesFile -Append -Encoding utf8
+"    Minimal - AI assistant only (fastest)"                              | Out-File $notesFile -Append -Encoding utf8
+"    Custom  - choose components"                                        | Out-File $notesFile -Append -Encoding utf8
+""                                                                        | Out-File $notesFile -Append -Encoding utf8
+"Requires: Windows 10+, WSL, Python 3.10+, Anthropic API key, Claude Desktop." | Out-File $notesFile -Append -Encoding utf8
 
-# Check if release already exists
 gh release view $tag --repo SVerITG/Metis 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "Creating GitHub Release $tag..." -ForegroundColor Yellow
-    gh release create $tag @exes `
+    gh release create $tag $exe `
         --repo SVerITG/Metis `
         --title "Metis $Version" `
         --notes-file $notesFile
 } else {
     Write-Host ""
-    Write-Host "Release $tag exists — uploading assets..." -ForegroundColor Yellow
-    foreach ($exe in $exes) {
-        gh release upload $tag $exe --repo SVerITG/Metis --clobber
-    }
+    Write-Host "Release $tag exists — uploading asset..." -ForegroundColor Yellow
+    gh release upload $tag $exe --repo SVerITG/Metis --clobber
 }
 
 Write-Host ""

@@ -1,9 +1,23 @@
 <Configuration>
+  <!--
+    Windows Sandbox test config for the Metis installer.
+
+    EDIT the HostFolder path below to point at YOUR built installer folder
+    (the dist\ directory that build-windows-installers.ps1 writes to), then
+    double-click this file. Windows Sandbox requires an absolute path here.
+
+    On logon the installer folder opens automatically so MetisSetup-<ver>.exe
+    is ready to run. Note: Windows Sandbox has no WSL, so this validates the
+    wizard UI + file layout; a full server install needs a real WSL-enabled box.
+  -->
   <MappedFolders>
     <MappedFolder>
-      <HostFolder>C:\Users\sverschaeve\OneDrive - ITG\Documents\7. Software\Research Cortex\system\install\installer\dist</HostFolder>
+      <HostFolder>C:\path\to\Metis\system\install\installer\dist</HostFolder>
       <SandboxFolder>C:\Metis-Installer</SandboxFolder>
       <ReadOnly>true</ReadOnly>
     </MappedFolder>
   </MappedFolders>
+  <LogonCommand>
+    <Command>explorer.exe C:\Metis-Installer</Command>
+  </LogonCommand>
 </Configuration>
