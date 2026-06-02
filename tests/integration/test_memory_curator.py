@@ -166,8 +166,12 @@ class TestConsolidateSessionMemory:
         assert "Runs reviewed" in text
 
     def test_writes_report_markdown(self, tmp_db, db_conn, tmp_path, monkeypatch):
-        """consolidate_session_memory should produce a report text even if no entries written."""
+        """consolidate_session_memory should produce a report when runs exist."""
         import asyncio
+        _seed_runs(db_conn, [
+            {"slug": "epidemiologist",
+             "summary": "Reviewed the elimination study design and sample-size assumptions in detail."},
+        ])
         result = asyncio.run(consolidate_session_memory(n_runs=5))
         text = _text(result)
         assert "Memory Consolidation" in text

@@ -35,12 +35,13 @@ class Paths:
         self.library = self.root / "knowledge" / "library"
         self.reviews = self.root / "outputs" / "reviews"
         self.config = self.root / "system" / "config"
+        # Honor METIS_DB when set (aligns with the dashboard's db.py and lets tests
+        # point at a temp DB). Falls back to the canonical location under the RC root.
+        _db_env = os.environ.get("METIS_DB")
         self.db = (
-            self.root
-            / "system"
-            / "app"
-            / "data"
-            / "metis.sqlite"
+            Path(_db_env)
+            if _db_env
+            else self.root / "system" / "app" / "data" / "metis.sqlite"
         )
 
 

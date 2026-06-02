@@ -48,10 +48,7 @@ jobs:
         env:
           METIS_RC_ROOT: ${{ github.workspace }}
         run: |
-          # Hermetic, high-value suites: RAG grounding (the core trust claim),
-          # red-line security enforcement, and agent-contract integrity.
-          # NOTE: tests/integration/ (memory_curator) + one db_helpers test are
-          # excluded until their paths.db-vs-METIS_DB isolation is fixed — they
-          # leak to the real DB rather than the temp fixture.
-          pytest tests/test_rag_grounding.py tests/red_lines tests/functional \
-                 -m "not e2e" --tb=short
+          # Full suite minus e2e (Playwright needs a browser harness). Tests isolate
+          # via the tmp_db fixture, which now also redirects the config `paths`
+          # singleton, so no test touches a real DB.
+          pytest tests/ -m "not e2e" --tb=short
