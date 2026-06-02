@@ -254,25 +254,13 @@ begin
     wpSelectComponents,
     'Authorise Background Component',
     'The MCP server — what it does and what you are authorising.',
-    'Metis works by installing a small background program called an MCP server' + #13#10 +
-    '(MCP = Model Context Protocol, an open standard from Anthropic).' + #13#10 +
-    'This program sits between Claude and your research files. When you ask Claude' + #13#10 +
-    'a question, the MCP server retrieves the right context from your notes,' + #13#10 +
-    'papers, and history — and returns it to Claude on your behalf.' + #13#10 +
+    'Metis installs a small background program — the MCP server (Model Context' + #13#10 +
+    'Protocol, an open Anthropic standard). It sits between Claude and your' + #13#10 +
+    'research files, fetching the right context when you ask a question.' + #13#10 +
     '' + #13#10 +
-    'What the MCP server CAN do:' + #13#10 +
-    '  ✓  Read and write files in your Metis research folder' + #13#10 +
-    '  ✓  Connect to Claude when you open Claude Desktop or Claude Code' + #13#10 +
-    '  ✓  Build and maintain your personal knowledge base locally' + #13#10 +
-    '  ✓  Run lightweight background scans (news, papers) on a schedule' + #13#10 +
-    '' + #13#10 +
-    'What the MCP server CANNOT do:' + #13#10 +
-    '  ✗  Access files outside your Metis folder without your permission' + #13#10 +
-    '  ✗  Send your research data to any server (everything stays local)' + #13#10 +
-    '  ✗  Run without Claude being open (it is not a persistent background service)' + #13#10 +
-    '' + #13#10 +
-    'You can remove the MCP server at any time: Windows Settings → Apps → Metis' + #13#10 +
-    'or by running the Metis uninstaller.',
+    'It reads/writes only inside your Metis folder, keeps all data local' + #13#10 +
+    '(nothing is sent anywhere), and runs only while Claude is open.' + #13#10 +
+    'Remove it any time via Windows Settings -> Apps -> Metis.',
     False, False);
   McpConsentPage.Add(
     'I understand what the MCP server does and authorise its installation');
@@ -285,17 +273,10 @@ begin
     McpConsentPage.ID,
     'Demo Workspace',
     'Start with example content so you can explore every feature right away?',
-    'A demo workspace pre-loads a realistic research scenario:' + #13#10 +
-    '  • 3 example projects (surveillance study, literature review, grant)' + #13#10 +
-    '  • Sample meeting notes with action items' + #13#10 +
-    '  • A small example literature library' + #13#10 +
-    '  • Some open tasks and ideas' + #13#10 +
-    '' + #13#10 +
-    'This lets you try every dashboard tab immediately without having to add' + #13#10 +
-    'your own content first.' + #13#10 +
-    '' + #13#10 +
-    'You can clear the demo content and replace it with your own work at any time' + #13#10 +
-    'from the Metis dashboard (Settings → Clear demo content).',
+    'A demo workspace pre-loads a realistic scenario — example projects, meeting' + #13#10 +
+    'notes, a small literature library, and some open tasks — so you can explore' + #13#10 +
+    'every dashboard tab right away. Clear it and add your own work any time' + #13#10 +
+    '(Metis dashboard -> Settings -> Clear demo content).',
     True, False);
   DemoPage.Add('Yes — load demo content  (recommended for first-time users)');
   DemoPage.Add('No  — start with a blank workspace');
@@ -308,27 +289,11 @@ begin
     DemoPage.ID,
     'Anthropic API Key',
     'Connect Metis to Claude AI — takes 2 minutes.',
-    'Metis uses the Anthropic API to power its 34 specialist agents' + #13#10 +
-    '(Epidemiologist, Writing Partner, Librarian, Methods Coach, and more).' + #13#10 +
-    'You need a free API key from Anthropic to use them.' + #13#10 +
+    'Metis uses the Anthropic API to power its 34 specialist agents.' + #13#10 +
     '' + #13#10 +
-    'HOW TO GET YOUR FREE API KEY' + #13#10 +
-    '  1. Open your browser and go to:  https://console.anthropic.com' + #13#10 +
-    '  2. Sign up or log in (free — no credit card needed to start)' + #13#10 +
-    '  3. Click "API Keys" in the left sidebar, then "Create Key"' + #13#10 +
-    '  4. Copy the key and paste it in the box below' + #13#10 +
-    '' + #13#10 +
-    'COSTS' + #13#10 +
-    '  Most daily research tasks cost a few cents. Metis shows you exactly' + #13#10 +
-    '  what each agent run costs — there are no hidden charges.' + #13#10 +
-    '  You can set a monthly spending limit in the Anthropic console.' + #13#10 +
-    '' + #13#10 +
-    'SECURITY' + #13#10 +
-    '  Your key is stored only on this computer in a local .env file.' + #13#10 +
-    '  It is never uploaded, shared, or sent anywhere except to Anthropic''s' + #13#10 +
-    '  own API when you run an agent.' + #13#10 +
-    '' + #13#10 +
-    'The key looks like:   sk-ant-api03-…');
+    'Get a free key:  https://console.anthropic.com  ->  API Keys  ->  Create Key' + #13#10 +
+    'Your key stays on this PC in a local .env file (it looks like sk-ant-api03-…).' + #13#10 +
+    'Most tasks cost a few cents; set a spending limit in the Anthropic console.');
   ApiKeyPage.Add('Paste your Anthropic API key here:', False);
 
   { ═══════════════════════════════════════════════════════════════════════
@@ -338,16 +303,9 @@ begin
     ApiKeyPage.ID,
     'About You',
     'Help Metis get to know you — this takes about 1 minute.',
-    'Metis will use your answers to:' + #13#10 +
-    '  • Address you by name in every conversation' + #13#10 +
-    '  • Calibrate how it communicates (technical depth, terminology)' + #13#10 +
-    '  • Understand your institutional context when reviewing documents' + #13#10 +
-    '  • Route questions to the most relevant specialist agent' + #13#10 +
-    '' + #13#10 +
-    'You can update any of this later by typing  /metis_config  in Claude.' + #13#10 +
-    '' + #13#10 +
-    'Your name and institution never leave this computer — they are used' + #13#10 +
-    'only to personalise how Metis talks to you.');
+    'Metis uses this to address you by name, calibrate how it communicates,' + #13#10 +
+    'and route questions to the right agent. It stays on this computer.' + #13#10 +
+    'Update any time with  /metis_config  in Claude.');
   AboutPage.Add('Your full name:', False);
   AboutPage.Add('Institution or organisation (optional):', False);
   AboutPage.Add('Your role or title (e.g. PhD researcher, epidemiologist, professor):', False);
@@ -359,18 +317,9 @@ begin
     AboutPage.ID,
     'Your Research Domain',
     'Tell Metis what field you work in.',
-    'Metis uses your field and topics to:' + #13#10 +
-    '  • Set up daily literature alerts (PubMed, OpenAlex)' + #13#10 +
-    '  • Load the right specialist agents by default' + #13#10 +
-    '  • Use accurate domain terminology in responses' + #13#10 +
-    '  • Build a tailored morning brief every day' + #13#10 +
-    '' + #13#10 +
-    'EXAMPLES' + #13#10 +
-    '  Primary field:     Epidemiology / Global Health / Spatial statistics' + #13#10 +
-    '  Key topics:        NTDs, HAT surveillance, vector control, DRC' + #13#10 +
-    '  Tools:             R, QGIS, DHIS2, SaTScan' + #13#10 +
-    '' + #13#10 +
-    'You can refine these any time via  /metis_config  in Claude.');
+    'Metis uses your field for literature alerts, default agents, and your' + #13#10 +
+    'daily brief.  Examples — field: "Epidemiology";  topics: "surveillance,' + #13#10 +
+    'vector control";  tools: "R, QGIS".  Refine any time via /metis_config.');
   ResearchPage.Add('Primary research field:', False);
   ResearchPage.Add('Key topics (comma-separated):', False);
   ResearchPage.Add('Tools and software you use regularly (comma-separated):', False);
@@ -382,13 +331,9 @@ begin
     ResearchPage.ID,
     'Communication Style',
     'How should Metis give you feedback?',
-    'Metis will review your methods, critique your writing, and challenge your' + #13#10 +
-    'thinking. Choose the approach that works best for you.' + #13#10 +
-    '' + #13#10 +
-    'This affects how agents like the Epidemiologist, Writing Partner, and' + #13#10 +
-    'Methods Coach communicate with you — not what they know.' + #13#10 +
-    '' + #13#10 +
-    'You can change this at any time from the Metis tab → Appearance.',
+    'Metis reviews your methods, critiques writing, and challenges your thinking.' + #13#10 +
+    'Choose the feedback approach that suits you (affects tone, not knowledge).' + #13#10 +
+    'Change any time from the Metis tab -> Appearance.',
     True, False);
   StylePage.Add('Supportive — always encouraging; critiques are wrapped in positive framing');
   StylePage.Add('Direct — honest and clear; calls out problems without softening  (recommended)');
@@ -402,20 +347,10 @@ begin
     StylePage.ID,
     'Your Active Projects',
     'Tell Metis what you are currently working on.',
-    'Metis creates a tracking record for each project:' + #13#10 +
-    '  • Writes a CLAUDE.md into the project folder — so Claude understands' + #13#10 +
-    '    the project the moment you open it' + #13#10 +
-    '  • Registers the project in Claude Desktop automatically' + #13#10 +
-    '  • Adds it to the dashboard for task tracking and progress updates' + #13#10 +
-    '' + #13#10 +
-    'FORMAT:   Project name | Category' + #13#10 +
-    '  Just a name:         HAT Surveillance Study' + #13#10 +
-    '  With category:       HAT Surveillance Study | Article' + #13#10 +
-    '' + #13#10 +
-    'Categories: Article, Grant, Teaching, Software, Review — or create your own.' + #13#10 +
-    '' + #13#10 +
-    'Folders are selected on the next page.' + #13#10 +
-    'You can add unlimited projects later from the dashboard (localhost:8080/setup).');
+    'Metis tracks each project (writes a CLAUDE.md, registers it, adds it to the' + #13#10 +
+    'dashboard).  Format:  Project name | Category   e.g.  Surveillance Study | Article' + #13#10 +
+    'Categories: Article, Grant, Teaching, Software, Review — or your own.' + #13#10 +
+    'Folders are chosen next; add more later from the dashboard.');
   ProjectsPage.Add('Project 1  (name | category):', False);
   ProjectsPage.Add('Project 2  (optional):', False);
   ProjectsPage.Add('Project 3  (optional):', False);
