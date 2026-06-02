@@ -198,14 +198,20 @@ cp "$SRC_DIR/pyproject.toml" "$LOCAL_SRC/"
 [ -f "$SRC_DIR/requirements.txt" ] && cp "$SRC_DIR/requirements.txt" "$LOCAL_SRC/"
 
 echo "Installing MCP server requirements..."
+# Install WITH the [embedding] and [library] extras so the knowledge layer works
+# out of the box: fastembed (semantic search / RAG — required) and paper-qa
+# (ask_library). PyMuPDF + pdfminer come from core deps. Without [embedding], all
+# semantic search is silently disabled — so it is installed by default here.
 if [ "$USE_UV" = "1" ]; then
   [ -f "$LOCAL_SRC/requirements.txt" ] && "$UV" pip install --python "$VENV_DIR/bin/python3" -r "$LOCAL_SRC/requirements.txt"
-  echo "Installing metis-mcp-server package..."
-  "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC"
+  echo "Installing metis-mcp-server package (with embedding + library extras)..."
+  "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC[embedding,library]" \
+    || "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC"
 else
   [ -f "$LOCAL_SRC/requirements.txt" ] && "$VENV_DIR/bin/pip" install -r "$LOCAL_SRC/requirements.txt"
-  echo "Installing metis-mcp-server package..."
-  "$VENV_DIR/bin/pip" install "$LOCAL_SRC"
+  echo "Installing metis-mcp-server package (with embedding + library extras)..."
+  "$VENV_DIR/bin/pip" install "$LOCAL_SRC[embedding,library]" \
+    || "$VENV_DIR/bin/pip" install "$LOCAL_SRC"
 fi
 
 # If a transitive dependency pulled in GPU torch, swap it for the CPU-only build.

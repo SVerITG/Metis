@@ -21,7 +21,10 @@ dependencies = [
     "pandas>=2.0",
     "openpyxl>=3.1",
     "pyreadstat>=1.2",
-    # Phase L — PDF knowledge indexing (replaces pypdf)
+    # Phase L — PDF knowledge indexing. PyMuPDF is the PRIMARY extractor (robust,
+    # per-page, rescues image-heavy PDFs); pdfminer-six is the fallback. Required
+    # for the knowledge layer to index PDFs at all.
+    "pymupdf>=1.24",
     "pdfminer-six>=20240706",
     # Phase 8.8 — content scan
     "feedparser>=6.0",
@@ -39,9 +42,13 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
-# Neural embedding — pulls ~200 MB of ONNX models (no GPU needed).
-# Install with: pip install "metis-mcp-server[embedding]"
+# Neural embedding — REQUIRED for all semantic search, RAG, and the knowledge
+# layer (search_pdf_knowledge, vector memory). Pulls ~200 MB of ONNX models (no
+# GPU). setup-mcp.sh installs this by default; without it, semantic search is off.
 embedding = ["fastembed>=0.8.0"]
+# PaperQA2 — ask_library / extract_structured (full-text Q&A over the PDF library).
+# Heavier; ask_library degrades gracefully without it.
+library = ["paper-qa>=5.0"]
 # Voice capture — faster-whisper for local transcription (no GPU needed).
 # resemblyzer removed: it requires PyTorch GPU and is not used in any tool.
 voice = [
