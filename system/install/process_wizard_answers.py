@@ -95,7 +95,30 @@ def _format_answers(answers: dict) -> str:
         "language": "Preferred language",
     }
     for key, label in labels.items():
-        val = answers.get(key, "").strip()
+        raw = answers.get(key, "")
+        if isinstance(raw, list):
+            # e.g. projects: a list of {name, category, folder} objects
+            parts = []
+            for item in raw:
+                if isinstance(item, dict):
+                    nm = str(item.get("name", "")).strip()
+                    if not nm:
+                        continue
+                    cat = str(item.get("category", "")).strip()
+                    fld = str(item.get("folder", "")).strip()
+                    desc = nm
+                    if cat:
+                        desc += f" [{cat}]"
+                    if fld:
+                        desc += f" — {fld}"
+                    parts.append(desc)
+                else:
+                    s = str(item).strip()
+                    if s:
+                        parts.append(s)
+            val = "; ".join(parts)
+        else:
+            val = str(raw).strip()
         if val:
             lines.append(f"{label}: {val}")
     return "\n".join(lines)

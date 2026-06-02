@@ -46,6 +46,32 @@
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  YOUR ANTHROPIC API KEY — FULL GUIDE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Metis uses the Anthropic API to power its 34 specialist agents
+  (Epidemiologist, Writing Partner, Librarian, Methods Coach, and more).
+  You need a free API key from Anthropic to use them.
+
+  HOW TO GET YOUR FREE API KEY
+    1. Go to:  https://console.anthropic.com
+    2. Sign up or log in (free — no credit card needed to start)
+    3. Click "API Keys" in the left sidebar, then "Create Key"
+    4. Copy the key (it looks like  sk-ant-api03-…)
+
+  WHERE METIS STORES IT
+    Locally only, in:   Documents\Metis\system\.env
+    It is never uploaded or shared — it is sent only to Anthropic's own
+    API when you run an agent. Paste or update it during the installer
+    wizard, in the dashboard setup, or by editing that .env file.
+
+  COSTS
+    Most daily research tasks cost a few cents. Metis shows you exactly
+    what each agent run costs — there are no hidden charges. You can set a
+    monthly spending limit in the Anthropic console.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   USEFUL LINKS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
