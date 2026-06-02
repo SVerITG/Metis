@@ -37,7 +37,7 @@
     "biostatistician":     ["methods", "literature", "data", "writing", "sessions"],
     "background-maker":    ["literature", "media", "specialist", "sessions"],
     "metis":               ["pipeline", "intelligence", "admin", "sessions", "meetings"],
-    "_default":            ["admin", "writing", "literature", "intelligence", "sessions", "meetings"]
+    "_default":            "all"
   },
-  "_comment_default": "_default is the subset loaded when no METIS_AGENT_SUBSET is set. It covers the tools used in a typical daily research session (~65 tools vs 172 total). Agents explicitly named above get a narrower, task-specific subset. Use METIS_TOOL_SUBSETS=0 to disable filtering entirely."
+  "_comment_default": "_default is the subset loaded when no METIS_AGENT_SUBSET is set — i.e. the general interactive session used by Claude Desktop AND the Claude Code main 'metis-rc' connection. Both have ONE connection and ONE subset for the whole session (no per-agent relaunch), so the default MUST expose every tool — otherwise capabilities like the routed knowledge layer (search_pdf_knowledge), DHIS2, data tools, transcription and voice are unreachable. Hence 'all'. The per-agent subsets above still apply ONLY when METIS_AGENT_SUBSET=<slug> is set explicitly (e.g. token-optimized automation launchers). Set METIS_TOOL_SUBSETS=0 to disable the mechanism entirely."
 }

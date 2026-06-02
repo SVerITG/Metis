@@ -270,6 +270,15 @@ bash tools/test-mcp.sh          # smoke-test the server on this system (exit 0 =
 
 The dashboard (`system/app-py/`) reads source directly, so dashboard edits take effect on restart with no reinstall. The server self-checks at every start and writes `system/config/mcp-health.json`; it warns in its logs if it detects stale installed code.
 
+### Claude Desktop — how Metis is reachable there
+
+Claude Desktop does **not** read this CLAUDE.md and has **no** access to the Claude Code skills in `.claude/skills/`. It only sees what the MCP server exposes. So the routing/agent behavior you get from `/metis` in the terminal is delivered to Desktop two ways:
+
+- **MCP prompts** (`system/mcp-server/src/metis_mcp/tools/prompts.py`) — 39 prompts surface in Desktop's prompt picker: a `metis` router (calls `run_metis`, announces the routing, loads + adopts the chosen agent via `get_agent_context`, logs via `log_agent_run`), one prompt per agent, and 5 workflow prompts (morning/research/capture/handoff/weekly). **Editing a prompt requires the same reinstall + reconnect** as any MCP code change.
+- **Full tool reachability** — Desktop has ONE connection and ONE tool subset for the whole session (no per-agent relaunch). Therefore `_default` in `system/config/tool-subsets.json` is `"all"` — anything narrower hides core capability (the routed knowledge layer, DHIS2, data tools, transcription). Per-agent subsets only apply when `METIS_AGENT_SUBSET=<slug>` is set explicitly (token-optimized automation launchers).
+
+The smoke test (`tools/test-mcp.sh`) verifies prompts register on every run.
+
 ---
 
 ## VS Code integration
