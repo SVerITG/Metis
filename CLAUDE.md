@@ -4,7 +4,7 @@ This is the Metis Research Cortex — a local AI second-brain for researchers in
 
 **Owner:** [User] — address by their configured name (see `system/config/user-config.yaml`)
 **Root:** This folder
-**App:** `system/app/`
+**App:** `system/app-py/`
 **Agents:** `agents/`
 
 ---
@@ -194,7 +194,7 @@ When a request arrives, route as follows:
 - Journal / session handoffs / ideas: `journal/`
 - Agent patterns (user-editable prompts): `system/config/patterns/`
 - Implementation progress tracker: `system/config/implementation-progress.json`
-- Dashboard: `system/app/`
+- Dashboard: `system/app-py/` (FastAPI + HTMX; the DB it uses lives in `system/app/data/`)
 - MCP server: `system/mcp-server/`
 - Config: `system/config/`
 - Knowledge (library + domains + courses): `knowledge/`
@@ -252,7 +252,7 @@ Every session, check:
 - **Python** — dashboard (FastAPI + HTMX), MCP server, scripting
 - **R / RStudio** — statistical analysis
 - **SQLite** — Metis metadata store (`system/app/data/metis.sqlite`)
-- **FastAPI + HTMX** — dashboard (`system/app/`)
+- **FastAPI + HTMX** — dashboard (`system/app-py/`)
 - **Docker** — containerization (planned)
 - **Windows + WSL** — host OS
 - **OneDrive** — file sync
