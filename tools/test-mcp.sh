@@ -62,6 +62,20 @@ try:
 except Exception as e:
     bad(f"package import FAILED: {type(e).__name__}: {e}"); sys.exit(2)
 
+# 2b. MCP prompts registered (Claude Desktop reaches Metis via these)
+try:
+    import asyncio
+    prompts=asyncio.run(app.list_prompts())
+    pnames={p.name for p in prompts}
+    if "metis" not in pnames:
+        warn(f"{len(prompts)} prompts registered but 'metis' router MISSING — Desktop routing broken")
+    elif len(prompts) < 10:
+        warn(f"only {len(prompts)} prompts registered — agent/workflow prompts may have failed (Desktop reach reduced)")
+    else:
+        ok(f"{len(prompts)} MCP prompts registered (metis router + agents + workflows)")
+except Exception as e:
+    warn(f"prompt registration check failed: {type(e).__name__}: {e}")
+
 # 3. DB reachable + key tables
 try:
     from metis_mcp.config import paths
