@@ -64,7 +64,7 @@ async def consolidate_session_memory(
             conn.execute(_MEMORY_DDL)
 
             cur = conn.execute(
-                """SELECT id, agent_slug, task_summary, output_path, input_path, created_at
+                """SELECT run_id, agent_slug, task_summary, output_path, input_path, created_at
                    FROM agent_runs
                    ORDER BY created_at DESC
                    LIMIT ?""",
@@ -140,7 +140,7 @@ async def consolidate_session_memory(
             f"",
             f"**Agent:** {slug}",
             f"**Date:** {entry_date}",
-            f"**Run ID:** {run['id']}",
+            f"**Run ID:** {run['run_id']}",
             f"",
             f"## Summary",
             f"{summary_text}",

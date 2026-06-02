@@ -21,7 +21,14 @@ class TestGetDbPath:
     def test_raises_when_no_db_configured(self, monkeypatch, tmp_path):
         monkeypatch.delenv("METIS_DB", raising=False)
         monkeypatch.delenv("METIS_RC_ROOT", raising=False)
-        import pytest
+        # get_db_path's last fallback is a path relative to db.py
+        # (system/app-py/data/metis.sqlite). On a populated dev machine that file
+        # exists, so the negative (raise) path isn't observable there — skip rather
+        # than fail. In a clean checkout / CI it doesn't exist and the raise is tested.
+        from pathlib import Path as _Path
+        import db as _db
+        if (_Path(_db.__file__).parent / "data" / "metis.sqlite").exists():
+            pytest.skip("local DB present at the relative fallback; raise path not observable")
         with pytest.raises(FileNotFoundError):
             get_db_path()
 

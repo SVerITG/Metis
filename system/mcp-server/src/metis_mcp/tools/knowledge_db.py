@@ -522,12 +522,13 @@ async def build_pdf_knowledge_db(
         )]
 
     # Load embedding model
+    # Unit-normalized embeddings (same path as the query side) so L2 distance maps
+    # to cosine similarity and the displayed relevance score is meaningful.
     try:
-        from fastembed import TextEmbedding
-        _model = TextEmbedding(model_name="nomic-ai/nomic-embed-text-v1.5-Q")
+        from metis_mcp.embeddings import embed as _embed
         def embed_fn(texts: List[str]) -> List[List[float]]:
-            prefixed = ["search_document: " + t for t in texts]
-            return [e.tolist() for e in _model.embed(prefixed)]
+            return _embed(texts, prefix="search_document: ", normalize=True)
+        embed_fn(["warmup"])  # surface a model-load failure here, before indexing
     except Exception as e:
         conn.close()
         return [TextContent(type="text", text=f"Could not load fastembed: {e}\nInstall: pip install fastembed")]
@@ -664,7 +665,7 @@ async def search_pdf_knowledge(
             "Start with: build_pdf_knowledge_db(database='ph-background')"
         ))]
 
-    q_vec = _encode_vec(embed_query(query))
+    q_vec = _encode_vec(embed_query(query, normalize=True))
 
     # ANN search — get more candidates, filter after
     candidates = conn.execute(
@@ -711,7 +712,10 @@ async def search_pdf_knowledge(
     for rank, c in enumerate(chunks, 1):
         chunk_id, db_id, source_file, domain, title, page_start, chunk_text = c
         dist  = distances.get(chunk_id, 0)
-        score = max(0.0, round(1.0 - dist, 3))
+        # Vectors are unit-normalized, so sqlite-vec's L2 distance d relates to
+        # cosine similarity by cos = 1 - d^2/2. (The old `1 - d` was wrong for L2
+        # and collapsed to 0 for every result.)
+        score = round(max(0.0, min(1.0, 1.0 - (dist * dist) / 2.0)), 3)
         layer_name = db_names.get(db_id, f"db:{db_id}")
         excerpt = chunk_text[:400].replace("\n", " ")
         if len(chunk_text) > 400:

@@ -123,7 +123,8 @@ def _build_index(conn) -> None:
             (db_id, f"{title}.pdf", domain, title, page, idx, text, len(text)),
         )
         rowid = cur.lastrowid
-        vec = K._encode_vec(embed_document(text))  # real 768-dim passage embedding
+        # unit-normalized passage embedding — matches the production index path
+        vec = K._encode_vec(embed_document(text, normalize=True))
         conn.execute(
             "INSERT INTO vec_pdf_chunks (rowid, embedding) VALUES (?,?)", (rowid, vec)
         )
@@ -160,28 +161,6 @@ def _top_score(text: str) -> float:
     return float(m.group(1)) if m else -1.0
 
 
-def _best_distance(query: str) -> float:
-    """Nearest vector distance for a query against the current paths.db corpus.
-
-    This is the raw grounding signal (lower = closer match). We assert on this
-    rather than the formatted 'score', because the tool's display score
-    (max(0, 1 - L2_distance)) collapses to 0.0 for L2 distances >= 1.
-    """
-    from metis_mcp.config import paths
-    from metis_mcp.tools import knowledge_db as K
-
-    conn = sqlite3.connect(str(paths.db))
-    import sqlite_vec
-
-    conn.enable_load_extension(True)
-    sqlite_vec.load(conn)
-    qv = K._encode_vec(embed_query(query))
-    row = conn.execute(
-        "SELECT min(distance) FROM vec_pdf_chunks WHERE embedding MATCH ? AND k = 3",
-        (qv,),
-    ).fetchone()
-    conn.close()
-    return float(row[0]) if row and row[0] is not None else 9999.0
 
 
 # ── Tests ──────────────────────────────────────────────────────────────────────
@@ -197,6 +176,9 @@ def test_in_corpus_query_retrieves_right_doc_with_provenance(rag_db):
     first = text.split("**1.")[1].split("**2.")[0]
     assert "Elimination Verification Criteria" in first   # right doc at rank 1
     assert "p.21" in first                                # provenance is surfaced
+    # cosine score is meaningful and positive (regression guard for the old
+    # `1 - L2_distance` formula that collapsed every score to 0.0)
+    assert _top_score(text) > 0.4
 
 def test_methods_query_routes_to_methods_doc(rag_db):
     """A distinct topic retrieves the distinct right doc (not the HAT/NTD chunks)."""
@@ -219,19 +201,22 @@ def test_fabricated_query_grounds_weakly(rag_db):
     """Hallucination signal (manual Q7): a fabricated protocol that is NOT in the
     corpus must produce a markedly weaker top match than a genuine question — the
     low-confidence signal an LLM uses to refuse rather than invent."""
-    genuine_dist = _best_distance(
-        "WHO criteria for verifying elimination of gambiense HAT as a public health problem"
+    genuine = _search(
+        "WHO criteria for verifying elimination of gambiense HAT as a public health problem",
+        databases=["testkb"],
     )
-    fabricated_dist = _best_distance(
+    fabricated = _search(
         "Summarise the WHO Fexinidazole-2 combination protocol for rhodesiense HAT 2025 "
-        "dosing schedule and its recommended treatment duration"
+        "dosing schedule and its recommended treatment duration",
+        databases=["testkb"],
     )
-    # The invented protocol has no source in the corpus, so its nearest chunk is
-    # measurably farther away than a genuine question's — the low-confidence signal
-    # an LLM uses to refuse rather than fabricate.
-    assert fabricated_dist > genuine_dist, (
-        f"fabricated query (dist {fabricated_dist:.3f}) should be farther from the "
-        f"corpus than genuine (dist {genuine_dist:.3f})"
+    genuine_top, fabricated_top = _top_score(genuine), _top_score(fabricated)
+    # The invented protocol has no source in the corpus, so its best match scores
+    # lower than a genuine question's — the low-confidence signal an LLM uses to
+    # refuse rather than fabricate.
+    assert genuine_top > fabricated_top, (
+        f"fabricated query (score {fabricated_top}) should ground weaker than "
+        f"genuine (score {genuine_top})"
     )
 
 def test_empty_index_reports_no_chunks(tmp_path):

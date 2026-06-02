@@ -118,6 +118,14 @@ def tmp_db(tmp_path, monkeypatch):
 
     monkeypatch.setenv("METIS_DB", str(db_path))
     monkeypatch.setenv("METIS_RC_ROOT", str(_REPO))
+    # The config `paths` singleton computed its db path at import time (before this
+    # fixture set METIS_DB), so MCP tools that read `paths.db` would still hit the
+    # real DB. Point the singleton at the temp DB too, so every tool isolates.
+    try:
+        from metis_mcp.config import paths as _paths
+        monkeypatch.setattr(_paths, "db", db_path)
+    except Exception:
+        pass
     yield db_path
 
 
