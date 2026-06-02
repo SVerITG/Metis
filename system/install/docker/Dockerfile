@@ -42,7 +42,14 @@ RUN pip install --no-cache-dir --upgrade pip && \
         "feedparser>=6.0" \
         "pyzotero>=1.5" \
         "apscheduler>=3.10" \
-        "pyyaml>=6.0"
+        "pyyaml>=6.0" && \
+    # Defensive CPU-torch swap — mirrors setup-mcp.sh. None of the extras need
+    # torch (fastembed=ONNX, faster-whisper=ctranslate2, paper-qa=API), but if a
+    # transitive dep ever pulls the ~2 GB CUDA build, replace it with CPU (~200 MB).
+    if python -c "import torch" 2>/dev/null; then \
+        pip install --no-cache-dir --force-reinstall \
+            --index-url https://download.pytorch.org/whl/cpu torch; \
+    fi
 
 # Copy dashboard
 COPY metis/system/app-py ./dashboard
