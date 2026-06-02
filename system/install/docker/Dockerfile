@@ -35,7 +35,7 @@ COPY metis/system/mcp-server/pyproject.toml .
 COPY metis/system/mcp-server/src ./src
 
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -e ".[voice]" && \
+    pip install --no-cache-dir -e ".[embedding,library,voice]" && \
     pip install --no-cache-dir \
         "fastapi>=0.110.0" \
         "uvicorn[standard]>=0.29.0" \
