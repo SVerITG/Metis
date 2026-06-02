@@ -13,7 +13,10 @@ INPUT: path to R script
 OUTPUT: structured findings, optionally patched file
 ```
 
-## Workflow 2: Shiny dashboard bug fix
+## Workflow 2: R Shiny dashboard bug fix (user projects)
+
+> Note: this applies to a **user's own R Shiny project**. The **Metis dashboard
+> itself is FastAPI + HTMX** (`system/app-py/`) — for that, route to Dashboard Engineer.
 
 ```
 INPUT: bug description + affected module name

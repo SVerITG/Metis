@@ -141,7 +141,7 @@ Metis is **workflow-defined**: the features exist to serve specific ways of work
 
 **Trigger:** Claude Code → `/rc-builder` or any Metis build request  
 **Steps:**
-1. RC Builder agent loads architecture context (config.py, app.R, token-guardrails.md, red-lines.md)
+1. RC Builder agent loads architecture context (config.py, system/app-py/, token-guardrails.md, red-lines.md)
 2. Plans change, confirms scope with user
 3. Implements: MCP tool / R module / agent skill / migration
 4. Writes session report to `outputs/reviews/implementation/YYYY-MM-DD_[task].md`
