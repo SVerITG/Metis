@@ -109,22 +109,23 @@ git push -u origin main
 
 ---
 
-## Step 4 — Add to the Metis dashboard
+## Step 4 — Register the project with Metis
 
-Open `inst/scripts/seed_projects.R` in the Metis dashboard folder, add a row to the `projects` data.frame:
+Use the MCP tool (in Claude) — no manual file editing:
 
-```r
-project_id    = "your-project-id",
-title         = "Your Project Title",
-domain        = "your-domain",
-status        = "active",
-priority      = "high",
-next_step     = "First thing to do",
-external_path = "C:\\full\\windows\\path",
-github_url    = "https://github.com/<your-github-username>/your-repo",
+```
+create_project_full(
+  name="Your Project Title",
+  category="Article",          # Article | Grant | Teaching | Software | Review | …
+  folder="C:/full/path",       # optional — local project folder to track
+  next_step="First thing to do"
+)
 ```
 
-And add tasks in the `tasks` data.frame. Then run the script.
+`create_project_full` writes the project record, links the folder (so the
+Planning tab tracks it), and — if a folder is given — drops a `CLAUDE.md` into it.
+Add tasks with `create_task(...)`. You can also do all of this from the dashboard
+**Work** tab or the setup wizard at `http://localhost:8080/setup`.
 
 ---
 

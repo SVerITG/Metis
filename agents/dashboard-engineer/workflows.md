@@ -1,80 +1,69 @@
 # Dashboard Engineer Workflows
 
-## 1. Stack-selection workflow
+The Metis dashboard is a **FastAPI + HTMX + Jinja2** application in `system/app-py/`
+(no JS framework, no R Shiny). All workflows below target that stack.
 
-For each dashboard or app request:
+## 1. Change-scoping workflow
 
-1. identify the purpose
-2. identify the data and interactions required
-3. estimate complexity
-4. decide whether:
-   - a simple dashboard is enough
-   - a modular app is needed
-5. choose the stack
+For each dashboard request:
 
-Typical options:
+1. identify the purpose — what decision does this view support?
+2. identify the data and interactions required (db.py query, MCP tool, or external API)
+3. locate the touchpoints:
+   - which router (`routers/<tab>.py`)
+   - which template/partial (`templates/`, `templates/partials/`)
+   - which HTMX endpoint serves the fragment
+4. estimate complexity — a single partial, or a small set of composed partials?
+5. confirm the change doesn't break an existing `hx-target`/`hx-swap` contract or a partial reused by other views
 
-- R Shiny for analytics-heavy dashboards and close integration with R workflows
-- a broader web stack when the system becomes a larger multi-page application
+## 2. Endpoint + partial workflow
 
-## 2. Shiny-architecture workflow
+When building or fixing a view:
 
-When R Shiny is appropriate:
+1. add/modify the endpoint in the correct router; return `templates.TemplateResponse(request, "partials/<name>.html", {...})` as an `HTMLResponse`
+2. keep the partial self-contained (no full `<html>` wrapper)
+3. wire it into the parent tab template with `hx-get` + an appropriate `hx-trigger`
+4. add a skeleton loader for partials that hit the DB or an MCP tool
+5. separate concerns: data logic in `db.py`/tools, presentation in the template, glue in the router
 
-1. decide if a simple app or modular architecture is needed
-2. separate:
-   - data logic
-   - reactive logic
-   - presentation logic
-3. plan for maintainability
-4. avoid dumping everything into one `app.R` if the app is central or growing
+## 3. Tab integration workflow
 
-## 3. Command-center integration workflow
+The dashboard tabs form one coherent surface. Current tabs:
 
-The command center should not be separate from the rest of the system.
+- Today (home / morning brief), Knowledge, Meetings, Learning, Work,
+  Thinking, Planner, Teach, Metis
 
-The app should support:
-
-- Control Room as home
-- Library page
-- PhD page
-- Projects page
-- Meetings page
-- Ideas page
-- possible specialist pages later
-
-The command center should act as the overview and routing layer.
+New views should slot into the right existing tab rather than spawning detached pages.
+Changing the tab structure itself requires approval (see contract / registry).
 
 ## 4. Visualization workflow
 
 When designing visualizations:
 
 1. clarify the question the chart should answer
-2. choose the simplest chart that answers it well
-3. maintain visual hierarchy
+2. choose the simplest form that answers it well — HTML/CSS first; Chart.js when interactivity or axis precision is needed; Leaflet for geographic data; SVG sparklines for compact in-card trends
+3. maintain visual hierarchy; use the `--m-*` CSS tokens, never hardcoded colours
 4. avoid clutter and decorative complexity
 
 ## 5. Implementation workflow
 
 For a real dashboard build:
 
-1. define the page structure
-2. define reusable components
-3. define data sources
-4. define state and navigation
-5. implement incrementally
+1. define the view structure (which partials compose it)
+2. define reusable components / shared CSS classes
+3. define data sources (db.py queries / MCP tools)
+4. define endpoints, HTMX triggers, and state
+5. implement incrementally; restart with `system/app-py/run.sh` and verify in the browser
 
-## 6. Simple-vs-complex decision rule
+## 6. Simple-vs-richer decision rule
 
-Use a simple dashboard when:
+Use a single partial when:
 
-- there are few views
-- interactions are limited
-- the dashboard is mostly analytical and self-contained
+- the view is one self-contained panel
+- interactions are limited to a refresh or a simple swap
 
-Use a more structured application when:
+Compose multiple partials / add helpers when:
 
-- multiple pages are needed
-- several system functions must be combined
-- the dashboard is becoming the daily control surface
-- multiple data domains are linked
+- the view aggregates several data domains
+- parts refresh independently via different HTMX triggers
+- a router is growing unwieldy (today.py / knowledge.py are already large — extract partials/helpers rather than piling on)

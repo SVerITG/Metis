@@ -29,36 +29,35 @@
 
 ## 3. Code Security Rules
 
-These rules apply to all code reviewed or produced by Software Engineer and Dashboard Engineer:
+These rules apply to all code reviewed or produced by Software Engineer and Dashboard Engineer. The system is Python (MCP server + FastAPI dashboard) over SQLite.
 
 ### SQL
-- Parameterised queries only (`DBI::dbExecute(con, "... ?", params = list(...))`)
-- Never concatenate user input into SQL strings
-- ✓ Already enforced in `data_store.R`
+- Parameterised queries only — `?` placeholders via `system/app-py/db.py` helpers / `sqlite3` (`con.execute("... WHERE x = ?", (val,))`)
+- Never f-string or concatenate user input into SQL
+- Enforced in `db.py` and the MCP tool DB helpers
 
 ### File system
-- All file paths normalised with `normalizePath()` before use
-- Paths constrained to known roots (`paths$second_brain_root`, `paths$data_root`, etc.)
-- Never accept user-typed paths directly without validation
+- Resolve paths through `metis_mcp.config.paths`; never accept user-typed absolute paths unvalidated
+- Constrain reads/writes to known roots (RC root, library, outputs); refuse `basket/private/`
+- Use `pathlib.resolve()` and confirm the path stays within the allowed root
 
 ### External commands
-- `system2()` and `system()` must never include user-controlled strings without sanitisation
-- `browseURL()` only with DB-sourced or hardcoded URLs (not user-typed input)
-- Shell commands in `run_script()` use `Rscript` with a known script path — no dynamic command injection
+- `subprocess` without `shell=True`; never interpolate user-controlled strings into a command
+- Open only DB-sourced or hardcoded/allowlisted URLs (Cybersecurity validates) — never raw user-typed input
 
 ### Secrets
-- API keys, database passwords, authentication tokens: always in `.env` files
-- `.env` files in `.gitignore` — never committed
-- No secrets in `app.R`, `data_store.R`, or any sourced R file
+- API keys, database passwords, authentication tokens: always in `system/.env` (loaded from env), never hardcoded
+- `.env` is in `.gitignore` — never committed
+- No secrets in any source file (the release scan blocks `sk-ant-` prefixes and key assignments)
 
-### Shiny UI
-- `renderUI()` must never inject unsanitised user text as raw HTML
-- `HTML()` with user-generated content is forbidden without `htmltools::htmlEscape()`
-- File upload inputs must validate file type and size before processing
+### Templates / UI (FastAPI + HTMX + Jinja2)
+- Rely on Jinja2 autoescaping; never disable it for user-generated content and never `| safe` raw user/scraped text
+- Endpoints returning partials must escape any external content before rendering
+- File upload inputs must validate type and size before processing
 
-### R-specific
-- No `eval(parse(text = user_input))` — ever
-- `source()` only with known, controlled file paths
+### Python-specific
+- No `eval()` / `exec()` on user input — ever
+- No dynamic import from user-controlled names
 
 ---
 
