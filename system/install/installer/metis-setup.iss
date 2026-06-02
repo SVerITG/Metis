@@ -37,6 +37,8 @@ Compression=lzma2/max
 SolidCompression=yes
 DiskSpanning=no
 WizardStyle=modern
+; Roomier wizard so page text + input fields are never clipped
+WizardSizePercent=120
 MinVersion=10.0.17134
 InfoBeforeFile=metis-info.txt
 InfoAfterFile=metis-after.txt
@@ -208,8 +210,11 @@ var
   AboutPage:      TInputQueryWizardPage;
   ResearchPage:   TInputQueryWizardPage;
   StylePage:      TInputOptionWizardPage;
-  ProjectsPage:   TInputQueryWizardPage;
-  FoldersPage:    TInputDirWizardPage;
+  ProjectsPage:   TWizardPage;
+  PName:          array[0..2] of TNewEdit;
+  PCat:           array[0..2] of TNewComboBox;
+  PFolder:        array[0..2] of TNewEdit;
+  PBrowse:        array[0..2] of TNewButton;
 
 { ── Pascal helpers ──────────────────────────────────────────────────────── }
 function ShouldSeedDemo: Boolean;
@@ -240,8 +245,24 @@ begin
   Result := R;
 end;
 
+{ Browse-for-folder handler shared by the three project folder fields.
+  The button's Tag holds the project index (0..2). }
+procedure BrowseProjectFolder(Sender: TObject);
+var
+  Dir: String;
+  idx: Integer;
+begin
+  idx := TNewButton(Sender).Tag;
+  Dir := PFolder[idx].Text;
+  if BrowseForFolder('Select the folder for this project', Dir, False) then
+    PFolder[idx].Text := Dir;
+end;
+
 { ── Wizard initialisation ───────────────────────────────────────────────── }
 procedure InitializeWizard;
+var
+  i: Integer;
+  Lbl: TNewStaticText;
 begin
   WizardForm.WelcomeLabel2.Caption := CustomMessage('WelcomeText');
 
@@ -343,40 +364,68 @@ begin
   { ═══════════════════════════════════════════════════════════════════════
     PAGE 7 — ACTIVE PROJECTS (names + categories)
     ═══════════════════════════════════════════════════════════════════════ }
-  ProjectsPage := CreateInputQueryPage(
+  ProjectsPage := CreateCustomPage(
     StylePage.ID,
     'Your Active Projects',
-    'Tell Metis what you are currently working on.',
-    'Metis tracks each project (writes a CLAUDE.md, registers it, adds it to the' + #13#10 +
-    'dashboard).  Format:  Project name | Category   e.g.  Surveillance Study | Article' + #13#10 +
-    'Categories: Article, Grant, Teaching, Software, Review — or your own.' + #13#10 +
-    'Folders are chosen next; add more later from the dashboard.');
-  ProjectsPage.Add('Project 1  (name | category):', False);
-  ProjectsPage.Add('Project 2  (optional):', False);
-  ProjectsPage.Add('Project 3  (optional):', False);
+    'Add what you are working on — every field is optional. Pick a category from ' +
+    'the list or type your own, and choose a folder if the project lives on this PC. ' +
+    'You can add more projects later from the dashboard.');
 
-  { ═══════════════════════════════════════════════════════════════════════
-    PAGE 8 — PROJECT FOLDERS  (folder browse with native OS dialog)
-    ═══════════════════════════════════════════════════════════════════════ }
-  FoldersPage := CreateInputDirPage(
-    ProjectsPage.ID,
-    'Project Folders',
-    'Select the folder on your computer for each project (optional).',
-    'Metis will scan each folder you select to understand what work you' + #13#10 +
-    'have already done — commits, modified files, and notes.' + #13#10 +
-    '' + #13#10 +
-    'Click the "..." button to browse for the folder on your computer.' + #13#10 +
-    '' + #13#10 +
-    'Tip: this is the root folder of the project — for example:' + #13#10 +
-    '  C:\Users\YourName\Documents\HAT-Surveillance' + #13#10 +
-    '' + #13#10 +
-    'Leave a field blank if the project has no local folder yet,' + #13#10 +
-    'or if you prefer to add the folder later from the dashboard.',
-    True,
-    'The folder you entered does not exist. Leave it blank to skip it, or create the folder first.');
-  FoldersPage.Add('Project 1 folder (optional):');
-  FoldersPage.Add('Project 2 folder (optional):');
-  FoldersPage.Add('Project 3 folder (optional):');
+  for i := 0 to 2 do
+  begin
+    { Bold row header }
+    Lbl := TNewStaticText.Create(ProjectsPage);
+    Lbl.Parent := ProjectsPage.Surface;
+    Lbl.Top := ScaleY(2) + i * ScaleY(74);
+    Lbl.Left := 0;
+    Lbl.AutoSize := True;
+    Lbl.Font.Style := [fsBold];
+    Lbl.Caption := 'Project ' + IntToStr(i + 1) + '  (optional)';
+
+    { Name (left) }
+    PName[i] := TNewEdit.Create(ProjectsPage);
+    PName[i].Parent := ProjectsPage.Surface;
+    PName[i].Top := Lbl.Top + ScaleY(16);
+    PName[i].Left := 0;
+    PName[i].Width := ScaleX(240);
+    PName[i].Hint := 'Project name';
+    PName[i].ShowHint := True;
+
+    { Category dropdown (right of name) — editable: pick or type your own }
+    PCat[i] := TNewComboBox.Create(ProjectsPage);
+    PCat[i].Parent := ProjectsPage.Surface;
+    PCat[i].Top := PName[i].Top;
+    PCat[i].Left := ScaleX(248);
+    PCat[i].Width := ProjectsPage.SurfaceWidth - ScaleX(248);
+    PCat[i].Style := csDropDown;
+    PCat[i].Items.Add('Article');
+    PCat[i].Items.Add('Grant');
+    PCat[i].Items.Add('Teaching');
+    PCat[i].Items.Add('Software');
+    PCat[i].Items.Add('Review');
+    PCat[i].Items.Add('Dataset');
+    PCat[i].Items.Add('Course');
+    PCat[i].Items.Add('Thesis');
+
+    { Folder (full width, with Browse button) — optional }
+    PFolder[i] := TNewEdit.Create(ProjectsPage);
+    PFolder[i].Parent := ProjectsPage.Surface;
+    PFolder[i].Top := PName[i].Top + ScaleY(26);
+    PFolder[i].Left := 0;
+    PFolder[i].Width := ProjectsPage.SurfaceWidth - ScaleX(96);
+    PFolder[i].Hint := 'Local folder (optional) — leave blank to skip';
+    PFolder[i].ShowHint := True;
+
+    PBrowse[i] := TNewButton.Create(ProjectsPage);
+    PBrowse[i].Parent := ProjectsPage.Surface;
+    PBrowse[i].Top := PFolder[i].Top - ScaleY(1);
+    PBrowse[i].Left := ProjectsPage.SurfaceWidth - ScaleX(90);
+    PBrowse[i].Width := ScaleX(90);
+    PBrowse[i].Height := ScaleY(23);
+    PBrowse[i].Caption := 'Browse...';
+    PBrowse[i].Tag := i;
+    PBrowse[i].OnClick := @BrowseProjectFolder;
+  end;
 end;
 
 { ── Validation on Next ──────────────────────────────────────────────────── }
@@ -456,7 +505,6 @@ var
   AnswersFile, AnswersContent, StyleStr: String;
   ProjectLines: String;
   ProjName, ProjCat, ProjFolder: String;
-  PipeParts: TStringList;
   HasDash: Boolean;
   i: Integer;
 begin
@@ -476,21 +524,16 @@ begin
       StyleStr := 'direct';
     end;
 
-    { Build project list as JSON array.
-      Each entry combines the name|category from ProjectsPage and the
-      folder path from FoldersPage into a single JSON object. }
+    { Build project list as JSON array from the custom Projects page —
+      name + category (dropdown or typed) + optional folder per project. }
     ProjectLines := '[';
-    PipeParts := TStringList.Create;
-    PipeParts.Delimiter := '|';
     for i := 0 to 2 do
     begin
-      if Trim(ProjectsPage.Values[i]) <> '' then
+      if Trim(PName[i].Text) <> '' then
       begin
-        PipeParts.DelimitedText := ProjectsPage.Values[i];
-        ProjName := Trim(PipeParts[0]);
-        if PipeParts.Count > 1 then ProjCat := Trim(PipeParts[1])
-        else ProjCat := '';
-        ProjFolder := Trim(FoldersPage.Values[i]);
+        ProjName   := Trim(PName[i].Text);
+        ProjCat    := Trim(PCat[i].Text);
+        ProjFolder := Trim(PFolder[i].Text);
 
         if ProjectLines <> '[' then ProjectLines := ProjectLines + ',' + #13#10;
         ProjectLines := ProjectLines +
@@ -499,7 +542,6 @@ begin
           ',"folder":"' + JsonEsc(ProjFolder) + '"}';
       end;
     end;
-    PipeParts.Free;
     ProjectLines := ProjectLines + #13#10 + ']';
 
     { Write system/.env }
