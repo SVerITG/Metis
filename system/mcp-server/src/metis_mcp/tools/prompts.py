@@ -25,11 +25,56 @@ The module is loaded by server.py exactly like a tool module.
 from __future__ import annotations
 
 import logging
+import os
+from pathlib import Path
 
+import metis_mcp
 from metis_mcp.app_instance import app
 from metis_mcp.config import paths
 
 _log = logging.getLogger("metis")
+
+
+# ── Locate the agents/ directory robustly ───────────────────────────────────
+def _dir_has_agents(d: Path) -> bool:
+    """True if `d` holds at least one agent folder (a subdir with system-prompt.md)."""
+    try:
+        return any((c / "system-prompt.md").exists() for c in d.iterdir() if c.is_dir())
+    except Exception:
+        return False
+
+
+def _resolve_agents_dir() -> Path:
+    """Find the agents/ directory, preferring the user's RC but falling back to code.
+
+    Primary is `METIS_RC_ROOT/agents`. When that is absent or empty — e.g. an
+    unmounted Docker container where agents ship in the image but METIS_RC_ROOT
+    points at an empty data volume — fall back to code-bundled locations so the
+    per-agent prompts still register. Without this, only the router + workflow
+    prompts appear (6 instead of the full set).
+    """
+    candidates: list[Path] = [paths.agents]
+    code_root = os.environ.get("METIS_CODE_ROOT", "").strip()
+    if code_root:
+        candidates.append(Path(code_root) / "agents")
+    # Package-relative: walk up from the installed package for a sibling agents/
+    try:
+        for parent in Path(metis_mcp.__file__).resolve().parents:
+            candidates.append(parent / "agents")
+    except Exception:
+        pass
+    # Known Docker code locations (Dockerfile COPYs agents here; test mounts at /opt/metis)
+    candidates += [Path("/opt/metis/agents"), Path("/app/metis/agents")]
+    for c in candidates:
+        if c.is_dir() and _dir_has_agents(c):
+            if c != paths.agents:
+                _log.info("prompts: agents/ resolved to code fallback %s "
+                          "(METIS_RC_ROOT/agents absent or empty)", c)
+            return c
+    return paths.agents  # last resort — primary path even if empty
+
+
+_AGENTS_DIR = _resolve_agents_dir()
 
 
 # ── Shared workflow contract ────────────────────────────────────────────────
@@ -70,7 +115,7 @@ def _metis_router(request: str = "") -> str:
 
 def _read_agent_description(slug: str) -> str:
     """Pull the `description:` line from an agent's skill.md frontmatter (best effort)."""
-    skill = paths.agents / slug / "skill.md"
+    skill = _AGENTS_DIR / slug / "skill.md"
     try:
         text = skill.read_text(encoding="utf-8")
     except Exception:
@@ -202,7 +247,7 @@ def register_prompts() -> dict:
     # 2) One prompt per agent (read dynamically from agents/)
     try:
         agent_slugs = sorted(
-            d.name for d in paths.agents.iterdir()
+            d.name for d in _AGENTS_DIR.iterdir()
             if d.is_dir() and not d.name.startswith(".")
             and (d / "system-prompt.md").exists()
         )
