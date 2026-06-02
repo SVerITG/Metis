@@ -253,3 +253,6 @@ metis/system/config/mcp-health.json
 
 # Local Windows Sandbox configs — contain the user's absolute host path
 *.local.wsb
+
+# PaperQA runtime index cache (rebuilt at runtime by paperqa_search.py)
+system/app/data/paperqa_index/
