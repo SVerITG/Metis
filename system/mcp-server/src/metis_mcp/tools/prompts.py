@@ -213,12 +213,40 @@ def _weekly(period: str = "") -> str:
     )
 
 
+def _doctor(area: str = "") -> str:
+    return (
+        "Run a **health check** on this Metis install. Call the `metis_doctor` tool and "
+        "render its Metis-branded report verbatim (the `Metis · Research Cortex` block with "
+        "✓ / ⚠ / ✗ rows). Then, for every ⚠ or ✗ row, add one plain-language sentence telling "
+        "the researcher what it means and the exact next step (no developer jargon). It checks "
+        "Python, the database, the Anthropic API key, the embedding/RAG engine, whether the "
+        "knowledge layer has indexed docs, agents/skills, the dashboard on :8080, and whether "
+        "Metis is registered with Claude Desktop."
+    )
+
+
+def _customize(request: str = "") -> str:
+    return (
+        "Help the researcher **make Metis their own** — no coding required. Show the "
+        "`Metis · Research Cortex — Make It Yours` menu: 1) your projects, 2) the look & "
+        "layout, 3) Metis's tone, 4) describe it freely. Route preferences (tone, projects) "
+        "directly; route structural changes (look, behaviour, new features) through the RC "
+        "Builder agent — but FIRST show the disclaimer that structural changes aren't "
+        "guaranteed to keep everything working, it's their Metis, and they can run "
+        "`metis_doctor` afterward / revert via git. Never bypass system/config/red-lines.md. "
+        "Keep everything in plain language.\n"
+        + (f"\nThe researcher already said: {request}\n" if request else "")
+    )
+
+
 _WORKFLOW_PROMPTS = {
     "metis-morning": ("Morning briefing — tasks, inbox, news, new papers, today's focus", _morning),
     "metis-research": ("Start/continue a research session on an article", _research),
     "metis-capture": ("Quick-capture an idea, task, or note into Metis", _capture),
     "metis-handoff": ("Generate a portable context handoff brief", _handoff),
     "metis-weekly": ("Weekly digest — ideas, papers, meetings, projects", _weekly),
+    "metis-doctor": ("Health check — is Metis working on this computer?", _doctor),
+    "metis-customize": ("Make Metis yours — change projects, look, tone, or anything", _customize),
 }
 
 
