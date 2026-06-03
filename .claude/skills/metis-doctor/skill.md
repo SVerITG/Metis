@@ -17,24 +17,33 @@ Use whenever:
 
 ## What to do when invoked
 
-Call the MCP tool `metis_doctor` directly. It returns a plain-text status block. Render it as-is — do not paraphrase. If any check is FAIL or WARN, surface a short paragraph after the report explaining the next step for that specific failure, in researcher language (not developer language).
+Call the MCP tool `metis_doctor` directly. It returns a Metis-branded status block (the same `Metis · Research Cortex` look as the dashboard, with ✓ / ⚠ / ✗ status glyphs). **Render it as-is — do not paraphrase.** Then, for every ⚠ or ✗ row, add a short plain-language paragraph telling the user what it means and the exact next step — in researcher language, never developer jargon.
+
+The check covers: Python, the database, the Anthropic API key, the **embedding/RAG engine** (fastembed + sqlite-vec), the **knowledge layer** (are docs indexed?), agents/skills, the **dashboard on :8080**, the **Claude Desktop link** (is metis-rc registered?), folder hygiene, MCP imports, and `.env` git safety.
 
 ## Output format
 
 ```
-Metis Doctor — OK | WARN | FAIL
-<one-line summary>
+════════════════════════════════════════════════════
+  Metis · Research Cortex — Health Check
+════════════════════════════════════════════════════
+  Status: ✓ HEALTHY  |  ⚠ NEEDS ATTENTION  |  ✗ PROBLEMS FOUND
+  <one-line summary>
 
-  [  OK] Python 3.10+                — running 3.12.3
-  [  OK] METIS_RC_ROOT               — /home/.../metis
-  [  OK] SQLite database             — metis.sqlite · 47 tables · 2840 KB
-  [WARN] Anthropic API key           — not found in env or .env
+  ✓  Python 3.10+              running 3.12.3
+  ✓  Embedding / RAG engine    fastembed + sqlite-vec installed
+  ⚠  Anthropic API key         not found in env or .env
+  ⚠  Claude Desktop link       found but metis-rc not registered — re-run setup-mcp.sh
   ...
+────────────────────────────────────────────────────
+  Next step → <most severe open item, in plain language>
 ```
 
-If status is OK, end with: "All clear — Metis is healthy."
-
-If status is WARN or FAIL, end with a one-line "Next step:" suggestion for the most severe issue (e.g. "Next step: run `/metis_config` to set the Anthropic API key.").
+Translate each open item into a plain fix, e.g.:
+- *Embedding / RAG engine missing* → "Semantic search is off. Reinstall Metis with the embedding extra: `bash tools/reinstall-mcp.sh`."
+- *Anthropic API key* → "Run `/metis_config` (or `/metis-customize`) to paste your key."
+- *Claude Desktop link* → "Re-run `bash system/mcp-server/setup-mcp.sh`, then quit and reopen Claude Desktop."
+- *Dashboard not running* → "Start it from the Metis desktop icon, or run `bash system/app-py/run.sh`."
 
 ## Edge cases
 

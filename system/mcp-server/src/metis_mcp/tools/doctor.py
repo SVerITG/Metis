@@ -290,6 +290,80 @@ def _check_env_files_safe() -> dict:
 # ---------------------------------------------------------------------------
 
 
+def _check_embedding() -> dict:
+    """The RAG / semantic-search engine: fastembed + sqlite-vec must be installed."""
+    missing = []
+    for mod, label in [("fastembed", "fastembed"), ("sqlite_vec", "sqlite-vec")]:
+        try:
+            __import__(mod)
+        except Exception:
+            missing.append(label)
+    if missing:
+        return {
+            "name": "Embedding / RAG engine", "ok": False, "severity": "warn",
+            "detail": f"missing {', '.join(missing)} — semantic search + knowledge layer are OFF. "
+                      "Fix: reinstall with the [embedding] extra.",
+        }
+    return {"name": "Embedding / RAG engine", "ok": True, "severity": "info",
+            "detail": "fastembed + sqlite-vec installed"}
+
+
+def _check_knowledge_layer() -> dict:
+    """Is there any indexed knowledge to ground answers in?"""
+    try:
+        con = sqlite3.connect(str(paths.db))
+        n = con.execute("SELECT COUNT(*) FROM pdf_chunks").fetchone()[0]
+        con.close()
+    except Exception:
+        return {"name": "Knowledge layer", "ok": True, "severity": "info",
+                "detail": "not initialised yet — index docs with build_pdf_knowledge_db()"}
+    if n == 0:
+        return {"name": "Knowledge layer", "ok": False, "severity": "warn",
+                "detail": "no documents indexed — the RAG layer has nothing to search yet"}
+    return {"name": "Knowledge layer", "ok": True, "severity": "info",
+            "detail": f"{n:,} chunks indexed and searchable"}
+
+
+def _check_dashboard() -> dict:
+    """Is the dashboard currently serving on :8080? (Not running is fine.)"""
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(0.4)
+    try:
+        s.connect(("127.0.0.1", 8080))
+        s.close()
+        return {"name": "Dashboard (:8080)", "ok": True, "severity": "info",
+                "detail": "running — open http://localhost:8080"}
+    except Exception:
+        return {"name": "Dashboard (:8080)", "ok": True, "severity": "info",
+                "detail": "not running — start it from the Metis desktop icon or run.sh"}
+    finally:
+        try:
+            s.close()
+        except Exception:
+            pass
+
+
+def _check_claude_desktop() -> dict:
+    """Is the metis-rc MCP server registered with Claude Desktop? (Windows/WSL.)"""
+    import glob
+    import json
+    candidates = glob.glob("/mnt/c/Users/*/AppData/Roaming/Claude/claude_desktop_config.json")
+    if not candidates:
+        return {"name": "Claude Desktop link", "ok": True, "severity": "info",
+                "detail": "Claude Desktop config not found (Desktop may not be installed here)"}
+    try:
+        cfg = json.loads(Path(candidates[0]).read_text(encoding="utf-8"))
+        if "metis-rc" in (cfg.get("mcpServers") or {}):
+            return {"name": "Claude Desktop link", "ok": True, "severity": "info",
+                    "detail": "metis-rc is registered — Metis is reachable in Claude Desktop"}
+        return {"name": "Claude Desktop link", "ok": False, "severity": "warn",
+                "detail": "Claude Desktop found but metis-rc not registered — re-run setup-mcp.sh"}
+    except Exception as e:
+        return {"name": "Claude Desktop link", "ok": False, "severity": "warn",
+                "detail": f"could not read Claude Desktop config ({type(e).__name__})"}
+
+
 def run_doctor() -> dict:
     """Run all checks. Returns the structured report (Python dict)."""
     checks = [
@@ -297,9 +371,13 @@ def run_doctor() -> dict:
         _check_metis_root(),
         _check_db(),
         _check_api_key(),
+        _check_embedding(),
+        _check_knowledge_layer(),
         _check_user_config(),
         _check_agents(),
         _check_skills(),
+        _check_dashboard(),
+        _check_claude_desktop(),
         _check_legacy_paths(),
         _check_mcp_imports(),
         _check_env_files_safe(),
@@ -335,12 +413,28 @@ async def metis_doctor() -> list[TextContent]:
       - After a `git pull`, to confirm nothing regressed.
     """
     report = run_doctor()
+    _glyph = {"ok": "✓", "warn": "⚠", "fail": "✗"}
+    _verdict = {"ok": "✓ HEALTHY", "warn": "⚠ NEEDS ATTENTION", "fail": "✗ PROBLEMS FOUND"}
+    bar = "═" * 52
     lines = [
-        f"Metis Doctor — {report['status'].upper()}",
-        report["summary"],
+        bar,
+        "  Metis · Research Cortex — Health Check",
+        bar,
+        f"  Status: {_verdict.get(report['status'], report['status'].upper())}",
+        f"  {report['summary']}",
         "",
     ]
     for c in report["checks"]:
-        icon = "OK" if c["ok"] else c["severity"].upper()
-        lines.append(f"  [{icon:>4}] {c['name']:<28} — {c['detail']}")
+        g = _glyph["ok"] if c["ok"] else _glyph.get(c["severity"], "•")
+        lines.append(f"  {g}  {c['name']:<26} {c['detail']}")
+    lines.append("─" * 52)
+
+    # Plain-language next step for the most severe open item
+    fail = next((c for c in report["checks"] if not c["ok"] and c["severity"] == "fail"), None)
+    warn = next((c for c in report["checks"] if not c["ok"] and c["severity"] == "warn"), None)
+    focus = fail or warn
+    if focus:
+        lines.append(f"  Next step → {focus['name']}: {focus['detail']}")
+    else:
+        lines.append("  All clear — Metis is healthy.")
     return [TextContent(type="text", text="\n".join(lines))]
