@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Metis · Research Cortex — Configure &amp; Fix</title>
+<style>
+  :root{
+    --m-bg:#f5f2ea; --m-ink:#1f2a24; --m-muted:#7a8178; --m-accent:#2d4a3a;
+    --m-ok:#5a7a5e; --m-warn:#9a7b3c; --m-card:#fffdf7; --m-line:#e3ddcf;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--m-bg);color:var(--m-ink);
+       font:16px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:760px;margin:0 auto;padding:40px 28px 64px}
+  header{border-left:6px solid var(--m-accent);padding:6px 0 6px 18px;margin-bottom:8px}
+  h1{margin:0;font-size:30px;letter-spacing:.5px}
+  .sub{color:var(--m-accent);font-size:12px;letter-spacing:2px;text-transform:uppercase}
+  .lead{color:var(--m-muted);margin:18px 0 30px}
+  h2{font-size:20px;margin:34px 0 6px;border-bottom:1px solid var(--m-line);padding-bottom:6px}
+  .cmd{display:inline-block;background:var(--m-accent);color:#fff;border-radius:6px;
+       padding:2px 9px;font-family:Consolas,monospace;font-size:14px}
+  .card{background:var(--m-card);border:1px solid var(--m-line);border-radius:10px;
+        padding:18px 22px;margin:16px 0}
+  .card h3{margin:0 0 4px;font-size:18px}
+  .pill{display:inline-block;background:#eee7d6;color:var(--m-accent);border-radius:20px;
+        padding:1px 10px;font-size:12px;font-weight:600;margin-bottom:8px}
+  ol{margin:8px 0 0;padding-left:22px} li{margin:5px 0}
+  a{color:var(--m-accent)}
+  code{background:#eee7d6;border-radius:4px;padding:1px 6px;font-family:Consolas,monospace;font-size:13px}
+  .note{background:#fbf6e8;border:1px solid #e7dcc0;border-radius:10px;padding:14px 18px;color:#6b5b33;margin-top:28px;font-size:14px}
+  footer{color:var(--m-muted);font-size:12px;margin-top:40px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Metis</h1>
+    <div class="sub">Research Cortex · Configure &amp; Fix</div>
+  </header>
+  <p class="lead">Metis can check itself and reconfigure itself — just by asking it.
+  No editing files, no code. There are two doors; pick whichever feels comfortable.
+  Both reach the same two things:</p>
+
+  <div class="card">
+    <h3><span class="cmd">metis-doctor</span></h3>
+    Checks that Metis is working on <em>your</em> computer and tells you, in plain
+    language, how to fix anything that isn't.
+  </div>
+  <div class="card">
+    <h3><span class="cmd">metis-customize</span></h3>
+    Walks you through changing Metis — your projects, the look of the dashboard,
+    how Metis talks to you, or anything you describe in your own words.
+  </div>
+
+  <h2>Door A — Claude Desktop <span class="pill">easiest · recommended</span></h2>
+  <p>A normal app with a chat window. No terminal, no code.</p>
+  <ol>
+    <li>Install Claude Desktop (free): <a href="https://claude.ai/download">claude.ai/download</a></li>
+    <li>Open it — Metis registers itself automatically the first time (it appears as <code>metis-rc</code>).</li>
+    <li>Click the <strong>＋ / prompt menu</strong> in the message box.</li>
+    <li>Pick <strong>“Metis Doctor”</strong> to check your install, or <strong>“Metis Customize”</strong> to change something.</li>
+    <li>Answer the questions in plain language. Done.</li>
+  </ol>
+  <p style="color:var(--m-muted);font-size:14px">Don't see the Metis prompts? Quit Claude Desktop completely and reopen it.</p>
+
+  <h2>Door B — Claude Code <span class="pill">more powerful</span></h2>
+  <p>Runs in a terminal and can make deeper changes.</p>
+  <ol>
+    <li>Install Claude Code: <a href="https://docs.anthropic.com/en/docs/claude-code/getting-started">docs.anthropic.com/en/docs/claude-code</a></li>
+    <li>Open it <strong>in your Metis / Research Cortex folder</strong> (in VS Code: open the folder, then <code>Ctrl+`</code> for the terminal).</li>
+    <li>Type <code>/metis-doctor</code> to check the install, or <code>/metis-customize</code> to change something.</li>
+  </ol>
+
+  <h2>Which door?</h2>
+  <p><strong>Just using Metis and the occasional tweak?</strong> → Door A (Claude Desktop).<br>
+  <strong>Comfortable with a terminal, or want bigger changes?</strong> → Door B (Claude Code).<br>
+  Both reach the same Metis — Desktop is friendlier, Code is more powerful. Switch any time.</p>
+
+  <div class="note">
+    <strong>Changing Metis:</strong> small changes (your projects, Metis's tone) are applied
+    safely and instantly. For bigger <em>structural</em> changes (the look of the dashboard,
+    new behaviour), Metis warns you first — it's your Metis, so of course you can change it,
+    but after a structural change run <span class="cmd">metis-doctor</span> to check, and any
+    change can be undone with git.
+  </div>
+
+  <footer>Metis · Research Cortex — your private research companion</footer>
+</div>
+</body>
+</html>

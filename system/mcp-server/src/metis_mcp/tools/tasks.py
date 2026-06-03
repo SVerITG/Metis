@@ -164,7 +164,7 @@ async def get_tasks(
                 vals = [str(row[c] or "") for c in cols]
                 lines.append("| " + " | ".join(vals) + " |")
 
-            lines.append("\n[Open Metis Dashboard](http://localhost:3939)")
+            lines.append("\n[Open Metis Dashboard](http://localhost:8080)")
             return [TextContent(type="text", text="\n".join(lines))]
 
     except Exception as e:
