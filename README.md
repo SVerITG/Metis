@@ -114,6 +114,20 @@ It runs entirely on your machine. Your data never leaves.
 
 ---
 
+## How it works
+
+Metis is **not a separate app you log into.** It's a small service that runs quietly in the background and connects Claude to your research — your papers, your memory, your projects.
+
+1. **A background service** (the "MCP server") starts with your computer. It's the bridge between Claude and your files — you never interact with it directly.
+2. **You talk to Metis through Claude**, two ways:
+   - **Claude Desktop** (easiest): open it and pick a **Metis prompt** (e.g. *Metis*, *Metis Doctor*) from the prompt menu — or just ask.
+   - **Claude Code** (terminal): type **`/metis`** followed by your request.
+3. **You ask in plain language.** Metis works out which of its 34 specialists should handle it, does the work using *your* library and memory, and answers — citing sources.
+
+That's it. There's nothing to learn before you start; the dashboard is optional visibility *on top* of all this.
+
+---
+
 ## Design Philosophy
 
 Every AI conversation starts from zero. You spend ten minutes re-explaining your context, and when the session ends, it's gone. Generic AI tools are powerful but stateless — they know everything about the world and nothing about you.
