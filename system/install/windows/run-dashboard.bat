@@ -29,10 +29,21 @@ wsl -e bash -c "pkill -f 'uvicorn main:app.*8080' 2>/dev/null; sleep 0.3" >nul 2
 :: Start the dashboard in the background (WSL window hidden via vbs wrapper)
 start "" /b wsl -e bash "%WSL_ROOT%/system/app-py/run.sh"
 
-:: Wait for run.sh to write the port file, then open browser on the correct port
-timeout /t 5 /nobreak >nul
+:: Give run.sh a moment to choose a port and write the port file.
+timeout /t 3 /nobreak >nul
 set "PORT=8080"
 if exist "%METIS_ROOT%\system\app-py\.metis-port" (
     for /f %%p in (%METIS_ROOT%\system\app-py\.metis-port) do set "PORT=%%p"
 )
-start "" "http://127.0.0.1:%PORT%"
+set "URL=http://127.0.0.1:%PORT%"
+
+:: Metis's first start can take 10-30s (it loads the agents, scheduler, and
+:: embedding model). Poll until the dashboard actually responds before opening
+:: the browser — a fixed wait used to open it too early and show "can't connect".
+:: curl.exe ships with Windows 10 1803+ (our minimum).
+for /l %%i in (1,1,40) do (
+    curl -s -o nul -m 1 "%URL%" && goto :ready
+    timeout /t 1 /nobreak >nul
+)
+:ready
+start "" "%URL%"
