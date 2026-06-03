@@ -64,6 +64,19 @@
 
 ---
 
+## Why researchers trust it
+
+- **📚 It cites your own sources.** Every knowledge answer is drawn from *your* indexed library, with document- and page-level citations — not the model's guesses.
+- **🚫 It refuses to invent.** Ask about something that isn't in your library and Metis tells you so, instead of fabricating a plausible-sounding answer. (This grounding behaviour is covered by an automated test.)
+- **🔒 It stays on your machine.** Local embeddings, local database, local files. Your papers, patient-adjacent data, and unpublished work never leave your computer.
+
+> 🎥 **See it in two minutes** — *(demo coming)* watch Metis answer from a real WHO source with page citations, then refuse to summarise a protocol that doesn't exist.
+> <!-- TODO: replace with demo GIF/video, e.g. ![Metis demo](docs/metis-demo.gif) -->
+
+**Easiest way to try it:** install [Claude Desktop](https://claude.ai/download) and run the [3-step setup](#for-researchers) — a demo workspace is pre-loaded, so you start with something to explore instead of a blank screen.
+
+---
+
 ## Who is this for?
 
 <table width="100%" cellspacing="0" cellpadding="20" border="0">
