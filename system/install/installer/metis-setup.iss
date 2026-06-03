@@ -39,6 +39,10 @@ DiskSpanning=no
 WizardStyle=modern
 ; Roomier wizard so page text + input fields are never clipped
 WizardSizePercent=120
+; Metis · Research Cortex branding — installer icon + welcome banner + header mark
+SetupIconFile=..\windows\metis-brain.ico
+WizardImageFile=..\windows\wizard-banner.bmp
+WizardSmallImageFile=..\windows\wizard-small.bmp
 MinVersion=10.0.17134
 InfoBeforeFile=metis-info.txt
 InfoAfterFile=metis-after.txt
@@ -367,16 +371,28 @@ begin
   ProjectsPage := CreateCustomPage(
     StylePage.ID,
     'Your Active Projects',
-    'Add what you are working on — every field is optional. Pick a category from ' +
-    'the list or type your own, and choose a folder if the project lives on this PC. ' +
-    'You can add more projects later from the dashboard.');
+    'What are you working on? Every field here is optional — add as much or as ' +
+    'little as you like, and add more later from the dashboard.');
+
+  { Plain-language explainer (the same calm guidance the dashboard gives) }
+  Lbl := TNewStaticText.Create(ProjectsPage);
+  Lbl.Parent := ProjectsPage.Surface;
+  Lbl.Left := 0;
+  Lbl.Top := 0;
+  Lbl.Width := ProjectsPage.SurfaceWidth;
+  Lbl.WordWrap := True;
+  Lbl.AutoSize := True;
+  Lbl.Caption :=
+    'A project is any body of work you want Metis to track — an article, grant, course, ' +
+    'dataset, or tool. The folder is optional: pick one and Metis reads the work already ' +
+    'in it (files, notes, git history); leave it blank to track the project by name only.';
 
   for i := 0 to 2 do
   begin
     { Bold row header }
     Lbl := TNewStaticText.Create(ProjectsPage);
     Lbl.Parent := ProjectsPage.Surface;
-    Lbl.Top := ScaleY(2) + i * ScaleY(74);
+    Lbl.Top := ScaleY(48) + i * ScaleY(74);
     Lbl.Left := 0;
     Lbl.AutoSize := True;
     Lbl.Font.Style := [fsBold];
@@ -474,12 +490,14 @@ begin
   begin
     if Trim(AboutPage.Values[0]) = '' then
     begin
-      MsgBox('Please enter your name before continuing.', mbError, MB_OK);
+      MsgBox('Metis personalises everything to you — please enter your name to continue.'
+        + #13#10 + 'You can change it any time later with  /metis_config.', mbInformation, MB_OK);
       Result := False;
     end
     else if Trim(AboutPage.Values[2]) = '' then
     begin
-      MsgBox('Please enter your role or title before continuing.', mbError, MB_OK);
+      MsgBox('Please add your role or title so Metis can pitch its language right'
+        + #13#10 + '(e.g. PhD researcher, epidemiologist, professor).', mbInformation, MB_OK);
       Result := False;
     end;
   end

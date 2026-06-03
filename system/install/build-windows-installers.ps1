@@ -36,16 +36,26 @@ if (-not (Test-Path $iscc)) {
 Write-Host "Using ISCC: $iscc" -ForegroundColor Cyan
 
 # ── 2. Compile the installer ──────────────────────────────────────────────────
+# Build into a LOCAL temp dir, not straight into dist/. The repo often lives on
+# OneDrive, and SetupIconFile makes ISCC do an in-place EndUpdateResource on the
+# output .exe — OneDrive locks the file mid-write and the compile fails (error 32).
+# Building locally then copying sidesteps that entirely.
+$BuildDir = Join-Path $env:TEMP "metis-build"
+New-Item -ItemType Directory -Force -Path $BuildDir | Out-Null
 Write-Host ""
 Write-Host "Compiling installer (version $Version)..." -ForegroundColor Yellow
-& $iscc /DMyAppVersion=$Version $IssFile
+& $iscc "/O$BuildDir" /DMyAppVersion=$Version $IssFile
 if ($LASTEXITCODE -ne 0) {
     Write-Error "ISCC failed (exit code $LASTEXITCODE)"
     exit $LASTEXITCODE
 }
 
-# ── 3. Locate output ──────────────────────────────────────────────────────────
-$exe = Join-Path $DistDir "MetisSetup-$Version.exe"
+# ── 3. Copy the result into dist/ ──────────────────────────────────────────────
+New-Item -ItemType Directory -Force -Path $DistDir | Out-Null
+$built = Join-Path $BuildDir "MetisSetup-$Version.exe"
+$exe   = Join-Path $DistDir  "MetisSetup-$Version.exe"
+Copy-Item $built $exe -Force
+Remove-Item $BuildDir -Recurse -Force -ErrorAction SilentlyContinue
 if (-not (Test-Path $exe)) {
     Write-Error "Expected output not found: $exe"
     exit 1
