@@ -125,6 +125,8 @@ Source: "..\vendor\get-pip.py";       DestDir: "{app}\vendor"; Flags: ignorevers
 ; ── Docs ─────────────────────────────────────────────────────────────────────
 Source: "{#RepoRoot}\..\CONTRIBUTING.md"; DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
 Source: "{#RepoRoot}\..\README.md";       DestDir: "{app}"; Flags: ignoreversion skipifsourcedoesntexist
+; "Configure & Fix Metis" help page — the door for metis-doctor / metis-customize
+Source: "..\windows\configure-fix-metis.html"; DestDir: "{app}"; DestName: "Configure-and-Fix-Metis.html"; Flags: ignoreversion
 
 [Dirs]
 Name: "{app}\journal"
@@ -140,6 +142,11 @@ Name: "{app}\system\config"
 [Icons]
 ; Start Menu
 Name: "{group}\Metis — Open AI";    Filename: "{commonpf}\Anthropic\Claude\Claude.exe"; Tasks: startmenu
+; "Configure & Fix Metis" — the door to metis-doctor / metis-customize (always created)
+Name: "{group}\Configure & Fix Metis"; Filename: "{app}\Configure-and-Fix-Metis.html"; \
+  IconFilename: "{app}\system\install\windows\metis-brain.ico"; IconIndex: 0; Tasks: startmenu
+Name: "{autodesktop}\Configure & Fix Metis"; Filename: "{app}\Configure-and-Fix-Metis.html"; \
+  IconFilename: "{app}\system\install\windows\metis-brain.ico"; IconIndex: 0
 Name: "{group}\Metis — Dashboard";  Filename: "powershell.exe"; \
   Parameters: "-WindowStyle Hidden -ExecutionPolicy Bypass -File ""{app}\system\install\windows\launch-dashboard.ps1"""; \
   IconFilename: "{app}\system\install\windows\metis-brain.ico"; IconIndex: 0; \
