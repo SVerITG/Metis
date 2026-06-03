@@ -191,7 +191,7 @@ async def get_project_status(project_id: str = "") -> list[TextContent]:
 
         sections.append(section)
 
-    sections.append("\n---\n[Open Metis Dashboard](http://localhost:3939)")
+    sections.append("\n---\n[Open Metis Dashboard](http://localhost:8080)")
     return [TextContent(type="text", text="\n\n".join(sections))]
 
 
