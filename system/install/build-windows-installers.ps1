@@ -71,11 +71,13 @@ if ($SkipUpload) {
     exit 0
 }
 
-# ── 4. Upload to GitHub Release ───────────────────────────────────────────────
+# ── 4. Upload to GitHub Release (public repo = Metis_PH) ──────────────────────
+$Repo = "SVerITG/Metis_PH"   # the public repo the README's download link points at
 $ghCmd = Get-Command gh -ErrorAction SilentlyContinue
 if (-not $ghCmd) {
     Write-Host ""
-    Write-Host "gh CLI not found — upload manually from: $DistDir" -ForegroundColor Yellow
+    Write-Host "gh CLI not found — install it (winget install GitHub.cli; gh auth login)" -ForegroundColor Yellow
+    Write-Host "or upload $exe to $Repo release $tag manually on github.com." -ForegroundColor Yellow
     exit 0
 }
 
@@ -83,29 +85,30 @@ $tag = "v$Version"
 
 # Release notes (temp file avoids here-string indentation issues)
 $notesFile = Join-Path $env:TEMP "metis-release-notes.txt"
-"Metis Research Cortex $Version - base release."                          | Out-File $notesFile -Encoding utf8
+"## Metis $Version — install"                                             | Out-File $notesFile -Encoding utf8
 ""                                                                        | Out-File $notesFile -Append -Encoding utf8
-"Windows Installer:"                                                      | Out-File $notesFile -Append -Encoding utf8
-"  MetisSetup-$Version.exe - one installer, pick your scope in the wizard:" | Out-File $notesFile -Append -Encoding utf8
-"    Full    - AI assistant + 9-tab research dashboard (recommended)"     | Out-File $notesFile -Append -Encoding utf8
-"    Minimal - AI assistant only (fastest)"                              | Out-File $notesFile -Append -Encoding utf8
-"    Custom  - choose components"                                        | Out-File $notesFile -Append -Encoding utf8
+"**Windows:** download **MetisSetup-$Version.exe** below and double-click it."  | Out-File $notesFile -Append -Encoding utf8
+"One installer — choose Full (AI + dashboard), Minimal (AI only), or Custom in the wizard." | Out-File $notesFile -Append -Encoding utf8
 ""                                                                        | Out-File $notesFile -Append -Encoding utf8
-"Requires: Windows 10+, WSL, Python 3.10+, Anthropic API key, Claude Desktop." | Out-File $notesFile -Append -Encoding utf8
+"**macOS / Linux:** see the README one-line install."                     | Out-File $notesFile -Append -Encoding utf8
+""                                                                        | Out-File $notesFile -Append -Encoding utf8
+"Requires: Windows 10/11 + WSL, an Anthropic API key, and Claude Desktop." | Out-File $notesFile -Append -Encoding utf8
 
-gh release view $tag --repo SVerITG/Metis 2>$null | Out-Null
+gh release view $tag --repo $Repo 2>$null | Out-Null
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
-    Write-Host "Creating GitHub Release $tag..." -ForegroundColor Yellow
-    gh release create $tag $exe `
-        --repo SVerITG/Metis `
-        --title "Metis $Version" `
-        --notes-file $notesFile
+    Write-Host "Creating GitHub Release $tag on $Repo..." -ForegroundColor Yellow
+    gh release create $tag $exe --repo $Repo --title "Metis $Version" --notes-file $notesFile
 } else {
     Write-Host ""
-    Write-Host "Release $tag exists — uploading asset..." -ForegroundColor Yellow
-    gh release upload $tag $exe --repo SVerITG/Metis --clobber
+    Write-Host "Release $tag exists on $Repo — removing stale assets + uploading fresh exe..." -ForegroundColor Yellow
+    # Remove the old per-variant installers (superseded by the single MetisSetup-$Version.exe)
+    foreach ($stale in @("MetisSetup-full-$Version.exe","MetisSetup-standard-$Version.exe","MetisSetup-minimal-$Version.exe")) {
+        gh release delete-asset $tag $stale --repo $Repo --yes 2>$null
+    }
+    gh release upload $tag $exe --repo $Repo --clobber
+    gh release edit  $tag --repo $Repo --notes-file $notesFile
 }
 
 Write-Host ""
-Write-Host "Done. https://github.com/SVerITG/Metis/releases/tag/$tag" -ForegroundColor Green
+Write-Host "Done. https://github.com/$Repo/releases/tag/$tag" -ForegroundColor Green
