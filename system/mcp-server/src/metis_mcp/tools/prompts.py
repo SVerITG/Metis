@@ -250,8 +250,29 @@ def _customize(request: str = "") -> str:
     )
 
 
+def _safe_analysis(request: str = "") -> str:
+    return (
+        "Help the researcher analyse **sensitive data without ever sending it** — the "
+        "'send code, not data' pattern. NON-NEGOTIABLE contract:\n"
+        "1. NEVER ask them to paste raw data, individual records, or a file's contents.\n"
+        "2. If they paste something that looks like raw/sensitive data, STOP — run "
+        "`check_data_safety` on it; if CONFIDENTIAL/SENSITIVE, say so, discard it, and give "
+        "them a script that emits only aggregates instead.\n"
+        "3. Only request/accept aggregates: column names, types, value counts, ranges, "
+        "missingness, summary tables, model coefficients.\n\n"
+        "Steps: (a) clarify the goal and data *format* (not values); (b) generate a "
+        "self-contained R or Python script they run locally that prints ONLY safe metadata "
+        "(never row-level data); (c) when they paste that output, sanity-check it, then do the "
+        "real work — dashboard, model interpretation, Table 1, cleaning plan — routing to the "
+        "Dashboard Engineer / Biostatistician / Methods Coach / Data Analyst / Writing Partner "
+        "as needed. All raw-data computation stays on their machine.\n"
+        + (f"\nThe researcher wants to: {request}\n" if request else "")
+    )
+
+
 _WORKFLOW_PROMPTS = {
     "metis-morning": ("Morning briefing — tasks, inbox, news, new papers, today's focus", _morning),
+    "safe-analysis": ("Analyse sensitive data without sending it — send code, not data", _safe_analysis),
     "metis-research": ("Start/continue a research session on an article", _research),
     "metis-capture": ("Quick-capture an idea, task, or note into Metis", _capture),
     "metis-handoff": ("Generate a portable context handoff brief", _handoff),
