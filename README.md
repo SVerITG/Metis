@@ -60,7 +60,7 @@
   <a href="https://github.com/SVerITG/Metis_PH/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" alt="Python"/>
   <img src="https://img.shields.io/badge/Claude-MCP-orange?logo=anthropic" alt="Claude MCP"/>
-  <img src="https://img.shields.io/badge/runs%20locally-✓-green" alt="Local"/>
+  <img src="https://img.shields.io/badge/data%20stays%20local-✓-green" alt="Data stays local"/>
 </p>
 
 ---
@@ -110,9 +110,9 @@ Open-source, extensible, well-architected. Build domain packs, add agents, exten
 
 ## What is Metis?
 
-Metis is a **local AI research companion** built on top of Claude. It gives every AI conversation a persistent memory of your domain, your papers, your projects, and your working history. It routes your requests to the right specialist, does the work, records the result, and returns a plain answer — without requiring you to prompt or configure anything.
+Metis is a **research companion built on top of Claude** that keeps your data on your own machine. It gives every AI conversation a persistent memory of your domain, your papers, your projects, and your working history. It routes your requests to the right specialist, does the work, records the result, and returns a plain answer — without requiring you to prompt or configure anything.
 
-It runs entirely on your machine. Your data never leaves.
+The app runs on your machine and your data stays there — your documents, notes, embeddings and memory never leave it. The reasoning is powered by Claude, so the text you choose to send for analysis goes to the Anthropic API; everything else is local. (See [Data Protection](#data-protection) for exactly what leaves your machine, and when.)
 
 **The short version:** imagine an AI that already knew your field and your literature, connected every paper, meeting, idea and note you've captured, sent each request to the right specialist — and got sharper about your work, *and about itself*, the longer you used it. That's Metis.
 
@@ -710,7 +710,7 @@ key journals + RSS feeds · specialist agents · a domain ontology · a curated 
 - **Translations** — the wizard and skill files are English-only; translations into French, Dutch, Spanish, German would open Metis to many more researchers
 - **Installer testing** — Windows `.exe` and PowerShell on managed machines, corporate environments, and varied hardware; reports of what works and what breaks are valuable
 - **New agents and skills** — specialist agents for use cases not yet covered
-- **Security verification** — independent review of the local-first guarantees, PII detection, hook behaviour, and constitution enforcement; if you find a gap, open a private issue
+- **Security verification** — independent review of the data-stays-local guarantees (what's kept on the machine vs. sent to the Claude API), PII detection, hook behaviour, and constitution enforcement; if you find a gap, open a private issue
 - **Multi-AI support** — better Gemini and local model (Ollama) support, especially for offline research environments
 - **Bug reports and UX feedback** — if something doesn't work for your workflow, say so
 
