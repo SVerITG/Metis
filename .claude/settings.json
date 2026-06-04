@@ -2,7 +2,7 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "WebFetch|WebSearch|Bash|Write|Edit|Read",
+        "matcher": "WebFetch|WebSearch|Bash|Write|Edit|Read|mcp__metis-rc__read_file",
         "hooks": [
           {
             "type": "command",
