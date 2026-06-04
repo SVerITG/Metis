@@ -74,6 +74,7 @@ This is the Metis Research Cortex — a second-brain for researchers in any fiel
 | `/new-project` | New Project | Scaffold a new Shiny app, R script, report, or tool in Metis |
 | `/add-context` | Add Context | Add a specialist context to your profile without re-running /metis_config |
 | `/metis_config` | Metis Config Wizard | First-time setup, reconfigure, or add context — 13-section guided wizard |
+| `/safe-analysis` | Safe Analysis | Work with sensitive/patient data without sending it: Metis writes the script, you run it locally, only derived metadata comes back ("send code, not data") |
 
 **RC workflow commands:**
 
