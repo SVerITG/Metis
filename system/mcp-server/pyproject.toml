@@ -2,7 +2,7 @@
 name = "metis-mcp-server"
 version = "1.0.0"
 description = "A research companion for Claude that keeps your data on your machine: your library, notes and memory never leave your computer; answers are cited from your own indexed library; 30+ specialist skills; automatic cross-pollination across papers, meetings, ideas, notes and journal; and a weekly self-review that drafts improvements for your approval. Reasoning runs on the Claude API."
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.14"
 dependencies = [
     "mcp>=1.27.0",
     "pyyaml>=6.0",

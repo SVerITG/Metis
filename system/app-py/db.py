@@ -41,13 +41,21 @@ def get_db_path() -> Path:
         canonical.parent.mkdir(parents=True, exist_ok=True)
         return canonical
 
+    # No env vars (e.g. a developer running `uvicorn main:app` directly).
+    # Resolve the CANONICAL DB relative to this file first — system/app-py/db.py
+    # → system/app/data/metis.sqlite — so we never silently fall back to the
+    # stale split-brain stub at system/app-py/data/metis.sqlite.
+    canonical_rel = Path(__file__).resolve().parent.parent / "app" / "data" / "metis.sqlite"
+    if canonical_rel.exists():
+        return canonical_rel
+
     local_candidate = Path(__file__).parent / "data" / "metis.sqlite"
     if local_candidate.exists():
         return local_candidate
 
     raise FileNotFoundError(
         "metis.sqlite not found. Set METIS_RC_ROOT or place the DB at "
-        f"{local_candidate}"
+        f"{canonical_rel}"
     )
 
 

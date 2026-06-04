@@ -166,18 +166,37 @@ if [ "$USE_UV" = "1" ]; then
     "$UV" venv "$VENV_DIR" --python 3.12
   fi
 else
-  # Fallback: system Python + venv
+  # Fallback: system Python + venv (uv unavailable).
+  # Pick a Python in the SUPPORTED range (3.10–3.13) that can actually create a
+  # venv. Newer Pythons (3.14+) lack prebuilt wheels for onnxruntime/sqlite-vec/
+  # tokenizers and a bare system 3.14 often has no ensurepip, which otherwise
+  # fails later with a cryptic "ensurepip is not available" and no guidance.
   PYTHON=""
-  for candidate in python3.12 python3.11 python3.10 python3.9 python3; do
-    if command -v "$candidate" >/dev/null 2>&1; then
-      VER=$("$candidate" -c "import sys; print('%d.%d' % sys.version_info[:2])" 2>/dev/null)
-      MAJOR=${VER%%.*}; MINOR=${VER#*.}
-      if [ "$MAJOR" -ge 3 ] && [ "$MINOR" -ge 9 ]; then
+  for candidate in python3.13 python3.12 python3.11 python3.10 python3; do
+    command -v "$candidate" >/dev/null 2>&1 || continue
+    VER=$("$candidate" -c "import sys; print('%d.%d' % sys.version_info[:2])" 2>/dev/null) || continue
+    MAJOR=${VER%%.*}; MINOR=${VER#*.}
+    if [ "$MAJOR" = "3" ] && [ "$MINOR" -ge 10 ] && [ "$MINOR" -lt 14 ]; then
+      # Must be able to bootstrap pip into a venv.
+      if "$candidate" -c "import ensurepip" >/dev/null 2>&1; then
         PYTHON="$candidate"; break
       fi
     fi
   done
-  [ -z "$PYTHON" ] && echo "ERROR: Python 3.9+ not found." && exit 1
+  if [ -z "$PYTHON" ]; then
+    _sys_py="$(command -v python3 >/dev/null 2>&1 && python3 --version 2>&1 || echo 'not found')"
+    echo ""
+    echo "ERROR: No usable Python found for the fallback installer."
+    echo "Metis needs Python 3.10–3.13 that can create a virtual environment."
+    echo "Your default python3 is: ${_sys_py}"
+    echo ""
+    echo "Fix any one of these, then re-run this script:"
+    echo "  • Install uv (recommended — downloads its own Python 3.12, no sudo):"
+    echo "      curl -LsSf https://astral.sh/uv/install.sh | sh"
+    echo "  • Or install the venv package:   sudo apt install python3-venv"
+    echo "  • Or install Python 3.12:        sudo apt install python3.12 python3.12-venv"
+    exit 1
+  fi
   PYTHON_PATH=$(command -v "$PYTHON")
   echo "Using Python: $PYTHON_PATH ($($PYTHON --version))"
   if [ -d "$VENV_DIR" ] && [ ! -f "$VENV_DIR/bin/python3" ]; then

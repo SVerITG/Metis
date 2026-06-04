@@ -75,6 +75,8 @@ This is the Metis Research Cortex — a second-brain for researchers in any fiel
 | `/add-context` | Add Context | Add a specialist context to your profile without re-running /metis_config |
 | `/metis_config` | Metis Config Wizard | First-time setup, reconfigure, or add context — 13-section guided wizard |
 | `/safe-analysis` | Safe Analysis | Work with sensitive/patient data without sending it: Metis writes the script, you run it locally, only derived metadata comes back ("send code, not data") |
+| `/metis-doctor` | Metis Doctor | Health check — is Metis working on this computer? Plain-language diagnostic of Python, DB, API key, RAG engine, dashboard, Desktop registration |
+| `/metis-customize` | Metis Customize | Make Metis yours — change projects, look, tone, or behaviour (routes structural changes to RC Builder; shows the safety disclaimer) |
 
 **RC workflow commands:**
 
@@ -275,7 +277,7 @@ The dashboard (`system/app-py/`) reads source directly, so dashboard edits take 
 
 Claude Desktop does **not** read this CLAUDE.md and has **no** access to the Claude Code skills in `.claude/skills/`. It only sees what the MCP server exposes. So the routing/agent behavior you get from `/metis` in the terminal is delivered to Desktop two ways:
 
-- **MCP prompts** (`system/mcp-server/src/metis_mcp/tools/prompts.py`) — 39 prompts surface in Desktop's prompt picker: a `metis` router (calls `run_metis`, announces the routing, loads + adopts the chosen agent via `get_agent_context`, logs via `log_agent_run`), one prompt per agent, and 5 workflow prompts (morning/research/capture/handoff/weekly). **Editing a prompt requires the same reinstall + reconnect** as any MCP code change.
+- **MCP prompts** (`system/mcp-server/src/metis_mcp/tools/prompts.py`) — 42 prompts surface in Desktop's prompt picker: a `metis` router (calls `run_metis`, announces the routing, loads + adopts the chosen agent via `get_agent_context`, logs via `log_agent_run`), one prompt per agent (33), and 8 workflow prompts (morning/safe-analysis/research/capture/handoff/weekly/doctor/customize). **Editing a prompt requires the same reinstall + reconnect** as any MCP code change.
 - **Full tool reachability** — Desktop has ONE connection and ONE tool subset for the whole session (no per-agent relaunch). Therefore `_default` in `system/config/tool-subsets.json` is `"all"` — anything narrower hides core capability (the routed knowledge layer, DHIS2, data tools, transcription). Per-agent subsets only apply when `METIS_AGENT_SUBSET=<slug>` is set explicitly (token-optimized automation launchers).
 
 The smoke test (`tools/test-mcp.sh`) verifies prompts register on every run.
