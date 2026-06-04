@@ -10,6 +10,9 @@ M7.2  encrypt_backup(backup_path, passphrase)
         AES-256-GCM encrypt a backup file with a user passphrase.
         Produces <backup_path>.enc alongside the plaintext.
 
+M7.2b decrypt_backup(enc_path, passphrase, output_path="")
+        Reverse of encrypt_backup — recover the .sqlite from a .enc file.
+
 M7.3  list_backups(backup_dir)
         Return all .sqlite (and .enc) backups with size + age.
 
@@ -190,7 +193,7 @@ async def encrypt_backup(
         aesgcm = AESGCM(key)
         plaintext = bp.read_bytes()
         ciphertext = aesgcm.encrypt(nonce, plaintext, None)
-        # Format: [4B magic][16B salt][12B nonce][ciphertext+tag]
+        # Format: [8B magic][16B salt][12B nonce][ciphertext+tag]
         magic = b"METISBK1"
         enc_path.write_bytes(magic + salt + nonce + ciphertext)
         method = "AES-256-GCM (PBKDF2-SHA256, 200k rounds)"
@@ -207,6 +210,87 @@ async def encrypt_backup(
         "original_path":  str(bp),
         "size":           _human_size(enc_path.stat().st_size),
         "method":         method,
+    }
+    return [TextContent(type="text", text=json.dumps(result, indent=2))]
+
+
+# ---------------------------------------------------------------------------
+# M7.2b — decrypt_backup
+# ---------------------------------------------------------------------------
+
+
+@app.tool()
+async def decrypt_backup(
+    enc_path: str,
+    passphrase: str,
+    output_path: str = "",
+) -> list[TextContent]:
+    """Decrypt a .enc backup produced by encrypt_backup().
+
+    Reverses the format [8B magic][16B salt][12B nonce][ciphertext+tag]. Writes the
+    recovered .sqlite next to the .enc file (dropping the .enc suffix) unless
+    output_path is given. The passphrase is never stored. This is the counterpart
+    to encrypt_backup — without it, encrypted backups could not be restored.
+
+    Args:
+        enc_path:    Path to the .enc encrypted backup.
+        passphrase:  The passphrase used at encryption time.
+        output_path: Optional explicit destination for the decrypted file.
+
+    Returns JSON with out_path and the method used.
+    """
+    ep = Path(enc_path)
+    if not ep.exists():
+        return [TextContent(type="text", text=f"ERROR: encrypted file not found: {enc_path}")]
+
+    blob = ep.read_bytes()
+    if output_path:
+        out = Path(output_path)
+    elif ep.suffix == ".enc":
+        out = ep.with_suffix("")          # strip .enc → original .sqlite name
+    else:
+        out = ep.with_suffix(ep.suffix + ".decrypted")
+
+    magic = b"METISBK1"  # 8 bytes — present iff this was AES-256-GCM encrypted
+    if blob[:len(magic)] == magic:
+        try:
+            from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+            from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+            from cryptography.hazmat.primitives import hashes as crypto_hashes
+        except ImportError:
+            return [TextContent(type="text", text=(
+                "ERROR: this backup is AES-256-GCM encrypted but the 'cryptography' "
+                "package is not installed. Install it (pip install cryptography) and retry."
+            ))]
+        body = blob[len(magic):]
+        salt, nonce, ciphertext = body[:16], body[16:28], body[28:]
+        kdf = PBKDF2HMAC(
+            algorithm=crypto_hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=200_000,
+        )
+        key = kdf.derive(passphrase.encode())
+        try:
+            plaintext = AESGCM(key).decrypt(nonce, ciphertext, None)
+        except Exception:
+            return [TextContent(type="text", text=(
+                "ERROR: decryption failed — wrong passphrase or corrupted file."
+            ))]
+        out.write_bytes(plaintext)
+        method = "AES-256-GCM (PBKDF2-SHA256, 200k rounds)"
+    else:
+        # XOR-SHA256 fallback is symmetric (XOR is its own inverse).
+        key_bytes = hashlib.sha256(passphrase.encode()).digest()
+        keystream = (key_bytes * (len(blob) // 32 + 1))[:len(blob)]
+        out.write_bytes(bytes(a ^ b for a, b in zip(blob, keystream)))
+        method = "XOR-SHA256 fallback (insecure — file was not AES-encrypted)"
+
+    result = {
+        "out_path": str(out),
+        "enc_path": str(ep),
+        "size":     _human_size(out.stat().st_size),
+        "method":   method,
     }
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 
