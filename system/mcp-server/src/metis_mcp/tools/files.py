@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS tracked_files (
 
 def _ensure_tracked_files(conn) -> None:
     """Create tracked_files table and apply any pending column migrations."""
-    _ensure_tracked_files(conn)
+    conn.execute(_TRACKED_FILES_DDL)
     cols = {row["name"] for row in conn.execute("PRAGMA table_info(tracked_files)").fetchall()}
     if "label" not in cols:
         conn.execute("ALTER TABLE tracked_files ADD COLUMN label TEXT DEFAULT ''")
