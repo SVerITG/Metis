@@ -107,6 +107,17 @@ def _metis_router(request: str = "") -> str:
         "do the work, using the Metis MCP tools (search_library, ask_library, "
         "search_pdf_knowledge, semantic_search, etc.) for grounding.\n"
         "4. " + _EXECUTE_CONTRACT + "\n\n"
+        "**If the request describes new or ongoing work** — a study, analysis, paper, "
+        "dataset, or tool that the user will keep returning to — treat it as a candidate "
+        "**tracked project**, exactly as Claude Code does:\n"
+        "- First call `get_project_status()` to see whether it is already tracked (avoid duplicates).\n"
+        "- If it is not, **offer to register it**, and on agreement call "
+        "`create_project_full(title=..., folder_path=<absolute folder if known>, "
+        "category=..., description=...)`. This creates the DB record, writes a CLAUDE.md, "
+        "and links it into Claude Desktop — without this step the work is only saved as "
+        "loose memory entries and never appears as a project on the dashboard.\n"
+        "- Then capture the concrete next steps with `create_task(title=..., "
+        "project_id=<id returned above>, notes=...)` so they show up in the Work tab.\n\n"
         "Never invent facts the knowledge base does not support — ground answers in "
         "the library and say so when evidence is thin.\n\n"
         f"**Request:** {request}"
@@ -273,15 +284,26 @@ def register_prompts() -> dict:
         failed["metis"] = f"{type(exc).__name__}: {exc}"
 
     # 2) One prompt per agent (read dynamically from agents/)
-    try:
-        agent_slugs = sorted(
-            d.name for d in _AGENTS_DIR.iterdir()
-            if d.is_dir() and not d.name.startswith(".")
-            and (d / "system-prompt.md").exists()
-        )
-    except Exception as exc:  # noqa: BLE001
+    if not _AGENTS_DIR.is_dir():
+        # Expected in bare/standalone contexts — no RC root (e.g. the reinstall
+        # verify subprocess) or a data-only Docker volume. Not a failure: there
+        # are simply no agent prompts to register. Only the router + workflow
+        # prompts will appear. See _resolve_agents_dir() for the fallback chain.
         agent_slugs = []
-        failed["_agent_enumeration"] = f"{type(exc).__name__}: {exc}"
+        _log.info("prompts: agents/ dir absent (%s) — registering router + "
+                  "workflow prompts only", _AGENTS_DIR)
+    else:
+        try:
+            agent_slugs = sorted(
+                d.name for d in _AGENTS_DIR.iterdir()
+                if d.is_dir() and not d.name.startswith(".")
+                and (d / "system-prompt.md").exists()
+            )
+        except Exception as exc:  # noqa: BLE001
+            # The dir exists but couldn't be read (permissions, races) — a genuine
+            # problem worth surfacing.
+            agent_slugs = []
+            failed["_agent_enumeration"] = f"{type(exc).__name__}: {exc}"
 
     for slug in agent_slugs:
         if slug == "metis":
