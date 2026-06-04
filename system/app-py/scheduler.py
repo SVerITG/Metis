@@ -201,7 +201,7 @@ def job_library_index() -> None:
     try:
         from metis_mcp.tools.content_scan import scan_literature_folder
         r = scan_literature_folder()
-        msg = f"Indexed {r.get('files_indexed', '?')} files."
+        msg = f"Indexed {r.get('papers_added', 0)} papers."
         _log_job("library_index", "ok", msg)
         log.info("[scheduler] library_index done: %s", msg)
     except Exception as exc:

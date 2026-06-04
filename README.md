@@ -202,6 +202,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/system
 
 The script asks two questions (Full or AI only, demo workspace) and does the rest. Registers Metis with Claude Desktop and Claude Code automatically. Works on Ubuntu 20/22/24, Debian, and macOS.
 
+> **Requirements:** Python **3.10–3.13**. The installer prefers [`uv`](https://astral.sh/uv) (which downloads its own Python 3.12 — no system packages needed). If `uv` isn't available it falls back to your system Python; on a bare system you may need `sudo apt install python3-venv`. Very new Python (3.14+) isn't supported yet — some packages don't publish wheels for it. If you hit *"ensurepip is not available"*, install `uv` (the line above) or `python3-venv` and re-run.
+
 ---
 
 ### What you get on day one
