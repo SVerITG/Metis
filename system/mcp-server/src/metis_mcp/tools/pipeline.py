@@ -29,15 +29,10 @@ from metis_mcp.config import paths
 from metis_mcp.db import connect
 from metis_mcp.app_instance import app
 
-# Import PII patterns from safety module (no circular dependency)
-from metis_mcp.tools.safety import (  # noqa: E402
-    _EMAIL_RE,
-    _PHONE_RE,
-    _PATIENT_ID_RE,
-    _GPS_RE,
-    _BELGIAN_NID_RE,
-    _classify,
-)
+# Single shared PII scanner from the safety module (no circular dependency).
+# Importing scan_content (not the individual patterns) keeps the Data Guardian
+# and the check_data_safety tool permanently in sync.
+from metis_mcp.tools.safety import scan_content  # noqa: E402
 from metis_mcp.models import model_for
 
 # ── Table DDL (created on first use) ─────────────────────────────────────────
@@ -246,20 +241,13 @@ async def session_bootstrap(client: str = "code") -> list[TextContent]:
 # ── Stage 3: Data Guardian intercept ──────────────────────────────────────────
 
 def _scan_safety(content: str) -> dict:
-    """Run PII detection. Returns {safe, classification, warnings}."""
-    warnings: list[str] = []
-    if _EMAIL_RE.search(content):
-        warnings.append("Email address detected")
-    if _PHONE_RE.search(content):
-        warnings.append("Phone number detected")
-    if _PATIENT_ID_RE.search(content):
-        warnings.append("Patient/case ID pattern detected")
-    if _GPS_RE.search(content):
-        warnings.append("High-precision GPS coordinate detected")
-    if _BELGIAN_NID_RE.search(content):
-        warnings.append("Belgian national ID detected")
-    classification = _classify(warnings, "")
-    return {"safe": len(warnings) == 0, "classification": classification, "warnings": warnings}
+    """Run the shared PII scanner. Returns {safe, classification, warnings}.
+
+    Delegates to safety.scan_content so the Data Guardian sees every pattern
+    (names, DOB, passport, MRN, HAT/PNLTHA case numbers, DRC national ID,
+    sensitive CSV headers) — not just the original five.
+    """
+    return scan_content(content)
 
 
 async def _check_data_safety_stage(request: str, session_id: str) -> dict:

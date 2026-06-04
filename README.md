@@ -361,6 +361,22 @@ Everything else — your documents, voice recordings, PDF text, meeting notes, p
 | **Red lines** | 5 non-overridable rules enforced at code level — no override possible |
 | **AES-256 encryption** | All backups encrypted at rest |
 
+**The recommended pattern for sensitive data: send code, not data.**
+
+The strongest protection isn't a scanner — it's never putting the raw data in a prompt at all. Metis is built for this. Ask it for an analysis script (R or Python); **you run it on your own machine** against your real data; and only the *derived outputs* — variable names, value counts, summary tables, model coefficients, a data dictionary — come back to Metis. Claude reasons over the **shape** of your data, never the records.
+
+```
+Your real dataset (patient rows)         ── stays on your machine, never sent ──┐
+        │ you run Metis's R/Python script locally                               │
+        ▼                                                                       │
+Derived metadata (column names, unique values, Table 1, model summary) ── safe to share ──► Metis
+        │                                                                       │
+        ▼                                                                       │
+Metis builds the dashboard / writes the methods / interprets the model ◄────────┘
+```
+
+This is exactly how the dashboards and analyses in our own work were built: the raw surveillance data never left the machine, yet Metis could profile it, name every variable, list unique values, and generate a full dashboard. The **Data Guardian** (PII scan + 4-level classification at pipeline entry) is the *backstop* for when sensitive content might slip into a prompt anyway — but the pattern above means it rarely has to act.
+
 ---
 
 ### How Metis Stays Current — So You Don't Have To
