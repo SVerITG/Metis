@@ -216,7 +216,7 @@ The script asks two questions (Full or AI only, demo workspace) and does the res
 | **Project tracking** | Every project gets a tracking record, a context file in its folder, and integration with Claude Desktop. The Update button scans all your project folders for activity. |
 | **Voice capture** | Record anywhere, transcribe locally (no API, no upload), route to ideas, journal, or notes |
 | **9-tab dashboard** | Today · Knowledge · Meetings · Learning · Work · Thinking · Planner · Teach · Metis — all live, all local |
-| **Data protection** | Five security layers. Patient data and embargoed results are detected and blocked before anything reaches the AI. Everything runs on your machine. |
+| **Data protection** | Six security layers + the `/safe-analysis` workflow. Sensitive data is detected and held back before it reaches the AI, and the recommended pattern keeps raw data on your machine entirely — you share only derived metadata. |
 | **Cross-pollination** | Every idea, paper, meeting, and task is automatically connected to everything else in your research universe. Metis surfaces links across time — a paper from last year, a meeting note from March, a question you logged at a conference — without you searching for any of it. |
 | **Token tracking** | Every agent run shows exactly what it cost — which specialist was used, how many tokens, what model. The dashboard Today tab has a live token pulse so you always know your daily usage. Most daily tasks stay under a few cents. |
 | **Tool subset loading** | Metis registers 170+ MCP tools, but exposing all of them to Claude on every session wastes context. By default, Metis loads only the tools relevant to the current agent — 90 tools for News Radar, 107 for the Librarian, ~65 for a general session. Each tool definition costs tokens; loading fewer means more room for actual work and lower per-session cost. Disable with `METIS_TOOL_SUBSETS=0` to see all tools. |
@@ -375,7 +375,9 @@ Derived metadata (column names, unique values, Table 1, model summary) ── sa
 Metis builds the dashboard / writes the methods / interprets the model ◄────────┘
 ```
 
-This is exactly how the dashboards and analyses in our own work were built: the raw surveillance data never left the machine, yet Metis could profile it, name every variable, list unique values, and generate a full dashboard. The **Data Guardian** (PII scan + 4-level classification at pipeline entry) is the *backstop* for when sensitive content might slip into a prompt anyway — but the pattern above means it rarely has to act.
+This is exactly how the dashboards and analyses in our own work were built: the raw surveillance data never left the machine, yet Metis could profile it, name every variable, list unique values, and generate a full dashboard.
+
+**Just run `/safe-analysis`** (Claude Code or Claude Desktop) and Metis walks you through it end-to-end — it proposes the local script, tells you exactly which metadata to paste back, and never asks for raw rows. Two backstops sit underneath: the **pre-tool hook** peeks at a data file's header *locally* and asks before any individual-level data is read into the conversation, and the **Data Guardian** (PII scan + 4-level classification at pipeline entry) catches sensitive content that slips into a prompt anyway. With the pattern above, neither usually has to fire.
 
 ---
 
@@ -733,6 +735,16 @@ key journals + RSS feeds · specialist agents · a domain ontology · a curated 
 ---
 
 ## Changelog
+
+### Post-v1.0 — June 2026
+
+| What changed |
+|---|
+| **Sensitive-data workflow (`/safe-analysis`)** — a first-class "send code, not data" workflow: Metis writes a local analysis script, you run it on your machine, and only derived metadata (schema, value counts, summaries, model output) comes back. Available in Claude Code and Claude Desktop. |
+| **Data Guardian hardening** — the pipeline PII scanner now runs all 11 patterns (names, DOB, passport, MRN, HAT/PNLTHA case numbers, DRC national ID, + the original five) through one shared scanner used by both the tool and the pipeline, so they can't drift; covered by a unit-test suite. |
+| **Pre-tool data-file guard** — before a `Read`/`read_file`, the security hook peeks at the file's header *locally* and asks for confirmation before individual-level data is loaded into the conversation. |
+| **Honest positioning** — dropped the "local-first/local AI" framing (reasoning runs on the Claude API); copy now states plainly that your data stays on your machine while reasoning uses Claude. |
+| **Desktop project-tracking + file-tracking fixes** — the Desktop router now registers tracked projects; repaired a recursion bug that had broken file tracking. |
 
 ### Post-v1.0 — May 2026
 
