@@ -9,7 +9,8 @@
 
 <p align="center">
   <em>AI built around researchers. Not a prompt box — a way of working.</em><br>
-  <em>Everything you know, connected. Every idea, linked to everything else.</em>
+  <em>Your papers, meetings, ideas, notes and journal — each one linked to the rest.</em><br>
+  <em>A research companion that reviews its own work and gets sharper every week.</em>
 </p>
 
 <p align="center">
@@ -67,6 +68,9 @@
 ## Why researchers trust it
 
 - **📚 It cites your own sources.** Every knowledge answer is drawn from *your* indexed library, with document- and page-level citations — not the model's guesses.
+- **🔗 It connects everything you know.** Every paper, meeting transcript, idea, note, journal entry and task is linked to the rest of your work. The grant you write today surfaces a method paper from last year and a meeting note from March — you never go looking; Metis brings it to you.
+- **🧠 It routes to the right expert.** Ask in plain language, and Metis hands the work to the right one of 30+ specialist skills — Librarian, Methods Coach, Writing Partner, Meeting Memory, Epidemiologist, Course Builder, and more.
+- **🔁 It improves itself.** After every task it logs what worked and what fell short; each week it drafts improvements to its own behaviour and waits for your approval. Most MCP servers are static — Metis gets sharper the longer you use it.
 - **🚫 It refuses to invent.** Ask about something that isn't in your library and Metis tells you so, instead of fabricating a plausible-sounding answer. (This grounding behaviour is covered by an automated test.)
 - **🔒 It stays on your machine.** Local embeddings, local database, local files. Your papers, patient-adjacent data, and unpublished work never leave your computer.
 
@@ -110,7 +114,7 @@ Metis is a **local AI research companion** built on top of Claude. It gives ever
 
 It runs entirely on your machine. Your data never leaves.
 
-**The short version:** imagine if your AI already knew your field, your literature, and what you were working on last Tuesday — and got smarter about your work the longer you used it. That's Metis.
+**The short version:** imagine an AI that already knew your field and your literature, connected every paper, meeting, idea and note you've captured, sent each request to the right specialist — and got sharper about your work, *and about itself*, the longer you used it. That's Metis.
 
 ---
 
@@ -136,7 +140,7 @@ Every AI conversation starts from zero. You spend ten minutes re-explaining your
 
 Not just your name — your domain, your literature, your projects, your preferred working style, your open questions, your meeting notes from last month, and the paper you added to your library yesterday. The longer you use Metis, the better every response gets. Not because the AI changes — because Metis knows you better.
 
-**You don't need to follow developments in AI.** Metis does that for you. Every week, Metis reviews its own performance across all your sessions, identifies where it could have done better, drafts improvements to its own behaviour, and waits for your approval before applying them. New AI capabilities, better models, more efficient methods — Metis monitors the field and self-updates. As a researcher, you focus on your research. Metis handles keeping itself current.
+**You don't need to follow developments in AI.** Metis does that for you. Every week, Metis reviews its own performance across all your sessions, identifies where it could have done better, drafts improvements to its own behaviour, and waits for your approval before applying them. As better methods and models become available, those improvements are folded in the same way — always proposed for your approval, never applied behind your back. As a researcher, you focus on your research. Metis handles keeping itself sharp.
 
 **The core mechanism is cross-pollination.** Every time you capture an idea, add a paper, record a meeting, or complete a task, Metis connects it to everything else in your research universe. A paper you indexed a year ago surfaces when you're writing a grant today. A meeting note from March links to the idea you captured this morning. An open question from six months ago connects to a new paper that just came out. These connections happen automatically, in the background, without you having to search for them. This is what makes Metis a *research companion* rather than a search tool — it thinks across your entire body of work so you don't have to hold it all in your head.
 
@@ -216,7 +220,7 @@ The script asks two questions (Full or AI only, demo workspace) and does the res
 | **Cross-pollination** | Every idea, paper, meeting, and task is automatically connected to everything else in your research universe. Metis surfaces links across time — a paper from last year, a meeting note from March, a question you logged at a conference — without you searching for any of it. |
 | **Token tracking** | Every agent run shows exactly what it cost — which specialist was used, how many tokens, what model. The dashboard Today tab has a live token pulse so you always know your daily usage. Most daily tasks stay under a few cents. |
 | **Tool subset loading** | Metis registers 170+ MCP tools, but exposing all of them to Claude on every session wastes context. By default, Metis loads only the tools relevant to the current agent — 90 tools for News Radar, 107 for the Librarian, ~65 for a general session. Each tool definition costs tokens; loading fewer means more room for actual work and lower per-session cost. Disable with `METIS_TOOL_SUBSETS=0` to see all tools. |
-| **Metis evolves — you don't have to** | Every week, Metis reviews its own session logs, identifies where it underperformed, and drafts behaviour improvements. You approve or reject them. New AI capabilities get incorporated automatically. You focus on your research; Metis stays current with the field. |
+| **Metis evolves — you don't have to** | Every week, Metis reviews its own session logs, identifies where it underperformed, and drafts behaviour improvements. You approve or reject them — nothing changes without your sign-off. New capabilities are folded in the same way. You focus on your research; Metis keeps itself sharp. |
 | **Grows with you** | Every agent run adds to your profile. A question asked after six months of use gets a meaningfully better answer than the same question on day one — not because the AI changed, but because Metis knows you better. |
 
 ---

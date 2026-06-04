@@ -1,7 +1,7 @@
 [project]
 name = "metis-mcp-server"
 version = "1.0.0"
-description = "MCP server for the Metis Research Context"
+description = "Local-first AI research companion for Claude: persistent memory, answers cited from your own library, 30+ specialist skills, and automatic cross-pollination across your papers, meetings, ideas, notes and journal — plus a weekly loop that reviews its own work and proposes improvements for your approval."
 requires-python = ">=3.10"
 dependencies = [
     "mcp>=1.27.0",
