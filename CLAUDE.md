@@ -1,6 +1,6 @@
 # Metis Second Brain — Claude Code Configuration
 
-This is the Metis Research Cortex — a local AI second-brain for researchers in any field.
+This is the Metis Research Cortex — a second-brain for researchers in any field that keeps your data on your machine; reasoning runs on Claude (the Anthropic API).
 
 **Owner:** [User] — address by their configured name (see `system/config/user-config.yaml`)
 **Root:** This folder
