@@ -126,7 +126,7 @@ Metis is **not a separate app you log into.** It's a small service that runs qui
 2. **You talk to Metis through Claude**, two ways:
    - **Claude Desktop** (easiest): open it and pick a **Metis prompt** (e.g. *Metis*, *Metis Doctor*) from the prompt menu — or just ask.
    - **Claude Code** (terminal): type **`/metis`** followed by your request.
-3. **You ask in plain language.** Metis works out which of its 34 specialists should handle it, does the work using *your* library and memory, and answers — citing sources.
+3. **You ask in plain language.** Metis works out which of its 30+ specialists should handle it, does the work using *your* library and memory, and answers — citing sources.
 
 That's it. There's nothing to learn before you start; the dashboard is optional visibility *on top* of all this.
 
@@ -150,11 +150,11 @@ This is genuinely new ground. The individual components — local language model
 
 | Level | What it is | Best for |
 |---|---|---|
-| **☁️ MCP server only** | A background service that runs alongside Claude. Persistent memory, session awareness, 34 specialist agents — no dashboard, no visible app. | Researchers who use Claude already and want it to know their work |
+| **☁️ MCP server only** | A background service that runs alongside Claude. Persistent memory, session awareness, 30+ specialist agents — no dashboard, no visible app. | Researchers who use Claude already and want it to know their work |
 | **📊 With the dashboard** | Full visibility across your research life — papers, ideas, meetings, tasks, projects, all connected. Built for *cross-pollination* (ideas linking to literature) and *brain off-loading* (tracking leaving your head, entering the system). | Researchers who want a complete research operating environment |
 | **🌐 Metis OS** | Connects to email, calendar, data systems, and institutional infrastructure — a unified intelligence layer for your entire working environment. | The longer vision. Still in development. |
 
-> **Where things stand today:** The MCP server, 34 agents, and the 9-tab dashboard are fully operational and used daily. The one-click installer and the pre-loaded domain knowledge layer are still being refined. This is a working system — not vaporware — but it is also not finished. If something breaks, please open an issue. That feedback shapes what gets built next.
+> **Where things stand today:** The MCP server, 30+ agents, and the 9-tab dashboard are fully operational and used daily. The one-click installer and the pre-loaded domain knowledge layer are still being refined. This is a working system — not vaporware — but it is also not finished. If something breaks, please open an issue. That feedback shapes what gets built next.
 
 ---
 
@@ -210,7 +210,7 @@ The script asks two questions (Full or AI only, demo workspace) and does the res
 
 | Feature | What it does |
 |---|---|
-| **34 specialist agents** | Librarian, Epidemiologist, Methods Coach, Writing Partner, Meeting Memory, Course Builder, Career Coach, Critic, and 26 more — each an expert in their domain |
+| **30+ specialist agents** | Librarian, Epidemiologist, Methods Coach, Writing Partner, Meeting Memory, Course Builder, Career Coach, Critic, and more — each an expert in their domain |
 | **Grounded answers** | Every knowledge question is automatically answered from your own indexed document library with page-level citations — not AI guesses |
 | **Library management** | Import PDFs, sync Zotero or Mendeley, ask "what do my papers say about X?" — cited answers from your own library |
 | **Morning intelligence brief** | Every morning: new papers on your exact research topics, field news, surveillance alerts, and a focus recommendation — fully personalised |
@@ -415,7 +415,7 @@ flowchart LR
     U([Researcher])
     subgraph Harness["AI Harness (Claude Code / Desktop)"]
         METIS[Metis\nrouter agent]
-        AGENTS[Specialist agents\n34 agents]
+        AGENTS[Specialist agents\n30+ agents]
         WATCHERS{{Watchers\nData Guardian · Cybersecurity}}
     end
     subgraph Platform
@@ -664,7 +664,7 @@ Metis ships in distinct editions — a domain-agnostic base shell, and domain pa
 | Repository | Status | What it is |
 |---|---|---|
 | **[Metis](https://github.com/SVerITG/Metis)** | ✅ Live (v1.0) | Domain-agnostic base shell. Full architecture, no domain content. Clone this to build your own edition. |
-| **[Metis_PH](https://github.com/SVerITG/Metis_PH)** | ✅ Live (v1.0, this repo) | Public Health & Epidemiology — MCP server, 34 agents, dashboard, knowledge layer |
+| **[Metis_PH](https://github.com/SVerITG/Metis_PH)** | ✅ Live (v1.0, this repo) | Public Health & Epidemiology — MCP server, 30+ agents, dashboard, knowledge layer |
 | **[Metis_BM](https://github.com/SVerITG/Metis_BM)** | 🧬 Planned | Biomedical Sciences |
 | **[Metis_CL](https://github.com/SVerITG/Metis_CL)** | 🏥 Planned | Clinical Sciences |
 | **Metis [Community]** | 🌍 Open | Domain packs for other research fields — contributions welcome |
@@ -691,7 +691,7 @@ Open an issue with label `course-package` to pilot or contribute.
 | Area | Status |
 |---|---|
 | MCP server (170+ tools) | ✅ Operational, used daily |
-| 34 specialist agents | ✅ Operational, used daily |
+| 30+ specialist agents | ✅ Operational, used daily |
 | 9-tab dashboard | ✅ Operational, some features in active development |
 | Windows .exe installer | 🔧 In refinement |
 | Docker images | ✅ Test matrix working |
