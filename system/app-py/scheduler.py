@@ -590,6 +590,26 @@ def setup_jobs() -> None:
         if now_local > sched_today:
             missed.append((catch_job_id, catch_func))
 
+    # Weekly catch-up: weekly_summary only fires if the dashboard happens to be
+    # running at its Sunday cron time — easy to miss on a laptop. Run it on
+    # startup if it hasn't succeeded in the last 6 days.
+    wk_cfg = {**JOB_DEFAULTS.get("weekly_summary", {}), **settings_cu.get("weekly_summary", {})}
+    if wk_cfg.get("enabled", True):
+        try:
+            from db import db_query
+            rows = db_query(
+                "SELECT created_at FROM jobs_log WHERE job_type='weekly_summary' "
+                "AND status='ok' ORDER BY created_at DESC LIMIT 1"
+            )
+            due = True
+            if rows:
+                last_dt = _dt.datetime.fromisoformat(rows[0]["created_at"])
+                due = (now_local - last_dt).days >= 6
+            if due:
+                missed.append(("weekly_summary", job_weekly_summary))
+        except Exception as exc:
+            log.warning("[scheduler] weekly catch-up check failed: %s", exc)
+
     if missed:
         def _run_catchup(jobs):
             for jid, jfunc in jobs:

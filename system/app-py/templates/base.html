@@ -323,7 +323,7 @@
 
     <!-- Sidebar footer -->
     <div class="side-foot">
-      <span class="mini-ava">S</span>
+      <span class="mini-ava">{{ (_metis_user_name()[0]|upper) if (_metis_user_name is defined and _metis_user_name()) else 'R' }}</span>
       <span class="sf-text">Research Cortex</span>
     </div>
 
