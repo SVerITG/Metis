@@ -72,12 +72,19 @@ def _classify(warnings: list[str], file_path: str) -> str:
     """Determine classification based on warnings and file type."""
     warning_text = " ".join(warnings).lower()
 
-    # SENSITIVE: patient IDs, individual GPS, diagnostic results
-    if any(kw in warning_text for kw in ["patient", "case_id", "gps coordinate", "diagnostic", "test_result"]):
+    # SENSITIVE: direct individual identifiers — patient/case IDs, HAT/PNLTHA case
+    # numbers, individual GPS, diagnostic results
+    if any(kw in warning_text for kw in [
+        "patient", "case_id", "hat", "pnltha", "gps coordinate", "diagnostic", "test_result",
+    ]):
         return "SENSITIVE"
 
-    # CONFIDENTIAL: personal names + dates, files with sensitive columns
-    if any(kw in warning_text for kw in ["belgian national id", "sensitive column"]):
+    # CONFIDENTIAL: other PII — names, DOB, passport/record/identity numbers,
+    # files with sensitive columns
+    if any(kw in warning_text for kw in [
+        "belgian national id", "drc national id", "sensitive column",
+        "date of birth", "passport", "medical record", "name field",
+    ]):
         return "CONFIDENTIAL"
 
     if file_path:
@@ -98,6 +105,44 @@ def _classify(warnings: list[str], file_path: str) -> str:
     return "PUBLIC"
 
 
+# Ordered (regex, label) PII checks applied to any text Metis is about to send out.
+# Single source of truth — used by both check_data_safety() and the pipeline's
+# Stage-3 Data Guardian (via scan_content), so the two can never drift apart.
+_PII_CHECKS: list[tuple[re.Pattern, str]] = [
+    (_EMAIL_RE, "Email address"),
+    (_PHONE_RE, "Phone number"),
+    (_PATIENT_ID_RE, "Patient/case ID pattern"),
+    (_GPS_RE, "High-precision GPS coordinate"),
+    (_BELGIAN_NID_RE, "Belgian national ID"),
+    (_DOB_RE, "Date of birth"),
+    (_PASSPORT_RE, "Passport number"),
+    (_MRN_RE, "Medical record number"),
+    (_HAT_CASE_RE, "HAT/PNLTHA case number"),
+    (_DRC_NID_RE, "DRC national ID number"),
+    (_NAME_ID_RE, "Name field"),
+]
+
+
+def scan_content(content: str, file_path: str = "") -> dict:
+    """Scan text for PII patterns + sensitive CSV/TSV headers and classify it.
+
+    The one scanner both the check_data_safety tool and the pipeline Data Guardian
+    call. Returns {safe, classification, warnings}.
+
+    Args:
+        content: Text content to scan.
+        file_path: Optional file path for context-based classification.
+    """
+    warnings: list[str] = []
+    for pattern, label in _PII_CHECKS:
+        hits = pattern.findall(content)
+        if hits:
+            warnings.append(f"{label}(s) detected: {len(hits)} found")
+    warnings.extend(_check_sensitive_headers(content))
+    classification = _classify(warnings, file_path)
+    return {"safe": len(warnings) == 0, "classification": classification, "warnings": warnings}
+
+
 @app.tool()
 async def check_data_safety(
     content: str,
@@ -111,47 +156,10 @@ async def check_data_safety(
         content: Text content to scan.
         file_path: Optional file path for context-based classification.
     """
-    warnings: list[str] = []
-
-    # Email addresses
-    emails = _EMAIL_RE.findall(content)
-    if emails:
-        warnings.append(f"Email address(es) detected: {len(emails)} found")
-
-    # Phone numbers
-    phones = _PHONE_RE.findall(content)
-    if phones:
-        warnings.append(f"Phone number(s) detected: {len(phones)} found")
-
-    # Patient/case IDs
-    patient_ids = _PATIENT_ID_RE.findall(content)
-    if patient_ids:
-        warnings.append(f"Patient/case ID pattern(s) detected: {len(patient_ids)} found")
-
-    # GPS coordinates (high precision = individual level)
-    gps = _GPS_RE.findall(content)
-    if gps:
-        warnings.append(f"High-precision GPS coordinate(s) detected: {len(gps)} found")
-
-    # Belgian national ID
-    belgian = _BELGIAN_NID_RE.findall(content)
-    if belgian:
-        warnings.append(f"Belgian national ID pattern(s) detected: {len(belgian)} found")
-
-    # Sensitive CSV headers
-    header_warnings = _check_sensitive_headers(content)
-    warnings.extend(header_warnings)
-
-    # Classification
-    classification = _classify(warnings, file_path)
-    safe = len(warnings) == 0
-
-    # Build result
-    result = {
-        "safe": safe,
-        "classification": classification,
-        "warnings": warnings,
-    }
+    result = scan_content(content, file_path)
+    safe = result["safe"]
+    classification = result["classification"]
+    warnings = result["warnings"]
 
     lines = [
         f"**Safe:** {safe}",
