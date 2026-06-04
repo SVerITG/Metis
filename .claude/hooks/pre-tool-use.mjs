@@ -2,23 +2,28 @@
 /**
  * Metis pre-tool-use security hook
  *
- * Fires before WebFetch, WebSearch, Bash, Write, and Edit tool calls.
- * Inspects the action and warns the user when potentially sensitive operations
- * are detected. Does NOT silently block — shows a clear warning so the user
- * can make an informed decision.
+ * Fires before WebFetch, WebSearch, Bash, Write, Edit, Read, and the MCP
+ * read_file tool. Inspects the action and warns — or, for a file that looks
+ * like it holds individual-level data, asks the user to confirm — so sensitive
+ * data is not loaded into the conversation by accident.
+ *
+ * For Read / read_file it peeks at the file's HEADER locally (the read happens
+ * on this machine, nothing leaves it) and checks the column names + a small
+ * sample for sensitive patterns. Only matched column *names* (schema) and a
+ * generic PII flag are ever reported — never the data values themselves.
  *
  * Hook input (stdin): JSON { tool_name, tool_input }
- * Hook output (stdout): JSON { decision: "allow"|"block", reason?: string }
+ * Hook output (stdout): JSON { ...permissionDecision: "allow"|"deny"|"ask" }
  */
 
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, openSync, readSync, closeSync } from "fs";
 
 const RC_ROOT = process.env.METIS_RC_ROOT || "";
 
 // ─── Hook profile ──────────────────────────────────────────────────────────
-// Set METIS_HOOK_PROFILE=minimal for speed (domain allowlist only).
-// Set METIS_HOOK_PROFILE=full for strictest checks (adds PII detection on reads).
-// Default: standard (current full behaviour).
+// Set METIS_HOOK_PROFILE=minimal for speed (domain allowlist only; no file scan).
+// Set METIS_HOOK_PROFILE=full for strictest checks (adds PII-indicative filename warns).
+// Default: standard — includes sensitive-data file-content scanning on Read/read_file.
 const HOOK_PROFILE = (process.env.METIS_HOOK_PROFILE || "standard").toLowerCase();
 
 // ─── Sensitive path patterns ───────────────────────────────────────────────
@@ -79,6 +84,68 @@ const INJECTION_PATTERNS = [
   /override\s+(safety|constraints|rules)/i,
   /jailbreak/i,
 ];
+
+// ─── Sensitive-data file scanning ──────────────────────────────────────────
+// Mirrors metis/system/mcp-server/src/metis_mcp/tools/safety.py — keep in sync.
+// Text data formats we can peek into; binary formats we flag by extension only.
+const DATA_TEXT_EXT = new Set(["csv", "tsv", "tab", "psv", "txt"]);
+const DATA_BINARY_EXT = new Set(["xlsx", "xls", "sav", "dta", "rds", "rdata"]);
+
+const SENSITIVE_COLUMNS = new Set([
+  "patient", "patient_id", "case_id", "diagnosis", "dob", "date_of_birth",
+  "test_result", "gps_lat", "gps_lon", "nom", "prenom", "prénom", "surname",
+  "firstname", "first_name", "last_name", "mrn", "record_number", "dossier",
+  "passport_number", "nid", "national_id", "hat_case_id", "hat_patient_id",
+]);
+
+// Content-level PII patterns (subset of safety.py — the high-signal ones).
+const PII_PATTERNS = [
+  /\b(?:patient_?id|case_?id|patient\s*#)\s*[:=]?\s*\d+/i,
+  /-?\d{1,3}\.\d{5,},?\s*-?\d{1,3}\.\d{5,}/,                       // high-precision GPS
+  /\bhat[\s_-]?(?:case|id|patient|dossier)\s*[:=]?\s*[\dA-Z\-]{3,20}\b/i,
+  /\b\d{16}\b/,                                                    // DRC national ID
+  /\b(?:nom|prenom|prénom|surname|firstname|last[\s_]name)\s*[:=]\s*[A-Za-zÀ-ÿ]{2,}/i,
+];
+
+// Read only the first chunk of a file (local I/O — never sent anywhere).
+function readHead(path, maxBytes = 8192) {
+  let fd;
+  try {
+    fd = openSync(path, "r");
+    const buf = Buffer.alloc(maxBytes);
+    const n = readSync(fd, buf, 0, maxBytes, 0);
+    return buf.subarray(0, n).toString("utf8");
+  } catch {
+    return null;
+  } finally {
+    try { if (fd !== undefined) closeSync(fd); } catch { /* ignore */ }
+  }
+}
+
+// Returns { isData, isBinary, sensitiveCols:[], piiHit:bool }. Only the matched
+// column NAMES (from the fixed vocabulary) and a boolean ever leave this function.
+function scanDataFile(filePath) {
+  const ext = (filePath.split(".").pop() || "").toLowerCase();
+  if (DATA_BINARY_EXT.has(ext)) return { isData: true, isBinary: true, sensitiveCols: [], piiHit: false };
+  if (!DATA_TEXT_EXT.has(ext)) return { isData: false };
+
+  const head = readHead(filePath);
+  if (!head) return { isData: true, isBinary: false, sensitiveCols: [], piiHit: false };
+
+  const firstLine = head.split(/\r?\n/)[0] || "";
+  const sensitiveCols = [];
+  for (const sep of [",", "\t", ";", "|"]) {
+    if (firstLine.includes(sep)) {
+      for (let h of firstLine.split(sep)) {
+        h = h.trim().replace(/^["']|["']$/g, "").toLowerCase();
+        if (SENSITIVE_COLUMNS.has(h)) sensitiveCols.push(h);
+      }
+      if (sensitiveCols.length) break;
+    }
+  }
+  const piiHit = PII_PATTERNS.some((p) => p.test(head));
+  return { isData: true, isBinary: false, sensitiveCols: [...new Set(sensitiveCols)], piiHit };
+}
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function extractDomain(url) {
@@ -211,18 +278,32 @@ if (tool_name === "WebSearch") {
   }
 }
 
-// ── Full profile: PII keyword scan on Read operations ─────────────────────
-if (HOOK_PROFILE === "full" && tool_name === "Read") {
-  const filePath = tool_input?.file_path || "";
-  const PII_FILENAME_PATTERNS = [
-    /\bpatient/i, /\bparticipant[_-]?id/i, /\bsubject[_-]?id/i,
-    /\bname[s]?\.(csv|xlsx|xls)/i, /\bpersonal/i, /\bconfidential/i,
-  ];
-  if (PII_FILENAME_PATTERNS.some((p) => p.test(filePath))) {
-    warn(
-      `[FULL profile] Reading a file with a PII-indicative name: ${filePath}\n` +
-      `  Data Guardian review: confirm this file contains no patient identifiers.`
-    );
+// ── Read / read_file: scan the file's CONTENT for sensitive data ───────────
+// Runs for standard + full profiles. The file is read locally (nothing leaves
+// the machine); if it looks like individual-level data, we ASK before loading
+// it into the conversation and point the user at /safe-analysis.
+if (HOOK_PROFILE !== "minimal" && (tool_name === "Read" || /read_file$/i.test(tool_name))) {
+  const filePath = tool_input?.file_path || tool_input?.path || "";
+  if (filePath) {
+    const r = scanDataFile(filePath);
+    if (r.isData && (r.sensitiveCols.length || r.piiHit)) {
+      decision = "ask";
+      const cols = r.sensitiveCols.length ? ` Sensitive columns: ${r.sensitiveCols.join(", ")}.` : "";
+      reason =
+        `This file looks like it holds individual-level / sensitive data.${cols} ` +
+        `Reading it loads that data into the conversation, which is sent to Claude. ` +
+        `Prefer /safe-analysis — Metis writes a local script so only metadata ` +
+        `(column names, counts, summaries) is shared. Proceed only if this file is non-identifiable.`;
+      warn(
+        `Sensitive data file about to be read: ${filePath}${cols}\n` +
+        `  → Consider /safe-analysis (send code, not data). Confirm to proceed.`
+      );
+    } else if (r.isData && r.isBinary) {
+      warn(
+        `Reading a data file: ${filePath}\n` +
+        `  Binary format — contents not scanned. If it holds identifiers, prefer /safe-analysis.`
+      );
+    }
   }
 }
 
@@ -256,10 +337,12 @@ if (HOOK_PROFILE !== "minimal") {
 }
 
 // ─── Output ─────────────────────────────────────────────────────────────────
+const permissionDecision =
+  decision === "block" ? "deny" : decision === "ask" ? "ask" : "allow";
 const output = {
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
-    permissionDecision: decision === "block" ? "deny" : "allow",
+    permissionDecision,
     ...(reason ? { permissionDecisionReason: reason } : {}),
   },
 };

@@ -354,7 +354,7 @@ Everything else — your documents, voice recordings, PDF text, meeting notes, p
 
 | Layer | What it does |
 |---|---|
-| **Pre-tool hook** | Checks every tool call for injection attempts and restricted paths |
+| **Pre-tool hook** | Checks every tool call for injection attempts and restricted paths; peeks at a data file's header *locally* before it's read and asks you to confirm before individual-level data is loaded into the conversation |
 | **PII detection** | 11 checks, 4-level classification. Sensitive data is classified and refused at pipeline entry |
 | **Injection probe** | Detects prompt injection in external content (papers, transcripts) |
 | **Constitution** | 14 machine-readable rules applied to every deep agent run |
