@@ -340,6 +340,13 @@ def consolidate_reflexions(days: int = 14, min_count: int = 3,
     concept, so re-running nightly is idempotent). Then deletes working_memory
     rows older than prune_working_days.
 
+    VERIFIED-ONLY MEMORY: the ``min_count`` recurrence threshold IS the verification
+    gate. A single self-critique is unreliable (LLMs can't intrinsically self-correct
+    — Huang et al. 2310.01798), so only a theme *corroborated* by recurring across
+    >= min_count independent runs is promoted to the durable, searchable semantic
+    layer. Un-corroborated reflexions stay in reflexion_log (the audit trail) but
+    never pollute retrieval — i.e. unconfirmed self-critique is not promoted.
+
     Returns a summary dict. Embedding is best-effort (skipped if fastembed absent).
     """
     agg = aggregate_reflexions(days=days)
