@@ -35,7 +35,15 @@ Trigger moments → tags to pass:
 - User just edited code → `code-change`
 - First session / user seems unsure → `onboarding,first-session`
 
-**Respect the off switch.** If the user says "stop the tips" / "don't show these anymore", call `set_discovery_tips(enabled=False)` and confirm. `discovery_status()` reports on/off + how many remain. One tip per moment at most — never stack them or nag.
+The tool is **earned + rate-capped**: it already skips features the user uses, caps to ~1 tip / 20 min and a few per day, and respects snooze/mode — so just call it freely at trigger moments; it returns `''` when nothing should show.
+
+**First session / "what can you do?"** → call `discovery_intro()` once (the 3-5 core capabilities), not the full list.
+
+**Respect the user's control:**
+- "stop the tips" / "don't show these" → `set_discovery_tips(enabled=False)`
+- "remind me later" / "not now" → `set_discovery_tips(snooze_days=7)`
+- "I'm a power user" / "I know my way around" → `set_discovery_tips(power_user=True)` (tips stay quiet)
+- `discovery_status()` reports on/off, mode, and adoption. Always confirm the change in one line. Never stack tips or nag.
 
 ---
 

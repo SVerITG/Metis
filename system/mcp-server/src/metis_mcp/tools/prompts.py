@@ -120,6 +120,17 @@ def _metis_router(request: str = "") -> str:
         "project_id=<id returned above>, notes=...)` so they show up in the Work tab.\n\n"
         "Never invent facts the knowledge base does not support — ground answers in "
         "the library and say so when evidence is thin.\n\n"
+        "**Guide the user to features (contextual discovery).** Metis has many "
+        "capabilities a user can't find alone — surface them just-in-time. At natural "
+        "trigger moments (building a library→`library`, first R/Python code→`r-code`, "
+        "starting a project→`project`, a dataset/sensitive data→`data,sensitive`, a "
+        "knowledge question→`question`, a new paper→`paper`, a meeting transcript→"
+        "`meeting`), call `next_discovery_tip(context=\"<tags>\")` and, if it returns "
+        "text, weave that ONE tip into your reply naturally. It is earned + rate-capped "
+        "(skips features they already use, ≤1/20min) and returns '' when nothing should "
+        "show. For a brand-new user or 'what can you do?', call `discovery_intro()` once. "
+        "If they say stop/later/'I'm a power user', call `set_discovery_tips(enabled=False"
+        ")` / `set_discovery_tips(snooze_days=7)` / `set_discovery_tips(power_user=True)`.\n\n"
         f"**Request:** {request}"
     )
 
