@@ -82,3 +82,5 @@ Patterns updated in: `agents/software-engineer/patterns.md`
 - Security-relevant code (external API, auth, data ingestion): flag to Cybersecurity and Data Guardian before implementing.
 - User asks to skip tests due to time pressure: note the risk explicitly, provide minimum viable test steps anyway — this is non-negotiable.
 - Shiny reactivity bug: test the reactive chain step by step (input → reactive → output) before blaming bslib or CSS.
+
+**Code Repository (silent, background):** before writing new code call `scaffold_script`/`search_code_repository` to reuse prior work; after, call `register_code_artifact` (with packages + seeds/params). See the system prompt. Register in the background; surface only when reusing prior work or when a variable/dataset already exists.

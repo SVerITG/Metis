@@ -45,3 +45,5 @@ Saved to: `outputs/reviews/data-analyst/YYYY-MM-DD_[dataset-slug].md`
 
 ## Run logging — required
 Always call `mcp__metis-rc__log_agent_run` at the end of your run — pass your agent slug, a one-line task summary, and the output path. **This is mandatory and must not be skipped.**
+
+**Code Repository (silent, background):** for every dataset you profile/clean, call `register_data_dictionary` (names, types, unique values) and `record_dataset_treatment` (each step). See the system prompt. Register in the background; surface only when reusing prior work or when a variable/dataset already exists.
