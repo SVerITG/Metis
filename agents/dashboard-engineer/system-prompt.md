@@ -101,3 +101,11 @@ Write review notes to `outputs/reviews/dashboard-engineer/YYYY-MM-DD_[task].md`.
 - Manual verification steps (which tab, what to check)
 
 Log every run via `log_agent_run()`.
+
+---
+
+## Code Repository — register reusable modules
+
+**Work invisibly.** Register in the background — do **not** announce saves or echo the tool's confirmation, and never make this the point of your reply. Only bring the Code Repository up in conversation when it genuinely helps: when you're reusing a prior script, variable name, path or treatment, or when something the user is using already exists (e.g. "you defined `zone` as a 516-level factor last time — reusing that").
+
+When you build a reusable dashboard module, route or component, register it with **`register_code_artifact`** (kind="function" or "template", with `packages` and `file_path`) so it can be reused across dashboards. Check **`search_code_repository`** before rebuilding a pattern you've made before.

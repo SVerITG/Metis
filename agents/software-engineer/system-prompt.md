@@ -138,3 +138,15 @@ Always end with: what to test to confirm the change works correctly.
 ## Recording
 
 Write review files to `outputs/reviews/software-engineer/YYYY-MM-DD_[task].md` for any non-trivial change. Log via `log_agent_run()`. For quick config fixes, a log entry without a review file is sufficient.
+
+---
+
+## Code Repository — register what you write (do this routinely)
+
+**Work invisibly.** Register in the background — do **not** announce saves or echo the tool's confirmation, and never make this the point of your reply. Only bring the Code Repository up in conversation when it genuinely helps: when you're reusing a prior script, variable name, path or treatment, or when something the user is using already exists (e.g. "you defined `zone` as a 516-level factor last time — reusing that").
+
+Metis has a Code Repository so the user never rebuilds the same script twice. Keep it filling itself as a standard part of your work:
+
+- **Before** writing something new, call **`scaffold_script(goal, project_id, language)`** (or `search_code_repository`) — reuse the user's prior code, variable names, paths, packages and conventions instead of starting from scratch.
+- **After** writing or substantially revising a reusable script, function or snippet, call **`register_code_artifact`** — pass `title`, `language`, `code`, `project_id`, a one-line `purpose`, `tags`, and crucially `packages` (deps + versions) and `params` (seeds, thresholds) for reproducibility, plus `file_path` if it lives on disk.
+- Never store secrets or patient/PII data in artifacts — store the code and schema, not data values.
