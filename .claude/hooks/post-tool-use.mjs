@@ -56,6 +56,39 @@ if (HOOK_PROFILE !== "minimal") {
   }
 }
 
+// ── Post-edit syntax check (standard + full) — the cheapest working-loop signal ─
+// After an Edit/Write to a code file, run a fast syntax check on JUST that file and
+// surface any error immediately. Non-blocking (warn only). Implements the in-the-
+// moment "run the external signal, don't trust the edit" discipline — a broken edit
+// should never sit silently. (Research: LLMs can't be trusted to self-judge code
+// without an external signal — Huang et al. 2310.01798.)
+if (HOOK_PROFILE !== "minimal" && (input?.tool_name === "Edit" || input?.tool_name === "Write")) {
+  const fp = input?.tool_input?.file_path || "";
+  try {
+    const { execFileSync } = await import("child_process");
+    const { existsSync } = await import("fs");
+    const run = (cmd, args) => {
+      try { execFileSync(cmd, args, { stdio: "pipe", timeout: 8000 }); return null; }
+      catch (e) { return ((e.stderr && e.stderr.toString()) || e.message || "").slice(0, 400); }
+    };
+    let err = null, kind = null;
+    if (/\.py$/.test(fp)) {
+      kind = "py_compile";
+      const venvPy = `${process.env.HOME || ""}/.local/share/metis-mcp/.venv/bin/python`;
+      err = run(existsSync(venvPy) ? venvPy : "python3", ["-m", "py_compile", fp]);
+    } else if (/\.sh$/.test(fp)) {
+      kind = "bash -n"; err = run("bash", ["-n", fp]);
+    } else if (/\.(mjs|js)$/.test(fp)) {
+      kind = "node --check"; err = run("node", ["--check", fp]);
+    }
+    if (err) {
+      process.stderr.write(
+        `\n⚠️  [Metis Verify] ${kind} FAILED after editing ${fp}:\n${err}\n   Fix this before continuing — the edit is broken.\n`
+      );
+    }
+  } catch { /* never block the session */ }
+}
+
 try {
   const { tool_name, tool_input, session_id } = input;
 
