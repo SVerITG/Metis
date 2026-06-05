@@ -1,32 +1,48 @@
-<div id="today-session-handoff" {% if sessions %}style="margin-bottom:20px;"{% endif %}>
-  {% for session in sessions %}
-  <div class="panel" style="padding:14px 20px;{% if not loop.last %}margin-bottom:8px;{% endif %}border-left:3px solid var(--m-accent);">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:{% if session.summary or session.decisions %}10px{% else %}0{% endif %};">
+<div id="today-session-handoff" {% if session or did %}style="margin-bottom:20px;"{% endif %}>
+  {% if session or did %}
+  <div class="panel" style="padding:14px 20px;border-left:3px solid var(--m-accent);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
       <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M8 1v6l4 2"/><circle cx="8" cy="8" r="7"/>
       </svg>
       <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);">LAST SESSION</span>
-      {% if session.date %}
-      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ session.date }}</span>
-      {% endif %}
-      {% if session.age_label %}
-      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">· {{ session.age_label }} ago</span>
+      {% if session and session.date %}<span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ session.date }}</span>{% endif %}
+      {% if session and session.age_label %}<span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">· {{ session.age_label }} ago</span>{% endif %}
+      {% if total_sessions %}
+      <button hx-get="/api/partial/today/all-sessions" hx-target="#all-sessions-modal" hx-swap="innerHTML"
+              title="See what every past session worked on"
+              style="margin-left:auto;font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.08em;padding:3px 10px;
+                     background:transparent;border:1px solid var(--m-rule-strong);border-radius:var(--m-radius);
+                     color:var(--m-text);cursor:pointer;">
+        ▤ ALL SESSIONS ({{ total_sessions }})
+      </button>
       {% endif %}
     </div>
-    {% if session.summary %}
-    <div style="font-size:13px;color:var(--m-ink);line-height:1.55;{% if session.decisions %}margin-bottom:12px;{% endif %}">
-      {{ session.summary }}
-    </div>
+
+    {% if did %}
+    <div style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:6px;">WHAT WE DID</div>
+    <ul style="margin:0 0 12px;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:5px;">
+      {% for d in did %}
+      <li style="font-size:12.5px;color:var(--m-ink);line-height:1.45;display:flex;gap:8px;">
+        <span style="font-family:var(--m-mono);font-size:8px;color:var(--m-accent);white-space:nowrap;padding-top:2px;">{{ d.agent_slug }}</span>
+        <span>{{ d.task_summary[:150] }}{% if d.task_summary|length > 150 %}…{% endif %}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% elif session and session.summary %}
+    <div style="font-size:13px;color:var(--m-ink);line-height:1.55;margin-bottom:12px;">{{ session.summary }}</div>
     {% endif %}
-    {% if session.decisions %}
+
+    {% if session and session.topics %}
     <div style="display:flex;flex-wrap:wrap;gap:5px;">
-      {% for d in session.decisions %}
+      {% for t in session.topics %}
       <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;padding:3px 8px;
-                   background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:2px;
-                   color:var(--m-muted);">{{ d[:64] }}{% if d|length > 64 %}…{% endif %}</span>
+                   background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:2px;color:var(--m-muted);">
+        {{ t[:48] }}{% if t|length > 48 %}…{% endif %}</span>
       {% endfor %}
     </div>
     {% endif %}
   </div>
-  {% endfor %}
+  {% endif %}
+  <div id="all-sessions-modal"></div>
 </div>
