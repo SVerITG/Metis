@@ -701,3 +701,45 @@ CREATE TABLE IF NOT EXISTS speakers (
     created_at  TEXT NOT NULL,
     updated_at  TEXT NOT NULL
 );
+
+-- ── Code Repository (reproducibility + code reuse) ──────────────────────────
+CREATE TABLE IF NOT EXISTS code_artifacts (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id  TEXT DEFAULT '',
+    title       TEXT NOT NULL,
+    language    TEXT DEFAULT '',
+    kind        TEXT DEFAULT 'script',
+    purpose     TEXT DEFAULT '',
+    tags        TEXT DEFAULT '',
+    code        TEXT DEFAULT '',
+    file_path   TEXT DEFAULT '',
+    packages    TEXT DEFAULT '',
+    params      TEXT DEFAULT '',
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS data_dictionary (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id    TEXT DEFAULT '',
+    dataset_name  TEXT NOT NULL,
+    dataset_path  TEXT DEFAULT '',
+    variable_name TEXT NOT NULL,
+    var_type      TEXT DEFAULT '',
+    label         TEXT DEFAULT '',
+    unique_values TEXT DEFAULT '',
+    units         TEXT DEFAULT '',
+    notes         TEXT DEFAULT '',
+    created_at    TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS dataset_treatments (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id     TEXT DEFAULT '',
+    dataset_name   TEXT NOT NULL,
+    step_order     INTEGER DEFAULT 0,
+    step_type      TEXT DEFAULT '',
+    description    TEXT DEFAULT '',
+    code           TEXT DEFAULT '',
+    input_dataset  TEXT DEFAULT '',
+    output_dataset TEXT DEFAULT '',
+    created_at     TEXT NOT NULL
+);

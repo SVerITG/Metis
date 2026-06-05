@@ -116,81 +116,82 @@ def _get_task_counts(conn, project_id: str) -> dict:
 
 @app.tool()
 async def get_project_status(project_id: str = "") -> list[TextContent]:
-    """Get status of active projects from their YAML frontmatter.
+    """Status of your registered projects.
 
-    Reads project card markdown files and queries the tasks table for
-    completion counts.
+    Reads the project REGISTRY (the `projects` table — the source of truth that
+    the dashboard Work tab shows), not just the folders on disk, and adds task
+    completion counts. Empty project_id lists ALL active projects; a specific
+    project_id (exact or partial) shows that one, enriched from its folder card
+    if a `projects/active/<name>/` folder exists.
 
     Args:
-        project_id: Specific project folder name. Empty string = all active projects.
+        project_id: Project id (or part of one). Empty string = all active projects.
     """
-    proj_dir = paths.projects_active
-    if not proj_dir.exists():
-        return [
-            TextContent(type="text", text=f"Projects directory not found: {proj_dir}")
-        ]
+    if not paths.db.exists():
+        return [TextContent(type="text", text="No project database found.")]
 
-    if project_id:
-        targets = [proj_dir / project_id]
-    else:
-        try:
-            targets = sorted(
-                d for d in proj_dir.iterdir() if d.is_dir() and not d.name.startswith(".")
-            )
-        except FileNotFoundError:
-            return [TextContent(type="text", text="No active projects found.")]
+    def _folder_card(name: str) -> dict:
+        """Frontmatter from a matching projects/active/<name>/*.md card, if any."""
+        d = paths.projects_active / name
+        if d.is_dir():
+            for mf in d.glob("*.md"):
+                try:
+                    fm = _parse_frontmatter(mf.read_text(encoding="utf-8"))
+                    if fm:
+                        return fm
+                except (OSError, UnicodeDecodeError):
+                    continue
+        return {}
 
-    if not targets:
-        return [TextContent(type="text", text="No active projects found.")]
+    try:
+        with connect(paths.db) as conn:
+            if project_id:
+                row = conn.execute(
+                    "SELECT project_id, title, status, priority, next_step, description "
+                    "FROM projects WHERE project_id = ? OR project_id LIKE ? "
+                    "OR title LIKE ? LIMIT 1",
+                    (project_id, f"%{project_id}%", f"%{project_id}%"),
+                ).fetchone()
+                rows = [row] if row else []
+                if not rows:
+                    return [TextContent(type="text", text=f"No registered project matches '{project_id}'.")]
+            else:
+                rows = conn.execute(
+                    "SELECT project_id, title, status, priority, next_step, description "
+                    "FROM projects WHERE COALESCE(status,'') != 'archived' "
+                    "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 "
+                    "ELSE 3 END, title"
+                ).fetchall()
+                if not rows:
+                    return [TextContent(type="text", text="No active projects registered.")]
 
-    # Open DB once for task counts
-    db_available = paths.db.exists()
-    sections = []
+            sections = []
+            for r in rows:
+                pid, title = r[0], r[1] or r[0]
+                status, priority, nxt, desc = r[2] or "active", r[3] or "", r[4] or "", r[5] or ""
+                section = f"## {title}\n- **ID:** {pid}\n- **Status:** {status}"
+                if priority:
+                    section += f"\n- **Priority:** {priority}"
+                if nxt:
+                    section += f"\n- **Next step:** {nxt}"
+                if project_id and desc:
+                    section += f"\n- **About:** {desc}"
+                counts = _get_task_counts(conn, pid)
+                if counts:
+                    section += "\n- **Tasks:** " + ", ".join(
+                        f"{s}: {c}" for s, c in sorted(counts.items())
+                    )
+                # Enrich the single-project view with extra folder-card fields
+                if project_id:
+                    for k, v in _folder_card(pid).items():
+                        if k not in ("project_id", "title", "status", "priority", "next_step", "description", "owner"):
+                            section += f"\n- **{k}:** {v}"
+                sections.append(section)
+    except Exception as e:
+        return [TextContent(type="text", text=f"Could not read projects: {e}")]
 
-    for proj_path in targets:
-        if not proj_path.is_dir():
-            sections.append(f"## {proj_path.name}\n\n_Directory not found._")
-            continue
-
-        # Look for project card (any .md in project root)
-        md_files = list(proj_path.glob("*.md"))
-        fm = {}
-        for mf in md_files:
-            try:
-                fm = _parse_frontmatter(mf.read_text(encoding="utf-8"))
-                if fm:
-                    break
-            except (OSError, UnicodeDecodeError):
-                continue
-
-        pid = fm.get("project_id", proj_path.name)
-        title = fm.get("title", proj_path.name)
-        status = fm.get("status", "unknown")
-        owner = fm.get("owner", "")
-
-        section = f"## {title}\n- **ID:** {pid}\n- **Status:** {status}"
-        if owner:
-            section += f"\n- **Owner:** {owner}"
-
-        # Add remaining frontmatter fields
-        for k, v in fm.items():
-            if k not in ("project_id", "title", "status", "owner"):
-                section += f"\n- **{k}:** {v}"
-
-        # Task counts
-        if db_available:
-            try:
-                with connect(paths.db) as conn:
-                    counts = _get_task_counts(conn, pid)
-                    if counts:
-                        section += "\n- **Tasks:** " + ", ".join(
-                            f"{s}: {c}" for s, c in sorted(counts.items())
-                        )
-            except Exception:
-                pass
-
-        sections.append(section)
-
+    if not project_id:
+        sections.insert(0, f"**{len(rows)} active projects** in your Metis registry:")
     sections.append("\n---\n[Open Metis Dashboard](http://localhost:8080)")
     return [TextContent(type="text", text="\n\n".join(sections))]
 
