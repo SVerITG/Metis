@@ -150,12 +150,16 @@ def _user_topics() -> set[str]:
     return set()
 
 
-def _score_signal(title: str, summary: str, feed_name: str, user_topics: set[str]) -> str:
+def _score_signal(title: str, summary: str, feed_name: str,
+                  user_topics: set[str], sem: float = 0.0) -> str:
     """Heuristic signal strength: 'high' | 'medium' | 'low'.
 
-    Replaces the old hardcoded 'medium'. Combines source authority, urgency
-    vocabulary, and relevance to the user's configured research topics so the
-    stored value is meaningful even before an agent re-scores at read time.
+    Combines source authority, urgency vocabulary, keyword overlap with the user's
+    configured topics, AND semantic closeness to the user's ACTUAL corpus (``sem``
+    = cosine similarity to the interest-profile centroid, see relevance.py). The
+    semantic term is what makes results "close to my work" rather than mere keyword
+    hits. Thresholds calibrated on the real corpus: relevant items cluster ~0.65+,
+    unrelated ~0.57-.
     """
     haystack = (title + " " + summary).lower()
     score = 0
@@ -164,7 +168,14 @@ def _score_signal(title: str, summary: str, feed_name: str, user_topics: set[str
     if any(w in haystack for w in _URGENCY_WORDS):
         score += 2  # an outbreak / approval / elimination is a strong signal on its own
     if user_topics and any(t in haystack for t in user_topics):
-        score += 2  # direct relevance to the researcher's own topics matters most
+        score += 2  # keyword overlap with configured topics
+    # Semantic relevance to the user's library/projects/ideas/meetings (local, no API)
+    if sem >= 0.64:
+        score += 3
+    elif sem >= 0.60:
+        score += 2
+    elif sem >= 0.575:
+        score += 1
     if score >= 3:
         return "high"
     if score >= 1:
@@ -178,10 +189,26 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
     user_topics = _user_topics()
     with _connect() as conn:
         conn.execute(_DDL_NEWS)
+        # Numeric semantic relevance (closeness to the user's corpus) for ranking.
+        try:
+            conn.execute("ALTER TABLE news_briefs ADD COLUMN relevance REAL DEFAULT 0")
+        except Exception:
+            pass
         conn.commit()
+
+        # Build the interest-profile centroid once (cached daily; local, no API).
+        centroid = None
+        _score_batch = None
+        try:
+            from metis_mcp.tools.relevance import build_centroid, score_batch as _score_batch
+            centroid = build_centroid(conn)
+        except Exception:
+            _score_batch = None
+
         for name, url, tags in FEED_ALLOWLIST:
             try:
                 parsed = feedparser.parse(url)
+                pending = []
                 for entry in parsed.entries[:max_per_feed]:
                     link = entry.get("link", "")
                     title = entry.get("title", "").strip()
@@ -191,21 +218,28 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
                         "SELECT 1 FROM news_briefs WHERE source_url=? LIMIT 1", (link,)
                     ).fetchone():
                         continue
-                    summary_raw = entry.get("summary", "")[:800]
+                    pending.append((title, entry.get("summary", "")[:800], link))
+                if not pending:
+                    continue
+                # One batched embedding call per feed (efficient).
+                sims = (_score_batch([f"{t}. {s}" for t, s, _ in pending], centroid)
+                        if _score_batch else [0.0] * len(pending))
+                for (title, summary_raw, link), sim in zip(pending, sims):
                     primary_domain = _classify_domain(title, summary_raw, tags)
-                    signal = _score_signal(title, summary_raw, name, user_topics)
+                    signal = _score_signal(title, summary_raw, name, user_topics, sim)
                     conn.execute(
                         """INSERT INTO news_briefs
-                           (title, domain, signal_strength, summary, source_url, created_at, tags, brief_date)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                           (title, domain, signal_strength, summary, source_url, created_at, tags, brief_date, relevance)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                         (title, primary_domain, signal, summary_raw, link,
-                         datetime.now().isoformat(), tags, datetime.now().date().isoformat()),
+                         datetime.now().isoformat(), tags, datetime.now().date().isoformat(),
+                         round(float(sim), 4)),
                     )
                     added += 1
             except Exception as e:
                 errors.append(f"{name}: {type(e).__name__}: {str(e)[:120]}")
         conn.commit()
-    return {"news_added": added, "errors": errors}
+    return {"news_added": added, "errors": errors, "semantic": centroid is not None}
 
 
 def scan_literature_folder() -> dict:
