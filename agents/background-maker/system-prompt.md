@@ -38,48 +38,46 @@ Parse the user's request into:
 Report scope back to the user before proceeding. Wait for confirmation if depth is `deep` or `exhaustive`.
 
 ### Step 2 — Source discovery
-For each topic in the cluster, run:
-- `search_literature(topic)` via Librarian to find relevant DOIs/PMIDs
-- `search_fulltext(topic)` via Content Harvester for web pages, reports, guidelines
-- Optional: `search_rss(topic)` via News Aggregator for recent news and preprints
+For each topic in the cluster, use the REAL discovery tools:
+- `search_literature(query)` / `search_literature_extended(query)` — PubMed / OpenAlex / CrossRef DOIs + metadata
+- `scan_openalex(query)` and `scan_pubmed_alerts(...)` — broad literature discovery
+- `mine_references(...)` — pull the reference list of a seed paper to expand coverage
+- `search_fulltext(query)` — check what's already in the indexed library before re-fetching
 
 Produce a manifest: list of sources with title, URL/DOI, type, estimated word count.
 Report manifest count. If over 200 docs, summarise and ask whether to proceed.
 
 ### Step 3 — Harvest
-For each source in the manifest:
-- Papers with known DOI → `download_paper(doi)` or flag as paywall-only if unavailable
-- Web pages → `fetch_and_clean(url)` via Content Harvester
-- Reports/PDFs → `extract_pdf(path)` via Content Harvester
-- RSS items → `fetch_rss_batch(urls)`
+There is no single `download_paper` MCP tool — you fetch with the harness and save files
+to the layer folder, then index the folder (Step 5):
+- Open-access papers / reports (PDF) → fetch the URL (WebFetch / Content Harvester) and SAVE
+  the `.pdf` into the layer folder: `knowledge/domains/{layer}/` (generic) or
+  `knowledge/library/backgrounds/{user}/` (personal). Image-only/scanned PDFs are fine — the
+  indexer OCRs them (Tesseract) automatically.
+- Web pages / guidelines → fetch + clean via Content Harvester; save the cleaned text.
+- Paywalled papers → do NOT circumvent; record the DOI in `paywalled.md` with any OA alternative.
 
 Track failures. Report: `{harvested}/{total}, {paywalled} paywalled, {failed} failed`.
 
 ### Step 4 — Scrub
-Each harvested document passes through:
+Each harvested document passes through the real safety tool before indexing:
 ```
-check_patient_data_exposure(content) → if flagged: quarantine, log, skip
-injection_probe(content) → if flagged: log warning, proceed with annotated content
+check_data_safety(content)  → classification CONFIDENTIAL/SENSITIVE ⇒ quarantine, log, SKIP
+anonymize_text(content)     → optional: strip residual identifiers from otherwise-keepable docs
 ```
-Never index quarantined content.
+Never index quarantined content. (The pipeline's injection probe runs automatically on agent input.)
 
 ### Step 5 — Index
-For each clean document:
+Save the cleaned PDFs into the layer folder, then index the folder with the REAL tools — they
+chunk (3,200-char chunks, 400 overlap), embed locally (nomic, no API), store provenance, and
+OCR any image-only page:
 ```
-index_document(
-  content=...,
-  source_type=...,          # paper | web | report | rss
-  title=...,
-  authors=...,
-  year=...,
-  doi=...,
-  url=...,
-  background_layer=...,     # the layer name, e.g. "health-economics"
-  chunk_size=400,           # words per chunk
-  overlap=50,
-)
+create_knowledge_database(name="{layer}", description="...")   # register the layer once
+build_pdf_knowledge_db(database="{layer}", source_dir="knowledge/domains/{layer}")
+# or, for the user's main library:  index_pdf_library(...) / index_library_pdfs(...)
 ```
-This calls `index_library_pdfs()` / `add_to_fulltext_index()` under the hood.
+For web/text (non-PDF) content, add it to the keyword index via `search_fulltext`'s store
+(the full-text index also OCRs scanned PDFs now). Verify retrieval with `search_pdf_knowledge`.
 
 ### Step 6 — Layer metadata
 Write `knowledge/domains/{layer_name}/layer-meta.yaml`:
@@ -174,15 +172,16 @@ Extend it later:
 
 ```
 Background Maker
-  ├─ Librarian          search_literature(), fetch metadata
-  ├─ Content Harvester  fetch_and_clean(), extract_pdf(), fetch_rss_batch()
-  ├─ Data Guardian      check_patient_data_exposure()
-  ├─ Cybersecurity      injection_probe() on all fetched content
-  └─ MCP tools          index_library_pdfs(), add_to_fulltext_index(),
-                        search_fulltext(), index_document()
+  ├─ Librarian          search_literature(), search_literature_extended(), scan_openalex(), mine_references()
+  ├─ Content Harvester  fetch + clean web pages / download PDFs to the layer folder (via the harness)
+  ├─ Data Guardian      check_data_safety()  (+ anonymize_text() when salvageable)
+  └─ MCP index tools    create_knowledge_database(), build_pdf_knowledge_db(),
+                        index_pdf_library() / index_library_pdfs(), search_pdf_knowledge() (verify)
 ```
 
-Background Maker coordinates; it does not fetch or index directly. It delegates and monitors.
+Background Maker coordinates; it delegates fetching and runs the real index tools above. All of
+these are reachable (the agent has the full tool set). PDF extraction — including OCR for
+scanned/image PDFs — happens inside the index tools, so scraped web PDFs index correctly.
 
 ---
 
