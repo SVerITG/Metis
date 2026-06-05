@@ -187,6 +187,12 @@ def _cross_pollinate_core(content: str, max_results: int = 5) -> list[dict]:
                               keywords, "news", sql_hits, max_results)
                 _search_table(conn, "ideas", ["content", "title"],
                               keywords, "idea", sql_hits, max_results)
+                # Registered projects — so a brainstorm connects to your actual work
+                _search_table(conn, "projects", ["title", "description", "next_step"],
+                              keywords, "project", sql_hits, max_results)
+                # Personal notes
+                _search_table(conn, "personal_notes", ["title", "content"],
+                              keywords, "note", sql_hits, max_results)
         except Exception:
             pass
 
@@ -801,6 +807,10 @@ async def assemble_brainstorm_context(
         "news": ("news_briefs", "SELECT title, summary FROM news_briefs ORDER BY rowid DESC LIMIT 20", ["title", "summary"]),
         "ideas": ("ideas", "SELECT content, tags, created_at FROM ideas ORDER BY created_at DESC LIMIT 30", ["content", "tags", "created_at"]),
         "journal": ("journal_entries", "SELECT content, mood, created_at FROM journal_entries ORDER BY created_at DESC LIMIT 15", ["content", "mood", "created_at"]),
+        # Registered projects + personal notes — so a brainstorm cross-pollinates
+        # against your actual work, not just library/news.
+        "projects": ("projects", "SELECT title, next_step, description FROM projects WHERE COALESCE(status,'') != 'archived' ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END, title", ["title", "next_step", "description"]),
+        "notes": ("personal_notes", "SELECT title, content, created_at FROM personal_notes ORDER BY created_at DESC LIMIT 20", ["title", "content", "created_at"]),
     }
 
     try:

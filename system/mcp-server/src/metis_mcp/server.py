@@ -31,7 +31,7 @@ TOOL_MODULES = [
     "user_profile", "literature_monitor", "meetings", "course_builder",
     "paperqa_search", "voice_capture", "knowledge_db", "session_memory",
     "memory_curator", "research", "research_timeline", "project_tracker", "dhis2",
-    "discovery", "prompts",
+    "discovery", "code_repository", "prompts",
 ]
 
 LOADED_MODULES: list[str] = []
