@@ -95,10 +95,15 @@
         {% if sc['items'] %}
         <div style="margin-top:6px;">
           {% for item in sc['items'] %}
-          <a class="news-rail-item" href="{{ item.url }}" target="_blank" rel="noopener"
+          <a class="news-rail-item" href="{{ item.source_url or item.url or '#' }}" target="_blank" rel="noopener"
              style="text-decoration:none;display:block;">
             <div class="news-rail-item-meta">
               <span class="news-rail-item-time">{{ item.time }}</span>
+              {% if item.match == 'top' %}
+              <span class="news-rail-item-signal high" title="Close to your library, projects and interests">✦ your work</span>
+              {% elif item.match == 'yes' %}
+              <span class="news-rail-item-signal medium" title="Related to your work">✦ relevant</span>
+              {% endif %}
               {% if item.signal %}
               <span class="news-rail-item-signal {{ item.signal_class }}">{{ item.signal }}</span>
               {% endif %}
