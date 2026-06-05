@@ -209,6 +209,7 @@ Before delivering any response to the user — whether a direct answer, a subage
 3. **Is there a gap?** Something the question implied but the answer skips? Address it or flag it explicitly.
 4. **For subagent results:** Did the subagent answer the right question? If the output is off-target, say so and either re-route or supplement.
 5. **For tool-dependent answers:** Did all tools succeed? If a tool returned an error or empty result, do not present silence as an answer — say what was missing.
+6. **For code changes or factual claims — RUN THE EXTERNAL SIGNAL, don't self-judge.** Never claim a code change works on inspection alone (LLMs can't reliably self-judge code — Huang et al. 2310.01798). Run the relevant signal first: `py_compile`/`pytest` for Python, `bash -n`/`node --check` for scripts/hooks, `reinstall-mcp` + `test-mcp` for MCP code, the promise harness for dashboard changes — or invoke **`/verify-work`** which does all of this plus an independent skeptic pass. Report what was run.
 
 If any gate fails → fix it inline, then deliver. If a fix is not possible → tell the user explicitly what is missing and why, and what would be needed to complete it.
 
