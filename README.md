@@ -65,6 +65,30 @@
 
 ---
 
+## See it in action
+
+<p align="center">
+  <img src="docs/Scene1.gif" alt="Metis morning brief — overnight research connected to your work" width="760"/><br>
+  <em>The morning brief — overnight research tied to your projects, notes, ideas and a meeting. Switch daily ↔ weekly, then brainstorm it in Claude.</em>
+</p>
+
+<p align="center">
+  <img src="docs/Scene2.gif" alt="Idea mindmap and creativity-tuned brainstorm" width="760"/><br>
+  <em>Your ideas as a living mindmap — themes branch out, connections show as links. Brainstorm any thread in Claude Desktop, tuned for creativity.</em>
+</p>
+
+<p align="center">
+  <img src="docs/Scene4.gif" alt="The silent layer in Claude Desktop" width="760"/><br>
+  <em>The silent layer — Metis pulls your projects, notes and library straight into the conversation, so you never re-explain your work.</em>
+</p>
+
+<p align="center">
+  <img src="docs/Scene5.gif" alt="Metis reviews and improves its own work" width="760"/><br>
+  <em>Metis reviews its own work and proposes its own improvements — the self-improvement loop, in plan mode.</em>
+</p>
+
+---
+
 ## Why researchers trust it
 
 - **📚 It cites your own sources.** Every knowledge answer is drawn from *your* indexed library, with document- and page-level citations — not the model's guesses.
