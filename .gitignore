@@ -256,3 +256,7 @@ metis/system/config/mcp-health.json
 
 # PaperQA runtime index cache (rebuilt at runtime by paperqa_search.py)
 system/app/data/paperqa_index/
+
+# The /basket SKILL is code (the top-level basket/ data drop-zone stays ignored)
+!.claude/skills/basket/
+!.claude/skills/basket/**

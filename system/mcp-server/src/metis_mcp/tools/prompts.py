@@ -270,9 +270,41 @@ def _safe_analysis(request: str = "") -> str:
     )
 
 
+def _basket(request: str = "") -> str:
+    return (
+        "Process the researcher's **basket** — the drop-zone `basket/` where they toss "
+        "documents without filing them. Steps: call `list_basket()` (NEVER touch `basket/private/`); "
+        "for each item infer what it is from the name + a short `read_file()` peek; propose a "
+        "destination (papers→`inputs/literature/<topic>/`, scripts→`inputs/code/`, meeting notes→"
+        "`inputs/meetings/`, course material→`knowledge/courses/`, datasets→run `check_data_safety` "
+        "first and if CONFIDENTIAL/SENSITIVE route to `basket/private/`). Ask a SHORT questionnaire "
+        "(1–3 questions, batched by type) to confirm, then `promote_basket_item(source_path, target_path)` "
+        "each confirmed file. Report what moved where, and offer the next step (index papers via Librarian, "
+        "profile datasets via Data Analyst, structure notes via Meeting Memory)."
+        + (f"\nContext: {request}\n" if request else "")
+    )
+
+
+def _research_mode(request: str = "") -> str:
+    return (
+        "Answer in **research mode — library first, then the web, linked to the researcher's work.**\n"
+        "1. Recall their work: `surface_relevant_context(query=...)` (past sessions/findings/projects).\n"
+        "2. Library first: `search_pdf_knowledge(...)` + `search_fulltext(...)` (route per rag-routing-rules). "
+        "If the library answers it, answer from it with page-level citations, link to their work, and STOP.\n"
+        "3. If the library is thin/stale, SAY SO and **ask permission before going to the internet** "
+        "(Metis is local-first; never fetch silently, never send their data to look something up).\n"
+        "4. On approval, complement via `search_literature`/`scan_openalex` (+ Content Harvester for open-access). "
+        "Synthesise, clearly separating LIBRARY (cited, page-level) vs WEB (URL/DOI) vs inference, and tie it to "
+        "their projects/findings. Offer to index useful new sources into a background layer so next time it's local.\n"
+        + (f"\nQuestion: {request}\n" if request else "")
+    )
+
+
 _WORKFLOW_PROMPTS = {
     "metis-morning": ("Morning briefing — tasks, inbox, news, new papers, today's focus", _morning),
     "safe-analysis": ("Analyse sensitive data without sending it — send code, not data", _safe_analysis),
+    "basket": ("Process the basket — classify dropped documents and file them into the right folders", _basket),
+    "research-mode": ("Library-first answer, complemented from the web (with your OK), linked to your work", _research_mode),
     "metis-research": ("Start/continue a research session on an article", _research),
     "metis-capture": ("Quick-capture an idea, task, or note into Metis", _capture),
     "metis-handoff": ("Generate a portable context handoff brief", _handoff),
