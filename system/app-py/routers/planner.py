@@ -199,7 +199,7 @@ async def planner_focus(request: Request):
     phd = db_query(
         "SELECT project_id, title, next_step FROM projects "
         "WHERE status = 'active' AND COALESCE(domain,'') NOT LIKE '%phd%' "
-        "  AND project_id NOT IN ('personal','phd-framework') "
+        "  AND project_id NOT IN ('personal') "
         "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END LIMIT 6"
     )
     tasks_phd = db_query(
@@ -208,7 +208,7 @@ async def planner_focus(request: Request):
         "WHERE t.status NOT IN ('done','cancelled') "
         "  AND p.status = 'active' "
         "  AND COALESCE(p.domain,'') NOT LIKE '%phd%' "
-        "  AND t.project_id NOT IN ('personal','phd-framework') "
+        "  AND t.project_id NOT IN ('personal') "
         "ORDER BY CASE COALESCE(t.priority,'medium') WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END LIMIT 10"
     )
     return templates.TemplateResponse(

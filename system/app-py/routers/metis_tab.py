@@ -629,6 +629,21 @@ async def improvement_reject(proposal_id: int, request: Request):
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
+def _mask_home(p) -> str:
+    """In demo mode, hide the real home directory + username in displayed paths
+    so screenshots/recordings don't leak them. No-op outside demo mode."""
+    s = str(p)
+    if os.environ.get("METIS_DEMO") != "1":
+        return s
+    import re as _re
+    home = str(Path.home())
+    if home and s.startswith(home):
+        s = "~" + s[len(home):]
+    s = _re.sub(r"/home/[^/]+/", "~/", s)
+    s = _re.sub(r"[A-Za-z]:[\\/]Users[\\/][^\\/]+[\\/]", "~/", s)
+    return s
+
+
 @router.get("/api/partial/metis/system-info", response_class=HTMLResponse)
 async def metis_system_info(request: Request):
     rc_root = os.environ.get("METIS_RC_ROOT", "unknown")
@@ -648,8 +663,8 @@ async def metis_system_info(request: Request):
         request,
         "partials/metis_system_info.html",
         {
-            "rc_root": rc_root,
-            "db_path": db_path,
+            "rc_root": _mask_home(rc_root),
+            "db_path": _mask_home(db_path),
             "db_size_kb": db_size_kb,
         },
     )
@@ -1420,7 +1435,7 @@ To opt out of Metis mode for one message: start it with "direct:" and respond as
         {
             "mode": mode,
             "claude_md_exists": claude_md_exists,
-            "claude_md_path": str(_CLAUDE_MD_PATH),
+            "claude_md_path": _mask_home(str(_CLAUDE_MD_PATH)),
             "desktop_prompt": desktop_prompt,
             "user_name": name,
         },

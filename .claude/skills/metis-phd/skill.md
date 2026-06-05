@@ -16,14 +16,14 @@ A focused PhD status brief: article progress, thesis alignment, next milestone, 
 **Optional:** `/metis_phd article-1` (or `article-2`, `article-3`) — deep-dive on one article
 
 **Step 1 — Pull PhD data**
-- `get_project_status()` — find `phd-framework` project
-- `get_tasks(project="phd-framework")` — PhD-tagged tasks
+- `get_project_status()` — find `my-thesis` project
+- `get_tasks(project="my-thesis")` — PhD-tagged tasks
 - `get_tasks(project="article-1")` — article 1 tasks
 - `get_tasks(project="article-2")` — article 2 tasks
 - `get_notes(tags="phd")` — any PhD-tagged notes from the last 14 days
 
 **Step 2 — Read the PhD framework PLANNING.md**
-Path: `C:/Users/{username}/[path-to-phd-framework]/PLANNING.md`
+Path: `C:/Users/{username}/[path-to-my-thesis]/PLANNING.md`
 Extract: thesis topic summary, article titles, alignment status per article, most time-pressured item.
 
 **Step 3 — Check PhD domain notes**
@@ -39,7 +39,7 @@ Structure:
 5. **PhD-tagged tasks** — any open tasks relevant to PhD work
 
 **Step 5 — Log**
-`log_agent_run([], "phd-architect", "PhD status brief", "phd-framework/PLANNING.md", "outputs/reviews/phd-architect/...")`
+`log_agent_run([], "phd-architect", "PhD status brief", "my-thesis/PLANNING.md", "outputs/reviews/phd-architect/...")`
 
 ## Output format
 
