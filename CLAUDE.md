@@ -78,6 +78,8 @@ This is the Metis Research Cortex — a second-brain for researchers in any fiel
 | `/metis-doctor` | Metis Doctor | Health check — is Metis working on this computer? Plain-language diagnostic of Python, DB, API key, RAG engine, dashboard, Desktop registration |
 | `/metis-customize` | Metis Customize | Make Metis yours — change projects, look, tone, or behaviour (routes structural changes to RC Builder; shows the safety disclaimer) |
 | `/verify-work` | Verify Work | The in-the-moment generate→verify gate: after a code change, run the external signals (py_compile/tests/reinstall+smoke/harness) + an independent skeptic before trusting it's done. The working-loop tier of self-reflexion. |
+| `/basket` | Basket Intake | Drop documents in `basket/`, then this lists + classifies them (infers what each is, scans datasets for sensitive data), asks a short questionnaire, and promotes each to the right input folder (`inputs/literature`, `inputs/code`, knowledge layers…). Never touches `basket/private/`. |
+| `/research-mode` | Research Mode | Library-first answers: searches your indexed library + memory first, complements from the internet only on a real gap and with your OK (local-first), and links the cited answer back to your projects and work. |
 
 **RC workflow commands:**
 
