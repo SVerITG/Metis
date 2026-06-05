@@ -21,7 +21,7 @@ OUT_DIR="$RC_ROOT/outputs/reviews/metis-evaluation"
 OUT_FILE="$OUT_DIR/${DATE}_promise-check.md"
 mkdir -p "$OUT_DIR"
 
-PASS=0; FAIL=0; WARN=0
+PASS=0; FAIL=0; WARN=0; SKIP=0
 RESULTS=()
 
 log() {
@@ -31,12 +31,39 @@ log() {
     PASS) PASS=$((PASS+1)); RESULTS+=("| ✅ PASS | $msg |") ;;
     FAIL) FAIL=$((FAIL+1)); RESULTS+=("| 🔴 FAIL | $msg |") ;;
     WARN) WARN=$((WARN+1)); RESULTS+=("| 🟡 WARN | $msg |") ;;
+    SKIP) SKIP=$((SKIP+1)); RESULTS+=("| ⚪ SKIP | $msg |") ;;
   esac
   echo "[$status] $msg"
 }
 
+# ── Preflight: the dashboard must be UP for HTTP checks to be meaningful ──────
+# Lesson from the 2026-06-04 self-reflexion: a dashboard that wasn't running yet
+# produced 25 false FAILs. A down dashboard is an unknown, not a failure — so we
+# try to start it once, then SKIP (not FAIL) the HTTP/UI checks if it stays down.
+DASHBOARD_UP=1
+preflight_dashboard() {
+  local code
+  code=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/" --max-time 5 || echo "000")
+  [[ "$code" == "200" ]] && return
+  echo "Dashboard not reachable at $BASE — attempting to start it once…"
+  ( cd "$RC_ROOT/system/app-py" && nohup bash run.sh >/tmp/metis-harness-dash.log 2>&1 & ) || true
+  local i
+  for i in 1 2 3 4 5 6 7 8; do
+    sleep 3
+    code=$(curl -s -o /dev/null -w "%{http_code}" "$BASE/" --max-time 5 || echo "000")
+    [[ "$code" == "200" ]] && { echo "Dashboard came up."; return; }
+  done
+  DASHBOARD_UP=0
+  echo ""
+  echo "⚠️  DASHBOARD IS DOWN — HTTP and UI checks will be SKIPPED (not failed)."
+  echo "    Start it:  bash system/app-py/run.sh   then re-run this harness."
+  echo ""
+}
+preflight_dashboard
+
 check_endpoint() {
   local label="$1" path="$2" expected="${3:-200}"
+  if [[ "$DASHBOARD_UP" == "0" ]]; then log SKIP "$label → $path (dashboard down)"; return; fi
   local code
   code=$(curl -s -o /dev/null -w "%{http_code}" "$BASE$path" --max-time 10 || echo "000")
   if [[ "$code" == "$expected" ]]; then
@@ -50,6 +77,7 @@ check_endpoint() {
 
 check_endpoint_post() {
   local label="$1" path="$2" body="$3" expected="${4:-200}"
+  if [[ "$DASHBOARD_UP" == "0" ]]; then log SKIP "$label → POST $path (dashboard down)"; return; fi
   local code
   code=$(curl -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d "$body" "$BASE$path" --max-time 10 || echo "000")
   if [[ "$code" == "$expected" ]]; then
@@ -287,14 +315,77 @@ for a in agents:
 fi
 
 # ============================================================================
+# Section 10 — Backend static analysis (deterministic floor)
+# ============================================================================
+# Research: deterministic, hand-written checks beat model judgment. py_compile
+# every source file — catches syntax / indentation / import-time breakage that
+# an AI code review can miss.
+section "Backend static analysis (deterministic)"
+PYBIN="$HOME/.local/share/metis-mcp/.venv/bin/python"
+[[ -x "$PYBIN" ]] || PYBIN="python3"
+pyc_out=$(METIS_RC_ROOT="$RC_ROOT" "$PYBIN" - <<'PYEOF' 2>/dev/null
+import os, py_compile
+root = os.environ["METIS_RC_ROOT"]
+bad = []
+for sub in ("system/app-py", "system/mcp-server/src"):
+    for dp, dn, fn in os.walk(os.path.join(root, sub)):
+        if any(x in dp for x in (".venv", "__pycache__", "node_modules", ".git")):
+            continue
+        for f in fn:
+            if f.endswith(".py"):
+                try:
+                    py_compile.compile(os.path.join(dp, f), doraise=True)
+                except Exception:
+                    bad.append(os.path.join(dp, f).replace(root + "/", ""))
+print(len(bad))
+for p in bad[:8]:
+    print(p)
+PYEOF
+)
+n_py=$(echo "$pyc_out" | head -1)
+if [[ "$n_py" == "0" ]]; then
+  log PASS "All Python source files compile (py_compile)"
+elif [[ -z "$n_py" ]]; then
+  log WARN "py_compile sweep produced no output (interpreter missing?)"
+else
+  echo "$pyc_out" | tail -n +2 | while IFS= read -r f; do [[ -n "$f" ]] && log FAIL "Python compile error → $f"; done
+fi
+
+# ============================================================================
+# Section 11 — Dashboard UI / accessibility sanity (deterministic)
+# ============================================================================
+# Dependency-free a11y/health signals on rendered HTML: lang attribute, a title,
+# no unrendered template tags, no leaked tracebacks. A deterministic frontend
+# floor (axe/Playwright would deepen this but need a browser toolchain).
+section "Dashboard UI / a11y sanity (deterministic)"
+if [[ "$DASHBOARD_UP" == "0" ]]; then
+  log SKIP "UI sanity — dashboard down"
+else
+  for tab in / /today /knowledge /work /metis; do
+    html=$(curl -s "$BASE$tab" --max-time 10 || echo "")
+    if [[ -z "$html" ]]; then log FAIL "UI $tab returned an empty body"; continue; fi
+    issues=""
+    echo "$html" | grep -qi '<html[^>]* lang=' || issues="${issues} no-lang"
+    echo "$html" | grep -qi '<title'           || issues="${issues} no-title"
+    echo "$html" | grep -q  '{{'                && issues="${issues} unrendered-template"
+    echo "$html" | grep -qiE 'jinja2\.|traceback \(most recent|internal server error' && issues="${issues} error-leak"
+    if [[ -z "$issues" ]]; then
+      log PASS "UI $tab — lang + title present, no template/error leaks"
+    else
+      log WARN "UI $tab — sanity issues:${issues}"
+    fi
+  done
+fi
+
+# ============================================================================
 # Render report
 # ============================================================================
-TOTAL=$((PASS+FAIL+WARN))
+TOTAL=$((PASS+FAIL+WARN+SKIP))
 {
   echo "# Metis Promise Check — $DATE"
   echo ""
-  echo "**Base URL:** $BASE"
-  echo "**Total checks:** $TOTAL · ✅ $PASS · 🔴 $FAIL · 🟡 $WARN"
+  echo "**Base URL:** $BASE  ·  **Dashboard up:** $([[ "$DASHBOARD_UP" == "1" ]] && echo yes || echo NO)"
+  echo "**Total checks:** $TOTAL · ✅ $PASS · 🔴 $FAIL · 🟡 $WARN · ⚪ $SKIP"
   echo ""
   printf '%s\n' "${RESULTS[@]}"
   echo ""
@@ -303,10 +394,18 @@ TOTAL=$((PASS+FAIL+WARN))
   echo "Re-run: \`bash tests/functional/run_metis_promises.sh\`"
 } > "$OUT_FILE"
 
+# ── Drift time-series: append this run so regressions are visible across audits ─
+TREND_FILE="$OUT_DIR/promise-trend.jsonl"
+printf '{"date":"%s","pass":%d,"fail":%d,"warn":%d,"skip":%d,"total":%d,"dashboard_up":%s}\n' \
+  "$DATE" "$PASS" "$FAIL" "$WARN" "$SKIP" "$TOTAL" "$([[ "$DASHBOARD_UP" == "1" ]] && echo true || echo false)" \
+  >> "$TREND_FILE"
+
 echo ""
 echo "=========================================="
-echo "RESULT — ✅ $PASS · 🔴 $FAIL · 🟡 $WARN  (out of $TOTAL)"
+echo "RESULT — ✅ $PASS · 🔴 $FAIL · 🟡 $WARN · ⚪ $SKIP  (out of $TOTAL)"
+[[ "$DASHBOARD_UP" == "0" ]] && echo "NOTE: dashboard was down — HTTP/UI checks SKIPPED, not failed."
 echo "Report written to: $OUT_FILE"
+echo "Trend appended to: $TREND_FILE"
 echo "=========================================="
 
 # Exit non-zero if any failures

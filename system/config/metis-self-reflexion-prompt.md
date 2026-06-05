@@ -26,6 +26,26 @@ If a feature is built but not reachable from the UI, the user has lost it. Count
 
 ---
 
+## Trustworthy self-evaluation — how not to fool ourselves
+
+An LLM auditing its own project is, by default, an unreliable judge. The evidence:
+- Models **cannot intrinsically self-correct reasoning** and often *degrade* after self-revision when there is no external signal — Huang et al., *"LLMs Cannot Self-Correct Reasoning Yet"* (arXiv:2310.01798).
+- LLM-as-a-judge carries **self-preference, position and verbosity bias** (arXiv:2410.21819; llm-judge-bias.github.io).
+- Even AI *verifiers* are noisy; **hand-written deterministic checks** have far lower error than model judgment (SWE-bench correctness work, UTBoost arXiv:2506.09289).
+- What works is **external grounding**: tool/test execution, ground truth, and an **independent verifier** (Reflexion; CRITIC arXiv:2305.11738).
+
+This was proven here on 2026-06-04: an unverified pass reported **25 "failures"** (all a down-dashboard artefact) and **4 false "broken"** findings the verifier later refuted. Therefore every run of this audit obeys these rules:
+
+1. **Run the external signal before asserting.** The harness, the tests, `py_compile`, a real `curl`. Deterministic checks beat model opinion.
+2. **Every high/critical finding gets an independent verifier** — a fresh-context agent (ideally a *different model*) instructed to REFUTE it. Default to "refuted" on doubt; majority-refute kills it. The finder never grades itself (self-preference bias).
+3. **Every finding carries an executable acceptance test** — "how would we *prove* it's fixed?" No acceptance test → hypothesis, not result.
+4. **Score per-criterion with written justification**, not one holistic number (de-biasing). Severity cites file:line / command output.
+5. **Preconditions first.** Confirm the dashboard is up before any HTTP/UI assertion (down = SKIP, not FAIL). The harness self-guards this.
+6. **Only verified findings reach durable memory** (`store_semantic_memory`, `record_research_finding`). Expire unconfirmed self-critique rather than promoting it.
+7. **Track drift as a time series** (`outputs/reviews/metis-evaluation/promise-trend.jsonl`) so regressions are visible across audits, not just within one.
+
+---
+
 ## Section A — Vision and intention alignment
 
 Read these four files in full before anything else:
