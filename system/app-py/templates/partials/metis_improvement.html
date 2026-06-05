@@ -13,10 +13,19 @@
         {% endif %}
       </div>
     </div>
-    <span class="tail" style="cursor:pointer;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);"
-          hx-get="/api/partial/metis/improvement"
-          hx-target="#metis-improvement-body"
-          hx-swap="innerHTML">REFRESH</span>
+    <div style="display:flex;align-items:center;gap:14px;flex-shrink:0;">
+      <button type="button" onclick="improveMetisOODA()"
+              style="display:inline-flex;align-items:center;gap:7px;background:var(--m-accent);color:#fff;border:0;
+                     border-radius:var(--m-radius);padding:7px 14px;font-family:var(--m-mono);font-size:9px;
+                     letter-spacing:0.12em;cursor:pointer;white-space:nowrap;"
+              title="Opens Claude (Code recommended) primed to run an OODA self-improvement cycle over your reflexions — Observe · Orient · Decide · Act, in plan mode.">
+        ✦ IMPROVE METIS (OODA)
+      </button>
+      <span class="tail" style="cursor:pointer;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);"
+            hx-get="/api/partial/metis/improvement"
+            hx-target="#metis-improvement-body"
+            hx-swap="innerHTML">REFRESH</span>
+    </div>
   </div>
 </div>
 

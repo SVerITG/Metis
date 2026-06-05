@@ -128,8 +128,12 @@ metis/system/install/*.log
 # PH-specific seeding scripts
 metis/system/install/seed_ph_database.py
 
-# Demo/mockup seeding scripts (personal only)
+# Demo/mockup seeding + filming tools (personal only — never publish)
 metis/system/install/seed_mockup_demo.py
+system/install/seed_mockup_demo.py
+system/install/setup_demo_root.py
+system/install/demo_setup.sh
+.claude/skills/demo-builder/
 
 # Test suite (personal only — not published to public repos)
 metis/system/tests/

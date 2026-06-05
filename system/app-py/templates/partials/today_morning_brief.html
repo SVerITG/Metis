@@ -1,3 +1,4 @@
+{% set period = period|default('daily') %}
 <div class="panel" id="morning-brief" style="margin-bottom:28px;">
 
   <!-- Collapsible header -->
@@ -8,7 +9,16 @@
       <circle cx="8" cy="8" r="5.5"/>
       <polygon points="8 4 10 8 8 12 6 8"/>
     </svg>
-    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);">MORNING BRIEFING</span>
+    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);">{% if period == 'weekly' %}WEEKLY BRIEFING{% else %}MORNING BRIEFING{% endif %}</span>
+    <!-- Daily ↔ Weekly toggle (doesn't collapse the brief) -->
+    <div style="display:inline-flex;border:1px solid var(--m-rule-soft);border-radius:3px;overflow:hidden;" onclick="event.stopPropagation()">
+      <button type="button"
+              hx-get="/api/partial/today/morning-brief?period=daily" hx-target="#morning-brief" hx-swap="outerHTML"
+              style="border:0;background:{% if period != 'weekly' %}var(--m-accent){% else %}transparent{% endif %};color:{% if period != 'weekly' %}#fff{% else %}var(--m-muted){% endif %};font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:3px 9px;cursor:pointer;">DAILY</button>
+      <button type="button"
+              hx-get="/api/partial/today/morning-brief?period=weekly" hx-target="#morning-brief" hx-swap="outerHTML"
+              style="border:0;border-left:1px solid var(--m-rule-soft);background:{% if period == 'weekly' %}var(--m-accent){% else %}transparent{% endif %};color:{% if period == 'weekly' %}#fff{% else %}var(--m-muted){% endif %};font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:3px 9px;cursor:pointer;">WEEKLY</button>
+    </div>
     <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">·</span>
     {% if brief %}
       <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
@@ -126,6 +136,15 @@
       <span style="font-family:var(--m-mono);font-size:8.5px;color:var(--m-muted);" id="brief-timestamp">
         {% if brief %}Brief generated today{% else %}Not yet generated{% endif %}
       </span>
+      {% if brief %}
+      <button type="button" onclick="brainstormFromBrief()"
+         title="Brainstorm from today's brief in Claude Desktop — pulls the work, notes and ideas it connects. Also copies the prompt so you can paste it into a Temporary chat."
+         style="margin-left:auto;padding:5px 14px;font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;
+                background:var(--m-accent);border:1px solid var(--m-accent);border-radius:var(--m-radius);
+                color:#fff;cursor:pointer;white-space:nowrap;">
+        ✦ BRAINSTORM THIS
+      </button>
+      {% endif %}
       {%- set claude_brief_prompt -%}
 Produce my Metis daily brief now. Using the metis-rc tools: scan today's news and any new literature, rank the items by closeness to my work, write a short brief of the 5-7 most relevant items (most relevant first, one line each with why it matters), and save it with the Metis tool so it shows on my dashboard. Then show me the brief.
       {%- endset -%}
@@ -138,6 +157,7 @@ Produce my Metis daily brief now. Using the metis-rc tools: scan today's news an
       </a>
       <button
         hx-post="/api/morning-brief/refresh"
+        hx-vals='{"period": "{{ period }}"}'
         hx-target="#morning-brief"
         hx-swap="outerHTML"
         hx-indicator="#brief-spinner"

@@ -1005,16 +1005,17 @@ def _get_api_key() -> str:
 # ---------------------------------------------------------------------------
 
 
-def _get_or_generate_brief(force: bool = False) -> str | None:
-    """Return today's AI-generated morning brief, generating it if needed.
+def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | None:
+    """Return the AI-generated research brief, generating it if needed.
 
-    Checks daily_insights for today. Assembles context via assemble_daily_context()
-    and calls Claude Haiku to synthesize a ~300-word brief personalised to the
-    researcher's specific interests and monitored topics. Stores the result so
-    subsequent page loads are free (no API call).
+    period='daily'  → today's brief (keyed by today's date).
+    period='weekly' → a week-in-review synthesis (kept as a separate, latest row).
 
-    force=True deletes the cached entry first, forcing a fresh generation.
-    Returns the narrative string, or None if generation is unavailable.
+    Checks daily_insights, assembles context via assemble_daily_context(), and
+    calls Claude Haiku to synthesize the brief. Stores the result so subsequent
+    page loads are free (no API call).
+
+    force=True regenerates. Returns the narrative string, or None if unavailable.
     """
     import json as _json
     import sqlite3 as _sqlite3
@@ -1032,18 +1033,29 @@ def _get_or_generate_brief(force: bool = False) -> str | None:
         return None
 
     today = datetime.date.today().isoformat()
+    model_tag = "claude-haiku-weekly" if period == "weekly" else "claude-haiku-brief"
+    # Weekly briefs use a distinct storage key so a daily and a weekly brief can
+    # coexist for the same day (insight_date is UNIQUE).
+    insight_key = f"{today}-weekly" if period == "weekly" else today
 
     # Check cache — also used as fallback if force-regen fails
     cached_content: str | None = None
     try:
         conn = _sqlite3.connect(db_path_str)
         conn.row_factory = _sqlite3.Row
-        row = conn.execute(
-            "SELECT content, model FROM daily_insights WHERE insight_date = ? LIMIT 1",
-            (today,),
-        ).fetchone()
+        if period == "weekly":
+            row = conn.execute(
+                "SELECT content, model FROM daily_insights "
+                "WHERE model = 'claude-haiku-weekly' AND content IS NOT NULL "
+                "ORDER BY generated_at DESC LIMIT 1"
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT content, model FROM daily_insights WHERE insight_date = ? LIMIT 1",
+                (today,),
+            ).fetchone()
         conn.close()
-        if row and row["model"] == "claude-haiku-brief" and row["content"]:
+        if row and row["model"] == model_tag and row["content"]:
             cached_content = row["content"]
     except Exception:
         pass
@@ -1105,7 +1117,9 @@ def _get_or_generate_brief(force: bool = False) -> str | None:
 
     # Build period description
     name = _user_name()
-    if days_since_last <= 1:
+    if period == "weekly":
+        period_desc = "the past week"
+    elif days_since_last <= 1:
         period_desc = "today"
     elif days_since_last <= 7:
         period_desc = f"the last {days_since_last} days"
@@ -1221,8 +1235,8 @@ def _get_or_generate_brief(force: bool = False) -> str | None:
                            content = excluded.content, model = excluded.model,
                            sources = excluded.sources,
                            generated_at = excluded.generated_at""",
-                    (today, narrative, sources_json,
-                     datetime.datetime.now().isoformat(), "claude-haiku-brief"),
+                    (insight_key, narrative, sources_json,
+                     datetime.datetime.now().isoformat(), model_tag),
                 )
                 conn4.commit()
                 conn4.close()
@@ -1286,16 +1300,20 @@ async def today_morning_brief(request: Request):
     except Exception:
         pass
 
+    period = request.query_params.get("period", "daily")
+    if period not in ("daily", "weekly"):
+        period = "daily"
+
     ai_brief = None
     brief_date_label = None
     try:
-        ai_brief = _get_or_generate_brief()
+        ai_brief = _get_or_generate_brief(period=period)
     except Exception:
         pass
 
-    # If today's brief failed to generate, fall back to the most recent cached
-    # brief from any date — the user gets continuity instead of empty space.
-    if not ai_brief:
+    # If today's daily brief failed to generate, fall back to the most recent
+    # cached brief from any date — the user gets continuity instead of empty space.
+    if not ai_brief and period == "daily":
         try:
             import sqlite3 as _sqlite
             db_path = _get_db_path()
@@ -1348,6 +1366,7 @@ async def today_morning_brief(request: Request):
             "open_threads": open_threads,
             "time_of_day": time_of_day,
             "brief_mode": _get_brief_mode(),
+            "period": period,
         },
     )
 
@@ -1357,6 +1376,14 @@ async def morning_brief_refresh(request: Request):
     """Force regenerate the morning brief and return the updated partial."""
     hour = datetime.datetime.now().hour
     time_of_day = "morning" if hour < 12 else "afternoon" if hour < 17 else "evening"
+
+    try:
+        _form = await request.form()
+        period = _form.get("period") or request.query_params.get("period") or "daily"
+    except Exception:
+        period = request.query_params.get("period", "daily")
+    if period not in ("daily", "weekly"):
+        period = "daily"
 
     open_threads = 0
     try:
@@ -1368,7 +1395,7 @@ async def morning_brief_refresh(request: Request):
 
     ai_brief = None
     try:
-        ai_brief = _get_or_generate_brief(force=True)
+        ai_brief = _get_or_generate_brief(force=True, period=period)
     except Exception:
         pass
 
@@ -1406,6 +1433,7 @@ async def morning_brief_refresh(request: Request):
             "open_threads": open_threads,
             "time_of_day": time_of_day,
             "brief_mode": _get_brief_mode(),
+            "period": period,
         },
     )
 
