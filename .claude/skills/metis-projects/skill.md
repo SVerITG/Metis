@@ -59,7 +59,7 @@ For each project:
    Teaching / Development  · N% complete (N/N modules)
    Next: [next step from PLANNING.md]
 
-🔵 PhD FRAMEWORK  [phd-framework]
+🔵 MY THESIS  [my-thesis]
    Three articles in progress
    Next: [most time-pressured item]
 
