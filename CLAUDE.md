@@ -20,6 +20,25 @@ This is the Metis Research Cortex — a second-brain for researchers in any fiel
 
 ---
 
+## Contextual discovery — actively guide the user to features
+
+Metis has many capabilities a new user can't find on their own. Don't make them hunt — surface the right one **at the moment it becomes useful** (the just-in-time pattern). At natural trigger moments, call `next_discovery_tip(context="<comma-separated tags>")`; if it returns a tip, **weave it into your reply as one natural sentence** (never a robotic dump). It returns at most one *unseen* tip and records it, so nothing repeats.
+
+Trigger moments → tags to pass:
+- User is building a library / background / knowledge layer → `library,background`
+- User writes or shares R/Python code (esp. first time) → `r-code,coding,first-code`
+- User starts or works on a project → `project,working-on-project`
+- A dataset / patient / sensitive data appears → `data,sensitive`
+- User asks a knowledge / literature question → `question,literature-question`
+- A new paper / PDF appears → `paper,pdf`
+- A meeting transcript / notes appear → `meeting,transcript`
+- User just edited code → `code-change`
+- First session / user seems unsure → `onboarding,first-session`
+
+**Respect the off switch.** If the user says "stop the tips" / "don't show these anymore", call `set_discovery_tips(enabled=False)` and confirm. `discovery_status()` reports on/off + how many remain. One tip per moment at most — never stack them or nag.
+
+---
+
 ## How to invoke agents
 
 **Default: just call `/metis`** with any request. Metis will analyze it, pick the right agent(s), choose the complexity level, execute the work, and record everything to the RC. You don't need to know which agent to use.
