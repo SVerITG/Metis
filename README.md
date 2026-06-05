@@ -98,8 +98,7 @@
 - **🚫 It refuses to invent.** Ask about something that isn't in your library and Metis tells you so, instead of fabricating a plausible-sounding answer. (This grounding behaviour is covered by an automated test.)
 - **🔒 It stays on your machine.** Local embeddings, local database, local files. Your papers, patient-adjacent data, and unpublished work never leave your computer.
 
-> 🎥 **See it in two minutes** — *(demo coming)* watch Metis answer from a real WHO source with page citations, then refuse to summarise a protocol that doesn't exist.
-> <!-- TODO: replace with demo GIF/video, e.g. ![Metis demo](docs/metis-demo.gif) -->
+> 🎥 **See it in action** above — the dashboard, a tour of the tabs, the silent layer into Claude Desktop, and Metis improving its own work.
 
 **Easiest way to try it:** install [Claude Desktop](https://claude.ai/download) and run the [3-step setup](#for-researchers) — a demo workspace is pre-loaded, so you start with something to explore instead of a blank screen.
 
@@ -178,7 +177,7 @@ This is genuinely new ground. The individual components — local language model
 | **📊 With the dashboard** | Full visibility across your research life — papers, ideas, meetings, tasks, projects, all connected. Built for *cross-pollination* (ideas linking to literature) and *brain off-loading* (tracking leaving your head, entering the system). | Researchers who want a complete research operating environment |
 | **🌐 Metis OS** | Connects to email, calendar, data systems, and institutional infrastructure — a unified intelligence layer for your entire working environment. | The longer vision. Still in development. |
 
-> **Where things stand today:** The MCP server, 30+ agents, and the 9-tab dashboard are fully operational and used daily. The one-click installer and the pre-loaded domain knowledge layer are still being refined. This is a working system — not vaporware — but it is also not finished. If something breaks, please open an issue. That feedback shapes what gets built next.
+> **Where things stand today:** The MCP server, 30+ agents, and the 10-tab dashboard are fully operational and used daily. The one-click installer and the pre-loaded domain knowledge layer are still being refined. This is a working system — not vaporware — but it is also not finished. If something breaks, please open an issue. That feedback shapes what gets built next.
 
 ---
 
@@ -205,7 +204,7 @@ This is genuinely new ground. The individual components — local language model
 > **[⬇ Download MetisSetup.exe](https://github.com/SVerITG/Metis_PH/releases/latest)**
 
 Double-click the installer. The wizard walks you through:
-1. **Full or AI only** — Full gives you the AI assistant + 9-tab research dashboard (~15 min). AI only is faster (~5 min) and you can add the dashboard later.
+1. **Full or AI only** — Full gives you the AI assistant + 10-tab research dashboard (~15 min). AI only is faster (~5 min) and you can add the dashboard later.
 2. **Your projects** — Tell Metis what you're working on. It creates a tracking record for each project, writes a context file into the project folder, and registers it in Claude Desktop automatically.
 3. **Demo workspace** — Pre-loads realistic example projects, meetings, literature, and tasks so you can explore every feature immediately. Recommended for first-time users.
 4. **API key** — Paste it once.
@@ -241,11 +240,11 @@ The script asks two questions (Full or AI only, demo workspace) and does the res
 | **Live meeting assistant** | Follow along in real time, or paste a transcript — get structured notes, action items, and project cross-references automatically |
 | **Project tracking** | Every project gets a tracking record, a context file in its folder, and integration with Claude Desktop. The Update button scans all your project folders for activity. |
 | **Voice capture** | Record anywhere, transcribe locally (no API, no upload), route to ideas, journal, or notes |
-| **9-tab dashboard** | Today · Knowledge · Meetings · Learning · Work · Thinking · Planner · Teach · Metis — all live, all local |
+| **10-tab dashboard** | Today · News · Knowledge · Meetings · Learning · Work · Thinking · Planner · Teach · Metis — all live, all local |
 | **Data protection** | Six security layers + the `/safe-analysis` workflow. Sensitive data is detected and held back before it reaches the AI, and the recommended pattern keeps raw data on your machine entirely — you share only derived metadata. |
 | **Cross-pollination** | Every idea, paper, meeting, and task is automatically connected to everything else in your research universe. Metis surfaces links across time — a paper from last year, a meeting note from March, a question you logged at a conference — without you searching for any of it. |
 | **Token tracking** | Every agent run shows exactly what it cost — which specialist was used, how many tokens, what model. The dashboard Today tab has a live token pulse so you always know your daily usage. Most daily tasks stay under a few cents. |
-| **Tool subset loading** | Metis registers 170+ MCP tools, but exposing all of them to Claude on every session wastes context. By default, Metis loads only the tools relevant to the current agent — 90 tools for News Radar, 107 for the Librarian, ~65 for a general session. Each tool definition costs tokens; loading fewer means more room for actual work and lower per-session cost. Disable with `METIS_TOOL_SUBSETS=0` to see all tools. |
+| **Tool subset loading** | Metis registers 185 MCP tools, but exposing all of them to Claude on every session wastes context. By default, Metis loads only the tools relevant to the current agent — 90 tools for News Radar, 107 for the Librarian, ~65 for a general session. Each tool definition costs tokens; loading fewer means more room for actual work and lower per-session cost. Disable with `METIS_TOOL_SUBSETS=0` to see all tools. |
 | **Metis evolves — you don't have to** | Every week, Metis reviews its own session logs, identifies where it underperformed, and drafts behaviour improvements. You approve or reject them — nothing changes without your sign-off. New capabilities are folded in the same way. You focus on your research; Metis keeps itself sharp. |
 | **Grows with you** | Every agent run adds to your profile. A question asked after six months of use gets a meaningfully better answer than the same question on day one — not because the AI changed, but because Metis knows you better. |
 
@@ -324,7 +323,7 @@ Course topic defined
 
 ### The Dashboard
 
-The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account, no cloud, no subscription.
+The **10-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account, no cloud, no subscription.
 
 ![Metis dashboard — Today tab](docs/screenshots/dashboard-today.png)
 
@@ -335,6 +334,7 @@ The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account, no 
 | Tab | What it does |
 |---|---|
 | **Today** | Morning brief, priority task queue, news rail, quick capture (`Ctrl+K`) |
+| **News** | Field news, surveillance alerts and RSS signals relevant to your work |
 | **Knowledge** | Semantic PDF search, literature cards, knowledge graph, coverage gap analysis |
 | **Meetings** | Live assistant, transcript import, action items, cross-references |
 | **Learning** | Course progress, spaced repetition, competency map |
@@ -443,7 +443,7 @@ flowchart LR
         WATCHERS{{Watchers\nData Guardian · Cybersecurity}}
     end
     subgraph Platform
-        MCP[MCP Server\n170+ tools\nFastMCP]
+        MCP[MCP Server\n185 tools\nFastMCP]
         DASH[Dashboard\nFastAPI + HTMX]
         DB[(SQLite\nWAL mode)]
     end
@@ -479,7 +479,7 @@ flowchart LR
 | AI harness | Claude Code, Claude Desktop (primary); Gemini (experimental) |
 | MCP server | Python 3.10+, FastMCP, runs in local venv |
 | Dashboard | FastAPI + HTMX + Jinja2 — no JavaScript framework |
-| Database | SQLite WAL mode, 46 tables |
+| Database | SQLite WAL mode, 65 tables |
 | Vector memory | sqlite-vec + nomic-embed-text-v1.5-Q (768 dims, local ONNX) |
 | Semantic PDF search | sqlite-vec — local PDF chunk index, no external API |
 | Host OS | Windows + WSL2 (Ubuntu 20/22/24) · macOS · Linux |
@@ -714,9 +714,9 @@ Open an issue with label `course-package` to pilot or contribute.
 
 | Area | Status |
 |---|---|
-| MCP server (170+ tools) | ✅ Operational, used daily |
+| MCP server (185 tools) | ✅ Operational, used daily |
 | 30+ specialist agents | ✅ Operational, used daily |
-| 9-tab dashboard | ✅ Operational, some features in active development |
+| 10-tab dashboard | ✅ Operational, some features in active development |
 | Windows .exe installer | 🔧 In refinement |
 | Docker images | ✅ Test matrix working |
 | Domain knowledge layer (Metis_PH) | 🔧 Actively being expanded |
@@ -766,6 +766,9 @@ key journals + RSS feeds · specialist agents · a domain ontology · a curated 
 
 | What changed |
 |---|
+| **Code Repository** — a reproducibility / code-reuse layer: register scripts, data dictionaries (variable names, types, **unique values**) and dataset treatments, then `scaffold_script` rebuilds a new script from your previous work — same names, paths, packages. Fills itself silently as the code-producing agents work. |
+| **Projects in the registry + cross-pollination** — project listing now reads the project *registry* (every project, not just folders on disk); brainstorms and cross-pollination now draw on your registered projects and notes, not only library/news. |
+| **Brainstorm + brief upgrades** — a brainstorm creativity dial (Grounded/Balanced/Bold) and a scoped menu (this work · a topic · mindmap · cluster) that hand off to Claude Desktop primed with your work; a Daily ↔ Weekly morning-brief toggle; an idea **mindmap** on the Reflection tab; and an "Improve Metis (OODA)" button on the Metis tab. |
 | **Sensitive-data workflow (`/safe-analysis`)** — a first-class "send code, not data" workflow: Metis writes a local analysis script, you run it on your machine, and only derived metadata (schema, value counts, summaries, model output) comes back. Available in Claude Code and Claude Desktop. |
 | **Data Guardian hardening** — the pipeline PII scanner now runs all 11 patterns (names, DOB, passport, MRN, HAT/PNLTHA case numbers, DRC national ID, + the original five) through one shared scanner used by both the tool and the pipeline, so they can't drift; covered by a unit-test suite. |
 | **Pre-tool data-file guard** — before a `Read`/`read_file`, the security hook peeks at the file's header *locally* and asks for confirmation before individual-level data is loaded into the conversation. |
