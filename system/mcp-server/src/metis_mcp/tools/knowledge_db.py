@@ -267,11 +267,32 @@ def _encode_vec(v: List[float]) -> bytes:
     return struct.pack(f"{len(v)}f", *v)
 
 
+def _ocr_page(page) -> str:
+    """OCR a single rendered page with Tesseract (local, no API).
+
+    Fallback for IMAGE-ONLY / scanned pages, where the PDF text layer is empty
+    and PyMuPDF/pdfminer return nothing. Returns '' if Tesseract (or its Python
+    wrapper) isn't installed — so this is a strict, harmless no-op until the user
+    runs `apt install tesseract-ocr` / `brew install tesseract` (+ pip pytesseract).
+    Deliberately NOT PaddleOCR: that pulls a full DL framework; Tesseract is
+    light and CPU-only.
+    """
+    try:
+        import io
+        import pytesseract
+        from PIL import Image
+        pix = page.get_pixmap(dpi=200)          # render the page to an image
+        img = Image.open(io.BytesIO(pix.tobytes("png")))
+        return pytesseract.image_to_string(img) or ""
+    except Exception:
+        return ""
+
+
 def _extract_pages(pdf_path: Path) -> tuple[List[tuple[int, str]], int]:
-    """Extract text per page. Tries PyMuPDF (fast, robust, per-page) first, then
-    falls back to pdfminer. Many WHO PDFs return empty from pdfminer's single-shot
-    extract_text() — PyMuPDF handles those, so this is what rescues the documents
-    that were silently skipped before (e.g. the gHAT elimination criteria)."""
+    """Extract text per page. Tries PyMuPDF (fast, robust, per-page) first, OCRs
+    any image-only page that has no text layer, then falls back to pdfminer. Many
+    WHO PDFs return empty from pdfminer's single-shot extract_text() — PyMuPDF
+    handles those; OCR rescues genuinely scanned documents that index as blank."""
     # ── Primary: PyMuPDF, page by page (keeps real page numbers for provenance) ──
     try:
         import fitz  # PyMuPDF
@@ -279,6 +300,12 @@ def _extract_pages(pdf_path: Path) -> tuple[List[tuple[int, str]], int]:
         pages: List[tuple[int, str]] = []
         for i, page in enumerate(doc, 1):
             txt = page.get_text("text") or ""
+            if len(txt.strip()) < 40:
+                # Image-only / scanned page — text layer empty. OCR fallback
+                # (only fires here, so text-layer PDFs pay zero OCR cost).
+                ocr = _ocr_page(page)
+                if ocr.strip():
+                    txt = ocr
             if txt.strip():
                 pages.append((i, _clean_text(txt)))
         total = doc.page_count

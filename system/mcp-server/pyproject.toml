@@ -49,6 +49,11 @@ embedding = ["fastembed>=0.8.0"]
 # PaperQA2 — ask_library / extract_structured (full-text Q&A over the PDF library).
 # Heavier; ask_library degrades gracefully without it.
 library = ["paper-qa>=5.0"]
+# OCR fallback — Tesseract for image-only / scanned PDFs (~1% of a typical
+# library, but they index as blank without it). Light + CPU-only — deliberately
+# NOT PaddleOCR (which pulls a full DL framework). Also needs the system binary:
+#   Ubuntu: sudo apt install tesseract-ocr   ·   macOS: brew install tesseract
+ocr = ["pytesseract>=0.3.10", "pillow>=10.0"]
 # Voice capture — faster-whisper for local transcription (no GPU needed).
 # resemblyzer removed: it requires PyTorch GPU and is not used in any tool.
 voice = [
