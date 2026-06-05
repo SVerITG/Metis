@@ -19,19 +19,32 @@ Read in full:
 
 This is the contract for what you must produce.
 
+## Trustworthiness protocol (MANDATORY — read before dispatching anything)
+
+Self-evaluation by an LLM is unreliable on its own: models cannot intrinsically self-correct reasoning and often *degrade* without an external signal ([Huang et al. 2310.01798](https://arxiv.org/abs/2310.01798)); LLM judges carry self-preference / position / verbosity bias ([2410.21819](https://arxiv.org/html/2410.21819v2)). The 2026-06-04 audit proved it: an unverified pass reported **25 "failures"** that were all a down-dashboard artefact, plus **4 false "broken"** findings the verifier refuted. So this audit is bound by seven rules (full text in the master prompt's "Trustworthy self-evaluation" section):
+
+1. **Run the external signal before asserting** — harness, tests, `py_compile`, real `curl`. Deterministic > opinion.
+2. **Every high/critical finding gets an independent verifier** — a fresh-context agent (ideally a *different model*) that tries to REFUTE it. Default to "refuted" on doubt; majority-refute kills it. The finder never grades itself.
+3. **Every finding carries an executable acceptance test** ("how would we *prove* it's fixed?"). No acceptance test → it's a hypothesis, not a result.
+4. **Score per-criterion with written justification**, not one holistic number. Severity must cite file:line / command output.
+5. **Preconditions first** — confirm the dashboard is up before any HTTP/UI claim (down = SKIP, not FAIL). The harness now self-guards this.
+6. **Only verified findings reach durable memory** (`store_semantic_memory` / `record_research_finding`). Expire unconfirmed self-critique.
+7. **Append to the drift time-series** so regressions show across audits.
+
 ## Step 2 — Run the functional test harness
 
 Execute the concrete promise check first, so you have hard data before subjective evaluation:
 
 ```bash
+export METIS_RC_ROOT="$(pwd)"
 bash tests/functional/run_metis_promises.sh
 ```
 
-This produces:
+The harness now (a) **starts the dashboard if it's down** and SKIPs (never FAILs) HTTP/UI checks when it can't, (b) runs a deterministic **backend `py_compile`** floor and a **UI/a11y sanity** floor, and (c) appends this run to `outputs/reviews/metis-evaluation/promise-trend.jsonl`. It produces:
 - A markdown report at `outputs/reviews/metis-evaluation/YYYY-MM-DD_promise-check.md`
-- A pass/fail/warn line on stdout
+- A ✅/🔴/🟡/⚪ summary line on stdout
 
-Read the produced report. It is your evidence base.
+Read the produced report. It is your evidence base. **If the summary shows ⚪ SKIP, the dashboard was down — do not treat those as failures; bring it up and re-run before judging UI.**
 
 ## Step 3 — Dispatch parallel investigation streams
 
@@ -46,6 +59,10 @@ Spawn these as parallel sub-agents in a single message (use the `Agent` tool wit
 7. **Security verification stream** — Section G. Walk every claimed layer and prove or disprove it from code.
 
 Each stream returns a report. You synthesise.
+
+**Brief every investigator with the skeptic framing** (they over-claim otherwise — the 2026-06-04 streams rated four non-issues "critical/high broken"): *ground every finding in a file:line, command output, or DB query; severity must be defensible; run the external signal yourself before asserting; confirm the dashboard is up before any HTTP claim; prefer "works" unless you can prove otherwise.* Have each finding return a `severity`, an `evidence` (the exact command/file:line), and an **`acceptance_test`** ("how we'd prove it fixed").
+
+**Step 3b — Mandatory verification pass (do NOT skip).** For every finding rated **high or critical**, spawn an *independent* fresh-context agent (ideally a different model) whose only job is to **REFUTE** it — re-run the exact check, default to "refuted" on uncertainty, return `confirmed | refuted | partial` + its own proof + a revised severity. A finding that is refuted (or majority-refuted if you use 3 voters) does **not** appear in the final report except as "investigated, not confirmed". This pass is the single most important quality control — it is what separates a trustworthy audit from a list of plausible-but-wrong claims. (A Workflow with `pipeline(streams, investigate, verify)` is the clean way to run it.)
 
 **IMPORTANT — Logging Explore streams:** Explore subagents do NOT have MCP tool access and cannot call `log_agent_run`. After all streams complete, the orchestrating session (you, not the subagents) must call `log_agent_run` once per stream, with the stream slug and a brief summary of what it found. Do this before writing the drift heatmap. Stream slugs: `metis-audit-vision`, `metis-audit-features`, `metis-audit-workflow`, `metis-audit-memory`, `metis-audit-install`, `metis-audit-ui`, `metis-audit-security`.
 
