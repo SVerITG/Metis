@@ -224,13 +224,29 @@ echo "Installing MCP server requirements..."
 if [ "$USE_UV" = "1" ]; then
   [ -f "$LOCAL_SRC/requirements.txt" ] && "$UV" pip install --python "$VENV_DIR/bin/python3" -r "$LOCAL_SRC/requirements.txt"
   echo "Installing metis-mcp-server package (with embedding + library extras)..."
-  "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC[embedding,library]" \
+  "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC[embedding,library,ocr]" \
     || "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC"
 else
   [ -f "$LOCAL_SRC/requirements.txt" ] && "$VENV_DIR/bin/pip" install -r "$LOCAL_SRC/requirements.txt"
   echo "Installing metis-mcp-server package (with embedding + library extras)..."
-  "$VENV_DIR/bin/pip" install "$LOCAL_SRC[embedding,library]" \
+  "$VENV_DIR/bin/pip" install "$LOCAL_SRC[embedding,library,ocr]" \
     || "$VENV_DIR/bin/pip" install "$LOCAL_SRC"
+fi
+
+# ── OCR system binary (Tesseract) — fallback for image-only / scanned PDFs ────
+# The Python wrapper (pytesseract) ships via the [ocr] extra above; OCR also needs
+# the Tesseract binary. Best-effort install — image-only PDFs simply index as
+# text-layer-only (no OCR) if it isn't present. Especially valuable for the
+# Background Maker, which scrapes heterogeneous web PDFs.
+if ! command -v tesseract >/dev/null 2>&1; then
+  echo "Installing Tesseract OCR (for scanned-PDF extraction)…"
+  if command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get install -y tesseract-ocr >/dev/null 2>&1 || echo "  (skip) install manually: sudo apt install tesseract-ocr"
+  elif command -v brew >/dev/null 2>&1; then
+    brew install tesseract >/dev/null 2>&1 || echo "  (skip) install manually: brew install tesseract"
+  else
+    echo "  (skip) Tesseract not found — install it to enable OCR on scanned PDFs."
+  fi
 fi
 
 # If a transitive dependency pulled in GPU torch, swap it for the CPU-only build.
