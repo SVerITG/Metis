@@ -48,17 +48,17 @@ For each task, show:
 
 BLOCKED  (n)
   !! [my-research-project] Fix reactive trigger in map module  ← due 2026-04-20 [OVERDUE]
-  ·  [phd-framework] Resolve thesis spine alignment
+  ·  [my-thesis] Resolve thesis spine alignment
 
 IN PROGRESS  (n)
   !! [analysis-project] Fix inline output for model 4
 
 OPEN — HIGH  (n)
   !! [my-research-project] Review clustering script output
-  !! [phd-framework] Write Article 1 intro section
+  !! [my-thesis] Write Article 1 intro section
 
 OPEN — MEDIUM / LOW  (n)
-  ·  [metis-system] Seed phd-framework external_path
+  ·  [metis-system] Seed my-thesis external_path
   ·  [field-study] Consolidate screening notes
 
 ─────────────────────────────────────────────────────────

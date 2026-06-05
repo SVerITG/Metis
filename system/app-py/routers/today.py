@@ -1735,7 +1735,7 @@ async def today_resume(request: Request):
             "FROM projects p "
             "LEFT JOIN tasks t ON t.project_id = p.project_id "
             "WHERE p.status='active' AND COALESCE(p.domain,'') NOT LIKE '%phd%' "
-            "  AND p.project_id NOT IN ('personal','phd-framework') "
+            "  AND p.project_id NOT IN ('personal') "
             "GROUP BY p.project_id "
             "ORDER BY last_activity DESC NULLS LAST, p.created_at DESC LIMIT 3"
         )

@@ -53,7 +53,7 @@ FILES IN inbox/  (n items)
 
 INBOX TASKS  (n open)
   · "Review analysis script" → Assign to [project-slug]? [y/skip]
-  · "Check citation"         → Assign to phd-framework?  [y/skip]
+  · "Check citation"         → Assign to my-thesis?  [y/skip]
 
 ACTIONS
   Reply with: y [number] to route, skip [number] to leave, or clear [number] to dismiss.
