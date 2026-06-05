@@ -1048,7 +1048,9 @@ def _get_or_generate_brief(force: bool = False) -> str | None:
     except Exception:
         pass
 
-    if not force and cached_content:
+    # In demo mode the canned brief is always served, even on an explicit
+    # "Update" (force=True) — so the demo never makes a live API call.
+    if cached_content and (not force or os.environ.get("METIS_DEMO") == "1"):
         return cached_content
 
     # Compute how many days since the last brief was generated
