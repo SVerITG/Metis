@@ -33,6 +33,10 @@ from routers import (
 log = logging.getLogger("metis")
 
 
+class _SkipBootScan(Exception):
+    """Internal sentinel: skip the startup news/literature scan (e.g. demo mode)."""
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from db import run_migrations
@@ -56,13 +60,20 @@ async def lifespan(app: FastAPI):
             _sys.path.insert(0, _mcp_src)
         del _mcp_src
     del _rc
-    try:
-        from scheduler import scheduler, setup_jobs
-        setup_jobs()
-        scheduler.start()
-        log.info("APScheduler started")
-    except Exception as exc:
-        log.warning("Scheduler could not start: %s", exc)
+    # In demo mode the scheduler is NOT started: its catch-up sequence would
+    # immediately run the morning news/literature scan, pulling the real user's
+    # feeds and library folder into the demo database and overwriting the
+    # curated demo data. The demo is a static, self-contained snapshot.
+    if os.environ.get("METIS_DEMO") == "1":
+        log.info("[startup] Demo mode — scheduler not started (no background scans)")
+    else:
+        try:
+            from scheduler import scheduler, setup_jobs
+            setup_jobs()
+            scheduler.start()
+            log.info("APScheduler started")
+        except Exception as exc:
+            log.warning("Scheduler could not start: %s", exc)
     try:
         from inbox_watcher import start_inbox_watcher
         start_inbox_watcher()
@@ -70,7 +81,16 @@ async def lifespan(app: FastAPI):
         log.warning("Inbox watcher could not start: %s", exc)
     # On startup: run news scan if last scan was more than 4 hours ago,
     # then pre-generate today's morning brief.
+    #
+    # In demo mode this is skipped entirely: a live scan would pull the real
+    # user's news feeds and literature folder into the demo database (breaking
+    # the curated, coherent demo data) and try to generate a brief via the API.
+    _demo_mode = os.environ.get("METIS_DEMO") == "1"
+    if _demo_mode:
+        log.info("[startup] Demo mode — skipping boot scan + brief generation")
     try:
+        if _demo_mode:
+            raise _SkipBootScan()
         import sqlite3 as _sq3
         import threading
 
@@ -126,6 +146,8 @@ async def lifespan(app: FastAPI):
                 log.debug("Startup brief generation skipped: %s", exc)
 
         threading.Thread(target=_boot_scan_and_brief, daemon=True, name="boot-scan").start()
+    except _SkipBootScan:
+        pass  # demo mode — intentionally no scan
     except Exception as exc:
         log.debug("Could not start boot scan thread: %s", exc)
     yield

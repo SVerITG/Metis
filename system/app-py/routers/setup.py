@@ -147,6 +147,10 @@ async def api_key_status(request: Request):
     Claude-backed agent will silently fail. Surface this prominently.
     """
     import os as _os
+    # Demo mode never shows the key banner — the demo serves canned content and
+    # makes no live API calls, so the warning would only be noise in screenshots.
+    if _os.environ.get("METIS_DEMO") == "1":
+        return HTMLResponse("")
     key = _os.environ.get("ANTHROPIC_API_KEY", "").strip()
     if key and key.startswith("sk-ant-") and len(key) > 40:
         return HTMLResponse("")  # key looks valid → no banner
@@ -330,7 +334,8 @@ async def exit_demo():
 @router.get("/api/partial/demo-banner", response_class=HTMLResponse)
 async def demo_banner():
     """Slim persistent banner shown while in demo mode."""
-    if not _DEMO_MARKER.exists():
+    import os as _os
+    if not (_DEMO_MARKER.exists() or _os.environ.get("METIS_DEMO") == "1"):
         return HTMLResponse("")
     return HTMLResponse("""
 <div id="demo-mode-banner" style="background:linear-gradient(90deg,#0f2a1e,#1a3d28);
@@ -338,7 +343,7 @@ async def demo_banner():
      gap:16px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;">
   <span style="color:#4ade80;">▲ DEMO MODE</span>
   <span style="color:#6b9e7a;flex:1;">
-    Showing sample data for Dr. Amara Diallo — EVD outbreak response, WHO AFRO.
+    Showing sample data for Dr. Amélie Fontaine — health economist &amp; global health policy researcher.
     This is not your real workspace.
   </span>
   <a href="/setup" style="color:#4ade80;text-decoration:none;border:1px solid #2a5a38;

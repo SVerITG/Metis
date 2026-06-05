@@ -2,8 +2,8 @@
 # run-demo.sh — Start Metis dashboard with demo/screenshot data.
 #
 # Creates a temporary demo database seeded with fictional researcher data
-# (Dr. Amélie Fontaine, Senior Epidemiologist, IMT Lyon) suitable for
-# screenshots, demos, and documentation without exposing personal data.
+# (Dr. Amélie Fontaine, Senior Health Economist / Global Health Policy) suitable
+# for screenshots, demos, and documentation without exposing personal data.
 #
 # Usage:
 #   bash system/app-py/run-demo.sh
@@ -40,9 +40,9 @@ mkdir -p "$DEMO_DB_DIR"
 
 if [ ! -f "$DEMO_DB" ]; then
     echo "Creating fresh demo database at $DEMO_DB"
-    # Copy the live DB structure (tables only, no user data) using sqlite3
+    # Initialise with the full schema (all tables) so the seeder can populate it.
     if command -v sqlite3 &>/dev/null; then
-        sqlite3 "$DEMO_DB" ""
+        sqlite3 "$DEMO_DB" < "$METIS_ROOT/system/installer/schema.sql"
     else
         # Fallback: start dashboard briefly to create the DB via migrations, then seed
         METIS_DB="$DEMO_DB" METIS_RC_ROOT="$METIS_ROOT" PYTHONPATH="$SITE_PKG:$MCP_SRC:$APP_DIR" \
@@ -74,10 +74,13 @@ echo "Press Ctrl+C to stop."
 
 export METIS_RC_ROOT="$METIS_ROOT"
 export METIS_DB="$DEMO_DB"
+export METIS_DEMO=1   # hides the API-key banner, shows the demo banner, serves canned brief
 export PYTHONPATH="$SITE_PKG:$MCP_SRC:$APP_DIR"
 export PATH="$HOME/.local/bin:$PATH"
 
-pkill -f "uvicorn main:app.*8081" 2>/dev/null || true
+# Free port 8081 if a previous demo is still bound (kill by port, never by a
+# pattern that could match this very script).
+fuser -k 8081/tcp 2>/dev/null || true
 sleep 0.3
 
 cd "$APP_DIR"
