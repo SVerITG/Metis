@@ -11,7 +11,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from db import db_query, db_scalar
+from db import db_query, db_scalar, db_execute
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -31,6 +31,51 @@ async def metis_tab_partial(request: Request):
     return templates.TemplateResponse(
      request, "metis_tab.html", {"active_tab": "metis"}
  )
+
+
+# ---------------------------------------------------------------------------
+# Contextual discovery — settings surface (Tier 2)
+# ---------------------------------------------------------------------------
+
+
+def _discovery_ctx() -> dict:
+    db_execute("CREATE TABLE IF NOT EXISTS discovery_state (key TEXT PRIMARY KEY, value TEXT)")
+    db_execute("CREATE TABLE IF NOT EXISTS discovery_shown (tip_id TEXT PRIMARY KEY, shown_at TEXT)")
+    en = db_query("SELECT value FROM discovery_state WHERE key='enabled'") or []
+    enabled = True if not en else (en[0].get("value") != "0")
+    md = db_query("SELECT value FROM discovery_state WHERE key='mode'") or []
+    mode = md[0].get("value") if md else "guided"
+    shown = db_scalar("SELECT COUNT(*) FROM discovery_shown", default=0) or 0
+    try:
+        from metis_mcp.tools.discovery import TIPS
+        total = len(TIPS)
+        adopted = 0
+        shown_ids = [r["tip_id"] for r in (db_query("SELECT tip_id FROM discovery_shown") or [])]
+        # lightweight adoption read (which discovered features now have data)
+        for tid in shown_ids:
+            a = TIPS.get(tid, {}).get("adopted_if")
+            if a and (db_query(f"SELECT 1 FROM {a[0]} WHERE {a[1]} LIMIT 1") or []):
+                adopted += 1
+    except Exception:
+        total, adopted = max(shown, 11), 0
+    return {"d_enabled": enabled, "d_mode": mode, "d_shown": shown, "d_total": total, "d_adopted": adopted}
+
+
+@router.get("/api/partial/metis/discovery", response_class=HTMLResponse)
+async def metis_discovery(request: Request):
+    return templates.TemplateResponse(request, "partials/metis_discovery.html", _discovery_ctx())
+
+
+@router.post("/api/metis/discovery/toggle", response_class=HTMLResponse)
+async def metis_discovery_toggle(request: Request):
+    ctx = _discovery_ctx()
+    new_val = "0" if ctx["d_enabled"] else "1"
+    db_execute(
+        "INSERT INTO discovery_state (key, value) VALUES ('enabled', ?) "
+        "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+        (new_val,),
+    )
+    return templates.TemplateResponse(request, "partials/metis_discovery.html", _discovery_ctx())
 
 
 # ---------------------------------------------------------------------------
