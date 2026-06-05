@@ -56,7 +56,22 @@ def _ensure_table():
 # ---------------------------------------------------------------------------
 
 def _extract_text(pdf_path: Path, max_chars: int = 4000) -> str | None:
-    """Extract text from PDF using PyMuPDF (fitz). Returns None if unavailable."""
+    """Extract text from a PDF for the full-text index.
+
+    Routes through knowledge_db._extract_pages so it shares the OCR fallback for
+    image-only / scanned PDFs (otherwise those index as blank in full-text search
+    too). Falls back to a direct PyMuPDF read if that path is unavailable.
+    """
+    # ── Preferred: the shared, OCR-enabled extractor ──
+    try:
+        from metis_mcp.tools.knowledge_db import _extract_pages
+        pages, _ = _extract_pages(pdf_path)
+        if pages:
+            text = re.sub(r"\s+", " ", " ".join(t for _, t in pages)).strip()
+            return text[:max_chars] or None
+    except Exception:
+        pass
+    # ── Fallback: direct PyMuPDF (no OCR) ──
     try:
         try:
             import pymupdf as fitz  # PyMuPDF >= 1.24
@@ -69,12 +84,8 @@ def _extract_text(pdf_path: Path, max_chars: int = 4000) -> str | None:
             if sum(len(p) for p in parts) >= max_chars * 2:
                 break
         doc.close()
-        text = " ".join(parts)
-        # Clean up excessive whitespace
-        text = re.sub(r"\s+", " ", text).strip()
-        return text[:max_chars]
-    except ImportError:
-        return None
+        text = re.sub(r"\s+", " ", " ".join(parts)).strip()
+        return text[:max_chars] or None
     except Exception:
         return None
 
