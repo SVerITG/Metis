@@ -68,18 +68,18 @@
 ## See it in action
 
 <p align="center">
-  <img src="docs/Scene1.gif" alt="Metis morning brief — overnight research connected to your work" width="760"/><br>
-  <em>The morning brief — overnight research tied to your projects, notes, ideas and a meeting. Switch daily ↔ weekly, then brainstorm it in Claude.</em>
+  <img src="docs/Scene1.gif" alt="The Metis dashboard at a glance" width="760"/><br>
+  <em>The dashboard at a glance — your projects, tasks, the morning brief and what to focus on, in one calm view.</em>
 </p>
 
 <p align="center">
-  <img src="docs/Scene2.gif" alt="Idea mindmap and creativity-tuned brainstorm" width="760"/><br>
-  <em>Your ideas as a living mindmap — themes branch out, connections show as links. Brainstorm any thread in Claude Desktop, tuned for creativity.</em>
+  <img src="docs/Scene2.gif" alt="A tour through the Metis tabs" width="760"/><br>
+  <em>A tour through Metis — the system tab and every part of your Research Cortex: today, work, knowledge, meetings, ideas, learning and the control room.</em>
 </p>
 
 <p align="center">
-  <img src="docs/Scene4.gif" alt="The silent layer in Claude Desktop" width="760"/><br>
-  <em>The silent layer — Metis pulls your projects, notes and library straight into the conversation, so you never re-explain your work.</em>
+  <img src="docs/Scene4.gif" alt="From the AI brief straight into a Claude Desktop brainstorm" width="760"/><br>
+  <em>The silent layer — one click on the morning brief opens Claude Desktop, primed with your work, ready to brainstorm.</em>
 </p>
 
 <p align="center">
