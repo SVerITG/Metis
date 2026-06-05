@@ -77,6 +77,7 @@ This is the Metis Research Cortex — a second-brain for researchers in any fiel
 | `/safe-analysis` | Safe Analysis | Work with sensitive/patient data without sending it: Metis writes the script, you run it locally, only derived metadata comes back ("send code, not data") |
 | `/metis-doctor` | Metis Doctor | Health check — is Metis working on this computer? Plain-language diagnostic of Python, DB, API key, RAG engine, dashboard, Desktop registration |
 | `/metis-customize` | Metis Customize | Make Metis yours — change projects, look, tone, or behaviour (routes structural changes to RC Builder; shows the safety disclaimer) |
+| `/verify-work` | Verify Work | The in-the-moment generate→verify gate: after a code change, run the external signals (py_compile/tests/reinstall+smoke/harness) + an independent skeptic before trusting it's done. The working-loop tier of self-reflexion. |
 
 **RC workflow commands:**
 
