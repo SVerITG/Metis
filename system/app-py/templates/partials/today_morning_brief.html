@@ -122,22 +122,30 @@
     </div>
 
     <!-- Footer: timestamp + generate/update button -->
-    <div style="display:flex;align-items:center;gap:12px;padding:10px 20px 14px;border-top:1px solid var(--m-rule-soft);">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 20px 14px;border-top:1px solid var(--m-rule-soft);flex-wrap:wrap;">
       <span style="font-family:var(--m-mono);font-size:8.5px;color:var(--m-muted);" id="brief-timestamp">
         {% if brief %}Brief generated today{% else %}Not yet generated{% endif %}
-        {% if brief_mode == 'manual' %}
-          · <span style="color:var(--m-muted);opacity:.7;" title="Sends today's headlines to Claude API when clicked">sends headlines to Claude</span>
-        {% endif %}
       </span>
+      {%- set claude_brief_prompt -%}
+Produce my Metis daily brief now. Using the metis-rc tools: scan today's news and any new literature, rank the items by closeness to my work, write a short brief of the 5-7 most relevant items (most relevant first, one line each with why it matters), and save it with the Metis tool so it shows on my dashboard. Then show me the brief.
+      {%- endset -%}
+      <a href="claude://claude.ai/new?q={{ claude_brief_prompt | trim | urlencode }}"
+         title="Opens Claude Desktop with a ready prompt. Runs on your Claude subscription — no API key, no per-token cost. The brief saves back to this dashboard."
+         style="margin-left:auto;padding:5px 14px;font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;
+                background:transparent;border:1px solid var(--m-rule-strong);border-radius:var(--m-radius);
+                color:var(--m-text);text-decoration:none;cursor:pointer;white-space:nowrap;">
+        ✦ UPDATE WITH CLAUDE
+      </a>
       <button
         hx-post="/api/morning-brief/refresh"
         hx-target="#morning-brief"
         hx-swap="outerHTML"
         hx-indicator="#brief-spinner"
-        style="margin-left:auto;padding:5px 14px;font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;
-               background:transparent;border:1px solid var(--m-rule-strong);border-radius:var(--m-radius);
-               color:var(--m-text);cursor:pointer;transition:background 150ms,border-color 150ms;">
-        {% if brief_mode == 'manual' %}GENERATE BRIEF{% else %}UPDATE{% endif %}
+        title="Generates the brief using the Anthropic API (pay-per-token)."
+        style="padding:5px 12px;font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;
+               background:transparent;border:1px solid var(--m-rule-soft);border-radius:var(--m-radius);
+               color:var(--m-muted);cursor:pointer;white-space:nowrap;transition:background 150ms,border-color 150ms;">
+        {% if brief_mode == 'manual' %}GENERATE (API){% else %}UPDATE (API){% endif %}
       </button>
       <span id="brief-spinner" class="htmx-indicator"
             style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);letter-spacing:0.08em;">
