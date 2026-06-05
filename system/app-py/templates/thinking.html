@@ -62,8 +62,30 @@
           </div>
           <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
             <button class="btn btn--ghost btn--caps" onclick="openCapture('i')">Capture idea</button>
-            <button class="btn btn--ghost btn--caps" onclick="launchBrainstorm()">Brainstorm</button>
             <button class="btn btn--ghost btn--caps" onclick="exportIdeaAsNote()">Export as note</button>
+          </div>
+          <!-- Brainstorm — scoped to a work, a topic, a mindmap, or clustering -->
+          <div style="margin-top:12px;">
+            <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:7px;">BRAINSTORM IN CLAUDE DESKTOP</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn--ghost btn--caps" onclick="launchBrainstorm('work')">This work</button>
+              <button class="btn btn--ghost btn--caps" onclick="launchBrainstorm('topic')">A topic…</button>
+              <button class="btn btn--ghost btn--caps" onclick="launchBrainstorm('mindmap')">Mindmap ideas</button>
+              <button class="btn btn--ghost btn--caps" onclick="launchBrainstorm('cluster')">Cluster ideas</button>
+            </div>
+          </div>
+          <!-- Creativity dial — primes the brainstorm handoff to Claude Desktop -->
+          <div style="display:flex;align-items:center;gap:10px;margin-top:12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">
+            <span>CREATIVITY</span>
+            <div id="bs-creativity" style="display:inline-flex;border:1px solid var(--m-rule-strong);border-radius:3px;overflow:hidden;">
+              <button type="button" class="bs-seg" data-creativity="grounded" onclick="setCreativity(this)"
+                      style="border:0;background:transparent;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;padding:5px 10px;cursor:pointer;">GROUNDED</button>
+              <button type="button" class="bs-seg" data-creativity="balanced" onclick="setCreativity(this)"
+                      style="border:0;border-left:1px solid var(--m-rule-strong);background:var(--m-accent);color:#fff;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;padding:5px 10px;cursor:pointer;">BALANCED</button>
+              <button type="button" class="bs-seg" data-creativity="bold" onclick="setCreativity(this)"
+                      style="border:0;border-left:1px solid var(--m-rule-strong);background:transparent;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;padding:5px 10px;cursor:pointer;">BOLD</button>
+            </div>
+            <span style="margin-left:auto;font-style:normal;color:var(--m-muted-soft);text-transform:none;letter-spacing:0;font-family:var(--m-display);font-size:11.5px;">opens primed in Claude Desktop, with your sources</span>
           </div>
         </div>
       </div>
@@ -92,5 +114,20 @@
     </div>
 
   </div>
+
+  <!-- ── Idea mindmap ── -->
+  <div style="margin-top:36px;">
+    <div class="sec-label" style="margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+      <span>Idea mindmap</span>
+      <span style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);text-transform:none;letter-spacing:0;">how your open ideas cluster and connect</span>
+      <button class="btn btn--ghost btn--caps" style="margin-left:auto;" onclick="launchBrainstorm('mindmap')">Expand in Claude</button>
+    </div>
+    <div class="panel panel-pad"
+         hx-get="/api/partial/thinking/mindmap" hx-trigger="load" hx-swap="innerHTML"
+         style="padding:18px 20px;">
+      <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Laying out your idea mindmap…</p>
+    </div>
+  </div>
+
 </div>
 {% endblock %}

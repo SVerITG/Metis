@@ -723,14 +723,101 @@ function closeTuneScan() {
 // Thinking tab — Brainstorm + Export-as-note
 // ---------------------------------------------------------------------------
 
-function launchBrainstorm() {
-  // Reuse the existing launchPrompt path that opens Claude Code with /metis_brainstorm
-  if (typeof launchPrompt === 'function') {
-    launchPrompt('brainstorm');
-  } else {
-    showToast('<i class="bi bi-lightbulb toast-icon"></i>/metis_brainstorm copied — paste into Claude Code');
-    navigator.clipboard?.writeText('/metis_brainstorm');
+// Brainstorm creativity level (set by the dial in the Reflection tab)
+let _bsCreativity = 'balanced';
+function setCreativity(el) {
+  _bsCreativity = el.dataset.creativity || 'balanced';
+  el.parentElement.querySelectorAll('.bs-seg').forEach(b => {
+    const on = (b === el);
+    b.style.background = on ? 'var(--m-accent)' : 'transparent';
+    b.style.color = on ? '#fff' : 'var(--m-muted)';
+  });
+}
+
+// Open Claude Desktop with a pre-filled prompt via the claude:// deep link
+// (same mechanism the brief's "Update with Claude" uses). Clipboard is a safety
+// net in case the protocol handler isn't registered.
+function _openInClaude(prompt) {
+  try { navigator.clipboard?.writeText(prompt); } catch { /* noop */ }
+  try { window.location.href = 'claude://claude.ai/new?q=' + encodeURIComponent(prompt); } catch { /* noop */ }
+}
+
+function _creativityGuide(level) {
+  return {
+    grounded: 'Creativity: GROUNDED — stay practical and close to the evidence; prioritise feasible, well-supported connections.',
+    balanced: 'Creativity: BALANCED — mix solid, grounded connections with a few non-obvious ones.',
+    bold:     'Creativity: BOLD — push for surprising, divergent, cross-disciplinary connections; take risks I can prune later.',
+  }[level] || 'Creativity: BALANCED.';
+}
+
+// Build a primed brainstorm prompt for a given scope. The prompt tells Claude
+// (which has the Metis MCP tools connected) to pull the user's own context first.
+function _brainstormPrompt(level, mode, extra) {
+  let task;
+  switch (mode) {
+    case 'work':
+      task = "Brainstorm about my current active project/work. First pull its context with your Metis tools — its tasks, notes, meeting decisions, related ideas and the most relevant items from my library.";
+      break;
+    case 'topic':
+      task = `I want to brainstorm specifically about: "${extra}". Use your Metis tools to pull anything in my own work (projects, notes, ideas, library) that connects to it, and ground the brainstorm there.`;
+      break;
+    case 'mindmap':
+      task = "Build a mindmap of my thinking. Use your Metis tools to read my open ideas, notes and projects, cluster them into themes, and lay out how they connect. Present it as a mindmap I can save to my Reflection tab.";
+      break;
+    case 'cluster':
+      task = "Cluster my open ideas into a few coherent themes. Read my ideas, notes and projects with your Metis tools first, then group them, name each cluster, and note the cross-links between them.";
+      break;
+    default:
+      task = "First pull my current context with your Metis tools — active projects, recent notes, open ideas, meeting decisions and the most relevant library items — then brainstorm with me.";
   }
+  return [
+    "Metis — let's brainstorm.",
+    _creativityGuide(level),
+    task,
+    "Bring in relevant external sources where they help, and brainstorm in your usual voice — surface connections I might have missed across my work. When we're done, offer to save the session and generate a mindmap in my Reflection tab.",
+  ].join('\n\n');
+}
+
+// Scope: 'open' | 'work' | 'topic' | 'mindmap' | 'cluster'
+function launchBrainstorm(mode) {
+  mode = mode || 'open';
+  let extra = '';
+  if (mode === 'topic') {
+    extra = (window.prompt('Brainstorm about which topic?') || '').trim();
+    if (!extra) return;
+  }
+  const level = (typeof _bsCreativity !== 'undefined') ? _bsCreativity : 'balanced';
+  _openInClaude(_brainstormPrompt(level, mode, extra));
+  const label = mode === 'open' ? '' : ' · ' + mode;
+  showToast(`<i class="bi bi-lightbulb toast-icon"></i>Brainstorm (${level}${label}) — opening Claude Desktop`);
+}
+
+// Brainstorm straight from today's brief — copies the prompt AND opens Claude.
+function brainstormFromBrief() {
+  const prompt = [
+    "Metis — let's brainstorm from today's brief.",
+    "First call get_daily_insight to read today's brief, then use your other Metis tools to pull the projects, notes, ideas and meeting decisions it connects.",
+    "Bring in relevant external sources where useful, and brainstorm with me — surface non-obvious connections across my work and concrete next steps.",
+    "When we're done, offer to save the session and generate a mindmap in my Reflection tab.",
+  ].join('\n\n');
+  _openInClaude(prompt);
+  showToast("<i class=\"bi bi-lightbulb toast-icon\"></i>Brainstorming from today's brief — Claude Desktop opening; prompt copied (paste into a Temporary chat if you like)");
+}
+
+// Hand Metis's own self-improvement loop to Claude (OODA over the reflexions).
+// Claude Code is recommended — that's where /metis-self-reflexion runs — but the
+// prompt is self-contained and works in Desktop too.
+function improveMetisOODA() {
+  const prompt = [
+    "Metis — run a self-improvement cycle (OODA) on yourself.",
+    "OBSERVE: read my recent reflexions and session signals with your Metis tools — the reflexion log (went-well / could-improve / tool-wishes) and recent agent runs.",
+    "ORIENT: cluster them into 2–3 themes — what keeps going well, what keeps falling short, and which tools are missing.",
+    "DECIDE: in plan mode, propose concrete, minimal improvements to the relevant agents/skills. Ask me before any structural change.",
+    "ACT: once I approve, draft the improvement proposals and apply the safe ones.",
+    "If you're in Claude Code, you can run /metis-self-reflexion for the full audit.",
+  ].join('\n\n');
+  _openInClaude(prompt);
+  showToast('<i class="bi bi-arrow-repeat toast-icon"></i>Improve Metis — opening Claude (Code recommended); OODA prompt is on the clipboard');
 }
 
 async function exportIdeaAsNote() {

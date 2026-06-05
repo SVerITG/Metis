@@ -295,3 +295,153 @@ async def note_from_latest_idea():
             {"status": "error", "message": f"I couldn't save note: {e}"},
             status_code=500,
         )
+
+
+# ---------------------------------------------------------------------------
+# Idea mindmap — renders the user's ideas + idea_links as a clustered radial
+# mindmap (themes as branches, ideas as leaves, links as cross-connections).
+# Pure server-side SVG, no JS graph library.
+# ---------------------------------------------------------------------------
+
+_IDEA_TYPE_COLOR = {
+    "research": "var(--m-accent)",
+    "question": "#c98a2b",
+    "note": "#8a8a8a",
+    "method": "#3a8f7a",
+    "literature": "#7a5ea8",
+    "teaching": "#4a8f4a",
+}
+
+
+def _xml(s) -> str:
+    return (str(s or "").replace("&", "&amp;").replace("<", "&lt;")
+            .replace(">", "&gt;").replace('"', "&quot;"))
+
+
+def _mm_clean(text: str) -> str:
+    t = (text or "").strip()
+    # strip a leading "i: " / "q: " / "n: " marker
+    if len(t) > 2 and t[1] == ":" and t[0].lower() in "iqnlm":
+        t = t[2:].strip()
+    return t
+
+
+def _mm_label(text: str, n: int = 34) -> str:
+    t = _mm_clean(text)
+    return (t[: n - 1] + "…") if len(t) > n else t
+
+
+def _build_mindmap_svg(ideas: list, links: list) -> str:
+    import math
+    W, H = 860, 560
+    cx, cy = W / 2, H / 2
+    R1, R2 = 132, 232
+
+    groups: dict = {}
+    for it in ideas:
+        groups.setdefault((it.get("domain") or "Other"), []).append(it)
+    domains = list(groups.keys())
+    nD = max(1, len(domains))
+
+    pos: dict = {}
+    branch_svg, hub_svg, nodes_svg = [], [], []
+
+    for di, dom in enumerate(domains):
+        a = -math.pi / 2 + 2 * math.pi * di / nD
+        hx, hy = cx + R1 * math.cos(a), cy + R1 * math.sin(a)
+        branch_svg.append(
+            f'<path d="M{cx:.0f},{cy:.0f} Q{(cx+hx)/2:.0f},{(cy+hy)/2:.0f} {hx:.0f},{hy:.0f}" '
+            f'fill="none" stroke="var(--m-rule-strong)" stroke-width="1"/>')
+        anchor = "start" if math.cos(a) >= 0 else "end"
+        hub_svg.append(f'<circle cx="{hx:.0f}" cy="{hy:.0f}" r="3.5" fill="var(--m-ink)"/>')
+        hub_svg.append(
+            f'<text x="{hx + (6 if anchor=="start" else -6):.0f}" y="{hy+3:.0f}" '
+            f'text-anchor="{anchor}" font-family="var(--m-mono)" font-size="9" '
+            f'fill="var(--m-ink)" letter-spacing="0.04em">{_xml(dom.upper())}</text>')
+
+        items = groups[dom]
+        k = len(items)
+        sector = min(2 * math.pi / nD * 0.85, 1.1)
+        for ii, it in enumerate(items):
+            off = 0 if k == 1 else (sector * (ii / (k - 1) - 0.5))
+            ia = a + off
+            ix, iy = cx + R2 * math.cos(ia), cy + R2 * math.sin(ia)
+            pos[it.get("idea_id")] = (ix, iy)
+            branch_svg.append(
+                f'<path d="M{hx:.0f},{hy:.0f} Q{(hx+ix)/2:.0f},{(hy+iy)/2:.0f} {ix:.0f},{iy:.0f}" '
+                f'fill="none" stroke="var(--m-rule)" stroke-width="1"/>')
+            color = _IDEA_TYPE_COLOR.get(it.get("idea_type") or "", "var(--m-accent)")
+            ianchor = "start" if math.cos(ia) >= 0 else "end"
+            lx = ix + (9 if ianchor == "start" else -9)
+            nodes_svg.append(
+                f'<circle cx="{ix:.0f}" cy="{iy:.0f}" r="5.5" fill="{color}">'
+                f'<title>{_xml(_mm_clean(it.get("text","")))}</title></circle>')
+            nodes_svg.append(
+                f'<text x="{lx:.0f}" y="{iy+3:.0f}" text-anchor="{ianchor}" '
+                f'font-family="var(--m-display)" font-size="11.5" fill="var(--m-text)">'
+                f'{_xml(_mm_label(it.get("text","")))}</text>')
+
+    link_svg = []
+    for ln in links:
+        a_id, b_id = ln.get("idea_id_a"), ln.get("idea_id_b")
+        if a_id in pos and b_id in pos:
+            x1, y1 = pos[a_id]
+            x2, y2 = pos[b_id]
+            mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+            ctrlx, ctrly = mx + (cx - mx) * 0.30, my + (cy - my) * 0.30
+            link_svg.append(
+                f'<path d="M{x1:.0f},{y1:.0f} Q{ctrlx:.0f},{ctrly:.0f} {x2:.0f},{y2:.0f}" '
+                f'fill="none" stroke="var(--m-accent)" stroke-width="1.1" '
+                f'stroke-dasharray="3 3" opacity="0.55">'
+                f'<title>{_xml(ln.get("link_label",""))}</title></path>')
+
+    center_svg = (
+        f'<circle cx="{cx:.0f}" cy="{cy:.0f}" r="26" fill="var(--m-surface-2)" '
+        f'stroke="var(--m-rule-strong)" stroke-width="1"/>'
+        f'<text x="{cx:.0f}" y="{cy-1:.0f}" text-anchor="middle" font-family="var(--m-mono)" '
+        f'font-size="8.5" fill="var(--m-muted)" letter-spacing="0.1em">MY</text>'
+        f'<text x="{cx:.0f}" y="{cy+9:.0f}" text-anchor="middle" font-family="var(--m-mono)" '
+        f'font-size="8.5" fill="var(--m-muted)" letter-spacing="0.1em">IDEAS</text>'
+    )
+
+    return (
+        f'<svg viewBox="0 0 {W} {H}" width="100%" style="max-width:100%;height:auto;display:block;">'
+        + "".join(branch_svg) + "".join(link_svg) + "".join(hub_svg) + center_svg + "".join(nodes_svg)
+        + "</svg>"
+    )
+
+
+@router.get("/api/partial/thinking/mindmap", response_class=HTMLResponse)
+async def thinking_mindmap(request: Request):
+    """Render the user's ideas + idea_links as a clustered mindmap (SVG)."""
+    ideas = db_query(
+        "SELECT idea_id, text, domain, idea_type, tags FROM ideas "
+        "ORDER BY created_at DESC LIMIT 24"
+    ) or []
+    try:
+        links = db_query("SELECT idea_id_a, idea_id_b, link_label FROM idea_links") or []
+    except Exception:
+        links = []
+    if not ideas:
+        return HTMLResponse(
+            '<p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);'
+            'font-size:13px;margin:0;">No ideas captured yet — capture a few and they\'ll map here.</p>')
+    svg = _build_mindmap_svg(ideas, links)
+    legend_items = [
+        ("research", "var(--m-accent)"), ("question", "#c98a2b"), ("method", "#3a8f7a"),
+        ("note", "#8a8a8a"), ("literature", "#7a5ea8"), ("teaching", "#4a8f4a"),
+    ]
+    legend = (
+        '<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;padding-top:10px;'
+        'border-top:1px solid var(--m-rule-soft);font-family:var(--m-mono);font-size:8.5px;'
+        'letter-spacing:0.08em;color:var(--m-muted);">'
+        + "".join(
+            f'<span style="display:inline-flex;align-items:center;gap:5px;">'
+            f'<span style="width:8px;height:8px;border-radius:50%;background:{c};display:inline-block;"></span>'
+            f'{k.upper()}</span>'
+            for k, c in legend_items)
+        + '<span style="display:inline-flex;align-items:center;gap:5px;">'
+        '<span style="width:14px;border-top:1.5px dashed var(--m-accent);display:inline-block;"></span>'
+        'CONNECTION</span></div>'
+    )
+    return HTMLResponse(svg + legend)
