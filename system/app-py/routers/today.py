@@ -548,6 +548,7 @@ def _build_news_items(qrows) -> list[dict]:
     items = []
     for r in (qrows or []):
         dom = r.get("domain") or "General"
+        rel = r.get("relevance") or 0
         items.append({
             "id": r["brief_id"],
             "title": r.get("title") or "Untitled",
@@ -558,6 +559,10 @@ def _build_news_items(qrows) -> list[dict]:
             "signal_class": _signal_class(r.get("signal_strength") or ""),
             "source_url": r.get("source_url"),
             "time": _hm(r["created_at"]),
+            # Semantic closeness to the user's corpus (relevance.py). Qualitative
+            # chip, not a raw % — the embedding baseline sits ~0.5 so a % misleads.
+            "relevance": rel,
+            "match": "top" if rel >= 0.64 else ("yes" if rel >= 0.60 else ""),
         })
     return items
 
@@ -571,6 +576,13 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
         period = "week"
     days = 7 if period == "week" else 30
     cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
+
+    # Ensure the semantic-relevance column exists (the scanner adds it; guard older DBs).
+    try:
+        from db import db_execute
+        db_execute("ALTER TABLE news_briefs ADD COLUMN relevance REAL DEFAULT 0")
+    except Exception:
+        pass
 
     last_updated = None
     try:
@@ -614,10 +626,12 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
             cnt = tr.get("n") or 0
             age = (_age_label(tr["last_ts"]) + " ago") if tr.get("last_ts") else ""
 
-            # Articles for this topic
+            # Articles for this topic — most relevant to the user's work first.
             art_rows = db_query(
-                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at "
-                "FROM news_briefs WHERE domain = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 10",
+                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at, "
+                "COALESCE(relevance,0) as relevance "
+                "FROM news_briefs WHERE domain = ? AND created_at >= ? "
+                "ORDER BY COALESCE(relevance,0) DESC, created_at DESC LIMIT 10",
                 (topic, cutoff),
             ) or []
             items = _build_news_items(art_rows)
@@ -633,6 +647,29 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
                                if topic_summary.get("generated_at") else "",
                 "open": topic == category,
             })
+
+        # "Closest to your work" — top items by semantic relevance across all topics,
+        # prepended as a personalised section (the pattern pro feeds use).
+        try:
+            top_rows = db_query(
+                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at, "
+                "COALESCE(relevance,0) as relevance FROM news_briefs "
+                "WHERE created_at >= ? AND COALESCE(relevance,0) >= 0.60 "
+                "ORDER BY COALESCE(relevance,0) DESC LIMIT 8",
+                (cutoff,),
+            ) or []
+            if top_rows:
+                slipcases.insert(0, {
+                    "topic": "✦ Closest to your work",
+                    "count": len(top_rows),
+                    "age_label": "",
+                    "items": _build_news_items(top_rows),
+                    "summary": "Ranked by how close each item is to your library, projects and interests.",
+                    "summary_age": "",
+                    "open": True,
+                })
+        except Exception:
+            pass
     except Exception:
         pass
 

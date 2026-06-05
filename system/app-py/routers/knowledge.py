@@ -64,8 +64,9 @@ async def global_search(request: Request, q: str = ""):
         pass
     try:
         news = db_query(
-            "SELECT rowid as id, title, domain, source_url FROM news_briefs "
-            "WHERE title LIKE ? ORDER BY created_at DESC LIMIT 5",
+            "SELECT rowid as id, title, domain, source_url, COALESCE(relevance,0) as relevance "
+            "FROM news_briefs WHERE title LIKE ? "
+            "ORDER BY COALESCE(relevance,0) DESC, created_at DESC LIMIT 5",
             (like,),
         ) or []
     except Exception:
