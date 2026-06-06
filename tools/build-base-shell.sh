@@ -30,7 +30,9 @@ git branch -f base main
 git checkout -q base
 
 echo "▸ Stripping PH-specific content for the clean shell…"
-cp tools/base-shell/README.md README.md                                    # 1) generic base README
+# 1) README: the canonical README is the full base README; strip the PH-only
+#    blocks (the PH-edition note + pre-loaded-knowledge table) for the shell.
+sed -i '/<!-- PH-ONLY:START -->/,/<!-- PH-ONLY:END -->/d' README.md
 git rm -r -q --ignore-unmatch knowledge/courses/epidemiology-foundations \
                               knowledge/courses/health-economics \
                               knowledge/courses/outbreak-investigation 2>/dev/null || true   # 2) filled domain courses
