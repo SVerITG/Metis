@@ -187,9 +187,21 @@ This is genuinely new ground. The individual components — local language model
 
 ---
 
+### How Metis is powered — you choose (you won't burn API tokens just by using it)
+
+Metis runs two ways, and you pick:
+
+- **On your Claude subscription** — **no API key, no per-token bills.** This is the everyday path: you talk to Metis through **Claude Desktop or Claude Code**, and the dashboard's "✦ Update with Claude" / brainstorm buttons open Claude Desktop on your subscription. Most people use Metis entirely this way.
+- **With an Anthropic API key** — only needed for things that run *while you're not there*: the scheduled morning scan and automated brief generation. Pay-per-token, typically a few cents a day.
+- **With a local model (Ollama)** — optional, for fully-offline helper tasks (e.g. the data assistant).
+
+The installer asks for an API key so automation *can* run, but you can **skip it and use Metis on your subscription alone**. Nothing in the interactive experience requires the API.
+
+---
+
 ### Install in 3 steps
 
-> **Step 1 — Get your Anthropic API key (free, 2 minutes)**
+> **Step 1 — (Optional) Get an Anthropic API key — only for unattended automation (free, 2 minutes)**
 >
 > 1. Go to **[console.anthropic.com](https://console.anthropic.com)** and create an account.
 > 2. Click **API Keys → Create Key**. Copy the key (it starts with `sk-ant-…`).
