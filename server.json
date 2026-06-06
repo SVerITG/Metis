@@ -1,0 +1,11 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.SVerITG/metis-ph",
+  "description": "Public-health research companion for Claude: persistent memory of your papers, field, and work.",
+  "version": "1.0.0",
+  "websiteUrl": "https://github.com/SVerITG/Metis_PH#install-in-3-steps",
+  "repository": {
+    "url": "https://github.com/SVerITG/Metis_PH",
+    "source": "github"
+  }
+}
