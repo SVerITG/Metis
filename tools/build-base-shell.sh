@@ -35,6 +35,14 @@ echo "▸ Stripping PH-specific content for the clean shell…"
 sed -i '/<!-- PH-ONLY:START -->/,/<!-- PH-ONLY:END -->/d' README.md
 # Insert the base-only note (points readers to the PH edition to test the layer):
 sed -i -e '/<!-- BASE-NOTE -->/r tools/base-shell/base-note.md' -e '/<!-- BASE-NOTE -->/d' README.md
+# Point the status BADGES at this repo (Metis), not Metis_PH — without touching the
+# intentional Metis_PH links (the base-note + editions table use the bare repo URL).
+sed -i \
+  -e 's#github/stars/SVerITG/Metis_PH#github/stars/SVerITG/Metis#g' \
+  -e 's#github/last-commit/SVerITG/Metis_PH#github/last-commit/SVerITG/Metis#g' \
+  -e 's#SVerITG/Metis_PH/stargazers#SVerITG/Metis/stargazers#g' \
+  -e 's#SVerITG/Metis_PH/blob/main/LICENSE#SVerITG/Metis/blob/main/LICENSE#g' \
+  README.md
 git rm -r -q --ignore-unmatch knowledge/courses/epidemiology-foundations \
                               knowledge/courses/health-economics \
                               knowledge/courses/outbreak-investigation 2>/dev/null || true   # 2) filled domain courses
