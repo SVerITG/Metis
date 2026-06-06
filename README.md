@@ -247,6 +247,54 @@ The script asks two questions (Full or AI only, demo workspace) and does the res
 
 ---
 
+### MCP client configuration
+
+The installer registers Metis with Claude Desktop and Claude Code automatically — you normally don't need to edit any config by hand. The blocks below are for reference (and for MCP directories): they show how the `metis-rc` server is wired in.
+
+> **Metis is not a one-line `npx`/`uvx` server.** Run the installer first — it builds the local virtual environment, initialises the database, and generates the launch script (`run.sh`) the configs below point to.
+
+**Step 0 — install (builds the venv + DB, generates `run.sh`):**
+
+```bash
+bash system/mcp-server/setup-mcp.sh
+```
+
+**Claude Code (any OS)** — done for you by the installer, or add it manually:
+
+```bash
+claude mcp add metis-rc ~/.local/share/metis-mcp/run.sh
+```
+
+**Claude Desktop — macOS / Linux (native)** — in `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "metis-rc": {
+      "command": "bash",
+      "args": ["/home/<you>/.local/share/metis-mcp/run.sh"]
+    }
+  }
+}
+```
+
+**Claude Desktop — Windows + WSL** — in `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "metis-rc": {
+      "command": "wsl",
+      "args": ["-e", "/home/<you>/.local/share/metis-mcp/run.sh"]
+    }
+  }
+}
+```
+
+> Replace `<you>` with your username. The generated `run.sh` sets `METIS_RC_ROOT` (your Research Cortex folder) and launches `python -m metis_mcp.server` from the installed virtual environment — no API key is required to run the server itself.
+
+---
+
 ### What you get on day one
 
 | Feature | What it does |
