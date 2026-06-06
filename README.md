@@ -63,6 +63,11 @@
   <img src="https://img.shields.io/badge/data%20stays%20local-✓-green" alt="Data stays local"/>
 </p>
 
+<!-- PH-ONLY:START -->
+> ### 🩺 This is the Public Health & Epidemiology edition
+> Metis_PH ships with a **pre-loaded public-health knowledge layer** — WHO guidance, global-health reports, and epidemiology/methods references — so you can ask grounded, cited questions on day one without building a corpus first. The domain-agnostic [**base shell** (`SVerITG/Metis`)](https://github.com/SVerITG/Metis) is identical in every other way; it ships empty and builds *your* field's knowledge layer through the setup questionnaire.
+<!-- PH-ONLY:END -->
+
 ---
 
 ## See it in action
@@ -532,12 +537,16 @@ Methods Coach answers grounded in those passages, citing both sources.
 | Chunking | 3,200-character chunks, 400-character overlap |
 | Score threshold | Chunks below 0.4 similarity dropped before injection |
 
-**Pre-loaded knowledge layers (Metis_PH):**
+**Build your field's knowledge layer.** On first setup, the wizard's research-background questionnaire briefs the **Background Maker**, which harvests, scrubs, and indexes your discipline's literature into the local RAG store — so every agent answers from *your* corpus, cited. Grow it anytime with `/background build <topic>`.
+
+<!-- PH-ONLY:START -->
+**Pre-loaded knowledge layers (this edition):**
 
 | Layer | Documents | Covers |
 |---|---|---|
 | **Public Health Background** | 34 | WHO guidelines, global health reports, social determinants, NCDs, maternal & child health |
 | **Epidemiology & Methods** | 10 | STROBE, WHO Basic Epi, Leyland MLM, Bates lme4, PRISMA 2020, SaTScan, CIFOR |
+<!-- PH-ONLY:END -->
 
 ---
 
