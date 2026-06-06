@@ -36,7 +36,9 @@ sed -i '/<!-- PH-ONLY:START -->/,/<!-- PH-ONLY:END -->/d' README.md
 git rm -r -q --ignore-unmatch knowledge/courses/epidemiology-foundations \
                               knowledge/courses/health-economics \
                               knowledge/courses/outbreak-investigation 2>/dev/null || true   # 2) filled domain courses
-git rm -q --ignore-unmatch docs/Scene1.gif docs/Scene2.gif docs/Scene4.gif docs/Scene5.gif 2>/dev/null || true  # 3) PH demo GIFs
+# NB: the docs/Scene*.gif demo GIFs are KEPT in the base shell — they demonstrate
+# the universal features (dashboard, brainstorm, self-improvement); the persona is
+# just example data, and the README "See it in action" section references them.
 git add README.md
 
 git commit -q -m "build: domain-agnostic base shell (generated from main by build-base-shell.sh)" \
