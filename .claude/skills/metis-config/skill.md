@@ -141,16 +141,26 @@ integration:
 
 ---
 
-## Section 1 — Identity
+## Section 1 — Identity & Research Background
+
+This is the most important section. The answers do **two jobs**: they brief every Metis agent on who the user is, **and** they become the brief the **Background Maker** uses to build the user's field knowledge layer (the RAG corpus every agent retrieves from, with citations). Go slowly — ask **one question at a time**, in plain language, and let the user answer in their own words. Don't rush to the next question.
 
 Explain first:
 
-> "This becomes context for every agent in Metis. When the Librarian fetches a paper or the Methods Coach reviews your statistics, they will know your role and the kind of work you do. Think of it as a one-paragraph briefing for your AI team."
+> "This is the heart of setup. Your answers do two things: they brief every Metis agent on who you are, and they tell the Background Maker exactly what to read — so Metis can ground its answers in *your* field's literature, with citations, instead of generic web text. The more you tell me here, the sharper Metis is from day one. I'll ask a handful of short questions."
 
-Ask:
-- "Tell me about yourself — your role, your area of expertise, and the research domain you work in. (Two or three sentences.)"
-- "What language do you primarily work in? (English, French, Dutch, Spanish, …)"
-- "What's your name (just the one Metis should use to greet you)?"
+Ask, **one at a time**, recording each:
+
+1. **Name** — "What should Metis call you?"
+2. **Language** — "What language do you primarily work in? (English, French, Dutch, Spanish, …)"
+3. **Role & context** — "Your role and the kind of work you do, in a sentence or two."
+4. **Field & subfields** — "Your research field, and the sub-areas within it you actually work on. (e.g. 'epidemiology — neglected tropical disease surveillance, spatial methods'.)"
+5. **Core topics** — "The specific topics you follow — list as many as you like. These also drive your daily news + literature scans."
+6. **Seminal works & key authors** — "Any foundational papers, books, or authors your field is built on that Metis should know? Name a few — these anchor the knowledge layer."
+7. **Key journals & sources** — "Which journals, report series, or organisations publish the work you trust? (specific journals, an agency's report series, a society's guidelines …)"
+8. **Methods & frameworks** — "The methods, frameworks or tools central to your work (statistical, lab, field, software)."
+9. **Trusted organisations** — "Institutions or bodies whose output is authoritative in your field (so the Background Maker prioritises them and Data Guardian trusts them)."
+10. **Depth** — "How deep should the knowledge layer go? **light** (a starter corpus, ~30 docs), **standard** (~100), or **deep** (~250+)?"
 
 Write to `user-config.yaml`:
 
@@ -162,9 +172,32 @@ user:
   language: "en"
   active_contexts: ["general"]
   specialist_contexts: []
+research:
+  field: "..."
+  subfields: ["..."]
+  topics: ["..."]
+  key_authors: ["..."]
+  key_works: ["..."]
+  journals: ["..."]
+  methods: ["..."]
+  organisations: ["..."]
+  corpus_depth: "standard"   # light | standard | deep
 ```
 
-Mention: "You can add specialist contexts later via `/add-context` — for example if you take on a new project area."
+Mention: "You can add specialist contexts later via `/add-context`, or grow the knowledge layer anytime with `/background build <topic>`."
+
+### → Then build the background knowledge layer (the part that makes Metis *yours*)
+
+As soon as the background is captured, hand it **straight to the Background Maker** so Metis reads the user's field before they even ask. This is the demonstration of how the RAG/background layer is wired into Metis — do it, don't just describe it.
+
+> "Now the part that makes Metis actually yours: I'm going to have the **Background Maker** read your field. It harvests papers and reports from the sources you named, scrubs them for safety, and indexes them locally — so every agent can cite from them. It runs in the background; in a few minutes you'll have a searchable knowledge layer for **[field]**."
+
+- **Claude Code:** invoke **`/background-maker`** and pass the assembled brief (field, subfields, topics, key authors/works, journals, organisations, depth). It scopes → harvests (Content Harvester) → scrubs (Data Guardian) → indexes into the RAG store (`create_knowledge_database` / `build_pdf_knowledge_db`).
+- **Claude Desktop:** the same — pick the **Background Maker** prompt and paste the brief into your first message. (This whole wizard runs in Desktop too; it's the more accessible path for non-developers.)
+
+Then confirm and **show it working**:
+
+> "Done — Metis now has a **[depth]** knowledge layer for **[field]**. Try it: ask any agent a question in your field and it answers from *your* corpus, with citations — not generic web text. Grow it anytime with `/background build <topic>`."
 
 ---
 
