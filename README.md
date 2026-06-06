@@ -67,6 +67,7 @@
 > ### 🩺 This is the Public Health & Epidemiology edition
 > Metis_PH ships with a **pre-loaded public-health knowledge layer** — WHO guidance, global-health reports, and epidemiology/methods references — so you can ask grounded, cited questions on day one without building a corpus first. The domain-agnostic [**base shell** (`SVerITG/Metis`)](https://github.com/SVerITG/Metis) is identical in every other way; it ships empty and builds *your* field's knowledge layer through the setup questionnaire.
 <!-- PH-ONLY:END -->
+<!-- BASE-NOTE -->
 
 ---
 
