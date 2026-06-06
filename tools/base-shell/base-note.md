@@ -1,0 +1,2 @@
+> ### 🧪 Want to see the background layer in action? Try the Public Health edition.
+> **[Metis_PH](https://github.com/SVerITG/Metis_PH)** is a fully worked edition that ships with a **pre-loaded knowledge layer** (WHO guidance + epidemiology & methods references). Clone it to test the cited, library-grounded answers *immediately* — without building a corpus first — then bring the same setup to your own field here.
