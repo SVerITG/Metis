@@ -43,6 +43,15 @@ sed -i \
   -e 's#SVerITG/Metis_PH/stargazers#SVerITG/Metis/stargazers#g' \
   -e 's#SVerITG/Metis_PH/blob/main/LICENSE#SVerITG/Metis/blob/main/LICENSE#g' \
   README.md
+# 1b) server.json (official MCP registry): rewrite the PH identity → base identity.
+if [ -f server.json ]; then
+  sed -i \
+    -e 's#io.github.SVerITG/metis-ph#io.github.SVerITG/metis#g' \
+    -e 's#SVerITG/Metis_PH#SVerITG/Metis#g' \
+    -e 's#Public-health research companion for Claude: persistent memory of your papers, field, and work.#Research companion for Claude: persistent memory of your papers, field, and working history.#g' \
+    server.json
+  git add server.json
+fi
 git rm -r -q --ignore-unmatch knowledge/courses/epidemiology-foundations \
                               knowledge/courses/health-economics \
                               knowledge/courses/outbreak-investigation 2>/dev/null || true   # 2) filled domain courses
