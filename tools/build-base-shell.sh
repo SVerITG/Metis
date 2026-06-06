@@ -48,7 +48,7 @@ if [ -f server.json ]; then
   sed -i \
     -e 's#io.github.SVerITG/metis-ph#io.github.SVerITG/metis#g' \
     -e 's#SVerITG/Metis_PH#SVerITG/Metis#g' \
-    -e 's#Public-health research companion for Claude: persistent memory of your papers, field, and work.#Research companion for Claude: persistent memory of your papers, field, and working history.#g' \
+    -e 's#Public-health research memory for Claude: cited answers from your library + 30+ specialist agents#Persistent research memory for Claude: cited answers from your library + 30+ specialist agents#g' \
     server.json
   git add server.json
 fi
