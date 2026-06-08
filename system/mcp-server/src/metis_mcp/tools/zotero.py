@@ -513,7 +513,19 @@ def _parse_bibtex_simple(text: str) -> list[dict]:
 
 @app.tool()
 async def get_library_stats() -> list[TextContent]:
-    """Return a summary of the current literature library."""
+    """Summarise your literature library at a glance.
+
+    Use this to see how big and how current your reference collection is before
+    searching or citing: it reports the total number of papers, a breakdown by
+    source (e.g. Zotero, Mendeley, manual) and by item type, the most recently
+    added references, and — if you sync Zotero — when the library was last
+    synced. A quick "what's in my library right now?" overview. Takes no
+    arguments. Pairs with search_library and sync_zotero_library.
+
+    Returns:
+        A formatted summary: total papers, counts by source and item type, the
+        five most recent references, and Zotero sync state if available.
+    """
     with connect(paths.db) as conn:
         _ensure_lit_schema(conn)
         total = conn.execute("SELECT COUNT(*) FROM literature_metadata").fetchone()[0]

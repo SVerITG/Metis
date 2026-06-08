@@ -16,15 +16,24 @@ async def save_review(
     content: str,
     log_run: bool = True,
 ) -> list[TextContent]:
-    """Save a review document to the PKM and optionally log the agent run.
+    """Save an agent's output as a review file and record the run.
 
-    Writes to outputs/reviews/{agent_slug}/{date}_{task_slug}.md.
+    This is the standard way a Metis agent persists its work: it writes the
+    markdown to outputs/reviews/{agent_slug}/{date}_{task_slug}.md and, by
+    default, logs the run so the dashboard's Agents tab tracks it. Use it at the
+    end of any substantive agent task so the result is filed and discoverable.
 
     Args:
-        agent_slug: The agent that produced the review.
-        task_slug: Short slug identifying the review task.
-        content: The full review content in markdown.
-        log_run: Whether to also log this as an agent run (default True).
+        agent_slug: Slug of the agent that produced the review
+            (e.g. "epidemiologist", "writing-partner").
+        task_slug: Short kebab-case slug identifying the task; becomes part of
+            the filename (e.g. "article1-methodology").
+        content: The full review content as markdown.
+        log_run: Whether to also record this as an agent run for the dashboard.
+            Defaults to True.
+
+    Returns:
+        A confirmation with the path of the saved review file.
     """
     today = datetime.date.today().isoformat()
     review_dir = paths.reviews / agent_slug

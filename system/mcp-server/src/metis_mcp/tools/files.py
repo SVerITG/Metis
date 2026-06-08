@@ -416,10 +416,20 @@ async def promote_basket_item(source_path: str, target_path: str) -> list[TextCo
 
 @app.tool()
 async def remove_tracked_file(path: str) -> list[TextContent]:
-    """Remove a file from the tracking list.
+    """Stop tracking a file so Metis no longer watches it for changes.
+
+    Removes a single file from the tracked-files list (the files the dashboard
+    Planning tab scans for activity). Use this when a file is no longer relevant
+    or was added by mistake. The file on disk is never touched — only its
+    tracking record is deleted. The inverse of add_tracked_file.
 
     Args:
-        path: Path of the file to stop tracking.
+        path: Absolute path of the file to stop tracking. Must match the path
+            exactly as it was registered.
+
+    Returns:
+        A confirmation that tracking stopped, or a note if the path was not in
+        the tracking list.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]

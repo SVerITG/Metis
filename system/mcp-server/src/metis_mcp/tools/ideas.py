@@ -321,11 +321,21 @@ async def get_ideas(
     scope: str = "week",
     limit: int = 20,
 ) -> list[TextContent]:
-    """Retrieve ideas from the database.
+    """List captured ideas from your knowledge base, newest first.
+
+    Use this to review what you've been thinking about over a chosen time
+    window — the ideas you logged with capture_idea — so you can revisit,
+    connect, or act on them. Pairs with capture_idea (to add) and
+    cross_pollinate (to surface related work).
 
     Args:
-        scope: Time scope -- "today", "week", "month", "all".
-        limit: Maximum results (default 20).
+        scope: Time window to retrieve. One of "today", "week" (last 7 days),
+            "month" (last 30 days), or "all". Defaults to "week".
+        limit: Maximum number of ideas to return, newest first. Defaults to 20.
+
+    Returns:
+        A formatted list of matching ideas with their timestamps and tags, or a
+        friendly note if none were found in that window.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
@@ -475,11 +485,22 @@ async def get_journal(
     date_from: str = "",
     limit: int = 10,
 ) -> list[TextContent]:
-    """Retrieve journal entries.
+    """List journal entries from your knowledge base, newest first.
+
+    Use this to look back over your dated journal/log entries — reflections,
+    progress notes, and session handoffs — optionally from a given start date.
+    Helpful for "what was I working on lately?" and for rebuilding context at
+    the start of a session.
 
     Args:
-        date_from: Start date (YYYY-MM-DD). Empty = no filter.
-        limit: Maximum results (default 10).
+        date_from: Earliest entry date to include, as "YYYY-MM-DD". Empty
+            string (the default) applies no date filter and returns the most
+            recent entries.
+        limit: Maximum number of entries to return, newest first. Defaults to 10.
+
+    Returns:
+        A formatted list of journal entries with their dates, or a note if none
+        match.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
