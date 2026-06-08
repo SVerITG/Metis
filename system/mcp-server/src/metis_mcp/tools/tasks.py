@@ -229,3 +229,136 @@ async def create_task(
         ]
     except Exception as e:
         return [TextContent(type="text", text=f"Error creating task: {e}")]
+
+
+@app.tool()
+async def update_task(
+    task_id: str,
+    status: str = "",
+    title: str = "",
+    owner: str = "",
+    notes: str = "",
+    due_date: str = "",
+    recurrence: str = "",
+) -> list[TextContent]:
+    """Update an existing task — its status, title, owner, notes, due date, or recurrence.
+
+    The companion to create_task and get_tasks: use this to mark a task done or
+    blocked, reschedule it, reassign it, or edit its details. Only the fields you
+    pass are changed; empty arguments leave the existing value untouched. Marking
+    a recurring task "done" automatically creates its next occurrence. Find a
+    task_id with get_tasks; use delete_task to remove a task entirely.
+
+    Args:
+        task_id: ID of the task to update (as shown by get_tasks). Required.
+        status: New status — "open", "done", or "blocked". Empty = unchanged.
+        title: New title. Empty = unchanged.
+        owner: New owner. Empty = unchanged.
+        notes: New notes/details. Empty = unchanged.
+        due_date: New due date in "YYYY-MM-DD" format. Empty = unchanged.
+        recurrence: New repeat — "daily", "weekly", "monthly", or "yearly".
+            Empty = unchanged; pass "none" to clear an existing recurrence.
+
+    Returns:
+        A confirmation listing the changed fields (and the next-occurrence id if a
+        recurring task was completed), or a note if the task_id was not found.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    status = (status or "").strip().lower()
+    if status and status not in {"open", "done", "blocked"}:
+        return [TextContent(type="text", text=(
+            f"Invalid status '{status}'. Use one of: open, done, blocked."
+        ))]
+
+    # recurrence: "" = unchanged, "none" = clear, otherwise validate.
+    set_recurrence = False
+    new_recurrence = ""
+    raw_rec = (recurrence or "").strip().lower()
+    if raw_rec:
+        set_recurrence = True
+        new_recurrence = "" if raw_rec == "none" else raw_rec
+        if new_recurrence not in _VALID_RECURRENCE:
+            return [TextContent(type="text", text=(
+                f"Invalid recurrence '{recurrence}'. Use daily, weekly, monthly, yearly, or none."
+            ))]
+
+    fields: list[str] = []
+    params: list = []
+    if status:
+        fields.append("status = ?"); params.append(status)
+    if title:
+        fields.append("title = ?"); params.append(title)
+    if owner:
+        fields.append("owner = ?"); params.append(owner)
+    if notes:
+        fields.append("notes = ?"); params.append(notes)
+    if due_date:
+        fields.append("due_date = ?"); params.append(due_date)
+    if set_recurrence:
+        fields.append("recurrence = ?"); params.append(new_recurrence)
+
+    if not fields:
+        return [TextContent(type="text", text=(
+            "Nothing to update — pass at least one field (status, title, owner, notes, due_date, recurrence)."
+        ))]
+
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    fields.append("updated_at = ?"); params.append(now)
+    params.append(task_id)
+
+    try:
+        with connect(paths.db) as conn:
+            _ensure_task_columns(conn)
+            cur = conn.execute(
+                f"UPDATE tasks SET {', '.join(fields)} WHERE task_id = ?", params
+            )
+            if cur.rowcount == 0:
+                conn.rollback()
+                return [TextContent(type="text", text=f"Task not found: {task_id}")]
+
+            # Continue a recurring series when it's completed.
+            spawned = None
+            if status == "done":
+                spawned = spawn_next_occurrence(conn, task_id)
+            conn.commit()
+
+        changed = [f.split(" =")[0] for f in fields if not f.startswith("updated_at")]
+        msg = f"Task updated: **{task_id}**\n- Changed: {', '.join(changed)}"
+        if spawned:
+            msg += f"\n- Next occurrence created: {spawned}"
+        return [TextContent(type="text", text=msg)]
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error updating task: {e}")]
+
+
+@app.tool()
+async def delete_task(task_id: str) -> list[TextContent]:
+    """Permanently delete a task from the database.
+
+    The destructive complement to create_task — removes the task row entirely.
+    Use this for tasks created in error or no longer relevant; to instead mark
+    work finished (and continue a recurring series), use update_task with
+    status="done". Find the task_id with get_tasks. This cannot be undone.
+
+    Args:
+        task_id: ID of the task to delete (as shown by get_tasks). Required.
+
+    Returns:
+        A confirmation that the task was deleted, or a note if no task with that
+        id exists.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    try:
+        with connect(paths.db) as conn:
+            _ensure_task_columns(conn)
+            cur = conn.execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
+            conn.commit()
+            if cur.rowcount == 0:
+                return [TextContent(type="text", text=f"Task not found: {task_id}")]
+        return [TextContent(type="text", text=f"Task deleted: **{task_id}**")]
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error deleting task: {e}")]

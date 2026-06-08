@@ -141,16 +141,26 @@ async def add_memory_entry(
 ) -> list[TextContent]:
     """Add a new memory entry to the memory palace.
 
+    Use this for a human-curated 'memory palace' note (title + summary + topics,
+    optionally saved as a markdown file). For machine/agent event logging use
+    store_episodic_memory; for a distilled concept/definition use
+    store_semantic_memory.
+
     Inserts into the memory_entries table. If detail is provided, also writes
     a markdown file under journal/{entry_type}s/.
 
     Args:
         title: Short title for the entry.
-        summary: One-paragraph summary (stored in DB, shown in search).
+        summary: One-paragraph summary, stored in the DB and shown in search.
         topics: Comma-separated topic tags, e.g. "metis-setup,mcp-server".
-        entry_type: One of "session", "journal", "idea", "decision", "topic".
-        detail: Full markdown content for the .md file (optional).
+        entry_type: One of "session", "journal", "idea", "decision", or "topic".
+        detail: Full markdown content for the optional .md file.
         computer: Hostname of the computer this entry is from (optional).
+
+    Returns:
+        A single TextContent confirming the saved entry (title, generated ID,
+        type, topics, and the markdown file path if one was written), or an
+        error message if the database is missing or the write fails.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]

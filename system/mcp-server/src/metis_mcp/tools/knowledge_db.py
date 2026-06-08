@@ -642,15 +642,25 @@ async def search_pdf_knowledge(
 ) -> list[TextContent]:
     """Semantic search across one or more knowledge database layers.
 
+    Meaning-based (vector) search over your knowledge-base PDF chunks — the RAG
+    retrieval tool behind grounded, cited answers. For exact keyword matches use
+    search_fulltext; for reference metadata use search_library; for your own
+    notes/memory (not documents) use semantic_search.
+
     Searches indexed PDF chunks using 768-dim nomic-embed vector similarity.
     You can search a single layer or combine layers (e.g. PH background + HAT specialist).
 
     Args:
-        query:     Natural language question or keyword phrase.
-        databases: List of database slugs to search. Default: all indexed databases.
-                   Examples: ['ph-background'], ['hat-specialist', 'epi-methods'],
-                   or None to search everything.
-        top_k:     Number of results to return (default 8).
+        query: Natural language question or keyword phrase to embed and match.
+        databases: List of database slugs to search; pass None (the default) to
+            search all indexed databases. Examples: ['ph-background'],
+            ['hat-specialist', 'epi-methods'].
+        top_k: Number of results to return (default 8).
+
+    Returns:
+        A single TextContent listing the top-ranked PDF chunks (title, similarity
+        score, layer, domain, page, source file, and an excerpt), or a message if
+        nothing is indexed yet or no chunks match the requested databases.
     """
     from metis_mcp.embeddings import embed_query
 

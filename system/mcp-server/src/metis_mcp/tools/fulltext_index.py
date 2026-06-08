@@ -229,13 +229,23 @@ async def index_pdf_library(scope: str = "all") -> list[TextContent]:
 async def search_fulltext(query: str, max_results: int = 10) -> list[TextContent]:
     """Full-text keyword search across all indexed PDFs.
 
+    Exact KEYWORD search across the full body text of your indexed PDFs. For
+    meaning-based (semantic/vector) PDF search use search_pdf_knowledge; for
+    reference metadata only use search_library.
+
     Searches the library_fulltext table for papers containing your keywords.
     More powerful than title/abstract search — finds methodological details
     in the body of papers.
 
     Args:
-        query:       Keywords to search for (space-separated).
-        max_results: Maximum results to return (default 10).
+        query: Keywords to search for, space-separated (words shorter than three
+            letters and common stop-words are ignored).
+        max_results: Maximum number of results to return (default 10).
+
+    Returns:
+        A single TextContent listing each matching paper's title (or filename)
+        with a highlighted snippet around the first matched keyword, or a
+        "no results" / "no usable keywords" message.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text="Database not found.")]
