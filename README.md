@@ -311,7 +311,7 @@ claude mcp add metis-rc ~/.local/share/metis-mcp/run.sh
 | **Data protection** | Six security layers + the `/safe-analysis` workflow. Sensitive data is detected and held back before it reaches the AI, and the recommended pattern keeps raw data on your machine entirely — you share only derived metadata. |
 | **Cross-pollination** | Every idea, paper, meeting, and task is automatically connected to everything else in your research universe. Metis surfaces links across time — a paper from last year, a meeting note from March, a question you logged at a conference — without you searching for any of it. |
 | **Token tracking** | Every agent run shows exactly what it cost — which specialist was used, how many tokens, what model. The dashboard Today tab has a live token pulse so you always know your daily usage. Most daily tasks stay under a few cents. |
-| **Tool subset loading** | Metis registers 185 MCP tools, but exposing all of them to Claude on every session wastes context. By default, Metis loads only the tools relevant to the current agent — 90 tools for News Radar, 107 for the Librarian, ~65 for a general session. Each tool definition costs tokens; loading fewer means more room for actual work and lower per-session cost. Disable with `METIS_TOOL_SUBSETS=0` to see all tools. |
+| **Tool subset loading** | Metis registers 187 MCP tools, but exposing all of them to Claude on every session wastes context. By default, Metis loads only the tools relevant to the current agent — 90 tools for News Radar, 107 for the Librarian, ~65 for a general session. Each tool definition costs tokens; loading fewer means more room for actual work and lower per-session cost. Disable with `METIS_TOOL_SUBSETS=0` to see all tools. |
 | **Metis evolves — you don't have to** | Every week, Metis reviews its own session logs, identifies where it underperformed, and drafts behaviour improvements. You approve or reject them — nothing changes without your sign-off. New capabilities are folded in the same way. You focus on your research; Metis keeps itself sharp. |
 | **Grows with you** | Every agent run adds to your profile. A question asked after six months of use gets a meaningfully better answer than the same question on day one — not because the AI changed, but because Metis knows you better. |
 
@@ -510,7 +510,7 @@ flowchart LR
         WATCHERS{{Watchers\nData Guardian · Cybersecurity}}
     end
     subgraph Platform
-        MCP[MCP Server\n185 tools\nFastMCP]
+        MCP[MCP Server\n187 tools\nFastMCP]
         DASH[Dashboard\nFastAPI + HTMX]
         DB[(SQLite\nWAL mode)]
     end
@@ -785,7 +785,7 @@ Open an issue with label `course-package` to pilot or contribute.
 
 | Area | Status |
 |---|---|
-| MCP server (185 tools) | ✅ Operational, used daily |
+| MCP server (187 tools) | ✅ Operational, used daily |
 | 30+ specialist agents | ✅ Operational, used daily |
 | 10-tab dashboard | ✅ Operational, some features in active development |
 | Windows .exe installer | 🔧 In refinement |
