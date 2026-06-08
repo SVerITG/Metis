@@ -3,16 +3,16 @@
 # and anything that should never end up inside the image.
 
 # ── Personal / sensitive data ────────────────────────────────────────────────
-metis/journal/
-metis/inbox/
-metis/outputs/
-metis/archive/
-metis/basket/
-metis/knowledge/library/papers/
-metis/knowledge/library/pdfs/
-metis/knowledge/library/zotero/
-metis/system/app/data/
-metis/system/app-py/data/
+journal/
+inbox/
+outputs/
+archive/
+basket/
+knowledge/library/papers/
+knowledge/library/pdfs/
+knowledge/library/zotero/
+system/app/data/
+system/app-py/data/
 
 # ── Secrets and local config ─────────────────────────────────────────────────
 **/.env
