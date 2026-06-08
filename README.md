@@ -55,20 +55,17 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-v1.0-brightgreen" alt="v1.0"/>
-  <a href="https://github.com/SVerITG/Metis_PH/stargazers"><img src="https://img.shields.io/github/stars/SVerITG/Metis_PH?style=flat" alt="Stars"/></a>
-  <img src="https://img.shields.io/github/last-commit/SVerITG/Metis_PH" alt="Last commit"/>
-  <a href="https://github.com/SVerITG/Metis_PH/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
+  <a href="https://github.com/SVerITG/Metis/stargazers"><img src="https://img.shields.io/github/stars/SVerITG/Metis?style=flat" alt="Stars"/></a>
+  <img src="https://img.shields.io/github/last-commit/SVerITG/Metis" alt="Last commit"/>
+  <a href="https://github.com/SVerITG/Metis/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" alt="Python"/>
   <img src="https://img.shields.io/badge/Claude-MCP-orange?logo=anthropic" alt="Claude MCP"/>
-  <a href="https://glama.ai/mcp/servers/SVerITG/Metis_PH"><img src="https://glama.ai/mcp/servers/SVerITG/Metis_PH/badges/score.svg" alt="Glama score"/></a>
+  <a href="https://glama.ai/mcp/servers/SVerITG/Metis"><img src="https://glama.ai/mcp/servers/SVerITG/Metis/badges/score.svg" alt="Glama score"/></a>
   <img src="https://img.shields.io/badge/data%20stays%20local-✓-green" alt="Data stays local"/>
 </p>
 
-<!-- PH-ONLY:START -->
-> ### 🩺 This is the Public Health & Epidemiology edition
-> Metis_PH ships with a **pre-loaded public-health knowledge layer** — WHO guidance, global-health reports, and epidemiology/methods references — so you can ask grounded, cited questions on day one without building a corpus first. The domain-agnostic [**base shell** (`SVerITG/Metis`)](https://github.com/SVerITG/Metis) is identical in every other way; it ships empty and builds *your* field's knowledge layer through the setup questionnaire.
-<!-- PH-ONLY:END -->
-<!-- BASE-NOTE -->
+> ### 🧪 Want to see the background layer in action? Try the Public Health edition.
+> **[Metis_PH](https://github.com/SVerITG/Metis_PH)** is a fully worked edition that ships with a **pre-loaded knowledge layer** (WHO guidance + epidemiology & methods references). Clone it to test the cited, library-grounded answers *immediately* — without building a corpus first — then bring the same setup to your own field here.
 
 ---
 
@@ -589,14 +586,6 @@ Methods Coach answers grounded in those passages, citing both sources.
 
 **Build your field's knowledge layer.** On first setup, the wizard's research-background questionnaire briefs the **Background Maker**, which harvests, scrubs, and indexes your discipline's literature into the local RAG store — so every agent answers from *your* corpus, cited. Grow it anytime with `/background build <topic>`.
 
-<!-- PH-ONLY:START -->
-**Pre-loaded knowledge layers (this edition):**
-
-| Layer | Documents | Covers |
-|---|---|---|
-| **Public Health Background** | 34 | WHO guidelines, global health reports, social determinants, NCDs, maternal & child health |
-| **Epidemiology & Methods** | 10 | STROBE, WHO Basic Epi, Leyland MLM, Bates lme4, PRISMA 2020, SaTScan, CIFOR |
-<!-- PH-ONLY:END -->
 
 ---
 
