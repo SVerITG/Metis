@@ -27,7 +27,7 @@
 <tr>
 <td width="33%" valign="top" align="center">
 <p><strong>☁️ Light</strong><br><em>MCP server only</em></p>
-<p><em>You ask Claude to build a monitoring dashboard for your Leishmaniasis project. Metis recalls the surveillance tool you built eighteen months ago, your preferred layout, and your standard epidemiological indicators. The Epidemiology Agent and Dashboard Maker deliver exactly what you need — in your style, to your domain standards — without any re-explaining.</em></p>
+<p><em>You ask Claude to build a monitoring dashboard for your current project. Metis recalls the dashboard you built eighteen months ago, your preferred layout, and your standard indicators. The right specialist agents deliver exactly what you need — in your style, to your domain's standards — without any re-explaining.</em></p>
 </td>
 <td width="33%" valign="top" align="center">
 <p><strong>🔗 Cross-pollination</strong><br><em>The moment everything connects</em></p>
@@ -35,7 +35,7 @@
 </td>
 <td width="33%" valign="top" align="center">
 <p><strong>🌐 Metis OS</strong><br><em>The full picture — in development</em></p>
-<p><em>Your calendar shows a meeting with a Lepra diagnostics colleague. Yesterday you captured an idea about rapid field tests. Metis has your April transcript with this person and this week's new papers. A briefing appears before you leave. After the meeting, you ask for a five-day course on Lepra diagnostics from the latest research. By evening, it's ready.</em></p>
+<p><em>Your calendar shows a meeting with a research collaborator. Yesterday you captured an idea about a new method. Metis has your April transcript with this person and this week's new papers. A briefing appears before you leave. After the meeting, you ask for a five-day course on that topic from the latest research. By evening, it's ready.</em></p>
 </td>
 </tr>
 </table>
@@ -841,7 +841,7 @@ key journals + RSS feeds · specialist agents · a domain ontology · a curated 
 | **Projects in the registry + cross-pollination** — project listing now reads the project *registry* (every project, not just folders on disk); brainstorms and cross-pollination now draw on your registered projects and notes, not only library/news. |
 | **Brainstorm + brief upgrades** — a brainstorm creativity dial (Grounded/Balanced/Bold) and a scoped menu (this work · a topic · mindmap · cluster) that hand off to Claude Desktop primed with your work; a Daily ↔ Weekly morning-brief toggle; an idea **mindmap** on the Reflection tab; and an "Improve Metis (OODA)" button on the Metis tab. |
 | **Sensitive-data workflow (`/safe-analysis`)** — a first-class "send code, not data" workflow: Metis writes a local analysis script, you run it on your machine, and only derived metadata (schema, value counts, summaries, model output) comes back. Available in Claude Code and Claude Desktop. |
-| **Data Guardian hardening** — the pipeline PII scanner now runs all 11 patterns (names, DOB, passport, MRN, HAT/PNLTHA case numbers, DRC national ID, + the original five) through one shared scanner used by both the tool and the pipeline, so they can't drift; covered by a unit-test suite. |
+| **Data Guardian hardening** — the pipeline PII scanner now runs all 11 patterns (names, DOB, passport, medical record numbers, national ID numbers, case/registry identifiers, + the original five) through one shared scanner used by both the tool and the pipeline, so they can't drift; covered by a unit-test suite. |
 | **Pre-tool data-file guard** — before a `Read`/`read_file`, the security hook peeks at the file's header *locally* and asks for confirmation before individual-level data is loaded into the conversation. |
 | **Honest positioning** — dropped the "local-first/local AI" framing (reasoning runs on the Claude API); copy now states plainly that your data stays on your machine while reasoning uses Claude. |
 | **Desktop project-tracking + file-tracking fixes** — the Desktop router now registers tracked projects; repaired a recursion bug that had broken file tracking. |
