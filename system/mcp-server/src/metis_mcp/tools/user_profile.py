@@ -31,15 +31,15 @@ async def get_user_profile() -> list[TextContent]:
 
     Returns JSON with:
     - display_name: user's display name (set via /metis_config)
-    - role: professional role (e.g. "Senior researcher · public health")
-    - interests: list of research interest tags (e.g. ["sleeping sickness", "multilevel models"])
-    - news_topics: list of news monitoring topics (e.g. ["WHO surveillance", "AI governance"])
+    - role: professional role (e.g. "Senior researcher")
+    - interests: list of research interest tags (e.g. ["your research area", "a method you use"])
+    - news_topics: list of news monitoring topics (e.g. ["a topic you follow", "AI in your field"])
     - active_model: current default model slug (haiku / sonnet / opus)
 
     Usage pattern:
       profile = json.loads((await get_user_profile())[0].text)
-      interests = profile['interests']   # → ["sleeping sickness", "multilevel models"]
-      news_topics = profile['news_topics']  # → ["WHO surveillance", "AI governance"]
+      interests = profile['interests']   # → ["your research area", "a method you use"]
+      news_topics = profile['news_topics']  # → ["a topic you follow", "AI in your field"]
     """
     prefs = _read_prefs()
     profile = {

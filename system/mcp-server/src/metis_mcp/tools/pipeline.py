@@ -244,8 +244,9 @@ def _scan_safety(content: str) -> dict:
     """Run the shared PII scanner. Returns {safe, classification, warnings}.
 
     Delegates to safety.scan_content so the Data Guardian sees every pattern
-    (names, DOB, passport, MRN, HAT/PNLTHA case numbers, DRC national ID,
-    sensitive CSV headers) — not just the original five.
+    (names, DOB, passport, medical record numbers, national ID numbers,
+    sensitive CSV headers, plus any field-specific patterns from the local
+    override file) — not just the original five.
     """
     return scan_content(content)
 
