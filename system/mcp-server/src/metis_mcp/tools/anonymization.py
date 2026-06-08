@@ -237,8 +237,18 @@ async def log_consent_event(
 async def get_consent_ledger(limit: int = 30) -> list[TextContent]:
     """Retrieve recent consent events from the audit ledger.
 
+    Returns the data-handling consent trail — what data was approved or
+    classified, by which agent, and when — so you can review or report on how
+    sensitive data has been treated. Reads the consent_ledger that
+    log_consent_event writes to.
+
     Args:
-        limit: Number of most recent rows to return (default 30).
+        limit: Number of most recent ledger rows to return, newest first
+            (default 30).
+
+    Returns:
+        A JSON text block listing the consent events (id, timestamp, action,
+        data_classification, agent_slug, notes).
     """
     with connect(paths.db) as conn:
         _ensure_tables(conn)

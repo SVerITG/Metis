@@ -430,23 +430,26 @@ async def save_lesson_draft(
     lesson_id: str,
     content: str,
 ) -> list[TextContent]:
-    """Step 5 — Save a drafted lesson file.
+    """Step 5 of the course build — save one drafted lesson to disk.
 
-    Write one lesson's markdown content to disk. Call once per lesson.
-    The lesson_id must match an id in lessons.json (e.g. "lesson-01").
-
-    The lesson MUST include these sections in order:
-      ## Learning objectives
-      ## Prerequisites
-      ## Content  (with ### Section N: subsections)
-      ## Summary
-      ## Exercises
-      ## Further reading
+    Writes a single lesson's markdown into the course's lessons folder; call it
+    once per lesson during drafting. The content is validated and rejected
+    unless it contains all required sections, in order:
+    ## Learning objectives, ## Prerequisites, ## Content (with ### Section N:
+    subsections), ## Summary, ## Exercises, ## Further reading. The filename is
+    derived from the lesson number and its title in lessons.json.
 
     Args:
-        slug: The course slug.
-        lesson_id: The lesson id from lessons.json (e.g. "lesson-01").
-        content: Full markdown content of the lesson.
+        slug: The course slug; selects the
+            knowledge/courses/<slug>/lessons/ folder to write into.
+        lesson_id: The lesson id, which must match an id in lessons.json
+            (e.g. "lesson-01"); used to look up the title and build the filename.
+        content: The full markdown body of the lesson, including all required
+            sections listed above.
+
+    Returns:
+        A confirmation with the written file path, or a rejection message
+        listing the required sections that are missing.
     """
     lessons_dir = paths.root / "knowledge" / "courses" / slug / "lessons"
     lessons_dir.mkdir(parents=True, exist_ok=True)

@@ -82,14 +82,24 @@ async def archive_library_item(relative_path: str) -> list[TextContent]:
 async def remove_library_item(
     relative_path: str, delete_file: bool = False
 ) -> list[TextContent]:
-    """Remove a library item from the Metis index.
+    """Remove a library item from the Metis index, optionally deleting the file.
 
-    Deletes the row from library_seeded. If delete_file=True, also deletes
-    the actual file from disk (only if path is within PKM root — safety check required).
+    De-indexes a paper or document by deleting its row from library_seeded. By
+    default the file on disk is left untouched (index-only removal); set
+    delete_file=True to also delete the file, which is guarded so only paths
+    inside the PKM root can be removed. To hide rather than remove an item, use
+    archive_library_item instead.
 
     Args:
-        relative_path: The relative_path primary key in library_seeded table.
-        delete_file: If True, also delete the file from disk. Default False.
+        relative_path: The relative_path primary key identifying the row in the
+            library_seeded table.
+        delete_file: If True, also delete the underlying file from disk (subject
+            to the within-PKM-root safety check); if False (default), only the
+            index row is removed.
+
+    Returns:
+        A confirmation message of what was removed, or a not-found / error
+        message if the item or table is missing.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]

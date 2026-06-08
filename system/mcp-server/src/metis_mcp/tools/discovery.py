@@ -253,7 +253,20 @@ async def set_discovery_tips(enabled: bool | None = None,
 
 @app.tool()
 async def discovery_status() -> list[TextContent]:
-    """Report tips state + a simple adoption read (which shown tips' features are now used)."""
+    """Report the discovery-tips state and a simple adoption read.
+
+    Tells you whether the just-in-time feature tips are on or off, the current
+    mode, any active snooze, and how many tips have been shown versus how many
+    of those features the user has since started using (adoption). Use it to
+    answer "are tips on?" or to sanity-check before changing them with
+    set_discovery_tips. Pairs with discovery_intro and next_discovery_tip.
+
+    Takes no arguments.
+
+    Returns:
+        A one-line text summary: on/off, mode, snooze note, shown count, and
+        how many shown features are now adopted.
+    """
     try:
         con = _con()
         enabled = _state(con, "enabled", "1") != "0"

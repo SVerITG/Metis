@@ -637,11 +637,20 @@ async def add_glossary_term(
     term: str,
     definition: str,
 ) -> list[TextContent]:
-    """Add or update a glossary term.
+    """Add a glossary term, or update its definition if it already exists.
+
+    Maintains a personal glossary of field-specific terms and acronyms so
+    Metis can give consistent definitions across sessions. Upserts on the
+    term (an existing term keeps its created_at but takes the new definition).
+    Retrieve entries with get_glossary.
 
     Args:
-        term: The term to define.
-        definition: The definition text.
+        term: The term, acronym, or phrase to define; serves as the unique key,
+            so reusing an existing term overwrites its definition.
+        definition: The definition text to store for this term.
+
+    Returns:
+        A confirmation message naming the term that was added or updated.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]

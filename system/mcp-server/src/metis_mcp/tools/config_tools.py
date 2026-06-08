@@ -75,15 +75,25 @@ async def add_specialist_context(
     description: str,
     active_by_default: bool = True,
 ) -> list[TextContent]:
-    """Add a new specialist context to the user profile.
+    """Add a specialist context to the user profile, or update it if it exists.
 
-    Appends to specialist_contexts in user-config.yaml. Creates the file
-    with defaults if it doesn't exist yet.
+    Specialist contexts tell Metis which domains the user works in so routing
+    and search can be tailored. This appends to specialist_contexts in
+    user-config.yaml (creating the file with defaults if absent); if a context
+    with the same name already exists, its description is updated instead of
+    duplicated. Related tools: toggle_context, list_contexts.
 
     Args:
-        name: Short label, e.g. "Epidemiological dashboards"
-        description: 1-2 sentences about what this context covers.
-        active_by_default: Whether to add to active_contexts immediately.
+        name: Short label for the context, e.g. "Epidemiological dashboards";
+            also the key used to detect and update an existing context.
+        description: One or two sentences describing what this context covers.
+        active_by_default: If True (default), the context is added to
+            active_contexts immediately; if False, it is stored but left
+            inactive (and removed from active_contexts if already present).
+
+    Returns:
+        A confirmation message stating whether the context was added (and
+        activated) or an existing one was updated.
     """
     if not _YAML_AVAILABLE:
         return [TextContent(type="text", text="pyyaml not installed — run: pip install pyyaml")]
