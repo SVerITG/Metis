@@ -457,7 +457,18 @@ async def link_claude_desktop(
 
 @app.tool()
 async def get_project_categories() -> list[TextContent]:
-    """Return all project categories currently in use."""
+    """Return all distinct project categories currently in use.
+
+    Lists the user-defined categories (e.g. "Article", "Grant", "Teaching")
+    that have been assigned to projects, so you can group projects or offer
+    an existing category before set_project_category invents a new one.
+
+    Takes no arguments.
+
+    Returns:
+        A text line listing the distinct non-empty categories in alphabetical
+        order, or a message that none are defined yet.
+    """
     with connect(paths.db) as conn:
         _ensure_columns(conn)
         rows = conn.execute(
@@ -472,7 +483,20 @@ async def get_project_categories() -> list[TextContent]:
 
 @app.tool()
 async def set_project_category(project_id: str, category: str) -> list[TextContent]:
-    """Assign or change the category of a project."""
+    """Assign or change a project's category.
+
+    Sets the grouping label on a project so it sorts with related work on the
+    dashboard. Call get_project_categories first to reuse an existing label
+    rather than creating a near-duplicate.
+
+    Args:
+        project_id: The project_id of the project to update.
+        category: The category label to assign (e.g. "Article", "Grant");
+            surrounding whitespace is trimmed.
+
+    Returns:
+        A confirmation message naming the category and project that were set.
+    """
     with connect(paths.db) as conn:
         _ensure_columns(conn)
         conn.execute(

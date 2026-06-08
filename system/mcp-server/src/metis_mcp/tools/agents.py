@@ -92,20 +92,28 @@ async def log_agent_run(
     model: str = "",
     session_id: str = "",
 ) -> list[TextContent]:
-    """Log an agent run to the SQLite database.
+    """Log a completed agent run to the database for audit and dashboard tracking.
 
-    Records that an agent executed a task, for audit and dashboard tracking.
+    Records that an agent did a piece of work so it appears in the dashboard's
+    Agents view and in get_agent_runs. Call it after writing an output file, per
+    the output contract. When a session_id is supplied it also writes a "result"
+    event to session_events, closing the loop for /metis pipeline calls.
 
     Args:
-        agent_slug: Which agent performed the work.
-        task_summary: Brief description of what was done.
-        input_path: Path to input file(s), if any.
-        output_path: Path to output file(s), if any.
-        complexity: Run status stored in the `status` column -- "completed", "partial", or "failed".
-        input_tokens: Input tokens consumed (for cost tracking).
-        output_tokens: Output tokens produced (for cost tracking).
-        model: Model used (e.g. "claude-sonnet-4-6", "claude-haiku-4-5").
-        session_id: Pipeline session ID from session_bootstrap(), if any.
+        agent_slug: Slug of the agent that performed the work (e.g. "librarian").
+        task_summary: Brief description of what the agent did.
+        input_path: Path to the input file(s), if any (default empty string).
+        output_path: Path to the output file(s) produced, if any (default empty).
+        complexity: The run status stored in the `status` column — typically
+            "completed", "partial", or "failed" (default "standard").
+        input_tokens: Input tokens consumed, for cost tracking (default 0).
+        output_tokens: Output tokens produced, for cost tracking (default 0).
+        model: Model identifier used, e.g. "claude-sonnet-4-6" (default empty).
+        session_id: Pipeline session ID from session_bootstrap(); when set, also
+            records a result event in session_events (default empty string).
+
+    Returns:
+        A confirmation message naming the agent and task that were logged.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
@@ -175,10 +183,20 @@ async def get_agent_runs(
 ) -> list[TextContent]:
     """Retrieve recent agent run history from the database.
 
+    Returns the log of past agent work — what ran, when, its status, and token
+    usage — for the dashboard or for reviewing recent activity. These rows are
+    written by log_agent_run. Results come back newest first.
+
     Args:
-        limit: Maximum number of runs to return (default 10).
-        since: ISO date/datetime string — only return runs after this time. Empty = all.
-        agent_slug: Filter by agent name (e.g. "librarian", "metis"). Empty = all agents.
+        limit: Maximum number of runs to return, newest first (default 10).
+        since: ISO date or datetime string; only runs at or after this time are
+            returned. Empty string (default) returns runs from all dates.
+        agent_slug: Filter to a single agent by slug, e.g. "librarian" or
+            "metis". Empty string (default) returns all agents.
+
+    Returns:
+        A text block listing the matching runs (run_id, agent, task summary,
+        status, timestamp, token counts, model).
     """
     if not paths.db.exists():
         return [TextContent(type="text", text="Database not found.")]

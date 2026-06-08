@@ -145,7 +145,20 @@ def _extract_wikilinks(text: str) -> list[str]:
 
 @app.tool()
 def _obsidian_vault() -> "Path | None":
-    """Configured Obsidian vault path, from METIS_OBSIDIAN_VAULT or user-config.yaml."""
+    """Resolve the configured Obsidian vault path, if one is set and valid.
+
+    Looks up the user's external Obsidian vault so note-indexing tools
+    (e.g. kg_index_notes) know where to read .md notes from. Checks the
+    METIS_OBSIDIAN_VAULT environment variable first, then the
+    integrations.obsidian_vault (or top-level obsidian_vault) key in
+    user-config.yaml.
+
+    Takes no arguments.
+
+    Returns:
+        A Path to the vault directory if it is configured and exists on disk,
+        otherwise None.
+    """
     import os as _os
     p = _os.environ.get("METIS_OBSIDIAN_VAULT", "").strip()
     if not p:

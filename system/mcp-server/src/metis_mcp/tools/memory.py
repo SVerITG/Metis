@@ -38,12 +38,21 @@ async def search_memory(
 ) -> list[TextContent]:
     """Search the memory palace by keyword.
 
-    Searches the memory_entries table (title, summary, topics) and performs a
-    filesystem grep across journal/**/*.md files.
+    Looks across Metis's long-term memory to recall past context — what was
+    decided, found, or noted before. It searches the memory_entries table
+    (title, summary, topics) and also greps journal/**/*.md files on disk, so
+    both structured memory and freeform journal notes are covered.
 
     Args:
-        query: Search keyword or phrase.
-        entry_type: Optional filter -- "session", "journal", "idea", "decision", "topic".
+        query: Keyword or phrase to match against entry titles, summaries,
+            topics, and journal note text.
+        entry_type: Optional filter limiting results to one kind of entry —
+            "session", "journal", "idea", "decision", or "topic". Empty string
+            (default) searches all types.
+
+    Returns:
+        A text block of matching memory entries and journal hits, or a message
+        when nothing matches.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
