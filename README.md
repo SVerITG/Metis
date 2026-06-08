@@ -60,6 +60,7 @@
   <a href="https://github.com/SVerITG/Metis_PH/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" alt="Python"/>
   <img src="https://img.shields.io/badge/Claude-MCP-orange?logo=anthropic" alt="Claude MCP"/>
+  <a href="https://glama.ai/mcp/servers/SVerITG/Metis_PH"><img src="https://glama.ai/mcp/servers/SVerITG/Metis_PH/badges/score.svg" alt="Glama score"/></a>
   <img src="https://img.shields.io/badge/data%20stays%20local-✓-green" alt="Data stays local"/>
 </p>
 
