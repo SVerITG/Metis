@@ -155,14 +155,24 @@ async def store_episodic_memory(
 ) -> list[TextContent]:
     """Store an event in episodic memory and index it for vector search.
 
+    Logs a time-stamped EVENT (something that happened) and indexes it for vector
+    search. For a distilled, timeless concept/definition use store_semantic_memory;
+    for a human-curated palace note use add_memory_entry.
+
     Episodic memory is a chronological log of things that happened — ideas,
     notes, papers read, tasks completed, agent runs.
 
     Args:
         content: The text content of the event to remember.
-        event_type: One of 'idea', 'note', 'task', 'paper', 'meeting', 'agent_run'.
+        event_type: One of 'idea', 'note', 'task', 'paper', 'meeting', or
+            'agent_run'.
         session_id: Current pipeline session ID (optional).
-        metadata: JSON string with extra fields (e.g. title, tags, source).
+        metadata: JSON string with extra fields such as title, tags, or source.
+
+    Returns:
+        A single TextContent confirming the stored event (its row id and type),
+        or an error message if the database is missing, fastembed is not
+        installed, or the write fails.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
@@ -210,16 +220,27 @@ async def store_semantic_memory(
 ) -> list[TextContent]:
     """Store a distilled knowledge node in semantic memory.
 
+    Stores a distilled CONCEPT/definition (timeless 'what I know'). For a
+    time-stamped event use store_episodic_memory; for a human-curated palace
+    note use add_memory_entry.
+
     Semantic memory holds the 'what I know' layer — concepts, definitions,
     and their relationships. Used by retrieval to surface relevant knowledge
     without relying on raw event history.
 
     Args:
-        concept: Short name for the concept (e.g. 'RDT sensitivity', 'fAChE inhibition').
-        definition: 1-3 sentence definition or explanation.
-        related_concepts: Comma-separated related concept names.
-        source_type: Where this came from: 'paper', 'note', 'idea', 'user_defined'.
-        source_id: ID of the source record (e.g. paper DOI or idea_id).
+        concept: Short name for the concept, e.g. 'RDT sensitivity' or
+            'fAChE inhibition'.
+        definition: A one-to-three-sentence definition or explanation.
+        related_concepts: Comma-separated names of related concepts.
+        source_type: Where this came from: 'paper', 'note', 'idea', or
+            'user_defined'.
+        source_id: ID of the source record, e.g. a paper DOI or idea_id.
+
+    Returns:
+        A single TextContent confirming the stored node (its row id and concept
+        name), or an error message if the database is missing, fastembed is not
+        installed, or the write fails.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
@@ -401,6 +422,10 @@ async def semantic_search(
 ) -> list[TextContent]:
     """Search across memory layers using vector similarity + keyword RRF fusion.
 
+    Searches your personal MEMORY layers (episodic/semantic/procedural — things
+    you or Metis recorded), NOT your document library. For documents/PDFs use
+    search_pdf_knowledge; for reference metadata use search_library.
+
     Retrieval pipeline (M5.8):
     1. Embed the query.
     2. Run vector similarity search on each requested layer.
@@ -409,9 +434,14 @@ async def semantic_search(
     5. Return top_k deduplicated results ranked by fused score.
 
     Args:
-        query: Natural language search query.
-        layers: Comma-separated layers to search: 'episodic', 'semantic', 'procedural'.
-        top_k: Number of results to return (default 5).
+        query: Natural language search query to embed and keyword-match.
+        layers: Comma-separated memory layers to search, drawn from 'episodic',
+            'semantic', and 'procedural'.
+        top_k: Number of fused results to return (default 5).
+
+    Returns:
+        A single TextContent listing the top fused results (layer, title, score,
+        timestamp, and a content preview), or a "no results" / error message.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]

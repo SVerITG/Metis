@@ -13,13 +13,24 @@ async def search_literature(
 ) -> list[TextContent]:
     """Search the user's literature database.
 
+    Searches your curated/seeded literature catalogue by structured facets
+    (disease, method, geography, keyword). For your Zotero/manual reference
+    metadata use search_library; for full PDF body text use search_fulltext;
+    for semantic RAG over indexed PDFs use search_pdf_knowledge.
+
     Searches the library_seeded SQLite table. Use this to find papers
     by disease focus, methodology, geography, or any keyword.
 
     Args:
-        query: Search term (case-insensitive substring match).
-        field: Column to search -- "all", "disease", "method", "geography", "article".
-        limit: Maximum results to return (default 20).
+        query: Search term, matched as a case-insensitive substring.
+        field: Column to search -- one of "all", "disease", "method",
+            "geography", or "article".
+        limit: Maximum number of results to return (default 20).
+
+    Returns:
+        A single TextContent holding a markdown table of matching rows from the
+        library_seeded table, or an error/"no results" message if the database,
+        table, or column is missing or nothing matches.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]

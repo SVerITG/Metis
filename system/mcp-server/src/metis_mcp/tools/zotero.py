@@ -285,6 +285,11 @@ async def sync_zotero_library(full: bool = False) -> list[TextContent]:
 async def search_library(query: str, limit: int = 10) -> list[TextContent]:
     """Search the local literature library for matching papers.
 
+    Searches your saved reference METADATA (title/authors/abstract/tags of papers
+    in your Zotero-synced + manual library). For meaning-based search inside PDF
+    body text use search_pdf_knowledge; for exact keyword search of PDF text use
+    search_fulltext; for an online/external literature lookup use search_literature.
+
     Runs a substring search across the user's indexed references (Zotero-synced
     plus manually added) so you can find what they already have before going to
     the internet. Matches the query against title, authors, abstract, and tags,
