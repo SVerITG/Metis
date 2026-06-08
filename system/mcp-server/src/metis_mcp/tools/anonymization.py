@@ -33,6 +33,7 @@ from mcp.types import TextContent
 
 from metis_mcp.app_instance import app
 from metis_mcp.config import paths
+from metis_mcp.local_overrides import load_overrides
 from metis_mcp.db import connect
 
 # Re-use PII patterns already in safety.py
@@ -80,9 +81,14 @@ def _ensure_tables(conn):
 # Name heuristic: 2+ consecutive CAPITALIZED words not at sentence start
 _NAME_RE = re.compile(r"(?<!\.\s)(?<!\n)(?<![.!?]\s)(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)")
 
-# Research-context institution patterns
+# Research-context institution patterns. Generic global orgs ship in the public
+# source; any field- or institution-specific names (e.g. your own institute or
+# national programme) are kept private in the local override file and merged in
+# at runtime — so they never appear in the published source.
+_INSTITUTIONS = ["MSF", "DNDi", "WHO", "CDC", "Ministry of Health"]
+_INSTITUTIONS += [str(o) for o in load_overrides().get("extra_institutions", [])]
 _INSTITUTION_RE = re.compile(
-    r"\b(?:ITM|ITG|MSF|DNDi|WHO|CDC|PNLTHA|Ministry of Health|Ministère de la Santé)\b",
+    r"\b(?:" + "|".join(re.escape(o) for o in _INSTITUTIONS) + r")\b",
     re.IGNORECASE,
 )
 

@@ -5,6 +5,7 @@ import re
 from mcp.types import TextContent
 
 from metis_mcp.app_instance import app
+from metis_mcp.local_overrides import load_overrides
 
 # PII detection patterns
 _EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
@@ -31,13 +32,8 @@ _MRN_RE = re.compile(
     r"\b(?:mrn|medical[\s_]?record(?:[\s_]?(?:no|#|number))?|dossier[\s_]?(?:no|#|médical|medical)?|numéro[\s_]?dossier)\s*[:=]?\s*[\dA-Z\-]{4,15}\b",
     re.IGNORECASE,
 )
-# HAT / PNLTHA case registration numbers (DRC sleeping-sickness programme)
-_HAT_CASE_RE = re.compile(
-    r"\b(?:hat[\s_-]?(?:case|id|n°|no|#|patient)|pnltha[\s_-]?\d+|cas[\s_-]?hat|hat[\s_-]?dossier)\s*[:=]?\s*[\dA-Z\-]{3,20}\b",
-    re.IGNORECASE,
-)
-# DRC national ID card (16-digit number)
-_DRC_NID_RE = re.compile(r"\b\d{16}\b")
+# 16-digit national ID number (several national ID cards use a 16-digit format)
+_NID16_RE = re.compile(r"\b\d{16}\b")
 # Name fields with associated identifier-type values
 _NAME_ID_RE = re.compile(
     r"\b(?:nom|prenom|prénom|surname|firstname|first[\s_]name|last[\s_]name)\s*[:=]\s*[A-Za-zÀ-ÿ]{2,}",
@@ -47,11 +43,43 @@ _NAME_ID_RE = re.compile(
 _SENSITIVE_COLUMNS = {
     "patient", "patient_id", "case_id", "diagnosis", "dob",
     "date_of_birth", "test_result", "gps_lat", "gps_lon",
-    # Added: name fields, record numbers, identity numbers
+    # Name fields, record numbers, identity numbers
     "nom", "prenom", "prénom", "surname", "firstname", "first_name", "last_name",
     "mrn", "record_number", "dossier", "passport_number", "nid", "national_id",
-    "hat_case_id", "hat_patient_id",
 }
+# Merge any field-specific sensitive column names from the local override file.
+_SENSITIVE_COLUMNS |= {
+    str(c).lower() for c in load_overrides().get("extra_sensitive_columns", [])
+}
+
+
+def _build_extra_checks():
+    """Compile field-specific PII patterns from the local override file (if any).
+
+    Lets a user keep their own institution/programme identifiers (e.g. a national
+    case-registry number format) private and out of the public source, while still
+    being detected on their own machine.
+    """
+    checks: list[tuple[re.Pattern, str]] = []
+    sensitive: set[str] = set()
+    confidential: set[str] = set()
+    for item in load_overrides().get("extra_pii_patterns", []):
+        try:
+            flags = re.IGNORECASE if "i" in str(item.get("flags", "")).lower() else 0
+            rx = re.compile(item["regex"], flags)
+        except Exception:
+            continue
+        label = str(item.get("label", "Sensitive identifier"))
+        checks.append((rx, label))
+        level = str(item.get("level", "SENSITIVE")).upper()
+        if level == "CONFIDENTIAL":
+            confidential.add(label.lower())
+        else:
+            sensitive.add(label.lower())
+    return checks, sensitive, confidential
+
+
+_EXTRA_CHECKS, _EXTRA_SENSITIVE_LABELS, _EXTRA_CONFIDENTIAL_LABELS = _build_extra_checks()
 
 
 def _check_sensitive_headers(content: str) -> list[str]:
@@ -72,19 +100,19 @@ def _classify(warnings: list[str], file_path: str) -> str:
     """Determine classification based on warnings and file type."""
     warning_text = " ".join(warnings).lower()
 
-    # SENSITIVE: direct individual identifiers — patient/case IDs, HAT/PNLTHA case
-    # numbers, individual GPS, diagnostic results
+    # SENSITIVE: direct individual identifiers — patient/case IDs, individual GPS,
+    # diagnostic results, plus any field-specific identifiers from local overrides.
     if any(kw in warning_text for kw in [
-        "patient", "case_id", "hat", "pnltha", "gps coordinate", "diagnostic", "test_result",
-    ]):
+        "patient", "case_id", "gps coordinate", "diagnostic", "test_result",
+    ]) or any(lbl in warning_text for lbl in _EXTRA_SENSITIVE_LABELS):
         return "SENSITIVE"
 
     # CONFIDENTIAL: other PII — names, DOB, passport/record/identity numbers,
-    # files with sensitive columns
+    # files with sensitive columns.
     if any(kw in warning_text for kw in [
-        "belgian national id", "drc national id", "sensitive column",
+        "national id", "sensitive column",
         "date of birth", "passport", "medical record", "name field",
-    ]):
+    ]) or any(lbl in warning_text for lbl in _EXTRA_CONFIDENTIAL_LABELS):
         return "CONFIDENTIAL"
 
     if file_path:
@@ -117,10 +145,11 @@ _PII_CHECKS: list[tuple[re.Pattern, str]] = [
     (_DOB_RE, "Date of birth"),
     (_PASSPORT_RE, "Passport number"),
     (_MRN_RE, "Medical record number"),
-    (_HAT_CASE_RE, "HAT/PNLTHA case number"),
-    (_DRC_NID_RE, "DRC national ID number"),
+    (_NID16_RE, "16-digit national ID number"),
     (_NAME_ID_RE, "Name field"),
 ]
+# Append any field-specific patterns kept in the local (gitignored) override file.
+_PII_CHECKS.extend(_EXTRA_CHECKS)
 
 
 def scan_content(content: str, file_path: str = "") -> dict:

@@ -258,6 +258,11 @@ metis/system/config/mcp-health.json
 # Local Windows Sandbox configs — contain the user's absolute host path
 *.local.wsb
 
+# Private domain/personal overrides — field- and institution-specific sensitive
+# patterns (e.g. national case-registry formats, your institute name). Loaded at
+# runtime by the PII scanner + anonymiser; NEVER published to any repo/edition.
+system/config/domain-overrides.local.json
+
 # PaperQA runtime index cache (rebuilt at runtime by paperqa_search.py)
 system/app/data/paperqa_index/
 
