@@ -2,9 +2,14 @@
 Unit tests for the Data Guardian PII scanner (metis_mcp.tools.safety.scan_content).
 
 Guards against the regression where richer patterns (names, DOB, passport, MRN,
-HAT/PNLTHA case numbers, DRC national ID) were *defined* but never wired into the
-live scan — so the pipeline Data Guardian only caught 5 of them. scan_content is
-now the single source of truth used by both the tool and the pipeline (Stage 3).
+national ID numbers) were *defined* but never wired into the live scan — so the
+pipeline Data Guardian only caught 5 of them. scan_content is now the single
+source of truth used by both the tool and the pipeline (Stage 3).
+
+These tests cover the GENERIC, domain-agnostic patterns that ship publicly.
+Field-specific patterns (e.g. a national case-registry format) are loaded at
+runtime from the gitignored local override and are intentionally NOT asserted
+here, since they are absent in CI and in the public source.
 """
 
 import pytest
@@ -16,7 +21,7 @@ class TestSensitiveDetection:
     @pytest.mark.parametrize("text", [
         "patient_id: 4521 came in Tuesday",
         "coordinates -4.32100, 15.31234 for the household",
-        "HAT case: PN12345 confirmed",
+        "case_id: 4521 logged",
     ])
     def test_individual_identifiers_are_sensitive(self, text):
         r = scan_content(text)
@@ -30,7 +35,7 @@ class TestConfidentialDetection:
         "DOB: 12/03/1980",
         "passport: AB123456",
         "MRN: 88421",
-        "ID 1234567890123456",          # DRC 16-digit national ID
+        "ID 1234567890123456",          # 16-digit national ID
     ])
     def test_pii_is_confidential(self, text):
         r = scan_content(text)
@@ -51,7 +56,7 @@ class TestLowerSensitivity:
         assert r["classification"] == "INTERNAL"
 
     def test_clean_text_is_public_and_safe(self):
-        r = scan_content("Please help me draft an introduction on malaria surveillance.")
+        r = scan_content("Please help me draft an introduction for my methods section.")
         assert r["safe"] is True
         assert r["classification"] == "PUBLIC"
         assert r["warnings"] == []
@@ -61,5 +66,5 @@ class TestPipelineUsesSharedScanner:
     def test_pipeline_scan_matches_tool(self):
         # The pipeline's Data Guardian must see the same result as the tool.
         from metis_mcp.tools.pipeline import _scan_safety
-        text = "HAT case: PN12345"
+        text = "patient_id: 4521"
         assert _scan_safety(text)["classification"] == scan_content(text)["classification"] == "SENSITIVE"

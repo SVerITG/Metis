@@ -12,6 +12,7 @@ from mcp.types import TextContent
 
 from metis_mcp.app_instance import app
 from metis_mcp.config import paths
+from metis_mcp.local_overrides import load_overrides
 
 FEED_ALLOWLIST = [
     # Disease surveillance & outbreak monitoring
@@ -79,25 +80,20 @@ def _connect():
     return conn
 
 
-_TRYPANOSOMIASIS_KEYWORDS = {
-    "trypanosomiasis", "trypanosoma", "sleeping sickness", "tsetse",
-    "gambiense", "rhodesiense",
+# Domain classification keyword sets. "AI" ships as a generic, universally
+# relevant default; any field-specific domains (diseases, health systems, …) are
+# loaded from the gitignored local override file, so the public source stays
+# domain-agnostic. Override domains are checked first (more specific), AI last.
+_AI_KEYWORDS = {
+    "llm", "large language model", "machine learning", "neural network",
+    "artificial intelligence", "deep learning", "transformer", "gpt", "claude",
+    "gemini", "generative ai", "agentic", "agent framework",
 }
-_NTD_KEYWORDS = {
-    "neglected tropical", "ntd", "leishmaniasis", "schistosomiasis", "onchocerciasis",
-    "lymphatic filariasis", "soil-transmitted helminths", "chagas",
-}
-_DOMAIN_OVERRIDE: list[tuple[set[str], str]] = [
-    (_TRYPANOSOMIASIS_KEYWORDS, "NTD"),
-    (_NTD_KEYWORDS,             "NTD"),
-    ({"malaria", "plasmodium", "artemisinin", "bed net"}, "MALARIA"),
-    ({"dhis2", "dhis 2", "health information system", "his implementation"}, "DHIS2"),
-    ({"surveillance system", "disease surveillance", "outbreak detection",
-      "epidemic intelligence", "who alert"}, "surveillance"),
-    ({"llm", "large language model", "machine learning", "neural network",
-      "artificial intelligence", "deep learning", "transformer", "gpt", "claude",
-      "gemini", "generative ai", "agentic", "agent framework"}, "AI"),
-]
+_DOMAIN_OVERRIDE: list[tuple[set[str], str]] = []
+for _domain, _kws in (load_overrides().get("domain_keywords") or {}).items():
+    if isinstance(_kws, list) and _kws:
+        _DOMAIN_OVERRIDE.append((set(str(k).lower() for k in _kws), str(_domain)))
+_DOMAIN_OVERRIDE.append((_AI_KEYWORDS, "AI"))
 
 
 def _classify_domain(title: str, summary: str, feed_tags: str) -> str:
