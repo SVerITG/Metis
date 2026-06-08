@@ -42,6 +42,7 @@ sed -i \
   -e 's#github/last-commit/SVerITG/Metis_PH#github/last-commit/SVerITG/Metis#g' \
   -e 's#SVerITG/Metis_PH/stargazers#SVerITG/Metis/stargazers#g' \
   -e 's#SVerITG/Metis_PH/blob/main/LICENSE#SVerITG/Metis/blob/main/LICENSE#g' \
+  -e 's#glama.ai/mcp/servers/SVerITG/Metis_PH#glama.ai/mcp/servers/SVerITG/Metis#g' \
   README.md
 # 1b) server.json (official MCP registry): rewrite the PH identity → base identity.
 if [ -f server.json ]; then

@@ -77,16 +77,30 @@ async def record_thinking_event(
     agent_slug: str = "",
     context: str = "",
 ) -> list[TextContent]:
-    """Log a single preference signal to the thinking_profile_events table.
+    """Record one signal about how you think and work, to personalise Metis.
+
+    Each event is a small piece of evidence — you acted on a brainstorm, rated
+    an idea highly, flagged an agent's output — that feeds your evolving
+    "thinking profile". Over time these signals let Metis tailor its routing,
+    suggestions, and tone to your preferences. Call it whenever a meaningful
+    preference moment occurs; read the accumulated profile with
+    get_thinking_profile.
 
     Args:
-        event_type: One of: brainstorm_acted_on, brainstorm_ignored,
-                    idea_rated_high, idea_linked_project, journal_revisited,
-                    agent_output_accepted, agent_output_flagged.
-        source_type: Domain or source category the signal belongs to (e.g. "biology").
-        content_id: Optional ID of the related content record.
-        agent_slug: Agent identifier, used for agent_output_* events.
-        context: Free-text context or note for this event.
+        event_type: The kind of signal. Must be one of: "brainstorm_acted_on",
+            "brainstorm_ignored", "idea_rated_high", "idea_linked_project",
+            "journal_revisited", "agent_output_accepted", "agent_output_flagged".
+        source_type: Domain or category the signal belongs to (e.g. "biology").
+            Optional; defaults to empty.
+        content_id: ID of the related content record (idea, journal entry, etc.)
+            if applicable. Optional; defaults to 0 (none).
+        agent_slug: Agent identifier this signal relates to, used for the
+            "agent_output_*" event types. Optional.
+        context: Free-text note giving context for the event. Optional.
+
+    Returns:
+        A confirmation that the signal was recorded, or an error listing the
+        valid event types if an invalid one was supplied.
     """
     if event_type not in _VALID_EVENT_TYPES:
         valid = ", ".join(sorted(_VALID_EVENT_TYPES))

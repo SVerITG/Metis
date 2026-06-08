@@ -37,13 +37,22 @@ async def save_session_summary(
     """Save a summary of the current session to persistent memory.
 
     Call this at the end of any substantive session so future sessions can
-    recall what was discussed, decided, or built.
+    recall what was discussed, decided, or built — the core of Metis's
+    cross-session continuity. The saved summary is searchable later via
+    search_session_memory and surfaces when you resume related work.
 
     Args:
-        summary: 2–5 sentence plain-English summary of what happened.
-        key_topics: Optional list of topic tags (e.g. ["phase-10", "APScheduler"]).
-        decisions: Optional list of key decisions made (e.g. ["switched to AGPL-3.0"]).
-        session_id: Optional session identifier for grouping.
+        summary: A 2–5 sentence, plain-English summary of what happened this
+            session. Required.
+        key_topics: Optional list of short topic tags for retrieval
+            (e.g. ["phase-10", "APScheduler"]).
+        decisions: Optional list of key decisions made
+            (e.g. ["switched to AGPL-3.0"]).
+        session_id: Optional identifier used to group related summaries; if
+            omitted, the summary is stored on its own.
+
+    Returns:
+        A dict with the saved record's id and a confirmation status.
     """
     try:
         with sqlite3.connect(_db_path()) as conn:

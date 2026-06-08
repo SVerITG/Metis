@@ -760,12 +760,23 @@ async def search_pdf_knowledge(
 async def get_pdf_index_stats(
     database: str = "",
 ) -> list[TextContent]:
-    """Report indexing statistics for the PDF knowledge base.
+    """Report indexing status and coverage for your PDF knowledge bases.
 
-    Shows per-database status, domain breakdown, and list of un-indexed PDFs.
+    Use this to check how complete your RAG (retrieval) corpus is before
+    relying on grounded answers: it shows, per knowledge database, the document
+    and chunk counts, when it was last built, a domain breakdown, and which PDFs
+    are still un-indexed. A quick "is my library ready to answer questions?"
+    health check. Pairs with index_pdf_library (to index) and
+    search_pdf_knowledge (to query).
 
     Args:
-        database: Slug to report on. Empty = report all databases.
+        database: Slug of a single knowledge database to report on (e.g.
+            "ph-background"). Empty string (the default) reports on every
+            database.
+
+    Returns:
+        A formatted status report covering each database's counts, last-built
+        time, domain breakdown, and any un-indexed PDFs.
     """
     conn = _connect()
     _ensure_schema(conn)
