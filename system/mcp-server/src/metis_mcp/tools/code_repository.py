@@ -135,17 +135,26 @@ async def register_data_dictionary(
     project_id: str = "",
     dataset_path: str = "",
 ) -> list[TextContent]:
-    """Record a dataset's data dictionary — one entry per variable.
+    """Record a dataset's data dictionary — one stored entry per variable.
 
-    Captures the variable names, types, labels, **unique values / factor levels**
-    and units, so future scripts use the exact same names and treatments.
+    Captures each variable's name, type, label, unique values / factor levels,
+    and units so future analysis scripts reuse the exact same names and
+    treatments. Re-registering the same dataset is idempotent: it replaces the
+    previous dictionary for that dataset (matched on dataset_name + project_id).
 
     Args:
-        dataset_name: Name of the dataset (e.g. "hat_cases_2015_2023").
-        variables: List of variable entries. Each is an object with any of:
-            name (required), type, label, unique_values, units, notes.
-        project_id: Project this dataset belongs to. Optional.
-        dataset_path: Where the dataset lives on disk. Optional.
+        dataset_name: Name of the dataset, e.g. "hat_cases_2015_2023".
+        variables: List of variable entries. Each entry may be a plain string
+            (the variable name) or an object with any of: name (required),
+            type, label, unique_values, units, notes. Entries without a name
+            are skipped.
+        project_id: Project this dataset belongs to (default empty string);
+            also part of the key used when replacing an existing dictionary.
+        dataset_path: Where the dataset lives on disk (default empty string).
+
+    Returns:
+        A confirmation message with the count of variables recorded for the
+        dataset, or an error if none were provided.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text="No database found.")]

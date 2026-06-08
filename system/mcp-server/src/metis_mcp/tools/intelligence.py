@@ -54,12 +54,20 @@ def _ensure_tables(conn):
 
 @app.tool()
 async def generate_daily_insight() -> list[TextContent]:
-    """Assemble recent context for daily insight generation.
+    """Assemble recent activity into context for the daily insight.
 
-    Gathers: last 7 days agent_runs summaries, last 3 days high-signal
-    news_briefs, last 14 days meetings titles, last 7 days library_seeded
-    additions. Stores a placeholder in daily_insights (actual synthesis
-    is done by the Metis agent separately).
+    Gathers the raw material for a "what's happening across your research"
+    digest: the last 7 days of agent_runs summaries, last 3 days of high-signal
+    news_briefs, last 14 days of meeting titles, and last 7 days of new library
+    additions. It stores a placeholder row in daily_insights; the Metis agent
+    does the actual synthesis from the returned context. Read the stored result
+    later with get_daily_insight.
+
+    Takes no arguments.
+
+    Returns:
+        A text block of the assembled recent context (and the sources drawn on)
+        for the agent to synthesize into a daily insight.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]
@@ -437,10 +445,18 @@ async def get_new_publications(
 
 @app.tool()
 async def mark_publications_read(ids: list[int]) -> list[TextContent]:
-    """Mark publications as read by their IDs.
+    """Mark new publications as read by their IDs.
+
+    Clears items from the "new publications" queue once the user has seen them,
+    stamping each with a read time so they stop resurfacing. Use the IDs
+    returned by get_new_publications.
 
     Args:
-        ids: List of publication IDs to mark as read.
+        ids: List of new_publications row IDs to mark as read; an empty list is
+            a no-op.
+
+    Returns:
+        A confirmation message with the count of publications marked as read.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]

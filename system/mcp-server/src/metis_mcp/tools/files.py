@@ -131,11 +131,23 @@ async def add_tracked_file(
     path: str,
     label: str = "",
 ) -> list[TextContent]:
-    """Add a file to the tracking list.
+    """Add a single file to the tracked-files list and start watching it.
+
+    Registers one file so Metis notices when it changes and can read it later
+    via read_file; tracked files surface on the dashboard's Planning tab. The
+    file's current modification time is recorded and watch is set on. Re-adding
+    an existing path updates it (and keeps the old label unless a new one is
+    given). To register a whole project at once, use connect_project_folder.
 
     Args:
-        path: Absolute path to the file to track.
-        label: Optional label for categorization.
+        path: Absolute path to the file to track; the file must exist or an
+            error is returned.
+        label: Optional category label for the file (default empty string);
+            on re-add, an empty label leaves the existing label unchanged.
+
+    Returns:
+        A confirmation message naming the tracked file (and its label, if any),
+        or a "file not found" / error message.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text=f"Database not found: {paths.db}")]

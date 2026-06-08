@@ -283,13 +283,23 @@ async def sync_zotero_library(full: bool = False) -> list[TextContent]:
 
 @app.tool()
 async def search_library(query: str, limit: int = 10) -> list[TextContent]:
-    """Search the local literature library (Zotero-synced + manually added papers).
+    """Search the local literature library for matching papers.
 
-    Searches title, authors, abstract, tags, and journal fields.
+    Runs a substring search across the user's indexed references (Zotero-synced
+    plus manually added) so you can find what they already have before going to
+    the internet. Matches the query against title, authors, abstract, and tags,
+    returning the newest papers first. For richer literature workflows see
+    ask_library, search_literature, and export_citations.
 
     Args:
-        query: Search terms.
-        limit: Maximum results (default 10).
+        query: Search terms matched as a substring against title, authors,
+            abstract, and tags.
+        limit: Maximum number of papers to return, ordered newest year first
+            (default 10).
+
+    Returns:
+        A formatted text list of matching papers (title, authors, year, journal,
+        DOI, abstract snippet), or a "no papers found" message.
     """
     if not paths.db.exists():
         return [TextContent(type="text", text="Database not found.")]

@@ -213,10 +213,21 @@ async def commit_session_decisions(
 
 @app.tool()
 async def list_recent_sessions(limit: int = 20) -> list[dict]:
-    """List the most recent session summaries in reverse chronological order.
+    """List the most recent session summaries, newest first.
+
+    Returns the rolling history of saved session summaries so you can pick up
+    where a previous conversation left off or review recent decisions and
+    topics. Each entry carries its summary, key topics, and decisions.
+    Complements search_session_memory (keyword search) and
+    save_session_summary (which writes these rows).
 
     Args:
-        limit: How many to return (default 20).
+        limit: Maximum number of summaries to return, most recent first
+            (default 20).
+
+    Returns:
+        A list of session-summary dicts (id, session_id, summary, key_topics,
+        decisions, created_at); a single-item list with an "error" key on failure.
     """
     try:
         with sqlite3.connect(_db_path()) as conn:
