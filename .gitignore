@@ -269,3 +269,6 @@ system/app/data/paperqa_index/
 # The /basket SKILL is code (the top-level basket/ data drop-zone stays ignored)
 !.claude/skills/basket/
 !.claude/skills/basket/**
+
+# Preserved curated reference seed corpus (local only)
+system/config/seed-dois.local.md
