@@ -305,18 +305,25 @@ def assemble_daily_context(db_path) -> dict:
         conn.row_factory = _sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
 
-        # News briefs + literature alerts (3d) — recency-first, signal breaks ties.
-        # Items from the last 24h always lead regardless of signal_strength.
+        # News briefs + literature alerts (3d). Query the two streams SEPARATELY
+        # so fresh paper alerts always get their own slots and aren't crowded out
+        # of a shared limit by higher-recency news. Within each: last-24h leads,
+        # then signal strength, then recency.
         d1 = (now - datetime.timedelta(days=1)).isoformat()
-        rows = _q(conn,
-            "SELECT title, summary, domain, source_type FROM news_briefs "
-            "WHERE created_at >= ? ORDER BY "
-            "CASE WHEN created_at >= ? THEN 0 ELSE 1 END, "
+        _order = (
+            "ORDER BY CASE WHEN created_at >= ? THEN 0 ELSE 1 END, "
             "CASE WHEN signal_strength='high' THEN 1 WHEN signal_strength='medium' THEN 2 ELSE 3 END, "
-            "created_at DESC LIMIT 15", (d3, d1))
-        if rows:
-            news_items = [r for r in rows if (r["source_type"] or "news") == "news"]
-            lit_items  = [r for r in rows if r["source_type"] == "article"]
+            "created_at DESC"
+        )
+        news_items = _q(conn,
+            "SELECT title, summary, domain FROM news_briefs "
+            "WHERE created_at >= ? AND COALESCE(source_type,'news') = 'news' "
+            + _order + " LIMIT 10", (d3, d1))
+        lit_items = _q(conn,
+            "SELECT title, summary, domain FROM news_briefs "
+            "WHERE created_at >= ? AND source_type = 'article' "
+            + _order + " LIMIT 8", (d3, d1))
+        if news_items or lit_items:
             if news_items:
                 lines = ["## Field News (last 3 days)"]
                 for r in news_items:
@@ -325,7 +332,7 @@ def assemble_daily_context(db_path) -> dict:
                 context_parts.append("\n".join(lines))
                 sources_used.append(f"news:{len(news_items)}")
             if lit_items:
-                lines = ["## New Literature Alerts"]
+                lines = ["## New Literature Alerts (last 3 days)"]
                 for r in lit_items:
                     lines.append(f"- {r['title']}: {str(r['summary'] or '')[:200]}")
                 context_parts.append("\n".join(lines))
@@ -338,10 +345,22 @@ def assemble_daily_context(db_path) -> dict:
                 "The researcher can trigger a scan via the dashboard 'Scan now' button."
             )
 
-        # Recent literature additions (30d) — papers added to the library
+        # Recent literature additions (last 7 days) — papers genuinely added to
+        # the library recently. A one-time bulk import (e.g. an initial Zotero
+        # sync of hundreds of papers) is NOT "news" — if a single add-date holds
+        # a large batch, skip it so the brief doesn't resurface the same old
+        # import every day. Within real additions, lead with the newest
+        # publication years so old papers don't dominate.
+        bulk_dates = {
+            r["d"] for r in _q(conn,
+                "SELECT substr(created_at,1,10) AS d, COUNT(*) AS n FROM literature_metadata "
+                "GROUP BY d HAVING n >= 50")
+        }
         rows = _q(conn,
-            "SELECT title, abstract, year FROM literature_metadata "
-            "WHERE created_at >= ? ORDER BY created_at DESC LIMIT 8", (d30,))
+            "SELECT title, abstract, year, substr(created_at,1,10) AS add_day "
+            "FROM literature_metadata WHERE created_at >= ? "
+            "ORDER BY COALESCE(year,0) DESC, created_at DESC LIMIT 30", (d7,))
+        rows = [r for r in rows if r["add_day"] not in bulk_dates][:6]
         if rows:
             lines = ["## Recently Added Papers"]
             for r in rows:
