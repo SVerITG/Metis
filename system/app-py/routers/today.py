@@ -1327,7 +1327,7 @@ async def today_morning_brief(request: Request):
                 _conn.row_factory = _sqlite.Row
                 _last = _conn.execute(
                     "SELECT insight_date, content FROM daily_insights "
-                    "WHERE model = 'claude-haiku-brief' AND content IS NOT NULL "
+                    "WHERE model IN ('claude-haiku-brief','desktop-brief') AND content IS NOT NULL "
                     "ORDER BY insight_date DESC LIMIT 1"
                 ).fetchone()
                 _conn.close()
