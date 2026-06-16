@@ -407,6 +407,126 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ---------------------------------------------------------------------------
+// Project editing — rename, tags, category, banner colour
+// (the project-detail template calls these; they POST then refresh the panel)
+// ---------------------------------------------------------------------------
+
+function reloadProjectDetail(projectId) {
+  htmx.ajax('GET', '/api/partial/work/project-detail/' + projectId, {
+    target: '#proj-detail-overlay', swap: 'outerHTML',
+  });
+}
+
+function reloadProjectsZone() {
+  const z = document.getElementById('projects-zone');
+  if (z && window.htmx) htmx.trigger(z, 'load');
+}
+
+async function _projectUpdate(projectId, fields) {
+  const res = await fetch('/api/project/update/' + projectId, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fields),
+  });
+  return res.ok;
+}
+
+// — Rename (inline) —
+function pdStartRename(projectId) {
+  const h = document.getElementById('pd-title-display-' + projectId);
+  const inp = document.getElementById('pd-title-input-' + projectId);
+  if (!h || !inp) return;
+  inp.value = h.textContent.trim();
+  h.style.display = 'none';
+  inp.style.display = 'block';
+  inp.focus();
+  inp.select();
+}
+function pdCancelRename(projectId) {
+  const h = document.getElementById('pd-title-display-' + projectId);
+  const inp = document.getElementById('pd-title-input-' + projectId);
+  if (inp) inp.style.display = 'none';
+  if (h) h.style.display = 'block';
+}
+async function pdSaveRename(projectId) {
+  const inp = document.getElementById('pd-title-input-' + projectId);
+  if (!inp) return;
+  const newTitle = inp.value.trim();
+  const h = document.getElementById('pd-title-display-' + projectId);
+  if (!newTitle || (h && newTitle === h.textContent.trim())) { pdCancelRename(projectId); return; }
+  const ok = await _projectUpdate(projectId, { title: newTitle });
+  if (ok) {
+    if (h) h.textContent = newTitle;
+    pdCancelRename(projectId);
+    showToast('<i class="bi bi-check2 toast-icon"></i>Project renamed');
+    reloadProjectsZone();
+  } else {
+    showToast("<i class=\"bi bi-exclamation-circle toast-icon\"></i>Couldn't rename — try again");
+    pdCancelRename(projectId);
+  }
+}
+
+// — Tags (multiple per project) —
+async function pdAddTagPrompt(projectId) {
+  const tag = (prompt('Add a tag:') || '').trim();
+  if (!tag) return;
+  const res = await fetch('/api/project/' + projectId + '/tag-add', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tag }),
+  });
+  if (res.ok) { reloadProjectDetail(projectId); reloadProjectsZone(); }
+}
+async function pdRemoveTag(projectId, tag) {
+  const res = await fetch('/api/project/' + projectId + '/tag-remove', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tag }),
+  });
+  if (res.ok) { reloadProjectDetail(projectId); reloadProjectsZone(); }
+}
+
+// — Next step —
+async function pdClearNextStep(projectId) {
+  const res = await fetch('/api/project/' + projectId + '/clear-next-step', { method: 'POST' });
+  if (res.ok) { reloadProjectDetail(projectId); showToast('<i class="bi bi-check2 toast-icon"></i>Next step cleared'); }
+}
+
+// — Banner colour —
+async function pdSetColor(projectId, color) {
+  const ok = await _projectUpdate(projectId, { accent_color: color });
+  if (ok) { reloadProjectDetail(projectId); reloadProjectsZone(); }
+}
+
+// — Category (choose existing or add new) —
+async function pdSetCategory(projectId) {
+  let existing = [];
+  try {
+    const r = await fetch('/api/project/categories');
+    existing = (await r.json()).categories || [];
+  } catch (e) { /* ignore */ }
+  const hint = existing.length ? '\nExisting: ' + existing.join(', ') : '';
+  const cat = (prompt('Category for this project (type a new one or reuse):' + hint) || '').trim();
+  if (cat === '') return;
+  const ok = await _projectUpdate(projectId, { category: cat });
+  if (ok) {
+    reloadProjectDetail(projectId);
+    reloadProjectsZone();
+    const fb = document.querySelector('[hx-get="/api/partial/work/category-filters"]');
+    if (fb && window.htmx) htmx.trigger(fb, 'load');
+    showToast('<i class="bi bi-check2 toast-icon"></i>Category set to ' + cat);
+  }
+}
+
+// — Work tab filter chips —
+function filterProjects(value, btn) {
+  document.querySelectorAll('.work-filter-chip').forEach(function (c) {
+    c.classList.remove('chip--accent'); c.classList.add('chip--plain');
+  });
+  if (btn) { btn.classList.remove('chip--plain'); btn.classList.add('chip--accent'); }
+  htmx.ajax('GET', '/api/partial/work/projects?filter=' + encodeURIComponent(value || ''), {
+    target: '#projects-zone', swap: 'innerHTML',
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Project launcher — open external app (VS Code / RStudio / Claude Code)
 // ---------------------------------------------------------------------------
 

@@ -189,6 +189,10 @@ def _morning(focus: str = "") -> str:
         "`get_project_status`.\n"
         "3. Synthesise a concise briefing: what's pressing today, what's new "
         "overnight (news + literature), what's blocked, and one suggested focus.\n"
+        "4. **Save it for the dashboard:** call `save_daily_brief(content=<the "
+        "briefing>, sources=<what you drew on>)`. This writes the finished brief "
+        "to the shared database, so the dashboard's morning-brief widget shows it "
+        "automatically — no copy-paste needed.\n"
         + (f"\nUser's stated focus for today: {focus}\n" if focus else "")
     )
 

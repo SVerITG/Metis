@@ -10,6 +10,7 @@ OpenAlex: OpenAlex REST API (https://api.openalex.org)
 
 import datetime
 import json
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -347,4 +348,119 @@ async def scan_openalex(
     return [TextContent(
         type="text",
         text=f"OpenAlex: {added} new papers added from {len(items)} results (since {from_date}).",
+    )]
+
+
+def _s2_api_key() -> str:
+    """Optional Semantic Scholar API key (env or system/.env). Moves off the
+    heavily-throttled keyless shared pool. Get one free at semanticscholar.org."""
+    import os
+    key = os.environ.get("S2_API_KEY", "") or os.environ.get("SEMANTIC_SCHOLAR_API_KEY", "")
+    if not key:
+        try:
+            env_path = paths.root / "system" / ".env"
+            if env_path.exists():
+                for line in env_path.read_text().splitlines():
+                    line = line.strip()
+                    if line.startswith("S2_API_KEY") and "=" in line:
+                        key = line.partition("=")[2].strip()
+                        break
+        except Exception:
+            pass
+    return key
+
+
+def _semanticscholar_search(query: str, limit: int) -> list:
+    """Query the Semantic Scholar Graph API. Uses S2_API_KEY if set (recommended —
+    the keyless pool is heavily rate-limited). Retries once on HTTP 429."""
+    import time
+    fields = "title,abstract,year,venue,url,externalIds,citationCount,authors"
+    params = urllib.parse.urlencode({
+        "query": query,
+        "limit": max(1, min(limit, 100)),
+        "fields": fields,
+    })
+    url = f"https://api.semanticscholar.org/graph/v1/paper/search?{params}"
+    headers = {"User-Agent": "MetisRC/1.0"}
+    key = _s2_api_key()
+    if key:
+        headers["x-api-key"] = key
+
+    last_err = None
+    for attempt in range(2):
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=25) as r:
+                data = json.loads(r.read().decode("utf-8"))
+            return data.get("data", []) or []
+        except urllib.error.HTTPError as e:
+            last_err = e
+            if e.code == 429 and attempt == 0:
+                time.sleep(3)  # brief backoff, then one retry
+                continue
+            raise
+    if last_err:
+        raise last_err
+    return []
+
+
+@app.tool()
+async def search_semantic_scholar(
+    query: str = "",
+    max_results: int = 10,
+) -> list[TextContent]:
+    """Search Semantic Scholar for papers on a topic (citation-graph discovery).
+
+    Complements PubMed (scan_pubmed_alerts) and OpenAlex (scan_openalex) with
+    Semantic Scholar's 200M+ paper graph and citation counts. Free public Graph
+    API, no key required. Matched papers are inserted into news_briefs with
+    source_type='article' (domain 'Semantic Scholar') so the Librarian and the
+    dashboard surface them like any other discovered paper.
+
+    Args:
+        query: Free-text topic to search (e.g. "HAT elimination surveillance").
+               Defaults to your configured PubMed/topic query if empty.
+        max_results: Maximum papers to retrieve (default 10, max 100).
+    """
+    if not query:
+        query = _user_pubmed_query()
+    import sqlite3
+
+    try:
+        items = _semanticscholar_search(query, max_results)
+    except Exception as e:
+        return [TextContent(type="text", text=f"Semantic Scholar search error: {e}")]
+
+    if not items:
+        return [TextContent(type="text", text=f"Semantic Scholar: no papers for '{query}'.")]
+
+    added = 0
+    try:
+        con = sqlite3.connect(str(paths.db))
+        for item in items:
+            title = item.get("title") or "Untitled"
+            ext = item.get("externalIds") or {}
+            doi = ext.get("DOI") or ""
+            url = (f"https://doi.org/{doi}" if doi else "") or item.get("url") or ""
+            if not url:
+                continue
+            authors = "; ".join(
+                a.get("name", "") for a in (item.get("authors") or [])[:4] if a.get("name")
+            )
+            year = item.get("year") or ""
+            venue = item.get("venue") or ""
+            cites = item.get("citationCount")
+            abstract = (item.get("abstract") or "")[:300]
+            cite_str = f" · {cites} citations" if isinstance(cites, int) else ""
+            summary_text = f"{authors} ({year}). {venue}{cite_str}. {abstract}".strip()
+            if _insert_article(con, title, summary_text, url, "Semantic Scholar", "semanticscholar,article"):
+                added += 1
+        con.commit()
+        con.close()
+    except Exception as e:
+        return [TextContent(type="text", text=f"Semantic Scholar DB insert error: {e}")]
+
+    return [TextContent(
+        type="text",
+        text=f"Semantic Scholar: {added} new papers added from {len(items)} results for '{query}'.",
     )]

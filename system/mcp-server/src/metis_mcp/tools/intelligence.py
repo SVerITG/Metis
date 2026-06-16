@@ -192,6 +192,62 @@ async def generate_daily_insight() -> list[TextContent]:
         return [TextContent(type="text", text=f"Error generating daily insight: {e}")]
 
 
+@app.tool()
+async def save_daily_brief(
+    content: str,
+    sources: str = "",
+    date: str = "",
+    model: str = "desktop-brief",
+) -> list[TextContent]:
+    """Save a composed daily brief so the dashboard widget shows it.
+
+    This is the write-back half of the daily-brief round-trip. Claude Desktop (or
+    Claude Code) composes the brief from generate_daily_insight() context, then
+    calls this to upsert the finished prose into the daily_insights table — the
+    same table the dashboard's morning-brief widget reads via get_daily_insight().
+    Desktop and the dashboard share one database, so no files are involved: once
+    saved, the brief appears in the dashboard on next load.
+
+    Args:
+        content: The finished daily-brief prose (markdown ok). Required.
+        sources: Comma-separated list of what the brief drew on (optional).
+        date: YYYY-MM-DD; empty = today.
+        model: Model identifier that composed it, for provenance (optional).
+
+    Returns:
+        Confirmation with the date saved and a pointer to the dashboard widget.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+    if not (content or "").strip():
+        return [TextContent(type="text", text="Nothing saved: `content` is empty.")]
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if not date:
+        date = now.strftime("%Y-%m-%d")
+
+    try:
+        with connect(paths.db) as conn:
+            _ensure_tables(conn)
+            conn.execute(
+                """INSERT INTO daily_insights (insight_date, content, sources, generated_at, model)
+                   VALUES (?, ?, ?, ?, ?)
+                   ON CONFLICT(insight_date) DO UPDATE SET
+                       content = excluded.content,
+                       sources = excluded.sources,
+                       generated_at = excluded.generated_at,
+                       model = excluded.model""",
+                (date, content, sources, now.isoformat(), model),
+            )
+            conn.commit()
+        return [TextContent(type="text", text=(
+            f"Daily brief saved for {date} ({len(content)} chars). "
+            f"It will appear in the dashboard's morning-brief widget on next load."
+        ))]
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error saving daily brief: {e}")]
+
+
 def assemble_daily_context(db_path) -> dict:
     """Assemble daily briefing context from the database. Pure function, no MCP.
 

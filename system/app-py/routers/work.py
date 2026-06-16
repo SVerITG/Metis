@@ -272,20 +272,84 @@ def _parse_launchers(p: dict) -> list:
 
 
 @router.get("/api/partial/work/projects", response_class=HTMLResponse)
-async def work_projects(request: Request):
-    projects = db_query(
+async def work_projects(request: Request, filter: str = ""):
+    """Project list, optionally filtered.
+
+    filter='' or 'active' → active, tracked projects
+    filter='archived'     → archived projects
+    filter=<category>     → active projects whose category OR any tag matches
+    """
+    cols = (
         "SELECT project_id as id, title, description, domain, priority, next_step, status, "
         "external_path, launcher_type, github_url, launchers, dashboard_url, "
-        "project_type, last_session_at "
-        "FROM projects WHERE status = 'active' AND COALESCE(tracked, 1) = 1 "
-        "ORDER BY COALESCE(display_order, 999) ASC LIMIT 20"
+        "project_type, last_session_at, accent_color, category, tags "
+        "FROM projects "
     )
+    f = (filter or "").strip().lower()
+    if f == "archived":
+        projects = db_query(cols + "WHERE status = 'archived' ORDER BY COALESCE(display_order, 999) ASC LIMIT 50")
+    elif f in ("", "active", "all"):
+        projects = db_query(
+            cols + "WHERE status = 'active' AND COALESCE(tracked, 1) = 1 "
+            "ORDER BY COALESCE(display_order, 999) ASC LIMIT 50"
+        )
+    else:
+        like = f"%{f}%"
+        projects = db_query(
+            cols + "WHERE status = 'active' AND COALESCE(tracked, 1) = 1 "
+            "AND (LOWER(COALESCE(category,'')) = ? OR LOWER(COALESCE(tags,'')) LIKE ? "
+            "OR LOWER(COALESCE(domain,'')) = ?) "
+            "ORDER BY COALESCE(display_order, 999) ASC LIMIT 50",
+            (f, like, f),
+        )
     for p in (projects or []):
         p["launchers_list"] = _parse_launchers(p)
+        p["tags_list"] = [t.strip() for t in (p.get("tags") or "").split(",") if t.strip()]
     return templates.TemplateResponse(
         request,
         "partials/work_projects.html",
         {"projects": projects},
+    )
+
+
+@router.get("/api/partial/work/category-filters", response_class=HTMLResponse)
+async def work_category_filters(request: Request):
+    """Filter chips for the Work tab: All · <categories> · Archived.
+
+    Categories are drawn from distinct project categories AND distinct tags, so a
+    project carrying multiple tags shows up under each.
+    """
+    cat_rows = db_query(
+        "SELECT DISTINCT category AS c FROM projects "
+        "WHERE status='active' AND category IS NOT NULL AND category != ''"
+    ) or []
+    tag_rows = db_query(
+        "SELECT tags FROM projects WHERE status='active' AND tags IS NOT NULL AND tags != ''"
+    ) or []
+    values = {r["c"].strip() for r in cat_rows if r["c"]}
+    for r in tag_rows:
+        for t in (r["tags"] or "").split(","):
+            if t.strip():
+                values.add(t.strip())
+    has_archived = (db_scalar("SELECT COUNT(*) FROM projects WHERE status='archived'", default=0) or 0) > 0
+
+    def chip(label, value, active=False):
+        cls = "chip chip--accent" if active else "chip chip--plain"
+        return (
+            f'<button class="{cls} work-filter-chip" data-filter="{value}" '
+            f'onclick="filterProjects(\'{value}\', this)" '
+            f'style="cursor:pointer;border:none;font-family:var(--m-mono);font-size:10px;'
+            f'letter-spacing:.08em;padding:3px 11px;">{label}</button>'
+        )
+
+    chips = [chip("ALL", "", active=True)]
+    chips += [chip(v.upper()[:20], v) for v in sorted(values, key=str.lower)]
+    if has_archived:
+        chips.append(chip("ARCHIVED", "archived"))
+
+    return HTMLResponse(
+        '<div class="work-filter-bar" style="display:flex;gap:7px;margin-bottom:16px;'
+        'align-items:center;flex-wrap:wrap;">' + "".join(chips) + "</div>"
     )
 
 
@@ -318,6 +382,77 @@ async def project_create(request: Request):
          now),
     )
     return JSONResponse({"status": "ok", "project_id": project_id, "title": title})
+
+
+_PROJECT_EDITABLE_FIELDS = {
+    "title", "category", "accent_color", "description", "domain", "next_step",
+}
+
+
+@router.post("/api/project/update/{project_id}")
+async def project_update(project_id: str, request: Request):
+    """Update editable project fields (title, category, accent_color, etc.).
+
+    Accepts a JSON body with any subset of the whitelisted fields. Only fields
+    present in the body are changed.
+    """
+    data = await request.json()
+    fields = {k: (v or "") for k, v in data.items() if k in _PROJECT_EDITABLE_FIELDS}
+    if not fields:
+        return JSONResponse({"status": "error", "message": "No editable fields provided"}, status_code=400)
+    # Guard: title must not be blanked.
+    if "title" in fields and not str(fields["title"]).strip():
+        return JSONResponse({"status": "error", "message": "Title cannot be empty"}, status_code=400)
+    set_clause = ", ".join(f"{k}=?" for k in fields)
+    params = list(fields.values()) + [project_id]
+    db_execute(f"UPDATE projects SET {set_clause} WHERE project_id=?", tuple(params))
+    return JSONResponse({"status": "ok", "updated": list(fields.keys())})
+
+
+def _project_tags(project_id: str) -> list[str]:
+    raw = db_scalar("SELECT tags FROM projects WHERE project_id=?", (project_id,), default="") or ""
+    return [t.strip() for t in raw.split(",") if t.strip()]
+
+
+@router.post("/api/project/{project_id}/tag-add")
+async def project_tag_add(project_id: str, request: Request):
+    """Add a tag to a project (projects can carry multiple tags)."""
+    data = await request.json()
+    tag = (data.get("tag") or "").strip()
+    if not tag:
+        return JSONResponse({"status": "error", "message": "Tag required"}, status_code=400)
+    tags = _project_tags(project_id)
+    if tag.lower() not in [t.lower() for t in tags]:
+        tags.append(tag)
+    db_execute("UPDATE projects SET tags=? WHERE project_id=?", (",".join(tags), project_id))
+    return JSONResponse({"status": "ok", "tags": tags})
+
+
+@router.post("/api/project/{project_id}/tag-remove")
+async def project_tag_remove(project_id: str, request: Request):
+    """Remove a tag from a project."""
+    data = await request.json()
+    tag = (data.get("tag") or "").strip()
+    tags = [t for t in _project_tags(project_id) if t.lower() != tag.lower()]
+    db_execute("UPDATE projects SET tags=? WHERE project_id=?", (",".join(tags), project_id))
+    return JSONResponse({"status": "ok", "tags": tags})
+
+
+@router.post("/api/project/{project_id}/clear-next-step")
+async def project_clear_next_step(project_id: str):
+    """Clear a project's 'next step' (mark it done)."""
+    db_execute("UPDATE projects SET next_step='' WHERE project_id=?", (project_id,))
+    return JSONResponse({"status": "ok"})
+
+
+@router.get("/api/project/categories")
+async def project_categories():
+    """Distinct categories already in use, for the category picker datalist."""
+    rows = db_query(
+        "SELECT DISTINCT category FROM projects "
+        "WHERE category IS NOT NULL AND category != '' ORDER BY category"
+    ) or []
+    return JSONResponse({"categories": [r["category"] for r in rows]})
 
 
 @router.post("/api/project/scan/{project_id}")
@@ -497,7 +632,7 @@ async def project_detail_panel(request: Request, project_id: str):
         "SELECT project_id as id, title, description, domain, priority, next_step, status, "
         "created_at, external_path, github_url, project_type, context_doc, "
         "history_log, prompt_memory, last_session_at, "
-        "tags, started_at, completed_at, image_url "
+        "tags, started_at, completed_at, image_url, accent_color, category "
         "FROM projects WHERE project_id=? LIMIT 1",
         (project_id,),
     )

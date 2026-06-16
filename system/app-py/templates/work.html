@@ -132,6 +132,11 @@
 
     </div>
   </div>
+  <!-- Category / status filter chips -->
+  <div hx-get="/api/partial/work/category-filters"
+       hx-trigger="load"
+       hx-swap="innerHTML"></div>
+
   <div id="projects-zone"
        hx-get="/api/partial/work/projects"
        hx-trigger="load"
