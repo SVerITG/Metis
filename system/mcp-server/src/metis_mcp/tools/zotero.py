@@ -180,6 +180,41 @@ def _item_to_row(item: dict) -> dict:
 # MCP tools
 # ---------------------------------------------------------------------------
 
+def _upsert_lit_row(conn, row: dict) -> str:
+    """Insert or update one literature_metadata row keyed by zotero_key.
+
+    Returns 'added' or 'updated'. Shared by the Web-API sync and the local
+    zotero.sqlite reader so both behave identically.
+    """
+    existing = conn.execute(
+        "SELECT id FROM literature_metadata WHERE zotero_key = ?",
+        (row["zotero_key"],),
+    ).fetchone() if row.get("zotero_key") else None
+
+    if existing:
+        conn.execute(
+            """UPDATE literature_metadata SET
+               title=?, authors=?, year=?, source=?, journal=?, tags=?, doi=?,
+               abstract=?, url=?, item_type=?, zotero_version=?, library_source=?
+               WHERE zotero_key=?""",
+            (row["title"], row["authors"], row["year"], row["source"], row["journal"],
+             row["tags"], row["doi"], row["abstract"], row["url"], row["item_type"],
+             row["zotero_version"], row["library_source"], row["zotero_key"]),
+        )
+        return "updated"
+
+    conn.execute(
+        """INSERT INTO literature_metadata
+           (title, authors, year, source, journal, tags, doi, abstract,
+            url, item_type, zotero_key, zotero_version, library_source, created_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (row["title"], row["authors"], row["year"], row["source"], row["journal"],
+         row["tags"], row["doi"], row["abstract"], row["url"], row["item_type"],
+         row["zotero_key"], row["zotero_version"], row["library_source"], row["created_at"]),
+    )
+    return "added"
+
+
 @app.tool()
 async def sync_zotero_library(full: bool = False) -> list[TextContent]:
     """Sync the Zotero library into Metis literature_metadata.
@@ -231,32 +266,9 @@ async def sync_zotero_library(full: bool = False) -> list[TextContent]:
                 skipped += 1
                 continue
 
-            existing = conn.execute(
-                "SELECT id FROM literature_metadata WHERE zotero_key = ?",
-                (row["zotero_key"],),
-            ).fetchone()
-
-            if existing:
-                conn.execute(
-                    """UPDATE literature_metadata SET
-                       title=?, authors=?, year=?, source=?, journal=?, tags=?, doi=?,
-                       abstract=?, url=?, item_type=?, zotero_version=?, library_source=?
-                       WHERE zotero_key=?""",
-                    (row["title"], row["authors"], row["year"], row["source"], row["journal"],
-                     row["tags"], row["doi"], row["abstract"], row["url"], row["item_type"],
-                     row["zotero_version"], row["library_source"], row["zotero_key"]),
-                )
+            if _upsert_lit_row(conn, row) == "updated":
                 updated += 1
             else:
-                conn.execute(
-                    """INSERT INTO literature_metadata
-                       (title, authors, year, source, journal, tags, doi, abstract,
-                        url, item_type, zotero_key, zotero_version, library_source, created_at)
-                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                    (row["title"], row["authors"], row["year"], row["source"], row["journal"],
-                     row["tags"], row["doi"], row["abstract"], row["url"], row["item_type"],
-                     row["zotero_key"], row["zotero_version"], row["library_source"], row["created_at"]),
-                )
                 added += 1
 
         # Store new sync version
@@ -279,6 +291,175 @@ async def sync_zotero_library(full: bool = False) -> list[TextContent]:
     if full:
         lines.append("  (full sync — all items re-processed)")
     return [TextContent(type="text", text="\n".join(lines))]
+
+
+def _find_local_zotero_db() -> "str | None":
+    """Best-effort search for a local zotero.sqlite in common install locations."""
+    import glob
+    candidates = [
+        os.path.expanduser("~/Zotero/zotero.sqlite"),
+        os.path.expanduser("~/.zotero/zotero/*/zotero.sqlite"),
+    ]
+    # Windows-under-WSL: scan mounted user dirs.
+    candidates += glob.glob("/mnt/c/Users/*/Zotero/zotero.sqlite")
+    for pat in candidates:
+        for hit in glob.glob(pat):
+            if os.path.exists(hit):
+                return hit
+    return None
+
+
+def _read_local_zotero(db_path: str) -> list[dict]:
+    """Read items from a local zotero.sqlite and return rows shaped for upsert.
+
+    Zotero locks its DB while running, so we copy it to a temp file and read the
+    copy read-only. No Zotero API key needed — this is the offline path.
+    """
+    import shutil
+    import tempfile
+
+    tmp = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
+    tmp.close()
+    try:
+        shutil.copy2(db_path, tmp.name)
+        zc = sqlite3.connect(f"file:{tmp.name}?mode=ro", uri=True)
+        zc.row_factory = sqlite3.Row
+
+        # Field values per item (skip deleted, attachments, notes).
+        field_rows = zc.execute(
+            """
+            SELECT i.itemID, i.key AS item_key, i.version AS item_version,
+                   it.typeName AS item_type, f.fieldName AS field, idv.value AS value
+            FROM items i
+            JOIN itemTypes it       ON it.itemTypeID = i.itemTypeID
+            JOIN itemData idata     ON idata.itemID = i.itemID
+            JOIN fields f           ON f.fieldID = idata.fieldID
+            JOIN itemDataValues idv ON idv.valueID = idata.valueID
+            WHERE i.itemID NOT IN (SELECT itemID FROM deletedItems)
+              AND it.typeName NOT IN ('attachment', 'note')
+            """
+        ).fetchall()
+
+        items: dict = {}
+        for r in field_rows:
+            it = items.setdefault(r["itemID"], {
+                "key": r["item_key"], "version": r["item_version"],
+                "item_type": r["item_type"], "fields": {},
+            })
+            it["fields"][r["field"]] = r["value"]
+
+        # Creators per item, ordered.
+        creator_rows = zc.execute(
+            """
+            SELECT ic.itemID, c.lastName, c.firstName, c.fieldMode, ic.orderIndex
+            FROM itemCreators ic
+            JOIN creators c ON c.creatorID = ic.creatorID
+            ORDER BY ic.itemID, ic.orderIndex
+            """
+        ).fetchall()
+        creators: dict = {}
+        for r in creator_rows:
+            if r["fieldMode"] == 1 and r["lastName"]:
+                name = r["lastName"]                       # institutional/single-field
+            else:
+                name = r["lastName"] or ""
+                if r["firstName"]:
+                    name += f", {r['firstName'][0]}."
+            if name:
+                creators.setdefault(r["itemID"], []).append(name)
+
+        # Tags per item.
+        tag_rows = zc.execute(
+            """
+            SELECT it.itemID, t.name
+            FROM itemTags it JOIN tags t ON t.tagID = it.tagID
+            """
+        ).fetchall()
+        tags_map: dict = {}
+        for r in tag_rows:
+            tags_map.setdefault(r["itemID"], []).append(r["name"])
+
+        zc.close()
+
+        rows = []
+        for item_id, it in items.items():
+            fld = it["fields"]
+            title = (fld.get("title") or "")[:500]
+            if not title:
+                continue
+            raw_date = fld.get("date", "") or ""
+            ym = re.search(r"\b(19|20)\d{2}\b", raw_date)
+            year = int(ym.group()) if ym else None
+            doi = fld.get("DOI") or ""
+            url = fld.get("url") or (f"https://doi.org/{doi}" if doi else "")
+            rows.append({
+                "title": title,
+                "authors": "; ".join(creators.get(item_id, [])[:8])[:300],
+                "year": year,
+                "source": fld.get("publicationTitle") or fld.get("bookTitle") or fld.get("publisher") or "",
+                "journal": fld.get("publicationTitle") or "",
+                "tags": ",".join(tags_map.get(item_id, [])[:12]),
+                "doi": doi,
+                "abstract": (fld.get("abstractNote") or "")[:2000],
+                "url": url,
+                "item_type": it["item_type"] or "",
+                "zotero_key": it["key"] or "",
+                "zotero_version": it["version"] or 0,
+                "library_source": "zotero-local",
+                "created_at": datetime.now().isoformat(),
+            })
+        return rows
+    finally:
+        try:
+            os.unlink(tmp.name)
+        except Exception:
+            pass
+
+
+@app.tool()
+async def sync_zotero_local(db_path: str = "") -> list[TextContent]:
+    """Import a local Zotero library by reading zotero.sqlite directly (no API key).
+
+    The offline alternative to sync_zotero_library: reads your local Zotero
+    database file, so it works with no ZOTERO_API_KEY and no network. Items are
+    imported into literature_metadata (library_source='zotero-local'), the same
+    table the Librarian and search_library use.
+
+    Args:
+        db_path: Path to zotero.sqlite. If empty, Metis searches common locations
+                 (~/Zotero/zotero.sqlite, and /mnt/c/Users/*/Zotero on WSL).
+    """
+    path = db_path or _find_local_zotero_db()
+    if not path or not os.path.exists(path):
+        return [TextContent(type="text", text=(
+            "Local Zotero database not found. Pass db_path explicitly, e.g. "
+            "/mnt/c/Users/<you>/Zotero/zotero.sqlite. (Tip: in Zotero, "
+            "Settings → Advanced → Data Directory Location shows the folder.)"
+        ))]
+
+    try:
+        rows = _read_local_zotero(path)
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error reading local Zotero DB: {e}")]
+
+    if not rows:
+        return [TextContent(type="text", text=f"No importable items found in {path}.")]
+
+    added = updated = 0
+    with connect(paths.db) as conn:
+        _ensure_lit_schema(conn)
+        for row in rows:
+            if _upsert_lit_row(conn, row) == "updated":
+                updated += 1
+            else:
+                added += 1
+
+    return [TextContent(type="text", text="\n".join([
+        f"Local Zotero import complete (from {path}):",
+        f"  {added} new items added",
+        f"  {updated} items updated",
+        f"  {added + updated} total processed",
+    ]))]
 
 
 @app.tool()

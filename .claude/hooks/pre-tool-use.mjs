@@ -26,6 +26,30 @@ const RC_ROOT = process.env.METIS_RC_ROOT || "";
 // Default: standard — includes sensitive-data file-content scanning on Read/read_file.
 const HOOK_PROFILE = (process.env.METIS_HOOK_PROFILE || "standard").toLowerCase();
 
+// ─── Write-side data authorization ─────────────────────────────────────────
+// Metis rule: Claude must not create/overwrite/rebuild a dataset without the
+// user's authorization. The read-side scan stops data going TO the API; this
+// stops Claude WRITING data files on disk. Set METIS_ALLOW_DATA_WRITE=1 to
+// pre-authorize for a trusted batch/pipeline run.
+const ALLOW_DATA_WRITE = process.env.METIS_ALLOW_DATA_WRITE === "1";
+// File extensions that count as "a dataset" for the write gate.
+const DATA_WRITE_EXT = new Set([
+  "csv", "tsv", "tab", "psv", "xlsx", "xls",
+  "rds", "rdata", "sav", "dta", "parquet", "feather",
+]);
+// Bash/Rscript/Python idioms that create or overwrite a dataset.
+const DATA_WRITE_CMD_PATTERNS = [
+  /\bwrite\.csv2?\s*\(/i,          // R: write.csv / write.csv2
+  /\bwrite_(csv|tsv|delim|excel_csv|rds|parquet|feather|dta|sav)\s*\(/i, // readr/haven/arrow
+  /\bsaveRDS\s*\(/i,               // R: saveRDS
+  /\bsave\s*\([^)]*file\s*=/i,     // R: save(..., file=)
+  /\bwrite\.xlsx\s*\(|\bopenxlsx::/i, // R: openxlsx
+  /\bfwrite\s*\(/i,                // data.table::fwrite
+  /\.to_csv\s*\(|\.to_excel\s*\(|\.to_parquet\s*\(|\.to_stata\s*\(/i, // pandas
+  /\b(pd|pandas)\.\w+\.to_/i,
+  />\s*[^\s|;&]+\.(csv|tsv|xlsx|xls|rds|rdata|sav|dta|parquet)\b/i, // shell redirect to data file
+];
+
 // ─── Sensitive path patterns ───────────────────────────────────────────────
 // Updated 2026-05-05: refer to current folder layout (knowledge/library, inbox).
 const SENSITIVE_PATH_PATTERNS = [
@@ -40,9 +64,36 @@ const SENSITIVE_PATH_PATTERNS = [
   /\boutputs\/reviews\/data-guardian\//i,
 ];
 
+// ─── Secret / credential paths — DENY reads & writes ───────────────────────
+// 2026 CVE class: API-key exfiltration via reading credential stores in
+// untrusted repos. These are hard blocks, not warnings.
+const SECRET_PATH_PATTERNS = [
+  /(^|\/)\.env(\.|$)/i,
+  /(^|\/)\.ssh(\/|$)/i,
+  /(^|\/)\.aws(\/|$)/i,
+  /(^|\/)\.gnupg(\/|$)/i,
+  /(^|\/)id_rsa\b/i,
+  /(^|\/)id_ed25519\b/i,
+  /\.pem$/i,
+  /\.p12$/i,
+  /\.pfx$/i,
+  /(^|\/)\.npmrc$/i,
+  /(^|\/)\.netrc$/i,
+  /(^|\/)credentials$/i,
+  /(^|\/)\.git-credentials$/i,
+  /secrets?\.(ya?ml|json|toml|ini)$/i,
+];
+
+function isSecretPath(p) {
+  return SECRET_PATH_PATTERNS.some((re) => re.test(p || ""));
+}
+
 // ─── Domain allowlist ──────────────────────────────────────────────────────
 const ALLOWED_DOMAINS = [
   "pubmed.ncbi.nlm.nih.gov",
+  "eutils.ncbi.nlm.nih.gov",
+  "api.semanticscholar.org",
+  "semanticscholar.org",
   "scholar.google.com",
   "arxiv.org",
   "biorxiv.org",
@@ -183,6 +234,32 @@ const { tool_name, tool_input } = input;
 let decision = "allow";
 let reason = null;
 
+// ── Secret / credential guard (ALL profiles, runs first) ───────────────────
+// Hard-block any attempt to read or write a credential store, regardless of
+// hook profile. Covers the file tools and Bash commands that name a secret path.
+{
+  const candidatePaths = [
+    tool_input?.file_path,
+    tool_input?.path,
+  ].filter(Boolean);
+  const bashCmd = tool_name === "Bash" ? (tool_input?.command || "") : "";
+  const hitPath = candidatePaths.find(isSecretPath);
+  if (hitPath || (bashCmd && isSecretPath(bashCmd))) {
+    const what = hitPath || bashCmd.slice(0, 120);
+    warn(`BLOCKED — credential/secret path: ${what}`);
+    console.log(JSON.stringify({
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
+        permissionDecisionReason:
+          `Metis blocks access to credential/secret stores (.env, ~/.ssh, ~/.aws, ` +
+          `keys, credentials files). Target: ${what}. This is a hard red line.`,
+      },
+    }));
+    process.exit(0);
+  }
+}
+
 // ── Minimal profile: domain allowlist check only, return early ─────────────
 if (HOOK_PROFILE === "minimal") {
   if (tool_name === "WebFetch") {
@@ -227,9 +304,23 @@ if (tool_name === "WebFetch" || tool_name === "WebSearch") {
   }
 }
 
-// ── Write / Edit — check for sensitive paths ───────────────────────────────
+// ── Write / Edit — check for sensitive paths + data-write authorization ─────
 if (tool_name === "Write" || tool_name === "Edit") {
   const filePath = tool_input?.file_path || "";
+  // Data-authorization gate: ASK before creating/overwriting a dataset.
+  const ext = (filePath.split(".").pop() || "").toLowerCase();
+  if (!ALLOW_DATA_WRITE && DATA_WRITE_EXT.has(ext)) {
+    decision = "ask";
+    reason =
+      `Metis is about to ${tool_name === "Write" ? "create/overwrite" : "modify"} a data file: ${filePath}. ` +
+      `Rebuilding or overwriting a dataset needs your authorization. ` +
+      `For analysis prefer /safe-analysis (Metis writes a script you run locally; only metadata is shared). ` +
+      `Set METIS_ALLOW_DATA_WRITE=1 to pre-authorize batch writes.`;
+    warn(
+      `Data write requires authorization: ${filePath}\n` +
+      `  → Confirm to proceed, or use /safe-analysis. (METIS_ALLOW_DATA_WRITE=1 to skip this gate.)`
+    );
+  }
   if (isSensitivePath(filePath)) {
     warn(
       `Writing to a potentially sensitive path: ${filePath}\n` +
@@ -243,12 +334,28 @@ if (tool_name === "Write" || tool_name === "Edit") {
 if (tool_name === "Bash") {
   const cmd = tool_input?.command || "";
 
-  // Flag outbound network calls
-  if (/\b(curl|wget|http|https|ftp)\b/.test(cmd)) {
-    warn(
-      `Bash command contains a network call:\n  ${cmd.slice(0, 120)}\n` +
-      `  Cybersecurity review: confirm this destination is expected.`
+  // Outbound network calls — scope to the domain allowlist (default-deny posture).
+  if (/\b(curl|wget|ftp)\b/.test(cmd) || /\bhttps?:\/\//.test(cmd)) {
+    const urls = cmd.match(/https?:\/\/[^\s"'`)]+/gi) || [];
+    const domains = urls.map(extractDomain).filter(Boolean);
+    const nonAllowed = domains.filter(
+      (d) => !ALLOWED_DOMAINS.some((a) => d === a || d.endsWith("." + a))
     );
+    if (domains.length === 0) {
+      // Network tool but no parseable URL (e.g. variable-built) — ask to be safe.
+      decision = decision === "block" ? "block" : "ask";
+      reason = reason ||
+        `This command makes a network call but the destination couldn't be verified ` +
+        `against the allowlist:\n  ${cmd.slice(0, 140)}\nConfirm it's expected.`;
+      warn(`Network call with unverifiable destination — confirm:\n  ${cmd.slice(0, 120)}`);
+    } else if (nonAllowed.length) {
+      decision = decision === "block" ? "block" : "ask";
+      reason = reason ||
+        `Outbound call to a non-allowlisted domain: ${nonAllowed.join(", ")}. ` +
+        `Allowlisted research/news/API domains run freely; everything else needs your OK. ` +
+        `Add to ALLOWED_DOMAINS in .claude/hooks/pre-tool-use.mjs if this is trusted.`;
+      warn(`Non-allowlisted network destination (${nonAllowed.join(", ")}) — confirm to proceed.`);
+    }
   }
 
   // Flag attempts to read or transmit sensitive files
@@ -256,6 +363,20 @@ if (tool_name === "Bash") {
     warn(
       `Bash command references a sensitive path:\n  ${cmd.slice(0, 120)}\n` +
       `  Data Guardian review: confirm no patient/individual-level data is being transmitted.`
+    );
+  }
+
+  // Data-authorization gate: ASK before a command that writes/rebuilds a dataset.
+  if (!ALLOW_DATA_WRITE && decision !== "block" &&
+      DATA_WRITE_CMD_PATTERNS.some((p) => p.test(cmd))) {
+    decision = "ask";
+    reason =
+      `This command appears to create or overwrite a dataset:\n  ${cmd.slice(0, 160)}\n` +
+      `Rebuilding a dataset needs your authorization. Prefer /safe-analysis for analysis work. ` +
+      `Set METIS_ALLOW_DATA_WRITE=1 to pre-authorize batch writes.`;
+    warn(
+      `Data-writing command requires authorization:\n  ${cmd.slice(0, 120)}\n` +
+      `  → Confirm to proceed. (METIS_ALLOW_DATA_WRITE=1 to skip this gate.)`
     );
   }
 

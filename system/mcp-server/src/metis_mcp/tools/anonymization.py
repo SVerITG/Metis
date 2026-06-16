@@ -43,6 +43,7 @@ from metis_mcp.tools.safety import (
     _PATIENT_ID_RE,
     _GPS_RE,
     _BELGIAN_NID_RE,
+    _SENSITIVE_COLUMNS,
 )
 
 # ---------------------------------------------------------------------------
@@ -166,6 +167,150 @@ async def anonymize_text(
             "by_type": counters,
         }
 
+    return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
+
+
+@app.tool()
+async def scan_outgoing(text: str) -> list[TextContent]:
+    """Output rail: check a drafted response for leaked PII before it's sent.
+
+    The output-side complement to the read-side hook. Agents call this on any
+    response that might contain individual-level data; it enforces the
+    constitution's no-pii-output rule. Returns a verdict, what was found, and a
+    masked version safe to send.
+
+    Args:
+        text: The drafted response text to check.
+
+    Returns JSON: {safe: bool, found: {type: count}, masked: str}.
+    """
+    found: dict = {}
+    masked = text
+    for label, pattern in _PATTERNS:
+        def _r(m, lbl=label):
+            found[lbl] = found.get(lbl, 0) + 1
+            return f"[{lbl}]"
+        masked = pattern.sub(_r, masked)
+
+    safe = not found
+    result = {
+        "safe": safe,
+        "found": found,
+        "masked": masked if not safe else text,
+        "verdict": (
+            "PASS — no PII patterns detected; safe to send."
+            if safe else
+            "BLOCK — PII detected. Send the 'masked' version, or remove the identifiers."
+        ),
+    }
+    return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
+
+
+@app.tool()
+async def redact_data_file(
+    path: str,
+    max_rows: int = 20,
+) -> list[TextContent]:
+    """Read a sensitive data file and return a REDACTED preview (masked values).
+
+    The redaction half of /safe-analysis: where check_data_safety only *detects*
+    sensitive data and the read-hook *asks*, this returns a masked version so an
+    approved read shares no raw identifiers. Sensitive columns (patient/case IDs,
+    names, GPS, etc.) are pseudonymised consistently — the same value always maps
+    to the same placeholder, so record linkage survives while identity does not.
+    PII patterns (emails, phones, IDs) are scrubbed from all remaining cells.
+
+    Local I/O only — nothing leaves the machine except the masked preview you see.
+
+    Args:
+        path:     Absolute local path to a CSV/TSV/text data file.
+        max_rows: Rows to include in the masked preview (default 20).
+
+    Returns JSON: redacted preview rows, the columns masked, and a per-type count.
+    """
+    import csv as _csv
+    import io as _io
+    import os as _os
+
+    if not _os.path.exists(path):
+        return [TextContent(type="text", text=json.dumps({"error": f"File not found: {path}"}))]
+
+    ext = (path.rsplit(".", 1)[-1] if "." in path else "").lower()
+    if ext not in ("csv", "tsv", "tab", "txt", "psv"):
+        return [TextContent(type="text", text=json.dumps({
+            "error": f"redact_data_file handles delimited text (csv/tsv/txt). "
+                     f"For {ext}, convert to CSV first or use /safe-analysis.",
+        }))]
+
+    delim = "\t" if ext in ("tsv", "tab") else ("|" if ext == "psv" else ",")
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace", newline="") as fh:
+            reader = _csv.reader(fh, delimiter=delim)
+            rows = []
+            for i, r in enumerate(reader):
+                rows.append(r)
+                if i >= max_rows:  # header + max_rows data rows
+                    break
+    except Exception as e:
+        return [TextContent(type="text", text=json.dumps({"error": f"Read failed: {e}"}))]
+
+    if not rows:
+        return [TextContent(type="text", text=json.dumps({"error": "Empty file."}))]
+
+    header = rows[0]
+    data_rows = rows[1:]
+    # Which columns are sensitive (by header name)?
+    sensitive_idx = {
+        i: h for i, h in enumerate(header)
+        if (h or "").strip().strip('"\'').lower() in _SENSITIVE_COLUMNS
+    }
+
+    pseudonyms: dict = {}        # (col, value) -> placeholder
+    col_counters: dict = {}
+    by_type: dict = {}
+
+    def _scrub_cell(value: str) -> str:
+        out = value
+        for label, pattern in _PATTERNS:
+            def _r(m, lbl=label):
+                by_type[lbl] = by_type.get(lbl, 0) + 1
+                return f"[{lbl}]"
+            out = pattern.sub(_r, out)
+        return out
+
+    redacted = []
+    for r in data_rows:
+        new_row = []
+        for i, cell in enumerate(r):
+            if i in sensitive_idx:
+                col = sensitive_idx[i]
+                if cell.strip() == "":
+                    new_row.append(cell)
+                    continue
+                key = (col, cell)
+                if key not in pseudonyms:
+                    col_counters[col] = col_counters.get(col, 0) + 1
+                    pseudonyms[key] = f"[{col.upper()}_{col_counters[col]:03d}]"
+                    by_type["COLUMN_MASK"] = by_type.get("COLUMN_MASK", 0) + 1
+                new_row.append(pseudonyms[key])
+            else:
+                new_row.append(_scrub_cell(cell))
+        redacted.append(new_row)
+
+    # Re-emit as CSV text for a readable preview.
+    buf = _io.StringIO()
+    w = _csv.writer(buf, delimiter=delim)
+    w.writerow(header)
+    w.writerows(redacted)
+
+    result = {
+        "path": path,
+        "rows_previewed": len(redacted),
+        "masked_columns": sorted(set(sensitive_idx.values())),
+        "redactions_by_type": by_type,
+        "redacted_preview": buf.getvalue(),
+        "note": "Sensitive columns pseudonymised (consistent per value); PII patterns scrubbed. Raw values never left the machine.",
+    }
     return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
 
 

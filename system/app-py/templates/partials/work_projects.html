@@ -15,7 +15,8 @@
   <div class="panel panel-pad project-card"
        data-project-id="{{ p.id }}"
        draggable="true"
-       style="padding:0;display:flex;flex-direction:column;cursor:default;transition:opacity .15s,outline .1s;">
+       style="padding:0;display:flex;flex-direction:column;cursor:default;transition:opacity .15s,outline .1s;
+              border-left:3px solid {{ p.accent_color or 'transparent' }};">
 
     <!-- ── Header row (always visible) ── -->
     <div class="proj-header"
@@ -28,10 +29,18 @@
       <div onclick="openProjectDetail('{{ p.id }}')"
            style="flex:1;font-family:var(--m-display);font-size:16px;font-weight:500;color:var(--m-ink);line-height:1.2;cursor:pointer;"
            title="Open project details">{{ p.title }}</div>
+      <!-- Category chip -->
+      {% if p.category %}
+      <span class="chip chip--plain" style="flex-shrink:0;font-size:10px;">{{ p.category[:16] }}</span>
+      {% endif %}
       <!-- Domain chip -->
       {% if p.domain %}
       <span class="chip chip--info" style="flex-shrink:0;font-size:10px;">{{ p.domain[:16] }}</span>
       {% endif %}
+      <!-- Tag chips (multiple) -->
+      {% for tag in (p.tags_list or [])[:3] %}
+      <span class="chip chip--plain" style="flex-shrink:0;font-size:9px;opacity:.8;">{{ tag[:14] }}</span>
+      {% endfor %}
       <!-- Type / article badge -->
       {% if p.launcher_type == 'article' or p.project_type == 'article' %}
       <span class="chip" style="flex-shrink:0;font-size:10px;background:var(--m-ochre-wash,#fff8ee);color:var(--m-ochre-deep,#b36a1d);border:1px solid var(--m-ochre-soft,#e8c97a);">ARTICLE</span>

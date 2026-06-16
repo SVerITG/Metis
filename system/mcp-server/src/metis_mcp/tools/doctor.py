@@ -325,18 +325,25 @@ def _check_knowledge_layer() -> dict:
 
 
 def _check_dashboard() -> dict:
-    """Is the dashboard currently serving on :8080? (Not running is fine.)"""
+    """Is the dashboard currently serving? Reads the live port written by run.sh."""
     import socket
+    try:
+        port = int((paths.root / "system" / "app-py" / ".metis-port").read_text().strip())
+    except Exception:
+        port = 8080
+    label = f"Dashboard (:{port})"
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(0.4)
     try:
-        s.connect(("127.0.0.1", 8080))
+        s.connect(("127.0.0.1", port))
         s.close()
-        return {"name": "Dashboard (:8080)", "ok": True, "severity": "info",
-                "detail": "running — open http://localhost:8080"}
+        return {"name": label, "ok": True, "severity": "info",
+                "detail": f"running — open http://localhost:{port}"}
     except Exception:
-        return {"name": "Dashboard (:8080)", "ok": True, "severity": "info",
-                "detail": "not running — start it from the Metis desktop icon or run.sh"}
+        return {"name": label, "ok": False, "severity": "warn",
+                "detail": "not running (this is fine — just not started). "
+                          "Restart with:  bash system/app-py/run.sh  "
+                          "(or the Metis desktop icon)"}
     finally:
         try:
             s.close()

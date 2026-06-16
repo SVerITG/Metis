@@ -104,6 +104,28 @@ def _load_dataframe(path: Path) -> "Any":
         )
 
 
+def _data_write_authorized(authorized: bool) -> "str | None":
+    """Server-side data-write gate (mirrors the Claude Code PreToolUse hook).
+
+    The hook can't intercept MCP tool calls, so any MCP tool that creates or
+    overwrites a dataset must check this itself. Returns None when the write is
+    authorized; otherwise returns a refusal message to hand back to the user.
+
+    A write is allowed only when the caller passed authorized=True (after the
+    user confirmed) OR the env var METIS_ALLOW_DATA_WRITE=1 is set (batch runs).
+    """
+    import os
+    if authorized or os.environ.get("METIS_ALLOW_DATA_WRITE") == "1":
+        return None
+    return (
+        "Data-write blocked: rebuilding/overwriting a dataset needs the user's "
+        "authorization. Ask the user to confirm, then call this tool again with "
+        "authorized=True — or set METIS_ALLOW_DATA_WRITE=1 for pre-authorized "
+        "batch runs. For analysis prefer /safe-analysis (script runs locally; "
+        "only metadata is shared)."
+    )
+
+
 def _save_dataframe(df: "Any", path: Path) -> None:
     """Save a DataFrame to a file, inferring format from extension."""
     suffix = path.suffix.lower()
@@ -384,10 +406,16 @@ async def clean_dataset(
     path: str,
     operations: list[str],
     output_path: str = "",
+    authorized: bool = False,
 ) -> list[TextContent]:
     """Apply cleaning operations to a dataset and write a new file.
 
     NEVER modifies the original file. Always writes to output_path.
+
+    ⚠️ Writing a dataset requires authorization. This tool refuses to write
+    unless authorized=True (confirm with the user first) or the env var
+    METIS_ALLOW_DATA_WRITE=1 is set. This mirrors the Claude Code write-gate so
+    a rebuild can't bypass it via MCP.
 
     Supported operations:
       - "drop_duplicates"                    — remove exact duplicate rows
@@ -409,6 +437,13 @@ async def clean_dataset(
     col_delta, operations_applied, operations_skipped.
     """
     import pandas as pd
+
+    _refusal = _data_write_authorized(authorized)
+    if _refusal is not None:
+        return [TextContent(type="text", text=json.dumps({
+            "error": "authorization_required",
+            "message": _refusal,
+        }))]
 
     file_path = Path(path)
     if not file_path.exists():
