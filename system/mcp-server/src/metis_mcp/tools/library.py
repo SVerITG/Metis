@@ -257,3 +257,135 @@ async def search_literature_extended(
 
     except Exception as e:
         return [TextContent(type="text", text=f"Error searching literature: {e}")]
+
+
+def _slugify(text: str, maxlen: int = 80) -> str:
+    """Filesystem-safe slug for a markdown note filename."""
+    import re as _re
+    s = _re.sub(r"[^\w\s-]", "", (text or "untitled").lower())
+    s = _re.sub(r"[\s_-]+", "-", s).strip("-")
+    return (s or "untitled")[:maxlen]
+
+
+@app.tool()
+async def export_knowledge_markdown(out_dir: str = "") -> list[TextContent]:
+    """Export the library as a cross-linked Obsidian-style Markdown vault.
+
+    Writes one Markdown note per library item (YAML frontmatter + abstract) plus
+    an index, with [[wikilinks]] between items that share a tag — the
+    claude-obsidian / LLM-Wiki pattern. Gives you a portable, human-readable,
+    git-diffable view of the knowledge graph you can open in Obsidian. Read-only
+    on the database; writes only Markdown.
+
+    Args:
+        out_dir: Destination folder. Default: outputs/knowledge-export/ under the RC root.
+    """
+    from pathlib import Path as _Path
+
+    base = _Path(out_dir) if out_dir else (paths.root / "outputs" / "knowledge-export")
+    notes_dir = base / "notes"
+    try:
+        notes_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        return [TextContent(type="text", text=f"Could not create {base}: {e}")]
+
+    try:
+        with connect(paths.db) as conn:
+            rows = conn.execute(
+                "SELECT id, title, authors, year, journal, source, tags, doi, url, abstract "
+                "FROM literature_metadata WHERE title IS NOT NULL AND title != '' "
+                "ORDER BY year DESC, title"
+            ).fetchall()
+    except Exception as e:
+        return [TextContent(type="text", text=f"DB read error: {e}")]
+
+    if not rows:
+        return [TextContent(type="text", text="No library items to export.")]
+
+    # Build tag → [item] index for cross-linking, and assign unique slugs.
+    def _tags_of(r):
+        return [t.strip() for t in (r["tags"] or "").split(",") if t.strip()]
+
+    slugs: dict = {}
+    used: set = set()
+    for r in rows:
+        s = _slugify(r["title"])
+        orig = s
+        i = 2
+        while s in used:
+            s = f"{orig}-{i}"
+            i += 1
+        used.add(s)
+        slugs[r["id"]] = s
+
+    tag_index: dict = {}
+    for r in rows:
+        for t in _tags_of(r):
+            tag_index.setdefault(t.lower(), []).append(r["id"])
+
+    written = 0
+    for r in rows:
+        tags = _tags_of(r)
+        # Related = other items sharing any tag (capped).
+        related_ids: list = []
+        seen = {r["id"]}
+        for t in tags:
+            for oid in tag_index.get(t.lower(), []):
+                if oid not in seen:
+                    seen.add(oid)
+                    related_ids.append(oid)
+        related_ids = related_ids[:8]
+
+        title = (r["title"] or "Untitled").replace('"', "'")
+        fm = [
+            "---",
+            f'title: "{title}"',
+            f'authors: "{(r["authors"] or "").replace(chr(34), chr(39))}"',
+            f"year: {r['year'] or ''}",
+            f'journal: "{(r["journal"] or r["source"] or "").replace(chr(34), chr(39))}"',
+            f'doi: "{r["doi"] or ""}"',
+            # Quote every tag: MeSH tags can start with '*' (a YAML alias) or
+            # contain '/' ':' — unquoted they produce invalid YAML frontmatter.
+            "tags: [" + ", ".join('"' + t.replace('"', "'") + '"' for t in tags) + "]",
+            "---",
+            "",
+            f"# {title}",
+            "",
+        ]
+        if r["authors"]:
+            fm.append(f"**Authors:** {r['authors']}  ")
+        if r["year"]:
+            fm.append(f"**Year:** {r['year']}  ")
+        if r["doi"]:
+            fm.append(f"**DOI:** [{r['doi']}](https://doi.org/{r['doi']})  ")
+        elif r["url"]:
+            fm.append(f"**Link:** {r['url']}  ")
+        if r["abstract"]:
+            fm += ["", "## Abstract", "", r["abstract"]]
+        if related_ids:
+            fm += ["", "## Related", ""]
+            fm += [f"- [[{slugs[oid]}]]" for oid in related_ids]
+        fm += ["", f"_Tags: {', '.join(tags) if tags else 'none'}_", ""]
+
+        try:
+            (notes_dir / f"{slugs[r['id']]}.md").write_text("\n".join(fm), encoding="utf-8")
+            written += 1
+        except Exception:
+            continue
+
+    # Index grouped by tag.
+    idx = ["# Knowledge Vault — Index", "", f"{written} notes · {len(tag_index)} tags", ""]
+    for tag in sorted(tag_index):
+        idx.append(f"## {tag}")
+        for oid in tag_index[tag][:50]:
+            idx.append(f"- [[{slugs[oid]}]]")
+        idx.append("")
+    try:
+        (base / "_index.md").write_text("\n".join(idx), encoding="utf-8")
+    except Exception:
+        pass
+
+    return [TextContent(type="text", text=(
+        f"Knowledge vault exported: {written} notes + index → {base}\n"
+        f"Open the folder in Obsidian; [[wikilinks]] connect items sharing tags."
+    ))]

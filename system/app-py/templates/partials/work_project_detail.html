@@ -1,16 +1,27 @@
 <!-- work_project_detail.html — Full project panel v2 -->
 <div class="proj-detail-overlay" id="proj-detail-overlay" onclick="if(event.target===this)closeProjectDetail()">
-<div class="proj-detail-panel" style="display:flex;flex-direction:column;height:100%;max-height:90vh;">
+<div class="proj-detail-panel" style="display:flex;flex-direction:column;height:100%;max-height:90vh;overflow:hidden;">
+
+  {% set accent = p.accent_color or 'var(--m-accent)' %}
+  <!-- ── Banner colour strip ── -->
+  <div style="height:6px;background:{{ accent }};flex-shrink:0;"></div>
 
   <!-- ── Header ── -->
-  <div style="display:flex;align-items:flex-start;gap:14px;padding:26px 32px 18px;border-bottom:1px solid var(--m-rule);flex-shrink:0;">
+  <div style="display:flex;align-items:flex-start;gap:14px;padding:22px 32px 16px;border-bottom:1px solid var(--m-rule);flex-shrink:0;background:linear-gradient(to bottom, color-mix(in srgb, {{ accent }} 9%, transparent), transparent);">
     {% if p.image_url %}
     <img src="{{ p.image_url }}" alt="" style="width:52px;height:52px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid var(--m-rule);">
     {% endif %}
     <div style="flex:1;min-width:0;">
-      {% if p.domain %}
-      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);margin-bottom:5px;">{{ p.domain }}</div>
-      {% endif %}
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+        {% if p.domain %}
+        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);">{{ p.domain }}</span>
+        {% endif %}
+        <button onclick="pdSetCategory('{{ p.id }}')"
+                title="Set category"
+                style="background:color-mix(in srgb, {{ accent }} 14%, transparent);border:1px solid color-mix(in srgb, {{ accent }} 35%, transparent);
+                       border-radius:10px;padding:1px 9px;font-family:var(--m-mono);font-size:9px;letter-spacing:.08em;
+                       color:{{ accent }};cursor:pointer;">{% if p.category %}{{ p.category }}{% else %}+ category{% endif %}</button>
+      </div>
       <h2 id="pd-title-display-{{ p.id }}"
           style="font-family:var(--m-display);font-size:22px;font-weight:500;letter-spacing:-0.02em;color:var(--m-ink);margin:0 0 4px;cursor:pointer;"
           title="Click to rename"
@@ -30,7 +41,18 @@
                 style="background:none;border:1px dashed var(--m-rule);border-radius:10px;padding:1px 8px;font-family:var(--m-mono);font-size:9px;color:var(--m-muted);cursor:pointer;letter-spacing:.08em;">+ tag</button>
       </div>
     </div>
-    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+    <div style="display:flex;gap:10px;align-items:center;flex-shrink:0;">
+      <!-- Banner colour swatches -->
+      <div style="display:flex;gap:4px;align-items:center;" title="Banner colour">
+        {% for c in ['#c0392b','#d97706','#16a34a','#0ea5e9','#6366f1','#a855f7'] %}
+        <span onclick="pdSetColor('{{ p.id }}','{{ c }}')"
+              style="width:13px;height:13px;border-radius:50%;background:{{ c }};cursor:pointer;
+                     border:2px solid {% if p.accent_color == c %}var(--m-ink){% else %}transparent{% endif %};box-shadow:0 0 0 1px var(--m-rule);"></span>
+        {% endfor %}
+        <span onclick="pdSetColor('{{ p.id }}','')" title="Reset to default"
+              style="width:13px;height:13px;border-radius:50%;background:var(--m-surface-2);cursor:pointer;
+                     border:1px solid var(--m-rule);font-size:9px;line-height:11px;text-align:center;color:var(--m-muted);">&#8856;</span>
+      </div>
       {% if last_activity %}
       <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ last_activity[:10] }}</span>
       {% endif %}

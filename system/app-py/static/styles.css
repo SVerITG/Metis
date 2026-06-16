@@ -269,8 +269,17 @@ pre code { background: transparent; padding: 0; color: inherit; }
 .brand .b-text { min-width: 0; transition: opacity 160ms ease; }
 .app[data-side="rail"] .brand { justify-content: center; padding: 0 0 6px; }
 .app[data-side="rail"] .brand .b-text { opacity: 0; pointer-events: none; width: 0; overflow: hidden; }
-.brand .b-mark { width: 28px; height: 28px; flex-shrink: 0; color: var(--m-accent); }
-.brand .b-mark svg { width: 28px; height: 28px; }
+.brand .b-mark {
+  width: 34px; height: 34px; flex-shrink: 0; color: var(--m-accent);
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--m-accent) 14%, var(--m-surface));
+  border: 1px solid color-mix(in srgb, var(--m-accent) 32%, transparent);
+  border-radius: 9px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.brand .b-mark svg { width: 22px; height: 22px; }
+.app[data-side="rail"] .brand .b-mark { width: 32px; height: 32px; }
 .brand .b-word { font-family: var(--m-display); font-size: 22px; font-weight: 500; letter-spacing: -0.02em; color: var(--m-ink); line-height: 1; }
 .brand .b-word em { font-style: italic; color: var(--m-accent-soft); font-weight: 400; }
 .brand .b-sub { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--m-muted); margin-top: 2px; }

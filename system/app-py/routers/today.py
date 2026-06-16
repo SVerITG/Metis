@@ -1055,7 +1055,12 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
                 (today,),
             ).fetchone()
         conn.close()
-        if row and row["model"] == model_tag and row["content"]:
+        # Accept the dashboard's own Haiku brief, or a brief composed and saved
+        # from Claude Desktop/Code via save_daily_brief (tagged 'desktop-brief').
+        accepted_tags = {model_tag}
+        if period != "weekly":
+            accepted_tags.add("desktop-brief")
+        if row and row["content"] and row["model"] in accepted_tags:
             cached_content = row["content"]
     except Exception:
         pass

@@ -1,5 +1,5 @@
 # Metis — Constitutional Policy
-# version: 1.0 | updated: 2026-04-20
+# version: 1.1 | updated: 2026-06-16
 # Format: machine-readable rules loaded by load_constitution() into every agent's context.
 
 ## Scope
@@ -53,6 +53,32 @@ RULE no-secrets:
   When: any agent is about to output or log an API key, password, token, or private key
   Then: BLOCK the output and replace with [REDACTED]
   Severity: CRITICAL — hard block
+
+RULE no-data-rebuild:
+  When: any agent is about to create, overwrite, or rebuild a dataset file
+        (.csv/.tsv/.xlsx/.rds/.dta/.sav/.parquet) via a tool, script, or command
+  Then: STOP and obtain the user's explicit authorization first; never rebuild a
+        dataset silently. Enforced by the PreToolUse write-gate and the
+        server-side clean_dataset guard (authorized=True / METIS_ALLOW_DATA_WRITE=1).
+  Severity: CRITICAL — hard line
+
+RULE no-credential-access:
+  When: any agent attempts to read or transmit a credential store
+        (.env, ~/.ssh, ~/.aws, *.pem, credentials/.git-credentials, secrets.*)
+  Then: BLOCK the access. Enforced as a hard deny in the PreToolUse hook.
+  Severity: CRITICAL — hard block
+
+RULE network-allowlist:
+  When: any agent makes an outbound network call (curl/wget/http)
+  Then: allow only allowlisted research/news/API domains; any other destination
+        requires the user's confirmation (default-deny posture).
+  Severity: HIGH
+
+RULE prefer-safe-analysis:
+  When: an agent needs to work with sensitive / individual-level data
+  Then: prefer /safe-analysis (send code, not data) or redact_data_file; share
+        only metadata or masked values, never raw identifiers.
+  Severity: HIGH
 
 ---
 

@@ -14,6 +14,16 @@ from metis_mcp.app_instance import app
 from metis_mcp.config import paths
 from metis_mcp.local_overrides import load_overrides
 
+
+def _dashboard_port(default: int = 8080) -> int:
+    """Live dashboard port written by run.sh, so printed links never drift."""
+    try:
+        port_file = paths.root / "system" / "app-py" / ".metis-port"
+        return int(port_file.read_text().strip())
+    except Exception:
+        return default
+
+
 FEED_ALLOWLIST = [
     # Disease surveillance & outbreak monitoring
     ("WHO outbreak news",      "https://www.who.int/feeds/entity/csr/don/en/rss.xml",                                    "surveillance,public-health"),
@@ -553,5 +563,5 @@ async def full_scan() -> list[TextContent]:
     except Exception as e:
         lines.append(f"FILES      ERROR: {e}")
 
-    lines.append("\nDashboard: http://127.0.0.1:8000")
+    lines.append(f"\nDashboard: http://127.0.0.1:{_dashboard_port()}")
     return [TextContent(type="text", text="\n".join(lines))]
