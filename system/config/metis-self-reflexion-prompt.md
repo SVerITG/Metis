@@ -131,9 +131,9 @@ Run each workflow as a real user would. Each workflow is a sequence of dashboard
 ### C.7 Self-improvement workflow
 1. Run any agent (`/epidemiologist`, `/methods-coach`).
 2. Was a reflexion written?
-3. Run `aggregate_reflexions_tool()`.
+3. Run `aggregate_reflexions()`.
 4. Was a proposal drafted? Is it visible in the Metis tab → Self-improvement section?
-5. Approve a proposal — does `apply_proposal_tool()` actually edit the skill file with a backup?
+5. Approve a proposal — does `apply_proposal()` actually edit the skill file with a backup?
 
 ---
 
