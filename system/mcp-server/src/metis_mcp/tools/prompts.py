@@ -224,7 +224,7 @@ def _handoff(reason: str = "") -> str:
     return (
         "Generate a **portable handoff brief** for the current Metis session so work "
         "can continue in another AI or device.\n\n"
-        "Call `generate_handoff_brief_tool(write_to_journal=True)` and present the "
+        "Call `generate_handoff_brief(write_to_journal=True)` and present the "
         "brief. Include current state, open decisions, and the next concrete step.\n"
         + (f"\nReason for handoff: {reason}\n" if reason else "")
     )

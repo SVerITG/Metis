@@ -216,7 +216,7 @@ def generate_handoff_brief(session_id: str | None = None,
     }
 
 
-@app.tool()
+@app.tool(name="generate_handoff_brief")
 async def generate_handoff_brief_tool(session_id: str = "") -> list[TextContent]:
     """Generate a portable session handoff brief.
 

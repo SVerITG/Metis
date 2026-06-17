@@ -300,7 +300,7 @@ async def surface_relevant_context(
     return [TextContent(type="text", text="\n".join(lines))]
 
 
-@app.tool()
+@app.tool(name="get_memory_health")
 async def memory_health_report() -> list[TextContent]:
     """Generate a health report for the memory palace.
 

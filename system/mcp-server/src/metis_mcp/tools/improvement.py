@@ -430,7 +430,7 @@ def consolidate_reflexions(days: int = 14, min_count: int = 3,
 # ── MCP tool wrappers ────────────────────────────────────────────────────────
 
 
-@app.tool()
+@app.tool(name="consolidate_reflexions")
 async def consolidate_reflexions_tool(days: int = 14, min_count: int = 3) -> list[TextContent]:
     """Distil recurring reflexion themes into semantic memory and prune working memory.
 
@@ -446,7 +446,7 @@ async def consolidate_reflexions_tool(days: int = 14, min_count: int = 3) -> lis
     ))]
 
 
-@app.tool()
+@app.tool(name="aggregate_reflexions")
 async def aggregate_reflexions_tool(agent_slug: str = "",
                                     days: int = 14) -> list[TextContent]:
     """Theme recent reflexions per agent (Phase 9b).
@@ -488,7 +488,7 @@ async def aggregate_reflexions_tool(agent_slug: str = "",
     return [TextContent(type="text", text="\n".join(lines))]
 
 
-@app.tool()
+@app.tool(name="draft_self_improvement_proposal")
 async def draft_self_improvement_proposal_tool(
         agent_slug: str,
         days: int = 14) -> list[TextContent]:
@@ -605,7 +605,7 @@ def apply_proposal(proposal_id: int) -> dict:
     }
 
 
-@app.tool()
+@app.tool(name="apply_proposal")
 async def apply_proposal_tool(proposal_id: int) -> list[TextContent]:
     """Apply a self-improvement proposal: writes the proposed change to disk.
 

@@ -77,7 +77,7 @@ In a Claude Desktop or Claude Code session with `metis-rc` registered:
 - [ ] `list_tools()` returns 76+ tools (no error)
 - [ ] `get_user_profile()` returns user config (or empty dict — not an error)
 - [ ] `session_bootstrap()` returns a dict with `plan_status` key
-- [ ] `memory_health_report()` returns a health report string
+- [ ] `get_memory_health()` returns a health report string
 
 ---
 
