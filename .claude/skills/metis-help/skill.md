@@ -1,6 +1,6 @@
 ---
 name: Metis Help
-description: "help, what can you do, how does metis work, how to use metis, available commands, guide, FAQ, get started, what is metis, I don't know where to start, explain metis, metis help"
+description: "help, what can you do, how does metis work, how to use metis, available commands, guide, FAQ, get started, what is metis, I don't know where to start, explain metis, metis help, metis info, command list, command reference, what commands exist, show me all commands, what slash commands, what skills are available"
 model: claude-sonnet-4-6
 effort: normal
 complexity: quick
@@ -55,7 +55,6 @@ These commands trigger structured workflows. Type them exactly as shown.
 | `/metis_status` | Quick snapshot: blocked tasks, what's in progress, PhD status |
 | `/metis_projects` | All active projects with status, open tasks, and next steps |
 | `/metis_agents` | Agent directory: who does what, when to use each, last run date |
-| `/metis_info` | Full command reference for power users (Claude Code) |
 | `/metis_weekly` | Full week in review: ideas captured, papers found, meetings, progress |
 | `/metis_research` | Research session: load article context, check tracked files, suggest next steps |
 | `/metis_brainstorm` | Explore connections between your ideas and your literature |
@@ -63,6 +62,8 @@ These commands trigger structured workflows. Type them exactly as shown.
 | `/metis_notes` | Add a personal note or journal entry |
 | `/metis_help` | Show this guide |
 | `/metis_handoff` | Generate a portable context brief for switching AI or device |
+
+*Power users: the exhaustive command + agent reference lives in `CLAUDE.md` at the Research Cortex root.*
 
 ---
 
