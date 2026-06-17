@@ -1,6 +1,6 @@
 ---
 name: Metis Capture
-description: "capture, quick capture, save this, capture a thought, capture idea, capture task, capture note, add to inbox, log this, I want to save, quick add, capture from terminal, save for later, remember this"
+description: "capture, quick capture, save this, capture a thought, capture idea, capture task, capture note, add to inbox, log this, I want to save, quick add, capture from terminal, save for later, remember this, new idea, add idea, save idea, I had an idea, I just thought of, log idea, add note, quick note, personal note, write a note, note to self, journal entry, save a thought, metis ideas, metis notes"
 model: claude-haiku-4-5-20251001
 effort: normal
 complexity: quick
@@ -31,10 +31,12 @@ Examples:
 Extract the prefix (first 2 characters before `: `). Default to `n:` if none present.
 
 **Step 2 — Route and save**
-- `i:` → `save_idea(content, source="cli-capture", tags="cli")`
-- `n:` → `save_personal_note(content, source="cli-capture")`
-- `t:` → `create_task(title=content, project="inbox", priority="medium", source="cli-capture")`
-- `q:` → `save_idea(content, source="cli-capture", tags="question,cli")`
+- `i:` → `capture_idea(content=content, source="cli-capture")` then optionally `cross_pollinate(content=content)` for 2–3 quick connections
+- `n:` → `add_journal_entry(content=content)`
+- `t:` → `create_task(title=content, project="inbox", priority="medium")`
+- `q:` → `capture_idea(content=content, source="cli-capture")` (tag the entry as a question)
+
+This skill is the single capture entry point — it replaces the former `/metis_ideas` (use `i:`) and `/metis_notes` (use `n:`).
 
 **Step 3 — Confirm**
 Return a single-line confirmation with what was saved and where.
@@ -50,4 +52,4 @@ Return a single-line confirmation with what was saved and where.
   To review: /metis_inbox | Dashboard capture: Today tab
 ```
 
-Keep it one line if possible. Never show an error without a recovery path ("could not save — try /metis_ideas instead").
+Keep it one line if possible. Never show an error without a recovery path ("could not save — try the dashboard Today tab instead").
