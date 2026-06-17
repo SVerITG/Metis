@@ -31,7 +31,7 @@ TOOL_MODULES = [
     "user_profile", "literature_monitor", "meetings", "course_builder",
     "paperqa_search", "voice_capture", "knowledge_db", "session_memory",
     "memory_curator", "research", "research_timeline", "project_tracker", "dhis2",
-    "discovery", "code_repository", "prompts",
+    "discovery", "code_repository", "tool_search", "prompts",
 ]
 
 LOADED_MODULES: list[str] = []
@@ -74,6 +74,24 @@ if _os.environ.get("METIS_TOOL_SUBSETS", "0") == "1":
         "Tool subset active: agent=%s, %d tools removed, %d exposed",
         _agent, _removed, len(app._tool_manager._tools),
     )
+
+# ── Progressive tool disclosure ("tool search") ──────────────────────────────
+# When METIS_TOOL_SEARCH=1, park all non-core tools so the session loads a small
+# everyday set; the rest are retrieved on demand via find_tools()/load_tool_group().
+# Inert when the flag is unset. Runs AFTER subset filtering so the two compose.
+# See tool_search.py and the "core"/"groups" keys in config/tool-subsets.json.
+if _os.environ.get("METIS_TOOL_SEARCH", "0") == "1":
+    try:
+        from metis_mcp.tools.tool_search import partition_tools
+        _parked = partition_tools(app)
+        import logging as _logging2
+        _logging2.getLogger("metis").info(
+            "Tool search active: %d tools parked, %d exposed (core + meta).",
+            _parked, len(app._tool_manager._tools),
+        )
+    except Exception as _exc:  # never let this break startup
+        import logging as _logging2
+        _logging2.getLogger("metis").error("Tool search setup failed (skipped): %s", _exc)
 
 
 def _startup_selfcheck() -> None:

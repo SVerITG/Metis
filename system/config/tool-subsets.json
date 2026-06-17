@@ -1,6 +1,14 @@
 {
-  "version": "1.1",
-  "description": "Agent-to-tool-group mapping. The MCP server loads only the tools each agent needs, reducing context token cost by 50-80%. Set METIS_TOOL_SUBSETS=1 in run.sh to activate (default). Set METIS_TOOL_SUBSETS=0 to load all tools (developer mode).",
+  "version": "1.2",
+  "description": "Tool exposure config. TWO independent mechanisms: (1) per-agent SUBSETS — METIS_TOOL_SUBSETS=1 + METIS_AGENT_SUBSET=<slug> loads only that agent's groups (token-optimized launchers). (2) TOOL SEARCH — METIS_TOOL_SEARCH=1 keeps only the 'core' modules loaded and parks the rest, retrievable on demand via find_tools()/load_tool_group(). Tool search is the recommended setting for the general Desktop/Code session: it cuts the loaded toolset ~60% WITHOUT making anything unreachable (the fix for the '_default must be all' problem below). Set both flags off for developer mode (all tools loaded).",
+  "core": [
+    "tool_search", "agents", "handoff", "user_profile",
+    "projects", "tasks", "ideas", "notes",
+    "memory", "session_memory",
+    "library", "literature", "research", "content_scan", "intelligence",
+    "files", "meetings", "self_improvement", "safety", "discovery"
+  ],
+  "_comment_core": "Modules always exposed when METIS_TOOL_SEARCH=1 — the everyday set covering routing, capture, memory, projects/tasks, literature search, news/briefs, files, reflexion and contextual-discovery. Everything else (dhis2, data_tools, anonymization, backup, course_builder, knowledge_db/graph, vector_memory, thinking_profile, zotero, paperqa, transcription, voice, images, code_repository, research_timeline, project_tracker, memory_curator, brainstorm, doctor, pipeline, observability, improvement, config_tools, reviews, observation, ref_miner, fulltext_index, literature_monitor, guardrails) is parked and loaded on demand. Tune freely — membership is module-granular.",
   "groups": {
     "literature":   ["library", "literature", "literature_monitor", "knowledge_graph", "ref_miner", "fulltext_index", "zotero", "research", "paperqa_search"],
     "writing":      ["notes", "ideas", "brainstorm", "thinking_profile", "files", "observation"],
