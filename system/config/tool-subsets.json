@@ -4,16 +4,17 @@
   "core": [
     "tool_search", "agents", "handoff", "user_profile",
     "projects", "tasks", "ideas", "notes",
-    "memory", "session_memory",
+    "memory", "session_memory", "memory_gateway",
     "library", "literature", "research", "content_scan", "intelligence",
-    "files", "meetings", "self_improvement", "safety", "discovery"
+    "files", "meetings", "self_improvement", "safety", "discovery",
+    "script_analyzer"
   ],
   "_comment_core": "Modules always exposed when METIS_TOOL_SEARCH=1 — the everyday set covering routing, capture, memory, projects/tasks, literature search, news/briefs, files, reflexion and contextual-discovery. Everything else (dhis2, data_tools, anonymization, backup, course_builder, knowledge_db/graph, vector_memory, thinking_profile, zotero, paperqa, transcription, voice, images, code_repository, research_timeline, project_tracker, memory_curator, brainstorm, doctor, pipeline, observability, improvement, config_tools, reviews, observation, ref_miner, fulltext_index, literature_monitor, guardrails) is parked and loaded on demand. Tune freely — membership is module-granular.",
   "groups": {
     "literature":   ["library", "literature", "literature_monitor", "knowledge_graph", "ref_miner", "fulltext_index", "zotero", "research", "paperqa_search"],
     "writing":      ["notes", "ideas", "brainstorm", "thinking_profile", "files", "observation"],
     "methods":      ["ideas", "notes", "files", "research", "literature", "paperqa_search"],
-    "data":         ["data_tools", "anonymization", "files", "safety", "guardrails"],
+    "data":         ["data_tools", "script_analyzer", "anonymization", "files", "safety", "guardrails"],
     "admin":        ["projects", "tasks", "config_tools", "user_profile", "handoff", "project_tracker"],
     "intelligence": ["intelligence", "content_scan", "memory", "vector_memory", "improvement", "self_improvement"],
     "sessions":     ["session_memory", "memory_curator"],

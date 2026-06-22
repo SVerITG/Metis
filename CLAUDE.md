@@ -107,6 +107,7 @@ The tool is **earned + rate-capped**: it already skips features the user uses, c
 | `/verify-work` | Verify Work | The in-the-moment generate→verify gate: after a code change, run the external signals (py_compile/tests/reinstall+smoke/harness) + an independent skeptic before trusting it's done. The working-loop tier of self-reflexion. |
 | `/basket` | Basket Intake | Drop documents in `basket/`, then this lists + classifies them (infers what each is, scans datasets for sensitive data), asks a short questionnaire, and promotes each to the right input folder (`inputs/literature`, `inputs/code`, knowledge layers…). Never touches `basket/private/`. |
 | `/research-mode` | Research Mode | Library-first answers: searches your indexed library + memory first, complements from the internet only on a real gap and with your OK (local-first), and links the cited answer back to your projects and work. |
+| `/code-intake` | Code Intake | Scan R/Python scripts to extract metadata (packages, file paths, variables), generate safe profiling scripts, and build a per-project data dictionary — all without the AI seeing any data. |
 
 **RC workflow commands:**
 
