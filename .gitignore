@@ -272,3 +272,11 @@ system/app/data/paperqa_index/
 
 # Preserved curated reference seed corpus (local only)
 system/config/seed-dois.local.md
+
+# Encrypted DB backups — OneDrive-synced, never in git
+system/app/data/cloud-backups/
+*.sqlite.enc
+
+# Runtime logs — never ship (contain local paths)
+system/config/logs/
+*.log
