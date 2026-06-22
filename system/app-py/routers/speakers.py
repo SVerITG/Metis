@@ -54,7 +54,9 @@ def _ensure_table():
     conn.close()
 
 
-_ensure_table()
+# NOTE: _ensure_table() is invoked from main.py's lifespan startup (wrapped so a
+# DB failure disables only this feature, not the whole app). It must NOT run at
+# import time — that would crash the entire dashboard if the DB is unavailable.
 
 
 def _emb_to_blob(emb: np.ndarray) -> bytes:

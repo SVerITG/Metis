@@ -122,7 +122,11 @@ def start_inbox_watcher() -> bool:
 
     db_path = os.environ.get("METIS_DB", "")
     if not db_path:
-        db_path = str(Path(rc_root) / "system" / "app" / "data" / "metis.sqlite")
+        try:
+            from db import get_db_path
+            db_path = str(get_db_path())
+        except Exception:
+            db_path = str(Path(rc_root) / "system" / "app" / "data" / "metis.sqlite")
 
     t = Thread(
         target=_poll_inbox,

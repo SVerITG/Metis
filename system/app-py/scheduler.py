@@ -215,19 +215,23 @@ def job_nightly_backup() -> None:
     try:
         import sqlite3 as _sq3
         rc = os.environ.get("METIS_RC_ROOT", "")
-        db_path = Path(rc) / "system" / "app" / "data" / "metis.sqlite" if rc else None
-        # Fall back to db.get_db_path() if METIS_RC_ROOT not set
-        if not db_path or not db_path.exists():
-            try:
-                from db import get_db_path
-                db_path = get_db_path()
-            except Exception:
-                pass
+        # Source = the LIVE database (now on local disk, off OneDrive — see db.py).
+        try:
+            from db import get_db_path
+            db_path = get_db_path()
+        except Exception:
+            db_path = Path(rc) / "system" / "app" / "data" / "metis.sqlite" if rc else None
         if not db_path or not db_path.exists():
             _log_job("nightly_backup", "skip", "DB file not found")
             return
-        backup_dir = db_path.parent / "backups"
-        backup_dir.mkdir(exist_ok=True)
+        # Destination = OneDrive (system/app/data/backups), so backups sync
+        # off-machine even though the live DB lives on local disk.
+        backup_dir = (
+            Path(rc) / "system" / "app" / "data" / "backups"
+            if rc
+            else db_path.parent / "backups"
+        )
+        backup_dir.mkdir(parents=True, exist_ok=True)
         dst = backup_dir / f"metis.{datetime.date.today().strftime('%Y%m%d')}.sqlite"
         if dst.exists():
             _log_job("nightly_backup", "skip", f"Backup {dst.name} already exists")

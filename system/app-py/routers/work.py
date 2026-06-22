@@ -1449,25 +1449,37 @@ async def project_launch(
                     rest = wsl_ext[2:].replace("\\", "/")
                     wsl_ext = f"/mnt/{drive}{rest}"
 
-                # Prefer bat launcher (handles R discovery, path quoting, browser)
+                # Prefer dedicated launchers that poll for readiness before opening browser
                 bat_wsl = f"{wsl_ext.rstrip('/')}/launch_hat_dashboard.bat"
+                vbs_wsl = f"{wsl_ext.rstrip('/')}/launch_hat_dashboard.vbs"
                 launch_r_wsl = f"{wsl_ext.rstrip('/')}/launch_dashboard.R"
 
                 cmd_exe = "/mnt/c/Windows/System32/cmd.exe"
                 if not os.path.exists(cmd_exe):
                     cmd_exe = "cmd.exe"
 
+                # Dedicated launchers (.bat/.vbs) poll for readiness and open
+                # the browser themselves — no extra browser-open needed.
+                launcher_opens_browser = False
+
                 if os.path.exists(bat_wsl):
                     win_bat = _windows_to_cmd(_wsl_to_windows(bat_wsl))
-                    # Use shell string so cmd.exe quotes the path correctly
                     subprocess.Popen(
                         [cmd_exe, "/c", f'start "" "{win_bat}"'],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                     )
+                    launcher_opens_browser = True
+                elif os.path.exists(vbs_wsl):
+                    # VBS launcher polls until R responds — no premature browser open
+                    win_vbs = _windows_to_cmd(_wsl_to_windows(vbs_wsl))
+                    subprocess.Popen(
+                        [cmd_exe, "/c", f'start "" wscript.exe "{win_vbs}"'],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                    )
+                    launcher_opens_browser = True
                 elif os.path.exists(launch_r_wsl):
                     win_proj_dir = _wsl_to_windows(wsl_ext.rstrip("/"))
                     win_proj_dir_bs = _windows_to_cmd(win_proj_dir)
-                    # Build shell string so paths with spaces are quoted
                     subprocess.Popen(
                         [cmd_exe, "/c",
                          f'start "" /d "{win_proj_dir_bs}" Rscript.exe launch_dashboard.R'],
@@ -1481,20 +1493,27 @@ async def project_launch(
                         "message": "No launcher script found in project folder. Open manually.",
                     }, status_code=400)
 
-                # Open browser after delay — cold start takes 30-60 s
-                import threading
-                def _open_browser():
-                    import time, subprocess as _sp
-                    time.sleep(8)
-                    _sp.Popen(
-                        [cmd_exe, "/c", f'start "" "{dash_url}"'],
-                        stdout=_sp.DEVNULL, stderr=_sp.DEVNULL,
-                    )
-                threading.Thread(target=_open_browser, daemon=True).start()
+                # Only open the browser from Python when the launcher doesn't do it
+                if not launcher_opens_browser:
+                    import threading
+                    def _open_browser():
+                        import time, subprocess as _sp
+                        time.sleep(8)
+                        _sp.Popen(
+                            [cmd_exe, "/c", f'start "" "{dash_url}"'],
+                            stdout=_sp.DEVNULL, stderr=_sp.DEVNULL,
+                        )
+                    threading.Thread(target=_open_browser, daemon=True).start()
+
                 win_proj_dir = _wsl_to_windows(wsl_ext.rstrip("/"))
+                msg = (
+                    "Launcher started — it will open the browser once R is ready."
+                    if launcher_opens_browser
+                    else "Starting R Dashboard — browser opens in ~8 s. First load takes 30–60 s while R loads packages."
+                )
                 return JSONResponse({
                     "status": "starting",
-                    "message": "Starting R Dashboard — browser opens in ~8 s. First load takes 30–60 s while R loads packages.",
+                    "message": msg,
                     "target": target,
                     "path": win_proj_dir,
                     "project": project_title,

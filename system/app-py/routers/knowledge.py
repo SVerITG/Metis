@@ -81,9 +81,11 @@ async def global_search(request: Request, q: str = ""):
         pass
     total = len(papers) + len(projects) + len(news) + len(tasks)
     if total == 0:
+        import html as _html
+        q_safe = _html.escape(q)  # reflected-XSS guard: never echo raw user input into HTML
         return HTMLResponse(
             f'<div style="padding:20px 24px;font-family:var(--m-mono);font-size:11px;'
-            f'color:var(--m-muted);">No results for <em style="color:var(--m-ink);">{q}</em></div>'
+            f'color:var(--m-muted);">No results for <em style="color:var(--m-ink);">{q_safe}</em></div>'
         )
     return templates.TemplateResponse(
         request,
@@ -1127,7 +1129,8 @@ async def trigger_zotero_sync():
         }
 
         import sqlite3 as _sq3
-        db_path = Path(rc_root) / "system" / "app" / "data" / "metis.sqlite" if rc_root else None
+        from db import get_db_path
+        db_path = get_db_path()
         if not db_path or not db_path.exists():
             return JSONResponse({"status": "error", "message": "Database not found."}, status_code=500)
 
@@ -1999,7 +2002,8 @@ async def knowledge_build_hat_index(request: Request):
             '<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">Library path not found in user-preferences.json → library_path</span>'
         )
 
-    db_path = Path(rc_root) / "system" / "app" / "data" / "metis.sqlite"
+    from db import get_db_path
+    db_path = get_db_path()
     try:
         subprocess.Popen(
             [sys.executable, str(script), "--database", "hat-specialist",

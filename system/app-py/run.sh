@@ -39,12 +39,57 @@ fi
 
 cd "$APP_DIR"
 
-# Kill any previous Metis instance and free the preferred port. A short sleep is
-# not enough — the old process can keep 8080 bound for a few seconds, which used to
-# make the launcher silently land on 8081 (or fail to bind). Actively wait for 8080
-# to free, prefer it, and only fall back if it is genuinely still occupied.
+# ── Persistent, rotating logs (R7) ────────────────────────────────────────────
+# Off ephemeral /tmp; survives reboots; rotate at ~2 MB keeping 3 generations so a
+# crash is always diagnosable.
+LOG_DIR="${METIS_RC_ROOT}/system/config/logs"
+mkdir -p "$LOG_DIR"
+LOG_FILE="$LOG_DIR/dashboard.log"
+if [ -f "$LOG_FILE" ] && [ "$(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0)" -gt 2097152 ]; then
+    mv -f "$LOG_DIR/dashboard.log.2" "$LOG_DIR/dashboard.log.3" 2>/dev/null || true
+    mv -f "$LOG_DIR/dashboard.log.1" "$LOG_DIR/dashboard.log.2" 2>/dev/null || true
+    mv -f "$LOG_FILE"                "$LOG_DIR/dashboard.log.1" 2>/dev/null || true
+fi
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >>"$LOG_FILE"; }
+
+PORT_FILE="${METIS_RC_ROOT}/system/app-py/.metis-port"
+STOP_FILE="${APP_DIR}/.metis-stop"
+rm -f "$STOP_FILE" 2>/dev/null   # a fresh launch clears any prior stop request
+
+# ── Singleton / adopt-don't-kill (R4) ─────────────────────────────────────────
+# If a HEALTHY dashboard is already serving, adopt it — never kill a working server
+# (killing one mid-write is what corrupted the DB on 2026-06-19). Only a wedged /
+# unresponsive instance gets cleared below.
+for p in 8080 $(cat "$PORT_FILE" 2>/dev/null); do
+    if curl -sf -m 2 "http://127.0.0.1:$p/health" >/dev/null 2>&1; then
+        log "adopt: healthy dashboard already on :$p — not restarting"
+        echo "$p" > "$PORT_FILE"
+        echo "Metis already running on http://localhost:$p"
+        exit 0
+    fi
+done
+
+# Launch lock: only one supervisor may cold-start at a time (closes the race where
+# the logon autostart and a desktop double-click fire simultaneously). The winning
+# supervisor holds fd 9 for its whole life — a true singleton. Losers wait for the
+# winner to come up, then adopt it.
+exec 9>"${APP_DIR}/.metis-launch.lock"
+if command -v flock >/dev/null 2>&1 && ! flock -n 9; then
+    log "another launch in progress — waiting to adopt"
+    for _ in $(seq 1 30); do
+        if curl -sf -m 2 "http://127.0.0.1:8080/health" >/dev/null 2>&1; then
+            echo "Metis already running on http://localhost:8080"
+            exit 0
+        fi
+        sleep 1
+    done
+    log "gave up waiting for the other launch"
+    exit 0
+fi
+
+# No healthy instance → clear any stale/wedged one and free the preferred port.
+rm -f "$PORT_FILE" 2>/dev/null
 pkill -f "uvicorn main:app" 2>/dev/null || true
-# Best-effort: free port 8080 specifically (a wedged process from a crash).
 command -v fuser >/dev/null 2>&1 && fuser -k 8080/tcp 2>/dev/null || true
 
 PORT=$("$PYTHON" - <<'PYEOF'
@@ -74,13 +119,30 @@ PYEOF
 )
 
 export METIS_PORT="$PORT"
+mkdir -p "$(dirname "$PORT_FILE")"
+echo "$PORT" > "$PORT_FILE"
 echo "Starting Metis dashboard on http://localhost:${PORT}"
+log "supervisor start — 127.0.0.1:${PORT}"
 
-# Write selected port to a file so the desktop shortcut can open the correct URL.
-# Use METIS_RC_ROOT-relative path so Docker containers (read-only code mount) can write it.
-_PORT_FILE="${METIS_RC_ROOT}/system/app-py/.metis-port"
-mkdir -p "$(dirname "$_PORT_FILE")"
-echo "$PORT" > "$_PORT_FILE"
-unset _PORT_FILE
-
-exec "$PYTHON" -m uvicorn main:app --host 0.0.0.0 --port "$PORT"
+# ── Supervisor (R3): restart on crash with backoff; clean stop via .metis-stop ─
+# To stop Metis deliberately:  touch "$STOP_FILE" && pkill -f 'uvicorn main:app'
+# R6: bind 127.0.0.1 only (not 0.0.0.0) — single-user desktop app, no LAN exposure.
+attempt=0
+while [ ! -f "$STOP_FILE" ]; do
+    started=$(date +%s)
+    "$PYTHON" -m uvicorn main:app --host 127.0.0.1 --port "$PORT" >>"$LOG_FILE" 2>&1
+    ec=$?
+    [ -f "$STOP_FILE" ] && { log "stop requested — supervisor exiting"; break; }
+    ran=$(( $(date +%s) - started ))
+    if [ "$ran" -ge 30 ]; then attempt=0; fi   # stable run → reset backoff
+    attempt=$((attempt + 1))
+    if [ "$attempt" -gt 5 ]; then
+        log "uvicorn exited (code $ec) after ${ran}s — 5 rapid restarts, giving up"
+        break
+    fi
+    backoff=$(( attempt * 3 )); [ "$backoff" -gt 30 ] && backoff=30
+    log "uvicorn exited (code $ec) after ${ran}s — restart #$attempt in ${backoff}s"
+    sleep "$backoff"
+done
+rm -f "$STOP_FILE" 2>/dev/null
+log "supervisor stopped"

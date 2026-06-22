@@ -19,6 +19,7 @@ from routers import (
     knowledge,
     learning,
     meetings,
+    memory_health,
     metis_tab,
     planner,
     setup,
@@ -43,6 +44,18 @@ async def lifespan(app: FastAPI):
     applied = run_migrations()
     if applied:
         log.info("DB migrations applied: %s", ", ".join(applied))
+
+    # Per-feature table init — fail-soft. Each runs in its own try/except so a DB
+    # problem disables only that feature instead of crashing the whole app. These
+    # used to run at module-import time, which meant any DB error took the entire
+    # dashboard down (the 2026-06-19 outage). See stability evaluation.
+    for _mod, _fn in (("routers.speakers", "_ensure_table"),
+                      ("routers.meetings", "_ensure_columns")):
+        try:
+            import importlib
+            getattr(importlib.import_module(_mod), _fn)()
+        except Exception as exc:
+            log.warning("[startup] %s.%s skipped (feature degraded): %s", _mod, _fn, exc)
 
     # Startup health check — runs after migrations so tables exist
     try:
@@ -98,9 +111,8 @@ async def lifespan(app: FastAPI):
             """Return hours since last successful news scan (jobs_log), or 999 if never."""
             try:
                 import datetime as _dt
-                db_p = os.environ.get("METIS_DB") or str(
-                    Path(os.environ.get("METIS_RC_ROOT", "")) / "system" / "app" / "data" / "metis.sqlite"
-                )
+                from db import get_db_path
+                db_p = str(get_db_path())
                 conn = _sq3.connect(db_p, timeout=5)
                 row = conn.execute(
                     "SELECT created_at FROM jobs_log WHERE job_type IN ('morning_scan','news_scan') "
@@ -124,9 +136,8 @@ async def lifespan(app: FastAPI):
                     # Log success so the scheduler doesn't double-scan today
                     try:
                         import datetime as _dt
-                        db_p = os.environ.get("METIS_DB") or str(
-                            Path(os.environ.get("METIS_RC_ROOT", "")) / "system" / "app" / "data" / "metis.sqlite"
-                        )
+                        from db import get_db_path
+                        db_p = str(get_db_path())
                         conn = _sq3.connect(db_p, timeout=5)
                         conn.execute(
                             "INSERT INTO jobs_log (job_type, status, details, created_at) VALUES (?,?,?,?)",
@@ -170,6 +181,34 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
+
+# ── Global error handler — catch unhandled 500s so the dashboard never shows a
+# blank page or drops the connection silently. HTMX partials get a styled error
+# snippet; full page requests get a redirect to root with an error toast.
+@app.exception_handler(500)
+async def _handle_500(request: Request, exc: Exception):
+    log.error("Unhandled error on %s: %s", request.url.path, exc, exc_info=True)
+    # HTMX partial requests: return an error snippet the page can display
+    if request.headers.get("HX-Request"):
+        return HTMLResponse(
+            '<div class="panel panel-pad" role="alert" '
+            'style="margin:12px 0;border-left:3px solid var(--m-alert);">'
+            "Something went wrong loading this section — I'll try again in a moment."
+            '</div>',
+            status_code=200,  # 200 so HTMX swaps it into the page
+        )
+    return HTMLResponse(
+        "<!doctype html><html><head><meta charset='utf-8'><title>Metis</title></head>"
+        "<body style=\"font-family:'Newsreader',Georgia,serif;background:#f5f2ea;"
+        "color:#2c3a33;max-width:560px;margin:80px auto;padding:0 24px;line-height:1.65;\">"
+        "<h3 style='font-weight:500;color:#1f2a24;'>Something went wrong loading this view.</h3>"
+        "<p>The page hit an error and couldn&#39;t render. Nothing was lost — "
+        "try again, or return to the dashboard.</p>"
+        "<p><a href='/' style='color:#2d4a3a;'>Back to dashboard</a></p>"
+        "</body></html>",
+        status_code=500,
+    )
+
 # Inject user name into every template so today.html greeting JS can use it
 try:
     from routers.today import _user_name as _get_metis_user_name
@@ -192,6 +231,7 @@ app.include_router(thinking.router)
 app.include_router(planner.router)
 app.include_router(teach.router)
 app.include_router(metis_tab.router)
+app.include_router(memory_health.router)
 app.include_router(capture.router, prefix="/api")
 app.include_router(transcription.router)
 app.include_router(speakers.router)
@@ -322,7 +362,7 @@ async def trust_badge():
     policy_icon = {"strict": "bi-shield-lock", "offline": "bi-wifi-off", "normal": "bi-shield-check"}.get(policy, "bi-shield-check")
     policy_cls  = {"strict": "text-warning", "offline": "text-danger", "normal": ""}.get(policy, "")
 
-    label = f"{count} calls today" if count else "Local-first"
+    label = f"{count} calls today" if count else "Data stays local"
     return HTMLResponse(
         f'<i class="bi {policy_icon} {policy_cls}"></i>'
         f'<span class="trust-badge-text">{label}</span>'
