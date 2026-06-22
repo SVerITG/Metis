@@ -109,6 +109,8 @@ Source: "..\download_vendor_python.ps1";        DestDir: "{app}\system\install";
 Source: "..\windows\run-mcp.bat";               DestDir: "{app}\system\mcp-server";      Flags: ignoreversion
 Source: "..\windows\run-dashboard.bat";         DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
 Source: "..\windows\run-tray.bat";              DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
+Source: "..\windows\register-autostart.ps1";    DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
+Source: "..\windows\autostart-dashboard.vbs";   DestDir: "{app}\system\install\windows"; Flags: ignoreversion; Components: dashboard
 Source: "..\tray_launcher.py";           DestDir: "{app}\system\install";         Flags: ignoreversion; Components: dashboard
 Source: "..\dist\MetisTray.exe";         DestDir: "{app}\system\install\windows"; Flags: ignoreversion skipifsourcedoesntexist; Components: dashboard
 Source: "..\vendor_download.py";         DestDir: "{app}\system\install";         Flags: ignoreversion
