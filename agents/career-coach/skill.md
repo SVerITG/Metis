@@ -37,3 +37,9 @@ Action plans saved to: `outputs/reviews/career-coach/YYYY-MM-DD_[task].md`
 - Application is on a very short deadline: triage to highest-impact edits first, defer polish.
 - User asks for general career advice with no specific goal: ask one clarifying question about time horizon and target domain before proceeding.
 - Career move conflicts with PhD timeline: flag the tension explicitly, do not paper over it.
+
+## Recording (required)
+
+After completing your work and writing your output file, record the run so it appears on the dashboard and in `agent_runs` — an agent that never logs is invisible:
+
+`log_agent_run(agent_slug="career-coach", task_summary="<one line on what you did>", output_path="<output file>")`

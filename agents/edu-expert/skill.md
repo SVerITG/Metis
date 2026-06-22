@@ -40,3 +40,9 @@ Saved to: `outputs/reviews/edu-expert/YYYY-MM-DD_[course-slug].md`
 - Requested course overlaps with an existing Metis course: flag the overlap, propose integration rather than duplication.
 - Learning objectives use vague verbs ("understand", "know", "be aware of"): rewrite them with measurable Bloom-level verbs.
 - Course is purely theoretical with no application exercises: flag the gap and propose at least one practice activity per module.
+
+## Recording (required)
+
+After completing your work and writing your output file, record the run so it appears on the dashboard and in `agent_runs` — an agent that never logs is invisible:
+
+`log_agent_run(agent_slug="edu-expert", task_summary="<one line on what you did>", output_path="<output file>")`
