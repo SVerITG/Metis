@@ -1655,3 +1655,76 @@ async def launcher_vscode():
     else:
         ok = _ps_launch("Start-Process 'Code' -ErrorAction SilentlyContinue")
     return JSONResponse({"status": "ok" if ok else "error"})
+
+
+# ── Startup / autostart toggle (Windows Scheduled Task) ───────────────────────
+# Lets the user choose, from the dashboard, whether Metis (dashboard + MCP +
+# scheduled jobs) starts at login and persists, vs. only runs when opened.
+# Registers/removes the "Metis Dashboard Autostart" task via the existing
+# register-autostart.ps1 over WSL interop. No admin needed (RunLevel Limited).
+_AUTOSTART_TASK = "Metis Dashboard Autostart"
+
+
+def _win_path(p: str) -> str:
+    """WSL path → Windows path (for powershell.exe args). Avoids hardcoding user paths."""
+    import subprocess
+    try:
+        return subprocess.run(["wslpath", "-w", p], capture_output=True, text=True, timeout=5).stdout.strip() or p
+    except Exception:
+        return p
+
+
+def _autostart_enabled() -> bool:
+    import subprocess
+    try:
+        r = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-Command",
+             f"if (Get-ScheduledTask -TaskName '{_AUTOSTART_TASK}' -ErrorAction SilentlyContinue) {{'yes'}} else {{'no'}}"],
+            capture_output=True, text=True, timeout=15)
+        return "yes" in (r.stdout or "").lower()
+    except Exception:
+        return False
+
+
+@router.get("/api/partial/metis/startup", response_class=HTMLResponse)
+async def metis_startup(request: Request):
+    return templates.TemplateResponse(
+        request, "partials/metis_startup.html",
+        {"autostart_enabled": _autostart_enabled()},
+    )
+
+
+@router.post("/api/metis/autostart/enable", response_class=HTMLResponse)
+async def metis_autostart_enable(request: Request):
+    import os as _os
+    import subprocess
+    root = Path(_os.environ.get("METIS_RC_ROOT") or Path(__file__).resolve().parents[3])
+    ps1 = root / "system" / "install" / "windows" / "register-autostart.ps1"
+    if not ps1.exists():
+        return templates.TemplateResponse(
+            request, "partials/metis_startup.html",
+            {"autostart_enabled": False, "error": "register-autostart.ps1 not found"})
+    try:
+        subprocess.run(
+            ["powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", _win_path(str(ps1))],
+            capture_output=True, text=True, timeout=45)
+    except Exception as e:
+        return templates.TemplateResponse(
+            request, "partials/metis_startup.html",
+            {"autostart_enabled": _autostart_enabled(), "error": str(e)[:120]})
+    return templates.TemplateResponse(
+        request, "partials/metis_startup.html", {"autostart_enabled": _autostart_enabled()})
+
+
+@router.post("/api/metis/autostart/disable", response_class=HTMLResponse)
+async def metis_autostart_disable(request: Request):
+    import subprocess
+    try:
+        subprocess.run(
+            ["powershell.exe", "-NoProfile", "-Command",
+             f"Unregister-ScheduledTask -TaskName '{_AUTOSTART_TASK}' -Confirm:$false -ErrorAction SilentlyContinue"],
+            capture_output=True, text=True, timeout=20)
+    except Exception:
+        pass
+    return templates.TemplateResponse(
+        request, "partials/metis_startup.html", {"autostart_enabled": _autostart_enabled()})
