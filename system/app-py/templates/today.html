@@ -58,6 +58,16 @@
     </div>
   </div>
 
+  <!-- ===== Active threads — the warmest ideas/drafts/questions ===== -->
+  <div hx-get="/api/partial/today/threads"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <div class="sec-label" style="margin-bottom:14px;"><span>Active threads</span><span class="tail">ACROSS YOUR SURFACES</span></div>
+    <div class="grid grid-3" style="margin-bottom:32px;">
+      {{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}
+    </div>
+  </div>
+
   <!-- ===== Actionable ledger strip ===== -->
   <div hx-get="/api/partial/today/ledger"
        hx-trigger="load"
@@ -73,85 +83,17 @@
     </div>
   </div>
 
-  <!-- ===== Continue / Priority row (wave 2 — +200ms) ===== -->
-  <div class="grid grid-main" style="margin-bottom:var(--m-space-6);margin-top:var(--m-space-6);">
-
-    <div hx-get="/api/partial/today/resume" hx-trigger="load delay:200ms" hx-swap="outerHTML">
-      <div class="sec-label" style="margin-bottom:8px;">Continue where you left off</div>
-      {{ skeleton_box(size="md") }}
+  <!-- ===== Block 4 — Today's focus (max 3, customizable via starring) ===== -->
+  <div hx-get="/api/partial/today/day-at-hand" hx-trigger="load delay:200ms" hx-swap="outerHTML"
+       style="margin-top:var(--m-space-6);">
+    <div class="sec-label" style="margin-bottom:14px;"><span>Today's focus</span><span class="tail">STAR A TASK TO PIN IT HERE</span></div>
+    <div class="grid grid-3" style="margin-bottom:32px;">
+      {{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}
     </div>
-
-    <div hx-get="/api/partial/today/todos-archive" hx-trigger="load delay:200ms" hx-swap="outerHTML">
-      <div class="sec-label" style="margin-bottom:8px;">What needs your attention</div>
-      {{ skeleton_box(size="md") }}
-    </div>
-
   </div>
 
-  <!-- ===== Library + Idea row (wave 2 — +350ms) ===== -->
-  <div class="grid grid-main" style="margin-bottom:var(--m-space-6);">
-
-    <div hx-get="/api/partial/today/library-archive" hx-trigger="load delay:350ms" hx-swap="outerHTML">
-      <div class="sec-label" style="margin-bottom:8px;">New in your library</div>
-      {{ skeleton_box(size="md") }}
-    </div>
-
-    <div hx-get="/api/partial/today/idea-today" hx-trigger="load delay:350ms" hx-swap="outerHTML">
-      <div class="sec-label" style="margin-bottom:8px;">Today's thinking prompt</div>
-      {{ skeleton_box(size="sm") }}
-    </div>
-
-  </div>
-
-  <!-- ===== Proactive paper surfacing (wave 2 — +450ms) ===== -->
-  <div hx-get="/api/partial/today/relevant-papers" hx-trigger="load delay:450ms" hx-swap="outerHTML" style="margin-bottom:var(--m-space-6);">
-    <div class="sec-label" style="margin-bottom:8px;">Relevant to your active work</div>
-    {{ skeleton_box(size="md") }}
-  </div>
-
-  <!-- ===== Research progress + Capture row (wave 3 — +400ms) ===== -->
-  <div class="grid grid-main" style="margin-bottom:var(--m-space-6);">
-
-    <div hx-get="/api/partial/today/research-progress" hx-trigger="load delay:400ms" hx-swap="outerHTML">
-      <div class="sec-label" style="margin-bottom:8px;">Research progress</div>
-      {{ skeleton_box(size="md") }}
-    </div>
-
-    <!-- Mobile capture shortcut -->
-    <div>
-      <div class="sec-label" style="margin-bottom:8px;">
-        <span>Capture on the go</span>
-        <span class="tail">PHONE-FRIENDLY</span>
-      </div>
-      <div class="panel" style="padding:20px;text-align:center;">
-        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:12px;">OPEN ON YOUR PHONE</div>
-        <div id="capture-url-display"
-             style="font-family:var(--m-mono);font-size:11px;color:var(--m-accent);margin-bottom:14px;word-break:break-all;"></div>
-        <a id="capture-open-link" href="/capture" target="_blank"
-           style="display:inline-block;font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;
-                  padding:6px 16px;border:1px solid var(--m-accent);border-radius:2px;
-                  color:var(--m-accent);text-decoration:none;transition:background .15s;"
-           onmouseover="this.style.background='var(--m-accent)';this.style.color='var(--m-bg)'"
-           onmouseout="this.style.background='transparent';this.style.color='var(--m-accent)'">
-          OPEN CAPTURE PAGE
-        </a>
-        <script>
-        (function() {
-          var host = window.location.hostname + ':' + window.location.port;
-          var url = window.location.protocol + '//' + host + '/capture';
-          var el = document.getElementById('capture-url-display');
-          var link = document.getElementById('capture-open-link');
-          if (el) el.textContent = url;
-          if (link) link.href = url;
-        })();
-        </script>
-        <div style="margin-top:12px;font-family:var(--m-display);font-style:italic;font-size:11px;color:var(--m-muted);">
-          Voice notes, ideas, and quick captures<br>land directly in your inbox.
-        </div>
-      </div>
-    </div>
-
-  </div>
+  <!-- ===== Block 5 — From the assistant (wave 2 — +350ms) ===== -->
+  <div hx-get="/api/partial/today/assistant-notes" hx-trigger="load delay:350ms" hx-swap="outerHTML"></div>
 
   <!-- ===== News — compact strip (wave 3 — +500ms, deferred) ===== -->
   <div hx-get="/api/partial/today/news-archive" hx-trigger="load delay:500ms" hx-swap="outerHTML">

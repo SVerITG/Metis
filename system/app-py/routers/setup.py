@@ -23,7 +23,8 @@ _FIRST_RUN   = _CONFIG_DIR / ".first-run"
 _DEMO_MARKER = _CONFIG_DIR / ".demo-mode"
 _USER_CONFIG = _CONFIG_DIR / "user-config.yaml"
 _USER_PREFS  = _CONFIG_DIR / "user-preferences.json"
-_DB_PATH     = _METIS_ROOT / "system" / "app-py" / "data" / "metis.sqlite"
+# Live DB path: always resolve via db.get_db_path() (off OneDrive, see db.py).
+# Do NOT hardcode a path here — it caused split-brain reads/writes.
 _DEMO_DIR    = _METIS_ROOT / "inputs" / "demo"
 
 
@@ -302,7 +303,9 @@ async def welcome_banner(request: Request):
 @router.post("/api/setup/seed-demo", response_class=JSONResponse)
 async def seed_demo():
     """Seed the database with the demo persona and generate the demo linelist CSV."""
-    if not _DB_PATH.exists():
+    from db import get_db_path
+    _db_path = get_db_path()
+    if not _db_path.exists():
         return JSONResponse({"ok": False, "error": "Database not initialised. Start the dashboard first."}, status_code=503)
     try:
         seed_script = _METIS_ROOT / "system" / "install" / "seed_mockup_demo.py"
@@ -312,7 +315,7 @@ async def seed_demo():
             spec = importlib.util.spec_from_file_location("seed_mockup_demo", seed_script)
             mod  = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(mod)
-            conn = sqlite3.connect(str(_DB_PATH))
+            conn = sqlite3.connect(str(_db_path))
             mod.seed(conn)
             conn.close()
             if hasattr(mod, "generate_linelist"):

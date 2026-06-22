@@ -6,14 +6,14 @@
 
   <div class="page-head">
     <div>
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">SURFACE 07</div>
-      <h1 style="font-family:var(--m-display);font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0;">Learning</h1>
+      <div class="page-eyebrow">SURFACE 07 · WHAT YOU'RE LEARNING</div>
+      <h1 class="page-title">Learning</h1>
     </div>
     <div class="page-meta" hx-get="/api/partial/learning/meta" hx-trigger="load" hx-swap="innerHTML">— COURSES · — DUE TODAY</div>
   </div>
 
   <!-- Velocity strip -->
-  <div class="sec-label" style="margin-bottom:12px;"><span>How fast you're moving</span></div>
+  <div class="sec-label" style="margin-bottom:12px;"><span>How fast you're moving</span><span class="tail">PACE · STREAK · WINDOWS</span></div>
   <div style="margin-bottom:28px;"
        hx-get="/api/partial/learning/velocity"
        hx-trigger="load"

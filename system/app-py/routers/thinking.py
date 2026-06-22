@@ -47,50 +47,58 @@ async def thinking_meta(request: Request):
 @router.get("/api/partial/thinking/threads", response_class=HTMLResponse)
 async def thinking_threads(request: Request):
     threads = db_query(
-        "SELECT id, content, tags, created_at FROM ideas WHERE tags NOT LIKE '%archived%' ORDER BY created_at DESC LIMIT 12"
+        "SELECT idea_id AS id, text AS content, tags, created_at FROM ideas WHERE tags NOT LIKE '%archived%' ORDER BY created_at DESC LIMIT 12"
     ) or []
     today = datetime.date.today()
     items = ""
-    for t in threads:
+    for i, t in enumerate(threads):
         title = (t.get("content") or "")[:45]
         date_str = (t.get("created_at") or "")[:10]
         # compute age in days
-        age_label = ""
-        age_color = "var(--m-muted)"
+        age = None
+        age_color = "var(--m-accent)"
         try:
             d = datetime.date.fromisoformat(date_str)
             age = (today - d).days
             if age >= 30:
-                age_label = f"{age}d"
                 age_color = "var(--m-alert)"
             elif age >= 14:
-                age_label = f"{age}d"
-                age_color = "var(--m-warn,#b45309)"
-            elif age >= 7:
-                age_label = f"{age}d"
+                age_color = "var(--m-ochre)"
         except Exception:
             pass
-        staleness = (
-            f'<span style="font-family:var(--m-mono);font-size:9px;color:{age_color};'
-            f'margin-left:6px;letter-spacing:0.08em;">{age_label}</span>'
-            if age_label else ""
+        # mono meta line: "Nd · OPEN"
+        age_part = f"{age}D · " if age is not None else ""
+        meta = (
+            f'<div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;'
+            f'color:{age_color};margin-top:6px;">{age_part}OPEN</div>'
+        )
+        # first thread reads as active — accent left border + wash
+        active = i == 0
+        edge = (
+            "border-left:2px solid var(--m-accent);background:var(--m-accent-wash);"
+            if active else "border-left:2px solid transparent;"
         )
         items += (
-            f'<div style="padding:12px 16px;border-bottom:1px solid var(--m-rule-soft);'
-            f'cursor:pointer;font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.3;">'
-            f'{title}<br>'
-            f'<span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">{date_str}</span>'
-            f'{staleness}</div>'
+            f'<div style="padding:13px 16px 13px 14px;{edge}'
+            f'border-bottom:1px solid var(--m-rule-soft);cursor:pointer;'
+            f'transition:background 120ms ease;" '
+            f'onmouseover="if(!this.dataset.active)this.style.background=\'var(--m-surface-2)\';" '
+            f'onmouseout="if(!this.dataset.active)this.style.background=\'transparent\';"'
+            f'{" data-active=1" if active else ""}>'
+            f'<div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;">{title}</div>'
+            f'{meta}</div>'
         )
     if not items:
-        items = '<div style="padding:24px 16px;font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">No open threads.</div>'
+        items = ('<div style="padding:24px 16px;font-family:var(--m-display);font-style:italic;'
+                 'font-size:14px;color:var(--m-muted);line-height:1.6;">'
+                 'No open threads. Capture a thought and it will open one here.</div>')
     return HTMLResponse(items)
 
 
 @router.get("/api/partial/thinking/dialogue", response_class=HTMLResponse)
 async def thinking_dialogue(request: Request):
     ideas = db_query(
-        "SELECT content, created_at FROM ideas ORDER BY created_at DESC LIMIT 5"
+        "SELECT text AS content, created_at FROM ideas ORDER BY created_at DESC LIMIT 5"
     ) or []
     if not ideas:
         return HTMLResponse(
@@ -138,7 +146,7 @@ async def thinking_marginalia(request: Request):
 @router.get("/api/partial/thinking/ideas", response_class=HTMLResponse)
 async def thinking_ideas(request: Request):
     ideas = db_query(
-        "SELECT id, content, tags, created_at "
+        "SELECT idea_id AS id, text AS content, tags, created_at "
         "FROM ideas ORDER BY created_at DESC LIMIT 30"
     )
     return templates.TemplateResponse(
@@ -158,7 +166,7 @@ async def thinking_ideas(request: Request):
 @router.get("/api/partial/thinking/notes", response_class=HTMLResponse)
 async def thinking_notes(request: Request):
     notes = db_query(
-        "SELECT id, content, tags, created_at "
+        "SELECT note_id AS id, content, tags, created_at "
         "FROM personal_notes ORDER BY created_at DESC LIMIT 20"
     )
     return templates.TemplateResponse(
@@ -178,7 +186,7 @@ async def thinking_notes(request: Request):
 @router.get("/api/partial/thinking/questions", response_class=HTMLResponse)
 async def thinking_questions(request: Request):
     questions = db_query(
-        "SELECT id, content, created_at "
+        "SELECT idea_id AS id, text AS content, created_at "
         "FROM ideas WHERE tags LIKE '%question%' "
         "ORDER BY created_at DESC LIMIT 15"
     )
@@ -272,7 +280,7 @@ async def thinking_brainstorm_sessions(request: Request):
 @router.post("/api/note/from-latest-idea")
 async def note_from_latest_idea():
     rows = db_query(
-        "SELECT id, content FROM ideas ORDER BY created_at DESC LIMIT 1"
+        "SELECT idea_id AS id, text AS content FROM ideas ORDER BY created_at DESC LIMIT 1"
     ) or []
     if not rows:
         return JSONResponse(

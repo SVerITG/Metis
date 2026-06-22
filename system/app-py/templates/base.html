@@ -319,6 +319,27 @@
         <span class="n-tip">Metis</span>
       </div>
 
+      <!-- Memory -->
+      <div class="nav-item {% if active_tab == 'memory' %}active{% endif %}"
+           data-tab="memory"
+           hx-get="/api/tab/memory"
+           hx-target="#tab-content"
+           hx-swap="innerHTML"
+           hx-select="#tab-content"
+           hx-push-url="/memory"
+           onclick="setNavActive(this,'memory')"
+           role="button" tabindex="0"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+        <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <circle cx="8" cy="8" r="6"/>
+          <path d="M8 4 v4 l3 2"/>
+          <circle cx="8" cy="8" r="2" fill="currentColor" opacity="0.3"/>
+        </svg>
+        <span class="n-label">Memory</span>
+        <span class="n-meta">—</span>
+        <span class="n-tip">Memory</span>
+      </div>
+
     </div><!-- /.nav-sec system -->
 
     <!-- Sidebar footer -->
@@ -340,6 +361,16 @@
         <span class="sep">/</span>
         <span class="here" id="crumb-here">{{ active_tab|title if active_tab else 'Today' }}</span>
       </div>
+
+      <!-- Capture button — left, next to the breadcrumb -->
+      <button class="t-capture" onclick="openCapture()" aria-label="Quick capture" title="Quick capture — keyboard shortcut Ctrl/⌘ + K" style="flex-shrink:0;margin-left:20px;">
+        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <line x1="8" y1="3" x2="8" y2="13"/>
+          <line x1="3" y1="8" x2="13" y2="8"/>
+        </svg>
+        Capture
+        <kbd style="margin-left:6px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;padding:1px 5px;border:1px solid var(--m-rule-soft);border-radius:3px;color:var(--m-muted);opacity:0.8;">⌘K</kbd>
+      </button>
 
       <div class="topbar-controls" style="display:flex;align-items:center;gap:16px;margin-left:auto;min-width:0;flex-shrink:1;overflow:hidden;">
 
@@ -449,16 +480,6 @@
           </div>
           <div class="ts-thumb"></div>
         </div>
-
-        <!-- Capture button -->
-        <button class="t-capture" onclick="openCapture()" aria-label="Quick capture" title="Quick capture — keyboard shortcut Ctrl/⌘ + K">
-          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-            <line x1="8" y1="3" x2="8" y2="13"/>
-            <line x1="3" y1="8" x2="13" y2="8"/>
-          </svg>
-          Capture
-          <kbd style="margin-left:6px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;padding:1px 5px;border:1px solid var(--m-rule-soft);border-radius:3px;color:var(--m-muted);opacity:0.8;">⌘K</kbd>
-        </button>
 
         <!-- Trust badge -->
         <div class="t-trust"

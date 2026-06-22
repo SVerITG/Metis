@@ -516,10 +516,13 @@ def _hm(iso_ts: str) -> str:
 
 def _age_label(iso_ts: str) -> str:
     try:
-        dt = datetime.datetime.fromisoformat(iso_ts.replace("Z", ""))
+        dt = datetime.datetime.fromisoformat(iso_ts.replace("Z", "+00:00"))
     except Exception:
         return ""
-    delta = datetime.datetime.now() - dt
+    # Timestamps may be tz-aware (…+00:00) or naive. datetime.now(dt.tzinfo)
+    # matches the parsed value's awareness, avoiding "can't subtract
+    # offset-naive and offset-aware datetimes".
+    delta = datetime.datetime.now(dt.tzinfo) - dt
     if delta.days >= 7:
         return f"{delta.days // 7}w"
     if delta.days >= 1:
@@ -1023,10 +1026,8 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
     db_path_str = os.environ.get("METIS_DB", "")
     if not db_path_str:
         try:
-            from pathlib import Path as _P
-            rc = os.environ.get("METIS_RC_ROOT", "")
-            if rc:
-                db_path_str = str(_P(rc) / "system" / "app" / "data" / "metis.sqlite")
+            from db import get_db_path
+            db_path_str = str(get_db_path())
         except Exception:
             pass
     if not db_path_str:
@@ -1279,9 +1280,8 @@ def _get_db_path() -> str:
     db = os.environ.get("METIS_DB", "")
     if not db:
         try:
-            rc = os.environ.get("METIS_RC_ROOT", "")
-            if rc:
-                db = str(Path(rc) / "system" / "app" / "data" / "metis.sqlite")
+            from db import get_db_path
+            db = str(get_db_path())
         except Exception:
             pass
     return db
@@ -1373,6 +1373,36 @@ async def today_morning_brief(request: Request):
             "brief_mode": _get_brief_mode(),
             "period": period,
         },
+    )
+
+
+@router.get("/api/partial/today/threads", response_class=HTMLResponse)
+async def today_threads(request: Request):
+    """Active threads — the 3 warmest ideas/drafts/questions, as editorial cards.
+    Reference: TodaySurface > Active threads in the Metis design system."""
+    rows = db_query(
+        "SELECT idea_id, text, idea_type, tags, domain, created_at FROM ideas "
+        "WHERE tags NOT LIKE '%archived%' ORDER BY created_at DESC LIMIT 3"
+    ) or []
+    threads = []
+    for r in rows:
+        tags = (r.get("tags") or "").lower()
+        itype = (r.get("idea_type") or "").lower()
+        if "question" in tags or "question" in itype:
+            kind, kicker = "question", "QUESTION · LEFT FOR METIS"
+        elif "draft" in tags or itype in ("draft", "article"):
+            kind, kicker = "draft", "DRAFT · TEACH"
+        else:
+            kind, kicker = "thinking", "THINKING · ACTIVE"
+        threads.append({
+            "title": (r.get("text") or "").strip()[:90],
+            "kind": kind,
+            "kicker": kicker,
+            "domain": (r.get("domain") or "").upper(),
+            "age": _age_label(r.get("created_at") or ""),
+        })
+    return templates.TemplateResponse(
+        request, "partials/today_threads.html", {"threads": threads}
     )
 
 
@@ -2108,6 +2138,97 @@ async def today_todos_archive(request: Request):
     )
 
 
+@router.get("/api/partial/today/day-at-hand", response_class=HTMLResponse)
+async def today_day_at_hand(request: Request):
+    """Block 4 — 'The day at hand' (ordered tasks, no invented clock times) +
+    'Today's one intention' (the single top priority). Design: TodaySurface."""
+    rows = []
+    try:
+        rows = db_query(
+            "SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
+            "p.title AS project_title "
+            "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+            "WHERE t.status IN ('open','in_progress','blocked') "
+            "ORDER BY t.starred DESC, (t.status='blocked') DESC, "
+            "(t.status='in_progress') DESC, t.created_at ASC LIMIT 3"
+        ) or []
+    except Exception:
+        pass
+
+    def _label(r):
+        if r.get("status") == "blocked":
+            return "BLOCKED", "var(--m-alert)"
+        if r.get("starred"):
+            return "STARRED", "var(--m-ochre)"
+        if r.get("status") == "in_progress":
+            return "IN PROGRESS", "var(--m-accent)"
+        return "OPEN", "var(--m-muted)"
+
+    items = []
+    for r in rows:
+        label, color = _label(r)
+        items.append({
+            "title": (r.get("title") or "Untitled task")[:90],
+            "project": r.get("project_title") or "",
+            "project_id": r.get("project_id") or "",
+            "label": label,
+            "color": color,
+        })
+    intention = items[0] if items else None
+    return templates.TemplateResponse(
+        request,
+        "partials/today_day_at_hand.html",
+        {"items": items, "intention": intention},
+    )
+
+
+@router.get("/api/partial/today/assistant-notes", response_class=HTMLResponse)
+async def today_assistant_notes(request: Request):
+    """Block 5 — 'From the assistant': 2 margin notes from real signals
+    (latest daily insight + a portfolio observation). Design: TodaySurface."""
+    notes = []
+    try:
+        ins = db_query(
+            "SELECT insight_date, content FROM daily_insights "
+            "WHERE content IS NOT NULL ORDER BY insight_date DESC LIMIT 1"
+        ) or []
+        if ins and ins[0].get("content"):
+            notes.append({
+                "title": "From your recent days.",
+                "body": (ins[0]["content"] or "").strip()[:260],
+                "model": "haiku",
+                "meta": ins[0].get("insight_date") or "",
+            })
+    except Exception:
+        pass
+    try:
+        n_ideas = db_scalar(
+            "SELECT COUNT(*) FROM ideas WHERE tags NOT LIKE '%archived%'"
+        ) or 0
+        n_lib = db_scalar("SELECT COUNT(*) FROM library_inventory") or 0
+        oldest = db_query(
+            "SELECT created_at FROM ideas WHERE tags NOT LIKE '%archived%' "
+            "ORDER BY created_at ASC LIMIT 1"
+        ) or []
+        age = _age_label(oldest[0]["created_at"]) if oldest else ""
+        body = f"{n_ideas} open thread{'s' if n_ideas != 1 else ''}, and {n_lib} sources on the shelves."
+        if age:
+            body += f" The oldest thread has been waiting {age}."
+        notes.append({
+            "title": "Where things stand.",
+            "body": body,
+            "model": "sonnet",
+            "meta": "",
+        })
+    except Exception:
+        pass
+    return templates.TemplateResponse(
+        request,
+        "partials/today_assistant_notes.html",
+        {"notes": notes},
+    )
+
+
 @router.get("/api/partial/today/notebook-archive", response_class=HTMLResponse)
 async def today_notebook_archive(request: Request):
     notes = []
@@ -2192,7 +2313,8 @@ async def api_scan_content():
         if api_key and user_id:
             from pyzotero import zotero as _pyz
             zot = _pyz.Zotero(user_id, "user", api_key)
-            db_p = _P(rc) / "system" / "app" / "data" / "metis.sqlite" if rc else None
+            from db import get_db_path
+            db_p = get_db_path()
             if db_p and db_p.exists():
                 con = _sq3.connect(str(db_p))
                 con.row_factory = _sq3.Row
