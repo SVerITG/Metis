@@ -280,3 +280,14 @@ system/app/data/cloud-backups/
 # Runtime logs — never ship (contain local paths)
 system/config/logs/
 *.log
+
+# Owner's private DEV-ONLY evaluation suite — never shipped (see tests/README.md)
+tests/functional/clickthrough.py
+tests/functional/button_intents.py
+tests/functional/promise_runner.py
+tests/functional/orchestration.py
+tests/functional/routing_eval.py
+tests/security/
+tests/fixtures/
+tests/promises.yaml
+tests/README.md
