@@ -21,6 +21,10 @@
 <em>No prompt. No setup. Your research, connected — every morning.</em>
 </p>
 
+<p align="center">
+  🟢 <strong>Actively developed.</strong> &nbsp;Latest: learnable agent routing · a personalization layer that grows with you · a security pass. &nbsp;<a href="#changelog"><strong>See what's new ↓</strong></a>
+</p>
+
 <br>
 
 <table width="100%" cellspacing="0" cellpadding="16" border="0">
@@ -832,6 +836,18 @@ key journals + RSS feeds · specialist agents · a domain ontology · a curated 
 ---
 
 ## Changelog
+
+> **Metis is under active development** — see the latest below. (Recent: a routing brain that learns who should answer, a personalization layer that remembers how you like to work, and a security pass.)
+
+### Late June 2026
+
+| What changed |
+|---|
+| **Learnable agent routing** — which specialist answers a request now comes from a routing *database*, not a hardcoded list: it reaches 21 of the specialist agents (was 10), matches on word boundaries (so a stray word can't drag a request to the wrong expert), and **learns** — when something has no obvious owner, Metis can ask "should I always send this to the Epidemiologist, or just this once?" and remember your answer. |
+| **Personalization layer (it grows with you)** — Metis now keeps a record of your standing preferences and decisions — coding style, citation format, methodology defaults, the papers and datasets you keep returning to — and **applies them on every request** instead of asking again. Tell it once ("always use tidyverse style"), and it threads that into the context every time. |
+| **Living request loop** — every `/metis` request is now routed through the layers — persona · your memory · your preferences · the right agent + tools — and the answer is checked against them before it comes back, so Metis gets a little more *yours* with each use. |
+| **Security pass** — closed a reflected-XSS hole in search; broadened PII detection (international phone formats, household-precision GPS) and prompt-injection detection (more attack phrasings); all backed by repeatable probes. |
+| **Today surface — editorial redesign** — the morning view was rebuilt as a *briefing*, not a dashboard: an always-open morning paragraph, your warmest active threads, three customizable focus items, and notes from the assistant. |
 
 ### Post-v1.0 — June 2026
 
