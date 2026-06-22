@@ -45,8 +45,23 @@ _INJECTION_PATTERNS = [
     re.compile(r"\[INST\]|\[\/INST\]", re.IGNORECASE),       # LLaMA-style tokens
     re.compile(r"print\s+your\s+(system\s+)?prompt", re.IGNORECASE),
     re.compile(r"reveal\s+(your\s+)?(system\s+)?instructions?", re.IGNORECASE),
-    re.compile(r"override\s+(safety|constraints|rules)", re.IGNORECASE),
+    re.compile(r"override\s+(safety|constraints|rules|guardrails?)", re.IGNORECASE),
     re.compile(r"jailbreak", re.IGNORECASE),
+    # disregard/ignore the *content* (not just "instructions")
+    re.compile(r"disregard\s+(the\s+)?(above|previous|prior|foregoing|earlier)", re.IGNORECASE),
+    re.compile(r"ignore\s+(the\s+)?(above|previous|prior|foregoing|earlier)", re.IGNORECASE),
+    # role / mode overrides
+    re.compile(r"you\s+are\s+now\s+(in|the|an?)\s+", re.IGNORECASE),
+    re.compile(r"developer\s+mode", re.IGNORECASE),
+    re.compile(r"\bDAN\b|do\s+anything\s+now", re.IGNORECASE),
+    # forget your X (constitution/rules/guidelines), not just everything/all
+    re.compile(r"forget\s+(everything|all|your|the|these)\b", re.IGNORECASE),
+    # remove the guardrails
+    re.compile(r"bypass\s+(all\s+)?(rules?|safety|guardrails?|restrictions?|filters?)", re.IGNORECASE),
+    re.compile(r"(without|no)\s+(restrictions?|limits?|rules?|filters?|guardrails?)", re.IGNORECASE),
+    # exfiltration / secret disclosure
+    re.compile(r"reveal\s+.*\b(api[\s_]?key|password|secret|token|\.env|credentials?)", re.IGNORECASE),
+    re.compile(r"(exfiltrate|leak|send\s+all)\s+.*\b(database|records?|patient|data)", re.IGNORECASE),
 ]
 
 _ZERO_WIDTH_RE = re.compile(r"[\u200b\u200c\u200d\ufeff\u00ad]")

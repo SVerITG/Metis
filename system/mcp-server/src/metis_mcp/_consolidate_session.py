@@ -98,7 +98,12 @@ def main() -> None:
     topics_payload = extracted_topics if extracted_topics else agents
 
     # ── Write to SQLite ───────────────────────────────────────────────────────
-    db_path = root / "system" / "app" / "data" / "metis.sqlite"
+    # Resolve the live DB the same way the server does (local disk, off OneDrive).
+    try:
+        from metis_mcp.config import resolve_live_db
+        db_path = resolve_live_db(root)
+    except Exception:
+        db_path = root / "system" / "app" / "data" / "metis.sqlite"
     if not db_path.exists():
         return
 

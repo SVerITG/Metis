@@ -36,7 +36,10 @@ CREATE TABLE IF NOT EXISTS episodic_memory (
     event_type  TEXT DEFAULT 'note',
     content     TEXT NOT NULL,
     metadata    TEXT DEFAULT '{}',
-    created_at  TEXT NOT NULL
+    created_at  TEXT NOT NULL,
+    agent_id    TEXT DEFAULT '',
+    project_id  TEXT DEFAULT '',
+    scope       TEXT DEFAULT 'global'
 )
 """
 
@@ -49,7 +52,10 @@ CREATE TABLE IF NOT EXISTS semantic_memory (
     source_type      TEXT DEFAULT 'user_defined',
     source_id        TEXT DEFAULT '',
     created_at       TEXT NOT NULL,
-    updated_at       TEXT NOT NULL
+    updated_at       TEXT NOT NULL,
+    agent_id         TEXT DEFAULT '',
+    project_id       TEXT DEFAULT '',
+    scope            TEXT DEFAULT 'global'
 )
 """
 
@@ -61,7 +67,10 @@ CREATE TABLE IF NOT EXISTS procedural_memory (
     steps           TEXT NOT NULL,
     success_count   INTEGER DEFAULT 1,
     last_used       TEXT NOT NULL,
-    created_at      TEXT NOT NULL
+    created_at      TEXT NOT NULL,
+    agent_id        TEXT DEFAULT '',
+    project_id      TEXT DEFAULT '',
+    scope           TEXT DEFAULT 'global'
 )
 """
 
@@ -116,6 +125,19 @@ def _migrate_vec_table(conn, table: str, ddl: str) -> None:
         conn.execute(ddl)
 
 
+_SCOPE_MIGRATIONS = [
+    "ALTER TABLE episodic_memory ADD COLUMN agent_id TEXT DEFAULT ''",
+    "ALTER TABLE episodic_memory ADD COLUMN project_id TEXT DEFAULT ''",
+    "ALTER TABLE episodic_memory ADD COLUMN scope TEXT DEFAULT 'global'",
+    "ALTER TABLE semantic_memory ADD COLUMN agent_id TEXT DEFAULT ''",
+    "ALTER TABLE semantic_memory ADD COLUMN project_id TEXT DEFAULT ''",
+    "ALTER TABLE semantic_memory ADD COLUMN scope TEXT DEFAULT 'global'",
+    "ALTER TABLE procedural_memory ADD COLUMN agent_id TEXT DEFAULT ''",
+    "ALTER TABLE procedural_memory ADD COLUMN project_id TEXT DEFAULT ''",
+    "ALTER TABLE procedural_memory ADD COLUMN scope TEXT DEFAULT 'global'",
+]
+
+
 def _setup_tables(conn) -> None:
     """Ensure all memory tables and vec0 virtual tables exist."""
     import sqlite_vec
@@ -127,6 +149,13 @@ def _setup_tables(conn) -> None:
     conn.execute(_SEMANTIC_DDL)
     conn.execute(_PROCEDURAL_DDL)
     conn.execute(_WORKING_DDL)
+
+    # Migrate: add scope columns to existing tables
+    for stmt in _SCOPE_MIGRATIONS:
+        try:
+            conn.execute(stmt)
+        except Exception:
+            pass  # Column already exists
 
     # Migrate vec0 tables if dimension changed (e.g. 384→768 upgrade)
     _migrate_vec_table(conn, "vec_episodic", _VEC_EPISODIC_DDL)
