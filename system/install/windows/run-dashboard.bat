@@ -23,27 +23,37 @@ if "%WSL_ROOT%"=="" (
     exit /b 1
 )
 
-:: Kill any old instance silently
-wsl -e bash -c "pkill -f 'uvicorn main:app.*8080' 2>/dev/null; sleep 0.3" >nul 2>&1
+:: Do NOT kill a running instance here. run.sh now owns the singleton: it ADOPTS a
+:: healthy dashboard (and only clears a wedged one). Killing a healthy server mid-
+:: write is what corrupted the DB on 2026-06-19. Safe to double-click repeatedly.
 
-:: Start the dashboard in the background (WSL window hidden via vbs wrapper)
-start "" /b wsl -e bash "%WSL_ROOT%/system/app-py/run.sh"
+:: Start the dashboard DETACHED so it survives this launcher window closing.
+:: setsid + nohup put uvicorn in its own session — closing the console (or the
+:: parent process exiting) no longer sends SIGHUP and kills the server.
+wsl -e bash -c "setsid nohup bash '%WSL_ROOT%/system/app-py/run.sh' </dev/null >/tmp/metis-dashboard.log 2>&1 & disown" >nul 2>&1
 
-:: Give run.sh a moment to choose a port and write the port file.
-timeout /t 3 /nobreak >nul
+:: Wait for the port file — run.sh writes it once it has chosen a port. If the
+:: file doesn't appear within 12 seconds, fall back to 8080.
 set "PORT=8080"
-if exist "%METIS_ROOT%\system\app-py\.metis-port" (
-    for /f %%p in (%METIS_ROOT%\system\app-py\.metis-port) do set "PORT=%%p"
+for /l %%i in (1,1,12) do (
+    if exist "%METIS_ROOT%\system\app-py\.metis-port" (
+        for /f %%p in (%METIS_ROOT%\system\app-py\.metis-port) do set "PORT=%%p"
+        goto :have_port
+    )
+    timeout /t 1 /nobreak >nul
 )
+:have_port
 set "URL=http://127.0.0.1:%PORT%"
 
 :: Metis's first start can take 10-30s (it loads the agents, scheduler, and
-:: embedding model). Poll until the dashboard actually responds before opening
-:: the browser — a fixed wait used to open it too early and show "can't connect".
+:: embedding model). Poll the /health endpoint until the dashboard actually
+:: responds before opening the browser — a fixed wait used to open it too
+:: early and show "can't connect".
 :: curl.exe ships with Windows 10 1803+ (our minimum).
-for /l %%i in (1,1,40) do (
-    curl -s -o nul -m 1 "%URL%" && goto :ready
+for /l %%i in (1,1,60) do (
+    curl -s -o nul -m 2 "%URL%/health" && goto :ready
     timeout /t 1 /nobreak >nul
 )
+:: After 60s, open the browser anyway — user can manually refresh.
 :ready
 start "" "%URL%"
