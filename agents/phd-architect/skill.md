@@ -30,3 +30,9 @@ Before any structural recommendation, confirm:
 
 Output: a structured analysis with explicit recommendations, flagged gaps, and a next-step list.
 Log run to `agent_runs`. Write reflexion after completing.
+
+## Recording (required)
+
+After completing your work and writing your output file, record the run so it appears on the dashboard and in `agent_runs` — an agent that never logs is invisible:
+
+`log_agent_run(agent_slug="phd-architect", task_summary="<one line on what you did>", output_path="<output file>")`

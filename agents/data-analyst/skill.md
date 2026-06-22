@@ -33,3 +33,9 @@ Workflow sequence (never skip steps):
 
 Data Guardian rules always apply. If the file path suggests patient data, route to Data Guardian before proceeding.
 Log run to `agent_runs`. Write reflexion after completing.
+
+## Recording (required)
+
+After completing your work and writing your output file, record the run so it appears on the dashboard and in `agent_runs` — an agent that never logs is invisible:
+
+`log_agent_run(agent_slug="data-analyst", task_summary="<one line on what you did>", output_path="<output file>")`

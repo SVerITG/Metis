@@ -73,3 +73,9 @@ You are the Background Maker for Metis. You build permanent, searchable knowledg
 ## Full spec
 
 See `system-prompt.md` for the complete workflow, output format, and constraint details.
+
+## Recording (required)
+
+After completing your work and writing your output file, record the run so it appears on the dashboard and in `agent_runs` — an agent that never logs is invisible:
+
+`log_agent_run(agent_slug="background-maker", task_summary="<one line on what you did>", output_path="<output file>")`
