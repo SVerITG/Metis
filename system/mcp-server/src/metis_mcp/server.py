@@ -30,8 +30,8 @@ TOOL_MODULES = [
     "observation", "content_scan", "zotero", "doctor", "ref_miner", "fulltext_index",
     "user_profile", "literature_monitor", "meetings", "course_builder",
     "paperqa_search", "voice_capture", "knowledge_db", "session_memory",
-    "memory_curator", "research", "research_timeline", "project_tracker", "dhis2",
-    "discovery", "code_repository", "tool_search", "prompts",
+    "memory_curator", "memory_gateway", "research", "research_timeline", "project_tracker", "dhis2",
+    "discovery", "code_repository", "script_analyzer", "tool_search", "prompts",
 ]
 
 LOADED_MODULES: list[str] = []

@@ -1,6 +1,9 @@
 """Agent context retrieval and run logging."""
 
 import datetime
+import json
+import struct
+from pathlib import Path
 
 from mcp.types import TextContent
 
@@ -165,6 +168,16 @@ async def log_agent_run(
                 except Exception:
                     pass  # session_events write is best-effort — don't fail the log
 
+        # ── Phase B: Automatic memory extraction ──────────────────────────
+        # Write an episodic memory entry immediately so findings are
+        # searchable right away — don't wait for nightly consolidation.
+        try:
+            _auto_extract_memory(
+                conn, agent_slug, task_summary, output_path, session_id
+            )
+        except Exception:
+            pass  # Memory extraction is best-effort — never fail the log
+
         return [
             TextContent(
                 type="text",
@@ -173,6 +186,72 @@ async def log_agent_run(
         ]
     except Exception as e:
         return [TextContent(type="text", text=f"Error logging agent run: {e}")]
+
+
+def _auto_extract_memory(
+    conn, agent_slug: str, task_summary: str,
+    output_path: str, session_id: str,
+) -> None:
+    """Extract and store an episodic memory entry from an agent run.
+
+    Writes to episodic_memory with agent_id scope so the agent accumulates
+    its own searchable history. If the run produced an output file, reads
+    its first 1500 chars and indexes those too.
+    """
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    # Build the content to remember
+    content_parts = [f"Agent run: {agent_slug}"]
+    content_parts.append(f"Task: {task_summary}")
+
+    # Read output file excerpt if it exists
+    output_excerpt = ""
+    if output_path:
+        try:
+            fp = paths.root / output_path
+            if fp.exists() and fp.suffix in (".md", ".txt", ".json", ".yaml", ".yml"):
+                raw = fp.read_text(encoding="utf-8", errors="ignore")[:1500]
+                output_excerpt = raw
+                content_parts.append(f"Output excerpt: {raw[:500]}")
+        except Exception:
+            pass
+
+    content = "\n".join(content_parts)
+    metadata = json.dumps({
+        "agent_slug": agent_slug,
+        "output_path": output_path,
+        "auto_extracted": True,
+    })
+
+    # Ensure vector memory tables exist
+    try:
+        from metis_mcp.tools.vector_memory import _setup_tables
+        _setup_tables(conn)
+    except Exception:
+        return
+
+    # Insert episodic memory with agent scope
+    cur = conn.execute(
+        """INSERT INTO episodic_memory
+           (session_id, event_type, content, metadata, created_at,
+            agent_id, project_id, scope)
+           VALUES (?, 'agent_run', ?, ?, ?, ?, '', 'agent')""",
+        (session_id, content, metadata, now, agent_slug),
+    )
+    row_id = cur.lastrowid
+
+    # Embed and index for vector search
+    try:
+        from metis_mcp.embeddings import embed_document
+        vector = embed_document(content[:2000])
+        conn.execute(
+            "INSERT INTO vec_episodic (rowid, embedding) VALUES (?, ?)",
+            (row_id, struct.pack(f"{len(vector)}f", *vector)),
+        )
+    except (ImportError, Exception):
+        pass  # Store without embedding — still keyword-searchable
+
+    conn.commit()
 
 
 @app.tool()

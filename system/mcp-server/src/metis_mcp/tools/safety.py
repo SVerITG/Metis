@@ -10,11 +10,15 @@ from metis_mcp.local_overrides import load_overrides
 # PII detection patterns
 _EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
 _PHONE_RE = re.compile(r"\+?\d{1,3}[\s.-]?\(?\d{1,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}")
+# International numbers written in small (e.g. 2-digit) groups — Belgian/French style
+# "+32 478 12 34 56", "+243 81 234 5678". A privacy guard errs toward flagging.
+_INTL_PHONE_RE = re.compile(r"\+\d{1,3}(?:[\s.\-/]?\d){7,}")
 _PATIENT_ID_RE = re.compile(
     r"\b(?:patient_?id|case_?id|patient\s*#)\s*[:=]?\s*\d+", re.IGNORECASE
 )
 _GPS_RE = re.compile(
-    r"-?\d{1,3}\.\d{5,},?\s*-?\d{1,3}\.\d{5,}"
+    # Coordinate pair with ≥4 decimal places each (~11 m — household-identifying).
+    r"-?\d{1,3}\.\d{4,},?\s*-?\d{1,3}\.\d{4,}"
 )
 _BELGIAN_NID_RE = re.compile(r"\b\d{2}\.\d{2}\.\d{2}-\d{3}\.\d{2}\b")
 # Date of birth (explicit label + date value)
@@ -139,6 +143,7 @@ def _classify(warnings: list[str], file_path: str) -> str:
 _PII_CHECKS: list[tuple[re.Pattern, str]] = [
     (_EMAIL_RE, "Email address"),
     (_PHONE_RE, "Phone number"),
+    (_INTL_PHONE_RE, "Phone number"),
     (_PATIENT_ID_RE, "Patient/case ID pattern"),
     (_GPS_RE, "High-precision GPS coordinate"),
     (_BELGIAN_NID_RE, "Belgian national ID"),
