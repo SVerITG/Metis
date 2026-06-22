@@ -36,3 +36,9 @@ Saved to: `outputs/reviews/memory-curator/YYYY-MM-DD_[mode].md`
 - Duplicate found that partially conflicts with the new entry: flag the conflict explicitly, do not silently merge
 - Topic has no matching memory but the user's active projects clearly imply relevant past work: note the gap and suggest running a consolidation pass on older agent_runs
 - Memory table is empty: explain the cold-start state and suggest what types of content to curate first (method decisions, study design choices, key literature findings)
+
+## Recording (required)
+
+After completing your work and writing your output file, record the run so it appears on the dashboard and in `agent_runs` — an agent that never logs is invisible:
+
+`log_agent_run(agent_slug="memory-curator", task_summary="<one line on what you did>", output_path="<output file>")`
