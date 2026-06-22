@@ -1,0 +1,20 @@
+{# today_assistant_notes.html — Archive: "From the assistant" — Metis's margin
+   notes, model-tagged. Reference: TodaySurface > MarginNote.
+   Context: notes [{title, body, model, meta}] #}
+{% if notes %}
+<div style="margin-bottom:32px;">
+  <div class="sec-label" style="margin-bottom:14px;"><span>From the assistant</span><span class="tail">METIS · NOTES IN THE MARGIN</span></div>
+  <div class="grid grid-2">
+    {% for n in notes %}
+    <div class="panel panel-pad" style="border-left:3px solid var(--m-accent);padding:20px 24px;">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+        <span class="kicker kicker--accent" style="padding:0;">METIS{% if n.meta %} · {{ n.meta }}{% endif %}</span>
+        {% if n.model %}<span class="chip chip--{{ n.model }} chip--plain" style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;">{{ n.model }}</span>{% endif %}
+      </div>
+      <div style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);margin-bottom:6px;text-wrap:pretty;">{{ n.title }}</div>
+      <div class="ed" style="font-size:var(--t-small);color:var(--m-text);line-height:1.6;white-space:pre-wrap;">{{ n.body }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

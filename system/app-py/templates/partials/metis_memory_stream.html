@@ -10,7 +10,7 @@
 } %}
 
 {% if not entries %}
-<div class="empty-row">No observations recorded yet. Agents should call <code style="font-family:var(--m-mono);font-size:11px;">capture_observation()</code> during runs.</div>
+<div class="empty-row">Nothing here yet — observations from past sessions will appear once Metis has logged a few runs.</div>
 {% else %}
 {% for e in entries %}
 {% set cls = e.classification or e.event_type or 'note' %}

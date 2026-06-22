@@ -1,190 +1,118 @@
+{# today_morning_brief.html — Archive: the morning briefing as an always-open
+   editorial paragraph, not a collapsible dashboard panel.
+   Reference: TodaySurface > MorningBrief in Metis Application.html (design system).
+   Context vars: brief, brief_date_label, sources, fallback_headlines,
+                 open_threads, time_of_day, brief_mode, period #}
 {% set period = period|default('daily') %}
-<div class="panel" id="morning-brief" style="margin-bottom:28px;">
+<div class="panel panel-pad" id="morning-brief" style="padding:32px 40px;margin-bottom:32px;">
 
-  <!-- Collapsible header -->
-  <div class="morning-brief-header"
-       onclick="toggleBrief()"
-       style="display:flex;align-items:center;gap:10px;padding:14px 20px;cursor:pointer;user-select:none;border-bottom:1px solid var(--m-rule-soft);">
-    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="8" cy="8" r="5.5"/>
-      <polygon points="8 4 10 8 8 12 6 8"/>
-    </svg>
-    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);">{% if period == 'weekly' %}WEEKLY BRIEFING{% else %}MORNING BRIEFING{% endif %}</span>
-    <!-- Daily ↔ Weekly toggle (doesn't collapse the brief) -->
-    <div style="display:inline-flex;border:1px solid var(--m-rule-soft);border-radius:3px;overflow:hidden;" onclick="event.stopPropagation()">
+  {# Kicker + daily/weekly toggle — the rhythm-keeper, not a collapse handle #}
+  <div class="kicker kicker--accent" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+    <span style="display:inline-flex;align-items:center;gap:8px;">
+      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--m-accent);"></span>
+      {% if period == 'weekly' %}WEEKLY BRIEFING{% else %}MORNING BRIEFING{% endif %}
+    </span>
+    <span style="color:var(--m-muted);">·</span>
+    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);text-transform:none;">
+      {%- if brief and brief_date_label -%}from {{ brief_date_label }} · today's hasn't run yet
+      {%- elif brief -%}a paragraph, not a dashboard
+      {%- elif fallback_headlines -%}scan pending — latest signals below
+      {%- else -%}not yet written today
+      {%- endif -%}
+    </span>
+    <div style="margin-left:auto;display:inline-flex;border:1px solid var(--m-rule-soft);border-radius:3px;overflow:hidden;">
       <button type="button"
               hx-get="/api/partial/today/morning-brief?period=daily" hx-target="#morning-brief" hx-swap="outerHTML"
-              style="border:0;background:{% if period != 'weekly' %}var(--m-accent){% else %}transparent{% endif %};color:{% if period != 'weekly' %}#fff{% else %}var(--m-muted){% endif %};font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:3px 9px;cursor:pointer;">DAILY</button>
+              style="border:0;background:{% if period != 'weekly' %}var(--m-accent){% else %}transparent{% endif %};color:{% if period != 'weekly' %}#fff{% else %}var(--m-muted){% endif %};font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:3px 10px;cursor:pointer;">DAILY</button>
       <button type="button"
               hx-get="/api/partial/today/morning-brief?period=weekly" hx-target="#morning-brief" hx-swap="outerHTML"
-              style="border:0;border-left:1px solid var(--m-rule-soft);background:{% if period == 'weekly' %}var(--m-accent){% else %}transparent{% endif %};color:{% if period == 'weekly' %}#fff{% else %}var(--m-muted){% endif %};font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:3px 9px;cursor:pointer;">WEEKLY</button>
+              style="border:0;border-left:1px solid var(--m-rule-soft);background:{% if period == 'weekly' %}var(--m-accent){% else %}transparent{% endif %};color:{% if period == 'weekly' %}#fff{% else %}var(--m-muted){% endif %};font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:3px 10px;cursor:pointer;">WEEKLY</button>
     </div>
-    <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">·</span>
-    {% if brief %}
-      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
-        {%- if brief_date_label -%}showing brief from {{ brief_date_label }} · today's hasn't run yet
-        {%- elif time_of_day == 'morning' -%}brief ready · start your research day
-        {%- elif time_of_day == 'afternoon' -%}brief ready · afternoon check-in
-        {%- else -%}brief ready · end of day review
-        {%- endif -%}
-      </span>
-    {% elif fallback_headlines %}
-      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">scan pending — showing latest signals</span>
-    {% else %}
-      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
-        {%- if brief_mode == 'manual' -%}not generated — click Generate to synthesise with Claude
-        {%- elif time_of_day == 'morning' -%}not yet generated — runs automatically or click Update
-        {%- elif time_of_day == 'afternoon' -%}not generated today
-        {%- else -%}not generated today — run tomorrow or click Update
-        {%- endif -%}
-      </span>
-    {% endif %}
-    <span style="margin-left:auto;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);transition:transform 200ms;transform:{% if brief or fallback_headlines %}rotate(90deg){% else %}none{% endif %};" id="brief-chevron">▸</span>
   </div>
 
-  <!-- Expandable body — auto-open when AI brief is ready or fallback headlines exist -->
-  <div id="morning-brief-body" style="display:{% if brief or fallback_headlines %}block{% else %}none{% endif %};">
+  {# The briefing itself — editorial serif prose, always visible #}
+  {% if brief %}
+    <div class="ed" style="line-height:1.7;color:var(--m-ink);max-width:760px;white-space:pre-wrap;">{{ brief }}</div>
 
-    <div style="padding:24px 28px 20px;">
+    {% if sources %}
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--m-rule-soft);">
+      <div style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:10px;">SOURCES FROM THIS BRIEF</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        {% for s in sources %}
+          {% if s.url %}
+            <a href="{{ s.url }}" target="_blank" rel="noopener"
+               style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);font-family:var(--m-mono);font-size:9px;color:var(--m-text);text-decoration:none;">
+              {% if s.domain %}<span style="color:var(--m-accent);letter-spacing:0.08em;">{{ s.domain|upper }}</span>{% endif %}
+              <span style="color:var(--m-muted);">{{ s.title[:55] }}{% if s.title|length > 55 %}…{% endif %}</span>
+            </a>
+          {% else %}
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
+              {% if s.domain %}<span style="color:var(--m-accent);letter-spacing:0.08em;">{{ s.domain|upper }}</span>{% endif %}
+              {{ s.title[:55] }}{% if s.title|length > 55 %}…{% endif %}
+            </span>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
 
-      {% if brief %}
-        <div style="font-family:var(--m-display);font-size:16px;line-height:1.75;color:var(--m-ink);max-width:none;white-space:pre-wrap;">{{ brief }}</div>
-
-        {% if sources %}
-        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--m-rule-soft);">
-          <div style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:10px;">SOURCES FROM THIS BRIEF</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;">
-            {% for s in sources %}
-              {% if s.url %}
-                <a href="{{ s.url }}" target="_blank" rel="noopener"
-                   style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
-                          background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);
-                          font-family:var(--m-mono);font-size:9px;color:var(--m-text);text-decoration:none;
-                          transition:background 150ms;">
-                  {% if s.domain %}<span style="color:var(--m-accent);letter-spacing:0.08em;">{{ s.domain|upper }}</span>{% endif %}
-                  <span style="color:var(--m-muted);">{{ s.title[:55] }}{% if s.title|length > 55 %}…{% endif %}</span>
-                  <svg viewBox="0 0 10 10" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5"><path d="M2 8L8 2M8 2H4M8 2V6"/></svg>
-                </a>
-              {% else %}
-                <span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
-                             background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);
-                             font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
-                  {% if s.domain %}<span style="color:var(--m-accent);letter-spacing:0.08em;">{{ s.domain|upper }}</span>{% endif %}
-                  {{ s.title[:55] }}{% if s.title|length > 55 %}…{% endif %}
-                </span>
-              {% endif %}
-            {% endfor %}
-          </div>
-        </div>
+  {% elif fallback_headlines %}
+    <div class="ed" style="font-family:var(--m-display);font-style:italic;font-size:15px;color:var(--m-muted);margin-bottom:14px;max-width:720px;">
+      The morning scan hasn't run yet. Here are the latest signals while the brief is written.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px;">
+      {% for h in fallback_headlines %}
+      <div class="m-edge-left" style="display:flex;align-items:baseline;gap:10px;padding:8px 8px 8px 10px;border-bottom:1px solid var(--m-rule-soft);position:relative;">
+        {% if h.domain %}<span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.08em;color:var(--m-accent);flex-shrink:0;">{{ h.domain|upper }}</span>{% endif %}
+        {% if h.url %}
+          <a href="{{ h.url }}" target="_blank" rel="noopener" style="font-size:14px;color:var(--m-ink);text-decoration:none;line-height:1.4;">{{ h.title }}</a>
+        {% else %}
+          <span style="font-size:14px;color:var(--m-ink);line-height:1.4;">{{ h.title }}</span>
         {% endif %}
+      </div>
+      {% endfor %}
+    </div>
 
-      {% elif fallback_headlines %}
-        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-warn);margin-bottom:14px;">
-          Morning scan has not run yet. Showing latest signals — AI brief will appear after 07:15.
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          {% for h in fallback_headlines %}
-          <div class="m-edge-left" style="display:flex;align-items:baseline;gap:8px;padding:6px 8px 6px 10px;border-bottom:1px solid var(--m-rule-soft);position:relative;">
-            {% if h.domain %}<span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.08em;color:var(--m-accent);flex-shrink:0;">{{ h.domain|upper }}</span>{% endif %}
-            {% if h.url %}
-              <a href="{{ h.url }}" target="_blank" rel="noopener"
-                 style="font-size:13px;color:var(--m-ink);text-decoration:none;line-height:1.4;">{{ h.title }}</a>
-            {% else %}
-              <span style="font-size:13px;color:var(--m-ink);line-height:1.4;">{{ h.title }}</span>
-            {% endif %}
-          </div>
-          {% endfor %}
-        </div>
-
+  {% else %}
+    <div class="ed" style="font-family:var(--m-display);font-style:italic;font-size:16px;color:var(--m-muted);max-width:720px;">
+      No brief yet today.
+      {% if brief_mode == 'manual' %}
+        Write it with Claude when you're ready — it reads your news and library, then says what matters.
       {% else %}
-        <div style="display:flex;align-items:center;gap:14px;padding:8px 0;">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--m-muted)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.5;">
-            <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 13.5"/>
-          </svg>
-          <div>
-            <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);margin-bottom:3px;">No brief yet today.</div>
-            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);letter-spacing:0.08em;" id="brief-countdown-msg">
-              {% if brief_mode == 'manual' %}
-                Click Generate to synthesise your morning brief. This sends today's headlines to Claude.
-              {% else %}
-                Generates automatically — or click Update now.
-              {% endif %}
-            </div>
-          </div>
-        </div>
-        {% if brief_mode != 'manual' %}
-        <script>
-        (function() {
-          var el = document.getElementById('brief-countdown-msg');
-          if (!el) return;
-          var now = new Date();
-          var target = new Date(now); target.setHours(8,30,0,0);
-          if (now >= target) { return; }
-          var diff = Math.round((target - now) / 60000);
-          var h = Math.floor(diff / 60), m = diff % 60;
-          var label = h > 0 ? h + 'h ' + m + 'm' : m + 'm';
-          el.textContent = 'Brief generates at 08:30 — ' + label + ' from now. Or click Update.';
-        })();
-        </script>
-        {% endif %}
+        It writes itself on the morning scan, or you can ask for it now.
       {% endif %}
-
     </div>
+  {% endif %}
 
-    <!-- Footer: timestamp + generate/update button -->
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 20px 14px;border-top:1px solid var(--m-rule-soft);flex-wrap:wrap;">
-      <span style="font-family:var(--m-mono);font-size:8.5px;color:var(--m-muted);" id="brief-timestamp">
-        {% if brief %}Brief generated today{% else %}Not yet generated{% endif %}
-      </span>
-      {% if brief %}
-      <button type="button" onclick="brainstormFromBrief()"
-         title="Brainstorm from today's brief in Claude Desktop — pulls the work, notes and ideas it connects. Also copies the prompt so you can paste it into a Temporary chat."
-         style="margin-left:auto;padding:5px 14px;font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;
-                background:var(--m-accent);border:1px solid var(--m-accent);border-radius:var(--m-radius);
-                color:#fff;cursor:pointer;white-space:nowrap;">
-        ✦ BRAINSTORM THIS
-      </button>
-      {% endif %}
-      {%- set claude_brief_prompt -%}
+  {# Action row — the briefing's moves: generate / update with Claude #}
+  <div style="display:flex;align-items:center;gap:8px;margin-top:22px;padding-top:16px;border-top:1px solid var(--m-rule-soft);flex-wrap:wrap;">
+    {% if brief %}
+    <button type="button" class="btn btn--sec btn--caps" onclick="brainstormFromBrief()"
+       title="Brainstorm from today's brief in Claude Desktop — pulls the work, notes and ideas it connects."
+       style="padding:5px 12px;font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;">
+      Brainstorm this
+    </button>
+    {% endif %}
+    {%- set claude_brief_prompt -%}
 Produce my Metis daily brief now. Using the metis-rc tools: scan today's news and any new literature, rank the items by closeness to my work, write a short brief of the 5-7 most relevant items (most relevant first, one line each with why it matters), and save it with the Metis tool so it shows on my dashboard. Then show me the brief.
-      {%- endset -%}
-      <a href="claude://claude.ai/new?q={{ claude_brief_prompt | trim | urlencode }}"
-         title="Opens Claude Desktop with a ready prompt. Runs on your Claude subscription — no API key, no per-token cost. The brief saves back to this dashboard."
-         style="margin-left:auto;padding:5px 14px;font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;
-                background:transparent;border:1px solid var(--m-rule-strong);border-radius:var(--m-radius);
-                color:var(--m-text);text-decoration:none;cursor:pointer;white-space:nowrap;">
-        ✦ UPDATE WITH CLAUDE
-      </a>
-      <button
-        hx-post="/api/morning-brief/refresh"
-        hx-vals='{"period": "{{ period }}"}'
-        hx-target="#morning-brief"
-        hx-swap="outerHTML"
-        hx-indicator="#brief-spinner"
-        title="Generates the brief using the Anthropic API (pay-per-token)."
-        style="padding:5px 12px;font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;
-               background:transparent;border:1px solid var(--m-rule-soft);border-radius:var(--m-radius);
-               color:var(--m-muted);cursor:pointer;white-space:nowrap;transition:background 150ms,border-color 150ms;">
-        {% if brief_mode == 'manual' %}GENERATE (API){% else %}UPDATE (API){% endif %}
-      </button>
-      <span id="brief-spinner" class="htmx-indicator"
-            style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);letter-spacing:0.08em;">
-        generating…
-      </span>
-    </div>
+    {%- endset -%}
+    <a href="claude://claude.ai/new?q={{ claude_brief_prompt | trim | urlencode }}"
+       title="Opens Claude Desktop with a ready prompt. Runs on your Claude subscription — no API key."
+       class="btn btn--ghost btn--caps"
+       style="margin-left:auto;padding:5px 12px;font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;text-decoration:none;">
+      Update with Claude
+    </a>
+    <button
+      hx-post="/api/morning-brief/refresh"
+      hx-vals='{"period": "{{ period }}"}'
+      hx-target="#morning-brief"
+      hx-swap="outerHTML"
+      hx-indicator="#brief-spinner"
+      title="Generates the brief using the Anthropic API (pay-per-token)."
+      class="btn btn--ghost btn--caps"
+      style="padding:5px 12px;font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.1em;">
+      {% if brief_mode == 'manual' %}Generate (API){% else %}Update (API){% endif %}
+    </button>
+    <span id="brief-spinner" class="htmx-indicator" style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);letter-spacing:0.08em;">generating…</span>
   </div>
 </div>
-
-<script>
-(function() {
-  function toggleBrief() {
-    var body = document.getElementById('morning-brief-body');
-    var chevron = document.getElementById('brief-chevron');
-    if (!body) return;
-    var open = body.style.display !== 'none';
-    body.style.display = open ? 'none' : 'block';
-    if (chevron) chevron.style.transform = open ? '' : 'rotate(90deg)';
-  }
-  window.toggleBrief = toggleBrief;
-})();
-</script>

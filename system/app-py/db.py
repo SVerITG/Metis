@@ -1,21 +1,75 @@
 """
 db.py — SQLite helper for the Metis dashboard.
+
+Stability notes (June 2026):
+  - WAL mode is enabled on every connection so the MCP server and dashboard
+    can read/write concurrently without "database is locked" errors.
+  - busy_timeout is set to 10 s so SQLite retries instead of failing
+    immediately when another process holds a write lock.
+  - Async wrappers (adb_query, adb_scalar, adb_execute) run the blocking
+    SQLite calls in a thread pool so FastAPI's event loop is never blocked.
 """
 
+import asyncio
 import os
 import re
 import sqlite3
 from pathlib import Path
 
 
-def get_db_path() -> Path:
-    """Find metis.sqlite.
+# NOTE: the two helpers below are intentionally duplicated verbatim in the MCP
+# server's system/mcp-server/src/metis_mcp/config.py. Both processes must resolve
+# the live DB to the SAME location, and the two codebases don't share a module.
+# Keep them in sync.
 
-    Search order:
-    1. METIS_DB env var — explicit override (used by run-demo.sh for demo mode)
-    2. METIS_RC_ROOT env var → {root}/system/app/data/metis.sqlite
-    3. Path relative to this file: ./data/metis.sqlite
-    Raises FileNotFoundError if neither exists.
+def _migrate_db_to_local(source: Path, dest: Path) -> bool:
+    """One-time copy of the live DB to local disk via SQLite's backup API.
+
+    The backup API yields a transactionally consistent copy even while the source
+    is open/in WAL mode, and ignores the -wal/-shm sidecars (so OneDrive corruption
+    can't ride along). Atomic via temp file + os.replace; idempotent. Returns True
+    if dest exists afterwards.
+    """
+    import tempfile
+
+    if dest.exists():
+        return True
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp = None
+    try:
+        fd, tmp = tempfile.mkstemp(dir=str(dest.parent), suffix=".migrating")
+        os.close(fd)
+        src_conn = sqlite3.connect(str(source), timeout=30)
+        try:
+            dst_conn = sqlite3.connect(tmp)
+            try:
+                src_conn.backup(dst_conn)
+            finally:
+                dst_conn.close()
+        finally:
+            src_conn.close()
+        os.replace(tmp, dest)
+        return True
+    except Exception:
+        if tmp:
+            try:
+                os.unlink(tmp)
+            except OSError:
+                pass
+        return False
+
+
+def get_db_path() -> Path:
+    """Resolve the live metis.sqlite path.
+
+    Stability fix (2026-06-19): the live DB must NOT sit on a OneDrive/DrvFs path —
+    OneDrive sync deletes/corrupts SQLite's WAL sidecar files mid-write, which takes
+    the whole app down (see outputs/reviews/software-engineer/2026-06-19_metis-
+    stability-evaluation.md). So the canonical live DB lives on fast local disk
+    (~/.local/share/metis/), and an existing OneDrive DB is auto-migrated there on
+    first run. OneDrive keeps only the nightly backups.
+
+    Honored as-is: METIS_DB (tests/demo) and Docker volumes (METIS_DOCKER=1).
     """
     explicit = os.environ.get("METIS_DB", "")
     if explicit:
@@ -23,46 +77,43 @@ def get_db_path() -> Path:
         p.parent.mkdir(parents=True, exist_ok=True)
         return p
 
+    # Root: METIS_RC_ROOT, else inferred relative to this file (system/app-py/db.py
+    # → repo root is two levels up).
     rc_root = os.environ.get("METIS_RC_ROOT", "")
-    if rc_root:
-        # When METIS_RC_ROOT is set (e.g. Docker containers), always use it.
-        # CANONICAL path is system/app/data/metis.sqlite — the same file the MCP
-        # server uses (metis_mcp.config.paths.db) and the installer initialises.
-        # (Previously this pointed at system/app-py/data, which split the dashboard
-        # onto a separate empty DB while all real data lived in app/data.)
-        canonical = Path(rc_root) / "system" / "app" / "data" / "metis.sqlite"
-        if canonical.exists():
-            return canonical
-        # Legacy fallback: a pre-fix install that wrote real data to app-py/data.
-        legacy = Path(rc_root) / "system" / "app-py" / "data" / "metis.sqlite"
-        if legacy.exists():
-            return legacy
-        # Neither exists yet → initialise at the canonical location.
-        canonical.parent.mkdir(parents=True, exist_ok=True)
-        return canonical
+    root = Path(rc_root) if rc_root else Path(__file__).resolve().parent.parent.parent
 
-    # No env vars (e.g. a developer running `uvicorn main:app` directly).
-    # Resolve the CANONICAL DB relative to this file first — system/app-py/db.py
-    # → system/app/data/metis.sqlite — so we never silently fall back to the
-    # stale split-brain stub at system/app-py/data/metis.sqlite.
-    canonical_rel = Path(__file__).resolve().parent.parent / "app" / "data" / "metis.sqlite"
-    if canonical_rel.exists():
-        return canonical_rel
+    onedrive = root / "system" / "app" / "data" / "metis.sqlite"
+    legacy = root / "system" / "app-py" / "data" / "metis.sqlite"
 
-    local_candidate = Path(__file__).parent / "data" / "metis.sqlite"
-    if local_candidate.exists():
-        return local_candidate
+    # Docker: the mounted volume IS the durable store — never relocate.
+    if os.environ.get("METIS_DOCKER") == "1":
+        return onedrive
 
-    raise FileNotFoundError(
-        "metis.sqlite not found. Set METIS_RC_ROOT or place the DB at "
-        f"{canonical_rel}"
+    data_dir = Path(
+        os.environ.get("METIS_DATA_DIR")
+        or (Path.home() / ".local" / "share" / "metis")
     )
+    local = data_dir / "metis.sqlite"
+    if local.exists():
+        return local
+
+    source = onedrive if onedrive.exists() else (legacy if legacy.exists() else None)
+    if source is not None and _migrate_db_to_local(source, local):
+        return local
+    # Fresh install (no existing DB) → create on local disk.
+    data_dir.mkdir(parents=True, exist_ok=True)
+    return local
 
 
 def _connect() -> sqlite3.Connection:
     db_path = get_db_path()
-    conn = sqlite3.connect(str(db_path))
+    conn = sqlite3.connect(str(db_path), timeout=10)
     conn.row_factory = sqlite3.Row
+    # WAL mode allows concurrent reads during writes (dashboard + MCP server).
+    # busy_timeout tells SQLite to retry for up to 10 s before raising
+    # "database is locked" — critical when the MCP server is writing.
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=10000")
     return conn
 
 
@@ -109,6 +160,25 @@ def db_execute(sql: str, params=()) -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Async wrappers — use these from FastAPI async route handlers so the event
+# loop is never blocked by SQLite I/O. Under the hood they call the sync
+# functions above via asyncio.to_thread() (Python 3.9+ thread pool).
+# ---------------------------------------------------------------------------
+
+
+async def adb_query(sql: str, params=(), default=None) -> list[dict]:
+    return await asyncio.to_thread(db_query, sql, params, default)
+
+
+async def adb_scalar(sql: str, params=(), default=0):
+    return await asyncio.to_thread(db_scalar, sql, params, default)
+
+
+async def adb_execute(sql: str, params=()) -> None:
+    return await asyncio.to_thread(db_execute, sql, params)
 
 
 # ---------------------------------------------------------------------------

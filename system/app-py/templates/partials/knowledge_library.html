@@ -1,34 +1,43 @@
-<!-- knowledge_library.html — Library card list -->
+<!-- knowledge_library.html — Library index cards (Archive system) -->
 {% if not cards %}
-<div class="panel panel-pad" style="text-align:center;padding:32px 24px;border:1px dashed var(--m-line);">
-  <h4 class="ed" style="margin:0 0 8px;font-size:17px;">Your library is empty</h4>
+<div class="panel panel-pad" style="text-align:center;padding:32px 24px;border:1px dashed var(--m-rule);">
+  <h4 style="font-family:var(--m-display);font-weight:500;margin:0 0 8px;font-size:18px;color:var(--m-ink);">Your library is empty</h4>
   <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 16px;max-width:420px;margin-left:auto;margin-right:auto;">
-    Connect your reference manager (Zotero, Mendeley, or any BibTeX file) to populate this view.
+    Connect your reference manager — Zotero, Mendeley, or any BibTeX file — and your sources will gather here.
   </p>
-  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-    <span class="btn btn--primary" style="cursor:default;">In Claude Code: <code style="margin-left:4px;">/metis-library-setup</code></span>
+  <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;color:var(--m-muted);">
+    IN CLAUDE CODE · <span style="color:var(--m-accent);">/metis-library-setup</span>
   </div>
 </div>
 {% else %}
-<div class="row g-2">
+<div class="grid grid-3">
   {% for card in cards %}
-  <div class="col-12 col-md-6 col-xl-4">
-    <div class="card h-100 p-3">
-      <div class="fw-semibold small text-truncate">{{ card.title }}</div>
-      {% if card.domain %}
-      <span class="badge bg-primary-subtle text-primary mt-1 mb-1" style="font-size:0.7rem;">{{ card.domain }}</span>
-      {% endif %}
-      {% if card.summary %}
-      <div class="text-muted small mt-1" style="overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">{{ card.summary }}</div>
-      {% endif %}
-      {% if card.tags %}
-      <div class="mt-2">
-        {% for tag in card.tags.split(',')[:3] %}
-        <span class="badge bg-secondary-subtle text-secondary me-1" style="font-size:0.65rem;">{{ tag.strip() }}</span>
-        {% endfor %}
+  <div class="panel" style="padding:18px 20px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;gap:10px;">
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.18em;color:var(--m-muted);">
+        {{ card.created_at[:7] if card.created_at else '—' }} · CARD
       </div>
+      {% if card.domain %}
+      <span style="display:inline-flex;align-items:center;padding:2px 8px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;background:var(--m-accent-wash);color:var(--m-accent);border-radius:2px;flex-shrink:0;">
+        {{ card.domain[:14] }}
+      </span>
       {% endif %}
     </div>
+    <div style="font-family:var(--m-display);font-size:16px;font-weight:500;color:var(--m-ink);line-height:1.3;margin-bottom:8px;">
+      {{ card.title }}
+    </div>
+    {% if card.summary %}
+    <div class="ed" style="font-size:13px;color:var(--m-text);margin:0 0 10px;">
+      {{ card.summary | truncate(160, True, '…') }}
+    </div>
+    {% endif %}
+    {% if card.tags %}
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      {% for tag in card.tags.split(',')[:3] %}
+      <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.08em;color:var(--m-muted);background:var(--m-surface-2);padding:2px 8px;border-radius:2px;">{{ tag.strip() }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
   </div>
   {% endfor %}
 </div>

@@ -141,8 +141,13 @@ def run_startup_eval() -> dict:
     """Run all checks and return the results dict. Always succeeds (never raises)."""
     rc_root = os.environ.get("METIS_RC_ROOT", "")
     db_path = os.environ.get("METIS_DB", "")
-    if not db_path and rc_root:
-        db_path = str(Path(rc_root) / "system" / "app" / "data" / "metis.sqlite")
+    if not db_path:
+        try:
+            from db import get_db_path
+            db_path = str(get_db_path())
+        except Exception:
+            if rc_root:
+                db_path = str(Path(rc_root) / "system" / "app" / "data" / "metis.sqlite")
 
     app_dir = Path(__file__).parent
     templates_dir = app_dir / "templates"

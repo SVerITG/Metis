@@ -58,7 +58,8 @@ def _ensure_columns():
         pass
 
 
-_ensure_columns()
+# NOTE: _ensure_columns() is invoked from main.py's lifespan startup (wrapped),
+# not at import time — so a DB hiccup can never crash the whole dashboard.
 
 
 # ---------------------------------------------------------------------------
@@ -159,11 +160,8 @@ def _fast_keyword_connections(text: str, max_results: int = 6) -> list[dict]:
     if not keywords:
         return []
     try:
-        from db import _connect
-        db_path = None
-        rc_root = os.environ.get("METIS_RC_ROOT")
-        if rc_root:
-            db_path = Path(rc_root) / "system" / "app" / "data" / "metis.sqlite"
+        from db import get_db_path
+        db_path = get_db_path()
         if not db_path or not db_path.exists():
             return []
         import sqlite3

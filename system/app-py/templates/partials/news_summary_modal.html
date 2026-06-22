@@ -13,16 +13,28 @@
       {% if brief.summary %}
       {{ brief.summary }}
       {% else %}
-      <em style="color: var(--text-muted);">No summary recorded. Run /news-radar to enrich.</em>
+      <em style="color:var(--m-muted);">No summary recorded yet. The morning scan will fill this in.</em>
       {% endif %}
     </div>
     <div class="news-modal-footer">
       {% if brief.source_url %}
-      <a href="{{ brief.source_url }}" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm">
-        <i class="bi bi-box-arrow-up-right"></i> Open source
+      <a href="{{ brief.source_url }}" target="_blank" rel="noopener"
+         style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;
+                font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;
+                color:var(--m-ink);text-decoration:none;background:var(--m-surface);
+                border:1px solid var(--m-rule);border-radius:var(--m-radius);">
+        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 3.5H3.5v9h9V10"/><path d="M9 3.5h3.5V7"/><path d="M12 4 7 9"/>
+        </svg>
+        Open source
       </a>
       {% endif %}
-      <button class="btn btn-primary btn-sm" onclick="closeNewsModal()">Close</button>
+      <button onclick="closeNewsModal()"
+              style="padding:6px 14px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;
+                     text-transform:uppercase;color:var(--m-surface);background:var(--m-accent);
+                     border:1px solid var(--m-accent);border-radius:var(--m-radius);cursor:pointer;">
+        Close
+      </button>
     </div>
   </div>
 </div>
