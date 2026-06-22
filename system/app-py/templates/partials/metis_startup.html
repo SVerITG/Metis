@@ -1,0 +1,44 @@
+{# metis_startup.html — autostart / persistence toggle (Windows Scheduled Task).
+   Context: autostart_enabled (bool), error (optional str) #}
+<div id="metis-startup">
+  <div class="sec-label" style="margin-bottom:10px;"><span>Startup &amp; persistence</span><span class="tail">DASHBOARD + MCP</span></div>
+  <div class="panel panel-pad">
+    <div class="ed" style="margin-bottom:14px;color:var(--m-text);">
+      {% if autostart_enabled %}
+        <strong>Always on.</strong> Metis starts at login — the dashboard and scheduled jobs
+        (morning brief, news scan, library index) run in the background and come back after a
+        reboot or a stop. Nothing to launch by hand.
+      {% else %}
+        <strong>Starts when you open it.</strong> Metis runs only while you have it open. Turn on
+        autostart to keep the dashboard + MCP always running and surviving reboots.
+      {% endif %}
+    </div>
+
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <span class="label-caps" style="color:{{ 'var(--m-ok)' if autostart_enabled else 'var(--m-muted)' }};">
+        {% if autostart_enabled %}● AUTOSTART ON · persistent{% else %}○ AUTOSTART OFF · on demand{% endif %}
+      </span>
+      {% if autostart_enabled %}
+        <button class="btn btn--ghost btn--caps"
+                hx-post="/api/metis/autostart/disable" hx-target="#metis-startup" hx-swap="outerHTML"
+                hx-indicator="#startup-spin">Turn off — run only when opened</button>
+      {% else %}
+        <button class="btn btn--primary btn--caps"
+                hx-post="/api/metis/autostart/enable" hx-target="#metis-startup" hx-swap="outerHTML"
+                hx-indicator="#startup-spin">Turn on — start at login</button>
+      {% endif %}
+      <span id="startup-spin" class="htmx-indicator" style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">working…</span>
+    </div>
+
+    {% if error %}
+    <div class="ed" style="margin-top:10px;color:var(--m-alert);font-size:var(--t-small);">
+      Couldn't change it automatically: {{ error }}. You can run
+      <code style="font-family:var(--m-mono);">register-autostart.ps1</code> from PowerShell instead.
+    </div>
+    {% endif %}
+
+    <div class="meta" style="margin-top:12px;font-family:var(--m-mono);">
+      Registers the “Metis Dashboard Autostart” Windows task (hidden, no browser window). No admin needed.
+    </div>
+  </div>
+</div>
