@@ -18,19 +18,19 @@ class TestGetDbPath:
         assert p.exists()
         assert p == tmp_db
 
-    def test_raises_when_no_db_configured(self, monkeypatch, tmp_path):
+    def test_resolves_to_local_default_when_nothing_configured(self, monkeypatch, tmp_path):
+        # Relocation (2026-06-19): get_db_path no longer raises. With nothing configured
+        # it resolves to a local data dir (~/.local/share/metis, or METIS_DATA_DIR) and
+        # CREATES it — the live DB must never sit on OneDrive/DrvFs (SQLite WAL corruption).
         monkeypatch.delenv("METIS_DB", raising=False)
-        monkeypatch.delenv("METIS_RC_ROOT", raising=False)
-        # get_db_path's last fallback is a path relative to db.py
-        # (system/app-py/data/metis.sqlite). On a populated dev machine that file
-        # exists, so the negative (raise) path isn't observable there — skip rather
-        # than fail. In a clean checkout / CI it doesn't exist and the raise is tested.
-        from pathlib import Path as _Path
-        import db as _db
-        if (_Path(_db.__file__).parent / "data" / "metis.sqlite").exists():
-            pytest.skip("local DB present at the relative fallback; raise path not observable")
-        with pytest.raises(FileNotFoundError):
-            get_db_path()
+        monkeypatch.delenv("METIS_DOCKER", raising=False)
+        # Point the repo root at an empty dir so the onedrive/legacy fallbacks find nothing,
+        # and the data dir at a temp path so we never touch the real ~/.local/share/metis.
+        monkeypatch.setenv("METIS_RC_ROOT", str(tmp_path / "fakeroot"))
+        monkeypatch.setenv("METIS_DATA_DIR", str(tmp_path / "metisdata"))
+        p = get_db_path()
+        assert p == tmp_path / "metisdata" / "metis.sqlite"
+        assert p.parent.is_dir()  # fresh-install data dir was created
 
 
 class TestDbQuery:
