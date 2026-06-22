@@ -21,6 +21,7 @@ import datetime
 import json
 import re
 import socket
+import struct
 from uuid import uuid4
 
 from mcp.types import TextContent
@@ -228,11 +229,97 @@ async def session_bootstrap(client: str = "code") -> list[TextContent]:
     except Exception:
         pass
 
+    # ── Deep memory context (recall-powered) ────────────────────────────────
+    # Surface semantically relevant memories — not just the most recent ones.
+    # This is what makes Claude Desktop sessions feel "deep" instead of shallow.
+    deep_context: list[dict] = []
+    recent_decisions: list[str] = []
+    try:
+        # Load user profile interests for semantic search
+        profile_path = paths.root / "system" / "config" / "user-config.yaml"
+        interests_query = ""
+        if profile_path.exists():
+            import yaml
+            cfg = yaml.safe_load(profile_path.read_text(encoding="utf-8"))
+            interests = cfg.get("interests", [])
+            if interests:
+                interests_query = ", ".join(interests[:5])
+
+        if interests_query:
+            # Search across vector memory layers for relevant long-term context
+            try:
+                from metis_mcp.embeddings import embed_query
+                query_vec = embed_query(interests_query)
+                vec_bytes = struct.pack(f"{len(query_vec)}f", *query_vec)
+
+                with connect(paths.db) as _con:
+                    try:
+                        import sqlite_vec
+                        _con.enable_load_extension(True)
+                        sqlite_vec.load(_con)
+                        _con.enable_load_extension(False)
+                    except Exception:
+                        raise ImportError("sqlite_vec")
+
+                    # Semantic memory (concepts)
+                    sem_rows = _con.execute(
+                        """SELECT s.concept, s.definition, s.created_at
+                           FROM vec_semantic v
+                           JOIN semantic_memory s ON s.id = v.rowid
+                           WHERE v.embedding MATCH ? AND k = 3
+                           ORDER BY v.distance""",
+                        (vec_bytes,),
+                    ).fetchall()
+                    for r in sem_rows:
+                        deep_context.append({
+                            "layer": "semantic",
+                            "title": r["concept"],
+                            "preview": (r["definition"] or "")[:150],
+                        })
+
+                    # Episodic memory (recent events)
+                    epi_rows = _con.execute(
+                        """SELECT e.content, e.event_type, e.created_at
+                           FROM vec_episodic v
+                           JOIN episodic_memory e ON e.id = v.rowid
+                           WHERE v.embedding MATCH ? AND k = 3
+                           ORDER BY v.distance""",
+                        (vec_bytes,),
+                    ).fetchall()
+                    for r in epi_rows:
+                        deep_context.append({
+                            "layer": "episodic",
+                            "type": r["event_type"],
+                            "preview": (r["content"] or "")[:150],
+                        })
+            except (ImportError, Exception):
+                pass
+
+        # Extract recent session decisions (avoid re-asking)
+        with connect(paths.db) as _con:
+            try:
+                dec_rows = _con.execute(
+                    """SELECT decisions, key_topics
+                       FROM session_summaries
+                       WHERE decisions != '' AND decisions IS NOT NULL
+                       ORDER BY created_at DESC LIMIT 3""",
+                ).fetchall()
+                for r in dec_rows:
+                    if r["decisions"]:
+                        recent_decisions.append(r["decisions"][:200])
+            except Exception:
+                pass
+
+    except Exception:
+        pass
+
     result = {
         "session_id": session_id,
         "is_new": is_new,
         "computer": computer,
         "memory_snapshot": memory_snapshot,
+        "deep_context": deep_context[:6],
+        "recent_decisions": recent_decisions[:3],
         "plan_status": plan_status,
     }
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
@@ -310,49 +397,137 @@ async def _cybersecurity_stage(request: str, session_id: str) -> dict:
 
 # ── Stage 5: Intent parsing ───────────────────────────────────────────────────
 
-# (keyword list, agent_slug, task_type) — first match wins
-_ROUTING_TABLE: list[tuple[list[str], str, str]] = [
-    (["paper", "article", "literature", "pubmed", "journal", "citation", "reference"],
-     "librarian", "literature"),
-    (["meeting", "transcript", "audio", "attendee", "agenda"],
-     "meeting-memory", "meeting"),
-    (["code", "bug", "script", "shiny", "function", "error", "debug", "r script", "python"],
-     "software-engineer", "code"),
-    (["phd", "thesis", "chapter", "article 1", "article 2", "article 3", "dissertation"],
-     "phd-architect", "phd"),
-    (["write", "draft", "revise", "grammar", "paragraph", "abstract", "introduction"],
-     "writing-partner", "writing"),
-    (["method", "statistic", "sample", "study design", "epidem", "regression", "prevalence"],
-     "methods-coach", "methods"),
-    (["news", "briefing", "world events", "what happened"],
-     "news-radar", "news"),
-    (["ui", "ux", "design", "css", "layout", "visual"],
-     "ux-engineer", "ui"),
-    (["pii", "patient data", "sensitive", "protect", "gdpr"],
-     "data-guardian", "safety"),
-    (["idea", "brainstorm", "connect", "explore", "think"],
-     "metis", "idea"),
+# Routing is DATA, not CODE. Rules live in `agent_routing_rules` (part of the
+# user's institutional memory — persists across Metis CODE updates, stays on the
+# user's machine). Metis ships EMPTY of user data; this table is SEEDED with
+# sensible defaults on first run, then accumulates user-LEARNED rules via
+# record_routing_preference() ("should I always route X to agent Y?"). Matching
+# is word-boundary (so 'ui' no longer matches inside 'build') and most-specific
+# first (low `priority` wins), so a broad keyword can't steal a specialist.
+#
+# (keywords, agent_slug, task_type, priority) — priority asc.
+_DEFAULT_ROUTING_SEED: list[tuple[list[str], str, str, int]] = [
+    # specialists first (low priority) so broad keywords can't grab them
+    (["dhis2", "tracker program", "data element", "org unit", "organisation unit", "program stage"], "dhis2-expert", "dhis2", 10),
+    (["study design", "selection bias", "confounding", "case definition", "outbreak", "surveillance evaluation", "diagnostic accuracy"], "epidemiologist", "epi", 10),
+    (["power calculation", "monte carlo", "simulation study", "r package", "tolerance interval", "dose-response"], "biostatistician", "biostat", 12),
+    (["clean", "duplicates", "missing values", "csv", "excel", "spss", "stata", "dataset", "outlier"], "data-analyst", "data", 12),
+    (["build a course", "curriculum", "lesson plan", "learning objectives", "course outline", "module design"], "course-builder", "course", 12),
+    (["diagram", "ggplot", "plotly", "chart", "figure for", "visualise", "visualize", "system map"], "visualization-maker", "viz", 15),
+    (["harvest", "scrape", "extract from", "youtube", "github readme", "pdf content"], "content-harvester", "harvest", 15),
+    (["knowledge layer", "background corpus", "rag", "build corpus", "index domain"], "background-maker", "background", 15),
+    (["slide", "presentation", "powerpoint", "deck", "speaker notes"], "presentation-maker", "slides", 15),
+    (["cover letter", "job application", "fellowship", "interview prep", "career"], "career-coach", "career", 18),
+    (["learning path", "spaced repetition", "competency", "study plan", "what to study"], "learning-coach", "learning", 18),
+    # the original specialists, now with priorities (broad ones last)
+    (["thesis", "chapter", "article 1", "article 2", "article 3", "dissertation", "phd"], "phd-architect", "phd", 20),
+    (["meeting", "transcript", "attendee", "agenda"], "meeting-memory", "meeting", 25),
+    (["bug", "debug", "shiny", "r script", "python script", "stack trace", "refactor", "fastapi"], "software-engineer", "code", 25),
+    (["sample size", "regression", "prevalence", "statistic", "sampling", "icc", "multilevel"], "methods-coach", "methods", 30),
+    (["revise", "grammar", "paragraph", "abstract", "introduction", "manuscript", "prose"], "writing-partner", "writing", 30),
+    (["paper", "literature", "pubmed", "citation", "reference", "bibliography"], "librarian", "literature", 35),
+    (["news", "briefing", "world events", "what happened"], "news-radar", "news", 35),
+    (["patient data", "pii", "gdpr", "de-identif", "anonymis"], "data-guardian", "safety", 35),
+    (["css", "layout", "ux", "ui design", "design system", "responsive"], "ux-engineer", "ui", 40),
+    (["brainstorm", "connect ideas", "cross-pollinate", "explore connections"], "metis", "idea", 50),
 ]
 
 _DEEP_KEYWORDS = ["review", "critique", "analyse", "analyze", "evaluate", "challenge", "assess"]
 _QUICK_KEYWORDS = ["find", "get", "what is", "list", "show", "check", "status", "how many"]
 _CHAIN_KEYWORDS = ["and also", "then review", "both", "multiple agents", "all three"]
 
+# Back-compat alias for older imports expecting (keywords, agent, task_type) triples.
+_ROUTING_TABLE = [(kws, agent, t) for kws, agent, t, _p in _DEFAULT_ROUTING_SEED]
+
+
+def _ensure_routing_table() -> None:
+    """Create + seed the routing table on first run. Ships empty of user data;
+    seeds are default config. User-learned rules accumulate and persist across
+    CODE updates (they live in the data layer, never the shipped code)."""
+    with connect(paths.db) as con:
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS agent_routing_rules ("
+            " rule_id INTEGER PRIMARY KEY,"
+            " keyword TEXT NOT NULL,"
+            " agent_slug TEXT NOT NULL,"
+            " task_type TEXT,"
+            " priority INTEGER DEFAULT 100,"
+            " match_mode TEXT DEFAULT 'word',"
+            " source TEXT DEFAULT 'seed',"
+            " scope TEXT DEFAULT 'always',"
+            " hits INTEGER DEFAULT 0,"
+            " created_at TEXT DEFAULT (datetime('now')),"
+            " UNIQUE(keyword, agent_slug))"
+        )
+        if con.execute("SELECT COUNT(*) FROM agent_routing_rules").fetchone()[0] == 0:
+            for kws, agent, t, prio in _DEFAULT_ROUTING_SEED:
+                for kw in kws:
+                    con.execute(
+                        "INSERT OR IGNORE INTO agent_routing_rules "
+                        "(keyword, agent_slug, task_type, priority, match_mode, source) "
+                        "VALUES (?, ?, ?, ?, 'word', 'seed')",
+                        (kw.lower(), agent, t, prio),
+                    )
+        con.commit()
+
+
+def _load_routing_rules() -> list[tuple]:
+    """(keyword, agent_slug, task_type, match_mode, rule_id, source), most-specific
+    first. User-learned rules outrank seeds at equal priority."""
+    try:
+        _ensure_routing_table()
+        with connect(paths.db) as con:
+            return con.execute(
+                "SELECT keyword, agent_slug, task_type, match_mode, rule_id, source "
+                "FROM agent_routing_rules WHERE scope = 'always' "
+                "ORDER BY priority ASC, (source='user') DESC, length(keyword) DESC"
+            ).fetchall()
+    except Exception:
+        # DB unavailable → fall back to the in-code seed so routing never dies.
+        return [(kw.lower(), agent, t, "word", -1, "seed")
+                for kws, agent, t, _p in _DEFAULT_ROUTING_SEED for kw in kws]
+
+
+def _kw_match(keyword: str, text: str, mode: str) -> bool:
+    import re
+    if mode == "substring":
+        return keyword in text
+    # Leading word-boundary only: matches the keyword at the start of a word, so
+    # "paper" matches "papers"/"papering" (inflections) but "ui" still does NOT
+    # match inside "build" (no word-start before the 'ui'). Avoids both the
+    # substring over-match and the strict-boundary plural under-match.
+    return re.search(r"\b" + re.escape(keyword), text) is not None
+
 
 def _parse_intent_stage(request: str, session_id: str) -> dict:
-    """Stage 5: Classify task type, select agent(s) and complexity level."""
+    """Stage 5: select agent(s) + complexity from the DB routing rules (seeded +
+    user-learned), word-boundary matched, most-specific first. No match → the
+    generalist 'metis', flagged as an explicit `uncovered` decision so the
+    un-routed rate is measurable rather than a silent default."""
     lower = request.lower()
     agents: list[str] = []
     task_type = "general"
+    matched_rule_id = None
 
-    for keywords, agent, t_type in _ROUTING_TABLE:
-        if any(kw in lower for kw in keywords):
+    for kw, agent, t_type, mode, rule_id, _src in _load_routing_rules():
+        if _kw_match(kw, lower, mode or "word"):
             agents.append(agent)
             task_type = t_type
-            break  # deterministic — first match wins
+            matched_rule_id = rule_id
+            break  # most-specific first; first match wins
 
-    if not agents:
+    uncovered = not agents
+    if uncovered:
         agents = ["metis"]
+        task_type = "uncovered"  # explicit: no specialist matched → generalist
+
+    if matched_rule_id and matched_rule_id > 0:
+        try:
+            with connect(paths.db) as con:
+                con.execute("UPDATE agent_routing_rules SET hits = hits + 1 WHERE rule_id = ?", (matched_rule_id,))
+                con.commit()
+        except Exception:
+            pass
 
     word_count = len(lower.split())
     if any(kw in lower for kw in _CHAIN_KEYWORDS):
@@ -364,7 +539,178 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
     else:
         complexity = "standard"
 
-    return {"agents": agents, "complexity": complexity, "task_type": task_type}
+    return {"agents": agents, "complexity": complexity, "task_type": task_type, "uncovered": uncovered}
+
+
+@app.tool()
+def record_routing_preference(phrase: str, agent_slug: str, scope: str = "always", priority: int = 5) -> str:
+    """Active-learning routing. After Metis asks the user 'should I always route
+    requests like this to <agent>, or just this once?', call this with their answer.
+
+    scope='always' writes a permanent, high-priority rule (beats the built-in seeds)
+    into the routing DB — part of institutional memory, persists across Metis updates.
+    scope='once' is acknowledged but not stored.
+
+    Args:
+        phrase: the trigger word/phrase the user wants routed (e.g. "spatial scan").
+        agent_slug: which agent to route it to (e.g. "epidemiologist").
+        scope: 'always' (persist) or 'once' (don't store).
+        priority: lower = more specific / checked first (default 5 beats all seeds).
+    """
+    phrase = (phrase or "").strip().lower()
+    if not phrase or not agent_slug:
+        return "Could not record: both a phrase and an agent_slug are required."
+    if scope != "always":
+        return f"Noted for this once — '{phrase}' → {agent_slug}. Not stored as a standing rule."
+    _ensure_routing_table()
+    with connect(paths.db) as con:
+        con.execute(
+            "INSERT INTO agent_routing_rules "
+            "(keyword, agent_slug, task_type, priority, match_mode, source, scope) "
+            "VALUES (?, ?, 'user-defined', ?, 'word', 'user', 'always') "
+            "ON CONFLICT(keyword, agent_slug) DO UPDATE SET "
+            "priority=excluded.priority, source='user', scope='always'",
+            (phrase, agent_slug, priority),
+        )
+        con.commit()
+    return f"Learned: I'll always route '{phrase}' to the {agent_slug} from now on. (Stored in your routing memory.)"
+
+
+# ── Personalization layer — the decision/preference database ──────────────────
+# Metis grows with the user: preferences (coding style, citation style, methods
+# defaults), recurring references (articles, datasets), and explicit decisions are
+# recorded here and recalled into context on every request. Part of institutional
+# memory — persists across updates, stays on the user's machine.
+
+def _ensure_decisions_table() -> None:
+    with connect(paths.db) as con:
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS user_decisions ("
+            " decision_id INTEGER PRIMARY KEY,"
+            " category TEXT,"            # preference | coding | citation | methodology | writing | article-ref | dataset | routing | other
+            " decision TEXT NOT NULL,"
+            " context TEXT,"
+            " scope TEXT DEFAULT 'always',"   # always | once
+            " source TEXT DEFAULT 'user',"
+            " hits INTEGER DEFAULT 0,"
+            " created_at TEXT DEFAULT (datetime('now')))"
+        )
+        con.commit()
+
+
+@app.tool()
+def record_decision(decision: str, category: str = "preference", context: str = "", scope: str = "always") -> str:
+    """Record a user preference or decision so Metis adapts to the user over time.
+
+    Use this whenever the user states (or confirms) a standing preference or makes a
+    decision worth remembering — coding style, citation format, a methods default, an
+    article/dataset they keep returning to, a naming convention, a workflow choice.
+    These are recalled into context on future requests (recall_decisions), so Metis
+    personalizes instead of asking again.
+
+    Args:
+        decision: the preference/decision in plain language (e.g. "Always use tidyverse style in R, never base apply").
+        category: preference | coding | citation | methodology | writing | article-ref | dataset | routing | other.
+        context: optional — when/why it applies (e.g. "for HAT spatial analyses").
+        scope: 'always' (persist) or 'once'.
+    """
+    decision = (decision or "").strip()
+    if not decision:
+        return "Could not record: a decision/preference text is required."
+    if scope != "always":
+        return f"Noted for this once: {decision}"
+    _ensure_decisions_table()
+    with connect(paths.db) as con:
+        con.execute(
+            "INSERT INTO user_decisions (category, decision, context, scope, source) "
+            "VALUES (?, ?, ?, 'always', 'user')",
+            (category, decision, context),
+        )
+        con.commit()
+    return f"Recorded ({category}): {decision}. I'll apply this going forward."
+
+
+@app.tool()
+def recall_decisions(category: str = "", limit: int = 30) -> str:
+    """Recall the user's recorded preferences/decisions to personalize a response.
+    Called during context assembly (and any time Metis is about to act in a way a
+    preference might govern). Empty category returns all categories.
+
+    Args:
+        category: filter to one category, or '' for all.
+        limit: max rows.
+    """
+    try:
+        _ensure_decisions_table()
+        with connect(paths.db) as con:
+            if category:
+                rows = con.execute(
+                    "SELECT category, decision, context FROM user_decisions "
+                    "WHERE scope='always' AND category=? ORDER BY created_at DESC LIMIT ?",
+                    (category, limit),
+                ).fetchall()
+            else:
+                rows = con.execute(
+                    "SELECT category, decision, context FROM user_decisions "
+                    "WHERE scope='always' ORDER BY created_at DESC LIMIT ?",
+                    (limit,),
+                ).fetchall()
+    except Exception as e:
+        return f"(could not read decisions: {e})"
+    if not rows:
+        return "No recorded preferences yet."
+    lines = [f"- [{c}] {d}" + (f" — {ctx}" if ctx else "") for c, d, ctx in rows]
+    return "Recorded preferences & decisions:\n" + "\n".join(lines)
+
+
+@app.tool()
+def evaluate_against_layers(answer: str, session_id: str = "", task_type: str = "") -> str:
+    """Stage 6 — the evaluate gate. BEFORE you reply to the user, pass your drafted
+    answer here. It checks the answer against the user's layers — recorded preferences,
+    persona voice, institutional facts — and surfaces any conflict to fix first.
+
+    Returns a verdict (OK / REVIEW), the preferences this answer must honor, and any
+    detected conflicts (e.g. a 'never use base apply' preference when the answer shows
+    `apply(`). Resolve REVIEW items before replying.
+
+    Args:
+        answer: your drafted answer text.
+        session_id: current session (optional).
+        task_type: optional routing task_type for narrower preference recall.
+    """
+    import re as _re
+    issues: list[str] = []
+    prefs: list[str] = []
+    try:
+        _ensure_decisions_table()
+        with connect(paths.db) as con:
+            rows = con.execute(
+                "SELECT category, decision, context FROM user_decisions "
+                "WHERE scope='always' ORDER BY created_at DESC LIMIT 30"
+            ).fetchall()
+        low = (answer or "").lower()
+        for r in rows:
+            d = r["decision"]
+            prefs.append(f"[{r['category']}] {d}")
+            # lint: a "never/avoid/don't X" preference whose key token appears in the answer
+            for m in _re.finditer(r"(?:never|avoid|don'?t|do not|no)\s+(?:use\s+)?([a-z0-9_.()+ -]{3,40})", d.lower()):
+                phrase = m.group(1).strip(" .")
+                toks = [t for t in phrase.split() if len(t) >= 4]
+                hit = next((t for t in toks if t in low), "")
+                if hit:
+                    issues.append(f"Possible conflict with '{d}' — the answer mentions '{hit}'.")
+    except Exception as e:
+        return f"(could not evaluate: {e})"
+
+    verdict = "REVIEW" if issues else "OK"
+    out = [f"**Evaluation against your layers: {verdict}**"]
+    if issues:
+        out += ["", "Resolve before replying:"] + [f"- {i}" for i in issues]
+    if prefs:
+        out += ["", "Preferences this answer must honor:"] + [f"- {p}" for p in prefs[:10]]
+    out += ["", "Also confirm: the answer is in the persona voice (warm, plain, addressed to the user) "
+            "and does not contradict the institutional context you were given."]
+    return "\n".join(out)
 
 
 # ── Stage 6: Token budget allocation ──────────────────────────────────────────
@@ -413,15 +759,48 @@ def _assemble_context_stage(intent: dict, session_id: str) -> str:
     except Exception:
         pass
 
-    if not rows:
-        return ""
-
     parts = [
         f"- [{r['title']}] {(r['summary'] or '')[:120]}"
         for r in rows
         if r["title"]
     ]
-    return "Recent context:\n" + "\n".join(parts) if parts else ""
+    recent = "Recent context:\n" + "\n".join(parts) if parts else ""
+
+    # Stage 3 woven into 7: the user's standing preferences/decisions, pulled in on
+    # EVERY request so the answer respects them without re-asking. Personalization.
+    pref_block = ""
+    try:
+        _ensure_decisions_table()
+        cat_map = {
+            "code": ("coding",), "project": ("coding",),
+            "methods": ("methodology",), "epi": ("methodology",), "biostat": ("methodology",),
+            "writing": ("writing", "citation"), "literature": ("citation", "article-ref"),
+            "phd": ("writing", "methodology"),
+        }
+        cats = cat_map.get(task_type, ())
+        with connect(paths.db) as con:
+            if cats:
+                ph = ",".join("?" * len(cats))
+                prows = con.execute(
+                    "SELECT category, decision, context FROM user_decisions "
+                    f"WHERE scope='always' AND (category='preference' OR category IN ({ph})) "
+                    "ORDER BY created_at DESC LIMIT 8",
+                    tuple(cats),
+                ).fetchall()
+            else:
+                prows = con.execute(
+                    "SELECT category, decision, context FROM user_decisions "
+                    "WHERE scope='always' ORDER BY created_at DESC LIMIT 8",
+                ).fetchall()
+        if prows:
+            pref_block = "Your standing preferences (apply these):\n" + "\n".join(
+                f"- [{r['category']}] {r['decision']}" + (f" — {r['context']}" if r['context'] else "")
+                for r in prows
+            )
+    except Exception:
+        pass
+
+    return "\n\n".join(b for b in (pref_block, recent) if b)
 
 
 # ── Stage 8: save_session_event (MCP tool) ────────────────────────────────────
@@ -652,7 +1031,24 @@ async def run_metis(
         f"- `log_agent_run(agent_slug='{intent['agents'][0]}', ..., session_id='{session_id}')` — audit trail",
         f"- `write_reflexion(session_id='{session_id}', agent_slug='{intent['agents'][0]}', ...)` — self-critique",
         "",
+        f"**Stage 6 — evaluate before returning:** pass your drafted answer to "
+        f"`evaluate_against_layers(answer, session_id='{session_id}')` — it checks against the "
+        f"persona voice, the institutional context, and the user's standing preferences and "
+        f"flags conflicts. Resolve any REVIEW items before replying.",
     ]
+    # ── Stage 7 — active learning: grow the routing + decision memory ──────
+    if intent.get("uncovered"):
+        lines.append(
+            "**No specialist matched (uncovered)** — handling directly. If requests like this "
+            "should go to a specific agent in future, ask the user \"always or just this once?\" "
+            "and call `record_routing_preference(phrase, agent_slug, scope)`."
+        )
+    lines.append(
+        "**If the user states or confirms a standing preference** (coding/citation/methods style, "
+        "a paper or dataset they rely on, a naming or workflow choice), record it with "
+        "`record_decision(decision, category, scope='always')` so Metis applies it next time."
+    )
+    lines.append("")
     if context:
         lines += ["**Context for agent:**", context, ""]
     if constitution:

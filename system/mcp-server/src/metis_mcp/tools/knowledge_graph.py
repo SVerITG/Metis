@@ -457,3 +457,234 @@ async def kg_community(
     lines.append(f"Total: {total} related notes within {depth} hops")
 
     return [TextContent(type="text", text="\n".join(lines))]
+
+
+# ---------------------------------------------------------------------------
+# Phase D: Memory graph — link memory entries by shared topics/scopes
+# ---------------------------------------------------------------------------
+
+_MEMORY_LINKS_DDL = """
+CREATE TABLE IF NOT EXISTS memory_links (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_type  TEXT NOT NULL,
+    source_id    TEXT NOT NULL,
+    target_type  TEXT NOT NULL,
+    target_id    TEXT NOT NULL,
+    link_type    TEXT NOT NULL DEFAULT 'topic',
+    label        TEXT DEFAULT '',
+    created_at   TEXT DEFAULT (datetime('now'))
+);
+"""
+_MEMORY_LINKS_IDX = """
+CREATE UNIQUE INDEX IF NOT EXISTS idx_memory_links_uniq
+    ON memory_links(source_type, source_id, target_type, target_id, link_type);
+"""
+
+
+def _ensure_memory_links(conn):
+    conn.execute(_MEMORY_LINKS_DDL)
+    try:
+        conn.execute(_MEMORY_LINKS_IDX)
+    except Exception:
+        pass
+    conn.commit()
+
+
+@app.tool()
+async def kg_index_memory() -> list[TextContent]:
+    """Build a knowledge graph from memory entries, linking items by shared topics.
+
+    Scans memory_entries, episodic_memory, semantic_memory, and ideas,
+    extracts their topic tags, and creates bidirectional edges between
+    items that share topics. This makes cross-pollination between memory
+    layers discoverable via kg_memory_connections().
+
+    Takes no arguments. Safe to re-run (uses REPLACE semantics).
+
+    Returns:
+        Summary of nodes and edges indexed.
+    """
+    with connect(paths.db) as conn:
+        _ensure_memory_links(conn)
+        conn.execute("DELETE FROM memory_links")
+        conn.commit()
+
+        # Collect all tagged items: (type, id, set_of_topics)
+        items: list[tuple[str, str, set]] = []
+
+        # Memory palace entries
+        try:
+            rows = conn.execute(
+                "SELECT entry_id, topics FROM memory_entries WHERE topics IS NOT NULL AND topics != ''"
+            ).fetchall()
+            for r in rows:
+                topics = {t.strip().lower() for t in (r["topics"] or "").split(",") if t.strip()}
+                if topics:
+                    items.append(("memory", r["entry_id"], topics))
+        except Exception:
+            pass
+
+        # Episodic memory
+        try:
+            rows = conn.execute(
+                "SELECT id, metadata, agent_id FROM episodic_memory"
+            ).fetchall()
+            for r in rows:
+                topics = set()
+                try:
+                    import json as _json
+                    meta = _json.loads(r["metadata"] or "{}")
+                    for t in (meta.get("tags") or "").split(","):
+                        t = t.strip().lower()
+                        if t:
+                            topics.add(t)
+                except Exception:
+                    pass
+                if r["agent_id"]:
+                    topics.add(f"agent:{r['agent_id']}")
+                if topics:
+                    items.append(("episodic", str(r["id"]), topics))
+        except Exception:
+            pass
+
+        # Semantic memory
+        try:
+            rows = conn.execute(
+                "SELECT id, related_concepts, agent_id FROM semantic_memory"
+            ).fetchall()
+            for r in rows:
+                topics = set()
+                for t in (r["related_concepts"] or "").split(","):
+                    t = t.strip().lower()
+                    if t:
+                        topics.add(t)
+                if r["agent_id"]:
+                    topics.add(f"agent:{r['agent_id']}")
+                if topics:
+                    items.append(("semantic", str(r["id"]), topics))
+        except Exception:
+            pass
+
+        # Ideas
+        try:
+            rows = conn.execute(
+                "SELECT id, tags, domain_links FROM ideas WHERE tags IS NOT NULL"
+            ).fetchall()
+            for r in rows:
+                topics = set()
+                for t in (r["tags"] or "").split(","):
+                    t = t.strip().lower()
+                    if t:
+                        topics.add(t)
+                for t in (r["domain_links"] or "").split(","):
+                    t = t.strip().lower()
+                    if t:
+                        topics.add(t)
+                if topics:
+                    items.append(("idea", str(r["id"]), topics))
+        except Exception:
+            pass
+
+        # Build edges between items sharing at least one topic
+        edges = 0
+        for i in range(len(items)):
+            for j in range(i + 1, len(items)):
+                shared = items[i][2] & items[j][2]
+                if shared:
+                    label = ", ".join(sorted(shared)[:3])
+                    conn.execute(
+                        """INSERT OR REPLACE INTO memory_links
+                           (source_type, source_id, target_type, target_id, link_type, label)
+                           VALUES (?, ?, ?, ?, 'topic', ?)""",
+                        (items[i][0], items[i][1], items[j][0], items[j][1], label),
+                    )
+                    conn.execute(
+                        """INSERT OR REPLACE INTO memory_links
+                           (source_type, source_id, target_type, target_id, link_type, label)
+                           VALUES (?, ?, ?, ?, 'topic', ?)""",
+                        (items[j][0], items[j][1], items[i][0], items[i][1], label),
+                    )
+                    edges += 1
+
+        conn.commit()
+
+    return [TextContent(
+        type="text",
+        text=f"Memory graph indexed: {len(items)} nodes, {edges * 2} directed edges "
+             f"({edges} bidirectional pairs) from shared topics.",
+    )]
+
+
+@app.tool()
+async def kg_memory_connections(
+    entry_type: str,
+    entry_id: str,
+    depth: int = 2,
+) -> list[TextContent]:
+    """Find memory entries connected to a given entry via shared topics.
+
+    Uses the memory_links graph built by kg_index_memory(). BFS flood-fill
+    from the given entry up to `depth` hops.
+
+    Args:
+        entry_type: Type of the starting entry: 'memory', 'episodic', 'semantic', or 'idea'.
+        entry_id: ID of the entry (entry_id for memory, numeric id for others).
+        depth: Maximum hop distance (default 2).
+
+    Returns:
+        Connected entries grouped by distance, with their shared topics.
+    """
+    with connect(paths.db) as conn:
+        _ensure_memory_links(conn)
+
+        rows = conn.execute(
+            """SELECT source_type, source_id, target_type, target_id, label
+               FROM memory_links"""
+        ).fetchall()
+
+    # Build adjacency
+    adj: dict[str, list[tuple[str, str]]] = {}
+    for r in rows:
+        src_key = f"{r['source_type']}:{r['source_id']}"
+        tgt_key = f"{r['target_type']}:{r['target_id']}"
+        adj.setdefault(src_key, []).append((tgt_key, r["label"] or ""))
+
+    start = f"{entry_type}:{entry_id}"
+    if start not in adj:
+        return [TextContent(
+            type="text",
+            text=f"Entry not in memory graph: {start}\nRun kg_index_memory() first.",
+        )]
+
+    # BFS
+    visited = {start: 0}
+    queue = deque([(start, 0)])
+    levels: dict[int, list[tuple[str, str]]] = {}
+
+    while queue:
+        current, d = queue.popleft()
+        if d >= depth:
+            continue
+        for neighbor, label in adj.get(current, []):
+            if neighbor not in visited:
+                visited[neighbor] = d + 1
+                levels.setdefault(d + 1, []).append((neighbor, label))
+                queue.append((neighbor, d + 1))
+
+    lines = [f"Connections from {start}:", ""]
+    for level in range(1, depth + 1):
+        nodes = levels.get(level, [])
+        if not nodes:
+            continue
+        lines.append(f"Hop {level} ({len(nodes)} entries):")
+        for node, label in sorted(nodes):
+            lines.append(f"  - {node} (shared: {label})")
+        lines.append("")
+
+    total = sum(len(v) for v in levels.values())
+    if total == 0:
+        lines.append("No connections found.")
+    else:
+        lines.append(f"Total: {total} connected entries within {depth} hops")
+
+    return [TextContent(type="text", text="\n".join(lines))]
