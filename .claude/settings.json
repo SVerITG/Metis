@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \".claude/hooks/pre-tool-use.mjs\""
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-tool-use.mjs\""
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \".claude/hooks/post-tool-use.mjs\""
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use.mjs\""
           }
         ]
       }
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \".claude/hooks/stop.mjs\""
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop.mjs\""
           }
         ]
       }
@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \".claude/hooks/pre-compact.mjs\""
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-compact.mjs\""
           }
         ]
       }
