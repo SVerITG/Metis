@@ -58,6 +58,8 @@ aliases:
   paperqa:      haiku_synthesis    # paperqa_search.py LLM + summary_llm
   proposals:    haiku_synthesis    # improvement.py proposal drafts
   cache:        sonnet_default     # cache_helpers.py default
+  brief_weekly:  sonnet_default     # weekly brief (deeper synthesis)
+  brief_catchup: sonnet_default     # catch-up brief after absence
 
 # ---------------------------------------------------------------------------
 # Probe schedule — how often to test model availability

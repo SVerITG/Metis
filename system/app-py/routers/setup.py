@@ -153,21 +153,45 @@ async def api_key_status(request: Request):
     if _os.environ.get("METIS_DEMO") == "1":
         return HTMLResponse("")
     key = _os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    # Also honor a key saved to system/.env even if THIS process hasn't reloaded
+    # its environment — OR if the env holds a bad/leaked value (not a real key).
+    # Without this the banner nags forever despite a valid key sitting in .env.
+    if not (key.startswith("sk-ant-") and len(key) > 40):
+        try:
+            from pathlib import Path as _Path
+            _rc = _os.environ.get("METIS_RC_ROOT", "")
+            if _rc:
+                _envf = _Path(_rc) / "system" / ".env"
+                if _envf.exists():
+                    for _line in _envf.read_text(encoding="utf-8").splitlines():
+                        if _line.strip().startswith("ANTHROPIC_API_KEY="):
+                            key = _line.split("=", 1)[1].strip().strip('"').strip("'")
+                            break
+        except Exception:
+            pass
     if key and key.startswith("sk-ant-") and len(key) > 40:
         return HTMLResponse("")  # key looks valid → no banner
     return HTMLResponse("""
-<div style="background:linear-gradient(180deg,#fef7e0,#fbeec0);border-bottom:1px solid #d4b659;
+<div id="api-key-banner" style="background:linear-gradient(180deg,#fef7e0,#fbeec0);border-bottom:1px solid #d4b659;
      padding:10px 24px;display:flex;align-items:center;gap:14px;font-family:var(--m-display);font-size:13px;color:#5b4a17;">
   <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="#7a5a13" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
     <path d="M8 1.5L1.5 13.5h13z"/><line x1="8" y1="6" x2="8" y2="9.5"/><circle cx="8" cy="11.5" r=".7" fill="#7a5a13"/>
   </svg>
   <div style="flex:1;line-height:1.5;">
     <strong>I'm running without an API key.</strong>
-    The morning brief, retrieval, and Claude-backed agents need
-    <code style="font-family:var(--m-mono);font-size:12px;background:rgba(0,0,0,.06);padding:1px 5px;border-radius:3px;">ANTHROPIC_API_KEY</code>
-    to work. Get a key at <a href="https://console.anthropic.com" target="_blank" rel="noopener" style="color:#5b4a17;text-decoration:underline;">console.anthropic.com</a>, then set it as a Windows user env variable (Start → Edit environment variables for your account → New).
+    The morning brief, retrieval, and Claude-backed agents need an Anthropic key. Get one at
+    <a href="https://console.anthropic.com" target="_blank" rel="noopener" style="color:#5b4a17;text-decoration:underline;">console.anthropic.com</a>
+    and paste it here — Metis saves it locally for you, no setup:
+    <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap;">
+      <input id="inline-api-key" type="password" placeholder="sk-ant-..." autocomplete="off" spellcheck="false"
+             style="font-family:var(--m-mono);font-size:12px;padding:6px 10px;border:1px solid #b8983e;border-radius:3px;min-width:300px;background:#fff;color:#3a2f10;">
+      <button onclick="saveInlineApiKey(this)"
+              style="background:#7a5a13;border:1px solid #7a5a13;color:#fff;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;padding:6px 14px;border-radius:3px;cursor:pointer;">SAVE KEY</button>
+      <span id="inline-api-key-msg" style="font-size:11.5px;color:#7a5a13;"></span>
+    </div>
     <div style="margin-top:6px;font-size:11.5px;color:#7a5a13;font-style:italic;">
-      Already set it? Close and reopen Claude Code — the WSL session inherits the value at startup, not while it's running.
+      Saved to <code style="font-family:var(--m-mono);">system/.env</code> on your machine — never uploaded.
+      (A Windows environment variable won't work here: Metis runs inside WSL and can't read them.)
     </div>
   </div>
   <button onclick="this.parentElement.style.display='none'"
@@ -175,6 +199,25 @@ async def api_key_status(request: Request):
     HIDE
   </button>
 </div>
+<script>
+function saveInlineApiKey(btn){
+  var el=document.getElementById('inline-api-key'), msg=document.getElementById('inline-api-key-msg');
+  var v=(el.value||'').trim();
+  if(!v){ msg.textContent='Paste your key first.'; return; }
+  if(v.indexOf('sk-ant-')!==0){ msg.textContent='That doesn\\'t look like an Anthropic key (starts with sk-ant-).'; return; }
+  btn.disabled=true; msg.textContent='Saving…';
+  fetch('/api/settings/api-key',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name:'ANTHROPIC_API_KEY',value:v})})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.status==='ok'){ el.value='';
+        msg.innerHTML='✓ Saved and applied — you\\'re all set.';
+        var b=document.getElementById('api-key-banner'); if(b){ setTimeout(function(){ b.style.display='none'; }, 1200); } }
+      else { msg.textContent='Error: '+(d.message||'could not save'); btn.disabled=false; }
+    })
+    .catch(function(){ msg.textContent='Error saving — try the Metis tab → API keys.'; btn.disabled=false; });
+}
+</script>
 """)
 
 

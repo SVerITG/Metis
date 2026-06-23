@@ -173,3 +173,32 @@ its contract), and **update flows** must never overwrite them.
 - ⏳ One-command `metis update` flow with the data-dir list as its contract + pre-update
   encrypted backup + additive migrations.
 - ⏳ LLM fallback router for `uncovered` turns.
+
+---
+
+## 6. Run targets & installers (who runs Metis, and how)
+
+Metis is cross-platform Python (FastAPI dashboard + MCP server); none of the stack
+requires Linux. WSL is the *most fragile* Windows path (env-var invisibility,
+OneDrive/DrvFs WAL corruption, path translation, interop). So Metis ships **multiple
+run targets**, each with its own installer, split by audience:
+
+| Target | Audience | Installer | Stability | Notes |
+|---|---|---|---|---|
+| **Bundled `.exe`** (PyInstaller) | **End users** (default) | one double-click `MetisSetup.exe` | ★★★ | No Python, no WSL, no venv. The non-technical path. **Primary user installer.** |
+| **Native Windows Python** | Developers / power users on Windows | scripted venv install | ★★★ | No WSL layer → removes env-var, DrvFs/WAL, path-translation issues. |
+| **Native macOS / Linux** | Developers | `setup-mcp.sh` | ★★★ | Already native; no WSL. |
+| **Docker** | Developers / servers | `docker-compose` | ★★ | Reproducible; Docker Desktop itself is heavy (WSL2/Hyper-V). |
+| **WSL** | Developers only (legacy) | current Windows path | ★ | Keep as dev fallback; **not** the recommended user path. |
+
+**Direction:** the **`.exe` is the default for end users**; native Windows Python / macOS /
+Linux / Docker are **developer** targets; WSL is demoted to a legacy dev fallback. Moving
+the user default off WSL removes the largest class of "Metis is down" causes (all the
+boundary issues this strategy documents).
+
+Build status: the PyInstaller scaffolding for the bundled `.exe` now **exists** at
+`system/install/installer/pyinstaller/` (launcher with `dashboard`/`mcp` subcommands, spec,
+Windows build script, README) — syntax + dispatch validated. ⏳ The `.exe` itself is **not yet
+built** (needs a Windows Python host: `build-bundled-exe.ps1`) and the Inno `bundled`
+`DefaultType` wiring is the remaining step. The Inno Setup developer installer + Docker matrix
+already exist. The Release Coordinator owns building/shipping these variants (see its skill).

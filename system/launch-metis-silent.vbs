@@ -27,8 +27,10 @@ End If
 ' Launch dashboard silently (windowStyle=0 hides the terminal)
 WshShell.Run "wsl.exe -- bash " & Chr(34) & wslDir & "/app-py/run.sh" & Chr(34), 0, False
 
-' Give run.sh a moment to choose a port and write the port file
-WScript.Sleep 3000
+' Give run.sh a moment to choose a port and write the port file. With autostart
+' the server is usually already running, so keep this short — the poll below
+' opens the browser the instant the dashboard answers.
+WScript.Sleep 600
 
 ' Read the port actually selected by run.sh (written to .metis-port before exec)
 Dim port

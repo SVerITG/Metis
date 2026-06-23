@@ -23,18 +23,36 @@ export METIS_RC_ROOT="${METIS_RC_ROOT:-$METIS_ROOT}"
 export PYTHONPATH="$SITE_PKG:$MCP_SRC:$APP_DIR"
 export PATH="$HOME/.local/bin:$PATH"
 
+# Corporate proxy SSL fix: Python's httpx/requests use certifi's CA bundle by
+# default, which doesn't include the ITG root CA. Point them at the system
+# bundle which has itg-root-ca.pem, so HuggingFace model downloads and any
+# other HTTPS calls through the proxy succeed.
+_SYS_CA="/etc/ssl/certs/ca-certificates.crt"
+if [ -f "$_SYS_CA" ]; then
+    export SSL_CERT_FILE="$_SYS_CA"
+    export REQUESTS_CA_BUNDLE="$_SYS_CA"
+fi
+
 # AI features — set ANTHROPIC_API_KEY in system/.env (next to this file's parent folder).
 # WSL interop is disabled on this machine so Windows environment variables are not
 # visible to WSL processes. The key must be in system/.env or exported before launch.
-if [ -z "${ANTHROPIC_API_KEY}" ]; then
-    _env_file="$METIS_ROOT/system/.env"
-    if [ -f "$_env_file" ]; then
-        _file_key=$(grep -m1 '^ANTHROPIC_API_KEY=' "$_env_file" | cut -d= -f2-)
-        [ -n "$_file_key" ] && export ANTHROPIC_API_KEY="$_file_key"
-        unset _file_key
-    fi
-    unset _env_file
-fi
+# Load the key from system/.env unless a REAL one (sk-ant-…) is already exported.
+# A leaked/placeholder ANTHROPIC_API_KEY — e.g. a stray Windows env var passed in
+# through WSL interop — used to win over .env and silently break every API call
+# (no brief, "running without a key" banner). So .env now also overrides any value
+# that doesn't look like a real key. Also strips CR (Windows line endings) + quotes.
+case "${ANTHROPIC_API_KEY}" in
+    sk-ant-*) : ;;   # already a valid key — keep it
+    *)
+        _env_file="$METIS_ROOT/system/.env"
+        if [ -f "$_env_file" ]; then
+            _file_key=$(grep -m1 '^ANTHROPIC_API_KEY=' "$_env_file" | cut -d= -f2- | tr -d '\r' | sed 's/^"//; s/"$//')
+            [ -n "$_file_key" ] && export ANTHROPIC_API_KEY="$_file_key"
+            unset _file_key
+        fi
+        unset _env_file
+        ;;
+esac
 # To set the key: add ANTHROPIC_API_KEY=sk-ant-... to system/.env (one line, no quotes).
 
 cd "$APP_DIR"

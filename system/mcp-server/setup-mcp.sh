@@ -292,6 +292,16 @@ export METIS_TOOL_SUBSETS=1
 # are retrieved on demand via find_tools()/load_tool_group(). Cuts the loaded
 # toolset ~60% with nothing made unreachable. Set to 0 to load all tools.
 export METIS_TOOL_SEARCH=1
+
+# Corporate proxy SSL fix: point Python's httpx/requests at the system CA bundle
+# (includes institutional root CAs like ITG's pa-ca.itg.be) so HuggingFace model
+# downloads and other HTTPS calls succeed behind intercepting proxies.
+_SYS_CA="/etc/ssl/certs/ca-certificates.crt"
+if [ -f "\$_SYS_CA" ]; then
+    export SSL_CERT_FILE="\$_SYS_CA"
+    export REQUESTS_CA_BUNDLE="\$_SYS_CA"
+fi
+
 exec "\$VENV_DIR/bin/python3" -m metis_mcp.server
 RUNSH
 chmod +x "$RUN_SCRIPT"
