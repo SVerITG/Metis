@@ -1252,6 +1252,11 @@ async def set_api_key(request: Request):
     env[name] = value
     try:
         _write_env(env)
+        # Apply to the RUNNING process immediately so the key works without a
+        # restart — otherwise the user pastes a key, nothing changes in this
+        # process, and the banner keeps nagging ("it keeps asking for my key").
+        import os as _os
+        _os.environ[name] = value
         return JSONResponse({"status": "ok", "name": name, "masked": _mask_value(name, value)})
     except Exception as e2:
         return JSONResponse({"status": "error", "message": str(e2)}, status_code=500)

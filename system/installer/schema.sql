@@ -242,7 +242,8 @@ CREATE TABLE IF NOT EXISTS learning_courses (
     current_lesson    TEXT DEFAULT '',
     next_lesson       TEXT DEFAULT '',
     course_url        TEXT DEFAULT '',
-    lesson_notes      TEXT DEFAULT ''
+    lesson_notes      TEXT DEFAULT '',
+    updated_at        TEXT DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS learning_resources (
@@ -566,7 +567,7 @@ CREATE TABLE IF NOT EXISTS skill_improvement_proposals (
 );
 
 CREATE TABLE IF NOT EXISTS spaced_repetition (
-    sr_id         TEXT PRIMARY KEY,
+    sr_id         INTEGER PRIMARY KEY AUTOINCREMENT,
     source_table  TEXT NOT NULL,
     source_id     TEXT NOT NULL,
     front_text    TEXT,
@@ -575,7 +576,33 @@ CREATE TABLE IF NOT EXISTS spaced_repetition (
     interval_days INTEGER DEFAULT 1,
     ease_factor   REAL DEFAULT 2.5,
     repetitions   INTEGER DEFAULT 0,
-    created_at    TEXT NOT NULL
+    created_at    TEXT NOT NULL,
+    reviewed_at   TEXT DEFAULT NULL
+);
+
+CREATE TABLE IF NOT EXISTS lesson_completions (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    course_slug  TEXT NOT NULL,
+    lesson_id    TEXT NOT NULL,
+    completed_at TEXT NOT NULL,
+    UNIQUE(course_slug, lesson_id)
+);
+
+CREATE TABLE IF NOT EXISTS course_builds (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug             TEXT NOT NULL UNIQUE,
+    title            TEXT NOT NULL,
+    topic            TEXT NOT NULL,
+    target_audience  TEXT DEFAULT '',
+    duration_hours   INTEGER DEFAULT 0,
+    status           TEXT DEFAULT 'intake',
+    step             INTEGER DEFAULT 1,
+    intake_json      TEXT DEFAULT '{}',
+    outline_json     TEXT DEFAULT '[]',
+    sources_dir      TEXT DEFAULT '',
+    notes            TEXT DEFAULT '',
+    created_at       TEXT NOT NULL,
+    updated_at       TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS talks (
