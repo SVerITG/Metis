@@ -1,0 +1,223 @@
+<!-- learning_course_wizard.html — 4-screen intake wizard for course building.
+     Follows the .metis-modal-overlay + .metis-modal pattern (styles.css:1767-1835). -->
+
+<div class="metis-modal-overlay" id="course-wizard-overlay" data-open="false"
+     onclick="if(event.target===this)closeCourseWizard()">
+  <div class="metis-modal" style="max-width:600px;">
+
+    <!-- ─── Step indicator ──────────────────────────────────────────── -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+      <div class="cw-dots" id="cw-dots">
+        <span class="cw-dot dot--active" data-step="1"></span>
+        <span class="cw-dot" data-step="2"></span>
+        <span class="cw-dot" data-step="3"></span>
+        <span class="cw-dot" data-step="4"></span>
+      </div>
+      <span id="cw-step-title"
+            style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;">
+        STEP 1 OF 4
+      </span>
+    </div>
+
+    <!-- Hidden context fields -->
+    <input type="hidden" id="cw-slug" value="">
+    <input type="hidden" id="cw-title-original" value="">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCREEN 1 — "Who is this for?"
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="cw-step-1" class="cw-step">
+      <h3>Who is this for?</h3>
+      <div class="metis-modal-sub">Set up the audience and depth for your course.</div>
+
+      <label for="cw-title">Course title</label>
+      <input type="text" id="cw-title" placeholder="e.g. Network Analysis in R">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label for="cw-learner">Learner</label>
+          <select id="cw-learner">
+            <option value="yourself" selected>Yourself</option>
+            <option value="colleagues">Colleagues</option>
+            <option value="students">Students</option>
+          </select>
+        </div>
+        <div>
+          <label for="cw-level">Prior level</label>
+          <select id="cw-level">
+            <option value="none">None</option>
+            <option value="aware">Aware</option>
+            <option value="working" selected>Working knowledge</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="cw-time">Time budget</label>
+      <select id="cw-time">
+        <option value="< 2 hours">&lt; 2 hours</option>
+        <option value="1 weekend" selected>1 weekend</option>
+        <option value="1 month">1 month</option>
+        <option value="open-ended">Open-ended</option>
+      </select>
+
+      <label>Scope</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="cw-scope-cards">
+        <label class="cw-radio-card" onclick="_cwUpdateRadioCards('cw-scope')">
+          <input type="radio" name="cw-scope" value="introductory">
+          <strong style="font-size:13px;">Introductory</strong>
+          <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Broad overview, no prerequisites</div>
+        </label>
+        <label class="cw-radio-card card--selected" onclick="_cwUpdateRadioCards('cw-scope')">
+          <input type="radio" name="cw-scope" value="practical" checked>
+          <strong style="font-size:13px;">Practical</strong>
+          <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Hands-on skills you can use right away</div>
+        </label>
+        <label class="cw-radio-card" onclick="_cwUpdateRadioCards('cw-scope')">
+          <input type="radio" name="cw-scope" value="comprehensive">
+          <strong style="font-size:13px;">Comprehensive</strong>
+          <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Deep dive with theory + practice</div>
+        </label>
+        <label class="cw-radio-card" onclick="_cwUpdateRadioCards('cw-scope')">
+          <input type="radio" name="cw-scope" value="reference">
+          <strong style="font-size:13px;">Reference</strong>
+          <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Lookup-style, modular sections</div>
+        </label>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCREEN 2 — "What should it cover?"
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="cw-step-2" class="cw-step" style="display:none;">
+      <h3>What should it cover?</h3>
+      <div class="metis-modal-sub">Optional — leave blank and Claude will propose content.</div>
+
+      <label for="cw-questions">Key questions you want answered</label>
+      <textarea id="cw-questions" rows="4" placeholder="e.g. How do I fit a multilevel model in R?&#10;When should I use random slopes?"></textarea>
+      <div class="metis-help-line">What would you like to be able to do or explain after finishing?</div>
+
+      <label for="cw-materials">Materials to import</label>
+      <textarea id="cw-materials" rows="2" placeholder="e.g. lecture notes from last workshop, my R scripts in ~/analysis/"></textarea>
+      <div class="metis-help-line">Existing notes, slides, or code you want the course to build on.</div>
+
+      <label for="cw-exclude">Out of scope</label>
+      <textarea id="cw-exclude" rows="2" placeholder="e.g. Bayesian methods, time series"></textarea>
+      <div class="metis-help-line">Topics Claude should skip.</div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCREEN 3 — "How should it feel?"
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="cw-step-3" class="cw-step" style="display:none;">
+      <h3>How should it feel?</h3>
+      <div class="metis-modal-sub">Delivery format, tone, and extras.</div>
+
+      <label>Format</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="cw-format-cards">
+        <label class="cw-radio-card card--selected" onclick="_cwUpdateRadioCards('cw-format')">
+          <input type="radio" name="cw-format" value="reading" checked>
+          <strong style="font-size:13px;">Reading + notes</strong>
+          <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Text lessons with key takeaways</div>
+        </label>
+        <label class="cw-radio-card" onclick="_cwUpdateRadioCards('cw-format')">
+          <input type="radio" name="cw-format" value="interactive">
+          <strong style="font-size:13px;">Interactive</strong>
+          <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Code-along exercises and quizzes</div>
+        </label>
+        <label class="cw-radio-card" onclick="_cwUpdateRadioCards('cw-format')">
+          <input type="radio" name="cw-format" value="dashboard">
+          <strong style="font-size:13px;">Dashboard</strong>
+          <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Visual reference with worked examples</div>
+        </label>
+        <label class="cw-radio-card" onclick="_cwUpdateRadioCards('cw-format')">
+          <input type="radio" name="cw-format" value="mixed">
+          <strong style="font-size:13px;">Mixed</strong>
+          <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Blend of reading, code, and exercises</div>
+        </label>
+      </div>
+
+      <label>Tone</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;" id="cw-tone-cards">
+        <label class="cw-radio-card" onclick="_cwUpdateRadioCards('cw-tone')">
+          <input type="radio" name="cw-tone" value="formal">
+          <strong style="font-size:13px;">Formal</strong>
+          <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Academic style</div>
+        </label>
+        <label class="cw-radio-card card--selected" onclick="_cwUpdateRadioCards('cw-tone')">
+          <input type="radio" name="cw-tone" value="friendly" checked>
+          <strong style="font-size:13px;">Friendly practitioner</strong>
+          <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Warm, clear</div>
+        </label>
+        <label class="cw-radio-card" onclick="_cwUpdateRadioCards('cw-tone')">
+          <input type="radio" name="cw-tone" value="socratic">
+          <strong style="font-size:13px;">Socratic</strong>
+          <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">Question-led</div>
+        </label>
+      </div>
+
+      <label for="cw-module-length">Module length</label>
+      <select id="cw-module-length">
+        <option value="15 min">15 min</option>
+        <option value="30 min" selected>30 min</option>
+        <option value="1 hour">1 hour</option>
+      </select>
+
+      <label>Include</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;" id="cw-includes">
+        <span class="chip cw-include-chip chip--active" data-value="worked-examples" onclick="_cwToggleChip(this)">Worked examples</span>
+        <span class="chip cw-include-chip chip--active" data-value="exercises" onclick="_cwToggleChip(this)">Exercises</span>
+        <span class="chip cw-include-chip chip--active" data-value="spaced-rep" onclick="_cwToggleChip(this)">Spaced repetition</span>
+        <span class="chip cw-include-chip" data-value="quizzes" onclick="_cwToggleChip(this)">Quizzes</span>
+        <span class="chip cw-include-chip" data-value="code-snippets" onclick="_cwToggleChip(this)">Code snippets</span>
+        <span class="chip cw-include-chip" data-value="reading-list" onclick="_cwToggleChip(this)">Reading list</span>
+        <span class="chip cw-include-chip" data-value="cheat-sheets" onclick="_cwToggleChip(this)">Cheat sheets</span>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCREEN 4 — "Review & launch"
+         ═══════════════════════════════════════════════════════════════ -->
+    <div id="cw-step-4" class="cw-step" style="display:none;">
+      <!-- Review view (shown first) -->
+      <div id="cw-review-view">
+        <h3>Review &amp; launch</h3>
+        <div class="metis-modal-sub">Check your choices, then click to start building.</div>
+
+        <div id="cw-summary-content"
+             style="background:var(--m-bg);border:1px solid var(--m-line);border-radius:4px;padding:14px 16px;margin-bottom:14px;font-size:13px;line-height:1.6;color:var(--m-ink);">
+        </div>
+
+        <div style="font-size:12px;color:var(--m-muted);font-style:italic;margin-bottom:4px;">
+          Claude will use this information to skip the intake questionnaire and jump straight into designing your course outline.
+        </div>
+      </div>
+
+      <!-- Confirmation view (shown after submit) -->
+      <div id="cw-confirm-view" style="display:none;">
+        <h3 style="color:var(--m-ok,#3a9);">Course build started</h3>
+        <div class="metis-modal-sub">What happens next</div>
+        <ol style="font-size:13px;color:var(--m-ink);line-height:1.8;padding-left:20px;margin:12px 0 16px;">
+          <li><strong>Claude Desktop opens</strong> — paste the prompt from your clipboard</li>
+          <li><strong>Claude designs the scope plan</strong> — modules, objectives, time estimates</li>
+          <li><strong>You review and approve</strong> — adjust anything before writing begins</li>
+          <li><strong>Lessons are written</strong> — one module at a time, with spaced repetition cards</li>
+        </ol>
+        <div style="font-size:12px;color:var(--m-muted);font-style:italic;">
+          The course card will appear in your Courses section above with a progress bar showing each build step.
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Navigation ──────────────────────────────────────────────── -->
+    <div class="metis-modal-actions" id="cw-actions">
+      <button class="btn btn--ghost btn--caps" onclick="closeCourseWizard()">Cancel</button>
+      <span style="flex:1;"></span>
+      <button class="btn btn--ghost btn--caps" id="cw-btn-back" onclick="cwStep(-1)" style="display:none;">Back</button>
+      <button class="btn btn--primary btn--caps" id="cw-btn-next" onclick="cwStep(1)">Next</button>
+      <button class="btn btn--primary btn--caps" id="cw-btn-submit" onclick="cwSubmit()" style="display:none;">Start Build in Claude</button>
+      <button class="btn btn--ghost btn--caps" id="cw-btn-close" onclick="closeCourseWizard()" style="display:none;">Close</button>
+    </div>
+
+  </div>
+</div>

@@ -1,4 +1,7 @@
-<!-- learning_ideas.html — Course ideas: customizable catalog -->
+<!-- learning_ideas.html — Course ideas: customizable catalog.
+     Wrapped in #course-ideas-section so add/delete swaps replace the whole
+     partial instead of just the catalog grid (prevents hero duplication). -->
+<div id="course-ideas-section">
 {% set other_ideas = courses | rejectattr('slug', 'equalto', 'statistics-adaptive') | list %}
 {% set categories = other_ideas | map(attribute='category') | unique | list %}
 
@@ -18,12 +21,12 @@
   <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;">
     {% for c in other_ideas %}
     <button class="chip chip--plain" style="cursor:pointer;border:1px solid var(--m-accent-soft,var(--m-line));background:var(--m-surface-1);"
-            onclick="buildAdaptiveCourse('{{ c.slug }}', {{ c.title | tojson }})">{{ c.title }}</button>
+            onclick="openCourseWizard('{{ c.slug }}', {{ c.title | tojson }})">{{ c.title }}</button>
     {% endfor %}
   </div>
   <div style="display:flex;gap:8px;align-items:center;">
     <button class="btn btn--primary btn--caps"
-            onclick="buildAdaptiveCourse('statistics-adaptive', 'a topic of your choice')">
+            onclick="openCourseWizard('', 'Adaptive Statistics')">
       Build adaptive course
     </button>
     <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);letter-spacing:0.1em;">
@@ -45,9 +48,8 @@
 <!-- ─── Add course idea form (hidden by default) ─────────────────────────── -->
 <div id="add-idea-form" style="display:none;margin-bottom:20px;">
   <form hx-post="/api/course/idea/add"
-        hx-target="#course-ideas-catalog"
+        hx-target="#course-ideas-section"
         hx-swap="outerHTML"
-        hx-on::after-request="document.getElementById('add-idea-form').style.display='none';document.getElementById('add-idea-toggle-btn').textContent='+ Add course idea';"
         style="padding:16px 18px;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;display:flex;flex-direction:column;gap:10px;">
     <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">NEW COURSE IDEA</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -98,11 +100,11 @@
        id="idea-row-{{ c.id }}">
     <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;">{{ c.title }}</span>
     <button class="btn btn--ghost btn--caps" style="font-size:10px;padding:3px 8px;"
-            onclick="buildCourseIdea('{{ c.slug }}', {{ c.title | tojson }})">Build</button>
+            onclick="openCourseWizard('{{ c.slug }}', {{ c.title | tojson }})">Build</button>
     <button class="btn btn--ghost btn--caps" style="font-size:10px;padding:3px 8px;color:var(--m-danger,#dc3545);border-color:transparent;"
             title="Remove this course idea"
             hx-delete="/api/course/idea/{{ c.id }}"
-            hx-target="#course-ideas-catalog"
+            hx-target="#course-ideas-section"
             hx-swap="outerHTML"
             hx-confirm="Remove '{{ c.title }}' from your ideas?">✕</button>
   </div>
@@ -112,6 +114,7 @@
 </div>
 {% endif %}
 </div><!-- #course-ideas-catalog -->
+</div><!-- #course-ideas-section -->
 
 <script>
 function toggleAddIdeaForm() {

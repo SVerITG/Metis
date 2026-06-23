@@ -224,14 +224,9 @@ async function triggerJob(jobId) {
 // Course Builder — copy prompt to clipboard + notify server
 // ---------------------------------------------------------------------------
 
-async function openCourseReader(slug) {
-  const panel = document.getElementById('course-reader-panel');
-  if (!panel) return;
-  panel.style.display = 'grid';
-  htmx.ajax('GET', `/api/course/${slug}/overview`, { target: '#course-overview-panel', swap: 'innerHTML' });
-  document.getElementById('lesson-reader-panel').innerHTML =
-    '<div style="padding:40px 28px;color:var(--m-muted);font-size:14px;">Select a lesson from the left to begin.</div>';
-  panel.scrollIntoView({ behavior: 'smooth' });
+// Open a course in a dedicated browser tab (standalone reader).
+function openCourseReader(slug) {
+  window.open(`/course/${slug}`, `course-${slug}`, 'noopener');
 }
 
 // Open a course's external URL in a new browser tab.
@@ -329,6 +324,219 @@ async function buildAdaptiveCourse(topicSlug, topicTitle) {
     }
   } catch (e) {
     showToast("<i class=\"bi bi-exclamation-circle toast-icon\"></i>I couldn't prepare adaptive course prompt");
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Course Wizard — 4-screen intake wizard
+// ---------------------------------------------------------------------------
+
+let _cwCurrentStep = 1;
+
+function openCourseWizard(slug, title) {
+  _cwCurrentStep = 1;
+  document.getElementById('cw-slug').value = slug || '';
+  document.getElementById('cw-title-original').value = title || '';
+  document.getElementById('cw-title').value = title || '';
+
+  // Reset defaults
+  document.getElementById('cw-learner').value = 'yourself';
+  document.getElementById('cw-level').value = 'working';
+  document.getElementById('cw-time').value = '1 weekend';
+  _cwSelectRadio('cw-scope', 'practical');
+  _cwSelectRadio('cw-format', 'reading');
+  _cwSelectRadio('cw-tone', 'friendly');
+  document.getElementById('cw-module-length').value = '30 min';
+  document.getElementById('cw-questions').value = '';
+  document.getElementById('cw-materials').value = '';
+  document.getElementById('cw-exclude').value = '';
+
+  // Reset include chips
+  document.querySelectorAll('#cw-includes .cw-include-chip').forEach(chip => {
+    const defaults = ['worked-examples', 'exercises', 'spaced-rep'];
+    if (defaults.includes(chip.dataset.value)) {
+      chip.classList.add('chip--active');
+    } else {
+      chip.classList.remove('chip--active');
+    }
+  });
+
+  // Show review view, hide confirmation
+  const rv = document.getElementById('cw-review-view');
+  const cv = document.getElementById('cw-confirm-view');
+  if (rv) rv.style.display = '';
+  if (cv) cv.style.display = 'none';
+
+  // Reset title border
+  document.getElementById('cw-title').style.borderColor = '';
+
+  _cwUpdateSteps();
+  document.getElementById('course-wizard-overlay').dataset.open = 'true';
+}
+
+function closeCourseWizard() {
+  document.getElementById('course-wizard-overlay').dataset.open = 'false';
+}
+
+function cwStep(dir) {
+  const next = _cwCurrentStep + dir;
+  // Validate title on step 1 before advancing
+  if (_cwCurrentStep === 1 && dir > 0) {
+    const titleEl = document.getElementById('cw-title');
+    if (!titleEl.value.trim()) {
+      titleEl.style.borderColor = 'var(--m-danger, #dc3545)';
+      titleEl.focus();
+      return;
+    }
+    titleEl.style.borderColor = '';
+  }
+  if (next < 1 || next > 4) return;
+  _cwCurrentStep = next;
+  _cwUpdateSteps();
+  // Build summary when arriving at step 4
+  if (_cwCurrentStep === 4) _cwBuildSummary();
+}
+
+function _cwUpdateSteps() {
+  const titles = ['', 'STEP 1 OF 4 · AUDIENCE', 'STEP 2 OF 4 · CONTENT', 'STEP 3 OF 4 · STYLE', 'STEP 4 OF 4 · REVIEW'];
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('cw-step-' + i);
+    if (el) el.style.display = (i === _cwCurrentStep) ? '' : 'none';
+  }
+  document.getElementById('cw-step-title').textContent = titles[_cwCurrentStep];
+
+  // Update dots
+  document.querySelectorAll('#cw-dots .cw-dot').forEach(dot => {
+    const s = parseInt(dot.dataset.step, 10);
+    dot.classList.toggle('dot--active', s === _cwCurrentStep);
+    dot.classList.toggle('dot--done', s < _cwCurrentStep);
+  });
+
+  // Show/hide buttons
+  document.getElementById('cw-btn-back').style.display = _cwCurrentStep > 1 ? '' : 'none';
+  document.getElementById('cw-btn-next').style.display = _cwCurrentStep < 4 ? '' : 'none';
+  document.getElementById('cw-btn-submit').style.display = _cwCurrentStep === 4 ? '' : 'none';
+  document.getElementById('cw-btn-close').style.display = 'none';
+}
+
+function _cwSelectRadio(name, value) {
+  const radio = document.querySelector(`input[name="${name}"][value="${value}"]`);
+  if (radio) {
+    radio.checked = true;
+    _cwUpdateRadioCards(name);
+  }
+}
+
+function _cwUpdateRadioCards(name) {
+  // Tiny delay so the browser has time to update the :checked state
+  setTimeout(() => {
+    document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
+      r.closest('.cw-radio-card')?.classList.toggle('card--selected', r.checked);
+    });
+  }, 0);
+}
+
+function _cwToggleChip(chip) {
+  chip.classList.toggle('chip--active');
+}
+
+function _cwGatherIntake() {
+  return {
+    learner: document.getElementById('cw-learner').value,
+    level: document.getElementById('cw-level').value,
+    time_budget: document.getElementById('cw-time').value,
+    scope: document.querySelector('input[name="cw-scope"]:checked')?.value || 'practical',
+    key_questions: document.getElementById('cw-questions').value,
+    materials: document.getElementById('cw-materials').value,
+    out_of_scope: document.getElementById('cw-exclude').value,
+    format: document.querySelector('input[name="cw-format"]:checked')?.value || 'reading',
+    tone: document.querySelector('input[name="cw-tone"]:checked')?.value || 'friendly',
+    module_length: document.getElementById('cw-module-length').value,
+    includes: Array.from(document.querySelectorAll('#cw-includes .chip--active')).map(c => c.dataset.value),
+  };
+}
+
+function _cwEscHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function _cwBuildSummary() {
+  const intake = _cwGatherIntake();
+  const title = document.getElementById('cw-title').value.trim();
+  const lines = [
+    `<div style="margin-bottom:10px;font-family:var(--m-display);font-size:16px;font-weight:500;">${_cwEscHtml(title)}</div>`,
+    `<div style="display:grid;grid-template-columns:110px 1fr;gap:4px 12px;font-size:13px;">`,
+    `<span style="color:var(--m-muted);">Learner</span><span>${_cwEscHtml(intake.learner)}</span>`,
+    `<span style="color:var(--m-muted);">Level</span><span>${_cwEscHtml(intake.level)}</span>`,
+    `<span style="color:var(--m-muted);">Time</span><span>${_cwEscHtml(intake.time_budget)}</span>`,
+    `<span style="color:var(--m-muted);">Scope</span><span>${_cwEscHtml(intake.scope)}</span>`,
+    `<span style="color:var(--m-muted);">Format</span><span>${_cwEscHtml(intake.format)}</span>`,
+    `<span style="color:var(--m-muted);">Tone</span><span>${_cwEscHtml(intake.tone)}</span>`,
+    `<span style="color:var(--m-muted);">Module length</span><span>${_cwEscHtml(intake.module_length)}</span>`,
+  ];
+  if (intake.includes.length) {
+    lines.push(`<span style="color:var(--m-muted);">Include</span><span>${intake.includes.map(i => _cwEscHtml(i.replace(/-/g, ' '))).join(', ')}</span>`);
+  }
+  lines.push('</div>');
+  if (intake.key_questions?.trim()) {
+    lines.push(`<div style="margin-top:10px;"><span style="color:var(--m-muted);font-size:12px;">KEY QUESTIONS</span><div style="font-size:13px;white-space:pre-line;">${_cwEscHtml(intake.key_questions.trim())}</div></div>`);
+  }
+  if (intake.out_of_scope?.trim()) {
+    lines.push(`<div style="margin-top:8px;"><span style="color:var(--m-muted);font-size:12px;">OUT OF SCOPE</span><div style="font-size:13px;">${_cwEscHtml(intake.out_of_scope.trim())}</div></div>`);
+  }
+  document.getElementById('cw-summary-content').innerHTML = lines.join('\n');
+}
+
+async function cwSubmit() {
+  const title = document.getElementById('cw-title').value.trim();
+  const slug = document.getElementById('cw-slug').value.trim();
+  const intake = _cwGatherIntake();
+  const submitBtn = document.getElementById('cw-btn-submit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Starting…';
+
+  try {
+    const res = await fetch('/api/course/build-with-intake', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug, title, intake }),
+    });
+    const data = await res.json();
+
+    if (data.status === 'error') {
+      showToast(`<i class="bi bi-exclamation-circle toast-icon"></i>${data.message || 'Build failed.'}`);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Start Build in Claude';
+      return;
+    }
+
+    // Copy prompt and launch Claude Desktop
+    if (data.prompt) {
+      await navigator.clipboard.writeText(data.prompt).catch(() => {});
+      await _launchClaudeDesktop();
+    }
+
+    // Transition to confirmation view
+    document.getElementById('cw-review-view').style.display = 'none';
+    document.getElementById('cw-confirm-view').style.display = '';
+    document.getElementById('cw-btn-submit').style.display = 'none';
+    document.getElementById('cw-btn-back').style.display = 'none';
+    document.getElementById('cw-btn-close').style.display = '';
+
+    showToast(`<i class="bi bi-clipboard-check toast-icon"></i>Claude Desktop opening — paste prompt to build <strong>${_cwEscHtml(data.title)}</strong>`);
+
+    // Reload dashboard sections
+    const archiveEl = document.querySelector('[hx-get="/api/partial/learning/courses-archive"]');
+    if (archiveEl && window.htmx) htmx.trigger(archiveEl, 'load');
+    const ideasEl = document.querySelector('[hx-get="/api/partial/learning/placeholder-courses"]');
+    if (ideasEl && window.htmx) htmx.trigger(ideasEl, 'load');
+
+  } catch (e) {
+    showToast("<i class=\"bi bi-exclamation-circle toast-icon\"></i>I couldn't start the build — try again.");
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Start Build in Claude';
   }
 }
 
