@@ -106,13 +106,19 @@
   <!-- Course ideas -->
   <div class="sec-label" style="margin-top:32px;margin-bottom:16px;">
     <span>Course Ideas</span>
-    <span class="tail">CUSTOMISE YOUR CATALOG</span>
+    <span class="tail">
+      <button class="btn btn--ghost btn--caps" style="font-size:10px;"
+              onclick="openCourseWizard('', '')">+ New Course</button>
+      CUSTOMISE YOUR CATALOG
+    </span>
   </div>
   <div hx-get="/api/partial/learning/placeholder-courses"
        hx-trigger="load"
        hx-swap="outerHTML">
     <div class="panel skeleton" style="min-height:100px;"></div>
   </div>
+
+  {% include "partials/learning_course_wizard.html" %}
 
 </div>
 {% endblock %}
