@@ -1008,14 +1008,197 @@ def _get_api_key() -> str:
 # ---------------------------------------------------------------------------
 
 
+import logging as _logging
+import threading as _threading
+import time as _time
+
+_log = _logging.getLogger("metis")
+_brief_gen_inflight: set = set()
+_brief_gen_lock = _threading.Lock()
+_brief_last_attempt: dict = {}   # period -> monotonic ts of the last generation attempt
+
+
+def _get_cached_brief(period: str = "daily") -> str | None:
+    """Cache-only read of the brief — NEVER calls the API, so the Today page can
+    render instantly. Background generation fills the cache (see
+    _kick_brief_generation)."""
+    import sqlite3 as _sqlite3
+
+    db_path_str = _get_db_path()
+    if not db_path_str:
+        return None
+    today = datetime.date.today().isoformat()
+    try:
+        conn = _sqlite3.connect(db_path_str)
+        conn.row_factory = _sqlite3.Row
+        if period == "weekly":
+            row = conn.execute(
+                "SELECT content, model FROM daily_insights "
+                "WHERE model='claude-haiku-weekly' AND content IS NOT NULL "
+                "ORDER BY generated_at DESC LIMIT 1"
+            ).fetchone()
+            accepted = {"claude-haiku-weekly"}
+        elif period == "catchup":
+            row = conn.execute(
+                "SELECT content, model FROM daily_insights "
+                "WHERE model='claude-sonnet-catchup' AND content IS NOT NULL "
+                "ORDER BY generated_at DESC LIMIT 1"
+            ).fetchone()
+            accepted = {"claude-sonnet-catchup"}
+        else:
+            row = conn.execute(
+                "SELECT content, model FROM daily_insights WHERE insight_date=? LIMIT 1",
+                (today,),
+            ).fetchone()
+            accepted = {"claude-haiku-brief", "desktop-brief"}
+        conn.close()
+        if row and row["content"] and row["model"] in accepted:
+            return row["content"]
+    except Exception:
+        pass
+    return None
+
+
+def _kick_brief_generation(period: str = "daily") -> None:
+    """Generate the brief on a daemon thread (idempotent; concurrent calls are
+    deduped). The caller rate-limits retries (~90s) so a transient failure
+    self-heals on the next poll instead of giving up. Failures are logged."""
+    with _brief_gen_lock:
+        if period in _brief_gen_inflight:
+            return
+        _brief_gen_inflight.add(period)
+        _brief_last_attempt[period] = _time.monotonic()
+
+    def _run():
+        try:
+            _get_or_generate_brief(period=period)
+        except Exception:
+            _log.warning("morning-brief background generation failed", exc_info=True)
+        finally:
+            _brief_gen_inflight.discard(period)
+
+    _threading.Thread(target=_run, daemon=True, name="brief-gen").start()
+
+
+def _last_brief_generated_at(db_path_str: str = "") -> datetime.datetime | None:
+    """Return the datetime of the last daily brief, or None."""
+    import sqlite3 as _sqlite3
+    if not db_path_str:
+        db_path_str = _get_db_path()
+    if not db_path_str:
+        return None
+    try:
+        conn = _sqlite3.connect(db_path_str)
+        row = conn.execute(
+            "SELECT generated_at FROM daily_insights "
+            "WHERE model IN ('claude-haiku-brief','desktop-brief') AND content IS NOT NULL "
+            "ORDER BY insight_date DESC LIMIT 1"
+        ).fetchone()
+        conn.close()
+        if row and row[0]:
+            return datetime.datetime.fromisoformat(row[0])
+    except Exception:
+        pass
+    return None
+
+
+def _brief_system_prompt(
+    period: str,
+    name: str,
+    field: str,
+    interests: str,
+    topics: str,
+    period_desc: str,
+    gap_label: str = "",
+) -> str:
+    """Build the system prompt for the daily/weekly/catchup brief."""
+
+    guardrail = (
+        "IMPORTANT: Write about external developments only — never about the "
+        "researcher's own tools, software, or AI systems. Projects and ideas "
+        "are provided as framing context only — they are relevance anchors, "
+        "not briefing topics."
+    )
+
+    preamble = (
+        f"You are writing a research intelligence brief for {name}, "
+        f"a senior researcher in {field}.\n\n"
+        f"Their specific research interests: {interests}\n"
+        f"Topics they monitor: {topics}\n"
+        f"Briefing period: {period_desc}\n\n"
+        f"{guardrail}\n\n"
+    )
+
+    if period == "weekly":
+        return preamble + (
+            "Write exactly four paragraphs, 400–500 words total:\n\n"
+            "Paragraph 1 — THE WEEK: The two or three most significant developments "
+            "in global health, science, or AI this week. State what happened and why "
+            "it matters. Be specific — name papers, organisations, numbers.\n\n"
+            "Paragraph 2 — PATTERNS: Step back from individual items and identify "
+            "one or two emerging patterns, policy shifts, or methodological trends "
+            "across the week's signals. Cross-reference items when connected.\n\n"
+            "Paragraph 3 — THE BRIDGE: One concrete connection between an external "
+            f"signal and {name}'s active research or interests. Be explicit about "
+            "why it matters and what opportunity or risk it creates.\n\n"
+            "Paragraph 4 — ONE THING: A single paper, report, or question worth "
+            f"following up on next week. Name it precisely and say why {name} "
+            "should prioritise it.\n\n"
+            f"Tone: warm, direct, occasionally dry. Like a smart colleague giving the "
+            f"5-minute week-in-review. Plain language. Field-standard terms fine; "
+            f"unexplained jargon is not.\n\n"
+            "No greeting. No sign-off. No headers. No bullet points. Continuous prose only."
+        )
+
+    if period == "catchup":
+        gap_note = f" ({gap_label})" if gap_label else ""
+        return preamble + (
+            f"The researcher has been away{gap_note}. Write exactly four paragraphs, "
+            "400–500 words total:\n\n"
+            "Paragraph 1 — WHAT YOU MISSED: The two or three most important developments "
+            "since the last brief. Lead with the highest-impact item. State facts, not "
+            "opinions.\n\n"
+            "Paragraph 2 — WHAT CHANGED: Any shifts in policy, emerging patterns, or "
+            "new publications that alter the landscape of their field. Reference the "
+            "previous brief (provided) to highlight what's genuinely new vs. continuing.\n\n"
+            "Paragraph 3 — CONNECTIONS: One or two concrete links between missed signals "
+            f"and {name}'s active research. Be specific about implications.\n\n"
+            "Paragraph 4 — START HERE: The single most important thing to read, review, "
+            "or act on first. Name it and say why it's the priority re-entry point.\n\n"
+            f"Tone: warm, efficient. Like a trusted colleague bringing you up to speed "
+            f"after time away. No filler.\n\n"
+            "No greeting. No sign-off. No headers. No bullet points. Continuous prose only."
+        )
+
+    # Default: daily
+    return preamble + (
+        "Write exactly three paragraphs, 270–320 words total:\n\n"
+        "Paragraph 1 — THE LEAD: The single most important development in global health, "
+        "science, or AI since the last brief. State what happened and why it matters. "
+        f"If it touches {name}'s specific interests, draw that connection explicitly "
+        "and plainly. Don't hint: say it directly.\n\n"
+        "Paragraph 2 — THE FIELD: Two or three other notable developments, grouped "
+        "thematically. Cross-reference items when they are connected. Be specific — "
+        "name papers, organisations, or numbers. Group by theme.\n\n"
+        "Paragraph 3 — THE THREAD: One specific paper, news item, or open question "
+        f"from the context that {name} should follow up on today. Name it precisely "
+        "and say exactly why it matters for their work right now — concretely.\n\n"
+        f"Tone: warm, direct, occasionally dry. Like a smart colleague who read "
+        f"everything during {period_desc} and is giving you the 90-second version. "
+        "Plain language. Field-standard terms fine; unexplained jargon is not.\n\n"
+        "No greeting. No sign-off. No headers. No bullet points. Continuous prose only."
+    )
+
+
 def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | None:
     """Return the AI-generated research brief, generating it if needed.
 
-    period='daily'  → today's brief (keyed by today's date).
-    period='weekly' → a week-in-review synthesis (kept as a separate, latest row).
+    period='daily'   → today's brief (keyed by today's date, Haiku).
+    period='weekly'  → a week-in-review synthesis (Sonnet).
+    period='catchup' → catch-up after absence (Sonnet).
 
-    Checks daily_insights, assembles context via assemble_daily_context(), and
-    calls Claude Haiku to synthesize the brief. Stores the result so subsequent
+    Checks daily_insights, assembles context via the appropriate assembly function,
+    and calls Claude to synthesize the brief. Stores the result so subsequent
     page loads are free (no API call).
 
     force=True regenerates. Returns the narrative string, or None if unavailable.
@@ -1034,21 +1217,27 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
         return None
 
     today = datetime.date.today().isoformat()
-    model_tag = "claude-haiku-weekly" if period == "weekly" else "claude-haiku-brief"
-    # Weekly briefs use a distinct storage key so a daily and a weekly brief can
-    # coexist for the same day (insight_date is UNIQUE).
-    insight_key = f"{today}-weekly" if period == "weekly" else today
+    _model_tags = {
+        "daily": "claude-haiku-brief",
+        "weekly": "claude-haiku-weekly",
+        "catchup": "claude-sonnet-catchup",
+    }
+    model_tag = _model_tags.get(period, "claude-haiku-brief")
+    # Each period uses a distinct storage key so they can coexist for the same day.
+    _key_suffixes = {"weekly": "-weekly", "catchup": "-catchup"}
+    insight_key = today + _key_suffixes.get(period, "")
 
     # Check cache — also used as fallback if force-regen fails
     cached_content: str | None = None
     try:
         conn = _sqlite3.connect(db_path_str)
         conn.row_factory = _sqlite3.Row
-        if period == "weekly":
+        if period in ("weekly", "catchup"):
             row = conn.execute(
                 "SELECT content, model FROM daily_insights "
-                "WHERE model = 'claude-haiku-weekly' AND content IS NOT NULL "
-                "ORDER BY generated_at DESC LIMIT 1"
+                "WHERE model = ? AND content IS NOT NULL "
+                "ORDER BY generated_at DESC LIMIT 1",
+                (model_tag,),
             ).fetchone()
         else:
             row = conn.execute(
@@ -1056,10 +1245,9 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
                 (today,),
             ).fetchone()
         conn.close()
-        # Accept the dashboard's own Haiku brief, or a brief composed and saved
-        # from Claude Desktop/Code via save_daily_brief (tagged 'desktop-brief').
+        # Accept the dashboard's own brief, or a brief composed from Claude Desktop/Code.
         accepted_tags = {model_tag}
-        if period != "weekly":
+        if period == "daily":
             accepted_tags.add("desktop-brief")
         if row and row["content"] and row["model"] in accepted_tags:
             cached_content = row["content"]
@@ -1073,20 +1261,18 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
 
     # Compute how many days since the last brief was generated
     days_since_last = 1
-    try:
-        conn2 = _sqlite3.connect(db_path_str)
-        prev = conn2.execute(
-            "SELECT generated_at FROM daily_insights "
-            "WHERE insight_date < ? AND model = 'claude-haiku-brief' "
-            "ORDER BY insight_date DESC LIMIT 1",
-            (today,),
-        ).fetchone()
-        conn2.close()
-        if prev and prev[0]:
-            prev_dt = datetime.datetime.fromisoformat(prev[0])
-            days_since_last = max(1, (datetime.datetime.now() - prev_dt).days)
-    except Exception:
-        pass
+    last_brief_dt = _last_brief_generated_at(db_path_str)
+    if last_brief_dt:
+        days_since_last = max(1, (datetime.datetime.now() - last_brief_dt).days)
+
+    # Gap label for catch-up display (e.g. "3 DAYS", "1 WEEK")
+    gap_label = ""
+    if days_since_last >= 14:
+        gap_label = f"{days_since_last // 7} WEEKS"
+    elif days_since_last >= 7:
+        gap_label = "1 WEEK"
+    elif days_since_last >= 2:
+        gap_label = f"{days_since_last} DAYS"
 
     # Load user profile — interests and monitored topics
     interests: list[str] = []
@@ -1105,12 +1291,36 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
     except Exception:
         pass
 
-    # Assemble context
+    # Assemble context — route to the right function based on period
     try:
         sys.path.insert(0, str(Path(__file__).parent.parent.parent /
                                "mcp-server" / "src"))
-        from metis_mcp.tools.intelligence import assemble_daily_context
-        ctx = assemble_daily_context(db_path_str)
+        from metis_mcp.tools.intelligence import (
+            assemble_daily_context,
+            assemble_weekly_context,
+            assemble_catchup_context,
+        )
+        if period == "weekly":
+            ctx = assemble_weekly_context(db_path_str)
+        elif period == "catchup":
+            # Load previous brief content for contrast
+            prev_brief = ""
+            try:
+                conn_pb = _sqlite3.connect(db_path_str)
+                pb_row = conn_pb.execute(
+                    "SELECT content FROM daily_insights "
+                    "WHERE model IN ('claude-haiku-brief','desktop-brief') "
+                    "AND content IS NOT NULL ORDER BY insight_date DESC LIMIT 1"
+                ).fetchone()
+                conn_pb.close()
+                if pb_row and pb_row[0]:
+                    prev_brief = pb_row[0]
+            except Exception:
+                pass
+            since_iso = last_brief_dt.isoformat() if last_brief_dt else ""
+            ctx = assemble_catchup_context(db_path_str, since_iso, prev_brief)
+        else:
+            ctx = assemble_daily_context(db_path_str)
     except Exception:
         return None
 
@@ -1125,6 +1335,8 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
     name = _user_name()
     if period == "weekly":
         period_desc = "the past week"
+    elif period == "catchup":
+        period_desc = f"the last {days_since_last} days" if days_since_last <= 7 else f"the last {days_since_last // 7} week{'s' if days_since_last >= 14 else ''}"
     elif days_since_last <= 1:
         period_desc = "today"
     elif days_since_last <= 7:
@@ -1136,31 +1348,24 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
     interests_str = ", ".join(interests[:8]) if interests else "global health, infectious diseases, epidemiology, public health surveillance, health systems"
     topics_str = ", ".join(news_topics[:6]) if news_topics else "WHO surveillance, global health emergencies, disease control, AI in research"
 
-    system_preamble = (
-        f"You are writing the daily research intelligence brief for {name}, "
-        f"a senior researcher in {field_str}.\n\n"
-        f"Their specific research interests: {interests_str}\n"
-        f"Topics they monitor daily: {topics_str}\n"
-        f"Briefing period: {period_desc}\n\n"
-        "Write exactly three paragraphs, 270-320 words total:\n\n"
-        "Paragraph 1 — THE LEAD: The single most important development in global health, "
-        "science, or AI since the last brief. State what happened and why it matters. "
-        f"If it touches {name}'s specific interests — NTDs, disease surveillance, "
-        "health information systems, epidemiology methods, AI in research — draw that connection explicitly "
-        "and plainly. Don't hint: say it directly.\n\n"
-        "Paragraph 2 — THE REST: Two or three other notable developments, grouped thematically. "
-        "Cross-reference items when they are connected. Be specific — name papers, organizations, "
-        "or numbers when you have them from the context. Group by theme: research findings, "
-        "policy news, or field operations.\n\n"
-        "Paragraph 3 — THE THREAD: One specific paper, news item, or open question from the "
-        f"context that {name} should follow up on today. Name it precisely and say exactly why "
-        "it matters for their work right now — not generically, but concretely.\n\n"
-        f"Tone: warm, direct, occasionally dry. Like a smart colleague who read everything during {period_desc} "
-        "and is giving you the 90-second version before your first meeting. Plain language. "
-        "Field-standard terms are fine; unexplained jargon is not. A wry observation is welcome "
-        "when the situation calls for it.\n\n"
-        "No greeting. No sign-off. No headers. No bullet points. Continuous prose only."
+    system_preamble = _brief_system_prompt(
+        period=period,
+        name=name,
+        field=field_str,
+        interests=interests_str,
+        topics=topics_str,
+        period_desc=period_desc,
+        gap_label=gap_label,
     )
+
+    # Route to the right model: daily → Haiku, weekly/catchup → Sonnet
+    _model_aliases = {
+        "daily": "brief",
+        "weekly": "brief_weekly",
+        "catchup": "brief_catchup",
+    }
+    api_model = model_for(_model_aliases.get(period, "brief"))
+    max_tok = 800 if period == "daily" else 1200
 
     try:
         import httpx as _httpx
@@ -1173,8 +1378,8 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
                 "content-type": "application/json",
             },
             json={
-                "model": model_for("brief"),
-                "max_tokens": 800,
+                "model": api_model,
+                "max_tokens": max_tok,
                 "system": [
                     {
                         "type": "text",
@@ -1186,11 +1391,11 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
                     "role": "user",
                     "content": (
                         f"Research context for {period_desc}:\n\n"
-                        f"{ctx['context'][:4000]}"
+                        f"{ctx['context'][:6000]}"
                     ),
                 }],
             },
-            timeout=40.0,
+            timeout=60.0,
         )
         if resp.status_code == 200:
             narrative = resp.json()["content"][0]["text"].strip()
@@ -1306,19 +1511,53 @@ async def today_morning_brief(request: Request):
         pass
 
     period = request.query_params.get("period", "daily")
-    if period not in ("daily", "weekly"):
+    if period not in ("daily", "weekly", "catchup"):
         period = "daily"
+
+    # Compute gap label for catch-up button
+    db_path = _get_db_path()
+    last_gen = _last_brief_generated_at(db_path) if db_path else None
+    gap_days = 0
+    gap_label = ""
+    if last_gen:
+        gap_days = max(0, (datetime.datetime.now() - last_gen).days)
+        if gap_days >= 14:
+            gap_label = f"{gap_days // 7} WEEKS"
+        elif gap_days >= 7:
+            gap_label = "1 WEEK"
+        elif gap_days >= 2:
+            gap_label = f"{gap_days} DAYS"
 
     ai_brief = None
     brief_date_label = None
-    try:
-        ai_brief = _get_or_generate_brief(period=period)
-    except Exception:
-        pass
+    pending = False
+    if period in ("weekly", "catchup"):
+        try:
+            ai_brief = _get_or_generate_brief(period=period)
+        except Exception:
+            pass
+    else:
+        # Non-blocking daily brief: serve from cache instantly so the Today page
+        # opens with no wait. If today's brief isn't written yet, generate it on a
+        # background thread and tell the template to show a "brewing…" card that
+        # polls until it's ready — the dashboard never blocks on a Claude API call.
+        try:
+            ai_brief = _get_cached_brief("daily")
+        except Exception:
+            ai_brief = None
+        if (not ai_brief and _get_brief_mode() != "manual"
+                and os.environ.get("METIS_DEMO") != "1"):
+            # Kick generation in the background, but no more than once every ~90s,
+            # so a transient failure self-heals on the next poll without hammering
+            # the API. The card shows "brewing" while there's no cached brief.
+            _since = _time.monotonic() - _brief_last_attempt.get("daily", 0)
+            if "daily" not in _brief_gen_inflight and _since > 90:
+                _kick_brief_generation("daily")
+            pending = True
 
-    # If today's daily brief failed to generate, fall back to the most recent
-    # cached brief from any date — the user gets continuity instead of empty space.
-    if not ai_brief and period == "daily":
+    # Not waiting (manual mode, or generation gave up) and still nothing cached:
+    # fall back to the most recent brief from any date for continuity.
+    if not ai_brief and not pending and period == "daily":
         try:
             import sqlite3 as _sqlite
             db_path = _get_db_path()
@@ -1360,11 +1599,13 @@ async def today_morning_brief(request: Request):
         except Exception:
             pass
 
+    _bid, _bdate, _bread = _latest_brief_meta()
     return templates.TemplateResponse(
         request,
         "partials/today_morning_brief.html",
         {
             "brief": ai_brief,
+            "pending": pending,
             "brief_date_label": brief_date_label,
             "sources": sources,
             "fallback_headlines": fallback_headlines,
@@ -1372,6 +1613,10 @@ async def today_morning_brief(request: Request):
             "time_of_day": time_of_day,
             "brief_mode": _get_brief_mode(),
             "period": period,
+            "brief_id": _bid,
+            "brief_date": _bdate,
+            "brief_read": _bread,
+            "gap_label": gap_label,
         },
     )
 
@@ -1417,8 +1662,21 @@ async def morning_brief_refresh(request: Request):
         period = _form.get("period") or request.query_params.get("period") or "daily"
     except Exception:
         period = request.query_params.get("period", "daily")
-    if period not in ("daily", "weekly"):
+    if period not in ("daily", "weekly", "catchup"):
         period = "daily"
+
+    # Compute gap label
+    db_path = _get_db_path()
+    last_gen = _last_brief_generated_at(db_path) if db_path else None
+    gap_label = ""
+    if last_gen:
+        gap_days = max(0, (datetime.datetime.now() - last_gen).days)
+        if gap_days >= 14:
+            gap_label = f"{gap_days // 7} WEEKS"
+        elif gap_days >= 7:
+            gap_label = "1 WEEK"
+        elif gap_days >= 2:
+            gap_label = f"{gap_days} DAYS"
 
     open_threads = 0
     try:
@@ -1457,6 +1715,7 @@ async def morning_brief_refresh(request: Request):
         except Exception:
             pass
 
+    _bid, _bdate, _bread = _latest_brief_meta()
     return templates.TemplateResponse(
         request,
         "partials/today_morning_brief.html",
@@ -1469,8 +1728,164 @@ async def morning_brief_refresh(request: Request):
             "time_of_day": time_of_day,
             "brief_mode": _get_brief_mode(),
             "period": period,
+            "brief_id": _bid,
+            "brief_date": _bdate,
+            "brief_read": _bread,
+            "gap_label": gap_label,
         },
     )
+
+
+def _focus_item_from_task(row) -> dict:
+    """Normalize a task row into a unified focus card dict."""
+    status = row.get("status") or "open"
+    if status == "blocked":
+        badge, badge_color = "BLOCKED", "var(--m-alert)"
+    elif row.get("starred"):
+        badge, badge_color = "STARRED", "var(--m-ochre)"
+    elif status == "in_progress":
+        badge, badge_color = "IN PROGRESS", "var(--m-accent)"
+    else:
+        badge, badge_color = "OPEN", "var(--m-muted)"
+    return {
+        "item_type": "task",
+        "item_id": str(row.get("task_id") or ""),
+        "title": (row.get("title") or "Untitled task")[:90],
+        "subtitle": row.get("project_title") or row.get("project_id") or "",
+        "badge": badge,
+        "badge_color": badge_color,
+    }
+
+
+def _focus_item_from_idea(row) -> dict:
+    """Normalize an idea row into a unified focus card dict."""
+    tags = (row.get("tags") or "").lower()
+    itype = (row.get("idea_type") or "").lower()
+    if "question" in tags or "question" in itype:
+        badge, badge_color = "QUESTION", "var(--m-accent)"
+    elif "draft" in tags or itype in ("draft", "article"):
+        badge, badge_color = "DRAFT", "var(--m-ochre)"
+    else:
+        badge, badge_color = "IDEA", "var(--m-muted)"
+    return {
+        "item_type": "idea",
+        "item_id": str(row.get("idea_id") or ""),
+        "title": (row.get("text") or "").strip()[:90],
+        "subtitle": (row.get("domain") or "").upper(),
+        "badge": badge,
+        "badge_color": badge_color,
+    }
+
+
+@router.get("/api/partial/today/focus", response_class=HTMLResponse)
+async def today_focus(request: Request):
+    """Merged focus section — dismissable cards from 4 pools in priority order."""
+    _ensure_focus_dismissed_table()
+    today_str = datetime.date.today().isoformat()
+
+    # Load today's dismissed items
+    dismissed: set[tuple[str, str]] = set()
+    try:
+        rows = db_query(
+            "SELECT item_type, item_id FROM focus_dismissed WHERE dismissed_date = ?",
+            (today_str,),
+        ) or []
+        for r in rows:
+            dismissed.add((r["item_type"], r["item_id"]))
+    except Exception:
+        pass
+
+    items: list[dict] = []
+    seen_ids: set[str] = set()
+
+    def _add(item: dict):
+        key = (item["item_type"], item["item_id"])
+        if key in dismissed or item["item_id"] in seen_ids or len(items) >= 6:
+            return
+        seen_ids.add(item["item_id"])
+        items.append(item)
+
+    # Pool 1: Starred tasks
+    try:
+        for r in db_query(
+            "SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
+            "p.title AS project_title "
+            "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+            "WHERE t.starred = 1 AND t.status NOT IN ('done','completed','cancelled','deleted') "
+            "ORDER BY CASE t.status WHEN 'in_progress' THEN 1 WHEN 'blocked' THEN 2 ELSE 3 END, "
+            "t.created_at DESC LIMIT 6"
+        ) or []:
+            _add(_focus_item_from_task(r))
+    except Exception:
+        pass
+
+    # Pool 2: Blocked tasks
+    try:
+        for r in db_query(
+            "SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
+            "p.title AS project_title "
+            "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+            "WHERE t.status = 'blocked' "
+            "ORDER BY t.created_at ASC LIMIT 6"
+        ) or []:
+            _add(_focus_item_from_task(r))
+    except Exception:
+        pass
+
+    # Pool 3: Active ideas/drafts/questions
+    try:
+        for r in db_query(
+            "SELECT idea_id, text, idea_type, tags, domain, created_at FROM ideas "
+            "WHERE tags NOT LIKE '%archived%' "
+            "ORDER BY created_at DESC LIMIT 6"
+        ) or []:
+            _add(_focus_item_from_idea(r))
+    except Exception:
+        pass
+
+    # Pool 4: Open/in-progress tasks (fills remaining)
+    try:
+        for r in db_query(
+            "SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
+            "p.title AS project_title "
+            "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+            "WHERE t.status IN ('open','in_progress') AND t.starred = 0 "
+            "ORDER BY CASE t.status WHEN 'in_progress' THEN 1 ELSE 2 END, "
+            "t.created_at ASC LIMIT 10"
+        ) or []:
+            _add(_focus_item_from_task(r))
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_focus.html",
+        {"items": items},
+    )
+
+
+@router.post("/api/today/focus/dismiss", response_class=HTMLResponse)
+async def focus_dismiss(request: Request):
+    """Dismiss a focus item for today, then re-render the section."""
+    _ensure_focus_dismissed_table()
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    item_type = payload.get("item_type", "")
+    item_id = payload.get("item_id", "")
+    if item_type and item_id:
+        now = datetime.datetime.now().isoformat()
+        today_str = datetime.date.today().isoformat()
+        try:
+            db_execute(
+                "INSERT INTO focus_dismissed (item_type, item_id, dismissed_date, dismissed_at) "
+                "VALUES (?, ?, ?, ?)",
+                (item_type, item_id, today_str, now),
+            )
+        except Exception:
+            pass
+    return await today_focus(request)
 
 
 @router.get("/api/partial/today/ledger", response_class=HTMLResponse)
@@ -2807,3 +3222,97 @@ async def today_research_progress(request: Request):
             "active_projects": active_projects,
         },
     )
+
+
+# ── Morning-brief read-state + history ────────────────────────────────────────
+# A brief stays the "current" one until a new scan generates a fresh one — so the
+# same brief can show two days running. Read-tracking lets the user mark one read
+# (it then collapses + shows "read"), and the history endpoint exposes every past
+# brief, so nothing is lost between scans.
+def _ensure_brief_read_col():
+    import sqlite3
+    try:
+        con = sqlite3.connect(_get_db_path())
+        con.execute("ALTER TABLE daily_insights ADD COLUMN read_at TEXT")
+        con.commit(); con.close()
+    except Exception:
+        pass  # column already exists (additive migration)
+
+
+_FOCUS_DISMISSED_DDL = """
+CREATE TABLE IF NOT EXISTS focus_dismissed (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_type TEXT NOT NULL,
+    item_id TEXT NOT NULL,
+    dismissed_date TEXT NOT NULL,
+    dismissed_at TEXT NOT NULL
+)
+"""
+
+
+def _ensure_focus_dismissed_table():
+    try:
+        db_execute(_FOCUS_DISMISSED_DDL)
+    except Exception:
+        pass
+
+
+def _latest_brief_meta():
+    """(id, insight_date, read_bool) of the most recent brief, or (None, None, False)."""
+    import sqlite3
+    _ensure_brief_read_col()
+    try:
+        con = sqlite3.connect(_get_db_path()); con.row_factory = sqlite3.Row
+        r = con.execute(
+            "SELECT id, insight_date, read_at FROM daily_insights "
+            "WHERE content IS NOT NULL AND model IN ('claude-haiku-brief','desktop-brief') "
+            "ORDER BY insight_date DESC LIMIT 1").fetchone()
+        con.close()
+        if r:
+            return r["id"], r["insight_date"], bool(r["read_at"])
+    except Exception:
+        pass
+    return None, None, False
+
+
+@router.post("/api/today/morning-brief/read", response_class=HTMLResponse)
+async def mark_brief_read(request: Request):
+    import sqlite3
+    _ensure_brief_read_col()
+    try:
+        payload = await request.json()
+    except Exception:
+        payload = {}
+    bid = payload.get("id")
+    now = datetime.datetime.now().isoformat()
+    try:
+        con = sqlite3.connect(_get_db_path())
+        if bid:
+            con.execute("UPDATE daily_insights SET read_at=? WHERE id=?", (now, bid))
+        else:
+            con.execute(
+                "UPDATE daily_insights SET read_at=? WHERE id=("
+                "SELECT id FROM daily_insights WHERE content IS NOT NULL "
+                "ORDER BY insight_date DESC LIMIT 1)", (now,))
+        con.commit(); con.close()
+    except Exception:
+        pass
+    return await today_morning_brief(request)  # re-render the brief, now marked read
+
+
+@router.get("/api/partial/today/morning-brief/history", response_class=HTMLResponse)
+async def morning_brief_history(request: Request):
+    import sqlite3
+    _ensure_brief_read_col()
+    briefs = []
+    try:
+        con = sqlite3.connect(_get_db_path()); con.row_factory = sqlite3.Row
+        briefs = con.execute(
+            "SELECT id, insight_date, read_at, content FROM daily_insights "
+            "WHERE content IS NOT NULL AND model IN ('claude-haiku-brief','desktop-brief') "
+            "ORDER BY insight_date DESC LIMIT 30").fetchall()
+        con.close()
+    except Exception:
+        pass
+    return templates.TemplateResponse(
+        request, "partials/today_brief_history.html", {"briefs": briefs})
