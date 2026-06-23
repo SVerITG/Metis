@@ -11,13 +11,34 @@
 <div class="panel panel-pad course-card" style="padding:20px 22px;display:flex;flex-direction:column;gap:10px;" id="course-card-{{ c.id }}">
 
   <!-- Kicker -->
-  <div class="kicker" style="color:{% if c.status == 'active' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
+  <div class="kicker" style="color:{% if c.status == 'building' %}var(--m-ochre,#d97706){% elif c.status == 'active' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
+    {% if c.status == 'building' %}
+    <span>{{ (c.category or 'COURSE')|upper }} · BUILDING</span>
+    {% else %}
     <span>{{ (c.category or 'COURSE')|upper }} · {{ (c.status or 'in progress')|upper }}</span>
+    {% endif %}
   </div>
 
   <!-- Title -->
   <div style="font-family:var(--m-display);font-size:18px;font-weight:500;color:var(--m-ink);line-height:1.25;">{{ c.title }}</div>
 
+  {% if c.status == 'building' %}
+  <!-- Build pipeline progress -->
+  {% set step = c.build_step|default(1)|int %}
+  {% set step_labels = {1: 'Intake', 2: 'Scope', 3: 'Harvest', 4: 'Design', 5: 'Draft', 6: 'Review', 7: 'Publish'} %}
+  <div class="todo-meta" style="margin:0;">
+    STEP {{ step }} OF 7 · {{ step_labels.get(step, 'INTAKE') | upper }}
+  </div>
+  <div style="display:flex;gap:3px;margin-top:2px;">
+    {% for s in range(1, 8) %}
+    <div style="flex:1;height:5px;border-radius:2px;
+                background:{% if s <= step %}var(--m-ochre,#d97706){% else %}var(--m-surface-3){% endif %};"></div>
+    {% endfor %}
+  </div>
+  <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);margin-top:4px;line-height:1.4;">
+    This course is being built. Open Claude Desktop to continue the build pipeline.
+  </div>
+  {% else %}
   <!-- Progress bar + module count -->
   {% if c.total_modules %}
   <div class="todo-meta" style="margin:0;">
@@ -29,6 +50,7 @@
   <div style="height:7px;background:var(--m-surface-3);border-radius:4px;" role="progressbar" aria-valuenow="{{ (c.progress_pct or 0)|int }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ c.title }} progress">
     <div style="height:100%;width:{{ (c.progress_pct or 0)|int }}%;background:var(--m-accent);border-radius:4px;transition:width 600ms ease;min-width:{% if (c.progress_pct or 0)|int > 0 %}4px{% else %}0{% endif %};"></div>
   </div>
+  {% endif %}
 
   <!-- Last completed lesson -->
   {% if c.current_lesson %}
