@@ -370,50 +370,378 @@ def assemble_daily_context(db_path) -> dict:
             context_parts.append("\n".join(lines))
             sources_used.append(f"papers:{len(rows)}")
 
-        # Ideas (7d)
+        # Framing context: projects + ideas (relevance anchors, NOT briefing topics)
+        framing_parts: list[str] = []
+        rows = _q(conn,
+            "SELECT title FROM projects WHERE status='active' "
+            "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END LIMIT 3")
+        if rows:
+            framing_parts.append("Active projects: " + ", ".join(r['title'] for r in rows))
+            sources_used.append(f"projects:{len(rows)}")
+
         rows = _q(conn,
             "SELECT text FROM ideas "
             "WHERE created_at >= ? ORDER BY created_at DESC LIMIT 6", (d7,))
         if rows:
-            lines = ["## Recent Research Ideas"]
-            for r in rows:
-                lines.append(f"- {str(r['text'] or '')[:120]}")
-            context_parts.append("\n".join(lines))
+            snippets = [str(r['text'] or '')[:80] for r in rows]
+            framing_parts.append("Recent ideas: " + "; ".join(snippets))
             sources_used.append(f"ideas:{len(rows)}")
 
-        # Open tasks (priority-ordered)
+        if framing_parts:
+            context_parts.append(
+                "## Framing Context (connect external signals to these if relevant "
+                "— do not report on them)\n" + "\n".join(framing_parts)
+            )
+
+        conn.close()
+    except Exception:
+        pass
+
+    return {
+        "date": today,
+        "context": "\n\n".join(context_parts) if context_parts else "",
+        "sources": ", ".join(sources_used),
+    }
+
+
+def assemble_weekly_context(db_path) -> dict:
+    """Assemble weekly briefing context — wider windows, more items, memory connections.
+
+    Same return shape as assemble_daily_context: {date, context, sources}.
+    """
+    import sqlite3 as _sqlite3
+    import json as _json
+    import yaml as _yaml
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    d7 = (now - datetime.timedelta(days=7)).isoformat()
+    d14 = (now - datetime.timedelta(days=14)).isoformat()
+    d30 = (now - datetime.timedelta(days=30)).isoformat()
+
+    sources_used: list[str] = []
+    context_parts: list[str] = []
+
+    def _q(conn, sql, params=()):
+        try:
+            return conn.execute(sql, params).fetchall()
+        except Exception:
+            return []
+
+    # Researcher profile header (reuse daily logic)
+    try:
+        rc_root = paths.root
+        cfg_path = rc_root / "system" / "config" / "user-config.yaml"
+        prefs_path = rc_root / "system" / "config" / "user-preferences.json"
+        researcher_name = "Researcher"
+        research_field = ""
+        monitored_topics: list[str] = []
+        if cfg_path.exists():
+            cfg = _yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+            researcher_name = cfg.get("user", {}).get("name", "Researcher") or "Researcher"
+            research_field = cfg.get("research", {}).get("field", "")
+        if prefs_path.exists():
+            prefs = _json.loads(prefs_path.read_text(encoding="utf-8"))
+            monitored_topics = prefs.get("news_topics", [])
+        if research_field or monitored_topics:
+            header_parts = []
+            if research_field:
+                header_parts.append(f"Researcher field: {research_field}")
+            if monitored_topics:
+                header_parts.append(f"Monitoring topics: {', '.join(monitored_topics[:8])}")
+            context_parts.append("## Researcher Profile\n" + "\n".join(header_parts))
+    except Exception:
+        pass
+
+    try:
+        conn = _sqlite3.connect(str(db_path))
+        conn.row_factory = _sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+
+        # News (7-day window, limit 20)
+        d1 = (now - datetime.timedelta(days=1)).isoformat()
+        _order = (
+            "ORDER BY CASE WHEN created_at >= ? THEN 0 ELSE 1 END, "
+            "CASE WHEN signal_strength='high' THEN 1 WHEN signal_strength='medium' THEN 2 ELSE 3 END, "
+            "created_at DESC"
+        )
+        news_items = _q(conn,
+            "SELECT title, summary, domain FROM news_briefs "
+            "WHERE created_at >= ? AND COALESCE(source_type,'news') = 'news' "
+            + _order + " LIMIT 20", (d7, d1))
+        lit_items = _q(conn,
+            "SELECT title, summary, domain FROM news_briefs "
+            "WHERE created_at >= ? AND source_type = 'article' "
+            + _order + " LIMIT 12", (d7, d1))
+        if news_items:
+            lines = ["## Field News (last 7 days)"]
+            for r in news_items:
+                tag = f"[{r['domain'].upper()}] " if r["domain"] else ""
+                lines.append(f"- {tag}{r['title']}: {str(r['summary'] or '')[:200]}")
+            context_parts.append("\n".join(lines))
+            sources_used.append(f"news:{len(news_items)}")
+        if lit_items:
+            lines = ["## New Literature Alerts (last 7 days)"]
+            for r in lit_items:
+                lines.append(f"- {r['title']}: {str(r['summary'] or '')[:200]}")
+            context_parts.append("\n".join(lines))
+            sources_used.append(f"literature_alerts:{len(lit_items)}")
+        if not news_items and not lit_items:
+            context_parts.append(
+                "## Field News\nNo news signals found for the past week."
+            )
+
+        # Papers (14-day window, limit 10)
+        bulk_dates = {
+            r["d"] for r in _q(conn,
+                "SELECT substr(created_at,1,10) AS d, COUNT(*) AS n FROM literature_metadata "
+                "GROUP BY d HAVING n >= 50")
+        }
         rows = _q(conn,
-            "SELECT title, priority FROM tasks WHERE status IN ('open','in_progress','blocked') "
+            "SELECT title, abstract, year, substr(created_at,1,10) AS add_day "
+            "FROM literature_metadata WHERE created_at >= ? "
+            "ORDER BY COALESCE(year,0) DESC, created_at DESC LIMIT 40", (d14,))
+        rows = [r for r in rows if r["add_day"] not in bulk_dates][:10]
+        if rows:
+            lines = ["## Recently Added Papers (14 days)"]
+            for r in rows:
+                year = f" ({r['year']})" if r.get("year") else ""
+                snippet = str(r["abstract"] or "")[:150]
+                lines.append(f"- {r['title']}{year}" + (f": {snippet}" if snippet else ""))
+            context_parts.append("\n".join(lines))
+            sources_used.append(f"papers:{len(rows)}")
+
+        # Framing context: projects (5) + ideas (30-day, limit 10)
+        framing_parts: list[str] = []
+        rows = _q(conn,
+            "SELECT title FROM projects WHERE status='active' "
             "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END LIMIT 5")
         if rows:
-            lines = ["## Open Tasks"]
-            for r in rows:
-                lines.append(f"- [{r['priority']}] {r['title']}")
-            context_parts.append("\n".join(lines))
-            sources_used.append(f"tasks:{len(rows)}")
-
-        # Active projects
-        rows = _q(conn,
-            "SELECT title, description FROM projects WHERE status='active' "
-            "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END LIMIT 3")
-        if rows:
-            lines = ["## Active Projects"]
-            for r in rows:
-                desc = str(r["description"] or "")[:100]
-                lines.append(f"- {r['title']}" + (f": {desc}" if desc else ""))
-            context_parts.append("\n".join(lines))
+            framing_parts.append("Active projects: " + ", ".join(r['title'] for r in rows))
             sources_used.append(f"projects:{len(rows)}")
 
-        # Recent agent runs (7d) — brief log of what was worked on
         rows = _q(conn,
-            "SELECT agent_slug, task_summary FROM agent_runs "
-            "WHERE created_at >= ? ORDER BY created_at DESC LIMIT 8", (d7,))
+            "SELECT text FROM ideas "
+            "WHERE created_at >= ? ORDER BY created_at DESC LIMIT 10", (d30,))
         if rows:
-            lines = ["## Recent AI Activity"]
-            for r in rows:
-                lines.append(f"- [{r['agent_slug']}] {r['task_summary']}")
+            snippets = [str(r['text'] or '')[:80] for r in rows]
+            framing_parts.append("Recent ideas: " + "; ".join(snippets))
+            sources_used.append(f"ideas:{len(rows)}")
+
+        if framing_parts:
+            context_parts.append(
+                "## Framing Context (connect external signals to these if relevant "
+                "— do not report on them)\n" + "\n".join(framing_parts)
+            )
+
+        # Memory connections: keyword search against semantic_memory using top signal titles
+        try:
+            top_titles = _q(conn,
+                "SELECT title FROM news_briefs WHERE created_at >= ? "
+                "ORDER BY CASE WHEN signal_strength='high' THEN 1 ELSE 2 END, "
+                "created_at DESC LIMIT 5", (d7,))
+            if top_titles:
+                memory_hits: list[str] = []
+                for tt in top_titles:
+                    kw = str(tt['title'] or '')[:60]
+                    if not kw:
+                        continue
+                    mem_rows = _q(conn,
+                        "SELECT content FROM semantic_memory "
+                        "WHERE content LIKE ? LIMIT 2",
+                        (f"%{kw.split()[0]}%",))
+                    for mr in mem_rows:
+                        snippet = str(mr['content'] or '')[:120]
+                        if snippet and snippet not in memory_hits:
+                            memory_hits.append(snippet)
+                if memory_hits:
+                    lines = ["## Memory Connections"]
+                    for h in memory_hits[:6]:
+                        lines.append(f"- {h}")
+                    context_parts.append("\n".join(lines))
+                    sources_used.append(f"memory:{len(memory_hits)}")
+        except Exception:
+            pass
+
+        conn.close()
+    except Exception:
+        pass
+
+    return {
+        "date": today,
+        "context": "\n\n".join(context_parts) if context_parts else "",
+        "sources": ", ".join(sources_used),
+    }
+
+
+def assemble_catchup_context(db_path, since_iso: str, previous_brief: str = "") -> dict:
+    """Assemble catch-up briefing context — dynamic window from since_iso to now.
+
+    Same return shape: {date, context, sources}.
+    Adds a '## Previous Brief (for contrast)' section with truncated prior brief.
+    """
+    import sqlite3 as _sqlite3
+    import json as _json
+    import yaml as _yaml
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    d14_fallback = (now - datetime.timedelta(days=14)).isoformat()
+
+    # Use since_iso as the window start, or 14 days if not provided
+    window_start = since_iso if since_iso else d14_fallback
+
+    sources_used: list[str] = []
+    context_parts: list[str] = []
+
+    def _q(conn, sql, params=()):
+        try:
+            return conn.execute(sql, params).fetchall()
+        except Exception:
+            return []
+
+    # Researcher profile
+    try:
+        rc_root = paths.root
+        cfg_path = rc_root / "system" / "config" / "user-config.yaml"
+        prefs_path = rc_root / "system" / "config" / "user-preferences.json"
+        researcher_name = "Researcher"
+        research_field = ""
+        monitored_topics: list[str] = []
+        if cfg_path.exists():
+            cfg = _yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+            researcher_name = cfg.get("user", {}).get("name", "Researcher") or "Researcher"
+            research_field = cfg.get("research", {}).get("field", "")
+        if prefs_path.exists():
+            prefs = _json.loads(prefs_path.read_text(encoding="utf-8"))
+            monitored_topics = prefs.get("news_topics", [])
+        if research_field or monitored_topics:
+            header_parts = []
+            if research_field:
+                header_parts.append(f"Researcher field: {research_field}")
+            if monitored_topics:
+                header_parts.append(f"Monitoring topics: {', '.join(monitored_topics[:8])}")
+            context_parts.append("## Researcher Profile\n" + "\n".join(header_parts))
+    except Exception:
+        pass
+
+    # Previous brief for contrast
+    if previous_brief:
+        context_parts.append(
+            "## Previous Brief (for contrast)\n"
+            + previous_brief[:600]
+        )
+
+    try:
+        conn = _sqlite3.connect(str(db_path))
+        conn.row_factory = _sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+
+        d1 = (now - datetime.timedelta(days=1)).isoformat()
+        _order = (
+            "ORDER BY CASE WHEN created_at >= ? THEN 0 ELSE 1 END, "
+            "CASE WHEN signal_strength='high' THEN 1 WHEN signal_strength='medium' THEN 2 ELSE 3 END, "
+            "created_at DESC"
+        )
+
+        # News (dynamic window, limit 20)
+        news_items = _q(conn,
+            "SELECT title, summary, domain FROM news_briefs "
+            "WHERE created_at >= ? AND COALESCE(source_type,'news') = 'news' "
+            + _order + " LIMIT 20", (window_start, d1))
+        lit_items = _q(conn,
+            "SELECT title, summary, domain FROM news_briefs "
+            "WHERE created_at >= ? AND source_type = 'article' "
+            + _order + " LIMIT 12", (window_start, d1))
+
+        if news_items:
+            lines = ["## Field News (since last brief)"]
+            for r in news_items:
+                tag = f"[{r['domain'].upper()}] " if r["domain"] else ""
+                lines.append(f"- {tag}{r['title']}: {str(r['summary'] or '')[:200]}")
             context_parts.append("\n".join(lines))
-            sources_used.append(f"agent_runs:{len(rows)}")
+            sources_used.append(f"news:{len(news_items)}")
+        if lit_items:
+            lines = ["## New Literature Alerts (since last brief)"]
+            for r in lit_items:
+                lines.append(f"- {r['title']}: {str(r['summary'] or '')[:200]}")
+            context_parts.append("\n".join(lines))
+            sources_used.append(f"literature_alerts:{len(lit_items)}")
+        if not news_items and not lit_items:
+            context_parts.append("## Field News\nNo news signals found since last brief.")
+
+        # Papers (dynamic window, limit 10)
+        bulk_dates = {
+            r["d"] for r in _q(conn,
+                "SELECT substr(created_at,1,10) AS d, COUNT(*) AS n FROM literature_metadata "
+                "GROUP BY d HAVING n >= 50")
+        }
+        rows = _q(conn,
+            "SELECT title, abstract, year, substr(created_at,1,10) AS add_day "
+            "FROM literature_metadata WHERE created_at >= ? "
+            "ORDER BY COALESCE(year,0) DESC, created_at DESC LIMIT 40", (window_start,))
+        rows = [r for r in rows if r["add_day"] not in bulk_dates][:10]
+        if rows:
+            lines = ["## Recently Added Papers"]
+            for r in rows:
+                year = f" ({r['year']})" if r.get("year") else ""
+                snippet = str(r["abstract"] or "")[:150]
+                lines.append(f"- {r['title']}{year}" + (f": {snippet}" if snippet else ""))
+            context_parts.append("\n".join(lines))
+            sources_used.append(f"papers:{len(rows)}")
+
+        # Framing context (same as weekly: 5 projects, 10 ideas from 30d)
+        d30 = (now - datetime.timedelta(days=30)).isoformat()
+        framing_parts: list[str] = []
+        rows = _q(conn,
+            "SELECT title FROM projects WHERE status='active' "
+            "ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END LIMIT 5")
+        if rows:
+            framing_parts.append("Active projects: " + ", ".join(r['title'] for r in rows))
+            sources_used.append(f"projects:{len(rows)}")
+
+        rows = _q(conn,
+            "SELECT text FROM ideas "
+            "WHERE created_at >= ? ORDER BY created_at DESC LIMIT 10", (d30,))
+        if rows:
+            snippets = [str(r['text'] or '')[:80] for r in rows]
+            framing_parts.append("Recent ideas: " + "; ".join(snippets))
+            sources_used.append(f"ideas:{len(rows)}")
+
+        if framing_parts:
+            context_parts.append(
+                "## Framing Context (connect external signals to these if relevant "
+                "— do not report on them)\n" + "\n".join(framing_parts)
+            )
+
+        # Memory connections (same as weekly)
+        try:
+            top_titles = _q(conn,
+                "SELECT title FROM news_briefs WHERE created_at >= ? "
+                "ORDER BY CASE WHEN signal_strength='high' THEN 1 ELSE 2 END, "
+                "created_at DESC LIMIT 5", (window_start,))
+            if top_titles:
+                memory_hits: list[str] = []
+                for tt in top_titles:
+                    kw = str(tt['title'] or '')[:60]
+                    if not kw:
+                        continue
+                    mem_rows = _q(conn,
+                        "SELECT content FROM semantic_memory "
+                        "WHERE content LIKE ? LIMIT 2",
+                        (f"%{kw.split()[0]}%",))
+                    for mr in mem_rows:
+                        snippet = str(mr['content'] or '')[:120]
+                        if snippet and snippet not in memory_hits:
+                            memory_hits.append(snippet)
+                if memory_hits:
+                    lines = ["## Memory Connections"]
+                    for h in memory_hits[:6]:
+                        lines.append(f"- {h}")
+                    context_parts.append("\n".join(lines))
+                    sources_used.append(f"memory:{len(memory_hits)}")
+        except Exception:
+            pass
 
         conn.close()
     except Exception:

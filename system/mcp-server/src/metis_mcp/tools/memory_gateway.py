@@ -128,8 +128,8 @@ async def recall(
         query_vec = embed_query(query)
         vec_bytes = _encode_vec(query_vec)
         embed_available = True
-    except ImportError:
-        pass
+    except Exception:
+        pass  # SSL error, model download failure, etc. — keyword search still works
 
     try:
         with connect(paths.db) as conn:
