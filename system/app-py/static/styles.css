@@ -1832,6 +1832,59 @@ body.capture-open .t-capture {
   gap: 8px;
   margin-top: 22px;
 }
+
+/* Course wizard — radio cards */
+.cw-radio-card {
+  display: block;
+  border: 1px solid var(--m-line);
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color 140ms ease;
+}
+.cw-radio-card:hover { border-color: var(--m-accent-soft); }
+.cw-radio-card.card--selected { border-color: var(--m-accent); background: var(--m-accent-wash); }
+.cw-radio-card input[type="radio"] { display: none; }
+
+/* Course wizard — select dropdowns */
+.metis-modal select {
+  width: 100%;
+  background: var(--m-bg);
+  border: 1px solid var(--m-rule-strong);
+  border-radius: 3px;
+  padding: 8px 10px;
+  font-family: var(--m-ui);
+  font-size: 14px;
+  color: var(--m-ink);
+  outline: none;
+  transition: border-color 140ms ease;
+}
+.metis-modal select:focus { border-color: var(--m-accent); }
+
+/* Course wizard — include chips (toggleable) */
+.cw-include-chip {
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid var(--m-line);
+  transition: all 140ms ease;
+}
+.cw-include-chip.chip--active {
+  background: var(--m-accent-wash);
+  color: var(--m-accent);
+  border-color: var(--m-accent);
+}
+
+/* Course wizard — step dots */
+.cw-dots { display: flex; gap: 6px; align-items: center; }
+.cw-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--m-surface-3);
+  transition: background 140ms ease;
+}
+.cw-dot.dot--active { background: var(--m-accent); }
+.cw-dot.dot--done   { background: var(--m-ok, #3a9); }
+
 .metis-help-line {
   font-family: var(--m-display);
   font-style: italic;

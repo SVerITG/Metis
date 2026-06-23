@@ -26,6 +26,46 @@ templates = Jinja2Templates(
 )
 
 
+# ── One-time data migrations (idempotent) ────────────────────────────────────
+def _run_learning_migrations() -> None:
+    """Fix legacy data on startup. Each migration is idempotent."""
+    try:
+        # Rename "Multilevel Analysis Course" → "Statistics for Epidemiology"
+        # and fix the slug to match the filesystem (knowledge/courses/statistics/)
+        db_execute(
+            "UPDATE learning_courses SET title='Statistics for Epidemiology', "
+            "slug='statistics', category='statistics' "
+            "WHERE title IN ('Multilevel Analysis Course', 'Statistics for Epidemiology') "
+            "AND slug='multilevel-analysis-course'"
+        )
+    except Exception:
+        pass
+
+    # Ensure updated_at column exists (added after initial schema)
+    try:
+        db_execute("ALTER TABLE learning_courses ADD COLUMN updated_at TEXT")
+    except Exception:
+        pass
+
+    # Ensure reviewed_at column exists on spaced_repetition
+    try:
+        db_execute("ALTER TABLE spaced_repetition ADD COLUMN reviewed_at TEXT")
+    except Exception:
+        pass
+
+    # Remove duplicate course ideas (keep lowest id for each title)
+    try:
+        db_execute(
+            "DELETE FROM learning_courses WHERE id NOT IN "
+            "(SELECT MIN(id) FROM learning_courses GROUP BY title, status)"
+        )
+    except Exception:
+        pass
+
+
+_run_learning_migrations()
+
+
 def _streak_cells(days: int = 40) -> list[dict]:
     """Return a real review-activity map for the last `days` days.
 
@@ -69,6 +109,21 @@ async def learning_tab_partial(request: Request):
     return templates.TemplateResponse(request, "learning.html", _learning_context())
 
 
+@router.get("/course/{slug}", response_class=HTMLResponse)
+async def course_reader_page(slug: str, request: Request):
+    """Standalone course reader — opens in its own browser tab."""
+    course = db_query(
+        "SELECT title FROM learning_courses WHERE slug=? LIMIT 1",
+        (slug,), default=[],
+    )
+    title = course[0]["title"] if course else slug.replace("-", " ").title()
+    return templates.TemplateResponse(
+        request,
+        "course_reader.html",
+        {"slug": slug, "course_title": title},
+    )
+
+
 # ---------------------------------------------------------------------------
 # Archive-layout partials
 # ---------------------------------------------------------------------------
@@ -87,8 +142,28 @@ async def learning_courses_archive(request: Request):
     courses = db_query(
         "SELECT id, title, category, progress_pct, total_modules, completed_modules, status, slug, "
         "project_id, current_lesson, next_lesson, course_url, lesson_notes "
-        "FROM learning_courses WHERE status IN ('active','in_progress') ORDER BY progress_pct DESC LIMIT 6"
+        "FROM learning_courses WHERE status IN ('active','in_progress','building') "
+        "ORDER BY CASE status WHEN 'building' THEN 0 ELSE 1 END, progress_pct DESC LIMIT 6"
     ) or []
+
+    # Annotate building courses with their pipeline step from course_builds
+    for c in courses:
+        if c.get("status") == "building" and c.get("slug"):
+            try:
+                build = db_query(
+                    "SELECT step, status as build_status FROM course_builds WHERE slug=? LIMIT 1",
+                    (c["slug"],), default=[],
+                )
+                if build:
+                    c["build_step"] = build[0].get("step", 1)
+                    c["build_status"] = build[0].get("build_status", "intake")
+                else:
+                    c["build_step"] = 1
+                    c["build_status"] = "intake"
+            except Exception:
+                c["build_step"] = 1
+                c["build_status"] = "intake"
+
     return templates.TemplateResponse(
         request,
         "partials/learning_courses.html",
@@ -104,11 +179,6 @@ async def learning_courses_archive(request: Request):
 @router.get("/api/partial/learning/due-today", response_class=HTMLResponse)
 async def learning_due_today(request: Request):
     today = str(datetime.date.today())
-    # Ensure reviewed_at column exists (added in this phase)
-    try:
-        db_execute("ALTER TABLE spaced_repetition ADD COLUMN reviewed_at TEXT")
-    except Exception:
-        pass
     due = db_query(
         "SELECT sr_id as id, front_text as topic, source_table as course_title, "
         "next_review as next_review_date, interval_days "
@@ -281,11 +351,23 @@ async def add_course_idea(request: Request):
     category = (data.get("category") or "general").strip()
     if not title:
         return HTMLResponse("<div class='error-msg' style='color:var(--m-danger);font-size:13px;padding:6px 0;'>Title is required.</div>")
+    # Reject duplicate titles (case-insensitive) among ideas
+    dup = db_scalar(
+        "SELECT COUNT(*) FROM learning_courses WHERE LOWER(title)=LOWER(?) AND status='idea'",
+        (title,), default=0,
+    ) or 0
+    if dup:
+        return HTMLResponse(
+            "<div class='error-msg' style='color:var(--m-danger);font-size:13px;padding:6px 0;'>"
+            "A course idea with that title already exists.</div>"
+        )
     slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
-    # Ensure slug uniqueness
-    existing = db_scalar("SELECT COUNT(*) FROM learning_courses WHERE slug=?", (slug,), default=0) or 0
-    if existing:
-        slug = f"{slug}-{existing}"
+    # Ensure slug uniqueness — loop until we find a free slug
+    base_slug = slug
+    suffix = 1
+    while db_scalar("SELECT COUNT(*) FROM learning_courses WHERE slug=?", (slug,), default=0):
+        slug = f"{base_slug}-{suffix}"
+        suffix += 1
     db_execute(
         "INSERT INTO learning_courses (title, slug, category, status, progress_pct, created_at) "
         "VALUES (?,?,?,'idea',0,datetime('now'))",
@@ -388,6 +470,139 @@ async def course_build_idea(request: Request):
             f"and build this course following the same principles and structure."
         )
 
+    return {"status": "ok", "prompt": prompt, "title": title, "slug": slug}
+
+
+# ---------------------------------------------------------------------------
+# Course wizard — build with intake
+# ---------------------------------------------------------------------------
+
+
+def _parse_duration(time_budget: str) -> int:
+    """Map wizard time-budget labels to estimated hours."""
+    return {"< 2 hours": 2, "1 weekend": 8, "1 month": 40, "open-ended": 0}.get(
+        time_budget, 0
+    )
+
+
+def _generate_intake_prompt(slug: str, title: str, intake: dict) -> str:
+    """Build a context-rich prompt from wizard intake answers."""
+    mlm_ref = "Statistics for Epidemiology course (id=6, slug=statistics-full)"
+    questionnaire = "system/config/course-builder-questionnaire.md"
+
+    sections = [
+        f"/course-builder",
+        f"Project: {title} Course",
+        "",
+        "## Intake (completed via dashboard wizard)",
+        "",
+        f"**Title:** {title}",
+        f"**Learner:** {intake.get('learner', 'yourself')}",
+        f"**Prior level:** {intake.get('level', 'working')}",
+        f"**Time budget:** {intake.get('time_budget', '1 weekend')}",
+        f"**Scope:** {intake.get('scope', 'practical')}",
+        f"**Format:** {intake.get('format', 'reading')}",
+        f"**Tone:** {intake.get('tone', 'friendly')}",
+        f"**Module length:** {intake.get('module_length', '30 min')}",
+    ]
+
+    includes = intake.get("includes", [])
+    if includes:
+        sections.append(f"**Include:** {', '.join(includes)}")
+
+    questions = (intake.get("key_questions") or "").strip()
+    if questions:
+        sections += ["", "### Key questions", questions]
+
+    materials = (intake.get("materials") or "").strip()
+    if materials:
+        sections += ["", "### Materials to import", materials]
+
+    out_of_scope = (intake.get("out_of_scope") or "").strip()
+    if out_of_scope:
+        sections += ["", "### Out of scope", out_of_scope]
+
+    sections += [
+        "",
+        "---",
+        "",
+        "The user has already completed the intake questionnaire via the dashboard wizard. "
+        "Skip intake and proceed directly to **Step 2: Scope Plan**.",
+        "",
+        f"Reference template: {mlm_ref}",
+        f"Questionnaire path: {questionnaire}",
+    ]
+
+    return "\n".join(sections)
+
+
+@router.post("/api/course/build-with-intake")
+async def course_build_with_intake(request: Request):
+    """Wizard endpoint: save intake, set status to building, return prompt."""
+    data = await request.json()
+    title = (data.get("title") or "").strip()
+    slug = (data.get("slug") or "").strip()
+    intake = data.get("intake", {})
+
+    if not title:
+        return JSONResponse({"status": "error", "message": "Title is required."}, status_code=400)
+
+    # Generate slug from title if not provided
+    if not slug:
+        slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+
+    # Check for existing build that isn't cancelled
+    existing = db_query(
+        "SELECT status FROM course_builds WHERE slug=? LIMIT 1",
+        (slug,), default=[],
+    )
+    if existing and existing[0].get("status") not in (None, "", "cancelled", "intake"):
+        return JSONResponse({
+            "status": "error",
+            "message": f"A course build for '{title}' is already in progress.",
+        }, status_code=409)
+
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    duration = _parse_duration(intake.get("time_budget", ""))
+
+    # Upsert course_builds row
+    db_execute(
+        "INSERT INTO course_builds (slug, title, topic, target_audience, duration_hours, "
+        "status, step, intake_json, created_at, updated_at) "
+        "VALUES (?,?,?,?,?, 'intake', 1, ?,?,?) "
+        "ON CONFLICT(slug) DO UPDATE SET "
+        "title=excluded.title, topic=excluded.topic, target_audience=excluded.target_audience, "
+        "duration_hours=excluded.duration_hours, status='intake', step=1, "
+        "intake_json=excluded.intake_json, updated_at=excluded.updated_at",
+        (slug, title, title, intake.get("learner", "yourself"), duration,
+         json.dumps(intake), now, now),
+    )
+
+    # Ensure a learning_courses row exists and set status to 'building'
+    lc_exists = db_scalar(
+        "SELECT COUNT(*) FROM learning_courses WHERE slug=?", (slug,), default=0,
+    )
+    if lc_exists:
+        db_execute(
+            "UPDATE learning_courses SET status='building', updated_at=? WHERE slug=?",
+            (now, slug),
+        )
+    else:
+        category = "general"
+        # Try to pull category from an existing idea row
+        idea_row = db_query(
+            "SELECT category FROM learning_courses WHERE slug=? AND status='idea' LIMIT 1",
+            (slug,), default=[],
+        )
+        if idea_row:
+            category = idea_row[0].get("category", "general")
+        db_execute(
+            "INSERT INTO learning_courses (title, slug, category, status, progress_pct, created_at, updated_at) "
+            "VALUES (?,?,?,'building',0,?,?)",
+            (title, slug, category, now, now),
+        )
+
+    prompt = _generate_intake_prompt(slug, title, intake)
     return {"status": "ok", "prompt": prompt, "title": title, "slug": slug}
 
 
@@ -609,7 +824,7 @@ async def course_overview(slug: str, request: Request):
     """Return module + lesson list for a course (sidebar/overview panel)."""
     data = _load_lessons_json(slug)
     course = db_query(
-        "SELECT id, title, slug, progress_pct, total_modules, completed_modules, "
+        "SELECT id, title, slug, category, progress_pct, total_modules, completed_modules, "
         "current_lesson, next_lesson FROM learning_courses WHERE slug=? LIMIT 1",
         (slug,),
         default=[],
