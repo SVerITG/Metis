@@ -1,0 +1,24 @@
+{# today_brief_history.html — every past morning briefing, newest first.
+   Each is an expandable entry (full text on click) with date + read state.
+   Context: briefs — sqlite rows (id, insight_date, read_at, content) #}
+<div class="panel" style="background:var(--m-surface-2);padding:14px 18px;border:1px solid var(--m-rule-soft);">
+  <div class="label-caps" style="margin-bottom:10px;">Previous briefings · {{ briefs|length }}</div>
+  {% if briefs %}
+    {% for b in briefs %}
+    <details style="border-bottom:1px solid var(--m-rule-soft);padding:9px 0;">
+      <summary style="cursor:pointer;display:flex;align-items:center;gap:12px;font-family:var(--m-mono);font-size:11px;color:var(--m-ink);list-style:none;">
+        <span class="tnum">{{ b['insight_date'] }}</span>
+        {% if b['read_at'] %}
+          <span style="font-size:8px;letter-spacing:0.12em;color:var(--m-muted);">READ</span>
+        {% else %}
+          <span style="font-size:8px;letter-spacing:0.12em;color:var(--m-accent);">UNREAD</span>
+        {% endif %}
+        <span style="color:var(--m-muted);font-family:var(--m-display);font-style:italic;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ (b['content'] or '')[:80]|replace('*','') }}…</span>
+      </summary>
+      <div class="ed" style="margin-top:10px;white-space:pre-wrap;font-size:14px;color:var(--m-text);line-height:1.65;max-width:760px;">{{ b['content'] }}</div>
+    </details>
+    {% endfor %}
+  {% else %}
+    <div class="ed" style="font-style:italic;color:var(--m-muted);font-size:13px;">No past briefings yet — they'll collect here as the morning scan runs.</div>
+  {% endif %}
+</div>

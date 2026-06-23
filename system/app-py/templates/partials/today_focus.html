@@ -1,35 +1,46 @@
-<div class="card p-3">
-  <div class="d-flex align-items-center mb-2">
-    <i class="bi bi-bullseye me-2 text-danger"></i>
-    <span class="fw-semibold">Today's focus</span>
+{# today_focus.html — Merged dismissable focus cards (up to 6 items).
+   Context: items (list of dicts with item_type, item_id, title, subtitle, badge, badge_color). #}
+<div id="today-focus">
+{% if items %}
+  <div class="sec-label" style="margin-bottom:14px;">
+    <span>Today's focus</span>
+    <span class="tail">STAR A TASK TO PIN IT HERE</span>
   </div>
-
-  {% if project %}
-  <div class="focus-project">
-    <div class="d-flex align-items-start justify-content-between gap-2">
-      <div>
-        <div class="fw-semibold fs-6">{{ project.title }}</div>
-        {% if project.domain %}
-        <div class="text-muted small mb-1">
-          <i class="bi bi-folder2 me-1"></i>{{ project.domain }}
-        </div>
-        {% endif %}
-        {% if project.next_step %}
-        <div class="focus-next-step small mt-1">
-          <i class="bi bi-arrow-right-circle me-1 text-success"></i>
-          <span>{{ project.next_step }}</span>
-        </div>
+  <div class="grid grid-3" style="margin-bottom:32px;">
+    {% for item in items %}
+    <div class="panel" style="padding:16px 20px;position:relative;">
+      {# Dismiss button #}
+      <button type="button"
+              hx-post="/api/today/focus/dismiss"
+              hx-vals='{"item_type": "{{ item.item_type }}", "item_id": "{{ item.item_id }}"}'
+              hx-target="#today-focus"
+              hx-swap="outerHTML"
+              hx-headers='{"Content-Type": "application/json"}'
+              style="position:absolute;top:8px;right:10px;border:0;background:transparent;font-size:14px;color:var(--m-muted);cursor:pointer;line-height:1;padding:2px 4px;opacity:0.5;"
+              title="Dismiss for today"
+              onmouseover="this.style.opacity='1';this.style.color='var(--m-ink)'"
+              onmouseout="this.style.opacity='0.5';this.style.color='var(--m-muted)'">&times;</button>
+      {# Badge #}
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+        <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;padding:2px 8px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, {{ item.badge_color }} 15%, transparent);color:{{ item.badge_color }};">{{ item.badge }}</span>
+        {% if item.subtitle %}
+        <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;color:var(--m-muted);">{{ item.subtitle }}</span>
         {% endif %}
       </div>
-      {% if project.priority %}
-      <span class="badge bg-danger ms-auto">P{{ project.priority }}</span>
-      {% endif %}
+      {# Title #}
+      <div style="font-family:var(--m-display);font-size:14px;line-height:1.4;color:var(--m-ink);padding-right:16px;">{{ item.title }}</div>
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="sec-label" style="margin-bottom:14px;">
+    <span>Today's focus</span>
+    <span class="tail">ALL CLEAR</span>
+  </div>
+  <div class="panel" style="padding:20px 28px;margin-bottom:32px;">
+    <div class="ed" style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">
+      No open tasks or active ideas right now. Star a task or capture an idea to fill this section.
     </div>
   </div>
-  {% else %}
-  <div class="text-muted small">
-    <i class="bi bi-inbox me-1"></i>
-    No active project found. Add one with <kbd>i: new project idea</kbd> or update a project status to <em>active</em>.
-  </div>
-  {% endif %}
+{% endif %}
 </div>
