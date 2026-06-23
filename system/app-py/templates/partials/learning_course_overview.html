@@ -3,9 +3,9 @@
 
   <!-- Course header -->
   <div style="padding:16px 20px 14px;border-bottom:1px solid var(--m-line);">
-    <div class="kicker" style="margin-bottom:6px;">STATISTICS FOR EPIDEMIOLOGY</div>
+    <div class="kicker" style="margin-bottom:6px;">{{ (course.category or course.title or 'COURSE') | upper }}</div>
     <div style="font-family:var(--m-display);font-size:17px;font-weight:500;color:var(--m-ink);margin-bottom:10px;">
-      {{ course.title or "Statistics for Epidemiology" }}
+      {{ course.title or "Untitled Course" }}
     </div>
     <div style="height:3px;background:var(--m-surface-3);border-radius:2px;margin-bottom:6px;">
       <div style="height:100%;width:{{ (course.progress_pct or 0)|int }}%;background:var(--m-accent);border-radius:2px;"></div>
