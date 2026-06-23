@@ -127,6 +127,12 @@ async def lifespan(app: FastAPI):
             return 999.0
 
         def _boot_scan_and_brief():
+            # Let the dashboard finish opening and become responsive BEFORE the
+            # news/literature scan starts competing for disk + network. The Today
+            # page's morning-brief card generates itself on first view (background
+            # thread, see routers/today.py), so nothing here blocks the UI.
+            import time as _time
+            _time.sleep(25)
             try:
                 if _hours_since_last_scan() > 4:
                     log.info("[startup] Running news scan (last scan >4 h ago)")
@@ -175,7 +181,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Metis Dashboard", docs_url=None, redoc_url=None, lifespan=lifespan)
 
-BASE_DIR = Path(__file__).parent
+# When frozen by PyInstaller (the bundled .exe), __file__ points into the temporary
+# extraction dir; templates/ and static/ are shipped as bundle datas at the bundle root
+# (sys._MEIPASS). Otherwise resolve relative to this source file as normal.
+import sys as _sys
+if getattr(_sys, "frozen", False) and hasattr(_sys, "_MEIPASS"):
+    BASE_DIR = Path(_sys._MEIPASS)
+else:
+    BASE_DIR = Path(__file__).parent
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
