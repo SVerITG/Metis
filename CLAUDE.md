@@ -4,9 +4,9 @@
 **Project ID:** `metis-dashboard`
 
 ## Open tasks
-- [OPEN] Review latest brief categories
-- [OPEN] Install and connect local Whisper workflow
-- [OPEN] Scaffold MCP server for Metis data automation
+- [DONE] Review latest brief categories
+- [DONE] Install and connect local Whisper workflow
+- [DONE] Scaffold MCP server for Metis data automation
 
 ## Metis integration
 The Metis MCP server (`metis-rc`) is available. Use its tools to:
