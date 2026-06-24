@@ -770,3 +770,30 @@ CREATE TABLE IF NOT EXISTS dataset_treatments (
     output_dataset TEXT DEFAULT '',
     created_at     TEXT NOT NULL
 );
+
+-- Data automation triggers — "when X happens, do Y"
+CREATE TABLE IF NOT EXISTS data_triggers (
+    trigger_id   TEXT PRIMARY KEY,
+    name         TEXT NOT NULL,
+    event_type   TEXT NOT NULL,           -- file-added, file-modified, scheduled, record-count
+    source_path  TEXT DEFAULT '',          -- file or folder to watch
+    action       TEXT NOT NULL,           -- profile, suggest-cleaning, clean, reindex-kg, alert, custom
+    action_args  TEXT DEFAULT '{}',        -- JSON with action-specific parameters
+    schedule     TEXT DEFAULT '',          -- cron expression for scheduled triggers
+    project_id   TEXT DEFAULT '',          -- optional project link
+    enabled      INTEGER DEFAULT 1,
+    last_run_at  TEXT DEFAULT '',
+    last_status  TEXT DEFAULT '',
+    last_message TEXT DEFAULT '',
+    created_at   TEXT NOT NULL,
+    updated_at   TEXT NOT NULL
+);
+
+-- Log of trigger executions
+CREATE TABLE IF NOT EXISTS data_trigger_log (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    trigger_id   TEXT NOT NULL,
+    status       TEXT NOT NULL,           -- ok, error, skipped
+    message      TEXT DEFAULT '',
+    ran_at       TEXT NOT NULL
+);
