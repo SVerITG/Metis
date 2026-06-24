@@ -41,6 +41,12 @@ FEED_ALLOWLIST = [
     ("BMJ Global Health",      "https://gh.bmj.com/rss/current.xml",                                                     "public-health,methods"),
     ("Nature Medicine",        "https://www.nature.com/nm.rss",                                                           "methods,biomedical"),
     ("Tropical Med & IH",      "https://onlinelibrary.wiley.com/action/showFeed?jc=13653156&type=etoc&feed=rss",         "tropical-medicine,methods,public-health"),
+    # Spatial epidemiology & methods
+    ("IJH Geographics",        "https://ij-healthgeographics.biomedcentral.com/articles/most-recent/rss.xml",              "spatial-epi,methods"),
+    ("Spat Spatio-temp Epi",   "https://sstepj.biomedcentral.com/articles/most-recent/rss.xml",                           "spatial-epi,methods"),
+    ("Int J Epidemiology",     "https://academic.oup.com/rss/site_5339/3241.xml",                                         "methods,epidemiology"),
+    # Regional — Africa / DRC
+    ("WHO AFRO",               "https://www.afro.who.int/rss.xml",                                                         "surveillance,public-health,africa"),
     # Global health policy
     ("IHP Newsletter",         "https://www.internationalhealthpolicies.org/feed/",                                       "policy,public-health"),
     ("DEVEX Global Health",    "https://www.devex.com/news/rss.xml",                                                     "policy,public-health"),
@@ -126,6 +132,7 @@ _AUTHORITY_SOURCES = {
     "who outbreak news", "lancet inf. diseases", "nature medicine",
     "plos medicine", "plos ntds", "eurosurveillance", "cdc eid journal",
     "africa cdc", "ecdc threat reports", "bmj global health",
+    "int j epidemiology", "who afro", "ijh geographics",
 }
 # Words that mark a genuinely high-signal development (not routine coverage).
 _URGENCY_WORDS = {
