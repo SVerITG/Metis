@@ -10,6 +10,7 @@ Default schedule (all overridable via /api/scheduler/settings):
   library_index       07:30 daily  — library file inventory
   inbox_process       08:00 daily  — process pending inbox items
   brief_synthesis     08:30 daily  — pre-generate AI morning brief (runs AFTER scans)
+  dataset_monitor     09:00 daily  — check data triggers, fire if conditions met
   evening_reflexion   20:00 daily  — aggregate reflexions for self-improvement
   memory_consolidation 22:00 daily — distil recent agent runs into memory_entries
   weekly_summary      Sun 09:00    — generate weekly summary
@@ -471,6 +472,47 @@ Open the Metis tab for agent run history, or run `/metis-weekly` for a full narr
         log.error("[scheduler] weekly_summary failed: %s", exc)
 
 
+# ---------------------------------------------------------------------------
+# Dataset monitor — check data triggers
+# ---------------------------------------------------------------------------
+
+async def job_dataset_monitor() -> None:
+    """Poll file-based data triggers and fire any that match."""
+    _log_job("dataset_monitor", "running", "Checking data triggers…")
+    try:
+        # Import the trigger engine from the MCP tools
+        import sys
+        mcp_src = str(Path(__file__).resolve().parent.parent / "mcp-server" / "src")
+        if mcp_src not in sys.path:
+            sys.path.insert(0, mcp_src)
+
+        from metis_mcp.tools.data_automation import check_file_triggers, _execute_trigger, _connect, _ensure_tables
+
+        fired_ids = check_file_triggers()
+        if not fired_ids:
+            _log_job("dataset_monitor", "ok", "No triggers fired")
+            return
+
+        # Execute each fired trigger
+        results = []
+        with _connect() as conn:
+            _ensure_tables(conn)
+            for tid in fired_ids:
+                row = conn.execute(
+                    "SELECT * FROM data_triggers WHERE trigger_id = ?", (tid,)
+                ).fetchone()
+                if row:
+                    msg = await _execute_trigger(dict(row))
+                    results.append(msg)
+
+        _log_job("dataset_monitor", "ok", f"{len(fired_ids)} triggers fired: {'; '.join(results)}")
+    except ImportError:
+        _log_job("dataset_monitor", "ok", "Data automation tools not installed — skipping")
+    except Exception as exc:
+        _log_job("dataset_monitor", "error", str(exc)[:300])
+        log.error("[scheduler] dataset_monitor failed: %s", exc)
+
+
 # Exported map so the jobs router can trigger them by name
 JOB_FUNCS: dict[str, callable] = {
     "brief_synthesis":       job_brief_synthesis,
@@ -481,6 +523,7 @@ JOB_FUNCS: dict[str, callable] = {
     "memory_consolidation":  job_memory_consolidation,
     "weekly_summary":        job_weekly_summary,
     "nightly_backup":        job_nightly_backup,
+    "dataset_monitor":       job_dataset_monitor,
 }
 
 # Human-readable labels for the UI
@@ -493,16 +536,19 @@ JOB_LABELS: dict[str, str] = {
     "memory_consolidation": "Nightly memory consolidation",
     "weekly_summary":       "Weekly summary",
     "nightly_backup":       "Nightly DB backup",
+    "dataset_monitor":      "Dataset trigger monitor",
 }
 
 # Default schedule (used when no user-config entry exists)
 # Order intentional: scans first, brief synthesis last (it reads what the scans produced)
 # Memory consolidation runs at 22:00 — after the day's work, before the 23:00 backup.
+# Dataset monitor runs every 2 hours during working hours.
 JOB_DEFAULTS: dict[str, dict] = {
     "morning_scan":         {"enabled": True, "time": "07:00"},
     "library_index":        {"enabled": True, "time": "07:30"},
     "inbox_process":        {"enabled": True, "time": "08:00"},
     "brief_synthesis":      {"enabled": True, "time": "08:30"},
+    "dataset_monitor":      {"enabled": True, "time": "09:00"},
     "evening_reflexion":    {"enabled": True, "time": "20:00"},
     "memory_consolidation": {"enabled": True, "time": "22:00"},
     "weekly_summary":       {"enabled": True, "time": "09:00", "day": "sun"},
