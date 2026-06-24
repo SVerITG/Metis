@@ -273,3 +273,94 @@ async def _transcribe_faster_whisper(tmp_path, lang, speaker):
         "speaker": identified_speaker,
         "mode": "faster-whisper",
     })
+
+
+# ---------------------------------------------------------------------------
+# File upload transcription (standalone — not live meeting)
+# ---------------------------------------------------------------------------
+
+@router.post("/api/transcription/file")
+async def transcribe_file(
+    audio:    UploadFile = File(...),
+    language: str = Form(""),
+    route_to: str = Form("raw"),
+):
+    """
+    Transcribe an uploaded audio file (mp3, wav, m4a, ogg, webm).
+
+    route_to controls what happens with the result:
+      - 'raw'     → just return the text
+      - 'idea'    → save as a captured idea
+      - 'journal' → save as a journal entry
+      - 'note'    → save as a voice note on today's capture
+    """
+    async with _model_lock:
+        try:
+            _ensure_model()
+        except Exception as e:
+            return JSONResponse({"error": str(e), "text": ""}, status_code=503)
+
+    ct = audio.content_type or ""
+    suffix = (
+        ".mp3" if "mp3" in ct or "mpeg" in ct else
+        ".wav" if "wav" in ct else
+        ".m4a" if "m4a" in ct else
+        ".ogg" if "ogg" in ct else
+        ".webm"
+    )
+
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+        tmp_path = tmp.name
+        tmp.write(await audio.read())
+
+    try:
+        lang = language if language else None
+        if USE_WHISPERX:
+            result = await _transcribe_whisperx(tmp_path, lang, "Speaker", False)
+        else:
+            result = await _transcribe_faster_whisper(tmp_path, lang, "Speaker")
+
+        # Extract text from JSONResponse body
+        import json as _json
+        body = _json.loads(result.body)
+        text = body.get("text", "")
+
+        # Route the result
+        saved_to = None
+        if route_to == "idea" and text.strip():
+            try:
+                from db import db_execute
+                db_execute(
+                    "INSERT INTO ideas (content, source, status, created_at) "
+                    "VALUES (?, 'voice', 'new', datetime('now'))",
+                    (text.strip(),),
+                )
+                saved_to = "ideas"
+            except Exception:
+                pass
+        elif route_to == "journal" and text.strip():
+            try:
+                from db import db_execute
+                db_execute(
+                    "INSERT INTO journal_entries (content, source, created_at) "
+                    "VALUES (?, 'voice', datetime('now'))",
+                    (text.strip(),),
+                )
+                saved_to = "journal"
+            except Exception:
+                pass
+
+        return JSONResponse({
+            "text": text,
+            "language": body.get("language", ""),
+            "mode": body.get("mode", ""),
+            "route_to": route_to,
+            "saved_to": saved_to,
+        })
+    except Exception as e:
+        return JSONResponse({"error": str(e), "text": ""}, status_code=500)
+    finally:
+        try:
+            os.unlink(tmp_path)
+        except Exception:
+            pass
