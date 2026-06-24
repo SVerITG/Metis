@@ -217,19 +217,23 @@ cp "$SRC_DIR/pyproject.toml" "$LOCAL_SRC/"
 [ -f "$SRC_DIR/requirements.txt" ] && cp "$SRC_DIR/requirements.txt" "$LOCAL_SRC/"
 
 echo "Installing MCP server requirements..."
-# Install WITH the [embedding] and [library] extras so the knowledge layer works
-# out of the box: fastembed (semantic search / RAG — required) and paper-qa
-# (ask_library). PyMuPDF + pdfminer come from core deps. Without [embedding], all
-# semantic search is silently disabled — so it is installed by default here.
+# Install WITH extras so key features work out of the box:
+#   [embedding]  — fastembed (semantic search / RAG — required for relevance)
+#   [library]    — paper-qa (ask_library)
+#   [ocr]        — pytesseract (scanned PDF extraction)
+#   [voice]      — faster-whisper (local speech-to-text transcription)
+# Without [embedding], all semantic search is silently disabled.
+# Without [voice], transcription tools return install instructions.
+EXTRAS="embedding,library,ocr,voice"
 if [ "$USE_UV" = "1" ]; then
   [ -f "$LOCAL_SRC/requirements.txt" ] && "$UV" pip install --python "$VENV_DIR/bin/python3" -r "$LOCAL_SRC/requirements.txt"
-  echo "Installing metis-mcp-server package (with embedding + library extras)..."
-  "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC[embedding,library,ocr]" \
+  echo "Installing metis-mcp-server package (with $EXTRAS extras)..."
+  "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC[$EXTRAS]" \
     || "$UV" pip install --python "$VENV_DIR/bin/python3" "$LOCAL_SRC"
 else
   [ -f "$LOCAL_SRC/requirements.txt" ] && "$VENV_DIR/bin/pip" install -r "$LOCAL_SRC/requirements.txt"
-  echo "Installing metis-mcp-server package (with embedding + library extras)..."
-  "$VENV_DIR/bin/pip" install "$LOCAL_SRC[embedding,library,ocr]" \
+  echo "Installing metis-mcp-server package (with $EXTRAS extras)..."
+  "$VENV_DIR/bin/pip" install "$LOCAL_SRC[$EXTRAS]" \
     || "$VENV_DIR/bin/pip" install "$LOCAL_SRC"
 fi
 
@@ -246,6 +250,18 @@ if ! command -v tesseract >/dev/null 2>&1; then
     brew install tesseract >/dev/null 2>&1 || echo "  (skip) install manually: brew install tesseract"
   else
     echo "  (skip) Tesseract not found — install it to enable OCR on scanned PDFs."
+  fi
+fi
+
+# ── ffmpeg (for Whisper audio decoding + WhisperX diarization) ────────────────
+if ! command -v ffmpeg >/dev/null 2>&1; then
+  echo "Installing ffmpeg (for audio transcription)…"
+  if command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get install -y ffmpeg >/dev/null 2>&1 || echo "  (skip) install manually: sudo apt install ffmpeg"
+  elif command -v brew >/dev/null 2>&1; then
+    brew install ffmpeg >/dev/null 2>&1 || echo "  (skip) install manually: brew install ffmpeg"
+  else
+    echo "  (skip) ffmpeg not found — install it for audio transcription support."
   fi
 fi
 
