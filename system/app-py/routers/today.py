@@ -3477,3 +3477,147 @@ async def board_star_item(request: Request, board: str, item_id: int):
     return templates.TemplateResponse(
         request, "partials/today_board_box.html", ctx,
     )
+
+
+# ---------------------------------------------------------------------------
+# Board refresh via Claude web search — Events (congresses) & Funding (calls).
+# These boards have no RSS feeds (congresses/funders publish on web pages, not
+# feeds), so we ask Claude to web-search for current, real items relevant to the
+# user's topics. Triggered by the box's Refresh button and a monthly cron job.
+# ---------------------------------------------------------------------------
+
+_SEARCHABLE_BOARDS = {"events", "funding"}
+
+
+def _board_search_prompt(board: str, topics: str) -> str:
+    who = topics or "tropical medicine, neglected tropical diseases, global health, epidemiology"
+    if board == "events":
+        what = ("upcoming scientific congresses, conferences, symposia and short courses "
+                "(each with a future or recently-announced date) in tropical medicine, "
+                "neglected tropical diseases, global health and epidemiology")
+    else:
+        what = ("open or upcoming research funding calls, grant opportunities and fellowships "
+                "(each with an application deadline) relevant to tropical medicine, neglected "
+                "tropical diseases, global health and epidemiology")
+    return (
+        f"Use web search to find current, real {what}, especially anything relevant to a "
+        f"researcher working on: {who}. Prefer authoritative sources — society/congress sites "
+        "(ASTMH, FESTMIH/ECTMIH), funder portals (EDCTP / Global Health EDCTP3, Horizon Europe, "
+        "Wellcome, NIH, WHO/TDR) and the Institute of Tropical Medicine Antwerp (ITM). "
+        "Return ONLY a JSON array (no other prose) of up to 8 items, each object exactly: "
+        '{"title": string, "url": string, "date": string, "description": string}. '
+        "url must be the direct official page and start with http; date = the event date or "
+        'application deadline if known else ""; description = one short factual sentence. '
+        "Only include items you actually found with a real working URL. End with the JSON array."
+    )
+
+
+def _refresh_board_via_search(board: str) -> tuple[int, str]:
+    """Repopulate a board from a live Claude web search. Returns (count, error).
+
+    Replaces only the previously web-searched rows (source='web-search'); curated
+    and manually-added items are left untouched.
+    """
+    if board not in _SEARCHABLE_BOARDS:
+        return 0, "not-searchable"
+    api_key = _get_api_key()
+    if not api_key:
+        return 0, "no-api-key"
+
+    topics = ""
+    try:
+        rc = os.environ.get("METIS_RC_ROOT", "")
+        if rc:
+            prefs = Path(rc) / "system" / "config" / "user-preferences.json"
+            if prefs.exists():
+                p = _json.loads(prefs.read_text(encoding="utf-8"))
+                topics = ", ".join((p.get("interests") or [])[:10]) or (p.get("role") or "")
+    except Exception:
+        pass
+
+    try:
+        import httpx as _httpx
+        resp = _httpx.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json",
+            },
+            json={
+                "model": model_for("brief"),
+                "max_tokens": 2500,
+                # Keep searches few: web-search tool results are injected as INPUT
+                # tokens, and a low API tier (10k input tokens/min) 429s quickly.
+                "tools": [{"type": "web_search_20250305", "name": "web_search", "max_uses": 2}],
+                "messages": [{"role": "user", "content": _board_search_prompt(board, topics)}],
+            },
+            timeout=90.0,
+        )
+        if resp.status_code != 200:
+            return 0, f"api-{resp.status_code}"
+        blocks = resp.json().get("content", [])
+        text = "".join(b.get("text", "") for b in blocks if b.get("type") == "text")
+    except Exception as e:
+        return 0, f"{type(e).__name__}"
+
+    import re as _re
+    match = _re.search(r"\[\s*\{.*\}\s*\]", text, _re.DOTALL)
+    if not match:
+        return 0, "no-items"
+    try:
+        raw = _json.loads(match.group(0))
+    except Exception:
+        return 0, "bad-json"
+
+    clean: list[tuple[str, str, str]] = []
+    seen: set[str] = set()
+    for it in raw if isinstance(raw, list) else []:
+        if not isinstance(it, dict):
+            continue
+        title = (it.get("title") or "").strip()
+        url = (it.get("url") or "").strip()
+        if not title or not url.lower().startswith("http") or url in seen:
+            continue
+        seen.add(url)
+        date = (it.get("date") or "").strip()
+        desc = (it.get("description") or "").strip()
+        if date:
+            desc = (desc + f" · {date}").strip(" ·")
+        clean.append((title[:300], url[:500], desc[:400]))
+
+    if not clean:
+        return 0, "no-valid-items"
+
+    _ensure_board_table()
+    now = datetime.datetime.now().isoformat()
+    # Refresh = replace the previous search results, keep curated/manual items.
+    db_execute("DELETE FROM today_board_items WHERE board=? AND source='web-search'", (board,))
+    added = 0
+    for title, url, desc in clean:
+        # Don't duplicate a curated/manual item that already points at this URL.
+        if db_query("SELECT 1 FROM today_board_items WHERE board=? AND url=? LIMIT 1", (board, url)):
+            continue
+        db_execute(
+            "INSERT INTO today_board_items (board, title, url, description, source, auto_added, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, 'web-search', 1, ?, ?)",
+            (board, title, url, desc, now, now),
+        )
+        added += 1
+    return added, ""
+
+
+@router.post("/api/today/board/{board}/refresh", response_class=HTMLResponse)
+async def board_refresh(request: Request, board: str):
+    """Refresh a searchable board (Events / Funding) via a live web search."""
+    if board not in _VALID_BOARDS:
+        return HTMLResponse("")
+    if board in _SEARCHABLE_BOARDS:
+        # Best-effort: on error the box simply re-renders with its current items.
+        # Run the blocking web-search call off the event loop.
+        import asyncio as _asyncio
+        await _asyncio.to_thread(_refresh_board_via_search, board)
+    ctx = _board_context(board)
+    return templates.TemplateResponse(
+        request, "partials/today_board_box.html", ctx,
+    )

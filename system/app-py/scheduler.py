@@ -514,6 +514,28 @@ async def job_dataset_monitor() -> None:
 
 
 # Exported map so the jobs router can trigger them by name
+def job_board_refresh() -> None:
+    """Monthly: refresh the Events & Funding boards via Claude web search.
+
+    These two boards have no RSS source (congresses/funders publish on web pages,
+    not feeds), so once a month we ask Claude to web-search for current items. The
+    dashboard's per-box Refresh buttons run the same search on demand.
+    """
+    log.info("[scheduler] board_refresh starting")
+    try:
+        from routers.today import _refresh_board_via_search
+        parts = []
+        for b in ("events", "funding"):
+            n, err = _refresh_board_via_search(b)
+            parts.append(f"{b}:{n}" + (f"({err})" if err else ""))
+        msg = " ".join(parts)
+        log.info("[scheduler] board_refresh done: %s", msg)
+        _log_job("board_refresh", "ok", msg)
+    except Exception as e:
+        log.warning("[scheduler] board_refresh failed: %s", e)
+        _log_job("board_refresh", "error", str(e)[:200])
+
+
 JOB_FUNCS: dict[str, callable] = {
     "brief_synthesis":       job_brief_synthesis,
     "morning_scan":          job_morning_scan,
@@ -614,6 +636,25 @@ def setup_jobs() -> None:
         registered.append(f"{job_id}@{time_str}" + (f"({day_of_week})" if day_of_week else ""))
 
     log.info("[scheduler] jobs registered: %s", ", ".join(registered))
+
+    # Monthly board refresh (Events & Funding via web search) — 1st of month,
+    # 06:00 UTC. Registered separately because the loop above only supports
+    # daily/weekly cadences (hour/minute/day_of_week), not day-of-month.
+    try:
+        board_cfg = {"enabled": True, **settings.get("board_refresh", {})}
+        if board_cfg.get("enabled", True):
+            scheduler.add_job(
+                job_board_refresh,
+                CronTrigger(day=1, hour=6, minute=0),
+                id="board_refresh",
+                name="Monthly board refresh (Events & Funding)",
+                replace_existing=True,
+                misfire_grace_time=None,
+                coalesce=True,
+            )
+            log.info("[scheduler] board_refresh registered @ monthly (day 1, 06:00 UTC)")
+    except Exception as _e:
+        log.warning("[scheduler] could not register board_refresh: %s", _e)
 
     # Catch-up: if any morning jobs were missed (server started after their cron
     # time), fire them sequentially in one background thread — scan first, brief last.
