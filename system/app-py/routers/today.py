@@ -634,7 +634,7 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
                 "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at, "
                 "COALESCE(relevance,0) as relevance "
                 "FROM news_briefs WHERE domain = ? AND created_at >= ? "
-                "ORDER BY COALESCE(relevance,0) DESC, created_at DESC LIMIT 10",
+                "ORDER BY COALESCE(relevance,0) DESC, created_at DESC LIMIT 5",
                 (topic, cutoff),
             ) or []
             items = _build_news_items(art_rows)
@@ -648,7 +648,7 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
                 "summary": topic_summary.get("summary", ""),
                 "summary_age": (_age_label(topic_summary["generated_at"]) + " ago")
                                if topic_summary.get("generated_at") else "",
-                "open": topic == category,
+                "open": topic == category,  # only open if user clicked into it
             })
 
         # "Closest to your work" — top items by semantic relevance across all topics,
@@ -676,6 +676,13 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
     except Exception:
         pass
 
+    # Cap visible slipcases: "Closest to your work" (always first) + top 7 topics.
+    # The rest are hidden behind "Show all N topics".
+    show_all_topics = request.query_params.get("all_topics") == "1"
+    total_topics = len(slipcases)
+    if not show_all_topics and total_topics > 8:
+        slipcases = slipcases[:8]
+
     return templates.TemplateResponse(
         request,
         "partials/today_news_rail.html",
@@ -685,6 +692,8 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
             "active_topic": category,
             "period": period,
             "last_updated": last_updated,
+            "total_topics": total_topics,
+            "show_all_topics": show_all_topics,
         },
     )
 
@@ -1016,6 +1025,7 @@ _log = _logging.getLogger("metis")
 _brief_gen_inflight: set = set()
 _brief_gen_lock = _threading.Lock()
 _brief_last_attempt: dict = {}   # period -> monotonic ts of the last generation attempt
+_brief_last_error: dict = {}     # period -> error string for display
 
 
 def _get_cached_brief(period: str = "daily") -> str | None:
@@ -1071,8 +1081,20 @@ def _kick_brief_generation(period: str = "daily") -> None:
 
     def _run():
         try:
-            _get_or_generate_brief(period=period)
-        except Exception:
+            result = _get_or_generate_brief(period=period)
+            if result:
+                _brief_last_error.pop(period, None)
+            else:
+                # _get_or_generate_brief swallows exceptions and returns None;
+                # surface a diagnostic so the template shows the error instead
+                # of polling forever with "Brewing…".
+                _brief_last_error[period] = (
+                    "Brief generation returned empty — check the server log. "
+                    "Common causes: missing API key, no news data, or import error."
+                )
+                _log.warning("morning-brief generation returned None for period=%s", period)
+        except Exception as e:
+            _brief_last_error[period] = f"{type(e).__name__}: {str(e)[:200]}"
             _log.warning("morning-brief background generation failed", exc_info=True)
         finally:
             _brief_gen_inflight.discard(period)
@@ -1214,6 +1236,7 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
         except Exception:
             pass
     if not db_path_str:
+        _log.warning("morning-brief: no database path found (METIS_DB unset)")
         return None
 
     today = datetime.date.today().isoformat()
@@ -1321,14 +1344,17 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
             ctx = assemble_catchup_context(db_path_str, since_iso, prev_brief)
         else:
             ctx = assemble_daily_context(db_path_str)
-    except Exception:
+    except Exception as _ctx_exc:
+        _log.warning("morning-brief: context assembly failed: %s", _ctx_exc, exc_info=False)
         return None
 
     if not ctx.get("context"):
+        _log.warning("morning-brief: assembled context is empty (no news/papers in DB?)")
         return None
 
     api_key = _get_api_key()
     if not api_key:
+        _log.warning("morning-brief: no API key available")
         return None
 
     # Build period description
@@ -1454,8 +1480,11 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
             except Exception:
                 pass
             return narrative
-    except Exception:
-        pass
+        else:
+            _log.warning("morning-brief: API returned status %s: %s",
+                         resp.status_code, resp.text[:300] if hasattr(resp, 'text') else "")
+    except Exception as _api_exc:
+        _log.warning("morning-brief: API call failed: %s", _api_exc, exc_info=True)
     # Regeneration failed — return whatever was cached so the brief is never lost
     return cached_content
 
@@ -1555,6 +1584,14 @@ async def today_morning_brief(request: Request):
                 _kick_brief_generation("daily")
             pending = True
 
+    # Surface errors: missing API key or a failed generation attempt
+    brief_error = ""
+    if pending and not _get_api_key() and _get_brief_mode() != "manual":
+        brief_error = "no-api-key"  # sentinel — template shows setup guidance
+        pending = False  # stop the polling spinner — it won't resolve without a key
+    elif _brief_last_error.get(period):
+        brief_error = _brief_last_error[period]
+
     # Not waiting (manual mode, or generation gave up) and still nothing cached:
     # fall back to the most recent brief from any date for continuity.
     if not ai_brief and not pending and period == "daily":
@@ -1607,6 +1644,7 @@ async def today_morning_brief(request: Request):
             "brief": ai_brief,
             "pending": pending,
             "brief_date_label": brief_date_label,
+            "brief_error": brief_error,
             "sources": sources,
             "fallback_headlines": fallback_headlines,
             "open_threads": open_threads,
@@ -1722,6 +1760,7 @@ async def morning_brief_refresh(request: Request):
         {
             "brief": ai_brief,
             "brief_date_label": None,
+            "brief_error": "",
             "sources": sources,
             "fallback_headlines": fallback_headlines,
             "open_threads": open_threads,
@@ -3316,3 +3355,125 @@ async def morning_brief_history(request: Request):
         pass
     return templates.TemplateResponse(
         request, "partials/today_brief_history.html", {"briefs": briefs})
+
+
+# ---------------------------------------------------------------------------
+# Board boxes — Outbreaks · Events · Funding on the Today surface
+# ---------------------------------------------------------------------------
+
+_VALID_BOARDS = {"outbreaks", "events", "funding"}
+
+
+def _ensure_board_table():
+    """Create today_board_items if it doesn't exist yet (safe, idempotent)."""
+    try:
+        db_execute(
+            "CREATE TABLE IF NOT EXISTS today_board_items ("
+            "  id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "  board TEXT NOT NULL,"
+            "  title TEXT NOT NULL,"
+            "  url TEXT DEFAULT '',"
+            "  description TEXT DEFAULT '',"
+            "  source TEXT DEFAULT '',"
+            "  starred INTEGER DEFAULT 0,"
+            "  dismissed INTEGER DEFAULT 0,"
+            "  auto_added INTEGER DEFAULT 1,"
+            "  start_date TEXT DEFAULT '',"
+            "  end_date TEXT DEFAULT '',"
+            "  created_at TEXT NOT NULL DEFAULT (datetime('now')),"
+            "  updated_at TEXT NOT NULL DEFAULT (datetime('now'))"
+            ")"
+        )
+    except Exception:
+        pass
+
+
+def _board_context(board: str, show_all: bool = False) -> dict:
+    """Build template context for a single board box."""
+    _ensure_board_table()
+    limit = 50 if show_all else 5
+    items = db_query(
+        "SELECT id, title, url, source, starred, auto_added, created_at "
+        "FROM today_board_items "
+        "WHERE board=? AND dismissed=0 "
+        "ORDER BY starred DESC, created_at DESC LIMIT ?",
+        (board, limit),
+    ) or []
+    total = db_scalar(
+        "SELECT COUNT(*) FROM today_board_items WHERE board=? AND dismissed=0",
+        (board,),
+        default=0,
+    ) or 0
+    return {
+        "board": board,
+        "items": items,
+        "total": total,
+        "show_all": show_all,
+    }
+
+
+@router.get("/api/partial/today/board/{board}", response_class=HTMLResponse)
+async def today_board_box(request: Request, board: str):
+    """Render one board box (outbreaks | events | funding)."""
+    if board not in _VALID_BOARDS:
+        return HTMLResponse("")
+    show_all = request.query_params.get("all") == "1"
+    ctx = _board_context(board, show_all)
+    return templates.TemplateResponse(
+        request, "partials/today_board_box.html", ctx,
+    )
+
+
+@router.post("/api/today/board/{board}/add", response_class=HTMLResponse)
+async def board_add_item(request: Request, board: str):
+    """Manually add an item to a board box."""
+    if board not in _VALID_BOARDS:
+        return HTMLResponse("")
+    _ensure_board_table()
+    form = await request.form()
+    title = (form.get("title") or "").strip()
+    url = (form.get("url") or "").strip()
+    if title:
+        now = datetime.datetime.now().isoformat()
+        db_execute(
+            "INSERT INTO today_board_items (board, title, url, source, auto_added, created_at, updated_at) "
+            "VALUES (?, ?, ?, 'manual', 0, ?, ?)",
+            (board, title[:300], url, now, now),
+        )
+    ctx = _board_context(board)
+    return templates.TemplateResponse(
+        request, "partials/today_board_box.html", ctx,
+    )
+
+
+@router.delete("/api/today/board/{board}/item/{item_id}", response_class=HTMLResponse)
+async def board_dismiss_item(request: Request, board: str, item_id: int):
+    """Soft-delete (dismiss) a board item."""
+    if board not in _VALID_BOARDS:
+        return HTMLResponse("")
+    _ensure_board_table()
+    db_execute(
+        "UPDATE today_board_items SET dismissed=1, updated_at=? WHERE id=? AND board=?",
+        (datetime.datetime.now().isoformat(), item_id, board),
+    )
+    ctx = _board_context(board)
+    return templates.TemplateResponse(
+        request, "partials/today_board_box.html", ctx,
+    )
+
+
+@router.post("/api/today/board/{board}/item/{item_id}/star", response_class=HTMLResponse)
+async def board_star_item(request: Request, board: str, item_id: int):
+    """Toggle the star on a board item."""
+    if board not in _VALID_BOARDS:
+        return HTMLResponse("")
+    _ensure_board_table()
+    db_execute(
+        "UPDATE today_board_items SET starred = CASE WHEN starred=1 THEN 0 ELSE 1 END, "
+        "updated_at=? WHERE id=? AND board=?",
+        (datetime.datetime.now().isoformat(), item_id, board),
+    )
+    ctx = _board_context(board)
+    return templates.TemplateResponse(
+        request, "partials/today_board_box.html", ctx,
+    )
