@@ -206,7 +206,7 @@ function saveInlineApiKey(btn){
   if(!v){ msg.textContent='Paste your key first.'; return; }
   if(v.indexOf('sk-ant-')!==0){ msg.textContent='That doesn\\'t look like an Anthropic key (starts with sk-ant-).'; return; }
   btn.disabled=true; msg.textContent='Saving…';
-  fetch('/api/settings/api-key',{method:'POST',headers:{'Content-Type':'application/json'},
+  fetch('/api/settings/api-key',{method:'POST',headers:{'Content-Type':'application/json','X-Metis-Confirm':'api-key'},
         body:JSON.stringify({name:'ANTHROPIC_API_KEY',value:v})})
     .then(function(r){return r.json();})
     .then(function(d){
