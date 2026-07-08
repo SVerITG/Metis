@@ -57,6 +57,27 @@ async def save_session_summary(
     try:
         with sqlite3.connect(_db_path()) as conn:
             _ensure_table(conn)
+
+            # Skip byte-identical repeats. Auto-generated handoff briefs call this
+            # tool many times per day with the same text; without this guard the
+            # table fills with duplicate snapshots that add no recall value. A
+            # genuinely updated summary differs and still gets written.
+            latest = conn.execute(
+                """
+                SELECT summary FROM session_summaries
+                WHERE session_id = ?
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (session_id or "",),
+            ).fetchone()
+            if latest is not None and latest[0] == summary:
+                return {
+                    "ok": True,
+                    "skipped": True,
+                    "message": "Identical summary already saved for this session — skipped.",
+                }
+
             conn.execute(
                 """
                 INSERT INTO session_summaries
