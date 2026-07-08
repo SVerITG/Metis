@@ -2,11 +2,25 @@
 
 import datetime
 
-from mcp.types import TextContent
+try:
+    from mcp.types import TextContent
+except ImportError:
+    # Stub for non-MCP callers (e.g. FastAPI dashboard importing assemble_* functions).
+    # The actual MCP tool handlers are never called in that context.
+    TextContent = None                                  # type: ignore[assignment,misc]
 
 from metis_mcp.config import paths
 from metis_mcp.db import connect
-from metis_mcp.app_instance import app
+
+try:
+    from metis_mcp.app_instance import app
+except ImportError:
+    # Provide a no-op @app.tool() decorator so the module loads without the MCP runtime.
+    class _NoopApp:                                     # type: ignore[no-redef]
+        def tool(self, *a, **kw):
+            def _dec(fn): return fn
+            return _dec
+    app = _NoopApp()                                    # type: ignore[assignment]
 
 _DAILY_INSIGHTS_DDL = """
 CREATE TABLE IF NOT EXISTS daily_insights (

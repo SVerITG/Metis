@@ -59,6 +59,16 @@ FEED_ALLOWLIST = [
     ("Anthropic News",         "https://www.anthropic.com/news/rss.xml",                                                  "AI"),
     ("arXiv cs.AI",            "https://rss.arxiv.org/rss/cs.AI",                                                         "AI,methods"),
     ("arXiv q-bio (epi)",      "https://rss.arxiv.org/rss/q-bio.PE",                                                      "epidemiology,methods"),
+    # Outbreak monitoring (extended)
+    ("WHO WER",                "https://www.who.int/publications/journals/weekly-epidemiological-record/rss.xml",           "surveillance,outbreaks,public-health"),
+    ("WHO DON (full)",         "https://www.who.int/emergencies/disease-outbreak-news/feed.rss",                            "surveillance,outbreaks,public-health"),
+    ("GOARN",                  "https://extranet.who.int/goarn/rss.xml",                                                   "surveillance,outbreaks,public-health"),
+    # NTD-relevant MDPI journals
+    ("MDPI Trop Med",          "https://www.mdpi.com/rss/journal/tropicalmed",                                             "ntd,tropical-medicine,methods"),
+    ("MDPI Pathogens",         "https://www.mdpi.com/rss/journal/pathogens",                                               "infectious-disease,methods"),
+    ("MDPI IJERPH",            "https://www.mdpi.com/rss/journal/ijerph",                                                  "epidemiology,public-health,methods"),
+    # PubMed (NTD saved-search RSS)
+    ("PubMed HAT/NTD",         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1/?limit=15&query=human+african+trypanosomiasis+OR+sleeping+sickness+OR+neglected+tropical+diseases&fc=20250101",  "ntd,tropical-medicine"),
 ]
 
 _DDL_NEWS = """
@@ -141,6 +151,72 @@ _URGENCY_WORDS = {
     "approval", "approved", "vaccine", "resistance", "novel", "emerging",
 }
 
+# Board auto-classification — routes scanned items into the Outbreaks / Events /
+# Funding boxes on the Today surface. Outbreaks are SOURCE-GATED (only actual
+# surveillance feeds), not keyword-gated, to avoid false positives from research
+# articles that merely mention "outbreak". Events and Funding use keywords but
+# require specific multi-word phrases to stay selective.
+_OUTBREAK_SOURCES = {
+    "who outbreak news", "who don (full)", "promed-mail", "goarn",
+    "africa cdc", "ecdc threat reports", "who afro", "who wer",
+}
+_EVENT_KEYWORDS = {
+    "call for abstracts", "registration open", "annual meeting",
+    "congress 2026", "congress 2027", "symposium 2026", "symposium 2027",
+    "conference 2026", "conference 2027", "workshop 2026", "workshop 2027",
+}
+_FUNDING_KEYWORDS = {
+    "call for proposals", "call for applications", "request for applications",
+    "request for proposals", "funding opportunity", "grant opportunity",
+    "fellowship opportunity", "scholarship deadline",
+}
+
+_DDL_BOARD = """
+CREATE TABLE IF NOT EXISTS today_board_items (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    board       TEXT NOT NULL,
+    title       TEXT NOT NULL,
+    url         TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    source      TEXT DEFAULT '',
+    starred     INTEGER DEFAULT 0,
+    dismissed   INTEGER DEFAULT 0,
+    auto_added  INTEGER DEFAULT 1,
+    start_date  TEXT DEFAULT '',
+    end_date    TEXT DEFAULT '',
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+)
+"""
+
+
+def _maybe_add_to_board(conn, title: str, url: str, summary: str, source_name: str):
+    """Route a scanned article to a Today board if it qualifies.
+
+    Outbreaks: source-gated — only items from actual surveillance feeds (WHO DON,
+    ProMED, GOARN, etc.). A journal article mentioning "outbreak" is NOT an outbreak.
+    Events/Funding: keyword-gated with selective multi-word phrases.
+    """
+    board = None
+    # Outbreaks: only from surveillance sources
+    if source_name.lower() in _OUTBREAK_SOURCES:
+        board = "outbreaks"
+    else:
+        haystack = (title + " " + summary).lower()
+        if any(w in haystack for w in _EVENT_KEYWORDS):
+            board = "events"
+        elif any(w in haystack for w in _FUNDING_KEYWORDS):
+            board = "funding"
+    if not board:
+        return
+    if conn.execute("SELECT 1 FROM today_board_items WHERE url=? LIMIT 1", (url,)).fetchone():
+        return
+    conn.execute(
+        "INSERT INTO today_board_items (board, title, url, source, auto_added) "
+        "VALUES (?, ?, ?, ?, 1)",
+        (board, title[:300], url, source_name),
+    )
+
 
 def _user_topics() -> set[str]:
     """Lower-cased research topics/field from user-config.yaml, for relevance scoring."""
@@ -202,6 +278,7 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
     user_topics = _user_topics()
     with _connect() as conn:
         conn.execute(_DDL_NEWS)
+        conn.execute(_DDL_BOARD)
         # Numeric semantic relevance (closeness to the user's corpus) for ranking.
         try:
             conn.execute("ALTER TABLE news_briefs ADD COLUMN relevance REAL DEFAULT 0")
@@ -248,6 +325,7 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
                          datetime.now().isoformat(), tags, datetime.now().date().isoformat(),
                          round(float(sim), 4)),
                     )
+                    _maybe_add_to_board(conn, title, link, summary_raw, name)
                     added += 1
             except Exception as e:
                 errors.append(f"{name}: {type(e).__name__}: {str(e)[:120]}")

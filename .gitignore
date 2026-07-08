@@ -291,3 +291,10 @@ tests/security/
 tests/fixtures/
 tests/promises.yaml
 tests/README.md
+
+# Machine-specific runtime state (not for the repo)
+system/config/mcp-health*.json
+tests/.audit-logs/
+.claude/plan.md
+# Stray office docs
+*.docx

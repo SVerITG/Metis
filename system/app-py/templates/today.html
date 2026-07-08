@@ -35,10 +35,12 @@
   </script>
 
   {# ── Load strategy: stagger HTMX so the page doesn't waterfall skeletons.
-       Wave 1 (immediate): morning brief — the thing the user reads first.
-       Wave 2 (+200ms):    focus section — actionable items.
-       Wave 3 (+400ms):    news radar — full categorized news.
-       Wave 4 (+500ms):    session continuity — least urgent. -#}
+       Wave 1 (immediate):  morning brief — the thing you read first.
+       Wave 2 (+100ms):     board boxes — outbreaks · events · funding.
+       Wave 3 (+200ms):     focus — actionable items.
+       Wave 4 (+300ms):     last session — what you were working on.
+       Wave 5 (+500ms):     dispatch: news — topic slipcases.
+       Wave 6 (+600ms):     dispatch: literature — new papers. -#}
 
   <!-- ===== 2. Morning brief — full-width hero ===== -->
   <div hx-get="/api/partial/today/morning-brief"
@@ -52,7 +54,32 @@
     </div>
   </div>
 
-  <!-- ===== 3. Today's Focus — merged dismissable cards ===== -->
+  <!-- ===== 3. Board strip — Outbreaks · Events · Funding ===== -->
+  <div class="board-strip" style="margin-bottom:32px;">
+    <div hx-get="/api/partial/today/board/outbreaks"
+         hx-trigger="load delay:100ms"
+         hx-swap="outerHTML">
+      <div class="board-box" style="min-height:180px;">
+        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
+      </div>
+    </div>
+    <div hx-get="/api/partial/today/board/events"
+         hx-trigger="load delay:100ms"
+         hx-swap="outerHTML">
+      <div class="board-box" style="min-height:180px;">
+        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
+      </div>
+    </div>
+    <div hx-get="/api/partial/today/board/funding"
+         hx-trigger="load delay:100ms"
+         hx-swap="outerHTML">
+      <div class="board-box" style="min-height:180px;">
+        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 4. Today's Focus — merged dismissable cards ===== -->
   <div hx-get="/api/partial/today/focus"
        hx-trigger="load delay:200ms"
        hx-swap="outerHTML">
@@ -62,17 +89,25 @@
     </div>
   </div>
 
-  <!-- ===== 4. News Radar — full categorized news slipcases ===== -->
+  <!-- ===== 4b. Last session — what you were working on ===== -->
+  <div hx-get="/api/partial/today/session-handoff"
+       hx-trigger="load delay:300ms"
+       hx-swap="outerHTML"></div>
+
+  <!-- ===== 5. Dispatch — News + Literature ===== -->
+  <!-- 5a. News — topic slipcases -->
   <div hx-get="/api/partial/today/news-rail"
-       hx-trigger="load delay:400ms"
+       hx-trigger="load delay:500ms"
        hx-swap="outerHTML">
     {{ skeleton_box(size="sm") }}
   </div>
 
-  <!-- ===== 5. Sessions — continuity from last session ===== -->
-  <div hx-get="/api/partial/today/session-handoff"
-       hx-trigger="load delay:500ms"
-       hx-swap="outerHTML"></div>
+  <!-- 5b. Literature — new papers from library -->
+  <div hx-get="/api/partial/today/library-archive"
+       hx-trigger="load delay:600ms"
+       hx-swap="outerHTML">
+    {{ skeleton_box(size="sm") }}
+  </div>
 
 </div><!-- /.page -->
 

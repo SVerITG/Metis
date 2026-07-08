@@ -83,14 +83,15 @@ def _surface_connections(text: str) -> str:
         "news": "var(--m-ok)",
         "idea": "var(--m-muted)",
     }
+    from markupsafe import escape as _esc
     rows = "".join(
         '<div style="display:flex;align-items:baseline;gap:8px;padding:5px 0;'
         f'border-bottom:1px solid var(--m-rule-soft);">'
         f'<span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;'
         f'color:{source_colors.get(m["source"], "var(--m-muted)")};flex-shrink:0;width:48px;">'
-        f'{m["source"].upper()}</span>'
+        f'{_esc(m["source"].upper())}</span>'
         f'<span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);'
-        f'line-height:1.3;">{m["title"][:80]}</span>'
+        f'line-height:1.3;">{_esc(m["title"][:80])}</span>'
         "</div>"
         for m in matches
     )

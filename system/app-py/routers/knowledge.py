@@ -45,7 +45,7 @@ async def global_search(request: Request, q: str = ""):
     if len(q) < 2:
         return HTMLResponse("")
     like = f"%{q}%"
-    papers, projects, news, tasks = [], [], [], []
+    papers, projects, news, tasks, courses = [], [], [], [], []
     try:
         papers = db_query(
             "SELECT id, title, authors, year FROM literature_metadata "
@@ -79,7 +79,17 @@ async def global_search(request: Request, q: str = ""):
         ) or []
     except Exception:
         pass
-    total = len(papers) + len(projects) + len(news) + len(tasks)
+    try:
+        courses = db_query(
+            "SELECT id, title, slug, category, status, progress_pct "
+            "FROM learning_courses "
+            "WHERE title LIKE ? OR category LIKE ? "
+            "ORDER BY updated_at DESC LIMIT 5",
+            (like, like),
+        ) or []
+    except Exception:
+        pass
+    total = len(papers) + len(projects) + len(news) + len(tasks) + len(courses)
     if total == 0:
         import html as _html
         q_safe = _html.escape(q)  # reflected-XSS guard: never echo raw user input into HTML
@@ -90,7 +100,7 @@ async def global_search(request: Request, q: str = ""):
     return templates.TemplateResponse(
         request,
         "partials/search_results.html",
-        {"q": q, "papers": papers, "projects": projects, "news": news, "tasks": tasks},
+        {"q": q, "papers": papers, "projects": projects, "news": news, "tasks": tasks, "courses": courses},
     )
 
 
@@ -243,11 +253,13 @@ async def knowledge_pdf_search(request: Request, q: str = "", domain: str = ""):
         params,
     )
 
-    # Highlight query term in excerpt
+    # Highlight query term in excerpt (XSS-safe: escape before wrapping)
+    from markupsafe import escape as _esc
     for r in results:
         if r.get("excerpt"):
-            hi = r["excerpt"].replace(q, f"<mark>{q}</mark>")
-            r["excerpt_html"] = hi
+            safe_excerpt = str(_esc(r["excerpt"]))
+            safe_q = str(_esc(q))
+            r["excerpt_html"] = safe_excerpt.replace(safe_q, f"<mark>{safe_q}</mark>")
         r["filename"] = (r.get("source_file") or "").split("/")[-1]
 
     return templates.TemplateResponse(
@@ -1636,10 +1648,13 @@ async def knowledge_unified_search_semantic(request: Request, q: str = ""):
         "note": "Notes",
     }
     grouped: dict[str, list[dict]] = {}
+    from markupsafe import escape as _esc
     for h in semantic_hits:
         kind = (h.get("kind") or "other").lower()
         group = label_map.get(kind, kind.title() or "Other")
         snippet = h.get("snippet") or ""
+        # Escape snippet before highlighting to prevent XSS via |safe in template
+        snippet = str(_esc(snippet))
         if pat and snippet:
             snippet_html = pat.sub(r"<mark>\1</mark>", snippet)
         else:

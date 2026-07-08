@@ -68,7 +68,13 @@
   <!-- Courses grid -->
   <div class="sec-label" style="margin-bottom:16px;">
     <span>Courses</span>
-    <span class="tail" hx-get="/api/partial/learning/meta" hx-trigger="load" hx-swap="innerHTML">—</span>
+    <span class="tail">
+      <a href="http://127.0.0.1:3000/" target="_blank" rel="noopener"
+         class="btn btn--ghost btn--caps" style="font-size:10px;">
+        Statistics to Multilevel Models ↗
+      </a>
+      <span hx-get="/api/partial/learning/meta" hx-trigger="load" hx-swap="innerHTML">—</span>
+    </span>
   </div>
   <div class="grid grid-3"
        hx-get="/api/partial/learning/courses-archive"
