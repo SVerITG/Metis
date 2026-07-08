@@ -1235,7 +1235,12 @@ async def metis_api_keys(request: Request):
 
 @router.post("/api/settings/api-key")
 async def set_api_key(request: Request):
-    """Add or replace a key in system/.env."""
+    """Add or replace a key in system/.env.
+
+    Requires ``X-Metis-Confirm: api-key`` header to prevent CSRF-driven key changes.
+    """
+    if request.headers.get("X-Metis-Confirm") != "api-key":
+        return JSONResponse({"error": "confirmation header required"}, status_code=403)
     try:
         payload = await request.json()
     except Exception:
@@ -1263,8 +1268,13 @@ async def set_api_key(request: Request):
 
 
 @router.delete("/api/settings/api-key/{name}")
-async def delete_api_key(name: str):
-    """Remove a key from system/.env."""
+async def delete_api_key(name: str, request: Request):
+    """Remove a key from system/.env.
+
+    Requires ``X-Metis-Confirm: api-key`` header to prevent CSRF-driven key removal.
+    """
+    if request.headers.get("X-Metis-Confirm") != "api-key":
+        return JSONResponse({"error": "confirmation header required"}, status_code=403)
     name = name.strip().upper()
     if not name:
         return JSONResponse({"status": "error", "message": "Key name required."}, status_code=400)

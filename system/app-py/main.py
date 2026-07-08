@@ -181,6 +181,29 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Metis Dashboard", docs_url=None, redoc_url=None, lifespan=lifespan)
 
+# ── CSRF: reject cross-origin mutating requests ──────────────────────────────
+# Any website in the browser could POST to /api/capture, /api/restart, etc.
+# This middleware checks the Origin header on non-safe HTTP methods. If an
+# Origin is present and isn't localhost, the request is rejected with 403.
+# Same-origin requests (HTMX, fetch from the dashboard) either omit the
+# Origin header entirely or send http://127.0.0.1 / http://localhost.
+from starlette.middleware.base import BaseHTTPMiddleware
+
+
+class OriginCheckMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        if request.method not in ("GET", "HEAD", "OPTIONS"):
+            origin = request.headers.get("origin", "")
+            if origin and not (
+                origin.startswith("http://127.0.0.1")
+                or origin.startswith("http://localhost")
+            ):
+                return JSONResponse({"error": "origin rejected"}, status_code=403)
+        return await call_next(request)
+
+
+app.add_middleware(OriginCheckMiddleware)
+
 # When frozen by PyInstaller (the bundled .exe), __file__ points into the temporary
 # extraction dir; templates/ and static/ are shipped as bundle datas at the bundle root
 # (sys._MEIPASS). Otherwise resolve relative to this source file as normal.
@@ -191,6 +214,7 @@ else:
     BASE_DIR = Path(__file__).parent
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
@@ -304,8 +328,15 @@ async def health():
 
 
 @app.post("/api/restart")
-async def restart_dashboard():
-    """Restart the dashboard process. Returns 202 immediately; server comes back in ~3 s."""
+async def restart_dashboard(request: Request):
+    """Restart the dashboard process. Returns 202 immediately; server comes back in ~3 s.
+
+    Requires ``X-Metis-Confirm: restart`` header to prevent accidental or
+    CSRF-driven restarts.
+    """
+    if request.headers.get("X-Metis-Confirm") != "restart":
+        return JSONResponse({"error": "confirmation header required"}, status_code=403)
+
     import threading, os, sys
 
     def _do_restart():

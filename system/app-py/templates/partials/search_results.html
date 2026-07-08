@@ -82,6 +82,23 @@
   {% endfor %}
   {% endif %}
 
+  {% if courses %}
+  {{ section_header("Courses", courses|length) }}
+  {% for c in courses %}
+  <a href="javascript:void(0)"
+     onclick="openCourseReader('{{ c.slug }}');document.getElementById('search-results-drop').style.display='none';"
+     style="display:block;padding:9px 20px;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);
+            transition:background 120ms;">
+    <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;margin-bottom:2px;">
+      {{ c.title or 'Untitled Course' }}
+    </div>
+    <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
+      {% if c.category %}{{ (c.category or '')|upper }} · {% endif %}{{ (c.progress_pct or 0)|int }}% COMPLETE
+    </div>
+  </a>
+  {% endfor %}
+  {% endif %}
+
   <div style="padding:8px 20px;font-family:var(--m-mono);font-size:9px;color:var(--m-muted-soft);text-align:right;">
     Press Esc to close
   </div>

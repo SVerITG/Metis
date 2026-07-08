@@ -5,7 +5,8 @@
    brief_mode, period #}
 {% set period = period|default('daily') %}
 {% set pending = pending|default(false) %}
-{% set collapsed = brief_read %}
+{% set brief_error = brief_error|default('') %}
+{% set collapsed = false %}
 <div class="panel panel-pad" id="morning-brief" style="padding:28px 40px;margin-bottom:32px;">
 
   {# Header: label · date · read badge · daily/weekly · collapse chevron #}
@@ -48,6 +49,35 @@
       Brewing your morning brief… the dashboard's ready — this fills itself in shortly.
     </div>
     <style>@keyframes m-brew{0%,100%{opacity:.3}50%{opacity:1}}</style>
+    {% if brief_error %}
+    <div style="margin-top:8px;font-family:var(--m-mono);font-size:10px;color:var(--m-alert);max-width:720px;">
+      &#9888; Brief generation failed: {{ brief_error }}
+      <button hx-post="/api/morning-brief/refresh" hx-vals='{"period":"daily"}' hx-target="#morning-brief" hx-swap="outerHTML"
+              class="btn btn--ghost btn--caps" style="margin-left:8px;font-size:8px;padding:2px 8px;">Retry</button>
+    </div>
+    {% endif %}
+  {% elif brief_error == 'no-api-key' %}
+    <div style="max-width:720px;padding:16px 20px;background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius);">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:16px;">&#128273;</span>
+        <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-text);">API KEY NEEDED FOR AUTO-BRIEFS</span>
+      </div>
+      <div style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.6;">
+        The morning brief generates automatically with an Anthropic API key. Without one, use the <strong>"Update with Claude"</strong> button below to write briefs on your Claude subscription instead.
+      </div>
+      <div style="margin-top:12px;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);line-height:1.8;">
+        To enable auto-briefs:<br>
+        1. Get a key at <a href="https://console.anthropic.com" target="_blank" rel="noopener" style="color:var(--m-accent);">console.anthropic.com</a> &rarr; API Keys &rarr; Create Key<br>
+        2. Add <code style="background:var(--m-surface-3);padding:1px 5px;border-radius:3px;">ANTHROPIC_API_KEY=sk-ant-...</code> to <code style="background:var(--m-surface-3);padding:1px 5px;border-radius:3px;">system/.env</code><br>
+        3. Restart the dashboard
+      </div>
+    </div>
+  {% elif brief_error %}
+    <div style="display:flex;align-items:center;gap:10px;font-family:var(--m-mono);font-size:10px;color:var(--m-alert);max-width:720px;">
+      <span>&#9888; {{ brief_error }}</span>
+      <button hx-post="/api/morning-brief/refresh" hx-vals='{"period":"daily"}' hx-target="#morning-brief" hx-swap="outerHTML"
+              class="btn btn--ghost btn--caps" style="font-size:8px;padding:2px 8px;">Retry</button>
+    </div>
   {% elif brief %}
     <div class="ed" style="line-height:1.7;color:var(--m-ink);max-width:760px;white-space:pre-wrap;">{{ brief }}</div>
     {% if sources %}

@@ -2112,7 +2112,7 @@ function saveApiKey() {
   if (!value) { showToast('Key value is required.'); return; }
   fetch('/api/settings/api-key', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-Metis-Confirm': 'api-key' },
     body: JSON.stringify({ name: name, value: value })
   })
   .then(function (r) { return r.json(); })
@@ -2130,7 +2130,7 @@ function saveApiKey() {
 
 function removeApiKey(name) {
   if (!confirm('Remove ' + name + '? This cannot be undone.')) return;
-  fetch('/api/settings/api-key/' + encodeURIComponent(name), { method: 'DELETE' })
+  fetch('/api/settings/api-key/' + encodeURIComponent(name), { method: 'DELETE', headers: { 'X-Metis-Confirm': 'api-key' } })
   .then(function (r) { return r.json(); })
   .then(function (d) {
     if (d.status === 'ok') {
@@ -2203,7 +2203,7 @@ function mcpReconnect() {
 function mcpRestart() {
   var btn = document.getElementById('mcp-reconnect-btn');
   if (btn) { btn.textContent = 'Restarting…'; btn.disabled = true; }
-  fetch('/api/restart', { method: 'POST' })
+  fetch('/api/restart', { method: 'POST', headers: { 'X-Metis-Confirm': 'restart' } })
     .then(function () {
       // Poll /health until the server is back up, then reload the page
       var attempts = 0;

@@ -45,6 +45,39 @@ $StartLnk  = Join-Path $StartMenu "Metis.lnk"
 New-MetisShortcut -Path $StartLnk -Description "Open Metis Research Dashboard"
 Write-Host "Start Menu shortcut created." -ForegroundColor Green
 
+# Auto-start on Windows login — Metis launches silently when you sign in,
+# so the dashboard is always ready at http://localhost:8080.
+$Startup    = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\Startup"
+$StartupLnk = Join-Path $Startup "Metis.lnk"
+New-MetisShortcut -Path $StartupLnk -Description "Auto-start Metis Research Dashboard on login"
+Write-Host "Auto-start shortcut created (launches on login)." -ForegroundColor Green
+
+# Course-specific .url shortcut (opens in default browser)
+$CourseUrl = "http://127.0.0.1:3000/"
+$CourseIco = Join-Path $ScriptDir "app-py\static\course-icon.ico"
+if (-not (Test-Path $CourseIco)) {
+    Write-Host "Course icon not found at: $CourseIco - using Metis icon" -ForegroundColor Yellow
+    $CourseIco = $IcoFile
+}
+
+$CourseDesktopLnk = Join-Path $Desktop "Statistics to Multilevel Models.url"
+@"
+[InternetShortcut]
+URL=$CourseUrl
+IconIndex=0
+$(if ($CourseIco) { "IconFile=$CourseIco" })
+"@ | Out-File -Encoding ASCII $CourseDesktopLnk
+Write-Host "Course desktop shortcut created: $CourseDesktopLnk" -ForegroundColor Green
+
+$StartCourseLnk = Join-Path $StartMenu "Statistics to Multilevel Models.url"
+@"
+[InternetShortcut]
+URL=$CourseUrl
+IconIndex=0
+$(if ($CourseIco) { "IconFile=$CourseIco" })
+"@ | Out-File -Encoding ASCII $StartCourseLnk
+Write-Host "Course Start Menu entry created." -ForegroundColor Green
+
 # Clear Windows icon cache so the new icon appears immediately
 Write-Host ""
 Write-Host "Refreshing Windows icon cache..." -ForegroundColor Cyan

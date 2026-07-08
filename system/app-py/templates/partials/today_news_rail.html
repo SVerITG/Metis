@@ -126,6 +126,17 @@
     {% endfor %}
   </div>
 
+  {% if not show_all_topics|default(false) and total_topics|default(0) > slipcases|length %}
+  <div style="text-align:center;padding:12px 0 4px;">
+    <button class="btn btn--ghost btn--caps"
+            style="padding:5px 16px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;"
+            hx-get="/api/partial/today/news-rail?period={{ period }}&all_topics=1"
+            hx-target="#news-surface" hx-swap="outerHTML">
+      Show all {{ total_topics }} topics
+    </button>
+  </div>
+  {% endif %}
+
   {% else %}
   <div class="news-rail-empty">
     No news yet. Click <strong>Scan for content</strong> in the dateline to fetch feeds.

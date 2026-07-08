@@ -1,0 +1,87 @@
+{# today_board_box.html — Board card for Outbreaks / Events / Funding.
+   Context: board (str), items (list of dicts), total (int), show_all (bool).
+   Each item: id, title, url, source, starred, auto_added, created_at. #}
+{% set bm = {
+  'outbreaks': {'label': 'Outbreaks',  'cls': 'alert',  'icon': '⚠'},
+  'events':    {'label': 'Events',     'cls': 'accent', 'icon': '📅'},
+  'funding':   {'label': 'Funding',    'cls': 'ok',     'icon': '★'}
+} %}
+{% set m = bm[board] %}
+<div class="board-box board-box--{{ m.cls }}" id="board-{{ board }}">
+
+  {# ── Header ── #}
+  <div class="board-box-head">
+    <span class="board-box-icon">{{ m.icon }}</span>
+    <span class="board-box-label">{{ m.label }}</span>
+    {% if total %}<span class="board-box-count">{{ total }}</span>{% endif %}
+  </div>
+
+  {# ── Items ── #}
+  {% if items %}
+  <div class="board-box-list">
+    {% for item in items %}
+    <div class="board-item{% if item.auto_added %} board-item--scan{% endif %}">
+      <button type="button" class="board-star{% if item.starred %} board-star--on{% endif %}"
+              hx-post="/api/today/board/{{ board }}/item/{{ item.id }}/star"
+              hx-target="#board-{{ board }}" hx-swap="outerHTML"
+              title="{% if item.starred %}Unstar{% else %}Star{% endif %}">{% if item.starred %}★{% else %}☆{% endif %}</button>
+      <div class="board-item-body">
+        {% if item.url %}
+          <a href="{{ item.url }}" target="_blank" rel="noopener" class="board-item-title"
+             title="{{ item.title }}">{{ item.title[:72] }}{% if item.title|length > 72 %}…{% endif %}</a>
+        {% else %}
+          <span class="board-item-title" title="{{ item.title }}">{{ item.title[:72] }}{% if item.title|length > 72 %}…{% endif %}</span>
+        {% endif %}
+        {% if item.source %}
+        <span class="board-item-source">{{ item.source }}</span>
+        {% endif %}
+      </div>
+      <button type="button" class="board-dismiss"
+              hx-delete="/api/today/board/{{ board }}/item/{{ item.id }}"
+              hx-target="#board-{{ board }}" hx-swap="outerHTML"
+              hx-confirm="Remove this item?" title="Dismiss">×</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="board-box-empty">
+    No {{ board }} tracked yet.
+  </div>
+  {% endif %}
+
+  {# ── Footer ── #}
+  <div class="board-box-foot">
+    {% if total > 5 and not show_all %}
+    <button type="button" class="btn btn--ghost btn--caps board-box-btn"
+            hx-get="/api/partial/today/board/{{ board }}?all=1"
+            hx-target="#board-{{ board }}" hx-swap="outerHTML">Show all {{ total }}</button>
+    {% elif show_all and total > 5 %}
+    <button type="button" class="btn btn--ghost btn--caps board-box-btn"
+            hx-get="/api/partial/today/board/{{ board }}"
+            hx-target="#board-{{ board }}" hx-swap="outerHTML">Collapse</button>
+    {% endif %}
+    <button type="button" class="btn btn--ghost btn--caps board-box-btn board-box-btn--add"
+            onclick="toggleBoardAdd('{{ board }}')">+ Add</button>
+  </div>
+
+  {# ── Hidden add form ── #}
+  <div id="board-add-{{ board }}" class="board-box-addform" style="display:none;">
+    <form hx-post="/api/today/board/{{ board }}/add"
+          hx-target="#board-{{ board }}" hx-swap="outerHTML"
+          hx-encoding="multipart/form-data">
+      <input type="text" name="title" placeholder="Title" required class="board-input">
+      <input type="url" name="url" placeholder="URL (optional)" class="board-input board-input--mono">
+      <div style="display:flex;gap:6px;">
+        <button type="submit" class="btn btn--primary btn--caps board-box-btn">Save</button>
+        <button type="button" class="btn btn--ghost btn--caps board-box-btn"
+                onclick="toggleBoardAdd('{{ board }}')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function toggleBoardAdd(board) {
+  var el = document.getElementById('board-add-' + board);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>
