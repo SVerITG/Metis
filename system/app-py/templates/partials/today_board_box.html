@@ -60,6 +60,14 @@
             hx-get="/api/partial/today/board/{{ board }}"
             hx-target="#board-{{ board }}" hx-swap="outerHTML">Collapse</button>
     {% endif %}
+    {% if board in ['events', 'funding'] %}
+    <button type="button" class="btn btn--ghost btn--caps board-box-btn"
+            hx-post="/api/today/board/{{ board }}/refresh"
+            hx-target="#board-{{ board }}" hx-swap="outerHTML"
+            hx-indicator="#board-{{ board }}-spin"
+            title="Search the web now for current {{ m.label|lower }} and refresh this box (uses your API key; also runs monthly on its own).">↻ Refresh</button>
+    <span id="board-{{ board }}-spin" class="htmx-indicator" style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);letter-spacing:0.08em;">searching…</span>
+    {% endif %}
     <button type="button" class="btn btn--ghost btn--caps board-box-btn board-box-btn--add"
             onclick="toggleBoardAdd('{{ board }}')">+ Add</button>
   </div>
