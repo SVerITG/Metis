@@ -218,6 +218,83 @@ def _maybe_add_to_board(conn, title: str, url: str, summary: str, source_name: s
     )
 
 
+@app.tool()
+def update_today_board(board: str, items: list[dict]) -> dict:
+    """Fill a Today-surface board (Events or Funding) with items you found on the web.
+
+    Use this after web-searching for the researcher's field. The Events board holds
+    upcoming scientific congresses/conferences/symposia; the Funding board holds open
+    or upcoming research funding calls, grants and fellowships. These boards have no
+    RSS source, so this tool is how Claude Desktop (on the user's subscription, no API
+    rate limit) keeps them current — the dashboard's "Update with Claude" buttons open
+    a chat that calls this tool.
+
+    Replaces the previously tool-filled rows on that board; items the user curated or
+    added by hand are preserved.
+
+    Args:
+        board: "events" or "funding".
+        items: list of objects, each {"title": str, "url": str, "date": str (optional,
+            event date or application deadline), "description": str (optional, one short
+            sentence)}. Only include real items with a working http(s) URL.
+
+    Returns:
+        dict: {ok, board, saved} on success, or {ok: False, error} on failure.
+    """
+    import sqlite3 as _sqlite3
+    import datetime as _dt
+
+    board = (board or "").strip().lower()
+    if board not in ("events", "funding"):
+        return {"ok": False, "error": "board must be 'events' or 'funding'"}
+
+    clean: list[tuple[str, str, str]] = []
+    seen: set[str] = set()
+    for it in (items or []):
+        if not isinstance(it, dict):
+            continue
+        title = str(it.get("title", "")).strip()
+        url = str(it.get("url", "")).strip()
+        if not title or not url.lower().startswith("http") or url in seen:
+            continue
+        seen.add(url)
+        date = str(it.get("date", "")).strip()
+        desc = str(it.get("description", "")).strip()
+        if date:
+            desc = (desc + f" · {date}").strip(" ·")
+        clean.append((title[:300], url[:500], desc[:400]))
+
+    if not clean:
+        return {"ok": False, "error": "no valid items — each needs a title and an http(s) url"}
+
+    try:
+        conn = _sqlite3.connect(str(paths.db))
+        conn.execute(_DDL_BOARD)
+        now = _dt.datetime.now().isoformat()
+        # Refresh = replace previous auto/tool-added rows; keep curated & manual.
+        conn.execute(
+            "DELETE FROM today_board_items WHERE board=? AND source IN ('web-search','claude')",
+            (board,),
+        )
+        added = 0
+        for title, url, desc in clean:
+            if conn.execute(
+                "SELECT 1 FROM today_board_items WHERE board=? AND url=? LIMIT 1", (board, url)
+            ).fetchone():
+                continue  # don't shadow a curated/manual item with the same URL
+            conn.execute(
+                "INSERT INTO today_board_items (board, title, url, description, source, auto_added, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, 'claude', 1, ?, ?)",
+                (board, title, url, desc, now, now),
+            )
+            added += 1
+        conn.commit()
+        conn.close()
+        return {"ok": True, "board": board, "saved": added}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
 def _user_topics() -> set[str]:
     """Lower-cased research topics/field from user-config.yaml, for relevance scoring."""
     try:

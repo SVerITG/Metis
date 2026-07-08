@@ -61,11 +61,17 @@
             hx-target="#board-{{ board }}" hx-swap="outerHTML">Collapse</button>
     {% endif %}
     {% if board in ['events', 'funding'] %}
+    {%- set claude_board_prompt -%}
+Update my Metis {{ m.label }} board. Search the web for current, real {% if board == 'events' %}scientific congresses, conferences, symposia and short courses (each with a date){% else %}research funding calls, grants and fellowships (each with an application deadline){% endif %} in tropical medicine, neglected tropical diseases, global health and epidemiology relevant to my work. Then save the best 6-8 to the "{{ board }}" board using the metis-rc update_today_board tool — pass each as {title, url, date, description}. Only include items with a real working URL, then show me what you saved.
+    {%- endset -%}
+    <a href="claude://claude.ai/new?q={{ claude_board_prompt | trim | urlencode }}"
+       class="btn btn--ghost btn--caps board-box-btn"
+       title="Open Claude Desktop to find & save current {{ m.label|lower }} — runs on your subscription, no API limit.">✦ Update with Claude</a>
     <button type="button" class="btn btn--ghost btn--caps board-box-btn"
             hx-post="/api/today/board/{{ board }}/refresh"
             hx-target="#board-{{ board }}" hx-swap="outerHTML"
             hx-indicator="#board-{{ board }}-spin"
-            title="Search the web now for current {{ m.label|lower }} and refresh this box (uses your API key; also runs monthly on its own).">↻ Refresh</button>
+            title="Search the web via the API and refresh now (needs API credit; also runs monthly).">↻ Refresh (API)</button>
     <span id="board-{{ board }}-spin" class="htmx-indicator" style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);letter-spacing:0.08em;">searching…</span>
     {% endif %}
     <button type="button" class="btn btn--ghost btn--caps board-box-btn board-box-btn--add"
