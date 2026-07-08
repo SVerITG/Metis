@@ -10,7 +10,7 @@ from pathlib import Path
 
 import markdown as _md
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_query, db_scalar, db_execute
@@ -111,7 +111,13 @@ async def learning_tab_partial(request: Request):
 
 @router.get("/course/{slug}", response_class=HTMLResponse)
 async def course_reader_page(slug: str, request: Request):
-    """Standalone course reader — opens in its own browser tab."""
+    """Standalone course reader — opens in its own browser tab.
+
+    The 'statistics' course is a full Quarto site mounted as static files
+    at /course/statistics/. Redirect there so the mount handles it.
+    """
+    if slug == "statistics":
+        return RedirectResponse("http://127.0.0.1:3000/", status_code=302)
     course = db_query(
         "SELECT title FROM learning_courses WHERE slug=? LIMIT 1",
         (slug,), default=[],

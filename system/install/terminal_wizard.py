@@ -86,6 +86,31 @@ def _ask_multiline(prompt: str, hint: str = "") -> str:
     return "\n".join(lines)
 
 
+def _detect_name() -> str:
+    """Try to detect the user's name from git config or OS."""
+    import subprocess
+    # Try git config first
+    try:
+        result = subprocess.run(
+            ["git", "config", "--global", "user.name"],
+            capture_output=True, text=True, timeout=3,
+        )
+        name = result.stdout.strip()
+        if name and len(name) >= 2:
+            return name
+    except Exception:
+        pass
+    # Fall back to OS username (capitalised)
+    try:
+        import getpass
+        uname = getpass.getuser()
+        if uname and len(uname) >= 2:
+            return uname.capitalize()
+    except Exception:
+        pass
+    return ""
+
+
 def run_wizard(metis_root: Path, api_key: str | None) -> dict:
     _banner("Welcome to Metis — let's set up your workspace")
     print()
@@ -97,7 +122,8 @@ def run_wizard(metis_root: Path, api_key: str | None) -> dict:
 
     # ── Section 1: Who are you ────────────────────────────────────────────────
     _banner("1 / 4  About you")
-    name         = _ask("Your name", required=True, min_len=2)
+    detected_name = _detect_name()
+    name         = _ask("Your name", default=detected_name, required=True, min_len=2)
     institution  = _ask("Institution or organisation")
     role         = _ask("Your role or title", required=True, min_len=2)
     email        = _ask("Email (optional — used in outputs only)")

@@ -797,3 +797,21 @@ CREATE TABLE IF NOT EXISTS data_trigger_log (
     message      TEXT DEFAULT '',
     ran_at       TEXT NOT NULL
 );
+
+-- Today board items — Outbreaks · Events · Funding boxes on the Today surface
+CREATE TABLE IF NOT EXISTS today_board_items (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    board       TEXT NOT NULL,          -- 'outbreaks' | 'events' | 'funding'
+    title       TEXT NOT NULL,
+    url         TEXT DEFAULT '',
+    description TEXT DEFAULT '',
+    source      TEXT DEFAULT '',        -- 'WHO DON', 'ProMED', 'manual', etc.
+    starred     INTEGER DEFAULT 0,      -- 1 = favorited
+    dismissed   INTEGER DEFAULT 0,      -- 1 = soft-deleted by user
+    auto_added  INTEGER DEFAULT 1,      -- 1 = from scan, 0 = manually added
+    start_date  TEXT DEFAULT '',        -- event start date / outbreak onset
+    end_date    TEXT DEFAULT '',        -- event end date
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_board_items_board ON today_board_items (board, dismissed, created_at);

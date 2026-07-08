@@ -252,6 +252,22 @@ The script asks two questions (Full or AI only, demo workspace) and does the res
 
 ---
 
+### After installation — API key and updating
+
+**API key (optional):** Copy `system/.env.example` to `system/.env` and add your key, or the installer will prompt you. The key enables automated features (morning briefs, scheduled scans); interactive use through Claude works without it.
+
+**Updating after `git pull`:** The MCP server runs from a local copy of the source (not the repo directly). After pulling new code, re-sync with:
+
+```bash
+bash system/mcp-server/setup-mcp.sh --update
+```
+
+This re-copies the source, reinstalls the package, and applies migrations — without re-running the full wizard.
+
+**Moved the Metis folder?** Update the marker file at `~/.local/share/metis-mcp/.metis-rc-root` with the new path, or re-run the installer.
+
+---
+
 ### MCP client configuration
 
 The installer registers Metis with Claude Desktop and Claude Code automatically — you normally don't need to edit any config by hand. The blocks below are for reference (and for MCP directories): they show how the `metis-rc` server is wired in.
@@ -270,7 +286,20 @@ bash system/mcp-server/setup-mcp.sh
 claude mcp add metis-rc ~/.local/share/metis-mcp/run.sh
 ```
 
-**Claude Desktop — macOS / Linux (native)** — in `claude_desktop_config.json`:
+**Claude Desktop — macOS** — in `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "metis-rc": {
+      "command": "bash",
+      "args": ["/Users/<you>/.local/share/metis-mcp/run.sh"]
+    }
+  }
+}
+```
+
+**Claude Desktop — Linux (native)** — in `~/.config/Claude/claude_desktop_config.json`:
 
 ```json
 {
@@ -283,7 +312,7 @@ claude mcp add metis-rc ~/.local/share/metis-mcp/run.sh
 }
 ```
 
-**Claude Desktop — Windows + WSL** — in `claude_desktop_config.json`:
+**Claude Desktop — Windows + WSL** — in `%APPDATA%\Claude\claude_desktop_config.json`:
 
 ```json
 {
@@ -296,7 +325,7 @@ claude mcp add metis-rc ~/.local/share/metis-mcp/run.sh
 }
 ```
 
-> Replace `<you>` with your username. The generated `run.sh` sets `METIS_RC_ROOT` (your Research Cortex folder) and launches `python -m metis_mcp.server` from the installed virtual environment — no API key is required to run the server itself.
+> Replace `<you>` with your username. The generated `run.sh` resolves `METIS_RC_ROOT` from a marker file at runtime — no hardcoded paths. No API key is required to run the server itself.
 
 ---
 
