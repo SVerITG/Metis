@@ -3,10 +3,14 @@ routers/thinking.py — Thinking tab routes.
 """
 
 import datetime
+import json
+import os
+import shutil
+import subprocess
 from pathlib import Path
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_execute, db_query, db_scalar
@@ -453,3 +457,198 @@ async def thinking_mindmap(request: Request):
         'CONNECTION</span></div>'
     )
     return HTMLResponse(svg + legend)
+
+
+# ---------------------------------------------------------------------------
+# Graphify Knowledge Analysis
+# ---------------------------------------------------------------------------
+
+# Type → dot colour (matches Archive palette)
+_GRAPHIFY_TYPE_COLORS = {
+    "paper": "var(--m-accent)",
+    "idea": "#c98a2b",
+    "project": "#3a8f7a",
+    "task": "#8a8a8a",
+    "meeting": "#7a5ea8",
+    "concept": "#4a8f4a",
+    "journal": "#b05a5a",
+    "session": "#6a7f9a",
+    "corpus": "#9a7a5a",
+    "memory": "#5a7a9a",
+    "knowledge": "var(--m-muted)",
+}
+
+
+def _rc_root() -> Path:
+    return Path(os.environ.get("METIS_RC_ROOT", ""))
+
+
+def _graphify_bin() -> str | None:
+    """Find the graphify CLI binary."""
+    found = shutil.which("graphify")
+    if found:
+        return found
+    # Fallback to known pipx location
+    pipx_path = Path.home() / ".local" / "bin" / "graphify"
+    return str(pipx_path) if pipx_path.exists() else None
+
+
+def _graphify_python() -> str | None:
+    """Find the pipx Python with graphify installed."""
+    p = Path.home() / ".local" / "share" / "pipx" / "venvs" / "graphifyy" / "bin" / "python3"
+    return str(p) if p.exists() else None
+
+
+def _graphify_out(rc: Path) -> Path:
+    """Path to the Graphify output directory."""
+    return rc / "graphify-out"
+
+
+def _run_analytics(rc: Path) -> dict:
+    """Run the analytics script and return parsed JSON."""
+    graph_json = _graphify_out(rc) / "graph.json"
+    if not graph_json.exists():
+        return {"graph_exists": False}
+
+    script = rc / "tools" / "graphify_analytics.py"
+    if not script.exists():
+        return {"graph_exists": True, "error": "Analytics script not found"}
+
+    # Use system python — the script uses only stdlib (json, pathlib, collections)
+    try:
+        result = subprocess.run(
+            ["python3", str(script), str(graph_json)],
+            capture_output=True, text=True, timeout=30,
+            cwd=str(rc),
+        )
+        if result.returncode != 0:
+            return {"graph_exists": True, "error": result.stderr[:200]}
+        return json.loads(result.stdout)
+    except subprocess.TimeoutExpired:
+        return {"graph_exists": True, "error": "Analytics timed out"}
+    except Exception as e:
+        return {"graph_exists": True, "error": str(e)[:200]}
+
+
+@router.get("/api/partial/thinking/graphify-analytics", response_class=HTMLResponse)
+async def thinking_graphify_analytics(request: Request):
+    """Render the Graphify knowledge analytics panel."""
+    rc = _rc_root()
+    data = _run_analytics(rc)
+
+    ctx = {
+        "graph_exists": data.get("graph_exists", False),
+        "built_at": data.get("built_at", ""),
+        "error": data.get("error", ""),
+        "stats": data.get("stats", {}),
+        "god_nodes": data.get("god_nodes", []),
+        "surprising": data.get("surprising", []),
+        "communities": data.get("communities", []),
+        "type_colors": _GRAPHIFY_TYPE_COLORS,
+    }
+    return templates.TemplateResponse(
+        request, "partials/thinking_graphify.html", ctx
+    )
+
+
+def _rebuild_graphify(rc: Path) -> dict:
+    """Run the export + graphify update pipeline. Blocking — call via to_thread."""
+    import time
+    t0 = time.time()
+    errors = []
+
+    # Step 1: Export SQLite → markdown files
+    export_script = rc / "tools" / "export_knowledge_graph.py"
+    if export_script.exists():
+        try:
+            r = subprocess.run(
+                ["python3", str(export_script)],
+                capture_output=True, text=True, timeout=60,
+                cwd=str(rc),
+            )
+            if r.returncode != 0:
+                errors.append(f"Export: {r.stderr[:200]}")
+        except subprocess.TimeoutExpired:
+            errors.append("Export timed out (60s)")
+    else:
+        errors.append("Export script not found")
+
+    # Step 2: If no graph exists yet, run graphify update (AST-only, free).
+    # If the graph already exists, skip the slow rebuild — just use it as-is.
+    # Full rebuilds can be triggered via terminal: graphify update .
+    gout = rc / "graphify-out"
+    if not (gout / "graph.json").exists():
+        gbin = _graphify_bin()
+        if gbin:
+            try:
+                r = subprocess.run(
+                    [gbin, "update", "."],
+                    capture_output=True, text=True, timeout=300,
+                    cwd=str(rc),
+                )
+                if r.returncode != 0 and not (gout / "graph.json").exists():
+                    errors.append(f"Graphify: {r.stderr[:200]}")
+            except subprocess.TimeoutExpired:
+                errors.append("Graphify update timed out — run `graphify update .` from terminal")
+        else:
+            errors.append("Graphify binary not found — install with: pip install graphifyy")
+
+    duration = round(time.time() - t0, 1)
+
+    # Check result
+    gout = _graphify_out(rc)
+    graph_html = gout / "graph.html"
+    graph_json = gout / "graph.json"
+
+    if errors:
+        return {"status": "error", "message": "; ".join(errors), "duration": duration}
+
+    stats = {}
+    if graph_json.exists():
+        try:
+            with open(graph_json) as f:
+                g = json.load(f)
+            stats["nodes"] = len(g.get("nodes", []))
+            stats["edges"] = len(g.get("links", []))
+        except Exception:
+            pass
+
+    return {
+        "status": "ok",
+        "duration": duration,
+        "has_html": graph_html.exists(),
+        **stats,
+    }
+
+
+@router.post("/api/thinking/graphify-rebuild")
+async def thinking_graphify_rebuild():
+    """Run export + graphify update pipeline. Returns JSON status."""
+    import asyncio
+    rc = _rc_root()
+    if not rc or not rc.exists():
+        return JSONResponse(
+            {"status": "error", "message": "METIS_RC_ROOT not set"},
+            status_code=500,
+        )
+    result = await asyncio.to_thread(_rebuild_graphify, rc)
+    status_code = 200 if result["status"] == "ok" else 500
+    return JSONResponse(result, status_code=status_code)
+
+
+@router.get("/api/graphify/view")
+async def graphify_view():
+    """Serve the interactive graph.html file."""
+    rc = _rc_root()
+    graph_html = _graphify_out(rc) / "graph.html"
+    if not graph_html.exists():
+        return HTMLResponse(
+            "<h2>No graph available</h2>"
+            "<p>Click <em>Graphify my knowledge</em> on the Reflection surface to build one.</p>",
+            status_code=404,
+        )
+    return FileResponse(
+        str(graph_html),
+        media_type="text/html",
+        filename="graphify-knowledge-graph.html",
+    )
