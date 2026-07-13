@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import math
 import struct
 import subprocess
 from pathlib import Path
@@ -70,6 +71,7 @@ async def recall(
     project_id: str = "",
     layers: str = "all",
     top_k: int = 10,
+    recency_half_life: int = 90,
 ) -> list[TextContent]:
     """Search across ALL memory layers in one call.
 
@@ -100,6 +102,9 @@ async def recall(
         layers: Comma-separated layers to search. Options: 'memory', 'episodic',
             'semantic', 'procedural', 'knowledge', 'ideas', or 'all' (default).
         top_k: Number of results to return (default 10).
+        recency_half_life: Days until recency boost halves (default 90). Set to 0
+            to disable recency weighting. A 90-day-old entry gets ~37% of a
+            fresh entry's time bonus; 180-day ~14%.
 
     Returns:
         Ranked results from across all matching layers, each with its source
@@ -265,6 +270,27 @@ async def recall(
 
     except Exception as e:
         return [TextContent(type="text", text=f"Error during recall: {e}")]
+
+    # ── Apply recency weighting (R6) ────────────────────────────────────
+    if recency_half_life > 0:
+        now_dt = datetime.datetime.now(datetime.timezone.utc)
+        decay_lambda = math.log(2) / recency_half_life
+        for r in all_results:
+            date_str = r.get("date", "")
+            if date_str and len(date_str) >= 10:
+                try:
+                    entry_date = datetime.datetime.fromisoformat(
+                        date_str[:10] + "T00:00:00+00:00"
+                    )
+                    age_days = max(0, (now_dt - entry_date).days)
+                    recency_factor = math.exp(-decay_lambda * age_days)
+                except Exception:
+                    recency_factor = 0.5  # fallback for unparseable dates
+            else:
+                recency_factor = 0.5  # undated entries get neutral weight
+
+            # Blend: 70% relevance + 30% recency (keeps relevance dominant)
+            r["score"] = 0.7 * r["score"] + 0.3 * r["score"] * recency_factor
 
     # ── Sort by RRF score, deduplicate, take top_k ──────────────────────
     all_results.sort(key=lambda x: x["score"], reverse=True)
@@ -571,9 +597,9 @@ def _search_episodic_vec(conn, vec_bytes, limit, scope_where, scope_params) -> l
 
 
 def _search_episodic_kw(conn, like, limit, scope_where, scope_params) -> dict:
-    """Keyword search on episodic memory."""
+    """Keyword search on episodic memory (excludes archived entries)."""
     params = [like]
-    where_extra = ""
+    where_extra = " AND (archived IS NULL OR archived = 0)"
     if scope_params:
         for i, p in enumerate(scope_params):
             if "agent_id" in scope_where.split("?")[i] if i < len(scope_where.split("?")) else False:
@@ -769,3 +795,197 @@ def _merge_rrf(
             "date": info["date"],
             "meta": info["meta"],
         })
+
+
+# ── Memory relations (R5) — lightweight graph edges between entries ──────
+
+_RELATIONS_DDL = """
+CREATE TABLE IF NOT EXISTS memory_relations (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_layer TEXT NOT NULL,
+    source_id    INTEGER NOT NULL,
+    target_layer TEXT NOT NULL,
+    target_id    INTEGER NOT NULL,
+    relation     TEXT NOT NULL,
+    note         TEXT DEFAULT '',
+    created_at   TEXT NOT NULL,
+    UNIQUE(source_layer, source_id, target_layer, target_id, relation)
+)
+"""
+
+
+def _ensure_relations(conn) -> None:
+    conn.execute(_RELATIONS_DDL)
+
+
+@app.tool()
+async def link_memories(
+    source_layer: str,
+    source_id: int,
+    target_layer: str,
+    target_id: int,
+    relation: str,
+    note: str = "",
+) -> list[TextContent]:
+    """Create a typed relationship between two memory entries.
+
+    Links two entries across any memory layers — episodic, semantic, procedural,
+    memory (palace), or knowledge. This builds a lightweight knowledge graph on
+    top of the existing memory layers, enabling graph traversal during recall.
+
+    Example relations: 'informed_by', 'contradicts', 'elaborates', 'derived_from',
+    'supersedes', 'related_to', 'supports', 'led_to'.
+
+    Args:
+        source_layer: Layer of the source entry ('episodic', 'semantic',
+            'procedural', 'memory', 'knowledge').
+        source_id: Row ID of the source entry in its layer.
+        target_layer: Layer of the target entry.
+        target_id: Row ID of the target entry in its layer.
+        relation: Relationship type (e.g. 'informed_by', 'contradicts').
+        note: Optional free-text note explaining the relationship.
+
+    Returns:
+        Confirmation of the created link, or an error if it already exists.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    valid_layers = {"episodic", "semantic", "procedural", "memory", "knowledge"}
+    if source_layer not in valid_layers or target_layer not in valid_layers:
+        return [TextContent(type="text", text=f"Invalid layer. Use one of: {', '.join(sorted(valid_layers))}")]
+
+    now = _now()
+    try:
+        with connect(paths.db) as conn:
+            _ensure_relations(conn)
+            conn.execute(
+                """INSERT OR IGNORE INTO memory_relations
+                   (source_layer, source_id, target_layer, target_id, relation, note, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (source_layer, source_id, target_layer, target_id, relation, note, now),
+            )
+            conn.commit()
+        return [TextContent(
+            type="text",
+            text=f"Linked: [{source_layer}:{source_id}] —{relation}→ [{target_layer}:{target_id}]"
+                 + (f" ({note})" if note else ""),
+        )]
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error creating link: {e}")]
+
+
+@app.tool()
+async def get_related_memories(
+    layer: str,
+    entry_id: int,
+    direction: str = "both",
+) -> list[TextContent]:
+    """Find all memories related to a given entry via memory_relations.
+
+    Traverses the lightweight knowledge graph to find connected entries.
+    Use this after recall() to explore how a result connects to other
+    knowledge — e.g. which papers informed a decision, or which concepts
+    relate to a workflow.
+
+    Args:
+        layer: The layer of the entry to look up ('episodic', 'semantic', etc.).
+        entry_id: Row ID of the entry.
+        direction: 'outgoing' (this entry → others), 'incoming' (others → this),
+            or 'both' (default).
+
+    Returns:
+        List of related entries with their relationship type and content preview.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    try:
+        with connect(paths.db) as conn:
+            _ensure_relations(conn)
+            results = []
+
+            if direction in ("outgoing", "both"):
+                rows = conn.execute(
+                    """SELECT target_layer, target_id, relation, note, created_at
+                       FROM memory_relations
+                       WHERE source_layer = ? AND source_id = ?
+                       ORDER BY created_at DESC""",
+                    (layer, entry_id),
+                ).fetchall()
+                for r in rows:
+                    preview = _fetch_preview(conn, r["target_layer"], r["target_id"])
+                    results.append({
+                        "direction": "→",
+                        "relation": r["relation"],
+                        "layer": r["target_layer"],
+                        "id": r["target_id"],
+                        "preview": preview,
+                        "note": r["note"],
+                    })
+
+            if direction in ("incoming", "both"):
+                rows = conn.execute(
+                    """SELECT source_layer, source_id, relation, note, created_at
+                       FROM memory_relations
+                       WHERE target_layer = ? AND target_id = ?
+                       ORDER BY created_at DESC""",
+                    (layer, entry_id),
+                ).fetchall()
+                for r in rows:
+                    preview = _fetch_preview(conn, r["source_layer"], r["source_id"])
+                    results.append({
+                        "direction": "←",
+                        "relation": r["relation"],
+                        "layer": r["source_layer"],
+                        "id": r["source_id"],
+                        "preview": preview,
+                        "note": r["note"],
+                    })
+
+        if not results:
+            return [TextContent(type="text", text=f"No relations found for [{layer}:{entry_id}].")]
+
+        lines = [f"**Relations for [{layer}:{entry_id}]** — {len(results)} links\n"]
+        for r in results:
+            lines.append(f"- {r['direction']} **{r['relation']}** [{r['layer']}:{r['id']}]: {r['preview']}")
+            if r["note"]:
+                lines.append(f"  _Note: {r['note']}_")
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error querying relations: {e}")]
+
+
+def _fetch_preview(conn, layer: str, entry_id: int) -> str:
+    """Fetch a short content preview for a memory entry."""
+    try:
+        if layer == "episodic":
+            row = conn.execute(
+                "SELECT content FROM episodic_memory WHERE id = ?", (entry_id,)
+            ).fetchone()
+            return (row["content"] or "")[:120] if row else "(not found)"
+        elif layer == "semantic":
+            row = conn.execute(
+                "SELECT concept, definition FROM semantic_memory WHERE id = ?", (entry_id,)
+            ).fetchone()
+            return f"{row['concept']}: {(row['definition'] or '')[:100]}" if row else "(not found)"
+        elif layer == "procedural":
+            row = conn.execute(
+                "SELECT procedure_name FROM procedural_memory WHERE id = ?", (entry_id,)
+            ).fetchone()
+            return row["procedure_name"] if row else "(not found)"
+        elif layer == "memory":
+            row = conn.execute(
+                "SELECT title FROM memory_entries WHERE entry_id = ? OR CAST(rowid AS TEXT) = ?",
+                (str(entry_id), str(entry_id)),
+            ).fetchone()
+            return (row["title"] or "")[:120] if row else "(not found)"
+        elif layer == "knowledge":
+            row = conn.execute(
+                "SELECT title, chunk_text FROM pdf_chunks WHERE id = ?", (entry_id,)
+            ).fetchone()
+            return f"{row['title'] or ''}: {(row['chunk_text'] or '')[:80]}" if row else "(not found)"
+    except Exception:
+        pass
+    return "(preview unavailable)"
