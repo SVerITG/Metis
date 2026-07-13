@@ -1,7 +1,7 @@
 {# metis_startup.html — autostart / persistence toggle (Windows Scheduled Task).
    Context: autostart_enabled (bool), error (optional str) #}
 <div id="metis-startup">
-  <div class="sec-label" style="margin-bottom:10px;"><span>Startup &amp; persistence</span><span class="tail">DASHBOARD + MCP</span></div>
+  <div class="sec-label" style="margin-bottom:10px;"><span>Startup &amp; persistence</span><span class="tail">DASHBOARD + TOOLS</span></div>
   <div class="panel panel-pad">
     <div class="ed" style="margin-bottom:14px;color:var(--m-text);">
       {% if autostart_enabled %}
@@ -10,7 +10,7 @@
         reboot or a stop. Nothing to launch by hand.
       {% else %}
         <strong>Starts when you open it.</strong> Metis runs only while you have it open. Turn on
-        autostart to keep the dashboard + MCP always running and surviving reboots.
+        autostart to keep the dashboard and tools always running and surviving reboots.
       {% endif %}
     </div>
 

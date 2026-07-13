@@ -44,6 +44,7 @@
         ('howto',       'How to use',       true),
         ('overview',    'Overview',         false),
         ('agents',      'Agents',           false),
+        ('persona',     'Persona',          false),
         ('model',       'Model & usage',    false),
         ('memory',      'Memory',           false),
         ('improvement', 'What I learned',   false),
@@ -261,7 +262,7 @@
       <details id="metis-runs-details">
         <summary style="list-style:none;cursor:pointer;user-select:none;margin-bottom:12px;" onclick="metisRunsToggle(this)">
           <div class="sec-label" style="margin-bottom:0;pointer-events:none;display:flex;align-items:center;">
-            <span>Recent agent runs</span>
+            <span>Recent activity</span>
             <span class="tail" style="cursor:pointer;"
                   onclick="event.stopPropagation();htmx.ajax('GET','/api/partial/metis/agent-runs',{target:'#metis-runs-body',swap:'innerHTML'})">REFRESH</span>
             <svg id="metis-runs-chevron" viewBox="0 0 16 16" width="10" height="10" fill="none"
@@ -275,7 +276,7 @@
              hx-get="/api/partial/metis/agent-runs"
              hx-trigger="load"
              hx-swap="innerHTML">
-          <div style="padding:24px 16px;font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">Looking up recent agent activity…</div>
+          <div style="padding:24px 16px;font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">Looking up what you've been working on…</div>
         </div>
       </details>
       <script>
@@ -289,13 +290,36 @@
     </section>
 
     <!-- =================================================
+         PERSONA — how Metis talks to you
+    ================================================== -->
+    <section class="metis-section" data-section="persona" data-active="false">
+
+      <div class="sec-label" style="margin-bottom:12px;">
+        <span>How Metis talks to you</span>
+        <span class="tail">PERSONA SETTINGS</span>
+      </div>
+
+      <div class="metis-note" style="margin-bottom:18px;">
+        These settings shape how Metis communicates — its warmth, depth, and approach. Changes take effect in your next conversation.
+      </div>
+
+      <div id="metis-persona-panel"
+           hx-get="/api/partial/metis/persona"
+           hx-trigger="load"
+           hx-swap="innerHTML">
+        <div style="padding:24px;font-family:var(--m-display);font-style:italic;color:var(--m-muted);text-align:center;">Loading your preferences…</div>
+      </div>
+
+    </section>
+
+    <!-- =================================================
          MODEL & USAGE
     ================================================== -->
     <section class="metis-section" data-section="model" data-active="false">
 
       <div class="sec-label" style="margin-bottom:12px;">
         <span>Default model</span>
-        <span class="tail">USED FOR DASHBOARD AGENT RUNS</span>
+        <span class="tail">USED FOR DASHBOARD TASKS</span>
       </div>
 
       <div class="metis-note" style="margin-bottom:14px;">
@@ -368,8 +392,8 @@
       </div>
 
       <div class="sec-label" style="margin-bottom:12px;">
-        <span>Retrieval debugger</span>
-        <span class="tail">TEST SEMANTIC SEARCH</span>
+        <span>Search tester</span>
+        <span class="tail">TRY A SEARCH</span>
       </div>
       <div class="panel" style="padding:20px;margin-bottom:24px;">
         <div hx-get="/api/partial/metis/memory-debug"
@@ -388,7 +412,7 @@
 
       <div class="sec-label" style="margin-bottom:12px;">
         <span>What I&rsquo;ve learned</span>
-        <span class="tail">REFLEXIONS → DRAFTS → APPLIED</span>
+        <span class="tail">OBSERVATIONS → IMPROVEMENTS → APPLIED</span>
       </div>
       <div class="panel" id="metis-improvement-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/improvement"
@@ -608,7 +632,7 @@
 
       <div class="sec-label" style="margin-bottom:12px;">
         <span>Consent ledger</span>
-        <span class="tail">DATA ACCESS LOG</span>
+        <span class="tail">ACCESS HISTORY</span>
       </div>
       <div class="panel" id="metis-consent-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/consent"
