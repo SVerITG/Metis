@@ -41,6 +41,7 @@ desktop.ini
 *-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9].toml
 *-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9].R
 *-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9]-*.py
+*-[A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9][A-Z0-9].json
 
 # Secrets
 .env
@@ -296,5 +297,11 @@ tests/README.md
 system/config/mcp-health*.json
 tests/.audit-logs/
 .claude/plan.md
+# Graphify — codebase graph output (rebuilt on demand)
+graphify-out/
+.graphifyignore
+# NOTE: graphify-knowledge/ is in .git/info/exclude (not here)
+# so Graphify can read it but git won't track the 1,000+ generated files.
+
 # Stray office docs
 *.docx

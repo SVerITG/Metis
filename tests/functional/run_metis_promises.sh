@@ -87,9 +87,18 @@ check_endpoint_post() {
   fi
 }
 
+resolve_db() {
+  # Mirror the Python resolve_live_db() priority chain:
+  #   METIS_DB env → ~/.local/share/metis/metis.sqlite → OneDrive fallback
+  if [[ -n "${METIS_DB:-}" && -f "$METIS_DB" ]]; then echo "$METIS_DB"; return; fi
+  local local_db="${METIS_DATA_DIR:-$HOME/.local/share/metis}/metis.sqlite"
+  if [[ -f "$local_db" ]]; then echo "$local_db"; return; fi
+  echo "$RC_ROOT/system/app/data/metis.sqlite"
+}
+
 check_db_table() {
   local label="$1" table="$2" min_rows="${3:-0}"
-  local db="$RC_ROOT/system/app/data/metis.sqlite"
+  local db; db="$(resolve_db)"
   if [[ ! -f "$db" ]]; then
     log FAIL "$label → DB file missing at $db"; return
   fi
@@ -233,7 +242,7 @@ fi
 # Section 8 — Recent activity (drift indicator)
 # ============================================================================
 section "Recent activity — drift check"
-db="$RC_ROOT/system/app/data/metis.sqlite"
+db="$(resolve_db)"
 if [[ -f "$db" ]]; then
   for tbl in agent_runs reflexion_log episodic_memory ideas meetings; do
     recent=$(python3 -c "
