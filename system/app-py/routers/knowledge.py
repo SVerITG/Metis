@@ -1261,65 +1261,384 @@ async def knowledge_news_signals(request: Request):
 
 
 @router.get("/api/knowledge/graph-data")
-async def knowledge_graph_data():
-    """Return graph nodes + edges as JSON for D3 rendering."""
-    rc_root = os.environ.get("METIS_RC_ROOT", "")
-    library_root = Path(rc_root) / "knowledge" / "library" if rc_root else None
+async def knowledge_graph_data(
+    types: str = "",
+    time_range: str = "",
+    focus: str = "",
+):
+    """Return personal knowledge graph nodes + edges as JSON for D3.
 
-    nodes = []
-    links = []
-    seen_links: set = set()
+    Query params:
+      types      – comma-separated: paper,idea,project,meeting,concept,
+                   news,journal,task (empty = all)
+      time_range – week, month, quarter, year, all (default: all)
+      focus      – project:<id> or domain:<name> to centre the graph
+    """
+    from datetime import datetime, timedelta
 
-    if library_root and library_root.exists():
-        for md_file in sorted(library_root.rglob("*.md")):
-            rel = str(md_file.relative_to(library_root))
+    active_types = set(
+        t.strip() for t in types.split(",") if t.strip()
+    ) or {"paper", "idea", "project", "meeting", "concept", "news", "journal", "task"}
+
+    # Time cutoff
+    cutoff = None
+    now = datetime.utcnow()
+    if time_range == "week":
+        cutoff = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+    elif time_range == "month":
+        cutoff = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+    elif time_range == "quarter":
+        cutoff = (now - timedelta(days=90)).strftime("%Y-%m-%d")
+    elif time_range == "year":
+        cutoff = (now - timedelta(days=365)).strftime("%Y-%m-%d")
+
+    nodes: list[dict] = []
+    edges: list[dict] = []
+    node_ids: set = set()
+    seen_edges: set = set()
+    tag_index: dict[str, list[str]] = {}  # tag → [node_id, ...]
+    domain_index: dict[str, list[str]] = {}  # domain → [node_id, ...]
+    project_domains: dict[str, str] = {}  # project_id → domain keyword
+
+    # MeSH / generic tags to exclude from tag-based edges
+    STOP_TAGS = {
+        "humans", "animals", "female", "male", "adult", "child",
+        "adolescent", "aged", "middle aged", "young adult",
+        "infant", "pregnancy", "cross-sectional studies",
+        "retrospective studies", "prospective studies",
+    }
+
+    def _add_node(nid, ntype, title, tags=None, date="", extra=None):
+        if nid in node_ids:
+            return
+        if cutoff and date and date < cutoff:
+            return
+        node_ids.add(nid)
+        n = {"id": nid, "type": ntype, "title": title or "(untitled)",
+             "date": date, "tags": (tags or [])[:8]}
+        if extra:
+            n.update(extra)
+        nodes.append(n)
+        for t in (tags or []):
+            tl = t.strip().lower()
+            if tl and tl not in STOP_TAGS:
+                tag_index.setdefault(tl, []).append(nid)
+
+    def _add_edge(src, tgt, label="related"):
+        if src not in node_ids or tgt not in node_ids or src == tgt:
+            return
+        key = (min(src, tgt), max(src, tgt), label)
+        if key not in seen_edges:
+            seen_edges.add(key)
+            edges.append({"source": src, "target": tgt, "label": label})
+
+    def _parse_tags(raw):
+        if not raw:
+            return []
+        raw = str(raw).strip()
+        if raw.startswith("["):
             try:
-                text = md_file.read_text(encoding="utf-8", errors="replace")
-                fm = _parse_frontmatter(text)
-                if not fm:
-                    continue
-                tags = fm.get("tags", [])
-                if isinstance(tags, str):
-                    tags = [tags]
-                related = fm.get("related", [])
-                if isinstance(related, str):
-                    related = [related]
-                nodes.append({
-                    "id": rel,
-                    "title": fm.get("title", md_file.stem),
-                    "domain": fm.get("domain", "unknown"),
-                    "tags": tags[:6],
-                    "phd_relevance": fm.get("phd_relevance", "medium"),
-                    "status": fm.get("status", "current"),
-                })
-                for target in related:
-                    t = target.strip().strip('"').strip("'")
-                    key = tuple(sorted([rel, t]))
-                    if key not in seen_links:
-                        seen_links.add(key)
-                        links.append({"source": rel, "target": t})
+                return [str(t).strip() for t in json.loads(raw) if t]
             except Exception:
-                continue
+                pass
+        return [t.strip() for t in re.split(r"[,;]+", raw) if t.strip()]
 
-    return JSONResponse({"nodes": nodes, "links": links})
+    def _domain_keywords(domain_str):
+        """Extract matchable keywords from a domain string."""
+        if not domain_str:
+            return set()
+        d = domain_str.lower().replace("-", " ").replace("_", " ")
+        # Map common domain terms to canonical keywords
+        keywords = set()
+        for kw in ["sleeping sickness", "hat", "trypanosomiasis",
+                    "sleeping-sickness", "ntd", "neglected tropical",
+                    "dhis2", "surveillance", "epidemiology",
+                    "spatial", "multilevel", "software", "education",
+                    "malaria", "burden", "elimination"]:
+            if kw in d:
+                keywords.add(kw)
+        # Also add the raw domain words
+        for w in d.split():
+            if len(w) > 3:
+                keywords.add(w)
+        return keywords
+
+    # ── 1. Projects ──────────────────────────────────────────────────
+    if "project" in active_types:
+        for r in db_query(
+            "SELECT project_id, title, domain, status, tags, "
+            "       next_step, created_at FROM projects "
+            "WHERE tracked = 1 ORDER BY display_order"
+        ):
+            pid = f"project:{r['project_id']}"
+            domain = r.get("domain") or ""
+            _add_node(pid, "project", r["title"] or r["project_id"],
+                      _parse_tags(r.get("tags")),
+                      (r.get("created_at") or "")[:10],
+                      {"status": r.get("status", ""),
+                       "domain": domain,
+                       "next_step": r.get("next_step", "")})
+            # Index project domains for later matching
+            project_domains[r["project_id"]] = domain
+            for kw in _domain_keywords(domain):
+                domain_index.setdefault(kw, []).append(pid)
+            # Also index title keywords
+            for kw in _domain_keywords(r.get("title") or ""):
+                domain_index.setdefault(kw, []).append(pid)
+
+    # ── 2. Ideas ─────────────────────────────────────────────────────
+    if "idea" in active_types:
+        idea_counter = 0
+        for r in db_query(
+            "SELECT idea_id, text, project_id, idea_type, tags, "
+            "       domain, linked_papers, feasibility, created_at "
+            "FROM ideas ORDER BY created_at DESC"
+        ):
+            idea_counter += 1
+            raw_id = r.get("idea_id") or f"auto-{idea_counter}"
+            iid = f"idea:{raw_id}"
+            _add_node(iid, "idea", r["text"] or "(idea)",
+                      _parse_tags(r.get("tags")),
+                      (r.get("created_at") or "")[:10],
+                      {"idea_type": r.get("idea_type", ""),
+                       "domain": r.get("domain", ""),
+                       "feasibility": r.get("feasibility", "")})
+            # idea → project edge
+            if r.get("project_id"):
+                _add_edge(iid, f"project:{r['project_id']}", "belongs-to")
+            # idea → papers
+            for lp in _parse_tags(r.get("linked_papers")):
+                _add_edge(iid, f"paper:{lp}", "cites")
+            # idea → domain-matched projects
+            for kw in _domain_keywords(r.get("domain") or ""):
+                for proj_nid in domain_index.get(kw, []):
+                    _add_edge(iid, proj_nid, "domain-match")
+
+    # ── 3. Tasks (open only) ────────────────────────────────────────
+    if "task" in active_types:
+        for r in db_query(
+            "SELECT task_id, project_id, title, status, category, "
+            "       created_at FROM tasks "
+            "WHERE status NOT IN ('done','cancelled') "
+            "ORDER BY display_order LIMIT 60"
+        ):
+            raw_tid = r.get("task_id") or f"t-{r.get('title','')[:20]}"
+            tid = f"task:{raw_tid}"
+            _add_node(tid, "task", r["title"] or "(task)",
+                      [], (r.get("created_at") or "")[:10],
+                      {"status": r.get("status", ""),
+                       "category": r.get("category", "")})
+            if r.get("project_id"):
+                _add_edge(tid, f"project:{r['project_id']}", "task-of")
+
+    # ── 4. Meetings ──────────────────────────────────────────────────
+    if "meeting" in active_types:
+        meeting_counter = 0
+        for r in db_query(
+            "SELECT meeting_id, title, meeting_date, domain, project, "
+            "       attendees, meeting_type, decisions FROM meetings "
+            "ORDER BY meeting_date DESC"
+        ):
+            meeting_counter += 1
+            raw_mid = r.get("meeting_id") or f"mtg-{meeting_counter}"
+            mid = f"meeting:{raw_mid}"
+            _add_node(mid, "meeting", r["title"] or "(meeting)",
+                      [], (r.get("meeting_date") or "")[:10],
+                      {"domain": r.get("domain", ""),
+                       "attendees": r.get("attendees", ""),
+                       "decisions": (r.get("decisions") or "")[:200]})
+            if r.get("project"):
+                _add_edge(mid, f"project:{r['project']}", "discussed-in")
+            # meeting → domain-matched projects
+            for kw in _domain_keywords(r.get("domain") or ""):
+                for proj_nid in domain_index.get(kw, []):
+                    _add_edge(mid, proj_nid, "domain-match")
+
+    # ── 5. Concepts (semantic memory) ────────────────────────────────
+    if "concept" in active_types:
+        concept_map = {}
+        for r in db_query(
+            "SELECT id, concept, definition, related_concepts, "
+            "       project_id, created_at FROM semantic_memory "
+            "ORDER BY concept"
+        ):
+            cid = f"concept:{r['id']}"
+            concept_map[r["concept"].lower()] = cid
+            _add_node(cid, "concept", r["concept"],
+                      [], (r.get("created_at") or "")[:10],
+                      {"definition": (r.get("definition") or "")[:200]})
+            if r.get("project_id"):
+                _add_edge(cid, f"project:{r['project_id']}", "context-of")
+        # related_concepts edges
+        for r in db_query(
+            "SELECT id, related_concepts FROM semantic_memory"
+        ):
+            cid = f"concept:{r['id']}"
+            for rel in _parse_tags(r.get("related_concepts")):
+                target = concept_map.get(rel.lower())
+                if target:
+                    _add_edge(cid, target, "related")
+
+    # ── 6. Papers ────────────────────────────────────────────────────
+    if "paper" in active_types:
+        # Load ALL papers (limit at display time, not query time)
+        # so domain matching can connect them to projects
+        paper_cutoff = cutoff or "2000-01-01"
+        for r in db_query(
+            "SELECT id, title, authors, year, tags, collection, "
+            "       doi, journal, item_type, created_at "
+            "FROM literature_metadata "
+            "ORDER BY created_at DESC LIMIT 300",
+        ):
+            pid_str = f"paper:{r['id']}"
+            raw_tags = _parse_tags(r.get("tags"))
+            raw_colls = _parse_tags(r.get("collection"))
+            all_tags = raw_tags + raw_colls
+            _add_node(pid_str, "paper", r["title"] or "(paper)",
+                      all_tags, (r.get("created_at") or "")[:10],
+                      {"authors": (r.get("authors") or "")[:100],
+                       "year": r.get("year", ""),
+                       "journal": r.get("journal", ""),
+                       "doi": r.get("doi", "")})
+            # paper → domain-matched projects via tags
+            title_lower = (r.get("title") or "").lower()
+            tags_lower = {t.lower() for t in all_tags}
+            for kw, proj_nids in domain_index.items():
+                # Match if keyword appears in paper tags or title
+                if (kw in tags_lower
+                    or kw.replace("-", " ") in tags_lower
+                    or kw in title_lower):
+                    for proj_nid in proj_nids:
+                        _add_edge(pid_str, proj_nid, "topic-of")
+
+    # ── 7. News (recent high-signal) ─────────────────────────────────
+    if "news" in active_types:
+        news_cutoff = cutoff or (now - timedelta(days=14)).strftime("%Y-%m-%d")
+        for r in db_query(
+            "SELECT id, title, domain, signal_strength, tags, "
+            "       summary, created_at FROM news_briefs "
+            "WHERE created_at >= ? "
+            "  AND signal_strength IN ('critical','high','medium') "
+            "ORDER BY created_at DESC LIMIT 40",
+            (news_cutoff,),
+        ):
+            nid = f"news:{r['id']}"
+            _add_node(nid, "news", r["title"] or "(news)",
+                      _parse_tags(r.get("tags")),
+                      (r.get("created_at") or "")[:10],
+                      {"domain": r.get("domain", ""),
+                       "signal": r.get("signal_strength", ""),
+                       "summary": (r.get("summary") or "")[:200]})
+            # news → domain-matched projects
+            for kw in _domain_keywords(r.get("domain") or ""):
+                for proj_nid in domain_index.get(kw, []):
+                    _add_edge(nid, proj_nid, "domain-match")
+
+    # ── 8. Journal entries ───────────────────────────────────────────
+    if "journal" in active_types:
+        journal_counter = 0
+        for r in db_query(
+            "SELECT entry_id, content, summary, mood, tags, "
+            "       created_at FROM journal_entries "
+            "ORDER BY created_at DESC"
+        ):
+            journal_counter += 1
+            raw_jid = r.get("entry_id") or f"j-{journal_counter}"
+            jid = f"journal:{raw_jid}"
+            _add_node(jid, "journal", r.get("summary") or "(journal entry)",
+                      _parse_tags(r.get("tags")),
+                      (r.get("created_at") or "")[:10],
+                      {"mood": r.get("mood", "")})
+
+    # ── Build implicit edges ─────────────────────────────────────────
+
+    # Explicit knowledge_links (try both ID formats)
+    for r in db_query(
+        "SELECT source_type, source_id, target_type, target_id, "
+        "       link_label FROM knowledge_links"
+    ):
+        src = f"{r['source_type']}:{r['source_id']}"
+        tgt = f"{r['target_type']}:{r['target_id']}"
+        _add_edge(src, tgt, r.get("link_label") or "linked")
+
+    # Concept ↔ paper: concept name appears in paper tags or title
+    if concept_map if "concept" in active_types else False:
+        for n in nodes:
+            if n["type"] != "paper":
+                continue
+            title_lower = n["title"].lower()
+            tags_lower = {t.lower() for t in n.get("tags", [])}
+            for concept_name, concept_nid in concept_map.items():
+                if (concept_name in title_lower
+                    or concept_name in tags_lower
+                    or any(concept_name in t for t in tags_lower)):
+                    _add_edge(n["id"], concept_nid, "mentions")
+
+    # Tag co-occurrence: entities sharing tags get an edge
+    # (with stop-tags already filtered out during _add_node)
+    for tag, members in tag_index.items():
+        if len(members) > 20:
+            continue  # skip overly broad tags
+        if len(members) < 2:
+            continue
+        for i, a in enumerate(members):
+            for b in members[i + 1:]:
+                if a != b:
+                    _add_edge(a, b, "shared-tag")
+
+    # ── Focus filter (post-build) ────────────────────────────────────
+    if focus:
+        kind, _, val = focus.partition(":")
+        if kind == "project":
+            focus_id = f"project:{val}"
+        elif kind == "domain":
+            focus_id = None  # domain filter — keep nodes with matching domain
+        else:
+            focus_id = None
+
+        if focus_id and focus_id in node_ids:
+            # Keep the focus node + 2-hop neighbourhood
+            neighbours: set = {focus_id}
+            for e in edges:
+                if e["source"] == focus_id:
+                    neighbours.add(e["target"])
+                elif e["target"] == focus_id:
+                    neighbours.add(e["source"])
+            hop2: set = set(neighbours)
+            for e in edges:
+                if e["source"] in neighbours:
+                    hop2.add(e["target"])
+                elif e["target"] in neighbours:
+                    hop2.add(e["source"])
+            nodes = [n for n in nodes if n["id"] in hop2]
+            node_ids = {n["id"] for n in nodes}
+            edges = [e for e in edges if e["source"] in node_ids and e["target"] in node_ids]
+
+    # ── Stats ────────────────────────────────────────────────────────
+    type_counts = {}
+    for n in nodes:
+        type_counts[n["type"]] = type_counts.get(n["type"], 0) + 1
+
+    return JSONResponse({
+        "nodes": nodes,
+        "edges": edges,
+        "stats": {"node_count": len(nodes), "edge_count": len(edges),
+                  "types": type_counts},
+    })
 
 
 @router.get("/api/partial/knowledge/graph", response_class=HTMLResponse)
 async def knowledge_graph_partial(request: Request):
-    """Return the graph view partial (D3 force-directed graph)."""
-    rc_root = os.environ.get("METIS_RC_ROOT", "")
-    library_root = Path(rc_root) / "knowledge" / "library" if rc_root else None
-
-    # Count indexed edges
-    edge_count = db_scalar("SELECT COUNT(*) FROM note_links", default=0)
-    node_count = 0
-    if library_root and library_root.exists():
-        node_count = sum(1 for f in library_root.rglob("*.md"))
-
+    """Return the personal knowledge graph partial (D3 force-directed)."""
+    # Fetch project list for the focus selector
+    projects = db_query(
+        "SELECT project_id, title FROM projects "
+        "WHERE tracked = 1 ORDER BY display_order LIMIT 30"
+    )
     return templates.TemplateResponse(
         request,
         "partials/knowledge_graph.html",
-        {"node_count": node_count, "edge_count": edge_count},
+        {"projects": projects},
     )
 
 
@@ -1417,7 +1736,7 @@ async def knowledge_recently_added(request: Request):
     items = []
     try:
         rows = db_query(
-            "SELECT title, authors, year, created_at FROM literature_metadata "
+            "SELECT title, authors, year, item_type, COALESCE(is_read, 0) as is_read, created_at FROM literature_metadata "
             "WHERE title IS NOT NULL AND title != '' AND library_source='zotero' "
             "ORDER BY created_at DESC LIMIT 6"
         ) or []
@@ -1441,7 +1760,13 @@ async def knowledge_recently_added(request: Request):
                 age = created[:10] if created else "—"
             title = r.get("title") or "Untitled"
             short_title = title[:48] + "…" if len(title) > 50 else title
-            items.append({"title": short_title, "age": age, "year": r.get("year") or ""})
+            items.append({
+                "title": short_title,
+                "age": age,
+                "year": r.get("year") or "",
+                "item_type": r.get("item_type") or "",
+                "is_read": bool(r.get("is_read", 0)),
+            })
     except Exception:
         pass
     return templates.TemplateResponse(

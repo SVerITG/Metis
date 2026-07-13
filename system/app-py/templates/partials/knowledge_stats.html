@@ -1,37 +1,85 @@
-<!-- knowledge_stats.html — stat tiles using Metis design tokens -->
+<!-- knowledge_stats.html — stat tiles with icons and descriptions -->
 <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
 
-  <div class="panel" style="flex:1;min-width:120px;padding:16px 20px;text-align:center;">
-    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-accent);letter-spacing:-0.02em;">{{ cards }}</div>
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);margin-top:4px;">Library cards</div>
+  {# Library Cards #}
+  <div class="panel" style="flex:1;min-width:140px;padding:16px 20px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div style="width:32px;height:32px;border-radius:8px;background:color-mix(in srgb, var(--m-accent) 12%, transparent);display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h7M7 16h4"/>
+        </svg>
+      </div>
+      <div style="font-family:var(--m-mono);font-size:24px;font-weight:600;color:var(--m-accent);letter-spacing:-0.02em;line-height:1;">{{ cards }}</div>
+    </div>
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-ink);margin-bottom:3px;">Library cards</div>
+    <div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);line-height:1.4;">Curated knowledge notes from your domain corpus</div>
   </div>
 
-  <div class="panel" style="flex:1;min-width:120px;padding:16px 20px;text-align:center;">
-    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-ink);letter-spacing:-0.02em;">{{ domains }}</div>
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);margin-top:4px;">Domains</div>
+  {# Domains #}
+  <div class="panel" style="flex:1;min-width:140px;padding:16px 20px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div style="width:32px;height:32px;border-radius:8px;background:rgba(69,123,157,0.1);display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#457b9d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/>
+        </svg>
+      </div>
+      <div style="font-family:var(--m-mono);font-size:24px;font-weight:600;color:var(--m-ink);letter-spacing:-0.02em;line-height:1;">{{ domains }}</div>
+    </div>
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-ink);margin-bottom:3px;">Domains</div>
+    <div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);line-height:1.4;">Distinct knowledge domains indexed</div>
   </div>
 
-  <div class="panel" style="flex:1;min-width:120px;padding:16px 20px;text-align:center;">
-    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-ink);letter-spacing:-0.02em;">{{ lit }}</div>
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);margin-top:4px;">Literature items</div>
+  {# Literature Items #}
+  <div class="panel" style="flex:1;min-width:140px;padding:16px 20px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div style="width:32px;height:32px;border-radius:8px;background:rgba(109,104,117,0.1);display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#6d6875" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        </svg>
+      </div>
+      <div style="font-family:var(--m-mono);font-size:24px;font-weight:600;color:var(--m-ink);letter-spacing:-0.02em;line-height:1;">{{ lit }}</div>
+    </div>
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-ink);margin-bottom:3px;">Literature items</div>
+    <div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);line-height:1.4;">Papers synced from Zotero
+      {% if new_this_month %}<span style="color:#2d6a4f;font-weight:500;"> · {{ new_this_month }} new this month</span>{% endif %}
+    </div>
   </div>
 
-  <div class="panel" style="flex:1;min-width:140px;padding:16px 20px;text-align:center;">
-    {% if pdf_docs %}
-    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-ok);letter-spacing:-0.02em;">{{ pdf_docs }}</div>
-    {% else %}
-    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-muted);letter-spacing:-0.02em;">—</div>
-    {% endif %}
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);margin-top:4px;">PDFs indexed</div>
+  {# PDFs Indexed #}
+  <div class="panel" style="flex:1;min-width:140px;padding:16px 20px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div style="width:32px;height:32px;border-radius:8px;background:{% if pdf_docs %}rgba(45,106,79,0.1){% else %}var(--m-surface-3){% endif %};display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="{% if pdf_docs %}#2d6a4f{% else %}var(--m-muted){% endif %}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v6h6"/>
+          <path d="M10 13l2 2 4-4" stroke-width="2"/>
+        </svg>
+      </div>
+      {% if pdf_docs %}
+      <div style="font-family:var(--m-mono);font-size:24px;font-weight:600;color:#2d6a4f;letter-spacing:-0.02em;line-height:1;">{{ pdf_docs }}</div>
+      {% else %}
+      <div style="font-family:var(--m-mono);font-size:24px;font-weight:600;color:var(--m-muted);letter-spacing:-0.02em;line-height:1;">—</div>
+      {% endif %}
+    </div>
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-ink);margin-bottom:3px;">PDFs indexed</div>
+    <div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);line-height:1.4;">Full-text PDFs chunked and embedded for semantic search</div>
   </div>
 
-  <div class="panel" style="flex:1;min-width:140px;padding:16px 20px;text-align:center;">
-    {% if pdf_chunks %}
-    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-ok);letter-spacing:-0.02em;">{{ "{:,}".format(pdf_chunks) }}</div>
-    {% else %}
-    <div style="font-family:var(--m-mono);font-size:22px;font-weight:600;color:var(--m-muted);letter-spacing:-0.02em;">—</div>
-    {% endif %}
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);margin-top:4px;">Searchable chunks</div>
+  {# Searchable Chunks #}
+  <div class="panel" style="flex:1;min-width:140px;padding:16px 20px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <div style="width:32px;height:32px;border-radius:8px;background:{% if pdf_chunks %}rgba(45,106,79,0.1){% else %}var(--m-surface-3){% endif %};display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="{% if pdf_chunks %}#2d6a4f{% else %}var(--m-muted){% endif %}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </div>
+      {% if pdf_chunks %}
+      <div style="font-family:var(--m-mono);font-size:24px;font-weight:600;color:#2d6a4f;letter-spacing:-0.02em;line-height:1;">{{ "{:,}".format(pdf_chunks) }}</div>
+      {% else %}
+      <div style="font-family:var(--m-mono);font-size:24px;font-weight:600;color:var(--m-muted);letter-spacing:-0.02em;line-height:1;">—</div>
+      {% endif %}
+    </div>
+    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-ink);margin-bottom:3px;">Searchable chunks</div>
+    <div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);line-height:1.4;">Text passages with vector embeddings for deep retrieval</div>
   </div>
 
 </div>
