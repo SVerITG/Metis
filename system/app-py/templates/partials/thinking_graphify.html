@@ -1,0 +1,149 @@
+<!-- ── Graphify Knowledge Analysis ── -->
+<div id="graphify-section">
+  <div class="sec-label" style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <span>Graphify Knowledge Analysis</span>
+    <span class="tail">HUBS · BRIDGES · COMMUNITIES</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      {% if built_at %}
+      <span style="font-family:var(--m-display);font-style:italic;font-size:11px;color:var(--m-muted);text-transform:none;letter-spacing:0;">
+        built {{ built_at }}
+      </span>
+      {% endif %}
+      <button class="btn btn--ghost btn--caps" onclick="graphifyKnowledge(this)"
+              style="display:inline-flex;align-items:center;gap:5px;">
+        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="4" cy="4" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="4" r="1.5"/>
+          <path d="M5.5 5.5 10.5 10.5"/><path d="M5.5 4 10.5 4"/>
+        </svg>
+        {% if graph_exists %}Rebuild &amp; view{% else %}Graphify my knowledge{% endif %}
+      </button>
+      {% if graph_exists %}
+      <button class="btn btn--ghost btn--caps" onclick="window.open('/api/graphify/view','_blank','noopener,noreferrer')"
+              style="display:inline-flex;align-items:center;gap:5px;">
+        <svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <path d="M6 3H3v10h10v-3"/><path d="M9 2h5v5"/><path d="M14 2L7 9"/>
+        </svg>
+        Open graph
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if not graph_exists %}
+  <!-- Empty state -->
+  <div class="panel panel-pad" style="padding:32px 28px;text-align:center;">
+    <div style="font-family:var(--m-display);font-size:18px;color:var(--m-ink);margin-bottom:8px;">
+      No knowledge graph yet
+    </div>
+    <p style="font-family:var(--m-display);font-size:14px;color:var(--m-muted);margin:0 0 16px;">
+      Click <em>Graphify my knowledge</em> to build a semantic graph of your ideas, papers, projects, and notes.
+      It takes about 20 seconds and opens an interactive visualization in a new tab.
+    </p>
+  </div>
+
+  {% elif error %}
+  <div class="panel panel-pad" style="padding:20px;color:var(--m-warn);font-family:var(--m-mono);font-size:11px;">
+    ⚠ Could not load analytics: {{ error }}
+  </div>
+
+  {% else %}
+  <!-- Analytics cards -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+    <!-- Knowledge hubs (god nodes) -->
+    <div class="panel panel-pad" style="padding:18px 20px;">
+      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">
+        KNOWLEDGE HUBS
+        <span style="float:right;font-family:var(--m-display);font-style:italic;font-size:10px;letter-spacing:0;text-transform:none;">
+          {{ stats.knowledge_nodes }} nodes · {{ stats.knowledge_edges }} edges
+        </span>
+      </div>
+      {% if god_nodes %}
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        {% for g in god_nodes %}
+        <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:3px;background:var(--m-bg);border:1px solid var(--m-rule-soft);">
+          <span style="width:7px;height:7px;border-radius:50%;background:{{ type_colors.get(g.type, 'var(--m-muted)') }};flex-shrink:0;"></span>
+          <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                title="{{ g.label }}">
+            {{ g.label }}
+          </span>
+          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);text-transform:uppercase;flex-shrink:0;">
+            {{ g.type }}
+          </span>
+          <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-accent);flex-shrink:0;"
+                title="{{ g.degree }} connections">
+            {{ g.degree }}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);font-style:italic;margin:0;">
+        No knowledge hubs detected yet. Run a deep extract for richer connections.
+      </p>
+      {% endif %}
+    </div>
+
+    <!-- Right column: Communities + Bridges -->
+    <div style="display:flex;flex-direction:column;gap:14px;">
+
+      <!-- Communities overview -->
+      <div class="panel panel-pad" style="padding:18px 20px;">
+        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">
+          KNOWLEDGE CLUSTERS
+          <span style="float:right;font-family:var(--m-display);font-style:italic;font-size:10px;letter-spacing:0;text-transform:none;">
+            {{ stats.knowledge_communities }} communities
+          </span>
+        </div>
+        {% if communities %}
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          {% for c in communities %}
+          <div style="display:flex;align-items:center;gap:8px;font-family:var(--m-display);font-size:12.5px;">
+            <span style="width:7px;height:7px;border-radius:50%;background:{{ type_colors.get(c.dominant_type, 'var(--m-muted)') }};flex-shrink:0;"></span>
+            <span style="color:var(--m-ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                  title="{{ c.sample_members | join(', ') }}">
+              {% if c.sample_members %}{{ c.sample_members[0] }}{% if c.size > 1 %} + {{ c.size - 1 }} more{% endif %}{% else %}{{ c.name }}{% endif %}
+            </span>
+            <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);text-transform:uppercase;">
+              {{ c.dominant_type }}
+            </span>
+            <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted-soft);min-width:20px;text-align:right;">
+              {{ c.size }}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);font-style:italic;margin:0;">
+          No clusters detected.
+        </p>
+        {% endif %}
+      </div>
+
+      <!-- Surprising connections (bridges) -->
+      <div class="panel panel-pad" style="padding:18px 20px;">
+        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">
+          SURPRISING BRIDGES
+        </div>
+        {% if surprising %}
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          {% for s in surprising %}
+          <div style="font-family:var(--m-display);font-size:12.5px;color:var(--m-ink);display:flex;align-items:center;gap:6px;">
+            <span style="width:7px;height:7px;border-radius:50%;background:{{ type_colors.get(s.from_type, 'var(--m-muted)') }};flex-shrink:0;"></span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40%;" title="{{ s.from_label }}">{{ s.from_label }}</span>
+            <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-accent);">↔</span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40%;" title="{{ s.to_label }}">{{ s.to_label }}</span>
+            <span style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);margin-left:auto;">{{ s.relation }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);font-style:italic;margin:0;">
+          No cross-cluster bridges yet. A deep extract with LLM will surface semantic connections between your ideas, papers, and projects.
+        </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
