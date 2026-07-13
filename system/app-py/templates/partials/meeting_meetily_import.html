@@ -1,0 +1,132 @@
+{# meeting_meetily_import.html — Import a Meetily / external Markdown transcript.
+   Reuses meeting_import_result.html for the response. #}
+<div id="meeting-import-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:800;background:rgba(0,0,0,0.3);display:flex;align-items:flex-start;justify-content:center;padding-top:60px;">
+  <div class="panel m-drawer-top" style="width:640px;max-width:96vw;padding:0;box-shadow:0 8px 32px rgba(0,0,0,0.18);max-height:88vh;overflow-y:auto;">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;border-bottom:1px solid var(--m-rule-soft);position:sticky;top:0;background:var(--m-surface);z-index:1;">
+      <div class="kicker kicker--ok" style="margin:0;">
+        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H2v12h12z"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
+        IMPORT FROM MEETILY
+      </div>
+      <button onclick="closeMeetilyImport()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;padding:2px 6px;">ESC</button>
+    </div>
+
+    <!-- Tabs: File upload vs Paste -->
+    <div style="display:flex;border-bottom:1px solid var(--m-rule-soft);">
+      <button id="meetily-tab-file" onclick="switchMeetilyTab('file')"
+              style="flex:1;padding:10px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;border:none;cursor:pointer;background:var(--m-surface-2);color:var(--m-ink);border-bottom:2px solid var(--m-accent);">
+        UPLOAD .MD FILE
+      </button>
+      <button id="meetily-tab-paste" onclick="switchMeetilyTab('paste')"
+              style="flex:1;padding:10px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;border:none;cursor:pointer;background:var(--m-surface);color:var(--m-muted);border-bottom:2px solid transparent;">
+        PASTE MARKDOWN
+      </button>
+    </div>
+
+    <!-- File upload mode -->
+    <form id="meetily-form-file"
+          hx-post="/api/meeting/import-meetily"
+          hx-target="#meetily-import-result"
+          hx-swap="innerHTML"
+          hx-encoding="multipart/form-data"
+          style="padding:18px 20px 20px;">
+
+      <div style="border:2px dashed var(--m-line);border-radius:6px;padding:28px 20px;text-align:center;margin-bottom:14px;cursor:pointer;transition:border-color 0.15s;"
+           id="meetily-dropzone"
+           ondragover="event.preventDefault();this.style.borderColor='var(--m-accent)'"
+           ondragleave="this.style.borderColor='var(--m-line)'"
+           ondrop="handleMeetilyDrop(event)"
+           onclick="document.getElementById('meetily-file-input').click()">
+        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:6px;">DROP .MD FILE HERE</div>
+        <div style="font-family:var(--m-sans);font-size:13px;color:var(--m-ink);" id="meetily-file-label">or click to browse</div>
+        <input type="file" name="file" id="meetily-file-input" accept=".md,.txt,.markdown"
+               style="display:none;" onchange="meetilyFileSelected(this)">
+      </div>
+
+      <div id="meetily-import-result"></div>
+
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button type="submit" class="btn btn--primary btn--caps" style="flex:1;">Import &amp; Analyse</button>
+        <button type="button" class="btn btn--ghost btn--caps" onclick="closeMeetilyImport()">Cancel</button>
+      </div>
+    </form>
+
+    <!-- Paste mode (hidden by default) -->
+    <form id="meetily-form-paste"
+          hx-post="/api/meeting/import-meetily"
+          hx-target="#meetily-import-result-paste"
+          hx-swap="innerHTML"
+          style="padding:18px 20px 20px;display:none;">
+
+      <div style="margin-bottom:12px;">
+        <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">MEETILY MARKDOWN</label>
+        <textarea name="markdown" rows="12"
+                  placeholder="Paste the Meetily export here.&#10;&#10;Metis will parse:&#10;- YAML front matter (title, date, participants)&#10;- ## Summary sections&#10;- ## Action Items&#10;- ## Transcript with speaker labels&#10;&#10;Then run cross-pollination against your library."
+                  style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:10px 12px;font-family:var(--m-mono);font-size:12px;color:var(--m-ink);resize:vertical;line-height:1.6;outline:none;"></textarea>
+      </div>
+
+      <div id="meetily-import-result-paste"></div>
+
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button type="submit" class="btn btn--primary btn--caps" style="flex:1;">Import &amp; Analyse</button>
+        <button type="button" class="btn btn--ghost btn--caps" onclick="closeMeetilyImport()">Cancel</button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<script>
+function closeMeetilyImport() {
+  const el = document.getElementById('meeting-import-modal');
+  if (el) el.remove();
+}
+
+function switchMeetilyTab(tab) {
+  const fileForm  = document.getElementById('meetily-form-file');
+  const pasteForm = document.getElementById('meetily-form-paste');
+  const fileTab   = document.getElementById('meetily-tab-file');
+  const pasteTab  = document.getElementById('meetily-tab-paste');
+  if (tab === 'paste') {
+    fileForm.style.display  = 'none';
+    pasteForm.style.display = 'block';
+    fileTab.style.background  = 'var(--m-surface)';
+    fileTab.style.color       = 'var(--m-muted)';
+    fileTab.style.borderBottomColor = 'transparent';
+    pasteTab.style.background = 'var(--m-surface-2)';
+    pasteTab.style.color      = 'var(--m-ink)';
+    pasteTab.style.borderBottomColor = 'var(--m-accent)';
+  } else {
+    fileForm.style.display  = 'block';
+    pasteForm.style.display = 'none';
+    pasteTab.style.background = 'var(--m-surface)';
+    pasteTab.style.color      = 'var(--m-muted)';
+    pasteTab.style.borderBottomColor = 'transparent';
+    fileTab.style.background  = 'var(--m-surface-2)';
+    fileTab.style.color       = 'var(--m-ink)';
+    fileTab.style.borderBottomColor = 'var(--m-accent)';
+  }
+}
+
+function handleMeetilyDrop(e) {
+  e.preventDefault();
+  e.currentTarget.style.borderColor = 'var(--m-line)';
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    const input = document.getElementById('meetily-file-input');
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    input.files = dt.files;
+    meetilyFileSelected(input);
+  }
+}
+
+function meetilyFileSelected(input) {
+  const label = document.getElementById('meetily-file-label');
+  if (input.files.length && label) {
+    label.textContent = input.files[0].name;
+    label.style.color = 'var(--m-accent)';
+  }
+}
+</script>

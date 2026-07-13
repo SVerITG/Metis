@@ -1,17 +1,17 @@
 """
 routers/transcription.py — Audio transcription for the live meeting assistant.
 
-Two modes (auto-selected at startup):
-  1. WhisperX  — faster-whisper transcription + pyannote speaker diarization.
-                 Returns per-speaker segments when diarize=true.
-                 Requires: whisperx, pyannote.audio, ffmpeg in PATH.
-  2. faster-whisper — plain transcription, no diarization.
-                 Fallback when whisperx unavailable.
+Three backends (selectable via `backend` parameter on /api/transcription/chunk):
+  1. WhisperX  — faster-whisper + pyannote speaker diarization (local GPU).
+  2. faster-whisper — plain local transcription, no diarization (local GPU).
+  3. Voxtral  — Mistral AI's speech API with native diarization (cloud).
+                 Requires MISTRAL_API_KEY. Model: voxtral-mini-latest.
 
-The live meeting JS sends 25-second WebM/OGG blobs via POST /api/transcription/chunk.
+The live meeting JS sends 3.5-second WebM/OGG blobs via POST /api/transcription/chunk.
 """
 
 import asyncio
+import base64
 import os
 import tempfile
 from pathlib import Path
@@ -26,9 +26,27 @@ _wx_model = None          # whisperx model (wraps faster-whisper)
 _diarize_pipeline = None  # pyannote diarization pipeline
 _model_lock = asyncio.Lock()
 
-WHISPER_MODEL  = os.environ.get("WHISPER_MODEL", "base")
-HF_TOKEN       = os.environ.get("HF_TOKEN", "")          # needed for pyannote diarization
-USE_WHISPERX   = None   # resolved on first load
+WHISPER_MODEL    = os.environ.get("WHISPER_MODEL", "base")
+HF_TOKEN         = os.environ.get("HF_TOKEN", "")          # needed for pyannote diarization
+MISTRAL_API_KEY  = os.environ.get("MISTRAL_API_KEY", "")   # needed for Voxtral
+VOXTRAL_MODEL    = os.environ.get("VOXTRAL_MODEL", "voxtral-mini-latest")
+USE_WHISPERX     = None   # resolved on first load
+
+
+def _detect_device():
+    """Pick CUDA when available, else CPU."""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            return "cuda"
+    except ImportError:
+        pass
+    return "cpu"
+
+
+def _compute_type(device: str) -> str:
+    """int8 for CPU, float16 for CUDA (faster + fits VRAM)."""
+    return "float16" if device == "cuda" else "int8"
 
 
 def _check_whisperx() -> bool:
@@ -43,10 +61,11 @@ def _check_whisperx() -> bool:
 def _load_whisperx():
     global _wx_model, USE_WHISPERX
     import whisperx
+    device = _detect_device()
     _wx_model = whisperx.load_model(
         WHISPER_MODEL,
-        device="cpu",
-        compute_type="int8",
+        device=device,
+        compute_type=_compute_type(device),
         download_root=str(Path.home() / ".cache" / "whisper"),
     )
     USE_WHISPERX = True
@@ -55,10 +74,11 @@ def _load_whisperx():
 def _load_faster_whisper():
     global _fw_model, USE_WHISPERX
     from faster_whisper import WhisperModel
+    device = _detect_device()
     _fw_model = WhisperModel(
         WHISPER_MODEL,
-        device="cpu",
-        compute_type="int8",
+        device=device,
+        compute_type=_compute_type(device),
         download_root=str(Path.home() / ".cache" / "whisper"),
     )
     USE_WHISPERX = False
@@ -70,8 +90,9 @@ def _load_diarize_pipeline():
         return
     try:
         import whisperx
+        device = _detect_device()
         _diarize_pipeline = whisperx.DiarizationPipeline(
-            use_auth_token=HF_TOKEN, device="cpu"
+            use_auth_token=HF_TOKEN, device=device
         )
     except Exception:
         _diarize_pipeline = None
@@ -110,6 +131,8 @@ async def transcription_status():
 
     mode = "whisperx" if wx_available else "faster-whisper"
     diarize = bool(HF_TOKEN and wx_available)
+    device = _detect_device()
+    voxtral_ok = bool(MISTRAL_API_KEY)
 
     # Check voice-profile recognition availability
     voice_profiles = False
@@ -120,17 +143,39 @@ async def transcription_status():
     except Exception:
         pass
 
+    # GPU name for display
+    gpu_name = None
+    if device == "cuda":
+        try:
+            import torch
+            gpu_name = torch.cuda.get_device_name(0)
+        except Exception:
+            gpu_name = "CUDA GPU"
+
+    note_parts = []
+    if wx_available and diarize:
+        note_parts.append("WhisperX + diarization ready")
+    elif wx_available:
+        note_parts.append("WhisperX ready (no HF_TOKEN)")
+    elif fw_available:
+        note_parts.append(
+            f"faster-whisper ready ({device.upper()}"
+            + (f" · {gpu_name}" if gpu_name else "") + ")"
+        )
+    if voxtral_ok:
+        note_parts.append(f"Voxtral ({VOXTRAL_MODEL}) ready")
+
     return JSONResponse({
         "available": True,
         "model": WHISPER_MODEL,
         "mode": mode,
+        "device": device,
+        "gpu": gpu_name,
         "diarization": diarize,
         "voice_profiles": voice_profiles,
-        "note": (
-            "WhisperX + diarization ready." if diarize else
-            "WhisperX ready (no HF_TOKEN — diarization disabled)." if wx_available else
-            "faster-whisper ready (plain transcription)."
-        ),
+        "voxtral": voxtral_ok,
+        "voxtral_model": VOXTRAL_MODEL if voxtral_ok else None,
+        "note": " · ".join(note_parts) + ".",
     })
 
 
@@ -144,13 +189,42 @@ async def transcribe_chunk(
     language: str = Form(""),
     speaker:  str = Form("Speaker"),
     diarize:  str = Form("false"),
+    backend:  str = Form("auto"),
 ):
     """
-    Transcribe a 25-second audio chunk from MediaRecorder (WebM/OGG/WAV).
+    Transcribe a 3.5-second audio chunk from MediaRecorder (WebM/OGG/WAV).
+
+    backend: "auto" (WhisperX → faster-whisper), "voxtral" (Mistral API),
+             "whisper" (force local faster-whisper).
 
     Returns:
       {text, language, segments: [{start, end, text, speaker?}], mode, speaker}
     """
+    # ── Voxtral path — no local model needed ──
+    if backend == "voxtral":
+        if not MISTRAL_API_KEY:
+            return JSONResponse(
+                {"error": "MISTRAL_API_KEY not set", "text": ""},
+                status_code=503,
+            )
+        ct = audio.content_type or ""
+        suffix = ".ogg" if "ogg" in ct else ".mp4" if ("mp4" in ct or "m4a" in ct) else ".webm"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+            tmp_path = tmp.name
+            tmp.write(await audio.read())
+        try:
+            lang = language if language else None
+            do_diarize = diarize.lower() == "true"
+            return await _transcribe_voxtral(tmp_path, lang, speaker, do_diarize)
+        except Exception as e:
+            return JSONResponse({"error": str(e), "text": ""}, status_code=500)
+        finally:
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
+
+    # ── Local Whisper path ──
     async with _model_lock:
         try:
             _ensure_model()
@@ -190,11 +264,12 @@ async def _transcribe_whisperx(tmp_path, lang, speaker, do_diarize):
 
     # Align word timestamps
     try:
+        device = _detect_device()
         align_model, metadata = whisperx.load_align_model(
-            language_code=detected_lang, device="cpu"
+            language_code=detected_lang, device=device
         )
         result = whisperx.align(
-            result["segments"], align_model, metadata, tmp_path, device="cpu"
+            result["segments"], align_model, metadata, tmp_path, device=device
         )
     except Exception:
         pass  # alignment optional
@@ -272,6 +347,89 @@ async def _transcribe_faster_whisper(tmp_path, lang, speaker):
         "segments": seg_list,
         "speaker": identified_speaker,
         "mode": "faster-whisper",
+    })
+
+
+# ---------------------------------------------------------------------------
+# Voxtral (Mistral API) transcription
+# ---------------------------------------------------------------------------
+
+async def _transcribe_voxtral(tmp_path, lang, speaker, do_diarize):
+    """Call the Mistral Audio Transcriptions API (voxtral-mini-latest)."""
+    import httpx
+
+    with open(tmp_path, "rb") as f:
+        audio_bytes = f.read()
+
+    # Determine MIME type from extension
+    ext = Path(tmp_path).suffix.lower()
+    mime_map = {
+        ".webm": "audio/webm", ".ogg": "audio/ogg", ".mp4": "audio/mp4",
+        ".m4a": "audio/mp4", ".mp3": "audio/mpeg", ".wav": "audio/wav",
+    }
+    mime = mime_map.get(ext, "audio/webm")
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        # Mistral uses multipart form upload
+        files = {"file": (f"chunk{ext}", audio_bytes, mime)}
+        data = {
+            "model": VOXTRAL_MODEL,
+            "response_format": "verbose_json",
+        }
+        if lang:
+            data["language"] = lang
+        if do_diarize:
+            data["diarize"] = "true"
+            data["timestamp_granularities"] = "segment"
+
+        resp = await client.post(
+            "https://api.mistral.ai/v1/audio/transcriptions",
+            headers={"Authorization": f"Bearer {MISTRAL_API_KEY}"},
+            files=files,
+            data=data,
+        )
+
+    if resp.status_code != 200:
+        error_detail = resp.text[:200]
+        return JSONResponse(
+            {"error": f"Voxtral API error ({resp.status_code}): {error_detail}", "text": ""},
+            status_code=502,
+        )
+
+    result = resp.json()
+    text = result.get("text", "").strip()
+    detected_lang = result.get("language", lang or "")
+
+    # Parse segments (Voxtral returns segments with optional speaker labels)
+    seg_list = []
+    for seg in result.get("segments", []):
+        seg_speaker = seg.get("speaker", speaker)
+        # Map Voxtral speaker IDs (SPEAKER_0, SPEAKER_1) to configured names
+        if seg_speaker and seg_speaker.startswith("SPEAKER_"):
+            try:
+                idx = int(seg_speaker.split("_")[1])
+                # The speaker name will be resolved by the JS using the configured list
+                seg_speaker = f"SPEAKER_{idx:02d}"
+            except (ValueError, IndexError):
+                pass
+        seg_list.append({
+            "start": round(float(seg.get("start", 0)), 2),
+            "end":   round(float(seg.get("end", 0)), 2),
+            "text":  seg.get("text", "").strip(),
+            "speaker": seg_speaker,
+        })
+
+    # If no segments returned, build a single segment from full text
+    if not seg_list and text:
+        seg_list = [{"start": 0, "end": 0, "text": text, "speaker": speaker}]
+
+    return JSONResponse({
+        "text": text,
+        "language": detected_lang,
+        "segments": seg_list,
+        "speaker": speaker,
+        "mode": "voxtral",
+        "diarized": do_diarize,
     })
 
 
