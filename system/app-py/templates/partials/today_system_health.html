@@ -1,0 +1,11 @@
+{# today_system_health.html — Compact system status footer.
+   Context: job_count (int), last_scan_label (str), memory_count (int), api_status (str). #}
+<div id="today-system-health" style="text-align:center;padding:20px 0 8px;">
+  <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--m-muted);">
+    METIS
+    &middot; {{ job_count }} job{{ 's' if job_count != 1 else '' }} scheduled
+    {% if last_scan_label %}&middot; last scan {{ last_scan_label }}{% endif %}
+    &middot; {{ memory_count }} memories
+    &middot; API: {{ api_status }}
+  </span>
+</div>

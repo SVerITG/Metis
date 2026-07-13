@@ -1,0 +1,31 @@
+{# today_brief_bridges.html — Memory connections to the morning brief.
+   Context: bridges (list of dicts with brief_phrase, memory_type, memory_preview, memory_date, event_type). #}
+{% if bridges %}
+<div id="brief-bridges" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--m-rule-soft);">
+  <div style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:10px;">
+    CONNECTIONS TO YOUR RESEARCH
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    {% set bridge_colors = {
+      'episodic': '#2d6a4f',
+      'semantic': '#e76f51',
+      'decision': '#bc6c25',
+      'concept': '#457b9d',
+      'note': '#6d6875'
+    } %}
+    {% for b in bridges %}
+    <div style="display:flex;align-items:start;gap:10px;padding:10px 14px;background:var(--m-surface-2);border-radius:var(--m-radius);border-left:3px solid {{ bridge_colors.get(b.event_type, '#8d99ae') }};">
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;color:{{ bridge_colors.get(b.event_type, '#8d99ae') }};margin-bottom:4px;">
+          {% if b.memory_type == 'semantic' %}CONCEPT{% elif b.event_type == 'decision' %}DECISION{% else %}MEMORY{% endif %}
+          &middot; {{ b.memory_date }}
+        </div>
+        <div style="font-size:12.5px;color:var(--m-ink);line-height:1.45;">
+          {{ b.memory_preview }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

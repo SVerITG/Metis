@@ -1924,7 +1924,7 @@ async def focus_dismiss(request: Request):
             )
         except Exception:
             pass
-    return await today_focus(request)
+    return await today_focus_with_memory(request)
 
 
 @router.get("/api/partial/today/ledger", response_class=HTMLResponse)
@@ -2314,14 +2314,14 @@ async def today_library_archive(request: Request):
         # Zotero / literature_metadata — most recent with unread flag
         since_month = (datetime.datetime.now() - datetime.timedelta(days=30)).isoformat()
         rows = db_query(
-            "SELECT id, title, authors, year, source, tags, abstract, doi, url, created_at, "
+            "SELECT id, title, authors, year, source, tags, abstract, doi, url, item_type, created_at, "
             "COALESCE(is_read, 0) as is_read "
             "FROM literature_metadata WHERE created_at >= ? ORDER BY created_at DESC LIMIT 4",
             (since_month,),
         ) or []
         if not rows:
             rows = db_query(
-                "SELECT id, title, authors, year, source, tags, abstract, doi, url, created_at, "
+                "SELECT id, title, authors, year, source, tags, abstract, doi, url, item_type, created_at, "
                 "COALESCE(is_read, 0) as is_read "
                 "FROM literature_metadata ORDER BY created_at DESC LIMIT 4"
             ) or []
@@ -2346,6 +2346,7 @@ async def today_library_archive(request: Request):
                 "year": r.get("year") or "",
                 "domain": r.get("source") or "",
                 "card_type": r.get("source") or "ARTICLE",
+                "item_type": r.get("item_type") or "",
                 "abstract": clean_abstract[:200],
                 "source": r.get("source") or "ARTICLE",
                 "doi": doi,
@@ -2974,6 +2975,23 @@ async def api_session_consolidate(request: Request):
         if brief_content and len(brief_content) > 200 and os.environ.get("ANTHROPIC_API_KEY"):
             from anthropic import Anthropic
             client = Anthropic()
+            # ── PII output rail — scan brief before sending to Claude API ──
+            _brief_to_send = brief_content[:6000]
+            try:
+                from metis_mcp.tools.anonymization import _PATTERNS
+                _pii_found = {}
+                for _label, _pat in _PATTERNS:
+                    if _pat.search(_brief_to_send):
+                        _pii_found[_label] = len(_pat.findall(_brief_to_send))
+                        _brief_to_send = _pat.sub(f"[{_label}]", _brief_to_send)
+                if _pii_found:
+                    import logging
+                    logging.getLogger("metis.safety").warning(
+                        "scan_outgoing: masked %s in brief before API call", _pii_found
+                    )
+            except Exception:
+                pass  # import failure → send as-is; defense in depth, not a hard gate
+
             prompt = (
                 "You are summarising a researcher's session handoff brief for their "
                 "long-term memory. Read the brief below and return a JSON object with "
@@ -2983,7 +3001,7 @@ async def api_session_consolidate(request: Request):
                 '  "decisions": a JSON array of 3–8 short decision strings (≤ 120 chars each, '
                 'concrete next steps or outcomes)\n\n'
                 "Respond with ONLY the JSON. No commentary.\n\n"
-                "BRIEF:\n" + brief_content[:6000]
+                "BRIEF:\n" + _brief_to_send
             )
             msg = client.messages.create(
                 model=model_for("brief"),
@@ -3620,4 +3638,883 @@ async def board_refresh(request: Request, board: str):
     ctx = _board_context(board)
     return templates.TemplateResponse(
         request, "partials/today_board_box.html", ctx,
+    )
+
+
+# ===========================================================================
+# Memory-aware dashboard features (A–E)
+# ===========================================================================
+
+def _memory_depth(title_or_topic: str) -> dict:
+    """Count memories related to a topic across layers. Returns {total, level, layers}."""
+    like = f"%{title_or_topic}%"
+    counts = {}
+    for table, col in [
+        ("episodic_memory", "content"),
+        ("semantic_memory", "definition"),
+        ("procedural_memory", "steps"),
+        ("session_summaries", "summary"),
+    ]:
+        try:
+            n = db_scalar(
+                f"SELECT COUNT(*) FROM {table} WHERE {col} LIKE ?", (like,)
+            ) or 0
+            counts[table.split("_")[0]] = n
+        except Exception:
+            counts[table.split("_")[0]] = 0
+    total = sum(counts.values())
+    level = "deep" if total >= 10 else "moderate" if total >= 3 else "shallow"
+    return {"total": total, "level": level, "layers": counts}
+
+
+# ── A: Session Thread Strip ─────────────────────────────────────────────
+
+@router.get("/api/partial/today/session-thread", response_class=HTMLResponse)
+async def today_session_thread(request: Request):
+    """Thread view — groups recent sessions by topic/project and shows the narrative arc."""
+    import json as _json
+
+    threads: dict[str, dict] = {}  # key → {sessions, topic, first_date, last_date, ...}
+
+    try:
+        rows = db_query(
+            "SELECT session_id, summary, key_topics, decisions, created_at "
+            "FROM session_summaries "
+            "WHERE (archived IS NULL OR archived = 0) "
+            "ORDER BY created_at DESC LIMIT 60"
+        ) or []
+
+        for r in rows:
+            raw = (r.get("summary") or "").strip()
+            if ("Handoff brief:" in raw and "Stop reason:" in raw) or len(raw) < 30:
+                continue
+            topics = []
+            try:
+                topics = [t for t in _json.loads(r.get("key_topics") or "[]") if t][:6]
+            except Exception:
+                pass
+            decisions = []
+            try:
+                decisions = [d for d in _json.loads(r.get("decisions") or "[]") if d]
+            except Exception:
+                pass
+
+            # Group by primary topic (first topic, or 'general')
+            thread_key = topics[0].lower().strip() if topics else "general"
+            created = r.get("created_at") or ""
+            date = created[:10]
+
+            if thread_key not in threads:
+                threads[thread_key] = {
+                    "topic": topics[0] if topics else "General",
+                    "sessions": [],
+                    "first_date": date,
+                    "last_date": date,
+                    "total_decisions": 0,
+                    "all_topics": set(),
+                }
+            t = threads[thread_key]
+            t["sessions"].append({
+                "date": date,
+                "summary": _clean_handoff_text(raw)[:180],
+                "decisions": decisions[:3],
+                "topics": topics,
+            })
+            t["last_date"] = max(t["last_date"], date)
+            t["first_date"] = min(t["first_date"], date)
+            t["total_decisions"] += len(decisions)
+            t["all_topics"].update(topics)
+    except Exception:
+        pass
+
+    # Sort threads by most recent activity, take top 5
+    sorted_threads = sorted(
+        threads.values(),
+        key=lambda t: t["last_date"],
+        reverse=True,
+    )[:5]
+
+    # Add memory depth for each thread
+    for t in sorted_threads:
+        t["all_topics"] = list(t["all_topics"])[:8]
+        t["memory"] = _memory_depth(t["topic"])
+        t["session_count"] = len(t["sessions"])
+        # Calculate span
+        try:
+            d1 = datetime.datetime.fromisoformat(t["first_date"])
+            d2 = datetime.datetime.fromisoformat(t["last_date"])
+            t["span_days"] = max(1, (d2 - d1).days)
+        except Exception:
+            t["span_days"] = 0
+
+    # Also get the "last session" for the traditional view at top
+    last_session = None
+    last_did = []
+    if sorted_threads and sorted_threads[0]["sessions"]:
+        s = sorted_threads[0]["sessions"][0]
+        last_session = s
+
+    try:
+        last_did = db_query(
+            "SELECT agent_slug, task_summary FROM agent_runs "
+            "WHERE COALESCE(task_summary,'') != '' "
+            "ORDER BY created_at DESC LIMIT 4"
+        ) or []
+    except Exception:
+        pass
+
+    total_sessions = 0
+    try:
+        total_sessions = db_scalar(
+            "SELECT COUNT(DISTINCT DATE(created_at)) FROM session_summaries"
+        ) or 0
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_session_thread.html",
+        {
+            "threads": sorted_threads,
+            "last_session": last_session,
+            "last_did": last_did,
+            "total_sessions": total_sessions,
+        },
+    )
+
+
+# ── B: Memory Pulse heatmap ─────────────────────────────────────────────
+
+@router.get("/api/partial/today/memory-pulse", response_class=HTMLResponse)
+async def today_memory_pulse(request: Request):
+    """8-week heatmap of memory creation intensity, broken down by topic."""
+    now = datetime.datetime.now()
+    weeks: list[dict] = []
+
+    for w in range(7, -1, -1):
+        week_start = now - datetime.timedelta(weeks=w, days=now.weekday())
+        week_end = week_start + datetime.timedelta(days=6)
+        ws = week_start.strftime("%Y-%m-%d")
+        we = week_end.strftime("%Y-%m-%d")
+        week_label = week_start.strftime("W%U")
+
+        total = 0
+        by_type: dict[str, int] = {}
+
+        for table, col, type_col in [
+            ("episodic_memory", "created_at", "event_type"),
+            ("semantic_memory", "created_at", None),
+            ("session_summaries", "created_at", None),
+        ]:
+            try:
+                if type_col:
+                    rows = db_query(
+                        f"SELECT {type_col} as t, COUNT(*) as n FROM {table} "
+                        f"WHERE {col} >= ? AND {col} < ? "
+                        f"GROUP BY {type_col}",
+                        (ws, we + "T23:59:59"),
+                    ) or []
+                    for r in rows:
+                        typ = r["t"] or "other"
+                        by_type[typ] = by_type.get(typ, 0) + r["n"]
+                        total += r["n"]
+                else:
+                    n = db_scalar(
+                        f"SELECT COUNT(*) FROM {table} WHERE {col} >= ? AND {col} < ?",
+                        (ws, we + "T23:59:59"),
+                    ) or 0
+                    by_type[table.split("_")[0]] = n
+                    total += n
+            except Exception:
+                pass
+
+        # Intensity level for heatmap color
+        intensity = 0 if total == 0 else 1 if total <= 3 else 2 if total <= 8 else 3 if total <= 20 else 4
+
+        weeks.append({
+            "label": week_label,
+            "date_range": f"{ws} – {we}",
+            "total": total,
+            "intensity": intensity,
+            "by_type": by_type,
+        })
+
+    # Overall stats
+    total_all = sum(w["total"] for w in weeks)
+    peak_week = max(weeks, key=lambda w: w["total"]) if weeks else None
+    trend = ""
+    if len(weeks) >= 4:
+        first_half = sum(w["total"] for w in weeks[:4])
+        second_half = sum(w["total"] for w in weeks[4:])
+        if second_half > first_half * 1.2:
+            trend = "rising"
+        elif second_half < first_half * 0.8:
+            trend = "cooling"
+        else:
+            trend = "steady"
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_memory_pulse.html",
+        {"weeks": weeks, "total": total_all, "peak": peak_week, "trend": trend},
+    )
+
+
+# ── C: Focus items with memory depth ─────────────────────────────────────
+
+@router.get("/api/partial/today/focus-memory", response_class=HTMLResponse)
+async def today_focus_with_memory(request: Request):
+    """Same as today_focus but enriches each item with memory depth + connections."""
+    # Re-use the existing focus logic
+    _ensure_focus_dismissed_table()
+    today_str = datetime.date.today().isoformat()
+
+    dismissed: set[tuple[str, str]] = set()
+    try:
+        rows = db_query(
+            "SELECT item_type, item_id FROM focus_dismissed WHERE dismissed_date = ?",
+            (today_str,),
+        ) or []
+        for r in rows:
+            dismissed.add((r["item_type"], r["item_id"]))
+    except Exception:
+        pass
+
+    items: list[dict] = []
+    seen_ids: set[str] = set()
+
+    def _add(item: dict):
+        key = (item["item_type"], item["item_id"])
+        if key in dismissed or item["item_id"] in seen_ids or len(items) >= 6:
+            return
+        seen_ids.add(item["item_id"])
+        # Enrich with memory depth
+        item["memory"] = _memory_depth(item["title"])
+        items.append(item)
+
+    # Pool 0: Tasks with approaching deadlines (≤ 7 days)
+    try:
+        upcoming = db_query(
+            "SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
+            "t.due_date, p.title AS project_title "
+            "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+            "WHERE t.status NOT IN ('done','completed','cancelled','deleted') "
+            "AND t.due_date IS NOT NULL AND t.due_date != '' "
+            "AND t.due_date <= date('now', '+7 days') "
+            "ORDER BY t.due_date ASC LIMIT 3"
+        ) or []
+        for r in upcoming:
+            due = r.get("due_date", "")
+            try:
+                due_dt = datetime.date.fromisoformat(due)
+                delta = (due_dt - datetime.date.today()).days
+                if delta < 0:
+                    due_label, due_color = "OVERDUE", "var(--m-alert)"
+                elif delta == 0:
+                    due_label, due_color = "DUE TODAY", "var(--m-alert)"
+                elif delta == 1:
+                    due_label, due_color = "DUE TOMORROW", "var(--m-ochre)"
+                elif delta <= 2:
+                    due_label, due_color = f"DUE IN {delta}d", "var(--m-ochre)"
+                else:
+                    due_label, due_color = f"DUE IN {delta}d", "var(--m-accent)"
+            except Exception:
+                due_label, due_color = "DUE", "var(--m-accent)"
+            item = _focus_item_from_task(r)
+            item["badge"] = due_label
+            item["badge_color"] = due_color
+            _add(item)
+    except Exception:
+        pass
+
+    # Same 4 pools as today_focus
+    for query, mapper in [
+        ("SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
+         "p.title AS project_title "
+         "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+         "WHERE t.starred = 1 AND t.status NOT IN ('done','completed','cancelled','deleted') "
+         "ORDER BY CASE t.status WHEN 'in_progress' THEN 1 WHEN 'blocked' THEN 2 ELSE 3 END, "
+         "t.created_at DESC LIMIT 6", _focus_item_from_task),
+        ("SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
+         "p.title AS project_title "
+         "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+         "WHERE t.status = 'blocked' ORDER BY t.created_at ASC LIMIT 6", _focus_item_from_task),
+        ("SELECT idea_id, text, idea_type, tags, domain, created_at FROM ideas "
+         "WHERE tags NOT LIKE '%archived%' ORDER BY created_at DESC LIMIT 6", _focus_item_from_idea),
+        ("SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
+         "p.title AS project_title "
+         "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+         "WHERE t.status IN ('open','in_progress') AND t.starred = 0 "
+         "ORDER BY CASE t.status WHEN 'in_progress' THEN 1 ELSE 2 END, "
+         "t.created_at ASC LIMIT 10", _focus_item_from_task),
+    ]:
+        try:
+            for r in db_query(query) or []:
+                _add(mapper(r))
+        except Exception:
+            pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_focus_memory.html",
+        {"items": items},
+    )
+
+
+# ── D: Connection Bridges for Morning Brief ──────────────────────────────
+
+@router.get("/api/partial/today/brief-bridges", response_class=HTMLResponse)
+async def today_brief_bridges(request: Request):
+    """Find memory connections to the current morning brief content."""
+    bridges: list[dict] = []
+
+    # Get today's brief content
+    brief_text = ""
+    try:
+        today_str = datetime.date.today().isoformat()
+        row = db_query(
+            "SELECT content FROM daily_insights "
+            "WHERE insight_date = ? ORDER BY id DESC LIMIT 1",
+            (today_str,),
+        )
+        if row:
+            brief_text = row[0].get("content", "")[:1000]
+    except Exception:
+        pass
+
+    if not brief_text:
+        return HTMLResponse("")
+
+    # Extract key phrases (simple approach: sentences with research-relevant terms)
+    import re as _re
+    sentences = _re.split(r'[.!?\n]+', brief_text)
+    research_terms = [
+        "hat", "sleeping sickness", "surveillance", "elimination",
+        "dhis2", "diagnostic", "multilevel", "spatial", "ntd",
+        "burden", "outbreak", "resistance", "who",
+    ]
+
+    key_phrases = []
+    for s in sentences:
+        s = s.strip()
+        if len(s) < 15:
+            continue
+        lower = s.lower()
+        if any(t in lower for t in research_terms):
+            key_phrases.append(s[:120])
+        if len(key_phrases) >= 3:
+            break
+
+    # For each key phrase, search episodic+semantic memory for connections
+    for phrase in key_phrases:
+        like = f"%{phrase[:40]}%"
+        # Check if we have related episodic memories
+        try:
+            matches = db_query(
+                "SELECT content, created_at, event_type FROM episodic_memory "
+                "WHERE content LIKE ? AND (archived IS NULL OR archived = 0) "
+                "ORDER BY created_at DESC LIMIT 1",
+                (like,),
+            ) or []
+            if matches:
+                m = matches[0]
+                bridges.append({
+                    "brief_phrase": phrase[:80],
+                    "memory_type": "episodic",
+                    "memory_preview": (m["content"] or "")[:120],
+                    "memory_date": (m["created_at"] or "")[:10],
+                    "event_type": m["event_type"] or "note",
+                })
+        except Exception:
+            pass
+
+        # Also check semantic memory
+        try:
+            matches = db_query(
+                "SELECT concept, definition, created_at FROM semantic_memory "
+                "WHERE concept LIKE ? OR definition LIKE ? "
+                "ORDER BY updated_at DESC LIMIT 1",
+                (like, like),
+            ) or []
+            if matches:
+                m = matches[0]
+                bridges.append({
+                    "brief_phrase": phrase[:80],
+                    "memory_type": "semantic",
+                    "memory_preview": f"{m['concept']}: {(m['definition'] or '')[:100]}",
+                    "memory_date": (m["created_at"] or "")[:10],
+                    "event_type": "concept",
+                })
+        except Exception:
+            pass
+
+    # Deduplicate and limit
+    seen = set()
+    unique = []
+    for b in bridges:
+        key = b["memory_preview"][:60]
+        if key not in seen:
+            seen.add(key)
+            unique.append(b)
+        if len(unique) >= 3:
+            break
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_brief_bridges.html",
+        {"bridges": unique},
+    )
+
+
+# ── E: Memory Landscape ─────────────────────────────────────────────────
+
+@router.get("/api/partial/today/memory-landscape", response_class=HTMLResponse)
+async def today_memory_landscape(request: Request):
+    """Topic map — circles sized by memory density, colored by recency, with relation edges."""
+    import json as _json
+
+    topics: dict[str, dict] = {}
+
+    # Gather topic stats from episodic memory metadata
+    try:
+        rows = db_query(
+            "SELECT metadata, created_at, event_type FROM episodic_memory "
+            "WHERE (archived IS NULL OR archived = 0) "
+            "ORDER BY created_at DESC LIMIT 500"
+        ) or []
+        for r in rows:
+            try:
+                meta = _json.loads(r.get("metadata") or "{}")
+                tag_list = meta.get("topics") or []
+                if isinstance(tag_list, str):
+                    tag_list = [t.strip() for t in tag_list.split(",") if t.strip()]
+            except Exception:
+                tag_list = []
+
+            created = r.get("created_at") or ""
+            for tag in tag_list:
+                tag_lower = tag.lower().strip()
+                if not tag_lower or len(tag_lower) < 2:
+                    continue
+                if tag_lower not in topics:
+                    topics[tag_lower] = {
+                        "name": tag,
+                        "count": 0,
+                        "last_seen": created[:10],
+                        "types": {},
+                    }
+                topics[tag_lower]["count"] += 1
+                topics[tag_lower]["last_seen"] = max(
+                    topics[tag_lower]["last_seen"], created[:10]
+                )
+                et = r.get("event_type") or "other"
+                topics[tag_lower]["types"][et] = topics[tag_lower]["types"].get(et, 0) + 1
+    except Exception:
+        pass
+
+    # Also pull from session key_topics
+    try:
+        rows = db_query(
+            "SELECT key_topics, created_at FROM session_summaries "
+            "WHERE (archived IS NULL OR archived = 0) "
+            "ORDER BY created_at DESC LIMIT 200"
+        ) or []
+        for r in rows:
+            try:
+                tag_list = _json.loads(r.get("key_topics") or "[]")
+            except Exception:
+                tag_list = []
+            created = r.get("created_at") or ""
+            for tag in tag_list:
+                if not tag or not isinstance(tag, str):
+                    continue
+                tag_lower = tag.lower().strip()
+                if tag_lower not in topics:
+                    topics[tag_lower] = {
+                        "name": tag,
+                        "count": 0,
+                        "last_seen": created[:10],
+                        "types": {},
+                    }
+                topics[tag_lower]["count"] += 1
+                topics[tag_lower]["last_seen"] = max(
+                    topics[tag_lower]["last_seen"], created[:10]
+                )
+    except Exception:
+        pass
+
+    # Get memory relations for edges
+    edges: list[dict] = []
+    try:
+        rows = db_query(
+            "SELECT source_layer, source_id, target_layer, target_id, relation "
+            "FROM memory_relations LIMIT 100"
+        ) or []
+        for r in rows:
+            edges.append({
+                "source": f"{r['source_layer']}:{r['source_id']}",
+                "target": f"{r['target_layer']}:{r['target_id']}",
+                "relation": r["relation"],
+            })
+    except Exception:
+        pass
+
+    # Sort topics by count, take top 20
+    sorted_topics = sorted(topics.values(), key=lambda t: t["count"], reverse=True)[:20]
+
+    # Calculate recency (days since last seen)
+    now = datetime.date.today()
+    for t in sorted_topics:
+        try:
+            last = datetime.date.fromisoformat(t["last_seen"])
+            t["age_days"] = (now - last).days
+            t["recency"] = "fresh" if t["age_days"] <= 7 else "recent" if t["age_days"] <= 30 else "aging" if t["age_days"] <= 90 else "stale"
+        except Exception:
+            t["age_days"] = 999
+            t["recency"] = "stale"
+
+    # Get project connections
+    projects: list[dict] = []
+    try:
+        rows = db_query(
+            "SELECT project_id, title, status FROM projects "
+            "WHERE status NOT IN ('archived','removed') "
+            "ORDER BY CASE status WHEN 'active' THEN 1 ELSE 2 END, title "
+            "LIMIT 10"
+        ) or []
+        for r in rows:
+            pid = r["project_id"]
+            mem = _memory_depth(r["title"])
+            projects.append({
+                "id": pid,
+                "title": r["title"],
+                "status": r["status"],
+                "memory": mem,
+            })
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_memory_landscape.html",
+        {
+            "topics": sorted_topics,
+            "edges": edges,
+            "projects": projects,
+            "topics_json": _json.dumps([
+                {"name": t["name"], "count": t["count"], "recency": t["recency"],
+                 "age_days": t["age_days"]}
+                for t in sorted_topics
+            ]),
+        },
+    )
+
+
+# ── E: Resume Card — "Where we left off" ─────────────────────────────────
+
+@router.get("/api/partial/today/resume-card", response_class=HTMLResponse)
+async def today_resume_card(request: Request):
+    """First-class card showing the most recent session with a Continue button."""
+    import json as _json
+    import urllib.parse as _up
+
+    session = None
+    agents: list[dict] = []
+    time_label = ""
+    total_sessions = 0
+
+    try:
+        rows = db_query(
+            "SELECT session_id, summary, key_topics, decisions, created_at "
+            "FROM session_summaries "
+            "WHERE (archived IS NULL OR archived = 0) "
+            "AND COALESCE(summary, '') != '' "
+            "ORDER BY created_at DESC LIMIT 1"
+        ) or []
+        if rows:
+            r = rows[0]
+            raw = (r.get("summary") or "").strip()
+            # Skip handoff-only entries
+            if not ("Handoff brief:" in raw and "Stop reason:" in raw) and len(raw) >= 30:
+                decisions = []
+                try:
+                    decisions = [d for d in _json.loads(r.get("decisions") or "[]") if d][:5]
+                except Exception:
+                    pass
+                session = {
+                    "summary": _clean_handoff_text(raw)[:400],
+                    "decisions": decisions,
+                    "created_at": r.get("created_at", ""),
+                }
+                time_label = _age_label(r.get("created_at", ""))
+                if time_label:
+                    time_label += " ago"
+    except Exception:
+        pass
+
+    # Agent work from the last session
+    try:
+        agents = db_query(
+            "SELECT agent_slug, task_summary FROM agent_runs "
+            "WHERE COALESCE(task_summary,'') != '' "
+            "ORDER BY created_at DESC LIMIT 4"
+        ) or []
+    except Exception:
+        pass
+
+    # Total sessions for the "All sessions" button
+    try:
+        total_sessions = db_scalar(
+            "SELECT COUNT(DISTINCT DATE(created_at)) FROM session_summaries"
+        ) or 0
+    except Exception:
+        pass
+
+    # Build Claude Desktop deeplink
+    deeplink = ""
+    if session:
+        context = f"Continue from where we left off: {session['summary'][:200]}"
+        deeplink = "https://claude.ai/new?q=" + _up.quote(context, safe="")
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_resume_card.html",
+        {
+            "session": session,
+            "agents": agents,
+            "time_label": time_label,
+            "total_sessions": total_sessions,
+            "deeplink": deeplink,
+        },
+    )
+
+
+# ── F: Learning Nudge ────────────────────────────────────────────────────
+
+@router.get("/api/partial/today/learning-nudge", response_class=HTMLResponse)
+async def today_learning_nudge(request: Request):
+    """Compact nudge for active courses and spaced-rep cards due."""
+    course = None
+    days_since = None
+    due_cards = 0
+
+    # Active course with lowest progress
+    try:
+        rows = db_query(
+            "SELECT id, slug, title, progress_pct, next_lesson, status "
+            "FROM learning_courses "
+            "WHERE status IN ('active', 'in_progress') "
+            "ORDER BY progress_pct ASC LIMIT 1"
+        ) or []
+        if rows:
+            course = rows[0]
+    except Exception:
+        pass
+
+    # Days since last study (from spaced_repetition.reviewed_at)
+    try:
+        last_review = db_scalar(
+            "SELECT MAX(reviewed_at) FROM spaced_repetition "
+            "WHERE reviewed_at IS NOT NULL"
+        )
+        if last_review:
+            last_dt = datetime.datetime.fromisoformat(str(last_review)[:10])
+            days_since = (datetime.datetime.now() - last_dt).days
+    except Exception:
+        pass
+
+    # Due spaced-rep cards
+    today_str = datetime.date.today().isoformat()
+    try:
+        due_cards = db_scalar(
+            "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ?",
+            (today_str,),
+        ) or 0
+    except Exception:
+        pass
+
+    # Only show if there's an active course AND (stale study OR cards due)
+    if course and not (days_since is not None and days_since >= 3 or due_cards > 0):
+        course = None  # suppress the nudge
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_learning_nudge.html",
+        {"course": course, "days_since": days_since, "due_cards": due_cards},
+    )
+
+
+# ── G: Literature Discovery ──────────────────────────────────────────────
+
+@router.get("/api/partial/today/literature-discovery", response_class=HTMLResponse)
+async def today_literature_discovery(request: Request):
+    """Unread papers discovered by the weekly literature scan."""
+    period = request.query_params.get("period", "week")
+    if period == "month":
+        cutoff = (datetime.date.today() - datetime.timedelta(days=30)).isoformat()
+    else:
+        cutoff = (datetime.date.today() - datetime.timedelta(days=7)).isoformat()
+        period = "week"
+
+    papers: list[dict] = []
+    total = 0
+    try:
+        papers = db_query(
+            "SELECT id, title, journal, pub_date, doi, topic_tag, "
+            "relevance_note, source_url, discovered_at "
+            "FROM new_publications "
+            "WHERE (read_at IS NULL OR read_at = '') "
+            "AND discovered_at >= ? "
+            "ORDER BY discovered_at DESC",
+            (cutoff,),
+        ) or []
+        total = len(papers)
+    except Exception:
+        pass
+
+    topics: list[dict] = []
+    try:
+        topics = db_query(
+            "SELECT topic, description FROM user_topics WHERE active = 1 "
+            "ORDER BY topic"
+        ) or []
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_literature_discovery.html",
+        {"papers": papers, "total": total, "topics": topics, "period": period},
+    )
+
+
+@router.post("/api/today/literature-discovery/scan")
+async def literature_discovery_scan():
+    """Trigger an immediate literature discovery scan."""
+    import asyncio
+    try:
+        from scheduler import job_literature_discovery
+        found = await asyncio.to_thread(job_literature_discovery)
+        return JSONResponse({"ok": True, "message": "Scan complete"})
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)[:200]}, status_code=500)
+
+
+@router.post("/api/today/literature-discovery/add")
+async def literature_discovery_add(request: Request):
+    """Add a discovered paper to the library (literature_metadata)."""
+    body = await request.json()
+    pub_id = body.get("pub_id")
+    if not pub_id:
+        return JSONResponse({"ok": False, "error": "Missing pub_id"}, status_code=400)
+    try:
+        rows = db_query(
+            "SELECT title, journal, pub_date, doi, source_url FROM new_publications WHERE id = ?",
+            (pub_id,),
+        ) or []
+        if not rows:
+            return JSONResponse({"ok": False, "error": "Paper not found"}, status_code=404)
+        p = rows[0]
+        year = (p.get("pub_date") or "")[:4]
+        now = datetime.datetime.now().isoformat(timespec="seconds")
+        db_execute(
+            "INSERT INTO literature_metadata (title, authors, year, doi, url, journal, created_at, library_source) "
+            "VALUES (?, '', ?, ?, ?, ?, ?, 'discovery')",
+            (p["title"], year, p.get("doi", ""), p.get("source_url", ""), p.get("journal", ""), now),
+        )
+        db_execute(
+            "UPDATE new_publications SET read_at = ? WHERE id = ?",
+            (now, pub_id),
+        )
+        return JSONResponse({"ok": True})
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)[:200]}, status_code=500)
+
+
+@router.post("/api/today/literature-discovery/dismiss")
+async def literature_discovery_dismiss(request: Request):
+    """Mark paper(s) as read/dismissed."""
+    body = await request.json()
+    pub_ids = body.get("pub_ids") or []
+    if body.get("pub_id"):
+        pub_ids.append(body["pub_id"])
+    if not pub_ids:
+        return JSONResponse({"ok": False, "error": "No pub_ids"}, status_code=400)
+    now = datetime.datetime.now().isoformat(timespec="seconds")
+    try:
+        for pid in pub_ids:
+            db_execute(
+                "UPDATE new_publications SET read_at = ? WHERE id = ?",
+                (now, pid),
+            )
+        return JSONResponse({"ok": True})
+    except Exception as exc:
+        return JSONResponse({"ok": False, "error": str(exc)[:200]}, status_code=500)
+
+
+# ── H: System Health Footer ──────────────────────────────────────────────
+
+@router.get("/api/partial/today/system-health", response_class=HTMLResponse)
+async def today_system_health(request: Request):
+    """Compact system health status line."""
+    job_count = 0
+    last_scan_label = ""
+    memory_count = 0
+    api_status = "no key"
+
+    # Scheduled jobs
+    try:
+        from scheduler import scheduler as _sched
+        job_count = len(_sched.get_jobs())
+    except Exception:
+        pass
+
+    # Last scan (morning_scan job)
+    try:
+        rows = db_query(
+            "SELECT created_at FROM jobs_log "
+            "WHERE job_type = 'morning_scan' "
+            "ORDER BY created_at DESC LIMIT 1"
+        ) or []
+        if rows:
+            last_scan_label = _age_label(rows[0]["created_at"]) + " ago"
+    except Exception:
+        pass
+
+    # Memory count
+    try:
+        total = 0
+        for table in ("session_summaries", "episodic_memory", "semantic_memory", "memory_entries"):
+            try:
+                total += db_scalar(f"SELECT COUNT(*) FROM {table}") or 0
+            except Exception:
+                pass
+        memory_count = total
+    except Exception:
+        pass
+
+    # API key check
+    try:
+        key = os.environ.get("ANTHROPIC_API_KEY", "")
+        if not key:
+            rc = os.environ.get("METIS_RC_ROOT", "")
+            if rc:
+                import json as _json
+                kp = Path(rc) / "system" / "config" / "api-keys.json"
+                if kp.exists():
+                    keys = _json.loads(kp.read_text(encoding="utf-8"))
+                    key = keys.get("anthropic", "")
+        api_status = "healthy" if key else "no key"
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        request,
+        "partials/today_system_health.html",
+        {
+            "job_count": job_count,
+            "last_scan_label": last_scan_label,
+            "memory_count": memory_count,
+            "api_status": api_status,
+        },
     )
