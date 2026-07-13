@@ -1,27 +1,110 @@
-<!-- partials/knowledge_graph.html — Phase 5.8 knowledge graph view -->
+{# Personal Knowledge Graph — D3.js force-directed visualization.
+   Shows connections between papers, ideas, projects, meetings, concepts, news, journal.
+   Context vars: projects (list of {project_id, title}). #}
 
-<div class="d-flex align-items-center gap-2 mb-2">
-  <span class="badge bg-secondary">{{ node_count }} notes</span>
-  <span class="badge bg-primary">{{ edge_count }} links</span>
-  {% if edge_count == 0 %}
-  <div class="alert alert-warning py-1 px-2 mb-0 small">
-    No connections mapped yet. Tell me to <code>build the knowledge graph</code> in Claude Code and I'll wire your notes together.
-  </div>
-  {% endif %}
-  <div class="ms-auto d-flex gap-2">
-    <button class="btn btn-sm btn-outline-secondary" id="kg-reset-zoom">Reset zoom</button>
-    <input type="text" id="kg-filter" class="form-control form-control-sm" placeholder="Filter nodes…" style="width:150px;">
-  </div>
-</div>
+{% set type_meta = {
+  'paper':   {'color': '#457b9d', 'label': 'Papers',   'icon': '📄'},
+  'idea':    {'color': '#e76f51', 'label': 'Ideas',    'icon': '💡'},
+  'project': {'color': '#2d6a4f', 'label': 'Projects', 'icon': '◆'},
+  'meeting': {'color': '#7209b7', 'label': 'Meetings', 'icon': '👥'},
+  'concept': {'color': '#4e8ef7', 'label': 'Concepts', 'icon': '◎'},
+  'news':    {'color': '#ca8a04', 'label': 'News',     'icon': '📡'},
+  'journal': {'color': '#6d6875', 'label': 'Journal',  'icon': '✎'},
+  'task':    {'color': '#8d99ae', 'label': 'Tasks',     'icon': '☐'}
+} %}
 
-<!-- Graph canvas -->
-<div id="kg-container" style="width:100%; height:520px; border:1px solid #dee2e6; border-radius:6px; background:#f8f9fa; position:relative; overflow:hidden;">
-  <svg id="kg-svg" width="100%" height="100%"></svg>
-  <!-- Node detail panel -->
-  <div id="kg-detail" style="display:none; position:absolute; top:10px; right:10px; width:260px;
-       background:white; border:1px solid #dee2e6; border-radius:6px; padding:12px; font-size:.82rem; z-index:10;">
-    <button class="btn-close float-end" style="font-size:.7rem;" onclick="document.getElementById('kg-detail').style.display='none'"></button>
-    <div id="kg-detail-body"></div>
+<div id="kg-surface" style="margin-bottom:32px;">
+
+  <!-- ── Section header ── -->
+  <div class="sec-label" style="margin-bottom:10px;">
+    <span>Personal Knowledge Graph</span>
+    <span class="tail" id="kg-stats-tail">LOADING</span>
+  </div>
+
+  <div class="panel" style="overflow:hidden;">
+
+    <!-- ── Controls bar ── -->
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+                padding:10px 16px;background:var(--m-surface-2);border-bottom:1px solid var(--m-rule-soft);">
+
+      <!-- Entity type toggles -->
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">
+        {% for tkey, tm in type_meta.items() %}
+        <label class="kg-type-toggle" style="display:flex;align-items:center;gap:3px;cursor:pointer;
+                      padding:3px 9px;border-radius:100px;font-family:var(--m-mono);font-size:9px;
+                      letter-spacing:0.08em;border:1px solid {{ tm.color }}22;
+                      background:{{ tm.color }}0d;color:{{ tm.color }};transition:all 120ms;user-select:none;">
+          <input type="checkbox" class="kg-type-cb" value="{{ tkey }}" checked
+                 style="display:none;" onchange="kgReload()">
+          <span style="width:7px;height:7px;border-radius:50%;background:{{ tm.color }};display:inline-block;flex-shrink:0;"></span>
+          {{ tm.label | upper }}
+          <span class="kg-type-count" data-type="{{ tkey }}" style="opacity:.6;">0</span>
+        </label>
+        {% endfor %}
+      </div>
+
+      <div style="flex:1;"></div>
+
+      <!-- Time range selector -->
+      <div style="display:flex;border:1px solid var(--m-rule);border-radius:var(--m-radius);overflow:hidden;">
+        {% for val, lbl in [('week','1W'), ('month','1M'), ('quarter','3M'), ('year','1Y'), ('','ALL')] %}
+        <button class="kg-time-btn" data-range="{{ val }}"
+                style="padding:3px 9px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.08em;
+                       border:none;{% if not val %}border-left:none;{% else %}border-left:1px solid var(--m-rule);{% endif %}
+                       cursor:pointer;background:{% if not val %}var(--m-accent){% else %}transparent{% endif %};
+                       color:{% if not val %}#fff{% else %}var(--m-muted){% endif %};transition:all 100ms;"
+                onclick="kgSetTime(this)">{{ lbl }}</button>
+        {% endfor %}
+      </div>
+
+      <!-- Focus selector -->
+      <select id="kg-focus" style="padding:3px 8px;font-family:var(--m-mono);font-size:9px;
+                                    border:1px solid var(--m-rule);border-radius:var(--m-radius);
+                                    background:var(--m-surface);color:var(--m-ink);cursor:pointer;"
+              onchange="kgReload()">
+        <option value="">All contexts</option>
+        {% for p in projects %}
+        <option value="project:{{ p.project_id }}">{{ p.title or p.project_id }}</option>
+        {% endfor %}
+      </select>
+
+      <!-- Search -->
+      <input type="search" id="kg-search" placeholder="Filter…"
+             style="width:120px;padding:3px 8px;font-family:var(--m-mono);font-size:9px;
+                    border:1px solid var(--m-rule);border-radius:var(--m-radius);
+                    background:var(--m-surface);color:var(--m-ink);outline:none;"
+             oninput="kgFilter(this.value)">
+    </div>
+
+    <!-- ── Graph container ── -->
+    <div id="kg-container" style="position:relative;width:100%;height:560px;background:var(--m-surface);overflow:hidden;">
+      <svg id="kg-svg" width="100%" height="100%"></svg>
+
+      <!-- Detail panel (slides in from right) -->
+      <div id="kg-detail" style="display:none;position:absolute;top:0;right:0;bottom:0;width:280px;
+                                  background:var(--m-surface);border-left:1px solid var(--m-rule-soft);
+                                  padding:16px;overflow-y:auto;z-index:10;
+                                  box-shadow:-4px 0 16px rgba(0,0,0,.06);transition:transform 200ms;">
+        <button style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;
+                       font-size:16px;color:var(--m-muted);line-height:1;" onclick="kgCloseDetail()">✕</button>
+        <div id="kg-detail-body"></div>
+      </div>
+
+      <!-- Legend -->
+      <div id="kg-legend" style="position:absolute;bottom:10px;left:12px;display:flex;flex-wrap:wrap;gap:8px;
+                                  padding:6px 10px;background:var(--m-surface-2);border-radius:var(--m-radius);
+                                  border:1px solid var(--m-rule-soft);opacity:.9;"></div>
+
+      <!-- Loading overlay -->
+      <div id="kg-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+                                   background:var(--m-surface);z-index:20;">
+        <div style="text-align:center;">
+          <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:8px;">BUILDING GRAPH</div>
+          <div class="skeleton skeleton-bar" style="width:120px;height:3px;margin:0 auto;"></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -30,156 +113,352 @@
 {% raw %}
 <script>
 (function() {
-  const DOMAIN_COLORS = {
-    "concepts":           "#4e8ef7",
-    "disease-areas":      "#e05555",
-    "methods":            "#34a853",
-    "people-organizations": "#9b59b6",
-    "reading-lists":      "#f39c12",
-    "unknown":            "#aaa",
+  /* ── Config ─────────────────────────────────────────────── */
+  const TYPE_COLORS = {
+    paper:   '#457b9d', idea:    '#e76f51', project: '#2d6a4f',
+    meeting: '#7209b7', concept: '#4e8ef7', news:    '#ca8a04',
+    journal: '#6d6875', task:    '#8d99ae'
   };
-  const NODE_RADIUS = 10;
+  const TYPE_LABELS = {
+    paper:'Paper', idea:'Idea', project:'Project', meeting:'Meeting',
+    concept:'Concept', news:'News', journal:'Journal', task:'Task'
+  };
+  const BASE_R = 6;
+  const PROJECT_R = 14;
 
-  let allNodes = [], allLinks = [];
-  let simulation, svg, g, link, node, label;
-  let filterVal = "";
+  let currentTimeRange = '';
+  let allNodes = [], allEdges = [];
+  let simulation, gRoot, nodeElements, linkElements;
+  let highlightedId = null;
 
-  async function loadGraph() {
-    try {
-      const resp = await fetch("/api/knowledge/graph-data");
-      const data = await resp.json();
+  /* ── Controls ───────────────────────────────────────────── */
+  window.kgSetTime = function(btn) {
+    document.querySelectorAll('.kg-time-btn').forEach(b => {
+      b.style.background = 'transparent';
+      b.style.color = 'var(--m-muted)';
+    });
+    btn.style.background = 'var(--m-accent)';
+    btn.style.color = '#fff';
+    currentTimeRange = btn.dataset.range;
+    kgReload();
+  };
+
+  window.kgReload = function() {
+    const types = [...document.querySelectorAll('.kg-type-cb:checked')].map(c => c.value).join(',');
+    const focus = document.getElementById('kg-focus').value;
+    const url = `/api/knowledge/graph-data?types=${types}&time_range=${currentTimeRange}&focus=${encodeURIComponent(focus)}`;
+    document.getElementById('kg-loading').style.display = 'flex';
+    fetch(url).then(r => r.json()).then(data => {
       allNodes = data.nodes;
-      allLinks = data.links;
-      renderGraph(allNodes, allLinks);
-    } catch(e) {
-      document.getElementById("kg-container").innerHTML =
-        '<div class="p-3 text-danger">I couldn\'t load the graph data: ' + e + '</div>';
-    }
-  }
-
-  function renderGraph(nodes, links) {
-    const container = document.getElementById("kg-container");
-    const W = container.clientWidth || 800;
-    const H = container.clientHeight || 520;
-
-    svg = d3.select("#kg-svg");
-    svg.selectAll("*").remove();
-
-    // Zoom/pan
-    const zoom = d3.zoom().scaleExtent([0.2, 4]).on("zoom", e => g.attr("transform", e.transform));
-    svg.call(zoom);
-
-    // Reset zoom button
-    document.getElementById("kg-reset-zoom").onclick = () =>
-      svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
-
-    g = svg.append("g");
-
-    // Build node/link maps for filtering
-    const nodeMap = {};
-    nodes.forEach(n => nodeMap[n.id] = n);
-
-    // Filter links to only those with both endpoints in current node set
-    const nodeIds = new Set(nodes.map(n => n.id));
-    const validLinks = links.filter(l => nodeIds.has(l.source) && nodeIds.has(l.target));
-
-    // Clone data for D3 mutation
-    const simNodes = nodes.map(d => ({...d}));
-    const simLinks = validLinks.map(d => ({source: d.source, target: d.target}));
-
-    simulation = d3.forceSimulation(simNodes)
-      .force("link", d3.forceLink(simLinks).id(d => d.id).distance(90).strength(0.5))
-      .force("charge", d3.forceManyBody().strength(-160))
-      .force("center", d3.forceCenter(W / 2, H / 2))
-      .force("collision", d3.forceCollide().radius(NODE_RADIUS + 6));
-
-    // Links
-    link = g.append("g").attr("class", "links")
-      .selectAll("line").data(simLinks).join("line")
-      .attr("stroke", "#ccc").attr("stroke-width", 1.5).attr("stroke-opacity", 0.7);
-
-    // Nodes
-    const nodeGroup = g.append("g").attr("class", "nodes")
-      .selectAll("g").data(simNodes).join("g")
-      .attr("class", "kg-node")
-      .style("cursor", "pointer")
-      .call(d3.drag()
-        .on("start", (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
-        .on("drag",  (e, d) => { d.fx=e.x; d.fy=e.y; })
-        .on("end",   (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; })
-      )
-      .on("click", (e, d) => showDetail(d));
-
-    nodeGroup.append("circle")
-      .attr("r", NODE_RADIUS)
-      .attr("fill", d => DOMAIN_COLORS[d.domain] || "#aaa")
-      .attr("stroke", "#fff").attr("stroke-width", 1.5)
-      .attr("fill-opacity", 0.88);
-
-    // Labels
-    label = g.append("g").attr("class", "labels")
-      .selectAll("text").data(simNodes).join("text")
-      .text(d => d.title.length > 22 ? d.title.slice(0,20) + "…" : d.title)
-      .attr("font-size", "9px").attr("fill", "#444")
-      .attr("text-anchor", "middle").attr("dy", NODE_RADIUS + 11)
-      .style("pointer-events", "none").style("user-select", "none");
-
-    // Tick
-    simulation.on("tick", () => {
-      link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
-          .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
-      nodeGroup.attr("transform", d => `translate(${d.x},${d.y})`);
-      label.attr("x", d => d.x).attr("y", d => d.y);
+      allEdges = data.edges;
+      updateStats(data.stats);
+      renderGraph(allNodes, allEdges);
+      document.getElementById('kg-loading').style.display = 'none';
+    }).catch(e => {
+      document.getElementById('kg-loading').innerHTML =
+        '<div style="color:var(--m-alert);font-family:var(--m-mono);font-size:11px;">Error loading graph</div>';
     });
+  };
 
-    node = nodeGroup; // store for filter
-
-    // Legend
-    const legendData = Object.entries(DOMAIN_COLORS).filter(([k]) => k !== "unknown");
-    const legend = svg.append("g").attr("transform", "translate(10,10)");
-    legendData.forEach(([domain, color], i) => {
-      const row = legend.append("g").attr("transform", `translate(0,${i * 16})`);
-      row.append("circle").attr("r", 5).attr("cx", 5).attr("cy", 0)
-        .attr("fill", color).attr("fill-opacity", 0.85);
-      row.append("text").attr("x", 14).attr("y", 4)
-        .attr("font-size", "9px").attr("fill", "#555")
-        .text(domain.replace("-", " "));
-    });
-  }
-
-  function showDetail(d) {
-    const panel = document.getElementById("kg-detail");
-    const body = document.getElementById("kg-detail-body");
-    const tagHtml = (d.tags || []).map(t =>
-      `<span class="badge bg-light text-dark border me-1 mb-1" style="font-size:.7rem;">${t}</span>`
-    ).join("");
-    body.innerHTML = `
-      <strong style="font-size:.9rem;">${d.title}</strong>
-      <div class="mt-1 mb-1">
-        <span class="badge" style="background:${{'concepts':'#4e8ef7','disease-areas':'#e05555','methods':'#34a853','people-organizations':'#9b59b6','reading-lists':'#f39c12'}[d.domain]||'#aaa'}; font-size:.7rem;">${d.domain}</span>
-      </div>
-      <div class="mb-1">${tagHtml}</div>
-      <div class="text-muted" style="font-size:.72rem; word-break:break-all;">${d.id}</div>
-    `;
-    panel.style.display = "block";
-  }
-
-  // Filter
-  document.getElementById("kg-filter").addEventListener("input", function() {
-    filterVal = this.value.toLowerCase();
-    if (!filterVal) {
-      renderGraph(allNodes, allLinks);
+  window.kgFilter = function(query) {
+    if (!query) {
+      nodeElements.attr('opacity', 1);
+      linkElements.attr('opacity', 0.35);
       return;
     }
-    const filtered = allNodes.filter(n =>
-      n.title.toLowerCase().includes(filterVal) ||
-      (n.tags || []).some(t => t.toLowerCase().includes(filterVal)) ||
-      (n.domain || "").includes(filterVal)
-    );
-    renderGraph(filtered, allLinks);
-  });
+    const q = query.toLowerCase();
+    const matchIds = new Set();
+    allNodes.forEach(n => {
+      if ((n.title || '').toLowerCase().includes(q) ||
+          (n.tags || []).some(t => t.toLowerCase().includes(q)) ||
+          (n.type || '').includes(q) ||
+          (n.domain || '').toLowerCase().includes(q))
+        matchIds.add(n.id);
+    });
+    nodeElements.attr('opacity', d => matchIds.has(d.id) ? 1 : 0.08);
+    linkElements.attr('opacity', d =>
+      matchIds.has(d.source.id || d.source) && matchIds.has(d.target.id || d.target) ? 0.5 : 0.03);
+  };
 
-  loadGraph();
+  window.kgCloseDetail = function() {
+    document.getElementById('kg-detail').style.display = 'none';
+    highlightedId = null;
+    if (nodeElements) {
+      nodeElements.attr('opacity', 1);
+      linkElements.attr('opacity', 0.35);
+    }
+  };
+
+  /* ── Stats ──────────────────────────────────────────────── */
+  function updateStats(stats) {
+    const tail = document.getElementById('kg-stats-tail');
+    tail.textContent = `${stats.node_count} NODES · ${stats.edge_count} EDGES`;
+    const tc = stats.types || {};
+    document.querySelectorAll('.kg-type-count').forEach(el => {
+      el.textContent = tc[el.dataset.type] || 0;
+    });
+    // Update toggle styling
+    document.querySelectorAll('.kg-type-toggle').forEach(lbl => {
+      const cb = lbl.querySelector('input');
+      if (cb && !cb.checked) {
+        lbl.style.opacity = '0.35';
+      } else {
+        lbl.style.opacity = '1';
+      }
+    });
+  }
+
+  /* ── Legend ─────────────────────────────────────────────── */
+  function buildLegend(types) {
+    const el = document.getElementById('kg-legend');
+    el.innerHTML = '';
+    for (const t of Object.keys(types)) {
+      const c = TYPE_COLORS[t] || '#999';
+      el.innerHTML += `<div style="display:flex;align-items:center;gap:4px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block;"></span>
+        <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;color:var(--m-muted);">${(TYPE_LABELS[t]||t).toUpperCase()} ${types[t]}</span>
+      </div>`;
+    }
+  }
+
+  /* ── Render ─────────────────────────────────────────────── */
+  function renderGraph(nodes, edges) {
+    const container = document.getElementById('kg-container');
+    const W = container.clientWidth || 900;
+    const H = container.clientHeight || 560;
+
+    const svg = d3.select('#kg-svg');
+    svg.selectAll('*').remove();
+
+    if (!nodes.length) {
+      svg.append('text')
+        .attr('x', W/2).attr('y', H/2)
+        .attr('text-anchor', 'middle')
+        .attr('fill', 'var(--m-muted)')
+        .attr('font-family', 'var(--m-display)')
+        .attr('font-size', '15px')
+        .text('No nodes to display — adjust filters or time range.');
+      return;
+    }
+
+    // Compute connectivity for sizing
+    const degree = {};
+    edges.forEach(e => {
+      degree[e.source] = (degree[e.source] || 0) + 1;
+      degree[e.target] = (degree[e.target] || 0) + 1;
+    });
+
+    // Node radius function
+    const nodeR = d => {
+      if (d.type === 'project') return PROJECT_R;
+      const deg = degree[d.id] || 0;
+      return Math.max(BASE_R, Math.min(18, BASE_R + Math.sqrt(deg) * 2.5));
+    };
+
+    // Zoom
+    const zoom = d3.zoom().scaleExtent([0.15, 5])
+      .on('zoom', e => gRoot.attr('transform', e.transform));
+    svg.call(zoom);
+
+    gRoot = svg.append('g');
+
+    // Clone data
+    const simNodes = nodes.map(d => ({...d}));
+    const simEdges = edges.map(d => ({source: d.source, target: d.target, label: d.label}));
+
+    // Build ID set for edge validation
+    const idSet = new Set(simNodes.map(n => n.id));
+    const validEdges = simEdges.filter(e => idSet.has(e.source) && idSet.has(e.target));
+
+    // Force simulation
+    if (simulation) simulation.stop();
+    simulation = d3.forceSimulation(simNodes)
+      .force('link', d3.forceLink(validEdges).id(d => d.id).distance(d => {
+        // Shorter links for project-task/idea, longer for tag-based
+        if (d.label === 'shared-tag') return 130;
+        if (d.label === 'belongs-to' || d.label === 'task-of') return 60;
+        return 90;
+      }).strength(d => d.label === 'shared-tag' ? 0.15 : 0.4))
+      .force('charge', d3.forceManyBody().strength(d =>
+        d.type === 'project' ? -350 : -120))
+      .force('center', d3.forceCenter(W / 2, H / 2))
+      .force('collision', d3.forceCollide().radius(d => nodeR(d) + 4))
+      .force('x', d3.forceX(W / 2).strength(0.03))
+      .force('y', d3.forceY(H / 2).strength(0.03));
+
+    // ── Draw edges ──
+    linkElements = gRoot.append('g')
+      .selectAll('line').data(validEdges).join('line')
+      .attr('stroke', d => {
+        if (d.label === 'belongs-to' || d.label === 'task-of') return 'var(--m-rule)';
+        if (d.label === 'shared-tag') return 'var(--m-accent)';
+        return 'var(--m-rule-soft)';
+      })
+      .attr('stroke-width', d => d.label === 'shared-tag' ? 0.8 : 1.2)
+      .attr('stroke-opacity', 0.35)
+      .attr('stroke-dasharray', d => d.label === 'shared-tag' ? '3,3' : 'none');
+
+    // ── Draw nodes ──
+    const nodeGroup = gRoot.append('g')
+      .selectAll('g').data(simNodes).join('g')
+      .style('cursor', 'pointer')
+      .call(d3.drag()
+        .on('start', (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+        .on('drag',  (e, d) => { d.fx=e.x; d.fy=e.y; })
+        .on('end',   (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; })
+      )
+      .on('click', (e, d) => showDetail(d, edges))
+      .on('mouseenter', (e, d) => highlightNode(d))
+      .on('mouseleave', () => { if (!highlightedId) unhighlight(); });
+
+    // Circle
+    nodeGroup.append('circle')
+      .attr('r', d => nodeR(d))
+      .attr('fill', d => TYPE_COLORS[d.type] || '#999')
+      .attr('fill-opacity', d => d.type === 'project' ? 0.92 : 0.78)
+      .attr('stroke', d => d3.color(TYPE_COLORS[d.type] || '#999').darker(0.4))
+      .attr('stroke-width', d => d.type === 'project' ? 2 : 1.2);
+
+    // Project label (inside circle)
+    nodeGroup.filter(d => d.type === 'project')
+      .append('text')
+      .text('◆')
+      .attr('text-anchor', 'middle').attr('dy', '0.35em')
+      .attr('fill', '#fff').attr('font-size', '9px')
+      .style('pointer-events', 'none');
+
+    // Labels (below node)
+    nodeGroup.append('text')
+      .text(d => {
+        const t = d.title || '';
+        return t.length > 28 ? t.slice(0, 26) + '…' : t;
+      })
+      .attr('text-anchor', 'middle')
+      .attr('dy', d => nodeR(d) + 11)
+      .attr('font-family', 'var(--m-display)')
+      .attr('font-size', d => d.type === 'project' ? '10px' : '8.5px')
+      .attr('font-weight', d => d.type === 'project' ? '600' : '400')
+      .attr('fill', 'var(--m-ink)')
+      .attr('opacity', 0.7)
+      .style('pointer-events', 'none')
+      .style('user-select', 'none');
+
+    nodeElements = nodeGroup;
+
+    // Tick
+    simulation.on('tick', () => {
+      linkElements
+        .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+      nodeGroup.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    // Build legend from actual types present
+    const typeCounts = {};
+    nodes.forEach(n => { typeCounts[n.type] = (typeCounts[n.type] || 0) + 1; });
+    buildLegend(typeCounts);
+  }
+
+  /* ── Highlight ──────────────────────────────────────────── */
+  function highlightNode(d) {
+    const connected = new Set([d.id]);
+    allEdges.forEach(e => {
+      if (e.source === d.id || (e.source && e.source.id === d.id)) connected.add(typeof e.target === 'object' ? e.target.id : e.target);
+      if (e.target === d.id || (e.target && e.target.id === d.id)) connected.add(typeof e.source === 'object' ? e.source.id : e.source);
+    });
+    nodeElements.attr('opacity', n => connected.has(n.id) ? 1 : 0.08);
+    linkElements.attr('opacity', e => {
+      const s = typeof e.source === 'object' ? e.source.id : e.source;
+      const t = typeof e.target === 'object' ? e.target.id : e.target;
+      return (s === d.id || t === d.id) ? 0.7 : 0.03;
+    });
+  }
+
+  function unhighlight() {
+    if (nodeElements) nodeElements.attr('opacity', 1);
+    if (linkElements) linkElements.attr('opacity', 0.35);
+  }
+
+  /* ── Detail panel ───────────────────────────────────────── */
+  function showDetail(d, edges) {
+    highlightedId = d.id;
+    highlightNode(d);
+
+    const panel = document.getElementById('kg-detail');
+    const body = document.getElementById('kg-detail-body');
+    const color = TYPE_COLORS[d.type] || '#999';
+
+    // Find connections
+    const connections = [];
+    allEdges.forEach(e => {
+      const s = typeof e.source === 'object' ? e.source.id : e.source;
+      const t = typeof e.target === 'object' ? e.target.id : e.target;
+      if (s === d.id) {
+        const target = allNodes.find(n => n.id === t);
+        if (target) connections.push({node: target, label: e.label, dir: '→'});
+      } else if (t === d.id) {
+        const source = allNodes.find(n => n.id === s);
+        if (source) connections.push({node: source, label: e.label, dir: '←'});
+      }
+    });
+
+    let html = `
+      <div style="margin-bottom:12px;">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};vertical-align:middle;margin-right:6px;"></span>
+        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:${color};">${(TYPE_LABELS[d.type]||d.type).toUpperCase()}</span>
+      </div>
+      <div style="font-family:var(--m-display);font-size:14px;font-weight:600;color:var(--m-ink);line-height:1.35;margin-bottom:8px;">
+        ${d.title}
+      </div>`;
+
+    // Type-specific details
+    if (d.date) html += `<div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-bottom:6px;">${d.date}</div>`;
+    if (d.authors) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);margin-bottom:4px;">${d.authors}</div>`;
+    if (d.journal) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);font-style:italic;margin-bottom:4px;">${d.journal} ${d.year||''}</div>`;
+    if (d.doi) html += `<div style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);margin-bottom:4px;">DOI: ${d.doi}</div>`;
+    if (d.domain) html += `<div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-bottom:4px;">Domain: ${d.domain}</div>`;
+    if (d.status) html += `<div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-bottom:4px;">Status: ${d.status}</div>`;
+    if (d.signal) html += `<div style="font-family:var(--m-mono);font-size:9px;color:${color};margin-bottom:4px;">Signal: ${d.signal}</div>`;
+    if (d.feasibility) html += `<div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-bottom:4px;">Feasibility: ${d.feasibility}</div>`;
+    if (d.definition) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-ink);line-height:1.45;margin:8px 0;padding:8px 10px;background:var(--m-surface-2);border-radius:var(--m-radius);">${d.definition}</div>`;
+    if (d.summary) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-ink);line-height:1.45;margin:8px 0;padding:8px 10px;background:var(--m-surface-2);border-radius:var(--m-radius);">${d.summary}</div>`;
+    if (d.next_step) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-ink);line-height:1.45;margin:8px 0;"><strong>Next:</strong> ${d.next_step}</div>`;
+    if (d.decisions) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-ink);line-height:1.45;margin:8px 0;"><strong>Decisions:</strong> ${d.decisions}</div>`;
+
+    // Tags
+    if (d.tags && d.tags.length) {
+      html += '<div style="display:flex;flex-wrap:wrap;gap:3px;margin:8px 0;">';
+      d.tags.forEach(t => {
+        html += `<span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.06em;padding:1px 7px;border-radius:100px;background:var(--m-surface-3);color:var(--m-muted);">${t}</span>`;
+      });
+      html += '</div>';
+    }
+
+    // Connections
+    if (connections.length) {
+      html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--m-rule-soft);">
+        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:6px;">${connections.length} CONNECTION${connections.length>1?'S':''}</div>`;
+      connections.slice(0, 15).forEach(c => {
+        const cc = TYPE_COLORS[c.node.type] || '#999';
+        html += `<div style="display:flex;align-items:center;gap:5px;padding:3px 0;font-family:var(--m-display);font-size:11px;cursor:pointer;"
+                      onclick="(function(){var ns=document.querySelectorAll('.kg-node');/* TODO: focus */})()">
+          <span style="width:6px;height:6px;border-radius:50%;background:${cc};flex-shrink:0;"></span>
+          <span style="flex:1;color:var(--m-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.node.title}</span>
+          <span style="font-family:var(--m-mono);font-size:7px;color:var(--m-muted);flex-shrink:0;">${c.label}</span>
+        </div>`;
+      });
+      if (connections.length > 15) {
+        html += `<div style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);margin-top:4px;">+ ${connections.length - 15} more</div>`;
+      }
+      html += '</div>';
+    }
+
+    body.innerHTML = html;
+    panel.style.display = 'block';
+  }
+
+  /* ── Initial load ───────────────────────────────────────── */
+  kgReload();
 })();
 </script>
 {% endraw %}

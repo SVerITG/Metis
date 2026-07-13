@@ -1,10 +1,18 @@
 <div id="hat-table-area">
 
-  <div style="padding:9px 20px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);border-bottom:1px solid var(--m-rule-soft);">
+  <div style="padding:9px 20px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);border-bottom:1px solid var(--m-rule-soft);display:flex;align-items:center;gap:10px;">
     {% if q %}
-    {{ total }} PAPER{% if total != 1 %}S{% endif %} MATCHING &ldquo;{{ q }}&rdquo;
+    <span>{{ total }} PAPER{% if total != 1 %}S{% endif %} MATCHING &ldquo;{{ q }}&rdquo;</span>
     {% else %}
-    {{ total }} PAPERS IN CORPUS
+    <span>{{ total }} PAPERS IN CORPUS</span>
+    {% endif %}
+    {# Count by status #}
+    {% set seeded_count = items | selectattr("item_type", "equalto", "seeded") | list | length %}
+    {% if seeded_count %}
+    <span style="margin-left:auto;display:inline-flex;align-items:center;gap:4px;">
+      <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="#2d6a4f" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
+      <span style="color:#2d6a4f;">{{ seeded_count }} SEEDED</span>
+    </span>
     {% endif %}
   </div>
 
@@ -15,33 +23,47 @@
         <th style="padding:8px 20px 8px 20px;text-align:left;font-weight:400;width:120px;">Folder</th>
         <th style="padding:8px 10px;text-align:left;font-weight:400;">Title</th>
         <th style="padding:8px 10px;text-align:left;font-weight:400;width:110px;">Method</th>
-        <th style="padding:8px 10px;text-align:left;font-weight:400;width:70px;">Status</th>
+        <th style="padding:8px 10px;text-align:center;font-weight:400;width:90px;">Status</th>
         <th style="padding:8px 20px;text-align:right;font-weight:400;width:60px;"></th>
       </tr>
     </thead>
     <tbody>
       {% for item in items %}
-      <tr style="border-bottom:1px solid var(--m-rule-soft);"
+      {% set is_seeded = item.item_type == 'seeded' %}
+      <tr style="border-bottom:1px solid var(--m-rule-soft);border-left:2px solid {% if is_seeded %}#2d6a4f{% else %}var(--m-warn, #b45309){% endif %};"
           onmouseover="this.style.background='var(--m-surface-2)'"
           onmouseout="this.style.background=''">
 
-        <!-- Folder -->
-        <td style="padding:11px 20px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);vertical-align:top;white-space:nowrap;">
-          {% if item.collection_tags %}{{ item.collection_tags[0] | upper }}{% else %}—{% endif %}
+        <!-- Folder with icon -->
+        <td style="padding:11px 20px;vertical-align:top;white-space:nowrap;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--m-warn, #b45309)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);">
+              {% if item.collection_tags %}{{ item.collection_tags[0] | upper }}{% else %}—{% endif %}
+            </span>
+          </div>
         </td>
 
         <!-- Title + tags -->
         <td style="padding:11px 10px;vertical-align:top;">
-          <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;">
-            {{ item.title }}
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            {# PDF icon #}
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="{% if is_seeded %}#2d6a4f{% else %}var(--m-muted){% endif %}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+              <path d="M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v6h6"/>
+            </svg>
+            <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;">
+              {{ item.title }}
+            </div>
           </div>
           {% if item.abstract %}
-          <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);margin-top:4px;line-height:1.5;">
+          <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);margin-top:4px;line-height:1.5;padding-left:22px;">
             {{ item.abstract | truncate(140, True, '…') }}
           </div>
           {% endif %}
           {% if item.collection_tags | length > 1 %}
-          <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;">
+          <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;padding-left:22px;">
             {% for tag in item.collection_tags[1:] %}
             <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:1px 5px;border:1px solid var(--m-rule);border-radius:2px;color:var(--m-muted);">{{ tag | upper }}</span>
             {% endfor %}
@@ -50,17 +72,37 @@
         </td>
 
         <!-- Method -->
-        <td style="padding:11px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.08em;color:var(--m-muted);vertical-align:top;">
-          {{ item.method | upper if item.method else '—' }}
+        <td style="padding:11px 10px;vertical-align:top;">
+          {% if item.method %}
+          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.08em;padding:2px 7px;border-radius:var(--m-radius-pill,10px);
+            background:rgba(69,123,157,0.08);color:#457b9d;">
+            {{ item.method | upper }}
+          </span>
+          {% else %}
+          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">—</span>
+          {% endif %}
         </td>
 
         <!-- Status -->
-        <td style="padding:11px 10px;vertical-align:top;">
-          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;padding:2px 6px;border-radius:2px;
-                       background:{% if item.item_type == 'seeded' %}var(--m-ok-wash, rgba(22,163,74,.08)){% else %}var(--m-surface-2){% endif %};
-                       color:{% if item.item_type == 'seeded' %}var(--m-ok){% else %}var(--m-muted){% endif %};">
+        <td style="padding:11px 10px;text-align:center;vertical-align:top;">
+          {% if is_seeded %}
+          <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:2px 8px;border-radius:var(--m-radius-pill,10px);
+                       background:rgba(45,106,79,0.1);color:#2d6a4f;">
+            <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="#2d6a4f" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
+            SEEDED
+          </span>
+          {% elif item.item_type == 'to_triage' %}
+          <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:2px 8px;border-radius:var(--m-radius-pill,10px);
+                       background:rgba(180,83,9,0.08);color:var(--m-warn, #b45309);">
+            <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1"/></svg>
+            TRIAGE
+          </span>
+          {% else %}
+          <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:2px 8px;border-radius:var(--m-radius-pill,10px);
+                       background:var(--m-surface-2);color:var(--m-muted);">
             {{ item.item_type | upper }}
           </span>
+          {% endif %}
         </td>
 
         <!-- Actions -->
@@ -83,6 +125,9 @@
 
   {% else %}
   <div style="padding:52px 24px;text-align:center;">
+    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--m-muted)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.4;margin-bottom:12px;">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+    </svg>
     <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.22em;color:var(--m-muted);margin-bottom:12px;">DOMAIN CORPUS</div>
     <div style="font-family:var(--m-display);font-size:18px;font-weight:500;color:var(--m-ink);margin-bottom:8px;">No papers match your filters.</div>
     <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">Try broadening your search or removing the folder filter.</div>
