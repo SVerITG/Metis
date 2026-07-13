@@ -1,0 +1,67 @@
+{# metis_persona.html — persona settings panel.
+   Context: persona (dict with warmth, response_length, feedback_style,
+            challenge_level, detail_level, routing_verbosity) #}
+<div id="metis-persona-panel">
+  {% set settings = [
+    ('warmth', 'Warmth', 'How friendly and personal Metis feels', [
+      ('warm',    'Warm',    'Friendly, uses your name, conversational'),
+      ('neutral', 'Neutral', 'Professional but approachable'),
+      ('formal',  'Formal',  'Concise and businesslike'),
+    ]),
+    ('response_length', 'Response length', 'How much detail Metis gives by default', [
+      ('concise',  'Concise',  'Short answers, just what you need'),
+      ('moderate', 'Moderate', 'Balanced depth with some context'),
+      ('detailed', 'Detailed', 'Full explanations and background'),
+    ]),
+    ('feedback_style', 'Feedback style', 'How Metis gives you feedback on your work', [
+      ('gentle',      'Gentle',      'Encouraging, highlights strengths first'),
+      ('direct',      'Direct',      'Straightforward, gets to the point'),
+      ('challenging', 'Challenging', 'Pushes back, plays devil\'s advocate'),
+    ]),
+    ('challenge_level', 'Rigour', 'How deeply Metis questions your approach', [
+      ('supportive', 'Supportive', 'Affirming, helps you build confidence'),
+      ('balanced',   'Balanced',   'Questions when it matters, supports otherwise'),
+      ('rigorous',   'Rigorous',   'Always pushes for stronger evidence and logic'),
+    ]),
+    ('detail_level', 'Explanations', 'How much background Metis includes', [
+      ('brief',    'Brief',    'Minimal context, just the answer'),
+      ('balanced', 'Balanced', 'Some context when helpful'),
+      ('thorough', 'Thorough', 'Full reasoning and alternatives'),
+    ]),
+    ('routing_verbosity', 'Specialist announcements', 'Whether Metis tells you which perspective it\'s using', [
+      ('silent',   'Silent',   'Just does the work, no announcement'),
+      ('natural',  'Natural',  'Brief, natural mention (e.g. "thinking about this as an epi question")'),
+      ('detailed', 'Detailed', 'Names the specialist and approach'),
+    ]),
+  ] %}
+
+  {% for key, label, help_text, options in settings %}
+  <div class="panel panel-pad" style="margin-bottom:10px;padding:16px 20px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
+      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">{{ label }}</div>
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);">
+        {{ (persona.get(key, options[0][0]))|upper }}
+      </span>
+    </div>
+    <div style="font-size:12px;color:var(--m-muted);margin-bottom:12px;line-height:1.4;">{{ help_text }}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      {% set current = persona.get(key, options[0][0]) %}
+      {% for val, opt_label, opt_desc in options %}
+      <button class="btn btn--caps{% if val == current %} btn--primary{% else %} btn--ghost{% endif %}"
+              style="font-size:9px;padding:5px 12px;{% if val == current %}pointer-events:none;{% endif %}"
+              title="{{ opt_desc }}"
+              hx-post="/api/metis/persona"
+              hx-vals='{"key": "{{ key }}", "value": "{{ val }}"}'
+              hx-target="#metis-persona-panel"
+              hx-swap="outerHTML">
+        {{ opt_label }}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="metis-note" style="margin-top:6px;">
+    These are saved to your local configuration and loaded at the start of every Metis conversation.
+  </div>
+</div>
