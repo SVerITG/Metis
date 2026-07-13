@@ -10,4 +10,9 @@ anthropic>=0.40
 # Voice activity detection (lightweight — no GPU required)
 webrtcvad-wheels>=2.0.14
 soundfile>=0.12
-# resemblyzer removed: requires PyTorch GPU (~2 GB), not used in production code
+# Voice transcription & speaker identification
+faster-whisper>=1.0
+resemblyzer>=0.1.3
+# Optional voice deps (install manually if needed):
+#   torchaudio>=2.0        — audio processing (requires torch)
+#   pyannote.audio>=4.0    — speaker diarization (requires HF_TOKEN for gated model)
