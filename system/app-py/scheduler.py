@@ -5,16 +5,18 @@ Jobs registered here run automatically on their cron schedules when the
 dashboard is running. They are the same operations as the manual scan
 buttons — APScheduler just calls them without user interaction.
 
-Default schedule (all overridable via /api/scheduler/settings):
-  morning_scan        07:00 daily  — news feeds + PubMed + OpenAlex
-  library_index       07:30 daily  — library file inventory
-  inbox_process       08:00 daily  — process pending inbox items
-  brief_synthesis     08:30 daily  — pre-generate AI morning brief (runs AFTER scans)
-  dataset_monitor     09:00 daily  — check data triggers, fire if conditions met
-  evening_reflexion   20:00 daily  — aggregate reflexions for self-improvement
-  memory_consolidation 22:00 daily — distil recent agent runs into memory_entries
-  weekly_summary      Sun 09:00    — generate weekly summary
-  nightly_backup      23:00 daily  — copy metis.sqlite to backups/
+Default schedule (all overridable via user-config.yaml → jobs: section):
+  morning_scan           09:00 daily — news feeds + PubMed + OpenAlex
+  library_index          09:05 daily — library file inventory
+  inbox_process          09:10 daily — process pending inbox items
+  literature_discovery   Mon 09:15   — PubMed + OpenAlex paper discovery by topic
+  brief_synthesis        09:20 daily — pre-generate AI morning brief (runs AFTER scans)
+  dataset_monitor        09:30 daily — check data triggers, fire if conditions met
+  board_refresh          Mon 09:35   — Events & Funding boards via web search
+  evening_reflexion      09:40 daily — aggregate reflexions for self-improvement
+  memory_consolidation   09:45 daily — distil recent agent runs into memory_entries
+  weekly_summary         Mon 09:50   — generate weekly summary
+  nightly_backup         09:55 daily — copy metis.sqlite to backups/
 """
 
 import asyncio
@@ -53,14 +55,14 @@ def _log_job(job_id: str, status: str, message: str) -> None:
 
 
 def _morning_hour() -> int:
-    """Read preferred morning scan hour from user-config.yaml, default 7."""
+    """Read preferred morning scan hour from user-config.yaml, default 9."""
     cfg = _load_job_settings()
     try:
-        t = cfg.get("morning_scan", {}).get("time", "07:00")
+        t = cfg.get("morning_scan", {}).get("time", "09:00")
         return int(str(t).split(":")[0])
     except Exception:
         pass
-    return 7
+    return 9
 
 
 def _load_job_settings() -> dict:
@@ -102,12 +104,12 @@ def save_job_settings(jobs: dict) -> None:
 
 
 def _parse_time(time_str: str) -> tuple[int, int]:
-    """Parse 'HH:MM' → (hour, minute). Returns (7, 0) on failure."""
+    """Parse 'HH:MM' → (hour, minute). Returns (9, 0) on failure."""
     try:
         parts = str(time_str).split(":")
         return int(parts[0]), int(parts[1]) if len(parts) > 1 else 0
     except Exception:
-        return 7, 0
+        return 9, 0
 
 
 # ---------------------------------------------------------------------------
@@ -536,6 +538,149 @@ def job_board_refresh() -> None:
         _log_job("board_refresh", "error", str(e)[:200])
 
 
+def job_literature_discovery() -> None:
+    """Weekly: search PubMed + OpenAlex for new papers matching user topics.
+
+    Inserts into new_publications (not news_briefs) so they appear in the
+    Today surface's literature discovery widget with add/dismiss actions.
+    """
+    log.info("[scheduler] literature_discovery starting")
+    import sqlite3 as _sq
+    from metis_mcp.config import paths as _p
+
+    # Load active topics from user_topics
+    topics: list[str] = []
+    try:
+        con = _sq.connect(str(_p.db))
+        con.row_factory = _sq.Row
+        rows = con.execute(
+            "SELECT topic FROM user_topics WHERE active = 1"
+        ).fetchall()
+        topics = [r["topic"] for r in rows if r["topic"]]
+        con.close()
+    except Exception:
+        pass
+
+    # Fall back to user-config.yaml research.topics
+    if not topics:
+        try:
+            import yaml
+            rc = os.environ.get("METIS_RC_ROOT", "")
+            if rc:
+                cfg_path = Path(rc) / "system" / "config" / "user-config.yaml"
+                if cfg_path.exists():
+                    cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8")) or {}
+                    topics = cfg.get("research", {}).get("topics", [])
+        except Exception:
+            pass
+
+    if not topics:
+        _log_job("literature_discovery", "ok", "No topics configured — skipping")
+        return
+
+    total_found = 0
+    total_new = 0
+    from_date = (datetime.date.today() - datetime.timedelta(days=7)).isoformat()
+    now = datetime.datetime.now().isoformat(timespec="seconds")
+
+    try:
+        con = _sq.connect(str(_p.db))
+        con.row_factory = _sq.Row
+        # Ensure table exists
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS new_publications ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+            "title TEXT NOT NULL, journal TEXT DEFAULT '', "
+            "pub_date TEXT DEFAULT '', doi TEXT DEFAULT '', "
+            "topic_tag TEXT DEFAULT '', relevance_note TEXT DEFAULT '', "
+            "source_url TEXT DEFAULT '', read_at TEXT DEFAULT '', "
+            "discovered_at TEXT NOT NULL)"
+        )
+
+        for topic in topics[:6]:
+            # PubMed search
+            try:
+                from metis_mcp.tools.literature_monitor import (
+                    _pubmed_esearch, _pubmed_esummary,
+                )
+                query = f"{topic}[Title/Abstract]"
+                pmids = _pubmed_esearch(query, reldate=7, max_results=20)
+                summaries = _pubmed_esummary(pmids) if pmids else []
+                for item in summaries:
+                    total_found += 1
+                    pmid = item["pmid"]
+                    url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+                    # Dedup by source_url
+                    exists = con.execute(
+                        "SELECT id FROM new_publications WHERE source_url = ? LIMIT 1",
+                        (url,),
+                    ).fetchone()
+                    if exists:
+                        continue
+                    con.execute(
+                        "INSERT INTO new_publications "
+                        "(title, journal, pub_date, doi, topic_tag, source_url, discovered_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (
+                            item.get("title", "")[:500],
+                            item.get("source", ""),
+                            item.get("pubdate", ""),
+                            "",  # PubMed doesn't always return DOI in esummary
+                            topic[:60],
+                            url,
+                            now,
+                        ),
+                    )
+                    total_new += 1
+            except Exception as exc:
+                log.warning("[scheduler] lit_discovery PubMed '%s': %s", topic, exc)
+
+            # OpenAlex search
+            try:
+                from metis_mcp.tools.literature_monitor import _openalex_search
+                items = _openalex_search(topic, from_date=from_date, max_results=15)
+                for item in (items or []):
+                    total_found += 1
+                    doi = item.get("doi") or ""
+                    source_url = doi or item.get("id") or ""
+                    if not source_url:
+                        continue
+                    exists = con.execute(
+                        "SELECT id FROM new_publications "
+                        "WHERE source_url = ? OR (doi != '' AND doi = ?) LIMIT 1",
+                        (source_url, doi),
+                    ).fetchone()
+                    if exists:
+                        continue
+                    title = item.get("title") or "Untitled"
+                    pub_date = item.get("publication_date", "")
+                    journal = (
+                        (item.get("primary_location") or {})
+                        .get("source", {})
+                        .get("display_name", "")
+                    )
+                    con.execute(
+                        "INSERT INTO new_publications "
+                        "(title, journal, pub_date, doi, topic_tag, source_url, discovered_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        (title[:500], journal, pub_date, doi, topic[:60], source_url, now),
+                    )
+                    total_new += 1
+            except Exception as exc:
+                log.warning("[scheduler] lit_discovery OpenAlex '%s': %s", topic, exc)
+
+        con.commit()
+        con.close()
+    except Exception as exc:
+        log.error("[scheduler] literature_discovery DB error: %s", exc)
+        _log_job("literature_discovery", "error", str(exc)[:300])
+        return
+
+    msg = f"Found {total_found}, added {total_new} new papers across {len(topics)} topics"
+    _log_job("literature_discovery", "ok", msg)
+    log.info("[scheduler] literature_discovery done: %s", msg)
+
+
 JOB_FUNCS: dict[str, callable] = {
     "brief_synthesis":       job_brief_synthesis,
     "morning_scan":          job_morning_scan,
@@ -546,6 +691,8 @@ JOB_FUNCS: dict[str, callable] = {
     "weekly_summary":        job_weekly_summary,
     "nightly_backup":        job_nightly_backup,
     "dataset_monitor":       job_dataset_monitor,
+    "board_refresh":         job_board_refresh,
+    "literature_discovery":  job_literature_discovery,
 }
 
 # Human-readable labels for the UI
@@ -559,6 +706,8 @@ JOB_LABELS: dict[str, str] = {
     "weekly_summary":       "Weekly summary",
     "nightly_backup":       "Nightly DB backup",
     "dataset_monitor":      "Dataset trigger monitor",
+    "board_refresh":        "Board refresh (Events & Funding)",
+    "literature_discovery": "Literature discovery (weekly papers)",
 }
 
 # Default schedule (used when no user-config entry exists)
@@ -566,15 +715,17 @@ JOB_LABELS: dict[str, str] = {
 # Memory consolidation runs at 22:00 — after the day's work, before the 23:00 backup.
 # Dataset monitor runs every 2 hours during working hours.
 JOB_DEFAULTS: dict[str, dict] = {
-    "morning_scan":         {"enabled": True, "time": "07:00"},
-    "library_index":        {"enabled": True, "time": "07:30"},
-    "inbox_process":        {"enabled": True, "time": "08:00"},
-    "brief_synthesis":      {"enabled": True, "time": "08:30"},
-    "dataset_monitor":      {"enabled": True, "time": "09:00"},
-    "evening_reflexion":    {"enabled": True, "time": "20:00"},
-    "memory_consolidation": {"enabled": True, "time": "22:00"},
-    "weekly_summary":       {"enabled": True, "time": "09:00", "day": "sun"},
-    "nightly_backup":       {"enabled": True, "time": "23:00"},
+    "morning_scan":         {"enabled": True, "time": "09:00"},
+    "library_index":        {"enabled": True, "time": "09:05"},
+    "inbox_process":        {"enabled": True, "time": "09:10"},
+    "brief_synthesis":      {"enabled": True, "time": "09:20"},
+    "dataset_monitor":      {"enabled": True, "time": "09:30"},
+    "board_refresh":        {"enabled": True, "time": "09:35", "day": "mon"},
+    "literature_discovery": {"enabled": True, "time": "09:15", "day": "mon"},
+    "evening_reflexion":    {"enabled": True, "time": "09:40"},
+    "memory_consolidation": {"enabled": True, "time": "09:45"},
+    "weekly_summary":       {"enabled": True, "time": "09:50", "day": "mon"},
+    "nightly_backup":       {"enabled": True, "time": "09:55"},
 }
 
 
@@ -637,59 +788,53 @@ def setup_jobs() -> None:
 
     log.info("[scheduler] jobs registered: %s", ", ".join(registered))
 
-    # Monthly board refresh (Events & Funding via web search) — 1st of month,
-    # 06:00 UTC. Registered separately because the loop above only supports
-    # daily/weekly cadences (hour/minute/day_of_week), not day-of-month.
-    try:
-        board_cfg = {"enabled": True, **settings.get("board_refresh", {})}
-        if board_cfg.get("enabled", True):
-            scheduler.add_job(
-                job_board_refresh,
-                CronTrigger(day=1, hour=6, minute=0),
-                id="board_refresh",
-                name="Monthly board refresh (Events & Funding)",
-                replace_existing=True,
-                misfire_grace_time=None,
-                coalesce=True,
-            )
-            log.info("[scheduler] board_refresh registered @ monthly (day 1, 06:00 UTC)")
-    except Exception as _e:
-        log.warning("[scheduler] could not register board_refresh: %s", _e)
-
-    # Catch-up: if any morning jobs were missed (server started after their cron
-    # time), fire them sequentially in one background thread — scan first, brief last.
+    # Catch-up: if the dashboard starts after the scheduled time, fire all
+    # missed daily jobs immediately in a background thread (ordered so scans
+    # run before the brief synthesis, which needs their data).
     import threading as _threading
     import datetime as _dt
     now_local = _dt.datetime.now()
     settings_cu = _load_job_settings()
 
-    # Ordered: scans before brief synthesis so brief has fresh data
+    # Catch-up order: data-collection first, then analysis, then housekeeping.
     catchup_sequence = [
-        ("morning_scan",    job_morning_scan),
-        ("library_index",   job_library_index),
-        ("inbox_process",   job_inbox_process),
-        ("brief_synthesis", job_brief_synthesis),
+        ("morning_scan",        job_morning_scan),
+        ("library_index",       job_library_index),
+        ("inbox_process",       job_inbox_process),
+        ("brief_synthesis",     job_brief_synthesis),
+        ("dataset_monitor",     job_dataset_monitor),
+        ("evening_reflexion",   job_evening_reflexion),
+        ("memory_consolidation", job_memory_consolidation),
+        ("nightly_backup",      job_nightly_backup),
     ]
     missed = []
     for catch_job_id, catch_func in catchup_sequence:
         cfg = {**JOB_DEFAULTS.get(catch_job_id, {}), **settings_cu.get(catch_job_id, {})}
         if not cfg.get("enabled", True):
             continue
-        sched_h, sched_m = _parse_time(cfg.get("time", "07:00"))
+        if cfg.get("day"):
+            continue  # Weekly jobs are handled separately below
+        sched_h, sched_m = _parse_time(cfg.get("time", "10:00"))
         sched_today = now_local.replace(hour=sched_h, minute=sched_m,
                                         second=0, microsecond=0)
         if now_local > sched_today:
             missed.append((catch_job_id, catch_func))
 
-    # Weekly catch-up: weekly_summary only fires if the dashboard happens to be
-    # running at its Sunday cron time — easy to miss on a laptop. Run it on
-    # startup if it hasn't succeeded in the last 6 days.
-    wk_cfg = {**JOB_DEFAULTS.get("weekly_summary", {}), **settings_cu.get("weekly_summary", {})}
-    if wk_cfg.get("enabled", True):
+    # Weekly catch-up: weekly jobs (summary, board_refresh) only fire on their
+    # scheduled day — easy to miss on a laptop. Run on startup if they haven't
+    # succeeded in the last 6 days.
+    weekly_jobs = [
+        ("weekly_summary", job_weekly_summary),
+        ("board_refresh",  job_board_refresh),
+    ]
+    for wk_id, wk_func in weekly_jobs:
+        wk_cfg = {**JOB_DEFAULTS.get(wk_id, {}), **settings_cu.get(wk_id, {})}
+        if not wk_cfg.get("enabled", True):
+            continue
         try:
             from db import db_query
             rows = db_query(
-                "SELECT created_at FROM jobs_log WHERE job_type='weekly_summary' "
+                f"SELECT created_at FROM jobs_log WHERE job_type='{wk_id}' "
                 "AND status='ok' ORDER BY created_at DESC LIMIT 1"
             )
             due = True
@@ -697,9 +842,9 @@ def setup_jobs() -> None:
                 last_dt = _dt.datetime.fromisoformat(rows[0]["created_at"])
                 due = (now_local - last_dt).days >= 6
             if due:
-                missed.append(("weekly_summary", job_weekly_summary))
+                missed.append((wk_id, wk_func))
         except Exception as exc:
-            log.warning("[scheduler] weekly catch-up check failed: %s", exc)
+            log.warning("[scheduler] weekly catch-up check for %s failed: %s", wk_id, exc)
 
     if missed:
         def _run_catchup(jobs):
