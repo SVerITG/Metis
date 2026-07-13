@@ -33,6 +33,7 @@ class LiveMeetingSession {
     this.mediaRecorder = null;   // MediaRecorder for server Whisper
     this.audioChunks = [];
     this.useServerWhisper = false;
+    this.serverBackend = 'auto';   // 'auto' | 'voxtral'
     this.running = false;
     this.paused = false;
     this.startTime = null;
@@ -173,10 +174,10 @@ class LiveMeetingSession {
 
     mr.start();
     this._setInterimWhisper('recording');
-    // Record 8-second chunks for responsive transcription
+    // Record 3.5-second chunks — GPU transcribes each in <0.5s
     this.chunkInterval = setTimeout(() => {
       if (mr.state === 'recording') mr.stop();
-    }, 8000);
+    }, 3500);
   }
 
   _bestMime() {
@@ -194,7 +195,8 @@ class LiveMeetingSession {
     fd.append('audio', blob, `chunk${ext}`);
     fd.append('language', this.lang.split('-')[0]);
     fd.append('speaker', this.currentSpeaker);
-    fd.append('diarize', _serverDiarize() ? 'true' : 'false');
+    fd.append('diarize', (_serverDiarize() || this.serverBackend === 'voxtral') ? 'true' : 'false');
+    fd.append('backend', this.serverBackend);
     try {
       const r = await fetch('/api/transcription/chunk', { method: 'POST', body: fd });
       const data = await r.json();
@@ -246,7 +248,7 @@ class LiveMeetingSession {
     if (state === 'recording') {
       el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;color:var(--m-muted);font-family:var(--m-sans);font-size:12px;">
         <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--m-alert);animation:lm-pulse 1s infinite;"></span>
-        Recording… transcript appears every 8 seconds
+        Recording… transcript appears every few seconds
       </span>`;
     } else if (state === 'transcribing') {
       el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;color:var(--m-accent);font-family:var(--m-sans);font-size:12px;">
@@ -529,12 +531,16 @@ async function beginLiveMeeting() {
     return;
   }
 
-  // Determine whether to use server Whisper based on the user's choice
+  // Determine transcription backend
   let serverWhisper = false;
-  if (chosenMode === 'server') {
+  let backendName = 'auto';
+  if (chosenMode === 'voxtral') {
+    // Voxtral cloud mode — uses Mistral API, always "server" capture
+    serverWhisper = true;
+    backendName = 'voxtral';
+  } else if (chosenMode === 'server') {
     serverWhisper = await _checkServerWhisper();
     if (!serverWhisper) {
-      // Whisper not available — fall through to browser
       console.warn('[live-meeting] Server Whisper unavailable, falling back to browser speech.');
     }
   }
@@ -549,12 +555,14 @@ async function beginLiveMeeting() {
   const modeEl = document.getElementById('lm-mode');
   if (modeEl) {
     let label, col;
-    if (serverWhisper && _serverDiarize()) {
+    if (backendName === 'voxtral') {
+      label = 'Voxtral · cloud + diarization'; col = '#a78bfa';
+    } else if (serverWhisper && _serverDiarize()) {
       label = 'WhisperX + diarization'; col = 'var(--m-ok)';
     } else if (serverWhisper && _serverVoiceProfiles()) {
       label = 'Whisper + voice ID'; col = 'var(--m-ok)';
     } else if (serverWhisper) {
-      label = _serverMode() === 'whisperx' ? 'WhisperX' : 'Whisper · 8s chunks'; col = 'var(--m-ok)';
+      label = _serverMode() === 'whisperx' ? 'WhisperX' : 'Whisper · GPU'; col = 'var(--m-ok)';
     } else {
       label = 'Browser speech (instant)'; col = 'var(--m-muted)';
     }
@@ -565,6 +573,7 @@ async function beginLiveMeeting() {
   // Init session
   lm = new LiveMeetingSession();
   lm.init(title, speakers, lang);
+  lm.serverBackend = backendName;
 
   // Render speaker buttons
   const bar = document.getElementById('lm-speaker-bar');
