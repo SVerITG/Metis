@@ -429,6 +429,254 @@ async def meetings_import_form(request: Request):
     )
 
 
+# ---------------------------------------------------------------------------
+# Meetily / external markdown import
+# ---------------------------------------------------------------------------
+
+def _parse_meetily_markdown(md_text: str) -> dict:
+    """
+    Parse a Meetily-exported Markdown file into structured meeting data.
+
+    Expected format (flexible — handles variations):
+      ---
+      meeting-id: <uuid>
+      ---
+      # Title or first heading
+      ## Summary / ## Meeting Summary
+      Paragraph text...
+      ## Action Items / ## Tasks
+      - Item one
+      - Item two
+      ## Transcript
+      [00:01:23] Speaker Name: Text...
+      Speaker Name (00:01:23): Text...
+    """
+    import yaml as _yaml
+
+    result = {
+        "title": "",
+        "summary": "",
+        "actions": [],
+        "decisions": [],
+        "follow_ups": [],
+        "transcript": "",
+        "attendees": "",
+        "duration_minutes": None,
+        "meeting_date": datetime.date.today().isoformat(),
+        "source": "meetily",
+    }
+
+    lines = md_text.strip().splitlines()
+
+    # ── YAML front matter ──
+    body_start = 0
+    if lines and lines[0].strip() == "---":
+        end_idx = None
+        for i, line in enumerate(lines[1:], 1):
+            if line.strip() == "---":
+                end_idx = i
+                break
+        if end_idx:
+            try:
+                front = _yaml.safe_load("\n".join(lines[1:end_idx]))
+                if isinstance(front, dict):
+                    if "title" in front:
+                        result["title"] = str(front["title"])
+                    if "date" in front:
+                        result["meeting_date"] = str(front["date"])[:10]
+                    if "meeting-date" in front:
+                        result["meeting_date"] = str(front["meeting-date"])[:10]
+                    if "participants" in front:
+                        p = front["participants"]
+                        result["attendees"] = ", ".join(p) if isinstance(p, list) else str(p)
+                    if "attendees" in front:
+                        a = front["attendees"]
+                        result["attendees"] = ", ".join(a) if isinstance(a, list) else str(a)
+                    if "duration" in front:
+                        try:
+                            result["duration_minutes"] = int(front["duration"])
+                        except (ValueError, TypeError):
+                            pass
+            except Exception:
+                pass
+            body_start = end_idx + 1
+
+    # ── Section parsing ──
+    current_section = "preamble"
+    section_lines: dict[str, list[str]] = {
+        "preamble": [], "summary": [], "actions": [],
+        "decisions": [], "follow_ups": [], "transcript": [],
+    }
+    SECTION_MAP = {
+        "summary": "summary", "meeting summary": "summary", "overview": "summary",
+        "notes": "summary", "meeting notes": "summary",
+        "action items": "actions", "actions": "actions", "tasks": "actions",
+        "todos": "actions", "to-do": "actions", "to do": "actions",
+        "decisions": "decisions", "agreed": "decisions", "resolved": "decisions",
+        "follow-ups": "follow_ups", "follow ups": "follow_ups",
+        "next steps": "follow_ups", "next": "follow_ups",
+        "transcript": "transcript", "full transcript": "transcript",
+        "meeting transcript": "transcript", "raw transcript": "transcript",
+    }
+
+    for line in lines[body_start:]:
+        stripped = line.strip()
+
+        # Heading → detect section
+        heading_match = re.match(r"^#{1,3}\s+(.+)$", stripped)
+        if heading_match:
+            heading_text = heading_match.group(1).strip().rstrip(":").lower()
+            if heading_text in SECTION_MAP:
+                current_section = SECTION_MAP[heading_text]
+                continue
+            # First H1 becomes title if not set from front matter
+            if stripped.startswith("# ") and not result["title"]:
+                result["title"] = heading_match.group(1).strip()
+                continue
+
+        section_lines.setdefault(current_section, []).append(line)
+
+    # ── Assemble fields ──
+    result["summary"] = "\n".join(section_lines.get("summary", [])).strip()
+    result["transcript"] = "\n".join(section_lines.get("transcript", [])).strip()
+
+    # If no transcript section but preamble has speaker-labelled lines, treat as transcript
+    if not result["transcript"]:
+        preamble = "\n".join(section_lines.get("preamble", []))
+        speaker_lines = re.findall(
+            r"(?:^|\n)\s*(?:\[[\d:]+\]\s*)?\w[\w\s]*?(?:\([\d:]+\))?:\s+\S",
+            preamble,
+        )
+        if len(speaker_lines) >= 3:
+            result["transcript"] = preamble.strip()
+
+    # Extract bullet items from action/decision/follow-up sections
+    for section_key, result_key in [
+        ("actions", "actions"), ("decisions", "decisions"), ("follow_ups", "follow_ups"),
+    ]:
+        for line in section_lines.get(section_key, []):
+            s = line.strip()
+            if s.startswith(("-", "*", "•")):
+                item = re.sub(r"^[-*•]\s*(?:\[[ x]\])?\s*", "", s).strip()
+                if item:
+                    result[result_key].append(item)
+
+    # If no explicit action items found, run the existing extractor on everything
+    if not result["actions"] and not result["decisions"]:
+        full_text = result["summary"] + "\n" + result["transcript"]
+        extracted = _extract_structure(full_text)
+        result["actions"] = extracted["actions"]
+        result["decisions"] = extracted["decisions"]
+        result["follow_ups"] = extracted["follow_ups"]
+
+    # Extract attendees from transcript speaker labels if not set
+    if not result["attendees"] and result["transcript"]:
+        speakers = set()
+        for m in re.finditer(
+            r"(?:^|\n)\s*(?:\[[\d:]+\]\s*)?([A-Z][\w\s]{1,25}?)(?:\s*\([\d:]+\))?\s*:",
+            result["transcript"],
+        ):
+            name = m.group(1).strip()
+            if name and len(name) < 30 and name.upper() != "SPEAKER":
+                speakers.add(name)
+        result["attendees"] = ", ".join(sorted(speakers))
+
+    if not result["title"]:
+        result["title"] = f"Imported meeting ({result['meeting_date']})"
+
+    return result
+
+
+@router.get("/api/partial/meetings/meetily-import", response_class=HTMLResponse)
+async def meetily_import_form(request: Request):
+    today = datetime.date.today().isoformat()
+    return templates.TemplateResponse(
+        request, "partials/meeting_meetily_import.html", {"today": today}
+    )
+
+
+@router.post("/api/meeting/import-meetily", response_class=HTMLResponse)
+async def meeting_import_meetily(
+    request: Request,
+    markdown: str = Form(""),
+    file: UploadFile = File(None),
+):
+    """Import a Meetily Markdown export — file upload or pasted text."""
+    md_text = ""
+    if file and file.filename:
+        raw = await file.read()
+        md_text = raw.decode("utf-8", errors="replace")
+    if not md_text.strip():
+        md_text = markdown
+
+    if not md_text.strip():
+        return HTMLResponse(
+            '<div style="color:var(--m-alert);font-family:var(--m-mono);font-size:11px;'
+            'padding:10px 0;">No content provided — paste Markdown or upload a .md file.</div>'
+        )
+
+    parsed = _parse_meetily_markdown(md_text)
+    now = datetime.datetime.now().isoformat(timespec="seconds")
+
+    actions_json = json.dumps(parsed["actions"])
+    decisions_json = json.dumps(parsed["decisions"])
+    followups_json = json.dumps(parsed["follow_ups"])
+
+    # Build the full transcript — prepend summary if available
+    full_transcript = ""
+    if parsed["summary"]:
+        full_transcript = f"## Summary\n{parsed['summary']}\n\n"
+    if parsed["transcript"]:
+        full_transcript += parsed["transcript"]
+    elif not full_transcript:
+        full_transcript = md_text  # fallback: store raw markdown
+
+    try:
+        db_execute(
+            """INSERT INTO meetings
+               (title, meeting_date, attendees, meeting_type, transcript,
+                action_items, decisions, follow_ups, transcript_status,
+                duration_minutes, domain, created_at)
+               VALUES (?, ?, ?, 'meeting', ?, ?, ?, ?, 'filed', ?, ?, ?)""",
+            (
+                parsed["title"],
+                parsed["meeting_date"],
+                parsed["attendees"],
+                full_transcript.strip(),
+                actions_json,
+                decisions_json,
+                followups_json,
+                parsed["duration_minutes"],
+                parsed["source"],
+                now,
+            ),
+        )
+
+        connections = _surface_connections(
+            (parsed["title"] + " " + (parsed["summary"] or full_transcript))[:800]
+        )
+
+    except Exception as e:
+        return HTMLResponse(
+            f'<div style="color:var(--m-alert);font-family:var(--m-mono);font-size:10px;'
+            f'padding:12px 0;">ERROR: {e}</div>'
+        )
+
+    return templates.TemplateResponse(
+        request,
+        "partials/meeting_import_result.html",
+        {
+            "title": parsed["title"],
+            "extracted": {
+                "actions": parsed["actions"],
+                "decisions": parsed["decisions"],
+                "follow_ups": parsed["follow_ups"],
+            },
+            "connections": connections,
+        },
+    )
+
+
 @router.post("/api/meeting/import", response_class=HTMLResponse)
 async def meeting_import(
     request: Request,

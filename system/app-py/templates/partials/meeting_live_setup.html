@@ -49,7 +49,8 @@
           <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">TRANSCRIPTION</label>
           <select id="lm-setup-mode"
                   style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
-            <option value="server">Whisper — accurate, all browsers</option>
+            <option value="server">Whisper — local GPU, all browsers</option>
+            <option value="voxtral">Voxtral — cloud, diarization built-in</option>
             <option value="browser">Browser — instant, Chrome/Edge only</option>
           </select>
         </div>
@@ -57,7 +58,7 @@
 
       <!-- Mode description — updates dynamically -->
       <div id="lm-mode-hint" style="background:var(--m-surface-2);border-radius:4px;padding:10px 14px;margin-bottom:12px;font-family:var(--m-sans);font-size:12px;color:var(--m-muted);line-height:1.6;">
-        <strong style="color:var(--m-ink);">Whisper (recommended):</strong> Transcribes every 8 seconds via the local Whisper model — works in any browser, no cloud needed. Connections to your library and past meetings appear alongside as you speak.
+        <strong style="color:var(--m-ink);">Whisper (recommended):</strong> Transcribes every few seconds via your local GPU — works in any browser, no cloud needed. Connections to your library and past meetings appear alongside as you speak.
       </div>
 
       <!-- Voice ID status — loaded async -->
@@ -73,7 +74,7 @@
           <line x1="8" y1="12.5" x2="8" y2="14.5"/>
         </svg>
         <div>
-          When you click <strong style="color:var(--m-ink);">Start listening</strong>, your browser will ask for microphone access. Allow it. The first transcript appears after about 8 seconds of speaking.
+          When you click <strong style="color:var(--m-ink);">Start listening</strong>, your browser will ask for microphone access. Allow it. The first transcript appears after a few seconds of speaking.
         </div>
       </div>
 
@@ -95,31 +96,49 @@
   var hint = document.getElementById('lm-mode-hint');
   if (!sel || !hint) return;
   sel.addEventListener('change', function() {
-    if (sel.value === 'browser') {
-      hint.innerHTML = '<strong style="color:var(--m-ink);">Browser speech:</strong> Transcribes instantly as you speak — text appears word by word. Requires Chrome or Edge. No Whisper model used.';
+    if (sel.value === 'voxtral') {
+      hint.innerHTML = '<strong style="color:#a78bfa;">Voxtral (cloud):</strong> Uses Mistral&rsquo;s speech API with built-in speaker diarization &mdash; no local model needed. Requires MISTRAL_API_KEY. Excellent accuracy, 13 languages, speakers identified automatically.';
+    } else if (sel.value === 'browser') {
+      hint.innerHTML = '<strong style="color:var(--m-ink);">Browser speech:</strong> Transcribes instantly as you speak — text appears word by word. Requires Chrome or Edge. No model used.';
     } else {
-      hint.innerHTML = '<strong style="color:var(--m-ink);">Whisper (recommended):</strong> Transcribes every 8 seconds via the local Whisper model — works in any browser, no cloud needed. Connections to your library and past meetings appear alongside as you speak.';
+      hint.innerHTML = '<strong style="color:var(--m-ink);">Whisper (recommended):</strong> Transcribes every few seconds via your local GPU — works in any browser, no cloud needed. Connections to your library and past meetings appear alongside as you speak.';
     }
   });
 
-  // Load voice ID status
+  // Load voice ID + Voxtral status
   fetch('/api/transcription/status').then(r => r.json()).then(s => {
     const el = document.getElementById('lm-voice-id-status');
     if (!el) return;
+    let lines = [];
+
+    // Voxtral availability
+    if (s.voxtral) {
+      lines.push('<span style="color:#a78bfa;">▲ VOXTRAL AVAILABLE</span> — cloud transcription with native diarization');
+    } else {
+      // Disable voxtral option if no API key
+      const voxOpt = sel.querySelector('option[value="voxtral"]');
+      if (voxOpt) { voxOpt.disabled = true; voxOpt.textContent += ' (no API key)'; }
+    }
+
+    // GPU info
+    if (s.gpu) {
+      lines.push(`<span style="color:var(--m-ok);">▲ GPU: ${s.gpu}</span>`);
+    }
+
+    // Voice profiles
     if (s.voice_profiles) {
       fetch('/api/speakers').then(r => r.json()).then(speakers => {
         if (speakers.length) {
           const names = speakers.map(sp => sp.name).join(', ');
-          el.style.color = 'var(--m-ok)';
-          el.innerHTML = `▲ VOICE ID ACTIVE &mdash; ${speakers.length} profile${speakers.length !== 1 ? 's' : ''} enrolled: ${names}`;
+          lines.push(`<span style="color:var(--m-ok);">▲ VOICE ID ACTIVE</span> — ${speakers.length} profile${speakers.length !== 1 ? 's' : ''}: ${names}`);
         } else {
-          el.style.color = 'var(--m-muted)';
-          el.textContent = 'VOICE ID READY — no profiles enrolled yet (enroll voices in the Meetings tab)';
+          lines.push('VOICE ID READY — no profiles enrolled yet');
         }
+        el.innerHTML = lines.join('<br>');
       });
     } else {
-      el.style.color = 'var(--m-muted)';
-      el.textContent = 'VOICE ID UNAVAILABLE — speaker names assigned manually';
+      lines.push('VOICE ID UNAVAILABLE — speaker names assigned manually');
+      el.innerHTML = lines.join('<br>');
     }
   }).catch(() => {
     const el = document.getElementById('lm-voice-id-status');
