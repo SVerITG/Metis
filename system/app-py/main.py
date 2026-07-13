@@ -406,7 +406,7 @@ async def trust_badge():
     policy_icon = {"strict": "bi-shield-lock", "offline": "bi-wifi-off", "normal": "bi-shield-check"}.get(policy, "bi-shield-check")
     policy_cls  = {"strict": "text-warning", "offline": "text-danger", "normal": ""}.get(policy, "")
 
-    label = f"{count} calls today" if count else "Data stays local"
+    label = f"{count} calls today" if count else "Metis \u00b7 online"
     return HTMLResponse(
         f'<i class="bi {policy_icon} {policy_cls}"></i>'
         f'<span class="trust-badge-text">{label}</span>'

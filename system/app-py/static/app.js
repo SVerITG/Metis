@@ -1167,6 +1167,40 @@ async function exportIdeaAsNote() {
 }
 
 // ---------------------------------------------------------------------------
+// Graphify — build knowledge graph and open interactive view
+// ---------------------------------------------------------------------------
+
+async function graphifyKnowledge(btn) {
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⟳ Building graph…';
+  try {
+    const res = await fetch('/api/thinking/graphify-rebuild', { method: 'POST' });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      showToast(
+        '<i class="bi bi-diagram-3 toast-icon"></i>Knowledge graph ready' +
+        (data.nodes ? ' · ' + data.nodes + ' nodes' : '') +
+        ' — opening in new tab'
+      );
+      if (data.has_html) {
+        window.open('/api/graphify/view', '_blank', 'noopener,noreferrer');
+      }
+      // Refresh the analytics panel
+      const panel = document.querySelector('[hx-get="/api/partial/thinking/graphify-analytics"]');
+      if (panel && window.htmx) htmx.trigger(panel, 'load');
+    } else {
+      showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Graph build failed: ' + (data.message || 'unknown error'));
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Graph build failed — is the dashboard running?');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = orig;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Planner — task status (Retire / Pause / Schedule)
 // ---------------------------------------------------------------------------
 
@@ -2153,8 +2187,8 @@ function _mcpSetOnline() {
   var tbtn  = document.getElementById('mcp-toggle-btn');
   var rbtn  = document.getElementById('mcp-reconnect-btn');
   if (dot)   { dot.style.background = '#34c759'; }
-  if (label) { label.textContent = 'MCP ON'; label.style.color = ''; }
-  if (tbtn)  { tbtn.style.borderColor = 'var(--m-rule)'; tbtn.title = 'Metis MCP online — click to restart'; }
+  if (label) { label.textContent = 'Connected'; label.style.color = ''; }
+  if (tbtn)  { tbtn.style.borderColor = 'var(--m-rule)'; tbtn.title = 'Metis online — click to restart'; }
   if (rbtn)  { rbtn.style.display = 'none'; }
 }
 
@@ -2165,8 +2199,8 @@ function _mcpSetOffline() {
   var tbtn  = document.getElementById('mcp-toggle-btn');
   var rbtn  = document.getElementById('mcp-reconnect-btn');
   if (dot)   { dot.style.background = '#ff9500'; }
-  if (label) { label.textContent = 'MCP OFF'; label.style.color = '#ff9500'; }
-  if (tbtn)  { tbtn.style.borderColor = '#ff9500'; tbtn.title = 'Metis MCP offline — click to reconnect'; }
+  if (label) { label.textContent = 'Offline'; label.style.color = '#ff9500'; }
+  if (tbtn)  { tbtn.style.borderColor = '#ff9500'; tbtn.title = 'Metis offline — click to reconnect'; }
   if (rbtn)  { rbtn.style.display = 'none'; }
 }
 
@@ -2235,3 +2269,68 @@ document.addEventListener('keydown', function (e) {
     closeApiKeyModal();
   }
 });
+
+// ---------------------------------------------------------------------------
+// Literature Discovery actions
+// ---------------------------------------------------------------------------
+
+function scanLiterature(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Scanning…'; }
+  fetch('/api/today/literature-discovery/scan', { method: 'POST' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      showToast(d.ok ? 'Scan complete — refreshing…' : ('Scan failed: ' + (d.error || '')));
+      // Refresh the partial
+      var el = document.getElementById('today-lit-discovery');
+      if (el) { htmx.ajax('GET', '/api/partial/today/literature-discovery', { target: el, swap: 'outerHTML' }); }
+    })
+    .catch(function () { showToast('Scan failed — check your connection.'); })
+    .finally(function () { if (btn) { btn.disabled = false; btn.textContent = 'Scan now'; } });
+}
+
+function addToLibrary(pubId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Adding…'; }
+  fetch('/api/today/literature-discovery/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pub_id: pubId })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.ok) {
+        showToast('Added to library');
+        var row = document.getElementById('lit-paper-' + pubId);
+        if (row) { row.style.opacity = '0.4'; row.style.transition = 'opacity 0.3s'; }
+        // Refresh partial after brief delay
+        setTimeout(function () {
+          var el = document.getElementById('today-lit-discovery');
+          if (el) { htmx.ajax('GET', '/api/partial/today/literature-discovery', { target: el, swap: 'outerHTML' }); }
+        }, 600);
+      } else { showToast('Failed: ' + (d.error || '')); }
+    })
+    .catch(function () { showToast('Failed to add.'); })
+    .finally(function () { if (btn) { btn.disabled = false; btn.textContent = '+ Library'; } });
+}
+
+function copyDoi(doi, btn) {
+  navigator.clipboard.writeText(doi).then(function () {
+    showToast('DOI copied: ' + doi);
+    if (btn) { var orig = btn.textContent; btn.textContent = '✓'; setTimeout(function () { btn.textContent = orig; }, 1500); }
+  }).catch(function () { showToast('Copy failed — DOI: ' + doi); });
+}
+
+function dismissPaper(pubId, btn) {
+  fetch('/api/today/literature-discovery/dismiss', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pub_id: pubId })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d.ok) {
+        var row = document.getElementById('lit-paper-' + pubId);
+        if (row) { row.style.display = 'none'; }
+      }
+    })
+    .catch(function () { /* silent */ });
+}
