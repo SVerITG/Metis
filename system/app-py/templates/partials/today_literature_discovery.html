@@ -1,0 +1,88 @@
+{# today_literature_discovery.html — New papers in your field.
+   Context: papers (list), total (int), topics (list), period (str). #}
+<div id="today-lit-discovery" style="margin-bottom:28px;">
+  <div class="sec-label" style="margin-bottom:12px;">
+    <span>New in your field</span>
+    <span class="tail" style="display:inline-flex;align-items:center;gap:8px;">
+      {% if total > 0 %}
+      <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:1px 6px;border-radius:var(--m-radius-pill);background:var(--m-accent-wash);color:var(--m-accent);">{{ total }} UNREAD</span>
+      {% endif %}
+      {# Period toggle #}
+      <span style="display:inline-flex;gap:0;border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);overflow:hidden;">
+        <button hx-get="/api/partial/today/literature-discovery?period=week" hx-target="#today-lit-discovery" hx-swap="outerHTML"
+                style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:2px 8px;border:0;cursor:pointer;
+                  background:{% if period == 'week' %}var(--m-accent){% else %}transparent{% endif %};
+                  color:{% if period == 'week' %}#fff{% else %}var(--m-muted){% endif %};">WEEK</button>
+        <button hx-get="/api/partial/today/literature-discovery?period=month" hx-target="#today-lit-discovery" hx-swap="outerHTML"
+                style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:2px 8px;border:0;border-left:1px solid var(--m-rule-soft);cursor:pointer;
+                  background:{% if period == 'month' %}var(--m-accent){% else %}transparent{% endif %};
+                  color:{% if period == 'month' %}#fff{% else %}var(--m-muted){% endif %};">MONTH</button>
+      </span>
+      <button onclick="scanLiterature(this)" class="btn btn--ghost btn--caps" style="font-size:8px;padding:2px 8px;">Scan now</button>
+    </span>
+  </div>
+
+  {% if papers %}
+  <div class="panel" style="padding:0;overflow:hidden;">
+    {% for p in papers[:10] %}
+    <div id="lit-paper-{{ p.id }}" style="display:flex;align-items:flex-start;gap:12px;padding:12px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
+      <div style="flex:1;min-width:0;">
+        {# Title #}
+        <div style="font-family:var(--m-display);font-size:13px;line-height:1.45;color:var(--m-ink);margin-bottom:4px;">
+          {% if p.source_url or p.doi %}
+          <a href="{{ p.source_url or ('https://doi.org/' + p.doi) }}" target="_blank" rel="noopener"
+             style="color:inherit;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);"
+             onmouseover="this.style.borderColor='var(--m-accent)'"
+             onmouseout="this.style.borderColor='var(--m-rule-soft)'">{{ p.title|truncate(120) }}</a>
+          {% else %}
+          {{ p.title|truncate(120) }}
+          {% endif %}
+        </div>
+        {# Meta line #}
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          {% if p.journal %}
+          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ p.journal|truncate(40) }}</span>
+          {% endif %}
+          {% if p.pub_date %}
+          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ p.pub_date[:10] }}</span>
+          {% endif %}
+          {% if p.topic_tag %}
+          <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 6px;border-radius:var(--m-radius-pill);background:var(--m-accent-wash);color:var(--m-accent);">{{ p.topic_tag|truncate(24) }}</span>
+          {% endif %}
+        </div>
+      </div>
+      {# Action buttons #}
+      <div style="display:flex;gap:4px;flex-shrink:0;padding-top:2px;">
+        <button onclick="addToLibrary({{ p.id }}, this)" title="Add to library"
+                class="btn btn--ghost" style="font-size:9px;padding:3px 8px;color:var(--m-accent);">+ Library</button>
+        {% if p.doi %}
+        <button onclick="copyDoi('{{ p.doi }}', this)" title="Copy DOI"
+                class="btn btn--ghost" style="font-size:9px;padding:3px 8px;color:var(--m-muted);">DOI</button>
+        {% endif %}
+        <button onclick="dismissPaper({{ p.id }}, this)" title="Dismiss"
+                class="btn btn--ghost" style="font-size:9px;padding:3px 6px;color:var(--m-muted);">&times;</button>
+      </div>
+    </div>
+    {% endfor %}
+    {% if total > 10 %}
+    <div style="padding:8px 20px;text-align:center;font-family:var(--m-mono);font-size:9px;color:var(--m-muted);border-top:1px solid var(--m-rule-soft);">
+      + {{ total - 10 }} more papers
+    </div>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="panel" style="padding:20px 28px;">
+    <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);margin-bottom:8px;">
+      No new papers this {{ period }}. Scan runs every Monday, or click "Scan now".
+    </div>
+    {% if topics %}
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+      <span style="font-family:var(--m-mono);font-size:8.5px;color:var(--m-muted);margin-right:4px;">Your topics:</span>
+      {% for t in topics %}
+      <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.06em;padding:2px 7px;border-radius:var(--m-radius-pill);background:var(--m-surface-2);color:var(--m-muted);">{{ t.topic|truncate(30) }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>

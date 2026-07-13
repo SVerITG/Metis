@@ -1,11 +1,61 @@
 {#-
-  New Science — redesigned 2026-05-23
-  Goal: compact, scannable, two silos visually separated, abstracts on-demand.
+  Literature — Today surface, redesigned 2026-07-09
+  Goal: type-aware, visually scannable, status at a glance.
 -#}
 {% set zotero_items = items | selectattr("silo", "equalto", "zotero") | list %}
 {% set hat_items    = items | selectattr("silo", "equalto", "hat") | list %}
 {% set card_items   = items | selectattr("silo", "equalto", "card") | list %}
 {% set unread_count = zotero_items | rejectattr("is_read") | list | length %}
+
+{# ── Type icon macro ── #}
+{% macro type_icon(itype, size=13) %}
+{% set type_colors = {
+  'journalArticle': '#457b9d',
+  'book': '#6d6875',
+  'bookSection': '#9c6644',
+  'report': '#bc6c25',
+  'preprint': '#e76f51',
+  'thesis': '#2d6a4f',
+  'conferencePaper': '#7209b7'
+} %}
+{% set c = type_colors.get(itype, '#8d99ae') %}
+{% if itype == 'journalArticle' %}
+<svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" fill="none" stroke="{{ c }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h5"/></svg>
+{% elif itype == 'book' %}
+<svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" fill="none" stroke="{{ c }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/></svg>
+{% elif itype == 'bookSection' %}
+<svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" fill="none" stroke="{{ c }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 2v20"/></svg>
+{% elif itype == 'report' %}
+<svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" fill="none" stroke="{{ c }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v6h6"/></svg>
+{% elif itype == 'preprint' %}
+<svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" fill="none" stroke="{{ c }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+{% elif itype == 'thesis' %}
+<svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" fill="none" stroke="{{ c }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 3 3 6 3s6-1 6-3v-5"/></svg>
+{% elif itype == 'conferencePaper' %}
+<svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" fill="none" stroke="{{ c }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+{% else %}
+<svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" fill="none" stroke="{{ c }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+{% endif %}
+{% endmacro %}
+
+{% set type_labels = {
+  'journalArticle': 'Article',
+  'book': 'Book',
+  'bookSection': 'Chapter',
+  'report': 'Report',
+  'preprint': 'Preprint',
+  'thesis': 'Thesis',
+  'conferencePaper': 'Conference'
+} %}
+{% set type_colors = {
+  'journalArticle': '#457b9d',
+  'book': '#6d6875',
+  'bookSection': '#9c6644',
+  'report': '#bc6c25',
+  'preprint': '#e76f51',
+  'thesis': '#2d6a4f',
+  'conferencePaper': '#7209b7'
+} %}
 
 <div>
   <div class="sec-label" style="margin-bottom:8px;display:flex;align-items:baseline;gap:8px;">
@@ -23,7 +73,7 @@
   <div class="panel" style="overflow:hidden;">
 
     {% if not items %}
-      {# True empty state — Metis voice #}
+      {# True empty state #}
       <div style="padding:28px 22px;display:flex;gap:14px;align-items:flex-start;">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--m-muted)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.55;margin-top:2px;">
           <path d="M4 4h12a4 4 0 0 1 4 4v12"/><path d="M4 4v16h16"/><path d="M8 9h8M8 13h6"/>
@@ -44,21 +94,31 @@
         <span class="lib-group-count">{{ zotero_items|length }}</span>
       </div>
       {% for item in zotero_items %}
+      {% set icolor = type_colors.get(item.item_type, '#8d99ae') %}
       <div class="lib-row{% if item.is_read %} lib-row--read{% endif %}">
         <div class="lib-row-main">
+          {# Type icon #}
+          {{ type_icon(item.item_type) }}
           {% if item.url %}
             <a class="lib-row-title" href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title }}</a>
           {% else %}
             <span class="lib-row-title">{{ item.title }}</span>
           {% endif %}
-          <div class="lib-row-meta">
-            {% if item.authors %}<span class="lib-row-authors">{{ item.authors }}{% if item.year %} · {{ item.year }}{% endif %}</span>{% endif %}
-            {% if not item.is_read %}<span class="lib-chip lib-chip--unread">unread</span>{% endif %}
-            {% if item.age_label %}<span class="lib-row-age">{{ item.age_label }}</span>{% endif %}
-          </div>
+        </div>
+        <div class="lib-row-meta" style="padding-left:17px;">
+          {# Type badge #}
+          {% if item.item_type %}
+          <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;
+            padding:1px 6px;border-radius:var(--m-radius-pill,10px);
+            background:color-mix(in srgb, {{ icolor }} 12%, transparent);
+            color:{{ icolor }};">{{ type_labels.get(item.item_type, item.item_type) | upper }}</span>
+          {% endif %}
+          {% if item.authors %}<span class="lib-row-authors">{{ item.authors }}{% if item.year %} · {{ item.year }}{% endif %}</span>{% endif %}
+          {% if not item.is_read %}<span class="lib-chip lib-chip--unread">unread</span>{% endif %}
+          {% if item.age_label %}<span class="lib-row-age">{{ item.age_label }}</span>{% endif %}
         </div>
         {% if item.abstract %}
-        <details class="lib-row-abstract-details">
+        <details class="lib-row-abstract-details" style="padding-left:17px;">
           <summary class="lib-row-abstract-toggle">show abstract</summary>
           <div class="lib-row-abstract">{{ item.abstract }}{% if item.abstract|length >= 199 %}…{% endif %}</div>
         </details>
@@ -79,13 +139,20 @@
       {% for item in hat_items %}
       <div class="lib-row">
         <div class="lib-row-main">
+          {# PDF icon for domain corpus #}
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--m-warn, #b45309)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+            <path d="M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v6h6"/>
+          </svg>
           <span class="lib-row-title">{{ item.title }}</span>
-          <div class="lib-row-meta">
-            {% if item.domain %}<span class="lib-row-domain">{{ item.domain }}</span>{% endif %}
-          </div>
+        </div>
+        <div class="lib-row-meta" style="padding-left:17px;">
+          <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;
+            padding:1px 6px;border-radius:var(--m-radius-pill,10px);
+            background:rgba(180,83,9,0.08);color:var(--m-warn, #b45309);">CORPUS</span>
+          {% if item.domain %}<span class="lib-row-domain">{{ item.domain }}</span>{% endif %}
         </div>
         {% if item.abstract %}
-        <details class="lib-row-abstract-details">
+        <details class="lib-row-abstract-details" style="padding-left:17px;">
           <summary class="lib-row-abstract-toggle">show notes</summary>
           <div class="lib-row-abstract">{{ item.abstract }}</div>
         </details>
@@ -106,14 +173,21 @@
       {% for item in card_items %}
       <div class="lib-row">
         <div class="lib-row-main">
+          {# Note icon for cards #}
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--m-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h7M7 16h4"/>
+          </svg>
           <span class="lib-row-title">{{ item.title }}</span>
-          <div class="lib-row-meta">
-            {% if item.domain %}<span class="lib-row-domain">{{ item.domain }}</span>{% endif %}
-            {% if item.card_type %}<span class="lib-row-domain">{{ item.card_type }}</span>{% endif %}
-          </div>
+        </div>
+        <div class="lib-row-meta" style="padding-left:17px;">
+          <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;
+            padding:1px 6px;border-radius:var(--m-radius-pill,10px);
+            background:rgba(141,153,174,0.08);color:var(--m-muted);">NOTE</span>
+          {% if item.domain %}<span class="lib-row-domain">{{ item.domain }}</span>{% endif %}
+          {% if item.card_type %}<span class="lib-row-domain">{{ item.card_type }}</span>{% endif %}
         </div>
         {% if item.content %}
-        <details class="lib-row-abstract-details">
+        <details class="lib-row-abstract-details" style="padding-left:17px;">
           <summary class="lib-row-abstract-toggle">show note</summary>
           <div class="lib-row-abstract">{{ item.content }}</div>
         </details>
@@ -175,7 +249,7 @@
 .lib-row-main {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 .lib-row-title {
@@ -196,6 +270,7 @@
   font-size: 11px;
   color: var(--m-muted);
   flex-wrap: wrap;
+  margin-top: 3px;
 }
 .lib-row-authors {
   font-style: italic;

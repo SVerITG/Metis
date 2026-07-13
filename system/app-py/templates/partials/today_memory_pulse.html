@@ -1,0 +1,69 @@
+{# today_memory_pulse.html — 8-week memory creation heatmap.
+   Context: weeks (list of dicts), total (int), peak (dict), trend (str). #}
+{% if weeks and total > 0 %}
+<div id="memory-pulse" style="margin-bottom:28px;">
+  <div class="sec-label" style="margin-bottom:12px;">
+    <span>Memory pulse</span>
+    <span class="tail">
+      {{ total }} MEMORIES &middot; 8 WEEKS &middot;
+      {% if trend == 'rising' %}RISING &#9650;{% elif trend == 'cooling' %}COOLING &#9660;{% else %}STEADY &#9644;{% endif %}
+    </span>
+  </div>
+  <div class="panel" style="padding:18px 24px;">
+    {# Heatmap grid #}
+    <div style="display:flex;align-items:end;gap:6px;margin-bottom:12px;">
+      {% for w in weeks %}
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        {# Bar #}
+        <div style="width:100%;border-radius:3px 3px 0 0;transition:height .3s;
+          height:{% if w.total == 0 %}4{% elif w.total <= 3 %}16{% elif w.total <= 8 %}28{% elif w.total <= 20 %}44{% else %}60{% endif %}px;
+          background:{% if w.intensity == 0 %}var(--m-surface-3){% elif w.intensity == 1 %}var(--m-accent-wash-2){% elif w.intensity == 2 %}var(--m-accent-soft){% elif w.intensity == 3 %}var(--m-accent){% else %}var(--m-accent-hover){% endif %};
+          position:relative;"
+          title="{{ w.date_range }}: {{ w.total }} memories">
+          {% if w.total > 0 %}
+          <span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ w.total }}</span>
+          {% endif %}
+        </div>
+        {# Label #}
+        <span style="font-family:var(--m-mono);font-size:7.5px;letter-spacing:0.1em;color:var(--m-muted-soft);">{{ w.label }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# Breakdown legend (only show types that appeared) #}
+    {% set all_types = {} %}
+    {% for w in weeks %}
+      {% for typ, count in w.by_type.items() %}
+        {% if typ not in all_types %}{% if all_types.update({typ: count}) %}{% endif %}{% else %}{% if all_types.update({typ: all_types[typ] + count}) %}{% endif %}{% endif %}
+      {% endfor %}
+    {% endfor %}
+    {% if all_types %}
+    <div style="display:flex;flex-wrap:wrap;gap:12px;padding-top:10px;border-top:1px solid var(--m-rule-soft);">
+      {% set type_colors = {
+        'decision': '#2d6a4f',
+        'agent_run': '#457b9d',
+        'note': '#6d6875',
+        'consolidated_decisions': '#bc6c25',
+        'consolidated_reflexions': '#bc6c25',
+        'session': '#7b2cbf',
+        'semantic': '#e76f51',
+        'other': '#8d99ae'
+      } %}
+      {% for typ, count in all_types.items() %}
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span style="width:8px;height:8px;border-radius:2px;background:{{ type_colors.get(typ, '#8d99ae') }};"></span>
+        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;color:var(--m-muted);">{{ typ|replace('_', ' ') }} ({{ count }})</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Peak callout #}
+    {% if peak and peak.total > 0 %}
+    <div style="margin-top:10px;font-family:var(--m-display);font-size:12px;color:var(--m-muted);font-style:italic;">
+      Peak: {{ peak.date_range }} ({{ peak.total }} memories)
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}

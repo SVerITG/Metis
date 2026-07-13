@@ -1,0 +1,54 @@
+{# today_resume_card.html — "Where we left off" first-class card.
+   Context: session (dict|None), agents (list), time_label (str), total_sessions (int), deeplink (str). #}
+{% if session %}
+<div id="today-resume-card" style="margin-bottom:28px;">
+  <div class="panel" style="padding:20px 28px;border-left:3px solid var(--m-accent);">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 1v6l4 2"/><circle cx="8" cy="8" r="7"/>
+      </svg>
+      <span style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">Where we left off</span>
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.08em;color:var(--m-muted);margin-left:4px;">{{ time_label }}</span>
+      {% if total_sessions > 1 %}
+      <button hx-get="/api/partial/today/all-sessions" hx-target="#resume-all-sessions-modal" hx-swap="innerHTML"
+              class="btn btn--ghost btn--caps" style="margin-left:auto;font-size:8.5px;padding:3px 10px;">
+        ALL SESSIONS ({{ total_sessions }})
+      </button>
+      {% endif %}
+    </div>
+    {% if session.summary %}
+    <div style="font-size:13.5px;color:var(--m-ink);line-height:1.6;margin-bottom:10px;">
+      {{ session.summary }}
+    </div>
+    {% endif %}
+    {% if session.decisions %}
+    <div style="margin-bottom:10px;">
+      {% for d in session.decisions %}
+      <div style="font-size:12px;color:var(--m-muted);line-height:1.5;">
+        <span style="color:var(--m-accent);margin-right:5px;">&#10003;</span>{{ d[:140] }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      {% if agents %}
+      {% for a in agents %}
+      <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.08em;padding:2px 8px;border-radius:var(--m-radius-pill);background:var(--m-accent-wash);color:var(--m-accent);">{{ a.agent_slug }}</span>
+      {% endfor %}
+      {% endif %}
+      {% if deeplink %}
+      <a href="{{ deeplink }}" target="_blank" rel="noopener"
+         class="btn btn--ghost btn--caps" style="margin-left:auto;font-size:8.5px;padding:4px 12px;text-decoration:none;">
+        <svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
+          <path d="M1 8l6-6v4c7 0 7 4 7 8-2-3-4-4-7-4v4z"/>
+        </svg>
+        Continue in Claude
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  <div id="resume-all-sessions-modal"></div>
+</div>
+{% else %}
+<div id="today-resume-card"></div>
+{% endif %}

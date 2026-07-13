@@ -1,0 +1,68 @@
+{# today_focus_memory.html — Focus cards enriched with memory depth indicators.
+   Context: items (list of dicts with item_type, item_id, title, subtitle, badge, badge_color, memory). #}
+<div id="today-focus">
+{% if items %}
+  <div class="sec-label" style="margin-bottom:14px;">
+    <span>Today's focus</span>
+    <span class="tail">STAR A TASK TO PIN IT HERE</span>
+  </div>
+  <div class="grid grid-3" style="margin-bottom:32px;">
+    {% for item in items %}
+    <div class="panel" style="padding:16px 20px;position:relative;">
+      {# Dismiss button #}
+      <button type="button"
+              hx-post="/api/today/focus/dismiss"
+              hx-vals='{"item_type": "{{ item.item_type }}", "item_id": "{{ item.item_id }}"}'
+              hx-target="#today-focus"
+              hx-swap="outerHTML"
+              hx-headers='{"Content-Type": "application/json"}'
+              style="position:absolute;top:8px;right:10px;border:0;background:transparent;font-size:14px;color:var(--m-muted);cursor:pointer;line-height:1;padding:2px 4px;opacity:0.5;"
+              title="Dismiss for today"
+              onmouseover="this.style.opacity='1';this.style.color='var(--m-ink)'"
+              onmouseout="this.style.opacity='0.5';this.style.color='var(--m-muted)'">&times;</button>
+      {# Badge row — type badge + memory depth #}
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+        <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;padding:2px 8px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, {{ item.badge_color }} 15%, transparent);color:{{ item.badge_color }};">{{ item.badge }}</span>
+        {% if item.subtitle %}
+        <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;color:var(--m-muted);">{{ item.subtitle }}</span>
+        {% endif %}
+        {# Memory depth badge #}
+        {% if item.memory %}
+        {% set mem = item.memory %}
+        <span style="margin-left:auto;display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:2px 7px;border-radius:var(--m-radius-pill);
+          background:{% if mem.level == 'deep' %}rgba(45,106,79,0.12){% elif mem.level == 'moderate' %}rgba(69,123,157,0.1){% else %}rgba(141,153,174,0.1){% endif %};
+          color:{% if mem.level == 'deep' %}#2d6a4f{% elif mem.level == 'moderate' %}#457b9d{% else %}#8d99ae{% endif %};"
+          title="{{ mem.total }} related memories across {{ mem.layers|length }} layers">
+          <span style="width:5px;height:5px;border-radius:50%;
+            background:{% if mem.level == 'deep' %}#2d6a4f{% elif mem.level == 'moderate' %}#457b9d{% else %}#8d99ae{% endif %};"></span>
+          {{ mem.total }}
+        </span>
+        {% endif %}
+      </div>
+      {# Title #}
+      <div style="font-family:var(--m-display);font-size:14px;line-height:1.4;color:var(--m-ink);padding-right:16px;">{{ item.title }}</div>
+      {# Memory context hint (for deep items) #}
+      {% if item.memory and item.memory.level == 'deep' %}
+      <div style="margin-top:6px;font-family:var(--m-mono);font-size:8.5px;color:var(--m-muted);letter-spacing:0.04em;">
+        Deep context &middot; ready to pick up
+      </div>
+      {% elif item.memory and item.memory.level == 'shallow' %}
+      <div style="margin-top:6px;font-family:var(--m-mono);font-size:8.5px;color:var(--m-muted-soft);letter-spacing:0.04em;">
+        Shallow context &middot; may need ramp-up
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="sec-label" style="margin-bottom:14px;">
+    <span>Today's focus</span>
+    <span class="tail">ALL CLEAR</span>
+  </div>
+  <div class="panel" style="padding:20px 28px;margin-bottom:32px;">
+    <div class="ed" style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">
+      No open tasks or active ideas right now. Star a task or capture an idea to fill this section.
+    </div>
+  </div>
+{% endif %}
+</div>

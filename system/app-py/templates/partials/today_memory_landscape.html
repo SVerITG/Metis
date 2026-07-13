@@ -1,0 +1,101 @@
+{# today_memory_landscape.html — Topic map: circles by memory density, colored by recency.
+   Context: topics (list), edges (list), projects (list), topics_json (str). #}
+{% if topics %}
+<div id="memory-landscape" style="margin-bottom:32px;">
+  <div class="sec-label" style="margin-bottom:12px;">
+    <span>Memory landscape</span>
+    <span class="tail">{{ topics|length }} TOPICS &middot; SIZED BY DEPTH &middot; COLORED BY FRESHNESS</span>
+  </div>
+  <div class="panel" style="padding:24px 28px;">
+
+    {# Topic bubble grid — CSS-only, no D3 needed for this view #}
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:20px;">
+      {% set max_count = topics[0].count if topics else 1 %}
+      {% set recency_colors = {
+        'fresh': '#2d6a4f',
+        'recent': '#457b9d',
+        'aging': '#bc6c25',
+        'stale': '#8d99ae'
+      } %}
+      {% set recency_bg = {
+        'fresh': 'rgba(45,106,79,0.12)',
+        'recent': 'rgba(69,123,157,0.1)',
+        'aging': 'rgba(188,108,37,0.1)',
+        'stale': 'rgba(141,153,174,0.08)'
+      } %}
+      {% for t in topics %}
+      {% set scale = (t.count / max_count) if max_count > 0 else 0.2 %}
+      {% set size = 40 + (scale * 60)|int %}
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+        width:{{ size }}px;height:{{ size }}px;
+        border-radius:50%;
+        background:{{ recency_bg.get(t.recency, 'rgba(141,153,174,0.08)') }};
+        border:2px solid {{ recency_colors.get(t.recency, '#8d99ae') }};
+        cursor:default;transition:transform .15s;position:relative;"
+        title="{{ t.name }}: {{ t.count }} memories, last seen {{ t.age_days }}d ago ({{ t.recency }})"
+        onmouseover="this.style.transform='scale(1.1)';this.style.zIndex='10'"
+        onmouseout="this.style.transform='scale(1)';this.style.zIndex='0'">
+        <span style="font-family:var(--m-mono);font-size:{% if size >= 80 %}10{% elif size >= 60 %}9{% else %}7.5{% endif %}px;
+          letter-spacing:0.06em;color:{{ recency_colors.get(t.recency, '#8d99ae') }};
+          text-align:center;line-height:1.2;max-width:{{ size - 8 }}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+          {{ t.name[:18] }}
+        </span>
+        <span style="font-family:var(--m-mono);font-size:{% if size >= 60 %}8{% else %}7{% endif %}px;color:var(--m-muted-soft);margin-top:1px;">{{ t.count }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    {# Legend #}
+    <div style="display:flex;flex-wrap:wrap;gap:16px;padding-top:14px;border-top:1px solid var(--m-rule-soft);">
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span style="width:10px;height:10px;border-radius:50%;border:2px solid #2d6a4f;background:rgba(45,106,79,0.12);"></span>
+        <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Fresh (&lt;7d)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span style="width:10px;height:10px;border-radius:50%;border:2px solid #457b9d;background:rgba(69,123,157,0.1);"></span>
+        <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Recent (&lt;30d)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span style="width:10px;height:10px;border-radius:50%;border:2px solid #bc6c25;background:rgba(188,108,37,0.1);"></span>
+        <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Aging (&lt;90d)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;">
+        <span style="width:10px;height:10px;border-radius:50%;border:2px solid #8d99ae;background:rgba(141,153,174,0.08);"></span>
+        <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Stale (&gt;90d)</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;margin-left:auto;">
+        <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Size = memory count</span>
+      </div>
+    </div>
+
+    {# Project memory depth (if we have projects) #}
+    {% if projects %}
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--m-rule-soft);">
+      <div style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:10px;">PROJECT MEMORY DEPTH</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        {% for p in projects %}
+        {% set mem = p.memory %}
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="width:6px;height:6px;border-radius:50%;flex-shrink:0;
+            background:{% if mem.level == 'deep' %}#2d6a4f{% elif mem.level == 'moderate' %}#457b9d{% else %}#8d99ae{% endif %};"></span>
+          <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ p.title }}</span>
+          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;
+            color:{% if mem.level == 'deep' %}#2d6a4f{% elif mem.level == 'moderate' %}#457b9d{% else %}#8d99ae{% endif %};">
+            {{ mem.total }} memories &middot; {{ mem.level }}
+          </span>
+          {# Mini bar #}
+          {% set bar_width = ((mem.total / 50) * 100)|int %}
+          {% if bar_width > 100 %}{% set bar_width = 100 %}{% endif %}
+          {% if bar_width < 4 %}{% set bar_width = 4 %}{% endif %}
+          <div style="width:60px;height:4px;background:var(--m-surface-3);border-radius:2px;flex-shrink:0;">
+            <div style="width:{{ bar_width }}%;height:100%;border-radius:2px;
+              background:{% if mem.level == 'deep' %}#2d6a4f{% elif mem.level == 'moderate' %}#457b9d{% else %}#8d99ae{% endif %};"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
