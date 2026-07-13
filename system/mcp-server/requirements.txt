@@ -1,4 +1,4 @@
-# Pinned from working venv — 2026-05-03
+# Pinned from working venv — 2026-07-13
 # Regenerate: pip freeze | grep -v metis-mcp-server > requirements.txt
 mcp==1.27.0
 pyyaml==6.0.3
@@ -16,7 +16,7 @@ sse-starlette==3.3.4
 pydantic==2.13.3
 pydantic-settings==2.14.0
 pydantic_core==2.46.3
-# Phase 5 — vector memory (fastembed moved to [embedding] optional; no GPU required)
+# Phase 5 — vector memory
 sqlite-vec==0.1.9
 onnxruntime==1.24.4
 tokenizers==0.22.2
@@ -27,11 +27,67 @@ pandas==3.0.2
 openpyxl==3.1.5
 pyreadstat==1.3.4
 numpy==2.4.4
+# Phase L — PDF knowledge indexing
+pymupdf==1.27.2.3
+pdfminer.six==20260107
 # Phase 8.8 — content scan
 feedparser==6.0.12
+# Phase 10 — Zotero/library connector
+pyzotero==1.11.1
+scikit-learn==1.8.0
+# Phase 12 — Claude API access
+anthropic==0.116.0
 # Optional integrations
 google-genai==1.73.1
 twilio==9.10.5
+# Embedding extra
+fastembed==0.8.0
+# Library extra (PaperQA2)
+paper-qa==2026.3.18
+paper-qa-pypdf==2026.3.18
+# Voice extra — transcription + speaker ID
+faster-whisper==1.2.1
+Resemblyzer==0.1.4
+soundfile==0.14.0
+# Diarization (pyannote + torch audio)
+pyannote-audio==4.0.7
+pyannote-core==6.0.1
+pyannote-database==6.1.1
+pyannote-metrics==4.1
+pyannote-pipeline==4.0.0
+torchaudio==2.11.0
+# PyTorch + CUDA (GPU inference)
+torch==2.12.0
+torchvision==0.27.0
+# OCR extra
+pillow==12.2.0
+# Document processing
+beautifulsoup4==4.14.3
+python-docx==1.2.0
+python-pptx==1.0.2
+bibtexparser==1.4.4
+Markdown==3.10.2
+html2text==2025.4.15
+# Docling (advanced document parsing)
+docling==2.94.0
+docling-core==2.76.0
+docling-ibm-models==3.13.2
+docling-parse==5.11.0
+# LiteLLM (multi-model routing)
+litellm==1.83.10
+openai==2.24.0
+tiktoken==0.12.0
+# Tree-sitter (code analysis)
+tree-sitter==0.25.2
+tree-sitter-python==0.25.0
+# Audio processing
+librosa==0.11.0
+webrtcvad==2.0.10
+# ML / transformers
+transformers==5.8.1
+safetensors==0.7.0
+huggingface_hub==1.15.0
+accelerate==1.13.0
 # Transitive (keep pinned for reproducibility)
 annotated-types==0.7.0
 certifi==2026.2.25
@@ -48,3 +104,21 @@ sniffio==1.3.1
 typing_extensions==4.15.0
 urllib3==2.6.3
 websockets==16.0
+packaging==25.0
+setuptools==81.0.0
+filelock==3.29.0
+fsspec==2026.4.0
+regex==2026.5.9
+tqdm==4.67.3
+scipy==1.17.1
+joblib==1.5.3
+networkx==3.6.1
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+orjson==3.11.9
+psutil==7.2.2
+python-dateutil==2.9.0.post0
+six==1.17.0
+sortedcontainers==2.4.0
+tabulate==0.10.0
+threadpoolctl==3.6.0

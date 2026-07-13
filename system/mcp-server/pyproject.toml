@@ -54,15 +54,24 @@ library = ["paper-qa>=5.0"]
 # NOT PaddleOCR (which pulls a full DL framework). Also needs the system binary:
 #   Ubuntu: sudo apt install tesseract-ocr   ·   macOS: brew install tesseract
 ocr = ["pytesseract>=0.3.10", "pillow>=10.0"]
-# Voice capture — faster-whisper for local transcription (no GPU needed).
-# resemblyzer removed: it requires PyTorch GPU and is not used in any tool.
+# Voice capture — faster-whisper for local transcription, resemblyzer for speaker
+# identification (GE2E voice embeddings). GPU optional but accelerates both.
 voice = [
     "faster-whisper>=1.0",
+    "resemblyzer>=0.1.3",
     "sounddevice>=0.4",
     "numpy>=1.24",
     "scipy>=1.10",
     "soundfile>=0.12",
 ]
+# Speaker diarization — requires a gated HuggingFace model (HF_TOKEN needed).
+# Not installed by default; add with: pip install -e ".[diarization]"
+diarization = [
+    "torchaudio>=2.0",
+    "pyannote.audio>=4.0",
+]
+# Voxtral cloud transcription backend — requires MISTRAL_API_KEY env var.
+# No extra pip deps; uses httpx (already a core dependency).
 
 [project.scripts]
 metis-mcp = "metis_mcp.server:run"
