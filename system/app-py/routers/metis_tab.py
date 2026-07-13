@@ -375,6 +375,93 @@ async def identity_rename(request: Request):
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
 
 
+# ── Persona settings ──────────────────────────────────────────────────────
+
+_PERSONA_KEYS = {
+    "warmth":             {"warm", "neutral", "formal"},
+    "response_length":    {"concise", "moderate", "detailed"},
+    "feedback_style":     {"gentle", "direct", "challenging"},
+    "challenge_level":    {"supportive", "balanced", "rigorous"},
+    "detail_level":       {"brief", "balanced", "thorough"},
+    "routing_verbosity":  {"silent", "natural", "detailed"},
+}
+
+_PERSONA_DEFAULTS = {
+    "warmth": "warm",
+    "response_length": "concise",
+    "feedback_style": "gentle",
+    "challenge_level": "balanced",
+    "detail_level": "balanced",
+    "routing_verbosity": "natural",
+}
+
+
+def _load_persona() -> dict:
+    """Load persona settings from user-config.yaml (style: block) + user-preferences.json overlay."""
+    persona = dict(_PERSONA_DEFAULTS)
+    # 1. YAML base
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    yaml_path = Path(rc_root) / "system" / "config" / "user-config.yaml" if rc_root else None
+    if yaml_path and yaml_path.exists():
+        try:
+            import yaml
+            cfg = yaml.safe_load(yaml_path.read_text(encoding="utf-8")) or {}
+            raw = cfg.get("style") or {}
+            if isinstance(raw, dict):
+                for k in _PERSONA_KEYS:
+                    if k in raw and raw[k] in _PERSONA_KEYS[k]:
+                        persona[k] = raw[k]
+        except Exception:
+            pass
+    # 2. JSON overlay (persona_* keys take precedence)
+    prefs = _read_user_prefs()
+    for k in _PERSONA_KEYS:
+        pkey = f"persona_{k}"
+        val = prefs.get(pkey) or prefs.get(k)
+        if val and val in _PERSONA_KEYS[k]:
+            persona[k] = val
+    return persona
+
+
+@router.get("/api/partial/metis/persona", response_class=HTMLResponse)
+async def metis_persona(request: Request):
+    """Persona settings panel — warmth, length, feedback style, etc."""
+    persona = _load_persona()
+    return templates.TemplateResponse(
+        request,
+        "partials/metis_persona.html",
+        {"persona": persona},
+    )
+
+
+@router.post("/api/metis/persona", response_class=HTMLResponse)
+async def set_persona(request: Request):
+    """Save a single persona setting and re-render the panel."""
+    try:
+        payload = await request.form()
+        key = payload.get("key", "").strip()
+        value = payload.get("value", "").strip()
+    except Exception:
+        key, value = "", ""
+    if key not in _PERSONA_KEYS or value not in _PERSONA_KEYS.get(key, set()):
+        return HTMLResponse("<div class='metis-note' style='color:var(--m-alert);'>Unknown setting.</div>", status_code=400)
+    # Save to user-preferences.json (persona_* namespace)
+    prefs = _read_user_prefs()
+    prefs[f"persona_{key}"] = value
+    prefs[f"persona_{key}_set_at"] = datetime.datetime.now().isoformat()
+    try:
+        _write_user_prefs(prefs)
+    except Exception:
+        pass
+    # Re-render the full panel with updated values
+    persona = _load_persona()
+    return templates.TemplateResponse(
+        request,
+        "partials/metis_persona.html",
+        {"persona": persona},
+    )
+
+
 @router.get("/api/partial/metis/memory-stream", response_class=HTMLResponse)
 async def metis_memory_stream(
     request: Request,

@@ -43,7 +43,7 @@
   </div>
   {% if not any_runs and all_tokens_zero %}
     <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);padding:4px 0 10px;">
-      No agent runs yet. Start one with <code style="font-family:var(--m-mono);font-size:10px;">/metis</code> in Claude Code — activity will appear here.
+      No activity yet. Start with <code style="font-family:var(--m-mono);font-size:10px;">/metis</code> in Claude Code — activity will appear here.
     </div>
   {% else %}
     <div class="token-day-strip">
@@ -67,7 +67,7 @@
 
 <div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
-    <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">By agent</div>
+    <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">By specialist</div>
     <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">LAST {{ days }}D · TOP 12</span>
   </div>
   {% if by_agent %}
@@ -84,7 +84,7 @@
     </div>
     {% endfor %}
   {% else %}
-    <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:6px 0;">No agent runs in the last {{ days }} days.</div>
+    <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:6px 0;">No activity in the last {{ days }} days.</div>
   {% endif %}
 </div>
 
