@@ -424,8 +424,8 @@
         <!-- MCP toggle button -->
         <button id="mcp-toggle-btn"
                 onclick="mcpToggle()"
-                aria-label="Metis MCP tools — click to reconnect if offline"
-                title="Metis MCP tools — click to reconnect if offline"
+                aria-label="Metis connection — click to reconnect if offline"
+                title="Metis connection — click to reconnect if offline"
                 style="display:inline-flex;align-items:center;gap:6px;
                        background:none;border:1px solid var(--m-rule);border-radius:2px;
                        padding:4px 10px;font-family:var(--m-mono);font-size:9px;
@@ -433,7 +433,7 @@
                        color:var(--m-muted);cursor:pointer;
                        transition:border-color .15s,color .15s;">
           <span id="mcp-dot" style="width:6px;height:6px;border-radius:50%;background:var(--m-rule);flex-shrink:0;transition:background .3s;"></span>
-          <span id="mcp-label">MCP</span>
+          <span id="mcp-label">Connected</span>
           <!-- Hidden compat refs -->
           <button id="mcp-reconnect-btn" style="display:none;" onclick="mcpReconnect()"></button>
         </button>
@@ -485,7 +485,7 @@
         <div class="t-trust"
              hx-get="/api/trust-badge"
              hx-trigger="load, every 60s"
-             hx-swap="innerHTML">Data stays local</div>
+             hx-swap="innerHTML">Metis · online</div>
 
       </div>
     </div><!-- /.topbar -->
