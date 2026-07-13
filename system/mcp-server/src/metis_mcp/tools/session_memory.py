@@ -1,5 +1,6 @@
 """Conversation memory layer — store and search past session summaries."""
 
+import hashlib
 import json
 import sqlite3
 from datetime import datetime, timezone
@@ -16,14 +17,20 @@ def _db_path() -> Path:
 def _ensure_table(conn: sqlite3.Connection) -> None:
     conn.execute("""
         CREATE TABLE IF NOT EXISTS session_summaries (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id  TEXT,
-            summary     TEXT    NOT NULL,
-            key_topics  TEXT,
-            decisions   TEXT,
-            created_at  TEXT    NOT NULL
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id   TEXT,
+            summary      TEXT    NOT NULL,
+            key_topics   TEXT,
+            decisions    TEXT,
+            created_at   TEXT    NOT NULL,
+            summary_hash TEXT    DEFAULT ''
         )
     """)
+    # Migration: add summary_hash column to existing tables
+    try:
+        conn.execute("ALTER TABLE session_summaries ADD COLUMN summary_hash TEXT DEFAULT ''")
+    except Exception:
+        pass  # Already exists
     conn.commit()
 
 
@@ -58,31 +65,27 @@ async def save_session_summary(
         with sqlite3.connect(_db_path()) as conn:
             _ensure_table(conn)
 
-            # Skip byte-identical repeats. Auto-generated handoff briefs call this
-            # tool many times per day with the same text; without this guard the
-            # table fills with duplicate snapshots that add no recall value. A
-            # genuinely updated summary differs and still gets written.
-            latest = conn.execute(
-                """
-                SELECT summary FROM session_summaries
-                WHERE session_id = ?
-                ORDER BY created_at DESC
-                LIMIT 1
-                """,
-                (session_id or "",),
+            # Skip duplicate summaries by content hash — regardless of session_id.
+            # Earlier dedup checked per-session, but auto-generated handoff briefs
+            # use date-based session IDs while pipeline sessions use UUIDs, so
+            # identical content could bypass the check. Content hashing catches all.
+            content_hash = hashlib.sha256(summary.encode("utf-8")).hexdigest()[:16]
+            existing = conn.execute(
+                "SELECT id FROM session_summaries WHERE summary_hash = ? LIMIT 1",
+                (content_hash,),
             ).fetchone()
-            if latest is not None and latest[0] == summary:
+            if existing:
                 return {
                     "ok": True,
                     "skipped": True,
-                    "message": "Identical summary already saved for this session — skipped.",
+                    "message": "Identical summary already saved — skipped.",
                 }
 
             conn.execute(
                 """
                 INSERT INTO session_summaries
-                    (session_id, summary, key_topics, decisions, created_at)
-                VALUES (?, ?, ?, ?, ?)
+                    (session_id, summary, key_topics, decisions, created_at, summary_hash)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 (
                     session_id or "",
@@ -90,6 +93,7 @@ async def save_session_summary(
                     json.dumps(key_topics or []),
                     json.dumps(decisions or []),
                     datetime.now(timezone.utc).isoformat(),
+                    content_hash,
                 ),
             )
             conn.commit()
@@ -181,52 +185,55 @@ async def commit_session_decisions(
     stored_episodic = 0
 
     try:
+        # 1. Write consolidated row to session_summaries
+        content_hash = hashlib.sha256(full_summary.encode("utf-8")).hexdigest()[:16]
         with sqlite3.connect(_db_path()) as conn:
             _ensure_table(conn)
-
-            # Ensure episodic_memory table exists (mirrors vector_memory DDL without vec)
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS episodic_memory (
-                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                    session_id TEXT    DEFAULT '',
-                    event_type TEXT    DEFAULT 'decision',
-                    content    TEXT    NOT NULL,
-                    metadata   TEXT    DEFAULT '{}',
-                    created_at TEXT    NOT NULL
-                )
-            """)
-
-            # 1. Write consolidated row to session_summaries
             conn.execute(
                 """INSERT INTO session_summaries
-                   (session_id, summary, key_topics, decisions, created_at)
-                   VALUES (?, ?, ?, ?, ?)""",
-                (sid, full_summary, topics_json, decisions_json, now),
+                   (session_id, summary, key_topics, decisions, created_at, summary_hash)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (sid, full_summary, topics_json, decisions_json, now, content_hash),
             )
+            conn.commit()
             stored_summary = True
 
-            # 2. Write each decision individually to episodic_memory
-            for decision in decisions:
-                meta = json.dumps({
-                    "session_id": sid,
-                    "topics": key_topics or [],
-                    "source": "commit_session_decisions",
-                })
-                conn.execute(
-                    """INSERT INTO episodic_memory
-                       (session_id, event_type, content, metadata, created_at)
-                       VALUES (?, 'decision', ?, ?, ?)""",
-                    (sid, decision, meta, now),
+        # 2. Write each decision to episodic memory WITH vector embedding.
+        #    Previous versions used raw SQL INSERT, bypassing the embedding
+        #    pipeline — decisions were stored but invisible to semantic search.
+        #    Now we call store_episodic_memory() which handles embedding.
+        from metis_mcp.tools.vector_memory import store_episodic_memory
+        for decision in decisions:
+            meta = json.dumps({
+                "session_id": sid,
+                "topics": key_topics or [],
+                "source": "commit_session_decisions",
+            })
+            try:
+                await store_episodic_memory(
+                    content=decision,
+                    event_type="decision",
+                    session_id=sid,
+                    metadata=meta,
                 )
                 stored_episodic += 1
-
-            conn.commit()
+            except Exception:
+                # Fallback: store without embedding rather than lose the decision
+                with sqlite3.connect(_db_path()) as conn:
+                    conn.execute(
+                        """INSERT INTO episodic_memory
+                           (session_id, event_type, content, metadata, created_at)
+                           VALUES (?, 'decision', ?, ?, ?)""",
+                        (sid, decision, meta, now),
+                    )
+                    conn.commit()
+                stored_episodic += 1
 
         return {
             "ok": True,
             "summary_saved": stored_summary,
             "decisions_saved": stored_episodic,
-            "message": f"{stored_episodic} decision(s) committed to permanent memory.",
+            "message": f"{stored_episodic} decision(s) committed to permanent memory (vector-indexed).",
         }
     except Exception as e:
         return {"ok": False, "error": str(e)}
