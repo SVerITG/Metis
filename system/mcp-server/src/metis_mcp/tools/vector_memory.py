@@ -441,6 +441,130 @@ async def get_working_memory(session_id: str = "") -> list[TextContent]:
         return [TextContent(type="text", text=f"Error reading working memory: {e}")]
 
 
+# ── Backfill / reindex missing vectors ────────────────────────────────────────
+
+@app.tool()
+async def reindex_memory(
+    layers: str = "episodic,semantic,procedural",
+    batch_size: int = 50,
+) -> list[TextContent]:
+    """Re-embed memory entries that are missing vector indexes.
+
+    Scans each requested layer for rows without a corresponding vector in the
+    vec_* table, generates embeddings, and inserts them. Safe to run repeatedly
+    — only processes gaps, never overwrites existing vectors.
+
+    Use this to recover from embedding failures, or after importing memories
+    via raw SQL. Can be scheduled nightly via APScheduler.
+
+    Args:
+        layers: Comma-separated layers to reindex: 'episodic', 'semantic',
+            'procedural' (default: all three).
+        batch_size: How many entries to embed per batch (default 50).
+            Lower values use less memory; higher values are faster.
+
+    Returns:
+        Summary of how many entries were reindexed per layer.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    requested = {l.strip() for l in layers.split(",") if l.strip()}
+
+    try:
+        from metis_mcp.embeddings import embed_document
+    except ImportError:
+        return [TextContent(type="text", text="fastembed not installed — cannot reindex.")]
+
+    stats: dict[str, dict] = {}
+
+    try:
+        with connect(paths.db) as conn:
+            _setup_tables(conn)
+
+            if "episodic" in requested:
+                missing = conn.execute(
+                    """SELECT e.id, e.content FROM episodic_memory e
+                       WHERE e.id NOT IN (SELECT rowid FROM vec_episodic)
+                       ORDER BY e.id"""
+                ).fetchall()
+                embedded = 0
+                for row in missing:
+                    try:
+                        vec = embed_document(row["content"][:2000])
+                        conn.execute(
+                            "INSERT INTO vec_episodic (rowid, embedding) VALUES (?, ?)",
+                            (row["id"], _encode_vec(vec)),
+                        )
+                        embedded += 1
+                        if embedded % batch_size == 0:
+                            conn.commit()
+                    except Exception:
+                        pass
+                conn.commit()
+                stats["episodic"] = {"missing": len(missing), "embedded": embedded}
+
+            if "semantic" in requested:
+                missing = conn.execute(
+                    """SELECT s.id, s.concept, s.definition FROM semantic_memory s
+                       WHERE s.id NOT IN (SELECT rowid FROM vec_semantic)
+                       ORDER BY s.id"""
+                ).fetchall()
+                embedded = 0
+                for row in missing:
+                    try:
+                        text = f"{row['concept']}: {row['definition']}"
+                        vec = embed_document(text[:2000])
+                        conn.execute(
+                            "INSERT INTO vec_semantic (rowid, embedding) VALUES (?, ?)",
+                            (row["id"], _encode_vec(vec)),
+                        )
+                        embedded += 1
+                        if embedded % batch_size == 0:
+                            conn.commit()
+                    except Exception:
+                        pass
+                conn.commit()
+                stats["semantic"] = {"missing": len(missing), "embedded": embedded}
+
+            if "procedural" in requested:
+                missing = conn.execute(
+                    """SELECT p.id, p.procedure_name, p.trigger_context, p.steps
+                       FROM procedural_memory p
+                       WHERE p.id NOT IN (SELECT rowid FROM vec_procedural)
+                       ORDER BY p.id"""
+                ).fetchall()
+                embedded = 0
+                for row in missing:
+                    try:
+                        text = f"{row['procedure_name']}. {row['trigger_context']}. {row['steps'][:500]}"
+                        vec = embed_document(text[:2000])
+                        conn.execute(
+                            "INSERT INTO vec_procedural (rowid, embedding) VALUES (?, ?)",
+                            (row["id"], _encode_vec(vec)),
+                        )
+                        embedded += 1
+                        if embedded % batch_size == 0:
+                            conn.commit()
+                    except Exception:
+                        pass
+                conn.commit()
+                stats["procedural"] = {"missing": len(missing), "embedded": embedded}
+
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error during reindex: {e}")]
+
+    lines = ["**Memory reindex complete:**\n"]
+    total_missing = 0
+    total_embedded = 0
+    for layer, s in stats.items():
+        lines.append(f"- **{layer}**: {s['embedded']}/{s['missing']} entries embedded")
+        total_missing += s["missing"]
+        total_embedded += s["embedded"]
+    lines.append(f"\nTotal: {total_embedded}/{total_missing} gaps filled.")
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
 # ── Unified semantic search (M5.8 — RRF retrieval) ───────────────────────────
 
 @app.tool()
