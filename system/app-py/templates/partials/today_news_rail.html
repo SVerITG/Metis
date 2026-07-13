@@ -1,148 +1,240 @@
-{# News surface — topic slipcases with Haiku summaries (C1+C3) #}
-<div class="today-news-rail" id="news-surface">
+{# News Dispatch — topic slipcases with AI summaries, redesigned 2026-07-10.
+   Context: slipcases, all_topics, active_topic, period, last_updated, total_topics, show_all_topics. #}
 
-  <!-- Header + controls -->
-  <div class="news-rail-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div class="caps-label caps-label-teal">Dispatch</div>
-      <div class="news-rail-updated">
-        {% if last_updated %}updated {{ last_updated }}{% else %}no scans yet{% endif %}
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-      <!-- Period selector -->
-      <div style="display:flex;gap:4px;">
-        <button class="btn btn--caps {% if period == 'week' %}btn--pri{% else %}btn--ghost{% endif %}"
-                style="padding:3px 9px;font-size:9px;"
-                hx-get="/api/partial/today/news-rail?period=week"
-                hx-target="#news-surface" hx-swap="outerHTML">Week</button>
-        <button class="btn btn--caps {% if period == 'month' %}btn--pri{% else %}btn--ghost{% endif %}"
-                style="padding:3px 9px;font-size:9px;"
-                hx-get="/api/partial/today/news-rail?period=month"
-                hx-target="#news-surface" hx-swap="outerHTML">Month</button>
-      </div>
-      <!-- Update summaries button -->
-      <button class="btn btn--sec btn--caps" style="padding:3px 10px;font-size:9px;"
-              onclick="updateNewsSummaries('{{ period }}')"
-              id="news-update-btn">
-        ✦ Update summaries
-      </button>
-    </div>
+{# ── Signal strength colors ── #}
+{% set signal_colors = {
+  'critical': '#dc2626',
+  'high': '#ea580c',
+  'medium': '#ca8a04',
+  'low': '#6b7280',
+  'routine': '#8d99ae'
+} %}
+{% set signal_bg = {
+  'critical': 'rgba(220,38,38,0.08)',
+  'high': 'rgba(234,88,12,0.06)',
+  'medium': 'rgba(202,138,4,0.05)',
+  'low': 'rgba(107,114,128,0.05)',
+  'routine': 'rgba(141,153,174,0.04)'
+} %}
+
+<div class="today-news-rail" id="news-surface" style="margin-bottom:32px;">
+
+  <!-- ── Section header ── -->
+  <div class="sec-label" style="margin-bottom:10px;">
+    <span>Dispatch</span>
+    <span class="tail">
+      {% if slipcases %}{{ slipcases | sum(attribute='count') }} SIGNALS{% endif %}
+      {% if last_updated %} · UPDATED {{ last_updated | upper }}{% endif %}
+    </span>
   </div>
 
-  <!-- Topic selector for targeted update -->
-  <div id="news-topic-selector" style="display:none;padding:10px 0 12px;">
-    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:6px;">SELECT TOPICS FOR SUMMARY UPDATE:</div>
-    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">
-      {% for topic in all_topics %}
-      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;
-                    font-family:var(--m-mono);font-size:10px;padding:2px 8px;
-                    border:1px solid var(--m-rule);border-radius:3px;
-                    background:var(--m-surface-2);">
-        <input type="checkbox" class="news-topic-cb" value="{{ topic }}" checked style="margin:0;"> {{ topic }}
-      </label>
+  <div class="panel" style="overflow:hidden;">
+
+    <!-- ── Controls bar ── -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+                padding:12px 18px;background:var(--m-surface-2);border-bottom:1px solid var(--m-rule-soft);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
+        </svg>
+        <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-ink);">
+          {% if period == 'week' %}THIS WEEK{% else %}THIS MONTH{% endif %}
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <!-- Period toggle -->
+        <div style="display:flex;border:1px solid var(--m-rule);border-radius:var(--m-radius);overflow:hidden;">
+          <button style="padding:4px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;border:none;cursor:pointer;
+                         background:{% if period == 'week' %}var(--m-accent){% else %}transparent{% endif %};
+                         color:{% if period == 'week' %}#fff{% else %}var(--m-muted){% endif %};"
+                  hx-get="/api/partial/today/news-rail?period=week"
+                  hx-target="#news-surface" hx-swap="outerHTML">WEEK</button>
+          <button style="padding:4px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;border:none;border-left:1px solid var(--m-rule);cursor:pointer;
+                         background:{% if period == 'month' %}var(--m-accent){% else %}transparent{% endif %};
+                         color:{% if period == 'month' %}#fff{% else %}var(--m-muted){% endif %};"
+                  hx-get="/api/partial/today/news-rail?period=month"
+                  hx-target="#news-surface" hx-swap="outerHTML">MONTH</button>
+        </div>
+        <!-- Update summaries -->
+        <button style="padding:4px 12px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+                       border:1px solid var(--m-accent);border-radius:var(--m-radius);cursor:pointer;
+                       background:transparent;color:var(--m-accent);transition:all 120ms;"
+                onmouseover="this.style.background='var(--m-accent)';this.style.color='#fff'"
+                onmouseout="this.style.background='transparent';this.style.color='var(--m-accent)'"
+                onclick="updateNewsSummaries('{{ period }}')"
+                id="news-update-btn">
+          ✦ UPDATE
+        </button>
+      </div>
+    </div>
+
+    <!-- Topic selector for targeted update (hidden by default) -->
+    <div id="news-topic-selector" style="display:none;padding:12px 18px;background:var(--m-surface-2);border-bottom:1px solid var(--m-rule-soft);">
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:8px;">SELECT TOPICS FOR SUMMARY UPDATE:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
+        {% for topic in all_topics %}
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;
+                      font-family:var(--m-mono);font-size:10px;padding:3px 10px;
+                      border:1px solid var(--m-rule);border-radius:100px;
+                      background:var(--m-surface);transition:all 120ms;"
+               onmouseover="this.style.borderColor='var(--m-accent)'"
+               onmouseout="this.style.borderColor='var(--m-rule)'">
+          <input type="checkbox" class="news-topic-cb" value="{{ topic }}" checked style="margin:0;accent-color:var(--m-accent);"> {{ topic }}
+        </label>
+        {% endfor %}
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button style="padding:5px 16px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
+                       border:none;border-radius:var(--m-radius);cursor:pointer;
+                       background:var(--m-accent);color:#fff;" onclick="runSummaryUpdate('{{ period }}')">GENERATE</button>
+        <button style="padding:5px 16px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
+                       border:1px solid var(--m-rule);border-radius:var(--m-radius);cursor:pointer;
+                       background:transparent;color:var(--m-muted);" onclick="document.getElementById('news-topic-selector').style.display='none'">Cancel</button>
+        <span id="news-summary-status" style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-left:8px;"></span>
+      </div>
+    </div>
+
+    <!-- ── Topic slipcases ── -->
+    {% if slipcases %}
+    <div style="padding:0;">
+      {% for sc in slipcases %}
+      {% set is_highlight = sc.topic.startswith('✦') %}
+      <div class="news-sc" style="border-bottom:1px solid var(--m-rule-soft);">
+
+        <!-- Slipcase header -->
+        <div onclick="toggleSlipcase(this)" style="display:flex;align-items:center;gap:10px;padding:12px 18px;cursor:pointer;user-select:none;transition:background 100ms;"
+             onmouseover="this.style.background='var(--m-surface-2)'"
+             onmouseout="this.style.background=''">
+          <svg class="slipcase-chevron" viewBox="0 0 10 10" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+               style="flex-shrink:0;color:var(--m-muted);transition:transform .2s;{% if sc.open %}transform:rotate(90deg);{% endif %}">
+            <polyline points="3 2 7 5 3 8"/>
+          </svg>
+          {# Topic icon #}
+          {% if is_highlight %}
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          {% else %}
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--m-muted)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+            <path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2Z"/>
+          </svg>
+          {% endif %}
+          <span style="font-family:var(--m-display);font-size:14px;font-weight:{% if is_highlight %}600{% else %}500{% endif %};
+                       color:{% if is_highlight %}var(--m-accent){% else %}var(--m-ink){% endif %};flex:1;">
+            {{ sc.topic }}
+          </span>
+          <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
+                       padding:2px 8px;border-radius:100px;
+                       background:{% if sc.count >= 10 %}rgba(45,106,79,0.1){% elif sc.count >= 5 %}rgba(69,123,157,0.08){% else %}var(--m-surface-3){% endif %};
+                       color:{% if sc.count >= 10 %}#2d6a4f{% elif sc.count >= 5 %}#457b9d{% else %}var(--m-muted){% endif %};">
+            {{ sc.count }}
+          </span>
+          {% if sc.age_label %}
+          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted-soft);">{{ sc.age_label }}</span>
+          {% endif %}
+        </div>
+
+        <!-- Slipcase body (collapsible) -->
+        <div class="news-slipcase-body" style="{% if not sc.open %}display:none;{% endif %}padding:0 18px 14px;">
+
+          {# AI summary #}
+          {% if sc.summary %}
+          <div style="margin-bottom:12px;padding:12px 16px;background:var(--m-surface-2);
+                      border-left:3px solid var(--m-accent);border-radius:0 var(--m-radius) var(--m-radius) 0;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+              <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-accent);">AI DIGEST</span>
+              {% if sc.summary_age %}<span style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);margin-left:4px;">{{ sc.summary_age }}</span>{% endif %}
+            </div>
+            <p style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.55;margin:0;">{{ sc.summary }}</p>
+          </div>
+          {% elif not is_highlight %}
+          <div style="margin-bottom:10px;padding:8px 14px;background:var(--m-surface-2);border-radius:var(--m-radius);
+                      font-family:var(--m-mono);font-size:10px;color:var(--m-muted);letter-spacing:0.04em;">
+            No summary yet — click ✦ UPDATE to generate.
+          </div>
+          {% endif %}
+
+          {# Articles #}
+          {% if sc['items'] %}
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            {% for item in sc['items'] %}
+            <a href="{{ item.source_url or item.url or '#' }}" target="_blank" rel="noopener"
+               style="text-decoration:none;display:block;padding:8px 12px;border-radius:var(--m-radius);transition:background 100ms;"
+               onmouseover="this.style.background='var(--m-surface-2)'"
+               onmouseout="this.style.background=''">
+              {# Meta row: time + signal badges #}
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
+                <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ item.time }}</span>
+                {% if item.match == 'top' %}
+                <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
+                             background:rgba(45,106,79,0.1);color:#2d6a4f;">
+                  <svg viewBox="0 0 16 16" width="8" height="8" fill="#2d6a4f" stroke="none" style="vertical-align:-1px;margin-right:2px;">
+                    <polygon points="8 1 10 6 16 6.5 11.5 10.5 13 16 8 13 3 16 4.5 10.5 0 6.5 6 6"/>
+                  </svg>
+                  YOUR WORK
+                </span>
+                {% elif item.match == 'yes' %}
+                <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
+                             background:rgba(69,123,157,0.08);color:#457b9d;">RELEVANT</span>
+                {% endif %}
+                {% if item.signal %}
+                <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
+                             background:{{ signal_bg.get(item.signal_class, 'var(--m-surface-3)') }};
+                             color:{{ signal_colors.get(item.signal_class, 'var(--m-muted)') }};">{{ item.signal }}</span>
+                {% endif %}
+              </div>
+              {# Title #}
+              <div style="font-family:var(--m-display);font-size:13.5px;color:var(--m-ink);line-height:1.4;font-weight:500;">{{ item.title }}</div>
+              {# Summary #}
+              {% if item.summary %}
+              <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);line-height:1.45;margin-top:3px;">{{ item.summary }}</div>
+              {% endif %}
+            </a>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);padding:6px 0;">
+            No articles in selected period.
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
       {% endfor %}
     </div>
-    <div style="display:flex;gap:6px;">
-      <button class="btn btn--primary btn--caps" style="padding:4px 12px;font-size:10px;" onclick="runSummaryUpdate('{{ period }}')">Generate</button>
-      <button class="btn btn--ghost btn--caps" style="padding:4px 12px;font-size:10px;" onclick="document.getElementById('news-topic-selector').style.display='none'">Cancel</button>
+
+    {# Show more topics button #}
+    {% if not show_all_topics|default(false) and total_topics|default(0) > slipcases|length %}
+    <div style="text-align:center;padding:14px 18px;border-top:1px solid var(--m-rule-soft);">
+      <button style="padding:6px 20px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;
+                     border:1px solid var(--m-rule);border-radius:100px;cursor:pointer;
+                     background:transparent;color:var(--m-muted);transition:all 120ms;"
+              onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
+              onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'"
+              hx-get="/api/partial/today/news-rail?period={{ period }}&all_topics=1"
+              hx-target="#news-surface" hx-swap="outerHTML">
+        SHOW ALL {{ total_topics }} TOPICS
+      </button>
     </div>
-    <div id="news-summary-status" style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-top:6px;min-height:16px;"></div>
-  </div>
+    {% endif %}
 
-  <!-- Topic slipcases -->
-  {% if slipcases %}
-  <div class="news-slipcases">
-    {% for sc in slipcases %}
-    <div class="news-slipcase" id="slipcase-{{ sc.topic | replace(' ','-') | lower }}">
-      <!-- Slipcase header (always visible) -->
-      <div class="news-slipcase-hd" onclick="toggleSlipcase(this)"
-           style="display:flex;align-items:center;gap:8px;padding:9px 0;cursor:pointer;
-                  border-bottom:1px solid var(--m-rule-soft);user-select:none;">
-        <svg class="slipcase-chevron" viewBox="0 0 10 10" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="flex-shrink:0;color:var(--m-muted);transition:transform .2s;{% if sc.open %}transform:rotate(90deg);{% endif %}">
-          <polyline points="3 2 7 5 3 8"/>
-        </svg>
-        <span style="font-family:var(--m-mono);font-size:10px;font-weight:700;letter-spacing:0.12em;color:var(--m-ink);">{{ sc.topic }}</span>
-        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ sc.count }}</span>
-        {% if sc.age_label %}
-        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted-soft);margin-left:auto;">{{ sc.age_label }}</span>
-        {% endif %}
-      </div>
-
-      <!-- Slipcase body (collapsible) -->
-      <div class="news-slipcase-body" style="{% if not sc.open %}display:none;{% endif %}padding-bottom:4px;">
-
-        <!-- AI summary -->
-        {% if sc.summary %}
-        <div style="margin:10px 0 8px;padding:10px 12px;background:var(--m-surface-2);
-                    border-left:2px solid var(--m-accent);border-radius:0 4px 4px 0;">
-          <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;
-                      color:var(--m-accent);margin-bottom:5px;">
-            ✦ AI DIGEST
-            {% if sc.summary_age %}<span style="color:var(--m-muted);margin-left:6px;">{{ sc.summary_age }}</span>{% endif %}
-          </div>
-          <p style="font-family:var(--m-sans);font-size:12.5px;color:var(--m-ink);
-                    line-height:1.55;margin:0;">{{ sc.summary }}</p>
-        </div>
-        {% else %}
-        <div style="margin:8px 0 6px;padding:8px 12px;background:var(--m-surface-2);
-                    border-radius:4px;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
-          No summary yet — click "Update summaries" to generate.
-        </div>
-        {% endif %}
-
-        <!-- Articles -->
-        {% if sc['items'] %}
-        <div style="margin-top:6px;">
-          {% for item in sc['items'] %}
-          <a class="news-rail-item" href="{{ item.source_url or item.url or '#' }}" target="_blank" rel="noopener"
-             style="text-decoration:none;display:block;">
-            <div class="news-rail-item-meta">
-              <span class="news-rail-item-time">{{ item.time }}</span>
-              {% if item.match == 'top' %}
-              <span class="news-rail-item-signal high" title="Close to your library, projects and interests">✦ your work</span>
-              {% elif item.match == 'yes' %}
-              <span class="news-rail-item-signal medium" title="Related to your work">✦ relevant</span>
-              {% endif %}
-              {% if item.signal %}
-              <span class="news-rail-item-signal {{ item.signal_class }}">{{ item.signal }}</span>
-              {% endif %}
-            </div>
-            <h4 class="news-rail-item-title">{{ item.title }}</h4>
-            {% if item.summary %}
-            <p class="news-rail-item-summary">{{ item.summary }}</p>
-            {% endif %}
-          </a>
-          {% endfor %}
-        </div>
-        {% else %}
-        <div class="news-rail-empty" style="font-size:11px;padding:8px 0;">
-          No articles in selected period.
-        </div>
-        {% endif %}
-
+    {% else %}
+    <!-- Empty state -->
+    <div style="padding:32px 24px;text-align:center;">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--m-muted)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.45;margin-bottom:10px;">
+        <path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2Z"/>
+      </svg>
+      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);margin-bottom:4px;">No news yet.</div>
+      <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);line-height:1.5;">
+        Run a content scan to populate the dispatch — ask me to <em>scan for news</em>, or set up the news aggregator feeds.
       </div>
     </div>
-    {% endfor %}
-  </div>
+    {% endif %}
 
-  {% if not show_all_topics|default(false) and total_topics|default(0) > slipcases|length %}
-  <div style="text-align:center;padding:12px 0 4px;">
-    <button class="btn btn--ghost btn--caps"
-            style="padding:5px 16px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;"
-            hx-get="/api/partial/today/news-rail?period={{ period }}&all_topics=1"
-            hx-target="#news-surface" hx-swap="outerHTML">
-      Show all {{ total_topics }} topics
-    </button>
   </div>
-  {% endif %}
-
-  {% else %}
-  <div class="news-rail-empty">
-    No news yet. Click <strong>Scan for content</strong> in the dateline to fetch feeds.
-  </div>
-  {% endif %}
-
 </div>
 
 <script>
@@ -169,7 +261,7 @@ async function runSummaryUpdate(period) {
   const btn = document.querySelector('[onclick*="runSummaryUpdate"]');
   if (!checks.length) { status.textContent = 'Select at least one topic.'; return; }
   status.style.color = 'var(--m-muted)';
-  status.textContent = `Generating summaries for ${checks.length} topic(s)…`;
+  status.textContent = 'Generating summaries for ' + checks.length + ' topic(s)…';
   if (btn) btn.disabled = true;
   try {
     const res = await fetch('/api/news/summarize', {
@@ -180,20 +272,18 @@ async function runSummaryUpdate(period) {
     const data = await res.json();
     if (data.ok) {
       status.style.color = 'var(--m-ok)';
-      status.textContent = `✓ ${data.generated} summaries generated`;
-      // Reload the news rail
-      setTimeout(() => {
-        const rail = document.getElementById('news-surface');
-        if (rail && window.htmx) htmx.trigger(rail, 'refresh');
-        else if (rail) {
-          htmx.ajax('GET', `/api/partial/today/news-rail?period=${period}`, {
+      status.textContent = '✓ ' + data.generated + ' summaries generated';
+      setTimeout(function() {
+        var rail = document.getElementById('news-surface');
+        if (rail && window.htmx) {
+          htmx.ajax('GET', '/api/partial/today/news-rail?period=' + period, {
             target: '#news-surface', swap: 'outerHTML'
           });
         }
       }, 1200);
     } else {
       status.style.color = 'var(--m-alert)';
-      status.textContent = `I couldn't generate that — ${data.error || 'something went wrong, try again'}`;
+      status.textContent = "Couldn't generate — " + (data.error || 'try again');
     }
   } catch(e) {
     status.style.color = 'var(--m-alert)';

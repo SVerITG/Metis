@@ -5,30 +5,54 @@
       <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M8 1v6l4 2"/><circle cx="8" cy="8" r="7"/>
       </svg>
-      <span class="session-strip-label">Last session</span>
+      <span class="session-strip-label">Where we left off</span>
       {% if session and session.date %}<span class="session-strip-meta">{{ session.date }}</span>{% endif %}
       {% if session and session.age_label %}<span class="session-strip-meta">· {{ session.age_label }} ago</span>{% endif %}
       {% if total_sessions %}
       <button hx-get="/api/partial/today/all-sessions" hx-target="#all-sessions-modal" hx-swap="innerHTML"
-              title="See what every past session worked on"
+              title="See everything you've worked on"
               class="btn btn--ghost btn--caps" style="margin-left:auto;font-size:8.5px;padding:3px 10px;">
         ALL SESSIONS ({{ total_sessions }})
       </button>
       {% endif %}
     </div>
 
+    {# ── Summary narrative — what the session was ABOUT ── #}
+    {% if session and session.summary %}
+    <div class="session-narrative" style="font-size:13px;color:var(--m-ink);line-height:1.55;margin:6px 0 4px;">
+      {{ session.summary }}
+    </div>
+    {% endif %}
+
+    {# ── Expandable detail — click to see everything that happened ── #}
     {% if did %}
-    <div class="session-did-label">What we worked on</div>
-    <ul class="session-did-list">
-      {% for d in did %}
-      <li class="session-did-item">
-        <span class="session-did-agent">{{ d.agent_slug }}</span>
-        <span>{{ d.task_summary[:150] }}{% if d.task_summary|length > 150 %}…{% endif %}</span>
-      </li>
-      {% endfor %}
-    </ul>
-    {% elif session and session.summary %}
-    <div style="font-size:13px;color:var(--m-ink);line-height:1.55;">{{ session.summary }}</div>
+    <details class="session-detail" style="margin:6px 0 0;">
+      <summary style="cursor:pointer;font-size:11px;color:var(--m-muted);text-transform:uppercase;letter-spacing:0.5px;user-select:none;">
+        ▸ What we worked on ({{ did|length }} items)
+      </summary>
+      <ul class="session-did-list" style="margin-top:6px;">
+        {% for d in did %}
+        <li class="session-did-item">
+          <span class="session-did-agent">{{ d.agent_slug }}</span>
+          <span>{{ d.task_summary }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+
+    {# ── Decisions / next steps ── #}
+    {% if session and session.decisions %}
+    <details class="session-detail" style="margin:4px 0 0;">
+      <summary style="cursor:pointer;font-size:11px;color:var(--m-muted);text-transform:uppercase;letter-spacing:0.5px;user-select:none;">
+        ▸ Decisions &amp; next steps ({{ session.decisions|length }})
+      </summary>
+      <ul style="margin:6px 0 0;padding-left:18px;font-size:12.5px;color:var(--m-ink);line-height:1.5;">
+        {% for d in session.decisions %}
+        <li style="margin-bottom:3px;">{{ d }}</li>
+        {% endfor %}
+      </ul>
+    </details>
     {% endif %}
 
     {% if session and session.topics %}

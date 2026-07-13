@@ -36,11 +36,17 @@
 
   {# ── Load strategy: stagger HTMX so the page doesn't waterfall skeletons.
        Wave 1 (immediate):  morning brief — the thing you read first.
+       Wave 1b (+50ms):     resume card — where we left off.
        Wave 2 (+100ms):     board boxes — outbreaks · events · funding.
-       Wave 3 (+200ms):     focus — actionable items.
-       Wave 4 (+300ms):     last session — what you were working on.
-       Wave 5 (+500ms):     dispatch: news — topic slipcases.
-       Wave 6 (+600ms):     dispatch: literature — new papers. -#}
+       Wave 2b (+150ms):    literature discovery — new papers in your field.
+       Wave 3 (+200ms):     focus (with memory depth + deadline nudges).
+       Wave 3b (+250ms):    learning nudge — course progress reminder.
+       Wave 4 (+300ms):     research threads — session narrative arcs.
+       Wave 5 (+400ms):     memory pulse — 8-week activity heatmap.
+       Wave 6 (+500ms):     brief bridges — memory connections to brief.
+       Wave 7 (+600ms):     dispatch: news — topic slipcases.
+       Wave 8 (+700ms):     memory landscape — topic depth map.
+       Wave 9 (+800ms):     system health footer. -#}
 
   <!-- ===== 2. Morning brief — full-width hero ===== -->
   <div hx-get="/api/partial/today/morning-brief"
@@ -53,6 +59,11 @@
       <div class="skeleton skeleton-bar w-70"  style="height:14px;"></div>
     </div>
   </div>
+
+  <!-- ===== 2b. Resume card — where we left off ===== -->
+  <div hx-get="/api/partial/today/resume-card"
+       hx-trigger="load delay:50ms"
+       hx-swap="outerHTML"></div>
 
   <!-- ===== 3. Board strip — Outbreaks · Events · Funding ===== -->
   <div class="board-strip" style="margin-bottom:32px;">
@@ -79,8 +90,13 @@
     </div>
   </div>
 
-  <!-- ===== 4. Today's Focus — merged dismissable cards ===== -->
-  <div hx-get="/api/partial/today/focus"
+  <!-- ===== 3b. Literature discovery — new papers in your field ===== -->
+  <div hx-get="/api/partial/today/literature-discovery"
+       hx-trigger="load delay:150ms"
+       hx-swap="outerHTML"></div>
+
+  <!-- ===== 4. Today's Focus — with memory depth + deadline nudges ===== -->
+  <div hx-get="/api/partial/today/focus-memory"
        hx-trigger="load delay:200ms"
        hx-swap="outerHTML">
     <div class="sec-label" style="margin-bottom:14px;"><span>Today's focus</span><span class="tail">LOADING</span></div>
@@ -89,25 +105,48 @@
     </div>
   </div>
 
-  <!-- ===== 4b. Last session — what you were working on ===== -->
-  <div hx-get="/api/partial/today/session-handoff"
+  <!-- ===== 4b. Learning nudge ===== -->
+  <div hx-get="/api/partial/today/learning-nudge"
+       hx-trigger="load delay:250ms"
+       hx-swap="outerHTML"></div>
+
+  <!-- ===== 5. Research threads — session narrative arcs ===== -->
+  <div hx-get="/api/partial/today/session-thread"
        hx-trigger="load delay:300ms"
        hx-swap="outerHTML"></div>
 
-  <!-- ===== 5. Dispatch — News + Literature ===== -->
-  <!-- 5a. News — topic slipcases -->
-  <div hx-get="/api/partial/today/news-rail"
-       hx-trigger="load delay:500ms"
-       hx-swap="outerHTML">
-    {{ skeleton_box(size="sm") }}
-  </div>
+  <!-- ===== 5b. Memory Pulse — 8-week heatmap ===== -->
+  <div hx-get="/api/partial/today/memory-pulse"
+       hx-trigger="load delay:400ms"
+       hx-swap="outerHTML"></div>
 
-  <!-- 5b. Literature — new papers from library -->
-  <div hx-get="/api/partial/today/library-archive"
+  <!-- ===== 5c. Brief Bridges — memory connections to today's brief ===== -->
+  <div hx-get="/api/partial/today/brief-bridges"
+       hx-trigger="load delay:500ms"
+       hx-swap="outerHTML"></div>
+
+  <!-- ===== 6. Dispatch — News ===== -->
+  <div hx-get="/api/partial/today/news-rail"
        hx-trigger="load delay:600ms"
        hx-swap="outerHTML">
-    {{ skeleton_box(size="sm") }}
+    <div class="sec-label" style="margin-bottom:10px;"><span>Dispatch</span><span class="tail">LOADING NEWS</span></div>
+    <div class="panel" style="padding:20px 24px;min-height:120px;">
+      <div class="skeleton skeleton-bar w-40" style="margin-bottom:14px;"></div>
+      <div class="skeleton skeleton-bar w-100" style="height:12px;margin-bottom:8px;"></div>
+      <div class="skeleton skeleton-bar w-80" style="height:12px;margin-bottom:8px;"></div>
+      <div class="skeleton skeleton-bar w-60" style="height:12px;"></div>
+    </div>
   </div>
+
+  <!-- ===== 7. Memory Landscape — topic depth map ===== -->
+  <div hx-get="/api/partial/today/memory-landscape"
+       hx-trigger="load delay:700ms"
+       hx-swap="outerHTML"></div>
+
+  <!-- ===== 8. System health footer ===== -->
+  <div hx-get="/api/partial/today/system-health"
+       hx-trigger="load delay:800ms"
+       hx-swap="outerHTML"></div>
 
 </div><!-- /.page -->
 
