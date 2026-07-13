@@ -129,5 +129,35 @@
     </div>
   </div>
 
+  <!-- ── Personal Knowledge Graph ── -->
+  <div style="margin-top:36px;">
+    <div hx-get="/api/partial/knowledge/graph"
+         hx-trigger="load delay:300ms"
+         hx-swap="outerHTML">
+      <div>
+        <div class="sec-label" style="margin-bottom:8px;">
+          <span>Personal Knowledge Graph</span>
+          <span class="tail">IDEAS · PAPERS · PROJECTS · CONNECTIONS</span>
+        </div>
+        <div class="panel skeleton skeleton-box" style="height:520px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Graphify Knowledge Analysis ── -->
+  <div style="margin-top:36px;">
+    <div hx-get="/api/partial/thinking/graphify-analytics"
+         hx-trigger="load delay:500ms"
+         hx-swap="outerHTML">
+      <div>
+        <div class="sec-label" style="margin-bottom:8px;">
+          <span>Graphify Knowledge Analysis</span>
+          <span class="tail">HUBS · BRIDGES · COMMUNITIES</span>
+        </div>
+        <div class="panel skeleton skeleton-box" style="height:280px;"></div>
+      </div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
