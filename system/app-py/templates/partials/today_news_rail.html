@@ -5,16 +5,16 @@
 {% set signal_colors = {
   'critical': 'var(--m-alert)',
   'high': '#ea580c',
-  'medium': '#ca8a04',
+  'medium': 'var(--m-chart-4)',
   'low': 'var(--m-muted)',
-  'routine': '#8d99ae'
+  'routine': 'var(--m-chart-8)'
 } %}
 {% set signal_bg = {
   'critical': 'rgba(220,38,38,0.08)',
   'high': 'rgba(234,88,12,0.06)',
   'medium': 'rgba(202,138,4,0.05)',
   'low': 'rgba(107,114,128,0.05)',
-  'routine': 'rgba(141,153,174,0.04)'
+  'routine': 'color-mix(in srgb, var(--m-chart-8) 4%, transparent)'
 } %}
 
 <div class="today-news-rail" id="news-surface" style="margin-bottom:32px;">
@@ -125,8 +125,8 @@
           </span>
           <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
                        padding:2px 8px;border-radius:100px;
-                       background:{% if sc.count >= 10 %}rgba(45,106,79,0.1){% elif sc.count >= 5 %}rgba(69,123,157,0.08){% else %}var(--m-surface-3){% endif %};
-                       color:{% if sc.count >= 10 %}#2d6a4f{% elif sc.count >= 5 %}#457b9d{% else %}var(--m-muted){% endif %};">
+                       background:{% if sc.count >= 10 %}color-mix(in srgb, var(--m-chart-2) 10%, transparent){% elif sc.count >= 5 %}color-mix(in srgb, var(--m-chart-1) 8%, transparent){% else %}var(--m-surface-3){% endif %};
+                       color:{% if sc.count >= 10 %}var(--m-chart-2){% elif sc.count >= 5 %}var(--m-chart-1){% else %}var(--m-muted){% endif %};">
             {{ sc.count }}
           </span>
           {% if sc.age_label %}
@@ -170,15 +170,15 @@
                 <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ item.time }}</span>
                 {% if item.match == 'top' %}
                 <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
-                             background:rgba(45,106,79,0.1);color:#2d6a4f;">
-                  <svg viewBox="0 0 16 16" width="8" height="8" fill="#2d6a4f" stroke="none" style="vertical-align:-1px;margin-right:2px;">
+                             background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
+                  <svg viewBox="0 0 16 16" width="8" height="8" fill="var(--m-chart-2)" stroke="none" style="vertical-align:-1px;margin-right:2px;">
                     <polygon points="8 1 10 6 16 6.5 11.5 10.5 13 16 8 13 3 16 4.5 10.5 0 6.5 6 6"/>
                   </svg>
                   YOUR WORK
                 </span>
                 {% elif item.match == 'yes' %}
                 <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
-                             background:rgba(69,123,157,0.08);color:#457b9d;">RELEVANT</span>
+                             background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">RELEVANT</span>
                 {% endif %}
                 {% if item.signal %}
                 <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;

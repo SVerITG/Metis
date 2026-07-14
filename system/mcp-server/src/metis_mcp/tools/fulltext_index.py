@@ -12,6 +12,7 @@ MCP tools:
 
 from __future__ import annotations
 
+import logging
 import os
 import re
 import sqlite3
@@ -19,7 +20,10 @@ from pathlib import Path
 
 from metis_mcp.app_instance import app
 from metis_mcp.config import paths
+from metis_mcp.tools.guardrails import sanitize_external
 from mcp.types import TextContent
+
+log = logging.getLogger("metis.fulltext_index")
 
 # ---------------------------------------------------------------------------
 # DB setup
@@ -61,33 +65,48 @@ def _extract_text(pdf_path: Path, max_chars: int = 4000) -> str | None:
     Routes through knowledge_db._extract_pages so it shares the OCR fallback for
     image-only / scanned PDFs (otherwise those index as blank in full-text search
     too). Falls back to a direct PyMuPDF read if that path is unavailable.
+
+    INGESTION CHOKEPOINT: this is the single exit through which all PDF text in
+    this module reaches the DB — both `library_fulltext.text_chunk` and, via
+    _match_to_metadata, `literature_metadata.abstract`. Everything returned here
+    is sanitised, so no unprobed PDF text can get past it.
     """
+    text: str | None = None
+
     # ── Preferred: the shared, OCR-enabled extractor ──
     try:
         from metis_mcp.tools.knowledge_db import _extract_pages
         pages, _ = _extract_pages(pdf_path)
         if pages:
-            text = re.sub(r"\s+", " ", " ".join(t for _, t in pages)).strip()
-            return text[:max_chars] or None
-    except Exception:
-        pass
+            text = re.sub(r"\s+", " ", " ".join(t for _, t in pages)).strip()[:max_chars] or None
+    except Exception as e:
+        log.warning("OCR-enabled extractor failed for %s (%s: %s) — falling back to PyMuPDF",
+                    pdf_path.name, type(e).__name__, e)
+
     # ── Fallback: direct PyMuPDF (no OCR) ──
-    try:
+    if text is None:
         try:
-            import pymupdf as fitz  # PyMuPDF >= 1.24
-        except ImportError:
-            import fitz  # PyMuPDF legacy
-        doc = fitz.open(str(pdf_path))
-        parts = []
-        for page in doc:
-            parts.append(page.get_text())
-            if sum(len(p) for p in parts) >= max_chars * 2:
-                break
-        doc.close()
-        text = re.sub(r"\s+", " ", " ".join(parts)).strip()
-        return text[:max_chars] or None
-    except Exception:
+            try:
+                import pymupdf as fitz  # PyMuPDF >= 1.24
+            except ImportError:
+                import fitz  # PyMuPDF legacy
+            doc = fitz.open(str(pdf_path))
+            parts = []
+            for page in doc:
+                parts.append(page.get_text())
+                if sum(len(p) for p in parts) >= max_chars * 2:
+                    break
+            doc.close()
+            text = re.sub(r"\s+", " ", " ".join(parts)).strip()[:max_chars] or None
+        except Exception as e:
+            log.warning("PDF text extraction failed for %s: %s: %s",
+                        pdf_path.name, type(e).__name__, e)
+            return None
+
+    if text is None:
         return None
+
+    return sanitize_external(text, f"PDF:{pdf_path.name}", compact=True)
 
 
 def _already_indexed(conn: sqlite3.Connection, filepath: str) -> bool:

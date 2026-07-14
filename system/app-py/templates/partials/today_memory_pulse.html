@@ -40,18 +40,18 @@
     {% if all_types %}
     <div style="display:flex;flex-wrap:wrap;gap:12px;padding-top:10px;border-top:1px solid var(--m-rule-soft);">
       {% set type_colors = {
-        'decision': '#2d6a4f',
-        'agent_run': '#457b9d',
-        'note': '#6d6875',
-        'consolidated_decisions': '#bc6c25',
-        'consolidated_reflexions': '#bc6c25',
+        'decision': 'var(--m-chart-2)',
+        'agent_run': 'var(--m-chart-1)',
+        'note': 'var(--m-chart-6)',
+        'consolidated_decisions': 'var(--m-chart-4)',
+        'consolidated_reflexions': 'var(--m-chart-4)',
         'session': '#7b2cbf',
-        'semantic': '#e76f51',
-        'other': '#8d99ae'
+        'semantic': 'var(--m-chart-3)',
+        'other': 'var(--m-chart-8)'
       } %}
       {% for typ, count in all_types.items() %}
       <div style="display:flex;align-items:center;gap:5px;">
-        <span style="width:8px;height:8px;border-radius:2px;background:{{ type_colors.get(typ, '#8d99ae') }};"></span>
+        <span style="width:8px;height:8px;border-radius:2px;background:{{ type_colors.get(typ, 'var(--m-chart-8)') }};"></span>
         <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;color:var(--m-muted);">{{ typ|replace('_', ' ') }} ({{ count }})</span>
       </div>
       {% endfor %}

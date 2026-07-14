@@ -2,15 +2,19 @@
    Shows connections between papers, ideas, projects, meetings, concepts, news, journal.
    Context vars: projects (list of {project_id, title}). #}
 
+{# Node types map onto the shared categorical chart ramp (--m-chart-1..8 in
+   styles.css). Slot 8 is the neutral fallback, which is why 'task' takes it.
+   The legend below uses var() directly; the D3 script cannot (d3.color() needs a
+   resolved value), so it reads the same tokens via getComputedStyle. #}
 {% set type_meta = {
-  'paper':   {'color': '#457b9d', 'label': 'Papers',   'icon': '📄'},
-  'idea':    {'color': '#e76f51', 'label': 'Ideas',    'icon': '💡'},
-  'project': {'color': '#2d6a4f', 'label': 'Projects', 'icon': '◆'},
-  'meeting': {'color': '#7209b7', 'label': 'Meetings', 'icon': '👥'},
-  'concept': {'color': '#4e8ef7', 'label': 'Concepts', 'icon': '◎'},
-  'news':    {'color': '#ca8a04', 'label': 'News',     'icon': '📡'},
-  'journal': {'color': '#6d6875', 'label': 'Journal',  'icon': '✎'},
-  'task':    {'color': '#8d99ae', 'label': 'Tasks',     'icon': '☐'}
+  'paper':   {'color': 'var(--m-chart-1)', 'label': 'Papers',   'icon': '📄'},
+  'idea':    {'color': 'var(--m-chart-3)', 'label': 'Ideas',    'icon': '💡'},
+  'project': {'color': 'var(--m-chart-2)', 'label': 'Projects', 'icon': '◆'},
+  'meeting': {'color': 'var(--m-chart-5)', 'label': 'Meetings', 'icon': '👥'},
+  'concept': {'color': 'var(--m-chart-7)', 'label': 'Concepts', 'icon': '◎'},
+  'news':    {'color': 'var(--m-chart-4)', 'label': 'News',     'icon': '📡'},
+  'journal': {'color': 'var(--m-chart-6)', 'label': 'Journal',  'icon': '✎'},
+  'task':    {'color': 'var(--m-chart-8)', 'label': 'Tasks',     'icon': '☐'}
 } %}
 
 <div id="kg-surface" style="margin-bottom:32px;">
@@ -30,10 +34,13 @@
       <!-- Entity type toggles -->
       <div style="display:flex;flex-wrap:wrap;gap:4px;">
         {% for tkey, tm in type_meta.items() %}
+        {# NB: these were `{{ tm.color }}22` / `...0d` — hex-alpha suffixes. That only
+           works when tm.color is a literal hex; now that it is a var() token the
+           suffix would be invalid CSS, so the tints go through color-mix. #}
         <label class="kg-type-toggle" style="display:flex;align-items:center;gap:3px;cursor:pointer;
-                      padding:3px 9px;border-radius:100px;font-family:var(--m-mono);font-size:9px;
-                      letter-spacing:0.08em;border:1px solid {{ tm.color }}22;
-                      background:{{ tm.color }}0d;color:{{ tm.color }};transition:all 120ms;user-select:none;">
+                      padding:3px 9px;border-radius:100px;font-family:var(--m-mono);font-size:11px;
+                      letter-spacing:0.08em;border:1px solid color-mix(in srgb, {{ tm.color }} 13%, transparent);
+                      background:color-mix(in srgb, {{ tm.color }} 5%, transparent);color:{{ tm.color }};transition:all 120ms;user-select:none;">
           <input type="checkbox" class="kg-type-cb" value="{{ tkey }}" checked
                  style="display:none;" onchange="kgReload()">
           <span style="width:7px;height:7px;border-radius:50%;background:{{ tm.color }};display:inline-block;flex-shrink:0;"></span>
@@ -114,11 +121,27 @@
 <script>
 (function() {
   /* ── Config ─────────────────────────────────────────────── */
-  const TYPE_COLORS = {
-    paper:   '#457b9d', idea:    '#e76f51', project: '#2d6a4f',
-    meeting: '#7209b7', concept: '#4e8ef7', news:    '#ca8a04',
-    journal: '#6d6875', task:    '#8d99ae'
+  /* Colours come from the shared categorical ramp in styles.css, not from
+     hardcoded hex — so the graph tracks the active theme. d3.color() needs a
+     resolved value (it calls .darker() on the stroke), so we cannot hand it a
+     `var(...)` string; we resolve the tokens off the root element instead. */
+  const TYPE_SLOT = {
+    paper: 1, project: 2, idea: 3, news: 4,
+    meeting: 5, journal: 6, concept: 7, task: 8
   };
+  let TYPE_COLORS = {};
+
+  function readChartRamp() {
+    const cs = getComputedStyle(document.documentElement);
+    const next = {};
+    for (const [type, slot] of Object.entries(TYPE_SLOT)) {
+      const v = cs.getPropertyValue('--m-chart-' + slot).trim();
+      next[type] = v || '#666c63';   /* fallback = neutral slot */
+    }
+    TYPE_COLORS = next;
+    return TYPE_COLORS;
+  }
+  readChartRamp();
   const TYPE_LABELS = {
     paper:'Paper', idea:'Idea', project:'Project', meeting:'Meeting',
     concept:'Concept', news:'News', journal:'Journal', task:'Task'
@@ -213,7 +236,7 @@
     const el = document.getElementById('kg-legend');
     el.innerHTML = '';
     for (const t of Object.keys(types)) {
-      const c = TYPE_COLORS[t] || '#999';
+      const c = TYPE_COLORS[t] || '#666c63';
       el.innerHTML += `<div style="display:flex;align-items:center;gap:4px;">
         <span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block;"></span>
         <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;color:var(--m-muted);">${(TYPE_LABELS[t]||t).toUpperCase()} ${types[t]}</span>
@@ -314,9 +337,9 @@
     // Circle
     nodeGroup.append('circle')
       .attr('r', d => nodeR(d))
-      .attr('fill', d => TYPE_COLORS[d.type] || '#999')
+      .attr('fill', d => TYPE_COLORS[d.type] || '#666c63')
       .attr('fill-opacity', d => d.type === 'project' ? 0.92 : 0.78)
-      .attr('stroke', d => d3.color(TYPE_COLORS[d.type] || '#999').darker(0.4))
+      .attr('stroke', d => d3.color(TYPE_COLORS[d.type] || '#666c63').darker(0.4))
       .attr('stroke-width', d => d.type === 'project' ? 2 : 1.2);
 
     // Project label (inside circle)
@@ -386,7 +409,7 @@
 
     const panel = document.getElementById('kg-detail');
     const body = document.getElementById('kg-detail-body');
-    const color = TYPE_COLORS[d.type] || '#999';
+    const color = TYPE_COLORS[d.type] || '#666c63';
 
     // Find connections
     const connections = [];
@@ -439,7 +462,7 @@
       html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--m-rule-soft);">
         <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:6px;">${connections.length} CONNECTION${connections.length>1?'S':''}</div>`;
       connections.slice(0, 15).forEach(c => {
-        const cc = TYPE_COLORS[c.node.type] || '#999';
+        const cc = TYPE_COLORS[c.node.type] || '#666c63';
         html += `<div style="display:flex;align-items:center;gap:5px;padding:3px 0;font-family:var(--m-display);font-size:11px;cursor:pointer;"
                       onclick="(function(){var ns=document.querySelectorAll('.kg-node');/* TODO: focus */})()">
           <span style="width:6px;height:6px;border-radius:50%;background:${cc};flex-shrink:0;"></span>
@@ -456,6 +479,23 @@
     body.innerHTML = html;
     panel.style.display = 'block';
   }
+
+  /* ── Repaint on theme change ────────────────────────────────
+     The app supports live theme switching (base.html applyTheme sets
+     data-theme on <html>). CSS-driven colour follows automatically, but the
+     D3 nodes were painted with values resolved at draw time, so they must be
+     re-read and re-applied. Observing the attribute is implementation-agnostic. */
+  function repaintRamp() {
+    readChartRamp();
+    if (!nodeElements) return;
+    nodeElements.selectAll('circle')
+      .attr('fill', d => TYPE_COLORS[d.type] || '#666c63')
+      .attr('stroke', d => d3.color(TYPE_COLORS[d.type] || '#666c63').darker(0.4));
+  }
+
+  new MutationObserver(repaintRamp).observe(document.documentElement, {
+    attributes: true, attributeFilter: ['data-theme']
+  });
 
   /* ── Initial load ───────────────────────────────────────── */
   kgReload();

@@ -19,6 +19,7 @@ Public MCP tools: session_bootstrap, save_session_event, run_metis
 
 import datetime
 import json
+import logging
 import re
 import socket
 import struct
@@ -29,6 +30,9 @@ from mcp.types import TextContent
 from metis_mcp.config import paths
 from metis_mcp.db import connect
 from metis_mcp.app_instance import app
+
+# stderr logger — stdout belongs to the MCP stdio channel.
+log = logging.getLogger("metis.pipeline")
 
 # Single shared PII scanner from the safety module (no circular dependency).
 # Importing scan_content (not the individual patterns) keeps the Data Guardian
@@ -114,8 +118,17 @@ def _write_event_sync(session_id: str, event_type: str, content: str) -> None:
                 (session_id, event_type, content[:2000], _now()),
             )
             con.commit()
-    except Exception:
-        pass
+    except Exception as e:
+        # Still never raises — but a dropped event is no longer invisible. The
+        # 'redline' events written here ARE the Data Guardian / Cybersecurity
+        # audit trail: losing them silently means the block happened and left no
+        # record, which is indistinguishable from the guard never running.
+        level = logging.ERROR if event_type == "redline" else logging.WARNING
+        log.log(
+            level,
+            "SESSION EVENT NOT PERSISTED (type=%s, session=%s): %s: %s",
+            event_type, session_id[:8], type(e).__name__, e,
+        )
 
 
 # ── Stage 1: session_bootstrap ───────────────────────────────────────────────
@@ -1014,7 +1027,13 @@ async def run_metis(
     try:
         from metis_mcp.tools.guardrails import load_constitution
         constitution = load_constitution(intent["complexity"])
-    except Exception:
+    except Exception as e:
+        # An empty constitution means the behavioural-policy layer is OFF for this
+        # run. That is a security-relevant degradation — say so, do not swallow it.
+        log.error(
+            "CONSTITUTION NOT LOADED (%s: %s) — this run has NO constitutional "
+            "policy in context.", type(e).__name__, e,
+        )
         constitution = ""
 
     # ── Stage 8: Persist routing decision ─────────────────────────────────

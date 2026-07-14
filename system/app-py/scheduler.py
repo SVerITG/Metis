@@ -761,7 +761,42 @@ def job_embedding_backfill() -> None:
         _log_job("embedding_backfill", "error", str(exc)[:300])
 
 
+def job_db_sync() -> None:
+    """Converge this machine's memory with the other computer's.
+
+    The live DB stays on the native filesystem forever — OneDrive corrupted it in
+    June by syncing the .sqlite/-wal/-shm trio mid-write. But a FINISHED, static
+    snapshot has no writer and no WAL, so it is safe to put on OneDrive. This job
+    exports one, and merges the snapshots the other machine left behind.
+
+    Append-only union, deduped by content fingerprint (ids collide across
+    machines), so it is idempotent. Mutable state (tasks/projects) is deliberately
+    not merged. See tools/metis-sync-db.py for the full reasoning.
+    """
+    import subprocess
+
+    root = os.environ.get("METIS_RC_ROOT")
+    if not root:
+        _log_job("db_sync", "skip", "METIS_RC_ROOT not set")
+        return
+    script = Path(root) / "tools" / "metis-sync-db.py"
+    if not script.exists():
+        _log_job("db_sync", "skip", "metis-sync-db.py not found")
+        return
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(script)],
+            capture_output=True, text=True, timeout=1800,
+        )
+        out = (proc.stdout or "").strip().splitlines()
+        merged = next((ln.strip() for ln in reversed(out) if "merged" in ln), "no changes")
+        _log_job("db_sync", "ok" if proc.returncode == 0 else "error", merged[:300])
+    except Exception as exc:
+        _log_job("db_sync", "error", str(exc)[:300])
+
+
 JOB_FUNCS: dict[str, callable] = {
+    "db_sync":               job_db_sync,
     "embedding_backfill":    job_embedding_backfill,
     "brief_synthesis":       job_brief_synthesis,
     "morning_scan":          job_morning_scan,
@@ -778,6 +813,7 @@ JOB_FUNCS: dict[str, callable] = {
 
 # Human-readable labels for the UI
 JOB_LABELS: dict[str, str] = {
+    "db_sync":              "Two-computer memory sync",
     "embedding_backfill":   "Memory embedding reconcile",
     "brief_synthesis":      "Morning brief synthesis",
     "morning_scan":         "Morning scan (news + papers)",
@@ -799,6 +835,9 @@ JOB_LABELS: dict[str, str] = {
 JOB_DEFAULTS: dict[str, dict] = {
     # Runs late, after the day's memory has been written. Purely local (no API
     # cost) — it only reconciles rows that are missing an embedding.
+    # Sync first, then embed — so memory merged from the other computer is
+    # searchable the same night rather than a day later.
+    "db_sync":              {"enabled": True, "time": "22:15"},
     "embedding_backfill":   {"enabled": True, "time": "22:30"},
     "morning_scan":         {"enabled": True, "time": "09:00"},
     "library_index":        {"enabled": True, "time": "09:05"},
@@ -890,6 +929,7 @@ def setup_jobs() -> None:
         ("dataset_monitor",     job_dataset_monitor),
         ("evening_reflexion",   job_evening_reflexion),
         ("memory_consolidation", job_memory_consolidation),
+        ("db_sync",             job_db_sync),
         ("embedding_backfill",  job_embedding_backfill),
         ("nightly_backup",      job_nightly_backup),
     ]

@@ -4527,3 +4527,132 @@ async def today_system_health(request: Request):
             "api_status": api_status,
         },
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# NEWS FRONT PAGE
+#
+# The old /news was three stacked lists (topic slipcases → flat feed → library).
+# That is an RSS READER's model: group by category, treat every item as equal.
+# A newspaper does the opposite — it RANKS, then groups. Nothing on the old page
+# was bigger than anything else, so nothing invited a click.
+#
+# The ranking signal already existed and was being wasted: `relevance` is a real
+# embedding score of each item against the researcher's own corpus. It was rendered as a
+# small chip. Here it chooses the lead story.
+#
+# THE IMAGE PROBLEM (measured 2026-07-14, and it drives the whole layout):
+#     policy / world-news ......... 100% have thumbnails
+#     surveillance ................  15%
+#     tropical-medicine ...........  13%
+#     epidemiology ................   0%
+# The domains he actually cares about have NO pictures; generic wire news has all
+# of them. So a thumbnail-led grid would systematically bury his own field beneath
+# BBC headlines. Photo cards and TYPOGRAPHIC cards are therefore equal citizens:
+# an item without a picture must never look like a degraded one with a picture.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+_SOURCE_NAMES = {
+    "who.int": "WHO", "thelancet.com": "The Lancet", "nature.com": "Nature",
+    "bbc.co.uk": "BBC", "bbc.com": "BBC", "theguardian.com": "The Guardian",
+    "nejm.org": "NEJM", "science.org": "Science", "pubmed.ncbi.nlm.nih.gov": "PubMed",
+    "cidrap.umn.edu": "CIDRAP", "reliefweb.int": "ReliefWeb", "bmj.com": "BMJ",
+    "plos.org": "PLOS", "cdc.gov": "CDC", "reuters.com": "Reuters",
+}
+
+
+def _source_of(url: str) -> str:
+    """Human source name from a URL — the wordmark on a typographic card."""
+    if not url:
+        return "—"
+    host = re.sub(r"^https?://(www\.)?", "", url).split("/")[0].lower()
+    for domain, name in _SOURCE_NAMES.items():
+        if host.endswith(domain):
+            return name
+    parts = host.split(".")
+    return (parts[-2] if len(parts) >= 2 else host).replace("-", " ").title()
+
+
+def _news_card(r: dict) -> dict:
+    rel = r.get("relevance") or 0
+    img = (r.get("image_url") or "").strip()
+    return {
+        "title": r.get("title") or "Untitled",
+        "summary": (r.get("summary") or "").strip(),
+        "url": r.get("source_url") or "",
+        "image": img,
+        "has_image": bool(img),
+        "source": _source_of(r.get("source_url") or ""),
+        "domain": r.get("domain") or "general",
+        "relevance": rel,
+        # The qualitative band, not a raw %: the embedding baseline sits ~0.5,
+        # so "62%" would read as a coin-flip when it is in fact a strong match.
+        "close": rel >= 0.64,
+        "signal": (r.get("signal_strength") or "").strip(),
+        "when": _age_label(r["created_at"]) if r.get("created_at") else "",
+    }
+
+
+@router.get("/api/partial/news/front", response_class=HTMLResponse)
+async def news_front(request: Request, days: int = 7):
+    """The curated front page: lead → your beat → top stories → wire."""
+    cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
+
+    rows = db_query(
+        """SELECT title, summary, domain, signal_strength, source_url,
+                  created_at, relevance, COALESCE(image_url,'') AS image_url
+           FROM news_briefs
+           WHERE created_at > ?
+           ORDER BY relevance DESC, created_at DESC""",
+        (cutoff,),
+    ) or []
+
+    cards = [_news_card(r) for r in rows]
+    seen: set[str] = set()
+
+    def take(pool, n):
+        """Pull the next n unseen cards — so a story never appears twice."""
+        out = []
+        for c in pool:
+            key = c["url"] or c["title"]
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(c)
+            if len(out) == n:
+                break
+        return out
+
+    # 1. THE LEAD — single highest-relevance item. Prefer one with a picture, but
+    #    only among the genuinely top-relevance items: a pretty photo must never
+    #    outrank a Lancet paper that is actually about his work.
+    top_band = [c for c in cards if c["close"]] or cards
+    lead_pool = [c for c in top_band[:6] if c["has_image"]] or top_band
+    lead = (take(lead_pool, 1) or [None])[0]
+
+    # 2. CLOSEST TO YOUR WORK — the section that justifies Metis existing.
+    #    Ranked by corpus proximity, NOT recency.
+    closest = take([c for c in cards if c["close"]], 4)
+
+    # 3. TOP STORIES — the next tier.
+    top = take(cards, 6)
+
+    # 4. THE WIRE — everything else, dense and chronological.
+    wire = sorted(
+        [c for c in cards if (c["url"] or c["title"]) not in seen],
+        key=lambda c: c["when"],
+    )[:40]
+
+    return templates.TemplateResponse(
+        request,
+        "partials/news_front.html",
+        {
+            "lead": lead,
+            "closest": closest,
+            "top": top,
+            "wire": wire,
+            "total": len(cards),
+            "days": days,
+            "with_images": sum(1 for c in cards if c["has_image"]),
+        },
+    )

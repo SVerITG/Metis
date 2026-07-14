@@ -1,39 +1,50 @@
 {% extends "base.html" %}
 {% block title %}News{% endblock %}
 
+{# The order of this page IS the argument.
+   Lead → Closest to your work → Top stories → The wire → (then, and only then)
+   the by-theme slipcases. Category used to be the spine of this page; it is now
+   a filter you drop to when you already know what you are looking for. #}
+
 {% block content %}
 <div class="page">
 
-  <!-- ===== PageHead ===== -->
+  <!-- ===== Masthead ===== -->
   <div class="page-head">
     <div>
       <div class="page-eyebrow">SURFACE 03 · NEWS RADAR</div>
       <h1 class="page-title">News.</h1>
     </div>
     <div class="page-meta" id="news-meta" style="white-space:pre-line;">
-      <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">Global Health · Tropical Disease · Public Health</span>
+      <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">
+        Curated against your library · Global health · Tropical disease
+      </span>
     </div>
   </div>
 
-  <!-- ===== Topic slipcases — the rich, multi-topic view ===== -->
+  <!-- ===== The front page: ranked by proximity to your corpus ===== -->
+  <div hx-get="/api/partial/news/front?days=7"
+       hx-trigger="load"
+       hx-swap="outerHTML"
+       style="margin-bottom:34px;">
+    <div class="panel skeleton skeleton-box" style="height:300px;margin-bottom:18px;"></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:18px;">
+      {% for _ in range(4) %}
+        <div class="panel skeleton skeleton-box" style="height:190px;"></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ===== By theme — demoted to a filter, below the fold ===== -->
   <div hx-get="/api/partial/today/news-rail?period=week"
        hx-trigger="load"
        hx-swap="outerHTML"
        style="margin-bottom:32px;">
     <div>
-      <div class="sec-label" style="margin-bottom:8px;">Topic dispatch <span class="sec-label-tail">SLIPCASES · WEEK</span></div>
+      <div class="sec-label" style="margin-bottom:8px;">
+        By theme <span class="sec-label-tail">SLIPCASES · WEEK</span>
+      </div>
       <div class="panel skeleton skeleton-box" style="height:280px;"></div>
-    </div>
-  </div>
-
-  <!-- ===== Flat news radar (compact recent feed) ===== -->
-  <div hx-get="/api/partial/today/news-archive"
-       hx-trigger="load"
-       hx-swap="outerHTML"
-       style="margin-bottom:28px;">
-    <div>
-      <div class="sec-label" style="margin-bottom:8px;">Latest signals <span class="sec-label-tail">RECENT FEED</span></div>
-      <div class="panel skeleton skeleton-box" style="height:200px;"></div>
     </div>
   </div>
 

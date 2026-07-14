@@ -7,16 +7,16 @@
   </div>
   <div style="display:flex;flex-direction:column;gap:8px;">
     {% set bridge_colors = {
-      'episodic': '#2d6a4f',
-      'semantic': '#e76f51',
-      'decision': '#bc6c25',
-      'concept': '#457b9d',
-      'note': '#6d6875'
+      'episodic': 'var(--m-chart-2)',
+      'semantic': 'var(--m-chart-3)',
+      'decision': 'var(--m-chart-4)',
+      'concept': 'var(--m-chart-1)',
+      'note': 'var(--m-chart-6)'
     } %}
     {% for b in bridges %}
-    <div style="display:flex;align-items:start;gap:10px;padding:10px 14px;background:var(--m-surface-2);border-radius:var(--m-radius);border-left:3px solid {{ bridge_colors.get(b.event_type, '#8d99ae') }};">
+    <div style="display:flex;align-items:start;gap:10px;padding:10px 14px;background:var(--m-surface-2);border-radius:var(--m-radius);border-left:3px solid {{ bridge_colors.get(b.event_type, 'var(--m-chart-8)') }};">
       <div style="flex:1;min-width:0;">
-        <div style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;color:{{ bridge_colors.get(b.event_type, '#8d99ae') }};margin-bottom:4px;">
+        <div style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;color:{{ bridge_colors.get(b.event_type, 'var(--m-chart-8)') }};margin-bottom:4px;">
           {% if b.memory_type == 'semantic' %}CONCEPT{% elif b.event_type == 'decision' %}DECISION{% else %}MEMORY{% endif %}
           &middot; {{ b.memory_date }}
         </div>

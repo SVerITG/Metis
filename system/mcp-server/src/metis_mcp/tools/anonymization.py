@@ -26,6 +26,7 @@ M6.5  get_network_policy()
 
 import difflib
 import json
+import logging
 import re
 from pathlib import Path
 
@@ -45,6 +46,9 @@ from metis_mcp.tools.safety import (
     _BELGIAN_NID_RE,
     _SENSITIVE_COLUMNS,
 )
+
+# stderr logger — stdout belongs to the MCP stdio channel.
+log = logging.getLogger("metis.anonymization")
 
 # ---------------------------------------------------------------------------
 # DDL
@@ -493,7 +497,14 @@ async def get_network_policy() -> list[TextContent]:
         try:
             data = json.loads(p.read_text(encoding="utf-8"))
             policy = data.get("policy", _DEFAULT_POLICY)
-        except Exception:
+        except Exception as e:
+            # A corrupt policy file silently downgrading 'offline'/'strict' back to
+            # 'normal' would re-enable network access the user believed was off.
+            log.error(
+                "NETWORK POLICY FILE UNREADABLE (%s) — %s: %s. Falling back to %r; "
+                "if you had set 'strict' or 'offline', it is NOT in effect.",
+                p, type(e).__name__, e, _DEFAULT_POLICY,
+            )
             policy = _DEFAULT_POLICY
     else:
         policy = _DEFAULT_POLICY
