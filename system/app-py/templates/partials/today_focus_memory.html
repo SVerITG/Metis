@@ -3,7 +3,13 @@
    Context: items (list of dicts with item_type, item_id, title, subtitle, badge, badge_color, memory). #}
 <div id="today-focus">
 {% if items %}
-  {{ sec_label("Today's focus", tail="STAR A TASK TO PIN IT HERE", style="margin-bottom:14px;") }}
+  {{ sec_label("Today's focus", tail="STAR A TASK TO PIN IT HERE", style="margin-bottom:6px;") }}
+  {# Link to Work — Today's focus and the Work planning horizon are two ends of
+     the same thread: what you intend (Work) → what you're doing today (here). #}
+  <div style="margin-bottom:14px;">
+    <a href="/work" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
+       text-transform:uppercase;color:var(--m-accent);text-decoration:none;">Plan in Work →</a>
+  </div>
   <div class="grid grid-3" style="margin-bottom:32px;">
     {% for item in items %}
     <div class="panel" style="padding:16px 20px;position:relative;">
@@ -57,6 +63,10 @@
   <div class="panel" style="padding:20px 28px;margin-bottom:32px;">
     <div class="ed" style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">
       No open tasks or active ideas right now. Star a task or capture an idea to fill this section.
+    </div>
+    <div style="margin-top:10px;">
+      <a href="/work" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
+         text-transform:uppercase;color:var(--m-accent);text-decoration:none;">Plan in Work →</a>
     </div>
   </div>
 {% endif %}

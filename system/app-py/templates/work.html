@@ -35,6 +35,17 @@
   <!-- ══════════ LIST VIEW ══════════ -->
   <div id="work-view-list">
 
+  {# Planning horizon at the TOP — this is where the merged Planner lives now:
+     your intentions ("what you want to do") sit above your projects, so the link
+     between them is the first thing you see when you open Work. #}
+  <div hx-get="/api/partial/planner/intentions"
+       hx-trigger="load"
+       hx-swap="innerHTML"
+       style="margin-bottom:22px;">
+    {{ sec_label("What you want to do", tail="INTENTIONS · THIS QUARTER", style="margin-bottom:12px;") }}
+    <div class="panel panel-pad skeleton" style="min-height:70px;"></div>
+  </div>
+
   <!-- Due Today / Overdue strip -->
   <div hx-get="/api/partial/work/due-today"
        hx-trigger="load"
