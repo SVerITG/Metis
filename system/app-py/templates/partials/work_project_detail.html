@@ -315,6 +315,16 @@
       </div>
     </div><!-- /history -->
 
+    {# Ambient cross-pollination — what across your whole corpus relates to this
+       project. Lazy-loaded so opening the panel stays instant. This is the
+       README's core promise, shown where it's useful instead of in a tab. #}
+    <div style="padding:0 20px 18px;"
+         hx-get="/api/partial/connections/project/{{ p.id }}"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+      <div class="skeleton skeleton-box" style="height:90px;border-radius:8px;"></div>
+    </div>
+
   </div><!-- /body -->
 </div><!-- /panel -->
 </div><!-- /overlay -->

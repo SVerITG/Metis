@@ -15,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 
 from routers import (
     capture,
+    connections,
     jobs,
     knowledge,
     learning,
@@ -270,6 +271,7 @@ app.include_router(teach.router)
 app.include_router(metis_tab.router)
 app.include_router(memory_health.router)
 app.include_router(capture.router, prefix="/api")
+app.include_router(connections.router)
 app.include_router(transcription.router)
 app.include_router(speakers.router)
 app.include_router(jobs.router)
