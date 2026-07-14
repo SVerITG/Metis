@@ -22,6 +22,7 @@ from mcp.types import TextContent
 from metis_mcp.app_instance import app
 from metis_mcp.config import paths
 from metis_mcp.db import connect
+from metis_mcp.tools.guardrails import sanitize_external
 
 # ---------------------------------------------------------------------------
 # Schema migration
@@ -185,7 +186,17 @@ def _upsert_lit_row(conn, row: dict) -> str:
 
     Returns 'added' or 'updated'. Shared by the Web-API sync and the local
     zotero.sqlite reader so both behave identically.
+
+    INGESTION CHOKEPOINT: an abstract is third-party text fetched from a
+    reference manager — the classic poisoned-paper vector. Both Zotero paths
+    funnel through here, so probing here covers both.
     """
+    row = dict(row)
+    if row.get("abstract"):
+        row["abstract"] = sanitize_external(
+            row["abstract"], f"zotero-abstract:{row.get('title', '')[:60]}"
+        )
+
     existing = conn.execute(
         "SELECT id FROM literature_metadata WHERE zotero_key = ?",
         (row["zotero_key"],),
@@ -674,7 +685,10 @@ async def import_bibtex_library(bibtex_path: str) -> list[TextContent]:
             year = int(year_raw) if year_raw.isdigit() else None
             journal = entry.get("journal") or entry.get("booktitle") or entry.get("publisher") or ""
             doi = entry.get("doi") or ""
-            abstract = (entry.get("abstract") or "")[:2000]
+            # INGESTION CHOKEPOINT — BibTeX/Mendeley import is external content.
+            abstract = sanitize_external(
+                (entry.get("abstract") or "")[:2000], f"bibtex-abstract:{title[:60]}"
+            )
             tags = entry.get("keywords") or ""
 
             conn.execute(

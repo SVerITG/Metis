@@ -1,11 +1,15 @@
 """Data safety scanner for PII and sensitive content detection."""
 
+import logging
 import re
 
 from mcp.types import TextContent
 
 from metis_mcp.app_instance import app
 from metis_mcp.local_overrides import load_overrides
+
+# stderr logger — stdout belongs to the MCP stdio channel.
+log = logging.getLogger("metis.safety")
 
 # PII detection patterns
 _EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
@@ -16,9 +20,42 @@ _INTL_PHONE_RE = re.compile(r"\+\d{1,3}(?:[\s.\-/]?\d){7,}")
 _PATIENT_ID_RE = re.compile(
     r"\b(?:patient_?id|case_?id|patient\s*#)\s*[:=]?\s*\d+", re.IGNORECASE
 )
+# ── GPS coordinates ──────────────────────────────────────────────────────────
+# In HAT/NTD surveillance a coordinate pair IS an identifier: it locates a
+# patient's village, and at 3-4 decimals their household. The previous pattern
+# required ≥4 decimals on BOTH numbers with no cue word, so the single most
+# common way coordinates are actually written — "GPS -4.325, 15.322" — sailed
+# straight through the rail untouched.
+#
+# Three branches, each tuned to avoid firing on ordinary research prose
+# (p-values, percentages, version numbers, confidence intervals, DOIs):
+#   (a) a CUE word (gps/lat/lon/coords/village/household/…) followed by a pair
+#       → 2 decimals is enough, because the cue disambiguates.
+#   (b) NO cue → demand ≥4 decimals on both AND a comma/semicolon separator
+#       (household precision, ~11 m). The lookahead drops pairs where BOTH
+#       values are < 1 — those are probabilities/correlations/CI bounds
+#       ("sensitivity 0.9821, 0.9754"), never a field coordinate anyone records.
+#   (c) hemisphere-suffixed decimal or DMS: "4.325° S, 15.322° E".
+_GPS_COORD = r"[-+]?\d{1,3}\.\d{2,}"
+_GPS_CUE = (
+    r"(?:gps|coord(?:inate)?s?|lat(?:itude)?|lon(?:gitude)?|lng"
+    r"|position|location|geo|village|household)"
+)
 _GPS_RE = re.compile(
-    # Coordinate pair with ≥4 decimal places each (~11 m — household-identifying).
-    r"-?\d{1,3}\.\d{4,},?\s*-?\d{1,3}\.\d{4,}"
+    r"(?:"
+    # (a) cue word + pair (≥2 dp)
+    rf"\b{_GPS_CUE}\b[\s:=]*[\(\[]?\s*(?:lat(?:itude)?[\s:=]*)?{_GPS_COORD}\s*[,;/]?\s*"
+    rf"(?:lon(?:g(?:itude)?)?[\s:=]*)?{_GPS_COORD}"
+    r"|"
+    # (b) bare pair, ≥4 dp both, not two sub-1 values (those are stats, not places)
+    r"(?!0\.\d+\s*[,;]\s*0\.)"
+    r"[-+]?\d{1,3}\.\d{4,}\s*[,;]\s*[-+]?\d{1,3}\.\d{4,}"
+    r"|"
+    # (c) hemisphere-suffixed decimal degrees / DMS
+    r"\d{1,3}(?:\.\d+)?\s*°?\s*(?:\d{1,2}['′]\s*(?:\d{1,2}(?:\.\d+)?[\"″]\s*)?)?[NSns]\s*[,;/]?\s*"
+    r"\d{1,3}(?:\.\d+)?\s*°?\s*(?:\d{1,2}['′]\s*(?:\d{1,2}(?:\.\d+)?[\"″]\s*)?)?[EWew]\b"
+    r")",
+    re.IGNORECASE,
 )
 _BELGIAN_NID_RE = re.compile(r"\b\d{2}\.\d{2}\.\d{2}-\d{3}\.\d{2}\b")
 # Date of birth (explicit label + date value)
@@ -71,7 +108,15 @@ def _build_extra_checks():
         try:
             flags = re.IGNORECASE if "i" in str(item.get("flags", "")).lower() else 0
             rx = re.compile(item["regex"], flags)
-        except Exception:
+        except Exception as e:
+            # A PII check that fails to compile is a PII check that is simply OFF.
+            # Never swallow this: the user believes their institution's case-ID
+            # format is being detected, and it is not.
+            log.error(
+                "PII OVERRIDE PATTERN DISABLED — could not compile %r (label=%r): %s: %s. "
+                "This identifier will NOT be detected until the regex is fixed.",
+                item.get("regex"), item.get("label"), type(e).__name__, e,
+            )
             continue
         label = str(item.get("label", "Sensitive identifier"))
         checks.append((rx, label))

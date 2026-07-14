@@ -2,6 +2,7 @@
 No LLM calls. Pure data fetching and dedup.
 """
 import json
+import logging
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -13,6 +14,9 @@ from mcp.types import TextContent
 from metis_mcp.app_instance import app
 from metis_mcp.config import paths
 from metis_mcp.local_overrides import load_overrides
+from metis_mcp.tools.guardrails import sanitize_external
+
+log = logging.getLogger("metis.content_scan")
 
 
 def _dashboard_port(default: int = 8080) -> int:
@@ -350,11 +354,19 @@ def _score_signal(title: str, summary: str, feed_name: str,
 
 
 def scan_news_feeds(max_per_feed: int = 10) -> dict:
+    from metis_mcp.tools.news_images import DDL as _IMG_DDL, image_from_entry, resolve_image
+
     added = 0
     errors = []
     user_topics = _user_topics()
     with _connect() as conn:
         conn.execute(_DDL_NEWS)
+        conn.execute(_IMG_DDL)
+        try:
+            conn.execute("ALTER TABLE news_briefs ADD COLUMN image_url TEXT DEFAULT ''")
+        except Exception:
+            pass  # already there
+
         conn.execute(_DDL_BOARD)
         # Numeric semantic relevance (closeness to the user's corpus) for ranking.
         try:
@@ -385,22 +397,37 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
                         "SELECT 1 FROM news_briefs WHERE source_url=? LIMIT 1", (link,)
                     ).fetchone():
                         continue
-                    pending.append((title, entry.get("summary", "")[:800], link))
+                    # Thumbnail: free from the feed if present (BBC/Guardian do),
+                    # else resolved from the article's og:image below (journals).
+                    pending.append((title, entry.get("summary", "")[:800], link,
+                                    image_from_entry(entry)))
                 if not pending:
                     continue
                 # One batched embedding call per feed (efficient).
-                sims = (_score_batch([f"{t}. {s}" for t, s, _ in pending], centroid)
+                sims = (_score_batch([f"{t}. {s}" for t, s, _, _ in pending], centroid)
                         if _score_batch else [0.0] * len(pending))
-                for (title, summary_raw, link), sim in zip(pending, sims):
+                for (title, summary_raw, link, feed_img), sim in zip(pending, sims):
+                    # Classify/score on the RAW text (an injection banner must not
+                    # skew relevance), then sanitise before it touches the DB.
                     primary_domain = _classify_domain(title, summary_raw, tags)
                     signal = _score_signal(title, summary_raw, name, user_topics, sim)
+
+                    # ── INGESTION CHOKEPOINT — RSS is fully attacker-controlled text.
+                    src = f"RSS:{name}"
+                    title = sanitize_external(title, f"{src}:title", compact=True)
+                    summary_raw = sanitize_external(summary_raw, src)
+
+                    # A news page without pictures is a list of links. Never let a
+                    # slow image lookup break a scan — resolve_image never raises.
+                    image_url = feed_img or (resolve_image(None, link, conn) or "")
+
                     conn.execute(
                         """INSERT INTO news_briefs
-                           (title, domain, signal_strength, summary, source_url, created_at, tags, brief_date, relevance)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                           (title, domain, signal_strength, summary, source_url, created_at, tags, brief_date, relevance, image_url)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                         (title, primary_domain, signal, summary_raw, link,
                          datetime.now().isoformat(), tags, datetime.now().date().isoformat(),
-                         round(float(sim), 4)),
+                         round(float(sim), 4), image_url),
                     )
                     _maybe_add_to_board(conn, title, link, summary_raw, name)
                     added += 1
@@ -465,9 +492,18 @@ def _transcribe_inbox_audio(audio_path: str, model_size: str = "base") -> str | 
         from faster_whisper import WhisperModel  # type: ignore
         model = WhisperModel(model_size, device="cpu", compute_type="int8")
         segments, _ = model.transcribe(audio_path, beam_size=3)
-        return " ".join(seg.text.strip() for seg in segments).strip() or None
-    except Exception:
+        text = " ".join(seg.text.strip() for seg in segments).strip() or None
+    except Exception as e:
+        log.warning("Inbox transcription failed for %s: %s: %s",
+                    audio_path, type(e).__name__, e)
         return None
+
+    # ── INGESTION CHOKEPOINT — a transcript is external content. The audio may be
+    #    a recorded meeting, a downloaded talk, or anything else a third party
+    #    said. It goes straight into `ideas` and then into cross-pollination.
+    if text:
+        text = sanitize_external(text, f"audio-transcript:{Path(audio_path).name}")
+    return text
 
 
 # ---------------------------------------------------------------------------

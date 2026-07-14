@@ -10,8 +10,8 @@
     {% set seeded_count = items | selectattr("item_type", "equalto", "seeded") | list | length %}
     {% if seeded_count %}
     <span style="margin-left:auto;display:inline-flex;align-items:center;gap:4px;">
-      <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="#2d6a4f" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
-      <span style="color:#2d6a4f;">{{ seeded_count }} SEEDED</span>
+      <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="var(--m-chart-2)" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
+      <span style="color:var(--m-chart-2);">{{ seeded_count }} SEEDED</span>
     </span>
     {% endif %}
   </div>
@@ -30,7 +30,7 @@
     <tbody>
       {% for item in items %}
       {% set is_seeded = item.item_type == 'seeded' %}
-      <tr style="border-bottom:1px solid var(--m-rule-soft);border-left:2px solid {% if is_seeded %}#2d6a4f{% else %}var(--m-warn){% endif %};"
+      <tr style="border-bottom:1px solid var(--m-rule-soft);border-left:2px solid {% if is_seeded %}var(--m-chart-2){% else %}var(--m-warn){% endif %};"
           onmouseover="this.style.background='var(--m-surface-2)'"
           onmouseout="this.style.background=''">
 
@@ -50,7 +50,7 @@
         <td style="padding:11px 10px;vertical-align:top;">
           <div style="display:flex;align-items:baseline;gap:8px;">
             {# PDF icon #}
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="{% if is_seeded %}#2d6a4f{% else %}var(--m-muted){% endif %}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="{% if is_seeded %}var(--m-chart-2){% else %}var(--m-muted){% endif %}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
               <path d="M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v6h6"/>
             </svg>
             <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;">
@@ -75,7 +75,7 @@
         <td style="padding:11px 10px;vertical-align:top;">
           {% if item.method %}
           <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.08em;padding:2px 7px;border-radius:var(--m-radius-pill,10px);
-            background:rgba(69,123,157,0.08);color:#457b9d;">
+            background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">
             {{ item.method | upper }}
           </span>
           {% else %}
@@ -87,8 +87,8 @@
         <td style="padding:11px 10px;text-align:center;vertical-align:top;">
           {% if is_seeded %}
           <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:2px 8px;border-radius:var(--m-radius-pill,10px);
-                       background:rgba(45,106,79,0.1);color:#2d6a4f;">
-            <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="#2d6a4f" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
+                       background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
+            <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="var(--m-chart-2)" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
             SEEDED
           </span>
           {% elif item.item_type == 'to_triage' %}

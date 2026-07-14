@@ -12,16 +12,16 @@
     <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:20px;">
       {% set max_count = topics[0].count if topics else 1 %}
       {% set recency_colors = {
-        'fresh': '#2d6a4f',
-        'recent': '#457b9d',
-        'aging': '#bc6c25',
-        'stale': '#8d99ae'
+        'fresh': 'var(--m-chart-2)',
+        'recent': 'var(--m-chart-1)',
+        'aging': 'var(--m-chart-4)',
+        'stale': 'var(--m-chart-8)'
       } %}
       {% set recency_bg = {
-        'fresh': 'rgba(45,106,79,0.12)',
-        'recent': 'rgba(69,123,157,0.1)',
-        'aging': 'rgba(188,108,37,0.1)',
-        'stale': 'rgba(141,153,174,0.08)'
+        'fresh': 'color-mix(in srgb, var(--m-chart-2) 12%, transparent)',
+        'recent': 'color-mix(in srgb, var(--m-chart-1) 10%, transparent)',
+        'aging': 'color-mix(in srgb, var(--m-chart-4) 10%, transparent)',
+        'stale': 'color-mix(in srgb, var(--m-chart-8) 8%, transparent)'
       } %}
       {% for t in topics %}
       {% set scale = (t.count / max_count) if max_count > 0 else 0.2 %}
@@ -29,14 +29,14 @@
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;
         width:{{ size }}px;height:{{ size }}px;
         border-radius:50%;
-        background:{{ recency_bg.get(t.recency, 'rgba(141,153,174,0.08)') }};
-        border:2px solid {{ recency_colors.get(t.recency, '#8d99ae') }};
+        background:{{ recency_bg.get(t.recency, 'color-mix(in srgb, var(--m-chart-8) 8%, transparent)') }};
+        border:2px solid {{ recency_colors.get(t.recency, 'var(--m-chart-8)') }};
         cursor:default;transition:transform .15s;position:relative;"
         title="{{ t.name }}: {{ t.count }} memories, last seen {{ t.age_days }}d ago ({{ t.recency }})"
         onmouseover="this.style.transform='scale(1.1)';this.style.zIndex='10'"
         onmouseout="this.style.transform='scale(1)';this.style.zIndex='0'">
         <span style="font-family:var(--m-mono);font-size:{% if size >= 80 %}10{% elif size >= 60 %}9{% else %}7.5{% endif %}px;
-          letter-spacing:0.06em;color:{{ recency_colors.get(t.recency, '#8d99ae') }};
+          letter-spacing:0.06em;color:{{ recency_colors.get(t.recency, 'var(--m-chart-8)') }};
           text-align:center;line-height:1.2;max-width:{{ size - 8 }}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
           {{ t.name[:18] }}
         </span>
@@ -48,19 +48,19 @@
     {# Legend #}
     <div style="display:flex;flex-wrap:wrap;gap:16px;padding-top:14px;border-top:1px solid var(--m-rule-soft);">
       <div style="display:flex;align-items:center;gap:5px;">
-        <span style="width:10px;height:10px;border-radius:50%;border:2px solid #2d6a4f;background:rgba(45,106,79,0.12);"></span>
+        <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-2);background:color-mix(in srgb, var(--m-chart-2) 12%, transparent);"></span>
         <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Fresh (&lt;7d)</span>
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
-        <span style="width:10px;height:10px;border-radius:50%;border:2px solid #457b9d;background:rgba(69,123,157,0.1);"></span>
+        <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-1);background:color-mix(in srgb, var(--m-chart-1) 10%, transparent);"></span>
         <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Recent (&lt;30d)</span>
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
-        <span style="width:10px;height:10px;border-radius:50%;border:2px solid #bc6c25;background:rgba(188,108,37,0.1);"></span>
+        <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-4);background:color-mix(in srgb, var(--m-chart-4) 10%, transparent);"></span>
         <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Aging (&lt;90d)</span>
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
-        <span style="width:10px;height:10px;border-radius:50%;border:2px solid #8d99ae;background:rgba(141,153,174,0.08);"></span>
+        <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-8);background:color-mix(in srgb, var(--m-chart-8) 8%, transparent);"></span>
         <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Stale (&gt;90d)</span>
       </div>
       <div style="display:flex;align-items:center;gap:5px;margin-left:auto;">
@@ -77,10 +77,10 @@
         {% set mem = p.memory %}
         <div style="display:flex;align-items:center;gap:10px;">
           <span style="width:6px;height:6px;border-radius:50%;flex-shrink:0;
-            background:{% if mem.level == 'deep' %}#2d6a4f{% elif mem.level == 'moderate' %}#457b9d{% else %}#8d99ae{% endif %};"></span>
+            background:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};"></span>
           <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ p.title }}</span>
           <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;
-            color:{% if mem.level == 'deep' %}#2d6a4f{% elif mem.level == 'moderate' %}#457b9d{% else %}#8d99ae{% endif %};">
+            color:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};">
             {{ mem.total }} memories &middot; {{ mem.level }}
           </span>
           {# Mini bar #}
@@ -89,7 +89,7 @@
           {% if bar_width < 4 %}{% set bar_width = 4 %}{% endif %}
           <div style="width:60px;height:4px;background:var(--m-surface-3);border-radius:2px;flex-shrink:0;">
             <div style="width:{{ bar_width }}%;height:100%;border-radius:2px;
-              background:{% if mem.level == 'deep' %}#2d6a4f{% elif mem.level == 'moderate' %}#457b9d{% else %}#8d99ae{% endif %};"></div>
+              background:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};"></div>
           </div>
         </div>
         {% endfor %}

@@ -10,15 +10,15 @@
 {# ── Type icon macro ── #}
 {% macro type_icon(itype, size=13) %}
 {% set type_colors = {
-  'journalArticle': '#457b9d',
-  'book': '#6d6875',
-  'bookSection': '#9c6644',
-  'report': '#bc6c25',
-  'preprint': '#e76f51',
-  'thesis': '#2d6a4f',
-  'conferencePaper': '#7209b7'
+  'journalArticle': 'var(--m-chart-1)',
+  'book': 'var(--m-chart-6)',
+  'bookSection': 'var(--m-chart-7)',
+  'report': 'var(--m-chart-4)',
+  'preprint': 'var(--m-chart-3)',
+  'thesis': 'var(--m-chart-2)',
+  'conferencePaper': 'var(--m-chart-5)'
 } %}
-{% set c = type_colors.get(itype, '#8d99ae') %}
+{% set c = type_colors.get(itype, 'var(--m-chart-8)') %}
 {% if itype == 'journalArticle' %}
 <svg viewBox="0 0 24 24" width="{{ size }}" height="{{ size }}" fill="none" stroke="{{ c }}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h5"/></svg>
 {% elif itype == 'book' %}
@@ -48,13 +48,13 @@
   'conferencePaper': 'Conference'
 } %}
 {% set type_colors = {
-  'journalArticle': '#457b9d',
-  'book': '#6d6875',
-  'bookSection': '#9c6644',
-  'report': '#bc6c25',
-  'preprint': '#e76f51',
-  'thesis': '#2d6a4f',
-  'conferencePaper': '#7209b7'
+  'journalArticle': 'var(--m-chart-1)',
+  'book': 'var(--m-chart-6)',
+  'bookSection': 'var(--m-chart-7)',
+  'report': 'var(--m-chart-4)',
+  'preprint': 'var(--m-chart-3)',
+  'thesis': 'var(--m-chart-2)',
+  'conferencePaper': 'var(--m-chart-5)'
 } %}
 
 <div>
@@ -94,7 +94,7 @@
         <span class="lib-group-count">{{ zotero_items|length }}</span>
       </div>
       {% for item in zotero_items %}
-      {% set icolor = type_colors.get(item.item_type, '#8d99ae') %}
+      {% set icolor = type_colors.get(item.item_type, 'var(--m-chart-8)') %}
       <div class="lib-row{% if item.is_read %} lib-row--read{% endif %}">
         <div class="lib-row-main">
           {# Type icon #}
@@ -182,7 +182,7 @@
         <div class="lib-row-meta" style="padding-left:17px;">
           <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;
             padding:1px 6px;border-radius:var(--m-radius-pill,10px);
-            background:rgba(141,153,174,0.08);color:var(--m-muted);">NOTE</span>
+            background:color-mix(in srgb, var(--m-chart-8) 8%, transparent);color:var(--m-muted);">NOTE</span>
           {% if item.domain %}<span class="lib-row-domain">{{ item.domain }}</span>{% endif %}
           {% if item.card_type %}<span class="lib-row-domain">{{ item.card_type }}</span>{% endif %}
         </div>

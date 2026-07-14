@@ -363,8 +363,11 @@ class LiveMeetingSession {
     const el = document.getElementById('lm-interim');
     if (!el) return;
     if (this.interimText) {
+      // Speaker names and interim transcript text are UNTRUSTED (they come from
+      // an imported transcript or a speech model listening to third parties).
+      // Escape both before they reach innerHTML.
       const col = this.speakerColors[this.currentSpeaker] || 'var(--m-muted)';
-      el.innerHTML = `<span style="color:${col};font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;">${this.currentSpeaker.toUpperCase()}</span> <span style="color:var(--m-muted);font-style:italic;">${this.interimText}…</span>`;
+      el.innerHTML = `<span style="color:${this._esc(col)};font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;">${this._esc(String(this.currentSpeaker).toUpperCase())}</span> <span style="color:var(--m-muted);font-style:italic;">${this._esc(this.interimText)}…</span>`;
     } else {
       el.innerHTML = '';
     }
@@ -380,11 +383,14 @@ class LiveMeetingSession {
     const div = document.createElement('div');
     div.id = `lm-seg-${seg.idx}`;
     div.style.cssText = 'margin-bottom:14px;';
+    // seg.speaker is untrusted (imported transcript / speech model output) and was
+    // previously interpolated raw — the XSS sink. seg.ts is generated locally but
+    // is escaped anyway; escaping costs nothing and removes it as a future sink.
     div.innerHTML = `
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:3px;">
-        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:${col};font-weight:600;">${seg.speaker.toUpperCase()}</span>
+        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:${this._esc(col)};font-weight:600;">${this._esc(String(seg.speaker).toUpperCase())}</span>
         ${autoTag}
-        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">${seg.ts}</span>
+        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">${this._esc(seg.ts)}</span>
       </div>
       <div style="font-family:var(--m-sans);font-size:14px;color:var(--m-ink);line-height:1.65;">${this._esc(seg.text)}</div>`;
     body.appendChild(div);
@@ -423,11 +429,13 @@ class LiveMeetingSession {
     const col = colors[c.source] || 'var(--m-muted)';
     const div = document.createElement('div');
     div.style.cssText = 'display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--m-rule-soft);';
+    // c.source / c.title come back from /api/meeting/live-segment — i.e. from the
+    // DB, which holds ingested (untrusted) library, news and meeting content.
     div.innerHTML = `
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:${col};flex-shrink:0;width:48px;">${(c.source||'').toUpperCase()}</span>
+      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:${this._esc(col)};flex-shrink:0;width:48px;">${this._esc(String(c.source || '').toUpperCase())}</span>
       <div>
         <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.3;">${this._esc((c.title||'').slice(0,75))}</div>
-        <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-top:2px;">at ${this._elapsed()}</div>
+        <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-top:2px;">at ${this._esc(this._elapsed())}</div>
       </div>`;
     panel.insertBefore(div, panel.firstChild);
   }
@@ -498,8 +506,16 @@ class LiveMeetingSession {
       .then(r => r.text());
   }
 
+  // Escape for interpolation into HTML. Quotes are escaped too: several sinks
+  // below interpolate into ATTRIBUTE position, where escaping only < > & still
+  // lets `" onerror=...` break out.
   _esc(s) {
-    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 }
 
@@ -578,15 +594,24 @@ async function beginLiveMeeting() {
   // Render speaker buttons
   const bar = document.getElementById('lm-speaker-bar');
   if (bar) {
-    bar.innerHTML = speakers.map((name, i) => {
+    // Participant names are untrusted (they can be prefilled from an imported
+    // transcript). Build the buttons with DOM APIs and set the label via
+    // textContent — no HTML parsing of the name at all. `i` is a loop index, so
+    // the onclick handler carries no attacker-controlled data.
+    bar.replaceChildren(...speakers.map((name, i) => {
       const col = lm.speakerColors[name];
       const active = i === 0;
-      return `<button id="lm-spk-${i}" onclick="lm.switchSpeaker(${i})"
-        style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;padding:5px 12px;
-        border:1px solid ${active ? col : 'transparent'};border-radius:3px;cursor:pointer;
-        background:${active ? 'var(--m-surface-2)' : 'transparent'};
-        color:${active ? col : 'var(--m-muted)'};">${name.toUpperCase()}</button>`;
-    }).join('');
+      const btn = document.createElement('button');
+      btn.id = `lm-spk-${i}`;
+      btn.addEventListener('click', () => lm.switchSpeaker(i));
+      btn.style.cssText =
+        'font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;padding:5px 12px;' +
+        `border:1px solid ${active ? col : 'transparent'};border-radius:3px;cursor:pointer;` +
+        `background:${active ? 'var(--m-surface-2)' : 'transparent'};` +
+        `color:${active ? col : 'var(--m-muted)'};`;
+      btn.textContent = String(name).toUpperCase();
+      return btn;
+    }));
   }
 
   await lm.startWithMode(serverWhisper);
