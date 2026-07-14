@@ -220,7 +220,7 @@ def _compute_streak() -> int:
 
 
 @router.post("/api/learning/review/{sr_id}", response_class=HTMLResponse)
-async def mark_review_done(sr_id: int, request: Request):
+async def mark_review_done(sr_id: str, request: Request):
     """Mark a spaced-repetition card as reviewed and apply SM-2 scheduling."""
     data = await request.json()
     quality = int(data.get("quality", 4))  # 0-5; 4 = "got it"
@@ -975,6 +975,95 @@ async def seed_course_spaced_rep(slug: str, request: Request):
     return JSONResponse({"status": "ok", "seeded": seeded, "total": len(lessons)})
 
 
+def _generate_card(domain: str, topic: str) -> tuple[str, str] | None:
+    """Generate a real Q/A flashcard for a competency topic via Claude.
+
+    A competency ("statistics / Spatial scan statistics") is a topic, not a card.
+    Without a real question and answer, seeding it produces "Explain: X" stubs that
+    teach nothing. Since the dashboard now loads ANTHROPIC_API_KEY, we generate a
+    genuine domain flashcard. Returns None on any failure → caller uses a plain
+    fallback card, so this never blocks seeding.
+    """
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key:
+        return None
+    try:
+        import httpx
+        from models import model_for
+
+        prompt = (
+            f"Write one spaced-repetition flashcard for a senior epidemiologist "
+            f"studying '{topic}' (domain: {domain}). Return ONLY JSON: "
+            '{"front": "a specific recall question", "back": "a concise, correct '
+            'answer (2-4 sentences, technical, no fluff)"}. '
+            "The question must test understanding, not definitions."
+        )
+        resp = httpx.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": api_key, "anthropic-version": "2023-06-01",
+                     "content-type": "application/json"},
+            json={"model": model_for("brief"), "max_tokens": 400,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=30.0,
+        )
+        if resp.status_code != 200:
+            return None
+        raw = resp.json()["content"][0]["text"].strip()
+        s, e = raw.find("{"), raw.rfind("}") + 1
+        if s < 0 or e <= s:
+            return None
+        d = json.loads(raw[s:e])
+        front, back = str(d.get("front", "")).strip(), str(d.get("back", "")).strip()
+        return (front, back) if front and back else None
+    except Exception:
+        return None
+
+
+@router.post("/api/learning/seed-from-competencies", response_class=JSONResponse)
+async def seed_from_competencies(request: Request):
+    """Build the review deck from the user's competencies.
+
+    The whole spaced-repetition machine (SM-2 scheduler, grade buttons, streak,
+    heatmap) was fully built and correct — it had simply never been given a single
+    card, because cards only came from course lesson JSONs that don't exist. The 8
+    competencies ARE real content, so this turns each into a genuine flashcard,
+    due immediately. Idempotent (dedup on source_table='competency' + source_id).
+    """
+    rows = db_query(
+        "SELECT competency_id, domain, topic FROM learning_competencies", default=[]
+    ) or []
+    today = str(datetime.date.today())
+    seeded = 0
+    for r in rows:
+        cid = r["competency_id"]
+        exists = db_scalar(
+            "SELECT COUNT(*) FROM spaced_repetition WHERE source_id=? AND source_table='competency'",
+            (cid,), default=0,
+        )
+        if exists:
+            continue
+        card = _generate_card(r["domain"] or "", r["topic"] or "")
+        if card:
+            front, back = card
+        else:
+            front = f"{r['topic']} — explain the core idea and when you'd use it."
+            back = f"Self-assess your grasp of {r['topic']} ({r['domain']})."
+        try:
+            # sr_id is TEXT PRIMARY KEY and is NOT auto-assigned — it must be set
+            # explicitly, or the row gets a NULL id and every review call 422s.
+            db_execute(
+                "INSERT INTO spaced_repetition "
+                "(sr_id, front_text, back_text, source_id, source_table, next_review, "
+                "interval_days, ease_factor, repetitions, created_at) "
+                "VALUES (?,?,?,?,'competency',?,1,2.5,0,datetime('now'))",
+                (f"comp-{cid}", front, back, cid, today),
+            )
+            seeded += 1
+        except Exception:
+            pass
+    return JSONResponse({"status": "ok", "seeded": seeded, "total": len(rows)})
+
+
 def _ensure_lesson_completions_table() -> None:
     try:
         db_execute(
@@ -1006,9 +1095,9 @@ def _seed_spaced_rep_card(slug: str, lesson: dict) -> int:
             return 0
         db_execute(
             "INSERT INTO spaced_repetition "
-            "(front_text, back_text, source_id, source_table, next_review, interval_days, ease_factor, repetitions, created_at) "
-            "VALUES (?,?,?,?,?,1,2.5,0,datetime('now'))",
-            (title, lesson.get("description", ""), lesson_id, slug, today),
+            "(sr_id, front_text, back_text, source_id, source_table, next_review, interval_days, ease_factor, repetitions, created_at) "
+            "VALUES (?,?,?,?,?,?,1,2.5,0,datetime('now'))",
+            (f"{slug}:{lesson_id}", title, lesson.get("description", ""), lesson_id, slug, today),
         )
         return 1
     except Exception:

@@ -21,6 +21,16 @@
    onmouseout="this.style.background='transparent'">
   GO TO COURSES →
 </a>
+{# Build the deck from competencies — the review machine (SM-2, streak, heatmap) was
+   fully built but had never been given a card. This is the one-click way to fill it. #}
+<button hx-post="/api/learning/seed-from-competencies"
+        hx-swap="none"
+        hx-on::after-request="htmx.ajax('GET','/api/partial/learning/due-today',{target:'#sr-due-wrap',swap:'innerHTML'})"
+        style="margin-left:8px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;
+               color:var(--m-on-accent);background:var(--m-accent);border:1px solid var(--m-accent);
+               border-radius:2px;padding:5px 13px;cursor:pointer;">
+  BUILD DECK FROM YOUR COMPETENCIES
+</button>
 {% else %}
 <div class="kicker kicker--accent">
   <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -45,11 +55,11 @@
     </span>
     <!-- Mark done buttons (quality 3=hard, 4=ok, 5=easy) -->
     <div style="display:flex;gap:4px;flex-shrink:0;">
-      <button title="Hard — remembered with effort" onclick="srReview({{ item.id }}, 3, this)"
+      <button title="Hard — remembered with effort" onclick="srReview({{ item.id | tojson }}, 3, this)"
               style="font-family:var(--m-mono);font-size:11px;padding:2px 7px;border:1px solid var(--m-line);border-radius:3px;background:none;color:var(--m-muted);cursor:pointer;">Hard</button>
-      <button title="Good — got it" onclick="srReview({{ item.id }}, 4, this)"
+      <button title="Good — got it" onclick="srReview({{ item.id | tojson }}, 4, this)"
               style="font-family:var(--m-mono);font-size:11px;padding:2px 7px;border:1px solid var(--m-ok);border-radius:3px;background:none;color:var(--m-ok);cursor:pointer;">Good</button>
-      <button title="Easy — no effort needed" onclick="srReview({{ item.id }}, 5, this)"
+      <button title="Easy — no effort needed" onclick="srReview({{ item.id | tojson }}, 5, this)"
               style="font-family:var(--m-mono);font-size:11px;padding:2px 7px;border:1px solid var(--m-info);border-radius:3px;background:none;color:var(--m-info);cursor:pointer;">Easy</button>
     </div>
   </div>
