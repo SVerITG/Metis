@@ -9,7 +9,7 @@
   <div class="todo-row{% if t.status == 'in_progress' %} todo-row--active{% endif %}"
        data-task-id="{{ t.id }}"
        style="grid-template-columns:28px 1fr auto auto;column-gap:14px;">
-    <span class="todo-check" onclick="markTaskDone({{ t.id }}, this)" title="Mark done"></span>
+    <span class="todo-check" onclick="markTaskDone({{ t.id | tojson }}, this)" title="Mark done"></span>
     <div style="min-width:0;">
       <div class="todo-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.title }}</div>
       <div class="todo-meta" style="margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;">
@@ -33,10 +33,10 @@
       {% if t.status == 'in_progress' %}<span style="color:var(--m-info);">IN PROGRESS</span>{% endif %}
     </span>
     <span class="todo-actions" style="display:flex;gap:4px;">
-      <button class="feed-act" title="Mark done" onclick="markTaskDone({{ t.id }}, this)">
+      <button class="feed-act" title="Mark done" onclick="markTaskDone({{ t.id | tojson }}, this)">
         <svg viewBox="0 0 16 16"><polyline points="4 8 7 11 12 5"/></svg>
       </button>
-      <button class="feed-act feed-act-dismiss" title="Delete" onclick="deleteTask({{ t.id }}, this)">
+      <button class="feed-act feed-act-dismiss" title="Delete" onclick="deleteTask({{ t.id | tojson }}, this)">
         <svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>
       </button>
     </span>
