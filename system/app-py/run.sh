@@ -126,7 +126,15 @@ _start_course_server() {
     fi
 
     log "starting Statistics course server (node on :3000)"
-    nohup "$node_exe" "$MLM_APP_DIR/server.js" >> "$MLM_LOG" 2>&1 &
+    # 9>&- is load-bearing: CLOSE the launch-lock fd in this child.
+    # Children inherit open fds, and an flock is only released when EVERY fd
+    # referring to that open file description is closed. The course server is
+    # long-lived, so if it inherits fd 9 it holds the dashboard's launch lock
+    # forever — and every later launch fails flock, reports "another launch in
+    # progress", and gives up. The dashboard then can never restart until the
+    # node process dies. That was the real cause of the recurring "dashboard is
+    # down and won't come back" (diagnosed 2026-07-14).
+    nohup "$node_exe" "$MLM_APP_DIR/server.js" >> "$MLM_LOG" 2>&1 9>&- &
 }
 
 # Helper: ensure the course server is running (used in both adopt and cold-start)
@@ -169,7 +177,16 @@ done
 exec 9>"${APP_DIR}/.metis-launch.lock"
 if command -v flock >/dev/null 2>&1 && ! flock -n 9; then
     log "another launch in progress — waiting to adopt"
-    for _ in $(seq 1 30); do
+    # We lost the lock on the FIRST try — but that alone means very little. Every
+    # child of run.sh inherits fd 9 (uvicorn, a stray `sleep`, the course server),
+    # and an flock is held until EVERY such fd is closed. So a merely *dying*
+    # supervisor can make us lose the race for a moment.
+    #
+    # Therefore: RETRY the lock on every pass. Do not just wait for health.
+    # Waiting only on health is what made a transient holder cost a full timeout.
+    got_lock=0
+    for _ in $(seq 1 120); do
+        # (a) Someone came up healthy → adopt it, never kill a working server.
         if curl -sf -m 2 "http://127.0.0.1:8080/health" >/dev/null 2>&1; then
             echo "Metis already running on http://localhost:8080"
             # Under systemd: monitor the winner's server (same as adopt path)
@@ -183,15 +200,45 @@ if command -v flock >/dev/null 2>&1 && ! flock -n 9; then
             fi
             exit 0
         fi
+        # (b) The holder let go (it died / was transient) → take it and cold-start.
+        if flock -n 9; then
+            got_lock=1
+            log "launch lock freed — cold-starting"
+            break
+        fi
         sleep 1
     done
-    log "gave up waiting for the other launch"
-    exit 1
+
+    # ── Wedged-lock recovery ──────────────────────────────────────────────────
+    # 120s, lock still held, and NOTHING serving. That is not a cold start in
+    # progress — it is a stale holder. Previously we exited 1 here, which is why
+    # the dashboard could NEVER come back on its own and every "fix" only lasted
+    # until the next wedge (diagnosed 2026-07-14: the node course server had
+    # inherited fd 9 and held the lock for its whole life).
+    #
+    # Recreating the lock file gives us a NEW inode: the stale holder's flock is
+    # on the OLD open file description, so it cannot block us — and we never have
+    # to kill an unknown process to break out.
+    if [ "$got_lock" -eq 0 ]; then
+        log "lock held for 120s with no healthy server — stale holder; taking over"
+        rm -f "${APP_DIR}/.metis-launch.lock" 2>/dev/null
+        exec 9>"${APP_DIR}/.metis-launch.lock"
+        if ! flock -n 9; then
+            log "could not take over the launch lock — giving up"
+            exit 1
+        fi
+        log "took over the launch lock — cold-starting"
+    fi
+    # fall through to the cold-start path below
 fi
 
 # No healthy instance → clear any stale/wedged one and free the preferred port.
+#
+# Kill by PORT, never by name. `pkill -f "uvicorn main:app"` matches EVERY uvicorn
+# on the machine with that command line — including the demo instance, which runs
+# the same app on a different port. Freeing the port is the actual intent, and
+# fuser does exactly that without collateral damage.
 rm -f "$PORT_FILE" 2>/dev/null
-pkill -f "uvicorn main:app" 2>/dev/null || true
 command -v fuser >/dev/null 2>&1 && fuser -k 8080/tcp 2>/dev/null || true
 
 PORT=$("$PYTHON" - <<'PYEOF'
@@ -230,7 +277,18 @@ log "supervisor start — 127.0.0.1:${PORT}"
 _ensure_course_server
 
 # Background watchdog: restart Node if it crashes while Metis stays up.
-# Checks every 60s. Exits when .metis-stop is touched.
+# Checks every 60s.
+#
+# `9>&-` is load-bearing — the SAME fd-inheritance bug that wedged the dashboard.
+# This subshell (and its `sleep`) would otherwise inherit the launch lock and hold
+# it for as long as it lives, and an flock is only released when EVERY fd on the
+# open file description closes.
+#
+# The stop-file alone is NOT enough to end it: on the give-up path the supervisor
+# deletes STOP_FILE and exits, and on a clean stop it deletes STOP_FILE within
+# milliseconds while this loop is mid-`sleep 60` — so the flag is missed and the
+# watchdog becomes immortal. Killing it from an EXIT trap is what actually
+# guarantees it dies with its supervisor, race or no race.
 (
     while [ ! -f "$STOP_FILE" ]; do
         sleep 60
@@ -239,7 +297,9 @@ _ensure_course_server
             _start_course_server
         fi
     done
-) &
+) 9>&- &
+WATCHDOG_PID=$!
+trap 'kill "$WATCHDOG_PID" 2>/dev/null; rm -f "$STOP_FILE" 2>/dev/null' EXIT
 
 # ── Supervisor (R3): restart on crash with backoff; clean stop via .metis-stop ─
 # To stop Metis deliberately:  touch "$STOP_FILE" && pkill -f 'uvicorn main:app'
@@ -266,7 +326,8 @@ while [ ! -f "$STOP_FILE" ]; do
     # restart attempt fails with exit 1 ("address already in use") until the kernel
     # releases it (~60s). This was the primary cause of the "5 rapid restarts, giving
     # up" crash loop observed on 2026-06-29.
-    pkill -f "uvicorn main:app" 2>/dev/null || true
+    # Port-scoped only — see the note above. Never `pkill -f "uvicorn main:app"`:
+    # it also kills the demo instance, which shares that exact command line.
     command -v fuser >/dev/null 2>&1 && fuser -k "$PORT"/tcp 2>/dev/null || true
     backoff=$(( attempt * 5 )); [ "$backoff" -gt 60 ] && backoff=60
     log "uvicorn exited (code $ec) after ${ran}s — restart #$attempt in ${backoff}s"

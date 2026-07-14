@@ -27,8 +27,8 @@
   <a href="#" class="ledger-cell ledger-tier-warn"
      title="Blocked tasks needing attention"
      onclick="setNavActive(document.querySelector('[data-tab=work]'),'work'); htmx.ajax('GET','/api/tab/work',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'}); return false;">
-    <div class="ledger-n tnum" style="color:var(--m-warn,#b45309);">{{ stats.blocked_count }}</div>
-    <div class="ledger-l" style="color:var(--m-warn,#b45309);">BLOCKED</div>
+    <div class="ledger-n tnum" style="color:var(--m-warn);">{{ stats.blocked_count }}</div>
+    <div class="ledger-l" style="color:var(--m-warn);">BLOCKED</div>
   </a>
   {% endif %}
   {% if stats.idea_count %}

@@ -29,13 +29,13 @@
       <button type="submit"
               style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
                      padding:8px 16px;background:var(--m-accent);border:none;border-radius:2px;
-                     color:#fff;cursor:pointer;white-space:nowrap;align-self:flex-end;">
+                     color:var(--m-on-accent);cursor:pointer;white-space:nowrap;align-self:flex-end;">
         CHECK GAPS
       </button>
     </form>
 
     {% if error %}
-    <div style="padding:16px 20px;font-family:var(--m-mono);font-size:11px;color:var(--m-warn, #b45309);">
+    <div style="padding:16px 20px;font-family:var(--m-mono);font-size:11px;color:var(--m-warn);">
       {{ error }}
     </div>
     {% endif %}
@@ -45,7 +45,7 @@
     <!-- Summary line -->
     <div style="padding:9px 20px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);border-bottom:1px solid var(--m-rule-soft);">
       {% if results %}
-      <span style="color:var(--m-warn, #b45309);font-weight:600;">{{ results | length }} POTENTIALLY MISSING</span>
+      <span style="color:var(--m-warn);font-weight:600;">{{ results | length }} POTENTIALLY MISSING</span>
       from {{ checked }} OpenAlex results for &ldquo;{{ query }}&rdquo; · sorted by citation count
       {% else %}
       <span style="color:var(--m-ok);">ALL {{ checked }} PAPERS FOUND IN YOUR LIBRARY</span> — no gaps detected for &ldquo;{{ query }}&rdquo;

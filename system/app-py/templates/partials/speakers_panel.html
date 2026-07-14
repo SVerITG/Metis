@@ -22,7 +22,7 @@
     {% for sp in speakers %}
     <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--m-rule-soft);">
       <div style="width:32px;height:32px;border-radius:50%;background:var(--m-accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-        <span style="font-family:var(--m-mono);font-size:11px;color:#fff;font-weight:600;">{{ sp.name[0].upper() }}</span>
+        <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-on-accent);font-weight:600;">{{ sp.name[0].upper() }}</span>
       </div>
       <div style="flex:1;min-width:0;">
         <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">{{ sp.name }}</div>

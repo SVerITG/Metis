@@ -16,6 +16,77 @@ _PROJECT_EXTENSIONS = {
     ".sql", ".json", ".yaml", ".yml", ".qmd", ".tex", ".csv",
 }
 
+# ── Path confinement for read_file / list_folder ──────────────────────────────
+# These tools took an ABSOLUTE path and read it with no boundary at all: no root
+# check, no deny-list. That made `~/.ssh/id_rsa`, `system/.env` and — worst —
+# `basket/private/` readable straight into the Claude API context.
+#
+# `basket/private/` is declared off-limits to every agent in CLAUDE.md and in the
+# list_basket docstring, but that was enforced ONLY inside list_basket. The
+# sensitive-data boundary was documentation, not code. The Claude Code hook that
+# blocks some of this is client-side and Claude Desktop never loads it.
+#
+# So the boundary lives HERE, server-side, where every caller must pass through it.
+_DENY_FILENAMES = {
+    ".env", ".env.local", ".netrc", ".pgpass", "credentials",
+    "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519",
+}
+_DENY_SUFFIXES = {".pem", ".key", ".p12", ".pfx", ".ppk"}
+# Any path component equal to one of these is refused outright.
+_DENY_DIR_PARTS = {".ssh", ".gnupg", ".aws", ".azure", ".kube", "gcloud"}
+
+
+def _path_refusal(target: Path) -> str | None:
+    """Return a refusal message if this path must not be touched, else None.
+
+    Deny-list first (applies everywhere, even inside the repo), then confinement.
+    """
+    try:
+        rp = target.expanduser().resolve()
+    except (OSError, RuntimeError):
+        return "Path could not be resolved."
+
+    lower_parts = [p.lower() for p in rp.parts]
+
+    # 1. basket/private/ — patient / personal data. Never, from anywhere.
+    if "basket" in lower_parts and "private" in lower_parts:
+        return (
+            "Refused: `basket/private/` is off-limits to all agents "
+            "(patient / personal data). This is enforced server-side."
+        )
+
+    # 2. Credential stores and secret files.
+    if any(p in _DENY_DIR_PARTS for p in lower_parts):
+        return f"Refused: `{rp.name}` sits in a credentials directory."
+    if rp.name.lower() in _DENY_FILENAMES or rp.suffix.lower() in _DENY_SUFFIXES:
+        return f"Refused: `{rp.name}` looks like a secret or credential file."
+
+    # 3. Confinement. Allowed: anywhere under the Metis root (the user's own
+    #    research tree), or a NON-hidden path under $HOME (project folders, R
+    #    repos). That still permits every legitimate use — reading an R script in
+    #    ~/projects — while refusing /etc/shadow and every dotfile store in $HOME.
+    home = Path.home().resolve()
+    roots = [home]
+    rc_root = os.environ.get("METIS_RC_ROOT")
+    if rc_root:
+        try:
+            roots.append(Path(rc_root).resolve())
+        except (OSError, RuntimeError):
+            pass
+
+    if not any(rp == r or r in rp.parents for r in roots):
+        return f"Refused: `{rp}` is outside the Metis workspace and your home folder."
+
+    # Hidden directories under $HOME hold config/credentials — refuse unless the
+    # path is inside the Metis root itself (which is where the app legitimately lives).
+    in_rc = rc_root and (Path(rc_root).resolve() in rp.parents or Path(rc_root).resolve() == rp)
+    if not in_rc:
+        rel = rp.relative_to(home) if home in rp.parents else None
+        if rel and any(part.startswith(".") for part in rel.parts):
+            return f"Refused: `{rp}` is inside a hidden (configuration) directory."
+
+    return None
+
 _TRACKED_FILES_DDL = """
 CREATE TABLE IF NOT EXISTS tracked_files (
     path TEXT PRIMARY KEY,
@@ -278,6 +349,13 @@ async def read_file(path: str, max_chars: int = 8000) -> list[TextContent]:
                    increase this or ask for a specific section.
     """
     fp = Path(path)
+
+    # Boundary check BEFORE any stat/read — and before we reveal whether the file
+    # even exists (a "File not found" on ~/.ssh/id_rsa is itself a disclosure).
+    refusal = _path_refusal(fp)
+    if refusal:
+        return [TextContent(type="text", text=refusal)]
+
     if not fp.exists():
         return [TextContent(type="text", text=f"File not found: {path}")]
     if not fp.is_file():
@@ -317,6 +395,12 @@ async def list_folder(folder_path: str, pattern: str = "*") -> list[TextContent]
         pattern: Glob pattern to filter files (e.g. "*.R", "*.md"). Default: all files.
     """
     root = Path(folder_path)
+
+    # Same server-side boundary as read_file — listing a directory is disclosure too.
+    refusal = _path_refusal(root)
+    if refusal:
+        return [TextContent(type="text", text=refusal)]
+
     if not root.exists():
         return [TextContent(type="text", text=f"Folder not found: {folder_path}")]
     if not root.is_dir():

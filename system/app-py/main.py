@@ -324,6 +324,42 @@ async def root(request: Request):
 
 @app.get("/health")
 async def health():
+    """Liveness AND data-layer health.
+
+    This endpoint is the SOLE definition of "healthy" for the whole supervision
+    chain — run.sh's adopt-don't-kill check, and the 5-minute Task Scheduler
+    heartbeat (tools/metis-boot.sh). It used to return {"status": "ok"}
+    unconditionally, without ever touching the database. So a corrupt or empty DB
+    produced a dashboard rendering zeros everywhere while every supervisor happily
+    reported "nothing to do" — the 2026-06-19 corruption mode, made invisible.
+
+    Touch the DB. If the data layer is gone, we are NOT healthy, and supervision
+    must be told so it can act instead of adopting a hollow server.
+    """
+    # Query SQLite directly. Do NOT use db_query/db_scalar here: they catch
+    # OperationalError (including "disk image is malformed") and return a default,
+    # which would report a corrupt database as perfectly healthy — the very failure
+    # this check exists to catch.
+    import sqlite3
+
+    from db import get_db_path
+
+    try:
+        conn = sqlite3.connect(f"file:{get_db_path()}?mode=ro", uri=True, timeout=5)
+        try:
+            tables = conn.execute(
+                "SELECT count(*) FROM sqlite_master WHERE type='table'"
+            ).fetchone()[0]
+        finally:
+            conn.close()
+        if not tables:
+            raise sqlite3.DatabaseError("database has no tables (empty or wiped)")
+    except Exception as e:
+        log.error("health: data layer unhealthy — %s: %s", type(e).__name__, e)
+        return JSONResponse(
+            {"status": "unhealthy", "reason": "database", "error": type(e).__name__},
+            status_code=503,
+        )
     return JSONResponse({"status": "ok"})
 
 
