@@ -64,6 +64,17 @@ if FAILED_MODULES:
 
 
 # ── Domain-specific tool loading ─────────────────────────────────────────────
+# ── Tool-dispatch guard ──────────────────────────────────────────────────────
+# Installed AFTER every tool module has registered, and it wraps FastMCP.call_tool
+# — the single funnel all 213 tools pass through. Before this, the Data Guardian
+# only inspected the `run_metis` request string and the other ~212 tools were
+# callable straight around it: "a front-door mat in a building with 212 side
+# doors". Guarding at the dispatch point means a tool cannot opt out, and a tool
+# written next year is covered without anyone remembering to wire it in.
+from metis_mcp import middleware as _middleware  # noqa: E402
+
+_middleware.install(app)
+
 # When METIS_TOOL_SUBSETS=1 and METIS_AGENT_SUBSET=<slug> are set, strip tools
 # not in the agent's declared subset. This reduces the tools/list token cost
 # by 50–80% for targeted agent sessions.

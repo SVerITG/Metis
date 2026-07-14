@@ -28,51 +28,56 @@ def _dashboard_port(default: int = 8080) -> int:
         return default
 
 
+# Each feed declares its KIND: "news" or "paper".
+#
+# This field is the fix for a bug that kept coming back: half of these feeds are
+# journal tables-of-contents (PLOS NTDs, Lancet ID, Nature Medicine, arXiv, MDPI,
+# a PubMed saved search…). They emit PAPERS. With no kind field they all landed in
+# news_briefs, so the News surface filled up with articles and preprints — and the
+# relevance ranking then PROMOTED them, because a paper is by definition closer to
+# a researcher's corpus than a BBC headline.
+#
+# News is what happened. Literature is what was published. They are different
+# surfaces, different tables, and different jobs to be done.
+#   kind="news"  → news_briefs      (the News surface)
+#   kind="paper" → new_publications (the Library / literature surface)
 FEED_ALLOWLIST = [
-    # Disease surveillance & outbreak monitoring
-    ("WHO outbreak news",      "https://www.who.int/feeds/entity/csr/don/en/rss.xml",                                    "surveillance,public-health"),
-    ("ProMED-mail",            "https://promedmail.org/feed/",                                                            "surveillance,infectious-disease,public-health"),
-    ("ECDC Threat Reports",    "https://www.ecdc.europa.eu/en/rss.xml",                                                  "surveillance,public-health"),
-    ("Africa CDC",             "https://africacdc.org/feed/",                                                             "surveillance,public-health,africa"),
-    # Infectious disease & NTD research
-    ("PLOS NTDs",              "https://journals.plos.org/plosntds/feed/atom",                                            "ntd,tropical-medicine,public-health"),
-    ("CDC EID journal",        "https://wwwnc.cdc.gov/eid/rss/ahead-of-print.xml",                                       "methods,surveillance"),
-    ("Lancet Inf. Diseases",   "https://www.thelancet.com/rssFeed/laninf_current.xml",                                   "infectious-disease,public-health,methods"),
-    ("MSF Science",            "https://www.msf.org/rss.xml",                                                            "field-research,public-health,tropical-medicine"),
-    ("Eurosurveillance",       "https://www.eurosurveillance.org/content/rss.xml",                                       "surveillance,methods,public-health"),
-    # Global health research
-    ("PLOS Medicine",          "https://journals.plos.org/plosmedicine/feed/atom",                                        "public-health,methods"),
-    ("BMJ Global Health",      "https://gh.bmj.com/rss/current.xml",                                                     "public-health,methods"),
-    ("Nature Medicine",        "https://www.nature.com/nm.rss",                                                           "methods,biomedical"),
-    ("Tropical Med & IH",      "https://onlinelibrary.wiley.com/action/showFeed?jc=13653156&type=etoc&feed=rss",         "tropical-medicine,methods,public-health"),
-    # Spatial epidemiology & methods
-    ("IJH Geographics",        "https://ij-healthgeographics.biomedcentral.com/articles/most-recent/rss.xml",              "spatial-epi,methods"),
-    ("Spat Spatio-temp Epi",   "https://sstepj.biomedcentral.com/articles/most-recent/rss.xml",                           "spatial-epi,methods"),
-    ("Int J Epidemiology",     "https://academic.oup.com/rss/site_5339/3241.xml",                                         "methods,epidemiology"),
-    # Regional — Africa / DRC
-    ("WHO AFRO",               "https://www.afro.who.int/rss.xml",                                                         "surveillance,public-health,africa"),
-    # Global health policy
-    ("IHP Newsletter",         "https://www.internationalhealthpolicies.org/feed/",                                       "policy,public-health"),
-    ("DEVEX Global Health",    "https://www.devex.com/news/rss.xml",                                                     "policy,public-health"),
-    ("The New Humanitarian",   "https://www.thenewhumanitarian.org/rss.xml",                                              "policy,public-health,africa"),
-    ("Reliefweb",              "https://reliefweb.int/updates/rss.xml",                                                  "policy,public-health"),
-    # World / general context
-    ("BBC World",              "https://feeds.bbci.co.uk/news/world/rss.xml",                                             "world-news"),
-    ("Reuters World",          "https://feeds.reuters.com/Reuters/worldNews",                                             "world-news"),
-    # AI & methods
-    ("Anthropic News",         "https://www.anthropic.com/news/rss.xml",                                                  "AI"),
-    ("arXiv cs.AI",            "https://rss.arxiv.org/rss/cs.AI",                                                         "AI,methods"),
-    ("arXiv q-bio (epi)",      "https://rss.arxiv.org/rss/q-bio.PE",                                                      "epidemiology,methods"),
-    # Outbreak monitoring (extended)
-    ("WHO WER",                "https://www.who.int/publications/journals/weekly-epidemiological-record/rss.xml",           "surveillance,outbreaks,public-health"),
-    ("WHO DON (full)",         "https://www.who.int/emergencies/disease-outbreak-news/feed.rss",                            "surveillance,outbreaks,public-health"),
-    ("GOARN",                  "https://extranet.who.int/goarn/rss.xml",                                                   "surveillance,outbreaks,public-health"),
-    # NTD-relevant MDPI journals
-    ("MDPI Trop Med",          "https://www.mdpi.com/rss/journal/tropicalmed",                                             "ntd,tropical-medicine,methods"),
-    ("MDPI Pathogens",         "https://www.mdpi.com/rss/journal/pathogens",                                               "infectious-disease,methods"),
-    ("MDPI IJERPH",            "https://www.mdpi.com/rss/journal/ijerph",                                                  "epidemiology,public-health,methods"),
-    # PubMed (NTD saved-search RSS)
-    ("PubMed HAT/NTD",         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1/?limit=15&query=human+african+trypanosomiasis+OR+sleeping+sickness+OR+neglected+tropical+diseases&fc=20250101",  "ntd,tropical-medicine"),
+    # ── NEWS: outbreaks, alerts, policy, world ────────────────────────────────
+    ("WHO outbreak news",      "https://www.who.int/feeds/entity/csr/don/en/rss.xml",                                    "surveillance,public-health",              "news"),
+    ("ProMED-mail",            "https://promedmail.org/feed/",                                                            "surveillance,infectious-disease,public-health", "news"),
+    ("ECDC Threat Reports",    "https://www.ecdc.europa.eu/en/rss.xml",                                                  "surveillance,public-health",              "news"),
+    ("Africa CDC",             "https://africacdc.org/feed/",                                                             "surveillance,public-health,africa",       "news"),
+    ("MSF Science",            "https://www.msf.org/rss.xml",                                                            "field-research,public-health,tropical-medicine", "news"),
+    ("WHO AFRO",               "https://www.afro.who.int/rss.xml",                                                         "surveillance,public-health,africa",       "news"),
+    ("WHO WER",                "https://www.who.int/publications/journals/weekly-epidemiological-record/rss.xml",           "surveillance,outbreaks,public-health",    "news"),
+    ("WHO DON (full)",         "https://www.who.int/emergencies/disease-outbreak-news/feed.rss",                            "surveillance,outbreaks,public-health",    "news"),
+    ("GOARN",                  "https://extranet.who.int/goarn/rss.xml",                                                   "surveillance,outbreaks,public-health",    "news"),
+    ("IHP Newsletter",         "https://www.internationalhealthpolicies.org/feed/",                                       "policy,public-health",                    "news"),
+    ("DEVEX Global Health",    "https://www.devex.com/news/rss.xml",                                                     "policy,public-health",                    "news"),
+    ("The New Humanitarian",   "https://www.thenewhumanitarian.org/rss.xml",                                              "policy,public-health,africa",             "news"),
+    ("Reliefweb",              "https://reliefweb.int/updates/rss.xml",                                                  "policy,public-health",                    "news"),
+    ("BBC World",              "https://feeds.bbci.co.uk/news/world/rss.xml",                                             "world-news",                              "news"),
+    ("Reuters World",          "https://feeds.reuters.com/Reuters/worldNews",                                             "world-news",                              "news"),
+    ("Anthropic News",         "https://www.anthropic.com/news/rss.xml",                                                  "AI",                                      "news"),
+
+    # ── PAPERS: journal tables-of-contents and preprints → the LIBRARY ────────
+    ("PLOS NTDs",              "https://journals.plos.org/plosntds/feed/atom",                                            "ntd,tropical-medicine,public-health",     "paper"),
+    ("PLOS Medicine",          "https://journals.plos.org/plosmedicine/feed/atom",                                        "public-health,methods",                   "paper"),
+    ("CDC EID journal",        "https://wwwnc.cdc.gov/eid/rss/ahead-of-print.xml",                                       "methods,surveillance",                    "paper"),
+    ("Lancet Inf. Diseases",   "https://www.thelancet.com/rssFeed/laninf_current.xml",                                   "infectious-disease,public-health,methods","paper"),
+    ("Eurosurveillance",       "https://www.eurosurveillance.org/content/rss.xml",                                       "surveillance,methods,public-health",      "paper"),
+    ("BMJ Global Health",      "https://gh.bmj.com/rss/current.xml",                                                     "public-health,methods",                   "paper"),
+    ("Nature Medicine",        "https://www.nature.com/nm.rss",                                                           "methods,biomedical",                      "paper"),
+    ("Tropical Med & IH",      "https://onlinelibrary.wiley.com/action/showFeed?jc=13653156&type=etoc&feed=rss",         "tropical-medicine,methods,public-health", "paper"),
+    ("IJH Geographics",        "https://ij-healthgeographics.biomedcentral.com/articles/most-recent/rss.xml",              "spatial-epi,methods",                     "paper"),
+    ("Spat Spatio-temp Epi",   "https://sstepj.biomedcentral.com/articles/most-recent/rss.xml",                           "spatial-epi,methods",                     "paper"),
+    ("Int J Epidemiology",     "https://academic.oup.com/rss/site_5339/3241.xml",                                         "methods,epidemiology",                    "paper"),
+    ("MDPI Trop Med",          "https://www.mdpi.com/rss/journal/tropicalmed",                                             "ntd,tropical-medicine,methods",           "paper"),
+    ("MDPI Pathogens",         "https://www.mdpi.com/rss/journal/pathogens",                                             "infectious-disease,methods",              "paper"),
+    ("MDPI IJERPH",            "https://www.mdpi.com/rss/journal/ijerph",                                                 "epidemiology,public-health,methods",      "paper"),
+    ("arXiv cs.AI",            "https://rss.arxiv.org/rss/cs.AI",                                                         "AI,methods",                              "paper"),
+    ("arXiv q-bio (epi)",      "https://rss.arxiv.org/rss/q-bio.PE",                                                      "epidemiology,methods",                    "paper"),
+    ("PubMed HAT/NTD",         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1/?limit=15&query=human+african+trypanosomiasis+OR+sleeping+sickness+OR+neglected+tropical+diseases&fc=20250101",  "ntd,tropical-medicine", "paper"),
 ]
 
 _DDL_NEWS = """
@@ -355,6 +360,7 @@ def _score_signal(title: str, summary: str, feed_name: str,
 
 def scan_news_feeds(max_per_feed: int = 10) -> dict:
     from metis_mcp.tools.news_images import DDL as _IMG_DDL, image_from_entry, resolve_image
+    papers_added = 0
 
     added = 0
     errors = []
@@ -384,7 +390,7 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
         except Exception:
             _score_batch = None
 
-        for name, url, tags in FEED_ALLOWLIST:
+        for name, url, tags, kind in FEED_ALLOWLIST:
             try:
                 parsed = feedparser.parse(url)
                 pending = []
@@ -393,8 +399,10 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
                     title = entry.get("title", "").strip()
                     if not link or not title:
                         continue
+                    # Dedup against the table this feed actually WRITES to.
+                    _dedup_table = "new_publications" if kind == "paper" else "news_briefs"
                     if conn.execute(
-                        "SELECT 1 FROM news_briefs WHERE source_url=? LIMIT 1", (link,)
+                        f"SELECT 1 FROM {_dedup_table} WHERE source_url=? LIMIT 1", (link,)
                     ).fetchone():
                         continue
                     # Thumbnail: free from the feed if present (BBC/Guardian do),
@@ -417,6 +425,24 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
                     title = sanitize_external(title, f"{src}:title", compact=True)
                     summary_raw = sanitize_external(summary_raw, src)
 
+                    # ── ROUTE ON KIND ────────────────────────────────────────
+                    # A journal table-of-contents feed emits PAPERS. They belong in
+                    # the library, not on the news surface. Sending them to
+                    # news_briefs is what filled News with articles and preprints —
+                    # and the relevance ranking then promoted them to the lead,
+                    # because a paper is by definition closer to a researcher's
+                    # corpus than a BBC headline.
+                    if kind == "paper":
+                        conn.execute(
+                            """INSERT INTO new_publications
+                               (title, journal, pub_date, doi, topic_tag, source_url, discovered_at)
+                               VALUES (?, ?, ?, '', ?, ?, ?)""",
+                            (title, name, datetime.now().date().isoformat(), tags, link,
+                             datetime.now().isoformat()),
+                        )
+                        papers_added += 1
+                        continue
+
                     # A news page without pictures is a list of links. Never let a
                     # slow image lookup break a scan — resolve_image never raises.
                     image_url = feed_img or (resolve_image(None, link, conn) or "")
@@ -434,7 +460,14 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
             except Exception as e:
                 errors.append(f"{name}: {type(e).__name__}: {str(e)[:120]}")
         conn.commit()
-    return {"news_added": added, "errors": errors, "semantic": centroid is not None}
+    # Reported separately on purpose: "12 news, 30 papers" is the honest picture.
+    # They are different things and they went to different places.
+    return {
+        "news_added": added,
+        "papers_added": papers_added,
+        "errors": errors,
+        "semantic": centroid is not None,
+    }
 
 
 def scan_literature_folder() -> dict:
