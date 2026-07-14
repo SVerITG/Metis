@@ -1,8 +1,8 @@
 <div>
-  <div class="sec-label" style="margin-bottom:8px;">
+  <h2 class="sec-label" style="margin-bottom:8px;">
     News radar
     <span class="sec-label-tail">{{ news_briefs|length }} SIGNALS</span>
-  </div>
+  </h2>
   <div class="panel">
     <!-- Category chip strip -->
     {% if categories %}
@@ -26,10 +26,10 @@
                 title="{{ brief.signal }} signal"></span>
           {% endif %}
           {% if brief.domain %}
-          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-accent);white-space:nowrap;flex-shrink:0;">{{ (brief.domain)|upper }}</span>
+          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-accent);white-space:nowrap;flex-shrink:0;">{{ (brief.domain)|upper }}</span>
           {% endif %}
           {% if brief.age_label %}
-          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);white-space:nowrap;flex-shrink:0;">{{ brief.age_label }}</span>
+          <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);white-space:nowrap;flex-shrink:0;">{{ brief.age_label }}</span>
           {% endif %}
         </div>
         <a class="feed-title" href="{{ brief.source_url or '#' }}" target="_blank" rel="noopener"
@@ -42,7 +42,7 @@
         </div>
         {% endif %}
         <button onclick="searchLibraryFor({{ brief.title | tojson }})"
-                style="background:none;border:none;padding:0;font-family:var(--m-mono);font-size:9px;
+                style="background:none;border:none;padding:0;font-family:var(--m-mono);font-size:11px;
                        color:var(--m-muted);cursor:pointer;letter-spacing:0.08em;
                        transition:color 120ms;"
                 onmouseover="this.style.color='var(--m-accent)'"
@@ -54,7 +54,7 @@
       {% endfor %}
     {% else %}
       <div class="empty-row" style="padding:20px;text-align:center;">
-        <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-bottom:8px;">No signals yet</div>
+        <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:8px;">No signals yet</div>
         <div style="font-size:12px;color:var(--m-muted);">Run a content scan to populate the news radar.</div>
       </div>
     {% endif %}
@@ -63,7 +63,7 @@
     <div style="padding:8px 16px 10px;border-top:1px solid var(--m-rule-soft);text-align:right;">
       <a hx-get="/api/tab/news" hx-target="#tab-content" hx-swap="innerHTML" hx-push-url="/news"
          onclick="setNavActive(document.querySelector('.nav-item[data-tab=\'news\']'),'news')"
-         style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);
+         style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-accent);
                 text-decoration:none;cursor:pointer;border:none;">
         ALL {{ total_count }} SIGNALS →
       </a>

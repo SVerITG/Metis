@@ -1,7 +1,7 @@
 {# metis_startup.html — autostart / persistence toggle (Windows Scheduled Task).
    Context: autostart_enabled (bool), error (optional str) #}
 <div id="metis-startup">
-  <div class="sec-label" style="margin-bottom:10px;"><span>Startup &amp; persistence</span><span class="tail">DASHBOARD + TOOLS</span></div>
+  <h2 class="sec-label" style="margin-bottom:10px;"><span>Startup &amp; persistence</span><span class="tail">DASHBOARD + TOOLS</span></h2>
   <div class="panel panel-pad">
     <div class="ed" style="margin-bottom:14px;color:var(--m-text);">
       {% if autostart_enabled %}
@@ -27,7 +27,7 @@
                 hx-post="/api/metis/autostart/enable" hx-target="#metis-startup" hx-swap="outerHTML"
                 hx-indicator="#startup-spin">Turn on — start at login</button>
       {% endif %}
-      <span id="startup-spin" class="htmx-indicator" style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">working…</span>
+      <span id="startup-spin" class="htmx-indicator" style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">working…</span>
     </div>
 
     {% if error %}

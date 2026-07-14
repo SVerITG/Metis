@@ -3,7 +3,7 @@
 
   <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
     <span class="kicker kicker--accent" style="margin:0;">VOICE PROFILES</span>
-    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">{{ speakers | length }} ENROLLED</span>
+    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">{{ speakers | length }} ENROLLED</span>
   </div>
 
   {% if not available %}
@@ -26,13 +26,13 @@
       </div>
       <div style="flex:1;min-width:0;">
         <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">{{ sp.name }}</div>
-        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);">
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);">
           {{ sp.sample_count }} SAMPLE{% if sp.sample_count != 1 %}S{% endif %}
           &middot; UPDATED {{ (sp.updated_at or '')[:10] }}
         </div>
       </div>
       <button onclick="deleteSpeaker({{ sp.id }}, '{{ sp.name }}')"
-              style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;padding:4px 8px;"
+              style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:11px;padding:4px 8px;"
               title="Remove {{ sp.name }}">✕</button>
     </div>
     {% endfor %}
@@ -45,19 +45,19 @@
 
   {# Enroll form #}
   <div style="padding:14px 20px;border-top:1px solid var(--m-rule-soft);">
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">ENROLL NEW VOICE</div>
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">ENROLL NEW VOICE</div>
     <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px;">
       <input id="spk-enroll-name" type="text" placeholder="Full name (e.g. Alex)"
              style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;width:100%;box-sizing:border-box;">
     </div>
     <div style="margin-bottom:8px;">
-      <label style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);display:block;margin-bottom:4px;">
+      <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);display:block;margin-bottom:4px;">
         AUDIO SAMPLE — WAV, MP3, M4A &middot; at least 10 seconds of speech
       </label>
       <input id="spk-enroll-file" type="file" accept=".wav,.mp3,.m4a,.ogg,.flac,.webm"
              style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:12px;color:var(--m-ink);width:100%;box-sizing:border-box;">
     </div>
-    <div id="spk-enroll-status" style="min-height:18px;font-family:var(--m-mono);font-size:10px;margin-bottom:8px;"></div>
+    <div id="spk-enroll-status" style="min-height:18px;font-family:var(--m-mono);font-size:11px;margin-bottom:8px;"></div>
     <div style="display:flex;gap:8px;">
       <button class="btn btn--primary btn--caps" style="flex:1;" onclick="enrollSpeaker()">Save Voice</button>
       <button class="btn btn--ghost btn--caps" onclick="recordSpeakerSample()">
@@ -71,7 +71,7 @@
 </div>
 
 <div id="spk-record-area" style="display:none;padding:14px 20px;background:var(--m-surface);border:1px solid var(--m-line);border-radius:4px;margin-bottom:18px;">
-  <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:8px;">RECORDING VOICE SAMPLE</div>
+  <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:8px;">RECORDING VOICE SAMPLE</div>
   <div id="spk-record-status" style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);margin-bottom:10px;">Press Start, speak for 15–30 seconds, press Stop.</div>
   <div style="display:flex;gap:8px;">
     <button class="btn btn--primary btn--caps" id="spk-rec-start" onclick="startSpeakerRecording()">Start Recording</button>

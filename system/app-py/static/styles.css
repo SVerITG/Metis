@@ -423,7 +423,10 @@ pre code { background: transparent; padding: 0; color: inherit; }
 .page-head .page-meta { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--m-muted); text-align: right; }
 
 /* Section label */
-.sec-label { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--m-muted); display: flex; align-items: center; gap: 14px; margin: 0 0 16px; }
+/* font-weight is pinned to 400 so that promoting these from <div> to a semantic
+   <h2>/<h3> (for the document outline) does not silently bold them to the UA
+   default of 700. The look is identical; only the tag changes. */
+.sec-label { font-family: var(--m-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.22em; text-transform: uppercase; color: var(--m-muted); display: flex; align-items: center; gap: 14px; margin: 0 0 16px; }
 .sec-label::after { content: ""; flex: 1; height: 1px; background: var(--m-rule); }
 .sec-label .tail,
 .sec-label .sec-label-tail { font-family: var(--m-mono); font-size: 11px; color: var(--m-muted); }
@@ -440,7 +443,7 @@ pre code { background: transparent; padding: 0; color: inherit; }
 .panel-pad { padding: 22px 24px; }
 
 /* Kicker */
-.kicker { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--m-muted); display: flex; gap: 8px; align-items: center; }
+.kicker { font-family: var(--m-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.2em; text-transform: uppercase; color: var(--m-muted); display: flex; gap: 8px; align-items: center; }
 .kicker--accent { color: var(--m-accent); }
 .kicker--ochre  { color: var(--m-ochre-deep); }
 

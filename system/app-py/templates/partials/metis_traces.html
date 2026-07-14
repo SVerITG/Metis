@@ -1,10 +1,10 @@
 <!-- partials/metis_traces.html — Phase 5.9 span waterfall -->
 
 {% set KIND_COLOR = {
-  "internal": "#4e8ef7",
+  "internal": "var(--m-chart-1)",
   "tool":     "var(--m-ok)",
   "agent":    "var(--m-warn)",
-  "llm":      "#9b59b6"
+  "llm":      "var(--m-chart-5)"
 } %}
 
 <div class="d-flex align-items-center gap-2 mb-2 text-muted small">
@@ -85,7 +85,7 @@
                title="{{ span.name }} — {{ span.duration_ms or '?' }}ms [{{ span.kind }}]{% if span.error %} ERROR: {{ span.error }}{% endif %}">
           </div>
           {% if span.status == 'error' %}
-          <span style="position:absolute; left:{{ left_pct }}%; font-size:8px; top:-1px; color:var(--m-alert);">✕</span>
+          <span style="position:absolute; left:{{ left_pct }}%; font-size:11px; top:-1px; color:var(--m-alert);">✕</span>
           {% endif %}
         </div>
         <!-- Duration -->

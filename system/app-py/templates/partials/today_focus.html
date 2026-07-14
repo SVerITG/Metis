@@ -1,11 +1,9 @@
+{% from "partials/_section.html" import sec_label %}
 {# today_focus.html — Merged dismissable focus cards (up to 6 items).
    Context: items (list of dicts with item_type, item_id, title, subtitle, badge, badge_color). #}
 <div id="today-focus">
 {% if items %}
-  <div class="sec-label" style="margin-bottom:14px;">
-    <span>Today's focus</span>
-    <span class="tail">STAR A TASK TO PIN IT HERE</span>
-  </div>
+  {{ sec_label("Today's focus", tail="STAR A TASK TO PIN IT HERE", style="margin-bottom:14px;") }}
   <div class="grid grid-3" style="margin-bottom:32px;">
     {% for item in items %}
     <div class="panel" style="padding:16px 20px;position:relative;">
@@ -22,9 +20,9 @@
               onmouseout="this.style.opacity='0.5';this.style.color='var(--m-muted)'">&times;</button>
       {# Badge #}
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-        <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;padding:2px 8px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, {{ item.badge_color }} 15%, transparent);color:{{ item.badge_color }};">{{ item.badge }}</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;padding:2px 8px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, {{ item.badge_color }} 15%, transparent);color:{{ item.badge_color }};">{{ item.badge }}</span>
         {% if item.subtitle %}
-        <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;color:var(--m-muted);">{{ item.subtitle }}</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;color:var(--m-muted);">{{ item.subtitle }}</span>
         {% endif %}
       </div>
       {# Title #}
@@ -33,10 +31,7 @@
     {% endfor %}
   </div>
 {% else %}
-  <div class="sec-label" style="margin-bottom:14px;">
-    <span>Today's focus</span>
-    <span class="tail">ALL CLEAR</span>
-  </div>
+  {{ sec_label("Today's focus", tail="ALL CLEAR", style="margin-bottom:14px;") }}
   <div class="panel" style="padding:20px 28px;margin-bottom:32px;">
     <div class="ed" style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">
       No open tasks or active ideas right now. Star a task or capture an idea to fill this section.

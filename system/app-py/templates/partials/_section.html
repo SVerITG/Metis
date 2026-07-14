@@ -32,6 +32,31 @@
 {% endmacro %}
 
 
+{#-
+  sec_label — the heading style the app ACTUALLY uses (mono 11px uppercase with a
+  hairline rule), emitted as a real <h2>/<h3> instead of a <div>.
+
+  Why this exists: `section()` above renders a 20px serif `.section-title`. The ~100
+  hand-rolled headings in the app are all `.sec-label`. Migrating them to `section()`
+  would restyle every heading in the product — a redesign, not a migration. This macro
+  gives the same single-source-of-truth benefit while keeping the look byte-identical,
+  and fixes the real defect: the page had no document outline (one <h1>, zero <h2>).
+
+  `level` picks the heading rank so pages nest correctly (h2 for a page section, h3
+  for a subsection). Use `section()` when you genuinely want the serif title.
+
+  Usage:
+    {% from "partials/_section.html" import sec_label %}
+    {{ sec_label("Research threads", tail="LAST 7 DAYS") }}
+-#}
+{% macro sec_label(title, tail=None, level=2, id=None, style=None) %}
+<h{{ level }} class="sec-label"{% if id %} id="{{ id }}"{% endif %}{% if style %} style="{{ style }}"{% endif %}>
+  <span>{{ title }}</span>
+  {%- if tail %}<span class="tail">{{ tail }}</span>{% endif %}
+</h{{ level }}>
+{% endmacro %}
+
+
 {#- Skeleton placeholder — drop into a section body while HTMX is loading. -#}
 {% macro skeleton_block(rows=3, sizes=["w-90", "w-70", "w-50"]) %}
 <div class="skeleton-stack">

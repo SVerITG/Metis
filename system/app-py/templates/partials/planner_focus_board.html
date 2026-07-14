@@ -16,7 +16,7 @@
       Once it's in, I'll show you the next action, open tasks, and when you last touched it.
     </p>
     <a href="/tab/work"
-       style="display:inline-block;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;
+       style="display:inline-block;font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;
               color:var(--m-accent);text-decoration:none;padding:8px 14px;border:1px solid var(--m-accent);border-radius:3px;">
       OPEN WORK TAB &rarr;
     </a>
@@ -32,7 +32,7 @@
               transition:background 140ms ease, border-left-color 140ms ease;"
        onmouseover="this.style.background='var(--m-surface-2)';this.style.borderLeftColor='var(--m-accent)';"
        onmouseout="this.style.background='transparent';this.style.borderLeftColor='transparent';">
-      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;
                   color:{% if c.priority == 'high' %}var(--m-alert){% elif c.priority == 'medium' %}var(--m-accent){% else %}var(--m-muted){% endif %};
                   margin-bottom:8px;">
         {{ c.priority | upper }}{% if c.domain %} &middot; {{ c.domain | upper }}{% endif %}
@@ -45,7 +45,7 @@
         Next: {{ c.next_step[:100] }}{% if c.next_step | length > 100 %}&hellip;{% endif %}
       </div>
       {% endif %}
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.10em;color:var(--m-muted);">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.10em;color:var(--m-muted);">
         <span>
           {{ c.open_tasks }} OPEN TASK{% if c.open_tasks != 1 %}S{% endif %}
         </span>
@@ -53,7 +53,7 @@
         <span>{{ c.touched_label | upper }}</span>
         {% endif %}
       </div>
-      <div style="margin-top:12px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);">
+      <div style="margin-top:12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-accent);">
         OPEN IN WORK &rarr;
       </div>
     </a>

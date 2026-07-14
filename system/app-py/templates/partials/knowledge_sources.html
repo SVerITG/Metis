@@ -1,8 +1,6 @@
+{% from "partials/_section.html" import sec_label %}
 <div>
-  <div class="sec-label" style="margin-bottom:12px;">
-    <span>Sources · recently clipped</span>
-    <span class="tail">IN THE HAND</span>
-  </div>
+  {{ sec_label("Sources · recently clipped", tail="IN THE HAND", style="margin-bottom:12px;") }}
   <div class="panel">
     {% if sources %}
       {% for source in sources %}
@@ -15,7 +13,7 @@
             {% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}
            ">
         <!-- Tag / source type -->
-        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.18em;color:{{ source.tag_color }};text-transform:uppercase;">
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;color:{{ source.tag_color }};text-transform:uppercase;">
           {{ source.tag }}
         </div>
         <!-- Title + author -->
@@ -32,7 +30,7 @@
         <!-- Chip -->
         <div style="text-align:right;">
           {% if source.doi %}
-          <span style="display:inline-flex;align-items:center;padding:2px 9px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">
+          <span style="display:inline-flex;align-items:center;padding:2px 9px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">
             DOI
           </span>
           {% endif %}

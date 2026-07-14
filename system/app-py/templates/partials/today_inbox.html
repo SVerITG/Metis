@@ -1,9 +1,9 @@
 <!-- today_inbox.html — Agent inbox feed-row, editorial -->
 <div id="today-inbox-card">
-  <div class="sec-label" style="margin-bottom:8px;">
+  <h2 class="sec-label" style="margin-bottom:8px;">
     <span>Agent inbox</span>
     <span class="tail">{{ items | length }} RECENT</span>
-  </div>
+  </h2>
   <div class="panel" id="inbox-list">
     {% if not items %}
     <div class="empty-row"><em>Inbox clear. The agents have nothing for you.</em></div>

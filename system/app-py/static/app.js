@@ -2186,7 +2186,7 @@ function _mcpSetOnline() {
   var label = document.getElementById('mcp-label');
   var tbtn  = document.getElementById('mcp-toggle-btn');
   var rbtn  = document.getElementById('mcp-reconnect-btn');
-  if (dot)   { dot.style.background = '#34c759'; }
+  if (dot)   { dot.style.background = 'var(--m-ok)'; }
   if (label) { label.textContent = 'Connected'; label.style.color = ''; }
   if (tbtn)  { tbtn.style.borderColor = 'var(--m-rule)'; tbtn.title = 'Metis online — click to restart'; }
   if (rbtn)  { rbtn.style.display = 'none'; }
@@ -2198,9 +2198,9 @@ function _mcpSetOffline() {
   var label = document.getElementById('mcp-label');
   var tbtn  = document.getElementById('mcp-toggle-btn');
   var rbtn  = document.getElementById('mcp-reconnect-btn');
-  if (dot)   { dot.style.background = '#ff9500'; }
-  if (label) { label.textContent = 'Offline'; label.style.color = '#ff9500'; }
-  if (tbtn)  { tbtn.style.borderColor = '#ff9500'; tbtn.title = 'Metis offline — click to reconnect'; }
+  if (dot)   { dot.style.background = 'var(--m-warn)'; }
+  if (label) { label.textContent = 'Offline'; label.style.color = 'var(--m-warn)'; }
+  if (tbtn)  { tbtn.style.borderColor = 'var(--m-warn)'; tbtn.title = 'Metis offline — click to reconnect'; }
   if (rbtn)  { rbtn.style.display = 'none'; }
 }
 

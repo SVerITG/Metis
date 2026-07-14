@@ -31,21 +31,21 @@
            title="Open project details">{{ p.title }}</div>
       <!-- Category chip -->
       {% if p.category %}
-      <span class="chip chip--plain" style="flex-shrink:0;font-size:10px;">{{ p.category[:16] }}</span>
+      <span class="chip chip--plain" style="flex-shrink:0;font-size:11px;">{{ p.category[:16] }}</span>
       {% endif %}
       <!-- Domain chip -->
       {% if p.domain %}
-      <span class="chip chip--info" style="flex-shrink:0;font-size:10px;">{{ p.domain[:16] }}</span>
+      <span class="chip chip--info" style="flex-shrink:0;font-size:11px;">{{ p.domain[:16] }}</span>
       {% endif %}
       <!-- Tag chips (multiple) -->
       {% for tag in (p.tags_list or [])[:3] %}
-      <span class="chip chip--plain" style="flex-shrink:0;font-size:9px;opacity:.8;">{{ tag[:14] }}</span>
+      <span class="chip chip--plain" style="flex-shrink:0;font-size:11px;opacity:.8;">{{ tag[:14] }}</span>
       {% endfor %}
       <!-- Type / article badge -->
       {% if p.launcher_type == 'article' or p.project_type == 'article' %}
-      <span class="chip" style="flex-shrink:0;font-size:10px;background:var(--m-ochre-wash);color:var(--m-ochre-deep);border:1px solid var(--m-ochre-soft);">ARTICLE</span>
+      <span class="chip" style="flex-shrink:0;font-size:11px;background:var(--m-ochre-wash);color:var(--m-ochre-deep);border:1px solid var(--m-ochre-soft);">ARTICLE</span>
       {% elif p.project_type and p.project_type != 'research' %}
-      <span class="chip chip--plain" style="flex-shrink:0;font-size:10px;">{{ p.project_type | upper }}</span>
+      <span class="chip chip--plain" style="flex-shrink:0;font-size:11px;">{{ p.project_type | upper }}</span>
       {% endif %}
       <!-- Notes toggle -->
       <button onclick="toggleProjectNotes('{{ p.id }}')"
@@ -77,14 +77,14 @@
 
       <!-- Last session indicator -->
       {% if p.last_session_at %}
-      <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
+      <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
         Last session · {{ p.last_session_at[:10] }}
       </div>
       {% endif %}
 
       <!-- Next step -->
       {% if p.next_step %}
-      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-accent);
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-accent);
                   padding:6px 10px;background:var(--m-accent-wash);border-radius:4px;">
         NEXT → {{ p.next_step[:120] }}{% if p.next_step|length > 120 %}…{% endif %}
       </div>
@@ -96,7 +96,7 @@
            hx-trigger="intersect once, every 90s"
            hx-swap="innerHTML"
            style="min-height:20px;">
-        <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">Pulling tasks for this project…</div>
+        <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">Pulling tasks for this project…</div>
       </div>
 
       <!-- Launcher rail (driven by launchers_list from DB) -->
