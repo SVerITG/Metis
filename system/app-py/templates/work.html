@@ -16,6 +16,25 @@
          hx-swap="innerHTML">— PROJECTS · — TASKS · — PAUSED</div>
   </div>
 
+  {# List / Board toggle. Planner used to be its own tab, but it queried the same
+     tasks/projects tables as Work. It is now the "Board" view here: the planning
+     horizon (week ahead · intentions · project pipeline) that the task-centric
+     List view doesn't show. One dataset, two lenses, one surface. #}
+  <div style="display:flex;gap:2px;margin-bottom:22px;border:1px solid var(--m-rule);
+              border-radius:6px;width:max-content;padding:2px;">
+    <button id="work-toggle-list" onclick="workSetView('list')"
+            style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
+                   padding:5px 14px;border:none;border-radius:4px;cursor:pointer;
+                   background:var(--m-accent);color:var(--m-on-accent);">List</button>
+    <button id="work-toggle-board" onclick="workSetView('board')"
+            style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
+                   padding:5px 14px;border:none;border-radius:4px;cursor:pointer;
+                   background:transparent;color:var(--m-muted);">Board</button>
+  </div>
+
+  <!-- ══════════ LIST VIEW ══════════ -->
+  <div id="work-view-list">
+
   <!-- Due Today / Overdue strip -->
   <div hx-get="/api/partial/work/due-today"
        hx-trigger="load"
@@ -227,6 +246,46 @@
        id="work-all-tasks">
     <div class="panel panel-pad skeleton" style="min-height:80px;"></div>
   </div>
+
+  </div><!-- ══════════ /LIST VIEW ══════════ -->
+
+  <!-- ══════════ BOARD VIEW (was the Planner tab) ══════════ -->
+  <div id="work-view-board" style="display:none;">
+    <!-- Week ahead -->
+    <div hx-get="/api/partial/planner/week" hx-trigger="revealed" hx-swap="innerHTML" style="margin-bottom:28px;">
+      {{ sec_label("The week ahead", tail="SEVEN DAYS", style="margin-bottom:14px;") }}
+      <div class="panel panel-pad skeleton" style="min-height:120px;"></div>
+    </div>
+    <!-- Intentions -->
+    <div hx-get="/api/partial/planner/intentions" hx-trigger="revealed" hx-swap="innerHTML" style="margin-bottom:28px;">
+      {{ sec_label("Intentions", tail="THIS QUARTER", style="margin-bottom:14px;") }}
+      <div class="panel panel-pad skeleton" style="min-height:80px;"></div>
+    </div>
+    <!-- Project pipeline -->
+    <div hx-get="/api/partial/planner/kanban" hx-trigger="revealed" hx-swap="innerHTML">
+      {{ sec_label("The pipeline", tail="SOMEDAY · INCUBATING · ACTIVE · DONE", style="margin-bottom:14px;") }}
+      <div class="panel panel-pad skeleton" style="min-height:160px;"></div>
+    </div>
+  </div>
+
+  <script>
+    // Toggle between Work's task-centric List and the planning-horizon Board.
+    // Board partials use hx-trigger="revealed", so they load the first time the
+    // board is shown and not before — the List view stays instant.
+    window.workSetView = function(view){
+      var list = document.getElementById('work-view-list');
+      var board = document.getElementById('work-view-board');
+      var bl = document.getElementById('work-toggle-list');
+      var bb = document.getElementById('work-toggle-board');
+      var on = 'var(--m-accent)', onFg = 'var(--m-on-accent)', off = 'transparent', offFg = 'var(--m-muted)';
+      var showBoard = view === 'board';
+      list.style.display = showBoard ? 'none' : '';
+      board.style.display = showBoard ? '' : 'none';
+      bb.style.background = showBoard ? on : off;  bb.style.color = showBoard ? onFg : offFg;
+      bl.style.background = showBoard ? off : on;  bl.style.color = showBoard ? offFg : onFg;
+      if (showBoard && window.htmx) window.htmx.process(board);  // fire revealed loads
+    };
+  </script>
 
 </div>
 {% endblock %}
