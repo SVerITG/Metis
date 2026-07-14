@@ -44,20 +44,47 @@ $settings = New-ScheduledTaskSettingsSet `
     -StartWhenAvailable `
     -MultipleInstances IgnoreNew
 
-# Register with BOTH triggers
-Register-ScheduledTask `
-    -TaskName $taskName `
-    -Action $action `
-    -Trigger @($triggerLogon, $triggerHeartbeat) `
-    -Settings $settings `
-    -Description "Start the Metis Research Cortex dashboard at login and keep it alive with a 5-minute heartbeat. Recovers from sleep/wake, WSL crashes, and unexpected shutdowns. No browser window is opened." `
-    -RunLevel Limited
+# Register with BOTH triggers.
+# -ErrorAction Stop is essential: without it a "Access is denied" from a managed
+# /corporate machine only writes a non-terminating error, the script sails past it
+# and still prints "Task registered" — so the supervision looks installed when it
+# is not. That false success is exactly why the dashboard appeared "fixed" for
+# months while nothing was actually watching it (found 2026-07-14).
+try {
+    Register-ScheduledTask `
+        -TaskName $taskName `
+        -Action $action `
+        -Trigger @($triggerLogon, $triggerHeartbeat) `
+        -Settings $settings `
+        -Description "Start the Metis Research Cortex dashboard at login and keep it alive with a 5-minute heartbeat. Recovers from sleep/wake, WSL crashes, and unexpected shutdowns. No browser window is opened." `
+        -RunLevel Limited `
+        -ErrorAction Stop | Out-Null
+}
+catch {
+    Write-Host ""
+    Write-Host "FAILED to register '$taskName': $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "This machine's policy may block at-logon tasks. Fallback that DOES work" -ForegroundColor Yellow
+    Write-Host "without elevation (verified on 5XLQDJ4) — a 5-minute heartbeat only:" -ForegroundColor Yellow
+    Write-Host "  schtasks /create /tn `"Metis Heartbeat`" /tr `"wscript.exe '$vbsPath'`" /sc minute /mo 5 /f"
+    Write-Host ""
+    Write-Host "Logon start is then covered by the Startup-folder shortcut." -ForegroundColor Yellow
+    exit 1
+}
+
+# Prove it exists rather than assuming the call worked.
+$check = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+if (-not $check) {
+    Write-Host "Register-ScheduledTask reported no error but the task is absent." -ForegroundColor Red
+    exit 1
+}
 
 Write-Host ""
-Write-Host "Task registered: $taskName" -ForegroundColor Green
+Write-Host "Task registered and verified present: $taskName" -ForegroundColor Green
 Write-Host "  Action:    wscript.exe `"$vbsPath`""
 Write-Host "  Trigger 1: At logon (cold start)"
 Write-Host "  Trigger 2: Every 5 minutes (heartbeat / recovery)"
 Write-Host "  Settings:  Battery OK, no duplicate instances"
+Write-Host "  State:     $($check.State)"
 Write-Host ""
 Write-Host "Verify in Task Scheduler: taskschd.msc -> Task Scheduler Library -> $taskName"

@@ -181,7 +181,7 @@
             {% endif %}
             {% if not item.is_read %}
             <span style="font-family:var(--m-mono);font-size:7.5px;letter-spacing:0.08em;
-              padding:1px 6px;border-radius:var(--m-radius-pill,10px);background:var(--m-accent);color:#fff;">NEW</span>
+              padding:1px 6px;border-radius:var(--m-radius-pill,10px);background:var(--m-accent);color:var(--m-on-accent);">NEW</span>
             {% endif %}
           </div>
         </td>
@@ -208,7 +208,7 @@
              style="display:inline-block;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
                     color:var(--m-ok);text-decoration:none;padding:2px 6px;margin-left:2px;
                     border:1px solid var(--m-ok);border-radius:2px;transition:background 140ms,color 140ms;"
-             onmouseover="this.style.background='var(--m-ok)';this.style.color='#fff'"
+             onmouseover="this.style.background='var(--m-ok)';this.style.color='var(--m-on-accent)'"
              onmouseout="this.style.background='';this.style.color='var(--m-ok)'"
              title="Open local PDF">PDF ↗</a>
           {% endif %}

@@ -72,11 +72,23 @@ except Exception as e:
     print(f"IMPORTFAIL {type(e).__name__}: {e}")
 PYEOF
 )"
-echo "$COUNT" | while read -r line; do
+# Check the FAILURE case outside any pipeline. `exit 1` inside `echo … | while`
+# runs in a SUBSHELL and only exits that subshell — so the script sailed on and
+# printed "Reinstall complete." with status 0 even when the package did not import.
+# metis-preflight.sh gates on this exit code and would then log "running current
+# code" over a broken install. Same false-success class as register-autostart.ps1.
+if printf '%s\n' "$COUNT" | grep -q '^IMPORTFAIL'; then
+  printf '%s\n' "$COUNT" | sed -n 's/^IMPORTFAIL /  ✗ /p'
+  echo ""
+  echo "  The installed package does NOT import — the server would start on broken code."
+  echo "  Nothing was verified. Fix the error above and re-run."
+  exit 1
+fi
+
+printf '%s\n' "$COUNT" | while read -r line; do
   case "$line" in
-    OK*)        set -- $line; echo "  ✓ imports OK — $2 tools registered, $3 module(s) skipped" ;;
-    FAILMOD*)   echo "  ⚠ ${line#FAILMOD }" ;;
-    IMPORTFAIL*)echo "  ✗ ${line#IMPORTFAIL }"; exit 1 ;;
+    OK*)      set -- $line; echo "  ✓ imports OK — $2 tools registered, $3 module(s) skipped" ;;
+    FAILMOD*) echo "  ⚠ ${line#FAILMOD }" ;;
   esac
 done
 

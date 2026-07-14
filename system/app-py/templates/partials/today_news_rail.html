@@ -3,10 +3,10 @@
 
 {# ── Signal strength colors ── #}
 {% set signal_colors = {
-  'critical': '#dc2626',
+  'critical': 'var(--m-alert)',
   'high': '#ea580c',
   'medium': '#ca8a04',
-  'low': '#6b7280',
+  'low': 'var(--m-muted)',
   'routine': '#8d99ae'
 } %}
 {% set signal_bg = {
@@ -46,12 +46,12 @@
         <div style="display:flex;border:1px solid var(--m-rule);border-radius:var(--m-radius);overflow:hidden;">
           <button style="padding:4px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;border:none;cursor:pointer;
                          background:{% if period == 'week' %}var(--m-accent){% else %}transparent{% endif %};
-                         color:{% if period == 'week' %}#fff{% else %}var(--m-muted){% endif %};"
+                         color:{% if period == 'week' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
                   hx-get="/api/partial/today/news-rail?period=week"
                   hx-target="#news-surface" hx-swap="outerHTML">WEEK</button>
           <button style="padding:4px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;border:none;border-left:1px solid var(--m-rule);cursor:pointer;
                          background:{% if period == 'month' %}var(--m-accent){% else %}transparent{% endif %};
-                         color:{% if period == 'month' %}#fff{% else %}var(--m-muted){% endif %};"
+                         color:{% if period == 'month' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
                   hx-get="/api/partial/today/news-rail?period=month"
                   hx-target="#news-surface" hx-swap="outerHTML">MONTH</button>
         </div>
@@ -59,7 +59,7 @@
         <button style="padding:4px 12px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
                        border:1px solid var(--m-accent);border-radius:var(--m-radius);cursor:pointer;
                        background:transparent;color:var(--m-accent);transition:all 120ms;"
-                onmouseover="this.style.background='var(--m-accent)';this.style.color='#fff'"
+                onmouseover="this.style.background='var(--m-accent)';this.style.color='var(--m-on-accent)'"
                 onmouseout="this.style.background='transparent';this.style.color='var(--m-accent)'"
                 onclick="updateNewsSummaries('{{ period }}')"
                 id="news-update-btn">
@@ -86,7 +86,7 @@
       <div style="display:flex;gap:8px;align-items:center;">
         <button style="padding:5px 16px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
                        border:none;border-radius:var(--m-radius);cursor:pointer;
-                       background:var(--m-accent);color:#fff;" onclick="runSummaryUpdate('{{ period }}')">GENERATE</button>
+                       background:var(--m-accent);color:var(--m-on-accent);" onclick="runSummaryUpdate('{{ period }}')">GENERATE</button>
         <button style="padding:5px 16px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
                        border:1px solid var(--m-rule);border-radius:var(--m-radius);cursor:pointer;
                        background:transparent;color:var(--m-muted);" onclick="document.getElementById('news-topic-selector').style.display='none'">Cancel</button>

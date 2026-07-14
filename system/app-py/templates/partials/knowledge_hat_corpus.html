@@ -55,10 +55,10 @@
     {% if collections %}
     <div style="padding:8px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
       <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-right:6px;">FOLDER</span>
-      <button style="padding:3px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;border:1px solid var(--m-rule);border-radius:2px;cursor:pointer;white-space:nowrap;background:{% if not active_collection %}var(--m-accent){% else %}var(--m-surface-2){% endif %};color:{% if not active_collection %}#fff{% else %}var(--m-muted){% endif %};"
+      <button style="padding:3px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;border:1px solid var(--m-rule);border-radius:2px;cursor:pointer;white-space:nowrap;background:{% if not active_collection %}var(--m-accent){% else %}var(--m-surface-2){% endif %};color:{% if not active_collection %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
               data-coll="" onclick="setHatCollection('')">All</button>
       {% for coll, count in collections %}
-      <button style="padding:3px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;border:1px solid var(--m-rule);border-radius:2px;cursor:pointer;white-space:nowrap;background:{% if active_collection == coll %}var(--m-accent){% else %}var(--m-surface-2){% endif %};color:{% if active_collection == coll %}#fff{% else %}var(--m-muted){% endif %};"
+      <button style="padding:3px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;border:1px solid var(--m-rule);border-radius:2px;cursor:pointer;white-space:nowrap;background:{% if active_collection == coll %}var(--m-accent){% else %}var(--m-surface-2){% endif %};color:{% if active_collection == coll %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
               data-coll="{{ coll | e }}" onclick="setHatCollection(this.dataset.coll)">
         {{ coll }}&nbsp;<span style="opacity:.55;">({{ count }})</span>
       </button>
@@ -84,7 +84,7 @@ function setHatCollection(val) {
   document.querySelectorAll('[data-coll]').forEach(function(b) {
     var active = b.dataset.coll === val;
     b.style.background = active ? 'var(--m-accent)' : 'var(--m-surface-2)';
-    b.style.color = active ? '#fff' : 'var(--m-muted)';
+    b.style.color = active ? 'var(--m-on-accent)' : 'var(--m-muted)';
   });
   _refreshHatTable();
 }

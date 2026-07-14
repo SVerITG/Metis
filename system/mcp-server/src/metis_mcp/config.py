@@ -17,9 +17,75 @@ def get_root() -> Path:
     return _infer_root()
 
 
+def load_env_file() -> list[str]:
+    """Load `system/.env` into os.environ. Returns the names of keys it set.
+
+    The dashboard's run.sh sources system/.env; the MCP server's run.sh never did.
+    So inside the MCP process ANTHROPIC_API_KEY was simply NOT SET — and every
+    feature that needs the Claude API silently took its degraded path instead of
+    failing. The most visible casualty was the weekly self-improvement loop: its
+    semantic theme extraction (Claude Haiku) could never run, so it *always* fell
+    through to word-frequency counting and produced proposals like
+    "Recurring themes: test (4), library (2)". The capability existed; the key
+    never reached it. (Found 2026-07-14.)
+
+    Existing environment variables always win — this only fills gaps.
+    """
+    loaded: list[str] = []
+    env_path = get_root() / "system" / ".env"
+    try:
+        if not env_path.is_file():
+            return loaded
+        for raw in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key, value = key.strip(), value.strip().strip('"').strip("'")
+            if not key or not value:
+                continue
+            if os.environ.get(key):
+                continue  # never override a real environment variable
+            os.environ[key] = value
+            loaded.append(key)
+    except OSError:
+        pass
+    return loaded
+
+
 # NOTE: the two helpers below are intentionally duplicated verbatim in the
 # dashboard's system/app-py/db.py. Both processes must resolve the live DB to the
 # SAME location, and the two codebases don't share a module. Keep them in sync.
+
+def _is_usable_db(path: Path) -> bool:
+    """True only if `path` is a real SQLite DB with actual content.
+
+    Guards the migration source. `path.exists()` is dangerously insufficient: a
+    0-byte file opens as a VALID EMPTY SQLite database, so migrating from one
+    silently produces an empty Metis — every note, paper and memory apparently
+    gone, with no error anywhere. Require: non-empty file, readable header, and at
+    least one table.
+    """
+    try:
+        if not path.is_file() or path.stat().st_size == 0:
+            return False
+    except OSError:
+        return False
+
+    import sqlite3
+
+    try:
+        con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        try:
+            tables = con.execute(
+                "SELECT count(*) FROM sqlite_master WHERE type='table'"
+            ).fetchone()[0]
+            return bool(tables)
+        finally:
+            con.close()
+    except sqlite3.DatabaseError:
+        return False
+
 
 def _migrate_db_to_local(source: Path, dest: Path) -> bool:
     """One-time copy of the live DB to local disk via SQLite's backup API.
@@ -92,7 +158,16 @@ def resolve_live_db(root: Path) -> Path:
     if local.exists():
         return local
 
-    source = onedrive if onedrive.exists() else (legacy if legacy.exists() else None)
+    # .exists() is NOT enough. SQLite opens a 0-BYTE file as a perfectly valid,
+    # perfectly EMPTY database — no error, and .backup() succeeds. There is such a
+    # file at system/app/data/metis.sqlite (an artifact of the OneDrive orphan
+    # cleanup), so a fresh install / restore / new machine would have "migrated"
+    # from it and come up with all memory silently gone. A migration source must be
+    # proven USABLE, not merely present.
+    source = next(
+        (p for p in (onedrive, legacy) if _is_usable_db(p)),
+        None,
+    )
     if source is not None and _migrate_db_to_local(source, local):
         return local
     # Fresh install (no existing DB) → create on local disk.

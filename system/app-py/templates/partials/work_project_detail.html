@@ -44,7 +44,7 @@
     <div style="display:flex;gap:10px;align-items:center;flex-shrink:0;">
       <!-- Banner colour swatches -->
       <div style="display:flex;gap:4px;align-items:center;" title="Banner colour">
-        {% for c in ['#c0392b','#d97706','#16a34a','#0ea5e9','#6366f1','#a855f7'] %}
+        {% for c in ['var(--m-alert)','var(--m-warn)','var(--m-ok)','#0ea5e9','#6366f1','#a855f7'] %}
         <span onclick="pdSetColor('{{ p.id }}','{{ c }}')"
               style="width:13px;height:13px;border-radius:50%;background:{{ c }};cursor:pointer;
                      border:2px solid {% if p.accent_color == c %}var(--m-ink){% else %}transparent{% endif %};box-shadow:0 0 0 1px var(--m-rule);"></span>
@@ -121,7 +121,7 @@
             <button onclick="pdDetailTaskDelete('{{ t.task_id }}','{{ p.id }}')"
                     title="Delete task"
                     style="background:none;border:none;padding:2px 5px;cursor:pointer;color:var(--m-muted);font-size:12px;flex-shrink:0;line-height:1;opacity:.5;"
-                    onmouseenter="this.style.opacity='1';this.style.color='#e53e3e'"
+                    onmouseenter="this.style.opacity='1';this.style.color='var(--m-alert)'"
                     onmouseleave="this.style.opacity='.5';this.style.color='var(--m-muted)'">&#10005;</button>
           </div>
           {% endfor %}
@@ -146,7 +146,7 @@
           <option value="review">review</option>
         </select>
         <button onclick="pdDetailAddTask('{{ p.id }}')"
-                style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
+                style="background:var(--m-accent);color:var(--m-on-accent);border:none;border-radius:3px;
                        padding:6px 14px;font-family:var(--m-mono);font-size:10px;cursor:pointer;white-space:nowrap;">Add task</button>
       </div>
 
@@ -190,7 +190,7 @@
                          resize:vertical;outline:none;"></textarea>
         <div style="display:flex;justify-content:flex-end;margin-top:6px;">
           <button onclick="pdSaveNote('{{ p.id }}')"
-                  style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
+                  style="background:var(--m-accent);color:var(--m-on-accent);border:none;border-radius:3px;
                          padding:6px 16px;font-family:var(--m-mono);font-size:10px;cursor:pointer;">Save note</button>
         </div>
       </div>
@@ -274,7 +274,7 @@
         </div>
         <div style="display:flex;gap:8px;padding-top:4px;">
           <button onclick="pdSaveAbout('{{ p.id }}')"
-                  style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
+                  style="background:var(--m-accent);color:var(--m-on-accent);border:none;border-radius:3px;
                          padding:7px 20px;font-family:var(--m-mono);font-size:10px;cursor:pointer;letter-spacing:.06em;">Save</button>
           {% if p.github_url %}
           <a class="btn btn--ghost btn--caps" href="{{ p.github_url }}" target="_blank" rel="noopener" style="padding:7px 14px;">GitHub &#8599;</a>

@@ -12,11 +12,11 @@
         <button hx-get="/api/partial/today/literature-discovery?period=week" hx-target="#today-lit-discovery" hx-swap="outerHTML"
                 style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:2px 8px;border:0;cursor:pointer;
                   background:{% if period == 'week' %}var(--m-accent){% else %}transparent{% endif %};
-                  color:{% if period == 'week' %}#fff{% else %}var(--m-muted){% endif %};">WEEK</button>
+                  color:{% if period == 'week' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};">WEEK</button>
         <button hx-get="/api/partial/today/literature-discovery?period=month" hx-target="#today-lit-discovery" hx-swap="outerHTML"
                 style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:2px 8px;border:0;border-left:1px solid var(--m-rule-soft);cursor:pointer;
                   background:{% if period == 'month' %}var(--m-accent){% else %}transparent{% endif %};
-                  color:{% if period == 'month' %}#fff{% else %}var(--m-muted){% endif %};">MONTH</button>
+                  color:{% if period == 'month' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};">MONTH</button>
       </span>
       <button onclick="scanLiterature(this)" class="btn btn--ghost btn--caps" style="font-size:8px;padding:2px 8px;">Scan now</button>
     </span>

@@ -4,10 +4,20 @@ WhatsApp webhook runs as a separate FastAPI process (see webhook.py).
 Start with: uvicorn metis_mcp.webhook:app --port 8000
 """
 
+# ── Load system/.env FIRST ───────────────────────────────────────────────────
+# Must happen before any tool module is imported: tools read os.environ (notably
+# ANTHROPIC_API_KEY) at import and call time. The dashboard's run.sh sourced
+# system/.env; the MCP server's never did — so inside this process the API key was
+# simply absent, and every Claude-API feature silently took its degraded path
+# rather than failing. See config.load_env_file() for the full story.
+from metis_mcp.config import load_env_file as _load_env_file
+
+_LOADED_ENV = _load_env_file()
+
 # Use the shared app instance to avoid split registrations across tool modules.
 # All tool modules should import `app` from either server.py or app_instance.py —
 # both now point to the same object.
-from metis_mcp.app_instance import app  # noqa: F401
+from metis_mcp.app_instance import app  # noqa: E402,F401
 
 # ── Resilient tool loading ───────────────────────────────────────────────────
 # Each tool module registers handlers via @app.tool() on import. Historically

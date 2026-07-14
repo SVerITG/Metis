@@ -18,7 +18,7 @@
   <button onclick="miniTaskStar('{{ t.task_id }}','{{ project_id }}',this)"
           title="{% if t.starred %}Unstar{% else %}Star (appears in Today){% endif %}"
           style="background:none;border:none;padding:0 2px;cursor:pointer;font-size:11px;flex-shrink:0;line-height:1;
-                 color:{% if t.starred %}var(--m-ochre-deep,#b36a1d){% else %}var(--m-muted){% endif %};opacity:{% if t.starred %}1{% else %}0.4{% endif %};">&#9733;</button>
+                 color:{% if t.starred %}var(--m-ochre-deep){% else %}var(--m-muted){% endif %};opacity:{% if t.starred %}1{% else %}0.4{% endif %};">&#9733;</button>
   <!-- done -->
   <button onclick="markProjectTaskDone('{{ t.task_id }}','{{ project_id }}')"
           title="Mark done"
@@ -30,7 +30,7 @@
           title="Delete task"
           style="background:none;border:none;padding:0 2px;cursor:pointer;color:var(--m-muted);
                  font-size:10px;flex-shrink:0;line-height:1;opacity:0.3;"
-          onmouseenter="this.style.opacity='1';this.style.color='#e53e3e'"
+          onmouseenter="this.style.opacity='1';this.style.color='var(--m-alert)'"
           onmouseleave="this.style.opacity='.3';this.style.color='var(--m-muted)'">&#10005;</button>
 </div>
 {% endfor %}
@@ -74,7 +74,7 @@
       <option value="review">review</option>
     </select>
     <button onclick="submitQuickTask('{{ project_id }}')"
-            style="background:var(--m-accent);color:#fff;border:none;border-radius:3px;
+            style="background:var(--m-accent);color:var(--m-on-accent);border:none;border-radius:3px;
                    padding:4px 10px;font-family:var(--m-mono);font-size:10px;cursor:pointer;">Add</button>
     <button onclick="document.getElementById('task-add-{{ project_id }}').style.display='none';"
             style="background:none;border:none;padding:2px 4px;cursor:pointer;color:var(--m-muted);font-size:13px;">✕</button>

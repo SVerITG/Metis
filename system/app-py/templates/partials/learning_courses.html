@@ -11,7 +11,7 @@
 <div class="panel panel-pad course-card" style="padding:20px 22px;display:flex;flex-direction:column;gap:10px;" id="course-card-{{ c.id }}">
 
   <!-- Kicker -->
-  <div class="kicker" style="color:{% if c.status == 'building' %}var(--m-ochre,#d97706){% elif c.status == 'active' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
+  <div class="kicker" style="color:{% if c.status == 'building' %}var(--m-ochre){% elif c.status == 'active' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
     {% if c.status == 'building' %}
     <span>{{ (c.category or 'COURSE')|upper }} · BUILDING</span>
     {% else %}
@@ -32,7 +32,7 @@
   <div style="display:flex;gap:3px;margin-top:2px;">
     {% for s in range(1, 8) %}
     <div style="flex:1;height:5px;border-radius:2px;
-                background:{% if s <= step %}var(--m-ochre,#d97706){% else %}var(--m-surface-3){% endif %};"></div>
+                background:{% if s <= step %}var(--m-ochre){% else %}var(--m-surface-3){% endif %};"></div>
     {% endfor %}
   </div>
   <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);margin-top:4px;line-height:1.4;">

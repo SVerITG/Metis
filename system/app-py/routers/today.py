@@ -2975,22 +2975,31 @@ async def api_session_consolidate(request: Request):
         if brief_content and len(brief_content) > 200 and os.environ.get("ANTHROPIC_API_KEY"):
             from anthropic import Anthropic
             client = Anthropic()
-            # ── PII output rail — scan brief before sending to Claude API ──
-            _brief_to_send = brief_content[:6000]
+            # ── PII output rail — scan the brief before it leaves the machine ──
+            # FAIL CLOSED. This used to swallow any failure and "send as-is", so a
+            # broken import meant patient-adjacent text went to the API unmasked —
+            # the precise thing the rail exists to prevent. If we cannot prove the
+            # text is clean, we do not send it.
+            import logging as _logging
+
+            _safety_log = _logging.getLogger("metis.safety")
             try:
-                from metis_mcp.tools.anonymization import _PATTERNS
-                _pii_found = {}
-                for _label, _pat in _PATTERNS:
-                    if _pat.search(_brief_to_send):
-                        _pii_found[_label] = len(_pat.findall(_brief_to_send))
-                        _brief_to_send = _pat.sub(f"[{_label}]", _brief_to_send)
+                from metis_mcp.tools.anonymization import mask_pii
+
+                _brief_to_send, _pii_found = mask_pii(brief_content[:6000])
                 if _pii_found:
-                    import logging
-                    logging.getLogger("metis.safety").warning(
-                        "scan_outgoing: masked %s in brief before API call", _pii_found
+                    _safety_log.warning(
+                        "output rail: masked %s in brief before API call", _pii_found
                     )
-            except Exception:
-                pass  # import failure → send as-is; defense in depth, not a hard gate
+            except Exception as _exc:
+                _safety_log.error(
+                    "output rail UNAVAILABLE (%s: %s) — refusing to send the brief "
+                    "to the API. Nothing left the machine.",
+                    type(_exc).__name__, _exc,
+                )
+                raise RuntimeError(
+                    "PII output rail unavailable — brief not sent (fail-closed)."
+                ) from _exc
 
             prompt = (
                 "You are summarising a researcher's session handoff brief for their "

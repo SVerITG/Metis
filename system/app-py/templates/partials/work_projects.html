@@ -43,7 +43,7 @@
       {% endfor %}
       <!-- Type / article badge -->
       {% if p.launcher_type == 'article' or p.project_type == 'article' %}
-      <span class="chip" style="flex-shrink:0;font-size:10px;background:var(--m-ochre-wash,#fff8ee);color:var(--m-ochre-deep,#b36a1d);border:1px solid var(--m-ochre-soft,#e8c97a);">ARTICLE</span>
+      <span class="chip" style="flex-shrink:0;font-size:10px;background:var(--m-ochre-wash);color:var(--m-ochre-deep);border:1px solid var(--m-ochre-soft);">ARTICLE</span>
       {% elif p.project_type and p.project_type != 'research' %}
       <span class="chip chip--plain" style="flex-shrink:0;font-size:10px;">{{ p.project_type | upper }}</span>
       {% endif %}
@@ -55,7 +55,7 @@
       <button onclick="untrackProject({{ p.id | tojson }}, {{ p.title | tojson }})"
               title="Hide this project (doesn't delete it)"
               style="background:none;border:none;padding:2px 5px;cursor:pointer;font-size:13px;color:var(--m-muted);line-height:1;flex-shrink:0;opacity:.6;"
-              onmouseenter="this.style.opacity='1';this.style.color='var(--m-danger,#e53e3e)'"
+              onmouseenter="this.style.opacity='1';this.style.color='var(--m-danger)'"
               onmouseleave="this.style.opacity='.6';this.style.color='var(--m-muted)'">✕</button>
       <!-- Collapse toggle -->
       <button class="proj-collapse-btn"
