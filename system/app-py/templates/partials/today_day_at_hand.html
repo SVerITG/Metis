@@ -1,9 +1,10 @@
+{% from "partials/_section.html" import sec_label %}
 {# today_day_at_hand.html — Archive: "Today's focus" — at most 3 focus items.
    No timeline. Customizable: starred tasks lead, so starring picks your focus.
    Type uses the design scale only (var(--t-*)) — no arbitrary sizes.
    Context: items [{title, project, project_id, label, color}] (max 3) #}
 <div style="margin-bottom:32px;">
-  <div class="sec-label" style="margin-bottom:14px;"><span>Today's focus</span><span class="tail">STAR A TASK TO PIN IT HERE</span></div>
+  {{ sec_label("Today's focus", tail="STAR A TASK TO PIN IT HERE", style="margin-bottom:14px;") }}
   {% if items %}
   <div class="grid grid-3">
     {% for it in items %}

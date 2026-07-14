@@ -2,16 +2,16 @@
 
   <!-- ── Legend ── -->
   <div style="display:flex;align-items:center;gap:20px;margin-bottom:16px;flex-wrap:wrap;">
-    <span style="display:flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">
+    <span style="display:flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">
       <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--m-ok);"></span>GOOD COVERAGE
     </span>
-    <span style="display:flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">
+    <span style="display:flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">
       <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--m-warn);"></span>PARTIAL
     </span>
-    <span style="display:flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">
+    <span style="display:flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">
       <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--m-alert);"></span>GAP
     </span>
-    <span style="margin-left:auto;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);">
+    <span style="margin-left:auto;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">
       {{ topics | length }} TOPICS · {{ total_papers }} SOURCES INDEXED
     </span>
   </div>
@@ -44,7 +44,7 @@
 
       <!-- Badge + count row -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
-        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;padding:2px 7px;background:{{ badge_bg }};color:{{ badge_fg }};border-radius:2px;">
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;padding:2px 7px;background:{{ badge_bg }};color:{{ badge_fg }};border-radius:2px;">
           {{ badge_text }}
         </span>
         <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
@@ -59,7 +59,7 @@
 
       <!-- Description / keywords -->
       {% if t.description %}
-      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;color:var(--m-muted);line-height:1.45;margin-bottom:10px;">
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);line-height:1.45;margin-bottom:10px;">
         {{ t.description | truncate(70, True, '…') }}
       </div>
       {% endif %}
@@ -73,7 +73,7 @@
       {% if t.sources %}
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">
         {% for src_label, src_count in t.sources %}
-        <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 6px;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:1px 6px;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">
           {{ src_label }} {{ src_count }}
         </span>
         {% endfor %}
@@ -89,7 +89,7 @@
     <div style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">
       No topics configured. Add research topics in Metis to enable coverage mapping.
     </div>
-    <div style="margin-top:12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">
+    <div style="margin-top:12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">
       Try: /metis add a topic for your research domain
     </div>
   </div>

@@ -1,10 +1,10 @@
 {# signal_strength → CSS color helper #}
 
 <div id="knowledge-news-signals">
-  <div class="sec-label" style="margin-bottom:12px;">
+  <h2 class="sec-label" style="margin-bottom:12px;">
     <span>Signals</span>
     <span class="tail">{{ total }} ITEMS · NEWS · INTELLIGENCE</span>
-  </div>
+  </h2>
 
   {% if domains %}
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;">
@@ -13,9 +13,9 @@
       <!-- Domain header -->
       <div style="padding:10px 16px;border-bottom:1px solid var(--m-rule-soft);
                   display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.16em;
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;
                      text-transform:uppercase;color:var(--m-ink);">{{ domain }}</span>
-        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
+        <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
           {{ items | length }} SIGNAL{% if items | length != 1 %}S{% endif %}
         </span>
       </div>
@@ -44,7 +44,7 @@
               {% if s.summary | length > 120 %}{{ s.summary[:120] }}…{% else %}{{ s.summary }}{% endif %}
             </div>
             {% endif %}
-            <div style="margin-top:4px;font-family:var(--m-mono);font-size:9px;
+            <div style="margin-top:4px;font-family:var(--m-mono);font-size:11px;
                         letter-spacing:0.1em;color:var(--m-muted);display:flex;gap:10px;">
               {% set _str = (s.signal_strength or '')|upper %}
               <span style="color:{% if _str == 'HIGH' %}var(--m-accent){% elif _str == 'MEDIUM' %}var(--m-ochre-deep){% else %}var(--m-muted){% endif %};">
@@ -57,7 +57,7 @@
       </div>
       {% endfor %}
       {% if items | length > 5 %}
-      <div style="padding:8px 16px;font-family:var(--m-mono);font-size:9px;
+      <div style="padding:8px 16px;font-family:var(--m-mono);font-size:11px;
                   letter-spacing:0.1em;color:var(--m-muted);text-align:center;
                   border-top:1px solid var(--m-rule-soft);">
         + {{ items | length - 5 }} MORE SIGNALS

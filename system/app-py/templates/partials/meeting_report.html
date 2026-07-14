@@ -26,7 +26,7 @@
   <!-- Summary -->
   {% if summary_lines %}
   <div style="margin-bottom:28px;">
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:10px;">SUMMARY</div>
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:10px;">SUMMARY</div>
     <div style="font-family:var(--m-sans);font-size:15px;color:var(--m-ink);line-height:1.7;padding:16px 20px;background:var(--m-surface-2);border-radius:4px;">
       {% for line in summary_lines %}{{ line }} {% endfor %}
     </div>
@@ -37,11 +37,11 @@
 
     <!-- Decisions -->
     <div>
-      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-accent);margin-bottom:10px;">DECISIONS ({{ extracted.decisions|length }})</div>
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-accent);margin-bottom:10px;">DECISIONS ({{ extracted.decisions|length }})</div>
       {% if extracted.decisions %}
         {% for d in extracted.decisions %}
         <div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--m-rule-soft);">
-          <span style="color:var(--m-accent);font-family:var(--m-mono);font-size:10px;flex-shrink:0;margin-top:3px;">■</span>
+          <span style="color:var(--m-accent);font-family:var(--m-mono);font-size:11px;flex-shrink:0;margin-top:3px;">■</span>
           <span style="font-family:var(--m-sans);font-size:14px;color:var(--m-ink);line-height:1.5;">{{ d }}</span>
         </div>
         {% endfor %}
@@ -52,11 +52,11 @@
 
     <!-- Action items -->
     <div>
-      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-ochre);margin-bottom:10px;">ACTION ITEMS ({{ extracted.actions|length }})</div>
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-ochre);margin-bottom:10px;">ACTION ITEMS ({{ extracted.actions|length }})</div>
       {% if extracted.actions %}
         {% for a in extracted.actions %}
         <div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--m-rule-soft);">
-          <span style="color:var(--m-ochre);font-family:var(--m-mono);font-size:10px;flex-shrink:0;margin-top:3px;">→</span>
+          <span style="color:var(--m-ochre);font-family:var(--m-mono);font-size:11px;flex-shrink:0;margin-top:3px;">→</span>
           <span style="font-family:var(--m-sans);font-size:14px;color:var(--m-ink);line-height:1.5;">{{ a }}</span>
         </div>
         {% endfor %}
@@ -70,7 +70,7 @@
   <!-- Follow-ups -->
   {% if extracted.follow_ups %}
   <div style="margin-bottom:28px;">
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:10px;">FOLLOW-UPS</div>
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:10px;">FOLLOW-UPS</div>
     {% for f in extracted.follow_ups %}
     <div style="padding:6px 0 6px 12px;border-left:2px solid var(--m-rule);font-family:var(--m-sans);font-size:14px;color:var(--m-ink);margin-bottom:4px;">{{ f }}</div>
     {% endfor %}
@@ -80,12 +80,12 @@
   <!-- Connections surfaced during meeting -->
   {% if all_connections %}
   <div style="margin-bottom:28px;">
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:10px;">KNOWLEDGE CONNECTIONS SURFACED ({{ all_connections|length }})</div>
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:10px;">KNOWLEDGE CONNECTIONS SURFACED ({{ all_connections|length }})</div>
     <div class="panel" style="padding:0;">
       {% for c in all_connections %}
       {% set src_colors = {'library': 'var(--m-accent)', 'meeting': 'var(--m-ochre)', 'news': 'var(--m-ok)', 'idea': 'var(--m-muted)'} %}
       <div style="display:flex;align-items:baseline;gap:10px;padding:9px 16px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
-        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:{{ src_colors.get(c.source, 'var(--m-muted)') }};flex-shrink:0;width:52px;">{{ c.source.upper() }}</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:{{ src_colors.get(c.source, 'var(--m-muted)') }};flex-shrink:0;width:52px;">{{ c.source.upper() }}</span>
         <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">{{ (c.title or '')[:80] }}</span>
       </div>
       {% endfor %}
@@ -96,7 +96,7 @@
   <!-- Full transcript -->
   <div style="margin-bottom:28px;">
     <details>
-      <summary style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);cursor:pointer;padding:6px 0;">FULL TRANSCRIPT</summary>
+      <summary style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);cursor:pointer;padding:6px 0;">FULL TRANSCRIPT</summary>
       <div style="margin-top:12px;padding:16px 18px;background:var(--m-surface-2);border-radius:4px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);line-height:1.75;white-space:pre-wrap;max-height:480px;overflow-y:auto;">{{ transcript }}</div>
     </details>
   </div>

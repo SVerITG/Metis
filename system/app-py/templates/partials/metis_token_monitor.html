@@ -36,14 +36,14 @@
   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
     <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">Daily activity</div>
     {% if all_tokens_zero %}
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">LAST 7 DAYS · RUNS</span>
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">LAST 7 DAYS · RUNS</span>
     {% else %}
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">LAST 7 DAYS · TOKENS</span>
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">LAST 7 DAYS · TOKENS</span>
     {% endif %}
   </div>
   {% if not any_runs and all_tokens_zero %}
     <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);padding:4px 0 10px;">
-      No activity yet. Start with <code style="font-family:var(--m-mono);font-size:10px;">/metis</code> in Claude Code — activity will appear here.
+      No activity yet. Start with <code style="font-family:var(--m-mono);font-size:11px;">/metis</code> in Claude Code — activity will appear here.
     </div>
   {% else %}
     <div class="token-day-strip">
@@ -68,7 +68,7 @@
 <div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
     <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">By specialist</div>
-    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">LAST {{ days }}D · TOP 12</span>
+    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">LAST {{ days }}D · TOP 12</span>
   </div>
   {% if by_agent %}
     {% set max_runs_a = namespace(val=1) %}{% for a in by_agent %}{% if a.runs > max_runs_a.val %}{% set max_runs_a.val = a.runs %}{% endif %}{% endfor %}
@@ -91,7 +91,7 @@
 <div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
   <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
     <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">By model</div>
-    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">DEFAULT · {{ active_model|upper }}</span>
+    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">DEFAULT · {{ active_model|upper }}</span>
   </div>
   {% if by_model and by_model|length > 0 and (by_model|length > 1 or by_model[0].model != 'unspecified') %}
     {% for m in by_model %}

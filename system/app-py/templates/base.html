@@ -369,7 +369,7 @@
           <line x1="3" y1="8" x2="13" y2="8"/>
         </svg>
         Capture
-        <kbd style="margin-left:6px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;padding:1px 5px;border:1px solid var(--m-rule-soft);border-radius:3px;color:var(--m-muted);opacity:0.8;">⌘K</kbd>
+        <kbd style="margin-left:6px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;padding:1px 5px;border:1px solid var(--m-rule-soft);border-radius:3px;color:var(--m-muted);opacity:0.8;">⌘K</kbd>
       </button>
 
       <div class="topbar-controls" style="display:flex;align-items:center;gap:16px;margin-left:auto;min-width:0;flex-shrink:1;overflow:hidden;">
@@ -428,7 +428,7 @@
                 title="Metis connection — click to reconnect if offline"
                 style="display:inline-flex;align-items:center;gap:6px;
                        background:none;border:1px solid var(--m-rule);border-radius:2px;
-                       padding:4px 10px;font-family:var(--m-mono);font-size:9px;
+                       padding:4px 10px;font-family:var(--m-mono);font-size:11px;
                        letter-spacing:0.14em;text-transform:uppercase;
                        color:var(--m-muted);cursor:pointer;
                        transition:border-color .15s,color .15s;">
@@ -442,7 +442,7 @@
         <button id="update-btn"
                 onclick="runMetisUpdate()"
                 title="Update — scan news, sync library, check projects"
-                style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;text-transform:uppercase;
+                style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;
                        padding:5px 12px;background:transparent;border:1px solid var(--m-rule);
                        border-radius:2px;color:var(--m-muted);cursor:pointer;white-space:nowrap;
                        transition:border-color .15s,color .15s;"
@@ -450,7 +450,7 @@
                 onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'">
           Update
         </button>
-        <span id="update-spinner" style="display:none;font-family:var(--m-mono);font-size:9px;
+        <span id="update-spinner" style="display:none;font-family:var(--m-mono);font-size:11px;
               letter-spacing:0.1em;color:var(--m-muted);">UPDATING…</span>
 
         <!-- Theme switch -->
@@ -629,18 +629,18 @@
     if (!el) return;
     var target = evt.detail.target || el;
     target.innerHTML =
-      '<div style="padding:16px 20px;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);' +
+      '<div style="padding:16px 20px;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);' +
       'display:flex;align-items:center;gap:10px;border:1px solid var(--m-rule-soft);border-radius:3px;">' +
       '<span style="color:var(--m-warn);">⚠</span> Something went wrong loading this section — I\'ll try again in a moment. ' +
       '<button onclick="htmx.trigger(this.closest(\'[hx-get],[hx-post]\') || document.body, \'load\')" ' +
       'style="background:none;border:1px solid var(--m-rule);border-radius:2px;padding:2px 8px;' +
-      'font-family:var(--m-mono);font-size:9px;color:var(--m-muted);cursor:pointer;">Retry</button></div>';
+      'font-family:var(--m-mono);font-size:11px;color:var(--m-muted);cursor:pointer;">Retry</button></div>';
   });
   document.addEventListener('htmx:sendError', function(evt) {
     var target = evt.detail.target || evt.detail.elt;
     if (!target) return;
     target.innerHTML =
-      '<div style="padding:16px 20px;font-family:var(--m-mono);font-size:10px;color:var(--m-muted);' +
+      '<div style="padding:16px 20px;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);' +
       'display:flex;align-items:center;gap:10px;border:1px solid var(--m-rule-soft);border-radius:3px;">' +
       '<span style="color:var(--m-warn);">⚠</span> I can\'t reach the server right now. Check your connection, or restart the dashboard if it\'s been a while.</div>';
   });

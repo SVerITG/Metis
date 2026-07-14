@@ -1,7 +1,7 @@
 <div id="lib-table-area">
 
   <!-- count line -->
-  <div style="padding:9px 20px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);border-bottom:1px solid var(--m-rule-soft);display:flex;align-items:center;gap:10px;">
+  <div style="padding:9px 20px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);border-bottom:1px solid var(--m-rule-soft);display:flex;align-items:center;gap:10px;">
     {% if q or item_type or active_filter_count %}
     <span>{{ total }} PAPER{% if total != 1 %}S{% endif %} MATCHING FILTERS</span>
     {% else %}
@@ -85,7 +85,7 @@
   {% if items %}
   <table style="width:100%;border-collapse:collapse;">
     <thead>
-      <tr style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;border-bottom:1px solid var(--m-rule);">
+      <tr style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;border-bottom:1px solid var(--m-rule);">
         <th style="padding:8px 20px 8px 20px;text-align:left;font-weight:400;width:56px;">Year</th>
         <th style="padding:8px 10px;text-align:left;font-weight:400;">Title / Authors</th>
         <th style="padding:8px 10px;text-align:left;font-weight:400;width:160px;">Journal</th>
@@ -115,7 +115,7 @@
           <div style="display:flex;align-items:baseline;gap:8px;">
             {# Type badge #}
             {% if item.item_type %}
-            <span style="flex-shrink:0;font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;
+            <span style="flex-shrink:0;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
               padding:2px 7px;border-radius:var(--m-radius-pill,10px);
               background:color-mix(in srgb, {{ icolor }} 12%, transparent);
               color:{{ icolor }};">{{ type_labels.get(item.item_type, item.item_type) | upper }}</span>
@@ -138,7 +138,7 @@
             </div>
           </div>
           {% if item.authors %}
-          <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);margin-top:4px;">
+          <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);margin-top:4px;">
             {{ item.authors }}
           </div>
           {% endif %}
@@ -146,7 +146,7 @@
           {% if item.collection_tags %}
           <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;">
             {% for tag in item.collection_tags %}
-            <span style="font-family:var(--m-mono);font-size:7.5px;letter-spacing:0.1em;padding:1px 6px;
+            <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;padding:1px 6px;
               border-radius:2px;background:var(--m-surface-3);color:var(--m-muted);">{{ tag }}</span>
             {% endfor %}
           </div>
@@ -172,7 +172,7 @@
         <td style="padding:11px 10px;text-align:center;vertical-align:top;">
           <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
             {% if item.pdf_url %}
-            <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;
+            <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;
               padding:2px 7px;border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);"
               title="PDF indexed — full-text searchable">
               <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="var(--m-chart-2)" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
@@ -180,7 +180,7 @@
             </span>
             {% endif %}
             {% if not item.is_read %}
-            <span style="font-family:var(--m-mono);font-size:7.5px;letter-spacing:0.08em;
+            <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;
               padding:1px 6px;border-radius:var(--m-radius-pill,10px);background:var(--m-accent);color:var(--m-on-accent);">NEW</span>
             {% endif %}
           </div>
@@ -191,7 +191,7 @@
           {% if item.has_abstract %}
           <button onclick="toggleAbstract({{ loop.index }})" id="abs-btn-{{ loop.index }}"
                   style="background:none;border:1px solid var(--m-rule);border-radius:2px;cursor:pointer;
-                         font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+                         font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
                          color:var(--m-muted);padding:2px 6px;transition:border-color 140ms,color 140ms;"
                   onmouseover="this.style.borderColor='{{ icolor }}';this.style.color='{{ icolor }}'"
                   onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'"
@@ -199,13 +199,13 @@
           {% endif %}
           {% if item.doi %}
           <a href="https://doi.org/{{ item.doi }}" target="_blank" rel="noopener"
-             style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+             style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
                     color:var(--m-accent);text-decoration:none;padding:0 3px;"
              title="Open DOI">DOI ↗</a>
           {% endif %}
           {% if item.pdf_url %}
           <a href="{{ item.pdf_url }}" target="_blank" rel="noopener"
-             style="display:inline-block;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+             style="display:inline-block;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
                     color:var(--m-ok);text-decoration:none;padding:2px 6px;margin-left:2px;
                     border:1px solid var(--m-ok);border-radius:2px;transition:background 140ms,color 140ms;"
              onmouseover="this.style.background='var(--m-ok)';this.style.color='var(--m-on-accent)'"
@@ -224,7 +224,7 @@
     <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--m-muted)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.4;margin-bottom:12px;">
       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
     </svg>
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.22em;color:var(--m-muted);margin-bottom:12px;">ZOTERO LIBRARY</div>
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.22em;color:var(--m-muted);margin-bottom:12px;">ZOTERO LIBRARY</div>
     <div style="font-family:var(--m-display);font-size:18px;font-weight:500;color:var(--m-ink);margin-bottom:8px;">No papers match your filters.</div>
     <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">Try broadening your search or removing a type filter.</div>
   </div>

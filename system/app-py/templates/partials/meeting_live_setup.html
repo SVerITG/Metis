@@ -6,20 +6,20 @@
         <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><line x1="8" y1="5" x2="8" y2="8"/></svg>
         LIVE MEETING — SETUP
       </div>
-      <button onclick="closeLiveSession()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;padding:2px 6px;">ESC</button>
+      <button onclick="closeLiveSession()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:11px;padding:2px 6px;">ESC</button>
     </div>
 
     <div style="padding:20px;">
 
       <div style="margin-bottom:14px;">
-        <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">MEETING TITLE</label>
+        <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">MEETING TITLE</label>
         <input id="lm-setup-title" type="text" autofocus
                placeholder="e.g. Research coordination meeting"
                style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:14px;color:var(--m-ink);outline:none;">
       </div>
 
       <div style="margin-bottom:14px;">
-        <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:6px;">PARTICIPANTS — first name or full name</label>
+        <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:6px;">PARTICIPANTS — first name or full name</label>
         <div id="lm-speaker-inputs" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
           <input class="lm-setup-speaker" type="text" placeholder="Name 1 (first speaker)"
                  style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
@@ -34,7 +34,7 @@
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
         <div>
-          <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">LANGUAGE</label>
+          <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">LANGUAGE</label>
           <select id="lm-setup-lang"
                   style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
             <option value="en-US">English (US)</option>
@@ -46,7 +46,7 @@
           </select>
         </div>
         <div>
-          <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">TRANSCRIPTION</label>
+          <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">TRANSCRIPTION</label>
           <select id="lm-setup-mode"
                   style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
             <option value="server">Whisper — local GPU, all browsers</option>
@@ -62,7 +62,7 @@
       </div>
 
       <!-- Voice ID status — loaded async -->
-      <div id="lm-voice-id-status" style="margin-bottom:12px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);">
+      <div id="lm-voice-id-status" style="margin-bottom:12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">
         Checking voice profiles…
       </div>
 
@@ -97,7 +97,7 @@
   if (!sel || !hint) return;
   sel.addEventListener('change', function() {
     if (sel.value === 'voxtral') {
-      hint.innerHTML = '<strong style="color:#a78bfa;">Voxtral (cloud):</strong> Uses Mistral&rsquo;s speech API with built-in speaker diarization &mdash; no local model needed. Requires MISTRAL_API_KEY. Excellent accuracy, 13 languages, speakers identified automatically.';
+      hint.innerHTML = '<strong style="color:var(--m-chart-5);">Voxtral (cloud):</strong> Uses Mistral&rsquo;s speech API with built-in speaker diarization &mdash; no local model needed. Requires MISTRAL_API_KEY. Excellent accuracy, 13 languages, speakers identified automatically.';
     } else if (sel.value === 'browser') {
       hint.innerHTML = '<strong style="color:var(--m-ink);">Browser speech:</strong> Transcribes instantly as you speak — text appears word by word. Requires Chrome or Edge. No model used.';
     } else {
@@ -113,7 +113,7 @@
 
     // Voxtral availability
     if (s.voxtral) {
-      lines.push('<span style="color:#a78bfa;">▲ VOXTRAL AVAILABLE</span> — cloud transcription with native diarization');
+      lines.push('<span style="color:var(--m-chart-5);">▲ VOXTRAL AVAILABLE</span> — cloud transcription with native diarization');
     } else {
       // Disable voxtral option if no API key
       const voxOpt = sel.querySelector('option[value="voxtral"]');

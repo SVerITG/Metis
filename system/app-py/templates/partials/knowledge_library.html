@@ -14,11 +14,11 @@
   {% for card in cards %}
   <div class="panel" style="padding:18px 20px;">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;gap:10px;">
-      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.18em;color:var(--m-muted);">
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;color:var(--m-muted);">
         {{ card.created_at[:7] if card.created_at else '—' }} · CARD
       </div>
       {% if card.domain %}
-      <span style="display:inline-flex;align-items:center;padding:2px 8px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;background:var(--m-accent-wash);color:var(--m-accent);border-radius:2px;flex-shrink:0;">
+      <span style="display:inline-flex;align-items:center;padding:2px 8px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;background:var(--m-accent-wash);color:var(--m-accent);border-radius:2px;flex-shrink:0;">
         {{ card.domain[:14] }}
       </span>
       {% endif %}
@@ -34,7 +34,7 @@
     {% if card.tags %}
     <div style="display:flex;flex-wrap:wrap;gap:6px;">
       {% for tag in card.tags.split(',')[:3] %}
-      <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.08em;color:var(--m-muted);background:var(--m-surface-2);padding:2px 8px;border-radius:2px;">{{ tag.strip() }}</span>
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;color:var(--m-muted);background:var(--m-surface-2);padding:2px 8px;border-radius:2px;">{{ tag.strip() }}</span>
       {% endfor %}
     </div>
     {% endif %}

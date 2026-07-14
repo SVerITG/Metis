@@ -3,9 +3,9 @@
   <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;align-items:center;gap:10px;">
     <span class="kicker kicker--accent" style="margin:0;">LIVE ASSIST</span>
     {% if live and live_fresh %}
-    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-ok);">SESSION ACTIVE</span>
+    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-ok);">SESSION ACTIVE</span>
     {% else %}
-    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);">STANDING BY</span>
+    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">STANDING BY</span>
     {% endif %}
   </div>
 
@@ -19,13 +19,13 @@
       <span style="position:absolute;inset:0;border-radius:50%;background:var(--m-ok);"></span>
     </div>
     <div style="flex:1;min-width:0;">
-      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.18em;color:var(--m-ok);margin-bottom:4px;">
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;color:var(--m-ok);margin-bottom:4px;">
         LIVE NOW
       </div>
       <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);line-height:1.35;">
         {{ live.title }}
       </div>
-      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-top:4px;">
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-top:4px;">
         {% if elapsed_min is not none %}{{ elapsed_min }} MIN ELAPSED{% else %}STARTED TODAY{% endif %}{% if live.attendees %} &middot; {{ live.attendees[:60] }}{% endif %}
       </div>
     </div>
@@ -33,7 +33,7 @@
     <div style="width:48px;height:48px;flex-shrink:0;border-radius:50%;
                 background:var(--m-surface-3);border:1px solid var(--m-rule-soft);"></div>
     <div style="flex:1;min-width:0;">
-      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.18em;color:var(--m-muted);margin-bottom:4px;">
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;color:var(--m-muted);margin-bottom:4px;">
         NO LIVE MEETING
       </div>
       <div style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.5;">
@@ -45,18 +45,18 @@
 
   {% if connections %}
   <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">
       RECENT CONNECTIONS
     </div>
     {% for c in connections %}
     <div style="padding:6px 0;display:flex;gap:10px;align-items:baseline;">
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-accent);width:54px;flex-shrink:0;">
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-accent);width:54px;flex-shrink:0;">
         {{ c.source | upper }}
       </span>
       <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.4;">
         {{ c.title }}
         {% if c.from_meeting %}
-        <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);"> &middot; from &ldquo;{{ c.from_meeting }}&rdquo;</span>
+        <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"> &middot; from &ldquo;{{ c.from_meeting }}&rdquo;</span>
         {% endif %}
       </span>
     </div>

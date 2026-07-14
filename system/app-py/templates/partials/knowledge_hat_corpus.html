@@ -1,20 +1,20 @@
 <div id="hat-corpus-section">
-  <div class="sec-label" style="margin-bottom:12px;">
+  <h2 class="sec-label" style="margin-bottom:12px;">
     <span>Knowledge Corpus</span>
     <span class="tail">{{ total }} PAPERS · {{ seeded_count }} ANNOTATED · {{ triage_count }} TO TRIAGE</span>
     <button hx-post="/api/knowledge/build-hat-index"
             hx-target="#hat-index-status"
             hx-swap="innerHTML"
             hx-confirm="This will index all knowledge corpus PDFs for semantic search (10–40 min, runs in background). Continue?"
-            style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;
+            style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;
                    padding:3px 10px;background:transparent;border:1px solid var(--m-rule);border-radius:2px;
                    color:var(--m-muted);cursor:pointer;margin-left:12px;"
             onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
             onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'">
       INDEX FOR SEMANTIC SEARCH
     </button>
-    <span id="hat-index-status" style="font-family:var(--m-mono);font-size:10px;margin-left:8px;"></span>
-  </div>
+    <span id="hat-index-status" style="font-family:var(--m-mono);font-size:11px;margin-left:8px;"></span>
+  </h2>
 
   <div class="panel" style="overflow:hidden;">
 
@@ -22,7 +22,7 @@
     <div style="padding:14px 20px 10px;border-bottom:1px solid var(--m-rule-soft);
                 display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
       <div style="flex:1;min-width:220px;">
-        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Search</div>
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Search</div>
         <input
           id="hat-q"
           name="q"
@@ -39,9 +39,9 @@
       </div>
 
       <div style="min-width:160px;">
-        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Sort by</div>
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Sort by</div>
         <select id="hat-sort" name="sort"
-                style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.08em;padding:8px 10px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;cursor:pointer;"
+                style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:8px 10px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;cursor:pointer;"
                 onchange="_refreshHatTable()">
           <option value="title"  {% if active_sort == 'title'  %}selected{% endif %}>Title A–Z</option>
           <option value="folder" {% if active_sort == 'folder' %}selected{% endif %}>Folder</option>
@@ -54,11 +54,11 @@
     <!-- ── Row 2: Collection chips ── -->
     {% if collections %}
     <div style="padding:8px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-right:6px;">FOLDER</span>
-      <button style="padding:3px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;border:1px solid var(--m-rule);border-radius:2px;cursor:pointer;white-space:nowrap;background:{% if not active_collection %}var(--m-accent){% else %}var(--m-surface-2){% endif %};color:{% if not active_collection %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-right:6px;">FOLDER</span>
+      <button style="padding:3px 10px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;border:1px solid var(--m-rule);border-radius:2px;cursor:pointer;white-space:nowrap;background:{% if not active_collection %}var(--m-accent){% else %}var(--m-surface-2){% endif %};color:{% if not active_collection %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
               data-coll="" onclick="setHatCollection('')">All</button>
       {% for coll, count in collections %}
-      <button style="padding:3px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;border:1px solid var(--m-rule);border-radius:2px;cursor:pointer;white-space:nowrap;background:{% if active_collection == coll %}var(--m-accent){% else %}var(--m-surface-2){% endif %};color:{% if active_collection == coll %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
+      <button style="padding:3px 10px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;border:1px solid var(--m-rule);border-radius:2px;cursor:pointer;white-space:nowrap;background:{% if active_collection == coll %}var(--m-accent){% else %}var(--m-surface-2){% endif %};color:{% if active_collection == coll %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
               data-coll="{{ coll | e }}" onclick="setHatCollection(this.dataset.coll)">
         {{ coll }}&nbsp;<span style="opacity:.55;">({{ count }})</span>
       </button>

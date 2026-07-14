@@ -20,10 +20,10 @@
 <div id="kg-surface" style="margin-bottom:32px;">
 
   <!-- ── Section header ── -->
-  <div class="sec-label" style="margin-bottom:10px;">
+  <h2 class="sec-label" style="margin-bottom:10px;">
     <span>Personal Knowledge Graph</span>
     <span class="tail" id="kg-stats-tail">LOADING</span>
-  </div>
+  </h2>
 
   <div class="panel" style="overflow:hidden;">
 
@@ -56,7 +56,7 @@
       <div style="display:flex;border:1px solid var(--m-rule);border-radius:var(--m-radius);overflow:hidden;">
         {% for val, lbl in [('week','1W'), ('month','1M'), ('quarter','3M'), ('year','1Y'), ('','ALL')] %}
         <button class="kg-time-btn" data-range="{{ val }}"
-                style="padding:3px 9px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.08em;
+                style="padding:3px 9px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;
                        border:none;{% if not val %}border-left:none;{% else %}border-left:1px solid var(--m-rule);{% endif %}
                        cursor:pointer;background:{% if not val %}var(--m-accent){% else %}transparent{% endif %};
                        color:{% if not val %}#fff{% else %}var(--m-muted){% endif %};transition:all 100ms;"
@@ -65,7 +65,7 @@
       </div>
 
       <!-- Focus selector -->
-      <select id="kg-focus" style="padding:3px 8px;font-family:var(--m-mono);font-size:9px;
+      <select id="kg-focus" style="padding:3px 8px;font-family:var(--m-mono);font-size:11px;
                                     border:1px solid var(--m-rule);border-radius:var(--m-radius);
                                     background:var(--m-surface);color:var(--m-ink);cursor:pointer;"
               onchange="kgReload()">
@@ -77,7 +77,7 @@
 
       <!-- Search -->
       <input type="search" id="kg-search" placeholder="Filter…"
-             style="width:120px;padding:3px 8px;font-family:var(--m-mono);font-size:9px;
+             style="width:120px;padding:3px 8px;font-family:var(--m-mono);font-size:11px;
                     border:1px solid var(--m-rule);border-radius:var(--m-radius);
                     background:var(--m-surface);color:var(--m-ink);outline:none;"
              oninput="kgFilter(this.value)">
@@ -106,7 +106,7 @@
       <div id="kg-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
                                    background:var(--m-surface);z-index:20;">
         <div style="text-align:center;">
-          <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:8px;">BUILDING GRAPH</div>
+          <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:8px;">BUILDING GRAPH</div>
           <div class="skeleton skeleton-bar" style="width:120px;height:3px;margin:0 auto;"></div>
         </div>
       </div>
@@ -239,7 +239,7 @@
       const c = TYPE_COLORS[t] || '#666c63';
       el.innerHTML += `<div style="display:flex;align-items:center;gap:4px;">
         <span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block;"></span>
-        <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;color:var(--m-muted);">${(TYPE_LABELS[t]||t).toUpperCase()} ${types[t]}</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;color:var(--m-muted);">${(TYPE_LABELS[t]||t).toUpperCase()} ${types[t]}</span>
       </div>`;
     }
   }
@@ -428,21 +428,21 @@
     let html = `
       <div style="margin-bottom:12px;">
         <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};vertical-align:middle;margin-right:6px;"></span>
-        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:${color};">${(TYPE_LABELS[d.type]||d.type).toUpperCase()}</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:${color};">${(TYPE_LABELS[d.type]||d.type).toUpperCase()}</span>
       </div>
       <div style="font-family:var(--m-display);font-size:14px;font-weight:600;color:var(--m-ink);line-height:1.35;margin-bottom:8px;">
         ${d.title}
       </div>`;
 
     // Type-specific details
-    if (d.date) html += `<div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-bottom:6px;">${d.date}</div>`;
+    if (d.date) html += `<div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:6px;">${d.date}</div>`;
     if (d.authors) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);margin-bottom:4px;">${d.authors}</div>`;
     if (d.journal) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);font-style:italic;margin-bottom:4px;">${d.journal} ${d.year||''}</div>`;
-    if (d.doi) html += `<div style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);margin-bottom:4px;">DOI: ${d.doi}</div>`;
-    if (d.domain) html += `<div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-bottom:4px;">Domain: ${d.domain}</div>`;
-    if (d.status) html += `<div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-bottom:4px;">Status: ${d.status}</div>`;
-    if (d.signal) html += `<div style="font-family:var(--m-mono);font-size:9px;color:${color};margin-bottom:4px;">Signal: ${d.signal}</div>`;
-    if (d.feasibility) html += `<div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-bottom:4px;">Feasibility: ${d.feasibility}</div>`;
+    if (d.doi) html += `<div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:4px;">DOI: ${d.doi}</div>`;
+    if (d.domain) html += `<div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:4px;">Domain: ${d.domain}</div>`;
+    if (d.status) html += `<div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:4px;">Status: ${d.status}</div>`;
+    if (d.signal) html += `<div style="font-family:var(--m-mono);font-size:11px;color:${color};margin-bottom:4px;">Signal: ${d.signal}</div>`;
+    if (d.feasibility) html += `<div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:4px;">Feasibility: ${d.feasibility}</div>`;
     if (d.definition) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-ink);line-height:1.45;margin:8px 0;padding:8px 10px;background:var(--m-surface-2);border-radius:var(--m-radius);">${d.definition}</div>`;
     if (d.summary) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-ink);line-height:1.45;margin:8px 0;padding:8px 10px;background:var(--m-surface-2);border-radius:var(--m-radius);">${d.summary}</div>`;
     if (d.next_step) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-ink);line-height:1.45;margin:8px 0;"><strong>Next:</strong> ${d.next_step}</div>`;
@@ -452,7 +452,7 @@
     if (d.tags && d.tags.length) {
       html += '<div style="display:flex;flex-wrap:wrap;gap:3px;margin:8px 0;">';
       d.tags.forEach(t => {
-        html += `<span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.06em;padding:1px 7px;border-radius:100px;background:var(--m-surface-3);color:var(--m-muted);">${t}</span>`;
+        html += `<span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;padding:1px 7px;border-radius:100px;background:var(--m-surface-3);color:var(--m-muted);">${t}</span>`;
       });
       html += '</div>';
     }
@@ -460,18 +460,18 @@
     // Connections
     if (connections.length) {
       html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--m-rule-soft);">
-        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:6px;">${connections.length} CONNECTION${connections.length>1?'S':''}</div>`;
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:6px;">${connections.length} CONNECTION${connections.length>1?'S':''}</div>`;
       connections.slice(0, 15).forEach(c => {
         const cc = TYPE_COLORS[c.node.type] || '#666c63';
         html += `<div style="display:flex;align-items:center;gap:5px;padding:3px 0;font-family:var(--m-display);font-size:11px;cursor:pointer;"
                       onclick="(function(){var ns=document.querySelectorAll('.kg-node');/* TODO: focus */})()">
           <span style="width:6px;height:6px;border-radius:50%;background:${cc};flex-shrink:0;"></span>
           <span style="flex:1;color:var(--m-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.node.title}</span>
-          <span style="font-family:var(--m-mono);font-size:7px;color:var(--m-muted);flex-shrink:0;">${c.label}</span>
+          <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);flex-shrink:0;">${c.label}</span>
         </div>`;
       });
       if (connections.length > 15) {
-        html += `<div style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);margin-top:4px;">+ ${connections.length - 15} more</div>`;
+        html += `<div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-top:4px;">+ ${connections.length - 15} more</div>`;
       }
       html += '</div>';
     }

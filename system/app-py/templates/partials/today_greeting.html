@@ -18,27 +18,27 @@
   <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
 
     <span class="chip {% if overdue > 0 %}chip--alert{% elif open_tasks > 0 %}chip--ochre{% else %}chip--accent{% endif %}"
-          style="font-size:10px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;">
+          style="font-size:11px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;">
       {{ open_tasks }} OPEN
     </span>
 
     {% if overdue > 0 %}
     <span class="chip chip--alert"
-          style="font-size:10px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;background:var(--m-alert-wash);color:var(--m-alert);">
+          style="font-size:11px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;background:var(--m-alert-wash);color:var(--m-alert);">
       {{ overdue }} OVERDUE
     </span>
     {% endif %}
 
     {% for run in morning_runs %}
     <span class="chip"
-          style="font-size:10px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;background:var(--m-ok-wash);color:var(--m-ok);">
+          style="font-size:11px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;background:var(--m-ok-wash);color:var(--m-ok);">
       {{ run.agent_slug }} · DONE
     </span>
     {% endfor %}
 
     {% if not morning_runs %}
     <span class="chip"
-          style="font-size:10px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;background:var(--m-surface-2);color:var(--m-muted);">
+          style="font-size:11px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;background:var(--m-surface-2);color:var(--m-muted);">
       AGENTS · IDLE
     </span>
     {% endif %}

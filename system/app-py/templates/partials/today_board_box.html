@@ -72,7 +72,7 @@ Update my Metis {{ m.label }} board. Search the web for current, real {% if boar
             hx-target="#board-{{ board }}" hx-swap="outerHTML"
             hx-indicator="#board-{{ board }}-spin"
             title="Search the web via the API and refresh now (needs API credit; also runs monthly).">↻ Refresh (API)</button>
-    <span id="board-{{ board }}-spin" class="htmx-indicator" style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);letter-spacing:0.08em;">searching…</span>
+    <span id="board-{{ board }}-spin" class="htmx-indicator" style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);letter-spacing:0.08em;">searching…</span>
     {% endif %}
     <button type="button" class="btn btn--ghost btn--caps board-box-btn board-box-btn--add"
             onclick="toggleBoardAdd('{{ board }}')">+ Add</button>

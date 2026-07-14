@@ -2,13 +2,13 @@
    Context: weeks (list of dicts), total (int), peak (dict), trend (str). #}
 {% if weeks and total > 0 %}
 <div id="memory-pulse" style="margin-bottom:28px;">
-  <div class="sec-label" style="margin-bottom:12px;">
+  <h2 class="sec-label" style="margin-bottom:12px;">
     <span>Memory pulse</span>
     <span class="tail">
       {{ total }} MEMORIES &middot; 8 WEEKS &middot;
       {% if trend == 'rising' %}RISING &#9650;{% elif trend == 'cooling' %}COOLING &#9660;{% else %}STEADY &#9644;{% endif %}
     </span>
-  </div>
+  </h2>
   <div class="panel" style="padding:18px 24px;">
     {# Heatmap grid #}
     <div style="display:flex;align-items:end;gap:6px;margin-bottom:12px;">
@@ -21,11 +21,11 @@
           position:relative;"
           title="{{ w.date_range }}: {{ w.total }} memories">
           {% if w.total > 0 %}
-          <span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ w.total }}</span>
+          <span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{{ w.total }}</span>
           {% endif %}
         </div>
         {# Label #}
-        <span style="font-family:var(--m-mono);font-size:7.5px;letter-spacing:0.1em;color:var(--m-muted-soft);">{{ w.label }}</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted-soft);">{{ w.label }}</span>
       </div>
       {% endfor %}
     </div>
@@ -45,14 +45,14 @@
         'note': 'var(--m-chart-6)',
         'consolidated_decisions': 'var(--m-chart-4)',
         'consolidated_reflexions': 'var(--m-chart-4)',
-        'session': '#7b2cbf',
+        'session': 'var(--m-chart-5)',
         'semantic': 'var(--m-chart-3)',
         'other': 'var(--m-chart-8)'
       } %}
       {% for typ, count in all_types.items() %}
       <div style="display:flex;align-items:center;gap:5px;">
         <span style="width:8px;height:8px;border-radius:2px;background:{{ type_colors.get(typ, 'var(--m-chart-8)') }};"></span>
-        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;color:var(--m-muted);">{{ typ|replace('_', ' ') }} ({{ count }})</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">{{ typ|replace('_', ' ') }} ({{ count }})</span>
       </div>
       {% endfor %}
     </div>

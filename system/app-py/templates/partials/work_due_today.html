@@ -1,18 +1,18 @@
 {% if overdue or due_today %}
 <div id="work-due-today" style="margin-bottom:28px;">
-  <div class="sec-label" style="margin-bottom:10px;">
+  <h2 class="sec-label" style="margin-bottom:10px;">
     <span>Due Today</span>
     {% if overdue %}
-    <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-alert);">{{ overdue|length }} OVERDUE</span>
+    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-alert);">{{ overdue|length }} OVERDUE</span>
     {% endif %}
-  </div>
+  </h2>
   <div class="panel">
     {% for task in overdue %}
     <div class="todo-row" style="border-left:2px solid var(--m-alert);">
       <span class="todo-check" onclick="workTaskDone('{{ task.id }}', this)" style="cursor:pointer;" title="Mark done"></span>
       <span class="todo-title" style="flex:1;">
         {{ task.title or 'Untitled task' }}
-        {% if task.project %}<span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-left:6px;">{{ task.project[:22] }}</span>{% endif %}
+        {% if task.project %}<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-left:6px;">{{ task.project[:22] }}</span>{% endif %}
       </span>
       <span class="todo-meta" style="color:var(--m-alert);">OVERDUE · {{ task.due_date }}</span>
     </div>
@@ -22,7 +22,7 @@
       <span class="todo-check" onclick="workTaskDone('{{ task.id }}', this)" style="cursor:pointer;" title="Mark done"></span>
       <span class="todo-title" style="flex:1;">
         {{ task.title or 'Untitled task' }}
-        {% if task.project %}<span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-left:6px;">{{ task.project[:22] }}</span>{% endif %}
+        {% if task.project %}<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-left:6px;">{{ task.project[:22] }}</span>{% endif %}
       </span>
       <span class="todo-meta">TODAY</span>
     </div>

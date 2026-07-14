@@ -19,7 +19,7 @@
   {% for module in modules %}
   {% set module_lessons = lessons | selectattr("module", "equalto", module.title) | list %}
   <div style="padding:12px 20px 4px;border-bottom:1px solid var(--m-line);">
-    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:8px;">
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:8px;">
       {{ module.title | upper }}
     </div>
     {% for lesson in module_lessons %}

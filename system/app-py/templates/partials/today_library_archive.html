@@ -58,17 +58,17 @@
 } %}
 
 <div>
-  <div class="sec-label" style="margin-bottom:8px;display:flex;align-items:baseline;gap:8px;">
+  <h2 class="sec-label" style="margin-bottom:8px;display:flex;align-items:baseline;gap:8px;">
     <span>Literature</span>
     <span class="sec-label-tail">
       {% if zotero_items %}{{ zotero_items|length }} ZOTERO{% if unread_count %} · {{ unread_count }} UNREAD{% endif %}{% endif %}
       {% if zotero_items and hat_items %} · {% endif %}
       {% if hat_items %}{{ hat_items|length }} DOMAIN CORPUS{% endif %}
     </span>
-    <a href="/knowledge" style="margin-left:auto;font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;color:var(--m-muted);text-decoration:none;">
+    <a href="/knowledge" style="margin-left:auto;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);text-decoration:none;">
       OPEN LIBRARY →
     </a>
-  </div>
+  </h2>
 
   <div class="panel" style="overflow:hidden;">
 
@@ -108,7 +108,7 @@
         <div class="lib-row-meta" style="padding-left:17px;">
           {# Type badge #}
           {% if item.item_type %}
-          <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;
+          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
             padding:1px 6px;border-radius:var(--m-radius-pill,10px);
             background:color-mix(in srgb, {{ icolor }} 12%, transparent);
             color:{{ icolor }};">{{ type_labels.get(item.item_type, item.item_type) | upper }}</span>
@@ -146,7 +146,7 @@
           <span class="lib-row-title">{{ item.title }}</span>
         </div>
         <div class="lib-row-meta" style="padding-left:17px;">
-          <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;
+          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
             padding:1px 6px;border-radius:var(--m-radius-pill,10px);
             background:rgba(180,83,9,0.08);color:var(--m-warn);">CORPUS</span>
           {% if item.domain %}<span class="lib-row-domain">{{ item.domain }}</span>{% endif %}
@@ -180,7 +180,7 @@
           <span class="lib-row-title">{{ item.title }}</span>
         </div>
         <div class="lib-row-meta" style="padding-left:17px;">
-          <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;
+          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
             padding:1px 6px;border-radius:var(--m-radius-pill,10px);
             background:color-mix(in srgb, var(--m-chart-8) 8%, transparent);color:var(--m-muted);">NOTE</span>
           {% if item.domain %}<span class="lib-row-domain">{{ item.domain }}</span>{% endif %}
@@ -224,7 +224,7 @@
 .lib-group-dot--card   { background: var(--m-muted); }
 .lib-group-label {
   font-family: var(--m-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--m-ink);
@@ -284,13 +284,13 @@
 }
 .lib-row-age {
   font-family: var(--m-mono);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--m-muted);
 }
 
 .lib-chip {
   font-family: var(--m-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 1px 6px;

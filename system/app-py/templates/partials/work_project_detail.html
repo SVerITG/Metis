@@ -14,12 +14,12 @@
     <div style="flex:1;min-width:0;">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
         {% if p.domain %}
-        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);">{{ p.domain }}</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);">{{ p.domain }}</span>
         {% endif %}
         <button onclick="pdSetCategory('{{ p.id }}')"
                 title="Set category"
                 style="background:color-mix(in srgb, {{ accent }} 14%, transparent);border:1px solid color-mix(in srgb, {{ accent }} 35%, transparent);
-                       border-radius:10px;padding:1px 9px;font-family:var(--m-mono);font-size:9px;letter-spacing:.08em;
+                       border-radius:10px;padding:1px 9px;font-family:var(--m-mono);font-size:11px;letter-spacing:.08em;
                        color:{{ accent }};cursor:pointer;">{% if p.category %}{{ p.category }}{% else %}+ category{% endif %}</button>
       </div>
       <h2 id="pd-title-display-{{ p.id }}"
@@ -33,28 +33,28 @@
       <!-- Tags -->
       <div id="pd-tags-{{ p.id }}" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;">
         {% for tag in tags_list %}
-        <span class="chip chip--plain" style="font-size:10px;padding:1px 7px;cursor:default;">{{ tag }}
-          <span onclick="pdRemoveTag('{{ p.id }}','{{ tag }}')" style="margin-left:4px;cursor:pointer;opacity:.6;font-size:9px;">&#10005;</span>
+        <span class="chip chip--plain" style="font-size:11px;padding:1px 7px;cursor:default;">{{ tag }}
+          <span onclick="pdRemoveTag('{{ p.id }}','{{ tag }}')" style="margin-left:4px;cursor:pointer;opacity:.6;font-size:11px;">&#10005;</span>
         </span>
         {% endfor %}
         <button onclick="pdAddTagPrompt('{{ p.id }}')"
-                style="background:none;border:1px dashed var(--m-rule);border-radius:10px;padding:1px 8px;font-family:var(--m-mono);font-size:9px;color:var(--m-muted);cursor:pointer;letter-spacing:.08em;">+ tag</button>
+                style="background:none;border:1px dashed var(--m-rule);border-radius:10px;padding:1px 8px;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);cursor:pointer;letter-spacing:.08em;">+ tag</button>
       </div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-shrink:0;">
       <!-- Banner colour swatches -->
       <div style="display:flex;gap:4px;align-items:center;" title="Banner colour">
-        {% for c in ['var(--m-alert)','var(--m-warn)','var(--m-ok)','#0ea5e9','#6366f1','#a855f7'] %}
+        {% for c in ['var(--m-alert)','var(--m-warn)','var(--m-ok)','var(--m-chart-1)','var(--m-chart-5)','var(--m-chart-7)'] %}
         <span onclick="pdSetColor('{{ p.id }}','{{ c }}')"
               style="width:13px;height:13px;border-radius:50%;background:{{ c }};cursor:pointer;
                      border:2px solid {% if p.accent_color == c %}var(--m-ink){% else %}transparent{% endif %};box-shadow:0 0 0 1px var(--m-rule);"></span>
         {% endfor %}
         <span onclick="pdSetColor('{{ p.id }}','')" title="Reset to default"
               style="width:13px;height:13px;border-radius:50%;background:var(--m-surface-2);cursor:pointer;
-                     border:1px solid var(--m-rule);font-size:9px;line-height:11px;text-align:center;color:var(--m-muted);">&#8856;</span>
+                     border:1px solid var(--m-rule);font-size:11px;line-height:11px;text-align:center;color:var(--m-muted);">&#8856;</span>
       </div>
       {% if last_activity %}
-      <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ last_activity[:10] }}</span>
+      <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{{ last_activity[:10] }}</span>
       {% endif %}
       <button onclick="closeProjectDetail()"
               style="background:none;border:none;font-size:20px;color:var(--m-muted);cursor:pointer;padding:0;line-height:1;">&#10005;</button>
@@ -67,7 +67,7 @@
     <button id="pd-tab-btn-{{ tab_id }}"
             onclick="pdSwitchTab('{{ p.id }}','{{ tab_id }}')"
             style="background:none;border:none;border-bottom:2px solid {% if tab_id=='tasks' %}var(--m-accent){% else %}transparent{% endif %};
-                   padding:10px 16px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;
+                   padding:10px 16px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;
                    color:{% if tab_id=='tasks' %}var(--m-accent){% else %}var(--m-muted){% endif %};
                    cursor:pointer;margin-bottom:-1px;transition:color .15s,border-color .15s;">{{ tab_label | upper }}</button>
     {% endfor %}
@@ -81,16 +81,16 @@
 
       {% if p.next_step %}
       <div style="display:flex;align-items:center;gap:10px;background:var(--m-accent-wash);border-radius:5px;padding:10px 14px;margin-bottom:16px;">
-        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-accent);flex-shrink:0;">NEXT</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-accent);flex-shrink:0;">NEXT</span>
         <span style="font-family:var(--m-display);font-size:13px;color:var(--m-accent);flex:1;line-height:1.4;">{{ p.next_step }}</span>
         <button onclick="pdClearNextStep('{{ p.id }}')"
                 title="Mark as done"
                 style="background:none;border:1px solid var(--m-accent);border-radius:3px;padding:2px 8px;
-                       font-family:var(--m-mono);font-size:9px;color:var(--m-accent);cursor:pointer;">&#10003; Done</button>
+                       font-family:var(--m-mono);font-size:11px;color:var(--m-accent);cursor:pointer;">&#10003; Done</button>
       </div>
       {% endif %}
 
-      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);margin-bottom:10px;">
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);margin-bottom:10px;">
         Open tasks <span style="color:var(--m-ink);margin-left:4px;">{{ open_count }}</span>
       </div>
 
@@ -101,7 +101,7 @@
                draggable="true"
                style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;border:1px solid transparent;">
             <span style="cursor:grab;color:var(--m-rule);font-size:13px;flex-shrink:0;user-select:none;" title="Drag to reorder">&#8919;</span>
-            <span style="font-size:10px;flex-shrink:0;color:{% if t.status == 'blocked' %}var(--m-alert){% elif t.status == 'in_progress' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
+            <span style="font-size:11px;flex-shrink:0;color:{% if t.status == 'blocked' %}var(--m-alert){% elif t.status == 'in_progress' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
               {% if t.status == 'blocked' %}&#9679;{% elif t.status == 'in_progress' %}&#9656;{% else %}&middot;{% endif %}
             </span>
             <span class="pd-task-title"
@@ -109,7 +109,7 @@
                   onclick="pdStartTaskRename(this,'{{ t.task_id }}','{{ p.id }}')"
                   title="Click to rename">{{ t.title }}</span>
             <select onchange="pdSetTaskStatus('{{ t.task_id }}','{{ p.id }}',this.value)"
-                    style="font-family:var(--m-mono);font-size:9px;border:1px solid var(--m-rule);border-radius:3px;
+                    style="font-family:var(--m-mono);font-size:11px;border:1px solid var(--m-rule);border-radius:3px;
                            padding:2px 4px;background:var(--m-surface-2);color:var(--m-muted);flex-shrink:0;">
               <option value="open" {% if t.status == 'open' %}selected{% endif %}>open</option>
               <option value="in_progress" {% if t.status == 'in_progress' %}selected{% endif %}>in progress</option>
@@ -136,7 +136,7 @@
                style="flex:1;font-family:var(--m-display);font-size:13px;border:1px solid var(--m-line);
                       border-radius:3px;padding:6px 10px;background:var(--m-surface-2);color:var(--m-ink);outline:none;">
         <select id="pd-new-task-cat-{{ p.id }}"
-                style="font-family:var(--m-mono);font-size:10px;border:1px solid var(--m-line);
+                style="font-family:var(--m-mono);font-size:11px;border:1px solid var(--m-line);
                        border-radius:3px;padding:6px 7px;background:var(--m-surface-2);color:var(--m-muted);">
           <option value="general">general</option>
           <option value="urgent">urgent</option>
@@ -147,14 +147,14 @@
         </select>
         <button onclick="pdDetailAddTask('{{ p.id }}')"
                 style="background:var(--m-accent);color:var(--m-on-accent);border:none;border-radius:3px;
-                       padding:6px 14px;font-family:var(--m-mono);font-size:10px;cursor:pointer;white-space:nowrap;">Add task</button>
+                       padding:6px 14px;font-family:var(--m-mono);font-size:11px;cursor:pointer;white-space:nowrap;">Add task</button>
       </div>
 
       {% if done_tasks %}
       <div style="margin-top:20px;">
         <button onclick="pdToggleDoneArchive('{{ p.id }}')"
                 style="background:none;border:none;padding:0;cursor:pointer;font-family:var(--m-mono);
-                       font-size:9px;letter-spacing:0.16em;color:var(--m-muted);text-transform:uppercase;
+                       font-size:11px;letter-spacing:0.16em;color:var(--m-muted);text-transform:uppercase;
                        display:flex;align-items:center;gap:6px;">
           <span id="pd-done-chevron-{{ p.id }}">&#9656;</span>
           Done &amp; archived &mdash; {{ done_tasks | length }} tasks
@@ -162,14 +162,14 @@
         <div id="pd-done-archive-{{ p.id }}" style="display:none;margin-top:10px;border-left:2px solid var(--m-rule-soft);padding-left:12px;">
           {% for t in done_tasks %}
           <div style="display:flex;align-items:baseline;gap:10px;padding:4px 0;border-bottom:1px solid var(--m-rule-soft);">
-            <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-ok);flex-shrink:0;">&#10003;</span>
+            <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-ok);flex-shrink:0;">&#10003;</span>
             <span style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);flex:1;text-decoration:line-through;opacity:.7;">{{ t.title }}</span>
             {% if t.updated_at %}
-            <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);flex-shrink:0;">{{ t.updated_at[:10] }}</span>
+            <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);flex-shrink:0;">{{ t.updated_at[:10] }}</span>
             {% endif %}
             <button onclick="pdRestoreTask('{{ t.task_id }}','{{ p.id }}')"
                     title="Restore to open"
-                    style="background:none;border:none;padding:0 3px;cursor:pointer;font-family:var(--m-mono);font-size:9px;color:var(--m-accent);opacity:.7;">&#8617;</button>
+                    style="background:none;border:none;padding:0 3px;cursor:pointer;font-family:var(--m-mono);font-size:11px;color:var(--m-accent);opacity:.7;">&#8617;</button>
           </div>
           {% endfor %}
         </div>
@@ -181,7 +181,7 @@
     <!-- NOTES TAB -->
     <div id="pd-panel-notes" style="display:none;">
       <div style="margin-bottom:20px;">
-        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:8px;">NEW NOTE</div>
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:8px;">NEW NOTE</div>
         <textarea id="pd-note-input-{{ p.id }}" rows="3"
                   placeholder="Write a note linked to this project…"
                   style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:13px;
@@ -191,14 +191,14 @@
         <div style="display:flex;justify-content:flex-end;margin-top:6px;">
           <button onclick="pdSaveNote('{{ p.id }}')"
                   style="background:var(--m-accent);color:var(--m-on-accent);border:none;border-radius:3px;
-                         padding:6px 16px;font-family:var(--m-mono);font-size:10px;cursor:pointer;">Save note</button>
+                         padding:6px 16px;font-family:var(--m-mono);font-size:11px;cursor:pointer;">Save note</button>
         </div>
       </div>
       <div id="pd-notes-list-{{ p.id }}">
         {% if linked_notes %}
           {% for n in linked_notes %}
           <div class="panel panel-pad" style="padding:14px 16px;margin-bottom:10px;position:relative;" data-note-id="{{ n.note_id }}">
-            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-bottom:6px;letter-spacing:.1em;">{{ n.created_at[:10] }} &middot; NOTE</div>
+            <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:6px;letter-spacing:.1em;">{{ n.created_at[:10] }} &middot; NOTE</div>
             <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.6;white-space:pre-wrap;">{{ n.content }}</div>
             <button onclick="pdDeleteNote('{{ n.note_id }}','{{ p.id }}')"
                     style="position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;
@@ -219,7 +219,7 @@
     <div id="pd-panel-about" style="display:none;">
       <div style="display:flex;flex-direction:column;gap:18px;">
         <div>
-          <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:6px;">DESCRIPTION</div>
+          <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:6px;">DESCRIPTION</div>
           <textarea id="pd-desc-{{ p.id }}" rows="3"
                     style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:13px;
                            line-height:1.6;border:1px solid var(--m-line);border-radius:4px;
@@ -227,19 +227,19 @@
         </div>
         <div style="display:flex;gap:16px;flex-wrap:wrap;">
           <div style="flex:1;min-width:140px;">
-            <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:5px;">STARTED</div>
+            <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:5px;">STARTED</div>
             <input type="date" id="pd-started-{{ p.id }}" value="{{ p.started_at[:10] if p.started_at else '' }}"
                    style="font-family:var(--m-mono);font-size:12px;border:1px solid var(--m-line);border-radius:3px;
                           padding:6px 8px;background:var(--m-surface-2);color:var(--m-ink);width:100%;box-sizing:border-box;">
           </div>
           <div style="flex:1;min-width:140px;">
-            <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:5px;">COMPLETED / ENDED</div>
+            <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:5px;">COMPLETED / ENDED</div>
             <input type="date" id="pd-completed-{{ p.id }}" value="{{ p.completed_at[:10] if p.completed_at else '' }}"
                    style="font-family:var(--m-mono);font-size:12px;border:1px solid var(--m-line);border-radius:3px;
                           padding:6px 8px;background:var(--m-surface-2);color:var(--m-ink);width:100%;box-sizing:border-box;">
           </div>
           <div style="flex:1;min-width:140px;">
-            <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:5px;">STATUS</div>
+            <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:5px;">STATUS</div>
             <select id="pd-status-{{ p.id }}"
                     style="font-family:var(--m-mono);font-size:11px;border:1px solid var(--m-line);border-radius:3px;
                            padding:6px 8px;background:var(--m-surface-2);color:var(--m-ink);width:100%;">
@@ -251,7 +251,7 @@
           </div>
         </div>
         <div>
-          <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:5px;">PROJECT IMAGE URL (optional)</div>
+          <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:5px;">PROJECT IMAGE URL (optional)</div>
           <input type="url" id="pd-image-{{ p.id }}" value="{{ p.image_url or '' }}"
                  placeholder="https://… or leave blank"
                  style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:11px;
@@ -260,9 +260,9 @@
         </div>
         <div>
           <div style="display:flex;align-items:center;margin-bottom:6px;">
-            <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);">CONTEXT FOR CLAUDE</div>
+            <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:.14em;color:var(--m-muted);">CONTEXT FOR CLAUDE</div>
             <button id="ctx-copy-btn-{{ p.id }}" onclick="copyProjectContext('{{ p.id }}')"
-                    style="margin-left:auto;padding:2px 9px;font-family:var(--m-mono);font-size:8.5px;
+                    style="margin-left:auto;padding:2px 9px;font-family:var(--m-mono);font-size:11px;
                            letter-spacing:0.1em;background:transparent;border:1px solid var(--m-rule-strong);
                            border-radius:var(--m-radius);color:var(--m-text);cursor:pointer;">COPY</button>
           </div>
@@ -275,7 +275,7 @@
         <div style="display:flex;gap:8px;padding-top:4px;">
           <button onclick="pdSaveAbout('{{ p.id }}')"
                   style="background:var(--m-accent);color:var(--m-on-accent);border:none;border-radius:3px;
-                         padding:7px 20px;font-family:var(--m-mono);font-size:10px;cursor:pointer;letter-spacing:.06em;">Save</button>
+                         padding:7px 20px;font-family:var(--m-mono);font-size:11px;cursor:pointer;letter-spacing:.06em;">Save</button>
           {% if p.github_url %}
           <a class="btn btn--ghost btn--caps" href="{{ p.github_url }}" target="_blank" rel="noopener" style="padding:7px 14px;">GitHub &#8599;</a>
           {% endif %}
@@ -293,16 +293,16 @@
       {% if history_entries %}
         {% for e in history_entries %}
         <div style="display:flex;gap:14px;padding:8px 0;border-bottom:1px solid var(--m-rule-soft);">
-          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);flex-shrink:0;min-width:74px;padding-top:3px;">{{ e.date }}</span>
+          <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);flex-shrink:0;min-width:74px;padding-top:3px;">{{ e.date }}</span>
           <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.4;flex:1;">{{ e.summary }}</span>
-          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);flex-shrink:0;padding-top:3px;">{{ e.get('author','') }}</span>
+          <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);flex-shrink:0;padding-top:3px;">{{ e.get('author','') }}</span>
         </div>
         {% endfor %}
       {% else %}
         <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">No history yet.</div>
       {% endif %}
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--m-rule);">
-        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:6px;">LOG A SESSION NOTE</div>
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:.14em;color:var(--m-muted);margin-bottom:6px;">LOG A SESSION NOTE</div>
         <div style="display:flex;gap:8px;">
           <input id="pd-history-input-{{ p.id }}" type="text" placeholder="What did you work on?"
                  onkeydown="if(event.key==='Enter')pdLogHistory('{{ p.id }}')"
@@ -310,7 +310,7 @@
                         border-radius:3px;padding:6px 10px;background:var(--m-surface-2);color:var(--m-ink);outline:none;">
           <button onclick="pdLogHistory('{{ p.id }}')"
                   style="background:none;border:1px solid var(--m-line);border-radius:3px;
-                         padding:6px 14px;font-family:var(--m-mono);font-size:10px;cursor:pointer;color:var(--m-muted);">Log</button>
+                         padding:6px 14px;font-family:var(--m-mono);font-size:11px;cursor:pointer;color:var(--m-muted);">Log</button>
         </div>
       </div>
     </div><!-- /history -->
@@ -379,8 +379,8 @@
       if (!zone) return;
       var addBtn = zone.querySelector('button');
       var html = updated.map(function(t){
-        return '<span class="chip chip--plain" style="font-size:10px;padding:1px 7px;">' + t.replace(/</g,'&lt;') +
-          '<span onclick="pdRemoveTag(\'' + pid + '\',\'' + t.replace(/'/g,"\\'") + '\')" style="margin-left:4px;cursor:pointer;opacity:.6;font-size:9px;">&#10005;</span></span>';
+        return '<span class="chip chip--plain" style="font-size:11px;padding:1px 7px;">' + t.replace(/</g,'&lt;') +
+          '<span onclick="pdRemoveTag(\'' + pid + '\',\'' + t.replace(/'/g,"\\'") + '\')" style="margin-left:4px;cursor:pointer;opacity:.6;font-size:11px;">&#10005;</span></span>';
       }).join('');
       zone.innerHTML = html + (addBtn ? addBtn.outerHTML : '');
     });

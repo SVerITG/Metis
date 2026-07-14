@@ -1,18 +1,19 @@
 {% extends "base.html" %}
+{% from "partials/_section.html" import sec_label %}
 {% block title %}Teach{% endblock %}
 
 {% block extra_head %}
 <style>
 .source-chip {
   display:inline-flex;align-items:center;gap:4px;
-  font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+  font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
   padding:4px 10px;border:1px solid var(--m-line);border-radius:3px;
   cursor:pointer;color:var(--m-muted);background:transparent;transition:all 100ms;
 }
 .source-chip.active { border-color:var(--m-accent);color:var(--m-accent);background:rgba(99,102,241,.07); }
 .slide-row { padding:10px 0;border-bottom:1px solid var(--m-rule-soft);display:flex;gap:10px;align-items:flex-start; }
 .slide-row:last-child { border-bottom:none; }
-.slide-num { font-family:var(--m-mono);font-size:9px;color:var(--m-muted);width:22px;padding-top:2px;flex-shrink:0; }
+.slide-num { font-family:var(--m-mono);font-size:11px;color:var(--m-muted);width:22px;padding-top:2px;flex-shrink:0; }
 </style>
 {% endblock %}
 
@@ -37,12 +38,12 @@
 
       <!-- Builder form -->
       <div id="teach-builder-form">
-        <div class="sec-label" style="margin-bottom:12px;"><span>Course builder</span><span class="tail">INTAKE</span></div>
+        {{ sec_label("Course builder", tail="INTAKE", style="margin-bottom:12px;") }}
 
         <div class="panel" style="padding:24px 24px 20px;">
 
           <div style="margin-bottom:16px;">
-            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">COURSE TITLE</label>
+            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">COURSE TITLE</label>
             <input id="teach-title" type="text" autofocus
                    placeholder="e.g. Introduction to Disease Epidemiology"
                    style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:9px 12px;font-family:var(--m-sans);font-size:14px;color:var(--m-ink);outline:none;">
@@ -50,7 +51,7 @@
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
             <div>
-              <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">AUDIENCE</label>
+              <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">AUDIENCE</label>
               <select id="teach-audience" style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
                 <option value="expert">Expert / Specialist</option>
                 <option value="practitioner" selected>Health Practitioner</option>
@@ -59,7 +60,7 @@
               </select>
             </div>
             <div>
-              <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">DEPTH</label>
+              <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">DEPTH</label>
               <select id="teach-depth" style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
                 <option value="overview" selected>Overview (8–12 slides)</option>
                 <option value="lecture">Full lecture (20–25 slides)</option>
@@ -69,7 +70,7 @@
           </div>
 
           <div style="margin-bottom:16px;">
-            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:8px;">KNOWLEDGE SOURCES</label>
+            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:8px;">KNOWLEDGE SOURCES</label>
             <div style="display:flex;gap:7px;flex-wrap:wrap;" id="teach-source-chips">
               <button class="source-chip active" data-src="library" onclick="toggleSource(this)">Library</button>
               <button class="source-chip active" data-src="literature" onclick="toggleSource(this)">Literature</button>
@@ -79,7 +80,7 @@
           </div>
 
           <div style="margin-bottom:16px;">
-            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:8px;">OUTPUT FORMAT</label>
+            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:8px;">OUTPUT FORMAT</label>
             <div style="display:flex;gap:7px;" id="teach-fmt-chips">
               <button class="source-chip active" data-fmt="pptx" onclick="toggleFormat(this)">PowerPoint (.pptx)</button>
               <button class="source-chip" data-fmt="outline" onclick="toggleFormat(this)">Outline only</button>
@@ -88,7 +89,7 @@
           </div>
 
           <div style="margin-bottom:20px;">
-            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">CONTEXT / OBJECTIVES <span style="opacity:.5;">(optional)</span></label>
+            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">CONTEXT / OBJECTIVES <span style="opacity:.5;">(optional)</span></label>
             <textarea id="teach-context" rows="3"
                       placeholder="Learning objectives, required sections, key messages to include…"
                       style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:9px 12px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;resize:vertical;"></textarea>
@@ -97,8 +98,8 @@
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <button class="btn btn--primary btn--caps" onclick="buildCourse()" id="teach-build-btn">Build Course</button>
             <button class="btn btn--ghost btn--caps" onclick="buildOutline()">Outline First</button>
-            <span id="teach-build-status" style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);"></span>
-            <span id="teach-ai-badge" style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.08em;color:var(--m-muted);margin-left:auto;">TEMPLATE MODE</span>
+            <span id="teach-build-status" style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"></span>
+            <span id="teach-ai-badge" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;color:var(--m-muted);margin-left:auto;">TEMPLATE MODE</span>
           </div>
 
         </div>
@@ -106,10 +107,10 @@
 
       <!-- Output panel (hidden until build runs) -->
       <div id="teach-output-panel" style="display:none;">
-        <div class="sec-label" style="margin-bottom:12px;">
+        <h2 class="sec-label" style="margin-bottom:12px;">
           <span id="teach-output-label">Build output</span>
-          <button class="btn btn--ghost btn--caps" style="font-size:9px;padding:3px 8px;" onclick="resetBuilder()">New Build</button>
-        </div>
+          <button class="btn btn--ghost btn--caps" style="font-size:11px;padding:3px 8px;" onclick="resetBuilder()">New Build</button>
+        </h2>
         <div id="teach-output-body" class="panel" style="padding:24px;min-height:300px;"></div>
         <div id="teach-download-bar" style="margin-top:12px;display:none;gap:10px;align-items:center;"></div>
       </div>
@@ -119,7 +120,7 @@
     <!-- RIGHT: Past builds + KB stats -->
     <div>
 
-      <div class="sec-label" style="margin-bottom:12px;"><span>Past builds</span></div>
+      {{ sec_label("Past builds", style="margin-bottom:12px;") }}
       <div id="teach-past-builds"
            hx-get="/api/partial/teach/past-builds"
            hx-trigger="load"
@@ -130,7 +131,7 @@
         </div>
       </div>
 
-      <div class="sec-label" style="margin-bottom:12px;margin-top:24px;"><span>Knowledge base</span></div>
+      {{ sec_label("Knowledge base", style="margin-bottom:12px;margin-top:24px;") }}
       <div hx-get="/api/partial/teach/kb-stats"
            hx-trigger="load"
            hx-swap="outerHTML">
@@ -140,7 +141,7 @@
         </div>
       </div>
 
-      <div class="sec-label" style="margin-bottom:12px;margin-top:24px;"><span>Where your teaching has gaps</span></div>
+      {{ sec_label("Where your teaching has gaps", style="margin-bottom:12px;margin-top:24px;") }}
       <div hx-get="/api/partial/teach/gap-analysis"
            hx-trigger="load"
            hx-swap="innerHTML">
@@ -149,7 +150,7 @@
         </div>
       </div>
 
-      <div class="sec-label" style="margin-bottom:12px;margin-top:24px;"><span>Question bank</span></div>
+      {{ sec_label("Question bank", style="margin-bottom:12px;margin-top:24px;") }}
       <div hx-get="/api/partial/teach/qbank"
            hx-trigger="load"
            hx-swap="innerHTML">
@@ -227,8 +228,8 @@ function _showOutput(data, title) {
     data.html || '<em style="color:var(--m-muted)">The build didn\'t produce anything yet — adjust your selections and try again.</em>';
 
   const aiChip = data.ai_generated
-    ? `<span id="teach-mode-chip" style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:2px 6px;background:var(--m-accent);color:var(--m-on-accent);border-radius:2px;margin-left:8px;">AI</span>`
-    : `<span id="teach-mode-chip" style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:2px 6px;border:1px solid var(--m-line);color:var(--m-muted);border-radius:2px;margin-left:8px;">TEMPLATE</span>`;
+    ? `<span id="teach-mode-chip" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:2px 6px;background:var(--m-accent);color:var(--m-on-accent);border-radius:2px;margin-left:8px;">AI</span>`
+    : `<span id="teach-mode-chip" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:2px 6px;border:1px solid var(--m-line);color:var(--m-muted);border-radius:2px;margin-left:8px;">TEMPLATE</span>`;
   const oldChip = document.getElementById('teach-mode-chip');
   if (oldChip) oldChip.remove();
   document.getElementById('teach-output-label').insertAdjacentHTML('afterend', aiChip);

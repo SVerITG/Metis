@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_section.html" import sec_label %}
 {% block title %}Work{% endblock %}
 
 {% block content %}
@@ -21,13 +22,13 @@
        hx-swap="outerHTML"></div>
 
   <!-- Active Projects -->
-  <div class="sec-label" style="margin-bottom:16px;">
+  <h2 class="sec-label" style="margin-bottom:16px;">
     <span>Active Projects</span>
     <button onclick="openAddProjectModal()"
             style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:3px;
-                   padding:3px 10px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
+                   padding:3px 10px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
                    color:var(--m-muted);cursor:pointer;">+ Project</button>
-  </div>
+  </h2>
 
   <!-- Add Project wizard modal (2 steps) -->
   <div id="add-project-overlay"
@@ -52,16 +53,16 @@
         </p>
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div>
-            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">FOLDER PATH</label>
+            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">FOLDER PATH</label>
             <input id="np-path" type="text" placeholder="C:\Users\you\Documents\MyProject"
                    oninput="npAutoTitle()"
                    style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:11px;
                           border:1px solid var(--m-line);border-radius:3px;padding:8px 10px;
                           background:var(--m-surface-2);color:var(--m-ink);outline:none;">
-            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-top:4px;">Leave blank if this project has no folder on your computer yet.</div>
+            <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-top:4px;">Leave blank if this project has no folder on your computer yet.</div>
           </div>
           <div>
-            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">PROJECT NAME *</label>
+            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">PROJECT NAME *</label>
             <input id="np-title" type="text" placeholder="My project name…"
                    style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:14px;
                           border:1px solid var(--m-line);border-radius:3px;padding:8px 10px;
@@ -82,21 +83,21 @@
       <div id="np-step-2" style="display:none;">
         <div style="display:flex;flex-direction:column;gap:12px;">
           <div>
-            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">WHAT IS THIS PROJECT ABOUT?</label>
+            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">WHAT IS THIS PROJECT ABOUT?</label>
             <input id="np-desc" type="text" placeholder="One sentence about the purpose…"
                    style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:13px;
                           border:1px solid var(--m-line);border-radius:3px;padding:7px 10px;
                           background:var(--m-surface-2);color:var(--m-ink);outline:none;">
           </div>
           <div>
-            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">MAIN TASKS (one per line, optional)</label>
+            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">MAIN TASKS (one per line, optional)</label>
             <textarea id="np-tasks" rows="3" placeholder="Write a literature review&#10;Analyse the dataset&#10;Submit to journal"
                       style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:13px;
                              border:1px solid var(--m-line);border-radius:3px;padding:7px 10px;resize:vertical;
                              background:var(--m-surface-2);color:var(--m-ink);outline:none;"></textarea>
           </div>
           <div>
-            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:6px;">HOW DO YOU OPEN THIS PROJECT?</label>
+            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:6px;">HOW DO YOU OPEN THIS PROJECT?</label>
             <div style="display:flex;flex-wrap:wrap;gap:8px;" id="np-launcher-btns">
               <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-family:var(--m-mono);font-size:11px;">
                 <input type="radio" name="np-launcher" value="vscode" checked> VS Code
@@ -113,7 +114,7 @@
             </div>
           </div>
           <div>
-            <label style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">GITHUB URL (optional)</label>
+            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">GITHUB URL (optional)</label>
             <input id="np-github" type="text" placeholder="https://github.com/…"
                    style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:11px;
                           border:1px solid var(--m-line);border-radius:3px;padding:7px 10px;
@@ -155,7 +156,7 @@
 
   <!-- Workbench -->
   <div class="panel" style="padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-    <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);padding-right:8px;border-right:1px solid var(--m-rule-soft);">Workbench</div>
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);padding-right:8px;border-right:1px solid var(--m-rule-soft);">Workbench</div>
     <button class="btn btn--sec"
             style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;"
             onclick="launchProjectTarget('rc-root','claude_chat')"
@@ -197,14 +198,14 @@
   </div>
 
   <!-- Task kanban board -->
-  <div class="sec-label" style="margin-bottom:16px;"><span>Tasks by Status</span></div>
+  {{ sec_label("Tasks by Status", style="margin-bottom:16px;") }}
   <div hx-get="/api/partial/work/kanban"
        hx-trigger="load"
        hx-swap="outerHTML">
     <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;">
       {% for col in ['Inbox', 'This week', 'In progress', 'Closed · this week'] %}
       <div class="skeleton" style="border-radius:3px;padding:12px;min-height:300px;">
-        <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+        <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
           <span>{{ col }}</span><span>—</span>
         </div>
       </div>
@@ -213,13 +214,13 @@
   </div>
 
   <!-- All tasks — cross-project view sorted by priority -->
-  <div class="sec-label" style="margin-top:32px;margin-bottom:16px;">
+  <h2 class="sec-label" style="margin-top:32px;margin-bottom:16px;">
     <span>All Open Tasks · Priority View</span>
     <button onclick="openCapture('t')"
             style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:3px;
-                   padding:3px 10px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
+                   padding:3px 10px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
                    color:var(--m-muted);cursor:pointer;">+ Task</button>
-  </div>
+  </h2>
   <div hx-get="/api/partial/work/all-tasks"
        hx-trigger="load"
        hx-swap="outerHTML"

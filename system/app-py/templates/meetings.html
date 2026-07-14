@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_section.html" import sec_label %}
 {% block title %}Meetings{% endblock %}
 
 {% block content %}
@@ -42,13 +43,13 @@
 
     <!-- Left: upcoming + transcripts + list -->
     <div>
-      <div class="sec-label" style="margin-bottom:12px;"
+      <h2 class="sec-label" style="margin-bottom:12px;"
            hx-get="/api/partial/meetings/next-label"
            hx-trigger="load"
            hx-swap="outerHTML">
         <span>Next meeting</span>
         <span class="tail">UPCOMING</span>
-      </div>
+      </h2>
 
       <!-- Active meeting panel -->
       <div hx-get="/api/partial/meetings/upcoming"
@@ -58,7 +59,7 @@
       </div>
 
       <!-- Live assist status pane -->
-      <div class="sec-label" style="margin-bottom:12px;"><span>Live assist</span></div>
+      {{ sec_label("Live assist", style="margin-bottom:12px;") }}
       <div style="margin-bottom:18px;"
            hx-get="/api/partial/meetings/live-assist"
            hx-trigger="load, every 30s"
@@ -73,7 +74,7 @@
 
       <!-- Search + filter bar -->
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-        <div class="sec-label" style="margin:0;flex:1;"><span>All meetings</span></div>
+        {{ sec_label("All meetings", style="margin:0;flex:1;") }}
         <input type="search" placeholder="Search…"
                hx-get="/api/partial/meetings/search"
                hx-trigger="keyup delay:300ms, search"
@@ -107,7 +108,7 @@
 
     <!-- Right: follow-ups first (most actionable), then week ahead, then stats -->
     <div>
-      <div class="sec-label" style="margin-bottom:12px;"><span>Open follow-ups</span></div>
+      {{ sec_label("Open follow-ups", style="margin-bottom:12px;") }}
       <div class="panel panel-pad" style="padding:16px 20px;margin-bottom:18px;"
            hx-get="/api/partial/meetings/follow-ups"
            hx-trigger="load"
@@ -115,7 +116,7 @@
         <div class="ed" style="font-size:14px;opacity:.5;"><em>Looking up open follow-ups…</em></div>
       </div>
 
-      <div class="sec-label" style="margin-bottom:12px;"><span>Week ahead</span></div>
+      {{ sec_label("Week ahead", style="margin-bottom:12px;") }}
       <div class="panel" style="margin-bottom:18px;"
            hx-get="/api/partial/meetings/week-ahead"
            hx-trigger="load"
@@ -126,14 +127,14 @@
         </div>
       </div>
 
-      <div class="sec-label" style="margin-bottom:12px;"><span>Stats</span></div>
+      {{ sec_label("Stats", style="margin-bottom:12px;") }}
       <div hx-get="/api/partial/meetings/stats"
            hx-trigger="load"
            hx-swap="outerHTML">
         <div class="panel panel-pad skeleton" style="padding:18px 20px;"></div>
       </div>
 
-      <div class="sec-label" style="margin-bottom:12px;margin-top:18px;"><span>Voice profiles</span></div>
+      {{ sec_label("Voice profiles", style="margin-bottom:12px;margin-top:18px;") }}
       <div hx-get="/api/partial/speakers"
            hx-trigger="load"
            hx-swap="outerHTML">
@@ -149,16 +150,16 @@
   <div class="panel" style="width:480px;max-width:92vw;padding:0;">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
       <div class="kicker" style="margin:0;">PROCESS AUDIO</div>
-      <button onclick="closeAudioUpload()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;">✕</button>
+      <button onclick="closeAudioUpload()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:11px;">✕</button>
     </div>
     <div style="padding:20px;">
       <p style="font-family:var(--m-sans);font-size:13px;color:var(--m-muted);margin:0 0 16px;line-height:1.5;">
         Upload any meeting recording. Transcribed on your own machine — nothing is uploaded, and the audio is deleted afterwards. WAV files transcribe instantly; other formats may take a little longer to process.
       </p>
-      <label style="display:block;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:4px;">MEETING TITLE (optional)</label>
+      <label style="display:block;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:4px;">MEETING TITLE (optional)</label>
       <input id="audio-meeting-title" type="text" placeholder="e.g. Research coordination call"
              style="width:100%;box-sizing:border-box;padding:8px 10px;font-family:var(--m-sans);font-size:13px;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;color:var(--m-ink);margin-bottom:12px;">
-      <label style="display:block;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:4px;">AUDIO FILE</label>
+      <label style="display:block;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:4px;">AUDIO FILE</label>
       <input id="audio-file-input" type="file" accept=".wav,.mp3,.m4a,.ogg,.webm,.flac"
              style="width:100%;box-sizing:border-box;padding:8px 10px;font-family:var(--m-sans);font-size:13px;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;color:var(--m-ink);margin-bottom:16px;">
       <div id="audio-upload-status" style="min-height:20px;font-family:var(--m-mono);font-size:11px;margin-bottom:12px;"></div>

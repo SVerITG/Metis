@@ -4,14 +4,14 @@
 </div>
 
 {% else %}
-<div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);padding:6px 0 12px;">
+<div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);padding:6px 0 12px;">
   {{ total }} RESULT{% if total != 1 %}S{% endif %} FOR &ldquo;{{ q }}&rdquo;
 </div>
 
 <!-- ── Zotero papers ── -->
 {% if papers %}
 <div style="margin-bottom:20px;">
-  <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
+  <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;
               color:var(--m-accent);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--m-rule-soft);">
     ZOTERO LIBRARY — {{ papers | length }} PAPER{% if papers | length != 1 %}S{% endif %}
   </div>
@@ -25,7 +25,7 @@
          onmouseout="this.style.color='var(--m-ink)'">{{ p.title }}</a>
       {% else %}{{ p.title }}{% endif %}
     </div>
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);margin-top:3px;display:flex;gap:12px;">
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);margin-top:3px;display:flex;gap:12px;">
       {% if p.authors %}<span>{{ p.authors[:60] }}</span>{% endif %}
       {% if p.year %}<span>{{ p.year }}</span>{% endif %}
       {% if p.source %}<span>{{ p.source[:40] }}</span>{% endif %}
@@ -42,14 +42,14 @@
 <!-- ── Domain corpus ── -->
 {% if seeded %}
 <div style="margin-bottom:20px;">
-  <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
+  <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;
               color:var(--m-ok);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--m-rule-soft);">
     DOMAIN CORPUS — {{ seeded | length }} PAPER{% if seeded | length != 1 %}S{% endif %}
   </div>
   {% for s in seeded %}
   <div style="padding:7px 0;border-bottom:1px solid var(--m-rule-soft);">
     <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);">{{ s.title }}</div>
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);margin-top:3px;display:flex;gap:10px;">
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);margin-top:3px;display:flex;gap:10px;">
       {% if s.top_folder %}<span>{{ s.top_folder | upper }}</span>{% endif %}
       {% if s.method %}<span>{{ s.method | upper }}</span>{% endif %}
     </div>
@@ -61,7 +61,7 @@
 <!-- ── Library cards ── -->
 {% if cards %}
 <div style="margin-bottom:20px;">
-  <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
+  <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;
               color:var(--m-muted);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--m-rule-soft);">
     KNOWLEDGE CARDS — {{ cards | length }} CARD{% if cards | length != 1 %}S{% endif %}
   </div>
@@ -81,7 +81,7 @@
 <!-- ── Episodic memory ── -->
 {% if memory %}
 <div style="margin-bottom:12px;">
-  <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;text-transform:uppercase;
+  <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;
               color:var(--m-muted);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--m-rule-soft);">
     MEMORY — {{ memory | length }} ENTRY{% if memory | length != 1 %}IES{% endif %}
   </div>
@@ -90,7 +90,7 @@
     <div style="font-family:var(--m-display);font-size:12px;color:var(--m-text);line-height:1.5;">
       {{ m.content | truncate(200, True, '…') }}
     </div>
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);margin-top:3px;">
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);margin-top:3px;">
       {{ m.event_type | upper }} · {{ m.created_at[:10] if m.created_at else '—' }}
     </div>
   </div>
