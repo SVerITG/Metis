@@ -188,7 +188,7 @@ This is genuinely new ground. The individual components — local language model
 | **📊 With the dashboard** | Full visibility across your research life — papers, ideas, meetings, tasks, projects, all connected. Built for *cross-pollination* (ideas linking to literature) and *brain off-loading* (tracking leaving your head, entering the system). | Researchers who want a complete research operating environment |
 | **🌐 Metis OS** | Connects to email, calendar, data systems, and institutional infrastructure — a unified intelligence layer for your entire working environment. | The longer vision. Still in development. |
 
-> **Where things stand today:** The MCP server, 30+ agents, and the 10-tab dashboard are fully operational and used daily. The one-click installer and the pre-loaded domain knowledge layer are still being refined. This is a working system — not vaporware — but it is also not finished. If something breaks, please open an issue. That feedback shapes what gets built next.
+> **Where things stand today:** The MCP server, 30+ agents, and the 9-tab dashboard are fully operational and used daily. The one-click installer and the pre-loaded domain knowledge layer are still being refined. This is a working system — not vaporware — but it is also not finished. If something breaks, please open an issue. That feedback shapes what gets built next.
 
 ---
 
@@ -227,7 +227,7 @@ The installer asks for an API key so automation *can* run, but you can **skip it
 > **[⬇ Download MetisSetup.exe](https://github.com/SVerITG/Metis_PH/releases/latest)**
 
 Double-click the installer. The wizard walks you through:
-1. **Full or AI only** — Full gives you the AI assistant + 10-tab research dashboard (~15 min). AI only is faster (~5 min) and you can add the dashboard later.
+1. **Full or AI only** — Full gives you the AI assistant + 9-tab research dashboard (~15 min). AI only is faster (~5 min) and you can add the dashboard later.
 2. **Your projects** — Tell Metis what you're working on. It creates a tracking record for each project, writes a context file into the project folder, and registers it in Claude Desktop automatically.
 3. **Demo workspace** — Pre-loads realistic example projects, meetings, literature, and tasks so you can explore every feature immediately. Recommended for first-time users.
 4. **API key** — Paste it once.
@@ -340,7 +340,7 @@ claude mcp add metis-rc ~/.local/share/metis-mcp/run.sh
 | **Live meeting assistant** | Follow along in real time, or paste a transcript — get structured notes, action items, and project cross-references automatically |
 | **Project tracking** | Every project gets a tracking record, a context file in its folder, and integration with Claude Desktop. The Update button scans all your project folders for activity. |
 | **Voice capture** | Record anywhere, transcribe locally (no API, no upload), route to ideas, journal, or notes |
-| **10-tab dashboard** | Today · News · Knowledge · Meetings · Learning · Work · Thinking · Planner · Teach · Metis — all live, all local |
+| **9-tab dashboard** | Today · News · Knowledge · Meetings · Learning · Work · Thinking · Teach · Metis — all live, all local |
 | **Data protection** | Six security layers + the `/safe-analysis` workflow. Sensitive data is detected and held back before it reaches the AI, and the recommended pattern keeps raw data on your machine entirely — you share only derived metadata. |
 | **Cross-pollination** | Every idea, paper, meeting, and task is automatically connected to everything else in your research universe. Metis surfaces links across time — a paper from last year, a meeting note from March, a question you logged at a conference — without you searching for any of it. |
 | **Token tracking** | Every agent run shows exactly what it cost — which specialist was used, how many tokens, what model. The dashboard Today tab has a live token pulse so you always know your daily usage. Most daily tasks stay under a few cents. |
@@ -423,7 +423,7 @@ Course topic defined
 
 ### The Dashboard
 
-The **10-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account, no cloud, no subscription.
+The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account, no cloud, no subscription.
 
 ![Metis dashboard — Today tab](docs/screenshots/dashboard-today.png)
 
@@ -438,9 +438,8 @@ The **10-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account, no
 | **Knowledge** | Semantic PDF search, literature cards, knowledge graph, coverage gap analysis |
 | **Meetings** | Live assistant, transcript import, action items, cross-references |
 | **Learning** | Course progress, spaced repetition, competency map |
-| **Work** | Tasks, project cards, activity tracking, one-click open in VS Code / RStudio / Claude |
+| **Work** | Tasks, project cards, activity tracking, one-click open in VS Code / RStudio / Claude — with a **Board** view (week ahead · intentions · project pipeline) |
 | **Thinking** | Idea capture, cross-pollination, brainstorm launcher, open questions tracker |
-| **Planner** | Kanban board, research timeline, milestones |
 | **Teach** | Course Builder, literature alerts, lesson generation, student-facing content |
 | **Metis** | Agent run history, self-improvement proposals, system health, identity card |
 
@@ -820,7 +819,7 @@ Open an issue with label `course-package` to pilot or contribute.
 |---|---|
 | MCP server (210+ tools) | ✅ Operational, used daily |
 | 30+ specialist agents | ✅ Operational, used daily |
-| 10-tab dashboard | ✅ Operational, some features in active development |
+| 9-tab dashboard | ✅ Operational, some features in active development |
 | Windows .exe installer | 🔧 In refinement |
 | Docker images | ✅ Test matrix working |
 | Domain knowledge layer (Metis_PH) | 🔧 Actively being expanded |

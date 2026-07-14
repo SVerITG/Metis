@@ -386,8 +386,15 @@ async def restart_dashboard(request: Request):
     return JSONResponse({"status": "restarting"}, status_code=202)
 
 
+# Surfaces that were merged into another surface — old URLs redirect so bookmarks
+# and refreshes don't 404. Planner became the "Board" view of Work (2026-07-14).
+_TAB_ALIASES = {"planner": "/work"}
+
+
 @app.get("/{tab}", response_class=HTMLResponse)
 async def tab_page(request: Request, tab: str):
+    if tab in _TAB_ALIASES:
+        return RedirectResponse(url=_TAB_ALIASES[tab], status_code=302)
     template_name = _TAB_TEMPLATES.get(tab)
     if template_name is None:
         return RedirectResponse(url="/", status_code=302)
