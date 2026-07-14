@@ -1,0 +1,52 @@
+{# ══════════════════════════════════════════════════════════════════════════════
+   connections_strip.html — the ambient cross-pollination strip.
+
+   Dropped into any surface via a lazy HTMX load:
+     <div hx-get="/api/partial/connections/paper/{{ id }}" hx-trigger="revealed"></div>
+
+   This is the README's core promise made visible ON the surface you're already on,
+   instead of hidden in a Thinking tab. One shared partial → one consistent look
+   everywhere. Design tokens only; 11px floor; each row is a real link so the item
+   is no longer a dead end.
+   ══════════════════════════════════════════════════════════════════════════════ #}
+
+{% set source_meta = {
+  "library":  ("Paper",   "var(--m-accent)",  "/knowledge"),
+  "meeting":  ("Meeting", "var(--m-ochre)",   "/meetings"),
+  "news":     ("News",    "var(--m-ok)",      "/news"),
+  "idea":     ("Idea",    "var(--m-info)",    "/thinking"),
+  "note":     ("Note",    "var(--m-info)",    "/thinking"),
+  "project":  ("Project", "var(--m-accent)",  "/work"),
+  "task":     ("Task",    "var(--m-muted)",   "/work"),
+} %}
+
+{% if matches %}
+<div style="margin-top:14px;border-top:1px solid var(--m-rule);padding-top:12px;">
+  <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;
+              text-transform:uppercase;color:var(--m-muted);margin-bottom:8px;">
+    Connects to
+    <span style="color:var(--m-muted-soft);">· {{ matches|length }} across your work</span>
+  </div>
+
+  {% for m in matches %}
+    {% set meta = source_meta.get(m.source, ("Memory", "var(--m-muted)", "/thinking")) %}
+    <a href="{{ meta[2] }}"
+       style="display:flex;align-items:baseline;gap:10px;padding:7px 0;
+              border-bottom:1px solid var(--m-rule-soft);text-decoration:none;color:inherit;">
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
+                   text-transform:uppercase;color:{{ meta[1] }};flex-shrink:0;width:64px;">
+        {{ meta[0] }}
+      </span>
+      <span style="font-size:13px;line-height:1.35;color:var(--m-ink);
+                   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+        {{ m.title[:120] }}
+      </span>
+    </a>
+  {% endfor %}
+</div>
+{% else %}
+<div style="margin-top:14px;border-top:1px solid var(--m-rule);padding-top:12px;
+            font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted-soft);">
+  No connections yet — they appear as your library and notes grow.
+</div>
+{% endif %}
