@@ -11,7 +11,7 @@
           {% set ns.last_section = task.section %}
           <div style="padding:3px 12px;background:var(--m-surface-2);border-bottom:1px solid var(--m-rule-soft);">
             {% if task.section == 'blocked' %}
-            <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;color:var(--m-warn,#b45309);">BLOCKED</span>
+            <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;color:var(--m-warn);">BLOCKED</span>
             {% elif task.section == 'starred' %}
             <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;color:var(--m-muted);">STARRED</span>
             {% else %}
@@ -20,7 +20,7 @@
           </div>
         {% endif %}
         <div class="todo-row" data-task-id="{{ task.id }}" data-project-id="{{ task.project_id }}"
-             style="border-left:{% if task.section == 'blocked' %}2px solid var(--m-warn,#b45309){% elif task.section == 'starred' %}2px solid var(--m-ochre-deep,#b36a1d){% else %}2px solid transparent{% endif %};">
+             style="border-left:{% if task.section == 'blocked' %}2px solid var(--m-warn){% elif task.section == 'starred' %}2px solid var(--m-ochre-deep){% else %}2px solid transparent{% endif %};">
           <!-- done toggle -->
           <span class="todo-check" onclick="todayTaskDone('{{ task.id }}', this)"
                 style="cursor:pointer;" title="Mark done">
@@ -38,7 +38,7 @@
             {% endif %}
           </span>
           <!-- status badge -->
-          <span class="todo-meta" style="{% if task.status == 'blocked' %}color:var(--m-warn,#b45309);{% endif %}">
+          <span class="todo-meta" style="{% if task.status == 'blocked' %}color:var(--m-warn);{% endif %}">
             {%- if task.status == 'in_progress' -%}IN PROGRESS
             {%- elif task.status == 'blocked' -%}BLOCKED
             {%- else -%}&mdash;
@@ -49,7 +49,7 @@
           <button onclick="todayTaskUnstar('{{ task.id }}', this)"
                   title="Remove from Today (unstar)"
                   style="background:none;border:none;padding:0 4px;cursor:pointer;
-                         font-size:11px;color:var(--m-ochre-deep,#b36a1d);opacity:.7;flex-shrink:0;line-height:1;"
+                         font-size:11px;color:var(--m-ochre-deep);opacity:.7;flex-shrink:0;line-height:1;"
                   onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.7'">&#9733;</button>
           {% endif %}
         </div>

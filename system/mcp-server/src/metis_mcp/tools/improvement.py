@@ -10,6 +10,7 @@ wrappers for MCP / Claude Code.
 """
 
 import datetime
+import logging
 import os
 import re
 from collections import Counter
@@ -18,6 +19,8 @@ from pathlib import Path
 from mcp.types import TextContent
 
 from metis_mcp.app_instance import app
+
+_log = logging.getLogger("metis")
 from metis_mcp.config import paths
 from metis_mcp.db import connect
 from metis_mcp.models import model_for
@@ -138,17 +141,27 @@ def _theme_from(texts: list[str], top_n: int = 3) -> list[tuple[str, int]]:
                             for item in parsed[:top_n]
                             if isinstance(item, (list, tuple)) and len(item) >= 2
                         ]
-        except Exception:
-            pass  # fall through to word-frequency
+        except Exception as exc:
+            # Never swallow this. Silently degrading to word-counting is how the
+            # weekly loop came to emit "Recurring themes: test (4), library (2)"
+            # and have it stored as if it were semantic analysis.
+            _log.warning("theme extraction: semantic pass failed (%s: %s) — "
+                         "falling back to word frequency", type(exc).__name__, exc)
+    elif not api_key:
+        _log.warning("theme extraction: ANTHROPIC_API_KEY not set — falling back to "
+                     "word frequency. Themes will be single words, not insights.")
 
-    # Word-frequency fallback
+    # Word-frequency fallback. LABEL IT. A caller must never be able to mistake a
+    # token count for a semantic theme — that is what made the self-improvement
+    # loop look like a feature when it was a Counter.
     counter: Counter[str] = Counter()
     for t in non_empty:
         tokens = re.findall(r"[a-z][a-z\-]{2,}", t.lower())
         for tok in tokens:
             if tok not in _STOP_WORDS:
                 counter[tok] += 1
-    return counter.most_common(top_n)
+    return [(f"{word} (keyword only — no semantic analysis)", n)
+            for word, n in counter.most_common(top_n)]
 
 
 def aggregate_reflexions(agent_slug: str | None = None,

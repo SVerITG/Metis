@@ -24,6 +24,7 @@ import datetime
 import logging
 import os
 import shutil
+import sys
 from pathlib import Path
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -31,10 +32,53 @@ from apscheduler.triggers.cron import CronTrigger
 
 log = logging.getLogger("metis.scheduler")
 
-scheduler = AsyncIOScheduler(timezone="UTC")
+# Run cron jobs in the USER'S timezone, not UTC.
+#
+# Job times in user-config.yaml ("09:00") are what the user means locally, and the
+# catch-up logic below compares against datetime.now() (local). With timezone="UTC"
+# the CronTrigger fired at 09:00 UTC = 11:00 Brussels in summer — so the "morning"
+# brief arrived at 11:00 and the catch-up disagreed with the cron by two hours.
+try:
+    from tzlocal import get_localzone  # ships with APScheduler
+
+    _LOCAL_TZ = get_localzone()
+except Exception:  # pragma: no cover — fall back to APScheduler's own detection
+    _LOCAL_TZ = None
+
+scheduler = AsyncIOScheduler(timezone=_LOCAL_TZ) if _LOCAL_TZ else AsyncIOScheduler()
 
 # In-memory last-run cache (keyed by job_id)
 _last_results: dict[str, dict] = {}
+
+
+def _ran_today(job_id: str) -> bool:
+    """Has this job already completed today?
+
+    The daily catch-up had NO such check (the weekly path did), so every restart
+    after the scheduled time re-fired every daily job. With a 5-minute supervision
+    heartbeat now restarting the dashboard, that means repeatedly re-running
+    `memory_consolidation` (writing duplicate memory rows) and `brief_synthesis`
+    (a BILLABLE Claude API call). Observed 2026-07-14: 7-8 runs of every daily job
+    in a single morning.
+
+    'skip' counts as done — the job ran and decided there was nothing to do.
+    'error' does NOT count, so a genuinely failed job is still retried.
+    """
+    try:
+        from db import db_query
+
+        rows = db_query(
+            "SELECT 1 FROM jobs_log "
+            "WHERE job_type = ? AND status IN ('ok', 'skip') "
+            "AND date(created_at) = date('now', 'localtime') LIMIT 1",
+            (job_id,),
+        )
+        return bool(rows)
+    except Exception as exc:
+        # Fail SAFE: if we cannot tell, assume it ran. Re-running costs money and
+        # corrupts memory; skipping one day of a job costs nothing that matters.
+        log.warning("[scheduler] could not check if '%s' ran today: %s", job_id, exc)
+        return True
 
 
 # ---------------------------------------------------------------------------
@@ -681,7 +725,44 @@ def job_literature_discovery() -> None:
     log.info("[scheduler] literature_discovery done: %s", msg)
 
 
+def job_embedding_backfill() -> None:
+    """Embed any memory row that has no vector — keeps cross-pollination honest.
+
+    episodic_memory has many writers (session events, agent runs, auto-capture,
+    meeting import); only `remember()` embeds on write. So the semantic index
+    silently rotted to 1.8% coverage (33 of 1,858 rows) and cross-pollination —
+    the feature Metis is *for* — quietly degraded to a keyword LIKE.
+
+    Reconciling on a schedule is the fix that survives a new writer being added:
+    we never have to remember to embed at the call site.
+    """
+    import subprocess
+
+    root = os.environ.get("METIS_RC_ROOT")
+    if not root:
+        _log_job("embedding_backfill", "skip", "METIS_RC_ROOT not set")
+        return
+    script = Path(root) / "tools" / "backfill-embeddings.py"
+    if not script.exists():
+        _log_job("embedding_backfill", "skip", "backfill-embeddings.py not found")
+        return
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(script)],
+            capture_output=True, text=True, timeout=1800,
+        )
+        tail = (proc.stdout or proc.stderr or "").strip().splitlines()
+        summary = tail[-1] if tail else "no output"
+        if proc.returncode == 0:
+            _log_job("embedding_backfill", "ok", summary[:300])
+        else:
+            _log_job("embedding_backfill", "error", summary[:300])
+    except Exception as exc:
+        _log_job("embedding_backfill", "error", str(exc)[:300])
+
+
 JOB_FUNCS: dict[str, callable] = {
+    "embedding_backfill":    job_embedding_backfill,
     "brief_synthesis":       job_brief_synthesis,
     "morning_scan":          job_morning_scan,
     "library_index":         job_library_index,
@@ -697,6 +778,7 @@ JOB_FUNCS: dict[str, callable] = {
 
 # Human-readable labels for the UI
 JOB_LABELS: dict[str, str] = {
+    "embedding_backfill":   "Memory embedding reconcile",
     "brief_synthesis":      "Morning brief synthesis",
     "morning_scan":         "Morning scan (news + papers)",
     "library_index":        "Library index",
@@ -715,6 +797,9 @@ JOB_LABELS: dict[str, str] = {
 # Memory consolidation runs at 22:00 — after the day's work, before the 23:00 backup.
 # Dataset monitor runs every 2 hours during working hours.
 JOB_DEFAULTS: dict[str, dict] = {
+    # Runs late, after the day's memory has been written. Purely local (no API
+    # cost) — it only reconciles rows that are missing an embedding.
+    "embedding_backfill":   {"enabled": True, "time": "22:30"},
     "morning_scan":         {"enabled": True, "time": "09:00"},
     "library_index":        {"enabled": True, "time": "09:05"},
     "inbox_process":        {"enabled": True, "time": "09:10"},
@@ -805,6 +890,7 @@ def setup_jobs() -> None:
         ("dataset_monitor",     job_dataset_monitor),
         ("evening_reflexion",   job_evening_reflexion),
         ("memory_consolidation", job_memory_consolidation),
+        ("embedding_backfill",  job_embedding_backfill),
         ("nightly_backup",      job_nightly_backup),
     ]
     missed = []
@@ -817,8 +903,15 @@ def setup_jobs() -> None:
         sched_h, sched_m = _parse_time(cfg.get("time", "10:00"))
         sched_today = now_local.replace(hour=sched_h, minute=sched_m,
                                         second=0, microsecond=0)
-        if now_local > sched_today:
-            missed.append((catch_job_id, catch_func))
+        if now_local <= sched_today:
+            continue  # not due yet today — the cron will fire it
+        # "Missed" means the scheduled time has passed AND it has not run today.
+        # Without this second half, every restart re-ran every daily job — 7-8×
+        # a morning once a 5-minute heartbeat started restarting the dashboard.
+        if _ran_today(catch_job_id):
+            log.info("[scheduler] catch-up: '%s' already ran today — skipping", catch_job_id)
+            continue
+        missed.append((catch_job_id, catch_func))
 
     # Weekly catch-up: weekly jobs (summary, board_refresh) only fire on their
     # scheduled day — easy to miss on a laptop. Run on startup if they haven't

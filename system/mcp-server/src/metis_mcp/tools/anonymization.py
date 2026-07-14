@@ -93,8 +93,25 @@ _INSTITUTION_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Date of birth — a DIRECT identifier under GDPR Art. 4, and the output rail had
+# no pattern for it at all: "born 12/03/1978" sailed straight through to the API.
+# Deliberately narrow (requires a birth cue word) so it does not mask the ordinary
+# dates that fill a research brief.
+_DOB_RE = re.compile(
+    r"\b(?:born|birth(?:date|day)?|dob|d\.o\.b\.?|né[e]?\s+le|naissance)\b[\s:,-]*"
+    r"\d{1,4}[/\-.]\d{1,2}[/\-.]\d{1,4}",
+    re.IGNORECASE,
+)
+
+# NOTE ON NAMES: _NAME_RE (above) is deliberately NOT in this list. On the egress
+# path it would mask "Research Cortex", "Task Scheduler", "Morning Brief" and
+# every other capitalised phrase — corrupting the text and training the user to
+# ignore the rail. Names are masked on demand via anonymize_text(mode="full").
+# The real control for patient names is that patient data must never enter the DB:
+# `basket/private/` is now blocked server-side in tools/files.py.
 _PATTERNS = [
     ("PATIENT",     _PATIENT_ID_RE),
+    ("DOB",         _DOB_RE),
     ("GPS",         _GPS_RE),
     ("NID",         _BELGIAN_NID_RE),
     ("EMAIL",       _EMAIL_RE),
@@ -168,6 +185,28 @@ async def anonymize_text(
         }
 
     return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
+
+
+def mask_pii(text: str) -> tuple[str, dict[str, int]]:
+    """Mask every PII pattern in `text`. Returns (masked_text, {label: count}).
+
+    The plain-function core of the output rail, so callers on the EGRESS path can
+    use it directly instead of hoping an agent voluntarily calls the scan_outgoing
+    tool. (`scan_outgoing` had zero real callers; the dashboard re-implemented this
+    inline and failed OPEN — "import failure → send as-is". For a data-protection
+    rail that is exactly backwards.)
+
+    Raises on failure. Callers on an egress path must fail CLOSED: if we cannot
+    prove the text is clean, it does not leave the machine.
+    """
+    found: dict[str, int] = {}
+    masked = text
+    for label, pattern in _PATTERNS:
+        hits = pattern.findall(masked)
+        if hits:
+            found[label] = len(hits)
+            masked = pattern.sub(f"[{label}]", masked)
+    return masked, found
 
 
 @app.tool()

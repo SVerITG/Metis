@@ -249,6 +249,58 @@ def _check_mcp_imports() -> dict:
         }
 
 
+def _check_installed_matches_source() -> dict:
+    """Is the RUNNING MCP package the same code as the source tree?
+
+    The server runs an INSTALLED COPY in the venv, not the source. A `git pull`
+    alone leaves it executing old code, silently. On 2026-07-14 the repo was fully
+    current while the running server was SIX DAYS stale — 7 files behind, quietly
+    missing the memory-gateway / session-memory / user-profile tools. Nothing
+    anywhere reported it. This check exists so that can never be invisible again.
+    """
+    import filecmp
+
+    name = "MCP install is current"
+    src_dir = paths.root / "system" / "mcp-server" / "src" / "metis_mcp"
+    installed_dir = Path(__file__).resolve().parent.parent  # …/site-packages/metis_mcp
+
+    if not src_dir.is_dir():
+        return {"name": name, "ok": True, "severity": "info",
+                "detail": "no source tree here (installed-only machine)"}
+
+    try:
+        if installed_dir.resolve() == src_dir.resolve():
+            return {"name": name, "ok": True, "severity": "info",
+                    "detail": "running directly from source (editable install)"}
+    except OSError:
+        pass
+
+    stale: list[str] = []
+    for src_file in src_dir.rglob("*.py"):
+        if "__pycache__" in src_file.parts:
+            continue
+        rel = src_file.relative_to(src_dir)
+        inst_file = installed_dir / rel
+        if not inst_file.exists() or not filecmp.cmp(src_file, inst_file, shallow=False):
+            stale.append(str(rel))
+
+    if not stale:
+        return {"name": name, "ok": True, "severity": "info",
+                "detail": "installed package matches source"}
+
+    shown = ", ".join(stale[:4]) + (f" (+{len(stale) - 4} more)" if len(stale) > 4 else "")
+    return {
+        "name": name,
+        "ok": False,
+        "severity": "fail",
+        "detail": (
+            f"{len(stale)} file(s) STALE — the server is running OLD code: {shown}. "
+            "Tools you think exist may not. Fix: bash tools/reinstall-mcp.sh, "
+            "then /mcp → reconnect 'metis-rc' (Claude Desktop: quit and reopen)."
+        ),
+    }
+
+
 def _check_env_files_safe() -> dict:
     """Verify .env is not tracked by git (best-effort: check gitignore)."""
     gi = paths.root.parent / ".gitignore"
@@ -387,6 +439,7 @@ def run_doctor() -> dict:
         _check_claude_desktop(),
         _check_legacy_paths(),
         _check_mcp_imports(),
+        _check_installed_matches_source(),
         _check_env_files_safe(),
     ]
 

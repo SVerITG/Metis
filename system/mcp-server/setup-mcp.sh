@@ -401,6 +401,11 @@ export METIS_TOOL_SUBSETS=1
 # toolset ~60% with nothing made unreachable. Set to 0 to load all tools.
 export METIS_TOOL_SEARCH=1
 
+# Pin the embedding-model cache. The server does NOT default this itself, so
+# without it fastembed re-downloads ~200 MB of ONNX models instead of reusing
+# the copy already on disk.
+export FASTEMBED_CACHE_PATH="$HOME/.cache/fastembed"
+
 # Corporate proxy SSL fix: point Python's httpx/requests at the system CA bundle
 # (includes institutional root CAs like ITG's) so HuggingFace model downloads
 # and other HTTPS calls succeed behind intercepting proxies.
@@ -408,6 +413,18 @@ _SYS_CA="/etc/ssl/certs/ca-certificates.crt"
 if [ -f "$_SYS_CA" ]; then
     export SSL_CERT_FILE="$_SYS_CA"
     export REQUESTS_CA_BUNDLE="$_SYS_CA"
+fi
+
+# ── Preflight: make sure THIS computer is running the CURRENT Metis ──────────
+# Metis is worked on from more than one computer. The server loads an INSTALLED
+# COPY of the package, so a `git pull` alone leaves it running old code. The
+# preflight fast-forwards the repo and reinstalls if the install is behind the
+# source — and it runs BEFORE the exec below, so the fresh code is what starts.
+# It writes only to stderr (stdout is the MCP JSON-RPC stream) and always
+# exits 0, so it can never stop the server from launching.
+# Disable with METIS_NO_PREFLIGHT=1.
+if [ -x "$METIS_RC_ROOT/tools/metis-preflight.sh" ]; then
+    bash "$METIS_RC_ROOT/tools/metis-preflight.sh" >&2 2>&1 || true
 fi
 
 exec "$VENV_DIR/bin/python3" -m metis_mcp.server

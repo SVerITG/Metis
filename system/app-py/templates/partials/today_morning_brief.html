@@ -29,11 +29,11 @@
     {% set gap_label = gap_label|default('') %}
     <div style="margin-left:auto;display:inline-flex;border:1px solid var(--m-rule-soft);border-radius:3px;overflow:hidden;">
       <button type="button" hx-get="/api/partial/today/morning-brief?period=daily" hx-target="#morning-brief" hx-swap="outerHTML"
-              style="border:0;background:{% if period == 'daily' %}var(--m-accent){% else %}transparent{% endif %};color:{% if period == 'daily' %}#fff{% else %}var(--m-muted){% endif %};font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:3px 10px;cursor:pointer;">DAILY</button>
+              style="border:0;background:{% if period == 'daily' %}var(--m-accent){% else %}transparent{% endif %};color:{% if period == 'daily' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:3px 10px;cursor:pointer;">DAILY</button>
       <button type="button" hx-get="/api/partial/today/morning-brief?period=weekly" hx-target="#morning-brief" hx-swap="outerHTML"
-              style="border:0;border-left:1px solid var(--m-rule-soft);background:{% if period == 'weekly' %}var(--m-accent){% else %}transparent{% endif %};color:{% if period == 'weekly' %}#fff{% else %}var(--m-muted){% endif %};font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:3px 10px;cursor:pointer;">WEEKLY</button>
+              style="border:0;border-left:1px solid var(--m-rule-soft);background:{% if period == 'weekly' %}var(--m-accent){% else %}transparent{% endif %};color:{% if period == 'weekly' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:3px 10px;cursor:pointer;">WEEKLY</button>
       <button type="button" hx-get="/api/partial/today/morning-brief?period=catchup" hx-target="#morning-brief" hx-swap="outerHTML"
-              style="border:0;border-left:1px solid var(--m-rule-soft);background:{% if period == 'catchup' %}var(--m-accent){% else %}transparent{% endif %};color:{% if period == 'catchup' %}#fff{% else %}var(--m-muted){% endif %};font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:3px 10px;cursor:pointer;">CATCH UP{% if gap_label %} · {{ gap_label }}{% endif %}</button>
+              style="border:0;border-left:1px solid var(--m-rule-soft);background:{% if period == 'catchup' %}var(--m-accent){% else %}transparent{% endif %};color:{% if period == 'catchup' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;padding:3px 10px;cursor:pointer;">CATCH UP{% if gap_label %} · {{ gap_label }}{% endif %}</button>
     </div>
   </div>
 

@@ -7,7 +7,7 @@
 
     {% if days_since_commit is not none %}
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--m-rule-soft);">
-      <div style="font-size:22px;font-weight:600;font-family:var(--m-display);color:{% if days_since_commit == 0 %}var(--m-accent){% elif days_since_commit <= 2 %}var(--m-accent){% elif days_since_commit <= 7 %}var(--m-warn,#b45309){% else %}var(--m-danger,#b91c1c){% endif %};">
+      <div style="font-size:22px;font-weight:600;font-family:var(--m-display);color:{% if days_since_commit == 0 %}var(--m-accent){% elif days_since_commit <= 2 %}var(--m-accent){% elif days_since_commit <= 7 %}var(--m-warn){% else %}var(--m-danger){% endif %};">
         {{ days_since_commit if days_since_commit > 0 else '&lt;1' }}
       </div>
       <div>
@@ -25,7 +25,7 @@
       <div style="display:flex;align-items:center;gap:10px;">
         <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:
           {% if m.status == 'done' %}var(--m-accent)
-          {% elif m.status == 'active' %}var(--m-warn,#b45309)
+          {% elif m.status == 'active' %}var(--m-warn)
           {% else %}var(--m-rule){% endif %};"></div>
         <div style="flex:1;min-width:0;">
           <span style="font-family:var(--m-sans);font-size:12px;color:var(--m-ink);

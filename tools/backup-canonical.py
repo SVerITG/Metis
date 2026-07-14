@@ -19,6 +19,7 @@ Run:  "$HOME/.local/share/metis-mcp/.venv/bin/python3" tools/backup-canonical.py
 Schedule daily (dashboard scheduler / cron). Restore: copy the file back to paths.db.
 """
 
+import platform
 import shutil
 import sqlite3
 import sys
@@ -32,6 +33,13 @@ from metis_mcp.config import paths  # noqa: E402
 DB = Path(str(paths.db))
 ONEDRIVE_BACKUPS = ROOT / "system" / "app" / "data" / "cloud-backups"  # OneDrive-synced, git-ignored
 KEEP = 14
+
+# Snapshots are stamped with the machine name. Metis is used from more than one
+# computer and every machine has its OWN live DB (the DB is deliberately per-machine
+# — see data-persistence-strategy.md §4). Without the hostname all machines write
+# into one pool and the prune below, keeping only the last KEEP, would delete another
+# computer's only snapshot. Hostname-stamping keeps each machine's history separate.
+HOST = "".join(c if c.isalnum() else "-" for c in platform.node()) or "unknown"
 
 
 def main():
@@ -52,17 +60,30 @@ def main():
 
     # 2 — move the complete static file onto OneDrive (cloud-recoverable). Moving the
     # FINISHED file (not writing live) means OneDrive never sees a half-written DB.
-    target = ONEDRIVE_BACKUPS / f"metis-{stamp}.sqlite"
+    target = ONEDRIVE_BACKUPS / f"metis-{HOST}-{stamp}.sqlite"
     shutil.move(str(snap), str(target))  # shutil.move crosses filesystems (/tmp → OneDrive)
 
-    # 3 — prune
-    backups = sorted(ONEDRIVE_BACKUPS.glob("metis-*.sqlite"))
+    # 3 — prune THIS machine's snapshots only. Never touch another computer's.
+    backups = sorted(ONEDRIVE_BACKUPS.glob(f"metis-{HOST}-*.sqlite"))
     for old in backups[:-KEEP]:
         old.unlink(missing_ok=True)
 
     size = target.stat().st_size // 1024
-    print(f"  ✓ backup → {target.relative_to(ROOT)} ({size}KB) · kept {min(len(backups), KEEP)} of last {KEEP}")
+    print(f"  ✓ backup → {target.relative_to(ROOT)} ({size}KB) · {HOST}: kept {min(len(backups), KEEP)} of last {KEEP}")
     print("  cloud-recoverable via OneDrive — no key needed; restore by copying the file back to the live DB path.")
+
+    # Show what the OTHER computers have left here, so a divergent DB is visible
+    # rather than silent. (The DB does NOT sync between machines — only these
+    # snapshots do, and only for recovery.)
+    others = sorted(
+        p for p in ONEDRIVE_BACKUPS.glob("metis-*.sqlite")
+        if not p.name.startswith(f"metis-{HOST}-")
+    )
+    if others:
+        print("  other machines' snapshots in OneDrive:")
+        for p in others[-3:]:
+            age = (time.time() - p.stat().st_mtime) / 86400
+            print(f"    {p.name}  ({age:.0f} days old)")
 
 
 if __name__ == "__main__":
