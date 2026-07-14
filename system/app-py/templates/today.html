@@ -106,6 +106,18 @@
     </div>
   </div>
 
+  <!-- ===== 4a2. Cross-pollination — connections for what you're working on ===== -->
+  <!-- The README's core promise, greeting you daily on the cockpit. Seeds from
+       the most recently touched project; endpoint lives in routers/connections.py
+       (not today.py) so it stays isolated. -->
+  <div style="margin-bottom:32px;"
+       hx-get="/api/partial/connections/today"
+       hx-trigger="load delay:300ms"
+       hx-swap="innerHTML">
+    {{ sec_label("Connections", tail="ACROSS YOUR WORK", style="margin-bottom:14px;") }}
+    {{ skeleton_box(size="sm") }}
+  </div>
+
   <!-- ===== 4b. Learning nudge ===== -->
   <div hx-get="/api/partial/today/learning-nudge"
        hx-trigger="load delay:250ms"
