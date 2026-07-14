@@ -118,8 +118,70 @@ _FOLLOWUP_RE = re.compile(
 )
 
 
+def _extract_structure_llm(text: str) -> dict | None:
+    """Extract {actions, decisions, follow_ups} from a NATURAL transcript via Claude.
+
+    Why this exists: the heuristic below only finds action items when the
+    transcript already contains a literal "Action items:" header with bullet
+    points. A real meeting — natural speech, "okay Stan, you'll pull the DHIS2
+    data by Friday and I'll draft the ethics amendment" — has no headers and no
+    bullets, so the heuristic returns NOTHING. That is why every real meeting
+    produced zero action items and the headline feature looked dead.
+
+    Returns None (not {}) on any failure, so the caller falls back to the
+    heuristic. Needs ANTHROPIC_API_KEY, which the dashboard now loads from
+    system/.env.
+    """
+    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if not api_key or len(text.strip()) < 120:
+        return None
+    try:
+        import httpx
+        from models import model_for
+
+        prompt = (
+            "You are extracting structure from a meeting transcript. Return ONLY a "
+            "JSON object with exactly three keys: \"actions\" (concrete things "
+            "someone agreed to DO, each starting with a verb and naming the owner "
+            "if stated), \"decisions\" (things the group decided or agreed), and "
+            "\"follow_ups\" (open items / next steps to revisit). Each is an array "
+            "of short strings. If a category is empty, use []. No commentary.\n\n"
+            "TRANSCRIPT:\n" + text[:8000]
+        )
+        resp = httpx.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": api_key, "anthropic-version": "2023-06-01",
+                     "content-type": "application/json"},
+            json={"model": model_for("brief"), "max_tokens": 700,
+                  "messages": [{"role": "user", "content": prompt}]},
+            timeout=30.0,
+        )
+        if resp.status_code != 200:
+            log.warning("meeting extract: LLM HTTP %s — falling back to heuristic", resp.status_code)
+            return None
+        raw = resp.json()["content"][0]["text"].strip()
+        start, end = raw.find("{"), raw.rfind("}") + 1
+        if start < 0 or end <= start:
+            return None
+        data = json.loads(raw[start:end])
+        out = {k: [str(x).strip() for x in (data.get(k) or []) if str(x).strip()]
+               for k in ("actions", "decisions", "follow_ups")}
+        return out if any(out.values()) else None
+    except Exception as exc:
+        log.warning("meeting extract: LLM path failed (%s) — using heuristic", exc)
+        return None
+
+
 def _extract_structure(text: str) -> dict:
-    """Return {actions, decisions, follow_ups} extracted from free text."""
+    """Return {actions, decisions, follow_ups} extracted from free text.
+
+    Tries the LLM first (handles natural speech), falls back to the header/bullet
+    heuristic when there's no API key or the call fails.
+    """
+    llm = _extract_structure_llm(text)
+    if llm is not None:
+        return llm
+
     actions, decisions, follow_ups = [], [], []
     lines = text.splitlines()
     in_actions_block = False
