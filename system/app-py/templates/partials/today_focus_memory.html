@@ -30,11 +30,11 @@
         {% if item.memory %}
         {% set mem = item.memory %}
         <span style="margin-left:auto;display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:2px 7px;border-radius:var(--m-radius-pill);
-          background:{% if mem.level == 'deep' %}rgba(45,106,79,0.12){% elif mem.level == 'moderate' %}rgba(69,123,157,0.1){% else %}rgba(141,153,174,0.1){% endif %};
-          color:{% if mem.level == 'deep' %}#2d6a4f{% elif mem.level == 'moderate' %}#457b9d{% else %}#8d99ae{% endif %};"
+          background:{% if mem.level == 'deep' %}color-mix(in srgb, var(--m-chart-2) 12%, transparent){% elif mem.level == 'moderate' %}color-mix(in srgb, var(--m-chart-1) 10%, transparent){% else %}color-mix(in srgb, var(--m-chart-8) 10%, transparent){% endif %};
+          color:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};"
           title="{{ mem.total }} related memories across {{ mem.layers|length }} layers">
           <span style="width:5px;height:5px;border-radius:50%;
-            background:{% if mem.level == 'deep' %}#2d6a4f{% elif mem.level == 'moderate' %}#457b9d{% else %}#8d99ae{% endif %};"></span>
+            background:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};"></span>
           {{ mem.total }}
         </span>
         {% endif %}

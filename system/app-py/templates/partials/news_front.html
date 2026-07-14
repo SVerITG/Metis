@@ -1,0 +1,201 @@
+{# ══════════════════════════════════════════════════════════════════════════════
+   news_front.html — the curated front page.
+
+   Organised by RELEVANCE TO STAN'S CORPUS, not by category. Category is a filter,
+   not the spine. The old page was three stacked lists with nothing bigger than
+   anything else, so nothing invited a click.
+
+   PHOTO CARDS AND TYPOGRAPHIC CARDS ARE EQUAL CITIZENS. Measured coverage:
+   policy/world-news 100% have thumbnails; epidemiology 0%. If an image-less item
+   rendered as a "degraded" card, his own field would lose to BBC headlines every
+   single day. So a story without a picture gets a deliberate typographic
+   treatment — large serif on a tinted ground with the source wordmark — which
+   reads as MORE authoritative, the way the FT and the Economist set their leads.
+   ══════════════════════════════════════════════════════════════════════════════ #}
+
+<style>
+  .nf-lead        { display:grid; grid-template-columns:1.15fr 1fr; gap:0;
+                    border:1px solid var(--m-rule); border-radius:10px;
+                    overflow:hidden; background:var(--m-surface); margin-bottom:28px; }
+  .nf-lead-media  { min-height:280px; background-size:cover; background-position:center; }
+  .nf-lead-type   { min-height:280px; display:grid; align-content:center; gap:14px;
+                    padding:32px; background:var(--m-accent-wash);
+                    border-right:1px solid var(--m-rule); }
+  .nf-lead-body   { padding:32px; display:flex; flex-direction:column; gap:12px;
+                    justify-content:center; }
+  .nf-lead h2     { font-size:26px; line-height:1.22; letter-spacing:-0.015em;
+                    margin:0; text-wrap:balance; }
+  .nf-lead p      { color:var(--m-text); margin:0; font-size:14px; line-height:1.55; }
+
+  .nf-wordmark    { font-family:var(--m-mono); font-size:11px; letter-spacing:0.16em;
+                    text-transform:uppercase; color:var(--m-accent); }
+  .nf-serif       { font-size:30px; line-height:1.2; letter-spacing:-0.02em;
+                    color:var(--m-ink); text-wrap:balance; }
+
+  .nf-grid        { display:grid; gap:18px; }
+  .nf-grid-4      { grid-template-columns:repeat(auto-fill, minmax(215px, 1fr)); }
+  .nf-grid-3      { grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); }
+
+  .nf-card        { display:flex; flex-direction:column; border:1px solid var(--m-rule);
+                    border-radius:8px; overflow:hidden; background:var(--m-surface);
+                    text-decoration:none; color:inherit; transition:border-color .15s, transform .15s; }
+  .nf-card:hover  { border-color:var(--m-accent); transform:translateY(-2px); }
+  .nf-card:focus-visible { outline:2px solid var(--m-accent); outline-offset:2px; }
+  .nf-thumb       { height:130px; background-size:cover; background-position:center;
+                    background-color:var(--m-surface-2); }
+  /* The type card is NOT a fallback — it is the other half of the design. */
+  .nf-typecard    { height:130px; display:grid; align-content:center; gap:8px;
+                    padding:16px; background:var(--m-accent-wash);
+                    border-bottom:1px solid var(--m-rule); }
+  .nf-typecard-hd { font-size:16px; line-height:1.25; letter-spacing:-0.01em;
+                    color:var(--m-ink); text-wrap:balance;
+                    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+                    overflow:hidden; }
+  .nf-card-body   { padding:12px 14px 14px; display:flex; flex-direction:column; gap:6px; flex:1; }
+  .nf-card-title  { font-size:14px; line-height:1.35; font-weight:600; color:var(--m-ink);
+                    text-wrap:pretty;
+                    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+                    overflow:hidden; }
+  .nf-meta        { display:flex; align-items:center; gap:8px; margin-top:auto;
+                    font-family:var(--m-mono); font-size:10px; letter-spacing:0.08em;
+                    text-transform:uppercase; color:var(--m-muted); }
+
+  /* "Closest to your work" — the whole reason this page exists, so it gets the
+     one accent that nothing else on the page is allowed to use. */
+  .nf-close       { display:inline-flex; align-items:center; gap:5px;
+                    font-family:var(--m-mono); font-size:10px; letter-spacing:0.1em;
+                    text-transform:uppercase; color:var(--m-on-accent);
+                    background:var(--m-accent); padding:3px 8px; border-radius:999px; }
+  .nf-dot         { width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+  .nf-wire        { border:1px solid var(--m-rule); border-radius:8px;
+                    background:var(--m-surface); overflow:hidden; }
+  .nf-wire a      { display:grid; grid-template-columns:64px 1fr auto; gap:14px;
+                    align-items:baseline; padding:10px 16px;
+                    border-bottom:1px solid var(--m-rule-soft);
+                    text-decoration:none; color:inherit; }
+  .nf-wire a:last-child { border-bottom:none; }
+  .nf-wire a:hover      { background:var(--m-surface-2); }
+  .nf-wire .src   { font-family:var(--m-mono); font-size:10px; letter-spacing:0.08em;
+                    text-transform:uppercase; color:var(--m-muted); }
+  .nf-wire .hd    { font-size:13.5px; line-height:1.4; color:var(--m-ink); }
+  .nf-wire .ago   { font-family:var(--m-mono); font-size:10px; color:var(--m-muted-soft);
+                    white-space:nowrap; }
+
+  @media (max-width: 760px) {
+    .nf-lead { grid-template-columns:1fr; }
+    .nf-lead-type, .nf-lead-media { min-height:200px; }
+  }
+</style>
+
+{# ── THE LEAD ─────────────────────────────────────────────────────────────── #}
+{% if lead %}
+<a class="nf-lead" href="{{ lead.url }}" target="_blank" rel="noopener noreferrer"
+   style="text-decoration:none;color:inherit;">
+  {% if lead.has_image %}
+    <div class="nf-lead-media" style="background-image:url('{{ lead.image }}');"
+         role="img" aria-label="{{ lead.title }}"></div>
+  {% else %}
+    {# No picture — and that is fine. Set it like a leader, not like a gap. #}
+    <div class="nf-lead-type">
+      <div class="nf-wordmark">{{ lead.source }}</div>
+      <div class="nf-serif">{{ lead.title }}</div>
+    </div>
+  {% endif %}
+  <div class="nf-lead-body">
+    {% if lead.close %}<div><span class="nf-close"><span class="nf-dot"></span>Closest to your work</span></div>{% endif %}
+    {% if lead.has_image %}<h2>{{ lead.title }}</h2>{% endif %}
+    {% if lead.summary %}<p>{{ lead.summary[:260] }}{% if lead.summary|length > 260 %}…{% endif %}</p>{% endif %}
+    <div class="nf-meta">
+      <span>{{ lead.source }}</span><span>·</span>
+      <span>{{ lead.domain }}</span><span>·</span>
+      <span>{{ lead.when }} ago</span>
+    </div>
+  </div>
+</a>
+{% endif %}
+
+{# ── CLOSEST TO YOUR WORK ─────────────────────────────────────────────────── #}
+{% if closest %}
+<div class="sec-label" style="margin-bottom:10px;">
+  Closest to your work
+  <span class="sec-label-tail">RANKED BY PROXIMITY TO YOUR LIBRARY — NOT BY DATE</span>
+</div>
+<div class="nf-grid nf-grid-4" style="margin-bottom:30px;">
+  {% for c in closest %}
+  <a class="nf-card" href="{{ c.url }}" target="_blank" rel="noopener noreferrer">
+    {% if c.has_image %}
+      <div class="nf-thumb" style="background-image:url('{{ c.image }}');"></div>
+    {% else %}
+      <div class="nf-typecard">
+        <div class="nf-wordmark">{{ c.source }}</div>
+        <div class="nf-typecard-hd">{{ c.title }}</div>
+      </div>
+    {% endif %}
+    <div class="nf-card-body">
+      {% if c.has_image %}<div class="nf-card-title">{{ c.title }}</div>{% endif %}
+      <div class="nf-meta">
+        <span class="nf-close" style="padding:2px 6px;"><span class="nf-dot"></span>Close</span>
+        <span>{{ c.when }}</span>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ── TOP STORIES ──────────────────────────────────────────────────────────── #}
+{% if top %}
+<div class="sec-label" style="margin-bottom:10px;">
+  Top stories <span class="sec-label-tail">{{ total }} ITEMS · LAST {{ days }} DAYS</span>
+</div>
+<div class="nf-grid nf-grid-3" style="margin-bottom:30px;">
+  {% for c in top %}
+  <a class="nf-card" href="{{ c.url }}" target="_blank" rel="noopener noreferrer">
+    {% if c.has_image %}
+      <div class="nf-thumb" style="background-image:url('{{ c.image }}');"></div>
+    {% else %}
+      <div class="nf-typecard">
+        <div class="nf-wordmark">{{ c.source }}</div>
+        <div class="nf-typecard-hd">{{ c.title }}</div>
+      </div>
+    {% endif %}
+    <div class="nf-card-body">
+      {% if c.has_image %}<div class="nf-card-title">{{ c.title }}</div>{% endif %}
+      {% if c.summary %}
+        <div style="font-size:12.5px;line-height:1.45;color:var(--m-muted);
+                    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+          {{ c.summary[:150] }}
+        </div>
+      {% endif %}
+      <div class="nf-meta">
+        {% if c.close %}<span class="nf-close" style="padding:2px 6px;"><span class="nf-dot"></span>Close</span>{% endif %}
+        <span>{{ c.source }}</span><span>·</span><span>{{ c.when }}</span>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ── THE WIRE — everything else, dense and scannable ──────────────────────── #}
+{% if wire %}
+<div class="sec-label" style="margin-bottom:10px;">
+  The wire <span class="sec-label-tail">EVERYTHING ELSE · {{ wire|length }} ITEMS</span>
+</div>
+<div class="nf-wire">
+  {% for c in wire %}
+  <a href="{{ c.url }}" target="_blank" rel="noopener noreferrer">
+    <span class="src">{{ c.source }}</span>
+    <span class="hd">{{ c.title }}</span>
+    <span class="ago">{{ c.when }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if not lead and not wire %}
+  <div class="panel" style="padding:28px;text-align:center;color:var(--m-muted);">
+    No news in the last {{ days }} days. Run a scan from the Today surface.
+  </div>
+{% endif %}
