@@ -113,6 +113,39 @@ def connections_for(seed: str, exclude_title: str = "", limit: int = 5) -> list[
     return out[:limit]
 
 
+@router.get("/api/partial/connections/today", response_class=HTMLResponse)
+async def connections_today(request: Request):
+    """Connections for what you're working on right now — for the Today cockpit.
+
+    Seeds from your most recently touched project, so cross-pollination greets you
+    daily on the surface you actually open, not in a tab you have to remember.
+    Kept in THIS router (not the 4,600-line today.py) so it stays isolated.
+    """
+    seed, own_title = "", ""
+    try:
+        from metis_mcp.config import paths
+        from metis_mcp.db import connect
+
+        with connect(paths.db) as conn:
+            row = conn.execute(
+                "SELECT title, description, next_step FROM projects "
+                "WHERE status IS NULL OR status NOT IN ('archived','done') "
+                "ORDER BY COALESCE(last_session_at, created_at) DESC LIMIT 1"
+            ).fetchone()
+        if row:
+            own_title = str(row["title"] or "")
+            seed = " ".join(str(row[c]) for c in ("title", "description", "next_step") if row[c])[:2000]
+    except Exception as exc:
+        log.warning("connections/today: could not pick active project: %s", exc)
+
+    matches = connections_for(seed, exclude_title=own_title) if seed else []
+    return _TEMPLATES.TemplateResponse(
+        request,
+        "partials/connections_strip.html",
+        {"matches": matches, "entity": "today", "seed_title": own_title},
+    )
+
+
 @router.get("/api/partial/connections/{entity}/{entity_id:path}", response_class=HTMLResponse)
 async def connections_partial(request: Request, entity: str, entity_id: str):
     """The one endpoint every surface calls. Lazy-loaded via hx-trigger=revealed."""
