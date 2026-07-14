@@ -4590,6 +4590,9 @@ def _news_card(r: dict) -> dict:
         "close": rel >= 0.64,
         "signal": (r.get("signal_strength") or "").strip(),
         "when": _age_label(r["created_at"]) if r.get("created_at") else "",
+        # Raw timestamp for correct chronological sorting (the "when" label is not
+        # sortable — "2d" vs "10h" would sort lexically).
+        "_ts": r.get("created_at") or "",
     }
 
 
@@ -4630,6 +4633,16 @@ async def news_front(request: Request, days: int = 7):
     lead_pool = [c for c in top_band[:6] if c["has_image"]] or top_band
     lead = (take(lead_pool, 1) or [None])[0]
 
+    # 1b. WORLD — a compact band of what's happening in the world, so the page
+    #     isn't only your niche. Ranked by RECENCY, not corpus proximity: for world
+    #     news you want what just happened, not what's closest to your library.
+    #     Pulled from a SEPARATE pool so it never competes with the curated lead.
+    world = sorted(
+        [c for c in cards if c["domain"] in ("world-news", "policy")],
+        key=lambda c: c["_ts"], reverse=True,
+    )
+    world = [c for c in world if c["url"] != (lead or {}).get("url")][:6]
+
     # 2. CLOSEST TO YOUR WORK — the section that justifies Metis existing.
     #    Ranked by corpus proximity, NOT recency.
     closest = take([c for c in cards if c["close"]], 4)
@@ -4637,10 +4650,10 @@ async def news_front(request: Request, days: int = 7):
     # 3. TOP STORIES — the next tier.
     top = take(cards, 6)
 
-    # 4. THE WIRE — everything else, dense and chronological.
+    # 4. THE WIRE — everything else, dense and chronological (newest first).
     wire = sorted(
         [c for c in cards if (c["url"] or c["title"]) not in seen],
-        key=lambda c: c["when"],
+        key=lambda c: c["_ts"], reverse=True,
     )[:40]
 
     return templates.TemplateResponse(
@@ -4648,6 +4661,7 @@ async def news_front(request: Request, days: int = 7):
         "partials/news_front.html",
         {
             "lead": lead,
+            "world": world,
             "closest": closest,
             "top": top,
             "wire": wire,
