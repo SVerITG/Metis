@@ -12,7 +12,7 @@
 </div>
 {% else %}
 <div style="padding:14px 22px;">
-  <div style="display:grid;grid-template-columns:120px 1fr 110px 100px;gap:10px;padding:6px 0 8px;border-bottom:1px solid var(--m-rule-strong);font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);text-transform:uppercase;">
+  <div style="display:grid;grid-template-columns:120px 1fr 110px 100px;gap:10px;padding:6px 0 8px;border-bottom:1px solid var(--m-rule-strong);font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);text-transform:uppercase;">
     <div>Time</div>
     <div>Action</div>
     <div>Class</div>
@@ -20,17 +20,17 @@
   </div>
   {% for ev in events %}
   <div style="display:grid;grid-template-columns:120px 1fr 110px 100px;gap:10px;padding:9px 0;align-items:center;border-bottom:1px solid var(--m-rule-soft);">
-    <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">{{ ev.timestamp[:16] if ev.timestamp else '—' }}</div>
+    <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{{ ev.timestamp[:16] if ev.timestamp else '—' }}</div>
     <div style="font-family:var(--m-ui);font-size:12.5px;color:var(--m-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ ev.action }}">
       {{ ev.action }}
       {% if ev.notes %}<span style="color:var(--m-muted);font-style:italic;"> · {{ ev.notes }}</span>{% endif %}
     </div>
     <div>
-      <span class="chip {{ CLASS_CHIP.get(ev.data_classification, 'chip--mute') }}" style="font-size:9px;">
+      <span class="chip {{ CLASS_CHIP.get(ev.data_classification, 'chip--mute') }}" style="font-size:11px;">
         {{ ev.data_classification or '—' }}
       </span>
     </div>
-    <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+    <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
       {{ ev.agent_slug or '—' }}
     </div>
   </div>

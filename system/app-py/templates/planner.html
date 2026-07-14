@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_section.html" import sec_label %}
 {% block title %}Planner{% endblock %}
 
 {% block content %}
@@ -31,10 +32,7 @@
   </div>
 
   <!-- Focus board: top 3 projects + open task counts -->
-  <div class="sec-label" style="margin-bottom:16px;">
-    <span>What you're focused on right now</span>
-    <span class="tail">TOP 3 · OPEN TASKS</span>
-  </div>
+  {{ sec_label("What you're focused on right now", tail="TOP 3 · OPEN TASKS", style="margin-bottom:16px;") }}
   <div style="margin-bottom:32px;"
        hx-get="/api/partial/planner/focus-board"
        hx-trigger="load"
@@ -45,13 +43,13 @@
   </div>
 
   <!-- Week at a glance -->
-  <div class="sec-label" style="margin-bottom:16px;">
+  <h2 class="sec-label" style="margin-bottom:16px;">
     <span>This week at a glance</span>
     <span class="tail"
           hx-get="/api/partial/planner/week-label"
           hx-trigger="load"
           hx-swap="innerHTML">WEEK —</span>
-  </div>
+  </h2>
   <div class="panel" style="padding:24px;margin-bottom:32px;overflow-x:auto;"
        hx-get="/api/partial/planner/week"
        hx-trigger="load"
@@ -59,7 +57,7 @@
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;min-width:700px;">
       {% for d in ['MON','TUE','WED','THU','FRI','SAT','SUN'] %}
       <div style="padding:12px 10px;border:1px solid var(--m-rule);min-height:150px;border-radius:2px;opacity:.35;">
-        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:8px;">{{ d }}</div>
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:8px;">{{ d }}</div>
       </div>
       {% endfor %}
     </div>
@@ -69,9 +67,7 @@
   <div class="grid grid-2">
 
     <div>
-      <div class="sec-label" style="margin-bottom:12px;">
-        <span>Intentions · Q4</span>
-      </div>
+      {{ sec_label("Intentions · Q4", style="margin-bottom:12px;") }}
       <div class="panel"
            hx-get="/api/partial/planner/intentions"
            hx-trigger="load"
@@ -89,7 +85,7 @@
     </div>
 
     <div>
-      <div class="sec-label" style="margin-bottom:12px;"><span>Notes from the planner</span></div>
+      {{ sec_label("Notes from the planner", style="margin-bottom:12px;") }}
       <div class="panel panel-pad" style="padding:22px 24px;"
            hx-get="/api/partial/planner/notes"
            hx-trigger="load"
@@ -103,10 +99,7 @@
   </div>
 
   <!-- Project pipeline: 4-column kanban -->
-  <div class="sec-label" style="margin:32px 0 16px;">
-    <span>The pipeline</span>
-    <span class="tail">SOMEDAY · INCUBATING · ACTIVE · DONE</span>
-  </div>
+  {{ sec_label("The pipeline", tail="SOMEDAY · INCUBATING · ACTIVE · DONE", style="margin:32px 0 16px;") }}
   <div hx-get="/api/partial/planner/kanban"
        hx-trigger="load"
        hx-swap="innerHTML">

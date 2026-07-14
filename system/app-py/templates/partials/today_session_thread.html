@@ -1,13 +1,11 @@
+{% from "partials/_section.html" import sec_label %}
 {# today_session_thread.html — Research thread view.
    "Where we left off" is now a first-class resume card (today_resume_card.html).
    Context: threads (list), last_session (dict), last_did (list), total_sessions (int). #}
 <div id="today-session-handoff" {% if threads %}style="margin-bottom:28px;"{% endif %}>
   {# ── Research threads — grouped sessions with narrative arc ── #}
   {% if threads %}
-  <div class="sec-label" style="margin-bottom:12px;">
-    <span>Research threads</span>
-    <span class="tail">ACTIVE TOPICS ACROSS SESSIONS</span>
-  </div>
+  {{ sec_label("Research threads", tail="ACTIVE TOPICS ACROSS SESSIONS", style="margin-bottom:12px;") }}
   <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:28px;">
     {% for thread in threads %}
     <details class="panel" style="padding:0;overflow:hidden;">
@@ -21,7 +19,7 @@
         {# Thread title #}
         <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);flex:1;">{{ thread.topic }}</span>
         {# Stats #}
-        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.08em;color:var(--m-muted);">
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;color:var(--m-muted);">
           {{ thread.session_count }} session{{ 's' if thread.session_count != 1 else '' }}
           &middot; {{ thread.span_days }}d span
           &middot; {{ thread.total_decisions }} decision{{ 's' if thread.total_decisions != 1 else '' }}
@@ -38,7 +36,7 @@
               background:{% if loop.first %}var(--m-accent){% else %}var(--m-surface-2){% endif %};
               border:2px solid var(--m-accent-wash-2);"></span>
             <div style="display:flex;align-items:baseline;gap:10px;">
-              <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;color:var(--m-muted);flex-shrink:0;">{{ s.date }}</span>
+              <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);flex-shrink:0;">{{ s.date }}</span>
               <span style="font-size:12.5px;color:var(--m-ink);line-height:1.45;">{{ s.summary }}</span>
             </div>
             {% if s.decisions %}
@@ -53,7 +51,7 @@
           </div>
           {% endfor %}
           {% if thread.sessions|length > 5 %}
-          <div style="padding:4px 0 4px 16px;font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">
+          <div style="padding:4px 0 4px 16px;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
             + {{ thread.sessions|length - 5 }} earlier sessions
           </div>
           {% endif %}

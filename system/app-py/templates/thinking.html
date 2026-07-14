@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_section.html" import sec_label %}
 {% block title %}Reflection{% endblock %}
 
 {% block content %}
@@ -16,7 +17,7 @@
 
     <!-- ── Left: Threads list ── -->
     <div>
-      <div class="sec-label" style="margin-bottom:12px;">Open threads</div>
+      <h2 class="sec-label" style="margin-bottom:12px;">Open threads</h2>
       <div class="panel list-scroll" id="threads-panel"
            hx-get="/api/partial/thinking/threads"
            hx-trigger="load"
@@ -58,7 +59,7 @@
                onclick="openCapture()">
             <span style="color:var(--m-accent);font-family:var(--m-mono);font-style:normal;font-size:13px;">›</span>
             <span>What's a thought or question you want to explore?</span>
-            <span style="margin-left:auto;font-family:var(--m-mono);font-style:normal;font-size:10px;letter-spacing:0.16em;color:var(--m-muted-soft);">⌘K</span>
+            <span style="margin-left:auto;font-family:var(--m-mono);font-style:normal;font-size:11px;letter-spacing:0.16em;color:var(--m-muted-soft);">⌘K</span>
           </div>
           <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
             <button class="btn btn--ghost btn--caps" onclick="openCapture('i')">Capture idea</button>
@@ -66,7 +67,7 @@
           </div>
           <!-- Brainstorm — scoped to a work, a topic, a mindmap, or clustering -->
           <div style="margin-top:12px;">
-            <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:7px;">BRAINSTORM IN CLAUDE DESKTOP</div>
+            <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:7px;">BRAINSTORM IN CLAUDE DESKTOP</div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;">
               <button class="btn btn--ghost btn--caps" onclick="launchBrainstorm('work')">This work</button>
               <button class="btn btn--ghost btn--caps" onclick="launchBrainstorm('topic')">A topic…</button>
@@ -75,15 +76,15 @@
             </div>
           </div>
           <!-- Creativity dial — primes the brainstorm handoff to Claude Desktop -->
-          <div style="display:flex;align-items:center;gap:10px;margin-top:12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">
+          <div style="display:flex;align-items:center;gap:10px;margin-top:12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">
             <span>CREATIVITY</span>
             <div id="bs-creativity" style="display:inline-flex;border:1px solid var(--m-rule-strong);border-radius:3px;overflow:hidden;">
               <button type="button" class="bs-seg" data-creativity="grounded" onclick="setCreativity(this)"
-                      style="border:0;background:transparent;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;padding:5px 10px;cursor:pointer;">GROUNDED</button>
+                      style="border:0;background:transparent;color:var(--m-muted);font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;padding:5px 10px;cursor:pointer;">GROUNDED</button>
               <button type="button" class="bs-seg" data-creativity="balanced" onclick="setCreativity(this)"
-                      style="border:0;border-left:1px solid var(--m-rule-strong);background:var(--m-accent);color:var(--m-on-accent);font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;padding:5px 10px;cursor:pointer;">BALANCED</button>
+                      style="border:0;border-left:1px solid var(--m-rule-strong);background:var(--m-accent);color:var(--m-on-accent);font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;padding:5px 10px;cursor:pointer;">BALANCED</button>
               <button type="button" class="bs-seg" data-creativity="bold" onclick="setCreativity(this)"
-                      style="border:0;border-left:1px solid var(--m-rule-strong);background:transparent;color:var(--m-muted);font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;padding:5px 10px;cursor:pointer;">BOLD</button>
+                      style="border:0;border-left:1px solid var(--m-rule-strong);background:transparent;color:var(--m-muted);font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;padding:5px 10px;cursor:pointer;">BOLD</button>
             </div>
             <span style="margin-left:auto;font-style:normal;color:var(--m-muted-soft);text-transform:none;letter-spacing:0;font-family:var(--m-display);font-size:11.5px;">opens primed in Claude Desktop, with your sources</span>
           </div>
@@ -93,7 +94,7 @@
 
     <!-- ── Right: Marginalia ── -->
     <div>
-      <div class="sec-label" style="margin-bottom:12px;">Marginalia</div>
+      <h2 class="sec-label" style="margin-bottom:12px;">Marginalia</h2>
       <div hx-get="/api/partial/thinking/marginalia"
            hx-trigger="load"
            hx-swap="innerHTML">
@@ -103,7 +104,7 @@
         </div>
       </div>
 
-      <div class="sec-label" style="margin-top:24px;margin-bottom:12px;"><span>What you're brainstorming about</span></div>
+      {{ sec_label("What you're brainstorming about", style="margin-top:24px;margin-bottom:12px;") }}
       <div hx-get="/api/partial/thinking/brainstorm"
            hx-trigger="load"
            hx-swap="innerHTML">
@@ -117,11 +118,11 @@
 
   <!-- ── Idea mindmap ── -->
   <div style="margin-top:36px;">
-    <div class="sec-label" style="margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+    <h2 class="sec-label" style="margin-bottom:12px;display:flex;align-items:center;gap:10px;">
       <span>Idea mindmap</span>
       <span style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);text-transform:none;letter-spacing:0;">how your open ideas cluster and connect</span>
       <button class="btn btn--ghost btn--caps" style="margin-left:auto;" onclick="launchBrainstorm('mindmap')">Expand in Claude</button>
-    </div>
+    </h2>
     <div class="panel panel-pad"
          hx-get="/api/partial/thinking/mindmap" hx-trigger="load" hx-swap="innerHTML"
          style="padding:18px 20px;">
@@ -135,10 +136,7 @@
          hx-trigger="load delay:300ms"
          hx-swap="outerHTML">
       <div>
-        <div class="sec-label" style="margin-bottom:8px;">
-          <span>Personal Knowledge Graph</span>
-          <span class="tail">IDEAS · PAPERS · PROJECTS · CONNECTIONS</span>
-        </div>
+        {{ sec_label("Personal Knowledge Graph", tail="IDEAS · PAPERS · PROJECTS · CONNECTIONS", style="margin-bottom:8px;") }}
         <div class="panel skeleton skeleton-box" style="height:520px;"></div>
       </div>
     </div>
@@ -150,10 +148,7 @@
          hx-trigger="load delay:500ms"
          hx-swap="outerHTML">
       <div>
-        <div class="sec-label" style="margin-bottom:8px;">
-          <span>Graphify Knowledge Analysis</span>
-          <span class="tail">HUBS · BRIDGES · COMMUNITIES</span>
-        </div>
+        {{ sec_label("Graphify Knowledge Analysis", tail="HUBS · BRIDGES · COMMUNITIES", style="margin-bottom:8px;") }}
         <div class="panel skeleton skeleton-box" style="height:280px;"></div>
       </div>
     </div>

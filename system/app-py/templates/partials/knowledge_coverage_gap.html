@@ -1,8 +1,6 @@
+{% from "partials/_section.html" import sec_label %}
 <div id="coverage-gap-section">
-  <div class="sec-label" style="margin-bottom:12px;">
-    <span>Coverage Gap Detector</span>
-    <span class="tail">ZOTERO vs. OPENALEX · MISSING PAPERS</span>
-  </div>
+  {{ sec_label("Coverage Gap Detector", tail="ZOTERO vs. OPENALEX · MISSING PAPERS", style="margin-bottom:12px;") }}
 
   <div class="panel" style="overflow:hidden;">
 
@@ -12,22 +10,22 @@
           hx-swap="outerHTML"
           style="padding:16px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
       <div style="flex:1;min-width:260px;">
-        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Search OpenAlex for</div>
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Search OpenAlex for</div>
         <input name="query" type="text"
                value="{{ query or '' }}"
                placeholder="e.g. disease surveillance elimination"
                style="width:100%;font-family:var(--m-ui);font-size:13px;padding:8px 12px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
       </div>
       <div style="min-width:100px;">
-        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Max results</div>
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">Max results</div>
         <select name="max_results"
-                style="font-family:var(--m-mono);font-size:10px;padding:8px 10px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;cursor:pointer;">
+                style="font-family:var(--m-mono);font-size:11px;padding:8px 10px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;cursor:pointer;">
           <option value="20">20</option>
           <option value="50">50</option>
         </select>
       </div>
       <button type="submit"
-              style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;text-transform:uppercase;
+              style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;
                      padding:8px 16px;background:var(--m-accent);border:none;border-radius:2px;
                      color:var(--m-on-accent);cursor:pointer;white-space:nowrap;align-self:flex-end;">
         CHECK GAPS
@@ -43,7 +41,7 @@
     {% if results is not none %}
 
     <!-- Summary line -->
-    <div style="padding:9px 20px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);border-bottom:1px solid var(--m-rule-soft);">
+    <div style="padding:9px 20px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);border-bottom:1px solid var(--m-rule-soft);">
       {% if results %}
       <span style="color:var(--m-warn);font-weight:600;">{{ results | length }} POTENTIALLY MISSING</span>
       from {{ checked }} OpenAlex results for &ldquo;{{ query }}&rdquo; · sorted by citation count
@@ -55,7 +53,7 @@
     {% if results %}
     <table style="width:100%;border-collapse:collapse;">
       <thead>
-        <tr style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;border-bottom:1px solid var(--m-rule);">
+        <tr style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;border-bottom:1px solid var(--m-rule);">
           <th style="padding:8px 20px 8px 20px;text-align:left;font-weight:400;width:52px;">Year</th>
           <th style="padding:8px 10px;text-align:left;font-weight:400;">Title / Authors</th>
           <th style="padding:8px 10px;text-align:left;font-weight:400;width:140px;">Journal</th>
@@ -78,7 +76,7 @@
               {% else %}{{ p.title }}{% endif %}
             </div>
             {% if p.authors %}
-            <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;color:var(--m-muted);margin-top:3px;">{{ p.authors }}</div>
+            <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);margin-top:3px;">{{ p.authors }}</div>
             {% endif %}
             {% if p.abstract %}
             <div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);margin-top:5px;line-height:1.5;max-width:580px;">{{ p.abstract }}…</div>

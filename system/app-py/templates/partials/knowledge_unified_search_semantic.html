@@ -9,14 +9,14 @@
   Try a broader query, or check the keyword results above.
 </div>
 {% else %}
-<div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;color:var(--m-muted);padding:6px 0 14px;">
+<div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);padding:6px 0 14px;">
   {{ total }} SEMANTIC HIT{% if total != 1 %}S{% endif %} FOR &ldquo;{{ q }}&rdquo;
   {% if not used_semantic %}&middot; KEYWORD FALLBACK (embeddings unavailable){% endif %}
 </div>
 
 {% for group_name, items in groups %}
 <div style="margin-bottom:18px;">
-  <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.18em;color:var(--m-accent);
+  <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;color:var(--m-accent);
               border-bottom:1px solid var(--m-rule-soft);padding-bottom:4px;margin-bottom:8px;">
     {{ group_name | upper }} &middot; {{ items | length }}
   </div>
@@ -36,13 +36,13 @@
       <div style="flex:1;height:4px;background:var(--m-surface-3);border-radius:2px;overflow:hidden;max-width:240px;">
         <span style="display:block;height:100%;width:{{ h.score_pct }}%;background:var(--m-accent);"></span>
       </div>
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.10em;color:var(--m-muted);">
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.10em;color:var(--m-muted);">
         {{ h.score_pct }}% MATCH
       </span>
     </div>
     {% endif %}
 
-    <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.10em;color:var(--m-muted);">
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.10em;color:var(--m-muted);">
       from {{ h.kind | lower }}{% if h.extra %} &middot; {{ h.extra }}{% endif %}
     </div>
   </div>

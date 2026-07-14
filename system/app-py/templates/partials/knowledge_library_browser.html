@@ -2,7 +2,7 @@
 .lib-chip {
   padding: 3px 10px;
   font-family: var(--m-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   border: 1px solid var(--m-rule);
@@ -17,7 +17,7 @@
 .lib-chip.active { background: var(--m-accent); color: var(--m-on-accent); border-color: var(--m-accent); }
 .lib-field-label {
   font-family: var(--m-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--m-muted);
@@ -37,7 +37,7 @@
 .lib-input:focus { border-color: var(--m-accent); }
 .lib-select {
   font-family: var(--m-mono);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.08em;
   padding: 8px 10px;
   background: var(--m-surface-2);
@@ -50,10 +50,10 @@
 </style>
 
 <div id="lib-browser-section">
-  <div class="sec-label" style="margin-bottom:12px;">
+  <h2 class="sec-label" style="margin-bottom:12px;">
     <span>Literature Library</span>
     <span class="tail">{{ total }} PAPERS</span>
-  </div>
+  </h2>
 
   <div class="panel" style="overflow:hidden;">
 
@@ -117,7 +117,7 @@
       {% if active_filter_count %}
       <div style="align-self:flex-end;">
         <button onclick="clearLibFilters()"
-                style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;
+                style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;
                        padding:8px 12px;background:transparent;border:1px solid var(--m-rule);
                        border-radius:2px;color:var(--m-accent);cursor:pointer;white-space:nowrap;">
           CLEAR {{ active_filter_count }} FILTER{% if active_filter_count != 1 %}S{% endif %}
@@ -129,7 +129,7 @@
     <!-- ── Row 2: Item type chips ── -->
     {% if item_types %}
     <div style="padding:8px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);margin-right:6px;">TYPE</span>
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-right:6px;">TYPE</span>
       <button class="lib-chip{% if not active_type %} active{% endif %}"
               data-type="" onclick="setLibType('')">All</button>
       {% for itype, count in item_types %}

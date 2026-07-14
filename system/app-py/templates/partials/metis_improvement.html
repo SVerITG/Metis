@@ -16,12 +16,12 @@
     <div style="display:flex;align-items:center;gap:14px;flex-shrink:0;">
       <button type="button" onclick="improveMetisOODA()"
               style="display:inline-flex;align-items:center;gap:7px;background:var(--m-accent);color:var(--m-on-accent);border:0;
-                     border-radius:var(--m-radius);padding:7px 14px;font-family:var(--m-mono);font-size:9px;
+                     border-radius:var(--m-radius);padding:7px 14px;font-family:var(--m-mono);font-size:11px;
                      letter-spacing:0.12em;cursor:pointer;white-space:nowrap;"
               title="Opens Claude (Code recommended) primed to run an OODA self-improvement cycle over your reflexions — Observe · Orient · Decide · Act, in plan mode.">
         ✦ IMPROVE METIS (OODA)
       </button>
-      <span class="tail" style="cursor:pointer;font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);"
+      <span class="tail" style="cursor:pointer;font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);"
             hx-get="/api/partial/metis/improvement"
             hx-target="#metis-improvement-body"
             hx-swap="innerHTML">REFRESH</span>
@@ -34,27 +34,27 @@
 <div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
   <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);margin-bottom:10px;">
     Recent reflexions
-    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);margin-left:8px;">LAST {{ recent_reflexions|length }} · NEWEST FIRST</span>
+    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-left:8px;">LAST {{ recent_reflexions|length }} · NEWEST FIRST</span>
   </div>
   {% for r in recent_reflexions %}
   <div style="padding:12px 0;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
     <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px;">
-      <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-accent);">{{ r.agent_slug }}</span>
-      <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">{{ (r.created_at or '')[:16] }}</span>
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-accent);">{{ r.agent_slug }}</span>
+      <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{{ (r.created_at or '')[:16] }}</span>
     </div>
     {% if r.went_well %}
     <div style="font-size:12.5px;line-height:1.6;color:var(--m-ink);margin-bottom:6px;">
-      <span style="font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;color:var(--m-ok);margin-right:6px;">+ WENT WELL</span>{{ r.went_well[:280] }}{% if r.went_well|length > 280 %}…{% endif %}
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-ok);margin-right:6px;">+ WENT WELL</span>{{ r.went_well[:280] }}{% if r.went_well|length > 280 %}…{% endif %}
     </div>
     {% endif %}
     {% if r.could_improve %}
     <div style="font-size:12.5px;line-height:1.6;color:var(--m-ink);margin-bottom:6px;">
-      <span style="font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;color:var(--m-ochre-deep);margin-right:6px;">~ COULD IMPROVE</span>{{ r.could_improve[:280] }}{% if r.could_improve|length > 280 %}…{% endif %}
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-ochre-deep);margin-right:6px;">~ COULD IMPROVE</span>{{ r.could_improve[:280] }}{% if r.could_improve|length > 280 %}…{% endif %}
     </div>
     {% endif %}
     {% if r.tool_wishes %}
     <div style="font-size:12.5px;line-height:1.6;color:var(--m-muted);font-style:italic;">
-      <span style="font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;color:var(--m-info);margin-right:6px;font-style:normal;">→ TOOL WISH</span>{{ r.tool_wishes[:200] }}{% if r.tool_wishes|length > 200 %}…{% endif %}
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-info);margin-right:6px;font-style:normal;">→ TOOL WISH</span>{{ r.tool_wishes[:200] }}{% if r.tool_wishes|length > 200 %}…{% endif %}
     </div>
     {% endif %}
   </div>
@@ -67,7 +67,7 @@
   {% for L in learned %}
   <div class="learned-row">
     <div class="learned-head">
-      <span class="chip chip--ok" style="font-size:9px;">APPLIED</span>
+      <span class="chip chip--ok" style="font-size:11px;">APPLIED</span>
       <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">{{ L.agent_slug }}</span>
       <span class="learned-when">{{ (L.applied_at or L.proposed_at or '')[:16] }}</span>
     </div>
@@ -102,7 +102,7 @@
     <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px;">
       <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">
         {{ a.agent_slug }}
-        <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);margin-left:8px;">{{ a.n_reflexions }} REFLEXIONS</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-left:8px;">{{ a.n_reflexions }} REFLEXIONS</span>
       </div>
       <button class="btn btn--ghost btn--caps" onclick="draftImprovement('{{ a.agent_slug }}')">Draft proposal</button>
     </div>
@@ -137,7 +137,7 @@
     <div style="padding:12px 0;border-bottom:1px solid var(--m-rule-soft);">
       <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
         <div>
-          <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">#{{ p.id }} · {{ p.status|upper }}</span>
+          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">#{{ p.id }} · {{ p.status|upper }}</span>
           <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);margin-left:8px;">{{ p.agent_slug }}</span>
           <span style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);margin-left:8px;">{{ (p.proposed_at or '')[:16] }}</span>
         </div>
@@ -150,7 +150,7 @@
           <button class="btn btn--primary btn--caps" onclick="applyProposal({{ p.id }})" title="Write the change to the agent's skill.md (with backup)">Apply</button>
           {% endif %}
           {% if p.status == 'applied' %}
-          <span class="chip chip--ok" style="font-size:10px;">APPLIED</span>
+          <span class="chip chip--ok" style="font-size:11px;">APPLIED</span>
           {% endif %}
           {% if p.status not in ('rejected','applied') %}
           <button class="btn btn--sec btn--caps" onclick="rejectProposal({{ p.id }})">Reject</button>

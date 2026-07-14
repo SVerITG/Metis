@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_section.html" import sec_label %}
 {% block title %}Library{% endblock %}
 
 {% block content %}
@@ -19,10 +20,7 @@
 
   <!-- ===== Unified Search (first — primary interaction) ===== -->
   <div style="margin-bottom:28px;">
-    <div class="sec-label" style="margin-bottom:12px;">
-      <span>Search</span>
-      <span class="tail">PAPERS · DOMAIN CORPUS · CARDS · MEMORY</span>
-    </div>
+    {{ sec_label("Search", tail="PAPERS · DOMAIN CORPUS · CARDS · MEMORY", style="margin-bottom:12px;") }}
     <div class="panel" style="padding:16px 20px;">
       <input type="search"
              id="unified-search-input"
@@ -51,7 +49,7 @@
           {% for label, q in quick_queries %}
           <button type="button"
                   onclick="(function(){var el=document.getElementById('unified-search-input');if(!el)return;el.value='{{ q }}';el.dispatchEvent(new Event('keyup'));el.focus();})()"
-                  style="background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:14px;padding:4px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.06em;color:var(--m-muted);cursor:pointer;transition:all 120ms;"
+                  style="background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:14px;padding:4px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);cursor:pointer;transition:all 120ms;"
                   onmouseover="this.style.color='var(--m-ink)';this.style.borderColor='var(--m-accent)';this.style.background='var(--m-surface)';"
                   onmouseout="this.style.color='var(--m-muted)';this.style.borderColor='var(--m-rule-soft)';this.style.background='var(--m-surface-2)';">
             {{ label }}
@@ -62,10 +60,7 @@
 
       <!-- Semantic / deep-search companion -->
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--m-rule-soft);">
-        <div class="sec-label" style="margin-bottom:8px;">
-          <span>Semantic matches</span>
-          <span class="tail">MEANING · NOT JUST KEYWORDS</span>
-        </div>
+        {{ sec_label("Semantic matches", tail="MEANING · NOT JUST KEYWORDS", style="margin-bottom:8px;") }}
         <div id="unified-search-semantic-trigger"
              hx-get="/api/partial/knowledge/unified-search-semantic"
              hx-trigger="refresh delay:600ms from:#unified-search-input"
@@ -86,7 +81,7 @@
          hx-trigger="load"
          hx-swap="outerHTML">
       <div>
-        <div class="sec-label" style="margin-bottom:8px;">Slipcases</div>
+        <h2 class="sec-label" style="margin-bottom:8px;">Slipcases</h2>
         <div class="panel list-scroll skeleton" style="min-height:180px;"></div>
       </div>
     </div>
@@ -97,7 +92,7 @@
          hx-trigger="load"
          hx-swap="outerHTML">
       <div>
-        <div class="sec-label" style="margin-bottom:8px;">Index cards</div>
+        <h2 class="sec-label" style="margin-bottom:8px;">Index cards</h2>
         <div class="panel skeleton skeleton-box" style="height:320px;"></div>
       </div>
     </div>
@@ -124,7 +119,7 @@
          hx-trigger="load"
          hx-swap="outerHTML">
       <div>
-        <div class="sec-label" style="margin-bottom:8px;"><span>Zotero Library</span></div>
+        {{ sec_label("Zotero Library", style="margin-bottom:8px;") }}
         <div class="panel skeleton skeleton-box" style="height:200px;"></div>
       </div>
     </div>
@@ -136,7 +131,7 @@
          hx-trigger="load"
          hx-swap="outerHTML">
       <div>
-        <div class="sec-label" style="margin-bottom:8px;"><span>Knowledge Corpus</span></div>
+        {{ sec_label("Knowledge Corpus", style="margin-bottom:8px;") }}
         <div class="panel skeleton skeleton-box" style="height:200px;"></div>
       </div>
     </div>
@@ -144,10 +139,7 @@
 
   <!-- ===== PDF Fulltext Search ===== -->
   <div style="margin-top:32px;">
-    <div class="sec-label" style="margin-bottom:12px;">
-      <span>PDF Fulltext Search</span>
-      <span class="tail">KEYWORD · INDEXED DOCUMENTS</span>
-    </div>
+    {{ sec_label("PDF Fulltext Search", tail="KEYWORD · INDEXED DOCUMENTS", style="margin-bottom:12px;") }}
     <!-- Index status + build control (so the search box is never a dead end) -->
     <div class="panel" style="padding:14px 20px;margin-bottom:12px;"
          hx-get="/api/partial/knowledge/pdf-stats"
@@ -174,10 +166,7 @@
 
   <!-- ===== Research Landscape: Topic Coverage Map ===== -->
   <div style="margin-top:32px;">
-    <div class="sec-label" style="margin-bottom:12px;">
-      <span>Research Landscape</span>
-      <span class="tail">TOPIC COVERAGE · GOOD · PARTIAL · GAP</span>
-    </div>
+    {{ sec_label("Research Landscape", tail="TOPIC COVERAGE · GOOD · PARTIAL · GAP", style="margin-bottom:12px;") }}
     <div hx-get="/api/partial/knowledge/topic-coverage"
          hx-trigger="load"
          hx-swap="outerHTML">
@@ -193,10 +182,7 @@
   <div style="margin-top:28px;">
     <details>
       <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:0;user-select:none;">
-        <div class="sec-label" style="margin-bottom:0;pointer-events:none;">
-          <span>Coverage Gap Detector</span>
-          <span class="tail">ZOTERO VS. OPENALEX · CLICK TO EXPAND</span>
-        </div>
+        {{ sec_label("Coverage Gap Detector", tail="ZOTERO VS. OPENALEX · CLICK TO EXPAND", style="margin-bottom:0;pointer-events:none;") }}
         <svg id="gap-chevron" viewBox="0 0 16 16" width="10" height="10" fill="none"
              stroke="var(--m-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
              style="margin-left:auto;flex-shrink:0;transition:transform 200ms;">

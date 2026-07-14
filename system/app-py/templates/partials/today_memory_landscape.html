@@ -2,10 +2,10 @@
    Context: topics (list), edges (list), projects (list), topics_json (str). #}
 {% if topics %}
 <div id="memory-landscape" style="margin-bottom:32px;">
-  <div class="sec-label" style="margin-bottom:12px;">
+  <h2 class="sec-label" style="margin-bottom:12px;">
     <span>Memory landscape</span>
     <span class="tail">{{ topics|length }} TOPICS &middot; SIZED BY DEPTH &middot; COLORED BY FRESHNESS</span>
-  </div>
+  </h2>
   <div class="panel" style="padding:24px 28px;">
 
     {# Topic bubble grid — CSS-only, no D3 needed for this view #}
@@ -49,29 +49,29 @@
     <div style="display:flex;flex-wrap:wrap;gap:16px;padding-top:14px;border-top:1px solid var(--m-rule-soft);">
       <div style="display:flex;align-items:center;gap:5px;">
         <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-2);background:color-mix(in srgb, var(--m-chart-2) 12%, transparent);"></span>
-        <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Fresh (&lt;7d)</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">Fresh (&lt;7d)</span>
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
         <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-1);background:color-mix(in srgb, var(--m-chart-1) 10%, transparent);"></span>
-        <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Recent (&lt;30d)</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">Recent (&lt;30d)</span>
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
         <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-4);background:color-mix(in srgb, var(--m-chart-4) 10%, transparent);"></span>
-        <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Aging (&lt;90d)</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">Aging (&lt;90d)</span>
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
         <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-8);background:color-mix(in srgb, var(--m-chart-8) 8%, transparent);"></span>
-        <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Stale (&gt;90d)</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">Stale (&gt;90d)</span>
       </div>
       <div style="display:flex;align-items:center;gap:5px;margin-left:auto;">
-        <span style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.06em;color:var(--m-muted);">Size = memory count</span>
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">Size = memory count</span>
       </div>
     </div>
 
     {# Project memory depth (if we have projects) #}
     {% if projects %}
     <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--m-rule-soft);">
-      <div style="font-family:var(--m-mono);font-size:8.5px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:10px;">PROJECT MEMORY DEPTH</div>
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:10px;">PROJECT MEMORY DEPTH</div>
       <div style="display:flex;flex-direction:column;gap:6px;">
         {% for p in projects %}
         {% set mem = p.memory %}
@@ -79,7 +79,7 @@
           <span style="width:6px;height:6px;border-radius:50%;flex-shrink:0;
             background:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};"></span>
           <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ p.title }}</span>
-          <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;
+          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;
             color:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};">
             {{ mem.total }} memories &middot; {{ mem.level }}
           </span>

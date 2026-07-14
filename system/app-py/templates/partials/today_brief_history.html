@@ -9,9 +9,9 @@
       <summary style="cursor:pointer;display:flex;align-items:center;gap:12px;font-family:var(--m-mono);font-size:11px;color:var(--m-ink);list-style:none;">
         <span class="tnum">{{ b['insight_date'] }}</span>
         {% if b['read_at'] %}
-          <span style="font-size:8px;letter-spacing:0.12em;color:var(--m-muted);">READ</span>
+          <span style="font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">READ</span>
         {% else %}
-          <span style="font-size:8px;letter-spacing:0.12em;color:var(--m-accent);">UNREAD</span>
+          <span style="font-size:11px;letter-spacing:0.12em;color:var(--m-accent);">UNREAD</span>
         {% endif %}
         <span style="color:var(--m-muted);font-family:var(--m-display);font-style:italic;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ (b['content'] or '')[:80]|replace('*','') }}…</span>
       </summary>

@@ -1,13 +1,13 @@
 <!-- work_project_tasks.html — Top-5 tasks + expand to full detail -->
 {% if not tasks and not done_count %}
-<div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);padding:4px 0;">
+<div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);padding:4px 0;">
   NO OPEN TASKS
 </div>
 {% else %}
 
 {% for t in tasks %}
 <div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--m-rule-soft);">
-  <span style="font-family:var(--m-mono);font-size:9px;flex-shrink:0;
+  <span style="font-family:var(--m-mono);font-size:11px;flex-shrink:0;
                color:{% if t.status == 'blocked' %}var(--m-alert){% elif t.status == 'in_progress' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
     {% if t.status == 'blocked' %}●{% elif t.status == 'in_progress' %}▸{% else %}·{% endif %}
   </span>
@@ -29,7 +29,7 @@
   <button onclick="miniTaskDelete('{{ t.task_id }}','{{ project_id }}')"
           title="Delete task"
           style="background:none;border:none;padding:0 2px;cursor:pointer;color:var(--m-muted);
-                 font-size:10px;flex-shrink:0;line-height:1;opacity:0.3;"
+                 font-size:11px;flex-shrink:0;line-height:1;opacity:0.3;"
           onmouseenter="this.style.opacity='1';this.style.color='var(--m-alert)'"
           onmouseleave="this.style.opacity='.3';this.style.color='var(--m-muted)'">&#10005;</button>
 </div>
@@ -38,14 +38,14 @@
 {% if total_open > 5 or done_count %}
 <div style="display:flex;align-items:center;gap:8px;padding-top:6px;">
   {% if total_open > 5 %}
-  <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">+{{ total_open - 5 }} more</span>
+  <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">+{{ total_open - 5 }} more</span>
   {% endif %}
   {% if done_count %}
-  <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-ok);">{{ done_count }} done</span>
+  <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-ok);">{{ done_count }} done</span>
   {% endif %}
   <button onclick="openProjectDetail('{{ project_id }}')"
           style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:3px;
-                 padding:2px 8px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+                 padding:2px 8px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
                  color:var(--m-muted);cursor:pointer;">ALL TASKS ↗</button>
 </div>
 {% endif %}
@@ -63,7 +63,7 @@
                   border:1px solid var(--m-line);border-radius:3px;
                   padding:4px 8px;background:var(--m-surface-2);color:var(--m-ink);outline:none;">
     <select id="task-cat-{{ project_id }}"
-            style="font-family:var(--m-mono);font-size:10px;border:1px solid var(--m-line);
+            style="font-family:var(--m-mono);font-size:11px;border:1px solid var(--m-line);
                    border-radius:3px;padding:4px 6px;background:var(--m-surface-2);color:var(--m-muted);">
       <option value="general">general</option>
       <option value="urgent">urgent</option>
@@ -75,7 +75,7 @@
     </select>
     <button onclick="submitQuickTask('{{ project_id }}')"
             style="background:var(--m-accent);color:var(--m-on-accent);border:none;border-radius:3px;
-                   padding:4px 10px;font-family:var(--m-mono);font-size:10px;cursor:pointer;">Add</button>
+                   padding:4px 10px;font-family:var(--m-mono);font-size:11px;cursor:pointer;">Add</button>
     <button onclick="document.getElementById('task-add-{{ project_id }}').style.display='none';"
             style="background:none;border:none;padding:2px 4px;cursor:pointer;color:var(--m-muted);font-size:13px;">✕</button>
   </div>
@@ -85,6 +85,6 @@
 <button onclick="document.getElementById('task-add-{{ project_id }}').style.display='block';
                  document.getElementById('task-title-{{ project_id }}').focus();"
         style="background:none;border:none;padding:4px 0 0;cursor:pointer;
-               font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;
+               font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;
                color:var(--m-muted);text-decoration:underline dotted;text-underline-offset:2px;
                display:block;margin-top:4px;">+ add task</button>

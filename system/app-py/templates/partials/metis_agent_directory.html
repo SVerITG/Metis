@@ -8,7 +8,7 @@
         {{ agent_count }} specialist{{ '' if agent_count == 1 else 's' }} available · invoke any one with the slash command shown · run count shows how often each agent has been used.
       </div>
     </div>
-    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);">AGENT-REGISTRY.JSON</span>
+    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">AGENT-REGISTRY.JSON</span>
   </div>
 </div>
 
@@ -29,12 +29,12 @@
         </div>
         <div style="text-align:right;flex-shrink:0;margin-left:8px;">
           {% if is_warm %}
-            <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-accent);font-weight:600;">{{ a.run_count }} run{{ '' if a.run_count == 1 else 's' }}</div>
+            <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-accent);font-weight:600;">{{ a.run_count }} run{{ '' if a.run_count == 1 else 's' }}</div>
             {% if a.last_run %}
-            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);letter-spacing:0.08em;">{{ a.last_run }}</div>
+            <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);letter-spacing:0.08em;">{{ a.last_run }}</div>
             {% endif %}
           {% else %}
-            <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);opacity:0.6;">NEVER USED</div>
+            <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);opacity:0.6;">NEVER USED</div>
           {% endif %}
         </div>
       </div>
@@ -46,8 +46,8 @@
       {% endif %}
       {% if a.chains_with %}
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
-        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.14em;color:var(--m-muted);align-self:center;">CHAINS WITH</span>
-        {% for c in a.chains_with[:6] %}<span class="chip chip--mute" style="font-size:9px;">{{ c }}</span>{% endfor %}
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);align-self:center;">CHAINS WITH</span>
+        {% for c in a.chains_with[:6] %}<span class="chip chip--mute" style="font-size:11px;">{{ c }}</span>{% endfor %}
       </div>
       {% endif %}
     </div>

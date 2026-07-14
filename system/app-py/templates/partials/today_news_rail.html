@@ -4,7 +4,7 @@
 {# ── Signal strength colors ── #}
 {% set signal_colors = {
   'critical': 'var(--m-alert)',
-  'high': '#ea580c',
+  'high': 'var(--m-chart-3)',
   'medium': 'var(--m-chart-4)',
   'low': 'var(--m-muted)',
   'routine': 'var(--m-chart-8)'
@@ -20,13 +20,13 @@
 <div class="today-news-rail" id="news-surface" style="margin-bottom:32px;">
 
   <!-- ── Section header ── -->
-  <div class="sec-label" style="margin-bottom:10px;">
+  <h2 class="sec-label" style="margin-bottom:10px;">
     <span>Dispatch</span>
     <span class="tail">
       {% if slipcases %}{{ slipcases | sum(attribute='count') }} SIGNALS{% endif %}
       {% if last_updated %} · UPDATED {{ last_updated | upper }}{% endif %}
     </span>
-  </div>
+  </h2>
 
   <div class="panel" style="overflow:hidden;">
 
@@ -37,26 +37,26 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
         </svg>
-        <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-ink);">
+        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-ink);">
           {% if period == 'week' %}THIS WEEK{% else %}THIS MONTH{% endif %}
         </span>
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
         <!-- Period toggle -->
         <div style="display:flex;border:1px solid var(--m-rule);border-radius:var(--m-radius);overflow:hidden;">
-          <button style="padding:4px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;border:none;cursor:pointer;
+          <button style="padding:4px 10px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;border:none;cursor:pointer;
                          background:{% if period == 'week' %}var(--m-accent){% else %}transparent{% endif %};
                          color:{% if period == 'week' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
                   hx-get="/api/partial/today/news-rail?period=week"
                   hx-target="#news-surface" hx-swap="outerHTML">WEEK</button>
-          <button style="padding:4px 10px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;border:none;border-left:1px solid var(--m-rule);cursor:pointer;
+          <button style="padding:4px 10px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;border:none;border-left:1px solid var(--m-rule);cursor:pointer;
                          background:{% if period == 'month' %}var(--m-accent){% else %}transparent{% endif %};
                          color:{% if period == 'month' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
                   hx-get="/api/partial/today/news-rail?period=month"
                   hx-target="#news-surface" hx-swap="outerHTML">MONTH</button>
         </div>
         <!-- Update summaries -->
-        <button style="padding:4px 12px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+        <button style="padding:4px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
                        border:1px solid var(--m-accent);border-radius:var(--m-radius);cursor:pointer;
                        background:transparent;color:var(--m-accent);transition:all 120ms;"
                 onmouseover="this.style.background='var(--m-accent)';this.style.color='var(--m-on-accent)'"
@@ -70,11 +70,11 @@
 
     <!-- Topic selector for targeted update (hidden by default) -->
     <div id="news-topic-selector" style="display:none;padding:12px 18px;background:var(--m-surface-2);border-bottom:1px solid var(--m-rule-soft);">
-      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:8px;">SELECT TOPICS FOR SUMMARY UPDATE:</div>
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:8px;">SELECT TOPICS FOR SUMMARY UPDATE:</div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
         {% for topic in all_topics %}
         <label style="display:flex;align-items:center;gap:4px;cursor:pointer;
-                      font-family:var(--m-mono);font-size:10px;padding:3px 10px;
+                      font-family:var(--m-mono);font-size:11px;padding:3px 10px;
                       border:1px solid var(--m-rule);border-radius:100px;
                       background:var(--m-surface);transition:all 120ms;"
                onmouseover="this.style.borderColor='var(--m-accent)'"
@@ -84,13 +84,13 @@
         {% endfor %}
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button style="padding:5px 16px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
+        <button style="padding:5px 16px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
                        border:none;border-radius:var(--m-radius);cursor:pointer;
                        background:var(--m-accent);color:var(--m-on-accent);" onclick="runSummaryUpdate('{{ period }}')">GENERATE</button>
-        <button style="padding:5px 16px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
+        <button style="padding:5px 16px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
                        border:1px solid var(--m-rule);border-radius:var(--m-radius);cursor:pointer;
                        background:transparent;color:var(--m-muted);" onclick="document.getElementById('news-topic-selector').style.display='none'">Cancel</button>
-        <span id="news-summary-status" style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-left:8px;"></span>
+        <span id="news-summary-status" style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-left:8px;"></span>
       </div>
     </div>
 
@@ -123,14 +123,14 @@
                        color:{% if is_highlight %}var(--m-accent){% else %}var(--m-ink){% endif %};flex:1;">
             {{ sc.topic }}
           </span>
-          <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
+          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
                        padding:2px 8px;border-radius:100px;
                        background:{% if sc.count >= 10 %}color-mix(in srgb, var(--m-chart-2) 10%, transparent){% elif sc.count >= 5 %}color-mix(in srgb, var(--m-chart-1) 8%, transparent){% else %}var(--m-surface-3){% endif %};
                        color:{% if sc.count >= 10 %}var(--m-chart-2){% elif sc.count >= 5 %}var(--m-chart-1){% else %}var(--m-muted){% endif %};">
             {{ sc.count }}
           </span>
           {% if sc.age_label %}
-          <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted-soft);">{{ sc.age_label }}</span>
+          <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted-soft);">{{ sc.age_label }}</span>
           {% endif %}
         </div>
 
@@ -145,14 +145,14 @@
               <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
-              <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-accent);">AI DIGEST</span>
-              {% if sc.summary_age %}<span style="font-family:var(--m-mono);font-size:8px;color:var(--m-muted);margin-left:4px;">{{ sc.summary_age }}</span>{% endif %}
+              <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-accent);">AI DIGEST</span>
+              {% if sc.summary_age %}<span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-left:4px;">{{ sc.summary_age }}</span>{% endif %}
             </div>
             <p style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.55;margin:0;">{{ sc.summary }}</p>
           </div>
           {% elif not is_highlight %}
           <div style="margin-bottom:10px;padding:8px 14px;background:var(--m-surface-2);border-radius:var(--m-radius);
-                      font-family:var(--m-mono);font-size:10px;color:var(--m-muted);letter-spacing:0.04em;">
+                      font-family:var(--m-mono);font-size:11px;color:var(--m-muted);letter-spacing:0.04em;">
             No summary yet — click ✦ UPDATE to generate.
           </div>
           {% endif %}
@@ -167,9 +167,9 @@
                onmouseout="this.style.background=''">
               {# Meta row: time + signal badges #}
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
-                <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">{{ item.time }}</span>
+                <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{{ item.time }}</span>
                 {% if item.match == 'top' %}
-                <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
+                <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
                              background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
                   <svg viewBox="0 0 16 16" width="8" height="8" fill="var(--m-chart-2)" stroke="none" style="vertical-align:-1px;margin-right:2px;">
                     <polygon points="8 1 10 6 16 6.5 11.5 10.5 13 16 8 13 3 16 4.5 10.5 0 6.5 6 6"/>
@@ -177,11 +177,11 @@
                   YOUR WORK
                 </span>
                 {% elif item.match == 'yes' %}
-                <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
+                <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
                              background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">RELEVANT</span>
                 {% endif %}
                 {% if item.signal %}
-                <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
+                <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
                              background:{{ signal_bg.get(item.signal_class, 'var(--m-surface-3)') }};
                              color:{{ signal_colors.get(item.signal_class, 'var(--m-muted)') }};">{{ item.signal }}</span>
                 {% endif %}
@@ -209,7 +209,7 @@
     {# Show more topics button #}
     {% if not show_all_topics|default(false) and total_topics|default(0) > slipcases|length %}
     <div style="text-align:center;padding:14px 18px;border-top:1px solid var(--m-rule-soft);">
-      <button style="padding:6px 20px;font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;
+      <button style="padding:6px 20px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;
                      border:1px solid var(--m-rule);border-radius:100px;cursor:pointer;
                      background:transparent;color:var(--m-muted);transition:all 120ms;"
               onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"

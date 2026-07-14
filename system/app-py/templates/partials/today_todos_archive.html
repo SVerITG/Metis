@@ -1,8 +1,8 @@
 <div>
-  <div class="sec-label" style="margin-bottom:8px;">
+  <h2 class="sec-label" style="margin-bottom:8px;">
     Priority Tasks
     <span class="sec-label-tail">BLOCKED · STARRED · OPEN</span>
-  </div>
+  </h2>
   <div class="panel">
     {% if tasks %}
       {% set ns = namespace(last_section='') %}
@@ -11,11 +11,11 @@
           {% set ns.last_section = task.section %}
           <div style="padding:3px 12px;background:var(--m-surface-2);border-bottom:1px solid var(--m-rule-soft);">
             {% if task.section == 'blocked' %}
-            <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;color:var(--m-warn);">BLOCKED</span>
+            <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-warn);">BLOCKED</span>
             {% elif task.section == 'starred' %}
-            <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;color:var(--m-muted);">STARRED</span>
+            <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">STARRED</span>
             {% else %}
-            <span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.12em;color:var(--m-muted);">OLDEST OPEN</span>
+            <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">OLDEST OPEN</span>
             {% endif %}
           </div>
         {% endif %}
@@ -34,7 +34,7 @@
           <span class="todo-title" style="flex:1;">
             {{ task.title or 'Untitled task' }}
             {% if task.project %}
-            <span style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-left:6px;letter-spacing:.06em;">{{ task.project[:22] }}</span>
+            <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-left:6px;letter-spacing:.06em;">{{ task.project[:22] }}</span>
             {% endif %}
           </span>
           <!-- status badge -->

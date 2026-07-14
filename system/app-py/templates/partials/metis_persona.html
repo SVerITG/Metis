@@ -39,7 +39,7 @@
   <div class="panel panel-pad" style="margin-bottom:10px;padding:16px 20px;">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
       <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">{{ label }}</div>
-      <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);">
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">
         {{ (persona.get(key, options[0][0]))|upper }}
       </span>
     </div>
@@ -48,7 +48,7 @@
       {% set current = persona.get(key, options[0][0]) %}
       {% for val, opt_label, opt_desc in options %}
       <button class="btn btn--caps{% if val == current %} btn--primary{% else %} btn--ghost{% endif %}"
-              style="font-size:9px;padding:5px 12px;{% if val == current %}pointer-events:none;{% endif %}"
+              style="font-size:11px;padding:5px 12px;{% if val == current %}pointer-events:none;{% endif %}"
               title="{{ opt_desc }}"
               hx-post="/api/metis/persona"
               hx-vals='{"key": "{{ key }}", "value": "{{ val }}"}'

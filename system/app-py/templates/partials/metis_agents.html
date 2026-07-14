@@ -11,7 +11,7 @@
     <div style="min-width:0;">
       <div style="font-family:var(--m-display);font-size:13px;font-weight:500;color:var(--m-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.name or a.slug or '?' }}</div>
       {% if a.role or a.invocation %}
-      <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);text-transform:uppercase;">{{ (a.invocation or a.role)[:24] }}</div>
+      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);text-transform:uppercase;">{{ (a.invocation or a.role)[:24] }}</div>
       {% endif %}
     </div>
   </div>

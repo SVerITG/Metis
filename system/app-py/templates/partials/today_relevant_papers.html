@@ -1,9 +1,9 @@
 <div>
-  <div class="sec-label" style="margin-bottom:8px;display:flex;align-items:baseline;gap:8px;">
+  <h2 class="sec-label" style="margin-bottom:8px;display:flex;align-items:baseline;gap:8px;">
     <span>Relevant to your active work</span>
     {% if items %}<span class="sec-label-tail">FROM YOUR LIBRARY</span>{% endif %}
-    <a href="/knowledge" style="margin-left:auto;font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;color:var(--m-muted);text-decoration:none;">OPEN LIBRARY →</a>
-  </div>
+    <a href="/knowledge" style="margin-left:auto;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);text-decoration:none;">OPEN LIBRARY →</a>
+  </h2>
 
   <div class="panel" style="overflow:hidden;">
     {% if not items %}
@@ -28,12 +28,12 @@
             {% else %}
             <span style="font-family:var(--m-display);font-size:13.5px;font-weight:500;color:var(--m-ink);line-height:1.35;">{{ it.title }}</span>
             {% endif %}
-            {% if not it.is_read %}<span style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;color:var(--m-accent);border:1px solid var(--m-accent);border-radius:2px;padding:1px 4px;flex-shrink:0;">UNREAD</span>{% endif %}
+            {% if not it.is_read %}<span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-accent);border:1px solid var(--m-accent);border-radius:2px;padding:1px 4px;flex-shrink:0;">UNREAD</span>{% endif %}
           </div>
-          <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-top:3px;">
+          <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-top:3px;">
             {% if it.authors %}{{ it.authors }}{% if it.year %} · {{ it.year }}{% endif %}{% elif it.year %}{{ it.year }}{% endif %}
           </div>
-          <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.06em;color:var(--m-ochre);margin-top:5px;">
+          <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-ochre);margin-top:5px;">
             ↳ matches your work: {{ it.why }}
           </div>
         </div>

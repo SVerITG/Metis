@@ -1,8 +1,8 @@
 <div>
-  <div class="sec-label" style="margin-bottom:8px;">
+  <h2 class="sec-label" style="margin-bottom:8px;">
     <span>Research progress</span>
     {% if active_projects %}<span class="tail">{{ active_projects }} ACTIVE PROJECT{{ 's' if active_projects != 1 else '' }}</span>{% endif %}
-  </div>
+  </h2>
   <div class="panel" style="padding:16px 20px;">
 
     {% if days_since_commit is not none %}
@@ -11,7 +11,7 @@
         {{ days_since_commit if days_since_commit > 0 else '&lt;1' }}
       </div>
       <div>
-        <div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.12em;color:var(--m-muted);">DAYS SINCE LAST COMMIT</div>
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">DAYS SINCE LAST COMMIT</div>
         {% if last_commit_msg %}
         <div style="font-family:var(--m-sans);font-size:11px;color:var(--m-ink-soft);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;" title="{{ last_commit_msg }}">{{ last_commit_msg }}</div>
         {% endif %}
@@ -34,9 +34,9 @@
           </span>
         </div>
         {% if m.target_date %}
-        <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);flex-shrink:0;">{{ m.target_date[:7] }}</div>
+        <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);flex-shrink:0;">{{ m.target_date[:7] }}</div>
         {% endif %}
-        <div style="font-family:var(--m-mono);font-size:8px;letter-spacing:0.1em;color:var(--m-muted);
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);
                     padding:1px 5px;border:1px solid var(--m-rule-soft);border-radius:2px;flex-shrink:0;
                     {% if m.status == 'done' %}color:var(--m-accent);border-color:var(--m-accent);opacity:.6;{% endif %}">
           {{ (m.status or 'planned')|upper }}

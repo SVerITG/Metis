@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/_section.html" import sec_label %}
 {% from "partials/_section.html" import section, skeleton_block, skeleton_box %}
 {% block title %}Today{% endblock %}
 
@@ -99,7 +100,7 @@
   <div hx-get="/api/partial/today/focus-memory"
        hx-trigger="load delay:200ms"
        hx-swap="outerHTML">
-    <div class="sec-label" style="margin-bottom:14px;"><span>Today's focus</span><span class="tail">LOADING</span></div>
+    {{ sec_label("Today's focus", tail="LOADING", style="margin-bottom:14px;") }}
     <div class="grid grid-3" style="margin-bottom:32px;">
       {{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}
     </div>
@@ -129,7 +130,7 @@
   <div hx-get="/api/partial/today/news-rail"
        hx-trigger="load delay:600ms"
        hx-swap="outerHTML">
-    <div class="sec-label" style="margin-bottom:10px;"><span>Dispatch</span><span class="tail">LOADING NEWS</span></div>
+    {{ sec_label("Dispatch", tail="LOADING NEWS", style="margin-bottom:10px;") }}
     <div class="panel" style="padding:20px 24px;min-height:120px;">
       <div class="skeleton skeleton-bar w-40" style="margin-bottom:14px;"></div>
       <div class="skeleton skeleton-bar w-100" style="height:12px;margin-bottom:8px;"></div>

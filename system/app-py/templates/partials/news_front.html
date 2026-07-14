@@ -57,13 +57,13 @@
                     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
                     overflow:hidden; }
   .nf-meta        { display:flex; align-items:center; gap:8px; margin-top:auto;
-                    font-family:var(--m-mono); font-size:10px; letter-spacing:0.08em;
+                    font-family:var(--m-mono); font-size:11px; letter-spacing:0.08em;
                     text-transform:uppercase; color:var(--m-muted); }
 
   /* "Closest to your work" — the whole reason this page exists, so it gets the
      one accent that nothing else on the page is allowed to use. */
   .nf-close       { display:inline-flex; align-items:center; gap:5px;
-                    font-family:var(--m-mono); font-size:10px; letter-spacing:0.1em;
+                    font-family:var(--m-mono); font-size:11px; letter-spacing:0.1em;
                     text-transform:uppercase; color:var(--m-on-accent);
                     background:var(--m-accent); padding:3px 8px; border-radius:999px; }
   .nf-dot         { width:5px; height:5px; border-radius:50%; background:currentColor; }
@@ -76,10 +76,10 @@
                     text-decoration:none; color:inherit; }
   .nf-wire a:last-child { border-bottom:none; }
   .nf-wire a:hover      { background:var(--m-surface-2); }
-  .nf-wire .src   { font-family:var(--m-mono); font-size:10px; letter-spacing:0.08em;
+  .nf-wire .src   { font-family:var(--m-mono); font-size:11px; letter-spacing:0.08em;
                     text-transform:uppercase; color:var(--m-muted); }
   .nf-wire .hd    { font-size:13.5px; line-height:1.4; color:var(--m-ink); }
-  .nf-wire .ago   { font-family:var(--m-mono); font-size:10px; color:var(--m-muted-soft);
+  .nf-wire .ago   { font-family:var(--m-mono); font-size:11px; color:var(--m-muted-soft);
                     white-space:nowrap; }
 
   @media (max-width: 760px) {
@@ -117,10 +117,10 @@
 
 {# ── CLOSEST TO YOUR WORK ─────────────────────────────────────────────────── #}
 {% if closest %}
-<div class="sec-label" style="margin-bottom:10px;">
+<h2 class="sec-label" style="margin-bottom:10px;">
   Closest to your work
   <span class="sec-label-tail">RANKED BY PROXIMITY TO YOUR LIBRARY — NOT BY DATE</span>
-</div>
+</h2>
 <div class="nf-grid nf-grid-4" style="margin-bottom:30px;">
   {% for c in closest %}
   <a class="nf-card" href="{{ c.url }}" target="_blank" rel="noopener noreferrer">
@@ -146,9 +146,9 @@
 
 {# ── TOP STORIES ──────────────────────────────────────────────────────────── #}
 {% if top %}
-<div class="sec-label" style="margin-bottom:10px;">
+<h2 class="sec-label" style="margin-bottom:10px;">
   Top stories <span class="sec-label-tail">{{ total }} ITEMS · LAST {{ days }} DAYS</span>
-</div>
+</h2>
 <div class="nf-grid nf-grid-3" style="margin-bottom:30px;">
   {% for c in top %}
   <a class="nf-card" href="{{ c.url }}" target="_blank" rel="noopener noreferrer">
@@ -180,9 +180,9 @@
 
 {# ── THE WIRE — everything else, dense and scannable ──────────────────────── #}
 {% if wire %}
-<div class="sec-label" style="margin-bottom:10px;">
+<h2 class="sec-label" style="margin-bottom:10px;">
   The wire <span class="sec-label-tail">EVERYTHING ELSE · {{ wire|length }} ITEMS</span>
-</div>
+</h2>
 <div class="nf-wire">
   {% for c in wire %}
   <a href="{{ c.url }}" target="_blank" rel="noopener noreferrer">

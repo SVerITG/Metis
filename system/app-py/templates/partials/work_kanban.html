@@ -2,17 +2,17 @@
 
   <!-- Inbox -->
   <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;">
-    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
       <span>Inbox</span><span>{{ inbox|length }}</span>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       {% for t in inbox %}
       <div class="kanban-card" data-task-id="{{ t.id }}">
         <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;margin-bottom:6px;">{{ t.title }}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">
           <span>{{ (t.tag or 'TASK').upper()[:12] }}</span>
           <select class="kanban-status-select" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
-                  title="Move to…" style="background:transparent;border:none;font-family:var(--m-mono);font-size:9px;color:var(--m-muted);cursor:pointer;padding:0;">
+                  title="Move to…" style="background:transparent;border:none;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);cursor:pointer;padding:0;">
             <option value="open" selected>Inbox</option>
             <option value="in_progress">In Progress</option>
             <option value="done">Done</option>
@@ -27,7 +27,7 @@
 
   <!-- This week -->
   <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;">
-    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
       <span>This week</span><span>{{ this_week|length }}</span>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;">
@@ -37,12 +37,12 @@
       <div class="kanban-card" data-task-id="{{ t.id }}"
            style="border-left:{% if is_overdue %}2px solid var(--m-alert){% elif is_high %}2px solid var(--m-accent){% else %}1px solid var(--m-rule){% endif %};">
         <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;margin-bottom:6px;">{{ t.title }}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;">
           <span style="color:{% if is_overdue %}var(--m-alert){% else %}var(--m-muted){% endif %};">
             {{ t.due_date[:10] if t.due_date else '—' }}{% if is_overdue %} ⚠{% endif %}
           </span>
           <select class="kanban-status-select" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
-                  title="Move to…" style="background:transparent;border:none;font-family:var(--m-mono);font-size:9px;color:var(--m-muted);cursor:pointer;padding:0;">
+                  title="Move to…" style="background:transparent;border:none;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);cursor:pointer;padding:0;">
             <option value="open" selected>This week</option>
             <option value="in_progress">In Progress</option>
             <option value="done">Done</option>
@@ -57,17 +57,17 @@
 
   <!-- In progress -->
   <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;">
-    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
       <span>In progress</span><span>{{ in_progress|length }}</span>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       {% for t in in_progress %}
       <div class="kanban-card" data-task-id="{{ t.id }}" style="border-left:2px solid var(--m-accent);">
         <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;margin-bottom:6px;">{{ t.title }}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">
           <span>{{ (t.tag or 'TASK').upper()[:12] }}</span>
           <select class="kanban-status-select" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
-                  title="Move to…" style="background:transparent;border:none;font-family:var(--m-mono);font-size:9px;color:var(--m-muted);cursor:pointer;padding:0;">
+                  title="Move to…" style="background:transparent;border:none;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);cursor:pointer;padding:0;">
             <option value="open">Inbox</option>
             <option value="in_progress" selected>In Progress</option>
             <option value="done">Done</option>
@@ -82,14 +82,14 @@
 
   <!-- Closed this week -->
   <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;opacity:0.85;">
-    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
       <span>Closed · this week</span><span>{{ closed|length }}</span>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       {% for t in closed %}
       <div class="kanban-card" style="opacity:0.7;">
         <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;text-decoration:line-through;margin-bottom:4px;">{{ t.title }}</div>
-        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;color:var(--m-muted);">{{ (t.tag or 'TASK').upper()[:12] }}</div>
+        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">{{ (t.tag or 'TASK').upper()[:12] }}</div>
       </div>
       {% else %}
       <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px;">Nothing closed yet.</div>

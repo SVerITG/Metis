@@ -51,7 +51,7 @@
   <div style="border:1px solid var(--m-rule);border-radius:6px;overflow:hidden;">
     <div style="display:grid;grid-template-columns:72px 80px 1fr 60px 72px;gap:0;
                 background:var(--m-surface-2);padding:6px 14px;
-                font-family:var(--m-mono);font-size:10px;letter-spacing:0.08em;
+                font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;
                 color:var(--m-muted);border-bottom:1px solid var(--m-rule);">
       <div>LAYER</div>
       <div>TYPE</div>
@@ -65,10 +65,10 @@
     <div style="display:grid;grid-template-columns:72px 80px 1fr 60px 72px;gap:0;
                 padding:9px 14px;border-bottom:1px solid var(--m-rule-soft);
                 align-items:start;{% if loop.last %}border-bottom:none;{% endif %}">
-      <div style="font-family:var(--m-mono);font-size:9px;font-weight:600;letter-spacing:0.1em;color:var(--{{ lc }});padding-top:2px;">
+      <div style="font-family:var(--m-mono);font-size:11px;font-weight:600;letter-spacing:0.1em;color:var(--{{ lc }});padding-top:2px;">
         {{ r.layer|upper }}
       </div>
-      <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);padding-top:2px;">
+      <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);padding-top:2px;">
         {{ r.type }}
       </div>
       <div style="font-family:var(--m-ui);font-size:12px;color:var(--m-ink);line-height:1.5;padding-right:8px;">
@@ -78,7 +78,7 @@
                   {% if r.score is not none and r.score >= 0.7 %}color:var(--m-ok);{% elif r.score is not none %}color:var(--m-ink);{% else %}color:var(--m-muted);{% endif %}">
         {% if r.score is not none %}{{ r.score }}{% else %}—{% endif %}
       </div>
-      <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);padding-top:2px;">
+      <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);padding-top:2px;">
         {{ r.date or '—' }}
       </div>
     </div>
