@@ -10,10 +10,13 @@ Config is read from environment variables (set in metis/system/.env):
 """
 
 import json
+import logging
 import os
 import re
 import sqlite3
 from datetime import datetime
+
+log = logging.getLogger("metis.zotero")
 from pathlib import Path
 from typing import Optional
 
@@ -224,6 +227,154 @@ def _upsert_lit_row(conn, row: dict) -> str:
          row["zotero_key"], row["zotero_version"], row["library_source"], row["created_at"]),
     )
     return "added"
+
+
+def _check_write_access(zot) -> tuple[bool, str]:
+    """Does this key allow writing to the target library? Returns (ok, message).
+
+    The whole Zotero integration was READ-ONLY until now, and the configured key
+    returns 403 on a permissions check — so we verify write access explicitly and
+    fail with a clear, actionable message rather than a cryptic API error.
+    """
+    try:
+        import httpx
+
+        key = os.environ.get("ZOTERO_API_KEY", "")
+        r = httpx.get(
+            "https://api.zotero.org/keys/current",
+            headers={"Zotero-API-Key": key, "Zotero-API-Version": "3"},
+            timeout=15, verify=False,
+        )
+        if r.status_code != 200:
+            return False, (
+                f"Zotero key check failed (HTTP {r.status_code}). The key is likely "
+                "read-only, expired, or invalid. Generate a WRITE-enabled key at "
+                "zotero.org → Settings → Security → Applications → New Private Key "
+                "(tick 'Allow write access'), then put it in system/.env as "
+                "ZOTERO_API_KEY."
+            )
+        access = r.json().get("access", {})
+        can_write = bool(access.get("user", {}).get("write") or access.get("groups"))
+        if not can_write:
+            return False, (
+                "This Zotero key is READ-ONLY. Regenerate it with 'Allow write "
+                "access' ticked and update ZOTERO_API_KEY in system/.env."
+            )
+        return True, "write access confirmed"
+    except Exception as exc:
+        return False, f"could not verify Zotero write access: {type(exc).__name__}: {exc}"
+
+
+@app.tool()
+async def push_to_zotero(dry_run: bool = True, limit: int = 50) -> list[TextContent]:
+    """Push local library papers that aren't in Zotero yet UP to your Zotero library.
+
+    The complement to sync_zotero_library (which only pulls DOWN). Finds
+    literature_metadata rows that did not come from Zotero (no zotero_key) and
+    creates them as items in your Zotero library, so papers Metis ingested — e.g.
+    open-access reports added to a knowledge layer — end up in Zotero too.
+
+    Args:
+        dry_run: When True (default), report exactly what WOULD be created without
+            writing anything. Always review the dry run before a real push.
+        limit: Max items to push in one call.
+
+    Returns:
+        A summary: how many candidates, and either the dry-run preview or the
+        create result. Requires a WRITE-enabled ZOTERO_API_KEY.
+    """
+    from metis_mcp.config import paths as _paths
+
+    with connect(_paths.db) as conn:
+        _ensure_lit_schema(conn)
+        rows = conn.execute(
+            "SELECT id, title, authors, year, doi, url, item_type, abstract, tags "
+            "FROM literature_metadata "
+            "WHERE COALESCE(zotero_key,'') = '' AND COALESCE(title,'') != '' "
+            "ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+
+    candidates = [dict(r) for r in rows]
+    if not candidates:
+        return [TextContent(type="text", text="Nothing to push — every local paper is already in Zotero.")]
+
+    def _to_zotero_item(r: dict) -> dict:
+        itype = (r.get("item_type") or "").strip() or "report"
+        # Map free-text item types to valid Zotero types; default to 'report'
+        # (most of the ph-background layer is WHO/agency reports).
+        valid = {"journalArticle", "report", "book", "bookSection", "document",
+                 "webpage", "preprint", "conferencePaper", "thesis"}
+        if itype not in valid:
+            itype = "report"
+        creators = []
+        authors = (r.get("authors") or "").strip()
+        if authors and authors.lower() != "unknown":
+            for name in re.split(r";|,| and ", authors)[:20]:
+                name = name.strip()
+                if name:
+                    creators.append({"creatorType": "author", "name": name})
+        item = {
+            "itemType": itype,
+            "title": r.get("title") or "",
+            "creators": creators,
+            "date": str(r.get("year") or ""),
+            "url": r.get("url") or "",
+            "abstractNote": r.get("abstract") or "",
+            "tags": [{"tag": t.strip()} for t in (r.get("tags") or "").split(",") if t.strip()],
+        }
+        if r.get("doi"):
+            item["DOI"] = r["doi"]
+        return item
+
+    items = [_to_zotero_item(r) for r in candidates]
+
+    if dry_run:
+        preview = "\n".join(f"  • [{it['itemType']}] {it['title'][:80]}" for it in items[:limit])
+        return [TextContent(type="text", text=(
+            f"DRY RUN — {len(items)} paper(s) would be pushed to Zotero:\n{preview}\n\n"
+            "Nothing was written. Re-run with dry_run=False to create these in Zotero "
+            "(requires a write-enabled key)."
+        ))]
+
+    # Real push — verify write access first.
+    try:
+        zot = _get_zotero_client()
+    except RuntimeError as exc:
+        return [TextContent(type="text", text=str(exc))]
+    ok, msg = _check_write_access(zot)
+    if not ok:
+        return [TextContent(type="text", text=f"Cannot push to Zotero: {msg}")]
+
+    created, failed = 0, 0
+    key_by_title: dict[str, str] = {}
+    # Zotero create_items takes up to 50 at a time.
+    for i in range(0, len(items), 50):
+        batch = items[i:i + 50]
+        try:
+            resp = zot.create_items(batch)
+            for idx, info in (resp.get("successful") or {}).items():
+                created += 1
+                key_by_title[info["data"]["title"]] = info["key"]
+            failed += len(resp.get("failed") or {})
+        except Exception as exc:
+            failed += len(batch)
+            log.warning("push_to_zotero: batch failed: %s", exc)
+
+    # Record the new Zotero keys locally so we don't push duplicates next time.
+    if key_by_title:
+        with connect(_paths.db) as conn:
+            for title, zkey in key_by_title.items():
+                conn.execute(
+                    "UPDATE literature_metadata SET zotero_key=? WHERE title=? AND COALESCE(zotero_key,'')=''",
+                    (zkey, title),
+                )
+            conn.commit()
+
+    return [TextContent(type="text", text=(
+        f"Pushed to Zotero: {created} created, {failed} failed. "
+        "Local rows tagged with their new Zotero keys so they won't be pushed again."
+    ))]
 
 
 @app.tool()
