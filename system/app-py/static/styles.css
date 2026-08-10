@@ -2957,3 +2957,90 @@ details summary { outline: none; }
   font-size: 13px;
   color: var(--m-muted);
 }
+
+/* =========================================================================
+   Update menu — the single "↻ Update" control + anchored popover used by
+   every regularly-updated section (morning brief, boards, news, literature).
+   Markup: templates/partials/_update_menu.html · JS: app.js toggleUpdateMenu.
+   ========================================================================= */
+.update-menu { position: relative; display: inline-flex; align-items: center; gap: 8px; }
+.update-menu-caret { font-size: 9px; opacity: 0.7; margin-left: 2px; }
+/* Popover is position:fixed and placed by JS (toggleUpdateMenu) from the trigger's
+   bounding rect, so it escapes every overflow:hidden ancestor (short board cards,
+   the navbar) instead of being clipped. */
+.update-menu-pop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  min-width: 244px;
+  max-width: min(320px, 92vw);
+  background: var(--m-surface);
+  border: 1px solid var(--m-rule);
+  border-radius: var(--m-radius);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.16);
+  z-index: 10000;
+  overflow: hidden;
+  display: none;
+}
+.update-menu.is-open .update-menu-pop { display: block; }
+.update-menu.is-open .update-menu-trigger { color: var(--m-accent); }
+
+.update-menu-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 15px;
+  text-align: left;
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--m-rule-soft);
+  cursor: pointer;
+  font-family: var(--m-mono);
+  transition: background 120ms ease;
+}
+.update-menu-opt:last-of-type { border-bottom: 0; }
+.update-menu-opt:hover { background: var(--m-surface-2); }
+.update-menu-opt-icon { color: var(--m-muted); font-size: 13px; line-height: 1.35; flex-shrink: 0; }
+.update-menu-opt--primary .update-menu-opt-icon { color: var(--m-accent); }
+.update-menu-opt-text { display: flex; flex-direction: column; min-width: 0; }
+.update-menu-opt-label {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--m-ink);
+}
+.update-menu-opt--primary .update-menu-opt-label { color: var(--m-accent); }
+.update-menu-opt-sub {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--m-muted);
+  margin-top: 3px;
+}
+.update-menu-spin {
+  font-family: var(--m-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--m-muted);
+}
+
+/* Topbar variant of the update trigger — matches the old navbar "Update" button. */
+.update-menu-trigger--topbar {
+  font-family: var(--m-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid var(--m-rule);
+  border-radius: 2px;
+  color: var(--m-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .15s, color .15s;
+}
+.update-menu-trigger--topbar:hover,
+.update-menu.is-open .update-menu-trigger--topbar {
+  border-color: var(--m-accent);
+  color: var(--m-accent);
+}

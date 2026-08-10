@@ -3513,12 +3513,17 @@ async def board_star_item(request: Request, board: str, item_id: int):
 # user's topics. Triggered by the box's Refresh button and a monthly cron job.
 # ---------------------------------------------------------------------------
 
-_SEARCHABLE_BOARDS = {"events", "funding"}
+_SEARCHABLE_BOARDS = {"outbreaks", "events", "funding"}
 
 
 def _board_search_prompt(board: str, topics: str) -> str:
     who = topics or "tropical medicine, neglected tropical diseases, global health, epidemiology"
-    if board == "events":
+    if board == "outbreaks":
+        what = ("current, active disease outbreaks and public-health emergencies "
+                "(each with the location and a recent date) — prioritise neglected "
+                "tropical diseases, sleeping sickness / HAT, malaria, and other "
+                "epidemic-prone diseases, especially in West and Central Africa")
+    elif board == "events":
         what = ("upcoming scientific congresses, conferences, symposia and short courses "
                 "(each with a future or recently-announced date) in tropical medicine, "
                 "neglected tropical diseases, global health and epidemiology")
@@ -3526,16 +3531,23 @@ def _board_search_prompt(board: str, topics: str) -> str:
         what = ("open or upcoming research funding calls, grant opportunities and fellowships "
                 "(each with an application deadline) relevant to tropical medicine, neglected "
                 "tropical diseases, global health and epidemiology")
+    if board == "outbreaks":
+        sources = ("Prefer authoritative sources — WHO Disease Outbreak News, WHO AFRO, "
+                   "Africa CDC, ProMED, ReliefWeb and national ministries of health.")
+    else:
+        sources = ("Prefer authoritative sources — society/congress sites "
+                   "(ASTMH, FESTMIH/ECTMIH), funder portals (EDCTP / Global Health EDCTP3, "
+                   "Horizon Europe, Wellcome, NIH, WHO/TDR) and the Institute of Tropical "
+                   "Medicine Antwerp (ITM).")
     return (
         f"Use web search to find current, real {what}, especially anything relevant to a "
-        f"researcher working on: {who}. Prefer authoritative sources — society/congress sites "
-        "(ASTMH, FESTMIH/ECTMIH), funder portals (EDCTP / Global Health EDCTP3, Horizon Europe, "
-        "Wellcome, NIH, WHO/TDR) and the your institution Antwerp (ITM). "
+        f"researcher working on: {who}. {sources} "
         "Return ONLY a JSON array (no other prose) of up to 8 items, each object exactly: "
         '{"title": string, "url": string, "date": string, "description": string}. '
-        "url must be the direct official page and start with http; date = the event date or "
-        'application deadline if known else ""; description = one short factual sentence. '
-        "Only include items you actually found with a real working URL. End with the JSON array."
+        "url must be the direct official page and start with http; date = the event date, "
+        'application deadline or report date if known else ""; description = one short '
+        "factual sentence. Only include items you actually found with a real working URL. "
+        "End with the JSON array."
     )
 
 

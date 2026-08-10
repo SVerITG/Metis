@@ -1,5 +1,6 @@
 {# today_literature_discovery.html — New papers in your field.
    Context: papers (list), total (int), topics (list), period (str). #}
+{% from "partials/_update_menu.html" import update_menu %}
 <div id="today-lit-discovery" style="margin-bottom:28px;">
   <h2 class="sec-label" style="margin-bottom:12px;">
     <span>New in your field</span>
@@ -18,7 +19,18 @@
                   background:{% if period == 'month' %}var(--m-accent){% else %}transparent{% endif %};
                   color:{% if period == 'month' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};">MONTH</button>
       </span>
-      <button onclick="scanLiterature(this)" class="btn btn--ghost btn--caps" style="font-size:11px;padding:2px 8px;">Scan now</button>
+      {%- set claude_lit_prompt -%}
+Find recent publications relevant to my research (sleeping sickness / HAT, neglected tropical diseases, DHIS2, spatial epidemiology, disease surveillance in West and Central Africa). Using the metis-rc tools, add the most relevant new papers to my Metis literature discovery, then show me what you added.
+      {%- endset -%}
+      {% set lit_update_opts = [
+        {'icon': '✦', 'label': 'With Claude Desktop', 'sub': 'searches the web for new papers · no API tokens',
+         'href': 'claude://claude.ai/new?q=' ~ (claude_lit_prompt | trim | urlencode), 'primary': true,
+         'title': 'Open Claude Desktop to find new papers on the web — runs on your subscription.'},
+        {'icon': '↻', 'label': 'Local scan', 'sub': 'checks your library folder & feeds · free, instant',
+         'onclick': 'scanLiterature(this)',
+         'title': 'Scan your own library folder and feeds for new papers — no internet, no tokens.'}
+      ] %}
+      {{ update_menu('lit', lit_update_opts, label='Update', align='right') }}
     </span>
   </h2>
 
