@@ -70,19 +70,23 @@ echo "▸ Scrubbing maintainer identity from tracked text files…"
 HOME_USER="$(id -un)"
 NAME_PATTERNS=""
 [ -f tools/base-shell/scrub-names.txt ] && NAME_PATTERNS="$(grep -vE '^\s*(#|$)' tools/base-shell/scrub-names.txt || true)"
-git ls-files '*.py' '*.sh' '*.js' '*.mjs' '*.html' '*.css' '*.md' '*.json' '*.yaml' '*.yml' '*.txt' '*.toml' '*.cfg' \
-  | while IFS= read -r f; do
-      case "$f" in tools/build-base-shell.sh|tools/base-shell/*) continue;; esac
-      [ -f "$f" ] || continue
-      sed -i \
-        -e "s#/home/${HOME_USER}#\$HOME#g" \
-        -e "s#/mnt/c/Users/${HOME_USER}#\$HOME#g" \
-        -e "s#\b${HOME_USER}\b#user#g" \
-        "$f"
-      for pat in $NAME_PATTERNS; do
-        sed -i -e "s#\b${pat}'s\b#the user's#g" -e "s#\b${pat}\b#the user#g" "$f"
-      done
-    done
+# Build one regex of everything we scrub, then sed ONLY the files that actually
+# match. git grep is a single fast pass; because main is already scrubbed this
+# loop is usually empty — avoids sed-ing every file on a slow filesystem.
+SCRUB_RE="/home/${HOME_USER}|/mnt/c/Users/${HOME_USER}|\\b${HOME_USER}\\b"
+for pat in $NAME_PATTERNS; do SCRUB_RE="${SCRUB_RE}|\\b${pat}\\b"; done
+MATCHED="$(git grep -lE "$SCRUB_RE" -- '*.py' '*.sh' '*.js' '*.mjs' '*.html' '*.css' '*.md' '*.json' '*.yaml' '*.yml' '*.txt' '*.toml' '*.cfg' 2>/dev/null | grep -vE '^(tools/build-base-shell\.sh|tools/base-shell/)' || true)"
+for f in $MATCHED; do
+  [ -f "$f" ] || continue
+  sed -i \
+    -e "s#/home/${HOME_USER}#\$HOME#g" \
+    -e "s#/mnt/c/Users/${HOME_USER}#\$HOME#g" \
+    -e "s#\b${HOME_USER}\b#user#g" \
+    "$f"
+  for pat in $NAME_PATTERNS; do
+    sed -i -e "s#\b${pat}'s\b#the user's#g" -e "s#\b${pat}\b#the user#g" "$f"
+  done
+done
 git add -A
 
 git commit -q -m "build: domain-agnostic base shell (generated from main by build-base-shell.sh)" \
