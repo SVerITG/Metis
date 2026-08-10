@@ -1,6 +1,7 @@
 {# today_board_box.html — Board card for Outbreaks / Events / Funding.
    Context: board (str), items (list of dicts), total (int), show_all (bool).
    Each item: id, title, url, source, starred, auto_added, created_at. #}
+{% from "partials/_update_menu.html" import update_menu %}
 {% set bm = {
   'outbreaks': {'label': 'Outbreaks',  'cls': 'alert',  'icon': '⚠'},
   'events':    {'label': 'Events',     'cls': 'accent', 'icon': '📅'},
@@ -60,20 +61,18 @@
             hx-get="/api/partial/today/board/{{ board }}"
             hx-target="#board-{{ board }}" hx-swap="outerHTML">Collapse</button>
     {% endif %}
-    {% if board in ['events', 'funding'] %}
     {%- set claude_board_prompt -%}
-Update my Metis {{ m.label }} board. Search the web for current, real {% if board == 'events' %}scientific congresses, conferences, symposia and short courses (each with a date){% else %}research funding calls, grants and fellowships (each with an application deadline){% endif %} in tropical medicine, neglected tropical diseases, global health and epidemiology relevant to my work. Then save the best 6-8 to the "{{ board }}" board using the metis-rc update_today_board tool — pass each as {title, url, date, description}. Only include items with a real working URL, then show me what you saved.
+Update my Metis {{ m.label }} board. Search the web for current, real {% if board == 'outbreaks' %}active disease outbreaks and public-health emergencies (each with the location and a recent date) — prioritise neglected tropical diseases, sleeping sickness / HAT, malaria and epidemic-prone diseases, especially in West and Central Africa{% elif board == 'events' %}scientific congresses, conferences, symposia and short courses (each with a date) in tropical medicine, neglected tropical diseases, global health and epidemiology{% else %}research funding calls, grants and fellowships (each with an application deadline) in tropical medicine, neglected tropical diseases, global health and epidemiology{% endif %} relevant to my work. Then save the best 6-8 to the "{{ board }}" board using the metis-rc update_today_board tool — pass each as {title, url, date, description}. Only include items with a real working URL, then show me what you saved.
     {%- endset -%}
-    <a href="claude://claude.ai/new?q={{ claude_board_prompt | trim | urlencode }}"
-       class="btn btn--ghost btn--caps board-box-btn"
-       title="Open Claude Desktop to find & save current {{ m.label|lower }} — runs on your subscription, no API limit.">✦ Update with Claude</a>
-    <button type="button" class="btn btn--ghost btn--caps board-box-btn"
-            hx-post="/api/today/board/{{ board }}/refresh"
-            hx-target="#board-{{ board }}" hx-swap="outerHTML"
-            hx-indicator="#board-{{ board }}-spin"
-            title="Search the web via the API and refresh now (needs API credit; also runs monthly).">↻ Refresh (API)</button>
-    <span id="board-{{ board }}-spin" class="htmx-indicator" style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);letter-spacing:0.08em;">searching…</span>
-    {% endif %}
+    {% set board_update_opts = [
+      {'icon': '✦', 'label': 'With Claude Desktop', 'sub': 'free · runs on your subscription, no API tokens',
+       'href': 'claude://claude.ai/new?q=' ~ (claude_board_prompt | trim | urlencode), 'primary': true,
+       'title': 'Open Claude Desktop to find & save current ' ~ m.label|lower ~ ' — no API limit.'},
+      {'icon': '↻', 'label': 'With the API', 'sub': 'searches the web now · uses API credit',
+       'hx_post': '/api/today/board/' ~ board ~ '/refresh', 'hx_target': '#board-' ~ board, 'hx_swap': 'outerHTML',
+       'title': 'Search the web via the API and refresh now (needs API credit; also runs monthly).'}
+    ] %}
+    {{ update_menu('board-' ~ board, board_update_opts, align='left') }}
     <button type="button" class="btn btn--ghost btn--caps board-box-btn board-box-btn--add"
             onclick="toggleBoardAdd('{{ board }}')">+ Add</button>
   </div>

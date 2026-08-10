@@ -3,6 +3,7 @@
    · access to every past brief. Context: brief, brief_date_label, brief_date,
    brief_id, brief_read, sources, fallback_headlines, open_threads, time_of_day,
    brief_mode, period #}
+{% from "partials/_update_menu.html" import update_menu %}
 {% set period = period|default('daily') %}
 {% set pending = pending|default(false) %}
 {% set brief_error = brief_error|default('') %}
@@ -126,15 +127,20 @@
               onclick="var h=document.getElementById('brief-history');h.style.display=h.style.display==='none'?'block':'none';"
               style="padding:5px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;">Previous briefings</button>
       {%- set claude_brief_prompt -%}
-Produce my Metis daily brief now. Using the metis-rc tools: scan today's news and any new literature, rank by closeness to my work, write a short brief of the 5-7 most relevant items, save it with the Metis tool, then show me the brief.
+Produce my Metis {% if period == 'weekly' %}weekly{% elif period == 'catchup' %}catch-up{% else %}daily{% endif %} brief now. Using the metis-rc tools: scan today's news and any new literature, rank by closeness to my work, write a short brief of the 5-7 most relevant items, save it with the Metis tool, then show me the brief.
       {%- endset -%}
-      <a href="claude://claude.ai/new?q={{ claude_brief_prompt | trim | urlencode }}" class="btn btn--ghost btn--caps"
-         title="Opens Claude Desktop with a ready prompt — runs on your subscription, no API key."
-         style="margin-left:auto;padding:5px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;text-decoration:none;">Update with Claude</a>
-      <button hx-post="/api/morning-brief/refresh" hx-vals='{"period": "{{ period }}"}' hx-target="#morning-brief" hx-swap="outerHTML" hx-indicator="#brief-spinner"
-              class="btn btn--ghost btn--caps" title="Generate a fresh brief via the Anthropic API."
-              style="padding:5px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;">{% if brief_mode == 'manual' %}Generate (API){% else %}Update (API){% endif %}</button>
-      <span id="brief-spinner" class="htmx-indicator" style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);letter-spacing:0.08em;">generating…</span>
+      {% set brief_update_opts = [
+        {'icon': '✦', 'label': 'With Claude Desktop', 'sub': 'free · runs on your subscription, no API tokens',
+         'href': 'claude://claude.ai/new?q=' ~ (claude_brief_prompt | trim | urlencode), 'primary': true,
+         'title': 'Opens Claude Desktop with a ready prompt — no API key needed.'},
+        {'icon': '↻', 'label': 'With the API', 'sub': 'generates a fresh brief now · uses API credit',
+         'hx_post': '/api/morning-brief/refresh', 'hx_vals': '{"period": "' ~ period ~ '"}',
+         'hx_target': '#morning-brief', 'hx_swap': 'outerHTML',
+         'title': 'Generate a fresh brief via the Anthropic API.'}
+      ] %}
+      <span style="margin-left:auto;">
+        {{ update_menu('brief', brief_update_opts, label=('Generate' if brief_mode == 'manual' else 'Update'), align='right') }}
+      </span>
     </div>
 
     {# Previous briefings (lazy-loaded) #}

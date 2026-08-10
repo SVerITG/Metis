@@ -229,20 +229,21 @@ def _maybe_add_to_board(conn, title: str, url: str, summary: str, source_name: s
 
 @app.tool()
 def update_today_board(board: str, items: list[dict]) -> dict:
-    """Fill a Today-surface board (Events or Funding) with items you found on the web.
+    """Fill a Today-surface board (Outbreaks, Events or Funding) with items you found on the web.
 
-    Use this after web-searching for the researcher's field. The Events board holds
+    Use this after web-searching for the researcher's field. The Outbreaks board holds
+    current active disease outbreaks / public-health emergencies; the Events board holds
     upcoming scientific congresses/conferences/symposia; the Funding board holds open
     or upcoming research funding calls, grants and fellowships. These boards have no
     RSS source, so this tool is how Claude Desktop (on the user's subscription, no API
-    rate limit) keeps them current — the dashboard's "Update with Claude" buttons open
+    rate limit) keeps them current — the dashboard's "Update" buttons open
     a chat that calls this tool.
 
     Replaces the previously tool-filled rows on that board; items the user curated or
     added by hand are preserved.
 
     Args:
-        board: "events" or "funding".
+        board: "outbreaks", "events" or "funding".
         items: list of objects, each {"title": str, "url": str, "date": str (optional,
             event date or application deadline), "description": str (optional, one short
             sentence)}. Only include real items with a working http(s) URL.
@@ -254,8 +255,8 @@ def update_today_board(board: str, items: list[dict]) -> dict:
     import datetime as _dt
 
     board = (board or "").strip().lower()
-    if board not in ("events", "funding"):
-        return {"ok": False, "error": "board must be 'events' or 'funding'"}
+    if board not in ("outbreaks", "events", "funding"):
+        return {"ok": False, "error": "board must be 'outbreaks', 'events' or 'funding'"}
 
     clean: list[tuple[str, str, str]] = []
     seen: set[str] = set()

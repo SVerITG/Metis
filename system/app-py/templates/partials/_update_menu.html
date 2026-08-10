@@ -1,0 +1,88 @@
+{#-
+  _update_menu.html — the ONE update control for every regularly-updated section.
+
+  Renders a single "↻ Update ▾" button. Clicking it opens a small anchored popover
+  offering the ways to refresh this section. The whole point: give the free
+  "run it on my Claude Desktop subscription — no API tokens" path top billing,
+  next to the paid "via the API" path, so the reader picks with eyes open.
+
+  Consistency is enforced by construction: every section calls THIS macro, so a
+  future tweak to the look or behaviour of update controls happens in one place.
+
+  The CSS lives in static/styles.css (.update-menu*) and the open/close JS in
+  static/app.js (toggleUpdateMenu + a document-level click-away listener), both
+  loaded globally by base.html — so partials swapped in by HTMX inherit them
+  without shipping their own <script>/<style>.
+
+  Usage:
+    {% from "partials/_update_menu.html" import update_menu %}
+    {% set opts = [
+      {'icon':'✦','label':'With Claude Desktop','sub':'free · no API tokens',
+       'href': 'claude://claude.ai/new?q=' ~ (prompt | trim | urlencode), 'primary': true},
+      {'icon':'↻','label':'With the API','sub':'searches the web · uses API credit',
+       'hx_post': '/api/.../refresh', 'hx_target':'#some-id', 'hx_swap':'outerHTML'},
+    ] %}
+    {{ update_menu('some-id', opts, align='right') }}
+
+  Each option dict:
+    icon     — leading glyph (default ✦ for links, ↻ for actions)
+    label    — main line
+    sub      — muted second line (the honest cost/benefit hint)
+    primary  — highlight this option (use for the free Claude path)
+    title    — tooltip
+    ONE of:
+      href        — an <a> link (e.g. a claude:// deep link)
+      hx_post     — an HTMX POST button; pair with hx_target / hx_swap / hx_vals / hx_indicator
+      onclick     — raw JS (e.g. a local scan function already in app.js)
+-#}
+{% macro update_menu(menu_id, options, label='Update', align='left', trigger_class='btn btn--ghost btn--caps') %}
+<span class="update-menu" id="um-{{ menu_id }}">
+  <button type="button" class="{{ trigger_class }} update-menu-trigger"
+          onclick="toggleUpdateMenu(this)" aria-haspopup="true" aria-expanded="false"
+          title="Update this section — pick Claude Desktop (no API tokens) or the API.">↻ {{ label }} <span class="update-menu-caret" aria-hidden="true">▾</span></button>
+  <div class="update-menu-pop" data-align="{{ align }}" role="menu">
+    {% for o in options %}
+      {%- if o.href -%}
+      <a href="{{ o.href }}" role="menuitem"
+         class="update-menu-opt{% if o.primary %} update-menu-opt--primary{% endif %}"
+         onclick="this.closest('.update-menu').classList.remove('is-open')"
+         {% if o.title %}title="{{ o.title }}"{% endif %}>
+        <span class="update-menu-opt-icon" aria-hidden="true">{{ o.icon | default('✦') }}</span>
+        <span class="update-menu-opt-text">
+          <span class="update-menu-opt-label">{{ o.label }}</span>
+          {% if o.sub %}<span class="update-menu-opt-sub">{{ o.sub }}</span>{% endif %}
+        </span>
+      </a>
+      {%- elif o.hx_post -%}
+      <button type="button" role="menuitem"
+              class="update-menu-opt{% if o.primary %} update-menu-opt--primary{% endif %}"
+              hx-post="{{ o.hx_post }}"
+              {% if o.hx_vals %}hx-vals='{{ o.hx_vals }}'{% endif %}
+              {% if o.hx_target %}hx-target="{{ o.hx_target }}"{% endif %}
+              hx-swap="{{ o.hx_swap | default('outerHTML') }}"
+              hx-indicator="{{ o.hx_indicator | default('#um-' ~ menu_id ~ '-spin') }}"
+              onclick="this.closest('.update-menu').classList.remove('is-open')"
+              {% if o.title %}title="{{ o.title }}"{% endif %}>
+        <span class="update-menu-opt-icon" aria-hidden="true">{{ o.icon | default('↻') }}</span>
+        <span class="update-menu-opt-text">
+          <span class="update-menu-opt-label">{{ o.label }}</span>
+          {% if o.sub %}<span class="update-menu-opt-sub">{{ o.sub }}</span>{% endif %}
+        </span>
+      </button>
+      {%- elif o.onclick -%}
+      <button type="button" role="menuitem"
+              class="update-menu-opt{% if o.primary %} update-menu-opt--primary{% endif %}"
+              onclick="this.closest('.update-menu').classList.remove('is-open'); {{ o.onclick }}"
+              {% if o.title %}title="{{ o.title }}"{% endif %}>
+        <span class="update-menu-opt-icon" aria-hidden="true">{{ o.icon | default('↻') }}</span>
+        <span class="update-menu-opt-text">
+          <span class="update-menu-opt-label">{{ o.label }}</span>
+          {% if o.sub %}<span class="update-menu-opt-sub">{{ o.sub }}</span>{% endif %}
+        </span>
+      </button>
+      {%- endif -%}
+    {% endfor %}
+  </div>
+  <span class="htmx-indicator update-menu-spin" id="um-{{ menu_id }}-spin" aria-live="polite">working…</span>
+</span>
+{% endmacro %}

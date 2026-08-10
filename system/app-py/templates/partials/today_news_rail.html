@@ -1,5 +1,6 @@
 {# News Dispatch — topic slipcases with AI summaries, redesigned 2026-07-10.
    Context: slipcases, all_topics, active_topic, period, last_updated, total_topics, show_all_topics. #}
+{% from "partials/_update_menu.html" import update_menu %}
 
 {# ── Signal strength colors ── #}
 {% set signal_colors = {
@@ -55,16 +56,19 @@
                   hx-get="/api/partial/today/news-rail?period=month"
                   hx-target="#news-surface" hx-swap="outerHTML">MONTH</button>
         </div>
-        <!-- Update summaries -->
-        <button style="padding:4px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
-                       border:1px solid var(--m-accent);border-radius:var(--m-radius);cursor:pointer;
-                       background:transparent;color:var(--m-accent);transition:all 120ms;"
-                onmouseover="this.style.background='var(--m-accent)';this.style.color='var(--m-on-accent)'"
-                onmouseout="this.style.background='transparent';this.style.color='var(--m-accent)'"
-                onclick="updateNewsSummaries('{{ period }}')"
-                id="news-update-btn">
-          ✦ UPDATE
-        </button>
+        <!-- Update dispatch -->
+        {%- set claude_news_prompt -%}
+Update my Metis news dispatch. Using the metis-rc tools, scan the latest global-health, neglected-tropical-disease, sleeping-sickness/HAT and epidemiology news, write fresh topic summaries, save them, then show me the highlights most relevant to my work.
+        {%- endset -%}
+        {% set news_update_opts = [
+          {'icon': '✦', 'label': 'With Claude Desktop', 'sub': 'free · runs on your subscription, no API tokens',
+           'href': 'claude://claude.ai/new?q=' ~ (claude_news_prompt | trim | urlencode), 'primary': true,
+           'title': 'Open Claude Desktop to scan the news and write summaries — no API key needed.'},
+          {'icon': '↻', 'label': 'With the API', 'sub': 'pick topics & generate summaries now · uses API credit',
+           'onclick': "updateNewsSummaries('" ~ period ~ "')",
+           'title': 'Choose topics and generate fresh summaries via the API.'}
+        ] %}
+        {{ update_menu('news', news_update_opts, label='Update', align='right') }}
       </div>
     </div>
 

@@ -1,3 +1,4 @@
+{% from "partials/_update_menu.html" import update_menu %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +18,7 @@
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
   <!-- Archive design system — loaded after Bootstrap so it overrides -->
-  <link rel="stylesheet" href="/static/styles.css?v=11a">
+  <link rel="stylesheet" href="/static/styles.css?v=11c">
   <!-- Archive micro-animations -->
   <link rel="stylesheet" href="/static/motion.css">
 
@@ -418,18 +419,19 @@
           <button id="mcp-reconnect-btn" style="display:none;" onclick="mcpReconnect()"></button>
         </button>
 
-        <!-- Update button -->
-        <button id="update-btn"
-                onclick="runMetisUpdate()"
-                title="Update — scan news, sync library, check projects"
-                style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;
-                       padding:5px 12px;background:transparent;border:1px solid var(--m-rule);
-                       border-radius:2px;color:var(--m-muted);cursor:pointer;white-space:nowrap;
-                       transition:border-color .15s,color .15s;"
-                onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
-                onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'">
-          Update
-        </button>
+        <!-- Update menu — same two-path popup as every dashboard section -->
+        {%- set claude_global_prompt -%}
+Run my full Metis update. Using the metis-rc tools: scan the latest news and any new literature, refresh my Outbreaks, Events and Funding boards with current items you find on the web (via update_today_board), write my daily brief, then show me a short summary of everything that changed.
+        {%- endset -%}
+        {% set global_update_opts = [
+          {'icon': '✦', 'label': 'With Claude Desktop', 'sub': 'full update on your subscription · no API tokens',
+           'href': 'claude://claude.ai/new?q=' ~ (claude_global_prompt | trim | urlencode), 'primary': true,
+           'title': 'Open Claude Desktop and run a full Metis update — no API key needed.'},
+          {'icon': '↻', 'label': 'Local scan', 'sub': 'news feeds · library · Zotero · projects · free',
+           'onclick': 'runMetisUpdate()',
+           'title': 'Scan your feeds, library and projects locally — no internet search, no tokens.'}
+        ] %}
+        {{ update_menu('global', global_update_opts, align='right', trigger_class='update-menu-trigger--topbar') }}
         <span id="update-spinner" style="display:none;font-family:var(--m-mono);font-size:11px;
               letter-spacing:0.1em;color:var(--m-muted);">UPDATING…</span>
 
@@ -504,7 +506,7 @@
         crossorigin="anonymous"></script>
 
 <!-- Metis app JS -->
-<script src="/static/app.js?v=9j"></script>
+<script src="/static/app.js?v=9l"></script>
 
 <!-- Archive shell JS -->
 <script>
