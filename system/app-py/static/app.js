@@ -2334,3 +2334,49 @@ function dismissPaper(pubId, btn) {
     })
     .catch(function () { /* silent */ });
 }
+
+// ==========================================================================
+// Update menu — open/close the "↻ Update" popover rendered by
+// templates/partials/_update_menu.html. One open at a time; click-away closes.
+// Defined globally so it survives HTMX partial swaps.
+// ==========================================================================
+function _closeAllUpdateMenus() {
+  document.querySelectorAll('.update-menu.is-open').forEach(function (m) {
+    m.classList.remove('is-open');
+    var t = m.querySelector('.update-menu-trigger');
+    if (t) t.setAttribute('aria-expanded', 'false');
+  });
+}
+function toggleUpdateMenu(btn) {
+  var menu = btn.closest('.update-menu');
+  if (!menu) return;
+  var wasOpen = menu.classList.contains('is-open');
+  _closeAllUpdateMenus(); // only one open at a time
+  if (wasOpen) return;
+  // Place the fixed popover from the trigger's viewport rect so it escapes any
+  // overflow:hidden ancestor (short board cards, the navbar controls bar).
+  var pop = menu.querySelector('.update-menu-pop');
+  if (pop) {
+    var r = btn.getBoundingClientRect();
+    pop.style.top = (r.bottom + 6) + 'px';
+    if ((pop.getAttribute('data-align') || 'left') === 'right') {
+      pop.style.left = 'auto';
+      pop.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+    } else {
+      pop.style.right = 'auto';
+      pop.style.left = Math.max(8, r.left) + 'px';
+    }
+  }
+  menu.classList.add('is-open');
+  btn.setAttribute('aria-expanded', 'true');
+}
+// Click outside closes; Esc closes; scroll/resize close (fixed popover won't follow).
+document.addEventListener('click', function (e) {
+  if (e.target.closest('.update-menu')) return;
+  _closeAllUpdateMenus();
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') _closeAllUpdateMenus();
+});
+window.addEventListener('scroll', _closeAllUpdateMenus, true);
+window.addEventListener('resize', _closeAllUpdateMenus);
