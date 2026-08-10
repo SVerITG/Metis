@@ -20,7 +20,7 @@ here is a regression test for a failure that actually happened.
 Destructive tests
 -----------------
 Two tests kill the dashboard. They are opt-in so a routine `pytest` run never takes
-the researcher's dashboard down mid-workday:
+the user's dashboard down mid-workday:
 
     METIS_RELIABILITY_DESTRUCTIVE=1 pytest tests/reliability -m reliability
 

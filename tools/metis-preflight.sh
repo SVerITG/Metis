@@ -98,10 +98,10 @@ if [ "$MODE" = "--report" ]; then
     dirty="$(git_q status --porcelain | wc -l)"
 
     if is_stale; then
-        echo "METIS SYNC: the installed MCP server is STALE vs the source. Tell the researcher to run /mcp and reconnect 'metis-rc' so the new code loads."
+        echo "METIS SYNC: the installed MCP server is STALE vs the source. Tell the user to run /mcp and reconnect 'metis-rc' so the new code loads."
     fi
     [ "${behind:-0}" -gt 0 ] && echo "METIS SYNC: this computer is $behind commit(s) BEHIND the other computer (metis-ph/$branch). Offer to pull."
-    [ "${ahead:-0}"  -gt 0 ] && echo "METIS SYNC: $ahead commit(s) on this computer are NOT pushed. Remind the researcher to push before switching computers."
+    [ "${ahead:-0}"  -gt 0 ] && echo "METIS SYNC: $ahead commit(s) on this computer are NOT pushed. Remind the user to push before switching computers."
     [ "${dirty:-0}"  -gt 0 ] && echo "METIS SYNC: $dirty uncommitted file(s) in the working tree."
     exit 0
 fi
