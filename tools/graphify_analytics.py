@@ -3,7 +3,7 @@
 graphify_analytics.py — Extract knowledge-focused analytics from a Graphify graph.
 
 Called by the Metis dashboard via subprocess using the pipx Python:
-    /home/sverschaeve/.local/share/pipx/venvs/graphifyy/bin/python3 \
+    ~/.local/share/pipx/venvs/graphifyy/bin/python3 \
         tools/graphify_analytics.py [path/to/graph.json]
 
 Outputs JSON to stdout with:

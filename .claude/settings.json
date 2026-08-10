@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/sverschaeve/.local/bin/graphify hook-guard search"
+            "command": "$HOME/.local/bin/graphify hook-guard search"
           }
         ]
       },
@@ -44,7 +44,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/sverschaeve/.local/bin/graphify hook-guard read"
+            "command": "$HOME/.local/bin/graphify hook-guard read"
           }
         ]
       }

@@ -123,7 +123,7 @@ def _extract_structure_llm(text: str) -> dict | None:
 
     Why this exists: the heuristic below only finds action items when the
     transcript already contains a literal "Action items:" header with bullet
-    points. A real meeting — natural speech, "okay Stan, you'll pull the DHIS2
+    points. A real meeting — natural speech, "okay, you'll pull the DHIS2
     data by Friday and I'll draft the ethics amendment" — has no headers and no
     bullets, so the heuristic returns NOTHING. That is why every real meeting
     produced zero action items and the headline feature looked dead.

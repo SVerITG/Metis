@@ -27,7 +27,7 @@ THE POLICY, and why it is calibrated rather than blunt
        (file readers, data profilers, script analysers), LOG everywhere else.
 
        Blanket-masking every tool's output was the obvious move and it is WRONG.
-       Stan is an epidemiologist: GPS coordinates in HAT surveillance data are the
+       The user is an epidemiologist: GPS coordinates in HAT surveillance data are the
        object of study, not a leak. Masking them everywhere would break the real
        work and train him to switch the rail off — which is worse than not having
        one. So we mask where untrusted patient files enter, and elsewhere we make

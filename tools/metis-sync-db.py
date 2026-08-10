@@ -2,7 +2,7 @@
 """metis-sync-db.py — converge Metis's memory across two computers, safely.
 
 THE PROBLEM
-    Stan works from two machines. The CODE syncs (git + the OneDrive folder), but
+    The user works from two machines. The CODE syncs (git + the OneDrive folder), but
     the DATABASE does not: this machine's memory stopped at 8 July while the other
     had 8-13 July. Sessions, agent runs, ideas and reflexions diverged silently.
 

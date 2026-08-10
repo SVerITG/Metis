@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Enrich the thin hat-specialist (5 docs) and ntd (5 docs) knowledge layers with
-open-access HAT/NTD literature matched to Stan's work (gambiense HAT surveillance,
+open-access HAT/NTD literature matched to the user's work (gambiense HAT surveillance,
 elimination monitoring, spatial mapping, DRC)."""
 import sys
 from pathlib import Path

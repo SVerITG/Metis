@@ -4550,7 +4550,7 @@ async def today_system_health(request: Request):
 # was bigger than anything else, so nothing invited a click.
 #
 # The ranking signal already existed and was being wasted: `relevance` is a real
-# embedding score of each item against Stan's own corpus. It was rendered as a
+# embedding score of each item against the user's own corpus. It was rendered as a
 # small chip. Here it chooses the lead story.
 #
 # THE IMAGE PROBLEM (measured 2026-07-14, and it drives the whole layout):

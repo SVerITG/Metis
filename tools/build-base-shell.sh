@@ -61,6 +61,30 @@ git rm -r -q --ignore-unmatch knowledge/courses/epidemiology-foundations \
 # just example data, and the README "See it in action" section references them.
 git add README.md
 
+# ── Safety net: scrub maintainer identity from every tracked text file, so even
+#    if a personal reference slips into `main`, the public base shell never
+#    carries the maintainer's home path, username, or name. Values are derived
+#    dynamically (no personal literals live in this script); extra names come from
+#    a gitignored list (tools/base-shell/scrub-names.txt), also never shipped.
+echo "▸ Scrubbing maintainer identity from tracked text files…"
+HOME_USER="$(id -un)"
+NAME_PATTERNS=""
+[ -f tools/base-shell/scrub-names.txt ] && NAME_PATTERNS="$(grep -vE '^\s*(#|$)' tools/base-shell/scrub-names.txt || true)"
+git ls-files '*.py' '*.sh' '*.js' '*.mjs' '*.html' '*.css' '*.md' '*.json' '*.yaml' '*.yml' '*.txt' '*.toml' '*.cfg' \
+  | while IFS= read -r f; do
+      case "$f" in tools/build-base-shell.sh|tools/base-shell/*) continue;; esac
+      [ -f "$f" ] || continue
+      sed -i \
+        -e "s#/home/${HOME_USER}#\$HOME#g" \
+        -e "s#/mnt/c/Users/${HOME_USER}#\$HOME#g" \
+        -e "s#\b${HOME_USER}\b#user#g" \
+        "$f"
+      for pat in $NAME_PATTERNS; do
+        sed -i -e "s#\b${pat}'s\b#the user's#g" -e "s#\b${pat}\b#the user#g" "$f"
+      done
+    done
+git add -A
+
 git commit -q -m "build: domain-agnostic base shell (generated from main by build-base-shell.sh)" \
   || echo "  (nothing changed)"
 
