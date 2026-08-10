@@ -305,3 +305,6 @@ graphify-out/
 
 # Stray office docs
 *.docx
+
+# Base-shell scrub name list (maintainer identity — never ship)
+tools/base-shell/scrub-names.txt
