@@ -818,6 +818,24 @@ fi
 echo ""
 echo "  → $_PASS validation checks passed, $_FAIL failed"
 
+# ── Pre-fetch the local embedding model (Keystone P0.4) ──────────────────────
+# The runtime (run.sh) forces HF_HUB_OFFLINE=1, so if the model isn't already
+# cached, semantic search / RAG / memory silently do NOTHING on a fresh machine.
+# Download it now, while the installer is online. Best-effort — never fail install.
+if [ -x "$VENV_PYTHON" ]; then
+    echo ""
+    echo "── Pre-caching the local embedding model (one-time, ~200 MB) ──"
+    _EMBED_TIMEOUT=""
+    command -v timeout >/dev/null 2>&1 && _EMBED_TIMEOUT="timeout 600"
+    if $_EMBED_TIMEOUT "$VENV_PYTHON" -c "from metis_mcp.embeddings import embed_query; embed_query('warmup')" >/tmp/metis-embed-warmup.log 2>&1; then
+        echo "  ✓ Embedding model cached — semantic search works offline from first run"
+    else
+        echo "  ⚠ Could not pre-cache the embedding model (offline/blocked or 'embedding'"
+        echo "    extra not installed). It will download on first ONLINE use; until then"
+        echo "    semantic search is degraded. Log: /tmp/metis-embed-warmup.log"
+    fi
+fi
+
 echo ""
 # ── Run setup wizard ─────────────────────────────────────────────────────────
 # Always run the terminal wizard unless already configured.
