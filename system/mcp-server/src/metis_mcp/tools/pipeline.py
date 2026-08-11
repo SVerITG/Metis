@@ -512,6 +512,67 @@ def _kw_match(keyword: str, text: str, mode: str) -> bool:
     return re.search(r"\b" + re.escape(keyword), text) is not None
 
 
+_AGENT_ROUTE_VECS = None  # process cache: list[(slug, description_vector)]
+
+
+def _load_agent_route_vecs():
+    """Embed each specialist's registry description once per process (Keystone P3.7)."""
+    global _AGENT_ROUTE_VECS
+    if _AGENT_ROUTE_VECS is not None:
+        return _AGENT_ROUTE_VECS
+    vecs = []
+    try:
+        import json as _json
+        from metis_mcp.embeddings import embed_document
+        data = _json.loads((paths.root / "system" / "config" / "agent-registry.json").read_text(encoding="utf-8"))
+        agents = data.get("agents", data) if isinstance(data, dict) else data
+        for a in agents:
+            slug = (a.get("slug") or "").strip()
+            desc = (a.get("description") or "").strip()
+            name = (a.get("name") or "").strip()
+            if not slug or slug == "metis" or not desc:
+                continue  # skip the generalist — it's the fallback, not a match target
+            vecs.append((slug, embed_document(f"{name}. {desc}")))
+    except Exception:
+        vecs = []
+    _AGENT_ROUTE_VECS = vecs
+    return vecs
+
+
+def _semantic_route(request: str, min_top: float = 0.56, margin: float = 0.05):
+    """Embedding backstop for uncovered turns: the specialist whose description best
+    matches the request. Returns (slug|None, score). Best-effort — never raises.
+
+    These embeddings are anisotropic (random text sits ~0.5 cosine), so an absolute
+    threshold is meaningless — gibberish passes. Require BOTH a minimum top score AND
+    a clear MARGIN over the 2nd-best, so an ambiguous or nonsense request falls to the
+    generalist instead of a confident WRONG specialist. Verified: real requests
+    (data-analyst 0.71/m0.20, dhis2 0.72/m0.11) route; a mis-ranked case-control
+    (m0.01) and gibberish (m0.03) correctly fall through to metis."""
+    try:
+        import math
+        from metis_mcp.embeddings import embed_query
+        cands = _load_agent_route_vecs()
+        if len(cands) < 2:
+            return None, 0.0
+        q = embed_query(request)
+
+        def _cos(a, b):
+            dot = sum(x * y for x, y in zip(a, b))
+            na = math.sqrt(sum(x * x for x in a))
+            nb = math.sqrt(sum(y * y for y in b))
+            return dot / (na * nb) if na and nb else 0.0
+
+        scored = sorted(((_cos(q, v), slug) for slug, v in cands), reverse=True)
+        top_score, top_slug = scored[0]
+        second_score = scored[1][0]
+        if top_score >= min_top and (top_score - second_score) >= margin:
+            return top_slug, top_score
+        return None, top_score
+    except Exception:
+        return None, 0.0
+
+
 def _parse_intent_stage(request: str, session_id: str) -> dict:
     """Stage 5: select agent(s) + complexity from the DB routing rules (seeded +
     user-learned), word-boundary matched, most-specific first. No match → the
@@ -531,8 +592,17 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
 
     uncovered = not agents
     if uncovered:
-        agents = ["metis"]
-        task_type = "uncovered"  # explicit: no specialist matched → generalist
+        # Semantic fallback (Keystone P3.7): keyword rules reach only ~21/35 agents.
+        # For an un-routed request, pick the specialist whose description best matches
+        # by embedding similarity before defaulting to the generalist. Keyword-first
+        # stays the fast, deterministic, user-owned path; this is only the backstop.
+        sem_slug, _sem_score = _semantic_route(request)
+        if sem_slug:
+            agents = [sem_slug]
+            task_type = "semantic"  # not a keyword match → still measurable as fallback-routed
+        else:
+            agents = ["metis"]
+            task_type = "uncovered"  # explicit: nothing matched → generalist
 
     if matched_rule_id and matched_rule_id > 0:
         try:
