@@ -108,12 +108,14 @@ live server's failed-module count.
 ### PHASE 1 — Seamless install & first-run ("works on my computer, no technical steps")
 *The single biggest gap versus "a scientist just runs it."*
 
-> **Status (2026-08-11): 1.2 ✅ · 1.3 ✅ · 1.4 ✅ shipped to metis-ph.**
+> **Status (2026-08-11): 1.2 ✅ · 1.3 ✅ · 1.4 ✅ · 1.5 ✅ · 1.6 ✅ (WSL side) shipped to metis-ph.**
 > `2d6a84d` (1.2 correct Claude Desktop registration incl. multi-distro `-d`; 1.4 wizard writes the
 > truth — model fallback, populated projects, live-DB path, port docs, empty-topics YAML fix),
-> `2695100` (1.3 wizard self-verification gate: `/api/setup/verify` + green-checks finish; needs a
-> dashboard restart to go live). **Remaining:** 1.1 bundled `.exe` (**needs a Windows Python host** —
-> build not runnable from WSL), 1.5 one-click "adapt to my work", 1.6 detect/offer Claude Desktop + WSL.
+> `2695100` (1.3 wizard self-verification gate: `/api/setup/verify` + green-checks finish),
+> `9f1eafa` (1.5 one-click "adapt Metis to my work" claude:// deep link; 1.6 offer to open the Claude
+> Desktop download). Dashboard route changes (1.3) need a dashboard restart to go live.
+> **Remaining — Windows host only:** 1.1 bundled `.exe` + the winget/WSL-install + native-exe MCP
+> registration parts of 1.6. Step-by-step in `system/install/installer/pyinstaller/BUILD-CHECKLIST.md`.
 
 | # | Item | Why / evidence | Files | Size·Impact |
 |---|---|---|---|---|
