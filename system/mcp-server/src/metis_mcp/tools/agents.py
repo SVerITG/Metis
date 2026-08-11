@@ -72,6 +72,20 @@ async def get_agent_context(agent_slug: str) -> list[TextContent]:
             except Exception as e:
                 parts.append(f"# {filename}\n\nError reading file: {e}")
 
+    # Also include the agent's skill.md (Keystone P3.4). This is where approved
+    # self-improvement proposals are written (self_improvement._skill_path resolves
+    # .claude/skills/<slug>/skill.md, else agents/<slug>/skill.md). Without reading it
+    # here, an "applied" improvement never reached the context the pipeline injects —
+    # so "applied" did not mean "in effect". Same precedence as the writer.
+    skill_fp = paths.root / ".claude" / "skills" / agent_slug / "skill.md"
+    if not skill_fp.exists():
+        skill_fp = agent_dir / "skill.md"
+    if skill_fp.exists():
+        try:
+            parts.append(f"# skill.md\n\n{skill_fp.read_text(encoding='utf-8')}")
+        except Exception as e:
+            parts.append(f"# skill.md\n\nError reading file: {e}")
+
     if not parts:
         return [
             TextContent(
