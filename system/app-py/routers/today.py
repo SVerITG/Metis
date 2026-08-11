@@ -1424,7 +1424,23 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
             timeout=60.0,
         )
         if resp.status_code == 200:
-            narrative = resp.json()["content"][0]["text"].strip()
+            _payload = resp.json()
+            narrative = _payload["content"][0]["text"].strip()
+
+            # Record REAL token usage so the dashboard monitor reflects actual spend
+            # (Keystone B6.3). Background call → session_id="" (feeds totals, not
+            # per-session "who did what"). Cached-input tokens count as input.
+            try:
+                from db import record_token_usage
+                _u = _payload.get("usage", {}) or {}
+                record_token_usage(
+                    "metis", api_model,
+                    (_u.get("input_tokens", 0) or 0) + (_u.get("cache_read_input_tokens", 0) or 0),
+                    _u.get("output_tokens", 0),
+                    task_summary=f"Morning brief ({period_desc})",
+                )
+            except Exception:
+                pass
 
             # Build source items from context — top news with URLs for the template
             source_items: list[dict] = []
