@@ -155,14 +155,15 @@ verifies, and rolls back on failure; the app loads fully offline.
 > vector-indexed like chat), `2d17f9d` (3.9 — `cross_pollination_links` persisted at ingestion so the
 > graph accrues), `e119249` (3.4 — `get_agent_context` now reads `skill.md`, so an applied
 > self-improvement actually reaches the runtime). All verified live.
-> Also shipped: `20ce01a` (3.7 — semantic fallback router for uncovered turns: score-floor +
-> margin so it never confidently mis-routes; verified zero mis-routes), `ac725ee` (3.6 —
-> token-budgeted context assembly, ~1800-char ceiling, prefs-first). MCP reinstalled + smoke HEALTHY.
-> **Remaining:** 3.0 (pipeline EXECUTES RAG + agent hand-off, not just injects recall — the biggest,
-> deepest item; deserves a dedicated design+test session), 3.2 enforce reflexion write-back
-> server-side, 3.3 schedule proposal-drafting + move consolidation off the dashboard scheduler,
-> 3.5 surface the self-improvement loop + startup eval in the UI, 3.8 continuous self-eval harness +
-> drift heatmap.
+> Also shipped: `20ce01a` (3.7 — semantic fallback router, score-floor + margin, zero mis-routes),
+> `ac725ee` (3.6 — token-budgeted context, ~1800-char ceiling, prefs-first), `85ade45` (3.2 — enforce
+> reflexion write-back on uncovered turns + fix uncovered semantics for semantic-routed turns).
+> **7 of ~10 Phase-3 items shipped & verified.** MCP reinstalled + smoke HEALTHY.
+> **Remaining (best done with dashboard-restart verification / a dedicated pass):** 3.3 schedule
+> proposal-drafting + move consolidation off the dashboard-only scheduler (needs scheduler.py +
+> restart to verify), 3.5 surface the self-improvement loop + startup eval in the dashboard UI,
+> 3.8 continuous self-eval harness + drift heatmap, and **3.0 — pipeline EXECUTES RAG + agent
+> hand-off (the biggest, deepest item; dedicated design+test session).**
 
 | # | Item | Why / evidence | Files | Size·Impact |
 |---|---|---|---|---|
