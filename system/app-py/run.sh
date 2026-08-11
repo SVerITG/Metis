@@ -263,7 +263,18 @@ else:
         if free(p):
             print(p); break
     else:
-        print(8080)
+        # 8081-8090 all busy too. Rather than print an occupied 8080 and guarantee a
+        # bind failure → crash-loop → give-up (Keystone P0.7), grab any OS-assigned
+        # free port so Metis ALWAYS starts on *some* port. PORT_FILE captures it, so
+        # the browser and health checks use the real port.
+        import sys
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind(('', 0)); p = s.getsockname()[1]; s.close()
+        sys.stderr.write(
+            "[run.sh] ports 8080-8090 all in use; falling back to %d\n" % p
+        )
+        print(p)
 PYEOF
 )
 
