@@ -172,8 +172,12 @@ verifies, and rolls back on failure; the app loads fully offline.
 > server does NOT make the answer's model call (the calling Claude client does). Delivering them
 > requires a foundational decision: either move primary answer generation server-side (the server
 > calls the API, applies the budget model, compacts) or adopt the client's compaction API. That's a
-> strategic architecture choice, not more wiring — scope it deliberately. **Also remaining:** 3.8
-> continuous self-eval harness + drift heatmap.
+> strategic architecture choice, not more wiring — scope it deliberately.
+> ✅ **3.8 SHIPPED** (`0f9bf6a`): weekly `job_promise_harness` records the harness score to
+> `promise-trend.jsonl`; a "Promise drift" strip on the Metis tab shows the latest pass/fail/warn +
+> a per-run green/red history — "have we lost what we built?" is now a live indicator.
+> **Phase 3 is now COMPLETE except the two architecturally-bounded 3.0 pieces (binding model-tiering,
+> true compaction), which need the Option-A-vs-B decision above.**
 
 | # | Item | Why / evidence | Files | Size·Impact |
 |---|---|---|---|---|
