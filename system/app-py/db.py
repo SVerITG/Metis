@@ -22,6 +22,34 @@ from pathlib import Path
 # the live DB to the SAME location, and the two codebases don't share a module.
 # Keep them in sync.
 
+def _is_usable_db(path: Path) -> bool:
+    """True only if `path` is a real SQLite DB with actual content.
+
+    Guards the migration source. `path.exists()` is dangerously insufficient: a
+    0-byte file opens as a VALID EMPTY SQLite database, so migrating from one
+    silently produces an empty Metis — every note, paper and memory apparently
+    gone, with no error anywhere. Require: non-empty file, readable header, and at
+    least one table.
+    """
+    try:
+        if not path.is_file() or path.stat().st_size == 0:
+            return False
+    except OSError:
+        return False
+
+    try:
+        con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        try:
+            tables = con.execute(
+                "SELECT count(*) FROM sqlite_master WHERE type='table'"
+            ).fetchone()[0]
+            return bool(tables)
+        finally:
+            con.close()
+    except sqlite3.DatabaseError:
+        return False
+
+
 def _migrate_db_to_local(source: Path, dest: Path) -> bool:
     """One-time copy of the live DB to local disk via SQLite's backup API.
 
@@ -97,7 +125,11 @@ def get_db_path() -> Path:
     if local.exists():
         return local
 
-    source = onedrive if onedrive.exists() else (legacy if legacy.exists() else None)
+    # .exists() is NOT enough: SQLite opens a 0-byte file as a valid EMPTY DB, so a
+    # fresh install / restore would "migrate" from the OneDrive-orphan 0-byte artifact
+    # and come up with all memory silently gone. Require a proven-USABLE source. This
+    # mirrors resolve_live_db() in the MCP server's config.py — keep them in sync.
+    source = next((p for p in (onedrive, legacy) if _is_usable_db(p)), None)
     if source is not None and _migrate_db_to_local(source, local):
         return local
     # Fresh install (no existing DB) → create on local disk.
@@ -129,7 +161,11 @@ def db_query(sql: str, params=(), default=None) -> list[dict]:
             return [dict(row) for row in rows]
         finally:
             conn.close()
-    except (FileNotFoundError, sqlite3.OperationalError):
+    except (OSError, sqlite3.DatabaseError):
+        # OSError covers FileNotFoundError + a read-only/full data dir (mkdir in
+        # get_db_path); sqlite3.DatabaseError covers OperationalError ("database is
+        # locked") AND "database disk image is malformed" (corruption). Degrade to
+        # the default instead of 500-ing every panel.
         return default
 
 
@@ -148,7 +184,11 @@ def db_scalar(sql: str, params=(), default=0):
             return row[0] if row[0] is not None else default
         finally:
             conn.close()
-    except (FileNotFoundError, sqlite3.OperationalError):
+    except (OSError, sqlite3.DatabaseError):
+        # OSError covers FileNotFoundError + a read-only/full data dir (mkdir in
+        # get_db_path); sqlite3.DatabaseError covers OperationalError ("database is
+        # locked") AND "database disk image is malformed" (corruption). Degrade to
+        # the default instead of 500-ing every panel.
         return default
 
 
@@ -249,7 +289,11 @@ def run_migrations() -> list[str]:
 
         conn.commit()
         conn.close()
-    except (FileNotFoundError, sqlite3.OperationalError):
+    except (OSError, sqlite3.DatabaseError):
+        # A read-only/full data dir (mkdir in get_db_path), a locked DB, or a
+        # corrupt DB must not crash startup — migrations are best-effort and retried
+        # next boot. (main.py calls this in the lifespan; an escape here would fail
+        # uvicorn startup and trigger the supervisor's give-up-after-8 path.)
         pass
 
     return changes
