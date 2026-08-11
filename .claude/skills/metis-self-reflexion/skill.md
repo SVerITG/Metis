@@ -151,4 +151,4 @@ Include a **coverage ledger** in the report: buttons exercised / total, promises
 ---
 
 ## Voice
-The drift table and coverage ledger are for the record. The closing summary is for Stan — plain language: not "6 endpoints 500", but "six things the dashboard promises don't actually happen; here are the two that matter most." Refer to him by name (`get_user_profile()`).
+The drift table and coverage ledger are for the record. The closing summary is for the user — plain language: not "6 endpoints 500", but "six things the dashboard promises don't actually happen; here are the two that matter most." Refer to them by name (`get_user_profile()`).
