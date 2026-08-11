@@ -360,6 +360,14 @@ async def _generate_outline_ai(title: str, audience: str, depth: str, n_slides: 
         if resp.status_code != 200:
             return None
         data = resp.json()
+        try:  # record real token usage for the monitor (Keystone B6.3)
+            from db import record_token_usage
+            _u = data.get("usage", {}) or {}
+            record_token_usage("presentation-maker", _CLAUDE_MODEL,
+                               _u.get("input_tokens", 0), _u.get("output_tokens", 0),
+                               task_summary="Slide generation")
+        except Exception:
+            pass
         raw = data["content"][0]["text"]
     except Exception:
         return None
