@@ -131,7 +131,22 @@ def _theme_from(texts: list[str], top_n: int = 3) -> list[tuple[str, int]]:
                 timeout=20.0,
             )
             if resp.status_code == 200:
-                raw = resp.json()["content"][0]["text"].strip()
+                _payload = resp.json()
+                try:  # record real token usage for the dashboard monitor (Keystone B6.3)
+                    _u = _payload.get("usage", {}) or {}
+                    with connect(paths.db) as _c:
+                        _c.execute(
+                            "INSERT INTO agent_runs (agent_slug, task_summary, status, created_at, "
+                            "input_tokens, output_tokens, model, session_id) VALUES (?,?,?,?,?,?,?,?)",
+                            ("metis", "Reflexion theme extraction", "completed",
+                             datetime.datetime.now().isoformat(),
+                             int(_u.get("input_tokens", 0) or 0), int(_u.get("output_tokens", 0) or 0),
+                             model_for("brief"), ""),
+                        )
+                        _c.commit()
+                except Exception:
+                    pass
+                raw = _payload["content"][0]["text"].strip()
                 start, end = raw.find("["), raw.rfind("]") + 1
                 if start >= 0 and end > start:
                     parsed = _json.loads(raw[start:end])
