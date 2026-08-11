@@ -108,6 +108,13 @@ live server's failed-module count.
 ### PHASE 1 — Seamless install & first-run ("works on my computer, no technical steps")
 *The single biggest gap versus "a scientist just runs it."*
 
+> **Status (2026-08-11): 1.2 ✅ · 1.3 ✅ · 1.4 ✅ shipped to metis-ph.**
+> `2d6a84d` (1.2 correct Claude Desktop registration incl. multi-distro `-d`; 1.4 wizard writes the
+> truth — model fallback, populated projects, live-DB path, port docs, empty-topics YAML fix),
+> `2695100` (1.3 wizard self-verification gate: `/api/setup/verify` + green-checks finish; needs a
+> dashboard restart to go live). **Remaining:** 1.1 bundled `.exe` (**needs a Windows Python host** —
+> build not runnable from WSL), 1.5 one-click "adapt to my work", 1.6 detect/offer Claude Desktop + WSL.
+
 | # | Item | Why / evidence | Files | Size·Impact |
 |---|---|---|---|---|
 | 1.1 | **Build & ship the bundled `.exe`** | The only truly non-technical installer; scaffolded, never built. Must bundle the embedding model and register MCP pointing at the frozen exe. Needs a Windows Python host. | `system/install/installer/pyinstaller/` (spec, launcher, build ps1, README:59-60); Inno `bundled` DefaultType | L·★★★ |
