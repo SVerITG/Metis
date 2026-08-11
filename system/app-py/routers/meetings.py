@@ -159,7 +159,16 @@ def _extract_structure_llm(text: str) -> dict | None:
         if resp.status_code != 200:
             log.warning("meeting extract: LLM HTTP %s — falling back to heuristic", resp.status_code)
             return None
-        raw = resp.json()["content"][0]["text"].strip()
+        _payload = resp.json()
+        try:  # record real token usage for the monitor (Keystone B6.3)
+            from db import record_token_usage
+            _u = _payload.get("usage", {}) or {}
+            record_token_usage("meeting-memory", model_for("brief"),
+                               _u.get("input_tokens", 0), _u.get("output_tokens", 0),
+                               task_summary="Meeting action-item extraction")
+        except Exception:
+            pass
+        raw = _payload["content"][0]["text"].strip()
         start, end = raw.find("{"), raw.rfind("}") + 1
         if start < 0 or end <= start:
             return None

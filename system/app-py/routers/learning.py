@@ -1008,7 +1008,16 @@ def _generate_card(domain: str, topic: str) -> tuple[str, str] | None:
         )
         if resp.status_code != 200:
             return None
-        raw = resp.json()["content"][0]["text"].strip()
+        _payload = resp.json()
+        try:  # record real token usage for the monitor (Keystone B6.3)
+            from db import record_token_usage
+            _u = _payload.get("usage", {}) or {}
+            record_token_usage("learning-coach", model_for("brief"),
+                               _u.get("input_tokens", 0), _u.get("output_tokens", 0),
+                               task_summary="Flashcard generation")
+        except Exception:
+            pass
+        raw = _payload["content"][0]["text"].strip()
         s, e = raw.find("{"), raw.rfind("}") + 1
         if s < 0 or e <= s:
             return None
