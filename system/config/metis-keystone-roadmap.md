@@ -287,6 +287,14 @@ speculative/cascade routing, per-agent token attribution).*
 5. **Quality-evaluator cascade** instead of the `word_count>40→deep` heuristic (`pipeline.py:619`):
    cheap model first, escalate only on a failed check.
 
+**BUILD STATUS (2026-08-11):** ✅ **B6.2 shipped** (`dd9e8a6` — "who did what" strip on the Metis
+Overview, reads `agent_runs` per session, refreshes 30s). ✅ **B6.3 started** (`50b13ca` —
+`db.record_token_usage` + wired into the morning-brief call so the monitor shows REAL tokens; the
+same one-liner still needs adding at news-summary/meetings/learning/teach/improvement/paperqa).
+✅ **B6.1 display-ready** (the strip renders "working…" for `status='running'`; the dispatch-write
+that SETS 'running' is the remaining piece, pairs with 3.0). ⏳ Prompt caching (wire the dead
+`cache_helpers`), true compaction, and binding model-tiering remain (compaction + tiering pair with 3.0).
+
 **Builds (after the evaluation shows the gaps):**
 - **B6.1 — Live "who's working now":** write a `'running'` `agent_runs` row / `agent_start`
   session_event at dispatch + a polled `/api/partial/metis/active` partial keyed on the live session.
