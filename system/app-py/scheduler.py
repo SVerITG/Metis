@@ -432,9 +432,38 @@ def job_evening_reflexion() -> None:
         total = (result.get("totals", {}) or {}).get("reflexions", 0) if isinstance(result, dict) else 0
         # Close the loop: distil recurring themes into semantic memory + prune working memory.
         cons = consolidate_reflexions()
+        # Schedule the drafting step (Keystone P3.3): when themes accumulate, auto-create a
+        # DRAFT proposal for one-click human review — previously this never ran, so themes
+        # reached semantic memory but never became an actionable proposal. Guarded so we
+        # don't pile up duplicate drafts for an agent that already has one open.
+        drafted = 0
+        try:
+            from metis_mcp.tools.improvement import draft_self_improvement_proposal
+            import sqlite3 as _sq
+            from metis_mcp.config import paths as _paths
+            _con = _sq.connect(str(_paths.db))
+            try:
+                open_slugs = {r[0] for r in _con.execute(
+                    "SELECT DISTINCT agent_slug FROM skill_improvement_proposals "
+                    "WHERE status IN ('draft', 'pending')"
+                ).fetchall()}
+            except Exception:
+                open_slugs = set()
+            _con.close()
+            for _a in (agents or [])[:8]:
+                slug = (_a.get("agent_slug") or _a.get("slug") or _a.get("agent")
+                        or _a.get("name")) if isinstance(_a, dict) else None
+                if not slug or slug in open_slugs:
+                    continue
+                res = draft_self_improvement_proposal(slug)
+                if isinstance(res, dict) and res.get("status") not in ("empty", None, "error"):
+                    drafted += 1
+        except Exception as _exc:
+            log.warning("[scheduler] proposal drafting skipped: %s", _exc)
         msg = (f"Aggregated {total} reflexion(s) across {len(agents)} agent(s); "
                f"consolidated {cons['semantic_written']} new semantic node(s), "
-               f"pruned {cons['working_memory_pruned']} stale working-memory row(s).")
+               f"pruned {cons['working_memory_pruned']} stale working-memory row(s); "
+               f"drafted {drafted} improvement proposal(s).")
         _log_job("evening_reflexion", "ok", msg)
         log.info("[scheduler] evening_reflexion done: %s", msg)
     except Exception as exc:
