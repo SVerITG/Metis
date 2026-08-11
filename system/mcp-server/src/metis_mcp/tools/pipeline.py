@@ -908,7 +908,23 @@ def _assemble_context_stage(intent: dict, session_id: str) -> str:
     except Exception:
         pass
 
-    return "\n\n".join(b for b in (pref_block, related, recent) if b)
+    # Token/char budget (Keystone P3.6): assemble in priority order — standing
+    # preferences, then question-recall, then recency — and stop before a fixed
+    # ceiling, so injected context stays "surgical" no matter how much matched.
+    _BUDGET = 1800  # ~450 tokens of context
+    out: list[str] = []
+    used = 0
+    for b in (pref_block, related, recent):
+        if not b:
+            continue
+        if used + len(b) > _BUDGET:
+            head = b[: max(0, _BUDGET - used)].rstrip()
+            if head:
+                out.append(head + "\n…(trimmed to fit context budget)")
+            break
+        out.append(b)
+        used += len(b) + 2
+    return "\n\n".join(out)
 
 
 # ── Stage 8: save_session_event (MCP tool) ────────────────────────────────────
