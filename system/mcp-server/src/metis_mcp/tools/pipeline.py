@@ -813,7 +813,32 @@ def _assemble_context_stage(intent: dict, session_id: str) -> str:
     except Exception:
         pass
 
-    return "\n\n".join(b for b in (pref_block, recent) if b)
+    # Question-conditioned recall over the REAL memory + work corpus (Keystone P3.1).
+    # The `recent` block above is recency + LIKE only and never touches the 768-d
+    # vector layers. Add the same hybrid vector+keyword engine used at ingestion
+    # (_cross_pollinate_core), keyed on the ACTUAL request, so relevant prior papers,
+    # notes, meetings, projects and ideas surface BY CONSTRUCTION — not only if the
+    # model later chooses to call a recall tool. Degrades to keyword-only if the
+    # embedding model is unavailable (the engine handles that internally).
+    related = ""
+    try:
+        req = (intent.get("_request", "") or "").strip()
+        if req:
+            from metis_mcp.tools.ideas import _cross_pollinate_core
+            matches = _cross_pollinate_core(req, max_results=5) or []
+            lines = []
+            for m in matches:
+                title = (m.get("title") or m.get("text") or "").strip()
+                src = (m.get("source") or m.get("type") or "").strip()
+                if title:
+                    lines.append(f"- {('[' + src + '] ') if src else ''}{title[:120]}")
+            if lines:
+                related = ("Related from your library & past work (recall — ground your "
+                           "answer in these where relevant):\n" + "\n".join(lines))
+    except Exception:
+        pass
+
+    return "\n\n".join(b for b in (pref_block, related, recent) if b)
 
 
 # ── Stage 8: save_session_event (MCP tool) ────────────────────────────────────
