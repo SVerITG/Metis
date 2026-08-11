@@ -722,6 +722,22 @@
   <!-- ===== Actions ===== -->
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-bottom:2rem;">
 
+    <!-- Adapt Metis to my work (Keystone P1.5) — opens Claude with a prompt that
+         drives the existing detect_projects / connect_project_folder /
+         scan_project_scripts tools over the user's real folders, then writes back. -->
+    {%- set adapt_prompt -%}
+Adapt Metis to my existing work. Using the metis-rc tools: run detect_projects to find my research and code folders; for each real one, connect it with connect_project_folder and scan its scripts with scan_project_scripts to build a data dictionary; record each as a project and update my profile topics to match what you find. Then show me a summary of the projects and topics you added — and ask me before adding anything you're unsure about.
+    {%- endset -%}
+    <div class="card">
+      <h3 style="margin:0 0 0.5rem;">✦ Adapt Metis to my work</h3>
+      <p style="color:var(--text-muted);font-size:0.875rem;margin:0 0 1rem;">
+        Let Metis scan your existing folders, projects and code and configure itself
+        to what you're actually working on. Opens Claude Desktop — no API tokens.
+      </p>
+      <a href="claude://claude.ai/new?q={{ adapt_prompt | trim | urlencode }}"
+         class="btn btn--primary" style="text-decoration:none;">Scan my work with Claude</a>
+    </div>
+
     <!-- Re-run full wizard -->
     <div class="card">
       <h3 style="margin:0 0 0.5rem;">Re-run full wizard</h3>

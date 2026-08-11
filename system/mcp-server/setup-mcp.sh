@@ -505,9 +505,19 @@ elif [ "$_OS" = "Linux" ] && grep -qi microsoft /proc/version 2>/dev/null && [ !
   if [ ! -f "$_CD_EXE" ] && [ ! -f "$_CD_EXE2" ]; then
     echo ""
     echo "── Claude Desktop ──"
-    echo "  Claude Desktop is not installed on this Windows machine."
-    echo "  Download from: https://claude.ai/download"
-    echo "  Metis connects to Claude Desktop automatically after install."
+    echo "  Claude Desktop isn't installed on this Windows machine — Metis needs it"
+    echo "  (or Claude Code) to answer questions (Keystone P1.6)."
+    if [ -t 0 ]; then
+      printf "  Open the download page now? [Y/n] "
+      read -r _ans
+      case "${_ans:-Y}" in
+        [Nn]*) : ;;
+        *) cmd.exe /c start "" "https://claude.ai/download" >/dev/null 2>&1 \
+             || powershell.exe -NoProfile -Command "Start-Process 'https://claude.ai/download'" >/dev/null 2>&1 \
+             || true ;;
+      esac
+    fi
+    echo "  Download: https://claude.ai/download — Metis connects automatically after you install it."
   fi
   unset _WIN_USER _CD_EXE _CD_EXE2
 fi
