@@ -603,6 +603,14 @@
         <div style="padding:24px;">{{ skeleton_block(rows=3) }}</div>
       </div>
 
+      {{ sec_label("Startup self-check", tail="BOOT HEALTH", style="margin-bottom:12px;") }}
+      <div id="metis-startup-eval-body"
+           hx-get="/api/partial/metis/startup-eval"
+           hx-trigger="load delay:720ms"
+           hx-swap="innerHTML">
+        <div class="panel" style="padding:14px 18px;margin-bottom:24px;">{{ skeleton_block(rows=1) }}</div>
+      </div>
+
       {{ sec_label("Consent ledger", tail="ACCESS HISTORY", style="margin-bottom:12px;") }}
       <div class="panel" id="metis-consent-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/consent"
