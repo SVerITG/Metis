@@ -205,11 +205,19 @@ def run():
         # Don't block server start if migrations module fails to import.
         _logging.getLogger("metis").warning("Schema migration check failed: %s", _exc)
 
-    # Self-diagnose and log a health summary (never blocks startup).
+    # Self-diagnose in the BACKGROUND (Keystone P0.3). The self-check runs run_doctor()
+    # — filecmp over every source file, markdown globs, socket probes — all slow on
+    # DrvFs. Running it synchronously here put it on the MCP initialize/handshake path,
+    # where a cold start could exceed Claude Desktop's connect timeout and mark the
+    # server failed. The health snapshot it writes is read after the fact, so it does
+    # not need to finish before we start serving tools.
     try:
-        _startup_selfcheck()
+        import threading as _threading
+        _threading.Thread(
+            target=_startup_selfcheck, name="metis-selfcheck", daemon=True
+        ).start()
     except Exception as _exc:
-        _logging.getLogger("metis").warning("Startup self-check failed: %s", _exc)
+        _logging.getLogger("metis").warning("Startup self-check thread failed to start: %s", _exc)
 
     app.run()
 

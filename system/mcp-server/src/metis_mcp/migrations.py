@@ -119,6 +119,10 @@ def run_migrations(db_path: Path | str) -> dict:
     errors: list[tuple[str, str]] = []
 
     with sqlite3.connect(str(db_path)) as conn:
+        # Ride out a transient write lock (the dashboard may be mid-write when the MCP
+        # server starts) instead of immediately raising "database is locked" and
+        # skipping the migration until the next boot (Keystone P0.5).
+        conn.execute("PRAGMA busy_timeout=5000")
         _ensure_history_table(conn)
         already = {row[0] for row in conn.execute("SELECT name FROM _schema_migrations")}
 
