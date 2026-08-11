@@ -253,6 +253,14 @@
         <div style="padding:24px;">{{ skeleton_block(rows=2) }}</div>
       </div>
 
+      {{ sec_label("Who did what", tail="YOUR LAST SESSION", style="margin-bottom:12px;") }}
+      <div id="metis-who-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/who-did-what"
+           hx-trigger="load delay:60ms, every 30s"
+           hx-swap="innerHTML">
+        <div class="panel" style="padding:14px 18px;">{{ skeleton_block(rows=2) }}</div>
+      </div>
+
       <details id="metis-runs-details">
         <summary style="list-style:none;cursor:pointer;user-select:none;margin-bottom:12px;" onclick="metisRunsToggle(this)">
           <h2 class="sec-label" style="margin-bottom:0;pointer-events:none;display:flex;align-items:center;">
