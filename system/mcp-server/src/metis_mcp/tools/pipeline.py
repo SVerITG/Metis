@@ -1154,6 +1154,27 @@ async def run_metis(
 
     # ── Stage 7: Surgical context assembly ────────────────────────────────
     context = _assemble_context_stage(intent, session_id)
+
+    # Stage 7b — RAG grounding BY CONSTRUCTION (Keystone 3.0). Previously the pipeline
+    # only TOLD the model to search the library; it never did. For research-oriented,
+    # non-trivial turns, actually query the knowledge layers (library + backgrounds)
+    # and inject the top cited chunks, so answers are grounded even if the model never
+    # elects to call the RAG tool. Gated + bounded so quick turns stay fast; best-effort.
+    _tt, _cx = intent.get("task_type"), intent.get("complexity")
+    if _tt in ("literature", "methods", "phd") or (
+        _tt in ("general", "semantic", "uncovered") and _cx in ("standard", "deep", "chain")
+    ):
+        try:
+            from metis_mcp.tools.knowledge_db import search_pdf_knowledge as _rag_search
+            _rag = await _rag_search(request, top_k=4)
+            _rag_text = _rag[0].text if _rag else ""
+            _low = _rag_text.lower()[:80]
+            if _rag_text and "nothing" not in _low and "no chunks" not in _low and "not indexed" not in _low:
+                context = ((context + "\n\n") if context else "") + \
+                    "Grounding from your library (cite these where relevant):\n" + _rag_text[:1400]
+        except Exception:
+            pass
+
     if context:
         lines.append(f"**Context:** {len(context)} chars assembled")
 
