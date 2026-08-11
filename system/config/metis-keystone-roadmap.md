@@ -240,7 +240,61 @@ speculative/cascade routing, per-agent token attribution).*
   0 / never written (the review found `log_agent_run` is behavioral — if agents don't call it, the
   monitor undercounts). Make token capture reliable (server-side) so the monitor reflects reality.
 
+**EVALUATION RESULTS (run 2026-08-11, code trace + web benchmark):**
+
+*Token efficiency (E6.1):*
+- **Model tiering is real in DATA but ADVISORY in practice.** `_BUDGET_MAP`/`_allocate_budget`
+  (`pipeline.py:802-812`) + `models.yaml:50-57` correctly map quick→Haiku, standard→Sonnet,
+  deep/chain→Opus — but `run_metis` only PRINTS the model (`pipeline.py:1148-1153`) and returns an
+  instruction sheet; there is no `messages.create` in the pipeline, so the calling Claude client isn't
+  bound to it. Peripheral synthesis routers (briefs/news/slides/paperqa) DO use cheap models — but
+  statically per-feature, decoupled from the complexity tier.
+- **"Compaction with retention" is overstated — there is NO conversation summarization.** The
+  `max_turns` guard truncates ("start a new session", `pipeline.py:1055-1086`); the 80% auto-handoff
+  is a **DB-state card**, not a conversation summary (`handoff.py:117-216`); session summaries are
+  voluntary. Raw turns are dropped, not summarized. This is the biggest gap vs best practice
+  (Anthropic's Compaction API / anchored iterative summarization).
+- **Prompt caching is ~1 of 7 call sites; `cache_helpers.py` (build_system_with_cache /
+  build_agent_system) is DEAD CODE** — never imported. `token-guardrails.md` mandates caching but the
+  code doesn't follow its own policy. Agent system prompts (the biggest stable blocks) are never cached.
+- **Good by construction:** surgical context budget (`_BUDGET=1800`, P3.6) and efficient routing (P3.7).
+
+*Monitoring & transparency (E6.2):*
+- **Token monitor is real SQL over `agent_runs` but STRUCTURALLY UNDERCOUNTS to ~0.** `log_agent_run`
+  defaults tokens to 0 (`agents.py:101-111`) and **no caller ever passes real counts** — the template
+  even has an `all_tokens_zero` fallback to run-counts (`metis_token_monitor.html:30,38-56`). It
+  measures *runs* reliably, *tokens* only cosmetically. Real token numbers exist only in the demo seed.
+- **Agent-activity views exist** (runs, agents directory) but **`agent_spans` is dead instrumentation**
+  — `start_span/log_span/end_span` (`observability.py:72-155`) are never called, so the trace
+  waterfall is always empty. `session_events` ARE written but **no dashboard router reads them**.
+- **Live "who's working now": NONE** — `agent_runs.status='running'` is never set (template ready at
+  `metis_runs.html:29-30`); no active-session poll. **Per-answer "who did what": no surface.**
+- **Agent voices exist** (`agents/<slug>/system-prompt.md`) but are deliberately hidden per the MCP
+  server instructions ("never say 'routing to agent X'").
+
+**Prioritized work (evidence-based; sources in the eval run):**
+1. **Prompt caching everywhere stable** — wire the already-written-but-dead `cache_helpers` into every
+   real API call (meetings/learning/teach/improvement/paperqa + agent system prompts). ~50-90% off
+   cached prefixes; highest-leverage, lowest-effort. *(Anthropic prompt caching.)*
+2. **True conversation compaction with retention** — at ~60-70% context, sliding-window/anchored
+   iterative summarization into a persistent state + prune raw events; adopt Anthropic's Compaction API
+   rather than the turn-cap-and-abandon today. *(Anthropic context-engineering.)*
+3. **Fix token capture (B6.3 precondition)** — capture real input/output tokens + model at every
+   `log_agent_run` site (or from the API response) so the monitor stops reading ~0. Without this, all
+   token monitoring and per-agent cost is cosmetic.
+4. **Make model tiering binding OR reframe the claim honestly** — either apply `_BUDGET_MAP` to a real
+   call, or document that the client controls the model and stop implying enforced tiering.
+5. **Quality-evaluator cascade** instead of the `word_count>40→deep` heuristic (`pipeline.py:619`):
+   cheap model first, escalate only on a failed check.
+
 **Builds (after the evaluation shows the gaps):**
+- **B6.1 — Live "who's working now":** write a `'running'` `agent_runs` row / `agent_start`
+  session_event at dispatch + a polled `/api/partial/metis/active` partial keyed on the live session.
+- **B6.2 — Per-answer "who did what":** a `/api/partial/metis/session/{id}` view grouping the
+  already-written `session_events` (`"[agent_slug] summary"` results) into a contributor timeline;
+  optionally revive `agent_spans` by actually calling the span tools from the pipeline.
+- **B6.3 — Per-agent token attribution:** depends on #3 above (plumbing + by-agent query ready at
+  `metis_tab.py:828-849`; only real counts are missing).
 - **B6.1 — Live "who's working now."** Surface, in real time, which agent(s) a prompt is being routed
   to / handled by — in the dashboard (and, where possible, echoed in the chat via the `run_metis`
   return). Reuse the routing decision (`_parse_intent_stage`) + `session_events` classification rows.
