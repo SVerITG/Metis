@@ -148,6 +148,13 @@ async def save_capture(request: Request, text: str = Form(...)):
                 "INSERT INTO ideas (text, idea_type, created_at) VALUES (?, ?, ?)",
                 (clean_text, idea_type, now),
             )
+            # Vector-index it too, so a dashboard-captured idea is as findable by
+            # semantic recall as a chat-captured one (Keystone P3.10). Best-effort.
+            try:
+                from metis_mcp.tools.ideas import _embed_episodic  # type: ignore
+                _embed_episodic(clean_text, idea_type)
+            except Exception:
+                pass
 
         # Cross-pollination — auto-surface for ideas and questions
         connections_html = ""

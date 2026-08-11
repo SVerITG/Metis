@@ -114,6 +114,41 @@ def _iso_week(dt: datetime.datetime) -> str:
     return f"{cal[0]}-W{cal[1]:02d}"
 
 
+def _embed_episodic(content: str, event_type: str = "idea", session_id: str = "") -> bool:
+    """Embed `content` into episodic_memory + vec_episodic so vector recall and
+    cross-pollination can find it later. Best-effort — returns False (never raises)
+    if the embedding model / sqlite-vec is unavailable. Shared by chat capture_idea
+    AND the dashboard capture path, so an idea is equally retrievable no matter where
+    it was entered (Keystone P3.10)."""
+    if not (content or "").strip():
+        return False
+    try:
+        import datetime as _dt
+        import sqlite_vec as _svec
+        from metis_mcp.embeddings import embed_document
+        from metis_mcp.tools.vector_memory import _setup_tables, _encode_vec
+
+        _vec = embed_document(content)
+        with connect(paths.db) as _conn:
+            _conn.enable_load_extension(True)
+            _svec.load(_conn)
+            _conn.enable_load_extension(False)
+            _setup_tables(_conn)
+            _cur = _conn.execute(
+                "INSERT INTO episodic_memory (session_id, event_type, content, metadata, created_at)"
+                " VALUES (?, ?, ?, '{}', ?)",
+                (session_id, event_type, content, _dt.datetime.now().isoformat()),
+            )
+            _conn.execute(
+                "INSERT INTO vec_episodic (rowid, embedding) VALUES (?, ?)",
+                (_cur.lastrowid, _encode_vec(_vec)),
+            )
+            _conn.commit()
+        return True
+    except Exception:
+        return False
+
+
 def _cross_pollinate_core(content: str, max_results: int = 5) -> list[dict]:
     """Hybrid vector + keyword cross-pollination with RRF merge and title dedup.
 
@@ -268,31 +303,8 @@ async def capture_idea(
             conn.commit()
 
         # Also embed into episodic memory so vector cross-pollination can find it
-        try:
-            import struct as _struct
-            import sqlite_vec as _svec
-            from metis_mcp.embeddings import embed_document
-            from metis_mcp.tools.vector_memory import _setup_tables, _encode_vec
-
-            _vec = embed_document(content)
-            _now2 = now.isoformat()
-            with connect(paths.db) as _conn:
-                _conn.enable_load_extension(True)
-                _svec.load(_conn)
-                _conn.enable_load_extension(False)
-                _setup_tables(_conn)
-                _cur2 = _conn.execute(
-                    "INSERT INTO episodic_memory (session_id, event_type, content, metadata, created_at)"
-                    " VALUES ('', 'idea', ?, '{}', ?)",
-                    (content, _now2),
-                )
-                _conn.execute(
-                    "INSERT INTO vec_episodic (rowid, embedding) VALUES (?, ?)",
-                    (_cur2.lastrowid, _encode_vec(_vec)),
-                )
-                _conn.commit()
-        except Exception:
-            pass  # non-fatal: idea already saved to SQL above
+        # (shared helper — same path the dashboard capture now uses; Keystone P3.10).
+        _embed_episodic(content, "idea")
 
         lines = [
             f"Idea captured (week {week}).",
