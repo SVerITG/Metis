@@ -824,6 +824,32 @@ def job_db_sync() -> None:
         _log_job("db_sync", "error", str(exc)[:300])
 
 
+def job_promise_harness() -> None:
+    """Run the promise harness weekly and record the score to promise-trend.jsonl, so
+    "have we lost what we built?" becomes a live drift indicator instead of a manual
+    investigation (Keystone 3.8). Counts the harness's PASS/FAIL/WARN markers."""
+    import subprocess
+    import json as _json
+    import datetime as _dt
+    root = os.environ.get("METIS_RC_ROOT")
+    if not root:
+        _log_job("promise_harness", "skip", "METIS_RC_ROOT not set"); return
+    script = Path(root) / "tests" / "functional" / "run_metis_promises.sh"
+    if not script.exists():
+        _log_job("promise_harness", "skip", "harness not found"); return
+    try:
+        out = subprocess.run(["bash", str(script)], capture_output=True, text=True,
+                             cwd=root, timeout=300).stdout
+        p, f, w = out.count("✅ PASS"), out.count("🔴 FAIL"), out.count("🟡 WARN")
+        trend = Path(root) / "system" / "config" / "promise-trend.jsonl"
+        with open(trend, "a", encoding="utf-8") as fh:
+            fh.write(_json.dumps({"ts": _dt.datetime.now().isoformat(timespec="seconds"),
+                                  "pass": p, "fail": f, "warn": w}) + "\n")
+        _log_job("promise_harness", "ok", f"{p} pass / {f} fail / {w} warn")
+    except Exception as exc:
+        _log_job("promise_harness", "error", str(exc)[:200])
+
+
 JOB_FUNCS: dict[str, callable] = {
     "db_sync":               job_db_sync,
     "embedding_backfill":    job_embedding_backfill,
@@ -832,6 +858,7 @@ JOB_FUNCS: dict[str, callable] = {
     "library_index":         job_library_index,
     "inbox_process":         job_inbox_process,
     "evening_reflexion":     job_evening_reflexion,
+    "promise_harness":       job_promise_harness,
     "memory_consolidation":  job_memory_consolidation,
     "weekly_summary":        job_weekly_summary,
     "nightly_backup":        job_nightly_backup,
@@ -849,6 +876,7 @@ JOB_LABELS: dict[str, str] = {
     "library_index":        "Library index",
     "inbox_process":        "Inbox processing",
     "evening_reflexion":    "Evening reflexion",
+    "promise_harness":      "Promise harness (drift)",
     "memory_consolidation": "Nightly memory consolidation",
     "weekly_summary":       "Weekly summary",
     "nightly_backup":       "Nightly DB backup",
@@ -876,6 +904,7 @@ JOB_DEFAULTS: dict[str, dict] = {
     "board_refresh":        {"enabled": True, "time": "09:35", "day": "mon"},
     "literature_discovery": {"enabled": True, "time": "09:15", "day": "mon"},
     "evening_reflexion":    {"enabled": True, "time": "09:40"},
+    "promise_harness":      {"enabled": True, "time": "10:10", "day": "sun"},
     "memory_consolidation": {"enabled": True, "time": "09:45"},
     "weekly_summary":       {"enabled": True, "time": "09:50", "day": "mon"},
     "nightly_backup":       {"enabled": True, "time": "09:55"},
