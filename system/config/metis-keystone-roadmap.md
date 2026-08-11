@@ -158,12 +158,14 @@ verifies, and rolls back on failure; the app loads fully offline.
 > Also shipped: `20ce01a` (3.7 — semantic fallback router, score-floor + margin, zero mis-routes),
 > `ac725ee` (3.6 — token-budgeted context, ~1800-char ceiling, prefs-first), `85ade45` (3.2 — enforce
 > reflexion write-back on uncovered turns + fix uncovered semantics for semantic-routed turns).
-> **7 of ~10 Phase-3 items shipped & verified.** MCP reinstalled + smoke HEALTHY.
-> **Remaining (best done with dashboard-restart verification / a dedicated pass):** 3.3 schedule
-> proposal-drafting + move consolidation off the dashboard-only scheduler (needs scheduler.py +
-> restart to verify), 3.5 surface the self-improvement loop + startup eval in the dashboard UI,
-> 3.8 continuous self-eval harness + drift heatmap, and **3.0 — pipeline EXECUTES RAG + agent
-> hand-off (the biggest, deepest item; dedicated design+test session).**
+> **9 of ~10 Phase-3 items shipped & verified** (3.1/3.2/3.3/3.4/3.5/3.6/3.7/3.9/3.10). MCP smoke HEALTHY.
+> ✅ **3.0 — RAG grounding slice SHIPPED** (`f250ede`): `run_metis` now actually calls
+> `search_pdf_knowledge` over the library/backgrounds for research/substantive turns and injects the
+> top cited chunks BY CONSTRUCTION (gated so quick chatter stays fast; verified live — a literature
+> question and a deep "methods" request both get real cited chunks; trivial chit-chat does not).
+> **Remaining:** the rest of 3.0 — inline the routed agent's system-prompt (hand-off), binding
+> model-tiering, and true conversation compaction (architectural; pair together) — and 3.8 continuous
+> self-eval harness + drift heatmap.
 
 | # | Item | Why / evidence | Files | Size·Impact |
 |---|---|---|---|---|
