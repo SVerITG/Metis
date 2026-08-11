@@ -636,6 +636,58 @@ async def startup_eval_strip(request: Request):
     )
 
 
+@router.get("/api/partial/metis/who-did-what", response_class=HTMLResponse)
+async def who_did_what(request: Request, session_id: str = ""):
+    """'Who did what' for a session (Keystone B6.2) — surface the agent_runs
+    contributors so the user can SEE which specialists worked and what each did.
+    Defaults to the most recent session. A 'running' status renders as "working…"
+    (live indicator ready for B6.1's dispatch-write)."""
+    from markupsafe import escape as _esc
+    sid = (session_id or "").strip()
+    if not sid:
+        latest = db_query("SELECT session_id FROM sessions ORDER BY last_active DESC LIMIT 1", default=[]) or []
+        sid = latest[0]["session_id"] if latest else ""
+    runs = []
+    if sid:
+        runs = db_query(
+            "SELECT agent_slug, task_summary, model, status, "
+            "COALESCE(input_tokens,0)+COALESCE(output_tokens,0) AS tokens, created_at "
+            "FROM agent_runs WHERE session_id=? ORDER BY created_at ASC, run_id ASC LIMIT 30",
+            (sid,), default=[],
+        ) or []
+    _m = "font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"
+    if not runs:
+        return HTMLResponse(
+            f'<div class="panel" style="padding:16px 18px;{_m}">No agent activity recorded for your '
+            'last session yet. When Metis routes a request to a specialist and the run is logged, the '
+            'contributors appear here.</div>'
+        )
+    rows_html = []
+    for r in runs:
+        pretty = str(r.get("agent_slug") or "metis").replace("-", " ").title()
+        running = str(r.get("status")) == "running"
+        dot = '<span style="color:var(--m-warn);font-weight:600;">● working…</span> ' if running else ""
+        meta = ""
+        if r.get("model"):
+            meta += f' · {_esc(str(r["model"]))}'
+        if r.get("tokens"):
+            meta += f' · {r["tokens"]} tok'
+        rows_html.append(
+            '<div style="display:flex;gap:10px;align-items:baseline;padding:7px 0;'
+            'border-bottom:1px solid var(--m-rule-soft);">'
+            f'<span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;'
+            f'color:var(--m-accent);flex-shrink:0;min-width:130px;">{_esc(pretty)}</span>'
+            f'<span style="font-size:13px;color:var(--m-ink);line-height:1.4;">{dot}'
+            f'{_esc((r.get("task_summary") or "")[:180])}<span style="{_m}">{meta}</span></span>'
+            "</div>"
+        )
+    return HTMLResponse(
+        '<div class="panel" style="padding:14px 18px;margin-bottom:0;">'
+        f'<div style="{_m}margin-bottom:6px;">Session {_esc(sid[:8])}… — {len(runs)} contribution(s)</div>'
+        + "".join(rows_html) + "</div>"
+    )
+
+
 @router.post("/api/improvement/draft/{agent_slug}")
 async def improvement_draft(agent_slug: str, request: Request):
     """Queue a self-improvement draft for an agent (status='draft')."""
