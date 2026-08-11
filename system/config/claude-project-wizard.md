@@ -41,7 +41,7 @@ Confirm answers before moving to the next section. Allow skipping.
 
 Summarise what was configured. Tell the user:
 - Their research files are in: the Metis install folder
-- The dashboard opens at: http://127.0.0.1:8000 (if installed)
+- The dashboard opens at: http://127.0.0.1:8080 (if installed)
 - They can re-run any section at any time by asking "re-configure [section name]"
 - Type `/direct` to use the underlying AI without Metis, or `/metis off` for a whole session
 
