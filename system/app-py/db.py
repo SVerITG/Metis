@@ -202,6 +202,26 @@ def db_execute(sql: str, params=()) -> None:
         conn.close()
 
 
+def record_token_usage(agent_slug: str, model: str, input_tokens, output_tokens,
+                       task_summary: str = "", session_id: str = "") -> None:
+    """Record a REAL API call's token usage into agent_runs (Keystone B6.3) so the
+    dashboard token monitor reflects actual spend instead of ~0. Call this right after
+    any Anthropic API response with usage. Best-effort; never raises. Pass session_id
+    only for session-scoped agent work — leave empty for background calls (briefs,
+    news) so they feed the token totals without cluttering per-session 'who did what'."""
+    try:
+        import datetime as _dt
+        db_execute(
+            "INSERT INTO agent_runs (agent_slug, task_summary, status, created_at, "
+            "input_tokens, output_tokens, model, session_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (agent_slug or "metis", (task_summary or "")[:200], "completed",
+             _dt.datetime.now().isoformat(), int(input_tokens or 0), int(output_tokens or 0),
+             model or "", session_id or ""),
+        )
+    except Exception:
+        pass
+
+
 # ---------------------------------------------------------------------------
 # Async wrappers — use these from FastAPI async route handlers so the event
 # loop is never blocked by SQLite I/O. Under the hood they call the sync
