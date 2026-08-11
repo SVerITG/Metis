@@ -265,7 +265,7 @@ Then:
 >
 > Every morning when you open this, I'll have a briefing ready for you.
 > Your research files are in: [METIS_RC_ROOT]
-> Your dashboard (if installed) opens at: http://127.0.0.1:8000
+> Your dashboard (if installed) opens at: http://127.0.0.1:8080
 >
 > Just talk to me normally — I'll figure out what you need.
 > Welcome to Metis."
