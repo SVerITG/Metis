@@ -602,6 +602,40 @@ async def metis_improvement(request: Request, days: int = 14):
     )
 
 
+@router.get("/api/partial/metis/startup-eval", response_class=HTMLResponse)
+async def startup_eval_strip(request: Request):
+    """Surface the boot self-check (system/config/eval-results.json), written on every
+    dashboard start by startup_eval.run_startup_eval but previously read by nothing —
+    so a fresh-user / drift signal at boot was invisible (Keystone P3.5)."""
+    base = Path(os.environ.get("METIS_RC_ROOT", "") or Path(__file__).resolve().parents[3])
+    fp = base / "system" / "config" / "eval-results.json"
+    _muted = "font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"
+    if not fp.is_file():
+        return HTMLResponse(f'<div class="panel" style="padding:14px 18px;margin-bottom:24px;{_muted}">No startup self-check recorded yet.</div>')
+    try:
+        d = json.loads(fp.read_text(encoding="utf-8"))
+    except Exception:
+        return HTMLResponse(f'<div class="panel" style="padding:14px 18px;margin-bottom:24px;{_muted}">Startup self-check file is unreadable.</div>')
+    overall = str(d.get("overall") or "UNKNOWN").upper()
+    color = "var(--m-ok)" if overall == "PASS" else "var(--m-alert)"
+    when = str(d.get("run_at") or "")[:19].replace("T", " ")
+    chips = "".join(
+        '<span style="display:inline-block;' + _muted + 'border:1px solid var(--m-rule-soft);'
+        'border-radius:var(--m-radius-pill);padding:2px 8px;margin:2px 4px 2px 0;">'
+        f'{c.get("name")}: <span style="color:'
+        f'{"var(--m-ok)" if str(c.get("status")).upper() == "PASS" else "var(--m-alert)"};">'
+        f'{c.get("status")}</span></span>'
+        for c in (d.get("checks") or [])
+    )
+    return HTMLResponse(
+        '<div class="panel" style="padding:14px 18px;margin-bottom:24px;">'
+        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+        f'<span style="color:{color};font-weight:600;">● Startup self-check: {overall}</span>'
+        f'<span style="{_muted}">{when}</span></div>'
+        f'<div style="margin-top:8px;">{chips}</div></div>'
+    )
+
+
 @router.post("/api/improvement/draft/{agent_slug}")
 async def improvement_draft(agent_slug: str, request: Request):
     """Queue a self-improvement draft for an agent (status='draft')."""
