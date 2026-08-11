@@ -600,6 +600,7 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
         if sem_slug:
             agents = [sem_slug]
             task_type = "semantic"  # not a keyword match → still measurable as fallback-routed
+            uncovered = False       # a specialist WAS found (via the semantic backstop)
         else:
             agents = ["metis"]
             task_type = "uncovered"  # explicit: nothing matched → generalist
@@ -812,6 +813,28 @@ def _allocate_budget(complexity: str) -> dict:
 
 
 # ── Stage 7: Surgical context assembly ────────────────────────────────────────
+
+def _auto_reflexion(session_id: str, agent_slug: str, could_improve: str = "",
+                    missing_context: str = "") -> None:
+    """Server-side reflexion write-back (Keystone P3.2). The self-improvement loop
+    starved because write_reflexion was voluntary; auto-log a reflexion for NOTABLE
+    turns (e.g. uncovered routing) so recurring gaps accrue into nightly consolidation
+    without depending on the model remembering. Targeted (not every turn) so it feeds
+    signal, not noise. Best-effort; never raises."""
+    try:
+        with connect(paths.db) as con:
+            con.execute(_REFLEXION_DDL)
+            con.execute(
+                "INSERT INTO reflexion_log (session_id, agent_slug, went_well,"
+                " could_improve, missing_context, tool_wishes, created_at)"
+                " VALUES (?, ?, '', ?, ?, '', ?)",
+                (session_id or "", agent_slug or "metis",
+                 could_improve[:400], missing_context[:400], _now()),
+            )
+            con.commit()
+    except Exception:
+        pass
+
 
 def _assemble_context_stage(intent: dict, session_id: str) -> str:
     """Stage 7: Retrieve minimum needed context from memory_entries."""
@@ -1168,6 +1191,14 @@ async def run_metis(
     ]
     # ── Stage 7 — active learning: grow the routing + decision memory ──────
     if intent.get("uncovered"):
+        # Enforce the reflexion write-back server-side (Keystone P3.2) — an uncovered
+        # turn is a routing gap; logging it here means recurring gaps surface in the
+        # improvement loop even if the model never calls write_reflexion.
+        _auto_reflexion(
+            session_id, "metis",
+            could_improve=f"Uncovered request — no routing rule matched: {request[:120]}",
+            missing_context="Consider adding a routing rule or specialist for this class of request.",
+        )
         lines.append(
             "**No specialist matched (uncovered)** — handling directly. If requests like this "
             "should go to a specific agent in future, ask the user \"always or just this once?\" "
