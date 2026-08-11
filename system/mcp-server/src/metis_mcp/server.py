@@ -189,7 +189,43 @@ def _startup_selfcheck() -> None:
         pass
 
 
+def _configure_logging() -> None:
+    """Record the 'metis' logger's INFO+ lines to a rotating file (Keystone P0.6).
+
+    The MCP server had no logging configuration, so the startup health verdict and
+    the stale-install / failed-module warnings were emitted at INFO to a logger with
+    no handler — and vanished. Attach a rotating FILE handler (never stdout: that is
+    the MCP stdio JSON-RPC channel). propagate stays on, so WARNING+ still reach
+    stderr via the root lastResort for whoever watches the server's stderr.
+    """
+    log = _logging.getLogger("metis")
+    if getattr(log, "_metis_file_configured", False):
+        return
+    try:
+        import os
+        from pathlib import Path
+        from logging.handlers import RotatingFileHandler
+
+        log_dir = Path(
+            os.environ.get("METIS_DATA_DIR")
+            or (Path.home() / ".local" / "share" / "metis-mcp")
+        )
+        log_dir.mkdir(parents=True, exist_ok=True)
+        handler = RotatingFileHandler(
+            log_dir / "mcp.log", maxBytes=1_000_000, backupCount=3, encoding="utf-8"
+        )
+        handler.setFormatter(
+            _logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+        )
+        log.addHandler(handler)
+        log.setLevel(_logging.INFO)
+        log._metis_file_configured = True  # type: ignore[attr-defined]
+    except Exception:
+        pass  # logging must never break startup
+
+
 def run():
+    _configure_logging()
     # Apply any pending schema migrations BEFORE serving tools.
     # See metis_mcp/migrations.py — this is what prevented us from ever
     # repeating the brainstorm_sessions title-vs-topic drift from R8 (2026-05-25).
