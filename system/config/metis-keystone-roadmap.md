@@ -163,9 +163,17 @@ verifies, and rolls back on failure; the app loads fully offline.
 > `search_pdf_knowledge` over the library/backgrounds for research/substantive turns and injects the
 > top cited chunks BY CONSTRUCTION (gated so quick chatter stays fast; verified live — a literature
 > question and a deep "methods" request both get real cited chunks; trivial chit-chat does not).
-> **Remaining:** the rest of 3.0 — inline the routed agent's system-prompt (hand-off), binding
-> model-tiering, and true conversation compaction (architectural; pair together) — and 3.8 continuous
-> self-eval harness + drift heatmap.
+> ✅ **3.0 — hand-off slice SHIPPED** (`39d8729`): `run_metis` inlines the routed specialist's
+> system-prompt ("Adopt this specialist's approach (<slug>)") by construction (real specialists only;
+> verified live). **So the pipeline now GROUNDS in the library AND ADOPTS the specialist by
+> construction — the two deepest convention→construction gaps are closed.**
+> **Architectural boundary (honest finding):** the last two 3.0 pieces — **binding model-tiering** and
+> **true conversation compaction** — cannot be done in the current stdio-MCP model because the MCP
+> server does NOT make the answer's model call (the calling Claude client does). Delivering them
+> requires a foundational decision: either move primary answer generation server-side (the server
+> calls the API, applies the budget model, compacts) or adopt the client's compaction API. That's a
+> strategic architecture choice, not more wiring — scope it deliberately. **Also remaining:** 3.8
+> continuous self-eval harness + drift heatmap.
 
 | # | Item | Why / evidence | Files | Size·Impact |
 |---|---|---|---|---|
