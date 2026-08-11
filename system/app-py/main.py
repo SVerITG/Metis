@@ -500,9 +500,43 @@ async def touch_planning_files():
 # MCP server status — used by the offline banner in base.html
 # ---------------------------------------------------------------------------
 
+def _read_mcp_health() -> dict:
+    """Best-effort read of the LIVE MCP server's last startup health snapshot.
+
+    server.py::_startup_selfcheck writes system/config/mcp-health.json from the
+    process Claude actually talks to (its real FAILED_MODULES + stale-install flag).
+    Surfacing it lets the badge show "N tools failed" / "stale — reconnect" instead
+    of only "is the package importable" — which is computed in THIS process and
+    can't see what failed in the server (Keystone P0.6b / N11).
+    """
+    try:
+        import json as _json
+        rc_root = os.environ.get("METIS_RC_ROOT", "")
+        base = Path(rc_root) if rc_root else Path(__file__).resolve().parent.parent.parent
+        hp = base / "system" / "config" / "mcp-health.json"
+        if not hp.is_file():
+            return {}
+        data = _json.loads(hp.read_text(encoding="utf-8"))
+        failed = data.get("modules_failed") or {}
+        names = list(failed.keys()) if isinstance(failed, dict) else []
+        return {
+            "health": data.get("status", "unknown"),
+            "modules_failed": len(names),
+            "failed_names": names,
+            "stale_install": bool(data.get("stale_install")),
+            "checked_at": data.get("checked_at", ""),
+        }
+    except Exception:
+        return {}
+
+
 @app.get("/api/mcp/status")
 async def mcp_status():
-    """Returns 200 if the metis_mcp package is importable (i.e. venv is active)."""
+    """Returns 200 if the metis_mcp package is importable (i.e. venv is active).
+
+    Also folds in the live server's last health snapshot (modules_failed /
+    stale_install) so the badge can show a degraded state, not just online/offline.
+    """
     import sys
     rc_root = os.environ.get("METIS_RC_ROOT", "")
     if rc_root:
@@ -515,7 +549,7 @@ async def mcp_status():
         del sys.modules["metis_mcp"]
     try:
         import metis_mcp  # noqa: F401
-        return JSONResponse({"status": "ok"})
+        return JSONResponse({"status": "ok", **_read_mcp_health()})
     except Exception as exc:
         return JSONResponse({"status": "offline", "reason": str(exc)}, status_code=503)
 

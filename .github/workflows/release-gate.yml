@@ -1,0 +1,87 @@
+name: Release Gate
+
+# Keystone P0.8 — the pre-release gate. NOT run on every push (that's tests.yml);
+# it runs on demand and on a published release, so a red gate never blocks normal
+# development but a release is blocked until the cross-platform install actually
+# boots. Complements tests.yml (unit/integration/RAG-grounding) with the thing it
+# can't cheaply do: prove the packaged app starts on multiple distros.
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  container-smoke:
+    name: Cross-platform install smoke (Docker matrix)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build the test images
+        run: docker compose -f system/install/docker/docker-compose.test.yml build
+
+      - name: Start the matrix (waits for container healthchecks)
+        # The compose file defines healthchecks (curl /api/setup/status) on each
+        # dashboard service; --wait blocks until they pass or time out.
+        run: docker compose -f system/install/docker/docker-compose.test.yml up -d --wait --wait-timeout 300
+
+      - name: Verify each dashboard serves + the light MCP registered tools
+        run: |
+          set -e
+          fail=0
+          check() { # name  host-port
+            if curl -sf --max-time 10 "http://localhost:$2/api/setup/status" >/dev/null; then
+              echo "  ✓ $1 (:$2) dashboard serving"
+            else
+              echo "  ✗ $1 (:$2) dashboard NOT serving"; fail=1
+            fi
+          }
+          check ubuntu24-full 8080
+          check ubuntu22-full 8081
+          check debian-full   8082
+          # Light profile = MCP server only; assert it registered tools.
+          if docker logs metis-ubuntu24-light 2>&1 | grep -q "tools registered"; then
+            echo "  ✓ ubuntu24-light MCP registered tools"
+          else
+            echo "  ✗ ubuntu24-light MCP did not register tools"; fail=1
+          fi
+          exit $fail
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose -f system/install/docker/docker-compose.test.yml logs --tail=80
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f system/install/docker/docker-compose.test.yml down -v
+
+  reliability:
+    name: Reliability + promise harness (self-contained)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - name: Cache fastembed model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/fastembed
+          key: fastembed-nomic-v1.5-q
+      - name: System libs
+        run: sudo apt-get update && sudo apt-get install -y libsndfile1
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e "system/mcp-server/.[embedding,dev]"
+          pip install -r system/app-py/requirements.txt
+      - name: Reliability + functional suites
+        env:
+          METIS_RC_ROOT: ${{ github.workspace }}
+        run: pytest tests/reliability tests/functional -m "not e2e" --tb=short

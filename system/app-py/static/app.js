@@ -2204,6 +2204,28 @@ function _mcpSetOffline() {
   if (rbtn)  { rbtn.style.display = 'none'; }
 }
 
+function _mcpSetDegraded(d) {
+  // The server is UP but not fully healthy: tool modules failed to load, or it's
+  // running stale installed code. Show an amber "attention" state with detail
+  // (Keystone P0.6b) so a non-technical user sees something is wrong.
+  _mcpOnline = true;
+  var dot   = document.getElementById('mcp-dot');
+  var label = document.getElementById('mcp-label');
+  var tbtn  = document.getElementById('mcp-toggle-btn');
+  var msg, tip;
+  if (d.stale_install) {
+    msg = 'Stale — reconnect';
+    tip = 'Metis is running older installed code than the source. Run tools/reinstall-mcp.sh, then reconnect the server.';
+  } else {
+    var n = d.modules_failed || 0;
+    msg = n + ' tool' + (n === 1 ? '' : 's') + ' failed';
+    tip = 'These tool modules failed to load in the running server: ' + ((d.failed_names || []).join(', ') || 'unknown') + '. Try reconnecting; if it persists, run tools/reinstall-mcp.sh.';
+  }
+  if (dot)   { dot.style.background = 'var(--m-warn)'; }
+  if (label) { label.textContent = msg; label.style.color = 'var(--m-warn)'; }
+  if (tbtn)  { tbtn.style.borderColor = 'var(--m-warn)'; tbtn.title = tip; }
+}
+
 function mcpToggle() {
   if (_mcpOnline) {
     // Already online — offer restart
@@ -2260,7 +2282,16 @@ function mcpRestart() {
 
 (function () {
   fetch('/api/mcp/status')
-    .then(function (r) { r.ok ? _mcpSetOnline() : _mcpSetOffline(); })
+    .then(function (r) {
+      if (!r.ok) { _mcpSetOffline(); return; }
+      return r.json().then(function (d) {
+        if (d && (d.modules_failed > 0 || d.stale_install)) {
+          _mcpSetDegraded(d);
+        } else {
+          _mcpSetOnline();
+        }
+      });
+    })
     .catch(function () { /* server not yet ready — leave grey */ });
 })();
 
