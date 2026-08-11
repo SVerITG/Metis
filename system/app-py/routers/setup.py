@@ -131,6 +131,71 @@ async def setup_status():
     return _wizard_status()
 
 
+@router.get("/api/setup/verify", response_class=JSONResponse)
+async def setup_verify():
+    """Prove Metis actually works before the wizard declares success (Keystone P1.3).
+
+    Returns {ok, checks:[{name, ok, critical, detail}]}. The wizard shows these as
+    green/red ticks and only says "ready" when all CRITICAL checks pass — so a user
+    is never told "done" while the data layer, tools, or profile are actually broken.
+    """
+    checks: list[dict] = []
+
+    def add(name, ok, critical, detail=""):
+        checks.append({"name": name, "ok": bool(ok), "critical": bool(critical), "detail": str(detail)[:140]})
+
+    # 1) Dashboard is serving — we answered this request, so it is.
+    add("Dashboard running", True, True, "")
+
+    # 2) Data layer — the live DB is present and has tables.
+    try:
+        from db import get_db_path, db_scalar
+        dbp = get_db_path()
+        ntables = db_scalar("SELECT count(*) FROM sqlite_master WHERE type='table'", default=0)
+        add("Database ready", bool(ntables), True, f"{ntables} tables ({dbp.name})")
+    except Exception as e:
+        add("Database ready", False, True, f"{type(e).__name__}: {e}")
+
+    # 3) The MCP package Claude will launch is importable.
+    try:
+        rc_root = os.environ.get("METIS_RC_ROOT", "")
+        if rc_root:
+            mcp_src = str(Path(rc_root) / "system" / "mcp-server" / "src")
+            if mcp_src not in sys.path:
+                sys.path.insert(0, mcp_src)
+        import metis_mcp  # noqa: F401
+        add("Metis tools importable", True, True, "")
+    except Exception as e:
+        add("Metis tools importable", False, True, f"{type(e).__name__}: {e}")
+
+    # 4) Embedding model cached → semantic search works offline from first run.
+    try:
+        cache = Path(os.environ.get("FASTEMBED_CACHE_PATH") or (Path.home() / ".cache" / "fastembed"))
+        cached = cache.exists() and any(cache.rglob("*.onnx"))
+        add("Search model cached", cached, False,
+            "offline search ready" if cached else "will download on first online use")
+    except Exception as e:
+        add("Search model cached", False, False, f"{type(e).__name__}: {e}")
+
+    # 5) The profile the wizard just wrote exists.
+    add("Your profile saved", _USER_CONFIG.exists(), True,
+        "user-config.yaml" if _USER_CONFIG.exists() else "not written yet")
+
+    # 6) Deep self-check (non-critical extra signal, best-effort).
+    try:
+        from metis_mcp.tools.doctor import run_doctor
+        rep = run_doctor()
+        fails = [c.get("name") for c in rep.get("checks", [])
+                 if not c.get("ok") and c.get("severity") == "fail"]
+        add("Full self-check", not fails, False,
+            "all checks passed" if not fails else "flags: " + ", ".join(fails))
+    except Exception:
+        pass  # doctor is optional; never block the gate on its absence
+
+    ok = all(c["ok"] for c in checks if c["critical"])
+    return JSONResponse({"ok": ok, "checks": checks})
+
+
 @router.get("/api/setup/project-instructions")
 async def project_instructions():
     """Return the Claude Project wizard instructions as plain text for clipboard copy."""
