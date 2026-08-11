@@ -1175,6 +1175,19 @@ async def run_metis(
         except Exception:
             pass
 
+    # 3.0 — inline the routed specialist's approach (hand-off BY CONSTRUCTION) so the
+    # model adopts the persona even without electing to call get_agent_context. Bounded.
+    _primary = (intent.get("agents") or ["metis"])[0]
+    if _primary and _primary != "metis":
+        try:
+            _sp = paths.agents / _primary / "system-prompt.md"
+            if _sp.exists():
+                context = ((context + "\n\n") if context else "") + \
+                    f"Adopt this specialist's approach ({_primary}):\n" + \
+                    _sp.read_text(encoding="utf-8")[:1200]
+        except Exception:
+            pass
+
     if context:
         lines.append(f"**Context:** {len(context)} chars assembled")
 
