@@ -149,6 +149,16 @@ verifies, and rolls back on failure; the app loads fully offline.
 ### PHASE 3 — The ambient second brain ("nothing lost; it gets sharper on its own")
 *Close the two open loops so the flagship promise is true by construction.*
 
+> **Status (2026-08-11): 3.1 ✅ · 3.10 ✅ shipped to metis-ph.** `9bea309` (3.1 — pipeline Stage 7
+> now runs question-conditioned hybrid vector+keyword recall over the real corpus, injected by
+> construction; verified live: real papers/news/agent-runs surface for a research question),
+> `807ada4` (3.10 — shared `_embed_episodic`; dashboard-captured ideas are now vector-indexed like
+> chat ones; verified live embed→recall→cleanup). **Remaining:** 3.0 (pipeline EXECUTES RAG + agent
+> hand-off, not just injects recall), 3.2 enforce reflexion write-back, 3.3 schedule drafting + move
+> consolidation off the dashboard, 3.4 unify `_skill_path` so applied improvements reach the runtime,
+> 3.5 surface the loop in UI, 3.6 token-budgeted retrieval, 3.7 semantic fallback router, 3.8
+> continuous self-eval + drift heatmap, 3.9 persist cross-pollination links.
+
 | # | Item | Why / evidence | Files | Size·Impact |
 |---|---|---|---|---|
 | 3.1 | **Automatic rich recall in context assembly** | Stage-7 auto-recall injects only recency + `LIKE '%first 60 chars%'` over `memory_entries`, bypassing the 768-d vector layers. Replace with the existing `recall()` RRF hybrid + recent reflexion lessons for the routed agent. Converts "ambient recall" from convention to guarantee. | `pipeline.py:746-794`; reuse `memory_gateway.recall`, `vector_memory.semantic_search` | M·★★★ |
