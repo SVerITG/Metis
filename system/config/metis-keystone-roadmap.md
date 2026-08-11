@@ -212,6 +212,52 @@ results even alongside large layers.
 **Phase 5 acceptance:** a PowerPoint template edited via Claude appears in Metis; changing that template
 in PowerPoint updates Metis; every artifact carries provenance back to its source.
 
+### PHASE 6 — Token efficiency, monitoring & agent transparency (added 2026-08-11, on owner request)
+*Evaluation-first: prove the efficiency strategy actually works now that routing is real, confirm
+monitoring is truthful in the dashboard, and make the agents' work visible to the user. Benchmark
+against current best practice — run a WebSearch for up-to-date strategies before building (model
+cascades / small-model routing, prompt caching, context compaction/summarisation with retention,
+speculative/cascade routing, per-agent token attribution).*
+
+> **Honest precondition:** today an "agent" is persona role-play by the top-level model given
+> `get_agent_context`, not a separate model call — so per-agent token attribution and "who did what"
+> depend on `log_agent_run` being called, and true per-agent model tiering only becomes real with
+> **3.0** (pipeline executes/【hands off to】 agents). Phase 6 must state this honestly, not imply
+> isolated sub-agent billing that doesn't exist yet.
+
+**Evaluations (do FIRST, workflow-first, with evidence):**
+- **E6.1 — Token-efficiency strategy actually holds.** Verify: (a) `_allocate_budget` really assigns
+  lighter models by complexity (quick→Haiku, standard→Sonnet, deep/chain→Opus) and this reaches the
+  actual call; (b) conversation **compaction** happens regularly *with retention of essentials*
+  (max_turns guard + 80% auto-handoff brief `handoff.generate_handoff_brief`; session summaries;
+  `job_memory_consolidation`) — measure what's kept vs dropped; (c) context is **surgical** (P3.6
+  budget, P3.1 recall bounded, P3.7 routing avoids over-escalation). Produce a real before/after
+  token/cost measurement on representative prompts, and a gap list vs the best-practice benchmark.
+- **E6.2 — Monitoring is truthful + visible.** `routers/metis_tab.py::metis_token_monitor`
+  (`/api/partial/metis/token-monitor`, `partials/metis_token_monitor.html`) exists — verify it shows
+  REAL usage (from `agent_runs.input_tokens/output_tokens`, `token_footer`) and is not a stub or
+  estimate; confirm it's reachable and accurate on the dashboard. Flag any place tokens are logged as
+  0 / never written (the review found `log_agent_run` is behavioral — if agents don't call it, the
+  monitor undercounts). Make token capture reliable (server-side) so the monitor reflects reality.
+
+**Builds (after the evaluation shows the gaps):**
+- **B6.1 — Live "who's working now."** Surface, in real time, which agent(s) a prompt is being routed
+  to / handled by — in the dashboard (and, where possible, echoed in the chat via the `run_metis`
+  return). Reuse the routing decision (`_parse_intent_stage`) + `session_events` classification rows.
+- **B6.2 — Per-answer "who did what" overview.** After an answer, a compact summary of which agents
+  contributed and what each did (each agent has its own voice/label) — proving the agents actually
+  worked. Reuse `agent_runs` + `session_events`; render on the Today/Metis surface and offer it in the
+  `run_metis` output contract.
+- **B6.3 — Reliable per-agent token attribution.** Ensure each routed agent's token use is captured
+  (tie to B6.2) so E6.2's monitor can show per-agent cost, not just a global number.
+
+**Phase 6 acceptance:** a representative set of prompts shows (measured) lighter models on simple
+tasks and heavier only when warranted; the dashboard token monitor matches an independent count; the
+user can see which agents are working during a prompt and a truthful "who did what" summary after —
+and none of it overstates isolated sub-agent execution that 3.0 hasn't delivered yet.
+
+---
+
 ### CROSS-CUTTING — Engineering hygiene (runs alongside every phase)
 *What a senior engineer notices immediately; do opportunistically within the phase that touches each area.*
 
