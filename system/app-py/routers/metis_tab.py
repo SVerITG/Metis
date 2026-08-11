@@ -636,6 +636,49 @@ async def startup_eval_strip(request: Request):
     )
 
 
+@router.get("/api/partial/metis/promise-trend", response_class=HTMLResponse)
+async def promise_trend(request: Request):
+    """Drift heatmap (Keystone 3.8) — the promise-harness score over time, so
+    "have we lost what we built?" is a LIVE indicator, not a manual investigation.
+    Reads system/config/promise-trend.jsonl (written weekly by the scheduler)."""
+    base = Path(os.environ.get("METIS_RC_ROOT", "") or Path(__file__).resolve().parents[3])
+    fp = base / "system" / "config" / "promise-trend.jsonl"
+    _m = "font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"
+    entries = []
+    if fp.is_file():
+        try:
+            for line in fp.read_text(encoding="utf-8").splitlines()[-12:]:
+                line = line.strip()
+                if line:
+                    entries.append(json.loads(line))
+        except Exception:
+            entries = []
+    if not entries:
+        return HTMLResponse(
+            f'<div class="panel" style="padding:16px 18px;{_m}">No promise-harness runs recorded yet — '
+            'it runs weekly, or run <code>bash tests/functional/run_metis_promises.sh</code>.</div>'
+        )
+    latest = entries[-1]
+    ok = int(latest.get("fail", 0)) == 0
+    color = "var(--m-ok)" if ok else "var(--m-alert)"
+    cells = "".join(
+        f'<span title="{e.get("ts","")}: {e.get("pass",0)} pass / {e.get("fail",0)} fail / {e.get("warn",0)} warn" '
+        'style="display:inline-block;width:10px;height:16px;margin-right:2px;border-radius:2px;'
+        f'background:{"var(--m-ok)" if int(e.get("fail",0))==0 else "var(--m-alert)"};"></span>'
+        for e in entries
+    )
+    return HTMLResponse(
+        '<div class="panel" style="padding:14px 18px;margin-bottom:24px;">'
+        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+        f'<span style="color:{color};font-weight:600;">● Promises: {latest.get("pass",0)} pass · '
+        f'{latest.get("fail",0)} fail · {latest.get("warn",0)} warn</span>'
+        f'<span style="{_m}">{str(latest.get("ts",""))[:16].replace("T", " ")}</span></div>'
+        f'<div style="margin-top:8px;">{cells}</div>'
+        f'<div style="{_m}margin-top:6px;">weekly drift — each cell is one run (green = zero hard-fails)</div>'
+        "</div>"
+    )
+
+
 @router.get("/api/partial/metis/who-did-what", response_class=HTMLResponse)
 async def who_did_what(request: Request, session_id: str = ""):
     """'Who did what' for a session (Keystone B6.2) — surface the agent_runs
