@@ -149,6 +149,43 @@ def _embed_episodic(content: str, event_type: str = "idea", session_id: str = ""
         return False
 
 
+def _persist_connections(source_title: str, source_kind: str, matches: list) -> int:
+    """Persist surfaced cross-pollination links to cross_pollination_links so the
+    connection graph ACCRUES instead of being recomputed and discarded each time
+    (Keystone P3.9). Deduped via a UNIQUE index; best-effort (never raises). Call at
+    INGESTION (capture) — NOT on every recall, which would flood the table."""
+    if not matches:
+        return 0
+    try:
+        with connect(paths.db) as con:
+            con.execute(
+                "CREATE TABLE IF NOT EXISTS cross_pollination_links ("
+                " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                " source_kind TEXT, source_title TEXT,"
+                " target_kind TEXT, target_title TEXT,"
+                " score REAL, created_at TEXT,"
+                " UNIQUE(source_title, target_kind, target_title))"
+            )
+            now = datetime.datetime.now().isoformat()
+            n = 0
+            for rank, m in enumerate(matches, 1):
+                tt = (m.get("title") or "").strip()
+                if not tt:
+                    continue
+                tk = (m.get("source") or m.get("type") or "").strip()
+                cur = con.execute(
+                    "INSERT OR IGNORE INTO cross_pollination_links"
+                    " (source_kind, source_title, target_kind, target_title, score, created_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?)",
+                    (source_kind, (source_title or "")[:200], tk, tt[:200], round(1.0 / rank, 4), now),
+                )
+                n += 1 if cur.rowcount > 0 else 0
+            con.commit()
+            return n
+    except Exception:
+        return 0
+
+
 def _cross_pollinate_core(content: str, max_results: int = 5) -> list[dict]:
     """Hybrid vector + keyword cross-pollination with RRF merge and title dedup.
 
@@ -314,6 +351,7 @@ async def capture_idea(
 
         if auto_cross_pollinate:
             matches = _cross_pollinate_core(content, max_results=5)
+            _persist_connections(content[:120], "idea", matches)  # Keystone P3.9 — graph accrues
             if matches:
                 lines.append(f"\n**{len(matches)} connection{'s' if len(matches) != 1 else ''} surfaced:**")
                 for m in matches:

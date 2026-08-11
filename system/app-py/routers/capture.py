@@ -71,6 +71,14 @@ def _surface_connections(text: str) -> str:
         matches = _cross_pollinate_core(text, max_results=5)
     except Exception:
         return ""
+    # Persist the surfaced links so the connection graph accrues instead of being
+    # recomputed and thrown away (Keystone P3.9). Best-effort — a persist failure
+    # must not blank the connections display.
+    try:
+        from metis_mcp.tools.ideas import _persist_connections  # type: ignore
+        _persist_connections(text[:120], "idea", matches)
+    except Exception:
+        pass
     if not matches:
         return (
             '<div style="margin-top:12px;font-family:var(--m-mono);font-size:10px;'
