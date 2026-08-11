@@ -562,28 +562,46 @@ PYEOF
 [ -f "/.dockerenv" ] && WIN_USER="" || WIN_USER=$(cmd.exe /c "echo %USERNAME%" 2>/dev/null | tr -d '\r\n')
 CD_CONFIG="/mnt/c/Users/$WIN_USER/AppData/Roaming/Claude/claude_desktop_config.json"
 
-if [ -f "$CD_CONFIG" ]; then
-  python3 - <<PYEOF
-import json, sys
+CD_DIR="/mnt/c/Users/$WIN_USER/AppData/Roaming/Claude"
+# The distro Metis was installed in — REQUIRED so Desktop launches the right WSL
+# (a machine with >1 distro otherwise runs the default distro and can't see Metis).
+_METIS_DISTRO="${WSL_DISTRO_NAME:-}"
+if [ -n "$WIN_USER" ] && [ -d "/mnt/c/Users/$WIN_USER/AppData/Roaming" ]; then
+  # Create the Claude config dir even if Desktop has never been opened (N3) —
+  # Desktop merges an existing config on first launch, so registration is not lost.
+  mkdir -p "$CD_DIR" 2>/dev/null || true
+fi
+if [ -d "$CD_DIR" ]; then
+  METIS_CDCFG="$CD_CONFIG" METIS_RUN="$RUN_SCRIPT" METIS_DISTRO="$_METIS_DISTRO" python3 - <<'PYEOF'
+import json, os
+path = os.environ["METIS_CDCFG"]
+run_script = os.environ["METIS_RUN"]
+distro = os.environ.get("METIS_DISTRO", "").strip()
+try:
+    with open(path) as f:
+        cfg = json.load(f)
+except (FileNotFoundError, ValueError):
+    cfg = {}   # missing or corrupt → start clean, preserving nothing invalid
 
-path = "$CD_CONFIG"
-run_script = "$RUN_SCRIPT"
-
-with open(path) as f:
-    cfg = json.load(f)
-
+# Correct, multi-distro-safe launch: `wsl.exe -d <distro> -e bash <run.sh>`.
+# The old form ("wsl", ["-e", run_script]) omitted -d, so on a multi-distro
+# machine Desktop launched the DEFAULT distro and silently couldn't reach Metis.
+args = ["-e", "bash", run_script]
+if distro:
+    args = ["-d", distro] + args
 cfg.setdefault("mcpServers", {})["metis-rc"] = {
-    "command": "wsl",
-    "args": ["-e", run_script],
-    "autoApprove": ["*"]
+    "command": "wsl.exe",
+    "args": args,
+    "autoApprove": ["*"],
 }
-
 with open(path, "w") as f:
     json.dump(cfg, f, indent=2)
-print("  Claude Desktop: updated claude_desktop_config.json")
+print("  Claude Desktop: registered metis-rc (" +
+      ("distro=" + distro if distro else
+       "WARNING: distro unknown — add -d <distro> manually if you have >1 WSL distro") + ")")
 PYEOF
 else
-  echo "  Claude Desktop config not found at $CD_CONFIG — skipping (Claude Desktop may not be installed)"
+  echo "  Claude Desktop not installed for $WIN_USER (no AppData\\Roaming\\Claude) — skipping"
 fi
 
 # ── Initialize DB if not present ─────────────────────────────────────────────

@@ -131,15 +131,23 @@ def call_claude(api_key: str, answers: dict) -> str:
         raise RuntimeError("anthropic package not installed — run: pip install anthropic")
 
     client = anthropic.Anthropic(api_key=api_key)
-    message = client.messages.create(
-        model="claude-opus-4-7",
-        max_tokens=2500,
-        messages=[{
-            "role": "user",
-            "content": _PERSONA_PROMPT.format(answers=_format_answers(answers)),
-        }],
-    )
-    return message.content[0].text
+    # Try the current best model, then fall back — a single hard-coded dated id
+    # (was "claude-opus-4-7") silently degraded the whole wizard to the generic
+    # _basic_persona the moment that id was retired (Keystone P1.4 / N7).
+    content = _PERSONA_PROMPT.format(answers=_format_answers(answers))
+    last_err = None
+    for _model in ("claude-opus-4-8", "claude-sonnet-5", "claude-opus-4-7"):
+        try:
+            message = client.messages.create(
+                model=_model,
+                max_tokens=2500,
+                messages=[{"role": "user", "content": content}],
+            )
+            return message.content[0].text
+        except Exception as e:  # model retired / unavailable → try the next
+            last_err = e
+            continue
+    raise RuntimeError(f"persona generation failed on all candidate models: {last_err}")
 
 
 def parse_response(response: str) -> dict:
@@ -286,7 +294,22 @@ def write_user_config(metis_root: Path, answers: dict, topics: list) -> Path:
     config_dir.mkdir(parents=True, exist_ok=True)
     path = config_dir / "user-config.yaml"
 
-    topics_yaml = "\n".join(f"  - {t}" for t in topics) if topics else "  []"
+    # Empty value must be indented UNDER `topics:` (4 spaces) — "  []" at the key's
+    # own indent is a sibling and makes the whole config unparseable YAML.
+    topics_yaml = "\n".join(f"  - {t}" for t in topics) if topics else "    []"
+
+    # Populate the projects list from the wizard answers instead of always writing
+    # an empty list (Keystone P1.4 / N5) — otherwise _wizard_status reads projects
+    # as empty and "Current projects" never shows complete.
+    _projs = answers.get("projects") or []
+    _proj_names = [
+        (p.get("name") if isinstance(p, dict) else str(p)).strip() for p in _projs
+    ]
+    _proj_names = [n for n in _proj_names if n]
+    projects_block = (
+        "projects:\n" + "\n".join(f"  - {n}" for n in _proj_names)
+        if _proj_names else "projects: []"
+    )
 
     content = f"""\
 # Metis User Configuration
@@ -307,7 +330,7 @@ research:
   tools: {answers.get('tools', '')}
   methods: {answers.get('methods', '')}
 
-projects: []
+{projects_block}
 
 style:
   response_length: {answers.get('output_length', 'concise')}
@@ -328,7 +351,14 @@ def write_project_stubs(metis_root: Path, projects: list, scan_type: str = "name
         return []
 
     written = []
-    db_path = metis_root / "system" / "app-py" / "data" / "metis.sqlite"
+    # Write to the LIVE DB the server actually reads — NOT system/app-py/data, which
+    # is the archived split-brain path (Keystone P1.4 / N6). Mirror db.get_db_path():
+    # METIS_DB → METIS_DATA_DIR → ~/.local/share/metis/metis.sqlite.
+    import os as _os
+    _data_dir = _os.environ.get("METIS_DATA_DIR") or _os.path.join(
+        _os.path.expanduser("~"), ".local", "share", "metis"
+    )
+    db_path = Path(_os.environ.get("METIS_DB") or _os.path.join(_data_dir, "metis.sqlite"))
 
     for p in projects:
         # Support both old format (name string) and new format (dict with category/folder)
