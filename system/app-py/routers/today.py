@@ -3033,6 +3033,15 @@ async def api_session_consolidate(request: Request):
                 max_tokens=800,
                 messages=[{"role": "user", "content": prompt}],
             )
+            try:  # record real token usage for the monitor (Keystone B6.3)
+                from db import record_token_usage
+                _u = getattr(msg, "usage", None)
+                if _u is not None:
+                    record_token_usage("memory-curator", model_for("brief"),
+                                       getattr(_u, "input_tokens", 0), getattr(_u, "output_tokens", 0),
+                                       task_summary="Session consolidation summary")
+            except Exception:
+                pass
             text = "".join(b.text for b in msg.content if hasattr(b, "text")).strip()
             # Strip markdown fences if Haiku wrapped its JSON
             if text.startswith("```"):
