@@ -82,6 +82,12 @@ Effort: S (hours) · M (1–3 days) · L (1–2 weeks) · XL (multi-week). Impac
 ### PHASE 0 — Stability & data-integrity hardening ("never lose data, never fail to start")
 *The foundation is strong; these are the sharp edges that betray it on a fresh or unlucky machine.*
 
+> **Status: ✅ COMPLETE (2026-08-11)** — all items built + verified against real failure
+> scenarios, on `metis-ph`: `e2f7ed2` (P0.1/0.2 DB guard + graceful degrade), `7cccacb` (P0.3/0.5/0.7
+> handshake, migrator busy_timeout, port-exhaustion), `e3fe09d` (P0.6/0.4 MCP rotating log +
+> embedding pre-cache), `20691d8` (P0.6b/0.8 live-health badge + release-gate workflow). MCP server
+> reinstalled + smoke HEALTHY. `origin` (base) pending its next generated-shell push.
+
 | # | Item | Why / evidence | Files | Size·Impact |
 |---|---|---|---|---|
 | 0.1 | **Fix the silent empty-DB bug (N9)** | `db.py` (dashboard) picks the DB with plain `.exists()`; `config.py` (MCP) was hardened with `_is_usable_db()`. A 0-byte OneDrive artifact → dashboard migrates an empty DB → "everything gone." | `system/app-py/db.py:100`; mirror of `mcp .../config.py:60-88,167-170` — extract ONE shared resolver both import | S·★★★ |
