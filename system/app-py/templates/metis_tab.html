@@ -619,6 +619,14 @@
         <div class="panel" style="padding:14px 18px;margin-bottom:24px;">{{ skeleton_block(rows=1) }}</div>
       </div>
 
+      {{ sec_label("Promise drift", tail="ARE WE LOSING WHAT WE BUILT?", style="margin-bottom:12px;") }}
+      <div id="metis-promise-trend-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/promise-trend"
+           hx-trigger="load delay:740ms"
+           hx-swap="innerHTML">
+        <div class="panel" style="padding:14px 18px;">{{ skeleton_block(rows=1) }}</div>
+      </div>
+
       {{ sec_label("Consent ledger", tail="ACCESS HISTORY", style="margin-bottom:12px;") }}
       <div class="panel" id="metis-consent-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/consent"
