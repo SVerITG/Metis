@@ -288,10 +288,10 @@ speculative/cascade routing, per-agent token attribution).*
    cheap model first, escalate only on a failed check.
 
 **BUILD STATUS (2026-08-11):** ✅ **B6.2 shipped** (`dd9e8a6` — "who did what" strip on the Metis
-Overview, reads `agent_runs` per session, refreshes 30s). ✅ **B6.3 mostly done** (`50b13ca`+`cc40798` —
-`db.record_token_usage` wired into 4 dashboard call sites: morning brief, session-consolidation,
-meeting extraction, flashcard gen. Remaining: teach.py slide-gen + the MCP-side improvement.py /
-paperqa_search.py (need an MCP-side recorder writing agent_runs via config.paths.db)).
+Overview, reads `agent_runs` per session, refreshes 30s). ✅ **B6.3 done** (`50b13ca`+`cc40798`+`9b60927` — real token capture wired into 6 call sites: morning
+brief, session-consolidation, meeting extraction, flashcard gen, slide gen, and MCP-side reflexion
+themes. Only PaperQA is deferred — its usage is internal to the PaperQA library, not a plain response).
+The token monitor now reflects real spend across the dashboard + the MCP self-improvement call.
 ✅ **B6.1 display-ready** (the strip renders "working…" for `status='running'`; the dispatch-write
 that SETS 'running' is the remaining piece, pairs with 3.0). ⏳ Prompt caching (wire the dead
 `cache_helpers`), true compaction, and binding model-tiering remain (compaction + tiering pair with 3.0).
