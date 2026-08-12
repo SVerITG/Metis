@@ -19,18 +19,26 @@ templates = Jinja2Templates(
 )
 
 
+def _surface_ctx() -> dict:
+    """Shared context for the Metis surface — the saved model + theme so the
+    selector and theme swatches render their ACTUAL persisted state on load
+    (S.0b), instead of the previously hardcoded Sonnet / Archive defaults."""
+    prefs = _read_user_prefs()
+    return {
+        "active_tab": "metis",
+        "active_model": (prefs.get("active_model") or "sonnet"),
+        "active_theme": (prefs.get("theme") or "archive"),
+    }
+
+
 @router.get("/tab/metis", response_class=HTMLResponse)
 async def metis_tab(request: Request):
-    return templates.TemplateResponse(
-     request, "metis_tab.html", {"active_tab": "metis"}
- )
+    return templates.TemplateResponse(request, "metis_tab.html", _surface_ctx())
 
 
 @router.get("/api/tab/metis", response_class=HTMLResponse)
 async def metis_tab_partial(request: Request):
-    return templates.TemplateResponse(
-     request, "metis_tab.html", {"active_tab": "metis"}
- )
+    return templates.TemplateResponse(request, "metis_tab.html", _surface_ctx())
 
 
 # ---------------------------------------------------------------------------
@@ -114,6 +122,109 @@ async def metis_stats(request: Request):
 
 
 # ---------------------------------------------------------------------------
+# Dashboard (S.1) — the "is Metis healthy right now?" one-glance board that
+# leads the surface. Honest by design: it also states what ISN'T recorded.
+# ---------------------------------------------------------------------------
+
+
+def _scheduler_running() -> bool | None:
+    """Best-effort read of the APScheduler state. None = unknown."""
+    try:
+        import scheduler as _sched  # app-py/scheduler.py
+        sch = getattr(_sched, "scheduler", None) or getattr(_sched, "_scheduler", None)
+        if sch is not None and hasattr(sch, "running"):
+            return bool(sch.running)
+    except Exception:
+        pass
+    return None
+
+
+@router.get("/api/partial/metis/dashboard", response_class=HTMLResponse)
+async def metis_dashboard(request: Request):
+    """Compact health readout: connection, storage, activity — plus an honesty strip."""
+    _m = "font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"
+
+    # Connection
+    h = _mcp_health()
+
+    # Storage
+    db_path, db_size_kb = "unknown", 0
+    try:
+        from db import get_db_path
+        p = get_db_path()
+        db_path = _mask_home(str(p))
+        db_size_kb = round(p.stat().st_size / 1024)
+    except Exception:
+        pass
+    total_mem = sum(l["count"] for l in _memory_layers())
+
+    # Activity
+    today = str(datetime.date.today())
+    runs_today = db_scalar("SELECT COUNT(*) FROM agent_runs WHERE DATE(created_at)=?", (today,), default=0) or 0
+    total_runs = db_scalar("SELECT COUNT(*) FROM agent_runs", default=0) or 0
+    last_session = ""
+    try:
+        rows = db_query("SELECT summary FROM session_summaries ORDER BY created_at DESC LIMIT 1", default=[]) or []
+        if rows:
+            last_session = (rows[0].get("summary") or "")[:220]
+    except Exception:
+        pass
+    sched = _scheduler_running()
+
+    def tile(kicker, value, sub, color="var(--m-ink)"):
+        return (
+            '<div class="panel" style="padding:16px 18px;">'
+            f'<div class="kicker" style="padding:0;{_m}">{kicker}</div>'
+            f'<div style="font-family:var(--m-display);font-size:24px;font-weight:500;color:{color};margin:6px 0 2px;">{value}</div>'
+            f'<div style="{_m}">{sub}</div></div>'
+        )
+
+    conn_color = "var(--m-ok)" if h["ok"] else "var(--m-alert)"
+    conn_value = "Connected" if h["ok"] else "Check setup"
+    conn_sub = "Claude ↔ Metis" if h["ok"] else "see Integration & Keys"
+    sched_txt = "Running" if sched else ("Off" if sched is False else "—")
+
+    tiles = (
+        '<div class="grid grid-4" style="gap:12px;margin-bottom:14px;">'
+        + tile("CONNECTION", conn_value, conn_sub, conn_color)
+        + tile("MEMORY", f"{total_mem:,}", "entries across 8 layers")
+        + tile("ACTIVITY TODAY", f"{runs_today}", f"{total_runs:,} runs all-time")
+        + tile("BACKGROUND JOBS", sched_txt, "scheduler")
+        + '</div>'
+    )
+
+    storage = (
+        f'<div class="panel" style="padding:14px 18px;margin-bottom:14px;{_m}">'
+        f'Database · {db_size_kb:,} KB · <span style="color:var(--m-ink);">{db_path}</span></div>'
+    )
+
+    last = ""
+    if last_session:
+        from markupsafe import escape as _esc
+        last = (
+            '<div class="panel" style="padding:14px 18px;margin-bottom:14px;">'
+            f'<div class="kicker" style="padding:0;{_m}">LAST SESSION</div>'
+            f'<div style="font-size:13px;color:var(--m-ink);line-height:1.5;margin-top:6px;">{_esc(last_session)}</div></div>'
+        )
+
+    # Honesty strip — what is NOT captured yet, so the board never over-promises.
+    caveats = []
+    tok = db_scalar("SELECT COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0) FROM agent_runs", default=0) or 0
+    if not tok:
+        caveats.append("token usage isn't being recorded yet")
+    if sched is None:
+        caveats.append("scheduler state couldn't be read")
+    honesty = ""
+    if caveats:
+        honesty = (
+            f'<div class="metis-note" style="{_m}">Being straight with you: '
+            + "; ".join(caveats) + ".</div>"
+        )
+
+    return HTMLResponse(tiles + storage + last + honesty)
+
+
+# ---------------------------------------------------------------------------
 # Archive-layout partials
 # ---------------------------------------------------------------------------
 
@@ -174,95 +285,11 @@ async def metis_agent_runs(request: Request, days: int = 1):
 
 
 # ---------------------------------------------------------------------------
-# Registered agents (from agent-registry.json)
+# (Removed S.0d) The `/api/partial/metis/agents` and `/api/partial/metis/traces`
+# endpoints were dead code — referenced by no template. The agent directory is
+# served by `/api/partial/metis/agent-directory`; the span-trace waterfall had no
+# producer writing `agent_spans` so it always rendered empty. Both removed.
 # ---------------------------------------------------------------------------
-
-
-@router.get("/api/partial/metis/agents", response_class=HTMLResponse)
-async def metis_agents(request: Request):
-    agents: list[dict] = []
-    rc_root = os.environ.get("METIS_RC_ROOT", "")
-    if rc_root:
-        registry_path = (
-            Path(rc_root) / "system" / "config" / "agent-registry.json"
-        )
-        if registry_path.exists():
-            try:
-                data = json.loads(registry_path.read_text(encoding="utf-8"))
-                agents = data.get("agents", [])
-            except Exception:
-                pass
-    return templates.TemplateResponse(
-        request,
-        "partials/metis_agents.html",
-        {
-            "agents": agents
-        },
-    )
-
-
-# ---------------------------------------------------------------------------
-# System info
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# Span waterfall (Phase 5.9)
-# ---------------------------------------------------------------------------
-
-
-@router.get("/api/partial/metis/traces", response_class=HTMLResponse)
-async def metis_traces(request: Request, hours: int = 24):
-    """Return span waterfall partial for recent agent activity."""
-    cutoff = (
-        datetime.datetime.now() - datetime.timedelta(hours=hours)
-    ).isoformat()
-
-    # Recent runs (become root bars when no spans exist)
-    runs = db_query(
-        "SELECT run_id, agent_slug, task_summary, created_at, status "
-        "FROM agent_runs WHERE created_at >= ? ORDER BY created_at DESC LIMIT 20",
-        (cutoff,),
-    )
-
-    # All spans in window, grouped by run_id
-    raw_spans = db_query(
-        "SELECT span_id, parent_id, run_id, session_id, name, kind, "
-        "status, start_ms, end_ms, duration_ms, error, created_at "
-        "FROM agent_spans WHERE created_at >= ? ORDER BY start_ms ASC",
-        (cutoff,),
-        default=[],
-    )
-
-    # Group spans by run_id
-    spans_by_run: dict = {}
-    orphan_spans: list = []
-    for s in (raw_spans or []):
-        rid = s["run_id"] if s["run_id"] else None
-        if rid:
-            spans_by_run.setdefault(rid, []).append(dict(s))
-        else:
-            orphan_spans.append(dict(s))
-
-    # Enrich runs with span data
-    run_list = []
-    for r in (runs or []):
-        rd = dict(r)
-        rd["spans"] = spans_by_run.get(r["run_id"], [])
-        run_list.append(rd)
-
-    total_spans = sum(len(v) for v in spans_by_run.values()) + len(orphan_spans)
-
-    return templates.TemplateResponse(
-        request,
-        "partials/metis_traces.html",
-        {
-            "runs": run_list,
-            "orphan_spans": orphan_spans,
-            "total_spans": total_spans,
-            "hours": hours,
-        },
-    )
 
 
 @router.get("/api/partial/metis/network-policy", response_class=HTMLResponse)
@@ -860,6 +887,104 @@ def _mask_home(p) -> str:
     return s
 
 
+# ---------------------------------------------------------------------------
+# MCP health (S.3) — is the metis-rc server installed + registered where Claude
+# can actually reach it? This is the one thing a user most wants confirmed and
+# the old surface never checked it.
+# ---------------------------------------------------------------------------
+
+
+def _claude_desktop_config_paths() -> list[Path]:
+    """Candidate locations for Claude Desktop's config across WSL/Windows/macOS/Linux."""
+    cands: list[Path] = []
+    # WSL → Windows AppData, derived from METIS_RC_ROOT (…/mnt/<d>/Users/<user>/…)
+    rc_root = os.environ.get("METIS_RC_ROOT", "")
+    import re as _re
+    m = _re.match(r"(/mnt/[a-z])/Users/([^/]+)/", rc_root)
+    if m:
+        cands.append(Path(f"{m.group(1)}/Users/{m.group(2)}/AppData/Roaming/Claude/claude_desktop_config.json"))
+    home = Path.home()
+    cands += [
+        home / "AppData" / "Roaming" / "Claude" / "claude_desktop_config.json",  # native Windows
+        home / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json",  # macOS
+        home / ".config" / "Claude" / "claude_desktop_config.json",  # Linux
+    ]
+    return cands
+
+
+def _registered_in(config_path: Path) -> bool:
+    """True if any mcpServers key mentions metis in the given JSON config."""
+    try:
+        if not config_path.is_file():
+            return False
+        data = json.loads(config_path.read_text(encoding="utf-8"))
+        servers = data.get("mcpServers") or {}
+        return any("metis" in str(k).lower() for k in servers)
+    except Exception:
+        return False
+
+
+def _mcp_health() -> dict:
+    """Best-effort, read-only MCP reachability picture."""
+    # 1. Is the server package importable (i.e. installed in the venv)?
+    importable = False
+    try:
+        import importlib.util
+        importable = importlib.util.find_spec("metis_mcp") is not None
+    except Exception:
+        importable = False
+
+    # 2. Registered in Claude Desktop?
+    desktop = False
+    desktop_path = ""
+    for p in _claude_desktop_config_paths():
+        if _registered_in(p):
+            desktop, desktop_path = True, str(p)
+            break
+
+    # 3. Registered in Claude Code (~/.claude.json)?
+    code = _registered_in(Path.home() / ".claude.json")
+
+    ok = importable and (desktop or code)
+    return {
+        "ok": ok,
+        "importable": importable,
+        "desktop": desktop,
+        "desktop_path": _mask_home(desktop_path),
+        "code": code,
+    }
+
+
+@router.get("/api/partial/metis/mcp-health", response_class=HTMLResponse)
+async def metis_mcp_health(request: Request):
+    h = _mcp_health()
+    _m = "font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"
+
+    def row(label, good, good_txt, bad_txt):
+        color = "var(--m-ok)" if good else "var(--m-alert)"
+        dot = "●" if good else "○"
+        return (
+            '<div style="display:flex;align-items:baseline;gap:10px;padding:6px 0;'
+            'border-bottom:1px solid var(--m-rule-soft);">'
+            f'<span style="color:{color};flex-shrink:0;">{dot}</span>'
+            f'<span style="font-size:13px;color:var(--m-ink);min-width:190px;">{label}</span>'
+            f'<span style="{_m}">{good_txt if good else bad_txt}</span></div>'
+        )
+
+    overall_color = "var(--m-ok)" if h["ok"] else "var(--m-alert)"
+    overall_txt = "Connected — Claude can reach Metis" if h["ok"] else "Not fully connected"
+    body = (
+        '<div class="panel" style="padding:16px 18px;margin-bottom:24px;">'
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">'
+        f'<span style="color:{overall_color};font-weight:600;">● {overall_txt}</span></div>'
+        + row("Server installed", h["importable"], "importable in this environment", "metis_mcp not importable — reinstall")
+        + row("Claude Desktop", h["desktop"], "registered", "not registered — add it in Integration")
+        + row("Claude Code", h["code"], "registered", "not registered — run claude mcp add")
+        + '</div>'
+    )
+    return HTMLResponse(body)
+
+
 @router.get("/api/partial/metis/system-info", response_class=HTMLResponse)
 async def metis_system_info(request: Request):
     rc_root = os.environ.get("METIS_RC_ROOT", "unknown")
@@ -1066,21 +1191,53 @@ async def metis_agent_directory(request: Request):
 # ---------------------------------------------------------------------------
 
 
+def _memory_layers() -> list[dict]:
+    """Count every memory layer Metis holds (S.0c/S.4).
+
+    The old overview counted only `memory_entries` (~67 rows) and so under-reported
+    what Metis holds by two orders of magnitude. This counts all eight layers, the
+    same set the (now-merged) Memory Health surface used, degrading each to 0 if a
+    table is missing rather than failing the whole panel.
+    """
+    specs = [
+        ("Memory Palace", "CURATED",       "memory_entries",    "Entries you and Metis chose to keep"),
+        ("Episodic",      "EVENTS",        "episodic_memory",   "What happened, and what was found"),
+        ("Semantic",      "CONCEPTS",      "semantic_memory",   "Settled facts and understanding"),
+        ("Procedural",    "PRACTICE",      "procedural_memory", "How things are done here"),
+        ("Sessions",      "CONVERSATIONS", "session_summaries", "The record of each working session"),
+        ("Ideas",         "THREADS",       "ideas",             "Thoughts captured for later"),
+        ("Reflexions",    "SELF-REVIEW",   "reflexion_log",     "Where the work could improve"),
+        ("Library",       "INDEXED",       "pdf_chunks",        "Passages from your reading, searchable"),
+    ]
+    layers = []
+    for name, kicker, table, desc in specs:
+        try:
+            cnt = db_scalar(f"SELECT COUNT(*) FROM {table}", default=0) or 0
+        except Exception:
+            cnt = 0
+        layers.append({"name": name, "kicker": kicker, "table": table,
+                       "count": int(cnt), "desc": desc})
+    return layers
+
+
 @router.get("/api/partial/metis/memory-overview", response_class=HTMLResponse)
 async def metis_memory_overview(request: Request):
-    """Stats + filter chips + archive setting for the memory surface."""
-    total_memories = db_scalar(
-        "SELECT COUNT(*) FROM memory_entries", default=0
-    ) or 0
+    """Full 8-layer memory picture + by-type breakdown + archive control."""
+    layers = _memory_layers()
+    total_all = sum(l["count"] for l in layers)
+    max_layer = max((l["count"] for l in layers), default=1) or 1
+    for l in layers:
+        l["pct"] = round(100.0 * l["count"] / max_layer, 1)
+
+    # Curated "Memory Palace" detail (memory_entries) — kept for the by-type chips
+    total_memories = db_scalar("SELECT COUNT(*) FROM memory_entries", default=0) or 0
     week_cutoff = (datetime.datetime.now() - datetime.timedelta(days=7)).isoformat()
     week_count = db_scalar(
         "SELECT COUNT(*) FROM memory_entries WHERE created_at >= ?",
         (week_cutoff,),
         default=0,
     ) or 0
-    oldest = db_scalar(
-        "SELECT MIN(created_at) FROM memory_entries", default=""
-    ) or ""
+    oldest = db_scalar("SELECT MIN(created_at) FROM memory_entries", default="") or ""
 
     by_type_rows = db_query(
         "SELECT entry_type AS event_type, COUNT(*) AS n FROM memory_entries GROUP BY entry_type",
@@ -1095,6 +1252,8 @@ async def metis_memory_overview(request: Request):
         request,
         "partials/metis_memory_overview.html",
         {
+            "layers": layers,
+            "total_all": total_all,
             "total_memories": total_memories,
             "week_count": week_count,
             "oldest": (oldest or "")[:10],
@@ -1729,110 +1888,12 @@ Use `/metis` for any research or knowledge task. Use project-specific skills dir
 
 
 # ---------------------------------------------------------------------------
-# Content packs — install / remove / list
+# (Removed S.0d) The content-packs endpoints (list/toggle/install/remove) were
+# unreachable — no template GET them, and only one of two seed scripts ever
+# registered a `content_packs` row, so install-state was never truthful. The
+# packaged-background model is deferred to Phase 2 (backgrounds-as-plugins) and
+# will be rebuilt against a proper manifest + registry rather than this scaffold.
 # ---------------------------------------------------------------------------
-
-@router.get("/api/partial/metis/content-packs", response_class=HTMLResponse)
-async def content_packs_partial(request: Request):
-    """Show installed content packs with toggle controls."""
-    packs = db_query(
-        "SELECT pack_id, name, version, pack_type, description, installed_at, enabled "
-        "FROM content_packs ORDER BY pack_type, name"
-    ) or []
-
-    # Known packs not yet installed
-    KNOWN_PACKS = [
-        {
-            "pack_id": "statistics-course",
-            "name": "Statistics for Epidemiology",
-            "pack_type": "course",
-            "description": "Full statistics course: inference, regression, survival analysis, multilevel models.",
-            "version": "1.0",
-        },
-        {
-            "pack_id": "ph-content",
-            "name": "Public Health Content Pack",
-            "pack_type": "domain",
-            "description": "50 library cards, NTD/specialist literature seeds, 20 PH courses.",
-            "version": "1.0",
-        },
-    ]
-    installed_ids = {p["pack_id"] for p in packs}
-    available = [k for k in KNOWN_PACKS if k["pack_id"] not in installed_ids]
-
-    return templates.TemplateResponse(
-        request,
-        "partials/metis_content_packs.html",
-        {"packs": packs, "available": available},
-    )
-
-
-@router.post("/api/content-packs/{pack_id}/toggle")
-async def toggle_content_pack(pack_id: str):
-    """Enable or disable a content pack (toggle enabled flag)."""
-    row = db_query(
-        "SELECT pack_id, name, enabled FROM content_packs WHERE pack_id = ?",
-        (pack_id,),
-    )
-    if not row:
-        return JSONResponse({"status": "error", "message": "Pack not found."}, status_code=404)
-    new_state = 0 if row[0]["enabled"] else 1
-    db_execute(
-        "UPDATE content_packs SET enabled = ? WHERE pack_id = ?",
-        (new_state, pack_id),
-    )
-    return JSONResponse({"status": "ok", "pack_id": pack_id, "enabled": bool(new_state)})
-
-
-@router.post("/api/content-packs/{pack_id}/install")
-async def install_content_pack(pack_id: str):
-    """Run the seed script for a known content pack."""
-    import subprocess
-    import os
-
-    rc_root = os.environ.get("METIS_RC_ROOT", "")
-    db_path = ""
-    try:
-        from db import get_db_path
-        db_path = str(get_db_path())
-    except Exception:
-        pass
-
-    seed_scripts = {
-        "statistics-course": "seed_epi_base.py",
-        "ph-content": "seed_ph_database.py",
-    }
-    script_name = seed_scripts.get(pack_id)
-    if not script_name:
-        return JSONResponse({"status": "error", "message": f"Unknown pack: {pack_id}"}, status_code=400)
-
-    script_path = Path(rc_root) / "system" / "install" / script_name if rc_root else None
-    if not script_path or not script_path.exists():
-        return JSONResponse(
-            {"status": "error", "message": f"Seed script not found: {script_name}"},
-            status_code=500,
-        )
-
-    try:
-        result = subprocess.run(
-            ["python3", str(script_path), "--db", db_path, "--quiet"],
-            capture_output=True, text=True, timeout=120,
-        )
-        if result.returncode != 0:
-            return JSONResponse(
-                {"status": "error", "message": result.stderr[:500]},
-                status_code=500,
-            )
-        return JSONResponse({"status": "ok", "pack_id": pack_id, "installed": True})
-    except Exception as e:
-        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
-
-
-@router.delete("/api/content-packs/{pack_id}")
-async def remove_content_pack(pack_id: str):
-    """Remove a content pack record (does not delete seeded rows)."""
-    db_execute("DELETE FROM content_packs WHERE pack_id = ?", (pack_id,))
-    return JSONResponse({"status": "ok", "pack_id": pack_id, "removed": True})
 
 
 # ---------------------------------------------------------------------------
