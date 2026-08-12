@@ -304,7 +304,17 @@ the dashboard shows a live "promises green/red" trend.
 > - **Slice 2 ✅** — `job_background_index` at 09:07 indexes papers added since the last build, right
 >   after the library scan. Registered in JOB_FUNCS, JOB_LABELS **and JOB_DEFAULTS** — a job with no
 >   schedule entry would exist, look complete, and never run.
-> - **Slice 3 ⬜ — portable packs, the actual "download a background".** Today a background is a DB
+> - **Slice 3 ✅ SHIPPED 2026-08-12** (`e833d60`, `c8ecce1`) — packs are real.
+>   `list_background_packs` / `install_background_pack` (preview by default, confirm to fetch) /
+>   `export_background_pack`, plus `delete_knowledge_database` (P4.4) so the lifecycle closes.
+>   **Downloads are verified against the %PDF- magic bytes** — the first real install exposed why:
+>   both WHO IRIS links returned a 755-byte DSpace *HTML page* with a 200 status, and the only check
+>   was "size > 0", so they were saved as `.pdf` and reported as "2 downloaded". Indexing those would
+>   have filled a layer with website markup that answers could cite. An install where nothing
+>   downloaded no longer registers a layer. Ships one real pack (WHO HAT elimination monitoring, 4
+>   open-access PLOS NTDs papers): install → nightly index → a query on case counts returns Table 1
+>   of the 2017 paper. Manifest ships; PDFs are gitignored.
+>   *(Historical note on slice 3's original framing:)* Today a background is a DB
 >   row plus *local folder paths*; there is nothing to hand anyone. **Owner's decision (2026-08-12):
 >   bundle a curated pack in the Metis repo** — a manifest of open-access sources, where installing
 >   fetches and indexes locally. Keeps the repo small, avoids redistributing copyrighted PDFs, and
