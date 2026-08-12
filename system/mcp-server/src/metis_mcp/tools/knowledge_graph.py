@@ -143,7 +143,6 @@ def _extract_wikilinks(text: str) -> list[str]:
 # M5.8.2 + M5.8.3a — kg_index_notes
 # ---------------------------------------------------------------------------
 
-@app.tool()
 def _obsidian_vault() -> "Path | None":
     """Resolve the configured Obsidian vault path, if one is set and valid.
 
@@ -177,6 +176,7 @@ def _obsidian_vault() -> "Path | None":
     return vp if vp.exists() and vp.is_dir() else None
 
 
+@app.tool()
 async def kg_index_notes() -> list[TextContent]:
     """Index .md notes into the knowledge graph: knowledge/library/ plus, if
     configured, an external Obsidian vault. Parses YAML frontmatter `related:`
