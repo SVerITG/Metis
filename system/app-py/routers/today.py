@@ -4742,3 +4742,91 @@ async def news_front(request: Request, days: int = 7):
             "with_images": sum(1 for c in cards if c["has_image"]),
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# News digest — "what happened this week", at the top of the News surface
+# ---------------------------------------------------------------------------
+# `news_topic_summaries` has existed with zero rows: a summary feature that was
+# given a table and never fed. The surface opened straight into a lead story, so
+# the reader had to infer the shape of the week from the cards themselves.
+#
+# Written to work WITHOUT an API call. The counts, the busiest beats and the
+# strongest story are all in the database already, and a digest that needs credit
+# to render is one that is missing on the days the key is unset or the quota is
+# spent. Prose from a model can be added on top later; the skeleton should never
+# depend on it.
+
+_DIGEST_PERIODS = {"day": (1, "today"), "week": (7, "this week")}
+
+
+@router.get("/api/partial/news/digest", response_class=HTMLResponse)
+async def news_digest(request: Request, period: str = "week"):
+    days, label = _DIGEST_PERIODS.get(period, _DIGEST_PERIODS["week"])
+    cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
+
+    total = db_scalar(
+        "SELECT COUNT(*) FROM news_briefs WHERE created_at >= ? "
+        "AND COALESCE(source_type,'news') != 'article'",
+        (cutoff,), default=0,
+    ) or 0
+    unseen = db_scalar(
+        "SELECT COUNT(*) FROM news_briefs WHERE created_at >= ? AND seen_at IS NULL "
+        "AND COALESCE(source_type,'news') != 'article'",
+        (cutoff,), default=0,
+    ) or 0
+    beats = db_query(
+        "SELECT domain, COUNT(*) AS n FROM news_briefs "
+        "WHERE created_at >= ? AND domain IS NOT NULL AND domain != '' "
+        "AND COALESCE(source_type,'news') != 'article' "
+        "GROUP BY domain ORDER BY n DESC LIMIT 4",
+        (cutoff,), default=[],
+    ) or []
+    # "Closest to your work" rather than "most recent": the reason this surface
+    # exists is proximity to the researcher's corpus, so the digest leads on that.
+    # GROUP BY title: the same wire story arrives from several feeds, so without
+    # deduplication the digest led with one headline and then listed it again two
+    # lines later — which reads as a bug in the summary rather than in the data.
+    closest = db_query(
+        "SELECT title, domain, MAX(COALESCE(relevance,0)) AS relevance FROM news_briefs "
+        "WHERE created_at >= ? AND COALESCE(source_type,'news') != 'article' "
+        "GROUP BY title ORDER BY relevance DESC LIMIT 3",
+        (cutoff,), default=[],
+    ) or []
+
+    if not total:
+        return HTMLResponse(
+            '<div class="panel panel-pad" style="margin-bottom:22px;">'
+            '<div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;'
+            'color:var(--m-muted);">NOTHING NEW ' + label.upper() + '</div></div>'
+        )
+
+    beat_txt = ", ".join(f"{b['domain']} ({b['n']})" for b in beats)
+    lead = closest[0]["title"] if closest else ""
+    others = "".join(
+        f'<li style="margin:2px 0;">{c["title"][:110]}</li>' for c in closest[1:]
+    )
+    toggle = "".join(
+        f'<button hx-get="/api/partial/news/digest?period={p}" hx-target="#news-digest" '
+        f'hx-swap="outerHTML" style="font-family:var(--m-mono);font-size:9px;'
+        f'letter-spacing:0.1em;padding:2px 8px;border:1px solid var(--m-line);'
+        f'border-radius:10px;cursor:pointer;background:'
+        f'{"var(--m-accent)" if p == period else "transparent"};'
+        f'color:{"var(--m-bg)" if p == period else "var(--m-muted)"};">{p.upper()}</button>'
+        for p in ("day", "week")
+    )
+
+    return HTMLResponse(f"""
+    <div id="news-digest" class="panel" style="padding:18px 22px;margin-bottom:22px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">
+        <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;
+                     color:var(--m-muted);">THE BRIEFING · {label.upper()}</span>
+        <span style="display:flex;gap:6px;">{toggle}</span>
+      </div>
+      <p style="margin:0 0 8px;font-size:14px;line-height:1.5;color:var(--m-ink);">
+        <strong>{total}</strong> item{'s' if total != 1 else ''} {label}{f', <strong>{unseen}</strong> you have not seen' if unseen else ''}.
+        {f'Busiest: {beat_txt}.' if beat_txt else ''}
+      </p>
+      {f'<p style="margin:0;font-size:13px;color:var(--m-muted);line-height:1.5;">Closest to your work: <span style="color:var(--m-ink);">{lead[:150]}</span></p>' if lead else ''}
+      {f'<ul style="margin:6px 0 0 16px;padding:0;font-size:12px;color:var(--m-muted);">{others}</ul>' if others else ''}
+    </div>""")
