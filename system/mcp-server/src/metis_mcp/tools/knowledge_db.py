@@ -187,12 +187,35 @@ def _ensure_schema(conn) -> None:
     conn.commit()
 
 
+def _builtin_has_content(db: dict) -> bool:
+    """True if any folder backing this built-in layer exists on this machine."""
+    lib = _library_root()
+    for folder in db.get("folders", []):
+        if (lib / folder).is_dir() or (paths.root / folder).is_dir():
+            return True
+    return False
+
+
 def _seed_builtin_databases(conn) -> None:
-    """Insert built-in database definitions if they don't exist yet."""
+    """Insert built-in database definitions — but only ones with content here.
+
+    These three built-ins are public-health flavoured (PH Background, Epidemiology
+    & Methods, NTDs). Seeding them unconditionally meant the published BASE edition,
+    which is meant to be domain-agnostic and to ship empty, greeted every new user
+    with three empty specialist layers they never chose — and it contradicted the
+    Phase-4 story that backgrounds are things you install.
+
+    Gating on whether the content folders exist self-configures instead of needing
+    an edition flag or coupling to build-base-shell.sh: a layer appears when its
+    documents do. Existing rows are never touched, so a machine whose library is
+    briefly unavailable (OneDrive mid-sync) keeps the layers it already has.
+    """
     for db in BUILTIN_DATABASES:
         existing = conn.execute(
             "SELECT id FROM knowledge_databases WHERE slug = ?", (db["slug"],)
         ).fetchone()
+        if not existing and not _builtin_has_content(db):
+            continue
         if not existing:
             conn.execute(
                 """INSERT INTO knowledge_databases
