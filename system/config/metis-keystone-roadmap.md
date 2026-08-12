@@ -745,6 +745,25 @@ Health Check that surfaces all of this in plain language.
    ranking is logged in the backlog.
 5. **M5 — capture standing preferences reliably** (the table exists — see the C.4 correction; it is
    capture that is thin, 1 row since June). Downgraded from "create the table". (P3.2)
+   **Mechanism SHIPPED 2026-08-12** (`4d8b02b`) for the procedural case: when Metis volunteers a
+   recorded procedure it asks whether to apply it automatically in future and records the reply via
+   `record_decision(category='procedure')` — "always" becomes a standing instruction that stops
+   asking, "never" silences it. **Offer → record → honour**, verified end-to-end over the real
+   protocol. *Remaining M5 work is to generalise that same loop to every recurring choice* (use RAG?
+   which knowledge layer? complement from the web?), which is logged in the backlog. That
+   generalisation is what finally makes `user_decisions` a live layer instead of a 1-row table.
+
+   Two enabling fixes landed with it, both instances of Appendix D's pattern:
+   - **Recall was layer-biased by tie-order, not relevance.** RRF is rank-based, so the best hit in
+     every layer scores identically; a flat sort plus Python's *stable* sort meant ties kept
+     insertion order (episodic, semantic, procedural). Episodic won because it was appended first
+     and had 2,018 rows to fill `top_k` before the 7-row procedural layer was reached. Layers are
+     now ranked internally and interleaved.
+   - **`_texts_of` found nothing at all.** FastMCP's `call_tool` returns a 2-tuple
+     `(list[ContentBlock], dict)` and the helper walked only the top level — so the **egress PII
+     rail scanned nothing, on every call, with no error**. This morning's dispatch fix made the
+     guard *run*; this made it able to *see*. Found only because a feature built on top failed
+     loudly enough to investigate.
 6. **M6 — auto-index new library items into RAG.** (P4.8) — **the blocking half is fixed** (`?`, this
    session): a knowledge layer could only ever index folders under `knowledge/library`, and said
    nothing when a collection lived elsewhere. That hid the owner's **primary research collection** —
