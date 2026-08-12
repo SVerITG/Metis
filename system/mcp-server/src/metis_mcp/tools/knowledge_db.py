@@ -172,6 +172,13 @@ def _ensure_schema(conn) -> None:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} INTEGER DEFAULT 0")
         except Exception:
             pass
+    # Enable/disable a layer (Keystone P4). Additive with DEFAULT 1, per the
+    # CODE/DATA contract: every existing layer stays on, so an upgrade cannot
+    # silently switch off knowledge the researcher already relies on.
+    try:
+        conn.execute("ALTER TABLE knowledge_databases ADD COLUMN enabled INTEGER DEFAULT 1")
+    except Exception:
+        pass
     # Folder mapping for custom databases (newline-separated library subfolders)
     try:
         conn.execute("ALTER TABLE knowledge_databases ADD COLUMN folders TEXT DEFAULT ''")
@@ -396,6 +403,68 @@ def _relative_source(pdf_path: Path, lib_root: Path) -> str:
         except ValueError:
             continue
     return str(pdf_path)
+
+
+def pending_pdf_count(db_slug: str) -> int:
+    """How many PDFs belong to this layer but are not yet indexed.
+
+    The number that tells a researcher their knowledge layer has quietly gone
+    stale. Nothing surfaced this before: dropping a paper into a background folder
+    did nothing, no rebuild was scheduled, and no screen said the layer was behind
+    — so a layer last built in June looked identical to one built this morning.
+    """
+    try:
+        conn = _connect()
+        try:
+            row = conn.execute(
+                "SELECT id FROM knowledge_databases WHERE slug = ?", (db_slug,)
+            ).fetchone()
+            if not row:
+                return 0
+            indexed = {
+                r[0] for r in conn.execute(
+                    "SELECT source_file FROM pdf_index_state WHERE db_id = ?", (row[0],)
+                ).fetchall()
+            }
+        finally:
+            conn.close()
+        lib = _library_root()
+        return sum(1 for p in _collect_pdfs_for_db(db_slug)
+                   if _relative_source(p, lib) not in indexed)
+    except Exception:
+        return 0
+
+
+@app.tool()
+def set_knowledge_layer_enabled(database: str, enabled: bool = True) -> str:
+    """Turn a knowledge background layer on or off for searching.
+
+    A disabled layer is skipped when a question searches "all" layers, so its
+    documents stop influencing answers — useful when a background is off-topic for
+    the work at hand. It is not deleted, and naming it explicitly in a search still
+    reaches it.
+
+    Args:
+        database: The layer's slug (e.g. 'ph-background', 'hat-specialist').
+        enabled: True to include it in searches, False to exclude it.
+    """
+    try:
+        conn = _connect()
+        _ensure_schema(conn)
+        try:
+            cur = conn.execute(
+                "UPDATE knowledge_databases SET enabled = ? WHERE slug = ?",
+                (1 if enabled else 0, database),
+            )
+            conn.commit()
+            if cur.rowcount == 0:
+                return f"No knowledge layer called '{database}'."
+        finally:
+            conn.close()
+        return (f"'{database}' is now {'included in' if enabled else 'excluded from'} "
+                f"searches across all layers.")
+    except Exception as e:
+        return f"Could not change '{database}': {e}"
 
 
 def _index_one_pdf(conn, pdf_path: Path, lib_root: Path, db_id: int,
@@ -737,7 +806,21 @@ async def search_pdf_knowledge(
                 db_filter_ids.append(row[0])
                 db_names[row[0]] = row[1]
     else:
-        for row in conn.execute("SELECT id, name FROM knowledge_databases").fetchall():
+        # No layers named → search every ENABLED layer.
+        #
+        # db_filter_ids must be POPULATED here, not left as None. Leaving it None
+        # means "no filter at all": the name map below would drop a disabled layer's
+        # label while its chunks were still searched and returned, showing up as an
+        # unnamed `db:1`. The toggle would have looked like it worked — a disabled
+        # layer's name simply vanishes — while still shaping every answer.
+        # Naming a layer explicitly still overrides the toggle, so a disabled layer
+        # stays reachable on purpose.
+        db_filter_ids = []
+        for row in conn.execute(
+            "SELECT id, name FROM knowledge_databases "
+            "WHERE COALESCE(enabled, 1) = 1"
+        ).fetchall():
+            db_filter_ids.append(row[0])
             db_names[row[0]] = row[1]
 
     total_chunks = conn.execute("SELECT COUNT(*) FROM pdf_chunks").fetchone()[0]

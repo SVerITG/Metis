@@ -2430,3 +2430,131 @@ async def knowledge_build_hat_index(request: Request):
         return HTMLResponse(
             f"<span style=\"font-family:var(--m-mono);font-size:11px;color:var(--m-warn);\">I couldn't start the indexer: {e}</span>"
         )
+
+
+# ---------------------------------------------------------------------------
+# Knowledge backgrounds panel  (Keystone P4 — see and control the layers)
+# ---------------------------------------------------------------------------
+# Until now the background layers had NO interface at all: not one dashboard route
+# referenced knowledge_databases. They could only be listed, toggled or rebuilt by
+# asking in chat, and nothing anywhere reported that a layer had gone stale — the
+# epi-methods layer was last built in June and looked identical to one built today.
+# A knowledge base you cannot see the state of is one you stop trusting.
+
+def _layer_rows() -> list[dict]:
+    """Every background layer with its counts and how far behind it is."""
+    rows = db_query(
+        "SELECT id, slug, name, description, COALESCE(enabled,1) AS enabled, "
+        "       doc_count, chunk_count, last_built "
+        "FROM knowledge_databases ORDER BY slug"
+    ) or []
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["docs"] = db_scalar("SELECT COUNT(*) FROM pdf_index_state WHERE db_id=?",
+                              (d["id"],), default=0) or 0
+        d["chunks"] = db_scalar("SELECT COUNT(*) FROM pdf_chunks WHERE db_id=?",
+                                (d["id"],), default=0) or 0
+        d["pending"] = 0
+        try:
+            from metis_mcp.tools.knowledge_db import pending_pdf_count  # type: ignore
+            d["pending"] = pending_pdf_count(d["slug"])
+        except Exception:
+            pass
+        out.append(d)
+    return out
+
+
+@router.get("/api/partial/knowledge/layers", response_class=HTMLResponse)
+async def knowledge_layers(request: Request):
+    layers = _layer_rows()
+    if not layers:
+        return HTMLResponse(
+            '<div class="panel" style="padding:16px 18px;">No knowledge backgrounds yet.</div>'
+        )
+    total_pending = sum(l["pending"] for l in layers)
+    rows_html = []
+    for l in layers:
+        on = bool(l["enabled"])
+        dot = "var(--m-ok)" if on else "var(--m-muted)"
+        stale = (
+            f'<span style="color:var(--m-warn);">{l["pending"]} new paper'
+            f'{"s" if l["pending"] != 1 else ""} not indexed</span>'
+            if l["pending"] else
+            '<span style="color:var(--m-muted);">up to date</span>'
+        )
+        built = (l["last_built"] or "")[:10] or "never"
+        rows_html.append(f"""
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;
+                    border-bottom:1px solid var(--m-rule-soft);">
+          <span style="width:8px;height:8px;border-radius:50%;background:{dot};flex-shrink:0;"></span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;">{l['name']}</div>
+            <div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
+              {l['docs']} documents · {l['chunks']:,} passages · built {built} · {stale}
+            </div>
+          </div>
+          <button hx-post="/api/knowledge/layers/{l['slug']}/toggle"
+                  hx-target="#kb-layers" hx-swap="outerHTML"
+                  style="font-family:var(--m-mono);font-size:10px;padding:4px 10px;
+                         border:1px solid var(--m-line);border-radius:4px;cursor:pointer;
+                         background:var(--m-surface);color:var(--m-ink);">
+            {'ON' if on else 'OFF'}
+          </button>
+          <button hx-post="/api/knowledge/layers/{l['slug']}/rebuild"
+                  hx-target="#kb-layers" hx-swap="outerHTML"
+                  style="font-family:var(--m-mono);font-size:10px;padding:4px 10px;
+                         border:1px solid var(--m-line);border-radius:4px;cursor:pointer;
+                         background:var(--m-surface);color:var(--m-ink);">
+            Rebuild
+          </button>
+        </div>""")
+
+    hint = (f'<div style="font-family:var(--m-mono);font-size:10px;color:var(--m-warn);'
+            f'margin-top:10px;">{total_pending} paper(s) across all backgrounds are waiting to be '
+            f'indexed — press Rebuild on the affected layer.</div>') if total_pending else ""
+
+    return HTMLResponse(f"""
+    <div id="kb-layers" class="panel" style="padding:16px 18px;margin-bottom:16px;">
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;
+                  color:var(--m-muted);margin-bottom:8px;">KNOWLEDGE BACKGROUNDS</div>
+      <div style="font-size:12px;color:var(--m-muted);margin-bottom:6px;">
+        Questions search every background that is ON. Switch one OFF to keep it out of answers.
+      </div>
+      {''.join(rows_html)}
+      {hint}
+    </div>""")
+
+
+@router.post("/api/knowledge/layers/{slug}/toggle", response_class=HTMLResponse)
+async def knowledge_layer_toggle(slug: str, request: Request):
+    cur = db_scalar("SELECT COALESCE(enabled,1) FROM knowledge_databases WHERE slug=?",
+                    (slug,), default=1)
+    db_execute("UPDATE knowledge_databases SET enabled=? WHERE slug=?",
+               (0 if cur else 1, slug))
+    return await knowledge_layers(request)
+
+
+@router.post("/api/knowledge/layers/{slug}/rebuild", response_class=HTMLResponse)
+async def knowledge_layer_rebuild(slug: str, request: Request):
+    """Index whatever is new in this layer, in the background.
+
+    Detached on purpose: indexing a few hundred PDFs takes tens of minutes, and a
+    request that blocks that long is one the browser gives up on — leaving the user
+    unsure whether anything happened.
+    """
+    try:
+        import subprocess, sys
+        subprocess.Popen(
+            [sys.executable, "-c",
+             "import asyncio,os;"
+             "os.environ.setdefault('METIS_RC_ROOT', os.getcwd());"
+             "from metis_mcp.tools.knowledge_db import build_pdf_knowledge_db as b;"
+             f"asyncio.run(b(database='{slug}'))"],
+            cwd=os.environ.get("METIS_RC_ROOT", "."),
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except Exception:
+        pass
+    return await knowledge_layers(request)
