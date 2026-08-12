@@ -257,8 +257,7 @@ verifies, and rolls back on failure; the app loads fully offline.
 > a per-run green/red history — "have we lost what we built?" is now a live indicator.
 > ✅ **3.3 second half closed (2026-08-12, `31ed255`)**: the "trigger consolidation opportunistically
 > from the MCP server so Desktop-only users get the loop" gap is now filled — `session_bootstrap` runs
-> aggregate→consolidate→draft once per ~20h (throttled via `learning_loop_state`). *Caveat: gated on
-> `session_bootstrap` actually being called — see Appendix C (the pipeline is barely exercised today).*
+> aggregate→consolidate→draft once per ~20h (throttled via `learning_loop_state`). ~~*Caveat: gated on `session_bootstrap` actually being called.*~~ **Caveat RESOLVED by M1**: `ambient._start_learning_loop_once()` fires the loop on the first tool call of any server process, so it no longer depends on the pipeline being reached at all.
 > **Phase 3 is now COMPLETE except the two architecturally-bounded 3.0 pieces (binding model-tiering,
 > true compaction), which need the Option-A-vs-B decision above.**
 
