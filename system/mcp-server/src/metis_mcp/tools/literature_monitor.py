@@ -114,10 +114,11 @@ def _insert_article(con, title: str, summary: str, url: str, domain: str, tags: 
     now = datetime.datetime.now().isoformat()
     con.execute(
         """INSERT INTO news_briefs
-               (title, domain, signal_strength, summary, source_url,
+               (brief_id, title, domain, signal_strength, summary, source_url,
                 created_at, tags, brief_date, source_type, surprise_flag)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'article', 0)""",
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'article', 0)""",
         (
+            f"nb-{__import__('uuid').uuid4().hex[:12]}",
             title[:500],
             domain,
             "medium",
