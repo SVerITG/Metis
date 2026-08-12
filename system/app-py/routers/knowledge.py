@@ -593,6 +593,63 @@ def _refresh_library_inventory() -> tuple[int, int]:
         return (0, 0)
 
 
+def _refresh_library_duplicates() -> int:
+    """Find PDFs stored twice under different names, and record them.
+
+    `library_duplicates` held 23 rows from a scan that no longer runs anywhere —
+    another table the dashboard reads and nothing writes, so its duplicate count
+    could never change. Deduplication is a real librarian task: the same paper filed
+    under two folders wastes attention, and worse, is indexed twice into the RAG
+    corpus so a search returns the same passage as two independent sources.
+
+    Only SIZE COLLISIONS are hashed. Hashing every PDF on the library path would be
+    minutes of I/O on a network drive for a panel nobody asked to refresh; two files
+    of different byte length cannot be identical, so the expensive check runs on a
+    handful of candidates instead of hundreds.
+    """
+    import hashlib
+    from collections import defaultdict
+
+    base = _get_lib_base()
+    if base is None:
+        return 0
+    try:
+        by_size: dict[int, list[Path]] = defaultdict(list)
+        for f in base.rglob("*"):
+            if f.suffix.lower() != ".pdf" or not f.is_file():
+                continue
+            try:
+                by_size[f.stat().st_size].append(f)
+            except OSError:
+                continue
+
+        groups: dict[str, list[Path]] = defaultdict(list)
+        for size, files in by_size.items():
+            if len(files) < 2:
+                continue
+            for f in files:
+                try:
+                    h = hashlib.md5(f.read_bytes()).hexdigest()
+                    groups[h].append(f)
+                except OSError:
+                    continue
+
+        db_execute("DELETE FROM library_duplicates")
+        n = 0
+        for h, files in groups.items():
+            if len(files) < 2:
+                continue
+            for f in files:
+                db_execute(
+                    "INSERT INTO library_duplicates (hash, duplicate_count, file) VALUES (?,?,?)",
+                    (h, len(files), str(f)),
+                )
+                n += 1
+        return n
+    except Exception:
+        return 0
+
+
 def _ensure_pdf_cache() -> None:
     global _lit_pdf_cache
     if _lit_pdf_cache:
@@ -600,6 +657,7 @@ def _ensure_pdf_cache() -> None:
     # Refresh before reading. Once per process (this function is cache-guarded), so
     # the cost is one directory walk per dashboard start.
     _refresh_library_inventory()
+    _refresh_library_duplicates()
     lib_rows = db_query("SELECT relative_path, basename FROM library_inventory") or []
     if not lib_rows:
         return
