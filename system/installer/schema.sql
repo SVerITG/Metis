@@ -426,7 +426,11 @@ CREATE TABLE IF NOT EXISTS news_briefs (
     source_url     TEXT,
     tags           TEXT,
     surprise_flag  INTEGER DEFAULT 0,
-    source_type    TEXT DEFAULT 'news'
+    source_type    TEXT DEFAULT 'news',
+    -- Seen state. Without it the News surface showed the same 859 items on every
+    -- visit with no sense of what had arrived since last time — which is the one
+    -- thing that makes a feed readable rather than a wall. Added 2026-08-12.
+    seen_at        TEXT DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS news_items (

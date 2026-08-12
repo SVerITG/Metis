@@ -23,9 +23,24 @@
   <!-- ── Section header ── -->
   <h2 class="sec-label" style="margin-bottom:10px;">
     <span>Dispatch</span>
-    <span class="tail">
-      {% if slipcases %}{{ slipcases | sum(attribute='count') }} SIGNALS{% endif %}
-      {% if last_updated %} · UPDATED {{ last_updated | upper }}{% endif %}
+    <span class="tail" style="display:flex;align-items:center;gap:8px;">
+      {# What arrived since you last looked, stated first — an editor leads with
+         what is new, not with the total. #}
+      {% if unseen_count %}
+      <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;
+                   padding:2px 7px;border-radius:10px;
+                   background:color-mix(in srgb, var(--m-accent) 15%, transparent);
+                   color:var(--m-accent);">{{ unseen_count }} NEW</span>
+      <button hx-post="/api/news/mark-seen?period={{ period }}"
+              hx-target="#news-surface" hx-swap="outerHTML"
+              style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+                     padding:2px 8px;border:1px solid var(--m-line);border-radius:10px;
+                     background:transparent;color:var(--m-muted);cursor:pointer;">MARK ALL SEEN</button>
+      {% endif %}
+      <span>
+        {% if slipcases %}{{ slipcases | sum(attribute='count') }} SIGNALS{% endif %}
+        {% if last_updated %} · UPDATED {{ last_updated | upper }}{% endif %}
+      </span>
     </span>
   </h2>
 
