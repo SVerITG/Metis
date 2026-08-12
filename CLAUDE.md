@@ -261,6 +261,19 @@ Changes made via these tools appear immediately in the Metis dashboard.
 
 ## graphify
 
+> ⚠️ **NOT INSTALLED on this machine, and the graph is stale (last built 2026-07-10).**
+> Checked 2026-08-12: `graphify` is not at `~/.local/bin/graphify` nor anywhere on PATH.
+> Two PreToolUse hooks called it on every Bash/Read/Glob and errored every time; they are
+> now guarded with `command -v … || true`, so they stay silent and resume working if it is
+> reinstalled.
+>
+> **Do not trust `graphify-out/` for codebase questions.** It predates everything built
+> since mid-July — the ambient memory layer, the structural audit, the background packs,
+> the Office integration. A stale graph answers confidently and wrongly, which is worse
+> than no graph. Use ripgrep and the source until it is rebuilt with `graphify update .`
+>
+> The instructions below apply only once graphify is installed again.
+
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
 
 Rules:

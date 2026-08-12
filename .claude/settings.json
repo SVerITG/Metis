@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.local/bin/graphify hook-guard search"
+            "command": "command -v \"$HOME/.local/bin/graphify\" >/dev/null 2>&1 && \"$HOME/.local/bin/graphify\" hook-guard search || true"
           }
         ]
       },
@@ -46,7 +46,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.local/bin/graphify hook-guard read"
+            "command": "command -v \"$HOME/.local/bin/graphify\" >/dev/null 2>&1 && \"$HOME/.local/bin/graphify\" hook-guard read || true"
           }
         ]
       }
