@@ -1236,9 +1236,22 @@ async function setActiveModel(slug, btn) {
     const data = await res.json();
     if (data.status === 'ok') {
       showToast(`<i class="bi bi-check2 toast-icon"></i>Default model set to <b>${slug}</b>`);
-      // Visual update — toggle the model-card-on class
-      document.querySelectorAll('.model-card-on').forEach(el => el.classList.remove('model-card-on'));
-      if (btn) btn.closest('.panel')?.classList.add('model-card-on');
+      // Visual update — reflect the choice on every model card (S.0b): highlight
+      // + button label, matching what the server now renders on load.
+      document.querySelectorAll('.panel[data-model]').forEach(card => {
+        const on = (card.dataset.model === slug);
+        card.classList.toggle('model-card-on', on);
+        const b = card.querySelector('.model-select-btn');
+        if (b) {
+          b.textContent = on ? '· SELECTED' : 'USE';
+          b.style.color = on ? 'var(--m-accent)' : 'var(--m-muted)';
+        }
+      });
+      // Fallback for any card without the data-model hook
+      if (!document.querySelector('.panel[data-model]')) {
+        document.querySelectorAll('.model-card-on').forEach(el => el.classList.remove('model-card-on'));
+        if (btn) btn.closest('.panel')?.classList.add('model-card-on');
+      }
     } else {
       showToast('<i class="bi bi-info-circle toast-icon"></i>' + (data.message || "I couldn't change the model — check that it's available."));
     }

@@ -1,9 +1,33 @@
-{# Memory overview — stats + filter chips + archive control.
-   Inputs: total_memories, week_count, oldest, by_type{}, archive_days #}
+{% from "partials/_section.html" import sec_label %}
+{# Memory overview — 8-layer picture + curated stats + filter chips + archive control.
+   Inputs: layers[], total_all, total_memories, week_count, oldest, by_type{}, archive_days #}
+
+{# Full picture across every layer — the whole store, not just curated entries (S.0c/S.4) #}
+<div class="grid grid-4" style="margin-bottom:12px;gap:12px;">
+  {% for l in layers %}
+  <div class="panel" style="padding:14px 16px;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;">
+      <span class="kicker" style="padding:0;color:{{ 'var(--m-accent)' if l.count else 'var(--m-muted)' }};">{{ l.kicker }}</span>
+      <span style="font-family:var(--m-mono);font-size:17px;font-weight:600;color:var(--m-ink);">{{ '{:,}'.format(l.count) }}</span>
+    </div>
+    <div style="font-family:var(--m-display);font-size:15px;font-weight:500;color:var(--m-ink);margin:6px 0 3px;">{{ l.name }}</div>
+    <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);line-height:1.4;margin-bottom:10px;text-wrap:pretty;">{{ l.desc }}</div>
+    <div style="height:3px;background:var(--m-rule-soft);border-radius:2px;overflow:hidden;">
+      <div style="height:100%;width:{{ l.pct }}%;background:{{ 'var(--m-accent)' if l.count else 'var(--m-rule)' }};border-radius:2px;transition:width .4s;"></div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);text-align:right;margin-bottom:20px;">
+  {{ '{:,}'.format(total_all) }} entries held across every layer
+</div>
+
+{# Curated "Memory Palace" detail — the entries you and Metis chose to keep #}
+{{ sec_label("Curated memory", tail="MEMORY PALACE DETAIL", style="margin-bottom:10px;") }}
 <div class="token-stats-row">
   <div class="token-stat">
     <div class="token-stat-num">{{ total_memories }}</div>
-    <div class="token-stat-label">total memories</div>
+    <div class="token-stat-label">curated entries</div>
   </div>
   <div class="token-stat">
     <div class="token-stat-num">{{ week_count }}</div>
