@@ -725,9 +725,39 @@ async def semantic_search(
     except Exception as e:
         return [TextContent(type="text", text=f"Error during semantic search: {e}")]
 
-    # Sort by RRF score descending, take top_k
-    results.sort(key=lambda x: x[0], reverse=True)
-    top = results[:top_k]
+    # Rank within each layer, then interleave — do NOT flat-sort.
+    #
+    # RRF scores are rank-based, so the best hit in EVERY layer scores identically
+    # (1/(60+1) twice). A flat sort therefore produces a long run of ties, and
+    # Python's sort is stable, so ties keep insertion order — and layers are
+    # appended in a fixed order: episodic, semantic, procedural. Episodic was not
+    # winning because it was more relevant; it was winning because it was appended
+    # first, and with 2,018 rows it supplied enough tied candidates to fill top_k
+    # before the 7-row procedural layer was ever reached.
+    #
+    # That is why a freshly written procedure could not be found unless the caller
+    # named `layers="procedural"` explicitly — the small, high-signal layers were
+    # structurally unreachable through the default search.
+    #
+    # Round-robin fixes it without inventing a weighting: every requested layer
+    # offers its best hit, then its second, and so on. A layer with nothing
+    # relevant simply runs out and yields its slots to the others, so this costs
+    # nothing when one layer genuinely dominates.
+    by_layer: dict[str, list] = {}
+    for row in results:
+        by_layer.setdefault(row[1], []).append(row)
+    for rows in by_layer.values():
+        rows.sort(key=lambda x: x[0], reverse=True)
+
+    top = []
+    order = [l for l in ("procedural", "semantic", "episodic") if l in by_layer]
+    depth = 0
+    while len(top) < top_k and any(len(by_layer[l]) > depth for l in order):
+        for layer in order:
+            if len(by_layer[layer]) > depth and len(top) < top_k:
+                top.append(by_layer[layer][depth])
+        depth += 1
+    top.sort(key=lambda x: x[0], reverse=True)
 
     if not top:
         return [TextContent(type="text", text=f"No results found for '{query}' in layers: {layers}.")]

@@ -60,6 +60,7 @@ import datetime
 import logging
 import os
 import queue
+import re
 import socket
 import threading
 import time
@@ -421,6 +422,141 @@ def mark_agent_running(agent_slug: str) -> None:
             con.commit()
     except Exception as exc:
         log.debug("ambient: could not mark %s running (%s)", slug, exc)
+
+
+# ── volunteering recorded procedures ─────────────────────────────────────────
+# Storing a runbook is not the same as using one. Retrieval worked, but only when
+# something chose to search the procedural layer — so the researcher still had to
+# remember that a procedure existed, which is the thing a recorded procedure is
+# supposed to remove. This surfaces it instead, on the always-hit path.
+#
+# Deliberately CHEAP: a substring match against keywords lifted from each
+# procedure's trigger_context, never an embedding. This runs on every tool call,
+# and an embedding per call would put ~20 ms on all of Metis to serve a hint.
+#
+# And deliberately QUIET: each procedure is offered at most once per session. A
+# reminder that fires every call is one the reader learns to skip, which converts
+# a real safeguard into decoration — the exact failure this whole audit was about.
+
+# Extensions that mean "a dataset just entered the conversation". The owner's
+# standing instruction is that the safe-handling procedure be proposed EVERY time
+# data appears, unasked; a file extension is the one signal that is always true
+# regardless of how the request was phrased.
+_DATA_SUFFIXES = (".csv", ".xlsx", ".xls", ".dta", ".sav", ".rds", ".sas7bdat",
+                  ".parquet", ".accdb", ".mdb")
+_STOP = {"the", "and", "for", "with", "that", "this", "from", "when", "any",
+         "also", "into", "user", "asks", "before", "after", "path", "data",
+         "metis", "claude", "run", "new", "one", "not", "are", "its", "has"}
+
+_procs_cache: list[tuple[str, set[str]]] | None = None
+_offered: set[str] = set()
+
+
+def _load_procedures() -> list[tuple[str, set[str]]]:
+    """(procedure_name, trigger keywords) for every stored procedure. Cached."""
+    global _procs_cache
+    if _procs_cache is not None:
+        return _procs_cache
+    out: list[tuple[str, set[str]]] = []
+    try:
+        from metis_mcp.config import paths
+        from metis_mcp.db import connect
+
+        with connect(paths.db) as con:
+            rows = con.execute(
+                "SELECT procedure_name, trigger_context FROM procedural_memory"
+            ).fetchall()
+        for r in rows:
+            words = {
+                w for w in re.split(r"\W+", (r["trigger_context"] or "").lower())
+                if len(w) > 3 and w not in _STOP
+            }
+            if words:
+                out.append((r["procedure_name"], words))
+    except Exception as exc:
+        log.debug("ambient: could not load procedures (%s)", exc)
+    _procs_cache = out
+    return out
+
+
+def procedure_preference(procedure_name: str) -> str:
+    """The researcher's standing choice for this procedure: 'always', 'never', or ''.
+
+    Offering the same thing every session and forgetting the answer is its own kind
+    of amnesia. Once someone has said "always do it this way" or "stop suggesting
+    this", that IS a decision, and it belongs in `user_decisions` like any other
+    standing preference — so the offer becomes a one-time question rather than a
+    recurring prompt.
+    """
+    try:
+        from metis_mcp.config import paths
+        from metis_mcp.db import connect
+
+        with connect(paths.db) as con:
+            rows = con.execute(
+                "SELECT decision, scope FROM user_decisions "
+                "WHERE category='procedure' AND decision LIKE ?",
+                (f"%{procedure_name}%",),
+            ).fetchall()
+        for r in rows:
+            d = (r["decision"] or "").lower()
+            if any(w in d for w in ("never", "don't", "do not", "stop offering", "skip")):
+                return "never"
+            if any(w in d for w in ("always", "automatically", "without asking")):
+                return "always"
+    except Exception as exc:
+        log.debug("ambient: could not read procedure preference (%s)", exc)
+    return ""
+
+
+def procedure_hint(arguments: dict[str, Any]) -> str | None:
+    """The one procedure worth mentioning for this call, or None."""
+    try:
+        blob = " ".join(str(v) for v in (arguments or {}).values() if isinstance(v, str))
+        if not blob:
+            return None
+        low = blob.lower()
+
+        # 1. A data file is unambiguous — propose safe handling regardless of phrasing.
+        if any(s in low for s in _DATA_SUFFIXES):
+            for pname, _ in _load_procedures():
+                if "safe handling" in pname.lower():
+                    pref = procedure_preference(pname)
+                    if pref == "never":
+                        return None
+                    # An "always" preference is re-stated every time rather than
+                    # once per session: it is no longer a suggestion the reader can
+                    # tire of, it is the standing instruction they asked for.
+                    if pref == "always":
+                        return pname
+                    if pname not in _offered:
+                        _offered.add(pname)
+                        return pname
+                    return None
+
+        # 2. Otherwise, the procedure whose trigger words this request hits hardest.
+        req = {w for w in re.split(r"\W+", low) if len(w) > 3 and w not in _STOP}
+        if len(req) < 2:
+            return None
+        best, best_hits = None, 0
+        for pname, words in _load_procedures():
+            hits = len(req & words)
+            if hits > best_hits:
+                best, best_hits = pname, hits
+        # Three distinct trigger words is the threshold that separated
+        # "do risk mapping for Angola" from incidental overlap in testing.
+        if best and best_hits >= 3:
+            pref = procedure_preference(best)
+            if pref == "never":
+                return None
+            if pref == "always":
+                return best
+            if best not in _offered:
+                _offered.add(best)
+                return best
+    except Exception as exc:
+        log.debug("ambient: procedure hint skipped (%s)", exc)
+    return None
 
 
 def before_call(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
