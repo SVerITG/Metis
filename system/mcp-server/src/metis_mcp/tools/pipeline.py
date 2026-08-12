@@ -133,7 +133,6 @@ def _write_event_sync(session_id: str, event_type: str, content: str) -> None:
 
 # ── Stage 1: session_bootstrap ───────────────────────────────────────────────
 
-@app.tool()
 def _maybe_run_learning_loop() -> None:
     """S.6 — run the reflexion→improvement loop opportunistically, at most once
     per ~20h, from the MCP server. The nightly aggregation/consolidation/drafting
@@ -205,6 +204,7 @@ def _maybe_run_learning_loop() -> None:
         log.warning("[pipeline] opportunistic learning loop skipped: %s", exc)
 
 
+@app.tool()
 async def session_bootstrap(client: str = "code") -> list[TextContent]:
     """Stage 1: Find or create a session for the current computer.
 
@@ -216,7 +216,17 @@ async def session_bootstrap(client: str = "code") -> list[TextContent]:
         client: Which Claude client is calling ('code'|'chat'|'cowork'|'dashboard').
     """
     _ensure_pipeline_tables()
-    _maybe_run_learning_loop()  # S.6 — Desktop-only users get the learning loop too
+    # S.6 — Desktop-only users get the learning loop too. Started off-thread via
+    # ambient rather than inline: this loop can call the Claude API to draft
+    # proposals, and a bootstrap that blocks for seconds is a bootstrap the user
+    # learns to avoid. (Ambient also starts it on the first tool call of any
+    # session, so it no longer depends on bootstrap being reached at all.)
+    try:
+        from metis_mcp import ambient
+
+        ambient._start_learning_loop_once()
+    except Exception:
+        _maybe_run_learning_loop()
     computer = socket.gethostname()
     cutoff = (
         datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=2)

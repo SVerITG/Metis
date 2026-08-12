@@ -76,6 +76,32 @@ try:
 except Exception as e:
     warn(f"prompt registration check failed: {type(e).__name__}: {e}")
 
+# 2c. The load-bearing tools are actually REGISTERED, and no private helper leaked.
+#
+# Why this check exists (2026-08-12): a new helper was inserted between an
+# `@app.tool()` decorator and the function below it. Python binds a decorator to
+# whatever function comes next, so the decorator silently jumped — publishing the
+# private `_maybe_run_learning_loop` as a tool and DE-REGISTERING
+# `session_bootstrap`. The server started fine, imports passed, the tool COUNT was
+# unchanged, and nothing anywhere errored. Only a name-level assertion catches it.
+try:
+    import asyncio
+    names={t.name for t in asyncio.run(app.list_tools())}
+    required=["session_bootstrap","run_metis","save_session_event","get_agent_context",
+              "log_agent_run","write_reflexion","save_session_summary","recall","remember"]
+    missing=[t for t in required if t not in names]
+    if missing:
+        bad("load-bearing tools NOT REGISTERED: "+", ".join(missing)); fails+=1
+    else:
+        ok(f"all {len(required)} load-bearing tools registered")
+    private=sorted(n for n in names if n.startswith("_"))
+    if private:
+        bad("private helper(s) exposed as tools: "+", ".join(private)); fails+=1
+    else:
+        ok("no private helpers exposed as tools")
+except Exception as e:
+    warn(f"tool-name check failed: {type(e).__name__}: {e}")
+
 # 3. DB reachable + key tables
 try:
     from metis_mcp.config import paths
