@@ -12,6 +12,40 @@ direct code reading, cross-checked against the README's promises, the feature-ba
 memory, and the owner's stated evaluation philosophy.
 **Companion docs:** `data-persistence-strategy.md` (CODE/DATA contract), `metis-self-reflexion-prompt.md`
 (the audit doctrine), `feature-backlog.md` (raw request log). Full gap register in Appendix A.
+**Merged in (2026-08-12):** the senior-engineer surface review that ran as "Phase S" is now folded in
+here (see **PHASE S**) and its old plan file is superseded — this roadmap is the single source of truth.
+
+---
+
+## Latest status — 2026-08-12 (read this first)
+
+**Where we stand at a glance:** P0 ✅ · P1 ~85% (bundled `.exe` is the one big gap) · P2 🟡 advanced ·
+P3 ✅ except two architectural pieces · P4 ⬜ · P5 ⬜ · P6 🟡 (caching/compaction/tiering left) ·
+**PHASE S ✅ shipped today**.
+
+**Shipped this session (2026-08-12) — the Metis Systems surface overhaul + memory checks.** Three
+commits on `main`, **local only, not pushed yet**: `af7ddc2` (surface reshape), `31ed255` (live
+monitoring + honest tokens + Desktop learning loop), `c911818` (Sessions panel + Health Check + doctor
+checks). Full detail in **PHASE S** below. This also advanced existing Keystone items:
+- **P6 · B6.1 → COMPLETE** — the dispatch-write that sets `agent_runs.status='running'` now exists, so
+  live "who's working" is real end-to-end (was "display-ready").
+- **P3 · 3.3 → PARTIAL** — the MCP-server-side learning loop (aggregate→consolidate→draft, throttled
+  once/~20h in `session_bootstrap`) now runs, so Desktop-only users get the loop. *Caveat below.*
+- **P2 · 2.1/2.2 → substantially done** — the two named incoherences (theme dual-write/single-read;
+  model "selected" hardcoded to Sonnet) are fixed; the duplicate Memory surface is merged; scattered
+  settings collapsed into one Appearance & Settings section.
+- **New:** a one-click **Health Check** (runs the full doctor in plain language, no terminal) and a
+  **Sessions panel** — plus two new doctor checks (session-memory-active, projects-registered).
+
+**Honest caveat (from the memory evaluation, Appendix C):** S.2 and S.6 live inside
+`run_metis`/`session_bootstrap`, and the DB shows that pipeline is **barely exercised** (`session_events`
+= 0; `sessions` registry frozen since May). So these hooks are correct but only pay off once the
+pipeline is actually invoked — the same P3 "convention → construction / is `run_metis` even called?"
+gap. **Full memory-system evaluation is Appendix C.**
+
+**Do-next housekeeping:** (1) `/mcp` reconnect to load the server-side pieces; (2) push the three
+commits to `metis-ph` + regenerate the `origin` base via the Release Coordinator; (3) still open:
+rotate the Anthropic API key printed to a transcript (C10).
 
 ---
 
@@ -133,6 +167,13 @@ multi-distro machine), and can click "Adapt to my work" to auto-populate project
 ### PHASE 2 — Coherence & declutter ("one calm, professional surface")
 *Apply the update-menu principle broadly; end file-editing for settings; make updates a button.*
 
+> **Status (2026-08-12): 2.2 ✅ · 2.1 partially done** via the Metis Systems surface overhaul (see
+> PHASE S). Fixed: theme dual-write/single-read (now reflects saved), model "selected" hardcoded to
+> Sonnet (now reflects saved), merged the duplicate Memory surface, collapsed scattered controls
+> (feature-tips, autostart) into one Appearance & Settings section, deleted dead routes. **Remaining:**
+> the fuller single Settings pane spanning the wizard too (2.1), generalize the update-menu pattern
+> (2.3), the in-app "Update now" button (2.4), file-only-settings-as-UI (2.5), self-host CDN assets (2.6).
+
 | # | Item | Why / evidence | Files | Size·Impact |
 |---|---|---|---|---|
 | 2.1 | **A single Settings surface** | Settings are spread across the Metis tab (12 sections), the wizard (13 sections), ~40 config files, and a chat layer. Consolidate into one coherent, searchable pane; keep chat + file access for power users. | `routers/metis_tab.py`, `setup.py`, `templates/metis_tab.html` | L·★★ |
@@ -176,6 +217,10 @@ verifies, and rolls back on failure; the app loads fully offline.
 > ✅ **3.8 SHIPPED** (`0f9bf6a`): weekly `job_promise_harness` records the harness score to
 > `promise-trend.jsonl`; a "Promise drift" strip on the Metis tab shows the latest pass/fail/warn +
 > a per-run green/red history — "have we lost what we built?" is now a live indicator.
+> ✅ **3.3 second half closed (2026-08-12, `31ed255`)**: the "trigger consolidation opportunistically
+> from the MCP server so Desktop-only users get the loop" gap is now filled — `session_bootstrap` runs
+> aggregate→consolidate→draft once per ~20h (throttled via `learning_loop_state`). *Caveat: gated on
+> `session_bootstrap` actually being called — see Appendix C (the pipeline is barely exercised today).*
 > **Phase 3 is now COMPLETE except the two architecturally-bounded 3.0 pieces (binding model-tiering,
 > true compaction), which need the Option-A-vs-B decision above.**
 
@@ -306,9 +351,14 @@ Overview, reads `agent_runs` per session, refreshes 30s). ✅ **B6.3 done** (`50
 brief, session-consolidation, meeting extraction, flashcard gen, slide gen, and MCP-side reflexion
 themes. Only PaperQA is deferred — its usage is internal to the PaperQA library, not a plain response).
 The token monitor now reflects real spend across the dashboard + the MCP self-improvement call.
-✅ **B6.1 display-ready** (the strip renders "working…" for `status='running'`; the dispatch-write
-that SETS 'running' is the remaining piece, pairs with 3.0). ⏳ Prompt caching (wire the dead
-`cache_helpers`), true compaction, and binding model-tiering remain (compaction + tiering pair with 3.0).
+✅ **B6.1 COMPLETE (2026-08-12, `31ed255`)** — `run_metis` now dispatch-writes an `agent_runs`
+row with `status='running'` for the routed agent, and `log_agent_run` completes that row in place
+(matched on session_id, dispatch model preserved) instead of duplicating; a 15-min stale-guard on the
+dashboard stops a perpetual "working…". *Caveat: only fires when `run_metis` is actually invoked — see
+Appendix C.* ✅ **E6.2 honesty** (`31ed255`) — the token panel now states plainly that per-run token
+counts aren't captured (the LLM can't self-report) rather than showing misleading zeros. ⏳ Prompt
+caching (wire the dead `cache_helpers`), true compaction, and binding model-tiering remain (compaction
++ tiering pair with 3.0).
 
 **Builds (after the evaluation shows the gaps):**
 - **B6.1 — Live "who's working now":** write a `'running'` `agent_runs` row / `agent_start`
@@ -334,6 +384,43 @@ user can see which agents are working during a prompt and a truthful "who did wh
 and none of it overstates isolated sub-agent execution that 3.0 hasn't delivered yet.
 
 ---
+
+### PHASE S — Metis Systems surface overhaul ("an operator's console") — ✅ SHIPPED 2026-08-12
+*Merged in from the senior-engineer surface review. Reshaped the Systems surface (the `metis` tab) from
+an engineer's endpoint list into a console a non-technical scientist can read at a glance. Overlaps and
+advances P2 (coherence), P3 (learning loop), and P6 (monitoring) — cross-referenced there.*
+
+> **Status: ✅ SHIPPED (commits `af7ddc2`, `31ed255`, `c911818` on `main` — local only, not pushed).**
+> All items S.0–S.6 built + verified (in-process TestClient for endpoints; hermetic temp-DB tests for
+> the log_agent_run update-vs-insert and the learning-loop throttle; MCP smoke HEALTHY). MCP server
+> rebuilt offline — needs a `/mcp` reconnect to load the server-side pieces.
+
+**The problems it fixed (audit finding):** the surface opened on a static how-to instead of a
+state-of-things view; had no single "is Metis healthy right now?" answer; scattered two cards
+(feature-tips, autostart) into the page header so they showed on *every* section (the reported "bug");
+duplicated Memory (a section here **and** a standalone surface that under-reported by ~300× — 67 vs
+~19k across 8 layers); and several panels promised live data their producers never filled.
+
+| # | Item | Status | Notes |
+|---|---|---|---|
+| S.0a | Move feature-tips + startup cards out of the global header | ✅ | now in Appearance & Settings — fixes the "on every section" bug |
+| S.0b | Model selector + theme swatches reflect the **saved** value | ✅ | server-rendered via `_surface_ctx`; was hardcoded Sonnet/Archive (P2.2) |
+| S.0c | Memory overview counts all **8 layers**, not just `memory_entries` | ✅ | ~19k not 67 |
+| S.0d | Delete dead routes/templates (`metis/agents`, `metis/traces`, `content-packs`) | ✅ | producers never existed |
+| S.1 | Restructure 12 sections → **9**: Dashboard (new, first) → Activity → Memory → Agents → Learning → Persona & Model → Appearance & Settings → Integration & Keys → **Manual & FAQ** (last, with a real FAQ) | ✅ | opens on state, ends on help (P2.1) |
+| S.2 | Live agent monitoring: dispatch-write `status='running'` + complete-in-place + session linkage | ✅ | **= P6 B6.1.** Caveat: fires only when `run_metis` is invoked (App. C) |
+| S.3 | Live **MCP health check** (server importable + registered in Desktop/Code) on Dashboard + Integration | ✅ | the thing users most want confirmed; was absent |
+| S.4 | Merge the standalone Memory Health surface into the Memory section; `/memory` → redirect | ✅ | one canonical Memory home |
+| S.5 | Honest token panel (states usage isn't captured vs misleading zeros) | ✅ | **= P6 E6.2 honesty**; real capture still needs the pipeline |
+| S.6 | Desktop-only learning loop in `session_bootstrap` (throttled once/~20h) | ✅ | **= P3 3.3 second half.** Caveat: gated on `session_bootstrap` being called |
+| S.+ | **Health Check** button (full doctor inline, plain language, no terminal) + **Sessions panel** (recorded-session count, memory-active status, open each to read it) + two new doctor checks (session-memory-active, projects-registered) | ✅ | serves 1.3/3.5 spirit; answers "is everything recorded?" |
+
+**Phase S acceptance (met):** the surface opens on a Dashboard with a truthful health readout; the
+tips/startup cards appear only in Settings; model + theme show the saved values after reload; Memory
+appears in one place with the full 8-layer count; the token panel no longer shows misleading zeros;
+Manual & FAQ sits last. **Follow-up surfaced:** the client-tagged `sessions` registry is dormant, so a
+reliable Claude-Code-vs-Desktop session split needs it revived (client tagging added to
+`save_session_summary` going forward as a first step).
 
 ### CROSS-CUTTING — Engineering hygiene (runs alongside every phase)
 *What a senior engineer notices immediately; do opportunistically within the phase that touches each area.*
@@ -492,6 +579,104 @@ icon licensing before any public release (C22).
   existing `webhook.py`) is the proven pattern if isolation is wanted.
 - **Office** = dashboard JSON API + file-watcher (lowest friction) now, Office.js add-in (HTTPS-localhost
   cert needed) later. PPTX/XLSX/DOCX libraries are already installed and partially used.
+
+---
+
+## Appendix C — Memory System Evaluation (2026-08-12)
+
+*Full comprehensive evaluation of Metis's memory, on owner request. Method: live-DB scan of every
+layer (counts + last-write recency) via the MCP server's own connection, cross-read against the recall/
+consolidation code and the runtime data-flow review (§2.5). Numbers are from the live DB
+`~/.local/share/metis/metis.sqlite`.*
+
+### C.1 The layers, by liveness (the honest census)
+
+| Layer | Table | Rows | Last write | Verdict |
+|---|---|---|---|---|
+| Memory Palace (curated) | `memory_entries` | 67 | 2026-08-11 | ✅ active |
+| Episodic (events) | `episodic_memory` | 2,018 | 2026-08-11 | ✅ **strong** — auto-extracted from agent runs |
+| Semantic (concepts) | `semantic_memory` | 52 | 2026-08-10 | ✅ active — consolidation writes here |
+| Procedural (how-to) | `procedural_memory` | 1 | 2026-05-23 | ⚠️ **effectively dead** |
+| Working memory | `working_memory` | 0 | — | ⚠️ **empty** |
+| Session summaries | `session_summaries` | 687 | 2026-08-12 | ✅ **strong & current** — the real continuity layer |
+| Session registry | `sessions` | 5 | 2026-05-27 | 🔴 **dormant** since May; all `client='code'`, zero Desktop |
+| Session events | `session_events` | 0 | — | 🔴 **empty** — the pipeline path is not exercised |
+| Reflexions | `reflexion_log` | 36 | 2026-08-12 | ✅ active (incl. today) |
+| Improvement proposals | `skill_improvement_proposals` | 2 | 2026-06-04 | ⚠️ stale — drafting produces nothing new |
+| Ideas | `ideas` | 8 | 2026-06-18 | ⚠️ low/stale |
+| Idea links | `idea_links` | 0 | — | 🔴 empty |
+| Cross-pollination links | `cross_pollination_links` | 0 | — | 🔴 empty despite 3.9 "persist at ingestion" |
+| Decisions (standing prefs) | `decisions` | — | — | 🔴 **table absent** — `record_decision` never ran |
+| Dashboard notes | `personal_notes` | 0 | — | ⚠️ empty; also split from `.md` notes |
+| Topic memory | `user_topics` | 5 | 2026-06-11 | ⚠️ small |
+| Library chunks (RAG) | `pdf_chunks` | 16,500 | 2026-07-14 | ✅ substantial; not re-indexed since July |
+
+### C.2 The load-bearing finding: two memory systems — one alive, one dormant
+
+Continuity that **works** flows through **direct tool calls**: `save_session_summary` (687, today),
+`log_agent_run → _auto_extract_memory` (episodic 2,018), `write_reflexion` (36, today). These are
+healthy and current.
+
+The **pipeline-written** layer is **dormant**: `session_events` = 0 and the `sessions` registry has
+not grown since May. That means **`run_metis` / `session_bootstrap` are barely invoked in normal use** —
+so everything gated on them is empty. This is the DB confirming §2.5's "the lifecycle is convention,
+not construction," and it has a direct bearing on **today's Phase S backend**: the S.2 dispatch-write
+and the S.6 learning loop live *inside* that pipeline, so they are correct but only pay off once the
+pipeline is actually called. **This is the #1 memory issue and it reframes the remaining P3 priority:**
+the highest-leverage work is not more recall wiring — it's ensuring the lifecycle is actually invoked,
+or moving the session/decision/reflexion write-backs onto the always-hit direct-tool path.
+
+### C.3 Retrieval quality
+
+Recall is now a hybrid **vector + keyword** path (P3.1 shipped, RRF over the 768-d layers); episodic is
+embedded. On paper this is near state-of-the-art and the merged Memory section now exposes a live
+retrieval tester. **But** rich recall into a new request still depends on either the model choosing to
+call `recall()` or `run_metis` running its Stage-7 auto-recall — and §C.2 shows the pipeline isn't in
+the hot path. So the *capability* is strong; its *guaranteed presence in every answer* is not. (The
+`vec0` extension loads fine in the live server per the smoke test; a subprocess scan failing to load it
+is not a defect signal.)
+
+### C.4 Specific gaps (each mapped to a phase)
+
+- **Procedural + working memory never accumulate** (1 / 0) — the "how things are done here" layer is
+  inert; the cold loop harvests 0. Decide: feed it, or drop the claim. → P3.
+- **Cross-pollination + idea links = 0** despite 3.9 shipping "persist at ingestion" — verify the
+  writer fires in normal (non-pipeline) use; the connection graph is not growing. → P3 (3.9 follow-through).
+- **`decisions` table absent** — `record_decision`/`recall_decisions` never created it, so standing
+  preferences aren't captured (pipeline-gated, and the tool has known MCP-reconnect debt). → P3.2.
+- **New library items aren't auto-indexed into RAG** — `pdf_chunks` last grew 2026-07-14; adding a
+  paper writes metadata only. → P4 (new 4.8).
+- **Two notes systems** — `personal_notes` (SQL, empty) vs `search_notes` (greps `.md`). → P2/P3.
+- **Improvement proposals stale** (2, since June) — thin reflexion input + the 14-day theme window
+  mean drafting rarely fires; S.6 helps volume but the window still hides history. → P3.5.
+- **Session identity is messy** — `session_summaries.session_id` is a mix of dates/empty/UUIDs; a real
+  registry (revived `sessions`, now client-tagged going forward) would give clean continuity + the
+  Code-vs-Desktop split. → follow-up.
+
+### C.5 What is genuinely strong (keep)
+
+Episodic auto-extraction from every logged run (2,018), session-summary continuity with content-hash
+dedup (687), reflexion capture (36, current), semantic consolidation (52), fully-local 768-d
+embeddings + sqlite-vec, the coherent 8-layer model, and — new today — one visible Memory home + a
+Health Check that surfaces all of this in plain language.
+
+### C.6 Prioritized memory fixes
+
+1. **M1 (highest) — put the write-backs on the always-hit path.** Ensure `run_metis` is actually
+   invoked, or move session/decision/reflexion writes onto the direct-tool path that already works, so
+   memory accrues regardless of whether the pipeline ran. (P3.2 + the 3.0 "is the pipeline invoked?"
+   question.) *Without this, S.2/S.6 and much of P3 stay latent.*
+2. **M2 — make connection persistence real in normal use** (cross_pollination_links / idea_links). (P3/3.9)
+3. **M3 — revive the client-tagged `sessions` registry** for reliable continuity + Code-vs-Desktop. (follow-up)
+4. **M4 — decide procedural/working memory's fate**: feed it or drop the promise. (P3)
+5. **M5 — create the `decisions` table + capture standing preferences reliably.** (P3.2)
+6. **M6 — auto-index new library items into RAG.** (P4.8)
+7. **M7 — unify the two notes systems.** (P2/P3)
+
+**Acceptance (memory is "well"):** a new session references prior work and relevant memory surfaces
+without an explicit call; running any agent leaves an episodic entry *and* a reflexion; capturing an
+idea grows the connection graph (links > 0); a stated preference is recalled next session; the census
+above shows no unexpectedly-empty layer for a feature that's advertised as working.
 
 ---
 
