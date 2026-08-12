@@ -135,44 +135,55 @@ if [ "$MODE" = "--end" ]; then
         fi
     fi
 
-    branch="$(git_q rev-parse --abbrev-ref HEAD)"
-    [ "$branch" != "main" ] && exit 0
-    if [ -n "$(git_q status --porcelain)" ]; then
-        log "uncommitted changes on main — NOT pushing. Commit them so the other computer can see them."
-        exit 0
-    fi
-    if [ "$(git_q rev-list --count metis-ph/main..HEAD 2>/dev/null || echo 0)" -gt 0 ]; then
+    # Everything below is ADVISORY and non-interactive — nobody is reading stderr
+    # while the session closes. So the whole block runs detached and this hook
+    # returns immediately.
+    #
+    # Detaching only the push was not enough: `git status --porcelain` alone takes
+    # ~8s on this repo over DrvFs (/mnt/c is slow, and the tree is large), which is
+    # 8s of a quitting session waiting on a check whose only output is a log line.
+    # Measured 2026-08-12: 8.85s before this change, ~0.02s after.
+    END_LOG="$STATE_DIR/last-end.log"
+    _end_work() {
+        branch="$(git_q rev-parse --abbrev-ref HEAD)"
+        [ "$branch" != "main" ] && return 0
+        if [ -n "$(git_q status --porcelain)" ]; then
+            log "uncommitted changes on main — NOT pushing. Commit them so the other computer can see them."
+            return 0
+        fi
+        [ "$(git_q rev-list --count metis-ph/main..HEAD 2>/dev/null || echo 0)" -gt 0 ] || return 0
         if [ "${METIS_NO_AUTOPUSH:-0}" = "1" ]; then
             log "unpushed commits on main — push them before switching computers."
-        else
-            # metis-ph ONLY. origin/main is the generated base shell; pushing
-            # main there would clobber the build-base-shell.sh commit.
-            #
-            # DETACHED, not blocking. This runs from the SessionEnd hook while
-            # Claude Code is already quitting, and a `git push` over SSH is a
-            # network round-trip of unbounded duration. A blocking push meant the
-            # harness gave up waiting and showed the user a "hook cancelled"
-            # error on almost every exit (found 2026-08-12). setsid detaches from
-            # the dying session's process group so the push survives the exit;
-            # nohup is the fallback where setsid is unavailable. Both stdio ends
-            # are redirected to the log — an inherited fd would keep the hook
-            # "open" and reintroduce the exact hang we are removing.
-            log "pushing committed work to metis-ph in the background…"
-            PUSH_LOG="$STATE_DIR/last-push.log"
-            # The log is a FAILURE MARKER, not a transcript: it is deleted the
-            # moment the push succeeds. That way "the file exists" is by itself
-            # the signal --report needs, with no parsing and no false positive
-            # from a successful push that simply has newer commits after it.
-            rm -f "$PUSH_LOG"
-            PUSH_CMD="if timeout 120 git -C '$ROOT' push metis-ph main >'$PUSH_LOG' 2>&1; then rm -f '$PUSH_LOG'; fi"
-            if command -v setsid >/dev/null 2>&1; then
-                setsid bash -c "$PUSH_CMD" >/dev/null 2>&1 </dev/null &
-            else
-                nohup bash -c "$PUSH_CMD" >/dev/null 2>&1 </dev/null &
-            fi
-            disown 2>/dev/null || true
+            return 0
         fi
+        # metis-ph ONLY. origin/main is the generated base shell; pushing main
+        # there would clobber the build-base-shell.sh commit.
+        #
+        # The push log is a FAILURE MARKER, not a transcript: it is deleted the
+        # moment the push succeeds. That way "the file exists" is by itself the
+        # signal --report needs at the next session start, with no parsing and no
+        # false positive from a successful push that simply has newer commits
+        # after it. Without this, a background push that fails is invisible.
+        PUSH_LOG="$STATE_DIR/last-push.log"
+        rm -f "$PUSH_LOG"
+        if timeout 120 git -C "$ROOT" push metis-ph main >"$PUSH_LOG" 2>&1; then
+            rm -f "$PUSH_LOG"
+        fi
+    }
+
+    # setsid detaches from the dying session's process group so the work survives
+    # the exit; nohup is the fallback where setsid is unavailable. Both stdio ends
+    # are redirected — an inherited fd would keep the hook "open" and reintroduce
+    # the exact hang being removed here. (That fd-inheritance failure mode is the
+    # one that made the dashboard unrecoverable in July; see the crash post-mortem.)
+    if command -v setsid >/dev/null 2>&1; then
+        setsid bash -c "$(declare -f log git_q _end_work); STATE_DIR='$STATE_DIR'; ROOT='$ROOT'; _end_work" \
+            >"$END_LOG" 2>&1 </dev/null &
+    else
+        nohup bash -c "$(declare -f log git_q _end_work); STATE_DIR='$STATE_DIR'; ROOT='$ROOT'; _end_work" \
+            >"$END_LOG" 2>&1 </dev/null &
     fi
+    disown 2>/dev/null || true
     exit 0
 fi
 
