@@ -313,3 +313,6 @@ tools/base-shell/scrub-names.txt
 # do not (that is the whole point of a pack: small repo, no redistributing other
 # people's work). The folder is recreated on install.
 knowledge/library/open-access-books/HAT Elimination Monitoring/
+
+# Local JSON API bearer token — generated per machine, never shared
+system/config/api-token.txt
