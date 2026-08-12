@@ -7,6 +7,17 @@
   {%- else -%}{{ n }}{%- endif -%}
 {%- endmacro %}
 
+{# Honesty banner (S.5): token counts only exist for a few internal automated
+   tasks — the LLM that runs most agents can't self-report its own usage, so the
+   token totals below are near-zero by design. Say so rather than mislead. #}
+{% if (tokens_window or 0) == 0 %}
+<div class="metis-note" style="margin-bottom:12px;">
+  Token usage isn't being recorded for most runs yet — Claude can't report its own
+  token counts back to Metis, so only a few internal automated tasks show usage here.
+  The counts below reflect that. <strong style="color:var(--m-ink);">Run counts are accurate.</strong>
+</div>
+{% endif %}
+
 <div class="token-stats-row">
   <div class="token-stat">
     <div class="token-stat-num">{{ fmt_tokens(tokens_today) }}</div>

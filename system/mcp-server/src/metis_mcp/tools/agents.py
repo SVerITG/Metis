@@ -144,24 +144,48 @@ async def log_agent_run(
                     conn.execute(stmt)
                 except Exception:
                     pass  # Column already exists
-            conn.execute(
-                """INSERT INTO agent_runs
-                   (agent_slug, task_summary, input_path, output_path, status, created_at,
-                    input_tokens, output_tokens, model, session_id)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    agent_slug,
-                    task_summary,
-                    input_path,
-                    output_path,
-                    complexity,
-                    datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                    input_tokens,
-                    output_tokens,
-                    model,
-                    session_id,
-                ),
-            )
+            _now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            # S.2: if run_metis dispatch-wrote a 'running' row for this session,
+            # complete THAT row instead of inserting a duplicate — so the live
+            # "who's working now" resolves to a single finished run. Preserve the
+            # dispatch-written model when the completion call doesn't supply one.
+            _updated = False
+            if session_id:
+                cur = conn.execute(
+                    """UPDATE agent_runs
+                          SET agent_slug=?, task_summary=?, input_path=?, output_path=?,
+                              status=?, created_at=?, input_tokens=?, output_tokens=?,
+                              model=CASE WHEN ?='' THEN model ELSE ? END
+                        WHERE rowid = (
+                              SELECT rowid FROM agent_runs
+                               WHERE session_id=? AND status='running'
+                               ORDER BY created_at DESC, rowid DESC LIMIT 1)""",
+                    (
+                        agent_slug, task_summary, input_path, output_path,
+                        complexity, _now, input_tokens, output_tokens,
+                        model, model, session_id,
+                    ),
+                )
+                _updated = (cur.rowcount or 0) > 0
+            if not _updated:
+                conn.execute(
+                    """INSERT INTO agent_runs
+                       (agent_slug, task_summary, input_path, output_path, status, created_at,
+                        input_tokens, output_tokens, model, session_id)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        agent_slug,
+                        task_summary,
+                        input_path,
+                        output_path,
+                        complexity,
+                        _now,
+                        input_tokens,
+                        output_tokens,
+                        model,
+                        session_id,
+                    ),
+                )
             conn.commit()
 
             # Also write to session_events when this run is part of a pipeline session.
