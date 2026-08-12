@@ -878,7 +878,27 @@ questions are *"what has no caller, no writer, or no rows?"*
 | 5 | **`_check_output_stage`** — the output red-line scan — defined, called by nothing. | Could not be wired to `run_metis`: that returns an instruction sheet, not an answer. Now runs inside `evaluate_against_layers`, the only function receiving a drafted answer. |
 | 6 | **Cross-pollination searched after writing**, so every capture linked to itself at rank 1. | The table was empty for a different reason (no captures since it shipped), which masked it. |
 
-### D.2 Found, still OPEN — decisions for the owner
+### D.2 Fossil tables — status after 2026-08-12
+
+**Two of five REVIVED**, one documented, two remain:
+- ~~`library_inventory`~~ ✅ — now rescans disk on every dashboard start (22 dead pointers and
+  7 invisible papers at the time of the fix).
+- ~~`library_duplicates`~~ ✅ — duplicate detection runs again, hashing only size collisions.
+  Found 11 groups, one paper filed three times. A duplicate is not just clutter: it is indexed
+  twice into the RAG corpus, so a search returns the same passage as two independent sources.
+- `research_milestones` (0 rows) — **a feature never built.** The table and its one query are
+  the only surviving description of the intent, so both are kept and now say so in a comment
+  rather than looking like an oversight.
+- `knowledge_links` (93) and `learning_competencies` (8) — **still frozen.** Both hold real
+  data that the dashboard displays and nothing can update. Reviving them needs a decision about
+  what should write them, which is a product question rather than a bug.
+
+**Also fixed, same class, found later:** NULL primary keys across `news_briefs` (874/874),
+`journal_entries` (17/17), `ideas` (11/12), `brainstorm_sessions` (1/1) and `meetings` (3/4) —
+inserts that omitted a TEXT PRIMARY KEY, which SQLite permits silently. 903 ids backfilled.
+This is what kept `idea_links` and `news_brief_topics` empty: they join on keys that never existed.
+
+### D.2b Still OPEN — decisions for the owner
 
 **Frozen fossils** — created in `system/installer/schema.sql`, read by the dashboard,
 written by **no code anywhere in the repo**. Four still hold rows from a tool since removed,
