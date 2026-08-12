@@ -204,7 +204,29 @@ class OriginCheckMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+class AddinCORSMiddleware(BaseHTTPMiddleware):
+    """Attach CORS headers to /api/v1 responses for Office add-in origins.
+
+    Only /api/v1 — the HTML dashboard must stay same-origin-only. And only the
+    Office hosts: this says who may ASK, while the bearer token in api_v1.py says
+    who may READ. Neither is sufficient alone.
+    """
+
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/api/v1"):
+            try:
+                from routers.api_v1 import _cors_headers
+
+                for k, v in _cors_headers(request.headers.get("origin", "")).items():
+                    response.headers[k] = v
+            except Exception:
+                pass
+        return response
+
+
 app.add_middleware(OriginCheckMiddleware)
+app.add_middleware(AddinCORSMiddleware)
 
 # When frozen by PyInstaller (the bundled .exe), __file__ points into the temporary
 # extraction dir; templates/ and static/ are shipped as bundle datas at the bundle root

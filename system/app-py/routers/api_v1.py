@@ -197,3 +197,37 @@ async def v1_capture(request: Request, authorization: str | None = Header(None))
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"could not save: {exc}")
     return {"ok": True, "kind": kind, "saved_at": now}
+
+
+# ── CORS for Office add-ins (P5.4) ───────────────────────────────────────────
+# An add-in taskpane runs in a webview with an Office origin, so a browser
+# preflights every call. Without an OPTIONS handler and the matching headers the
+# request never reaches the routes above — and the add-in reports nothing more
+# useful than "failed to fetch".
+#
+# Scoped to the Office hosts only, and it grants nothing on its own: every route
+# still demands the bearer token. CORS decides who may ASK; the token decides who
+# may READ.
+_ADDIN_ORIGINS = (
+    "https://localhost", "https://127.0.0.1",
+    "https://appsforoffice.microsoft.com",
+    "https://excel.officeapps.live.com",
+    "https://powerpoint.officeapps.live.com",
+    "https://word.officeapps.live.com",
+)
+
+
+def _cors_headers(origin: str) -> dict:
+    if not origin or not origin.startswith(_ADDIN_ORIGINS):
+        return {}
+    return {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Headers": "Authorization, Content-Type",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Max-Age": "600",
+    }
+
+
+@router.options("/{rest_of_path:path}")
+async def v1_preflight(rest_of_path: str, request: Request):
+    return JSONResponse({}, headers=_cors_headers(request.headers.get("origin", "")))

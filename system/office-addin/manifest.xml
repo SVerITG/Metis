@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Metis Office add-in (Keystone P5.4).
+
+  Sideload this file in PowerPoint or Excel to get a Metis taskpane that searches
+  your indexed library and captures ideas without leaving the document.
+
+  IT REQUIRES THE DASHBOARD OVER HTTPS. An add-in taskpane is loaded over HTTPS in
+  a webview, and such a page may not call http://localhost — the browser blocks it
+  as mixed content, silently. See system/office-addin/README.md.
+-->
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+           xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+           xsi:type="TaskPaneApp">
+  <Id>7f3c1e64-0b2a-4d51-9c8e-2a6b5f0d1c93</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Metis</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Metis"/>
+  <Description DefaultValue="Search your own indexed library and capture ideas, without leaving the document."/>
+  <IconUrl DefaultValue="https://127.0.0.1:8443/static/metis-icon.png"/>
+  <SupportUrl DefaultValue="https://127.0.0.1:8443/"/>
+  <AppDomains>
+    <AppDomain>https://127.0.0.1:8443</AppDomain>
+    <AppDomain>https://localhost:8443</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Presentation"/>
+    <Host Name="Workbook"/>
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://127.0.0.1:8443/static/addin/taskpane.html"/>
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+</OfficeApp>

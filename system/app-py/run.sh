@@ -320,7 +320,23 @@ trap 'kill "$WATCHDOG_PID" 2>/dev/null; rm -f "$STOP_FILE" 2>/dev/null' EXIT
 attempt=0
 while [ ! -f "$STOP_FILE" ]; do
     started=$(date +%s)
-    "$PYTHON" -m uvicorn main:app --host 127.0.0.1 --port "$PORT" >>"$LOG_FILE" 2>&1
+    # HTTPS is OPTIONAL and OFF by default (METIS_HTTPS=1 to enable). It exists for
+    # one reason: an Office add-in taskpane is loaded over HTTPS in a webview, and
+    # such a page may not call http://localhost — the browser blocks it as mixed
+    # content, silently. It runs on a SEPARATE port so the plain-HTTP dashboard the
+    # user already has bookmarked keeps working unchanged.
+    if [ "${METIS_HTTPS:-0}" = "1" ] \
+       && [ -f "$APP_DIR/../config/certs/localhost.pem" ] \
+       && [ -f "$APP_DIR/../config/certs/localhost-key.pem" ]; then
+        "$PYTHON" -m uvicorn main:app --host 127.0.0.1 --port "${METIS_HTTPS_PORT:-8443}" \
+            --ssl-certfile "$APP_DIR/../config/certs/localhost.pem" \
+            --ssl-keyfile  "$APP_DIR/../config/certs/localhost-key.pem" >>"$LOG_FILE" 2>&1
+    else
+        if [ "${METIS_HTTPS:-0}" = "1" ]; then
+            log "METIS_HTTPS=1 but no certificate found — run tools/make-localhost-cert.py; starting on HTTP"
+        fi
+        "$PYTHON" -m uvicorn main:app --host 127.0.0.1 --port "$PORT" >>"$LOG_FILE" 2>&1
+    fi
     ec=$?
     [ -f "$STOP_FILE" ] && { log "stop requested — supervisor exiting"; break; }
     ran=$(( $(date +%s) - started ))
