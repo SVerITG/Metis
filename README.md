@@ -102,7 +102,7 @@
 
 ## Why researchers trust it
 
-- **📚 It cites your own sources.** Every knowledge answer is drawn from *your* indexed library, with document- and page-level citations — not the model's guesses.
+- **📚 It cites your own sources.** Knowledge answers are anchored in *your* indexed library, with document- and page-level citations — not the model's guesses. Your library grounds the answer; it doesn't fence it in. Metis still brings in recent literature, guidelines and wider knowledge where they matter, and tells you which is which — so anything worth citing that you don't have yet becomes a paper you can add.
 - **🔗 It connects everything you know.** Every paper, meeting transcript, idea, note, journal entry and task is linked to the rest of your work. The grant you write today surfaces a method paper from last year and a meeting note from March — you never go looking; Metis brings it to you.
 - **🧠 It routes to the right expert.** Ask in plain language, and Metis hands the work to the right one of 30+ specialist skills — Librarian, Methods Coach, Writing Partner, Meeting Memory, Epidemiologist, Course Builder, and more.
 - **🔁 It improves itself.** After every task it logs what worked and what fell short; each week it drafts improvements to its own behaviour and waits for your approval. Most MCP servers are static — Metis gets sharper the longer you use it.

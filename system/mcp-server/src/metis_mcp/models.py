@@ -58,7 +58,20 @@ def _chain_for(role: str) -> list[str]:
 
 
 def model_for(name: str) -> str:
-    """Return the model ID for an alias or role."""
+    """Return the model ID for an alias or role.
+
+    ADVISORY, NOT BINDING — and that is a deliberate decision (owner, 2026-08-12),
+    not an oversight. In the stdio-MCP design the Metis server does not make the
+    answer's model call; the Claude client does. So this can express which tier a
+    task *deserves*, and the budget map can record it, but nothing here can compel
+    the client to use it.
+
+    Making it binding would mean moving primary answer generation server-side — the
+    server calling the API itself, applying the budget and compacting. That is a
+    foundational change to what Metis is, and it changes the cost model. The
+    decision was to keep tiering advisory and say so plainly rather than imply an
+    enforcement that does not exist. See the Keystone roadmap, Phase 3.0 / Phase 6.
+    """
     role = _resolve_alias(name)
     cached = _cache.get(role)
     if cached and cached[1] > time.time():
