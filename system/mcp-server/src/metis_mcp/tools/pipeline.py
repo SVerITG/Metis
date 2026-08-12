@@ -134,6 +134,77 @@ def _write_event_sync(session_id: str, event_type: str, content: str) -> None:
 # ── Stage 1: session_bootstrap ───────────────────────────────────────────────
 
 @app.tool()
+def _maybe_run_learning_loop() -> None:
+    """S.6 — run the reflexion→improvement loop opportunistically, at most once
+    per ~20h, from the MCP server. The nightly aggregation/consolidation/drafting
+    normally lives in the dashboard's APScheduler, so a Claude-Desktop-only user
+    who never opens the dashboard would accumulate reflexions that never became
+    learning. Triggering it here (throttled, best-effort) closes that gap without
+    blocking or ever failing a session bootstrap.
+    """
+    try:
+        with connect(paths.db) as con:
+            con.execute(
+                "CREATE TABLE IF NOT EXISTS learning_loop_state "
+                "(id INTEGER PRIMARY KEY CHECK(id=1), last_run TEXT)"
+            )
+            row = con.execute(
+                "SELECT last_run FROM learning_loop_state WHERE id=1"
+            ).fetchone()
+            last_run = row["last_run"] if row else None
+            if last_run:
+                try:
+                    lr = datetime.datetime.fromisoformat(last_run)
+                    if lr.tzinfo is None:
+                        lr = lr.replace(tzinfo=datetime.timezone.utc)
+                    if (datetime.datetime.now(datetime.timezone.utc) - lr) < datetime.timedelta(hours=20):
+                        return  # ran recently — skip
+                except Exception:
+                    pass
+            # Claim the slot up front so concurrent bootstraps don't double-run.
+            con.execute(
+                "INSERT INTO learning_loop_state (id, last_run) VALUES (1, ?) "
+                "ON CONFLICT(id) DO UPDATE SET last_run=excluded.last_run",
+                (datetime.datetime.now(datetime.timezone.utc).isoformat(),),
+            )
+            con.commit()
+    except Exception:
+        return
+
+    # Heavy work outside the connection — mirrors the dashboard scheduler's
+    # evening job so behaviour is identical whoever triggers it.
+    try:
+        from metis_mcp.tools.improvement import (
+            aggregate_reflexions,
+            consolidate_reflexions,
+            draft_self_improvement_proposal,
+        )
+        result = aggregate_reflexions()
+        agents = result.get("agents", []) if isinstance(result, dict) else []
+        consolidate_reflexions()
+        try:
+            with connect(paths.db) as con:
+                open_slugs = {
+                    r[0] for r in con.execute(
+                        "SELECT DISTINCT agent_slug FROM skill_improvement_proposals "
+                        "WHERE status IN ('draft','pending')"
+                    ).fetchall()
+                }
+        except Exception:
+            open_slugs = set()
+        for _a in (agents or [])[:8]:
+            slug = (
+                _a.get("agent_slug") or _a.get("slug") or _a.get("agent") or _a.get("name")
+            ) if isinstance(_a, dict) else None
+            if slug and slug not in open_slugs:
+                try:
+                    draft_self_improvement_proposal(slug)
+                except Exception:
+                    pass
+    except Exception as exc:
+        log.warning("[pipeline] opportunistic learning loop skipped: %s", exc)
+
+
 async def session_bootstrap(client: str = "code") -> list[TextContent]:
     """Stage 1: Find or create a session for the current computer.
 
@@ -145,6 +216,7 @@ async def session_bootstrap(client: str = "code") -> list[TextContent]:
         client: Which Claude client is calling ('code'|'chat'|'cowork'|'dashboard').
     """
     _ensure_pipeline_tables()
+    _maybe_run_learning_loop()  # S.6 — Desktop-only users get the learning loop too
     computer = socket.gethostname()
     cutoff = (
         datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=2)
@@ -1151,6 +1223,32 @@ async def run_metis(
         session_id, "classification",
         f"model={budget['model']} max_tokens={budget['max_tokens']}",
     )
+
+    # ── Stage 6b: Live dispatch-write (S.2) ────────────────────────────────
+    # Record a 'running' agent_runs row for the primary agent the moment we route,
+    # so the dashboard's "who's working now" is real rather than dead code. The
+    # agent's later log_agent_run(session_id=...) UPDATES this row to its final
+    # status (matched on session_id), and a stale-guard on the dashboard stops a
+    # perpetual "working…" if that completion never arrives. Best-effort only.
+    try:
+        _primary_agent = (intent.get("agents") or ["metis"])[0]
+        with connect(paths.db) as _con:
+            _con.execute(
+                """INSERT INTO agent_runs
+                   (agent_slug, task_summary, input_path, output_path, status,
+                    created_at, input_tokens, output_tokens, model, session_id)
+                   VALUES (?, ?, '', '', 'running', ?, 0, 0, ?, ?)""",
+                (
+                    _primary_agent,
+                    request[:200],
+                    datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    budget.get("model", ""),
+                    session_id,
+                ),
+            )
+            _con.commit()
+    except Exception:
+        pass
 
     # ── Stage 7: Surgical context assembly ────────────────────────────────
     context = _assemble_context_stage(intent, session_id)
