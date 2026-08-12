@@ -46,8 +46,13 @@ PATTERNS: list[tuple[str, str, str]] = [
 SCAN_EXTS = {".html", ".js", ".py"}
 
 # Paths that are NOT user-facing — skip them to avoid noise
+#
+# `/static/vendor/` holds third-party libraries (Bootstrap, D3, icon fonts) vendored
+# for offline use. They are not our prose, and they are minified: a single ~230 KB
+# line makes the linter's per-line regex pass slow enough to time out a commit.
 SKIP_PARTS = {
     "/.venv/", "/node_modules/", "/htmx.min.js", "/bootstrap",
+    "/static/vendor/",
     "/tests/", "/scripts/", "/.git/", "/__pycache__/", "/dist/",
     "/persona_linter.py", "/run_metis_promises.sh",
     "/.claude/worktrees/",
