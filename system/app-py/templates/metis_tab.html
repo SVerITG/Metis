@@ -101,11 +101,33 @@
       </div>
 
       {{ sec_label("Connection", tail="CLAUDE ↔ METIS", style="margin-bottom:12px;") }}
-      <div id="metis-dashboard-mcp" style="margin-bottom:8px;"
+      <div id="metis-dashboard-mcp" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/mcp-health"
            hx-trigger="load delay:60ms"
            hx-swap="innerHTML">
         <div class="panel" style="padding:18px;">{{ skeleton_block(rows=2) }}</div>
+      </div>
+
+      {{ sec_label("Health check", tail="CHECK YOUR WHOLE SETUP", style="margin-bottom:12px;") }}
+      <div class="metis-note" style="margin-bottom:12px;">
+        One click checks everything in plain language — the memory system, dependencies and packages,
+        anything that needs installing or updating, whether your projects are registered, and whether
+        Claude can reach Metis. Nothing technical required.
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <button class="btn btn--primary btn--caps"
+                hx-get="/api/partial/metis/health-check"
+                hx-target="#metis-health-body" hx-swap="innerHTML">
+          Run health check
+        </button>
+        <button class="btn btn--ghost btn--caps" onclick="openHealthCheckInClaude()">
+          Open in Claude Code
+        </button>
+      </div>
+      <div id="metis-health-body" style="margin-bottom:8px;">
+        <div class="metis-note" style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
+          Click “Run health check” to check your whole Metis setup — it runs right here, no terminal needed.
+        </div>
       </div>
 
     </section>
@@ -129,6 +151,14 @@
            hx-trigger="load delay:60ms, every 30s"
            hx-swap="innerHTML">
         <div class="panel" style="padding:14px 18px;">{{ skeleton_block(rows=2) }}</div>
+      </div>
+
+      {{ sec_label("Sessions", tail="WHAT EACH ONE DID — CLICK TO OPEN", style="margin-bottom:12px;") }}
+      <div id="metis-sessions-body" style="margin-bottom:24px;"
+           hx-get="/api/partial/metis/sessions"
+           hx-trigger="load delay:80ms"
+           hx-swap="innerHTML">
+        <div class="panel" style="padding:14px 18px;">{{ skeleton_block(rows=3) }}</div>
       </div>
 
       <details id="metis-runs-details">
@@ -704,6 +734,19 @@ function openClaudeCode() {
 function openClaudeDesktop() {
   fetch('/api/launcher/claude-desktop', { method: 'POST' })
     .catch(() => {});
+}
+
+// Open Claude Code and hand the user the deep health-check command. The inline
+// button (Run health check) covers the basics with no terminal; this is for the
+// full check + one-click fixes, which live in the /metis-doctor skill.
+function openHealthCheckInClaude() {
+  fetch('/api/launcher/claude-code', { method: 'POST' }).catch(() => {});
+  try {
+    navigator.clipboard.writeText('/metis-doctor').catch(() => {});
+  } catch (e) {}
+  if (window.showToast) {
+    showToast('<i class="bi bi-terminal toast-icon"></i>Opening Claude Code — the command <code>/metis-doctor</code> is copied. Paste it and press enter for the full check.');
+  }
 }
 
 function openRStudio() {

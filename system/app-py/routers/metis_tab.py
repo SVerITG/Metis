@@ -225,6 +225,196 @@ async def metis_dashboard(request: Request):
 
 
 # ---------------------------------------------------------------------------
+# Sessions — proof that session memory is active, openable to read each summary
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/metis/sessions", response_class=HTMLResponse)
+async def metis_sessions(request: Request, limit: int = 12):
+    """Recorded-session count + memory-active status + recent sessions you can
+    open to read what each did. Answers 'is session memory active, and what did
+    each session do?' honestly, including the Code-vs-Desktop split where known."""
+    from markupsafe import escape as _esc
+    _m = "font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"
+
+    # The client column is added lazily by save_session_summary's migration; ensure
+    # it exists so this read never fails on a DB that hasn't saved a summary yet.
+    try:
+        db_execute("ALTER TABLE session_summaries ADD COLUMN client TEXT DEFAULT ''")
+    except Exception:
+        pass
+
+    total = db_scalar("SELECT COUNT(*) FROM session_summaries", default=0) or 0
+    last = db_scalar("SELECT MAX(created_at) FROM session_summaries", default="") or ""
+    # Client split — only meaningful for rows recorded since client capture was added.
+    by_client_rows = db_query(
+        "SELECT COALESCE(NULLIF(client,''),'(untagged)') AS client, COUNT(*) AS n "
+        "FROM session_summaries GROUP BY COALESCE(NULLIF(client,''),'(untagged)') ORDER BY n DESC",
+        default=[],
+    ) or []
+    tagged = {r["client"]: r["n"] for r in by_client_rows if r["client"] != "(untagged)"}
+
+    # Is memory active? Fresh if the most-recent summary is within 14 days.
+    active, when = False, ""
+    if last:
+        when = str(last)[:10]
+        try:
+            d = datetime.datetime.fromisoformat(str(last).replace("Z", "+00:00"))
+            if d.tzinfo is None:
+                d = d.replace(tzinfo=datetime.timezone.utc)
+            active = (datetime.datetime.now(datetime.timezone.utc) - d).days <= 14
+        except Exception:
+            active = True
+
+    _label = {"code": "Claude Code", "chat": "Claude Desktop", "desktop": "Claude Desktop",
+              "dashboard": "Dashboard"}
+    status_color = "var(--m-ok)" if active else "var(--m-alert)"
+    status_txt = (f"Session memory is active — {total:,} recorded, last {when}"
+                  if active else
+                  f"{total:,} recorded, but the last was {when} — recording may have stalled")
+
+    # Client split line (honest about the coverage gap)
+    if tagged:
+        parts = [f"{_label.get(k, k)}: {v}" for k, v in tagged.items()]
+        split = "By client: " + " · ".join(parts)
+        n_untagged = sum(r["n"] for r in by_client_rows if r["client"] == "(untagged)")
+        if n_untagged:
+            split += f" · {n_untagged} recorded before client was tracked"
+    else:
+        split = ("Claude Code vs Claude Desktop isn't distinguished in the records yet — "
+                 "client is tagged from now on, so this split will fill in going forward.")
+
+    head = (
+        '<div class="panel" style="padding:16px 18px;margin-bottom:14px;">'
+        f'<div style="display:flex;align-items:center;gap:10px;">'
+        f'<span style="color:{status_color};font-weight:600;">● {_esc(status_txt)}</span></div>'
+        f'<div style="{_m}margin-top:6px;">{_esc(split)}</div></div>'
+    )
+
+    rows = db_query(
+        "SELECT session_id, summary, key_topics, decisions, created_at, "
+        "COALESCE(NULLIF(client,''),'') AS client "
+        "FROM session_summaries ORDER BY created_at DESC LIMIT ?",
+        (limit,),
+        default=[],
+    ) or []
+
+    items = []
+    for r in rows:
+        d = dict(r)
+        ts = str(d.get("created_at") or "")[:16].replace("T", " ")
+        cli = _label.get(d.get("client"), d.get("client") or "")
+        cli_chip = (f'<span style="{_m}border:1px solid var(--m-rule-soft);border-radius:999px;'
+                    f'padding:1px 8px;margin-left:8px;">{_esc(cli)}</span>' if cli else "")
+        summ = (d.get("summary") or "").strip()
+        first_line = summ.split("\n", 1)[0][:120]
+        # topics
+        chips = ""
+        try:
+            for t in (json.loads(d.get("key_topics") or "[]"))[:6]:
+                chips += (f'<span style="{_m}background:var(--m-surface);border-radius:3px;'
+                          f'padding:1px 6px;margin:2px 4px 2px 0;display:inline-block;">{_esc(str(t))}</span>')
+        except Exception:
+            pass
+        decisions_html = ""
+        try:
+            decs = json.loads(d.get("decisions") or "[]")
+            if decs:
+                lis = "".join(f'<li style="margin:2px 0;">{_esc(str(x)[:240])}</li>' for x in decs[:8])
+                decisions_html = (f'<div style="{_m}margin-top:8px;">DECISIONS</div>'
+                                  f'<ul style="margin:4px 0 0;padding-left:18px;font-size:12.5px;'
+                                  f'color:var(--m-text);line-height:1.5;">{lis}</ul>')
+        except Exception:
+            pass
+        body = _esc(summ[:2000])
+        items.append(
+            '<details style="border-bottom:1px solid var(--m-rule-soft);">'
+            '<summary style="list-style:none;cursor:pointer;padding:11px 16px;display:flex;'
+            'align-items:baseline;gap:10px;">'
+            f'<span style="{_m}flex-shrink:0;min-width:120px;">{_esc(ts)}</span>'
+            f'<span style="font-size:13px;color:var(--m-ink);line-height:1.4;flex:1;">{_esc(first_line)}{cli_chip}</span>'
+            '</summary>'
+            f'<div style="padding:0 16px 14px;">'
+            f'<div style="font-size:13px;color:var(--m-text);line-height:1.6;white-space:pre-wrap;">{body}</div>'
+            f'<div style="margin-top:8px;">{chips}</div>{decisions_html}</div>'
+            '</details>'
+        )
+
+    listing = (
+        '<div class="panel" style="overflow:hidden;">' + "".join(items) + '</div>'
+        if items else
+        f'<div class="panel" style="padding:16px 18px;{_m}">No sessions recorded yet.</div>'
+    )
+    return HTMLResponse(head + listing)
+
+
+# ---------------------------------------------------------------------------
+# Health check — friendly one-click run of the full doctor, in the dashboard
+# ---------------------------------------------------------------------------
+
+
+@router.get("/api/partial/metis/health-check", response_class=HTMLResponse)
+async def metis_health_check(request: Request):
+    """Run the full system doctor and render it in plain language — memory,
+    dependencies, stale installs, projects registered, connection, and more —
+    so a non-technical user can check everything with one click, no terminal."""
+    _m = "font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"
+    try:
+        from metis_mcp.tools.doctor import run_doctor
+        report = run_doctor()
+    except Exception as e:
+        return HTMLResponse(
+            f'<div class="panel" style="padding:16px 18px;{_m}">Couldn\'t run the health check '
+            f'({_esc_str(e)}). Try reconnecting the Metis server, then run it again.</div>'
+        )
+
+    status = str(report.get("status") or "unknown").lower()
+    checks = report.get("checks") or []
+    overall_color = {"ok": "var(--m-ok)", "warn": "var(--m-warn)", "fail": "var(--m-alert)"}.get(status, "var(--m-muted)")
+    overall_txt = {
+        "ok": "Everything checks out — Metis is healthy.",
+        "warn": "Metis works, but a few things are worth fixing.",
+        "fail": "Something needs attention before relying on Metis.",
+    }.get(status, "Health check complete.")
+
+    from markupsafe import escape as _esc
+    n_ok = sum(1 for c in checks if c.get("ok"))
+    rows_html = []
+    for c in checks:
+        ok = bool(c.get("ok"))
+        sev = str(c.get("severity") or "info")
+        if ok:
+            color, dot = "var(--m-ok)", "●"
+        elif sev == "fail":
+            color, dot = "var(--m-alert)", "✕"
+        else:
+            color, dot = "var(--m-warn)", "▲"
+        rows_html.append(
+            '<div style="display:flex;align-items:baseline;gap:10px;padding:7px 0;'
+            'border-bottom:1px solid var(--m-rule-soft);">'
+            f'<span style="color:{color};flex-shrink:0;width:14px;">{dot}</span>'
+            f'<span style="font-size:13px;color:var(--m-ink);min-width:170px;flex-shrink:0;">{_esc(str(c.get("name") or ""))}</span>'
+            f'<span style="{_m}line-height:1.5;">{_esc(str(c.get("detail") or ""))}</span></div>'
+        )
+
+    return HTMLResponse(
+        '<div class="panel" style="padding:16px 18px;margin-bottom:12px;">'
+        f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">'
+        f'<span style="color:{overall_color};font-weight:600;">● {_esc(overall_txt)}</span></div>'
+        f'<div style="{_m}">{n_ok}/{len(checks)} checks passed · '
+        f'<span style="cursor:pointer;text-decoration:underline;" '
+        f'hx-get="/api/partial/metis/health-check" hx-target="#metis-health-body" hx-swap="innerHTML">run again</span></div>'
+        '</div>'
+        '<div class="panel" style="padding:12px 18px;">' + "".join(rows_html) + '</div>'
+    )
+
+
+def _esc_str(e) -> str:
+    from markupsafe import escape
+    return str(escape(str(e)))
+
+
+# ---------------------------------------------------------------------------
 # Archive-layout partials
 # ---------------------------------------------------------------------------
 

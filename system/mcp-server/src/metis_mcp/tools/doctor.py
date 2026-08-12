@@ -189,6 +189,71 @@ def _check_skills() -> dict:
     }
 
 
+def _check_session_memory() -> dict:
+    """Is session memory actually being recorded, and recently? A stale or empty
+    session_summaries table means Metis isn't capturing what gets done — the exact
+    thing a user checking 'is my memory working' wants confirmed."""
+    import datetime
+    db = paths.db
+    if not db.exists():
+        return {"name": "Session memory", "ok": False, "severity": "fail",
+                "detail": "database missing"}
+    try:
+        with sqlite3.connect(str(db)) as con:
+            n = con.execute("SELECT COUNT(*) FROM session_summaries").fetchone()[0]
+            last = con.execute("SELECT MAX(created_at) FROM session_summaries").fetchone()[0]
+    except Exception as e:
+        return {"name": "Session memory", "ok": False, "severity": "warn",
+                "detail": f"could not read session_summaries: {e}"}
+    if not n:
+        return {"name": "Session memory", "ok": False, "severity": "warn",
+                "detail": "no sessions recorded yet — save_session_summary() has never run"}
+    age_days = None
+    try:
+        d = datetime.datetime.fromisoformat(str(last).replace("Z", "+00:00"))
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=datetime.timezone.utc)
+        age_days = (datetime.datetime.now(datetime.timezone.utc) - d).days
+    except Exception:
+        pass
+    if age_days is not None and age_days > 14:
+        return {"name": "Session memory", "ok": False, "severity": "warn",
+                "detail": f"{n} recorded, but last was {age_days}d ago — recording may have stalled"}
+    when = str(last)[:10]
+    return {"name": "Session memory", "ok": True, "severity": "info",
+            "detail": f"{n} sessions recorded · last {when} — actively recording"}
+
+
+def _check_projects() -> dict:
+    """Are projects registered so the dashboard + routing can see them?"""
+    db = paths.db
+    if not db.exists():
+        return {"name": "Projects", "ok": False, "severity": "fail", "detail": "database missing"}
+    try:
+        with sqlite3.connect(str(db)) as con:
+            has = con.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='projects'"
+            ).fetchone()
+            if not has:
+                return {"name": "Projects", "ok": False, "severity": "warn",
+                        "detail": "no projects table — none registered yet"}
+            total = con.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
+            try:
+                active = con.execute(
+                    "SELECT COUNT(*) FROM projects WHERE COALESCE(status,'active') != 'archived'"
+                ).fetchone()[0]
+            except Exception:
+                active = total
+    except Exception as e:
+        return {"name": "Projects", "ok": False, "severity": "warn",
+                "detail": f"could not read projects: {e}"}
+    if not total:
+        return {"name": "Projects", "ok": False, "severity": "warn",
+                "detail": "no projects registered — add one so Metis can track your work"}
+    return {"name": "Projects", "ok": True, "severity": "info",
+            "detail": f"{active} active · {total} total registered"}
+
+
 def _check_legacy_paths() -> dict:
     """Look for legacy folder names (02_agents/, 07_outputs/, etc.) that
     survived the Phase 5.4 rename. Anything found is a documentation drift
@@ -433,6 +498,8 @@ def run_doctor() -> dict:
         _check_embedding(),
         _check_knowledge_layer(),
         _check_user_config(),
+        _check_session_memory(),
+        _check_projects(),
         _check_agents(),
         _check_skills(),
         _check_dashboard(),

@@ -23,14 +23,19 @@ def _ensure_table(conn: sqlite3.Connection) -> None:
             key_topics   TEXT,
             decisions    TEXT,
             created_at   TEXT    NOT NULL,
-            summary_hash TEXT    DEFAULT ''
+            summary_hash TEXT    DEFAULT '',
+            client       TEXT    DEFAULT ''
         )
     """)
-    # Migration: add summary_hash column to existing tables
-    try:
-        conn.execute("ALTER TABLE session_summaries ADD COLUMN summary_hash TEXT DEFAULT ''")
-    except Exception:
-        pass  # Already exists
+    # Migrations: add columns to existing tables
+    for _stmt in (
+        "ALTER TABLE session_summaries ADD COLUMN summary_hash TEXT DEFAULT ''",
+        "ALTER TABLE session_summaries ADD COLUMN client TEXT DEFAULT ''",
+    ):
+        try:
+            conn.execute(_stmt)
+        except Exception:
+            pass  # Already exists
     conn.commit()
 
 
@@ -40,6 +45,7 @@ async def save_session_summary(
     key_topics: list[str] | None = None,
     decisions: list[str] | None = None,
     session_id: str | None = None,
+    client: str = "",
 ) -> dict:
     """Save a summary of the current session to persistent memory.
 
@@ -57,6 +63,9 @@ async def save_session_summary(
             (e.g. ["switched to AGPL-3.0"]).
         session_id: Optional identifier used to group related summaries; if
             omitted, the summary is stored on its own.
+        client: Which Claude client this session ran in — 'code' (Claude Code),
+            'chat' (Claude Desktop), or 'dashboard'. Lets the dashboard show a
+            Code-vs-Desktop breakdown. Optional; defaults to unset.
 
     Returns:
         A dict with the saved record's id and a confirmation status.
@@ -84,8 +93,8 @@ async def save_session_summary(
             conn.execute(
                 """
                 INSERT INTO session_summaries
-                    (session_id, summary, key_topics, decisions, created_at, summary_hash)
-                VALUES (?, ?, ?, ?, ?, ?)
+                    (session_id, summary, key_topics, decisions, created_at, summary_hash, client)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     session_id or "",
@@ -94,6 +103,7 @@ async def save_session_summary(
                     json.dumps(decisions or []),
                     datetime.now(timezone.utc).isoformat(),
                     content_hash,
+                    (client or "").strip().lower(),
                 ),
             )
             conn.commit()
