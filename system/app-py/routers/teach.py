@@ -496,9 +496,35 @@ def _build_pptx(slides: list[dict], title: str, audience: str, today: str, slug:
     except ImportError:
         return None
 
-    prs = Presentation()
-    prs.slide_width  = Inches(13.33)
-    prs.slide_height = Inches(7.5)
+    # Open the researcher's own template if they have one, so a generated deck
+    # inherits their theme, fonts and master slides instead of arriving in Metis's
+    # colours (Keystone P5.2). Drop a file at system/config/templates/deck.pptx —
+    # typically the institutional template — and every deck picks it up.
+    #
+    # Its slide DIMENSIONS are respected too: overriding them on a 4:3 corporate
+    # template would letterbox every slide, which looks like a bug in the template
+    # rather than in us.
+    prs, from_template = Presentation(), False
+    try:
+        import os as _os
+        from pathlib import Path as _Path
+
+        _tpl = (_Path(_os.environ.get("METIS_RC_ROOT", "."))
+                / "system" / "config" / "templates" / "deck.pptx")
+        if _tpl.is_file():
+            prs = Presentation(str(_tpl))
+            from_template = True
+            # A template usually ships with example slides; we want its masters, not
+            # its content. Remove them so ours are the only slides in the deck.
+            _xml_slides = prs.slides._sldIdLst
+            for _sld in list(_xml_slides):
+                _xml_slides.remove(_sld)
+    except Exception:
+        prs, from_template = Presentation(), False
+
+    if not from_template:
+        prs.slide_width  = Inches(13.33)
+        prs.slide_height = Inches(7.5)
 
     # Colors
     BG     = RGBColor(0xFA, 0xF9, 0xF6)
@@ -507,7 +533,13 @@ def _build_pptx(slides: list[dict], title: str, audience: str, today: str, slug:
     MUTED  = RGBColor(0x8E, 0x92, 0x9E)
     WHITE  = RGBColor(0xFF, 0xFF, 0xFF)
 
-    blank_layout = prs.slide_layouts[6]  # completely blank
+    # Layout 6 is 'blank' in the default template, but a custom template may have
+    # fewer layouts or order them differently — indexing blindly would raise on
+    # exactly the institutional templates this feature exists to support.
+    try:
+        blank_layout = prs.slide_layouts[6]
+    except IndexError:
+        blank_layout = prs.slide_layouts[len(prs.slide_layouts) - 1]
 
     for i, slide_data in enumerate(slides):
         slide = prs.slides.add_slide(blank_layout)
