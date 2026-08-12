@@ -790,14 +790,87 @@ async def teach_meta(request: Request):
 async def _teach_active_label(request: Request):
     return HTMLResponse('<span>Course builder</span><span class="tail">READY</span>')
 
+# These three returned `<div></div>` — registered, HTTP 200, and rendering nothing
+# at all, so the Teach surface looked broken rather than empty. Worse, one of them
+# had 11 real courses to show and showed none of them: the builder had no library
+# of what it had built, which is the first thing any course tool needs.
+#
+# An empty state must SAY it is empty and say what to do about it. A blank div is
+# indistinguishable from a failure.
+
+def _teach_empty(message: str) -> HTMLResponse:
+    return HTMLResponse(
+        f'<div class="panel panel-pad" style="text-align:center;padding:18px;'
+        f'border:1px dashed var(--m-line);"><p style="margin:0;font-size:12px;'
+        f'color:var(--m-muted);">{message}</p></div>'
+    )
+
+
 @router.get("/api/partial/teach/active-draft", response_class=HTMLResponse)
 async def _teach_active_draft(request: Request):
-    return HTMLResponse('<div></div>')
+    """The most recent build, so the surface remembers what you last made."""
+    builds = _list_builds(limit=1)
+    if not builds:
+        return _teach_empty("No course built yet. Use the builder above to make your first one.")
+    b = builds[0]
+    dl = ""
+    if b.get("pptx_path") and Path(b["pptx_path"]).exists():
+        dl = (f'<a href="/api/teach/download?path={b["pptx_path"]}" download '
+              f'style="font-family:var(--m-mono);font-size:10px;color:var(--m-accent);">↓ PPTX</a>')
+    return HTMLResponse(
+        f'<div class="panel panel-pad">'
+        f'<div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">{b["title"][:70]}</div>'
+        f'<div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-top:4px;">'
+        f'{b.get("audience","")} · {b.get("depth","")} · {b.get("date","")} {dl}</div></div>'
+    )
+
 
 @router.get("/api/partial/teach/courses-list", response_class=HTMLResponse)
 async def _teach_courses_list(request: Request):
-    return HTMLResponse('<div></div>')
+    """Courses that exist, with progress — the library the builder was missing."""
+    rows = db_query(
+        "SELECT title, category, progress_pct, completed_modules, total_modules, status "
+        "FROM learning_courses ORDER BY COALESCE(updated_at, created_at) DESC LIMIT 12",
+        default=[],
+    ) or []
+    if not rows:
+        return _teach_empty("No courses yet.")
+    items = "".join(
+        f'<div style="display:flex;align-items:center;gap:10px;padding:8px 0;'
+        f'border-bottom:1px solid var(--m-rule-soft);">'
+        f'<div style="flex:1;min-width:0;">'
+        f'<div style="font-size:13px;color:var(--m-ink);">{(r.get("title") or "Untitled")[:60]}</div>'
+        f'<div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">'
+        f'{(r.get("category") or "—")} · {r.get("completed_modules") or 0}/{r.get("total_modules") or 0} modules'
+        f'</div></div>'
+        f'<span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">'
+        f'{int(r.get("progress_pct") or 0)}%</span></div>'
+        for r in rows
+    )
+    return HTMLResponse(f'<div class="panel panel-pad">{items}</div>')
+
 
 @router.get("/api/partial/teach/suggested", response_class=HTMLResponse)
 async def _teach_suggested(request: Request):
-    return HTMLResponse('<div></div>')
+    """Topics the library covers well enough to teach from.
+
+    Suggests from what is actually indexed rather than inventing topics — a course
+    you cannot source is not a suggestion, it is a chore.
+    """
+    rows = db_query(
+        "SELECT domain, COUNT(*) AS n FROM pdf_chunks WHERE domain IS NOT NULL AND domain != '' "
+        "GROUP BY domain HAVING n > 40 ORDER BY n DESC LIMIT 6",
+        default=[],
+    ) or []
+    if not rows:
+        return _teach_empty("Index some papers and Metis will suggest what you could teach from them.")
+    chips = "".join(
+        f'<span style="display:inline-block;font-family:var(--m-mono);font-size:10px;'
+        f'padding:3px 9px;margin:3px 4px 0 0;border:1px solid var(--m-line);border-radius:12px;'
+        f'color:var(--m-muted);">{r["domain"][:36]} · {r["n"]}</span>'
+        for r in rows
+    )
+    return HTMLResponse(
+        f'<div class="panel panel-pad"><div style="font-size:12px;color:var(--m-muted);'
+        f'margin-bottom:6px;">Your library covers these well enough to build from:</div>{chips}</div>'
+    )
