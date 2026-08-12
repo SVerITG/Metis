@@ -462,6 +462,9 @@ _SORT_MAP = {
 
 _lit_pdf_cache: dict[int, str] = {}   # lit_id -> relative_path
 _lib_pdf_base: Path | None = None     # base directory for library_inventory paths
+# One screen of results. A catalogue is read from the top, not scrolled to 300.
+LIB_PAGE_SIZE = 25
+
 _LIB_STOPWORDS = frozenset(
     "a an the and or of in to is on for with at by as from its be are that this "
     "1 2 3 4 5 6 7 8 9 0 study results using".split()
@@ -971,7 +974,7 @@ async def knowledge_library_browser_panel(
     item_types = [(r.get("item_type", ""), r.get("cnt", 0)) for r in type_rows if r.get("item_type")]
 
     items, total = _fetch_library_items(
-        q=q, item_type=item_type, sort=sort, per_page=300
+        q=q, item_type=item_type, sort=sort, per_page=LIB_PAGE_SIZE
     )
     # Exclude manual/garbage entries from browser display
     items = [i for i in items if i.get("title") and not i["title"].startswith(("19", "20"))]
@@ -1000,14 +1003,28 @@ async def knowledge_library_table_partial(
     sort: str = "newest",
     year_from: str = "",
     year_to: str = "",
+    page: int = 1,
 ):
-    """Table rows only — swapped in for live search/filter updates."""
+    """Table rows only — swapped in for live search/filter updates.
+
+    PAGINATED. Both this route and the browser rendered 300 items in one response
+    — 1.99 MB — and the search box fires on keyup with a 350 ms debounce, so every
+    few keystrokes pulled two megabytes over the wire to redraw a table nobody had
+    scrolled. No catalogue does this: WorldCat, a Koha OPAC and JSTOR all page at
+    20-50 with a count and a next link, because a result set is read from the top.
+
+    `_fetch_library_items` already accepted per_page/offset and already returned a
+    total; the surface simply never passed them.
+    """
+    page = max(1, page)
     items, total = _fetch_library_items(
-        q=q, item_type=item_type, sort=sort, per_page=300,
+        q=q, item_type=item_type, sort=sort, per_page=LIB_PAGE_SIZE,
+        offset=(page - 1) * LIB_PAGE_SIZE,
         year_from=year_from, year_to=year_to,
     )
     items = [i for i in items if i.get("title") and not i["title"].startswith(("19", "20"))]
     active_filter_count = sum(bool(v) for v in [q, item_type, year_from, year_to])
+    total_pages = max(1, (total + LIB_PAGE_SIZE - 1) // LIB_PAGE_SIZE)
     return templates.TemplateResponse(
         request,
         "partials/knowledge_library_table.html",
@@ -1020,6 +1037,11 @@ async def knowledge_library_table_partial(
             "sort": sort,
             "active_filter_count": active_filter_count,
             "library_mode": "seeded",
+            "page": page,
+            "total_pages": total_pages,
+            "page_size": LIB_PAGE_SIZE,
+            "year_from": year_from,
+            "year_to": year_to,
         },
     )
 
