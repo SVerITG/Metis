@@ -490,6 +490,69 @@ def set_knowledge_layer_enabled(database: str, enabled: bool = True) -> str:
         return f"Could not change '{database}': {e}"
 
 
+@app.tool()
+def delete_knowledge_database(database: str, confirm: bool = False) -> str:
+    """Remove a knowledge background layer and everything indexed under it.
+
+    Deletes the layer's registry row, its indexed passages and its vectors. Your
+    PDFs on disk are NOT touched — only the search index built from them, so the
+    layer can always be rebuilt by pointing at the same folders again.
+
+    Args:
+        database: The layer's slug (e.g. 'my-custom-layer').
+        confirm: Must be True to proceed. Without it, this reports what WOULD be
+            deleted and changes nothing.
+    """
+    try:
+        conn = _connect()
+        _ensure_schema(conn)
+        try:
+            row = conn.execute(
+                "SELECT id, name FROM knowledge_databases WHERE slug = ?", (database,)
+            ).fetchone()
+            if not row:
+                return f"No knowledge layer called '{database}'."
+            db_id, name = row[0], row[1]
+            chunks = conn.execute(
+                "SELECT COUNT(*) FROM pdf_chunks WHERE db_id = ?", (db_id,)).fetchone()[0]
+            docs = conn.execute(
+                "SELECT COUNT(*) FROM pdf_index_state WHERE db_id = ?", (db_id,)).fetchone()[0]
+
+            if not confirm:
+                # Deleting an indexed layer costs hours of embedding to rebuild.
+                # Say exactly what will go before doing it, not after.
+                return (f"'{name}' holds {docs} documents and {chunks:,} indexed passages.\n"
+                        f"Your PDFs stay on disk — only the search index is removed, and the "
+                        f"layer can be rebuilt from the same folders.\n"
+                        f"To go ahead: delete_knowledge_database('{database}', confirm=True)")
+
+            # Vectors first, and by the ids we are about to remove — a vec0 table
+            # has no foreign keys, so orphaned vectors would otherwise linger and
+            # keep matching queries for documents that no longer exist.
+            ids = [r[0] for r in conn.execute(
+                "SELECT id FROM pdf_chunks WHERE db_id = ?", (db_id,)).fetchall()]
+            try:
+                import sqlite_vec
+                conn.enable_load_extension(True)
+                sqlite_vec.load(conn)
+                conn.enable_load_extension(False)
+                for i in ids:
+                    conn.execute("DELETE FROM vec_pdf_chunks WHERE rowid = ?", (i,))
+            except Exception as exc:
+                log.warning("delete_knowledge_database: vectors not removed (%s)", exc)
+
+            conn.execute("DELETE FROM pdf_chunks WHERE db_id = ?", (db_id,))
+            conn.execute("DELETE FROM pdf_index_state WHERE db_id = ?", (db_id,))
+            conn.execute("DELETE FROM knowledge_databases WHERE id = ?", (db_id,))
+            conn.commit()
+        finally:
+            conn.close()
+        return (f"Removed '{name}' — {docs} documents and {chunks:,} passages taken out of the "
+                f"index. Your PDFs are untouched on disk.")
+    except Exception as e:
+        return f"Could not remove '{database}': {e}"
+
+
 def _index_one_pdf(conn, pdf_path: Path, lib_root: Path, db_id: int,
                    embed_fn) -> dict:
     source_file = _relative_source(pdf_path, lib_root)
