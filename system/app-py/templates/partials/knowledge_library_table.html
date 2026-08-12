@@ -120,6 +120,14 @@
               background:color-mix(in srgb, {{ icolor }} 12%, transparent);
               color:{{ icolor }};">{{ type_labels.get(item.item_type, item.item_type) | upper }}</span>
             {% endif %}
+            {# Read / unread toggle — the write half of a field that existed unused. #}
+            <button hx-post="/api/library/{{ item.id }}/read" hx-swap="outerHTML"
+                    title="{% if item.is_read %}Mark unread{% else %}Mark read{% endif %}"
+                    style="flex-shrink:0;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
+                           padding:2px 7px;border:1px solid var(--m-line);border-radius:10px;
+                           background:transparent;cursor:pointer;
+                           color:{% if item.is_read %}var(--m-muted){% else %}var(--m-accent){% endif %};"
+            >{% if item.is_read %}READ{% else %}UNREAD{% endif %}</button>
             {# Title #}
             <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.35;flex:1;">
               {% if item.doi %}
