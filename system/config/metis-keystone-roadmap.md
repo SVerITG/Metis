@@ -765,5 +765,60 @@ above shows no unexpectedly-empty layer for a feature that's advertised as worki
 
 ---
 
+## Appendix D — "Looks structural but isn't" register (2026-08-12)
+
+*Owner asked for a systematic sweep after four defects in one session turned out to share
+one shape. Method: `tools/audit-structural.py` (new, permanent, wired into `test-mcp.sh`
+as a WARN) + manual verification of every hit. The detector exists because reading the
+code cannot find these — in all four cases the code looked correct.*
+
+**The pattern.** A control or feature is correctly written, visibly present, and never
+reached. Nothing errors. Tests can pass while testing the wrong path. The only reliable
+questions are *"what has no caller, no writer, or no rows?"*
+
+### D.1 Found and FIXED this session
+
+| # | What | Why it was invisible |
+|---|---|---|
+| 1 | **Tool guard never on the request path** — `install()` reassigned `app.call_tool`, but FastMCP captured the bound method at construction. Every real MCP request bypassed the path deny + PII rail. | `tool_guard_log` had 3 rows, all from the day it was written. Our test called `app.call_tool()` directly — the one path that *did* reach the wrapper. |
+| 2 | **`session_bootstrap` de-registered** by a helper inserted under its `@app.tool()`. | Tool **count** unchanged (214 either way) — one name simply swapped for another, so the count-based check passed. |
+| 3 | **`kg_index_notes` de-registered**, same cause, much older. | Nobody was looking for it. |
+| 4 | **Memory write-backs behind `run_metis`**, which is almost never called. | `session_events` had 0 rows for its entire existence. |
+| 5 | **`_check_output_stage`** — the output red-line scan — defined, called by nothing. | Could not be wired to `run_metis`: that returns an instruction sheet, not an answer. Now runs inside `evaluate_against_layers`, the only function receiving a drafted answer. |
+| 6 | **Cross-pollination searched after writing**, so every capture linked to itself at rank 1. | The table was empty for a different reason (no captures since it shipped), which masked it. |
+
+### D.2 Found, still OPEN — decisions for the owner
+
+**Frozen fossils** — created in `system/installer/schema.sql`, read by the dashboard,
+written by **no code anywhere in the repo**. Four still hold rows from a tool since removed,
+so the dashboard renders real-looking numbers that can never change again:
+
+| Table | Rows | Consequence |
+|---|---|---|
+| `library_inventory` | 221 | **Worst one.** It is how the library browser resolves a paper to its PDF on disk. Every paper added from now on is invisible to that lookup. Same wound as M6, different organ. |
+| `knowledge_links` | 93 | Explicit knowledge links frozen; the graph cannot grow. |
+| `library_duplicates` | 23 | The dashboard's duplicate count can never update. |
+| `learning_competencies` | 8 | Teach-tab competencies frozen. |
+| `research_milestones` | 0 | Read in one place, never written — the feature does not exist. |
+
+**Silent layers** — a writer exists, but the table is empty, i.e. the tool is never invoked
+(the `run_metis` disease). Most are simply unused features; these three are not:
+- `discovery_shown` = 0 → **the discovery-tips feature in CLAUDE.md has never fired once**, in any session.
+- `agent_spans` = 0 → the observability waterfall the dashboard renders has never had a trace.
+- `meeting_actions` = 0 → confirms §2.5: meeting action items are shown but never persisted.
+
+**Hollow routes** — registered, return 200, body is a placeholder:
+`/api/partial/teach/active-draft`, `/courses-list`, `/suggested` — all return `<div></div>`.
+This is the UI dialect of the same disease and confirms the long-standing "Teach tab thin" note.
+
+### D.3 The rule this yields
+
+> **A control that has never written a row has never run.** Prefer evidence of execution
+> (an audit row, an event, a non-empty table) over evidence of correctness (it reads fine,
+> the test passes). When adding a guarantee, ask what would be *observably different* if it
+> silently stopped working — and if the answer is "nothing", that is the defect.
+
+---
+
 *End of the Keystone Roadmap. Update the status of items here as they are built; keep the promise-harness
 score and drift heatmap as the objective "are we there yet" signal.*

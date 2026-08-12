@@ -11,7 +11,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from db import db_query, db_scalar, get_db_path
+from db import db_execute, db_query, db_scalar, get_db_path
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -499,10 +499,79 @@ def _get_lib_base() -> Path | None:
     return None
 
 
+def _refresh_library_inventory() -> tuple[int, int]:
+    """Rebuild `library_inventory` from what is actually on disk. Returns (added, removed).
+
+    The table maps a PDF's path on disk so a `literature_metadata` row can be linked
+    to its file. It was created by the installer schema, read here — and written by
+    NO code anywhere in the repo (found by tools/audit-structural.py, 2026-08-12). It
+    held a snapshot from some earlier tool that has since been removed, so it could
+    only ever drift: measured at the time of this fix, 22 rows pointed at files that
+    no longer existed and 7 PDFs on disk were invisible to the browser entirely,
+    several of them on the researcher's own core topic.
+
+    A frozen index is worse than no index: it looks authoritative. Rescanning makes
+    the table a cache of the filesystem rather than a fossil of it.
+
+    Best-effort and never raises — a stale index degrades the PDF link, it must not
+    take the Library surface down.
+    """
+    base = _get_lib_base()
+    if base is None:
+        return (0, 0)
+    try:
+        on_disk: dict[str, Path] = {}
+        for p in base.rglob("*"):
+            if p.suffix.lower() != ".pdf" or not p.is_file():
+                continue
+            try:
+                on_disk[str(p.relative_to(base))] = p
+            except ValueError:
+                continue
+        if not on_disk:
+            return (0, 0)   # an empty walk usually means the drive is unmounted —
+                            # never let that delete a good index
+
+        known = {r["relative_path"] for r in
+                 (db_query("SELECT relative_path FROM library_inventory") or [])}
+
+        added = 0
+        for rel, path in on_disk.items():
+            if rel in known:
+                continue
+            try:
+                st = path.stat()
+                db_execute(
+                    "INSERT OR REPLACE INTO library_inventory "
+                    "(relative_path, basename, top_folder, extension, size_bytes, modified_date) "
+                    "VALUES (?,?,?,?,?,?)",
+                    (rel, path.name, rel.split("/")[0] if "/" in rel else "",
+                     "pdf", st.st_size,
+                     __import__("datetime").date.fromtimestamp(st.st_mtime).isoformat()),
+                )
+                added += 1
+            except Exception:
+                continue
+
+        removed = 0
+        for rel in known - set(on_disk):
+            try:
+                db_execute("DELETE FROM library_inventory WHERE relative_path = ?", (rel,))
+                removed += 1
+            except Exception:
+                continue
+        return (added, removed)
+    except Exception:
+        return (0, 0)
+
+
 def _ensure_pdf_cache() -> None:
     global _lit_pdf_cache
     if _lit_pdf_cache:
         return
+    # Refresh before reading. Once per process (this function is cache-guarded), so
+    # the cost is one directory walk per dashboard start.
+    _refresh_library_inventory()
     lib_rows = db_query("SELECT relative_path, basename FROM library_inventory") or []
     if not lib_rows:
         return
