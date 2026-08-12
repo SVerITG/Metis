@@ -2334,3 +2334,111 @@ async def metis_update_check(request: Request):
 async def metis_update_run(request: Request):
     _launch_update(dry=False)
     return HTMLResponse(_update_panel_html())
+
+
+# ---------------------------------------------------------------------------
+# Settings map  (Keystone P2.5 — which files matter, and which you can ignore)
+# ---------------------------------------------------------------------------
+# ~40 files live in system/config/. Some are yours to change, some are power-user
+# territory, some are internal state, and some are dead artefacts from an older
+# mechanism that nothing reads any more. Nothing distinguished them, so the honest
+# answer to "where do I change X?" was "read the source". This panel is the answer
+# instead — and it names the orphans, because a settings-shaped file that nothing
+# reads is worse than no file: editing it changes nothing and says nothing.
+
+_SETTINGS_MAP = [
+    # (filename, kind, what it controls, where to change it)
+    ("user-preferences.json", "ui", "Your name, style, theme, library path",
+     "Appearance & Settings, above"),
+    ("user-config.yaml", "ui", "Identity, interests, news topics, projects",
+     "Appearance & Settings, or the setup wizard"),
+    (".env", "ui", "Your Anthropic and Zotero API keys", "API keys section, above"),
+    ("models.yaml", "power", "Which model each task tier prefers (advisory — the "
+     "Claude client makes the actual call)", "edit the file"),
+    ("tool-subsets.json", "power", "Which tools load for which agent", "edit the file"),
+    ("agent-registry.json", "power", "The agent catalogue", "edit the file"),
+    ("network-policy.json", "power", "Which hosts Metis may reach", "edit the file"),
+    ("domain-overrides.local.json", "power", "Your institution's own PII patterns "
+     "(local only, never shared)", "edit the file"),
+    ("implementation-progress.json", "state", "Build progress tracker", "don't edit"),
+    ("install-state.json", "state", "What the installer did", "don't edit"),
+    ("mcp-health.json", "state", "Last server start's health", "don't edit"),
+    ("eval-results.json", "state", "Last self-evaluation run", "don't edit"),
+]
+
+_KIND_STYLE = {
+    "ui":      ("var(--m-ok)",    "CHANGE IN METIS"),
+    "power":   ("var(--m-accent)", "EDIT THE FILE"),
+    "state":   ("var(--m-muted)", "INTERNAL"),
+    "orphan":  ("var(--m-warn)",  "DEAD — SAFE TO DELETE"),
+}
+
+
+def _orphan_configs() -> list[str]:
+    """Config files carrying another machine's name that nothing reads any more.
+
+    They look like settings and are inert: written by a mechanism since removed,
+    read by no current code. Detected rather than hardcoded so a NEW machine's
+    leftovers surface the same way.
+    """
+    root = Path(os.environ.get("METIS_RC_ROOT", ".")) / "system" / "config"
+    live = {m[0] for m in _SETTINGS_MAP}
+    out = []
+    try:
+        import socket
+        me = socket.gethostname().lower()
+        for f in sorted(root.iterdir()):
+            if not f.is_file() or f.name in live or f.suffix not in (".json", ".md"):
+                continue
+            stem = f.stem.lower()
+            # "<known-setting>-<something>" where <something> is not this machine
+            for known in ("user-preferences", "mcp-health", "eval-results", "setup"):
+                if stem.startswith(known + "-") and me not in stem:
+                    out.append(f.name)
+                    break
+    except Exception:
+        pass
+    return out
+
+
+@router.get("/api/partial/metis/settings-map", response_class=HTMLResponse)
+async def metis_settings_map(request: Request):
+    root = Path(os.environ.get("METIS_RC_ROOT", ".")) / "system" / "config"
+    rows = []
+    for name, kind, what, where in _SETTINGS_MAP:
+        path = root / name if name != ".env" else root.parent / ".env"
+        exists = path.exists()
+        # Skipping a missing file HIDES a setting the user may want to change:
+        # `network-policy.json` does not exist until something writes it, so the
+        # allowlist silently runs on defaults and the panel said nothing at all.
+        # Internal state files are different — a missing one is not a setting.
+        if not exists and kind == "state":
+            continue
+        colour, label = _KIND_STYLE[kind]
+        rows.append((colour, label, name, what,
+                     where if exists else f"{where} — not created yet, defaults apply"))
+    for name in _orphan_configs():
+        colour, label = _KIND_STYLE["orphan"]
+        rows.append((colour, label, name,
+                     "Left over from another computer — nothing reads it", "safe to delete"))
+
+    body = "".join(f"""
+      <div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--m-rule-soft);">
+        <span style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.08em;color:{c};
+                     flex-shrink:0;width:136px;padding-top:2px;">{lbl}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:var(--m-mono);font-size:11px;">{n}</div>
+          <div style="font-size:11px;color:var(--m-muted);">{w} · <em>{wh}</em></div>
+        </div>
+      </div>""" for c, lbl, n, w, wh in rows)
+
+    return HTMLResponse(f"""
+    <div class="panel" style="padding:16px 18px;">
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;
+                  color:var(--m-muted);margin-bottom:8px;">WHERE SETTINGS LIVE</div>
+      <div style="font-size:12px;color:var(--m-muted);margin-bottom:8px;">
+        Most things you'd want to change are above, in Metis itself. The rest are here so you
+        never have to guess which file matters.
+      </div>
+      {body}
+    </div>""")
