@@ -44,14 +44,18 @@
             <option value="nl-BE">Dutch (Belgium)</option>
             <option value="fr-BE">French (Belgium)</option>
           </select>
+            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-top:4px;">
+              Local keeps the recording on this computer — the right choice if the meeting
+              covers patients or unpublished work.
+            </div>
         </div>
         <div>
           <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">TRANSCRIPTION</label>
           <select id="lm-setup-mode"
                   style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
-            <option value="server">Whisper — local GPU, all browsers</option>
-            <option value="voxtral">Voxtral — cloud, diarization built-in</option>
-            <option value="browser">Browser — instant, Chrome/Edge only</option>
+            <option value="server">Whisper — stays on this computer (recommended)</option>
+            <option value="voxtral">Voxtral — sent to Mistral's cloud · diarization built-in</option>
+            <option value="browser">Browser — sent to Google · instant, Chrome/Edge only</option>
           </select>
         </div>
       </div>
