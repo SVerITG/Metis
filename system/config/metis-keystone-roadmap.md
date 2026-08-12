@@ -279,6 +279,31 @@ explicit recall call; running a work agent leaves a reflexion without being told
 the dashboard shows a live "promises green/red" trend.
 
 ### PHASE 4 — Backgrounds as plug-ins ("enable the domains you want; update them")
+
+> **Status (2026-08-12): slices 1 and 2 SHIPPED** (`556d154`, `56ccd57`). Owner asked directly
+> whether the PH background was ready, whether questions can run through one or several backgrounds,
+> and how backgrounds get updated. Honest answers at the time: all four layers **were** built and
+> indexed (ph-background 57 docs / 9,593 chunks; epi-methods 19 / 5,479; ntd 7 / 970; hat-specialist
+> 221 / 7,973), and multi-layer questions **did** work from chat and ranked correctly by relevance
+> (cost-effectiveness → PH background; sampling design → epi-methods; post-elimination → HAT). But
+> there was **no dashboard UI whatsoever** — not one route referenced `knowledge_databases` — no
+> enable/disable, and **no update path at all**: dropping a PDF into a folder did nothing, forever.
+>
+> - **Slice 1 ✅** — `enabled` column (additive, DEFAULT 1), `set_knowledge_layer_enabled` tool,
+>   `pending_pdf_count` staleness measure, and a Library-surface panel: every layer with documents,
+>   passages, build date, papers waiting, plus ON/OFF and Rebuild. *The filter fix mattered more than
+>   the column:* with no layers named, the search left `db_filter_ids` as None — no filter — and only
+>   built a display-name map, so disabling a layer removed its NAME while its chunks were still
+>   searched and returned as `db:1`. The first test "passed" by checking for the absent label.
+> - **Slice 2 ✅** — `job_background_index` at 09:07 indexes papers added since the last build, right
+>   after the library scan. Registered in JOB_FUNCS, JOB_LABELS **and JOB_DEFAULTS** — a job with no
+>   schedule entry would exist, look complete, and never run.
+> - **Slice 3 ⬜ — portable packs, the actual "download a background".** Today a background is a DB
+>   row plus *local folder paths*; there is nothing to hand anyone. **Owner's decision (2026-08-12):
+>   bundle a curated pack in the Metis repo** — a manifest of open-access sources, where installing
+>   fetches and indexes locally. Keeps the repo small, avoids redistributing copyrighted PDFs, and
+>   works for the published base edition. Follow the `content_packs` (courses) lifecycle, which
+>   already does install/enable/update for this exact shape.
 *The data model is sound; generalize the existing `content_packs` lifecycle to knowledge layers.*
 
 | # | Item | Why / evidence | Files | Size·Impact |
