@@ -1,0 +1,30 @@
+{
+  "slug": "hat-elimination-monitoring",
+  "name": "HAT Elimination Monitoring (WHO series)",
+  "version": "1.0.0",
+  "description": "The WHO series monitoring progress towards elimination of gambiense human African trypanosomiasis — the reference numbers for coverage, case detection and country-level status. Open access (PLOS NTDs).",
+  "folder": "open-access-books/HAT Elimination Monitoring",
+  "color": "#8a7fb5",
+  "sources": [
+    {
+      "title": "Monitoring the Progress towards the Elimination of Gambiense Human African Trypanosomiasis (2015)",
+      "filename": "Franco_HAT_elimination_monitoring_2015.pdf",
+      "url": "https://journals.plos.org/plosntds/article/file?id=10.1371/journal.pntd.0003785&type=printable"
+    },
+    {
+      "title": "Monitoring the elimination of human African trypanosomiasis: Update to 2014 (2017)",
+      "filename": "Franco_HAT_elimination_monitoring_2017.pdf",
+      "url": "https://journals.plos.org/plosntds/article/file?id=10.1371/journal.pntd.0005585&type=printable"
+    },
+    {
+      "title": "Monitoring the elimination of human African trypanosomiasis: Update to 2016 (2018)",
+      "filename": "Franco_HAT_elimination_monitoring_2018.pdf",
+      "url": "https://journals.plos.org/plosntds/article/file?id=10.1371/journal.pntd.0006890&type=printable"
+    },
+    {
+      "title": "Monitoring the elimination of human African trypanosomiasis at continental and country level: Update to 2018 (2020)",
+      "filename": "Franco_HAT_elimination_monitoring_2020.pdf",
+      "url": "https://journals.plos.org/plosntds/article/file?id=10.1371/journal.pntd.0008261&type=printable"
+    }
+  ]
+}

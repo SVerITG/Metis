@@ -308,3 +308,8 @@ graphify-out/
 
 # Base-shell scrub name list (maintainer identity — never ship)
 tools/base-shell/scrub-names.txt
+
+# Documents fetched by an installed background pack — the MANIFEST ships, the PDFs
+# do not (that is the whole point of a pack: small repo, no redistributing other
+# people's work). The folder is recreated on install.
+knowledge/library/open-access-books/HAT Elimination Monitoring/
