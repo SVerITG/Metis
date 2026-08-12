@@ -773,8 +773,11 @@ Health Check that surfaces all of this in plain language.
    Folders now fall back to the RC root; `_relative_source` replaces three `relative_to(lib_root)`
    calls that would otherwise raise on an outside path (indexing would have aborted on file 1, and the
    resume check would have crashed rather than skipping). `hat-specialist` repointed → 221 PDFs; full
-   index run performed. **Still to do:** the *automatic* half — indexing on ingest, so a newly added
-   paper does not wait for a manual build.
+   index run **COMPLETE: all 211 sleeping-sickness papers indexed, 24,015 chunks.** Verified by
+   asking real questions — "passive screening sensitivity for gambiense HAT" now returns Checchi 2018
+   and Simarro 2014 with page numbers and quoted passages, from the owner's own collection, for the
+   first time. **Still to do:** the *automatic* half — indexing on ingest, so a newly added paper does
+   not wait for a manual build.
 7. ~~**M7 — unify the two notes systems.**~~ **✅ SHIPPED 2026-08-12.** `search_notes` now searches
    the dashboard's `personal_notes` rows as well as the `.md` files on disk — no migration, the two
    stores stay put but one question reaches both. Verification also exposed a matching weakness in
