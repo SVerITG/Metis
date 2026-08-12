@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from routers import (
+    api_v1,
     capture,
     connections,
     jobs,
@@ -271,6 +272,10 @@ app.include_router(teach.router)
 app.include_router(metis_tab.router)
 app.include_router(memory_health.router)
 app.include_router(capture.router, prefix="/api")
+# JSON API for non-Claude clients (Office, scripts). Carries its own /api/v1
+# prefix and its own bearer-token auth — see routers/api_v1.py on why the
+# dashboard's Origin check is necessary but not sufficient here.
+app.include_router(api_v1.router)
 app.include_router(connections.router)
 app.include_router(transcription.router)
 app.include_router(speakers.router)
