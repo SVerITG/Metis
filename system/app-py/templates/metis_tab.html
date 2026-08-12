@@ -457,6 +457,13 @@
         <div class="panel" style="padding:18px 22px;">{{ skeleton_block(rows=2) }}</div>
       </div>
 
+      {# Update Metis — P2.4. Backed up, verified, and self-undoing on failure. #}
+      {{ sec_label("Update", tail="SAFE, WITH ROLLBACK", style="margin-bottom:12px;") }}
+      <div hx-get="/api/partial/metis/update" hx-trigger="load delay:200ms" hx-swap="outerHTML"
+           style="margin-bottom:24px;">
+        <div class="panel" style="padding:18px 22px;">{{ skeleton_block(rows=2) }}</div>
+      </div>
+
     </section>
 
     <!-- =================================================
