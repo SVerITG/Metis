@@ -641,8 +641,9 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
             # Articles for this topic — most relevant to the user's work first.
             art_rows = db_query(
                 "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at, "
-                "COALESCE(relevance,0) as relevance "
+                "COALESCE(relevance,0) as relevance, seen_at "
                 "FROM news_briefs WHERE domain = ? AND created_at >= ? "
+                "AND COALESCE(source_type,'news') != 'article' "
                 "ORDER BY COALESCE(relevance,0) DESC, created_at DESC LIMIT 5",
                 (topic, cutoff),
             ) or []
@@ -703,8 +704,29 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
             "last_updated": last_updated,
             "total_topics": total_topics,
             "show_all_topics": show_all_topics,
+            # "What is new since I last looked" — the one thing that turns a feed
+            # into something readable rather than an undifferentiated wall. 859
+            # briefs with no seen-state showed the same items every visit.
+            "unseen_count": db_scalar(
+                "SELECT COUNT(*) FROM news_briefs WHERE seen_at IS NULL "
+                "AND COALESCE(source_type,'news') != 'article' AND created_at >= ?",
+                (cutoff,), default=0,
+            ) or 0,
         },
     )
+
+
+@router.post("/api/news/mark-seen", response_class=HTMLResponse)
+async def news_mark_seen(request: Request, period: str = "week"):
+    """Mark everything currently in view as seen, then redraw the rail."""
+    import datetime as _dt
+
+    db_execute(
+        "UPDATE news_briefs SET seen_at = ? WHERE seen_at IS NULL "
+        "AND COALESCE(source_type,'news') != 'article'",
+        (_dt.datetime.now().isoformat(timespec="seconds"),),
+    )
+    return await today_news_rail(request, category="", period=period)
 
 
 # ---------------------------------------------------------------------------
