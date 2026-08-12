@@ -833,13 +833,42 @@ async def search_pdf_knowledge(
 
     q_vec = _encode_vec(embed_query(query, normalize=True))
 
-    # ANN search — get more candidates, filter after
+    # ANN search, then filter by layer in Python — so the candidate pool must be
+    # sized for how NARROW the filter is, not just for top_k.
+    #
+    # The pool was a flat min(top_k*4, 80) taken globally. With the layer filter
+    # applied afterwards, a layer holding 4% of the corpus keeps roughly 4% of those
+    # 80 candidates — about three. Measured before this fix: asking the ntd layer
+    # (970 of 24,015 chunks) for 8 results on "mass drug administration coverage"
+    # returned 3, not because the layer lacked passages but because they never
+    # entered the pool.
+    #
+    # It is a scaling landmine rather than a static bug: every background added
+    # dilutes every other one, so the day the HAT layer grew from 10 documents to
+    # 221 it silently degraded retrieval for NTD, epi-methods and PH background.
+    #
+    # Over-fetch by the inverse of the filtered layers' share of the corpus, capped
+    # so a very narrow layer cannot ask for an unbounded scan.
+    ann_k = min(top_k * 4, 80)
+    if db_filter_ids:
+        try:
+            ph_ids = ",".join("?" * len(db_filter_ids))
+            in_scope = conn.execute(
+                f"SELECT COUNT(*) FROM pdf_chunks WHERE db_id IN ({ph_ids})",
+                db_filter_ids,
+            ).fetchone()[0]
+            if 0 < in_scope < total_chunks:
+                share = in_scope / total_chunks
+                ann_k = int(min(max(ann_k, (top_k * 4) / share), 4000))
+        except Exception:
+            pass  # a sizing failure must fall back to the old behaviour, not fail
+
     candidates = conn.execute(
         f"""SELECT v.rowid, v.distance
             FROM vec_pdf_chunks v
             WHERE v.embedding MATCH ?
               AND k = ?""",
-        (q_vec, min(top_k * 4, 80))
+        (q_vec, ann_k)
     ).fetchall()
 
     if not candidates:
