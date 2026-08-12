@@ -230,6 +230,38 @@
   </div>
   {% endif %}
 
+  {# ── Pagination ────────────────────────────────────────────────────────────
+     Shows WHERE you are as well as how to move: "26-50 of 726". A catalogue
+     without a position indicator makes a reader lose their place, which is the
+     whole reason page numbers exist. Hidden entirely on a single page of results. #}
+  {% if total_pages and total_pages > 1 %}
+  <div style="padding:10px 20px;display:flex;align-items:center;justify-content:space-between;
+              gap:12px;border-top:1px solid var(--m-rule-soft);">
+    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-muted);">
+      {{ (page - 1) * page_size + 1 }}–{{ [page * page_size, total] | min }} OF {{ total }}
+    </span>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button {% if page <= 1 %}disabled{% endif %}
+              hx-get="/api/partial/knowledge/library-table?page={{ page - 1 }}&q={{ q | urlencode }}&item_type={{ item_type | urlencode }}&sort={{ sort | urlencode }}&year_from={{ year_from | urlencode }}&year_to={{ year_to | urlencode }}"
+              hx-target="#lib-table-area" hx-swap="outerHTML"
+              style="font-family:var(--m-mono);font-size:10px;padding:4px 10px;border:1px solid var(--m-line);
+                     border-radius:4px;background:var(--m-surface);color:var(--m-ink);
+                     cursor:{% if page <= 1 %}default{% else %}pointer{% endif %};
+                     opacity:{% if page <= 1 %}0.4{% else %}1{% endif %};">← Previous</button>
+      <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
+        {{ page }} / {{ total_pages }}
+      </span>
+      <button {% if page >= total_pages %}disabled{% endif %}
+              hx-get="/api/partial/knowledge/library-table?page={{ page + 1 }}&q={{ q | urlencode }}&item_type={{ item_type | urlencode }}&sort={{ sort | urlencode }}&year_from={{ year_from | urlencode }}&year_to={{ year_to | urlencode }}"
+              hx-target="#lib-table-area" hx-swap="outerHTML"
+              style="font-family:var(--m-mono);font-size:10px;padding:4px 10px;border:1px solid var(--m-line);
+                     border-radius:4px;background:var(--m-surface);color:var(--m-ink);
+                     cursor:{% if page >= total_pages %}default{% else %}pointer{% endif %};
+                     opacity:{% if page >= total_pages %}0.4{% else %}1{% endif %};">Next →</button>
+    </div>
+  </div>
+  {% endif %}
+
 </div><!-- /#lib-table-area -->
 
 <script>
