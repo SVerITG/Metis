@@ -316,3 +316,6 @@ knowledge/library/open-access-books/HAT Elimination Monitoring/
 
 # Local JSON API bearer token — generated per machine, never shared
 system/config/api-token.txt
+
+# Self-signed localhost certificate for the Office add-in — per machine, never shared
+system/config/certs/

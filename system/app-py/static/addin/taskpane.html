@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Metis</title>
+<!--
+  Metis taskpane (Keystone P5.4).
+
+  Talks to the dashboard's /api/v1 JSON API. Two things it deliberately does:
+
+  · It asks for the API token once and keeps it in localStorage. The token is not
+    embedded in this file, because the manifest and taskpane are shareable and a
+    token baked into them would be a credential handed to anyone who copies it.
+
+  · It only ever INSERTS text the user chose. It never reads the document and
+    sends it anywhere — a slide deck can contain unpublished results, and an
+    add-in that quietly uploads the active document is exactly the thing the rest
+    of Metis is built to prevent.
+-->
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 13px/1.5 -apple-system, "Segoe UI", system-ui, sans-serif;
+         margin: 0; padding: 12px; }
+  h1 { font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+       color: #888; margin: 0 0 10px; }
+  input, button, textarea { font: inherit; width: 100%; box-sizing: border-box;
+       padding: 7px 9px; margin-bottom: 8px; border: 1px solid #bbb; border-radius: 4px; }
+  button { background: #5c5fe4; color: #fff; border-color: #5c5fe4; cursor: pointer; }
+  button.secondary { background: transparent; color: inherit; border-color: #bbb; }
+  .hit { border-bottom: 1px solid #e3e3e3; padding: 8px 0; }
+  .src { font-family: ui-monospace, monospace; font-size: 10px; color: #888; }
+  .msg { font-size: 12px; padding: 8px; border-radius: 4px; margin-bottom: 8px; }
+  .err { background: #fdecea; color: #8a1c12; }
+  .ok  { background: #e8f5e9; color: #1b5e20; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .tabs button { width: auto; flex: 1; }
+</style>
+</head>
+<body>
+<h1>Metis</h1>
+<div id="msg"></div>
+
+<div id="setup" hidden>
+  <p style="font-size:12px;color:#666;">
+    Paste the API token from <code>system/config/api-token.txt</code>. It stays on this
+    computer and is only used to reach Metis on localhost.
+  </p>
+  <input id="token" type="password" placeholder="API token" autocomplete="off">
+  <button id="saveToken">Connect</button>
+</div>
+
+<div id="main" hidden>
+  <div class="tabs">
+    <button id="tabSearch">Search library</button>
+    <button id="tabCapture" class="secondary">Capture idea</button>
+  </div>
+
+  <div id="paneSearch">
+    <input id="q" placeholder="e.g. passive screening sensitivity">
+    <button id="go">Search</button>
+    <div id="results"></div>
+  </div>
+
+  <div id="paneCapture" hidden>
+    <textarea id="idea" rows="4" placeholder="An idea worth keeping…"></textarea>
+    <button id="save">Save to Metis</button>
+  </div>
+</div>
+
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script>
+const API = location.origin + "/api/v1";
+const $ = (id) => document.getElementById(id);
+const say = (text, cls) => { $("msg").innerHTML = text ? `<div class="msg ${cls||''}">${text}</div>` : ""; };
+const token = () => localStorage.getItem("metisToken") || "";
+
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, {
+    ...opts,
+    headers: { "Authorization": "Bearer " + token(),
+               "Content-Type": "application/json", ...(opts.headers || {}) },
+  });
+  if (res.status === 401) { show(false); throw new Error("Metis rejected the token."); }
+  if (!res.ok) throw new Error("Metis returned " + res.status);
+  return res.json();
+}
+
+function show(connected) {
+  $("setup").hidden = connected;
+  $("main").hidden = !connected;
+}
+
+$("saveToken").onclick = async () => {
+  localStorage.setItem("metisToken", $("token").value.trim());
+  try { await api("/projects"); say("Connected.", "ok"); show(true); }
+  catch (e) { say(e.message, "err"); }
+};
+
+$("tabSearch").onclick = () => { $("paneSearch").hidden = false; $("paneCapture").hidden = true;
+  $("tabSearch").className = ""; $("tabCapture").className = "secondary"; };
+$("tabCapture").onclick = () => { $("paneSearch").hidden = true; $("paneCapture").hidden = false;
+  $("tabCapture").className = ""; $("tabSearch").className = "secondary"; };
+
+$("go").onclick = async () => {
+  const q = $("q").value.trim();
+  if (!q) return;
+  say("Searching your library…");
+  try {
+    const d = await api("/search?limit=5&q=" + encodeURIComponent(q));
+    say("");
+    // The API returns markdown; render the citation lines and give each an
+    // Insert button. Inserting is the point — grounding a slide in the
+    // researcher's OWN sources without retyping them.
+    const blocks = d.results_markdown.split(/\n(?=\*\*\d+\.)/).slice(1);
+    $("results").innerHTML = blocks.length
+      ? blocks.map((b, i) => {
+          const title = (b.match(/\*\*\d+\.\s*([^*]+)\*\*/) || [,"Result"])[1];
+          const src = (b.match(/\|\s*([^\s|]+\.pdf)/) || [,""])[1];
+          const quote = (b.match(/>\s*([\s\S]+)/) || [,""])[1].trim().slice(0, 400);
+          return `<div class="hit"><div><strong>${title}</strong></div>
+                  <div class="src">${src}</div>
+                  <div style="margin:4px 0;">${quote}</div>
+                  <button class="secondary" data-i="${i}">Insert into document</button></div>`;
+        }).join("")
+      : "<p style='font-size:12px;color:#666;'>Nothing found in your library.</p>";
+    [...$("results").querySelectorAll("button")].forEach((btn, i) => {
+      btn.onclick = () => insert(blocks[i]);
+    });
+  } catch (e) { say(e.message, "err"); }
+};
+
+function insert(block) {
+  const title = (block.match(/\*\*\d+\.\s*([^*]+)\*\*/) || [,""])[1].trim();
+  const src   = (block.match(/\|\s*([^\s|]+\.pdf)/) || [,""])[1];
+  const quote = (block.match(/>\s*([\s\S]+)/) || [,""])[1].trim().slice(0, 600);
+  const text  = `${quote}\n\n— ${title}${src ? " (" + src + ")" : ""}`;
+  try {
+    if (Office.context.host === Office.HostType.PowerPoint) {
+      Office.context.document.setSelectedDataAsync(text, (r) =>
+        say(r.status === Office.AsyncResultStatus.Succeeded
+            ? "Inserted, with its source." : "Could not insert: " + r.error.message,
+            r.status === Office.AsyncResultStatus.Succeeded ? "ok" : "err"));
+    } else {
+      Excel.run(async (ctx) => {
+        const rng = ctx.workbook.getSelectedRange();
+        rng.values = [[text]];
+        await ctx.sync();
+        say("Inserted, with its source.", "ok");
+      }).catch((e) => say("Could not insert: " + e.message, "err"));
+    }
+  } catch (e) { say("Could not insert: " + e.message, "err"); }
+}
+
+$("save").onclick = async () => {
+  const text = $("idea").value.trim();
+  if (!text) return;
+  try {
+    await api("/capture", { method: "POST",
+      body: JSON.stringify({ text, kind: "idea", source: "office-addin" }) });
+    $("idea").value = ""; say("Saved to Metis.", "ok");
+  } catch (e) { say(e.message, "err"); }
+};
+
+Office.onReady(async () => {
+  if (!token()) { show(false); return; }
+  try { await api("/projects"); show(true); }
+  catch { show(false); say("Metis needs your API token again.", "err"); }
+});
+</script>
+</body>
+</html>
