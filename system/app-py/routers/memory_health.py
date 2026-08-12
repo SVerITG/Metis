@@ -9,7 +9,7 @@ import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_query, db_scalar
@@ -20,18 +20,21 @@ templates = Jinja2Templates(
 )
 
 
-@router.get("/tab/memory", response_class=HTMLResponse)
+# The standalone Memory Health surface was merged into the Metis surface's
+# Memory section (S.4) — one canonical home. The full-page routes now redirect
+# there so old bookmarks/links still land somewhere sensible. The
+# `/api/partial/memory/*` widgets below stay: the merged Memory section embeds
+# them (agent-wisdom bars, topic cloud, freshness).
+
+
+@router.get("/tab/memory")
 async def memory_tab(request: Request):
-    return templates.TemplateResponse(
-        request, "memory_health.html", {"active_tab": "memory"}
-    )
+    return RedirectResponse(url="/metis", status_code=307)
 
 
-@router.get("/api/tab/memory", response_class=HTMLResponse)
+@router.get("/api/tab/memory")
 async def memory_tab_partial(request: Request):
-    return templates.TemplateResponse(
-        request, "memory_health.html", {"active_tab": "memory"}
-    )
+    return RedirectResponse(url="/api/tab/metis", status_code=307)
 
 
 # ── Partials ──────────────────────────────────────────────────────────────

@@ -300,26 +300,8 @@
         <span class="n-tip">Metis</span>
       </div>
 
-      <!-- Memory -->
-      <div class="nav-item {% if active_tab == 'memory' %}active{% endif %}"
-           data-tab="memory"
-           hx-get="/api/tab/memory"
-           hx-target="#tab-content"
-           hx-swap="innerHTML"
-           hx-select="#tab-content"
-           hx-push-url="/memory"
-           onclick="setNavActive(this,'memory')"
-           role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-        <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-          <circle cx="8" cy="8" r="6"/>
-          <path d="M8 4 v4 l3 2"/>
-          <circle cx="8" cy="8" r="2" fill="currentColor" opacity="0.3"/>
-        </svg>
-        <span class="n-label">Memory</span>
-        <span class="n-meta">—</span>
-        <span class="n-tip">Memory</span>
-      </div>
+      {# Memory surface merged into the Metis surface's Memory section (S.4).
+         Old /memory links redirect to /metis via memory_health.py. #}
 
     </div><!-- /.nav-sec system -->
 
