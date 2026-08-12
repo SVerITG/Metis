@@ -10,6 +10,7 @@ Stability notes (June 2026):
     SQLite calls in a thread pool so FastAPI's event loop is never blocked.
 """
 
+import logging
 import asyncio
 import os
 import re
@@ -161,11 +162,25 @@ def db_query(sql: str, params=(), default=None) -> list[dict]:
             return [dict(row) for row in rows]
         finally:
             conn.close()
-    except (OSError, sqlite3.DatabaseError):
+    except (OSError, sqlite3.DatabaseError) as exc:
         # OSError covers FileNotFoundError + a read-only/full data dir (mkdir in
         # get_db_path); sqlite3.DatabaseError covers OperationalError ("database is
         # locked") AND "database disk image is malformed" (corruption). Degrade to
         # the default instead of 500-ing every panel.
+        #
+        # BUT NEVER SILENTLY. Degrading turns a broken query into a plausible empty
+        # state, and an empty state is indistinguishable from "you have nothing".
+        # That is exactly how a missing `tasks.priority` column made the Work
+        # surface announce "No open tasks across any project" while 79 open tasks
+        # sat in the table, for as long as nobody counted the rows by hand
+        # (found 2026-08-12). A malformed query is a bug in us; a locked database is
+        # a passing condition. Log the first loudly, the second quietly.
+        _msg = str(exc)
+        logging.getLogger("metis.db").log(
+            logging.WARNING if "locked" in _msg.lower() else logging.ERROR,
+            "query degraded to its default (%s): %s | SQL: %s",
+            type(exc).__name__, _msg, " ".join(sql.split())[:200],
+        )
         return default
 
 
@@ -184,11 +199,25 @@ def db_scalar(sql: str, params=(), default=0):
             return row[0] if row[0] is not None else default
         finally:
             conn.close()
-    except (OSError, sqlite3.DatabaseError):
+    except (OSError, sqlite3.DatabaseError) as exc:
         # OSError covers FileNotFoundError + a read-only/full data dir (mkdir in
         # get_db_path); sqlite3.DatabaseError covers OperationalError ("database is
         # locked") AND "database disk image is malformed" (corruption). Degrade to
         # the default instead of 500-ing every panel.
+        #
+        # BUT NEVER SILENTLY. Degrading turns a broken query into a plausible empty
+        # state, and an empty state is indistinguishable from "you have nothing".
+        # That is exactly how a missing `tasks.priority` column made the Work
+        # surface announce "No open tasks across any project" while 79 open tasks
+        # sat in the table, for as long as nobody counted the rows by hand
+        # (found 2026-08-12). A malformed query is a bug in us; a locked database is
+        # a passing condition. Log the first loudly, the second quietly.
+        _msg = str(exc)
+        logging.getLogger("metis.db").log(
+            logging.WARNING if "locked" in _msg.lower() else logging.ERROR,
+            "query degraded to its default (%s): %s | SQL: %s",
+            type(exc).__name__, _msg, " ".join(sql.split())[:200],
+        )
         return default
 
 

@@ -633,7 +633,14 @@ CREATE TABLE IF NOT EXISTS tasks (
     category      TEXT DEFAULT 'project',
     updated_at    TEXT DEFAULT NULL,
     display_order INTEGER DEFAULT 999,
-    starred       INTEGER DEFAULT 0
+    starred       INTEGER DEFAULT 0,
+    -- Five queries across work.py and planner.py sort by t.priority. The column
+    -- never existed on `tasks` (only on `projects`), so every one of them raised
+    -- "no such column", db_query swallowed it into its empty default, and the Work
+    -- surface reported "No open tasks across any project" while 79 open tasks sat
+    -- in the table. Added 2026-08-12 with a default, so existing rows sort as
+    -- 'medium' rather than vanishing.
+    priority      TEXT DEFAULT 'medium'
 );
 
 CREATE TABLE IF NOT EXISTS tracked_files (
