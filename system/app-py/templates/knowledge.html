@@ -99,6 +99,14 @@
 
   </div>
 
+  <!-- ===== Knowledge backgrounds (P4) ===== -->
+  <div style="margin-top:32px;"
+       hx-get="/api/partial/knowledge/layers"
+       hx-trigger="load"
+       hx-swap="outerHTML">
+    <div class="skeleton" style="height:120px;border-radius:var(--m-radius);"></div>
+  </div>
+
   <!-- ===== Zotero Library browser ===== -->
   <div style="margin-top:32px;">
     <!-- Sync status bar -->
