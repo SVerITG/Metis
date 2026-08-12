@@ -167,10 +167,28 @@ def _persist_connections(source_title: str, source_kind: str, matches: list) -> 
                 " UNIQUE(source_title, target_kind, target_title))"
             )
             now = datetime.datetime.now().isoformat()
+            src_norm = " ".join((source_title or "").lower().split())
             n = 0
             for rank, m in enumerate(matches, 1):
                 tt = (m.get("title") or "").strip()
                 if not tt:
+                    continue
+                # Never persist a self-edge. Callers should cross-pollinate before
+                # writing the item (see capture_idea), but this is the backstop:
+                # `_persist_connections` is reachable from the dashboard too, and a
+                # graph that mostly says "X is connected to X" is worse than no
+                # graph — it looks populated while carrying no information.
+                # The prefix test only applies to strings long enough for a shared
+                # opening to actually mean "same item" — `source_title` is a 120-char
+                # truncation of the content, so the stored title and the match title
+                # are often the same text at different lengths. A short prefix would
+                # discard genuinely different items that happen to start alike.
+                tt_norm = " ".join(tt.lower().split())
+                shortest = min(len(tt_norm), len(src_norm))
+                same_item = tt_norm == src_norm or (
+                    shortest >= 40 and (tt_norm[:shortest] == src_norm[:shortest])
+                )
+                if same_item:
                     continue
                 tk = (m.get("source") or m.get("type") or "").strip()
                 cur = con.execute(
@@ -328,6 +346,18 @@ async def capture_idea(
     week = _iso_week(now)
 
     try:
+        # Cross-pollinate BEFORE the idea is written, not after.
+        #
+        # Ordering is load-bearing here. `_cross_pollinate_core` searches the ideas
+        # table and episodic memory, so running it after the insert meant every
+        # capture matched the copy of itself it had just written — at rank 1, score
+        # 1.0. That burned the top slot of five, pushed a genuine connection out of
+        # the results, persisted a self-edge into the connection graph, and showed
+        # the user their own idea back as a "connection". The query only needs
+        # `content`, which we already hold, so computing matches first removes the
+        # whole problem rather than filtering it afterwards.
+        matches = _cross_pollinate_core(content, max_results=5) if auto_cross_pollinate else []
+
         with connect(paths.db) as conn:
             conn.execute(_IDEAS_DDL)
             # Detect which text column the table actually uses (content vs text)
@@ -350,7 +380,6 @@ async def capture_idea(
         ]
 
         if auto_cross_pollinate:
-            matches = _cross_pollinate_core(content, max_results=5)
             _persist_connections(content[:120], "idea", matches)  # Keystone P3.9 — graph accrues
             if matches:
                 lines.append(f"\n**{len(matches)} connection{'s' if len(matches) != 1 else ''} surfaced:**")
