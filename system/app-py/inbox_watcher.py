@@ -46,6 +46,8 @@ def _classify(suffix: str) -> str:
         return "audio"
     if s in _IMAGE_EXTS:
         return "image"
+    if s in {".pptx", ".ppt"}:
+        return "presentation"
     if s in {".json", ".csv", ".xlsx", ".xls"}:
         return "data"
     return "file"
