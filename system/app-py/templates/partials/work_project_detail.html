@@ -145,6 +145,11 @@
           <option value="code">code</option>
           <option value="review">review</option>
         </select>
+        {# Due date — optional, and the reason every date view was empty. Zero of
+           105 tasks had one because nothing ever asked for it. #}
+        <input id="pd-new-task-due-{{ p.id }}" type="date" title="Due date (optional)"
+               style="font-family:var(--m-mono);font-size:11px;border:1px solid var(--m-line);
+                      border-radius:3px;padding:5px 7px;background:var(--m-surface-2);color:var(--m-muted);">
         <button onclick="pdDetailAddTask('{{ p.id }}')"
                 style="background:var(--m-accent);color:var(--m-on-accent);border:none;border-radius:3px;
                        padding:6px 14px;font-family:var(--m-mono);font-size:11px;cursor:pointer;white-space:nowrap;">Add task</button>
@@ -442,12 +447,16 @@
   window.pdDetailAddTask = function(pid) {
     var titleEl = document.getElementById('pd-new-task-' + pid);
     var catEl   = document.getElementById('pd-new-task-cat-' + pid);
+    var dueEl   = document.getElementById('pd-new-task-due-' + pid);
     var title   = titleEl ? titleEl.value.trim() : '';
     if (!title) { if (titleEl) titleEl.focus(); return; }
     fetch('/api/task/create', {method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({project_id:pid, title:title, category: catEl ? catEl.value : 'general'})
+      body:JSON.stringify({project_id:pid, title:title,
+                           category: catEl ? catEl.value : 'general',
+                           due_date: dueEl ? dueEl.value : ''})
     }).then(function(){
       if (titleEl) titleEl.value = '';
+      if (dueEl) dueEl.value = '';
       var el = document.getElementById('proj-detail-overlay');
       if (el) el.remove();
       openProjectDetail(pid);
