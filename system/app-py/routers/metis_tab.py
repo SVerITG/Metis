@@ -732,11 +732,30 @@ async def who_did_what(request: Request, session_id: str = ""):
             'last session yet. When Metis routes a request to a specialist and the run is logged, the '
             'contributors appear here.</div>'
         )
+    # A 'running' row older than this is treated as stale — the agent almost
+    # certainly finished without its completion being logged (or the process
+    # died), so we stop showing a perpetual "working…" (S.2).
+    _stale_cutoff = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=15))
     rows_html = []
     for r in runs:
         pretty = str(r.get("agent_slug") or "metis").replace("-", " ").title()
         running = str(r.get("status")) == "running"
-        dot = '<span style="color:var(--m-warn);font-weight:600;">● working…</span> ' if running else ""
+        stale = False
+        if running:
+            try:
+                _ts = str(r.get("created_at") or "")
+                _dt = datetime.datetime.fromisoformat(_ts)
+                if _dt.tzinfo is None:
+                    _dt = _dt.replace(tzinfo=datetime.timezone.utc)
+                stale = _dt < _stale_cutoff
+            except Exception:
+                stale = False
+        if running and not stale:
+            dot = '<span style="color:var(--m-warn);font-weight:600;">● working…</span> '
+        elif running and stale:
+            dot = '<span style="color:var(--m-muted);">○ no result logged</span> '
+        else:
+            dot = ""
         meta = ""
         if r.get("model"):
             meta += f' · {_esc(str(r["model"]))}'
