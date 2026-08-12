@@ -219,7 +219,7 @@ multi-distro machine), and can click "Adapt to my work" to auto-populate project
 | 2.3 | **Generalize the update-menu declutter pattern** | Reuse `partials/_update_menu.html` to collapse crowded control clusters across surfaces into one action + on-demand popover with honest labels. Inventory every button first. | `partials/_update_menu.html`; all surface templates | M·★★ |
 | 2.4 | **In-app one-command update (safe)** | `tools/metis-update.sh` exists but is terminal-only (non-tech user can't update), backs up only the DB (not the full data-dir list), doesn't run full migrations, and has no rollback/atomicity. Make it a dashboard "Update now" button: backup all data dirs → pull → additive migrate → verify → auto-rollback on failure. | `tools/metis-update.sh`; `backup-canonical.py`; `data-persistence-strategy.md:§2,§4` | M·★★★ |
 | 2.5 | **Expose file-only settings as UI or accept as power-user-only** | `network-policy.json`, `models.yaml`, `tool-subsets.json`, `agent-registry.json`, governance docs are hand-edited. Decide per item: promote to UI (non-tech) or label explicitly power-user. | `system/config/*.json` | M·★ |
-| 2.6 | **Self-host CDN assets (A11/C19)** | Bootstrap + fonts (+ any D3) load from a CDN, breaking the offline/local promise. Vendor them locally. | `templates/base.html` | S·★★ |
+| 2.6 | ~~**Self-host CDN assets (A11/C19)**~~ **✅ SHIPPED 2026-08-12.** Bootstrap CSS, the Bootstrap JS bundle, Bootstrap Icons and D3 now serve from `/static/vendor/`, icon font files included (vendoring the icons CSS alone would have left every icon broken — it resolves `fonts/` relative to itself). `integrity`/`crossorigin` stripped: an SRI hash on a same-origin file is meaningless and can block it. The persona linter skips `/static/vendor/` — a 230 KB single-line minified bundle made its per-line pass slow enough to time out the commit. Verified: rendered HTML of `/`, `/knowledge`, `/work` contains no external asset reference. | `templates/base.html`, `course_reader.html`, `partials/knowledge_graph.html`, `static/vendor/` | S·★★ |
 
 **Phase 2 acceptance:** a scientist changes any setting from one pane without editing a file; theme/
 persona/model persist consistently across machines; "Update now" is a button that backs up, updates,
@@ -756,7 +756,13 @@ Health Check that surfaces all of this in plain language.
    resume check would have crashed rather than skipping). `hat-specialist` repointed → 221 PDFs; full
    index run performed. **Still to do:** the *automatic* half — indexing on ingest, so a newly added
    paper does not wait for a manual build.
-7. **M7 — unify the two notes systems.** (P2/P3)
+7. ~~**M7 — unify the two notes systems.**~~ **✅ SHIPPED 2026-08-12.** `search_notes` now searches
+   the dashboard's `personal_notes` rows as well as the `.md` files on disk — no migration, the two
+   stores stay put but one question reaches both. Verification also exposed a matching weakness in
+   *both* stores: "tiny targets re-costing" missed a note reading "tiny targets NEEDS re-costing",
+   because substring matching breaks on any word in between — exactly how someone half-remembers
+   their own note. Both sides now fall back to all-words-present matching after trying the exact
+   phrase.
 
 **Acceptance (memory is "well"):** a new session references prior work and relevant memory surfaces
 without an explicit call; running any agent leaves an episodic entry *and* a reflexion; capturing an
