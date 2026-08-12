@@ -4674,6 +4674,10 @@ async def news_front(request: Request, days: int = 7):
                   created_at, relevance, COALESCE(image_url,'') AS image_url
            FROM news_briefs
            WHERE created_at > ?
+             -- Papers belong in the Library, not the front page. The Today rail and
+             -- the topic counts were filtered earlier the same day; THIS query is the
+             -- actual /news surface and was missed, so the fix was only half applied.
+             AND COALESCE(source_type,'news') != 'article'
            ORDER BY relevance DESC, created_at DESC""",
         (cutoff,),
     ) or []
