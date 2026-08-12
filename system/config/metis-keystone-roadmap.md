@@ -712,15 +712,50 @@ Health Check that surfaces all of this in plain language.
    of which tools those are. Instead the writes moved to the **dispatch chokepoint** — the wrapper
    around `FastMCP.call_tool` that the security guard already owns — so *every* tool call, present and
    future, carries session identity. See `ambient.py`. S.2 and S.6 are no longer latent.
-2. **M2 — make connection persistence real in normal use** (cross_pollination_links / idea_links). (P3/3.9)
+2. ~~**M2 — make connection persistence real in normal use**~~ **✅ SHIPPED 2026-08-12** (`a0de36e`).
+   The premise was wrong again: `_persist_connections` fires correctly on both capture paths — there
+   simply had been no capture since 3.9 landed (last idea 18 June). One capture took the table 0 → 5.
+   The *real* defect only surfaced by running it: both paths wrote and embedded the idea and **then**
+   searched, so every capture matched itself at rank 1 / score 1.0 — burning the top slot of five,
+   persisting a self-edge, and showing the user their own idea back as a "connection".
+   Cross-pollination now runs **before** the write on both paths, plus a self-edge backstop in
+   `_persist_connections`. Verified on chat capture and a real `POST /api/capture`.
 3. ~~**M3 — revive the client-tagged `sessions` registry**~~ **✅ SHIPPED 2026-08-12**, as a consequence
    of M1. Sessions now open on the first tool call, tagged by `ambient.detect_client()`, and reuse
    Claude Code's own `CLAUDE_CODE_SESSION_ID` as the session id where available — so a transcript and
    its memory rows finally share one identifier. The Code-vs-Desktop split fills in going forward.
-4. **M4 — decide procedural/working memory's fate**: feed it or drop the promise. (P3)
+4. ~~**M4 — decide procedural/working memory's fate**~~ **✅ DECIDED + SEEDED 2026-08-12.** The item
+   conflated two different things:
+   - **`working_memory` is not a promise.** It is never advertised on any surface; its docstring calls
+     it an ephemeral scratchpad for "state that agents need mid-pipeline", and both halves
+     (`set_working_memory` / `get_working_memory`) exist. It is empty because the pipeline is not the
+     hot path. **No action** — it is unused internal plumbing, not a broken feature.
+   - **`procedural_memory` IS advertised** on the Memory surface ("PRACTICE · How things are done
+     here") and showed 1. Owner's call: **keep it and seed it**, since he described real content for
+     it. Seeded with 5 genuine procedures drawn from documented practice (apply an MCP code change ·
+     ship to both repos · handle sensitive data · diagnose "Metis is down" · verify a change actually
+     works). Retrieval verified 5/5 on natural-language questions.
+
+   **The layer's defining test, for future entries:** procedural memory answers *"when situation X
+   arises, do these steps"* — it needs a `trigger_context` AND `steps`. A fact you know is **semantic**
+   memory; a standing preference is **`user_decisions`**. Same topic can split across all three.
+
+   **Known follow-up:** with `layers` left at its default, episodic's 2,018 rows drown procedural's 6
+   under RRF, so procedures reliably surface only when the layer is targeted. Layer-imbalance in
+   ranking is logged in the backlog.
 5. **M5 — capture standing preferences reliably** (the table exists — see the C.4 correction; it is
    capture that is thin, 1 row since June). Downgraded from "create the table". (P3.2)
-6. **M6 — auto-index new library items into RAG.** (P4.8)
+6. **M6 — auto-index new library items into RAG.** (P4.8) — **the blocking half is fixed** (`?`, this
+   session): a knowledge layer could only ever index folders under `knowledge/library`, and said
+   nothing when a collection lived elsewhere. That hid the owner's **primary research collection** —
+   211 sleeping-sickness papers in `inputs/literature/sleeping-sickness`, zero overlap with what was
+   indexed — while the dashboard showed `hat-specialist` as present because it held 10 books from a
+   different folder. A HAT question could quote the books and the general background, never the papers.
+   Folders now fall back to the RC root; `_relative_source` replaces three `relative_to(lib_root)`
+   calls that would otherwise raise on an outside path (indexing would have aborted on file 1, and the
+   resume check would have crashed rather than skipping). `hat-specialist` repointed → 221 PDFs; full
+   index run performed. **Still to do:** the *automatic* half — indexing on ingest, so a newly added
+   paper does not wait for a manual build.
 7. **M7 — unify the two notes systems.** (P2/P3)
 
 **Acceptance (memory is "well"):** a new session references prior work and relevant memory surfaces
