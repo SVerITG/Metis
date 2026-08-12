@@ -17,7 +17,45 @@ here (see **PHASE S**) and its old plan file is superseded — this roadmap is t
 
 ---
 
-## Latest status — 2026-08-12 (read this first)
+## Latest status — 2026-08-12 (session 2) — read this first
+
+**M1 IS SHIPPED.** The memory write-backs now run on the dispatch chokepoint, not the pipeline.
+Commits (local): `7dc0d2e` hooks · `a242c26` decorator drift · `eec122f` **M1**.
+
+**What changed.** `middleware.py` already wraps `FastMCP.call_tool` for security; memory continuity
+now rides the same wrapper via the new `ambient.py`. Four things became structural: the **session
+registry** (first tool call resumes/opens a client-tagged session), **session events** (every call
+leaves a breadcrumb), **session-id injection** (`log_agent_run`/`write_reflexion`/`save_session_summary`
+get the session id the model never passes), and **agent liveness** (`get_agent_context` opens the
+'running' row). Breadcrumbs write on a background thread: inline cost +15.9 ms/call, queued +0.6 ms.
+Verified end-to-end against the installed server with no pipeline in the test —
+`session_events` went from **0 (all-time) → live rows**, and a `log_agent_run` with no `session_id`
+closed the running agent row.
+
+- **M1 ✅ DONE** · **M3 ✅ DONE** (client-tagged registry revived; `detect_client()` reads it from the
+  process environment — Code launches the server under `claude` with `CLAUDE_CODE_SESSION_ID`, Desktop
+  goes through the WSL Relay chain) · **P6 · B6.1** and **P3 · 3.3** now genuinely reachable, since the
+  code that was correct-but-unreached is now on the always-hit path.
+- **Two tools had silently lost registration** to decorator drift — `session_bootstrap` (broken by
+  yesterday's S.6 commit) and `kg_index_notes`. The tool *count* was unchanged both times, so the
+  count-based smoke check missed both. It now asserts names, plus "no private helper may be a tool."
+- **Hook fix:** the "hook cancelled" error on exit was the SessionEnd hook doing a blocking `git push`
+  while Claude Code was quitting. The push is now detached; failures surface at the next session start.
+  Explicit timeouts pinned on the three slow hooks.
+
+**⚠️ CORRECTION to Appendix C.4 — the `decisions` finding was wrong.** The table is **not** absent; it
+is named **`user_decisions`** and the census grepped for `decisions`. It exists, holds 1 row, last
+written 2026-06-22. **M5 is therefore not "create the table" but "capture is thin"** — the same
+convention problem as everything else, at much lower severity. (`routing_preferences` likewise does not
+exist under that name; the real table is `agent_routing_rules`, 127 rows.)
+
+**Still open:** rotate the exposed Anthropic API key (C10) — owner is doing this via the dashboard's
+own settings UI, deliberately, as a first-run UX test. M2, M4, M6, M7 untouched. P1.1 bundled `.exe`,
+P2.3/2.4/2.6, P4, and the 3.0 architectural decision all unchanged.
+
+---
+
+## Status — 2026-08-12 (session 1)
 
 **Where we stand at a glance:** P0 ✅ · P1 ~85% (bundled `.exe` is the one big gap) · P2 🟡 advanced ·
 P3 ✅ except two architectural pieces · P4 ⬜ · P5 ⬜ · P6 🟡 (caching/compaction/tiering left) ·
@@ -599,14 +637,14 @@ consolidation code and the runtime data-flow review (§2.5). Numbers are from th
 | Procedural (how-to) | `procedural_memory` | 1 | 2026-05-23 | ⚠️ **effectively dead** |
 | Working memory | `working_memory` | 0 | — | ⚠️ **empty** |
 | Session summaries | `session_summaries` | 687 | 2026-08-12 | ✅ **strong & current** — the real continuity layer |
-| Session registry | `sessions` | 5 | 2026-05-27 | 🔴 **dormant** since May; all `client='code'`, zero Desktop |
-| Session events | `session_events` | 0 | — | 🔴 **empty** — the pipeline path is not exercised |
+| Session registry | `sessions` | 5 | 2026-05-27 | ✅ **FIXED (M1)** — was dormant since May; now opens on the first tool call, client-tagged |
+| Session events | `session_events` | 0 | — | ✅ **FIXED (M1)** — was empty all-time; now written by every tool call |
 | Reflexions | `reflexion_log` | 36 | 2026-08-12 | ✅ active (incl. today) |
 | Improvement proposals | `skill_improvement_proposals` | 2 | 2026-06-04 | ⚠️ stale — drafting produces nothing new |
 | Ideas | `ideas` | 8 | 2026-06-18 | ⚠️ low/stale |
 | Idea links | `idea_links` | 0 | — | 🔴 empty |
 | Cross-pollination links | `cross_pollination_links` | 0 | — | 🔴 empty despite 3.9 "persist at ingestion" |
-| Decisions (standing prefs) | `decisions` | — | — | 🔴 **table absent** — `record_decision` never ran |
+| Decisions (standing prefs) | `user_decisions` | 1 | 2026-06-22 | ⚠️ thin — *(the original row said "table absent"; that was a wrong table name, see the C.4 correction)* |
 | Dashboard notes | `personal_notes` | 0 | — | ⚠️ empty; also split from `.md` notes |
 | Topic memory | `user_topics` | 5 | 2026-06-11 | ⚠️ small |
 | Library chunks (RAG) | `pdf_chunks` | 16,500 | 2026-07-14 | ✅ substantial; not re-indexed since July |
@@ -642,8 +680,14 @@ is not a defect signal.)
   inert; the cold loop harvests 0. Decide: feed it, or drop the claim. → P3.
 - **Cross-pollination + idea links = 0** despite 3.9 shipping "persist at ingestion" — verify the
   writer fires in normal (non-pipeline) use; the connection graph is not growing. → P3 (3.9 follow-through).
-- **`decisions` table absent** — `record_decision`/`recall_decisions` never created it, so standing
-  preferences aren't captured (pipeline-gated, and the tool has known MCP-reconnect debt). → P3.2.
+- ~~**`decisions` table absent**~~ — **CORRECTED 2026-08-12 (session 2): this finding was wrong.** The
+  table exists as **`user_decisions`** (1 row, last written 2026-06-22); the census grepped for the
+  name `decisions`. `record_decision` and `recall_decisions` are both registered tools and have run.
+  The real gap is that capture is *thin*, not absent — standing preferences are recorded only when the
+  model chooses to record one. Same convention problem, far lower severity. → P3.2, downgraded.
+  (Likewise `routing_preferences` does not exist under that name: the real table is
+  `agent_routing_rules`, 127 rows.) *Lesson: "the table is missing" was inferred from a name lookup,
+  not from the schema — verify a table's real name before concluding a feature never ran.*
 - **New library items aren't auto-indexed into RAG** — `pdf_chunks` last grew 2026-07-14; adding a
   paper writes metadata only. → P4 (new 4.8).
 - **Two notes systems** — `personal_notes` (SQL, empty) vs `search_notes` (greps `.md`). → P2/P3.
@@ -662,14 +706,20 @@ Health Check that surfaces all of this in plain language.
 
 ### C.6 Prioritized memory fixes
 
-1. **M1 (highest) — put the write-backs on the always-hit path.** Ensure `run_metis` is actually
-   invoked, or move session/decision/reflexion writes onto the direct-tool path that already works, so
-   memory accrues regardless of whether the pipeline ran. (P3.2 + the 3.0 "is the pipeline invoked?"
-   question.) *Without this, S.2/S.6 and much of P3 stay latent.*
+1. ~~**M1 (highest) — put the write-backs on the always-hit path.**~~ **✅ SHIPPED 2026-08-12** (`eec122f`).
+   Neither of the two options in the original framing was taken. Forcing `run_metis` to be invoked
+   would have been another convention, and moving writes onto "the direct-tool path" begs the question
+   of which tools those are. Instead the writes moved to the **dispatch chokepoint** — the wrapper
+   around `FastMCP.call_tool` that the security guard already owns — so *every* tool call, present and
+   future, carries session identity. See `ambient.py`. S.2 and S.6 are no longer latent.
 2. **M2 — make connection persistence real in normal use** (cross_pollination_links / idea_links). (P3/3.9)
-3. **M3 — revive the client-tagged `sessions` registry** for reliable continuity + Code-vs-Desktop. (follow-up)
+3. ~~**M3 — revive the client-tagged `sessions` registry**~~ **✅ SHIPPED 2026-08-12**, as a consequence
+   of M1. Sessions now open on the first tool call, tagged by `ambient.detect_client()`, and reuse
+   Claude Code's own `CLAUDE_CODE_SESSION_ID` as the session id where available — so a transcript and
+   its memory rows finally share one identifier. The Code-vs-Desktop split fills in going forward.
 4. **M4 — decide procedural/working memory's fate**: feed it or drop the promise. (P3)
-5. **M5 — create the `decisions` table + capture standing preferences reliably.** (P3.2)
+5. **M5 — capture standing preferences reliably** (the table exists — see the C.4 correction; it is
+   capture that is thin, 1 row since June). Downgraded from "create the table". (P3.2)
 6. **M6 — auto-index new library items into RAG.** (P4.8)
 7. **M7 — unify the two notes systems.** (P2/P3)
 
