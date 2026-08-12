@@ -431,8 +431,76 @@ async def meetings_week_ahead(request: Request):
     )
 
 
+def _new_meeting_id() -> str:
+    """A primary key for a new meeting.
+
+    None of the four INSERT INTO meetings statements set one, so every meeting
+    created through the dashboard got a NULL primary key — SQLite permits that for
+    a TEXT PRIMARY KEY, unlike an INTEGER one, so nothing complained. A meeting
+    with no identity cannot be linked to: its action items could not be attached,
+    and the follow-ups panel (which JOINs meeting_actions to meetings on that key)
+    was permanently empty however many actions were extracted.
+    """
+    import uuid as _uuid
+
+    return f"mtg-{_uuid.uuid4().hex[:12]}"
+
+
+def _sync_meeting_actions() -> int:
+    """Materialise action items from `meetings.action_items` into `meeting_actions`.
+
+    Meetings store their extracted actions TWICE: as JSON on the meeting row, and
+    as rows in `meeting_actions`. Only the import path wrote the table; the live
+    meeting path wrote the JSON alone. So the follow-ups panel — which reads the
+    table — was permanently empty even for a meeting that had an action recorded.
+    The one output a meeting tool exists to produce did not survive the page.
+
+    Reconciling on read rather than picking a winner: the table is the right home
+    (per-action status and due date, which JSON handles badly), and the JSON is what
+    the live path already produces. Idempotent — an action already materialised is
+    not duplicated.
+
+    Returns the number newly materialised.
+    """
+    import json as _json
+
+    made = 0
+    try:
+        rows = db_query(
+            "SELECT meeting_id, action_items, created_at FROM meetings "
+            "WHERE action_items IS NOT NULL AND action_items != '' AND action_items != '[]'"
+        ) or []
+        for r in rows:
+            try:
+                items = _json.loads(r["action_items"])
+            except Exception:
+                continue
+            if not isinstance(items, list):
+                continue
+            existing = {
+                x["description"] for x in (db_query(
+                    "SELECT description FROM meeting_actions WHERE meeting_id = ?",
+                    (r["meeting_id"],)) or [])
+            }
+            for it in items:
+                desc = (it if isinstance(it, str) else
+                        (it.get("description") or it.get("text") or "")).strip()
+                if not desc or desc in existing:
+                    continue
+                db_execute(
+                    "INSERT INTO meeting_actions (meeting_id, description, status, created_at) "
+                    "VALUES (?, ?, 'open', ?)",
+                    (r["meeting_id"], desc[:500], r["created_at"]),
+                )
+                made += 1
+    except Exception:
+        pass          # a reconciliation failure must not blank the panel
+    return made
+
+
 @router.get("/api/partial/meetings/follow-ups", response_class=HTMLResponse)
 async def meetings_follow_ups(request: Request):
+    _sync_meeting_actions()
     actions = db_query(
         "SELECT ma.description, ma.status, ma.due_date, "
         "m.title as meeting_title, m.meeting_date as meeting_date "
@@ -747,10 +815,10 @@ async def meeting_import_meetily(
     try:
         db_execute(
             """INSERT INTO meetings
-               (title, meeting_date, attendees, meeting_type, transcript,
+               (meeting_id, title, meeting_date, attendees, meeting_type, transcript,
                 action_items, decisions, follow_ups, transcript_status,
                 duration_minutes, domain, created_at)
-               VALUES (?, ?, ?, 'meeting', ?, ?, ?, ?, 'filed', ?, ?, ?)""",
+               VALUES (?, ?, ?, ?, 'meeting', ?, ?, ?, ?, 'filed', ?, ?, ?)""",
             (
                 parsed["title"],
                 parsed["meeting_date"],
@@ -816,11 +884,12 @@ async def meeting_import(
     try:
         db_execute(
             """INSERT INTO meetings
-               (title, meeting_date, attendees, meeting_type, transcript,
+               (meeting_id, title, meeting_date, attendees, meeting_type, transcript,
                 action_items, decisions, follow_ups, transcript_status,
                 duration_minutes, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'filed', ?, ?)""",
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'filed', ?, ?)""",
             (
+                _new_meeting_id(),
                 title.strip(),
                 meeting_date,
                 attendees.strip(),
@@ -1119,11 +1188,12 @@ async def meeting_generate_report(
             dur_min = max(1, dur_min // 60)
         db_execute(
             """INSERT INTO meetings
-               (title, meeting_date, attendees, meeting_type, transcript,
+               (meeting_id, title, meeting_date, attendees, meeting_type, transcript,
                 action_items, decisions, follow_ups, transcript_status,
                 duration_minutes, created_at)
-               VALUES (?, ?, ?, 'live', ?, ?, ?, ?, 'filed', ?, ?)""",
+               VALUES (?, ?, ?, ?, 'live', ?, ?, ?, ?, 'filed', ?, ?)""",
             (
+                _new_meeting_id(),
                 title,
                 datetime.date.today().isoformat(),
                 participants,
@@ -1326,9 +1396,9 @@ async def meetings_transcribe_audio(
         #    whatever was said (or played) into it lands in the DB verbatim.
         transcript = _sanitize_ingest(transcript, f"audio-upload:{mtitle[:60]}")
         db_execute(
-            "INSERT INTO meetings (title, meeting_date, transcript, duration_minutes, status, created_at) "
-            "VALUES (?,?,?,?,?,?)",
-            (mtitle, now.date().isoformat(), transcript, duration_minutes, "processed",
+            "INSERT INTO meetings (meeting_id, title, meeting_date, transcript, duration_minutes, status, created_at) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (_new_meeting_id(), mtitle, now.date().isoformat(), transcript, duration_minutes, "processed",
              now.isoformat(timespec="seconds")),
         )
         return JSONResponse({
