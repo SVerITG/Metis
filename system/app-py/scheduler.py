@@ -256,6 +256,46 @@ def job_library_index() -> None:
         log.error("[scheduler] library_index failed: %s", exc)
 
 
+def job_background_index() -> None:
+    """Index papers added to a knowledge background since its last build.
+
+    Closes the other half of Keystone M6. Adding a PDF to a background folder used
+    to do nothing at all: no rebuild was scheduled, nothing detected the new file,
+    and no screen said the layer had fallen behind — so a layer last built in June
+    was indistinguishable from one built this morning, and a paper the researcher
+    had clearly decided to keep stayed unsearchable indefinitely.
+
+    Only ENABLED layers are indexed, and only layers with pending files, so this
+    normally costs one cheap directory walk per layer and exits.
+    """
+    log.info("[scheduler] background_index starting")
+    try:
+        from metis_mcp.tools.knowledge_db import (
+            pending_pdf_count, build_pdf_knowledge_db,
+        )
+        import asyncio as _asyncio
+        from db import db_query
+
+        layers = db_query(
+            "SELECT slug FROM knowledge_databases WHERE COALESCE(enabled,1)=1"
+        ) or []
+        done, total = [], 0
+        for row in layers:
+            slug = row["slug"]
+            pending = pending_pdf_count(slug)
+            if not pending:
+                continue
+            _asyncio.run(build_pdf_knowledge_db(database=slug))
+            done.append(f"{slug} (+{pending})")
+            total += pending
+        msg = ("Indexed " + ", ".join(done)) if done else "All backgrounds up to date."
+        _log_job("background_index", "ok", msg)
+        log.info("[scheduler] background_index done: %s", msg)
+    except Exception as exc:
+        _log_job("background_index", "error", str(exc)[:300])
+        log.error("[scheduler] background_index failed: %s", exc)
+
+
 def job_nightly_backup() -> None:
     """Safe online backup of metis.sqlite using the SQLite backup API (WAL-safe)."""
     log.info("[scheduler] nightly_backup starting")
@@ -856,6 +896,7 @@ JOB_FUNCS: dict[str, callable] = {
     "brief_synthesis":       job_brief_synthesis,
     "morning_scan":          job_morning_scan,
     "library_index":         job_library_index,
+    "background_index":      job_background_index,
     "inbox_process":         job_inbox_process,
     "evening_reflexion":     job_evening_reflexion,
     "promise_harness":       job_promise_harness,
@@ -874,6 +915,7 @@ JOB_LABELS: dict[str, str] = {
     "brief_synthesis":      "Morning brief synthesis",
     "morning_scan":         "Morning scan (news + papers)",
     "library_index":        "Library index",
+    "background_index":     "Knowledge backgrounds — index new papers",
     "inbox_process":        "Inbox processing",
     "evening_reflexion":    "Evening reflexion",
     "promise_harness":      "Promise harness (drift)",
@@ -898,6 +940,11 @@ JOB_DEFAULTS: dict[str, dict] = {
     "embedding_backfill":   {"enabled": True, "time": "22:30"},
     "morning_scan":         {"enabled": True, "time": "09:00"},
     "library_index":        {"enabled": True, "time": "09:05"},
+    # Right after the library scan, so a paper that arrived overnight is both
+    # catalogued AND searchable by the time the morning brief is written. Without a
+    # schedule entry the job would exist and never run — the exact failure this job
+    # was written to fix.
+    "background_index":     {"enabled": True, "time": "09:07"},
     "inbox_process":        {"enabled": True, "time": "09:10"},
     "brief_synthesis":      {"enabled": True, "time": "09:20"},
     "dataset_monitor":      {"enabled": True, "time": "09:30"},
