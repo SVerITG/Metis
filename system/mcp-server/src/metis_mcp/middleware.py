@@ -113,11 +113,36 @@ def _refuse(message: str) -> Any:
 
 
 def _texts_of(result: Any) -> list[Any]:
-    """The TextContent blocks in a tool result, whatever shape it came back in."""
-    if result is None:
-        return []
-    seq = result if isinstance(result, (list, tuple)) else [result]
-    return [b for b in seq if hasattr(b, "text") and isinstance(getattr(b, "text", None), str)]
+    """Every TextContent block in a tool result, at any nesting depth.
+
+    It must RECURSE, and the reason is a live defect this replaces: FastMCP's
+    `call_tool` returns a 2-TUPLE — `(list[ContentBlock], dict)` — when
+    convert_result is on. The previous version walked only the top level, so it saw
+    a list and a dict, found no `.text` attribute on either, and returned nothing.
+
+    That silently disabled the egress PII rail. Not "masked the wrong thing" —
+    scanned nothing at all, on every call, while logging no error. Even after the
+    dispatch registration was fixed on 2026-08-12 so the guard finally ran, this
+    kept it inert one layer deeper. Found only because a feature built on top of it
+    failed visibly enough to investigate (2026-08-12).
+    """
+    found: list[Any] = []
+
+    def walk(node: Any, depth: int = 0) -> None:
+        if node is None or depth > 4:
+            return
+        if hasattr(node, "text") and isinstance(getattr(node, "text", None), str):
+            found.append(node)
+            return
+        if isinstance(node, dict):
+            for v in node.values():
+                walk(v, depth + 1)
+        elif isinstance(node, (list, tuple)):
+            for v in node:
+                walk(v, depth + 1)
+
+    walk(result)
+    return found
 
 
 def install(app: Any) -> None:
@@ -191,6 +216,41 @@ def install(app: Any) -> None:
             from metis_mcp import ambient
 
             ambient.after_call(name, arguments)
+
+            # Volunteer a recorded procedure when this call matches one.
+            # Appended to the tool's own output because that is the only channel
+            # from here into the conversation — and a procedure that must be
+            # remembered to be used is no better than not having recorded it.
+            hint = ambient.procedure_hint(arguments)
+            if hint:
+                blocks = _texts_of(result)
+                if blocks:
+                    pref = ambient.procedure_preference(hint)
+                    retrieve = (f"`semantic_search(query=\"{hint}\", layers=\"procedural\")`")
+                    if pref == "always":
+                        # A standing instruction, not a suggestion — say so plainly
+                        # and do not ask again.
+                        blocks[-1].text += (
+                            f"\n\n---\n**Standing instruction — `{hint}`.** The researcher has "
+                            f"asked for this to be applied automatically. Retrieve it with "
+                            f"{retrieve} and follow it now, without asking."
+                        )
+                    else:
+                        # Offer once, then CAPTURE THE ANSWER. An offer that is
+                        # re-made every session because nobody wrote down the reply
+                        # is the same amnesia this whole layer exists to end.
+                        blocks[-1].text += (
+                            f"\n\n---\n**Recorded procedure — `{hint}`.** The researcher has done "
+                            f"this before and the steps are saved. Retrieve them with {retrieve} "
+                            f"and follow them, including the questions to ask first, rather than "
+                            f"improvising.\n\n"
+                            f"Then ask whether to apply it automatically in future, and record the "
+                            f"answer so it is never asked twice:\n"
+                            f"`record_decision(decision=\"always use the recorded procedure: {hint}\", "
+                            f"category=\"procedure\")` — or, if they decline, "
+                            f"`record_decision(decision=\"never offer the procedure: {hint}\", "
+                            f"category=\"procedure\")`."
+                        )
         except Exception as exc:
             log.debug("ambient: post-call skipped for %s (%s)", name, exc)
 
