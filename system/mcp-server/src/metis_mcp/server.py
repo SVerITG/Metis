@@ -39,7 +39,7 @@ TOOL_MODULES = [
     "anonymization", "backup", "brainstorm", "data_tools", "handoff", "improvement",
     "observation", "content_scan", "zotero", "doctor", "ref_miner", "fulltext_index",
     "user_profile", "literature_monitor", "meetings", "course_builder",
-    "paperqa_search", "voice_capture", "knowledge_db", "session_memory",
+    "paperqa_search", "voice_capture", "knowledge_db", "background_packs", "session_memory",
     "memory_curator", "memory_gateway", "research", "research_timeline", "project_tracker", "dhis2",
     "discovery", "code_repository", "script_analyzer", "tool_search", "prompts",
 ]
