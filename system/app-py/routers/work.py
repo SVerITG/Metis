@@ -796,14 +796,24 @@ async def task_create(request: Request):
     project_id = data.get("project_id", "")
     title = (data.get("title") or "").strip()
     category = (data.get("category") or "general").strip() or "general"
+    # Accept a due date and a priority if the caller sends them.
+    #
+    # Neither was captured anywhere in the dashboard, so ZERO of 105 tasks had a
+    # due date and every deadline-shaped feature was decorative: "due today" was
+    # structurally empty, the Planner week grid had nothing to place, and the
+    # overdue calculation could never fire. The MCP `create_task` has always
+    # accepted due_date; only the dashboard dropped it. Optional, so nothing
+    # changes for a caller that does not send one.
+    due_date = (data.get("due_date") or "").strip()
+    priority = (data.get("priority") or "medium").strip() or "medium"
     if not title:
         return JSONResponse({"status": "error", "message": "Title required"}, status_code=400)
     task_id = uuid.uuid4().hex[:12]
     now = datetime.datetime.now().isoformat()
     db_execute(
-        "INSERT INTO tasks (task_id, project_id, title, status, category, created_at, updated_at) "
-        "VALUES (?, ?, ?, 'open', ?, ?, ?)",
-        (task_id, project_id, title, category, now, now),
+        "INSERT INTO tasks (task_id, project_id, title, status, category, due_date, priority, "
+        "created_at, updated_at) VALUES (?, ?, ?, 'open', ?, ?, ?, ?, ?)",
+        (task_id, project_id, title, category, due_date or None, priority, now, now),
     )
     tasks = db_query(
         "SELECT task_id, title, status, category FROM tasks "
@@ -816,10 +826,21 @@ async def task_create(request: Request):
         params=(project_id,),
         default=0,
     )
+    # `total_open` is required by the template and was never passed here, so
+    # adding a task from the dashboard ALWAYS returned a 500: the task saved, then
+    # the response blew up rendering it. The other renderer of this template (the
+    # project detail panel) passes it; this one was written without it and nobody
+    # noticed, because the task does appear — on the next page load.
+    total_open = db_scalar(
+        "SELECT COUNT(*) FROM tasks WHERE project_id=? AND status NOT IN ('done','deleted')",
+        params=(project_id,),
+        default=0,
+    )
     return templates.TemplateResponse(
         request,
         "partials/work_project_tasks.html",
-        {"tasks": tasks, "done_count": done_count, "project_id": project_id},
+        {"tasks": tasks, "done_count": done_count, "project_id": project_id,
+         "total_open": total_open},
     )
 
 
