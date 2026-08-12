@@ -83,7 +83,7 @@
       </div>
       <div class="page-meta"
            hx-get="/api/partial/metis/user"
-           hx-trigger="load"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">RESEARCH CORTEX</div>
     </div>
 
@@ -103,7 +103,7 @@
       {{ sec_label("Connection", tail="CLAUDE ↔ METIS", style="margin-bottom:12px;") }}
       <div id="metis-dashboard-mcp" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/mcp-health"
-           hx-trigger="load delay:60ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div class="panel" style="padding:18px;">{{ skeleton_block(rows=2) }}</div>
       </div>
@@ -140,7 +140,7 @@
       {{ sec_label("At a glance", tail="RIGHT NOW", style="margin-bottom:12px;") }}
       <div class="panel" id="metis-overview-stats" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/stats"
-           hx-trigger="load delay:50ms, every 30s"
+           hx-trigger="revealed once, every 30s"
            hx-swap="innerHTML">
         <div style="padding:24px;">{{ skeleton_block(rows=2) }}</div>
       </div>
@@ -148,7 +148,7 @@
       {{ sec_label("Who did what", tail="YOUR LAST SESSION", style="margin-bottom:12px;") }}
       <div id="metis-who-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/who-did-what"
-           hx-trigger="load delay:60ms, every 30s"
+           hx-trigger="revealed once, every 30s"
            hx-swap="innerHTML">
         <div class="panel" style="padding:14px 18px;">{{ skeleton_block(rows=2) }}</div>
       </div>
@@ -156,7 +156,7 @@
       {{ sec_label("Sessions", tail="WHAT EACH ONE DID — CLICK TO OPEN", style="margin-bottom:12px;") }}
       <div id="metis-sessions-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/sessions"
-           hx-trigger="load delay:80ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div class="panel" style="padding:14px 18px;">{{ skeleton_block(rows=3) }}</div>
       </div>
@@ -176,7 +176,7 @@
         </summary>
         <div class="panel" id="metis-runs-body" style="margin-bottom:24px;"
              hx-get="/api/partial/metis/agent-runs"
-             hx-trigger="load delay:100ms"
+             hx-trigger="revealed once"
              hx-swap="innerHTML">
           <div style="padding:24px 16px;">{{ skeleton_block(rows=3) }}</div>
         </div>
@@ -195,7 +195,7 @@
       </div>
       <div class="panel" id="metis-automation-panel" style="padding:14px 18px;margin-bottom:24px;"
            hx-get="/api/partial/today/automation"
-           hx-trigger="load delay:500ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div style="padding:18px;">{{ skeleton_block(rows=2) }}</div>
       </div>
@@ -209,7 +209,7 @@
       </h2>
       <div class="panel" id="metis-automation-log-body" style="padding:4px 14px;margin-bottom:24px;"
            hx-get="/api/partial/metis/automation-log"
-           hx-trigger="load delay:550ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div style="padding:18px;">{{ skeleton_block(rows=2) }}</div>
       </div>
@@ -224,7 +224,7 @@
       {{ sec_label("Memory overview", tail="WHAT METIS IS HOLDING", style="margin-bottom:12px;") }}
       <div class="panel" id="metis-memory-overview-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/memory-overview"
-           hx-trigger="load delay:250ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div style="padding:24px;">{{ skeleton_block(rows=3) }}</div>
       </div>
@@ -235,7 +235,7 @@
       </h2>
       <div class="panel" id="metis-memory-stream-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/memory-stream"
-           hx-trigger="load delay:300ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div style="padding:24px;">{{ skeleton_block(rows=3) }}</div>
       </div>
@@ -243,7 +243,7 @@
       {{ sec_label("Search tester", tail="TRY A SEARCH", style="margin-bottom:12px;") }}
       <div class="panel" style="padding:20px;margin-bottom:24px;">
         <div hx-get="/api/partial/metis/memory-debug"
-             hx-trigger="load delay:350ms"
+             hx-trigger="revealed once"
              hx-swap="outerHTML">
           <div style="padding:16px;">{{ skeleton_block(rows=2) }}</div>
         </div>
@@ -253,7 +253,7 @@
       {{ sec_label("Where wisdom gathers", tail="BY SPECIALIST", style="margin-bottom:12px;") }}
       <div class="panel" style="padding:16px 20px;margin-bottom:24px;"
            hx-get="/api/partial/memory/agents"
-           hx-trigger="load delay:380ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div style="padding:12px;">{{ skeleton_block(rows=2) }}</div>
       </div>
@@ -261,13 +261,13 @@
       <div class="grid grid-2" style="gap:12px;margin-bottom:24px;">
         <div class="panel" style="padding:16px 20px;"
              hx-get="/api/partial/memory/topics"
-             hx-trigger="load delay:400ms"
+             hx-trigger="revealed once"
              hx-swap="innerHTML">
           <div style="padding:12px;">{{ skeleton_block(rows=2) }}</div>
         </div>
         <div class="panel" style="padding:16px 20px;"
              hx-get="/api/partial/memory/staleness"
-             hx-trigger="load delay:420ms"
+             hx-trigger="revealed once"
              hx-swap="innerHTML">
           <div style="padding:12px;">{{ skeleton_block(rows=2) }}</div>
         </div>
@@ -289,7 +289,7 @@
       </h2>
       <div class="panel" id="metis-agent-directory-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/agent-directory"
-           hx-trigger="load delay:450ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div style="padding:24px;">{{ skeleton_block(rows=3) }}</div>
       </div>
@@ -307,7 +307,7 @@
       </h2>
       <div class="panel" id="metis-improvement-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/improvement"
-           hx-trigger="load delay:400ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div style="padding:24px;">{{ skeleton_block(rows=3) }}</div>
       </div>
@@ -315,7 +315,7 @@
       {{ sec_label("Startup self-check", tail="BOOT HEALTH", style="margin-bottom:12px;") }}
       <div id="metis-startup-eval-body"
            hx-get="/api/partial/metis/startup-eval"
-           hx-trigger="load delay:720ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div class="panel" style="padding:14px 18px;margin-bottom:24px;">{{ skeleton_block(rows=1) }}</div>
       </div>
@@ -323,7 +323,7 @@
       {{ sec_label("Promise drift", tail="ARE WE LOSING WHAT WE BUILT?", style="margin-bottom:12px;") }}
       <div id="metis-promise-trend-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/promise-trend"
-           hx-trigger="load delay:740ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div class="panel" style="padding:14px 18px;">{{ skeleton_block(rows=1) }}</div>
       </div>
@@ -341,7 +341,7 @@
       </div>
       <div id="metis-persona-panel"
            hx-get="/api/partial/metis/persona"
-           hx-trigger="load delay:150ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div style="padding:24px;">{{ skeleton_block(rows=3) }}</div>
       </div>
@@ -383,7 +383,7 @@
       </h2>
       <div class="panel" id="metis-token-monitor-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/token-monitor"
-           hx-trigger="load delay:200ms, every 60s"
+           hx-trigger="revealed once, every 60s"
            hx-swap="innerHTML">
         <div style="padding:24px;">{{ skeleton_block(rows=2) }}</div>
       </div>
@@ -447,26 +447,26 @@
 
       {# Feature tips (contextual discovery) — moved here from the page header (S.0a) #}
       {{ sec_label("Feature tips", tail="JUST-IN-TIME HELP", style="margin-bottom:12px;") }}
-      <div hx-get="/api/partial/metis/discovery" hx-trigger="load delay:120ms" hx-swap="innerHTML" style="margin-bottom:24px;">
+      <div hx-get="/api/partial/metis/discovery" hx-trigger="revealed once" hx-swap="innerHTML" style="margin-bottom:24px;">
         <div class="panel" style="padding:18px 22px;">{{ skeleton_block(rows=2) }}</div>
       </div>
 
       {# Startup & persistence (autostart) — moved here from the page header (S.0a) #}
       {{ sec_label("Startup & persistence", tail="START AT LOGIN", style="margin-bottom:12px;") }}
-      <div hx-get="/api/partial/metis/startup" hx-trigger="load delay:150ms" hx-swap="innerHTML" style="margin-bottom:24px;">
+      <div hx-get="/api/partial/metis/startup" hx-trigger="revealed once" hx-swap="innerHTML" style="margin-bottom:24px;">
         <div class="panel" style="padding:18px 22px;">{{ skeleton_block(rows=2) }}</div>
       </div>
 
       {# Where settings live — P2.5. Which files matter, which you can ignore. #}
       {{ sec_label("Where settings live", tail="FILES vs METIS", style="margin-bottom:12px;") }}
-      <div hx-get="/api/partial/metis/settings-map" hx-trigger="load delay:250ms" hx-swap="innerHTML"
+      <div hx-get="/api/partial/metis/settings-map" hx-trigger="revealed once" hx-swap="innerHTML"
            style="margin-bottom:24px;">
         <div class="panel" style="padding:18px 22px;">{{ skeleton_block(rows=3) }}</div>
       </div>
 
       {# Update Metis — P2.4. Backed up, verified, and self-undoing on failure. #}
       {{ sec_label("Update", tail="SAFE, WITH ROLLBACK", style="margin-bottom:12px;") }}
-      <div hx-get="/api/partial/metis/update" hx-trigger="load delay:200ms" hx-swap="outerHTML"
+      <div hx-get="/api/partial/metis/update" hx-trigger="revealed once" hx-swap="outerHTML"
            style="margin-bottom:24px;">
         <div class="panel" style="padding:18px 22px;">{{ skeleton_block(rows=2) }}</div>
       </div>
@@ -481,7 +481,7 @@
       {{ sec_label("Connection health", tail="IS METIS REACHABLE?", style="margin-bottom:12px;") }}
       <div id="metis-integration-mcp" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/mcp-health"
-           hx-trigger="load delay:40ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div class="panel" style="padding:18px;">{{ skeleton_block(rows=2) }}</div>
       </div>
@@ -492,7 +492,7 @@
       </h2>
       <div class="panel" id="metis-integration-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/integration"
-           hx-trigger="load delay:600ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div style="padding:24px;">{{ skeleton_block(rows=3) }}</div>
       </div>
@@ -503,7 +503,7 @@
       </div>
       <div class="panel" id="metis-api-keys-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/api-keys"
-           hx-trigger="load delay:650ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div style="padding:18px 22px;">{{ skeleton_block(rows=2) }}</div>
       </div>
@@ -511,7 +511,7 @@
       {{ sec_label("System", style="margin-bottom:12px;") }}
       <div class="panel" id="metis-system-info-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/system-info"
-           hx-trigger="load delay:700ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div style="padding:24px;">{{ skeleton_block(rows=3) }}</div>
       </div>
@@ -519,7 +519,7 @@
       {{ sec_label("Consent ledger", tail="ACCESS HISTORY", style="margin-bottom:12px;") }}
       <div class="panel" id="metis-consent-body" style="margin-bottom:24px;"
            hx-get="/api/partial/metis/consent"
-           hx-trigger="load delay:750ms"
+           hx-trigger="revealed once"
            hx-swap="innerHTML">
         <div style="padding:24px;">{{ skeleton_block(rows=2) }}</div>
       </div>
@@ -528,7 +528,7 @@
       <div class="panel" style="padding:18px 22px;margin-bottom:24px;">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">Network policy</div>
-          <span hx-get="/api/partial/metis/network-policy" hx-trigger="load delay:800ms" hx-swap="innerHTML">…</span>
+          <span hx-get="/api/partial/metis/network-policy" hx-trigger="revealed once" hx-swap="innerHTML">…</span>
         </div>
         <div style="font-size:12px;color:var(--m-muted);margin-top:6px;">Configured in <code style="font-family:var(--m-mono);font-size:11px;">system/config/network-policy.json</code>.</div>
       </div>
@@ -719,6 +719,25 @@ function setMetisSection(id, el) {
   document.querySelectorAll('.metis-section').forEach(function (sec) {
     sec.dataset.active = (sec.dataset.section === id) ? 'true' : 'false';
   });
+
+  // Load this section's panels NOW, explicitly.
+  //
+  // Sections are display:none until activated, and their panels use
+  // hx-trigger="revealed" so the eight sections you are not looking at do not
+  // each fire a request on page load (and, in three cases, keep polling every
+  // 30-60 seconds while invisible). But htmx's "revealed" is an intersection
+  // check, and an element that was display:none may not be re-checked simply
+  // because it became visible — which would leave a section permanently blank.
+  // Triggering here makes it deterministic instead of relying on that.
+  var sec = document.querySelector('.metis-section[data-section="' + id + '"]');
+  if (sec && window.htmx) {
+    sec.querySelectorAll('[hx-get]').forEach(function (el) {
+      if (el.dataset.metisLoaded) return;      // once per section, not per switch
+      el.dataset.metisLoaded = '1';
+      htmx.trigger(el, 'revealed');
+    });
+  }
+
   var scroll = document.getElementById('tab-content');
   if (scroll) scroll.scrollTo({ top: 0, behavior: 'smooth' });
 }
