@@ -402,8 +402,14 @@ async def today_activity_feed(request: Request):
     # News briefs
     try:
         for r in db_query(
+            # Papers must never appear on the News surface. `source_type` already
+            # tags them ('article' vs 'news') and the literature panel above filters
+            # ON it — but these queries never did, so 53 journal articles kept
+            # surfacing as news. The data-model half of the fix shipped; this is the
+            # half that was missing.
             "SELECT brief_id, title, summary, domain, created_at, source_url "
             "FROM news_briefs WHERE created_at >= ? "
+            "AND COALESCE(source_type,'news') != 'article' "
             "ORDER BY created_at DESC LIMIT 5",
             (since,),
         ) or []:
@@ -600,8 +606,11 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
     all_topics: list[str] = []
     try:
         topic_rows = db_query(
+            # Same reason as the news rail: a topic chip counting journal articles
+            # sends the reader to a "news" topic made of papers.
             "SELECT domain, COUNT(*) as n, MAX(created_at) as last_ts "
             "FROM news_briefs WHERE created_at >= ? AND domain IS NOT NULL AND domain != '' "
+            "AND COALESCE(source_type,'news') != 'article' "
             "GROUP BY domain ORDER BY last_ts DESC",
             (cutoff,),
         ) or []
