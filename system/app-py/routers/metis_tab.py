@@ -2229,3 +2229,108 @@ async def metis_autostart_disable(request: Request):
         pass
     return templates.TemplateResponse(
         request, "partials/metis_startup.html", {"autostart_enabled": _autostart_enabled()})
+
+
+# ---------------------------------------------------------------------------
+# Update Metis  (Keystone P2.4 — an update you are not afraid to run)
+# ---------------------------------------------------------------------------
+# `tools/metis-update.sh` could already update Metis, but only from a terminal —
+# which fails the whole "non-technical by default" promise: the person Metis is
+# built for cannot open a shell. It also backed up only the database and had no
+# rollback, so a bad update left a half-updated system and no way back. An update
+# the user is afraid to run is one that never happens, and a Metis that never
+# updates quietly rots.
+#
+# The heavy lifting is tools/metis_update.py (record → back up → pull → migrate →
+# verify → roll back on failure). This is the button and the progress it shows.
+
+_UPDATE_STATUS = Path.home() / ".local/share/metis-mcp/update-status.json"
+
+
+def _update_state() -> dict:
+    try:
+        return json.loads(_UPDATE_STATUS.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _update_panel_html() -> str:
+    st = _update_state()
+    state = st.get("state", "")
+    running = state == "running"
+    colour = {
+        "ok": "var(--m-ok)", "failed": "var(--m-warn)", "blocked": "var(--m-warn)",
+        "rolled_back": "var(--m-warn)", "running": "var(--m-accent)",
+    }.get(state, "var(--m-muted)")
+
+    if st:
+        headline = st.get("detail") or state or "—"
+        when = (st.get("updated_at") or "")[:16].replace("T", " ")
+        last = (f'<div style="font-family:var(--m-mono);font-size:10px;color:{colour};'
+                f'margin-top:6px;">{headline}</div>'
+                f'<div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);">'
+                f'last checked {when}</div>')
+    else:
+        last = ('<div style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);'
+                'margin-top:6px;">Not checked yet.</div>')
+
+    # While it runs, the panel re-fetches itself; the moment it stops, polling stops.
+    poll = ('hx-get="/api/partial/metis/update" hx-trigger="load delay:3s" '
+            'hx-swap="outerHTML"') if running else ''
+
+    btn = ("Updating…" if running else "Update Metis")
+    disabled = "opacity:0.5;pointer-events:none;" if running else ""
+
+    return f"""
+    <div id="metis-update" class="panel" style="padding:16px 18px;margin-bottom:16px;" {poll}>
+      <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;
+                  color:var(--m-muted);margin-bottom:8px;">UPDATE</div>
+      <div style="font-size:12px;color:var(--m-muted);">
+        Brings in the newest Metis. Your work is backed up first, and if anything goes
+        wrong the update undoes itself and puts everything back.
+      </div>
+      {last}
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button hx-post="/api/metis/update/check" hx-target="#metis-update" hx-swap="outerHTML"
+                style="font-family:var(--m-mono);font-size:10px;padding:5px 12px;
+                       border:1px solid var(--m-line);border-radius:4px;cursor:pointer;
+                       background:var(--m-surface);color:var(--m-ink);{disabled}">
+          Check only
+        </button>
+        <button hx-post="/api/metis/update/run" hx-target="#metis-update" hx-swap="outerHTML"
+                hx-confirm="Update Metis now? Your data is backed up first and restored automatically if anything fails."
+                style="font-family:var(--m-mono);font-size:10px;padding:5px 12px;
+                       border:1px solid var(--m-accent);border-radius:4px;cursor:pointer;
+                       background:var(--m-accent);color:var(--m-bg);{disabled}">
+          {btn}
+        </button>
+      </div>
+    </div>"""
+
+
+@router.get("/api/partial/metis/update", response_class=HTMLResponse)
+async def metis_update_panel(request: Request):
+    return HTMLResponse(_update_panel_html())
+
+
+def _launch_update(dry: bool) -> None:
+    """Run the updater detached — it reinstalls the server and can take minutes."""
+    root = os.environ.get("METIS_RC_ROOT", str(Path(__file__).resolve().parents[3]))
+    venv = Path.home() / ".local/share/metis-mcp/.venv/bin/python3"
+    cmd = [str(venv) if venv.exists() else "python3", str(Path(root) / "tools/metis_update.py")]
+    if dry:
+        cmd.append("--dry-run")
+    subprocess.Popen(cmd, cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                     start_new_session=True)
+
+
+@router.post("/api/metis/update/check", response_class=HTMLResponse)
+async def metis_update_check(request: Request):
+    _launch_update(dry=True)
+    return HTMLResponse(_update_panel_html())
+
+
+@router.post("/api/metis/update/run", response_class=HTMLResponse)
+async def metis_update_run(request: Request):
+    _launch_update(dry=False)
+    return HTMLResponse(_update_panel_html())
