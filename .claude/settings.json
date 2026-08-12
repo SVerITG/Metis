@@ -5,7 +5,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/tools/metis-preflight.sh\" --report"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/tools/metis-preflight.sh\" --report",
+            "timeout": 30
           }
         ]
       }
@@ -15,7 +16,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/tools/metis-preflight.sh\" --end"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/tools/metis-preflight.sh\" --end",
+            "timeout": 15
           }
         ]
       }
@@ -65,7 +67,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop.mjs\""
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop.mjs\"",
+            "timeout": 25
           }
         ]
       }

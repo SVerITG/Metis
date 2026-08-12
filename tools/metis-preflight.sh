@@ -101,7 +101,15 @@ if [ "$MODE" = "--report" ]; then
         echo "METIS SYNC: the installed MCP server is STALE vs the source. Tell the user to run /mcp and reconnect 'metis-rc' so the new code loads."
     fi
     [ "${behind:-0}" -gt 0 ] && echo "METIS SYNC: this computer is $behind commit(s) BEHIND the other computer (metis-ph/$branch). Offer to pull."
-    [ "${ahead:-0}"  -gt 0 ] && echo "METIS SYNC: $ahead commit(s) on this computer are NOT pushed. Remind the user to push before switching computers."
+    if [ "${ahead:-0}" -gt 0 ]; then
+        echo "METIS SYNC: $ahead commit(s) on this computer are NOT pushed. Remind the user to push before switching computers."
+        # The --end push is detached (it must not stall session exit), so nobody
+        # sees its failure at the time. This is where that failure surfaces: still
+        # ahead + a non-empty push log means last session's background push broke.
+        if [ -f "$STATE_DIR/last-push.log" ]; then
+            echo "METIS SYNC: last session's background push to metis-ph FAILED — $(tail -1 "$STATE_DIR/last-push.log" | tr -d '\r')"
+        fi
+    fi
     [ "${dirty:-0}"  -gt 0 ] && echo "METIS SYNC: $dirty uncommitted file(s) in the working tree."
     exit 0
 fi
@@ -139,9 +147,30 @@ if [ "$MODE" = "--end" ]; then
         else
             # metis-ph ONLY. origin/main is the generated base shell; pushing
             # main there would clobber the build-base-shell.sh commit.
-            log "pushing committed work to metis-ph so the other computer sees it…"
-            timeout 60 git -C "$ROOT" push metis-ph main >&2 2>&1 \
-                && log "pushed." || log "push failed — do it manually."
+            #
+            # DETACHED, not blocking. This runs from the SessionEnd hook while
+            # Claude Code is already quitting, and a `git push` over SSH is a
+            # network round-trip of unbounded duration. A blocking push meant the
+            # harness gave up waiting and showed the user a "hook cancelled"
+            # error on almost every exit (found 2026-08-12). setsid detaches from
+            # the dying session's process group so the push survives the exit;
+            # nohup is the fallback where setsid is unavailable. Both stdio ends
+            # are redirected to the log — an inherited fd would keep the hook
+            # "open" and reintroduce the exact hang we are removing.
+            log "pushing committed work to metis-ph in the background…"
+            PUSH_LOG="$STATE_DIR/last-push.log"
+            # The log is a FAILURE MARKER, not a transcript: it is deleted the
+            # moment the push succeeds. That way "the file exists" is by itself
+            # the signal --report needs, with no parsing and no false positive
+            # from a successful push that simply has newer commits after it.
+            rm -f "$PUSH_LOG"
+            PUSH_CMD="if timeout 120 git -C '$ROOT' push metis-ph main >'$PUSH_LOG' 2>&1; then rm -f '$PUSH_LOG'; fi"
+            if command -v setsid >/dev/null 2>&1; then
+                setsid bash -c "$PUSH_CMD" >/dev/null 2>&1 </dev/null &
+            else
+                nohup bash -c "$PUSH_CMD" >/dev/null 2>&1 </dev/null &
+            fi
+            disown 2>/dev/null || true
         fi
     fi
     exit 0
