@@ -360,7 +360,20 @@ def _collect_pdfs_for_db(db_slug: str) -> List[Path]:
             folders = []
     pdfs: List[Path] = []
     for folder in folders:
+        # A folder is resolved inside knowledge/library first, then — if that does
+        # not exist — relative to the RC root.
+        #
+        # Without the second attempt, a collection can only be indexed if it lives
+        # under knowledge/library, and nothing tells you when one doesn't. That is
+        # how 211 sleeping-sickness papers in inputs/literature/ stayed invisible to
+        # content search while the dashboard happily reported the hat-specialist
+        # layer as present (it had 10 books from a different folder). Library-root
+        # first keeps every existing folder mapping resolving exactly as before.
         d = lib / folder
+        if not d.exists():
+            candidate = paths.root / folder
+            if candidate.exists():
+                d = candidate
         if d.exists():
             pdfs.extend(sorted(d.rglob("*.pdf")))
     return pdfs
@@ -368,9 +381,26 @@ def _collect_pdfs_for_db(db_slug: str) -> List[Path]:
 
 # ── Core indexing ─────────────────────────────────────────────────────────────
 
+def _relative_source(pdf_path: Path, lib_root: Path) -> str:
+    """The stable identifier stored in `pdf_chunks.source_file`.
+
+    Relative to knowledge/library when the PDF is under it, else relative to the RC
+    root — because collections may now legitimately live outside the library (see
+    `_collect_pdfs_for_db`), and `Path.relative_to` RAISES rather than returning
+    something usable when the path is outside the base. Left unguarded, indexing a
+    folder outside knowledge/library would abort on its first file.
+    """
+    for base in (lib_root, paths.root):
+        try:
+            return str(pdf_path.relative_to(base))
+        except ValueError:
+            continue
+    return str(pdf_path)
+
+
 def _index_one_pdf(conn, pdf_path: Path, lib_root: Path, db_id: int,
                    embed_fn) -> dict:
-    source_file = str(pdf_path.relative_to(lib_root))
+    source_file = _relative_source(pdf_path, lib_root)
     domain      = pdf_path.parent.name
     title       = _infer_title(pdf_path)
     file_size   = pdf_path.stat().st_size
@@ -583,7 +613,7 @@ async def build_pdf_knowledge_db(
     results: List[str] = []
 
     for i, pdf_path in enumerate(pdfs, 1):
-        source_file = str(pdf_path.relative_to(lib_root))
+        source_file = _relative_source(pdf_path, lib_root)
 
         if not force_rebuild:
             row = conn.execute(
@@ -854,7 +884,7 @@ async def get_pdf_index_stats(
                JOIN knowledge_databases kd ON kd.id = s.db_id
                WHERE kd.slug = ?""", (slug,)
         ).fetchall()}
-        pending = [p for p in all_pdfs if str(p.relative_to(lib_root)) not in indexed]
+        pending = [p for p in all_pdfs if _relative_source(p, lib_root) not in indexed]
         if pending:
             lines.append(f"    ⚠ {len(pending)} PDFs not yet indexed")
         lines.append("")
