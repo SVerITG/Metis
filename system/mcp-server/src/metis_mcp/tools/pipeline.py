@@ -10,7 +10,10 @@ Implements the 11-stage pipeline that runs on every /metis invocation:
   Stage  6 — Token budget             Model selection per complexity level
   Stage  7 — Surgical context         Minimum context from memory_entries
   Stage  8 — save_session_event       Write-through persistence (also MCP tool)
-  Stage  9 — Output red-line check    Post-execution safety verification
+  Stage  9 — Output red-line check    Runs inside evaluate_against_layers(), the only
+                                      function that receives the drafted answer. (It
+                                      previously lived here as its own stage and was
+                                      never called by anything — see that function.)
   Stage 10 — Logging                  Delegated to log_agent_run() in agents.py
   Stage 11 — Self-improvement         Delegated to write_reflexion() in self_improvement.py
 
@@ -868,6 +871,37 @@ def evaluate_against_layers(answer: str, session_id: str = "", task_type: str = 
     except Exception as e:
         return f"(could not evaluate: {e})"
 
+    # Red-line scan on the drafted answer.
+    #
+    # `_check_output_stage` was written as pipeline "Stage 9" and then never called
+    # by anything — a security control that existed, looked structural, and had no
+    # caller (found by the structural sweep, 2026-08-12). It could not simply be
+    # wired into run_metis, because run_metis returns an INSTRUCTION SHEET, not an
+    # answer; there was no output there to scan. This function is the only place in
+    # the system that actually receives the model's drafted answer, so it is the
+    # only place the check can mean anything.
+    #
+    # Advisory, not blocking: it surfaces SENSITIVE content and destructive command
+    # patterns for the model to fix before replying, and records a `redline` event
+    # so the scan leaves a trace even when nobody reads the verdict.
+    try:
+        _redline = _scan_safety(answer or "")
+        if _redline["classification"] == "SENSITIVE":
+            issues.append(
+                "Red line — the drafted answer contains SENSITIVE content: "
+                + "; ".join(_redline["warnings"])
+            )
+        if _DESTRUCTIVE_RE.search(answer or ""):
+            issues.append(
+                "Red line — the drafted answer contains a destructive command pattern "
+                "(rm -rf / DROP TABLE / DELETE FROM / TRUNCATE). Confirm it is intended "
+                "and clearly explained before replying."
+            )
+        if issues and session_id:
+            _write_event_sync(session_id, "redline", "; ".join(issues)[:2000])
+    except Exception:
+        pass  # an advisory scan must never break the evaluate gate
+
     verdict = "REVIEW" if issues else "OK"
     out = [f"**Evaluation against your layers: {verdict}**"]
     if issues:
@@ -1074,24 +1108,12 @@ _DESTRUCTIVE_RE = re.compile(
 )
 
 
-async def _check_output_stage(output: str, session_id: str) -> dict:
-    """Stage 9: Scan pipeline output for red-line violations."""
-    violations: list[str] = []
-
-    safety_result = _scan_safety(output)
-    if safety_result["classification"] == "SENSITIVE":
-        violations.append(
-            f"Output contains SENSITIVE content: {'; '.join(safety_result['warnings'])}"
-        )
-
-    if _DESTRUCTIVE_RE.search(output):
-        violations.append("Output contains a destructive command pattern")
-
-    if violations:
-        _write_event_sync(session_id, "redline",
-                          f"Output red-line: {'; '.join(violations)}")
-
-    return {"safe": len(violations) == 0, "violations": violations}
+# NOTE: the former `_check_output_stage` lived here — pipeline "Stage 9", an output
+# red-line scan that was defined and then never called by anything. Its checks now
+# run inside `evaluate_against_layers`, which is the only function that actually
+# receives the model's drafted answer. Removed rather than left in place: an unused
+# second copy of a security control is how the first one came to be trusted without
+# being reached.
 
 
 # ── Stage 12 (entry point): run_metis ────────────────────────────────────────

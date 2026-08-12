@@ -150,6 +150,21 @@ sys.exit(1 if fails else 0)
 PYEOF
 PYRC=$?
 
+# ── Structural audit — code that looks wired but never runs ──────────────────
+# WARN, never a hard fail. Its findings (a fossil table, a hollow panel, an
+# unreached guard) are decisions to take deliberately, not build breaks. What
+# matters is that they stay VISIBLE: every defect of this class found on
+# 2026-08-12 was invisible precisely because nothing ever printed it.
+if [ -f "$REPO_ROOT/tools/audit-structural.py" ]; then
+    AUDIT_OUT="$("$PY" "$REPO_ROOT/tools/audit-structural.py" 2>/dev/null)"
+    N_HIGH="$(printf '%s' "$AUDIT_OUT" | grep -cE '^    (system/|[a-z_]+ +rows=)' || true)"
+    if printf '%s' "$AUDIT_OUT" | grep -q "no high-severity findings"; then
+        ok "structural audit clean — no unreached guards or unfillable tables"
+    else
+        warn "structural audit: ${N_HIGH:-?} finding(s) — run: python3 tools/audit-structural.py --all"
+    fi
+fi
+
 echo "════════════════════════════════════════════════════"
 if [ "$PYRC" -eq 0 ]; then echo "  RESULT: HEALTHY"; exit 0
 else echo "  RESULT: PROBLEMS DETECTED — see ✗ rows above"; exit 1; fi
