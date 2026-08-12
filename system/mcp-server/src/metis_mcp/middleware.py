@@ -93,6 +93,25 @@ _PATH_ARGS = {
 }
 
 
+def _refuse(message: str) -> Any:
+    """A refusal the MCP client actually receives.
+
+    Must be a full CallToolResult, not a bare list of content blocks. Now that the
+    wrapper sits on the real protocol handler, the low-level server normalises and
+    then OUTPUT-VALIDATES whatever comes back: a bare content list from a tool that
+    declares an outputSchema fails validation, and the caller sees
+    "Output validation error: outputSchema defined but no structured output
+    returned" instead of the refusal. The block still happened — but the reason for
+    it was replaced by a schema complaint, which is the worst of both worlds.
+
+    A CallToolResult is returned by the handler verbatim, skipping normalisation
+    and validation entirely, so the researcher reads the actual explanation.
+    """
+    from mcp.types import CallToolResult, TextContent
+
+    return CallToolResult(content=[TextContent(type="text", text=message)], isError=True)
+
+
 def _texts_of(result: Any) -> list[Any]:
     """The TextContent blocks in a tool result, whatever shape it came back in."""
     if result is None:
@@ -134,15 +153,12 @@ def install(app: Any) -> None:
                     if refusal:
                         log.error("guard: BLOCKED %s(%s=%r) — %s", name, key, value[:80], refusal)
                         _audit(name, "BLOCKED", refusal[:120])
-                        from mcp.types import TextContent
-                        return [TextContent(type="text", text=refusal)]
+                        return _refuse(refusal)
             except ImportError:
                 log.error("guard: path confinement UNAVAILABLE — refusing %s (fail-closed)", name)
-                from mcp.types import TextContent
-                return [TextContent(
-                    type="text",
-                    text="Refused: the path-confinement guard could not load. Nothing was read.",
-                )]
+                return _refuse(
+                    "Refused: the path-confinement guard could not load. Nothing was read."
+                )
             except Exception as exc:  # a bug in OUR guard must not brick Metis
                 log.error("guard: path check errored on %s (%s) — allowing", name, exc)
 
@@ -206,6 +222,35 @@ def install(app: Any) -> None:
         return result
 
     app.call_tool = guarded_call_tool  # type: ignore[method-assign]
+
+    # ── Re-register the protocol handler, or none of the above runs ──────────
+    # Assigning `app.call_tool` is NOT enough, and the difference is invisible
+    # until you look for it. FastMCP.__init__ calls _setup_handlers(), which runs
+    #     self._mcp_server.call_tool(validate_input=False)(self.call_tool)
+    # capturing the BOUND METHOD OBJECT and storing a closure over it in
+    # request_handlers[CallToolRequest]. Rebinding the attribute afterwards leaves
+    # that closure pointing at the original function, so every real MCP request
+    # went straight to the unguarded tool while `app.call_tool(...)` — the way our
+    # own tests called it — went through the wrapper and passed.
+    #
+    # Found 2026-08-12: `tool_guard_log` held exactly 3 rows, all from the day the
+    # guard was written, and none in the month of real use since. The guard was
+    # decorative, and the ambient memory write-backs added on top of it inherited
+    # the same defect on day one.
+    #
+    # Re-running the registration builds a fresh handler around the WRAPPED
+    # function and overwrites the entry, which is the whole fix.
+    try:
+        app._mcp_server.call_tool(validate_input=False)(guarded_call_tool)
+        log.info("dispatch wrapper re-registered on the MCP protocol handler")
+    except Exception as exc:
+        # Loud: silently failing here returns us to exactly the state this block
+        # exists to escape — a guard that is installed but never reached.
+        log.error(
+            "guard: COULD NOT re-register the protocol handler (%s) — the guard and "
+            "ambient memory will NOT run on real MCP requests", exc,
+        )
+
     try:
         from metis_mcp import ambient
 
