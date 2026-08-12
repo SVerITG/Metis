@@ -1300,8 +1300,30 @@ async def run_metis(
             _rag_text = _rag[0].text if _rag else ""
             _low = _rag_text.lower()[:80]
             if _rag_text and "nothing" not in _low and "no chunks" not in _low and "not indexed" not in _low:
-                context = ((context + "\n\n") if context else "") + \
-                    "Grounding from your library (cite these where relevant):\n" + _rag_text[:1400]
+                # The framing matters as much as the retrieval.
+                #
+                # A bare "grounding from your library" header, next to the standing
+                # instruction to ground answers in the indexed library, reads as a
+                # BOUNDARY: answer only from these passages. That makes answers
+                # narrower the better the library gets, which is exactly backwards.
+                # The background exists to anchor an answer in what the researcher
+                # already trusts — not to define the edge of what may be said.
+                #
+                # So the header states both halves explicitly, and asks for the
+                # provenance to be visible, which also turns a gap into an action:
+                # something worth citing that is missing from the library is a
+                # paper worth adding.
+                context = ((context + "\n\n") if context else "") + (
+                    "GROUNDING — passages from the researcher's own indexed library and "
+                    "background layers. Treat these as established, trusted ground: build on "
+                    "them and cite them where they bear on the question.\n"
+                    "They are NOT the limit of the answer. Bring in relevant recent literature, "
+                    "news, guidelines and general knowledge as well — an answer restricted to "
+                    "the indexed corpus is a worse answer, not a safer one.\n"
+                    "Make the provenance clear: cite these passages as theirs, and mark anything "
+                    "from outside their library as not (yet) indexed — then offer to add it.\n\n"
+                    + _rag_text[:1400]
+                )
         except Exception:
             pass
 
