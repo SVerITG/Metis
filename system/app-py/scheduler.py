@@ -296,6 +296,49 @@ def job_background_index() -> None:
         log.error("[scheduler] background_index failed: %s", exc)
 
 
+def job_office_sync() -> None:
+    """Re-read Office documents that changed on disk since Metis last saw them.
+
+    This is the half of the round trip that makes the integration bidirectional.
+    Metis could write a deck and, since P5.2, read one back — but only when asked.
+    A deck edited in PowerPoint stayed stale in Metis until someone remembered to
+    re-ingest it, which is the same convention-not-construction gap that left
+    session memory empty for months.
+
+    Compares each ingested document's stored file_mtime against the file on disk.
+    Missing files are recorded rather than deleted: the row is the provenance, and
+    a file that is merely on an unmounted drive must not erase its own history.
+    """
+    log.info("[scheduler] office_sync starting")
+    try:
+        import asyncio as _asyncio
+        from pathlib import Path as _Path
+        from db import db_query, db_execute
+        from metis_mcp.tools.office import ingest_office_document
+
+        rows = db_query("SELECT path, file_mtime FROM office_documents WHERE kind='pptx'") or []
+        updated, missing = [], 0
+        for r in rows:
+            f = _Path(r["path"])
+            if not f.is_file():
+                missing += 1
+                continue
+            import datetime as _dt
+            disk = _dt.datetime.fromtimestamp(f.stat().st_mtime).isoformat(timespec="seconds")
+            if disk != (r["file_mtime"] or ""):
+                _asyncio.run(ingest_office_document(str(f)))
+                updated.append(f.name)
+        msg = ("Re-read " + ", ".join(updated[:5]) + (f" (+{len(updated)-5} more)" if len(updated) > 5 else "")) \
+            if updated else f"All {len(rows)} document(s) current."
+        if missing:
+            msg += f" {missing} file(s) not found on disk."
+        _log_job("office_sync", "ok", msg)
+        log.info("[scheduler] office_sync done: %s", msg)
+    except Exception as exc:
+        _log_job("office_sync", "error", str(exc)[:300])
+        log.error("[scheduler] office_sync failed: %s", exc)
+
+
 def job_nightly_backup() -> None:
     """Safe online backup of metis.sqlite using the SQLite backup API (WAL-safe)."""
     log.info("[scheduler] nightly_backup starting")
@@ -897,6 +940,7 @@ JOB_FUNCS: dict[str, callable] = {
     "morning_scan":          job_morning_scan,
     "library_index":         job_library_index,
     "background_index":      job_background_index,
+    "office_sync":           job_office_sync,
     "inbox_process":         job_inbox_process,
     "evening_reflexion":     job_evening_reflexion,
     "promise_harness":       job_promise_harness,
@@ -916,6 +960,7 @@ JOB_LABELS: dict[str, str] = {
     "morning_scan":         "Morning scan (news + papers)",
     "library_index":        "Library index",
     "background_index":     "Knowledge backgrounds — index new papers",
+    "office_sync":          "Office documents — re-read what changed",
     "inbox_process":        "Inbox processing",
     "evening_reflexion":    "Evening reflexion",
     "promise_harness":      "Promise harness (drift)",
@@ -945,6 +990,9 @@ JOB_DEFAULTS: dict[str, dict] = {
     # schedule entry the job would exist and never run — the exact failure this job
     # was written to fix.
     "background_index":     {"enabled": True, "time": "09:07"},
+    # Hourly, not daily: a deck edited during the working day should be current
+    # in Metis the same afternoon, and the check is a stat() per document.
+    "office_sync":          {"enabled": True, "every_hours": 1},
     "inbox_process":        {"enabled": True, "time": "09:10"},
     "brief_synthesis":      {"enabled": True, "time": "09:20"},
     "dataset_monitor":      {"enabled": True, "time": "09:30"},
@@ -1003,6 +1051,26 @@ def setup_jobs() -> None:
         trigger_kwargs = {"hour": hour, "minute": minute}
         if day_of_week:
             trigger_kwargs["day_of_week"] = day_of_week
+
+        # Repeating jobs: `every_hours: N` → run at minute M of every Nth hour.
+        #
+        # Added because a config key this loop does not recognise is SILENTLY
+        # IGNORED — the job still registers, at the default 07:00, and looks
+        # scheduled. A job that runs on a schedule nobody asked for is harder to
+        # notice than one that fails, so unknown keys must either work or be loud.
+        every_hours = cfg.get("every_hours")
+        if every_hours:
+            try:
+                n = max(1, min(int(every_hours), 23))
+                trigger_kwargs = {"hour": f"*/{n}", "minute": minute}
+            except (TypeError, ValueError):
+                log.warning("[scheduler] job '%s' has an unusable every_hours=%r — "
+                            "falling back to the daily time", job_id, every_hours)
+
+        unknown = set(cfg) - {"enabled", "time", "day", "every_hours"}
+        if unknown:
+            log.warning("[scheduler] job '%s' has unrecognised schedule key(s): %s "
+                        "— they do nothing", job_id, ", ".join(sorted(unknown)))
 
         scheduler.add_job(
             func,
