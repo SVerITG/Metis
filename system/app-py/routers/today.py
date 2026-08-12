@@ -3291,6 +3291,12 @@ async def register_morning_schedule():
 async def today_research_progress(request: Request):
     """Research progress widget: article milestones + days since last commit."""
     milestones: list[dict] = []
+    # `research_milestones` has zero rows and NO writer anywhere in the codebase —
+    # a feature that was given a table and a reader and never built (one of the
+    # fossil tables in Keystone Appendix D). Kept as a read rather than deleted,
+    # because the table and this query are the only remaining description of what
+    # was intended; if milestones are ever built, this is where they surface. It
+    # costs one empty query and is documented rather than mysterious.
     try:
         rows = db_query(
             "SELECT milestone_id, article_title, target_date, status, notes "
