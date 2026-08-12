@@ -792,6 +792,7 @@ def _fetch_library_items(
     collection: str = "",
     item_type: str = "",
     sort: str = "newest",
+    read_state: str = "",
     per_page: int = 200,
     offset: int = 0,
 ) -> tuple[list[dict], int]:
@@ -815,6 +816,16 @@ def _fetch_library_items(
                 "(title LIKE ? OR authors LIKE ? OR abstract LIKE ? OR source LIKE ? OR tags LIKE ?)"
             )
             params.extend([like, like, like, like, like])
+
+    # Read / unread. `is_read` has existed on every row since the schema was
+    # written and NOTHING ever set it — all 726 papers read 0. The table template
+    # already draws unread rows with an accent border, so the state was designed
+    # for and never wired. In a personal library this is the single most useful
+    # field there is: it is what separates "my collection" from "a list of files".
+    if read_state == "read":
+        where_parts.append("COALESCE(is_read, 0) = 1")
+    elif read_state == "unread":
+        where_parts.append("COALESCE(is_read, 0) = 0")
 
     if author and len(author.strip()) >= 2:
         where_parts.append("authors LIKE ?")
@@ -1003,6 +1014,7 @@ async def knowledge_library_table_partial(
     sort: str = "newest",
     year_from: str = "",
     year_to: str = "",
+    read_state: str = "",
     page: int = 1,
 ):
     """Table rows only — swapped in for live search/filter updates.
@@ -1020,10 +1032,10 @@ async def knowledge_library_table_partial(
     items, total = _fetch_library_items(
         q=q, item_type=item_type, sort=sort, per_page=LIB_PAGE_SIZE,
         offset=(page - 1) * LIB_PAGE_SIZE,
-        year_from=year_from, year_to=year_to,
+        year_from=year_from, year_to=year_to, read_state=read_state,
     )
     items = [i for i in items if i.get("title") and not i["title"].startswith(("19", "20"))]
-    active_filter_count = sum(bool(v) for v in [q, item_type, year_from, year_to])
+    active_filter_count = sum(bool(v) for v in [q, item_type, year_from, year_to, read_state])
     total_pages = max(1, (total + LIB_PAGE_SIZE - 1) // LIB_PAGE_SIZE)
     return templates.TemplateResponse(
         request,
@@ -1042,6 +1054,7 @@ async def knowledge_library_table_partial(
             "page_size": LIB_PAGE_SIZE,
             "year_from": year_from,
             "year_to": year_to,
+            "read_state": read_state,
         },
     )
 
@@ -2580,3 +2593,30 @@ async def knowledge_layer_rebuild(slug: str, request: Request):
     except Exception:
         pass
     return await knowledge_layers(request)
+
+
+@router.post("/api/library/{item_id}/read", response_class=HTMLResponse)
+async def library_toggle_read(item_id: int, request: Request):
+    """Mark a paper read or unread.
+
+    The write half of a field that has existed unused since the schema was written.
+    Returns just the new control, so marking one paper read does not redraw the
+    table and lose the reader's scroll position.
+    """
+    cur = db_scalar("SELECT COALESCE(is_read,0) FROM literature_metadata WHERE id=?",
+                    (item_id,), default=0)
+    new = 0 if cur else 1
+    db_execute("UPDATE literature_metadata SET is_read=? WHERE id=?", (new, item_id))
+    return HTMLResponse(_read_toggle_html(item_id, new))
+
+
+def _read_toggle_html(item_id: int, is_read: int) -> str:
+    label = "READ" if is_read else "UNREAD"
+    colour = "var(--m-muted)" if is_read else "var(--m-accent)"
+    return (
+        f'<button hx-post="/api/library/{item_id}/read" hx-swap="outerHTML" '
+        f'title="Mark {"unread" if is_read else "read"}" '
+        f'style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;'
+        f'padding:2px 7px;border:1px solid var(--m-line);border-radius:10px;'
+        f'background:transparent;color:{colour};cursor:pointer;">{label}</button>'
+    )
