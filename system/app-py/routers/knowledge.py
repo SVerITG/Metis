@@ -375,8 +375,33 @@ async def knowledge_stats_meta(request: Request):
         default=0,
     )
     total = (card_count or 0) + (lit_count or 0)
+
+    # Catalogue completeness — the first question a librarian asks of a collection.
+    # Of 726 papers, 221 had no year and 248 no DOI, and nothing anywhere said so.
+    # A record without a year cannot be sorted chronologically and one without a DOI
+    # cannot be resolved to its source, so this is not cosmetic metadata: it is the
+    # difference between a catalogue and a pile. Stated as a percentage complete,
+    # with the gap named, so it reads as something to fix rather than an accusation.
+    lit = lit_count or 0
+    complete = db_scalar(
+        "SELECT COUNT(*) FROM literature_metadata "
+        "WHERE year IS NOT NULL AND year != '' AND doi IS NOT NULL AND doi != ''",
+        default=0,
+    ) or 0
+    unread = db_scalar(
+        "SELECT COUNT(*) FROM literature_metadata WHERE COALESCE(is_read,0) = 0",
+        default=0,
+    ) or 0
+    quality = ""
+    if lit:
+        pct = round(100 * complete / lit)
+        missing = lit - complete
+        quality = (f" · {pct}% CATALOGUED"
+                   + (f" ({missing} MISSING YEAR OR DOI)" if missing else ""))
+
     return HTMLResponse(
-        f"{total} CARDS · {domain_count or 0} COLLECTIONS · {added_week or 0} SOURCES ADDED THIS WEEK"
+        f"{total} CARDS · {domain_count or 0} COLLECTIONS · {added_week or 0} ADDED THIS WEEK"
+        f"{quality} · {unread} UNREAD"
     )
 
 
