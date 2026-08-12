@@ -1,5 +1,11 @@
 """middleware.py — the tool-dispatch chokepoint.
 
+Two concerns ride here, for the same reason: SECURITY (below) and MEMORY
+CONTINUITY (see ambient.py, Keystone M1). Both were originally wired at
+individual call sites, and both failed the same way — silently, whenever someone
+forgot. FastMCP.call_tool is the one function every tool call passes through, so
+it is where a promise stops depending on anyone remembering to keep it.
+
 THE PROBLEM (security audit, 2026-07-14)
     Metis has a real Data Guardian: a genuine PII scanner, a hard-deny on secrets,
     a path-confinement guard. But they were wired in at *individual call sites*.
@@ -96,10 +102,16 @@ def _texts_of(result: Any) -> list[Any]:
 
 
 def install(app: Any) -> None:
-    """Wrap app.call_tool so no tool can bypass the guard."""
-    if os.environ.get("METIS_NO_TOOL_GUARD") == "1":
+    """Wrap app.call_tool so no tool can bypass the guard or the memory write-backs.
+
+    The two concerns are independent and switch independently. Turning the
+    security guard off in an emergency must not silently take session continuity
+    down with it — that coupling would make Metis quietly stop remembering things
+    for a reason nobody would ever connect to the switch they flipped.
+    """
+    guard_on = os.environ.get("METIS_NO_TOOL_GUARD") != "1"
+    if not guard_on:
         log.warning("tool guard DISABLED via METIS_NO_TOOL_GUARD=1")
-        return
 
     original = app.call_tool
 
@@ -107,37 +119,67 @@ def install(app: Any) -> None:
         # ── 1. PATH DENY — fails CLOSED ──────────────────────────────────────
         # The one rule worth an outage. A secret or a patient file disclosed to
         # the API cannot be un-disclosed.
-        try:
-            from metis_mcp.tools.files import _path_refusal
-            from pathlib import Path
+        if guard_on:
+            try:
+                from metis_mcp.tools.files import _path_refusal
+                from pathlib import Path
 
-            for key, value in (arguments or {}).items():
-                if not isinstance(value, str) or not value:
-                    continue
-                looks_like_path = key.lower() in _PATH_ARGS or value.startswith(("/", "~", "./", "../"))
-                if not looks_like_path:
-                    continue
-                refusal = _path_refusal(Path(value))
-                if refusal:
-                    log.error("guard: BLOCKED %s(%s=%r) — %s", name, key, value[:80], refusal)
-                    _audit(name, "BLOCKED", refusal[:120])
-                    from mcp.types import TextContent
-                    return [TextContent(type="text", text=refusal)]
-        except ImportError:
-            log.error("guard: path confinement UNAVAILABLE — refusing %s (fail-closed)", name)
-            from mcp.types import TextContent
-            return [TextContent(
-                type="text",
-                text="Refused: the path-confinement guard could not load. Nothing was read.",
-            )]
-        except Exception as exc:  # a bug in OUR guard must not brick Metis
-            log.error("guard: path check errored on %s (%s) — allowing", name, exc)
+                for key, value in (arguments or {}).items():
+                    if not isinstance(value, str) or not value:
+                        continue
+                    looks_like_path = key.lower() in _PATH_ARGS or value.startswith(("/", "~", "./", "../"))
+                    if not looks_like_path:
+                        continue
+                    refusal = _path_refusal(Path(value))
+                    if refusal:
+                        log.error("guard: BLOCKED %s(%s=%r) — %s", name, key, value[:80], refusal)
+                        _audit(name, "BLOCKED", refusal[:120])
+                        from mcp.types import TextContent
+                        return [TextContent(type="text", text=refusal)]
+            except ImportError:
+                log.error("guard: path confinement UNAVAILABLE — refusing %s (fail-closed)", name)
+                from mcp.types import TextContent
+                return [TextContent(
+                    type="text",
+                    text="Refused: the path-confinement guard could not load. Nothing was read.",
+                )]
+            except Exception as exc:  # a bug in OUR guard must not brick Metis
+                log.error("guard: path check errored on %s (%s) — allowing", name, exc)
+
+        # ── 1b. AMBIENT MEMORY — session identity, before the tool runs ──────
+        # Keystone M1. The same argument this file makes about security applies
+        # to memory continuity: a control that depends on being remembered is a
+        # convention. See ambient.py. Never allowed to break a call.
+        try:
+            from metis_mcp import ambient
+
+            arguments = ambient.before_call(name, arguments)
+        except Exception as exc:
+            log.debug("ambient: pre-call skipped for %s (%s)", name, exc)
 
         # ── 2. Run the tool ──────────────────────────────────────────────────
-        result = await original(name, arguments)
+        try:
+            result = await original(name, arguments)
+        except Exception:
+            # Record the failure before re-raising — a session trace that only
+            # contains successes is a misleading one.
+            try:
+                from metis_mcp import ambient
+
+                ambient.after_call(name, arguments, failed=True)
+            except Exception:
+                pass
+            raise
+
+        try:
+            from metis_mcp import ambient
+
+            ambient.after_call(name, arguments)
+        except Exception as exc:
+            log.debug("ambient: post-call skipped for %s (%s)", name, exc)
 
         # ── 3. EGRESS PII RAIL ───────────────────────────────────────────────
-        if name in _PII_IS_THE_PAYLOAD:
+        if not guard_on or name in _PII_IS_THE_PAYLOAD:
             return result
         try:
             from metis_mcp.tools.anonymization import mask_pii
@@ -164,7 +206,18 @@ def install(app: Any) -> None:
         return result
 
     app.call_tool = guarded_call_tool  # type: ignore[method-assign]
-    log.info("tool guard installed — path deny + egress PII rail on every tool call")
+    try:
+        from metis_mcp import ambient
+
+        memory_state = "on" if ambient.enabled() else "OFF"
+    except Exception:
+        memory_state = "unavailable"
+    log.info(
+        "dispatch wrapper installed — guard %s (path deny + egress PII rail), "
+        "ambient memory %s, on every tool call",
+        "on" if guard_on else "OFF",
+        memory_state,
+    )
 
 
 def _audit(tool: str, verdict: str, detail: str) -> None:
