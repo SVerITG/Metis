@@ -152,6 +152,20 @@ async def save_capture(request: Request, text: str = Form(...)):
         else:
             # idea or question — ideas table uses 'text' as the content column
             idea_type = "question" if item_type == "question" else "idea"
+
+            # Cross-pollinate BEFORE writing the idea. Searching afterwards made
+            # every capture match the copy of itself it had just inserted and
+            # embedded — rank 1, score 1.0 — burning the top slot of five and
+            # persisting a self-edge. Same fix as the chat-side capture_idea.
+            #
+            # Guarded: connections are a display nicety, the capture is the user's
+            # actual thought. Moving this above the INSERT means an exception here
+            # would now lose the thought, which it never could before.
+            try:
+                connections_html = _surface_connections(clean_text)
+            except Exception:
+                connections_html = ""
+
             db_execute(
                 "INSERT INTO ideas (text, idea_type, created_at) VALUES (?, ?, ?)",
                 (clean_text, idea_type, now),
@@ -164,10 +178,10 @@ async def save_capture(request: Request, text: str = Form(...)):
             except Exception:
                 pass
 
-        # Cross-pollination — auto-surface for ideas and questions
-        connections_html = ""
-        if item_type in ("idea", "question"):
-            connections_html = _surface_connections(clean_text)
+        # Cross-pollination is computed above, before the insert, for ideas and
+        # questions; every other capture type surfaces nothing.
+        if item_type not in ("idea", "question"):
+            connections_html = ""
 
         type_labels = {"idea": "IDEA", "question": "QUESTION", "note": "NOTE", "task": "TASK", "journal": "JOURNAL"}
         label = type_labels.get(item_type, item_type.upper())
