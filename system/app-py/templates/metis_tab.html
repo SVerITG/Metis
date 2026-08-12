@@ -457,6 +457,13 @@
         <div class="panel" style="padding:18px 22px;">{{ skeleton_block(rows=2) }}</div>
       </div>
 
+      {# Where settings live — P2.5. Which files matter, which you can ignore. #}
+      {{ sec_label("Where settings live", tail="FILES vs METIS", style="margin-bottom:12px;") }}
+      <div hx-get="/api/partial/metis/settings-map" hx-trigger="load delay:250ms" hx-swap="innerHTML"
+           style="margin-bottom:24px;">
+        <div class="panel" style="padding:18px 22px;">{{ skeleton_block(rows=3) }}</div>
+      </div>
+
       {# Update Metis — P2.4. Backed up, verified, and self-undoing on failure. #}
       {{ sec_label("Update", tail="SAFE, WITH ROLLBACK", style="margin-bottom:12px;") }}
       <div hx-get="/api/partial/metis/update" hx-trigger="load delay:200ms" hx-swap="outerHTML"
