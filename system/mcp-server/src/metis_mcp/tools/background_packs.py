@@ -239,7 +239,11 @@ async def install_background_pack(slug: str, confirm: bool = False) -> list[Text
                  "These are standard texts for this field that a script cannot fetch: the",
                  "publisher requires a browser, or your institution's subscription.",
                  "Save each PDF into **this folder**. It will be indexed automatically",
-                 "on the next rebuild — nothing else to do.", ""]
+                 "on the next rebuild — nothing else to do.", "",
+                 "If you save them in Zotero instead (the browser connector, logged in",
+                 "through your institution, keeps the citation too), put them in one",
+                 "collection and ask Metis to import that collection into this layer —",
+                 "it copies the PDFs here for you.", ""]
         for s in manual:
             lines.append(f"- **{s.get('title','?')}**")
             if s.get("doi"):
