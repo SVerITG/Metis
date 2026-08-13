@@ -479,14 +479,27 @@ def _load_procedures() -> list[tuple[str, set[str]]]:
     return out
 
 
-def procedure_preference(procedure_name: str) -> str:
-    """The researcher's standing choice for this procedure: 'always', 'never', or ''.
+# Words that turn a recorded decision into a standing instruction, or silence.
+# Kept in one place so every choice-type reads an answer the same way — otherwise
+# "always" would mean one thing for procedures and something subtly different for
+# the next kind of offer added.
+_ALWAYS_WORDS = ("always", "automatically", "without asking", "by default")
+_NEVER_WORDS = ("never", "don't", "do not", "stop offering", "stop suggesting", "skip")
 
-    Offering the same thing every session and forgetting the answer is its own kind
-    of amnesia. Once someone has said "always do it this way" or "stop suggesting
-    this", that IS a decision, and it belongs in `user_decisions` like any other
-    standing preference — so the offer becomes a one-time question rather than a
-    recurring prompt.
+
+def standing_preference(category: str, subject: str) -> str:
+    """The researcher's recorded choice about `subject`: 'always', 'never', or ''.
+
+    THE GENERAL FORM of Keystone M5. Metis makes the same kinds of offer over and
+    over — should I use a recorded procedure, should I search the library, should I
+    complement from the web, which knowledge layer — and until now only procedures
+    remembered the answer. Everything else re-asked forever, which is the amnesia
+    the memory work exists to end.
+
+    Any offer can now be made once: read the preference before offering, write it
+    with `record_decision(category=..., decision="always/never ... <subject>")`
+    after, and the question is answered for good. Reading is deliberately tolerant
+    of how the decision was phrased — the model writes these sentences, not a form.
     """
     try:
         from metis_mcp.config import paths
@@ -494,19 +507,26 @@ def procedure_preference(procedure_name: str) -> str:
 
         with connect(paths.db) as con:
             rows = con.execute(
-                "SELECT decision, scope FROM user_decisions "
-                "WHERE category='procedure' AND decision LIKE ?",
-                (f"%{procedure_name}%",),
+                "SELECT decision FROM user_decisions "
+                "WHERE category = ? AND decision LIKE ?",
+                (category, f"%{subject}%"),
             ).fetchall()
         for r in rows:
             d = (r["decision"] or "").lower()
-            if any(w in d for w in ("never", "don't", "do not", "stop offering", "skip")):
+            # "never" is checked FIRST: "never do this automatically" contains both
+            # families of word, and the refusal is the safer reading of the two.
+            if any(w in d for w in _NEVER_WORDS):
                 return "never"
-            if any(w in d for w in ("always", "automatically", "without asking")):
+            if any(w in d for w in _ALWAYS_WORDS):
                 return "always"
     except Exception as exc:
-        log.debug("ambient: could not read procedure preference (%s)", exc)
+        log.debug("ambient: could not read %s preference (%s)", category, exc)
     return ""
+
+
+def procedure_preference(procedure_name: str) -> str:
+    """Standing choice for a recorded procedure. Thin wrapper over the general form."""
+    return standing_preference("procedure", procedure_name)
 
 
 def procedure_hint(arguments: dict[str, Any]) -> str | None:
