@@ -1,0 +1,311 @@
+{
+  "slug": "ph-background",
+  "name": "Public Health Background",
+  "version": "1.0.0",
+  "description": "Foundation layer: general MPH knowledge — health systems, global health, governance, social determinants, environmental health, NCDs, nutrition, mental health, maternal & child health, health economics, DHIS2.",
+  "folder": "open-access-books/Health Systems & Financing",
+  "folders": [
+    "open-access-books/Health Systems & Financing",
+    "open-access-books/Global Health Governance",
+    "open-access-books/Social Determinants & Equity",
+    "open-access-books/Environmental & Occupational Health",
+    "open-access-books/Infectious Disease & Surveillance",
+    "open-access-books/Maternal & Child Health",
+    "open-access-books/NCDs",
+    "open-access-books/Nutrition & Food Security",
+    "open-access-books/Mental Health",
+    "open-access-books/Health Economics",
+    "open-access-books/One Health & AMR",
+    "open-access-books/Climate Change & Health",
+    "open-access-books/Africa & Sub-Saharan Africa",
+    "open-access-books/Health Informatics & DHIS2",
+    "open-access-books/Health Security"
+  ],
+  "sources": [
+    {
+      "title": "WHO AFRO State of Health African Region",
+      "filename": "WHO-AFRO-State-of-Health-African-Region.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Climate Resilient Sustainable Healthcare 2020",
+      "filename": "WHO-Climate-Resilient-Sustainable-Healthcare-2020.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO UNFCCC Guidance Protect Health Climate 2018",
+      "filename": "WHO-UNFCCC-Guidance-Protect-Health-Climate-2018.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Air Quality Guidelines 2021",
+      "filename": "WHO-Air-Quality-Guidelines-2021.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Guidelines Drinking Water Quality 4th ed 2011",
+      "filename": "WHO-Guidelines-Drinking-Water-Quality-4th-ed-2011.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Guidelines Drinking Water Quality 4th ed",
+      "filename": "WHO-Guidelines-Drinking-Water-Quality-4th-ed.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Preventing Disease Healthy Environments 2016",
+      "filename": "WHO-Preventing-Disease-Healthy-Environments-2016.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Global Strategy WASH and NTDs 2021 2030",
+      "filename": "WHO_Global_Strategy_WASH_and_NTDs_2021-2030.pdf",
+      "url": ""
+    },
+    {
+      "title": "ECDC Rapid Risk Assessment Methodology 2011",
+      "filename": "ECDC-Rapid-Risk-Assessment-Methodology-2011.pdf",
+      "url": ""
+    },
+    {
+      "title": "Lancet Commission Global Health 2050 2024",
+      "filename": "Lancet-Commission-Global-Health-2050-2024.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO NTD Roadmap 2021 2030",
+      "filename": "WHO-NTD-Roadmap-2021-2030.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO World Health Statistics 2024",
+      "filename": "WHO-World-Health-Statistics-2024.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO GBD DALY methods 2021",
+      "filename": "WHO-GBD-DALY-methods-2021.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO World Health Report 2010 Health Financing",
+      "filename": "WHO-World-Health-Report-2010-Health-Financing.pdf",
+      "url": ""
+    },
+    {
+      "title": "DHIS2 Implementation Guide 2023 DL29GY3",
+      "filename": "DHIS2-Implementation-Guide-2023-DL29GY3.pdf",
+      "url": ""
+    },
+    {
+      "title": "DHIS2 Implementation Guide",
+      "filename": "DHIS2-Implementation-Guide.pdf",
+      "url": ""
+    },
+    {
+      "title": "DHIS2 Tracker Implementation Guide",
+      "filename": "DHIS2-Tracker-Implementation-Guide.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Classification Digital Health Interventions 2018",
+      "filename": "WHO-Classification-Digital-Health-Interventions-2018.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Global Strategy Digital Health 2020 2025",
+      "filename": "WHO-Global-Strategy-Digital-Health-2020-2025.pdf",
+      "url": ""
+    },
+    {
+      "title": "GHSA 2028 Framework",
+      "filename": "GHSA-2028-Framework.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO International Health Regulations 2022",
+      "filename": "WHO-International-Health-Regulations-2022.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Astana Declaration PHC 2018",
+      "filename": "WHO-Astana-Declaration-PHC-2018.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Everybodys Business Health Systems 2007",
+      "filename": "WHO-Everybodys-Business-Health-Systems-2007.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Monitoring Building Blocks Health Systems 2010",
+      "filename": "WHO-Monitoring-Building-Blocks-Health-Systems-2010.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO RHIS Toolkit routine health data 2021",
+      "filename": "WHO-RHIS-Toolkit-routine-health-data-2021.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO UHC Global Monitoring Report 2023",
+      "filename": "WHO-UHC-Global-Monitoring-Report-2023.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Global Strategy HRH Workforce 2030",
+      "filename": "WHO_Global_Strategy_HRH_Workforce_2030.pdf",
+      "url": ""
+    },
+    {
+      "title": "UNAIDS Global AIDS Update 2024",
+      "filename": "UNAIDS-Global-AIDS-Update-2024.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO AFRO IDSR Technical Guidelines 3rd ed 2019",
+      "filename": "WHO-AFRO-IDSR-Technical-Guidelines-3rd-ed-2019.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Global TB Report 2024 Technical",
+      "filename": "WHO-Global-TB-Report-2024-Technical.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Global TB Report 2024",
+      "filename": "WHO-Global-TB-Report-2024.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO IDSR Technical Guidelines 2010",
+      "filename": "WHO-IDSR-Technical-Guidelines-2010.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Managing Epidemics 2nd ed 2023",
+      "filename": "WHO-Managing-Epidemics-2nd-ed-2023.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Global Technical Strategy Malaria 2016 2030 2021update",
+      "filename": "WHO_Global_Technical_Strategy_Malaria_2016-2030_2021update.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Global Vector Control Response 2017 2030",
+      "filename": "WHO_Global_Vector_Control_Response_2017-2030.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Immunization Agenda 2030 Framework",
+      "filename": "WHO_Immunization_Agenda_2030_Framework.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO World Malaria Report 2024",
+      "filename": "WHO_World_Malaria_Report_2024.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO ANC Recommendations 2016",
+      "filename": "WHO-ANC-Recommendations-2016.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Postnatal Care Highlights 2013",
+      "filename": "WHO-Postnatal-Care-Highlights-2013.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Trends Maternal Mortality 2000 2023",
+      "filename": "WHO-Trends-Maternal-Mortality-2000-2023.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Comprehensive Mental Health Action Plan 2013 2030",
+      "filename": "WHO-Comprehensive-Mental-Health-Action-Plan-2013-2030.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Mental Health Atlas 2020",
+      "filename": "WHO-Mental-Health-Atlas-2020.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO World Mental Health Report 2022",
+      "filename": "WHO-World-Mental-Health-Report-2022.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO mhGAP Intervention Guide v2.0 2016",
+      "filename": "WHO-mhGAP-Intervention-Guide-v2.0-2016.pdf",
+      "url": ""
+    },
+    {
+      "title": "PAHO NCD Roadmap 2023 2030",
+      "filename": "PAHO-NCD-Roadmap-2023-2030.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO NCD Implementation Roadmap 2023 2030",
+      "filename": "WHO-NCD-Implementation-Roadmap-2023-2030.pdf",
+      "url": ""
+    },
+    {
+      "title": "FAO State Food Security Nutrition SOFI 2023",
+      "filename": "FAO-State-Food-Security-Nutrition-SOFI-2023.pdf",
+      "url": ""
+    },
+    {
+      "title": "Global Nutrition Report 2022",
+      "filename": "Global-Nutrition-Report-2022.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Double Burden Malnutrition Policy Brief 2017",
+      "filename": "WHO-Double-Burden-Malnutrition-Policy-Brief-2017.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Essential Nutrition Actions 2nd ed",
+      "filename": "WHO-Essential-Nutrition-Actions-2nd-ed.pdf",
+      "url": ""
+    },
+    {
+      "title": "Quadripartite One Health Joint Plan of Action 2022 2026",
+      "filename": "Quadripartite-One-Health-Joint-Plan-of-Action-2022-2026.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Critically Important Antimicrobials 6th 2019",
+      "filename": "WHO-Critically-Important-Antimicrobials-6th-2019.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Global Action Plan AMR 2015",
+      "filename": "WHO-Global-Action-Plan-AMR-2015.pdf",
+      "url": ""
+    },
+    {
+      "title": "WOAH Implementing Global AMR Action Plan 2024",
+      "filename": "WOAH-Implementing-Global-AMR-Action-Plan-2024.pdf",
+      "url": ""
+    },
+    {
+      "title": "Marmot Fair Society Healthy Lives Review 2010",
+      "filename": "Marmot-Fair-Society-Healthy-Lives-Review-2010.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO CSDH Commission Final Report 2008",
+      "filename": "WHO-CSDH-Commission-Final-Report-2008.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO World Report Social Determinants 2025",
+      "filename": "WHO-World-Report-Social-Determinants-2025.pdf",
+      "url": ""
+    }
+  ]
+}
