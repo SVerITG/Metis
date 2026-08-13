@@ -137,7 +137,8 @@ async def install_background_pack(slug: str, confirm: bool = False) -> list[Text
         return [TextContent(type="text", text=f"No pack called '{slug}'. Try list_background_packs().")]
 
     sources = [s for s in (pack.get("sources") or []) if isinstance(s, dict)]
-    folder = (pack.get("folder") or f"open-access-books/{slug}").strip("/")
+    folders = [f.strip("/") for f in (pack.get("folders") or []) if str(f).strip()]
+    folder = (folders[0] if folders else (pack.get("folder") or f"open-access-books/{slug}")).strip("/")
     target = paths.root / "knowledge" / "library" / folder
 
     bad = [s for s in sources if not str(s.get("url", "")).startswith(_ALLOWED_SCHEMES)]
@@ -213,9 +214,10 @@ async def install_background_pack(slug: str, confirm: bool = False) -> list[Text
                 "INSERT OR IGNORE INTO knowledge_databases "
                 "(slug, name, description, layer, color, folders) VALUES (?,?,?,?,?,?)",
                 (slug, pack.get("name", slug), pack.get("description", ""), 5,
-                 pack.get("color", "#7a8b99"), folder),
+                 pack.get("color", "#7a8b99"), "\n".join(folders or [folder])),
             )
-            con.execute("UPDATE knowledge_databases SET folders=? WHERE slug=?", (folder, slug))
+            con.execute("UPDATE knowledge_databases SET folders=? WHERE slug=?",
+                        ("\n".join(folders or [folder]), slug))
             con.commit()
     except Exception as exc:
         return [TextContent(type="text", text=f"Downloaded {got} file(s) but could not register the layer: {exc}")]
@@ -263,26 +265,33 @@ async def export_background_pack(database: str, out_dir: str = "") -> list[TextC
     # `folders` column, which is empty for them. Guessing "open-access-books/<slug>"
     # produced `open-access-books/ntd` for a layer whose real folder is
     # `open-access-books/NTDs` — a manifest that looks right and installs nothing.
-    folder = ""
+    # ALL folders, not just the first. ph-background spans 15 topic folders
+    # (Health Systems, Governance, Equity, NCDs, …) and taking `[0]` produced a
+    # manifest that claimed to be the public-health background while describing one
+    # fifteenth of it — a pack that installs a sliver and looks complete.
+    folders: list[str] = []
     if row["folders"]:
-        folder = row["folders"].splitlines()[0].strip()
+        folders = [f.strip() for f in row["folders"].splitlines() if f.strip()]
     else:
         try:
             from metis_mcp.tools.knowledge_db import BUILTIN_DATABASES
 
             for b in BUILTIN_DATABASES:
                 if b["slug"] == database and b.get("folders"):
-                    folder = b["folders"][0]
+                    folders = list(b["folders"])
                     break
         except Exception:
             pass
-    folder = folder or f"open-access-books/{database}"
+    folders = folders or [f"open-access-books/{database}"]
     manifest = {
         "slug": row["slug"],
         "name": row["name"],
         "version": "1.0.0",
         "description": row["description"] or "",
-        "folder": folder,
+        # `folder` stays for single-folder packs (installers read it); `folders`
+        # carries the full set so a multi-topic layer round-trips intact.
+        "folder": folders[0],
+        "folders": folders,
         "sources": [{"title": Path(d).stem.replace("-", " ").replace("_", " ")[:120],
                      "filename": Path(d).name, "url": ""} for d in sorted(docs)],
     }

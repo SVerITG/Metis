@@ -1,0 +1,113 @@
+{
+  "slug": "epi-methods",
+  "name": "Epidemiology & Methods",
+  "version": "1.0.0",
+  "description": "Methods layer: epidemiology foundations, biostatistics, spatial epidemiology, multilevel models, research methods, field epidemiology, scientific writing.",
+  "folder": "open-access-books/Epidemiology & Methods",
+  "folders": [
+    "open-access-books/Epidemiology & Methods",
+    "open-access-books/Biostatistics & Methods",
+    "open-access-books/Spatial Epidemiology",
+    "open-access-books/Research Methods & Writing",
+    "open-access-books/Field Epidemiology",
+    "methods",
+    "concepts"
+  ],
+  "sources": [
+    {
+      "title": "Bates lme4 mixed models in r vignette",
+      "filename": "Bates-lme4-mixed-models-in-r-vignette.pdf",
+      "url": ""
+    },
+    {
+      "title": "Biostatistics for Epi PH using R",
+      "filename": "Biostatistics-for-Epi-PH-using-R.pdf",
+      "url": ""
+    },
+    {
+      "title": "Gelman BDA3 bayesian data analysis 3rd ed",
+      "filename": "Gelman-BDA3-bayesian-data-analysis-3rd-ed.pdf",
+      "url": ""
+    },
+    {
+      "title": "Leyland Multilevel Modelling Public Health 2020",
+      "filename": "Leyland-Multilevel-Modelling-Public-Health-2020.pdf",
+      "url": ""
+    },
+    {
+      "title": "LibreTexts Biostatistics Open Learning Textbook",
+      "filename": "LibreTexts-Biostatistics-Open-Learning-Textbook.pdf",
+      "url": ""
+    },
+    {
+      "title": "OpenIntro Statistics 4th ed",
+      "filename": "OpenIntro-Statistics-4th-ed.pdf",
+      "url": ""
+    },
+    {
+      "title": "CDC Principles Epidemiology SS1978 ArchiveMirror",
+      "filename": "CDC-Principles-Epidemiology-SS1978-ArchiveMirror.pdf",
+      "url": ""
+    },
+    {
+      "title": "Hernan Robins Causal Inference What If 2024",
+      "filename": "Hernan-Robins-Causal-Inference-What-If-2024.pdf",
+      "url": ""
+    },
+    {
+      "title": "STROBE Explanation Elaboration Vandenbroucke 2007",
+      "filename": "STROBE-Explanation-Elaboration-Vandenbroucke-2007.pdf",
+      "url": ""
+    },
+    {
+      "title": "STROBE Statement Observational Studies VonElm 2007",
+      "filename": "STROBE-Statement-Observational-Studies-VonElm-2007.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Basic Epidemiology 2nd ed Bonita 2006",
+      "filename": "WHO-Basic-Epidemiology-2nd-ed-Bonita-2006.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Basic Epidemiology 2nd ed",
+      "filename": "WHO-Basic-Epidemiology-2nd-ed.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO integrated disease surveillance response guide",
+      "filename": "WHO-integrated-disease-surveillance-response-guide.pdf",
+      "url": ""
+    },
+    {
+      "title": "CDC Guidelines Evaluating Surveillance Systems 2001",
+      "filename": "CDC-Guidelines-Evaluating-Surveillance-Systems-2001.pdf",
+      "url": ""
+    },
+    {
+      "title": "CIFOR Guidelines Foodborne Outbreak Response 3ed",
+      "filename": "CIFOR-Guidelines-Foodborne-Outbreak-Response-3ed.pdf",
+      "url": ""
+    },
+    {
+      "title": "CDC Framework Program Evaluation MMWR 1999",
+      "filename": "CDC-Framework-Program-Evaluation-MMWR-1999.pdf",
+      "url": ""
+    },
+    {
+      "title": "OECD DAC Evaluation Criteria Revised 2019",
+      "filename": "OECD-DAC-Evaluation-Criteria-Revised-2019.pdf",
+      "url": ""
+    },
+    {
+      "title": "PRISMA 2020 Statement BMJ",
+      "filename": "PRISMA-2020-Statement-BMJ.pdf",
+      "url": ""
+    },
+    {
+      "title": "SaTScan Tutorial NYSCancer",
+      "filename": "SaTScan-Tutorial-NYSCancer.pdf",
+      "url": ""
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "slug": "ntd",
+  "name": "Neglected Tropical Diseases",
+  "version": "1.0.0",
+  "description": "Specialist PH layer: neglected tropical disease program knowledge — WHO NTD roadmaps and targets, the global NTD report, malaria, and general HAT/sleeping-sickness awareness. The baseline NTD reference frame for the public-health edition.",
+  "folder": "open-access-books/NTDs",
+  "folders": [
+    "open-access-books/NTDs"
+  ],
+  "sources": [
+    {
+      "title": "DNDi Sleeping Sickness Factsheet 2022",
+      "filename": "DNDi-Sleeping-Sickness-Factsheet-2022.pdf",
+      "url": ""
+    },
+    {
+      "title": "Franco Monitoring HAT elimination update to 2016",
+      "filename": "Franco_Monitoring_HAT_elimination_update_to_2016.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO Global Report NTDs 2023",
+      "filename": "WHO-Global-Report-NTDs-2023.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO NTD Roadmap 2021 2030 Full",
+      "filename": "WHO-NTD-Roadmap-2021-2030-Full.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO NTD Roadmap Targets Summary 2021 2030",
+      "filename": "WHO-NTD-Roadmap-Targets-Summary-2021-2030.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO World Malaria Report 2023",
+      "filename": "WHO-World-Malaria-Report-2023.pdf",
+      "url": ""
+    },
+    {
+      "title": "WHO 3rd Stakeholders Meeting gHAT Elimination",
+      "filename": "WHO_3rd_Stakeholders_Meeting_gHAT_Elimination.pdf",
+      "url": ""
+    }
+  ]
+}
