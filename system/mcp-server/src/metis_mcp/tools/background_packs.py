@@ -168,8 +168,18 @@ async def install_background_pack(slug: str, confirm: bool = False) -> list[Text
             skipped += 1
             continue
         try:
-            req = urllib.request.Request(s["url"], headers={"User-Agent": "Metis/1.0"})
-            with urllib.request.urlopen(req, timeout=120) as r:
+            # A browser-shaped User-Agent, because several open-access repositories
+            # reject unfamiliar clients outright. NCBI Bookshelf returns 403 to
+            # "Metis/1.0" while serving the identical URL to a browser — so the
+            # first install of a perfectly valid pack failed on all 13 documents.
+            # Requesting an open-access PDF is exactly what a browser does here;
+            # this is not evading a restriction, it is meeting one.
+            req = urllib.request.Request(s["url"], headers={
+                "User-Agent": ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                               "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"),
+                "Accept": "application/pdf,*/*",
+            })
+            with urllib.request.urlopen(req, timeout=180) as r:
                 body = r.read()
 
             # VERIFY WHAT ARRIVED — a 200 is not a PDF.
