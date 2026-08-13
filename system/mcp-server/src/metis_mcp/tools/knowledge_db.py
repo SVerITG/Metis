@@ -399,11 +399,21 @@ def _collect_pdfs_for_db(db_slug: str) -> List[Path]:
         # content search while the dashboard happily reported the hat-specialist
         # layer as present (it had 10 books from a different folder). Library-root
         # first keeps every existing folder mapping resolving exactly as before.
-        d = lib / folder
-        if not d.exists():
-            candidate = paths.root / folder
-            if candidate.exists():
-                d = candidate
+        # Absolute path → use as given. The researcher's reference-manager library
+        # commonly lives OUTSIDE the Metis folder entirely (here: a Zotero library
+        # under OneDrive), and resolving only relative paths meant those PDFs could
+        # never belong to a layer. Measured 2026-08-13: 206 catalogued papers with
+        # metadata in the browser and no text in the corpus — visible as cards,
+        # unquotable in an answer.
+        fp = Path(folder).expanduser()
+        if fp.is_absolute():
+            d = fp
+        else:
+            d = lib / folder
+            if not d.exists():
+                candidate = paths.root / folder
+                if candidate.exists():
+                    d = candidate
         if d.exists():
             pdfs.extend(sorted(d.rglob("*.pdf")))
     return pdfs
@@ -425,7 +435,11 @@ def _relative_source(pdf_path: Path, lib_root: Path) -> str:
             return str(pdf_path.relative_to(base))
         except ValueError:
             continue
-    return str(pdf_path)
+    # Outside both roots (an external reference-manager library): keep the last two
+    # path segments, so the identifier stays readable and stable rather than being a
+    # full absolute path that changes between machines.
+    parts = pdf_path.parts
+    return "/".join(parts[-2:]) if len(parts) >= 2 else str(pdf_path)
 
 
 def pending_pdf_count(db_slug: str) -> int:
