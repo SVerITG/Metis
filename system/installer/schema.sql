@@ -728,7 +728,25 @@ CREATE TABLE IF NOT EXISTS session_summaries (
     summary    TEXT NOT NULL,
     key_topics TEXT,
     decisions  TEXT,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    -- Five Today-surface queries filter on `archived` and the column never
+    -- existed, so each raised "no such column", db_query swallowed it, and four
+    -- panels rendered nothing while 716 summaries and 2,036 episodic memories sat
+    -- in the tables. Same shape as the missing tasks.priority. Added 2026-08-12.
+    archived   INTEGER DEFAULT 0
+);
+
+-- episodic_memory is created by the MCP server (tools/observation.py), not here,
+-- but the dashboard filters it on `archived` too. Declared so the migration adds
+-- the column regardless of which process created the table first.
+CREATE TABLE IF NOT EXISTS episodic_memory (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT,
+    event_type TEXT,
+    content    TEXT,
+    metadata   TEXT,
+    created_at TEXT,
+    archived   INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS speakers (

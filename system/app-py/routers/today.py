@@ -4083,14 +4083,27 @@ async def today_brief_bridges(request: Request):
         if len(s) < 15:
             continue
         lower = s.lower()
-        if any(t in lower for t in research_terms):
-            key_phrases.append(s[:120])
+        hit = next((t for t in research_terms if t in lower), None)
+        if hit:
+            # Keep the TERM that made this sentence relevant, alongside the
+            # sentence itself. The term is what memory can actually be searched
+            # on; the sentence is only what the reader is shown.
+            key_phrases.append((hit, s[:120]))
         if len(key_phrases) >= 3:
             break
 
-    # For each key phrase, search episodic+semantic memory for connections
-    for phrase in key_phrases:
-        like = f"%{phrase[:40]}%"
+    # For each key phrase, search episodic+semantic memory for connections.
+    #
+    # Search on the TERM, not the sentence. This previously built its query as
+    # `%{phrase[:40]}%` — the first 40 characters of a whole sentence, matched as a
+    # literal substring — so it looked for things like
+    #   %The humanitarian crisis in Central African%
+    # in episodic memory. Nothing there contains verbatim sentences from today's
+    # brief, so the panel could never produce a single bridge, however much memory
+    # existed. It identified the term that made the sentence relevant and then threw
+    # it away. (Found 2026-08-12: "surveillance" alone matches 21 episodic rows.)
+    for term, phrase in key_phrases:
+        like = f"%{term}%"
         # Check if we have related episodic memories
         try:
             matches = db_query(
