@@ -45,7 +45,9 @@ CREATE TABLE IF NOT EXISTS library_fulltext (
 def _ensure_table():
     if not paths.db.exists():
         return
-    with sqlite3.connect(str(paths.db)) as conn:
+    # timeout=60: this walks the whole library, so it must outwait a dashboard
+    # write rather than abandon the run. See _connect() in knowledge_db.py.
+    with sqlite3.connect(str(paths.db), timeout=60.0) as conn:
         conn.execute(_DDL)
         # Also add abstract column to literature_metadata if missing
         try:
@@ -228,7 +230,9 @@ async def index_pdf_library(scope: str = "all") -> list[TextContent]:
             "then call index_pdf_library again."
         )]
 
-    with sqlite3.connect(str(paths.db)) as conn:
+    # timeout=60: this walks the whole library, so it must outwait a dashboard
+    # write rather than abandon the run. See _connect() in knowledge_db.py.
+    with sqlite3.connect(str(paths.db), timeout=60.0) as conn:
         conn.execute(_DDL)
         if scope in ("all", "literature") and lit_root.exists():
             _index_directory(lit_root, conn, stats)
@@ -279,7 +283,9 @@ async def search_fulltext(query: str, max_results: int = 10) -> list[TextContent
     for w in words:
         params += [f"%{w}%", f"%{w}%"]
 
-    with sqlite3.connect(str(paths.db)) as conn:
+    # timeout=60: this walks the whole library, so it must outwait a dashboard
+    # write rather than abandon the run. See _connect() in knowledge_db.py.
+    with sqlite3.connect(str(paths.db), timeout=60.0) as conn:
         conn.row_factory = sqlite3.Row
         _ensure_table()
         cur = conn.execute(
