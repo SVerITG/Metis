@@ -15,7 +15,18 @@ THE SHAPE (owner's decision, 2026-08-12)
     ships with no backgrounds at all (P4.6) and needs a way to gain one.
 
     backgrounds/<slug>/pack.json
-      { slug, name, version, description, folder, sources: [ {title, url, filename} ] }
+      { slug, name, version, description, folder, sources: [ ... ] }
+
+    A source is one of two kinds:
+      {title, url, filename}                     — fetched on install
+      {title, access: "manual", doi|isbn, note}  — named, never fetched
+
+    The second kind exists because most fields have a canonical text that no script
+    can retrieve: the publisher gates it behind a browser check, or it is behind an
+    institutional subscription. Omitting those would make a pack quietly claim the
+    field is covered by whatever was downloadable. Instead they are written to
+    `_TO-OBTAIN.md` inside the target folder, with DOIs. Because a layer indexes its
+    FOLDER, a PDF dropped in later needs no re-install and no manifest edit.
 
     `folder` is relative to knowledge/library/, so an installed pack lands beside
     the layers that are already there and is indexed by exactly the same path.
@@ -141,7 +152,17 @@ async def install_background_pack(slug: str, confirm: bool = False) -> list[Text
     folder = (folders[0] if folders else (pack.get("folder") or f"open-access-books/{slug}")).strip("/")
     target = paths.root / "knowledge" / "library" / folder
 
-    bad = [s for s in sources if not str(s.get("url", "")).startswith(_ALLOWED_SCHEMES)]
+    # A pack has two kinds of source. Most are open-access URLs Metis fetches.
+    # The rest are `access: "manual"` — a canonical text that exists but cannot be
+    # fetched by a script: it is behind a publisher's browser check, or behind an
+    # institutional subscription. Those are named, never fetched, and handed back
+    # as a shopping list. This is what keeps a pack honest: a background whose
+    # field has a standard textbook should SAY so and stay redistributable,
+    # rather than quietly substituting whatever happened to be downloadable.
+    manual = [s for s in sources if s.get("access") == "manual" or not s.get("url")]
+    fetchable = [s for s in sources if s not in manual]
+
+    bad = [s for s in fetchable if not str(s.get("url", "")).startswith(_ALLOWED_SCHEMES)]
     if bad:
         return [TextContent(type="text", text=(
             f"Refused: '{slug}' contains {len(bad)} source(s) that are not plain http(s) links. "
@@ -149,19 +170,25 @@ async def install_background_pack(slug: str, confirm: bool = False) -> list[Text
         ))]
 
     if not confirm:
-        hosts = sorted({re.sub(r"^https?://([^/]+).*", r"\1", s["url"]) for s in sources})
-        lines = [f"**{pack.get('name', slug)}** v{pack.get('version','?')} — {len(sources)} document(s)",
-                 f"Downloads to `knowledge/library/{folder}/` from: {', '.join(hosts)}", ""]
-        for s in sources[:20]:
+        hosts = sorted({re.sub(r"^https?://([^/]+).*", r"\1", s["url"]) for s in fetchable})
+        lines = [f"**{pack.get('name', slug)}** v{pack.get('version','?')} — "
+                 f"{len(fetchable)} document(s) to download"
+                 + (f", {len(manual)} you obtain yourself" if manual else ""),
+                 f"Downloads to `knowledge/library/{folder}/`"
+                 + (f" from: {', '.join(hosts)}" if hosts else ""), ""]
+        for s in fetchable[:20]:
             lines.append(f"- {s.get('title') or s.get('filename')}")
-        if len(sources) > 20:
-            lines.append(f"- …and {len(sources)-20} more")
+        if len(fetchable) > 20:
+            lines.append(f"- …and {len(fetchable)-20} more")
+        if manual:
+            lines += ["", f"**Not downloadable ({len(manual)})** — needs your library login or a browser:"]
+            lines += [f"- {s.get('title')}" + (f" · {s['doi']}" if s.get("doi") else "") for s in manual[:20]]
         lines += ["", f"To go ahead: install_background_pack('{slug}', confirm=True)"]
         return [TextContent(type="text", text="\n".join(lines))]
 
     target.mkdir(parents=True, exist_ok=True)
     got, failed, skipped = 0, [], 0
-    for s in sources:
+    for s in fetchable:
         name = s.get("filename") or Path(s["url"]).name or "document.pdf"
         dest = target / re.sub(r"[^\w.\- ]", "_", name)
         if dest.exists() and dest.stat().st_size > 0:
@@ -204,13 +231,34 @@ async def install_background_pack(slug: str, confirm: bool = False) -> list[Text
             dest.unlink(missing_ok=True)
             failed.append(f"{name}: {exc}")
 
+    # The shopping list lives IN the folder it refers to, not in the chat reply that
+    # scrolls away. Drop a PDF beside it and the layer picks it up on the next index —
+    # no re-install, no manifest edit, because the layer indexes the folder.
+    if manual:
+        lines = [f"# {pack.get('name', slug)} — still to obtain", "",
+                 "These are standard texts for this field that a script cannot fetch: the",
+                 "publisher requires a browser, or your institution's subscription.",
+                 "Save each PDF into **this folder**. It will be indexed automatically",
+                 "on the next rebuild — nothing else to do.", ""]
+        for s in manual:
+            lines.append(f"- **{s.get('title','?')}**")
+            if s.get("doi"):
+                lines.append(f"  - DOI: `{s['doi']}` · https://doi.org/{s['doi']}")
+            if s.get("isbn"):
+                lines.append(f"  - ISBN: `{s['isbn']}`")
+            if s.get("note"):
+                lines.append(f"  - {s['note']}")
+        (target / "_TO-OBTAIN.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
     if got == 0 and skipped == 0:
         # Registering a layer with nothing in it would put an empty background on
         # the Library surface and schedule a nightly index of no documents — a
         # feature that looks installed and is not. Fail visibly instead.
         return [TextContent(type="text", text="\n".join(
-            [f"Could not install **{pack.get('name', slug)}** — none of its {len(sources)} "
-             f"document(s) could be downloaded, so no layer was created.", ""]
+            [f"Could not install **{pack.get('name', slug)}** — none of its {len(fetchable)} "
+             f"downloadable document(s) could be fetched, so no layer was created."
+             + (f" ({len(manual)} manual entries were listed in "
+                f"`knowledge/library/{folder}/_TO-OBTAIN.md`.)" if manual else ""), ""]
             + [f"- {f}" for f in failed[:10]]
             + ["", "The links in `backgrounds/" + slug + "/pack.json` may have moved. "
                "Fix them there and try again."]
@@ -239,6 +287,10 @@ async def install_background_pack(slug: str, confirm: bool = False) -> list[Text
            "It will be indexed by tonight's background index, or press Rebuild on the Library surface to do it now."]
     if failed:
         msg += ["", "Could not fetch:"] + [f"- {f}" for f in failed[:10]]
+    if manual:
+        msg += ["", f"**{len(manual)} text(s) you need to fetch yourself** — listed with DOIs in "
+                    f"`knowledge/library/{folder}/_TO-OBTAIN.md`. Save the PDFs into that same "
+                    f"folder and they join the layer on the next rebuild."]
     return [TextContent(type="text", text="\n".join(msg))]
 
 
