@@ -1900,13 +1900,26 @@ def _build_claude_md(prefs: dict) -> str:
     interests = prefs.get("interests") or []
     news_topics = prefs.get("news_topics") or []
     rc_root = os.environ.get("METIS_RC_ROOT", "")
+    # The REAL database path, resolved, not assumed.
+    #
+    # This generator hardcoded `{rc_root}/system/app/data/metis.sqlite` — the
+    # OneDrive location the live DB was moved OFF in June 2026 because OneDrive
+    # sync corrupts SQLite's WAL sidecars. That file does not exist. The generated
+    # CLAUDE.md is read by every future Claude session, so the wrong path did not
+    # just sit in a file: it propagated as a fact into every conversation, and
+    # anyone backing up "the database" from it would have backed up nothing.
+    try:
+        from db import get_db_path
+        db_display = str(get_db_path())
+    except Exception:
+        db_display = str(Path.home() / ".local" / "share" / "metis" / "metis.sqlite")
     interests_str = ", ".join(interests) if interests else "(not set)"
     news_str = ", ".join(news_topics) if news_topics else "(not set)"
     return f"""# Metis — Global Claude Code Configuration
 
 **Owner:** {name}
 **Research Cortex root:** `{rc_root}/`
-**Database:** `{rc_root}/system/app/data/metis.sqlite`
+**Database:** `{db_display}`
 
 ---
 

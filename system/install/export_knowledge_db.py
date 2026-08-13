@@ -29,15 +29,39 @@ from pathlib import Path
 
 
 def resolve_source(override: str | None) -> Path:
+    """Resolve the LIVE database, the same way every other component does.
+
+    This used to hardcode `system/app/data/metis.sqlite` — the OneDrive mirror the
+    live DB was moved OFF in June 2026, because OneDrive sync corrupts SQLite's WAL
+    sidecars. That path no longer exists on this machine, and `sqlite3.connect()`
+    CREATES a database at a missing path rather than failing, so an export would
+    have silently produced an empty file and reported success. A knowledge pack
+    that installs nothing is worse than a failed export.
+
+    Order matches metis_mcp.config.resolve_live_db and app-py/db.get_db_path:
+    an explicit override, then METIS_DB, then METIS_DATA_DIR, then the canonical
+    ~/.local/share/metis/. The legacy locations are consulted only as a read-only
+    fallback for a machine that has not migrated yet.
+    """
     if override:
         return Path(override)
+
+    explicit = os.environ.get("METIS_DB", "")
+    if explicit:
+        return Path(explicit)
+
+    data_dir = os.environ.get("METIS_DATA_DIR", "")
+    canonical = (Path(data_dir) if data_dir else Path.home() / ".local" / "share" / "metis") / "metis.sqlite"
+    if canonical.is_file() and canonical.stat().st_size > 0:
+        return canonical
+
     root_env = os.environ.get("METIS_RC_ROOT", "")
-    if root_env:
-        return Path(root_env) / "system" / "app" / "data" / "metis.sqlite"
-    # Fallback: infer from script location (metis/system/install/ → metis/)
-    script_dir = Path(__file__).resolve().parent
-    metis_root = script_dir.parent.parent  # metis/system/install → metis
-    return metis_root / "system" / "app" / "data" / "metis.sqlite"
+    root = Path(root_env) if root_env else Path(__file__).resolve().parent.parent.parent
+    for legacy in (root / "system" / "app" / "data" / "metis.sqlite",
+                   root / "system" / "app-py" / "data" / "metis.sqlite"):
+        if legacy.is_file() and legacy.stat().st_size > 0:
+            return legacy
+    return canonical          # report the canonical path in the error, not a legacy one
 
 
 def table_exists(conn: sqlite3.Connection, name: str) -> bool:
