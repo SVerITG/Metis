@@ -1,0 +1,91 @@
+{
+  "slug": "ph-foundations",
+  "name": "Public Health Foundations (books)",
+  "version": "1.0.0",
+  "description": "The textbook layer for a public health / global health expert: health policy and governance, health economics and financing, health systems and primary care, quality, equity and the social determinants, preparedness and resilience. Complements ph-background (WHO reports and guidelines) and epi-methods (quantitative methodology). All open access, CC-licensed.",
+  "folder": "open-access-books/PH Foundations",
+  "folders": [
+    "open-access-books/PH Foundations"
+  ],
+  "color": "#3f7d8c",
+  "sources": [
+    {
+      "title": "Disease Control Priorities 3rd ed, Vol 9 — Improving Health and Reducing Poverty",
+      "filename": "NBK525289_Disease_Control_Priorities_3rd_ed,_Vol_9.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK525289/pdf/Bookshelf_NBK525289.pdf",
+      "note": "Health economics, cost-effectiveness analysis and priority setting: the reference volume for deciding what a health system should buy."
+    },
+    {
+      "title": "Organization and Financing of Public Health Services in Europe",
+      "filename": "NBK535724_Organization_and_Financing_of_Public_Health_Services_in_Euro.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK535724/pdf/Bookshelf_NBK535724.pdf",
+      "note": "How public health is funded, organised and delivered across European systems."
+    },
+    {
+      "title": "Implementing the Primary Health Care Approach: A Primer",
+      "filename": "NBK618500_Implementing_the_Primary_Health_Care_Approach:_A_Primer.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK618500/pdf/Bookshelf_NBK618500.pdf",
+      "note": "WHO/Observatory primer on the PHC approach — the organising model of modern health systems."
+    },
+    {
+      "title": "Improving Healthcare Quality in Europe",
+      "filename": "NBK549276_Improving_Healthcare_Quality_in_Europe.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK549276/pdf/Bookshelf_NBK549276.pdf",
+      "note": "Quality strategies, their effectiveness and how they are implemented."
+    },
+    {
+      "title": "Everything You Always Wanted to Know About European Union Health Policy",
+      "filename": "NBK590181_Everything_You_Always_Wanted_to_Know_About_European_Union_He.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK590181/pdf/Bookshelf_NBK590181.pdf",
+      "note": "Health policy-making, governance and law at supranational level."
+    },
+    {
+      "title": "The Role of Public Health Organizations in Addressing Public Health Problems in Europe",
+      "filename": "NBK536190_The_Role_of_Public_Health_Organizations_in_Addressing_Public.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK536190/pdf/Bookshelf_NBK536190.pdf",
+      "note": "Institutional design and the essential public health functions."
+    },
+    {
+      "title": "Economic Crisis, Health Systems and Health in Europe: Country Experience",
+      "filename": "NBK447858_Economic_Crisis,_Health_Systems_and_Health_in_Europe:_Countr.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK447858/pdf/Bookshelf_NBK447858.pdf",
+      "note": "Health system resilience and the health effects of austerity — natural-experiment evidence."
+    },
+    {
+      "title": "Trends in Health Systems in the Former Soviet Countries",
+      "filename": "NBK458305_Trends_in_Health_Systems_in_the_Former_Soviet_Countries.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK458305/pdf/Bookshelf_NBK458305.pdf",
+      "note": "Comparative health system transition across a whole region."
+    },
+    {
+      "title": "Civil Society and Health: Contributions and Potential",
+      "filename": "NBK459044_Civil_Society_and_Health:_Contributions_and_Potential.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK459044/pdf/Bookshelf_NBK459044.pdf",
+      "note": "Civil society, participation and accountability in health."
+    },
+    {
+      "title": "The Future of the Public's Health in the 21st Century",
+      "filename": "NBK221239_The_Future_of_the_Public's_Health_in_the_21st_Century.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK221239/pdf/Bookshelf_NBK221239.pdf",
+      "note": "IOM's foundational statement of the population-health framework and its determinants."
+    },
+    {
+      "title": "Vibrant and Healthy Kids: Aligning Science, Practice and Policy to Advance Health Equity",
+      "filename": "NBK551486_Vibrant_and_Healthy_Kids:_Aligning_Science,_Practice_and_Pol.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK551486/pdf/Bookshelf_NBK551486.pdf",
+      "note": "Health equity and the life-course/social-determinants evidence base."
+    },
+    {
+      "title": "Evidence-Based Practice for Public Health Emergency Preparedness and Response",
+      "filename": "NBK563990_Evidence-Based_Practice_for_Public_Health_Emergency_Prepared.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK563990/pdf/Bookshelf_NBK563990.pdf",
+      "note": "Preparedness, response and the evidence behind emergency public health."
+    },
+    {
+      "title": "Healthy, Resilient, and Sustainable Communities After Disasters",
+      "filename": "NBK316532_Healthy,_Resilient,_and_Sustainable_Communities_After_Disast.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK316532/pdf/Bookshelf_NBK316532.pdf",
+      "note": "Recovery, resilience and community health systems."
+    }
+  ]
+}
