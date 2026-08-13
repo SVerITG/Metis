@@ -1106,3 +1106,191 @@ async def export_citations(
         f"Import into Word (via Zotero/Mendeley), Overleaf, or any reference manager.\n\n"
         f"Preview:\n{preview}"
     ))]
+
+
+# ── Zotero → knowledge layer ──────────────────────────────────────────────────
+#
+# WHY THIS EXISTS
+#   A background pack can only ship URLs that any machine can fetch. Every field
+#   has canonical texts that fails that test — behind a publisher's browser check
+#   or an institutional subscription. Those are declared `access: "manual"` in the
+#   manifest and listed in _TO-OBTAIN.md, which leaves the researcher copying PDFs
+#   by hand into the right folder.
+#
+#   Zotero already solves the hard half. Saving with the browser connector while
+#   logged in through an institution puts BOTH the citation and the PDF on disk.
+#   This bridges the last step: it copies a collection's attachment PDFs into a
+#   knowledge layer's folder, where the existing folder-based indexer finds them.
+#
+#   No API key. It reads zotero.sqlite directly, like sync_zotero_local — the
+#   Zotero web API key on this install is read-only (403 on write) and an
+#   institutional PDF is not on the web API anyway; it is local to the machine
+#   that downloaded it.
+
+
+def _layer_folder(database: str) -> "tuple[Path | None, str]":
+    """Resolve a knowledge layer's on-disk folder, or (None, reason)."""
+    try:
+        with connect(paths.db) as con:
+            row = con.execute(
+                "SELECT name, folders FROM knowledge_databases WHERE slug = ?", (database,)
+            ).fetchone()
+    except Exception as exc:
+        return None, f"could not read the knowledge layers: {exc}"
+    if not row:
+        return None, f"no knowledge layer called '{database}'"
+    folders = [f.strip("/") for f in str(row[1] or "").splitlines() if f.strip()]
+    if not folders:
+        # The built-in layers (ph-background, epi-methods, hat-specialist, ntd)
+        # carry an EMPTY folders column — the indexer resolves them from a
+        # hardcoded table instead. Reading only the column made this tool refuse
+        # every layer that shipped with Metis, which is most of them. Ask the same
+        # source of truth the indexer uses, so a file copied here is a file indexed.
+        try:
+            from metis_mcp.tools.knowledge_db import BUILTIN_DATABASES
+            d = next((b for b in BUILTIN_DATABASES if b["slug"] == database), None)
+            folders = [f.strip("/") for f in (d or {}).get("folders", []) if str(f).strip()]
+        except Exception:
+            folders = []
+    if not folders:
+        # Guessing a folder here is how a previous bug wrote into a directory the
+        # layer does not index — silently, and looking like it worked.
+        return None, (f"the layer '{database}' has no folder recorded, so there is "
+                      f"nowhere safe to put the files")
+    first = Path(folders[0]).expanduser()
+    return (first if first.is_absolute() else paths.library / folders[0]), row[0]
+
+
+def _zotero_collection_pdfs(zdb: str, collection: str) -> "tuple[list[tuple[str, Path]], list[str]]":
+    """Return [(display_title, source_path)] for PDFs in a collection, plus all collection names."""
+    import shutil
+    import tempfile
+
+    tmp = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
+    tmp.close()
+    storage = Path(zdb).parent / "storage"
+    try:
+        shutil.copy2(zdb, tmp.name)  # Zotero holds a lock while running
+        zc = sqlite3.connect(f"file:{tmp.name}?mode=ro", uri=True)
+        zc.row_factory = sqlite3.Row
+        names = [r[0] for r in zc.execute("SELECT collectionName FROM collections ORDER BY 1")]
+
+        # An attachment is usually a CHILD of the item that sits in the collection,
+        # but it can also be filed directly. Both are matched, hence the OR.
+        rows = zc.execute(
+            """
+            SELECT ai.key AS akey, ia.path AS path,
+                   COALESCE(idv.value, ia.path) AS title
+            FROM collections co
+            JOIN collectionItems ci ON ci.collectionID = co.collectionID
+            JOIN itemAttachments ia ON ia.parentItemID = ci.itemID OR ia.itemID = ci.itemID
+            JOIN items ai           ON ai.itemID = ia.itemID
+            LEFT JOIN itemData idata ON idata.itemID = ci.itemID
+            LEFT JOIN fields f       ON f.fieldID = idata.fieldID AND f.fieldName = 'title'
+            LEFT JOIN itemDataValues idv ON idv.valueID = idata.valueID AND f.fieldID IS NOT NULL
+            WHERE co.collectionName = ?
+              AND ia.contentType = 'application/pdf'
+              AND ia.path LIKE 'storage:%'
+            """,
+            (collection,),
+        ).fetchall()
+        zc.close()
+    finally:
+        os.unlink(tmp.name)
+
+    out, seen = [], set()
+    for r in rows:
+        fname = r["path"].split("storage:", 1)[1]
+        src = storage / r["akey"] / fname
+        if src in seen or not src.exists():
+            continue
+        seen.add(src)
+        out.append((str(r["title"] or fname), src))
+    return out, names
+
+
+@app.tool()
+async def import_zotero_pdfs(
+    collection: str,
+    database: str,
+    confirm: bool = False,
+) -> list[TextContent]:
+    """Copy the PDFs from a Zotero collection into a knowledge layer, so they get indexed.
+
+    For texts a background pack cannot download — anything behind a publisher's
+    browser check or your institution's subscription. Save them in Zotero with the
+    browser connector (logged in through your library), then point this at the
+    collection. No Zotero API key needed; it reads your local Zotero database.
+
+    The files are COPIED, so your Zotero library is left untouched. Indexing is not
+    run here — press Rebuild on the Library surface, or wait for the nightly index.
+
+    Args:
+        collection: Zotero collection name, exactly as it appears in Zotero.
+        database:   Slug of the knowledge layer to add them to (e.g. 'ph-foundations').
+        confirm:    True to actually copy. Without it you get the list only.
+    """
+    zdb = _find_local_zotero_db()
+    if not zdb:
+        return [TextContent(type="text", text=(
+            "Could not find your Zotero database. In Zotero, look under "
+            "Settings → Advanced → Data Directory Location, then pass that folder's "
+            "zotero.sqlite to sync_zotero_local() once so I know where it lives."
+        ))]
+
+    target, layer_name = _layer_folder(database)
+    if target is None:
+        return [TextContent(type="text", text=f"Cannot import: {layer_name}.")]
+
+    try:
+        pdfs, names = _zotero_collection_pdfs(zdb, collection)
+    except Exception as exc:
+        return [TextContent(type="text", text=f"Could not read Zotero: {exc}")]
+
+    if not pdfs:
+        hint = ""
+        if collection not in names:
+            close = [n for n in names if collection.lower() in n.lower()][:5]
+            hint = (f" There is no collection called '{collection}'."
+                    + (f" Did you mean: {', '.join(close)}?" if close else
+                       f" Collections found: {', '.join(names[:12])}"))
+        return [TextContent(type="text", text=(
+            f"No PDF attachments found in '{collection}'.{hint}"))]
+
+    if not confirm:
+        lines = [f"**{len(pdfs)} PDF(s)** in Zotero collection *{collection}* would be copied into "
+                 f"**{layer_name}** (`{target}`):", ""]
+        lines += [f"- {t[:90]}" for t, _ in pdfs[:20]]
+        if len(pdfs) > 20:
+            lines.append(f"- …and {len(pdfs)-20} more")
+        lines += ["", f"To go ahead: import_zotero_pdfs('{collection}', '{database}', confirm=True)"]
+        return [TextContent(type="text", text="\n".join(lines))]
+
+    import shutil
+    target.mkdir(parents=True, exist_ok=True)
+    copied, skipped, failed = 0, 0, []
+    for title, src in pdfs:
+        dest = target / re.sub(r"[^\w.\- ]", "_", src.name)
+        if dest.exists() and dest.stat().st_size > 0:
+            skipped += 1
+            continue
+        try:
+            # Same rule as the pack installer: verify it IS a PDF. A Zotero
+            # attachment can be a stub saved when a download failed, and an
+            # HTML error page indexed as a book is worse than a missing book.
+            with open(src, "rb") as fh:
+                if fh.read(5) != b"%PDF-":
+                    raise OSError("not a PDF (Zotero may have saved a failed download)")
+            shutil.copy2(src, dest)
+            copied += 1
+        except Exception as exc:
+            failed.append(f"{title[:60]}: {exc}")
+
+    msg = [f"Copied **{copied}** PDF(s) from *{collection}* into **{layer_name}**"
+           + (f", {skipped} already there" if skipped else "")
+           + (f", {len(failed)} failed" if failed else "") + ".",
+           f"Folder: `{target}`",
+           "Press Rebuild on the Library surface to index them now, or leave it for tonight."]
+    if failed:
+        msg += ["", "Could not copy:"] + [f"- {f}" for f in failed[:10]]
+    return [TextContent(type="text", text="\n".join(msg))]
