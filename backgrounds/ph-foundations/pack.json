@@ -1,7 +1,7 @@
 {
   "slug": "ph-foundations",
   "name": "Public Health Foundations (books)",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "The textbook layer for a public health / global health expert: health policy and governance, health economics and financing, health systems and primary care, quality, equity and the social determinants, health promotion and behaviour change, qualitative methods, public health ethics, demography, preparedness and resilience. Complements ph-background (WHO reports and guidelines) and epi-methods (quantitative methodology). Most sources are open access; a few canonical texts are listed for you to obtain via your own library and drop into the folder.",
   "folder": "open-access-books/PH Foundations",
   "folders": [
@@ -121,6 +121,309 @@
       "access": "manual",
       "isbn": "9781557864512",
       "note": "Formal demography: life tables, standardisation, fertility and mortality measures, population projection, stable population theory — the arithmetic behind every denominator in public health."
+    },
+    {
+      "title": "Disease Control Priorities 3rd ed, Vol 1 — Essential Surgery",
+      "filename": "NBK333500_Disease_Control_Priorities_3rd_ed,_Vol_1_—_Essential_Surgery.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK333500/pdf/Bookshelf_NBK333500.pdf",
+      "note": "Surgical care as a public health intervention: burden, cost-effectiveness, task-sharing."
+    },
+    {
+      "title": "Disease Control Priorities 3rd ed, Vol 2 — Reproductive, Maternal, Newborn and Child Health",
+      "filename": "NBK361907_Disease_Control_Priorities_3rd_ed,_Vol_2_—_Reproductive,_Mat.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK361907/pdf/Bookshelf_NBK361907.pdf",
+      "note": "RMNCH interventions, packages and their cost-effectiveness."
+    },
+    {
+      "title": "Disease Control Priorities 3rd ed, Vol 3 — Cancer",
+      "filename": "NBK343628_Disease_Control_Priorities_3rd_ed,_Vol_3_—_Cancer.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK343628/pdf/Bookshelf_NBK343628.pdf",
+      "note": "Cancer control in low- and middle-income settings."
+    },
+    {
+      "title": "Disease Control Priorities 3rd ed, Vol 4 — Mental, Neurological and Substance Use Disorders",
+      "filename": "NBK361945_Disease_Control_Priorities_3rd_ed,_Vol_4_—_Mental,_Neurologi.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK361945/pdf/Bookshelf_NBK361945.pdf",
+      "note": "The most-neglected NCD group; treatment gap and scalable packages."
+    },
+    {
+      "title": "Disease Control Priorities 3rd ed, Vol 5 — Cardiovascular, Respiratory and Related Disorders",
+      "filename": "NBK525151_Disease_Control_Priorities_3rd_ed,_Vol_5_—_Cardiovascular,_R.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK525151/pdf/Bookshelf_NBK525151.pdf",
+      "note": "The main NCD burden: risk factors, population and clinical interventions."
+    },
+    {
+      "title": "Disease Control Priorities 3rd ed, Vol 6 — Major Infectious Diseases",
+      "filename": "NBK525192_Disease_Control_Priorities_3rd_ed,_Vol_6_—_Major_Infectious_.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK525192/pdf/Bookshelf_NBK525192.pdf",
+      "note": "HIV, TB, malaria and NTDs: control strategies and their economics. The infectious-disease control reference."
+    },
+    {
+      "title": "Disease Control Priorities 3rd ed, Vol 7 — Injury Prevention and Environmental Health",
+      "filename": "NBK525218_Disease_Control_Priorities_3rd_ed,_Vol_7_—_Injury_Prevention.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK525218/pdf/Bookshelf_NBK525218.pdf",
+      "note": "Environmental and occupational health, air and water, road traffic injury."
+    },
+    {
+      "title": "Disease Control Priorities 3rd ed, Vol 8 — Child and Adolescent Health and Development",
+      "filename": "NBK525240_Disease_Control_Priorities_3rd_ed,_Vol_8_—_Child_and_Adolesc.pdf",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK525240/pdf/Bookshelf_NBK525240.pdf",
+      "note": "Growth, development, schooling and adolescent health."
+    },
+    {
+      "title": "CIOMS International Ethical Guidelines for Health-related Research Involving Humans",
+      "filename": "CIOMS_International_Ethical_Guidelines_2016.pdf",
+      "url": "https://cioms.ch/wp-content/uploads/2017/01/WEB-CIOMS-EthicalGuidelines.pdf",
+      "note": "Research ethics: the international standard, with the LMIC-specific guidance."
+    },
+    {
+      "title": "Modern Epidemiology — Rothman, Greenland & Lash (4th ed)",
+      "access": "manual",
+      "note": "Epidemiology: the reference. Confounding, effect measures, bias, causal diagrams."
+    },
+    {
+      "title": "Epidemiology: Beyond the Basics — Szklo & Nieto",
+      "access": "manual",
+      "note": "Epidemiology: the bridge from an intro course to Rothman."
+    },
+    {
+      "title": "A Dictionary of Epidemiology — Porta (IEA)",
+      "access": "manual",
+      "note": "Epidemiology: settles definitional arguments."
+    },
+    {
+      "title": "Essential Medical Statistics — Kirkwood & Sterne (2nd ed)",
+      "access": "manual",
+      "note": "Biostatistics: the standard MPH text."
+    },
+    {
+      "title": "Statistical Models in Epidemiology — Clayton & Hills",
+      "access": "manual",
+      "note": "Biostatistics: rates, person-time and likelihood done properly."
+    },
+    {
+      "title": "Regression Methods in Biostatistics — Vittinghoff, Glidden, Shiboski & McCulloch",
+      "access": "manual",
+      "note": "Biostatistics: linear, logistic, survival and repeated measures in one place."
+    },
+    {
+      "title": "Applied Logistic Regression — Hosmer, Lemeshow & Sturdivant",
+      "access": "manual",
+      "note": "Biostatistics."
+    },
+    {
+      "title": "Data Analysis Using Regression and Multilevel/Hierarchical Models — Gelman & Hill",
+      "access": "manual",
+      "note": "Biostatistics: multilevel modelling."
+    },
+    {
+      "title": "Regression Modeling Strategies — Harrell (2nd ed)",
+      "access": "manual",
+      "note": "Biostatistics: model building and validation."
+    },
+    {
+      "title": "Analysis of Longitudinal Data — Diggle, Heagerty, Liang & Zeger",
+      "access": "manual",
+      "note": "Biostatistics: repeated measures and GEE."
+    },
+    {
+      "title": "Designing Clinical Research — Hulley, Cummings et al.",
+      "access": "manual",
+      "note": "Study design: sample size, measurement, study architecture."
+    },
+    {
+      "title": "Fundamentals of Clinical Trials — Friedman, Furberg & DeMets",
+      "access": "manual",
+      "note": "Study design: trials."
+    },
+    {
+      "title": "Making Health Policy — Buse, Mays & Walt",
+      "access": "manual",
+      "note": "Health policy: the policy triangle, agenda setting, power and interests."
+    },
+    {
+      "title": "Getting Health Reform Right — Roberts, Hsiao, Berman & Reich",
+      "access": "manual",
+      "note": "Health systems: the control-knobs framework for reform."
+    },
+    {
+      "title": "Methods for the Economic Evaluation of Health Care Programmes — Drummond, Sculpher, Claxton et al.",
+      "access": "manual",
+      "note": "Health economics: CEA, CUA, QALYs, decision modelling.",
+      "isbn": "9780199665884"
+    },
+    {
+      "title": "Decision Modelling for Health Economic Evaluation — Briggs, Claxton & Sculpher",
+      "access": "manual",
+      "note": "Health economics: building and reporting decision models."
+    },
+    {
+      "title": "The Economics of Health and Health Care — Folland, Goodman & Stano",
+      "access": "manual",
+      "note": "Health economics: the economics itself, not just evaluation."
+    },
+    {
+      "title": "Health Behavior: Theory, Research, and Practice — Glanz, Rimer & Viswanath (5th ed)",
+      "access": "manual",
+      "note": "Health promotion: the full treatment behind NCI's Theory at a Glance."
+    },
+    {
+      "title": "Social Epidemiology — Berkman, Kawachi & Glymour (2nd ed)",
+      "access": "manual",
+      "note": "Social determinants: how social structure becomes disease."
+    },
+    {
+      "title": "Planning Health Promotion Programs: Intervention Mapping — Bartholomew Eldredge et al.",
+      "access": "manual",
+      "note": "Health promotion: turning theory into a programme."
+    },
+    {
+      "title": "Health Program Planning: An Educational and Ecological Approach (PRECEDE-PROCEED) — Green & Kreuter",
+      "access": "manual",
+      "note": "Health promotion: programme planning."
+    },
+    {
+      "title": "Environmental Health: From Global to Local — Frumkin",
+      "access": "manual",
+      "note": "Environmental health: the standard text."
+    },
+    {
+      "title": "Basic Environmental Health — Yassi, Kjellström, de Kok & Guidotti (WHO/OUP)",
+      "access": "manual",
+      "note": "Environmental health: the WHO-aligned text."
+    },
+    {
+      "title": "Occupational and Environmental Health — Levy, Wegman, Baron & Sokas",
+      "access": "manual",
+      "note": "Occupational health: the standard text."
+    },
+    {
+      "title": "Research Methods in Occupational Epidemiology — Checkoway, Pearce & Kriebel",
+      "access": "manual",
+      "note": "Occupational epidemiology: exposure assessment and cohort methods."
+    },
+    {
+      "title": "Control of Communicable Diseases Manual — Heymann (APHA)",
+      "access": "manual",
+      "note": "Infectious disease control: the field reference, disease by disease."
+    },
+    {
+      "title": "Modern Infectious Disease Epidemiology — Giesecke",
+      "access": "manual",
+      "note": "Infectious disease: outbreak reasoning and transmission concepts."
+    },
+    {
+      "title": "Infectious Diseases of Humans: Dynamics and Control — Anderson & May",
+      "access": "manual",
+      "note": "Infectious disease: the theory of transmission dynamics."
+    },
+    {
+      "title": "Modeling Infectious Diseases in Humans and Animals — Keeling & Rohani",
+      "access": "manual",
+      "note": "Infectious disease modelling."
+    },
+    {
+      "title": "An Introduction to Infectious Disease Modelling — Vynnycky & White",
+      "access": "manual",
+      "note": "Infectious disease modelling: the practical entry point."
+    },
+    {
+      "title": "Manson's Tropical Diseases",
+      "access": "manual",
+      "note": "Tropical medicine: the clinical reference."
+    },
+    {
+      "title": "Hunter's Tropical Medicine and Emerging Infectious Diseases",
+      "access": "manual",
+      "note": "Tropical medicine."
+    },
+    {
+      "title": "Nutrition and Health in a Developing World — de Pee, Taren & Bloem",
+      "access": "manual",
+      "note": "Nutrition: the global-health nutrition text."
+    },
+    {
+      "title": "Demography: Measuring and Modeling Population Processes — Preston, Heuveline & Guillot",
+      "access": "manual",
+      "note": "Demography: life tables, standardisation, projection — the arithmetic behind every denominator.",
+      "isbn": "9781557864512"
+    },
+    {
+      "title": "Essential Demographic Methods — Wachter",
+      "access": "manual",
+      "note": "Demography: the shorter route in."
+    },
+    {
+      "title": "Public Health Ethics: Global Cases, Practice, and Context — Barrett, Ortmann, Dawson et al.",
+      "access": "manual",
+      "note": "Ethics: the standard casebook. OPEN ACCESS but Springer blocks scripted download — open the DOI in a browser.",
+      "doi": "10.1007/978-3-319-23847-0"
+    },
+    {
+      "title": "Principles of Biomedical Ethics — Beauchamp & Childress",
+      "access": "manual",
+      "note": "Ethics: the four-principles framework."
+    },
+    {
+      "title": "Global Health Law — Gostin",
+      "access": "manual",
+      "note": "Law: IHR, global governance and the legal basis of public health powers."
+    },
+    {
+      "title": "Qualitative Methods for Health Research — Green & Thorogood",
+      "access": "manual",
+      "note": "Qualitative methods: the standard public health text."
+    },
+    {
+      "title": "Thematic Analysis: A Practical Guide — Braun & Clarke",
+      "access": "manual",
+      "note": "Qualitative methods: the analysis method most used in health research."
+    },
+    {
+      "title": "Designing and Conducting Mixed Methods Research — Creswell & Plano Clark",
+      "access": "manual",
+      "note": "Mixed methods."
+    },
+    {
+      "title": "Qualitative Research and Evaluation Methods — Patton",
+      "access": "manual",
+      "note": "Qualitative methods: the evaluation-oriented reference."
+    },
+    {
+      "title": "Principles and Practice of Public Health Surveillance — Lee, Teutsch, Thacker & St Louis",
+      "access": "manual",
+      "note": "Surveillance: the reference. Directly relevant to routine-data and DHIS2 work."
+    },
+    {
+      "title": "Evaluation: A Systematic Approach — Rossi, Lipsey & Henry",
+      "access": "manual",
+      "note": "M&E: programme evaluation."
+    },
+    {
+      "title": "Dissemination and Implementation Research in Health — Brownson, Colditz & Proctor",
+      "access": "manual",
+      "note": "Implementation science: the reference."
+    },
+    {
+      "title": "Textbook of Global Health — Birn, Pillay & Holtz",
+      "access": "manual",
+      "note": "Global health: the political-economy account."
+    },
+    {
+      "title": "Reimagining Global Health: An Introduction — Farmer, Kim, Kleinman & Basilico",
+      "access": "manual",
+      "note": "Global health: the biosocial account."
+    },
+    {
+      "title": "Global Health 101 — Skolnik",
+      "access": "manual",
+      "note": "Global health: the accessible survey."
+    },
+    {
+      "title": "Planetary Health: Protecting Nature to Protect Ourselves — Myers & Frumkin",
+      "access": "manual",
+      "note": "Planetary health."
     }
-  ]
+  ],
+  "curriculum": "CURRICULUM.md"
 }
