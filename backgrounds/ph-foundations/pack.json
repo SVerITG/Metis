@@ -1,8 +1,8 @@
 {
   "slug": "ph-foundations",
   "name": "Public Health Foundations (books)",
-  "version": "1.0.0",
-  "description": "The textbook layer for a public health / global health expert: health policy and governance, health economics and financing, health systems and primary care, quality, equity and the social determinants, preparedness and resilience. Complements ph-background (WHO reports and guidelines) and epi-methods (quantitative methodology). All open access, CC-licensed.",
+  "version": "1.1.0",
+  "description": "The textbook layer for a public health / global health expert: health policy and governance, health economics and financing, health systems and primary care, quality, equity and the social determinants, health promotion and behaviour change, qualitative methods, public health ethics, demography, preparedness and resilience. Complements ph-background (WHO reports and guidelines) and epi-methods (quantitative methodology). Most sources are open access; a few canonical texts are listed for you to obtain via your own library and drop into the folder.",
   "folder": "open-access-books/PH Foundations",
   "folders": [
     "open-access-books/PH Foundations"
@@ -86,6 +86,41 @@
       "filename": "NBK316532_Healthy,_Resilient,_and_Sustainable_Communities_After_Disast.pdf",
       "url": "https://www.ncbi.nlm.nih.gov/books/NBK316532/pdf/Bookshelf_NBK316532.pdf",
       "note": "Recovery, resilience and community health systems."
+    },
+    {
+      "title": "Theory at a Glance: A Guide for Health Promotion Practice (2nd ed) — US National Cancer Institute",
+      "filename": "NCI_Theory_at_a_Glance_health_promotion.pdf",
+      "url": "https://cancercontrol.cancer.gov/sites/default/files/2020-06/theory.pdf",
+      "note": "Behaviour-change and health-promotion theory: Health Belief Model, Stages of Change, Social Cognitive Theory, diffusion of innovations, and how to choose between them. US public domain."
+    },
+    {
+      "title": "Qualitative Research: a practical guide for health and social care researchers and practitioners",
+      "filename": "Monash_Qualitative_Research_health_social_care.pdf",
+      "url": "https://monash.studium.pub/qualitative-research/open/download?type=pdf",
+      "note": "Qualitative methodology: study design, sampling, interviews and focus groups, thematic analysis, rigour and reflexivity. CC BY-NC (Monash University)."
+    },
+    {
+      "title": "Public Health Ethics: Global Cases, Practice, and Context (Barrett, Ortmann, Dawson et al., Springer)",
+      "access": "manual",
+      "doi": "10.1007/978-3-319-23847-0",
+      "note": "OPEN ACCESS, but Springer blocks scripted download — opening the DOI in a browser gives the free PDF. Public health ethics: the standard casebook (screening, surveillance, resource allocation, research ethics in LMICs)."
+    },
+    {
+      "title": "Making Health Policy (Buse, Mays & Walt, Open University Press) — latest edition",
+      "access": "manual",
+      "note": "Health policy analysis: the policy triangle (content/context/process/actors), agenda setting, power and interests, global health governance. The standard MPH policy text. Check the current edition in the ITG catalogue."
+    },
+    {
+      "title": "Methods for the Economic Evaluation of Health Care Programmes (Drummond, Sculpher, Claxton et al., Oxford) — latest edition",
+      "access": "manual",
+      "isbn": "9780199665884",
+      "note": "Health economics: cost-effectiveness, cost-utility and cost-benefit analysis, QALYs, decision-analytic modelling, handling uncertainty. ISBN is for the 4th ed — verify the current edition."
+    },
+    {
+      "title": "Demography: Measuring and Modeling Population Processes (Preston, Heuveline & Guillot, Blackwell)",
+      "access": "manual",
+      "isbn": "9781557864512",
+      "note": "Formal demography: life tables, standardisation, fertility and mortality measures, population projection, stable population theory — the arithmetic behind every denominator in public health."
     }
   ]
 }
