@@ -923,6 +923,37 @@ _BUDGET_MAP = {
 }
 
 
+def _web_line() -> str:
+    """One line about complementing from the web, honouring a recorded preference.
+
+    Keystone M5, generalised: the same offer→record→honour loop the procedure hints
+    use, applied to a second recurring choice. "Should I also look outside your
+    library?" is asked on every research turn, and until now the answer was never
+    written down, so it was asked forever.
+
+    Reads `user_decisions` (category 'research') before speaking: once the
+    researcher has said always or never, this stops being a question.
+    """
+    try:
+        from metis_mcp import ambient
+
+        pref = ambient.standing_preference("research", "complement from the web")
+    except Exception:
+        pref = ""
+    if pref == "always":
+        return ("They have asked you to ALWAYS complement library grounding with current "
+                "outside sources — do so without asking.")
+    if pref == "never":
+        return ("They have asked you NOT to go outside their library — answer from the "
+                "grounding above and say plainly what it cannot cover.")
+    return (
+        "If the question needs sources beyond their library, say so and offer to look "
+        "further afield — then record the answer so it is asked once, not every time: "
+        "`record_decision(decision=\"always complement from the web when the library is "
+        "thin\", category=\"research\")`, or \"never ...\" if they decline."
+    )
+
+
 def _allocate_budget(complexity: str) -> dict:
     """Stage 6: Select model and token ceiling based on complexity level."""
     return _BUDGET_MAP.get(complexity, _BUDGET_MAP["standard"])
@@ -1321,7 +1352,8 @@ async def run_metis(
                     "news, guidelines and general knowledge as well — an answer restricted to "
                     "the indexed corpus is a worse answer, not a safer one.\n"
                     "Make the provenance clear: cite these passages as theirs, and mark anything "
-                    "from outside their library as not (yet) indexed — then offer to add it.\n\n"
+                    "from outside their library as not (yet) indexed — then offer to add it.\n"
+                    + _web_line() + "\n"
                     + _rag_text[:1400]
                 )
         except Exception:
