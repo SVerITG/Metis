@@ -40,9 +40,21 @@ log = logging.getLogger("metis.knowledge_db")
 
 def _connect():
     """Open a plain SQLite connection with WAL mode for long-running indexing operations."""
-    conn = sqlite3.connect(str(paths.db))
+    # A 120-second busy timeout, not Python's 5-second default.
+    #
+    # Indexing runs for tens of minutes against a database the dashboard and
+    # several MCP processes are also using. WAL lets them all read while this
+    # writes, but a write from any of them still takes the lock briefly — and
+    # 5 seconds is short enough to lose that race. Measured: a 24-book run
+    # indexed 14 volumes and then died on the final count update with
+    # "database is locked", discarding the rest of the run for a lock that
+    # would have cleared in well under a second.
+    #
+    # For a background job, waiting is free and losing the run is not.
+    conn = sqlite3.connect(str(paths.db), timeout=120.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=120000")  # also covers waits inside SQLite itself
     return conn
 
 # ── Constants ─────────────────────────────────────────────────────────────────
