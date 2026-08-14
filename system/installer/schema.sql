@@ -864,3 +864,24 @@ CREATE TABLE IF NOT EXISTS day_plan (
 );
 CREATE INDEX IF NOT EXISTS idx_day_plan_start ON day_plan(start_date);
 CREATE INDEX IF NOT EXISTS idx_day_plan_span  ON day_plan(start_date, end_date);
+
+-- ── Open decisions ledger ────────────────────────────────────────────────────
+-- Separate from user_decisions: that holds STANDING preferences with no lifecycle
+-- ("always use tidyverse"). This holds a question awaiting a call, with a lifecycle
+-- (open → agreed/rejected/deferred/dropped) and the reasoning behind the outcome.
+-- The fingerprint is a normalised token set, so a decision restated in different
+-- words updates times_seen instead of creating a duplicate row.
+CREATE TABLE IF NOT EXISTS open_decisions (
+    od_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    statement    TEXT NOT NULL,
+    fingerprint  TEXT NOT NULL UNIQUE,
+    project_id   TEXT,
+    first_seen   TEXT NOT NULL,
+    last_seen    TEXT NOT NULL,
+    times_seen   INTEGER NOT NULL DEFAULT 1,
+    state        TEXT NOT NULL DEFAULT 'open',
+    resolution   TEXT,
+    resolved_at  TEXT,
+    source       TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_open_decisions_state ON open_decisions(state, last_seen DESC);
