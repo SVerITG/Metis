@@ -30,6 +30,24 @@
             style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
                    padding:5px 14px;border:none;border-radius:4px;cursor:pointer;
                    background:transparent;color:var(--m-muted);">Board</button>
+    {# Third lens: WHEN. List answers "what exists", Board answers "what stage",
+       Calendar answers "which day" — the question neither of the other two could
+       hold, because a task has no date and a due-date is a deadline not a plan. #}
+    <button id="work-toggle-calendar" onclick="workSetView('calendar')"
+            style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;
+                   padding:5px 14px;border:none;border-radius:4px;cursor:pointer;
+                   background:transparent;color:var(--m-muted);">Calendar</button>
+  </div>
+
+  <!-- ══════════ CALENDAR VIEW ══════════ -->
+  <div id="work-view-calendar" style="display:none;">
+    {{ sec_label("Plan your days", tail="DRAG · WRITE · REMIND", style="margin-bottom:12px;") }}
+    <div id="work-calendar"
+         hx-get="/api/partial/work/calendar?view=month"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+      <div class="panel panel-pad skeleton" style="min-height:420px;"></div>
+    </div>
   </div>
 
   <!-- ══════════ LIST VIEW ══════════ -->
@@ -284,17 +302,89 @@
     // Board partials use hx-trigger="revealed", so they load the first time the
     // board is shown and not before — the List view stays instant.
     window.workSetView = function(view){
-      var list = document.getElementById('work-view-list');
-      var board = document.getElementById('work-view-board');
-      var bl = document.getElementById('work-toggle-list');
-      var bb = document.getElementById('work-toggle-board');
-      var on = 'var(--m-accent)', onFg = 'var(--m-on-accent)', off = 'transparent', offFg = 'var(--m-muted)';
-      var showBoard = view === 'board';
-      list.style.display = showBoard ? 'none' : '';
-      board.style.display = showBoard ? '' : 'none';
-      bb.style.background = showBoard ? on : off;  bb.style.color = showBoard ? onFg : offFg;
-      bl.style.background = showBoard ? off : on;  bl.style.color = showBoard ? offFg : onFg;
-      if (showBoard && window.htmx) window.htmx.process(board);  // fire revealed loads
+      var on = 'var(--m-accent)', onFg = 'var(--m-on-accent)',
+          off = 'transparent', offFg = 'var(--m-muted)';
+      var views = {list:'work-view-list', board:'work-view-board', calendar:'work-view-calendar'};
+      var btns  = {list:'work-toggle-list', board:'work-toggle-board', calendar:'work-toggle-calendar'};
+      if (!views[view]) view = 'list';
+      Object.keys(views).forEach(function(k){
+        var pane = document.getElementById(views[k]), b = document.getElementById(btns[k]);
+        var active = (k === view);
+        if (pane) pane.style.display = active ? '' : 'none';
+        if (b){ b.style.background = active ? on : off; b.style.color = active ? onFg : offFg; }
+        // Board and Calendar partials use load/revealed triggers, so process them
+        // only when first shown — the List view stays instant.
+        if (active && pane && window.htmx) window.htmx.process(pane);
+      });
+      try { localStorage.setItem('metis.work.view', view); } catch(e){}
+    };
+    // Restore the last lens. Someone who plans in the calendar should not have to
+    // re-select it on every visit.
+    try {
+      var _v = localStorage.getItem('metis.work.view');
+      if (_v && _v !== 'list') window.addEventListener('DOMContentLoaded', function(){ workSetView(_v); });
+    } catch(e){}
+
+    // ── Calendar drag & drop ────────────────────────────────────────────────
+    // Two payload kinds share one drop handler: a NEW project (drag from the rail)
+    // and an EXISTING plan (drag a chip to another day). The kind is carried in the
+    // dataTransfer so the drop target does not have to guess.
+    window.calDragProject = function(ev, pid){
+      ev.dataTransfer.setData('text/plain', JSON.stringify({t:'project', id:pid}));
+      ev.dataTransfer.effectAllowed = 'copy';
+    };
+    window.calDragPlan = function(ev, planId){
+      ev.stopPropagation();
+      ev.dataTransfer.setData('text/plain', JSON.stringify({t:'plan', id:planId}));
+      ev.dataTransfer.effectAllowed = 'move';
+    };
+    function _calCtx(){
+      var c = document.getElementById('work-calendar');
+      return {view: (c && c.dataset.view) || 'month', anchor: (c && c.dataset.anchor) || ''};
+    }
+    function _calPost(url, fields){
+      var c = _calCtx(), body = new URLSearchParams();
+      Object.keys(fields).forEach(function(k){ body.append(k, fields[k]); });
+      body.append('view', c.view); body.append('anchor', c.anchor);
+      fetch(url, {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:body})
+        .then(function(r){ return r.text(); })
+        .then(function(html){
+          var cal = document.getElementById('work-calendar');
+          if (!cal) return;
+          cal.outerHTML = html;
+          if (window.htmx) window.htmx.process(document.getElementById('work-calendar'));
+        });
+    }
+    window.calDrop = function(ev, date){
+      ev.preventDefault(); ev.stopPropagation();
+      var cell = ev.currentTarget; if (cell) cell.style.outline = 'none';
+      var raw = ev.dataTransfer.getData('text/plain'); if (!raw) return;
+      var d; try { d = JSON.parse(raw); } catch(e){ return; }
+      if (d.t === 'project') _calPost('/api/plan/create', {start_date:date, kind:'project', project_id:d.id});
+      else if (d.t === 'plan') _calPost('/api/plan/' + d.id + '/move', {start_date:date});
+    };
+    // Click a day to write a focus. A leading "!" makes it a reminder; "→ YYYY-MM-DD"
+    // at the end makes it span to that date, so a multi-day focus needs no second UI.
+    window.calAddFocus = function(ev, date){
+      if (ev.target.closest('.cal-chip')) return;   // clicks on a chip are its own actions
+      var raw = window.prompt(
+        'Focus for ' + date + '\n\n' +
+        '· plain text  = a focus for this day\n' +
+        '· start with !  = a reminder (e.g. "!09:30 call Erick")\n' +
+        '· end with → YYYY-MM-DD = spans to that date', '');
+      if (raw === null) return;
+      var text = raw.trim(); if (!text) return;
+      var kind = 'focus', remind = '', end = '';
+      var span = text.match(/(?:→|->)\s*(\d{4}-\d{2}-\d{2})\s*$/);
+      if (span){ end = span[1]; text = text.slice(0, span.index).trim(); }
+      if (text.charAt(0) === '!'){
+        kind = 'reminder'; text = text.slice(1).trim();
+        var t = text.match(/^(\d{1,2}:\d{2})\s+(.*)$/);
+        if (t){ remind = t[1]; text = t[2]; }
+      }
+      if (!text) return;
+      _calPost('/api/plan/create',
+               {start_date:date, kind:kind, text:text, end_date:end, remind_at:remind});
     };
   </script>
 

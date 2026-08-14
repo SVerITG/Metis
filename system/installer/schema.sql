@@ -844,3 +844,23 @@ CREATE TABLE IF NOT EXISTS today_board_items (
     updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_board_items_board ON today_board_items (board, dismissed, created_at);
+
+-- ── Day planner (Work → Calendar) ────────────────────────────────────────────
+-- One table covers every planning object the Work calendar shows, because they
+-- differ only in `kind`: a project dragged onto a day, a written focus for that
+-- day, or a reminder. Multiple rows per date = multiple focuses, which is the
+-- normal case. end_date makes a focus span several days without duplicating rows.
+CREATE TABLE IF NOT EXISTS day_plan (
+    plan_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    start_date  TEXT NOT NULL,
+    end_date    TEXT,
+    kind        TEXT NOT NULL DEFAULT 'focus',
+    project_id  TEXT,
+    text        TEXT,
+    remind_at   TEXT,
+    done        INTEGER NOT NULL DEFAULT 0,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_day_plan_start ON day_plan(start_date);
+CREATE INDEX IF NOT EXISTS idx_day_plan_span  ON day_plan(start_date, end_date);

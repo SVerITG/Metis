@@ -24,6 +24,7 @@ from routers import (
     memory_health,
     metis_tab,
     planner,
+    calendar_plan,
     setup,
     speakers,
     teach,
@@ -290,6 +291,7 @@ app.include_router(learning.router)
 app.include_router(work.router)
 app.include_router(thinking.router)
 app.include_router(planner.router)
+app.include_router(calendar_plan.router)
 app.include_router(teach.router)
 app.include_router(metis_tab.router)
 app.include_router(memory_health.router)
