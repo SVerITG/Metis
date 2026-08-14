@@ -17,7 +17,47 @@ here (see **PHASE S**) and its old plan file is superseded — this roadmap is t
 
 ---
 
-## Latest status — 2026-08-12 (session 2) — read this first
+## Latest status — 2026-08-14 (session 4) — read this first
+
+**The plan is substantially complete.** 63 commits since 2026-08-12. Phases 2, 3, 4, 5, 6 and S have
+landed; Phase 0 was already strong. What follows is the honest remainder, verified against the code
+on 2026-08-14 rather than carried forward from the previous status block.
+
+**Three items Appendix A still lists as open are DONE** — the register was stale, not the code:
+- **A4 injection probe at ingestion** — chokepoints exist in `content_scan.py` (RSS, transcripts),
+  `fulltext_index.py` (all PDF text) and `guardrails.sanitize_external()`.
+- **A5 egress PII rail has no caller** — it has one. `middleware.py` calls `_texts_of` on every
+  result, and the reason it previously scanned nothing (FastMCP returns a 2-tuple) is fixed.
+- **A11/P2.6 CDN assets** — no template references a CDN. Grepped clean.
+
+**Genuinely open, engineering:**
+- **M6, automatic half** — indexing on ingest. The blocking half shipped (external folders index,
+  221 HAT PDFs); a newly added paper still waits for a manual or nightly build.
+- **P1.1 bundled `.exe`** — no `.spec` or `.iss` exists. Needs a Windows box; cannot be built here.
+- **P2.1 single Settings pane** — measured and got worse; still not consolidated.
+- **The three inventory packs** — `epi-methods`, `ntd` and `ph-background` have manifests with **no
+  URLs**, so they install nothing on anyone else's machine. `ph-foundations` and
+  `hat-elimination-monitoring` are the only genuinely installable packs. WHO IRIS *is* reachable via
+  its DSpace REST API (verified: a 15.2 MB PDF), so ph-background is fixable — but resolving the 57
+  entries by title is unsafe (see below); the reliable key is the ISBN printed inside each PDF.
+
+**Genuinely open, owner decisions (Appendix D.2b):** `knowledge_links` / `learning_competencies` /
+`research_milestones` are read and never written · Planner/Work duplication.
+
+**Immediate, owner:** rotate the exposed Anthropic API key (C10) — still live in `system/.env`,
+dated 2026-07-08. 61+ commits unpushed.
+
+**New rule earned this session, added to Appendix D.3:** *title-based matching against a
+bibliographic API cannot build a corpus.* Four fuzzy matchers produced confident, wrong results —
+a WHO title resolver (52 hits including a Regional Committee paper returned for the CSDH report),
+an OpenAlex free-text sweep (7 hits, all book reviews), a Crossref DOI lookup (2 wrong in the first
+22), and a `pgrep -f` wait loop that matched its own command line and reported success while doing
+nothing. Every one passed its structural check. Search can confirm a *named* thing is available; it
+cannot decide what a thing *is*.
+
+---
+
+## Status — 2026-08-12 (session 2)
 
 **M1 IS SHIPPED.** The memory write-backs now run on the dispatch chokepoint, not the pipeline.
 Commits (local): `7dc0d2e` hooks · `a242c26` decorator drift · `eec122f` **M1**.
@@ -928,6 +968,27 @@ This is the UI dialect of the same disease and confirms the long-standing "Teach
 > (an audit row, an event, a non-empty table) over evidence of correctness (it reads fine,
 > the test passes). When adding a guarantee, ask what would be *observably different* if it
 > silently stopped working — and if the answer is "nothing", that is the defect.
+
+**Corollary added 2026-08-14 — a matcher is not a judgement.**
+
+> **Title-based matching against a bibliographic API cannot decide what a document is.**
+> It can confirm that a *named* thing is available; it cannot choose what belongs.
+
+Four instances in one session, each passing its structural check:
+- a WHO IRIS title resolver returned 52 confident matches, including a Western Pacific Regional
+  Committee paper for the CSDH report and a World Health Assembly resolution for the IHR — scoring
+  1.00 because short keyword titles reduce to one token and the denominator was `min(len(a), len(b))`;
+- an OpenAlex sweep for free full texts returned 7 hits, every one a book review or front matter,
+  because its author guard read `if surnames and not match` and so was *skipped* when no author
+  parsed — a guard that does not apply looks exactly like a guard that passed;
+- a Crossref DOI lookup shipped 2 wrong in 22 (a chapter DOI, and a different book matched on a
+  shared author) — caught only by checking what each DOI *resolves to* rather than what the search
+  returned;
+- a `pgrep -f build_pdf_knowledge_db` wait loop matched its own command line, waited on itself
+  forever, and exited 0 with an empty log.
+
+The practical form: **verify against the resolved object, not the query result**, make guards **fail
+closed** when their input is missing, and never pattern-match on a string your own process contains.
 
 ---
 
