@@ -301,11 +301,16 @@ async def install_background_pack(slug: str, confirm: bool = False) -> list[Text
     except Exception as exc:
         return [TextContent(type="text", text=f"Downloaded {got} file(s) but could not register the layer: {exc}")]
 
+    # M6: index what just landed, rather than leaving it until someone presses Rebuild.
+    from metis_mcp.auto_index import schedule_index
+    started = schedule_index(slug, reason="pack install") if got else ""
+
     msg = [f"Installed **{pack.get('name', slug)}** — {got} downloaded"
            + (f", {skipped} already present" if skipped else "")
            + (f", {len(failed)} failed" if failed else "") + ".",
-           f"Documents are in `knowledge/library/{folder}/`.",
-           "It will be indexed by tonight's background index, or press Rebuild on the Library surface to do it now."]
+           f"Documents are in `knowledge/library/{folder}/`."]
+    msg.append(started.capitalize() + "." if started
+               else "Nothing new to index.")
     if failed:
         msg += ["", "Could not fetch:"] + [f"- {f}" for f in failed[:10]]
     if manual:
