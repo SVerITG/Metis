@@ -1,7 +1,7 @@
 {
   "slug": "ph-foundations",
   "name": "Public Health Foundations (books)",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "The textbook layer for a public health / global health expert: health policy and governance, health economics and financing, health systems and primary care, quality, equity and the social determinants, health promotion and behaviour change, qualitative methods, public health ethics, demography, preparedness and resilience. Complements ph-background (WHO reports and guidelines) and epi-methods (quantitative methodology). Most sources are open access; a few canonical texts are listed for you to obtain via your own library and drop into the folder.",
   "folder": "open-access-books/PH Foundations",
   "folders": [
@@ -193,7 +193,9 @@
     {
       "title": "A Dictionary of Epidemiology — Porta (IEA)",
       "access": "manual",
-      "note": "Epidemiology: settles definitional arguments."
+      "note": "Epidemiology: settles definitional arguments.",
+      "doi": "10.1093/acref/9780197663639.001.0001",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Essential Medical Statistics — Kirkwood & Sterne (2nd ed)",
@@ -214,28 +216,36 @@
       "access": "manual",
       "note": "Biostatistics: linear, logistic, survival and repeated measures in one place.",
       "isbn": "9780387202754",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1007/978-1-4614-1353-0",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Applied Logistic Regression — Hosmer, Lemeshow & Sturdivant",
       "access": "manual",
       "note": "Biostatistics.",
       "isbn": "9780471356325",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1002/0471722146",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Data Analysis Using Regression and Multilevel/Hierarchical Models — Gelman & Hill",
       "access": "manual",
       "note": "Biostatistics: multilevel modelling.",
       "isbn": "9780521686891",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1017/cbo9780511790942",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Regression Modeling Strategies — Harrell (2nd ed)",
       "access": "manual",
       "note": "Biostatistics: model building and validation.",
       "isbn": "9783319194240",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1007/978-1-4757-3462-1",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Analysis of Longitudinal Data — Diggle, Heagerty, Liang & Zeger",
@@ -256,7 +266,9 @@
       "access": "manual",
       "note": "Study design: trials.",
       "isbn": "9780387985862",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1007/978-1-4757-2915-3",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Making Health Policy — Buse, Mays & Walt",
@@ -270,27 +282,35 @@
       "access": "manual",
       "note": "Health systems: the control-knobs framework for reform.",
       "isbn": "9780195371505",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1093/acprof:oso/9780195371505.001.0001",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Methods for the Economic Evaluation of Health Care Programmes — Drummond, Sculpher, Claxton et al.",
       "access": "manual",
       "note": "Health economics: CEA, CUA, QALYs, decision modelling.",
-      "isbn": "9780199665884"
+      "isbn": "9780199665884",
+      "doi": "10.1093/oso/9780198529446.001.0001",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Decision Modelling for Health Economic Evaluation — Briggs, Claxton & Sculpher",
       "access": "manual",
       "note": "Health economics: building and reporting decision models.",
       "isbn": "9780198526629",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1093/oso/9780198526629.001.0001",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "The Economics of Health and Health Care — Folland, Goodman & Stano",
       "access": "manual",
       "note": "Health economics: the economics itself, not just evaluation.",
       "isbn": "9780023385308",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.4324/9781315510736",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Health Behavior: Theory, Research, and Practice — Glanz, Rimer & Viswanath (5th ed)",
@@ -324,7 +344,9 @@
       "access": "manual",
       "note": "Environmental health: the WHO-aligned text.",
       "isbn": "9780195135589",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1093/acprof:oso/9780195135589.001.0001",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Occupational and Environmental Health — Levy, Wegman, Baron & Sokas",
@@ -338,7 +360,9 @@
       "access": "manual",
       "note": "Occupational epidemiology: exposure assessment and cohort methods.",
       "isbn": "9780195092424",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1093/acprof:oso/9780195092424.001.0001",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Control of Communicable Diseases Manual — Heymann (APHA)",
@@ -357,14 +381,18 @@
     {
       "title": "Infectious Diseases of Humans: Dynamics and Control — Anderson & May",
       "access": "manual",
-      "note": "Infectious disease: the theory of transmission dynamics."
+      "note": "Infectious disease: the theory of transmission dynamics.",
+      "doi": "10.1093/oso/9780198545996.001.0001",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Modeling Infectious Diseases in Humans and Animals — Keeling & Rohani",
       "access": "manual",
       "note": "Infectious disease modelling.",
       "isbn": "9780691116174",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1515/9781400841035",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "An Introduction to Infectious Disease Modelling — Vynnycky & White",
@@ -392,7 +420,9 @@
       "access": "manual",
       "note": "Nutrition: the global-health nutrition text.",
       "isbn": "9783319437378",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1385/1592592252",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Demography: Measuring and Modeling Population Processes — Preston, Heuveline & Guillot",
@@ -405,7 +435,9 @@
       "access": "manual",
       "note": "Demography: the shorter route in.",
       "isbn": "9780674045576",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.4159/9780674369757",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Public Health Ethics: Global Cases, Practice, and Context — Barrett, Ortmann, Dawson et al.",
@@ -425,14 +457,18 @@
       "access": "manual",
       "note": "Law: IHR, global governance and the legal basis of public health powers.",
       "isbn": "9780674369870",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.4159/9780674369870",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Qualitative Methods for Health Research — Green & Thorogood",
       "access": "manual",
       "note": "Qualitative methods: the standard public health text.",
       "isbn": "9781412932257",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.4135/9781036234386",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Thematic Analysis: A Practical Guide — Braun & Clarke",
@@ -458,7 +494,9 @@
       "access": "manual",
       "note": "Surveillance: the reference. Directly relevant to routine-data and DHIS2 work.",
       "isbn": "9780195138276",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1093/acprof:oso/9780195372922.001.0001",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Evaluation: A Systematic Approach — Rossi, Lipsey & Henry",
@@ -477,7 +515,9 @@
       "access": "manual",
       "note": "Global health: the political-economy account.",
       "isbn": "9780190916527",
-      "isbn_note": "identifies the work; confirm the current edition in your catalogue"
+      "isbn_note": "identifies the work; confirm the current edition in your catalogue",
+      "doi": "10.1093/acprof:oso/9780199392285.001.0001",
+      "doi_note": "resolves to the publisher's page; with an institutional subscription that page has the download"
     },
     {
       "title": "Reimagining Global Health: An Introduction — Farmer, Kim, Kleinman & Basilico",
