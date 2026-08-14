@@ -240,18 +240,33 @@ async def install_background_pack(slug: str, confirm: bool = False) -> list[Text
                  "publisher requires a browser, or your institution's subscription.",
                  "Save each PDF into **this folder**. It will be indexed automatically",
                  "on the next rebuild — nothing else to do.", "",
-                 "If you save them in Zotero instead (the browser connector, logged in",
-                 "through your institution, keeps the citation too), put them in one",
+                 "## An ISBN below is for FINDING the book, not downloading it", "",
+                 "Pasting an ISBN into Zotero's *Add by Identifier* returns the catalogue",
+                 "record only — title, authors, publisher. There is no file at the other",
+                 "end of an ISBN, because it identifies a published book rather than a",
+                 "document on the web. A DOI is different: for an article or an",
+                 "open-access book it often does resolve to a PDF.", "",
+                 "To get the text:", "",
+                 "1. Search the title in your institution's library discovery service. If",
+                 "   it subscribes (Springer Link, Oxford Academic, Wiley, ProQuest or",
+                 "   EBSCO ebooks) you get a reader with a download. Many publishers allow",
+                 "   only chapter-by-chapter PDFs — that is fine, this folder indexes any",
+                 "   number of files per book.",
+                 "2. In Zotero, right-click an item and choose *Find Available PDF*. That",
+                 "   checks Unpaywall, so it finds the open-access entries and generally",
+                 "   not the commercial ones.",
+                 "3. Interlibrary loan for anything your institution does not hold.", "",
+                 "Once they are in Zotero with the PDFs attached, put them in one",
                  "collection and ask Metis to import that collection into this layer —",
-                 "it copies the PDFs here for you.", ""]
+                 "it copies the files here for you.", ""]
         for s in manual:
             lines.append(f"- **{s.get('title','?')}**")
             if s.get("doi"):
                 lines.append(f"  - DOI: `{s['doi']}` · https://doi.org/{s['doi']}")
             if s.get("isbn"):
-                lines.append(f"  - ISBN: `{s['isbn']}`"
+                lines.append(f"  - Search by ISBN `{s['isbn']}`"
                              + (f" — {s['isbn_note']}" if s.get("isbn_note") else "")
-                             + f" · https://www.worldcat.org/isbn/{s['isbn']}")
+                             + f" · find a holding library: https://search.worldcat.org/isbn/{s['isbn']}")
             if s.get("note"):
                 lines.append(f"  - {s['note']}")
         (target / "_TO-OBTAIN.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
