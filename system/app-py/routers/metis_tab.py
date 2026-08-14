@@ -2455,3 +2455,59 @@ async def metis_settings_map(request: Request):
       </div>
       {body}
     </div>""")
+
+
+# ---------------------------------------------------------------------------
+# Procedural memory — the layer that was a number and nothing else
+#
+# The memory overview counted procedural_memory and stopped there. Twelve
+# procedures existed, each one a worked-out way of doing something, and the only
+# thing any surface said about them was "12". A layer you cannot read is a layer
+# you cannot trust, correct, or reuse — and Metis volunteers these in
+# conversation, so the researcher needs to see what it is working from.
+
+
+def _procedure_family(name: str) -> str:
+    """Group by the prefix before an em dash: 'Course making — write one lesson'.
+
+    Families emerged naturally because procedures get written in sets. Without
+    grouping, a flat list of a dozen unrelated steps reads as noise.
+    """
+    for sep in ("—", " - ", ":"):
+        if sep in name:
+            head = name.split(sep, 1)[0].strip()
+            if 3 < len(head) < 40:
+                return head
+    return "General"
+
+
+@router.get("/api/partial/metis/procedures", response_class=HTMLResponse)
+async def metis_procedures(request: Request, q: str = "", open_id: int = 0):
+    """List every stored procedure, grouped, with its trigger and steps readable."""
+    rows = db_query(
+        "SELECT id, procedure_name, trigger_context, steps, success_count, "
+        "       last_used, created_at, scope, project_id "
+        "FROM procedural_memory ORDER BY procedure_name",
+        default=[],
+    ) or []
+
+    if q:
+        needle = q.lower()
+        rows = [r for r in rows
+                if needle in (r.get("procedure_name") or "").lower()
+                or needle in (r.get("trigger_context") or "").lower()
+                or needle in (r.get("steps") or "").lower()]
+
+    families: dict[str, list[dict]] = {}
+    for r in rows:
+        families.setdefault(_procedure_family(r.get("procedure_name") or ""), []).append(dict(r))
+
+    # Largest family first, "General" last — it is the leftovers bucket.
+    ordered = sorted(families.items(),
+                     key=lambda kv: (kv[0] == "General", -len(kv[1]), kv[0]))
+
+    return templates.TemplateResponse(
+        request,
+        "partials/metis_procedures.html",
+        {"families": ordered, "total": len(rows), "q": q, "open_id": open_id},
+    )
