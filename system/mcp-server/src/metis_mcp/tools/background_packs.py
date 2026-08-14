@@ -249,7 +249,9 @@ async def install_background_pack(slug: str, confirm: bool = False) -> list[Text
             if s.get("doi"):
                 lines.append(f"  - DOI: `{s['doi']}` · https://doi.org/{s['doi']}")
             if s.get("isbn"):
-                lines.append(f"  - ISBN: `{s['isbn']}`")
+                lines.append(f"  - ISBN: `{s['isbn']}`"
+                             + (f" — {s['isbn_note']}" if s.get("isbn_note") else "")
+                             + f" · https://www.worldcat.org/isbn/{s['isbn']}")
             if s.get("note"):
                 lines.append(f"  - {s['note']}")
         (target / "_TO-OBTAIN.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -292,9 +294,13 @@ async def install_background_pack(slug: str, confirm: bool = False) -> list[Text
     if failed:
         msg += ["", "Could not fetch:"] + [f"- {f}" for f in failed[:10]]
     if manual:
-        msg += ["", f"**{len(manual)} text(s) you need to fetch yourself** — listed with DOIs in "
-                    f"`knowledge/library/{folder}/_TO-OBTAIN.md`. Save the PDFs into that same "
-                    f"folder and they join the layer on the next rebuild."]
+        ident = sum(1 for s in manual if s.get("doi") or s.get("isbn"))
+        msg += ["", f"**{len(manual)} text(s) you need to fetch yourself** — listed in "
+                    f"`knowledge/library/{folder}/_TO-OBTAIN.md`"
+                    + (f" ({ident} with a DOI or ISBN, {len(manual)-ident} by title only)"
+                       if ident < len(manual) else " with DOIs or ISBNs")
+                    + ". Save the PDFs into that same folder and they join the layer on the "
+                      "next rebuild."]
     return [TextContent(type="text", text="\n".join(msg))]
 
 
