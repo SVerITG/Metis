@@ -1286,11 +1286,16 @@ async def import_zotero_pdfs(
         except Exception as exc:
             failed.append(f"{title[:60]}: {exc}")
 
+    # M6: a copied paper that is not indexed is a paper the researcher cannot find,
+    # and "I added it and Metis cannot see it" reads as breakage rather than a queue.
+    from metis_mcp.auto_index import schedule_index
+    started = schedule_index(database, reason="zotero import") if copied else ""
+
     msg = [f"Copied **{copied}** PDF(s) from *{collection}* into **{layer_name}**"
            + (f", {skipped} already there" if skipped else "")
            + (f", {len(failed)} failed" if failed else "") + ".",
-           f"Folder: `{target}`",
-           "Press Rebuild on the Library surface to index them now, or leave it for tonight."]
+           f"Folder: `{target}`"]
+    msg.append(started.capitalize() + "." if started else "Nothing new to index.")
     if failed:
         msg += ["", "Could not copy:"] + [f"- {f}" for f in failed[:10]]
     return [TextContent(type="text", text="\n".join(msg))]

@@ -1178,3 +1178,47 @@ async def create_knowledge_database(
         f"  Next: add PDFs to knowledge/library/ and run:\n"
         f"  build_pdf_knowledge_db(database='{slug}')"
     ))]
+
+
+@app.tool()
+async def index_pending_layers(confirm: bool = True) -> list[TextContent]:
+    """Index every knowledge layer that has documents waiting (Keystone M6).
+
+    The sweep behind "I dropped a PDF into the folder". Pack installs and Zotero
+    imports schedule their own indexing, but a file copied in by hand — which is
+    what _TO-OBTAIN.md asks for — has no code path to notice it. This closes that
+    gap, and is what the nightly job should call.
+
+    Runs detached and single-flight: a layer already indexing is left alone rather
+    than started twice.
+
+    Args:
+        confirm: False to report what is pending without starting anything.
+    """
+    from metis_mcp.auto_index import index_running, schedule_index
+
+    conn = _connect()
+    _ensure_schema(conn)
+    _seed_builtin_databases(conn)
+    slugs = [r[0] for r in conn.execute(
+        "SELECT slug FROM knowledge_databases ORDER BY slug").fetchall()]
+    conn.close()
+
+    pending = [(s, pending_pdf_count(s)) for s in slugs]
+    pending = [(s, n) for s, n in pending if n > 0]
+    if not pending:
+        return [TextContent(type="text", text="Every knowledge layer is up to date — nothing waiting.")]
+
+    lines = []
+    for slug, n in pending:
+        if index_running(slug):
+            lines.append(f"- **{slug}** — {n} waiting; already indexing")
+        elif confirm:
+            lines.append(f"- **{slug}** — {n} waiting; {schedule_index(slug, 'pending sweep')}")
+        else:
+            lines.append(f"- **{slug}** — {n} waiting")
+
+    head = (f"{len(pending)} layer(s) have documents waiting."
+            if not confirm else
+            f"Started indexing for {len(pending)} layer(s) with waiting documents.")
+    return [TextContent(type="text", text="\n".join([head, ""] + lines))]
