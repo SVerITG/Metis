@@ -1,0 +1,89 @@
+{% from "partials/_section.html" import sec_label %}
+{# Procedural memory, readable.
+   Inputs: families[(family_name, [procedures])], total, q, open_id
+
+   Procedures are collapsed by default and expand in place. A dozen full
+   step-lists rendered at once is the "nice to read, impossible to act on" wall;
+   the name plus the trigger is what tells you whether you want the rest. #}
+
+<div id="metis-procedures">
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+  <input type="search" name="q" value="{{ q }}"
+         placeholder="Search procedures — name, trigger, or a step…"
+         hx-get="/api/partial/metis/procedures"
+         hx-trigger="input changed delay:250ms, search"
+         hx-target="#metis-procedures" hx-swap="outerHTML"
+         style="flex:1;min-width:240px;font-family:var(--m-display);font-size:13px;
+                padding:7px 11px;border:1px solid var(--m-rule);border-radius:6px;
+                background:var(--m-surface,transparent);color:var(--m-ink);">
+  <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;
+               text-transform:uppercase;color:var(--m-muted);">
+    {{ total }} procedure{{ '' if total == 1 else 's' }}{% if q %} matching{% endif %}
+  </span>
+</div>
+
+{% if not total %}
+  <div class="panel panel-pad" style="text-align:center;color:var(--m-muted);
+       font-family:var(--m-display);font-size:13px;">
+    {% if q %}
+      No procedure mentions “{{ q }}”.
+    {% else %}
+      Nothing here yet. Procedures are written when a way of doing something has
+      proved itself — ask Metis to remember one after it works.
+    {% endif %}
+  </div>
+{% endif %}
+
+{% for family, procs in families %}
+<div style="margin-bottom:20px;">
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:8px;">
+    <span class="kicker" style="padding:0;color:var(--m-accent);">{{ family }}</span>
+    <span style="flex:1;height:1px;background:var(--m-rule-soft);"></span>
+    <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
+      {{ procs|length }}
+    </span>
+  </div>
+
+  {% for p in procs %}
+  {% set is_open = (open_id == p.id) or (q and q|length > 2) %}
+  <details class="panel" {% if is_open %}open{% endif %}
+           style="padding:0;margin-bottom:8px;border-radius:8px;overflow:hidden;">
+    <summary style="padding:12px 15px;cursor:pointer;list-style:none;
+                    display:flex;align-items:flex-start;gap:11px;">
+      <span style="color:var(--m-accent);font-family:var(--m-mono);font-size:11px;
+                   margin-top:2px;flex-shrink:0;">▸</span>
+      <span style="flex:1;min-width:0;">
+        <span style="display:block;font-family:var(--m-display);font-size:14px;
+                     font-weight:500;color:var(--m-ink);line-height:1.35;">
+          {# The family prefix is already the group heading — don't repeat it #}
+          {{ p.procedure_name.split('—')[-1].strip() if '—' in p.procedure_name else p.procedure_name }}
+        </span>
+        {% if p.trigger_context %}
+        <span style="display:block;font-family:var(--m-display);font-size:12px;
+                     color:var(--m-muted);line-height:1.45;margin-top:3px;text-wrap:pretty;">
+          <strong style="color:var(--m-ink);opacity:.75;">When:</strong>
+          {{ p.trigger_context[:210] }}{% if p.trigger_context|length > 210 %}…{% endif %}
+        </span>
+        {% endif %}
+      </span>
+      <span style="font-family:var(--m-mono);font-size:9.5px;color:var(--m-muted);
+                   text-align:right;flex-shrink:0;line-height:1.6;">
+        {% if p.success_count %}used {{ p.success_count }}×<br>{% endif %}
+        {% if p.last_used %}{{ p.last_used[:10] }}{% elif p.created_at %}{{ p.created_at[:10] }}{% endif %}
+      </span>
+    </summary>
+    <div style="padding:0 15px 14px 37px;border-top:1px solid var(--m-rule-soft);">
+      <div style="font-family:var(--m-display);font-size:13px;line-height:1.6;
+                  color:var(--m-ink);white-space:pre-wrap;padding-top:11px;text-wrap:pretty;">{{ p.steps }}</div>
+      {% if p.scope or p.project_id %}
+      <div style="margin-top:10px;font-family:var(--m-mono);font-size:9.5px;
+                  letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
+        {{ p.scope or 'global' }}{% if p.project_id %} · {{ p.project_id }}{% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </details>
+  {% endfor %}
+</div>
+{% endfor %}
+</div>
