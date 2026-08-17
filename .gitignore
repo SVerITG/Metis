@@ -319,3 +319,6 @@ system/config/api-token.txt
 
 # Self-signed localhost certificate for the Office add-in — per machine, never shared
 system/config/certs/
+
+# Promise-harness trend log — runtime metric output, regenerated per run.
+system/config/promise-trend.jsonl

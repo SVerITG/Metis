@@ -17,7 +17,64 @@ here (see **PHASE S**) and its old plan file is superseded — this roadmap is t
 
 ---
 
-## Latest status — 2026-08-14 (session 4) — read this first
+## Latest status — 2026-08-17 (session 5) — read this first
+
+**Theme of this session: the read side.** Every previous session hardened *writing* —
+decisions promoted, procedures stored, documents indexed. This one found that several of
+those writes had **no reader**, which makes a stored thing indistinguishable from a lost one.
+
+**The load-bearing find: eleven agent context files, written and never read.**
+`get_agent_context` loaded `system-prompt.md`, `contract.md` and `skill.md` only. Eleven
+`agents/**/*-context.md` files existed — ~44 KB — including a 187-line `hat-metric-context.md`
+whose opening paragraph asserts *"This file is loaded automatically by Methods Coach at the
+start of any session involving HAT risk mapping."* Nothing in the codebase referenced it.
+The best methodological record in the system was reachable only by opening the file by hand,
+and wholly invisible from Claude Desktop, which has no CLAUDE.md and no skills folder.
+Fixed in `53a725e`: the reader now globs `*-context.md`. This is the same shape as the
+session-decisions defect in Appendix C — a write path with no reader — and it is now the
+third instance, so it belongs in D.3 rather than in a list of one-offs.
+
+**Shipped this session:**
+- Reader fix above; `get_agent_context("methods-coach")` returns 7 sections / 43,920 chars.
+- **HAT risk mapping made runnable from Desktop by request alone.** Three independent routes
+  now carry it so no single failure hides it: the ambient layer (matches the request itself),
+  `get_agent_context`, and a new `risk-mapping` workflow prompt. Verified against the owner's
+  actual phrasing.
+- `agents/methods-coach/risk-mapping-runbook-context.md` — interview table, the 10-script
+  country pipeline, the 9-script 3-year cross-border pipeline, validation checks, traps.
+  Procedural memory #8 is **generated** from it by `tools/sync_runbook.py`, so the two cannot
+  drift; the previous inventory went stale precisely because it was maintained twice by hand.
+- Six duplicate Angola project rows merged into `angola-hat-analysis` (tasks, data dictionary,
+  dataset treatments, code artefacts and procedures reassigned; the May-2025 Claude Desktop
+  conversation preserved into its history before the row was deleted).
+
+**Corrected, not deleted — two procedures written the same morning (07:32) were wrong:**
+one filed as "Angola HAT Risk Mapping" named only scripts that exist under the *DRC*
+`Workflow Article/RM_5y/` folder and cited `gadm41_AGO_*.shp`, which exist nowhere in the
+Angola project and which a May-2025 decision explicitly forbids; the other named
+`4__pop_density.R`, `3__area_at_risk.R` and `0__setup.R`, none of which exist. Both had
+genuinely useful content attached to false filenames.
+
+**Correction to the 2026-08-14 block above: M6 is DONE, both halves.** `auto_index.py`
+exists and `schedule_index` is wired into `background_packs.py`, `knowledge_db.py` and
+`zotero.py`. That block was written before the commit landed and was never revised.
+
+**Still genuinely open, engineering:** P1.1 bundled `.exe` (needs a Windows box) · P2.1 single
+Settings pane · the three inventory packs (`epi-methods`, `ntd`, `ph-background`) still have
+manifests with no URLs · the ambient matcher drops 3-letter tokens, so domain acronyms
+(HAT, DRC, KDE, WHO) and the word "map" never contribute to a procedure match.
+
+**Still open, owner decisions:** `knowledge_links` / `learning_competencies` /
+`research_milestones` read and never written · Planner/Work duplication · the HAT risk-mapping
+output map (~280 files across 20+ `Results/` folders, nothing recording which run produced
+which) · 4 vs 5 cross-border foci · whether `crossborder_analysis.R` supersedes scripts 4/5/5b.
+
+**Immediate, owner:** rotate the exposed Anthropic API key (C10) — still live in `system/.env`,
+dated 2026-07-08. This is now the oldest unactioned item in the plan.
+
+---
+
+## Status — 2026-08-14 (session 4)
 
 **The plan is substantially complete.** 63 commits since 2026-08-12. Phases 2, 3, 4, 5, 6 and S have
 landed; Phase 0 was already strong. What follows is the honest remainder, verified against the code
@@ -989,6 +1046,33 @@ Four instances in one session, each passing its structural check:
 
 The practical form: **verify against the resolved object, not the query result**, make guards **fail
 closed** when their input is missing, and never pattern-match on a string your own process contains.
+
+**Corollary added 2026-08-17 — a document that claims to be loaded is not evidence that it is.**
+
+> **Every write path needs a named reader, and the claim of being read must be checked against
+> the code that reads.** Self-description is not wiring. Grep for the filename, not for the promise.
+
+Third instance of the write-path-with-no-reader shape, and the most embarrassing, because the
+artefact *documented its own delivery mechanism* and was wrong about it:
+- `session_summaries.decisions` — 675 rows written, `user_decisions` held 2. Fixed by the
+  decisions ledger (Appendix C).
+- `agents/**/*-context.md` — eleven files, ~44 KB, zero readers. `hat-metric-context.md` opened
+  with "This file is loaded automatically by Methods Coach"; `get_agent_context` read three other
+  filenames and never globbed. Fixed 2026-08-17.
+- Session memory *looked* like coverage and was not: 441 summaries mentioned Angola, **440 were
+  auto-generated handoff briefs** that merely list project names, and exactly one was a real
+  record. 193 episodic rows on the same subject were one task title repeated by a fallback hook.
+  A count of matches is not a measure of content — the same error as scoring a fuzzy matcher by
+  how many hits it returns.
+
+The practical form: when storing something for later, name the function that will retrieve it and
+**call it once** to prove the round trip. If the retrieval path is a different client (Claude
+Desktop, an agent pipeline), test it there — reachable from Claude Code is not reachable, and a
+file's own header is the least reliable evidence in the system.
+
+**Freshness is not accuracy.** Two procedures written at 07:32 on 2026-08-17 described a pipeline
+renumbered in June 2026 and named files that do not exist. Being the newest record made them the
+most likely to be trusted. Date a record by what it was *checked against*, not by when it was written.
 
 ---
 
