@@ -6,11 +6,11 @@ Two different clients reach this content by two different paths:
 Writing it twice by hand is how the last inventory went stale. Generated instead.
 """
 import sqlite3, datetime, pathlib, sys
-RC = pathlib.Path("/mnt/c/Users/sverschaeve/OneDrive - ITG/Documents/7. Software/Research Cortex")
+RC = pathlib.Path("$HOME/OneDrive - ITG/Documents/7. Software/Research Cortex")
 src = RC / "agents/methods-coach/risk-mapping-runbook-context.md"
 body = src.read_text(encoding="utf-8")
 
-db="/home/sverschaeve/.local/share/metis/metis.sqlite"
+db="$HOME/.local/share/metis/metis.sqlite"
 con=sqlite3.connect(db, timeout=120.0); con.execute("PRAGMA busy_timeout=120000")
 now=datetime.datetime.now(datetime.timezone.utc).isoformat()
 steps = (f"*Generated from `agents/methods-coach/risk-mapping-runbook-context.md` "
