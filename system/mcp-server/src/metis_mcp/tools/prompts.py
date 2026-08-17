@@ -368,7 +368,48 @@ def _onboarding(request: str = "") -> str:
     )
 
 
+def _risk_mapping(request: str = "") -> str:
+    return (
+        "Run the **HAT risk mapping** methodology for a country. Do NOT design a new "
+        "pipeline — two complete working implementations exist and the job is to copy "
+        "the reference one and re-point it.\n\n"
+        "1. **Load the runbook first, before saying anything about method.** Call "
+        "`get_agent_context(agent_slug=\"methods-coach\")` — it returns "
+        "`hat-metric-context.md` (the method: quartic KDE, tau=30km, RR thresholds "
+        "1e-5 / 1e-4, the piecewise negative-binomial infection-rate model) and "
+        "`risk-mapping-runbook-context.md` (the procedure: script inventory, execution "
+        "order, config blocks, cross-border addendum, traps). Same content is in "
+        "procedural memory — `semantic_search(query=\"risk mapping runbook\", "
+        "layers=\"procedural\")` — use it as a cross-check if the context looks thin.\n"
+        "2. **Profile the data, never open it.** Ask for a data dictionary "
+        "(`generate_profiling_script` → they run it locally → `ingest_profiling_output`). "
+        "Case data is patient data.\n"
+        "3. **Do the interview** — the 11-row table in the runbook. Country code, UTM "
+        "EPSG (this is the classic error: 32733 Angola vs 32734 DRC), year range, window "
+        "width, bandwidth, case source, boundary + foci shapefiles, cross-border yes/no, "
+        "LandScan year, outputs wanted. Confirm every one; the DRC and Angola runs differ "
+        "on most of them. State the chosen parameters back before generating anything.\n"
+        "4. **Generate the scripts** by adapting the reference pipeline — country config "
+        "block + shapefiles is almost the whole job. Respect the house style "
+        "(`librarian::shelf()`, `%>%`, always `dplyr::select()` because MASS masks it, "
+        "portable path block, never `setwd()`).\n"
+        "5. **If cross-border was asked for**, that is a SECOND pipeline, not a flag: "
+        "3-year windows, different UTM zone, merged border-province boundary, both "
+        "countries' case data, signed distance from the border. See the runbook.\n"
+        "6. **Validate before believing anything** — raster NA count, smooth mean "
+        "population across windows, risk area should decline, threshold labels not "
+        "swapped.\n"
+        "7. **Record it**: `update_project_memory(project_id=\"angola-hat-analysis\", …)` "
+        "for Angola work (all six duplicate project rows were merged into that one on "
+        "2026-08-17 — do not create a new one per pipeline), plus "
+        "`save_session_summary` with THE PARAMETERS ACTUALLY USED, and `log_agent_run`. "
+        "If you hit a new trap, add it to the runbook file — that file is the memory.\n"
+        + (f"\nThe request: {request}\n" if request else "")
+    )
+
+
 _WORKFLOW_PROMPTS = {
+    "risk-mapping": ("HAT risk mapping for a country — full runbook, optionally with cross-border analysis", _risk_mapping),
     "metis-onboarding": ("Set up Metis for your field — background questionnaire, then build your knowledge layer", _onboarding),
     "metis-morning": ("Morning briefing — tasks, inbox, news, new papers, today's focus", _morning),
     "safe-analysis": ("Analyse sensitive data without sending it — send code, not data", _safe_analysis),

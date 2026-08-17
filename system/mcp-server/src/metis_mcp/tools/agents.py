@@ -36,9 +36,12 @@ _AGENT_RUNS_MIGRATE = [
 
 @app.tool()
 async def get_agent_context(agent_slug: str) -> list[TextContent]:
-    """Load an agent's system prompt and contract from the RC.
+    """Load an agent's system prompt, contract, skill and project contexts from the RC.
 
-    Reads system-prompt.md and contract.md from agents/{agent_slug}/.
+    Reads system-prompt.md, contract.md, skill.md and every *-context.md from
+    agents/{agent_slug}/. The context files carry the project-specific detail —
+    methodology parameters, pipeline inventories, past decisions — that turns a
+    generic specialist into one that knows this researcher's actual work.
     If the agent is not found, lists all available agents.
 
     Args:
@@ -85,6 +88,28 @@ async def get_agent_context(agent_slug: str) -> list[TextContent]:
             parts.append(f"# skill.md\n\n{skill_fp.read_text(encoding='utf-8')}")
         except Exception as e:
             parts.append(f"# skill.md\n\nError reading file: {e}")
+
+    # Project context files: agents/<slug>/*-context.md.
+    #
+    # WHY THIS WAS ADDED (2026-08-17)
+    #   Eleven of these files existed — ~44 KB, including the 187-line
+    #   hat-metric-context.md that opens "This file is loaded automatically by
+    #   Methods Coach at the start of any session involving HAT risk mapping".
+    #   Nothing in the codebase referenced any of them. They were written, never
+    #   read: the best methodological record in the system was reachable only by
+    #   opening the file by hand, and completely invisible from Claude Desktop.
+    #
+    #   The same write-path-with-no-reader shape as session decisions. A document
+    #   that asserts it is loaded automatically is not evidence that it is.
+    #
+    # Sorted so the injected context is stable between calls; a project-specific
+    # file is appended AFTER the generic prompt so it refines rather than
+    # competes with it.
+    for ctx_fp in sorted(agent_dir.glob("*-context.md")):
+        try:
+            parts.append(f"# {ctx_fp.name}\n\n{ctx_fp.read_text(encoding='utf-8')}")
+        except Exception as e:
+            parts.append(f"# {ctx_fp.name}\n\nError reading file: {e}")
 
     if not parts:
         return [
