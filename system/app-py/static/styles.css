@@ -27,10 +27,15 @@
      --m-page-pad   grows with the viewport so a wide page does not look
                     like content pinned to the left edge.
      ---------------------------------------------------------------- */
-  --m-page-max:      1800px;
-  --m-page-max-wide: 2100px;   /* opt-in for genuinely tabular surfaces */
+  /* Dashboard surfaces FILL the window. A 1800px cap still left visible dead
+     margin on a wide monitor, which is the whole complaint — so the cap is gone
+     and the gutters grow instead. This only works because the grids below are
+     intrinsic (auto-fit minmax): extra width becomes MORE cards, not wider ones,
+     so a filled 3440px screen reads as deliberate rather than stretched. */
+  --m-page-max:      none;
+  --m-page-max-wide: none;
   --m-prose-max:     78ch;
-  --m-page-pad:      clamp(20px, 3.2vw, 72px);
+  --m-page-pad:      clamp(20px, 2.6vw, 64px);
   --m-page-pad-top:  clamp(24px, 2.4vw, 48px);
   --m-gap:           clamp(0.9rem, 1.4vw, 1.75rem);
 
@@ -2760,13 +2765,30 @@ details summary { outline: none; }
 
 /* ---------- >= 2400px : 4K unscaled / ultrawide ---------- */
 @media (min-width: 2400px) {
-  /* Beyond this the cap does the work: content stays at --m-page-max and
-     centres, because a genuinely edge-to-edge dashboard forces the eye to
-     travel further than any layout gain is worth. Only the gutters grow. */
-  :root { --m-page-pad: 80px; }
-  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
-  .today-canvas { grid-template-columns: 1fr 1fr 1fr 380px; }
+  :root { --m-page-pad: 72px; }
+  .grid-3, .grid-4 { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+  /* A fourth working column rather than three wider ones. */
+  .today-canvas { grid-template-columns: 1fr 1fr 1fr 400px; }
   .today-canvas > :last-child { grid-column: auto; }
+  .grid-main { grid-template-columns: minmax(0, 1fr) 460px; }
+  /* The remaining fixed-count grids become intrinsic only this wide, where a
+     5th or 6th column is genuinely readable rather than cramped. */
+  .vbox-strip, .ledger { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .news-top-signals-grid { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+  .nf-grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .nf-grid-4 { grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+}
+
+/* ---------- >= 3000px : ultrawide / 4K at 100% ---------- */
+@media (min-width: 3000px) {
+  /* At this width the LIMIT on usefulness is line-of-sight, not pixels, so the
+     gain goes into more columns and a slightly larger base size rather than
+     wider anything. Reading surfaces are unaffected — .page--prose and
+     .prose-measure keep their measure at every width. */
+  .page { font-size: 1.05rem; }
+  .grid-3, .grid-4 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+  .nf-grid-3 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .today-canvas { grid-template-columns: repeat(3, minmax(0, 1fr)) 420px; }
 }
 
 /* ===========================================================================
