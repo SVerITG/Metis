@@ -430,7 +430,12 @@ CREATE TABLE IF NOT EXISTS news_briefs (
     -- Seen state. Without it the News surface showed the same 859 items on every
     -- visit with no sense of what had arrived since last time — which is the one
     -- thing that makes a feed readable rather than a wall. Added 2026-08-12.
-    seen_at        TEXT DEFAULT NULL
+    seen_at        TEXT DEFAULT NULL,
+    -- When the story was PUBLISHED, from the feed. created_at is the SCAN time, so
+    -- it answers "when did Metis notice this" — after the 13 Jul → 18 Aug 2026 scan
+    -- gap every July story was stamped 18 August. Any daily/weekly/monthly filter
+    -- must read COALESCE(published_at, created_at). Added 2026-08-19.
+    published_at   TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS news_items (
@@ -442,6 +447,54 @@ CREATE TABLE IF NOT EXISTS news_items (
     created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Story threads. A long-running event (an epidemic, a funding shift) produces
+-- fresh wire items every day; without grouping them into one persistent story
+-- the daily brief led with the same thing every morning, because each item was
+-- genuinely new. Cooldown is keyed on daily_insights.read_at — a brief that was
+-- never marked read delivered nothing and must not silence a thread.
+-- See mcp-server/src/metis_mcp/tools/news_threads.py. Added 2026-08-19.
+CREATE TABLE IF NOT EXISTS news_threads (
+    thread_id   TEXT PRIMARY KEY,
+    label       TEXT NOT NULL,
+    subject     TEXT DEFAULT '',
+    place       TEXT DEFAULT '',
+    keywords    TEXT DEFAULT '',
+    domain      TEXT DEFAULT '',
+    first_seen  TEXT,
+    last_seen   TEXT,
+    item_count  INTEGER DEFAULT 0,
+    peak_signal TEXT DEFAULT 'low',
+    max_number  INTEGER DEFAULT 0,
+    status      TEXT DEFAULT 'active'
+);
+
+-- Keyed on news_briefs.rowid, NOT brief_id: SQLite permits NULL in a TEXT
+-- PRIMARY KEY, and most existing news_briefs rows have brief_id IS NULL.
+CREATE TABLE IF NOT EXISTS news_thread_items (
+    thread_id   TEXT NOT NULL,
+    brief_ref   INTEGER NOT NULL,
+    assigned_at TEXT,
+    PRIMARY KEY (thread_id, brief_ref)
+);
+
+-- What each brief actually led with / mentioned, and the analytical angle used,
+-- so recurring threads get a new lens rather than the same paragraph.
+CREATE TABLE IF NOT EXISTS news_thread_mentions (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    thread_id   TEXT NOT NULL,
+    insight_key TEXT NOT NULL,
+    period      TEXT NOT NULL DEFAULT 'daily',
+    role        TEXT NOT NULL DEFAULT 'mention',
+    angle       TEXT DEFAULT '',
+    created_at  TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_thread_items_brief ON news_thread_items(brief_ref);
+CREATE INDEX IF NOT EXISTS idx_thread_mentions_thread ON news_thread_mentions(thread_id);
+CREATE INDEX IF NOT EXISTS idx_thread_mentions_key ON news_thread_mentions(insight_key);
+
+-- Superseded by news_threads above. Retained because older installs have it;
+-- no code writes to it.
 CREATE TABLE IF NOT EXISTS news_topics (
     topic_id        TEXT PRIMARY KEY,
     label           TEXT,

@@ -3,8 +3,9 @@ No LLM calls. Pure data fetching and dedup.
 """
 import json
 import logging
+import re
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import feedparser
@@ -28,57 +29,248 @@ def _dashboard_port(default: int = 8080) -> int:
         return default
 
 
-# Each feed declares its KIND: "news" or "paper".
+# ═══════════════════════════════════════════════════════════════════════════════
+# TWO SEPARATE FEED LISTS, because News and Library are different jobs.
 #
-# This field is the fix for a bug that kept coming back: half of these feeds are
-# journal tables-of-contents (PLOS NTDs, Lancet ID, Nature Medicine, arXiv, MDPI,
-# a PubMed saved search…). They emit PAPERS. With no kind field they all landed in
-# news_briefs, so the News surface filled up with articles and preprints — and the
-# relevance ranking then PROMOTED them, because a paper is by definition closer to
-# a researcher's corpus than a BBC headline.
+# NEWS_FEEDS   → news_briefs      → the News surface
+# LIBRARY_FEEDS → new_publications → the Library surface
 #
-# News is what happened. Literature is what was published. They are different
-# surfaces, different tables, and different jobs to be done.
-#   kind="news"  → news_briefs      (the News surface)
-#   kind="paper" → new_publications (the Library / literature surface)
-FEED_ALLOWLIST = [
-    # ── NEWS: outbreaks, alerts, policy, world ────────────────────────────────
-    ("WHO outbreak news",      "https://www.who.int/feeds/entity/csr/don/en/rss.xml",                                    "surveillance,public-health",              "news"),
-    ("ProMED-mail",            "https://promedmail.org/feed/",                                                            "surveillance,infectious-disease,public-health", "news"),
-    ("ECDC Threat Reports",    "https://www.ecdc.europa.eu/en/rss.xml",                                                  "surveillance,public-health",              "news"),
-    ("Africa CDC",             "https://africacdc.org/feed/",                                                             "surveillance,public-health,africa",       "news"),
-    ("MSF Science",            "https://www.msf.org/rss.xml",                                                            "field-research,public-health,tropical-medicine", "news"),
-    ("WHO AFRO",               "https://www.afro.who.int/rss.xml",                                                         "surveillance,public-health,africa",       "news"),
-    ("WHO WER",                "https://www.who.int/publications/journals/weekly-epidemiological-record/rss.xml",           "surveillance,outbreaks,public-health",    "news"),
-    ("WHO DON (full)",         "https://www.who.int/emergencies/disease-outbreak-news/feed.rss",                            "surveillance,outbreaks,public-health",    "news"),
-    ("GOARN",                  "https://extranet.who.int/goarn/rss.xml",                                                   "surveillance,outbreaks,public-health",    "news"),
-    ("IHP Newsletter",         "https://www.internationalhealthpolicies.org/feed/",                                       "policy,public-health",                    "news"),
-    ("DEVEX Global Health",    "https://www.devex.com/news/rss.xml",                                                     "policy,public-health",                    "news"),
-    ("The New Humanitarian",   "https://www.thenewhumanitarian.org/rss.xml",                                              "policy,public-health,africa",             "news"),
-    ("Reliefweb",              "https://reliefweb.int/updates/rss.xml",                                                  "policy,public-health",                    "news"),
-    ("BBC World",              "https://feeds.bbci.co.uk/news/world/rss.xml",                                             "world-news",                              "news"),
-    ("Reuters World",          "https://feeds.reuters.com/Reuters/worldNews",                                             "world-news",                              "news"),
-    ("Anthropic News",         "https://www.anthropic.com/news/rss.xml",                                                  "AI",                                      "news"),
+# The distinction is not "health vs science", it is **journalism vs primary
+# literature**:
+#
+#   News is reporting that PICKED UP a result — Guardian Science on a Lancet
+#   paper, ScienceDaily on a new model, STAT on a trial readout. It is what
+#   happened, and what the world is saying about it.
+#
+#   Library is the primary literature itself — journal tables-of-contents and
+#   preprint servers. It exists to build a scientific background, not to tell you
+#   the news, and it is scanned on the Library's schedule, not the News one.
+#
+# Mixing them was a recurring bug: journal ToCs landed in news_briefs and the
+# relevance ranking PROMOTED them to the lead, because a paper is by definition
+# closer to a researcher's corpus than a headline. Separate lists make that
+# structurally impossible rather than a filter someone has to remember.
+#
+# EVERY URL BELOW WAS VERIFIED LIVE ON 2026-08-19: parsed, non-empty, and recent.
+# Never add one unverified — feedparser returns an EMPTY RESULT rather than
+# raising on a 404, so a bad URL fails silently and looks like a quiet news day
+# forever. 24 of the 52 feeds in the version before this were dead, some for
+# years. `check_news_feeds` exists to catch exactly that.
+# ═══════════════════════════════════════════════════════════════════════════════
 
-    # ── PAPERS: journal tables-of-contents and preprints → the LIBRARY ────────
-    ("PLOS NTDs",              "https://journals.plos.org/plosntds/feed/atom",                                            "ntd,tropical-medicine,public-health",     "paper"),
-    ("PLOS Medicine",          "https://journals.plos.org/plosmedicine/feed/atom",                                        "public-health,methods",                   "paper"),
-    ("CDC EID journal",        "https://wwwnc.cdc.gov/eid/rss/ahead-of-print.xml",                                       "methods,surveillance",                    "paper"),
-    ("Lancet Inf. Diseases",   "https://www.thelancet.com/rssFeed/laninf_current.xml",                                   "infectious-disease,public-health,methods","paper"),
-    ("Eurosurveillance",       "https://www.eurosurveillance.org/content/rss.xml",                                       "surveillance,methods,public-health",      "paper"),
-    ("BMJ Global Health",      "https://gh.bmj.com/rss/current.xml",                                                     "public-health,methods",                   "paper"),
-    ("Nature Medicine",        "https://www.nature.com/nm.rss",                                                           "methods,biomedical",                      "paper"),
-    ("Tropical Med & IH",      "https://onlinelibrary.wiley.com/action/showFeed?jc=13653156&type=etoc&feed=rss",         "tropical-medicine,methods,public-health", "paper"),
-    ("IJH Geographics",        "https://ij-healthgeographics.biomedcentral.com/articles/most-recent/rss.xml",              "spatial-epi,methods",                     "paper"),
-    ("Spat Spatio-temp Epi",   "https://sstepj.biomedcentral.com/articles/most-recent/rss.xml",                           "spatial-epi,methods",                     "paper"),
-    ("Int J Epidemiology",     "https://academic.oup.com/rss/site_5339/3241.xml",                                         "methods,epidemiology",                    "paper"),
-    ("MDPI Trop Med",          "https://www.mdpi.com/rss/journal/tropicalmed",                                             "ntd,tropical-medicine,methods",           "paper"),
-    ("MDPI Pathogens",         "https://www.mdpi.com/rss/journal/pathogens",                                             "infectious-disease,methods",              "paper"),
-    ("MDPI IJERPH",            "https://www.mdpi.com/rss/journal/ijerph",                                                 "epidemiology,public-health,methods",      "paper"),
-    ("arXiv cs.AI",            "https://rss.arxiv.org/rss/cs.AI",                                                         "AI,methods",                              "paper"),
-    ("arXiv q-bio (epi)",      "https://rss.arxiv.org/rss/q-bio.PE",                                                      "epidemiology,methods",                    "paper"),
-    ("PubMed HAT/NTD",         "https://pubmed.ncbi.nlm.nih.gov/rss/search/1/?limit=15&query=human+african+trypanosomiasis+OR+sleeping+sickness+OR+neglected+tropical+diseases&fc=20250101",  "ntd,tropical-medicine", "paper"),
+NEWS_FEEDS = [
+    # ── Outbreak & disease surveillance ───────────────────────────────────────
+    # ECDC publishes per-topic feeds at taxonomy/term/<id>/feed (listed on
+    # ecdc.europa.eu/en/rss-feeds). The weekly Communicable Disease Threats
+    # Report is the working substitute for WHO's retired DON feed.
+    ("ECDC threats report",    "https://www.ecdc.europa.eu/en/taxonomy/term/1505/feed",                 "surveillance,outbreaks,public-health"),
+    ("ECDC epi updates",       "https://www.ecdc.europa.eu/en/taxonomy/term/1310/feed",                 "surveillance,epidemiology"),
+    ("ECDC news",              "https://www.ecdc.europa.eu/en/taxonomy/term/1307/feed",                 "surveillance,public-health"),
+    ("WHO AFRO",               "https://www.afro.who.int/rss.xml",                                       "surveillance,public-health,africa"),
+    ("WHO AFRO press",         "https://afro.who.int/rss/featured-news.xml",                            "surveillance,public-health,africa"),
+    ("PAHO news",              "https://www.paho.org/en/rss.xml",                                        "surveillance,public-health,americas"),
+    ("Outbreak News Today",    "https://outbreaknewstoday.com/feed/",                                   "surveillance,outbreaks,infectious-disease"),
+    ("Avian Flu Diary",        "https://afludiary.blogspot.com/feeds/posts/default?alt=rss",            "surveillance,outbreaks,infectious-disease"),
+
+    # ── Science journalism — reporting ON research ────────────────────────────
+    # This is the block that makes News a news surface. Aggregators first:
+    # ScienceDaily and Phys.org syndicate university and journal press releases,
+    # so one feed covers hundreds of institutions.
+    ("ScienceDaily",           "https://www.sciencedaily.com/rss/all.xml",                              "science"),
+    ("ScienceDaily health",    "https://www.sciencedaily.com/rss/health_medicine.xml",                  "science,public-health"),
+    ("Phys.org",               "https://phys.org/rss-feed/",                                             "science"),
+    ("MedicalXpress",          "https://medicalxpress.com/rss-feed/",                                    "science,public-health"),
+    ("Guardian Science",       "https://www.theguardian.com/science/rss",                               "science"),
+    ("Guardian Environment",   "https://www.theguardian.com/environment/rss",                           "science,climate-health"),
+    ("BBC Sci & Environment",  "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",         "science"),
+    ("BBC Health",             "https://feeds.bbci.co.uk/news/health/rss.xml",                          "science,public-health"),
+    ("Science News",           "https://www.sciencenews.org/feed",                                       "science"),
+    ("New Scientist",          "https://www.newscientist.com/feed/home/",                               "science"),
+    ("Ars Technica Science",   "https://arstechnica.com/science/feed/",                                 "science"),
+    ("Quanta",                 "https://www.quantamagazine.org/feed/",                                  "science"),
+    ("Nature news",            "https://www.nature.com/nature.rss",                                     "science"),
+    ("Nature health sci",      "https://www.nature.com/subjects/health-sciences.rss",                   "science,public-health"),
+    ("Science news",           "https://www.science.org/rss/news_current.xml",                          "science"),
+    ("Lancet",                 "https://www.thelancet.com/rssFeed/lancet_current.xml",                  "science,public-health"),
+    # Research-integrity reporting. Directly useful when assessing a literature
+    # base: a retracted paper you have cited is news you want early.
+    ("Retraction Watch",       "https://retractionwatch.com/feed/",                                     "science,methods"),
+    ("Undark",                 "https://undark.org/feed/",                                              "science"),
+    # The Conversation is academics writing for a general audience — the closest
+    # thing to "a researcher explaining what this result means". The Africa desk
+    # is the most relevant edition for this field.
+    ("The Conversation Africa","https://theconversation.com/africa/articles.atom",                      "science,africa,public-health"),
+    ("The Conversation health","https://theconversation.com/africa/health/articles.atom",               "science,public-health,africa"),
+
+    # ── Global-health journalism ──────────────────────────────────────────────
+    ("STAT News",              "https://www.statnews.com/feed/",                                        "public-health,science"),
+    ("KFF Health News",        "https://kffhealthnews.org/feed/",                                       "public-health,policy"),
+    ("Health Policy Watch",    "https://healthpolicy-watch.news/feed/",                                 "policy,public-health"),
+    ("IHP Newsletter",         "https://www.internationalhealthpolicies.org/feed/",                     "policy,public-health"),
+    ("Geneva Health Files",    "https://genevahealthfiles.substack.com/feed",                           "policy,health-financing"),
+    ("Lancet Global Health",   "https://www.thelancet.com/rssFeed/langlo_current.xml",                  "public-health,policy"),
+
+    # ── Policy & financing ────────────────────────────────────────────────────
+    ("Global Fund",            "https://www.theglobalfund.org/data/rss-feeds/latest/",                  "policy,health-financing"),
+    ("Unitaid",                "https://unitaid.org/feed/",                                             "policy,health-financing"),
+    ("DNDi",                   "https://dndi.org/feed/?post_type=news",                                 "ntd,tropical-medicine,policy"),
+    ("MSF",                    "https://www.msf.org/rss/all",                                           "field-research,public-health,tropical-medicine"),
+    ("UN News health",         "https://news.un.org/feed/subscribe/en/news/topic/health/feed/rss.xml",  "policy,public-health"),
+
+    # ── Humanitarian & disaster ───────────────────────────────────────────────
+    # Outbreaks happen inside emergencies, so disaster feeds are epidemiological
+    # context, not a separate interest. GDACS is the EU/UN automated alert system.
+    ("GDACS alerts",           "https://www.gdacs.org/xml/rss.xml",                                     "policy,disasters"),
+    ("ReliefWeb disasters",    "https://reliefweb.int/disasters/rss.xml",                               "policy,disasters"),
+    ("Reliefweb",              "https://reliefweb.int/updates/rss.xml",                                 "policy,public-health"),
+    ("ReliefWeb DRC",          "https://reliefweb.int/updates/rss.xml?advanced-search=%28C61%29",        "policy,africa,drc"),
+    ("OCHA",                   "https://www.unocha.org/rss.xml",                                        "policy,disasters"),
+    ("IFRC",                   "https://www.ifrc.org/rss.xml",                                          "policy,disasters"),
+    ("The New Humanitarian",   "https://www.thenewhumanitarian.org/rss.xml",                            "policy,public-health,africa"),
+    ("Guardian Global dev",    "https://www.theguardian.com/global-development/rss",                    "policy,public-health,africa"),
+
+    # ── Africa desks ──────────────────────────────────────────────────────────
+    ("AllAfrica health",       "https://allafrica.com/tools/headlines/rdf/health/headlines.rdf",        "africa,public-health"),
+    ("AllAfrica",              "https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf",        "africa,world-news"),
+    ("RFI Afrique",            "https://www.rfi.fr/fr/afrique/rss",                                     "africa,world-news"),
+    ("Le Monde Afrique",       "https://www.lemonde.fr/afrique/rss_full.xml",                           "africa,world-news"),
+    ("France24 Afrique",       "https://www.france24.com/fr/afrique/rss",                               "africa,world-news"),
+
+    # ── World ─────────────────────────────────────────────────────────────────
+    ("BBC World",              "https://feeds.bbci.co.uk/news/world/rss.xml",                           "world-news"),
+    ("Al Jazeera",             "https://www.aljazeera.com/xml/rss/all.xml",                             "world-news,africa"),
+
+    # ── AI ────────────────────────────────────────────────────────────────────
+    # Anthropic publishes NO official feed (verified: every candidate 404s; only
+    # third-party scraper mirrors exist, not a dependency worth taking).
+    ("MIT Tech Review AI",     "https://www.technologyreview.com/topic/artificial-intelligence/feed",   "AI"),
+    ("Google AI blog",         "https://blog.google/technology/ai/rss/",                                "AI"),
+    ("Ars Technica AI",        "https://arstechnica.com/ai/feed/",                                      "AI"),
 ]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LIBRARY FEEDS — primary literature. Scanned by scan_library_feeds(), NOT by the
+# news scan, and written to `new_publications` for the Library surface.
+#
+# Springer/BMC expose every journal at
+#   link.springer.com/search.rss?facet-journal-id=<id>
+# which is how the whole BMC family below is reachable — the older
+# <journal>.biomedcentral.com/articles/most-recent/rss.xml form now 301s to a
+# non-feed.
+#
+# NOT INCLUDED — PubMed. Its feeds require an `rss_guid` generated by clicking
+# "Create RSS" on a saved search, so the URL cannot be constructed. Rather than
+# block on that, this list covers the same ground through publishers and
+# preprint servers directly. If a PubMed saved search is ever wanted, paste its
+# erss.cgi URL here.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+LIBRARY_FEEDS = [
+    # ── NTDs & tropical medicine ──────────────────────────────────────────────
+    ("PLOS NTDs",              "https://journals.plos.org/plosntds/feed/atom",                                    "ntd,tropical-medicine,public-health"),
+    ("Parasites & Vectors",    "https://link.springer.com/search.rss?facet-journal-id=13071",                     "ntd,tropical-medicine,vectors"),
+    ("Infect Dis Poverty",     "https://link.springer.com/search.rss?facet-journal-id=40249",                     "ntd,tropical-medicine,public-health"),
+    ("Trop Med & Health",      "https://link.springer.com/search.rss?facet-journal-id=41182",                     "tropical-medicine,public-health"),
+    ("Tropical Med & IH",      "https://onlinelibrary.wiley.com/feed/13653156/most-recent",                       "tropical-medicine,methods,public-health"),
+    ("Malaria Journal",        "https://link.springer.com/search.rss?facet-journal-id=12936",                     "malaria,tropical-medicine"),
+
+    # ── Infectious disease & surveillance ─────────────────────────────────────
+    ("Lancet Inf. Diseases",   "https://www.thelancet.com/rssFeed/laninf_current.xml",                            "infectious-disease,public-health,methods"),
+    ("CDC EID journal",        "https://wwwnc.cdc.gov/eid/rss/ahead-of-print.xml",                                "methods,surveillance"),
+    ("BMC Infect Dis",         "https://link.springer.com/search.rss?facet-journal-id=12879",                     "infectious-disease,epidemiology"),
+
+    # ── Global & public health ────────────────────────────────────────────────
+    ("PLOS Medicine",          "https://journals.plos.org/plosmedicine/feed/atom",                                "public-health,methods"),
+    ("PLOS Global Pub Health", "https://journals.plos.org/globalpublichealth/feed/atom",                           "public-health,policy"),
+    ("BMJ Global Health",      "https://gh.bmj.com/rss/current.xml",                                              "public-health,methods"),
+    ("Conflict and Health",    "https://link.springer.com/search.rss?facet-journal-id=13031",                     "conflict-health,public-health"),
+
+    # ── Methods, spatial epidemiology, modelling ───────────────────────────────
+    ("Int J Health Geogr",     "https://link.springer.com/search.rss?facet-journal-id=12942",                     "spatial-epi,methods"),
+    # No publication dates in this feed; date filters fall back to scan time.
+    ("Spat Spatio-temp Epi",   "https://rss.sciencedirect.com/publication/science/18775845",                      "spatial-epi,methods"),
+    ("Int J Epidemiology",     "https://academic.oup.com/rss/site_5339/OpenAccess.xml",                           "methods,epidemiology"),
+
+    # ── Preprints ─────────────────────────────────────────────────────────────
+    ("medRxiv",                "https://connect.medrxiv.org/medrxiv_xml.php?subject=all",                          "preprint,epidemiology,public-health"),
+    ("arXiv q-bio (epi)",      "https://rss.arxiv.org/rss/q-bio.PE",                                               "epidemiology,methods,preprint"),
+
+    # ── Biomedical & AI-in-science ────────────────────────────────────────────
+    ("Nature Medicine",        "https://www.nature.com/nm.rss",                                                    "methods,biomedical"),
+    ("Nature Mach Intell",     "https://www.nature.com/natmachintell.rss",                                         "AI,methods"),
+    ("arXiv cs.AI",            "https://rss.arxiv.org/rss/cs.AI",                                                   "AI,methods"),
+]
+
+# Combined view, kept because existing callers and `check_news_feeds` iterate one
+# list. The 4th element is the KIND, derived rather than hand-maintained so the
+# two lists cannot disagree with it.
+FEED_ALLOWLIST = (
+    [(n, u, t, "news") for n, u, t in NEWS_FEEDS]
+    + [(n, u, t, "paper") for n, u, t in LIBRARY_FEEDS]
+)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# REMOVED — verified permanently unavailable 2026-08-19. Recorded so nobody
+# re-adds them; all were in the list returning nothing, silently, for months.
+#
+#  WHO outbreak news / DON / WER — WHO RETIRED RSS FOR DISEASE OUTBREAK NEWS.
+#      The DON page now offers an email subscription only. No feed exists.
+#      ECDC threats report + WHO AFRO above are the substitutes.
+#  ProMED-mail   — ISID closed its feed permanently in 2023 to stop scraping.
+#  CIDRAP        — only parseable feed last published 2022-11-22 (1,365d stale).
+#  Africa CDC    — /feed/ 200 but unparseable; outbreak feed 750d stale.
+#  Anthropic     — no official feed; only third-party scraper mirrors.
+#  Reuters       — feeds.reuters.com NXDOMAIN, public RSS retired.
+#  EurekAlert, Scientific American, Think Global Health, Global Health NOW,
+#  BMJ news (403), Nature Medicine news (303), Devex (403, paywalled),
+#  ACAPS, Mail & Guardian, Nation Africa, WHO EURO, WHO SEARO, CDC newsroom,
+#  Europe PMC — all 403/404/unparseable on every pattern tried.
+#  Eurosurveillance — five URL patterns all dead.
+#  MDPI ×3       — 403; MDPI blocks automated feed access.
+#  GOARN, Gavi, Wellcome, ITM Antwerp — 404/302/Cloudflare challenge.
+#  bioRxiv epidemiology — parses but last published 2021-07-10 (1,866d).
+#      medRxiv (above) covers the same ground and is current.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Many publishers reject feedparser's default User-Agent outright. Measured
+# 2026-08-19: Africa CDC returned 403 Forbidden with the default UA and a clean
+# 200 with a browser-style one; WHO, Anthropic and Wellcome also 403 on default.
+# Because feedparser swallows the HTTP error and returns an object with zero
+# entries, this failed SILENTLY — `scan_news_feeds` recorded "0 new items" and
+# looked like a quiet news day rather than a blocked request. That is why the
+# feed looked thin: not too few sources, but sources that never answered.
+# There is no single UA that works everywhere, so try both. Measured 2026-08-19,
+# sequential single requests (the parallel test was confounded by rate limiting):
+#   default UA  → Al Jazeera and France24 return 200; Africa CDC returns 403
+#   browser UA  → Africa CDC returns 200; Al Jazeera and France24 return 403
+# Committing to either loses feeds. Fetch tries the default first and retries with
+# the browser UA only on an auth-ish rejection, so no publisher is hit twice
+# unnecessarily.
+FEED_USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/126.0 Safari/537.36"
+)
+_RETRY_STATUSES = (401, 403, 406, 429)
+
+
+def _fetch_feed(url: str):
+    """Parse a feed, retrying once with a browser User-Agent on rejection.
+
+    Returns the feedparser result whose entry list is non-empty where possible,
+    so the caller sees the best of the two attempts rather than the last one.
+    """
+    first = feedparser.parse(url)
+    if first.entries:
+        return first
+    status = getattr(first, "status", None) or 0
+    if status in _RETRY_STATUSES or status == 0 or status >= 500:
+        second = feedparser.parse(url, agent=FEED_USER_AGENT)
+        if second.entries:
+            return second
+        # Report whichever attempt got further than a bare rejection.
+        if (getattr(second, "status", None) or 0) and status in _RETRY_STATUSES:
+            return second
+    return first
 
 _DDL_NEWS = """
 CREATE TABLE IF NOT EXISTS news_briefs (
@@ -90,7 +282,9 @@ CREATE TABLE IF NOT EXISTS news_briefs (
     source_url     TEXT,
     created_at     TEXT,
     tags           TEXT,
-    brief_date     TEXT
+    brief_date     TEXT,
+    -- when the story was PUBLISHED (from the feed). created_at is the scan time.
+    published_at   TEXT DEFAULT ''
 )
 """
 
@@ -132,6 +326,37 @@ _DOMAIN_OVERRIDE.append((_AI_KEYWORDS, "AI"))
 
 
 import uuid as _uuid
+
+
+def _entry_published(entry) -> str:
+    """ISO publication timestamp from a feed entry, or '' if the feed omits it.
+
+    Why this matters: `created_at` records when the SCAN ran, so it answers "when
+    did Metis notice this?" — not "when did it happen?". Between 13 Jul and 18 Aug
+    2026 no scan ran at all, and every story from that window was then stamped
+    18 August. Any daily/weekly/monthly filter built on created_at therefore
+    reports the scanner's uptime rather than the news, which is worse than having
+    no filter because it looks authoritative.
+
+    feedparser normalises the several date formats RSS and Atom permit into
+    `published_parsed` / `updated_parsed` struct_times, already UTC.
+    """
+    import calendar as _calendar
+
+    for field in ("published_parsed", "updated_parsed", "created_parsed"):
+        st = entry.get(field)
+        if not st:
+            continue
+        try:
+            ts = _calendar.timegm(st)
+            dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+            # A feed that reports a date far in the future is broken, not prescient.
+            if dt > datetime.now(timezone.utc) + timedelta(days=2):
+                continue
+            return dt.replace(tzinfo=None).isoformat()
+        except (TypeError, ValueError, OverflowError):
+            continue
+    return ""
 
 
 def _strip_html(text: str) -> str:
@@ -176,9 +401,23 @@ def _classify_domain(title: str, summary: str, feed_tags: str) -> str:
     haystack = (title + " " + summary).lower()
     for keywords, domain in _DOMAIN_OVERRIDE:
         if any(kw in haystack for kw in keywords):
-            return domain
+            return _norm_domain(domain)
     # No keyword match — fall back to first feed tag
-    return feed_tags.split(",")[0].strip()
+    return _norm_domain(feed_tags.split(",")[0])
+
+
+def _norm_domain(domain: str) -> str:
+    """Lowercase, hyphenated domain tag.
+
+    The stored values had drifted into mixed case because the override keys in
+    `domain-overrides.local.json` are written naturally ('NTD', 'HAT',
+    'SPATIAL-EPI', 'MALARIA') while feed tags are lowercase. The result was
+    'NTD' (52 rows) and 'ntd' (48 rows) as two different domains, and
+    'SURVEILLANCE' separate from 'surveillance' — so a category filter grouping
+    by domain silently showed half of each. Normalising once at ingestion is the
+    fix; the News tabs also case-fold at match time so existing rows still group.
+    """
+    return re.sub(r"[\s_]+", "-", (domain or "").strip().lower())
 
 
 # High-authority sources — a hit here lifts the signal one level.
@@ -340,8 +579,31 @@ def update_today_board(board: str, items: list[dict]) -> dict:
         return {"ok": False, "error": str(e)}
 
 
-def _user_topics() -> set[str]:
-    """Lower-cased research topics/field from user-config.yaml, for relevance scoring."""
+def _user_topics(channel: str = "news") -> set[str]:
+    """Lower-cased topic terms for relevance scoring, for one channel.
+
+    `channel="news"` scores news items against what the person wants to HEAR
+    about; `channel="library"` scores papers against what they want a scientific
+    BACKGROUND on. These are separate lists on purpose — someone may follow a
+    conflict in the news daily and never collect literature on it, and want deep
+    literature on a method that never makes the news. Scoring both channels off a
+    single list made each one wrong in a different direction.
+
+    Falls back to user-config.yaml's research block, which is background-shaped,
+    so a person who has only been through the install wizard still gets sensible
+    library scoring.
+    """
+    out: set[str] = set()
+    try:
+        from metis_mcp.tools.user_profile import read_interest_lists
+        lists = read_interest_lists()
+        key = "library" if channel == "library" else "news"
+        out = {t.strip().lower() for t in lists.get(key, []) if t.strip()}
+    except Exception:
+        pass
+
+    # Always fold in the declared field/topics from the install wizard: they are
+    # the baseline for both channels when nothing more specific has been set.
     try:
         import yaml
         cfg_path = paths.config / "user-config.yaml"
@@ -351,14 +613,13 @@ def _user_topics() -> set[str]:
             topics = research.get("topics") or cfg.get("topics") or []
             if isinstance(topics, str):
                 topics = [t.strip() for t in topics.split(",")]
+            out |= {str(t).strip().lower() for t in topics if str(t).strip()}
             field = research.get("field") or cfg.get("field") or ""
-            out = {str(t).strip().lower() for t in topics if str(t).strip()}
             if field:
                 out.add(str(field).strip().lower())
-            return out
     except Exception:
         pass
-    return set()
+    return out
 
 
 def _score_signal(title: str, summary: str, feed_name: str,
@@ -394,13 +655,27 @@ def _score_signal(title: str, summary: str, feed_name: str,
     return "low"
 
 
-def scan_news_feeds(max_per_feed: int = 10) -> dict:
+def _scan_feeds(feeds, max_per_feed: int = 10) -> dict:
+    """Scan a given feed list. `feeds` is [(name, url, tags, kind), ...].
+
+    One engine, two callers: `scan_news_feeds()` passes NEWS_FEEDS and
+    `scan_library_feeds()` passes LIBRARY_FEEDS. Previously a single function
+    walked the combined list and branched on kind, which meant a News scan always
+    also pulled 21 journal tables-of-contents, and the Library could not be
+    refreshed without re-scanning every newspaper. News and Library are different
+    jobs on different schedules; they now have different entry points.
+    """
     from metis_mcp.tools.news_images import DDL as _IMG_DDL, image_from_entry, resolve_image
     papers_added = 0
 
     added = 0
     errors = []
-    user_topics = _user_topics()
+    # Score against the channel this scan actually serves: news items against
+    # what the person wants to hear about, papers against what they want a
+    # background on. `feeds` is homogeneous per call (scan_news_feeds /
+    # scan_library_feeds each pass one kind), so one lookup is correct.
+    _kind = feeds[0][3] if feeds else "news"
+    user_topics = _user_topics("library" if _kind == "paper" else "news")
     with _connect() as conn:
         conn.execute(_DDL_NEWS)
         conn.execute(_IMG_DDL)
@@ -426,9 +701,21 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
         except Exception:
             _score_batch = None
 
-        for name, url, tags, kind in FEED_ALLOWLIST:
+        for name, url, tags, kind in feeds:
             try:
-                parsed = feedparser.parse(url)
+                parsed = _fetch_feed(url)
+                # feedparser never raises on HTTP errors — it returns an object
+                # with no entries — so a 403/404 was indistinguishable from a
+                # quiet feed. Record it as an error so a dead source is visible
+                # in the scan report instead of masquerading as no news.
+                _status = getattr(parsed, "status", None)
+                if _status and _status >= 400:
+                    errors.append(f"{name}: HTTP {_status}")
+                    continue
+                if not parsed.entries:
+                    _bozo = str(getattr(parsed, "bozo_exception", "") or "")[:80]
+                    errors.append(f"{name}: no entries" + (f" ({_bozo})" if _bozo else ""))
+                    continue
                 pending = []
                 for entry in parsed.entries[:max_per_feed]:
                     link = entry.get("link", "")
@@ -444,13 +731,13 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
                     # Thumbnail: free from the feed if present (BBC/Guardian do),
                     # else resolved from the article's og:image below (journals).
                     pending.append((title, entry.get("summary", "")[:800], link,
-                                    image_from_entry(entry)))
+                                    image_from_entry(entry), _entry_published(entry)))
                 if not pending:
                     continue
                 # One batched embedding call per feed (efficient).
-                sims = (_score_batch([f"{t}. {s}" for t, s, _, _ in pending], centroid)
+                sims = (_score_batch([f"{t}. {s}" for t, s, _, _, _ in pending], centroid)
                         if _score_batch else [0.0] * len(pending))
-                for (title, summary_raw, link, feed_img), sim in zip(pending, sims):
+                for (title, summary_raw, link, feed_img, published_at), sim in zip(pending, sims):
                     # Classify/score on the RAW text (an injection banner must not
                     # skew relevance), then sanitise before it touches the DB.
                     primary_domain = _classify_domain(title, summary_raw, tags)
@@ -474,8 +761,12 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
                             """INSERT INTO new_publications
                                (title, journal, pub_date, doi, topic_tag, source_url, discovered_at)
                                VALUES (?, ?, ?, '', ?, ?, ?)""",
-                            (title, name, datetime.now().date().isoformat(), tags, link,
-                             datetime.now().isoformat()),
+                            # pub_date is the paper's real date when the feed gives
+                            # one; falling back to today made every backlog paper
+                            # look published on the day it was scanned.
+                            (title, name, (published_at[:10] if published_at
+                                           else datetime.now().date().isoformat()),
+                             tags, link, datetime.now().isoformat()),
                         )
                         papers_added += 1
                         continue
@@ -484,14 +775,19 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
                     # slow image lookup break a scan — resolve_image never raises.
                     image_url = feed_img or (resolve_image(None, link, conn) or "")
 
+                    # published_at = when it HAPPENED (from the feed, '' if absent).
+                    # created_at   = when this scan ran. Both are kept: readers use
+                    # COALESCE(published_at, created_at) so pre-2026-08-19 rows,
+                    # which have no publication date recoverable, still sort.
                     conn.execute(
                         """INSERT INTO news_briefs
-                           (brief_id, title, domain, signal_strength, summary, source_url, created_at, tags, brief_date, relevance, image_url)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                           (brief_id, title, domain, signal_strength, summary, source_url, created_at, tags, brief_date, relevance, image_url, published_at)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                         (
-                            f"nb-{_uuid.uuid4().hex[:12]}",title, primary_domain, signal, summary_raw, link,
-                         datetime.now().isoformat(), tags, datetime.now().date().isoformat(),
-                         round(float(sim), 4), image_url),
+                            f"nb-{_uuid.uuid4().hex[:12]}", title, primary_domain, signal, summary_raw, link,
+                         datetime.now().isoformat(), tags,
+                         (published_at[:10] if published_at else datetime.now().date().isoformat()),
+                         round(float(sim), 4), image_url, published_at),
                     )
                     _maybe_add_to_board(conn, title, link, summary_raw, name)
                     added += 1
@@ -505,7 +801,29 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
         "papers_added": papers_added,
         "errors": errors,
         "semantic": centroid is not None,
+        "feeds_checked": len(feeds),
     }
+
+
+def scan_news_feeds(max_per_feed: int = 10) -> dict:
+    """Scan the NEWS feeds only — journalism, into `news_briefs`.
+
+    Journal tables-of-contents are deliberately NOT scanned here. News is
+    reporting that picked up a result; the primary literature is the Library's
+    job (`scan_library_feeds`).
+    """
+    return _scan_feeds([(n, u, t, "news") for n, u, t in NEWS_FEEDS], max_per_feed)
+
+
+def scan_library_feeds(max_per_feed: int = 10) -> dict:
+    """Scan the LIBRARY feeds only — journal ToCs and preprints, into
+    `new_publications`.
+
+    This is the literature-alert side: it exists to build a scientific background,
+    not to report the news, so it runs on the Library's schedule and its output
+    never reaches the News surface.
+    """
+    return _scan_feeds([(n, u, t, "paper") for n, u, t in LIBRARY_FEEDS], max_per_feed)
 
 
 def scan_literature_folder() -> dict:
@@ -583,16 +901,47 @@ def _transcribe_inbox_audio(audio_path: str, model_size: str = "base") -> str | 
 
 @app.tool()
 async def scan_news() -> list[TextContent]:
-    """Fetch RSS feeds and add new items to news_briefs.
+    """Fetch the news feeds and add new items to the News surface.
 
-    Checks WHO outbreak news, CDC EID journal, PLOS NTDs, and Anthropic news.
-    Deduplicates by URL so running multiple times is safe.
+    Scans journalism only — outbreak surveillance (ECDC threats report, WHO AFRO,
+    PAHO), science reporting (ScienceDaily, Guardian Science, STAT, Nature news,
+    The Conversation Africa), humanitarian and disaster feeds (GDACS, ReliefWeb,
+    OCHA), Africa desks and policy sources. Journal tables-of-contents are NOT
+    scanned here: the primary literature is the Library's job, via
+    `scan_library`. Deduplicates by URL, so running it repeatedly is safe.
     """
     result = scan_news_feeds()
     errors = result.get("errors", [])
-    msg = f"News scan complete. {result['news_added']} new items added."
+    msg = (f"News scan complete. {result['news_added']} new items added "
+           f"from {result.get('feeds_checked', 0)} feeds.")
     if errors:
-        msg += f"\nErrors ({len(errors)}): " + "; ".join(errors[:3])
+        msg += (f"\n{len(errors)} feed(s) failed and contributed nothing: "
+                + "; ".join(errors[:5]))
+        if len(errors) > 5:
+            msg += f" (+{len(errors) - 5} more)"
+        msg += "\nRun a feed check to see the full list."
+    return [TextContent(type="text", text=msg)]
+
+
+@app.tool()
+async def scan_library() -> list[TextContent]:
+    """Fetch the literature feeds and add new papers to the Library.
+
+    This is the Library's own scan: journal tables-of-contents and preprint
+    servers (PLOS NTDs, Parasites & Vectors, Malaria Journal, Lancet ID, CDC EID,
+    BMC Infectious Diseases, Int J Health Geographics, medRxiv, arXiv q-bio …),
+    written to `new_publications` for the literature-alert surface.
+
+    Separate from `scan_news` on purpose: this builds a scientific background
+    rather than reporting what happened, so it runs on its own schedule and its
+    output never appears on the News surface. Deduplicates by URL.
+    """
+    result = scan_library_feeds()
+    errors = result.get("errors", [])
+    msg = (f"Library scan complete. {result['papers_added']} new paper(s) added "
+           f"from {result.get('feeds_checked', 0)} journal/preprint feeds.")
+    if errors:
+        msg += (f"\n{len(errors)} feed(s) failed: " + "; ".join(errors[:5]))
     return [TextContent(type="text", text=msg)]
 
 
@@ -762,6 +1111,82 @@ async def get_news_briefs(
 
 
 @app.tool()
+async def check_news_feeds(kind: str = "news") -> list[TextContent]:
+    """Check every news feed and report which ones are actually working.
+
+    Why this exists: feedparser never raises on an HTTP error — it returns an
+    object with zero entries. So a feed returning 404 or 403 was indistinguishable
+    from a quiet news day, and `scan_news_feeds` reported "0 new items" either way.
+    Measured 2026-08-19: 14 of 33 news feeds were HTTP-dead and had been
+    contributing nothing, silently. That is the real reason the News surface looked
+    thin — not too few sources, but sources that never answered.
+
+    Requests are sequential and spaced, because hammering publishers in parallel
+    produces 403s that are rate limiting rather than real rejections.
+
+    Args:
+        kind: "news" (journalism, the News surface), "paper" (journal ToCs and
+            preprints, the Library), or "all". Default "news".
+
+    Returns:
+        Per feed: working (with entry count and newest publication date) or the
+        HTTP status that needs fixing.
+    """
+    import time as _time
+
+    feeds = [f for f in FEED_ALLOWLIST if kind == "all" or f[3] == kind]
+    if not feeds:
+        return [TextContent(type="text", text=f"No feeds of kind '{kind}'.")]
+
+    working: list[str] = []
+    broken: list[str] = []
+    undated: list[str] = []
+
+    for i, (name, url, tags, fkind) in enumerate(feeds):
+        try:
+            parsed = _fetch_feed(url)
+            status = getattr(parsed, "status", None)
+            n = len(parsed.entries)
+            if n:
+                dated = sum(1 for e in parsed.entries[:10] if _entry_published(e))
+                newest = (_entry_published(parsed.entries[0]) or "")[:10] or "no date"
+                working.append(f"{name} — {n} entries, newest {newest}")
+                if dated == 0:
+                    undated.append(name)
+            else:
+                bz = str(getattr(parsed, "bozo_exception", "") or "")[:60]
+                broken.append(f"{name} — HTTP {status}" + (f" · {bz}" if bz else ""))
+        except Exception as e:
+            broken.append(f"{name} — {type(e).__name__}: {str(e)[:60]}")
+        if i < len(feeds) - 1:
+            _time.sleep(1.5)
+
+    lines = [f"**Feed health — {len(feeds)} '{kind}' feed(s) checked**", ""]
+    lines.append(f"WORKING ({len(working)}):")
+    for w in working:
+        lines.append(f"  · {w}")
+    if broken:
+        lines.append("")
+        lines.append(f"NOT WORKING ({len(broken)}) — these contribute nothing and need a new URL:")
+        for b in broken:
+            lines.append(f"  · {b}")
+    if undated:
+        lines.append("")
+        lines.append(
+            "No publication dates (period filters fall back to scan time): "
+            + ", ".join(undated)
+        )
+    if broken:
+        lines.append("")
+        lines.append(
+            f"{len(broken)} of {len(feeds)} sources are dead. Until they are replaced, "
+            "the news you see is drawn from the remainder — so a quiet briefing may "
+            "mean a broken feed rather than a quiet week."
+        )
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
+@app.tool()
 async def full_scan() -> list[TextContent]:
     """Run all Metis update scans in sequence and return a combined report.
 
@@ -776,13 +1201,24 @@ async def full_scan() -> list[TextContent]:
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     lines = [f"── Metis Full Scan ── {now} ──\n"]
 
-    # 1. News
+    # 1. News (journalism)
     try:
         news = scan_news_feeds()
         err_note = f" ({len(news['errors'])} feed errors)" if news["errors"] else ""
-        lines.append(f"NEWS       {news['news_added']:>4} new items{err_note}")
+        lines.append(f"NEWS       {news['news_added']:>4} new items "
+                     f"from {news.get('feeds_checked', 0)} feeds{err_note}")
     except Exception as e:
         lines.append(f"NEWS       ERROR: {e}")
+
+    # 1b. Library feeds (journal ToCs + preprints). Reported on its own line
+    # because it goes somewhere else and answers a different question.
+    try:
+        lib = scan_library_feeds()
+        err_note = f" ({len(lib['errors'])} feed errors)" if lib["errors"] else ""
+        lines.append(f"PAPERS     {lib['papers_added']:>4} new papers "
+                     f"from {lib.get('feeds_checked', 0)} journal feeds{err_note}")
+    except Exception as e:
+        lines.append(f"PAPERS     ERROR: {e}")
 
     # 2. Literature
     try:

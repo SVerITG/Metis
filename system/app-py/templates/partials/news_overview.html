@@ -1,0 +1,72 @@
+{# ══════════════════════════════════════════════════════════════════════════════
+   news_overview.html — the opening tab: what is actually happening.
+
+   This is deliberately NOT a card grid. A grid of headlines is what the other
+   tabs are for; an overview has to answer "what is going on" in one screen, and
+   that means RUNNING STORIES rather than individual links. Each row is a story
+   thread — many items collapsed into the thing they are about — with how long it
+   has been running, whether it escalated, and whether you have already been told
+   about it in a briefing you read.
+
+   Buckets are dropped by the route: the 'who' thread mixes crime and celebrity
+   with health because it collects everything that merely named the organisation,
+   which is useless as an overview row.
+   ══════════════════════════════════════════════════════════════════════════════ #}
+
+{% include "partials/_news_tabstrip.html" %}
+
+{% if not threads %}
+  <div class="panel" style="padding:22px;">
+    <div style="font-family:var(--m-display);font-style:italic;font-size:15px;color:var(--m-muted);">
+      Nothing in this window. That can mean a quiet period — or that the feeds
+      have stopped answering. Ask Metis to check the feeds if it looks too quiet.
+    </div>
+  </div>
+{% else %}
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px;">
+    <h2 class="sec-label" style="margin:0;">Running stories
+      <span class="sec-label-tail">{{ threads|length }} THREADS · {{ total_items }} ITEMS · {{ period_label|upper }}</span>
+    </h2>
+  </div>
+
+  <div style="margin-bottom:28px;">
+    {% for t in threads %}
+      <div class="ov-thread">
+        <div>
+          <div class="ov-thread-label">
+            {{ t.label }}
+            {% if t.never_delivered %}<span class="ov-pill ov-pill--new">not yet briefed</span>
+            {% elif t.read_leads %}<span class="ov-pill ov-pill--seen">briefed</span>{% endif %}
+            {% if t.material %}<span class="ov-pill ov-pill--esc">&#9650; changed</span>{% endif %}
+            {% if t.routine %}<span class="ov-pill ov-pill--seen">routine</span>{% endif %}
+          </div>
+          <div class="ov-thread-items">
+            {% for it in t['items'][:3] %}
+              {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener"
+                  style="color:var(--m-text);text-decoration:none;border-bottom:1px solid var(--m-rule);">{{ it.title[:130] }}</a>{% else %}{{ it.title[:130] }}{% endif %}{% if not loop.last %}<br>{% endif %}
+            {% endfor %}
+            {% if t['items']|length > 3 %}
+              <div style="color:var(--m-muted);font-size:12px;margin-top:4px;">
+                + {{ t['items']|length - 3 }} more in this story
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="ov-thread-meta" style="text-align:right;">
+          {{ t['items']|length }} item{{ '' if t['items']|length == 1 else 's' }}<br>
+          <span style="color:var(--m-muted-soft);">
+            {% if t.age_days is not none %}
+              {% if t.age_days < 1 %}new today
+              {% elif t.age_days < 14 %}{{ t.age_days|int }}d old
+              {% elif t.age_days < 60 %}{{ (t.age_days / 7)|int }}w old
+              {% else %}{{ (t.age_days / 30)|int }}mo old{% endif %}
+            {% else %}new{% endif %}
+          </span><br>
+          <span style="color:{{ 'var(--m-accent)' if t.top_signal == 'high' else 'var(--m-muted-soft)' }};">
+            {{ t.top_signal }}
+          </span>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
