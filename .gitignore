@@ -322,3 +322,13 @@ system/config/certs/
 
 # Promise-harness trend log — runtime metric output, regenerated per run.
 system/config/promise-trend.jsonl
+
+# Procedure-correction payloads — carry DB fixes between computers via OneDrive,
+# not git (they contain private research paths).
+agents/**/_procedure-corrections-*.json
+
+# What Metis has learned about how to behave — personal, like metis-persona.md.
+# Append-only ledger of confirmed preferences and corrections, written by
+# record_persona_learning(). Stays local; the SHAPE of this file is in
+# metis-response-contract.md, which IS tracked.
+system/config/metis-learned.md
