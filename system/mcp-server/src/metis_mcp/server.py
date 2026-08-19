@@ -42,6 +42,11 @@ TOOL_MODULES = [
     "paperqa_search", "voice_capture", "knowledge_db", "background_packs", "decisions_ledger", "office", "session_memory",
     "memory_curator", "memory_gateway", "research", "research_timeline", "project_tracker", "dhis2",
     "discovery", "code_repository", "script_analyzer", "tool_search", "prompts",
+    # news_threads is listed explicitly even though intelligence.py imports it:
+    # relying on another module's import chain meant a change there could silently
+    # unregister the whole story-thread layer, and this list is where module
+    # loading is meant to be visible.
+    "news_threads", "continuity",
 ]
 
 LOADED_MODULES: list[str] = []

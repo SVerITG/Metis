@@ -238,6 +238,206 @@ can re-run it any time from the "refine" link on the Metis Systems surface.
 """
 
 
+def _mine_work_terms(limit: int = 40) -> list[tuple[str, int, str]]:
+    """Terms that recur across the researcher's own work, with where they came from.
+
+    Interests should not depend on the person being able to articulate them. Their
+    work already states them: project titles and descriptions, ideas they captured,
+    what their papers are about, and what their sessions keep returning to. This
+    counts recurring domain terms across those sources so Metis can propose
+    interests instead of waiting to be told.
+
+    Returns [(term, weight, source_summary)], strongest first. Weight is the number
+    of distinct places the term appears — a term in one project title is a guess, a
+    term in four projects and twenty sessions is a fact about them.
+    """
+    import sqlite3 as _sq
+    import re as _re
+    from collections import Counter
+
+    if not paths.db.exists():
+        return []
+
+    STOP = {
+        "the", "and", "for", "with", "from", "that", "this", "have", "has", "was",
+        "are", "its", "into", "over", "what", "when", "where", "which", "how",
+        "why", "you", "your", "can", "should", "would", "could", "about", "there",
+        "their", "make", "made", "does", "did", "not", "but", "all", "any", "get",
+        "metis", "project", "analysis", "data", "using", "based", "study", "paper",
+        "article", "draft", "review", "session", "work", "working", "new", "add",
+        "added", "fix", "fixed", "build", "built", "update", "updated", "test",
+        "tests", "file", "files", "code", "script", "scripts", "dashboard",
+        "surface", "tool", "tools", "user", "claude", "memory", "system",
+        # Words that scored highly but name a FORMAT or an activity rather than a
+        # subject. "framework", "course" and "statistics" all ranked top-15 on a
+        # real corpus and none of them is an interest — they describe what the researcher is
+        # making, not what it is about. Compound terms survive this list, so
+        # "scan statistics" (a genuine spatial method) still comes through while
+        # bare "statistics" does not.
+        "framework", "course", "courses", "report", "reports", "chapter",
+        "results", "methods", "method", "approach", "model", "models",
+        "statistics", "statistical", "protocol", "manuscript", "thesis",
+        "scan", "scans", "plan", "planning", "notes", "meeting", "meetings",
+        "human", "african", "people", "patients", "cases", "control",
+        "health", "disease", "diseases", "public", "global", "national",
+        "based", "level", "levels", "high", "low", "large", "small",
+        "first", "second", "third", "week", "month", "year", "years",
+    }
+
+    # (sql, column, source label, weight per hit) — sessions are weighted lower
+    # because they are numerous and describe process as much as subject.
+    SOURCES = [
+        ("SELECT title || ' ' || COALESCE(description,'') t FROM projects "
+         "WHERE status='active'", "projects", 3),
+        ("SELECT text t FROM ideas ORDER BY created_at DESC LIMIT 60", "ideas", 2),
+        ("SELECT title t FROM literature_metadata ORDER BY created_at DESC LIMIT 300",
+         "library", 2),
+        ("SELECT COALESCE(key_topics,'') t FROM session_summaries "
+         "WHERE COALESCE(archived,0)=0 ORDER BY created_at DESC LIMIT 200",
+         "sessions", 1),
+    ]
+
+    scores: Counter = Counter()
+    origins: dict[str, set[str]] = {}
+    conn = _sq.connect(str(paths.db))
+    conn.row_factory = _sq.Row
+    try:
+        for sql, label, weight in SOURCES:
+            try:
+                rows = conn.execute(sql).fetchall()
+            except _sq.Error:
+                continue
+            for r in rows:
+                text = str(r["t"] or "").lower()
+                # Some stored text is JSON-escaped, so a literal "\u2014" (an em
+                # dash) survives into the word stream and mined as a term
+                # ("clinique u2014"). Decode the escapes, then drop any residue.
+                if "\\u" in text or "u20" in text:
+                    try:
+                        text = text.encode().decode("unicode_escape")
+                    except (UnicodeDecodeError, UnicodeEncodeError):
+                        pass
+                    text = _re.sub(r"\bu[0-9a-f]{4}\b", " ", text)
+                # Two-word phrases first: "sleeping sickness" and "passive
+                # screening" are the useful units, and single words lose them.
+                words = [w for w in _re.findall(r"[a-z][a-z0-9\-]{2,}", text)
+                         if w not in STOP and len(w) > 3]
+                seen_here: set[str] = set()
+                for i, w in enumerate(words):
+                    for term in ([w] + ([f"{w} {words[i+1]}"] if i + 1 < len(words) else [])):
+                        if term in seen_here:
+                            continue
+                        seen_here.add(term)
+                        scores[term] += weight
+                        origins.setdefault(term, set()).add(label)
+    finally:
+        conn.close()
+
+    # A single word has to appear across at least TWO source kinds to count — one
+    # project title mentioning it is a coincidence, the same word in projects and
+    # the library and the sessions is a fact about them. Two-word phrases are held
+    # to a lower bar because a phrase is already strong evidence of a real subject.
+    ranked: list[tuple[str, int, str]] = []
+    for t, s in scores.most_common(600):
+        srcs = origins.get(t, set())
+        is_phrase = " " in t
+        if is_phrase:
+            if s < 6:
+                continue
+        else:
+            if s < 8 or len(srcs) < 2:
+                continue
+        ranked.append((t, s, ", ".join(sorted(srcs))))
+
+    # Drop a phrase's component words when the phrase itself made the cut:
+    # "passive screening" is the interest, "passive" on its own is not.
+    phrases = {t for t, _, _ in ranked if " " in t}
+    covered = {w for p in phrases for w in p.split()}
+    ranked = [r for r in ranked if " " in r[0] or r[0] not in covered]
+
+    # Phrases first, then weight.
+    ranked.sort(key=lambda x: (0 if " " in x[0] else 1, -x[1], x[0]))
+    return ranked[:limit]
+
+
+@app.tool()
+async def suggest_interests_from_work(apply: bool = False, top: int = 12) -> list[TextContent]:
+    """Read the researcher's own work and propose interests they have not declared.
+
+    Interests should not depend on someone being able to articulate them from a
+    blank field. Their work already states them — project titles, captured ideas,
+    what their papers are about, what their sessions keep returning to. This mines
+    those sources for recurring domain terms and proposes the ones missing from
+    their declared lists.
+
+    Proposals go to the LIBRARY list by default: what recurs in someone's own
+    papers and projects is what they want a background on. What they want to hear
+    about in the NEWS is a different question, frequently outside their work
+    entirely, and cannot be mined from it — that one has to be asked. See
+    `start_interest_interview()`.
+
+    Args:
+        apply: False (default) proposes only, so the researcher decides. True adds
+            the suggestions to `library_interests` directly — use when they have
+            said to go ahead, or for a silent top-up during onboarding.
+        top: How many suggestions to consider. Default 12.
+
+    Returns:
+        Suggested terms with what evidence supports each, and what was already
+        declared so nothing is proposed twice.
+    """
+    lists = read_interest_lists()
+    known = {t.lower() for t in lists["union"]}
+    # Also treat a declared multi-word term as covering its words, so "sleeping
+    # sickness" already being declared does not surface "sickness" as new.
+    for t in list(known):
+        for w in t.split():
+            if len(w) > 3:
+                known.add(w)
+
+    mined = _mine_work_terms(limit=60)
+    fresh = [(t, s, src) for t, s, src in mined
+             if t.lower() not in known
+             and not any(t.lower() in k or k in t.lower() for k in known if len(k) > 5)]
+    fresh = fresh[:top]
+
+    if not fresh:
+        return [TextContent(type="text", text=(
+            "Nothing new to suggest — everything recurring in your projects, ideas, "
+            "library and sessions is already covered by your declared interests.\n\n"
+            f"Declared: {len(lists['library'])} library, {len(lists['news'])} news."
+        ))]
+
+    lines = [f"**{len(fresh)} interest(s) your work suggests but you have not declared**", ""]
+    for t, s, src in fresh:
+        lines.append(f"  · **{t}** — appears across {src} (weight {s})")
+    lines += [
+        "",
+        f"Already declared — library ({len(lists['library'])}): "
+        + (", ".join(lists["library"][:12]) or "none"),
+        f"Already declared — news ({len(lists['news'])}): "
+        + (", ".join(lists["news"][:12]) or "none"),
+    ]
+
+    if apply:
+        added = [t for t, _, _ in fresh]
+        res = await set_research_interests(library_interests=added, mode="add")
+        lines += ["", "---", "Added to your **library** interests:",
+                  "  " + ", ".join(added),
+                  "",
+                  "News interests are deliberately untouched — what you want to hear "
+                  "about is a separate question from what your work is about, and it "
+                  "cannot be mined from your projects."]
+    else:
+        lines += [
+            "",
+            "These are proposals, not changes. To accept them, run this again with "
+            "`apply=True`, or say which ones you want. They would go to your "
+            "**library** list; news interests have to be asked about separately.",
+        ]
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
 @app.tool()
 async def start_interest_interview() -> list[TextContent]:
     """Get the script for interviewing the researcher about their interests.
