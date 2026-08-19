@@ -80,29 +80,90 @@ Rules:
 
 ---
 
+## 3b. What actually renders — and the one thing that breaks
+
+Verified 2026-08-19. Claude Code renders: bold, italic, code spans, fenced blocks
+**with syntax highlighting**, **diff blocks**, tables, lists, single-level
+blockquotes. Highlighting is highlight.js approximated to xterm-256.
+
+**Raw ANSI is not available** — Metis emits markdown and the renderer emits ANSI.
+So colour has to be earned through a fence's language tag.
+
+**The one cross-medium trap: alignment.** Claude Code is monospace everywhere, so
+box-drawing works anywhere. **Claude Desktop renders prose in a proportional
+font**, so `┌───┐` in a paragraph misaligns into a mess. Inside a fence Desktop
+switches to monospace and it aligns.
+
+> **Portable rule:** anything that must LINE UP goes in a fence. Anything that must
+> FLOW goes in a table or a list.
+
+⚠ **Never let colour be the only carrier of meaning.** There are open Claude Code
+bugs where fenced keywords render in ANSI dark blue — near-unreadable on a dark
+background — and where highlighting fragments words like `ANTHROPIC_API_KEY`. The
+🟢🟡🔵 glyphs are the primary signal; `diff` colour is reinforcement. If the colour
+inverts or vanishes, the output must still read correctly.
+
+### The three sanctioned forms (the researcher's choice, 2026-08-19)
+
+**1. Tables — for anything comparative.** Native in both, no fence, no alignment
+risk. The default for a list of items with states.
+
+| | Item | State |
+|---|---|---|
+| 🟢 | Feed layer | 78/78 |
+| 🟡 | PubMed feed | needs you |
+
+**2. A `diff` fence — for the close-out status block.** `+` green, `-` red, `@@`
+cyan, `#` grey. Use where red/green genuinely means good/bad; do not use it for
+neutral information, because the colour then implies a judgement that isn't there.
+
+```diff
++ DECIDED    <what is now settled>
+- BLOCKED    <what cannot proceed>
+@@ NEEDS YOUR CALL @@
+  <the one thing>
+# saved: <where it went>
+```
+
+**3. A boxed panel — for session summaries and close-outs only.** Striking, but it
+costs vertical space and must be in a fence. Not for routine replies.
+
+```
+┌─ SESSION 2026-08-19 ─────────────────────────────────┐
+│ 🟢  3 commits    78/78 feeds    237 tools            │
+│ 🟡  PubMed URL · API key rotation                    │
+└──────────────────────────────────────────────────────┘
+```
+
+**Avoid:** nested blockquotes (Claude Code supports one level only) · box-drawing
+in flowing prose · `ini`/`yaml` status fences (considered and declined — compact
+but poor for anything but bare counts).
+
+### When the block appears
+
+**Only when there is something real to report** — a decision taken, something
+saved, something blocking. the researcher's choice, and it follows from the silent-layer
+rule: a short conversational reply stays short. A block with empty lines becomes
+wallpaper, and wallpaper is worse than nothing because it trains the eye to skip it.
+
+---
+
 ## 4. Shape of a substantive reply
 
 Aim for this order. Skip anything that is empty — a missing section is better than
 a hollow one.
 
-```
-[One-line answer to what was actually asked.]
+1. **One-line answer** to what was actually asked.
+2. **Short prose** — what was found, what was done, in plain language.
+3. **A table**, if several items each have a state.
+4. **✱ Insight** — the non-obvious thing, if there is one.
+5. **↩ Connection** to prior work, if genuine.
+6. **The close-out block** — a `diff` fence (§3b form 2), and only if there is
+   something real to put in it.
 
-Short prose. What was found, what was done, in plain language.
-
-✱ **Insight** — the non-obvious thing, if there is one.
-
-↩ Connection to prior work, if genuine.
-
-── (only if any apply) ──────────────────
-🟢 DECIDED    <what is now settled>
-🟡 NEEDS YOU  <the one thing blocking>
-🔵 SAVED      <where it went>
-⚠  CAVEAT     <what is unverified>
-```
-
-**Length discipline.** The strip is a summary, not a second copy of the answer.
-Each line one clause. If the strip is longer than the prose, delete the strip.
+**Length discipline.** The block is a summary, not a second copy of the answer.
+Each line one clause. **If the block is longer than the prose, delete the block.**
+The boxed panel (§3b form 3) replaces it only when wrapping up a whole session.
 
 ---
 
