@@ -262,6 +262,186 @@ async def save_daily_brief(
         return [TextContent(type="text", text=f"Error saving daily brief: {e}")]
 
 
+@app.tool()
+async def mark_brief_read(date: str = "", period: str = "daily") -> list[TextContent]:
+    """Mark a briefing as read, so its story threads go quiet in the next ones.
+
+    This is what stops the same long-running story leading every morning. Metis
+    only puts a thread on cooldown once the brief that carried it was actually
+    marked read — a brief that was generated but never read delivered nothing, so
+    it must not silence anything. Call this when you have delivered a briefing to
+    the researcher in conversation, or when they say they have read it.
+
+    Args:
+        date: YYYY-MM-DD of the brief. Empty = today.
+        period: "daily", "weekly" or "catchup". Default "daily".
+
+    Returns:
+        Confirmation, plus which threads that brief had covered.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+
+    if not date:
+        date = datetime.datetime.now().strftime("%Y-%m-%d")
+    suffix = {"weekly": "-weekly", "catchup": "-catchup"}.get(period, "")
+    key = f"{date}{suffix}"
+    now = datetime.datetime.now().isoformat()
+
+    try:
+        from metis_mcp.tools import news_threads as nt
+        with connect(paths.db) as conn:
+            nt.ensure_tables(conn)
+            row = conn.execute(
+                "SELECT insight_date, read_at FROM daily_insights WHERE insight_date = ?",
+                (key,),
+            ).fetchone()
+            if row is None:
+                return [TextContent(type="text", text=(
+                    f"No {period} brief stored for {date}. Nothing to mark."
+                ))]
+            already = bool(row["read_at"])
+            conn.execute("UPDATE daily_insights SET read_at = ? WHERE insight_date = ?",
+                         (now, key))
+            covered = conn.execute(
+                "SELECT m.thread_id, m.role, m.angle, t.label "
+                "FROM news_thread_mentions m "
+                "LEFT JOIN news_threads t ON t.thread_id = m.thread_id "
+                "WHERE m.insight_key = ? ORDER BY m.role DESC", (key,),
+            ).fetchall()
+            conn.commit()
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error marking brief read: {e}")]
+
+    lines = [
+        f"{'Already marked read; timestamp refreshed' if already else 'Marked read'}: "
+        f"{period} brief for {date}."
+    ]
+    if covered:
+        lines.append("")
+        lines.append("Threads now on cooldown:")
+        for c in covered:
+            label = c["label"] or c["thread_id"]
+            angle = f", angle: {c['angle']}" if c["angle"] else ""
+            stage = "led" if c["role"] == "lead" else "mentioned"
+            lines.append(f"  · {label} — {stage}{angle}")
+        lines.append("")
+        lines.append(
+            "A thread that led goes quiet for 3 days, then 5, then 7 on each "
+            "further lead — unless something materially changes."
+        )
+    else:
+        lines.append(
+            "\nNo threads were recorded for this brief, so nothing goes on cooldown. "
+            "That happens when the brief was composed without the coverage footer."
+        )
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
+@app.tool()
+async def get_briefing_coverage(days: int = 7, show_all: bool = False) -> list[TextContent]:
+    """Show which news stories the briefings have covered, and what is on cooldown.
+
+    Answers "why didn't today's brief mention X?" and "what has Metis been
+    holding back?". Story threads group many news items into one running story
+    (an epidemic, a funding shift), so a long-running event can be surfaced once
+    and then held quiet instead of leading every single morning.
+
+    Args:
+        days: Window of news activity to consider. Default 7.
+        show_all: Include threads with only one item. Default False (recurring only).
+
+    Returns:
+        Per thread: size, age, whether it may lead, how long it stays quiet, and
+        which analytical angles have already been used on it.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+    try:
+        from metis_mcp.tools import news_threads as nt
+        since = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
+        with connect(paths.db) as conn:
+            threads = nt.thread_window(conn, since)
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error reading briefing coverage: {e}")]
+
+    if not threads:
+        return [TextContent(type="text", text=f"No news activity in the last {days} days.")]
+
+    if not show_all:
+        threads = [t for t in threads if len(t["items"]) > 1] or threads[:10]
+
+    eligible = [t for t in threads if not t["blocked_from_lead"]]
+    held = [t for t in threads if t["blocked_from_lead"]]
+
+    lines = [f"**Briefing coverage — last {days} days, {len(threads)} story thread(s)**", ""]
+    if eligible:
+        lines.append(f"CAN LEAD THE NEXT BRIEF ({len(eligible)}):")
+        for t in eligible:
+            extra = f" · ESCALATION: {t['material_reason']}" if t["material"] else ""
+            hist = (f" · led {t['read_leads']}× before" if t["read_leads"] else " · never covered")
+            lines.append(f"  · {t['label']} — {len(t['items'])} item(s), "
+                         f"signal {t['top_signal']}{hist}{extra}")
+    if held:
+        lines.append("")
+        lines.append(f"HELD BACK — already delivered ({len(held)}):")
+        for t in held:
+            if t["read_leads"]:
+                why = (f"led {t['days_since_read_lead']}d ago, quiet for "
+                       f"{t['cooldown_days']}d")
+            else:
+                why = f"mentioned {t['days_since_read_mention']}d ago"
+            used = ", ".join(t["angles_used"]) or "none yet"
+            lines.append(f"  · {t['label']} — {why} · {len(t['items'])} new item(s) "
+                         f"· angles used: {used}")
+    lines.append("")
+    lines.append(
+        "Cooldown counts only briefs marked READ. If a brief was never marked "
+        "read, its threads stay eligible — nothing was actually delivered."
+    )
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
+@app.tool()
+async def get_missed_news(days: int = 14, min_signal: str = "medium") -> list[TextContent]:
+    """Show news that never reached you in a briefing you read.
+
+    "Missed" means never delivered — not merely old. A brief that was generated
+    but never marked read delivered nothing, so its stories still count as
+    missed. This is what a catch-up briefing should be built from.
+
+    Args:
+        days: How far back to look. Default 14.
+        min_signal: Minimum signal strength — "high", "medium" or "low". Default "medium".
+
+    Returns:
+        Story threads with recent activity that no read briefing ever carried.
+    """
+    if not paths.db.exists():
+        return [TextContent(type="text", text=f"Database not found: {paths.db}")]
+    try:
+        from metis_mcp.tools import news_threads as nt
+        with connect(paths.db) as conn:
+            missed = nt.missed_threads(conn, days=days, min_signal=min_signal)
+    except Exception as e:
+        return [TextContent(type="text", text=f"Error reading missed news: {e}")]
+
+    if not missed:
+        return [TextContent(type="text", text=(
+            f"Nothing missed: every {min_signal}-or-higher story from the last "
+            f"{days} days reached you in a briefing you marked read."
+        ))]
+
+    lines = [f"**Never delivered — last {days} days, {len(missed)} story thread(s)**", ""]
+    for t in missed:
+        extra = f" · ESCALATION: {t['material_reason']}" if t["material"] else ""
+        lines.append(f"· {t['label']} — {len(t['items'])} item(s), signal "
+                     f"{t['top_signal']}{extra}")
+        for it in t["items"][:2]:
+            lines.append(f"    - {it['title'][:110]}")
+    return [TextContent(type="text", text="\n".join(lines))]
+
+
 def assemble_daily_context(db_path) -> dict:
     """Assemble daily briefing context from the database. Pure function, no MCP.
 
@@ -319,32 +499,37 @@ def assemble_daily_context(db_path) -> dict:
         conn.row_factory = _sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL")
 
-        # News briefs + literature alerts (3d). Query the two streams SEPARATELY
-        # so fresh paper alerts always get their own slots and aren't crowded out
-        # of a shared limit by higher-recency news. Within each: last-24h leads,
-        # then signal strength, then recency.
+        # News is grouped into STORY THREADS with read-aware coverage state, so a
+        # long-running epidemic cannot lead every morning just because it emits
+        # fresh wire items every morning. See tools/news_threads.py for the full
+        # rationale. Literature alerts stay a flat list — a paper alert is a
+        # discrete event, not a running story, and gets its own slots so
+        # higher-recency news can't crowd it out of a shared limit.
         d1 = (now - datetime.timedelta(days=1)).isoformat()
         _order = (
             "ORDER BY CASE WHEN created_at >= ? THEN 0 ELSE 1 END, "
             "CASE WHEN signal_strength='high' THEN 1 WHEN signal_strength='medium' THEN 2 ELSE 3 END, "
             "created_at DESC"
         )
-        news_items = _q(conn,
-            "SELECT title, summary, domain FROM news_briefs "
-            "WHERE created_at >= ? AND COALESCE(source_type,'news') = 'news' "
-            + _order + " LIMIT 10", (d3, d1))
+        news_section = ""
+        news_threads_n = 0
+        try:
+            from metis_mcp.tools import news_threads as _nt
+            _threads = _nt.thread_window(conn, d3)
+            if _threads:
+                news_section, _eligible = _nt.render_daily_section(_threads)
+                news_threads_n = len(_threads)
+        except Exception:
+            news_section = ""
+
         lit_items = _q(conn,
             "SELECT title, summary, domain FROM news_briefs "
             "WHERE created_at >= ? AND source_type = 'article' "
             + _order + " LIMIT 8", (d3, d1))
-        if news_items or lit_items:
-            if news_items:
-                lines = ["## Field News (last 3 days)"]
-                for r in news_items:
-                    tag = f"[{r['domain'].upper()}] " if r["domain"] else ""
-                    lines.append(f"- {tag}{r['title']}: {str(r['summary'] or '')[:200]}")
-                context_parts.append("\n".join(lines))
-                sources_used.append(f"news:{len(news_items)}")
+        if news_section or lit_items:
+            if news_section:
+                context_parts.append(news_section)
+                sources_used.append(f"news_threads:{news_threads_n}")
             if lit_items:
                 lines = ["## New Literature Alerts (last 3 days)"]
                 for r in lit_items:
@@ -479,28 +664,35 @@ def assemble_weekly_context(db_path) -> dict:
             "CASE WHEN signal_strength='high' THEN 1 WHEN signal_strength='medium' THEN 2 ELSE 3 END, "
             "created_at DESC"
         )
-        news_items = _q(conn,
-            "SELECT title, summary, domain FROM news_briefs "
-            "WHERE created_at >= ? AND COALESCE(source_type,'news') = 'news' "
-            + _order + " LIMIT 20", (d7, d1))
+        # The weekly is COMPLETE by design — it carries threads the dailies
+        # suppressed, because the researcher reads it as an overview, not a diff. What the
+        # thread state changes here is the TREATMENT: an already-seen thread gets
+        # its week-long trajectory, a never-delivered one gets reported properly.
+        news_section = ""
+        news_threads_n = 0
+        try:
+            from metis_mcp.tools import news_threads as _nt
+            _threads = _nt.thread_window(conn, d7)
+            if _threads:
+                news_section = _nt.render_weekly_section(_threads)
+                news_threads_n = len(_threads)
+        except Exception:
+            news_section = ""
+
         lit_items = _q(conn,
             "SELECT title, summary, domain FROM news_briefs "
             "WHERE created_at >= ? AND source_type = 'article' "
             + _order + " LIMIT 12", (d7, d1))
-        if news_items:
-            lines = ["## Field News (last 7 days)"]
-            for r in news_items:
-                tag = f"[{r['domain'].upper()}] " if r["domain"] else ""
-                lines.append(f"- {tag}{r['title']}: {str(r['summary'] or '')[:200]}")
-            context_parts.append("\n".join(lines))
-            sources_used.append(f"news:{len(news_items)}")
+        if news_section:
+            context_parts.append(news_section)
+            sources_used.append(f"news_threads:{news_threads_n}")
         if lit_items:
             lines = ["## New Literature Alerts (last 7 days)"]
             for r in lit_items:
                 lines.append(f"- {r['title']}: {str(r['summary'] or '')[:200]}")
             context_parts.append("\n".join(lines))
             sources_used.append(f"literature_alerts:{len(lit_items)}")
-        if not news_items and not lit_items:
+        if not news_section and not lit_items:
             context_parts.append(
                 "## Field News\nNo news signals found for the past week."
             )
@@ -658,30 +850,37 @@ def assemble_catchup_context(db_path, since_iso: str, previous_brief: str = "") 
             "created_at DESC"
         )
 
-        # News (dynamic window, limit 20)
-        news_items = _q(conn,
-            "SELECT title, summary, domain FROM news_briefs "
-            "WHERE created_at >= ? AND COALESCE(source_type,'news') = 'news' "
-            + _order + " LIMIT 20", (window_start, d1))
+        # Catch-up is where read-state earns its keep: "what you missed" is not
+        # "what arrived in this window" but "what never reached you in a brief you
+        # read". A generated-but-unread brief delivered nothing, so its threads
+        # are still missed news. That distinction is impossible with a plain
+        # time window and is the whole point of the thread layer here.
+        news_section = ""
+        news_threads_n = 0
+        try:
+            from metis_mcp.tools import news_threads as _nt
+            _threads = _nt.thread_window(conn, window_start)
+            if _threads:
+                news_section = _nt.render_catchup_section(_threads)
+                news_threads_n = len(_threads)
+        except Exception:
+            news_section = ""
+
         lit_items = _q(conn,
             "SELECT title, summary, domain FROM news_briefs "
             "WHERE created_at >= ? AND source_type = 'article' "
             + _order + " LIMIT 12", (window_start, d1))
 
-        if news_items:
-            lines = ["## Field News (since last brief)"]
-            for r in news_items:
-                tag = f"[{r['domain'].upper()}] " if r["domain"] else ""
-                lines.append(f"- {tag}{r['title']}: {str(r['summary'] or '')[:200]}")
-            context_parts.append("\n".join(lines))
-            sources_used.append(f"news:{len(news_items)}")
+        if news_section:
+            context_parts.append(news_section)
+            sources_used.append(f"news_threads:{news_threads_n}")
         if lit_items:
             lines = ["## New Literature Alerts (since last brief)"]
             for r in lit_items:
                 lines.append(f"- {r['title']}: {str(r['summary'] or '')[:200]}")
             context_parts.append("\n".join(lines))
             sources_used.append(f"literature_alerts:{len(lit_items)}")
-        if not news_items and not lit_items:
+        if not news_section and not lit_items:
             context_parts.append("## Field News\nNo news signals found since last brief.")
 
         # Papers (dynamic window, limit 10)

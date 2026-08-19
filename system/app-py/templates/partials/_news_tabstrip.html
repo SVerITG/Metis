@@ -1,0 +1,39 @@
+{# ══════════════════════════════════════════════════════════════════════════════
+   _news_tabstrip.html — the tab strip + period switcher, shared by every tab.
+
+   Included by news_overview.html and news_tab.html so the strip is defined once.
+   Each tab swaps #news-tab-body, so switching tab or period is one request and
+   the rest of the page (masthead) never re-renders.
+
+   The period switcher reads COALESCE(published_at, created_at). Before
+   published_at existed (2026-08-19) the only available date was the SCAN time,
+   so "today" meant "scanned today" — after the 13 Jul → 18 Aug scan gap that
+   labelled five weeks of July news as today's. A period control has to filter on
+   when things happened or it is actively misleading.
+   ══════════════════════════════════════════════════════════════════════════════ #}
+
+<div class="news-tabs" role="tablist" aria-label="News categories">
+  {% for t in tabs %}
+    <button class="news-tab" role="tab" type="button"
+            aria-selected="{{ 'true' if t.key == active else 'false' }}"
+            hx-get="/api/partial/news/tab?tab={{ t.key }}&period={{ period }}"
+            hx-target="#news-tab-body" hx-swap="innerHTML"
+            title="{{ t.blurb }}">
+      {{ t.label }}{% if counts is defined and counts.get(t.key) is not none %}<span class="nt-count">{{ counts.get(t.key) }}</span>{% endif %}
+    </button>
+  {% endfor %}
+</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px;">
+  <div style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);max-width:60ch;">
+    {{ (spec.blurb if spec is defined else tabs[0].blurb) }}
+  </div>
+  <div class="news-period" role="group" aria-label="Time period">
+    {% for pkey, pval in periods.items() %}
+      <button class="news-period-btn" type="button"
+              aria-pressed="{{ 'true' if pkey == period else 'false' }}"
+              hx-get="/api/partial/news/tab?tab={{ active }}&period={{ pkey }}"
+              hx-target="#news-tab-body" hx-swap="innerHTML">{{ pval[1] }}</button>
+    {% endfor %}
+  </div>
+</div>

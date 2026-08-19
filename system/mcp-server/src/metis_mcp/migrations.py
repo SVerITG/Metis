@@ -68,6 +68,19 @@ MIGRATIONS: list[tuple[str, str, str]] = [
         "ALTER TABLE tasks ADD COLUMN parent_task_id TEXT DEFAULT ''",
         "tasks",
     ),
+    # ── 2026-08-19: real publication dates for news ──
+    # `created_at` is the SCAN time, not when the story was published. With no
+    # published_at, a daily/weekly/monthly period filter measures "when Metis
+    # noticed" — and after the 13 Jul → 18 Aug scan gap, everything published in
+    # July timestamps as arriving on 18 August. Any period switcher built on
+    # created_at reports the scanner's schedule, not the news.
+    # Backfill is impossible for existing rows (the feeds no longer carry them);
+    # readers use COALESCE(published_at, created_at) so old rows still work.
+    (
+        "20260819_news_briefs_add_published_at",
+        "ALTER TABLE news_briefs ADD COLUMN published_at TEXT DEFAULT ''",
+        "news_briefs",
+    ),
     # Future migrations append here. Never modify or delete an existing entry —
     # only add new ones. To revert, write a forward-only "down" migration.
 ]

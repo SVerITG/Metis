@@ -1,0 +1,110 @@
+{# ══════════════════════════════════════════════════════════════════════════════
+   news_tab.html — one category tab: a card grid for a single topic and period.
+
+   Photo and typographic cards are equal citizens (see the .nf-* block in
+   styles.css). Measured coverage: policy/world-news 100% have thumbnails,
+   epidemiology 0% — so treating an image-less card as degraded would mean the researcher's
+   own field loses to BBC headlines on every screen.
+
+   The grid is intrinsic (auto-fill minmax), so a wide monitor gets MORE cards
+   rather than wider ones.
+   ══════════════════════════════════════════════════════════════════════════════ #}
+
+{% include "partials/_news_tabstrip.html" %}
+
+{% if subfilters %}
+  {# Sub-filters inside "Related to my work" — client-side, because the set is
+     small and a round-trip to hide cards would be wasteful. #}
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;" id="news-subfilters">
+    <button type="button" class="btn btn--ghost btn--caps news-sub" data-subj=""
+            style="padding:3px 10px;font-size:11px;" aria-pressed="true">All</button>
+    {% for subj, n in subfilters %}
+      <button type="button" class="btn btn--ghost btn--caps news-sub" data-subj="{{ subj }}"
+              style="padding:3px 10px;font-size:11px;" aria-pressed="false">
+        {{ subj.replace('-', ' ') }} <span style="color:var(--m-muted-soft);">{{ n }}</span>
+      </button>
+    {% endfor %}
+  </div>
+  <script>
+  (function () {
+    var wrap = document.getElementById('news-subfilters');
+    if (!wrap) return;
+    wrap.addEventListener('click', function (e) {
+      var b = e.target.closest('.news-sub');
+      if (!b) return;
+      var want = b.dataset.subj || '';
+      wrap.querySelectorAll('.news-sub').forEach(function (x) {
+        x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+      });
+      document.querySelectorAll('#news-cards [data-subj]').forEach(function (card) {
+        card.style.display = (!want || card.dataset.subj === want) ? '' : 'none';
+      });
+    });
+  })();
+  </script>
+{% endif %}
+
+{% if not cards %}
+  <div class="panel" style="padding:22px;">
+    <div style="font-family:var(--m-display);font-style:italic;font-size:15px;color:var(--m-muted);">
+      Nothing here for {{ periods[period][1]|lower }}.
+      {% if period != 'month' %}
+        Try a longer period —
+        <button type="button" class="btn btn--ghost btn--caps"
+                hx-get="/api/partial/news/tab?tab={{ active }}&period=month"
+                hx-target="#news-tab-body" hx-swap="innerHTML"
+                style="padding:2px 9px;font-size:11px;">this month</button>
+      {% else %}
+        If a whole month is empty, the feeds for this topic may have stopped
+        answering rather than the world going quiet.
+      {% endif %}
+    </div>
+  </div>
+{% else %}
+  <h2 class="sec-label" style="margin-bottom:10px;">{{ spec.label }}
+    <span class="sec-label-tail">
+      {{ total }} ITEM{{ '' if total == 1 else 'S' }} · {{ periods[period][1]|upper }}
+      {%- if total > cards|length %} · SHOWING {{ cards|length }}{% endif %}
+    </span>
+  </h2>
+  {% if total > cards|length %}
+    {# Never cap silently: a grid of 60 with no note reads as "that is all there
+       is", and the period switcher then looks inert because every period fills
+       the cap. Say what was left out. #}
+    <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:12px;">
+      {{ total - cards|length }} more item{{ '' if total - cards|length == 1 else 's' }} in this
+      period than shown — narrow the window
+      {%- if subfilters %} or pick a sub-topic above{% endif %}.
+    </div>
+  {% endif %}
+
+  <div class="nf-grid nf-grid-3" id="news-cards" style="margin-bottom:30px;">
+    {% for c in cards %}
+      <a class="nf-card" href="{{ c.url or '#' }}" {% if c.url %}target="_blank" rel="noopener"{% endif %}
+         data-subj="{{ c.subject or '' }}">
+        {% if c.has_image %}
+          <div class="nf-thumb" style="background-image:url('{{ c.image }}');"></div>
+        {% else %}
+          <div class="nf-typecard">
+            <div class="nf-wordmark">{{ c.source or c.domain }}</div>
+            <div class="nf-typecard-hd">{{ c.title }}</div>
+          </div>
+        {% endif %}
+        <div class="nf-card-body">
+          {% if c.has_image %}<div class="nf-card-title">{{ c.title }}</div>{% endif %}
+          {% if c.summary %}
+            <div style="font-size:12.5px;color:var(--m-text);line-height:1.5;
+                        display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">
+              {{ c.summary[:190] }}
+            </div>
+          {% endif %}
+          <div class="nf-meta">
+            {% if c.close %}<span class="nf-close">your work</span>{% endif %}
+            <span class="src">{{ c.source }}</span>
+            <span class="ago" style="margin-left:auto;">{{ c.when }}</span>
+          </div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+{% endif %}

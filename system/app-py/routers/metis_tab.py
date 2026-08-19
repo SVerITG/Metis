@@ -434,8 +434,25 @@ async def metis_identity(request: Request):
     prefs = _read_user_prefs()
     name = prefs.get("display_name") or "Researcher"
     role = prefs.get("role") or "Senior researcher · public health"
-    interests = prefs.get("interests") or []
-    news_topics = prefs.get("news_topics") or []
+    # News and library interests are separate entities. read_interest_lists()
+    # resolves the new fields, falls back to the legacy `interests`/`news_topics`
+    # for installs that predate the split, and folds the install wizard's
+    # research block onto the library side.
+    news_interests: list = []
+    library_interests: list = []
+    try:
+        import sys as _sys
+        _src = str(Path(__file__).parent.parent.parent / "mcp-server" / "src")
+        if _src not in _sys.path:
+            _sys.path.insert(0, _src)
+        from metis_mcp.tools.user_profile import read_interest_lists
+        _lists = read_interest_lists()
+        news_interests = _lists["news"]
+        library_interests = _lists["library"]
+    except Exception:
+        news_interests = prefs.get("news_interests") or prefs.get("news_topics") or []
+        library_interests = prefs.get("library_interests") or prefs.get("interests") or []
+
     return templates.TemplateResponse(
         request,
         "partials/metis_identity_card.html",
@@ -443,8 +460,11 @@ async def metis_identity(request: Request):
             "name": name,
             "initial": (name[:1].upper() if name else "S"),
             "role": role,
-            "interests": interests,
-            "news_topics": news_topics,
+            "news_interests": news_interests,
+            "library_interests": library_interests,
+            # legacy names kept for any other consumer of this context
+            "interests": library_interests,
+            "news_topics": news_interests,
             "runs": runs,
         },
     )

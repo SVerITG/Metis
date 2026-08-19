@@ -9,7 +9,7 @@
         href="/static/vendor/bootstrap.min.css">
   <link rel="stylesheet"
         href="/static/vendor/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/static/styles.css?v=9n">
+  <link rel="stylesheet" href="/static/styles.css?v=12c">
   <link rel="stylesheet" href="/static/motion.css">
   <script src="/static/htmx.min.js"></script>
   <script>
@@ -29,12 +29,20 @@
   </script>
   <style>
     body { margin: 0; background: var(--m-surface-1); }
+    /* Reading surface: the shell may widen with the screen, but the text column
+       is held at the shared prose measure. A 1120px-wide line of course prose
+       was already past comfortable; letting it grow further would be worse. */
     .reader-shell {
       display: grid;
-      grid-template-columns: 280px 1fr;
+      grid-template-columns: minmax(240px, 280px) minmax(0, calc(var(--m-prose-max) + 96px));
+      justify-content: center;
       min-height: 100vh;
-      max-width: 1400px;
+      width: 100%;
+      max-width: var(--m-page-max);
       margin: 0 auto;
+    }
+    @media (max-width: 900px) {
+      .reader-shell { grid-template-columns: 1fr; }
     }
     .reader-sidebar {
       border-right: 1px solid var(--m-line);

@@ -184,7 +184,30 @@ research:
   corpus_depth: "standard"   # light | standard | deep
 ```
 
+**Then also call `set_research_interests()`** with what you just learned:
+
+```
+set_research_interests(
+  interests=[<research.topics + research.subfields — the specific ones>],
+  news_topics=[<what they said they want to follow in the news>],
+  role="<their role line>"
+)
+```
+
+This is not a duplicate of the YAML. `user-config.yaml` briefs the agents and the
+Background Maker; `set_research_interests` writes `user-preferences.json`, which is
+what drives the **story-thread vocabulary** (how Metis groups news into running
+stories), the **News surface category tabs**, and the **"related to my work"**
+filter. Skipping it leaves those three running on defaults — measured on a real
+install, 59% of news items matched no subject at all. Ask specifically which of
+their topics they want in the daily briefing versus which are just background:
+those are the two lists.
+
 Mention: "You can add specialist contexts later via `/add-context`, or grow the knowledge layer anytime with `/background build <topic>`."
+
+Mention too: "If you'd rather work your interests out by talking it through, there's
+a button on the Metis Systems surface — *Set up my interests* — that starts exactly
+that conversation. You can re-run it whenever your focus shifts."
 
 ### → Then build the background knowledge layer (the part that makes Metis *yours*)
 

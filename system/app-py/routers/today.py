@@ -1173,6 +1173,26 @@ def _brief_system_prompt(
         "not briefing topics."
     )
 
+    # Anti-repetition contract. The context groups news into story threads and
+    # labels each with what the researcher has already been told; without these rules the
+    # model still leads with the biggest story every day, which is exactly the
+    # behaviour the thread layer exists to stop. See tools/news_threads.py.
+    freshness = (
+        "FRESHNESS CONTRACT — this brief is read every day, so repetition is the "
+        "main failure mode:\n"
+        "- Lead ONLY with a thread listed under 'ELIGIBLE TO LEAD'. Never lead with "
+        "a thread under 'ALREADY DELIVERED', however large it is.\n"
+        "- A long-running story that has not changed deserves silence, not a "
+        "paragraph. Saying nothing about it is correct, not an omission.\n"
+        "- If an already-delivered thread genuinely escalated (its line says "
+        "ESCALATION), you may lead with it — say plainly what changed since last "
+        "time rather than re-describing the story.\n"
+        "- Take the ANGLE offered for the thread you lead with. The angles already "
+        "used are listed; do not reuse them. Same story, new lens.\n"
+        "- Never open with a phrase you would have used yesterday. No 'continues to', "
+        "'remains a concern', 'ongoing situation' as a lead.\n"
+    )
+
     preamble = (
         f"You are writing a research intelligence brief for {name}, "
         f"a senior researcher in {field}.\n\n"
@@ -1180,7 +1200,23 @@ def _brief_system_prompt(
         f"Topics they monitor: {topics}\n"
         f"Briefing period: {period_desc}\n\n"
         f"{guardrail}\n\n"
+        f"{freshness}\n"
     )
+
+    # Appended to every period so coverage is recorded and cooldowns advance.
+    # The path insert is defensive: without the footer no coverage is recorded,
+    # nothing ever goes on cooldown, and the repetition returns silently — so
+    # this must not depend on another function having set sys.path first.
+    footer = ""
+    try:
+        _src = str(Path(__file__).parent.parent.parent / "mcp-server" / "src")
+        if _src not in sys.path:
+            sys.path.insert(0, _src)
+        from metis_mcp.tools.news_threads import COVERAGE_FOOTER_INSTRUCTION as _footer_txt
+        footer = f"\n\n{_footer_txt}"
+    except Exception as _exc:
+        _log.warning("morning-brief: coverage footer unavailable (%s) — "
+                     "threads will not be recorded and the brief may repeat", _exc)
 
     if period == "weekly":
         return preamble + (
@@ -1197,10 +1233,23 @@ def _brief_system_prompt(
             "Paragraph 4 — ONE THING: A single paper, report, or question worth "
             f"following up on next week. Name it precisely and say why {name} "
             "should prioritise it.\n\n"
+            "WEEKLY-SPECIFIC RULE — this overrides the daily freshness contract "
+            "above. The weekly is COMPLETE on purpose: it must cover the week's "
+            "significant threads even where the dailies held them back, because "
+            f"{name} reads it as an overview rather than a diff. So do not suppress "
+            "anything here. What changes is the treatment:\n"
+            "- A thread marked ALREADY SEEN: give its TRAJECTORY across the week — "
+            "where it started, what moved, where it stands now. Never restate the "
+            "daily item he already read.\n"
+            "- A thread marked NOT YET SEEN: report it properly and completely. He "
+            "has never been told, so this is new information however old the story.\n"
+            "- Prefer a never-seen thread for Paragraph 4 (ONE THING) when one is "
+            "of comparable importance.\n\n"
             f"Tone: warm, direct, occasionally dry. Like a smart colleague giving the "
             f"5-minute week-in-review. Plain language. Field-standard terms fine; "
             f"unexplained jargon is not.\n\n"
             "No greeting. No sign-off. No headers. No bullet points. Continuous prose only."
+            + footer
         )
 
     if period == "catchup":
@@ -1218,21 +1267,29 @@ def _brief_system_prompt(
             f"and {name}'s active research. Be specific about implications.\n\n"
             "Paragraph 4 — START HERE: The single most important thing to read, review, "
             "or act on first. Name it and say why it's the priority re-entry point.\n\n"
+            "CATCH-UP-SPECIFIC RULE — draw your content from the threads marked "
+            "NEVER DELIVERED. Those are what he actually missed. Threads marked "
+            "ALREADY SEEN are for continuity: give their current state in a clause, "
+            "never a paragraph.\n\n"
             f"Tone: warm, efficient. Like a trusted colleague bringing you up to speed "
             f"after time away. No filler.\n\n"
             "No greeting. No sign-off. No headers. No bullet points. Continuous prose only."
+            + footer
         )
 
     # Default: daily
     return preamble + (
         "Write exactly three paragraphs, 270–320 words total:\n\n"
-        "Paragraph 1 — THE LEAD: The single most important development in global health, "
-        "science, or AI since the last brief. State what happened and why it matters. "
+        "Paragraph 1 — THE LEAD: The most important development from a thread listed "
+        "as ELIGIBLE TO LEAD. State what happened and why it matters. "
         f"If it touches {name}'s specific interests, draw that connection explicitly "
-        "and plainly. Don't hint: say it directly.\n\n"
+        "and plainly. Don't hint: say it directly. If the only eligible threads are "
+        "modest, lead with a modest story — a smaller genuinely-new lead is better "
+        "than a large one he has already read.\n\n"
         "Paragraph 2 — THE FIELD: Two or three other notable developments, grouped "
         "thematically. Cross-reference items when they are connected. Be specific — "
-        "name papers, organisations, or numbers. Group by theme.\n\n"
+        "name papers, organisations, or numbers. Group by theme. This is where an "
+        "already-delivered thread may earn one clause, and only if it has moved.\n\n"
         "Paragraph 3 — THE THREAD: One specific paper, news item, or open question "
         f"from the context that {name} should follow up on today. Name it precisely "
         "and say exactly why it matters for their work right now — concretely.\n\n"
@@ -1240,6 +1297,7 @@ def _brief_system_prompt(
         f"everything during {period_desc} and is giving you the 90-second version. "
         "Plain language. Field-standard terms fine; unexplained jargon is not.\n\n"
         "No greeting. No sign-off. No headers. No bullet points. Continuous prose only."
+        + footer
     )
 
 
@@ -1458,6 +1516,21 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
             _payload = resp.json()
             narrative = _payload["content"][0]["text"].strip()
 
+            # Split off the model's self-reported coverage footer and record it.
+            # Self-reporting rather than inference: the model may reasonably lead
+            # with the second-ranked thread, and guessing from the ranking would
+            # then put the WRONG thread on cooldown — reintroducing the exact
+            # repetition bug one level up. The footer is stripped before display.
+            _coverage: list[dict] = []
+            try:
+                from metis_mcp.tools.news_threads import parse_coverage_footer
+                narrative, _coverage = parse_coverage_footer(narrative)
+                if not _coverage:
+                    _log.warning("morning-brief: no coverage footer in %s brief — "
+                                 "nothing goes on cooldown, tomorrow may repeat", period)
+            except Exception as _cov_exc:
+                _log.warning("morning-brief: coverage parse failed: %s", _cov_exc)
+
             # Record REAL token usage so the dashboard monitor reflects actual spend
             # (Keystone B6.3). Background call → session_id="" (feeds totals, not
             # per-session "who did what"). Cached-input tokens count as input.
@@ -1526,6 +1599,22 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
                 conn4.close()
             except Exception:
                 pass
+
+            # Record thread coverage against this brief's key. Keyed on
+            # insight_key so the cooldown join can ask "was the brief that led
+            # with this thread ever marked read?" — the whole mechanism rests on
+            # that link, so it is written immediately after the brief is stored.
+            if _coverage:
+                try:
+                    from metis_mcp.tools.news_threads import record_coverage
+                    conn5 = _sqlite3.connect(db_path_str)
+                    conn5.row_factory = _sqlite3.Row
+                    n = record_coverage(conn5, insight_key, period, _coverage)
+                    conn5.close()
+                    _log.info("morning-brief: recorded %d thread(s) for %s (%s)",
+                              n, insight_key, period)
+                except Exception as _rec_exc:
+                    _log.warning("morning-brief: coverage record failed: %s", _rec_exc)
             return narrative
         else:
             _log.warning("morning-brief: API returned status %s: %s",
@@ -1555,6 +1644,58 @@ def _load_brief_sources(db_path_str: str) -> list[dict]:
     except Exception:
         pass
     return []
+
+
+def _load_brief_coverage(db_path_str: str, insight_key: str, period: str) -> dict:
+    """Story-thread coverage for the brief on screen.
+
+    Returns {led, held, escalated} — the threads this brief led with (which go
+    quiet once it is marked read), the threads currently held back because they
+    were already delivered, and any that broke their silence because something
+    changed. Surfacing this is what makes the read button's effect legible: with
+    read as the only cooldown trigger, "why did Ebola disappear?" and "why is it
+    still here?" both need an answer visible on the page.
+    """
+    import sqlite3 as _sqlite3
+    out: dict = {"led": [], "held": [], "escalated": []}
+    if not db_path_str:
+        return out
+    try:
+        _src = str(Path(__file__).parent.parent.parent / "mcp-server" / "src")
+        if _src not in sys.path:
+            sys.path.insert(0, _src)
+        from metis_mcp.tools import news_threads as _nt
+
+        conn = _sqlite3.connect(db_path_str)
+        conn.row_factory = _sqlite3.Row
+        _nt.ensure_tables(conn)
+
+        # What this brief actually led with / mentioned.
+        led_rows = conn.execute(
+            "SELECT m.thread_id, m.role, COALESCE(t.label, m.thread_id) AS label "
+            "FROM news_thread_mentions m "
+            "LEFT JOIN news_threads t ON t.thread_id = m.thread_id "
+            "WHERE m.insight_key = ? AND m.role = 'lead'",
+            (insight_key,),
+        ).fetchall()
+        out["led"] = [{"label": r["label"], "days": None} for r in led_rows]
+
+        # What is being held back right now, and what broke through.
+        since = (datetime.datetime.now() - datetime.timedelta(days=3)).isoformat()
+        for t in _nt.thread_window(conn, since):
+            if t["blocked_from_lead"]:
+                out["held"].append({
+                    "label": t["label"],
+                    "days": t["days_since_read_lead"] or t["days_since_read_mention"],
+                })
+            elif t["material"] and t["read_leads"]:
+                out["escalated"].append({"label": t["label"], "days": None})
+        conn.close()
+    except Exception as _exc:
+        _log.debug("morning-brief: coverage panel unavailable: %s", _exc)
+    out["held"] = out["held"][:6]
+    out["escalated"] = out["escalated"][:3]
+    return out
 
 
 def _get_db_path() -> str:
@@ -1661,10 +1802,14 @@ async def today_morning_brief(request: Request):
             pass
 
     sources: list[dict] = []
+    coverage: dict = {}
     if ai_brief and not brief_date_label:
         db_path = _get_db_path()
         if db_path:
             sources = _load_brief_sources(db_path)
+            _suffix = {"weekly": "-weekly", "catchup": "-catchup"}.get(period, "")
+            coverage = _load_brief_coverage(
+                db_path, datetime.date.today().isoformat() + _suffix, period)
 
     fallback_headlines: list[dict] = []
     if not ai_brief:
@@ -1693,6 +1838,7 @@ async def today_morning_brief(request: Request):
             "brief_date_label": brief_date_label,
             "brief_error": brief_error,
             "sources": sources,
+            "coverage": coverage,
             "fallback_headlines": fallback_headlines,
             "open_threads": open_threads,
             "time_of_day": time_of_day,
@@ -1778,10 +1924,14 @@ async def morning_brief_refresh(request: Request):
         pass
 
     sources: list[dict] = []
+    coverage: dict = {}
     if ai_brief:
         db_path = _get_db_path()
         if db_path:
             sources = _load_brief_sources(db_path)
+            _suffix = {"weekly": "-weekly", "catchup": "-catchup"}.get(period, "")
+            coverage = _load_brief_coverage(
+                db_path, datetime.date.today().isoformat() + _suffix, period)
 
     fallback_headlines: list[dict] = []
     if not ai_brief:
@@ -1809,6 +1959,7 @@ async def morning_brief_refresh(request: Request):
             "brief_date_label": None,
             "brief_error": "",
             "sources": sources,
+            "coverage": coverage,
             "fallback_headlines": fallback_headlines,
             "open_threads": open_threads,
             "time_of_day": time_of_day,
@@ -4681,6 +4832,258 @@ def _news_card(r: dict) -> dict:
         # sortable — "2d" vs "10h" would sort lexically).
         "_ts": r.get("created_at") or "",
     }
+
+
+# ---------------------------------------------------------------------------
+# News surface — tabs
+# ---------------------------------------------------------------------------
+# Category is the SPINE of this surface (it is a filter on the Today rail). One
+# undifferentiated feed made it impossible to answer "what is happening in the
+# world" separately from "what touches my work", so each question gets a tab.
+#
+# Tabs are matched on thread SUBJECT first, DOMAIN as fallback. Measured
+# 2026-08-19: only 41% of items match a subject, so domain is carrying most of
+# the load today — but subject is the better signal and grows as the user
+# declares interests (see news_threads.user_subjects), so it is checked first.
+#
+# `domains` are lowercased on both sides at match time: the stored values are
+# inconsistent ('NTD' 52 rows vs 'ntd' 48; 'SURVEILLANCE' vs 'surveillance'),
+# and a case-sensitive tab would silently show half a category.
+_NEWS_TABS: list[dict] = [
+    {"key": "overview", "label": "Overview", "kind": "overview",
+     "blurb": "What is actually happening — running stories, not a list of links."},
+    {"key": "work", "label": "Related to my work", "kind": "work",
+     "blurb": "Ranked by closeness to your library, with your own subjects first."},
+    {"key": "outbreaks", "label": "Outbreaks", "kind": "filter",
+     "subjects": {"ebola", "marburg", "mpox", "cholera", "measles", "polio", "dengue",
+                  "yellow-fever", "lassa", "diphtheria", "meningitis", "influenza",
+                  "covid", "outbreak-response", "sleeping-sickness", "malaria",
+                  "tuberculosis", "hiv", "ntd", "vaccination"},
+     "domains": {"surveillance", "outbreaks", "infectious-disease", "hat", "ntd",
+                 "tropical-medicine", "drc", "malaria", "vectors"},
+     "blurb": "Surveillance, alerts and disease events."},
+    {"key": "world", "label": "World news", "kind": "filter",
+     "subjects": {"conflict-health", "climate-health"},
+     # Disasters belong here: outbreaks happen inside emergencies, so flood and
+     # earthquake alerts are epidemiological context rather than a separate topic.
+     "domains": {"world-news", "africa", "disasters"},
+     "blurb": "The wider world, newest first."},
+    {"key": "policy", "label": "Policy & funding", "kind": "filter",
+     "subjects": {"health-financing", "pandemic-treaty", "health-workforce"},
+     "domains": {"policy", "health-financing", "public-health"},
+     "blurb": "Decisions, money and governance."},
+    {"key": "science", "label": "Science & methods", "kind": "filter",
+     "subjects": {"surveillance", "antimicrobial-resistance"},
+     "domains": {"science", "methods", "epidemiology", "spatial-epi", "epi-methods",
+                 "biomedical", "field-research"},
+     "blurb": "Findings and methodology."},
+    {"key": "ai", "label": "AI", "kind": "filter",
+     "subjects": {"ai-in-health"}, "domains": {"ai"},
+     "blurb": "Artificial intelligence, in health and generally."},
+]
+
+_NEWS_TABS_BY_KEY = {t["key"]: t for t in _NEWS_TABS}
+
+# Period windows. Read against COALESCE(published_at, created_at) — see the
+# 20260819 migration: created_at is the SCAN time, so filtering on it reports
+# the scanner's uptime rather than the news.
+_NEWS_PERIODS = {
+    "day":   (1,  "Today"),
+    "week":  (7,  "This week"),
+    "month": (30, "This month"),
+}
+
+
+def _news_rows(period: str = "week", limit: int = 400) -> list[dict]:
+    """News items in the period, newest-published first. Never papers.
+
+    `source_type='article'` is the literature stream. It is excluded here rather
+    than filtered per-tab so that no tab can ever reintroduce it: papers belong
+    to the Library surface, and when they were mixed in the relevance ranking
+    promoted them above real news (a paper is by definition closer to a
+    researcher's corpus than a BBC headline).
+    """
+    days, _ = _NEWS_PERIODS.get(period, _NEWS_PERIODS["week"])
+    cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
+    return db_query(
+        """SELECT b.rowid AS ref, b.title, b.summary, b.domain, b.signal_strength,
+                  b.source_url, b.created_at, b.relevance,
+                  COALESCE(b.image_url,'') AS image_url,
+                  COALESCE(NULLIF(b.published_at,''), b.created_at) AS when_at
+           FROM news_briefs b
+           WHERE COALESCE(NULLIF(b.published_at,''), b.created_at) > ?
+             AND COALESCE(b.source_type,'news') != 'article'
+           ORDER BY when_at DESC
+           LIMIT ?""",
+        (cutoff, limit),
+    ) or []
+
+
+def _subject_for_refs(refs: list[int]) -> dict[int, str]:
+    """rowid → thread subject, for the items on screen."""
+    if not refs:
+        return {}
+    out: dict[int, str] = {}
+    # Chunked so a large window cannot exceed SQLite's variable limit (999).
+    for i in range(0, len(refs), 400):
+        chunk = refs[i:i + 400]
+        marks = ",".join("?" * len(chunk))
+        rows = db_query(
+            f"SELECT i.brief_ref ref, COALESCE(t.subject,'') subj, "
+            f"       COALESCE(t.label,'') label, t.thread_id "
+            f"FROM news_thread_items i JOIN news_threads t ON t.thread_id = i.thread_id "
+            f"WHERE i.brief_ref IN ({marks})", tuple(chunk)) or []
+        for r in rows:
+            out[r["ref"]] = r["subj"] or ""
+    return out
+
+
+def _tab_matches(tab: dict, card: dict, subject: str) -> bool:
+    """Subject first, domain as fallback — the declared matching rule."""
+    if subject and subject in tab.get("subjects", ()):
+        return True
+    dom = (card.get("domain") or "").strip().lower()
+    return bool(dom) and dom in {d.lower() for d in tab.get("domains", ())}
+
+
+@router.get("/api/partial/news/tab", response_class=HTMLResponse)
+async def news_tab(request: Request, tab: str = "overview", period: str = "week"):
+    """Render one News tab. Overview is thread-based; the rest are card grids."""
+    if tab not in _NEWS_TABS_BY_KEY:
+        tab = "overview"
+    if period not in _NEWS_PERIODS:
+        period = "week"
+    spec = _NEWS_TABS_BY_KEY[tab]
+
+    # ---- Overview: running stories, not a link list -----------------------
+    if spec["kind"] == "overview":
+        days, plabel = _NEWS_PERIODS.get(period, _NEWS_PERIODS["week"])
+        threads: list[dict] = []
+        try:
+            import sqlite3 as _sq
+            _src = str(Path(__file__).parent.parent.parent / "mcp-server" / "src")
+            if _src not in sys.path:
+                sys.path.insert(0, _src)
+            from metis_mcp.tools import news_threads as _nt
+            conn = _sq.connect(_get_db_path())
+            conn.row_factory = _sq.Row
+            since = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
+            for t in _nt.thread_window(conn, since):
+                # Buckets are incoherent by construction ('who' mixes crime with
+                # health) — useless as an overview row.
+                if t["is_bucket"]:
+                    continue
+                threads.append(t)
+            conn.close()
+        except Exception as _exc:
+            _log.warning("news overview: thread window failed: %s", _exc)
+
+        return templates.TemplateResponse(
+            request, "partials/news_overview.html",
+            {"threads": threads[:24], "tabs": _NEWS_TABS, "active": tab,
+             "period": period, "periods": _NEWS_PERIODS, "period_label": plabel,
+             "total_items": sum(len(t["items"]) for t in threads)},
+        )
+
+    # ---- Category / work tabs: card grids --------------------------------
+    rows = _news_rows(period)
+    cards = [_news_card(r) for r in rows]
+    subjects = _subject_for_refs([r["ref"] for r in rows])
+    for c, r in zip(cards, rows):
+        c["subject"] = subjects.get(r["ref"], "")
+        c["when_at"] = r["when_at"]
+
+    if spec["kind"] == "work":
+        # "Related to my work" must NOT depend on embeddings alone.
+        #
+        # `close` is relevance >= 0.64, computed from the embedding model — and
+        # that model is optional (the MCP smoke test currently reports
+        # "embedding model unavailable: ConnectError"). With relevance stuck at 0
+        # this tab rendered completely empty, which is the worst possible failure
+        # for the one tab that justifies the surface existing. So proximity is
+        # now one of three independent routes in, and any of them is enough:
+        #   1. embedding proximity to the library (best signal, when available)
+        #   2. the item's thread subject is one the user declared as an interest
+        #   3. its domain or subject matches a profile interest / news topic by name
+        try:
+            from metis_mcp.tools.news_threads import user_subjects, SUBJECTS, _slugify
+            declared = set(user_subjects()) - set(SUBJECTS)
+        except Exception:
+            declared, _slugify = set(), None
+
+        interest_slugs: set[str] = set()
+        try:
+            import json as _json
+            _p = Path(os.environ.get("METIS_RC_ROOT", "")) / "system" / "config" / "user-preferences.json"
+            if _p.exists():
+                _prefs = _json.loads(_p.read_text(encoding="utf-8"))
+                for _f in ("interests", "news_topics"):
+                    for _v in (_prefs.get(_f) or []):
+                        s = _slugify(str(_v)) if _slugify else str(_v).lower().replace(" ", "-")
+                        if s:
+                            interest_slugs.add(s)
+                            # also index the individual words, so "sleeping sickness"
+                            # matches a 'sleeping-sickness' subject and an 'ntd' domain
+                            for w in re.split(r"[^a-z0-9]+", s):
+                                if len(w) > 3:
+                                    interest_slugs.add(w)
+        except Exception:
+            pass
+
+        def _is_mine(c: dict) -> bool:
+            if c["close"]:
+                return True
+            subj = (c.get("subject") or "").lower()
+            if subj and (subj in declared or subj in interest_slugs):
+                return True
+            dom = (c.get("domain") or "").strip().lower()
+            return bool(dom) and dom in interest_slugs
+
+        picked = [c for c in cards if _is_mine(c)]
+        # Relevance first where it exists, then recency — so the ordering degrades
+        # gracefully to chronological rather than collapsing when relevance is 0.
+        picked.sort(key=lambda c: (-(c["relevance"] or 0), c["when_at"]))
+        # Sub-filters inside the tab: one chip per subject actually present.
+        groups: dict[str, int] = {}
+        for c in picked:
+            if c.get("subject"):
+                groups[c["subject"]] = groups.get(c["subject"], 0) + 1
+        subfilters = sorted(groups.items(), key=lambda kv: -kv[1])[:12]
+    else:
+        picked = [c for c, r in zip(cards, rows)
+                  if _tab_matches(spec, c, subjects.get(r["ref"], ""))]
+        subfilters = []
+
+    counts = _news_tab_counts(period)
+    return templates.TemplateResponse(
+        request, "partials/news_tab.html",
+        {"cards": picked[:60], "tabs": _NEWS_TABS, "active": tab, "spec": spec,
+         "period": period, "periods": _NEWS_PERIODS, "counts": counts,
+         "subfilters": subfilters, "total": len(picked)},
+    )
+
+
+def _news_tab_counts(period: str) -> dict[str, int]:
+    """Item count per tab, so a tab that would open empty says so up front."""
+    rows = _news_rows(period)
+    if not rows:
+        return {t["key"]: 0 for t in _NEWS_TABS}
+    cards = [_news_card(r) for r in rows]
+    subjects = _subject_for_refs([r["ref"] for r in rows])
+    counts: dict[str, int] = {}
+    for t in _NEWS_TABS:
+        if t["kind"] == "overview":
+            counts[t["key"]] = len(rows)
+        elif t["kind"] == "work":
+            # Count only the cheap embedding signal here — recomputing the full
+            # three-route match for the strip on every request is not worth it,
+            # and the tab body shows the true total when opened.
+            counts[t["key"]] = sum(1 for c in cards if c["close"]) or None
+        else:
+            counts[t["key"]] = sum(
+                1 for c, r in zip(cards, rows)
+                if _tab_matches(t, c, subjects.get(r["ref"], "")))
+    return counts
 
 
 @router.get("/api/partial/news/front", response_class=HTMLResponse)

@@ -20,11 +20,29 @@ The `metis-rc` MCP server is registered globally. **Always call the MCP tools im
 
 **Step 1 — Pull data (run in parallel)**
 - `get_user_profile()` — retrieve `interests` and `news_topics`; use interests in the FOCUS line, use news_topics to weight news selection
-- `get_news_briefs(limit=5)` — recent general news signals; prioritise items that match `news_topics`
+- `get_briefing_coverage(days=7)` — **use this instead of a flat news list.** It groups news into story threads and tells you which may lead today and which have already been delivered. This is what stops a long-running epidemic leading every single morning.
 - `get_news_briefs(limit=3, source_type="article")` — recent scientific articles (if supported); prioritise items touching `interests`
 - `get_ideas(limit=10, since="7 days ago")` — recent captured ideas to surface a connection
 - `get_daily_insight(date=today)` — any AI-generated insight for today
 - `get_agent_runs(limit=3, since="yesterday")` — brief note on overnight activity only if something notable ran
+
+**Step 1b — Respect the freshness rules**
+
+the researcher reads this briefing every day, so **repetition is the main failure mode.**
+`get_briefing_coverage()` splits threads into two groups; obey the split:
+
+- **CAN LEAD** — draw the NEWS section from these.
+- **HELD BACK** — already delivered. Do not lead with one, however big it is, and
+  do not restate it. Mention it only if its new items tell the researcher something he has
+  not been told. **Silence about an unchanged running story is the correct output**,
+  not an omission. The one exception is a thread flagged `ESCALATION`: something
+  genuinely moved, so lead with *what changed*, not with the story again.
+- **Angles used** — for a thread that has appeared before, the coverage lists the
+  analytical angles already spent on it (epidemiological, operational, policy,
+  methodological, funding, regional-comparison). Take a fresh one. Same story,
+  new lens — the insight has to rotate, not just the topic.
+- If everything worth leading with is modest, **lead with something modest.** A
+  smaller genuinely-new item beats a large one he already read.
 
 **Step 2 — Compose the briefing**
 
@@ -45,6 +63,21 @@ Five sections, each max 3-4 lines:
 **Step 3 — Save, log, and reflect**
 Write to: `outputs/reviews/metis/YYYY-MM-DD_morning-brief.md`
 Log: `log_agent_run(paths, "metis", "Morning briefing", "", "outputs/reviews/metis/...")`
+
+**Step 3b — Mark it read, or tomorrow repeats itself**
+
+After delivering the briefing, call `mark_brief_read(date=<today>, period="daily")`.
+
+This is not bookkeeping — it is the mechanism. Cooldown counts only briefs marked
+read, deliberately: a brief that was generated but never read delivered nothing,
+so it must not silence a story. The consequence is that **a briefing delivered
+here and never marked read leaves every thread eligible, and tomorrow leads with
+the same story again.** the researcher reads the daily in conversation as often as on the
+dashboard, so this call is what keeps the two paths consistent.
+
+Say one plain sentence about what went quiet — e.g. "I've marked this read, so the
+Ebola thread goes quiet for a few days unless something changes." Never mention
+tool names or thread ids.
 Reflexion: `write_reflexion(session_id=..., agent_slug="metis-morning", went_well=..., could_improve=..., missing_context=..., tool_wishes=...)`
 
 ## Output format

@@ -9,6 +9,31 @@
    ARCHIVE — light palette (primary)
    ================================================================ */
 :root {
+  /* ── Layout widths ────────────────────────────────────────────────
+     ONE source of truth for how wide a surface may get. Before these
+     tokens there were six competing caps — .page 1280px, work.html
+     1320px inline, thinking.html 1180px inline, teach.html 1180px
+     inline, course_reader 1400px, .metis-layout max-width:none — three
+     of them inline styles. That is why surfaces did not render alike,
+     and why a large monitor left ~600px of dead margin on each side
+     with nothing widening to claim it.
+
+     --m-page-max   dashboards, grids, tables: use the space.
+     --m-prose-max  reading surfaces (briefs, articles, notes). Capped in
+                    ch, not px: prose past ~85 characters per line is
+                    measurably harder to read, so "wider" stops being
+                    "better" here. Full-bleed body text is a regression
+                    on a 4K screen, not an improvement.
+     --m-page-pad   grows with the viewport so a wide page does not look
+                    like content pinned to the left edge.
+     ---------------------------------------------------------------- */
+  --m-page-max:      1800px;
+  --m-page-max-wide: 2100px;   /* opt-in for genuinely tabular surfaces */
+  --m-prose-max:     78ch;
+  --m-page-pad:      clamp(20px, 3.2vw, 72px);
+  --m-page-pad-top:  clamp(24px, 2.4vw, 48px);
+  --m-gap:           clamp(0.9rem, 1.4vw, 1.75rem);
+
   /* Surfaces */
   --m-bg:            #f5f2ea;
   --m-surface:       #fbf8f0;
@@ -410,8 +435,25 @@ pre code { background: transparent; padding: 0; color: inherit; }
 .scroll::-webkit-scrollbar-thumb { background: var(--m-rule-strong); border: 3px solid var(--m-bg); border-radius: 6px; }
 .scroll::-webkit-scrollbar-track { background: transparent; }
 
-/* Page wrapper */
-.page { padding: 40px 56px 64px; max-width: 1280px; margin: 0 auto; transition: padding 0.2s ease; }
+/* Page wrapper — fluid, token-driven, one rule for every surface.
+   Modifiers instead of inline max-widths:
+     .page--prose  reading surface, capped at a comfortable measure
+     .page--wide   tabular/dense surface, allowed the extra 300px
+     .page--flush  full bleed (the Metis surface owns its own gutters) */
+.page {
+  width: 100%;
+  max-width: var(--m-page-max);
+  padding: var(--m-page-pad-top) var(--m-page-pad) 64px;
+  margin: 0 auto;
+  transition: padding 0.2s ease;
+}
+.page--wide  { max-width: var(--m-page-max-wide); }
+.page--flush { max-width: none; padding-left: var(--m-gap); padding-right: var(--m-gap); }
+
+/* Reading measure. Applied to the page for a wholly prose surface, or to a
+   single block (a brief, an abstract) sitting inside a wide dashboard. */
+.page--prose { max-width: calc(var(--m-prose-max) + 2 * var(--m-page-pad)); }
+.prose-measure { max-width: var(--m-prose-max); }
 
 /* ================================================================
    PAGE ELEMENTS
@@ -1735,16 +1777,19 @@ body.capture-open .t-capture {
    METIS SURFACE — full-width identity-first layout (v9c)
    ================================================================ */
 
-/* Wide layout — kills the .page max-width centring just for the Metis tab.
-   Two columns: sticky left rail (identity + nav) + wide content. */
+/* Wide layout for the Metis tab: sticky left rail (identity + nav) + content.
+   Previously `max-width: none; margin: 0` — a per-tab escape hatch from the
+   old 1280px cap, which is precisely why this surface never matched the others.
+   Now it uses the shared cap and centres like everything else; the wide feel
+   comes from the token, not from opting out of it. */
 .metis-layout {
   display: grid;
   grid-template-columns: 280px 1fr;
-  gap: 32px;
-  max-width: none;
+  gap: var(--m-gap);
+  max-width: var(--m-page-max);
   width: 100%;
-  padding: 0 16px;
-  margin: 0;
+  padding: 0 var(--m-gap);
+  margin: 0 auto;
 }
 .metis-layout .metis-side {
   position: sticky;
@@ -2671,6 +2716,60 @@ details summary { outline: none; }
 }
 
 /* ===========================================================================
+   SCALE-UP LAYER — large and very large displays
+   ===========================================================================
+   Every breakpoint above this point is `max-width`: the cascade only ever
+   degraded downward and never claimed extra space. On a wide monitor the
+   result was a 1280px column of content with empty margins either side.
+
+   These are the only `min-width` queries in the file. They ADD columns rather
+   than stretching cards, because a 600px-wide card holding one number is worse
+   than two 300px cards holding two. Reading surfaces are deliberately excluded
+   — .page--prose keeps its measure at every width.
+   =========================================================================== */
+
+/* ---------- >= 1600px : large desktop / 1440p ---------- */
+@media (min-width: 1600px) {
+  /* Cards stop stretching and start multiplying. */
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+
+  /* The Today canvas gains a wider marginalia rail rather than a wider middle. */
+  .today-canvas { grid-template-columns: 1fr 1fr 380px; }
+
+  /* Dense rows can afford more room for the title column. */
+  .thinking-layout { grid-template-columns: 260px 1fr 300px; }
+  .k-layout        { grid-template-columns: 280px 1fr; gap: 40px; }
+  .metis-layout    { grid-template-columns: 320px 1fr; gap: 40px; }
+}
+
+/* ---------- >= 1920px : 1080p full-width / 4K scaled ---------- */
+@media (min-width: 1920px) {
+  /* Fourth statistic column, and the ledger gets its full seven cells. */
+  .vbox-strip      { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .token-stats-row { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .agent-card-grid { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+  .board-strip     { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+  /* grid-main: the sidebar column stops growing so the main column gets the gain. */
+  .grid-main { grid-template-columns: minmax(0, 1fr) 420px; }
+
+  /* Slightly larger base type — at this width the default reads small. */
+  .page { font-size: 1.02rem; }
+}
+
+/* ---------- >= 2400px : 4K unscaled / ultrawide ---------- */
+@media (min-width: 2400px) {
+  /* Beyond this the cap does the work: content stays at --m-page-max and
+     centres, because a genuinely edge-to-edge dashboard forces the eye to
+     travel further than any layout gain is worth. Only the gutters grow. */
+  :root { --m-page-pad: 80px; }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+  .today-canvas { grid-template-columns: 1fr 1fr 1fr 380px; }
+  .today-canvas > :last-child { grid-column: auto; }
+}
+
+/* ===========================================================================
    Live meeting recording indicator pulse (referenced from live_meeting.js)
    =========================================================================== */
 @keyframes lm-pulse {
@@ -3044,3 +3143,142 @@ details summary { outline: none; }
   border-color: var(--m-accent);
   color: var(--m-accent);
 }
+
+
+/* ===========================================================================
+   NEWS CARDS (.nf-*) — moved out of partials/news_front.html 2026-08-19
+   ===========================================================================
+   These lived in a <style> block inside news_front.html, so any OTHER news
+   partial that reused the classes silently rendered unstyled. The tabbed News
+   surface has several partials sharing this vocabulary, so it belongs here.
+
+   Design note preserved from the original: photo cards and typographic cards
+   are EQUAL citizens. Measured coverage — policy/world-news 100% have
+   thumbnails, epidemiology 0% — so if an image-less item rendered as
+   "degraded", the researcher's own field would lose to BBC headlines every single day.
+   A story without a picture gets a deliberate typographic treatment instead.
+   =========================================================================== */
+  .nf-lead        { display:grid; grid-template-columns:1.15fr 1fr; gap:0;
+                    border:1px solid var(--m-rule); border-radius:10px;
+                    overflow:hidden; background:var(--m-surface); margin-bottom:28px; }
+  .nf-lead-media  { min-height:280px; background-size:cover; background-position:center; }
+  .nf-lead-type   { min-height:280px; display:grid; align-content:center; gap:14px;
+                    padding:32px; background:var(--m-accent-wash);
+                    border-right:1px solid var(--m-rule); }
+  .nf-lead-body   { padding:32px; display:flex; flex-direction:column; gap:12px;
+                    justify-content:center; }
+  .nf-lead h2     { font-size:26px; line-height:1.22; letter-spacing:-0.015em;
+                    margin:0; text-wrap:balance; }
+  .nf-lead p      { color:var(--m-text); margin:0; font-size:14px; line-height:1.55; }
+
+  .nf-wordmark    { font-family:var(--m-mono); font-size:11px; letter-spacing:0.16em;
+                    text-transform:uppercase; color:var(--m-accent); }
+  .nf-serif       { font-size:30px; line-height:1.2; letter-spacing:-0.02em;
+                    color:var(--m-ink); text-wrap:balance; }
+
+  .nf-grid        { display:grid; gap:18px; }
+  .nf-grid-4      { grid-template-columns:repeat(auto-fill, minmax(215px, 1fr)); }
+  .nf-grid-3      { grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); }
+
+  .nf-card        { display:flex; flex-direction:column; border:1px solid var(--m-rule);
+                    border-radius:8px; overflow:hidden; background:var(--m-surface);
+                    text-decoration:none; color:inherit; transition:border-color .15s, transform .15s; }
+  .nf-card:hover  { border-color:var(--m-accent); transform:translateY(-2px); }
+  .nf-card:focus-visible { outline:2px solid var(--m-accent); outline-offset:2px; }
+  .nf-thumb       { height:130px; background-size:cover; background-position:center;
+                    background-color:var(--m-surface-2); }
+  /* The type card is NOT a fallback — it is the other half of the design. */
+  .nf-typecard    { height:130px; display:grid; align-content:center; gap:8px;
+                    padding:16px; background:var(--m-accent-wash);
+                    border-bottom:1px solid var(--m-rule); }
+  .nf-typecard-hd { font-size:16px; line-height:1.25; letter-spacing:-0.01em;
+                    color:var(--m-ink); text-wrap:balance;
+                    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+                    overflow:hidden; }
+  .nf-card-body   { padding:12px 14px 14px; display:flex; flex-direction:column; gap:6px; flex:1; }
+  .nf-card-title  { font-size:14px; line-height:1.35; font-weight:600; color:var(--m-ink);
+                    text-wrap:pretty;
+                    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+                    overflow:hidden; }
+  .nf-meta        { display:flex; align-items:center; gap:8px; margin-top:auto;
+                    font-family:var(--m-mono); font-size:11px; letter-spacing:0.08em;
+                    text-transform:uppercase; color:var(--m-muted); }
+
+  /* "Closest to your work" — the whole reason this page exists, so it gets the
+     one accent that nothing else on the page is allowed to use. */
+  .nf-close       { display:inline-flex; align-items:center; gap:5px;
+                    font-family:var(--m-mono); font-size:11px; letter-spacing:0.1em;
+                    text-transform:uppercase; color:var(--m-on-accent);
+                    background:var(--m-accent); padding:3px 8px; border-radius:999px; }
+  .nf-dot         { width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+  .nf-wire        { border:1px solid var(--m-rule); border-radius:8px;
+                    background:var(--m-surface); overflow:hidden; }
+  .nf-wire a      { display:grid; grid-template-columns:64px 1fr auto; gap:14px;
+                    align-items:baseline; padding:10px 16px;
+                    border-bottom:1px solid var(--m-rule-soft);
+                    text-decoration:none; color:inherit; }
+  .nf-wire a:last-child { border-bottom:none; }
+  .nf-wire a:hover      { background:var(--m-surface-2); }
+  .nf-wire .src   { font-family:var(--m-mono); font-size:11px; letter-spacing:0.08em;
+                    text-transform:uppercase; color:var(--m-muted); }
+  .nf-wire .hd    { font-size:13.5px; line-height:1.4; color:var(--m-ink); }
+  .nf-wire .ago   { font-family:var(--m-mono); font-size:11px; color:var(--m-muted-soft);
+                    white-space:nowrap; }
+
+  @media (max-width: 760px) {
+    .nf-lead { grid-template-columns:1fr; }
+    .nf-lead-type, .nf-lead-media { min-height:200px; }
+  }
+
+/* Tabs for the News surface. Intrinsic grids above already handle the cards;
+   these only need the tab strip and the period switcher. */
+.news-tabs {
+  display: flex; flex-wrap: wrap; gap: 2px;
+  border-bottom: 1px solid var(--m-rule);
+  margin-bottom: 22px;
+}
+.news-tab {
+  appearance: none; background: transparent; border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 9px 14px; cursor: pointer;
+  font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--m-muted);
+  transition: color 140ms ease, border-color 140ms ease;
+}
+.news-tab:hover { color: var(--m-ink); }
+.news-tab[aria-selected="true"] { color: var(--m-ink); border-bottom-color: var(--m-accent); }
+.news-tab .nt-count {
+  margin-left: 6px; font-size: 10px; color: var(--m-muted-soft);
+}
+.news-period { display: flex; gap: 2px; align-items: center; }
+.news-period-btn {
+  appearance: none; background: var(--m-surface); border: 1px solid var(--m-rule);
+  padding: 4px 11px; cursor: pointer;
+  font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--m-muted);
+}
+.news-period-btn:first-child { border-radius: 2px 0 0 2px; }
+.news-period-btn:last-child  { border-radius: 0 2px 2px 0; }
+.news-period-btn[aria-pressed="true"] {
+  background: var(--m-accent); border-color: var(--m-accent); color: var(--m-on-accent);
+}
+/* Overview: one row per running story, not a card grid. */
+.ov-thread {
+  display: grid; grid-template-columns: 1fr auto; gap: 14px;
+  padding: 13px 0; border-bottom: 1px solid var(--m-rule-soft);
+}
+.ov-thread-label { font-size: 15px; color: var(--m-ink); line-height: 1.35; }
+.ov-thread-meta {
+  font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.08em;
+  color: var(--m-muted); text-transform: uppercase; white-space: nowrap;
+}
+.ov-thread-items { margin-top: 5px; font-size: 13px; color: var(--m-text); line-height: 1.5; }
+.ov-pill {
+  display: inline-block; font-family: var(--m-mono); font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: var(--m-radius-pill); margin-left: 6px;
+}
+.ov-pill--new  { background: var(--m-accent); color: var(--m-on-accent); }
+.ov-pill--esc  { background: var(--m-ochre-wash); color: var(--m-ochre-deep); }
+.ov-pill--seen { background: var(--m-surface-2); color: var(--m-muted); }
