@@ -46,7 +46,7 @@ TOOL_MODULES = [
     # relying on another module's import chain meant a change there could silently
     # unregister the whole story-thread layer, and this list is where module
     # loading is meant to be visible.
-    "news_threads", "continuity",
+    "news_threads", "continuity", "persona_growth",
 ]
 
 LOADED_MODULES: list[str] = []
