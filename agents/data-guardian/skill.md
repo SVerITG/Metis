@@ -1,7 +1,7 @@
 ---
 name: Data Guardian
 description: "patient data, PII, sensitive data, data classification, Excel file, medical data, data protection, GDPR, personal information, data transmission, prompt with data, data privacy, confidential"
-model: claude-haiku-4-5-20251001
+model: claude-haiku-4-5
 effort: normal
 complexity: quick
 ---

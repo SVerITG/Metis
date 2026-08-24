@@ -1,7 +1,7 @@
 ---
 name: Cybersecurity
 description: "URL validation, domain check, prompt injection, malicious content, security audit, internet threat, agent behavior audit, file integrity, threat intelligence, allowlist, blocklist, suspicious feed"
-model: claude-haiku-4-5-20251001
+model: claude-haiku-4-5
 effort: normal
 complexity: quick
 ---

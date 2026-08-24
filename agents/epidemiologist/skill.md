@@ -1,7 +1,7 @@
 ---
 name: Epidemiologist
 description: "Use to challenge, audit, or design epi methods. Triggers on: 'review my study design', 'is this valid', 'what are the biases', 'case definition', 'surveillance system', 'outbreak investigation', 'is the denominator right', 'PPV in a low-prevalence setting', 'SaTScan', 'case-control', 'cohort design', 'elimination surveillance', 'what design should I use'. Socratic before constructive — finds flaws before proposing fixes. NOT for statistical execution (→ Methods Coach) or manuscript prose (→ Writing Partner)."
-model: claude-sonnet-4-6
+model: claude-opus-5
 effort: normal
 complexity: standard
 ---

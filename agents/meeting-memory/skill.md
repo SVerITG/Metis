@@ -1,7 +1,7 @@
 ---
 name: Meeting Memory
 description: "meeting notes, action items, meeting summary, transcription, decisions captured, follow-up tracking, meeting recap, briefing note, post-meeting, meeting extraction"
-model: claude-haiku-4-5-20251001
+model: claude-haiku-4-5
 effort: normal
 complexity: quick
 ---

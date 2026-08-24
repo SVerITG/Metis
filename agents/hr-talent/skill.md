@@ -1,7 +1,7 @@
 ---
 name: HR/Talent Spotter
 description: "capability gap, agent quality flagged, task unmatched, propose new agent, team assessment, no agent matches, poor agent output, missing specialist, new domain, new tool type"
-model: claude-haiku-4-5-20251001
+model: claude-haiku-4-5
 effort: normal
 complexity: quick
 ---

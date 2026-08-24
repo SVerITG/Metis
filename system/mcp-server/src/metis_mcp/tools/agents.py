@@ -111,6 +111,51 @@ async def get_agent_context(agent_slug: str) -> list[TextContent]:
         except Exception as e:
             parts.append(f"# {ctx_fp.name}\n\nError reading file: {e}")
 
+    # STANDING DECISIONS — the part that makes invoking a specialist worth doing.
+    #
+    # Added 2026-08-24, after: "I don't see them mentioned in the outputs, where
+    # are my agents? ... if you are not using them they must not be good?"
+    #
+    # They were not bad; they were empty. `user_decisions` held TWO rows while
+    # session summaries held 7,578 decision entries, so this call returned a
+    # persona that could be guessed from the agent's name and nothing about how
+    # the researcher actually wants things done. Routing therefore cost tokens and
+    # added nothing, and anything with judgement stops routing.
+    #
+    # Injected LAST, after the generic prompt and the project context, because a
+    # settled decision should override a general instruction rather than argue
+    # with it. Empty string when there is nothing — a heading with nothing under
+    # it trains the reader to skip the section.
+    try:
+        from metis_mcp.tools.agent_memory import render_for_prompt
+        decisions = render_for_prompt(agent_slug)
+        if decisions:
+            parts.append(decisions)
+    except Exception as exc:  # noqa: BLE001 — never let memory break the context
+        parts.append(f"# standing decisions\n\nunavailable: {exc}")
+
+    # The model this agent DECLARES it wants. Reported, never enforced:
+    # `user_decisions` #2, 2026-08-12 — "Model tiering stays ADVISORY, not
+    # binding — Metis does not make the answer's model call, the Claude client
+    # does. Do not re-litigate without new reasons." Surfacing it means a stale
+    # declaration is visible instead of silently wrong, which is what it was:
+    # 16 agents declared a model a generation behind, and nothing read the field.
+    try:
+        import re as _re
+        for _f in ("skill.md", "system-prompt.md"):
+            _fp = agent_dir / _f
+            if not _fp.exists():
+                continue
+            _m = _re.search(r"^model:\s*(\S+)", _fp.read_text(encoding="utf-8"),
+                            _re.MULTILINE)
+            if _m:
+                parts.append(
+                    f"# declared model\n\n`{_m.group(1)}` (advisory — the client "
+                    "chooses the model; this is what the agent was written for)")
+                break
+    except Exception:
+        pass
+
     if not parts:
         return [
             TextContent(

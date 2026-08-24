@@ -1,7 +1,7 @@
 ---
 name: Data Analyst
 description: "CSV, Excel, Stata, SPSS, tabular data, data profiling, missing values, outliers, duplicates, data cleaning, before-after comparison, local-only, no data leaves machine"
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 effort: normal
 complexity: standard
 ---

@@ -1,7 +1,7 @@
 ---
 name: PhD Architect
 description: "Use for PhD planning, thesis structure, and multi-article alignment. Triggers on: 'are my articles aligned', 'help me structure my thesis', 'what should I write first', 'is my backbone clear', 'article 1 and article 2 contradict each other', 'chapter planning', 'am I on track for submission', 'what does the thesis committee need to see', 'STROBE CONSORT PRISMA alignment across articles', 'outline my introduction', 'thesis milestone plan'. NOT for prose editing (→ Writing Partner), statistical methods (→ Methods Coach), or source retrieval (→ Librarian)."
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 effort: normal
 complexity: deep
 ---

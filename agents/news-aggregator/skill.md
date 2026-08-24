@@ -1,7 +1,7 @@
 ---
 name: News Aggregator
 description: "RSS feed, feed ingestion, news pipeline, aggregate news, feed parsing, news digest, automated news collection, feed monitoring, news deduplication, signal tagging"
-model: claude-haiku-4-5-20251001
+model: claude-haiku-4-5
 effort: normal
 complexity: quick
 ---

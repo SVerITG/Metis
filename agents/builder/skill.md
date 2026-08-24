@@ -1,7 +1,7 @@
 ---
 name: Builder
 description: "build new app, MCP server, multi-agent workflow, orchestrate components, new project architecture, span datasets UI automation, multi-component creator, greenfield system"
-model: claude-sonnet-4-6
+model: claude-opus-5
 effort: normal
 complexity: standard
 ---

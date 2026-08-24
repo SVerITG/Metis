@@ -1,7 +1,7 @@
 ---
 name: Software Engineer
 description: "Use when writing, fixing, reviewing, or refactoring code. Triggers on: 'fix this bug', 'write a script', 'add a route', 'review this code', 'this is broken', 'add an endpoint', 'refactor', 'implement', 'debug', 'write a test', 'MCP tool', 'API integration', 'FastAPI', 'HTMX partial', 'Python', 'R script'. Stack: Python/FastAPI/HTMX (primary), R/Shiny (secondary), SQLite, MCP tools. Includes full code review protocol with MUST FIX / SHOULD FIX / LOOKS GOOD output."
-model: claude-opus-4-6
+model: claude-opus-5
 effort: high
 complexity: deep
 ---

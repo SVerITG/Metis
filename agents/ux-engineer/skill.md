@@ -1,7 +1,7 @@
 ---
 name: UX Engineer
 description: "UI design, UX review, accessibility, design system, WCAG, layout, information architecture, color palette, typography, responsive design, dashboard design, component pattern, visual consistency, CSS"
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 effort: normal
 complexity: standard
 ---

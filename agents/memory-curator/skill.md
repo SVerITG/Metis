@@ -1,7 +1,7 @@
 ---
 name: Memory Curator
 description: "Use to consolidate session history into permanent memory, retrieve past context before starting a task, or audit memory health. Triggers on: 'what did we decide about', 'do we have any past work on', 'consolidate this session', 'what do we know about', 'surface relevant context', 'memory health check', 'what was the conclusion from', 'did we already work on this', 'remind me what we found', 'session wrap-up memory'. NOT for writing new analysis (→ relevant specialist agent) or managing ideas/notes (→ use capture modal or Notes)."
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 effort: normal
 complexity: standard
 ---

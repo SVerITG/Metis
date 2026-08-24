@@ -1,7 +1,7 @@
 ---
 name: Dashboard Engineer
 description: "dashboard tab, HTMX partial, FastAPI route, epidemiological indicator, surveillance dashboard, KPI panel, health indicator design, coverage gap, screening completeness, positivity rate, burden visualization, dashboard bug, blank panel, spinner not resolving, data quality panel, choropleth, trend chart, health zone map"
-model: claude-opus-4-6
+model: claude-opus-5
 effort: normal
 complexity: standard
 ---
