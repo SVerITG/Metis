@@ -332,3 +332,16 @@ agents/**/_procedure-corrections-*.json
 # record_persona_learning(). Stays local; the SHAPE of this file is in
 # metis-response-contract.md, which IS tracked.
 system/config/metis-learned.md
+
+# Course source PDFs (brochures, syllabi) — keep the specs, not the binaries
+knowledge/courses/*/sources/*.pdf
+
+# OneDrive conflict copies of runtime output. OneDrive appends the hostname when
+# two machines write the same file, so these appear as eval-results-5XLQDJ4-2.json
+# and multiply. The canonical name is already ignored above; the forks are noise.
+system/config/eval-results-*.json
+system/config/mcp-health-*.json
+
+# The corpus-grounding hook's trigger cache — derived from the profile, rebuilt
+# twice a day, machine-local.
+system/config/.corpus-triggers.json
