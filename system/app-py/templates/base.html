@@ -225,7 +225,7 @@
           <line x1="14" y1="5" x2="14" y2="9"/>
         </svg>
         <span class="n-label">Learning</span>
-        <span class="n-meta">—</span>
+        <span class="n-meta" hx-get="/api/partial/learning/nav-meta" hx-trigger="load, every 300s" hx-swap="innerHTML">—</span>
         <span class="n-tip">Learning</span>
       </div>
 
@@ -273,6 +273,67 @@
       </div>
 
     </div><!-- /.nav-sec surfaces -->
+
+    {# ── Focus shelf ─────────────────────────────────────────────────────────
+       Between Surfaces and System, because that is what it is: not a permanent
+       surface, not machinery. A subject that has the researcher's attention right now.
+
+       Rendered from `focus_areas WHERE state='active'` — so putting something on
+       the shelf puts it in the navbar, and taking it off removes it, with no
+       template change. At most three: a shelf with ten things on it is not a
+       focus, and the cap is what makes the section mean something.
+
+       The section disappears entirely when the shelf is empty rather than showing
+       an empty heading — a label with nothing under it reads as a broken feature.
+    #}
+    {# `is defined` is load-bearing: there are SEVENTEEN Jinja2Templates
+       instances in this app, each with its own environment, so a global
+       registered on one is invisible to the others. install_shared_globals()
+       in main.py installs it on all of them; this guard means a router that
+       builds its own environment later degrades to a missing navbar section
+       rather than a 500 on every page it serves. #}
+    {% set _shelf = focus_shelf() if focus_shelf is defined else [] %}
+    <div class="nav-sec">
+      <div class="nav-label"><span>Focus</span></div>
+      {% for f in _shelf %}
+      <div class="nav-item {% if active_tab == 'focus:' ~ f.slug %}active{% endif %}"
+           data-tab="focus:{{ f.slug }}"
+           onclick="window.location='/focus/{{ f.slug }}'"
+           role="button" tabindex="0"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+        <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+             stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+             width="16" height="16">
+          <circle cx="8" cy="8" r="5.5"/>
+          <circle cx="8" cy="8" r="1.8"/>
+        </svg>
+        <span class="n-label">{{ f.title }}</span>
+        <span class="n-meta">{{ f.shelf_slot }}</span>
+        <span class="n-tip">{{ f.title }}{% if f.subtitle %} — {{ f.subtitle }}{% endif %}</span>
+      </div>
+      {% endfor %}
+
+      {# Always present, and it is not decoration: when the shelf is empty this is
+         the ONLY route to /focus, so without it a user could never create their
+         first focus from the interface — the exact gap this section exists to
+         close. Reads "Add a focus" when empty and "Manage" when not, because an
+         empty shelf needs an invitation and a full one needs a door. #}
+      <div class="nav-item {% if active_tab == 'focus-index' %}active{% endif %}"
+           data-tab="focus-index"
+           onclick="window.location='/focus'"
+           role="button" tabindex="0"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+        <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+             stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+             width="16" height="16">
+          <line x1="8" y1="3.5" x2="8" y2="12.5"/>
+          <line x1="3.5" y1="8" x2="12.5" y2="8"/>
+        </svg>
+        <span class="n-label">{% if _shelf %}Manage{% else %}Add a focus{% endif %}</span>
+        <span class="n-meta">{{ _shelf|length }}/3</span>
+        <span class="n-tip">All focus areas — create, shelve, archive</span>
+      </div>
+    </div><!-- /.nav-sec focus -->
 
     <!-- System nav section -->
     <div class="nav-sec">

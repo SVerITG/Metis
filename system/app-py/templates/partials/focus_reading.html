@@ -1,0 +1,41 @@
+{# Literature through the lens. Reads `new_publications`.
+
+   A publication date LATER than today is shown as-is and flagged, not hidden:
+   this corpus holds items stamped 2027 and 2030. They sort by discovery date so
+   they cannot squat at the top of the list, but the wrong claim stays visible. #}
+{% if not reading %}
+<div class="panel" style="padding:16px 18px;">
+  <p style="margin:0;font-size:13px;color:var(--m-muted);">
+    No literature matches this lens yet.
+  </p>
+</div>
+{% else %}
+<div class="panel" style="padding:4px 0;">
+  {% for r in reading %}
+  <div style="padding:11px 18px;{% if not loop.last %}border-bottom:1px solid var(--m-line);{% endif %}">
+    <div style="display:flex;gap:12px;align-items:baseline;">
+      <span style="font-family:var(--m-mono);font-size:10.5px;color:var(--m-muted);
+                   white-space:nowrap;font-variant-numeric:tabular-nums;">
+        {{ (r.pub or '')[:10] or '—' }}{% if r.pub and r.pub[:10] > today %} ⚠{% endif %}
+      </span>
+      <div style="min-width:0;flex:1;">
+        <div style="font-size:13.5px;line-height:1.45;">
+          {% if r.doi %}
+          <a href="https://doi.org/{{ r.doi }}" target="_blank" rel="noopener"
+             style="color:inherit;text-decoration:none;border-bottom:1px solid var(--m-line);">{{ r.title }}</a>
+          {% elif r.source_url %}
+          <a href="{{ r.source_url }}" target="_blank" rel="noopener"
+             style="color:inherit;text-decoration:none;border-bottom:1px solid var(--m-line);">{{ r.title }}</a>
+          {% else %}{{ r.title }}{% endif %}
+        </div>
+        <div style="font-family:var(--m-mono);font-size:10.5px;color:var(--m-muted);margin-top:3px;">
+          {{ r.kind }}{% if r.journal %} · {{ r.journal[:52] }}{% endif %}
+          {% if r.doi %} · {{ r.doi }}{% endif %}
+          {% if r.pub and r.pub[:10] > today %} · ⚠ dated in the future — sorted by when Metis found it{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

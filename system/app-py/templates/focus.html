@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% from "partials/_section.html" import sec_label %}
+{% block title %}{{ area.title }}{% endblock %}
+
+{#
+  ══════════════════════════════════════════════════════════════════════════════
+  A FOCUS SURFACE — one template, any number of surfaces.
+
+  Every other surface here is a bespoke template. This one is not, and that is
+  the feature: the researcher adds and removes focus areas himself, so a surface that
+  needed a developer to exist would not be a surface a user can add. `area` is a
+  row from `focus_areas`; everything on the page is that row's lens applied to
+  tables that already own their content.
+
+  ORDER IS AN ARGUMENT. Pulse first, overview second, feed third.
+  Opening a subject you have not looked at for a week, the first question is
+  "what happened", not "what is this" — so the answer to that is at the top, and
+  the standing narrative sits under it where it can be skipped.
+  ══════════════════════════════════════════════════════════════════════════════
+#}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <div class="page-eyebrow">
+        FOCUS{% if area.shelf_slot %} · SHELF {{ area.shelf_slot }}{% endif %}
+        · {{ area.state|upper }}
+      </div>
+      <h1 class="page-title">{{ area.title }}</h1>
+      {% if area.subtitle %}
+      <div style="font-family:var(--m-display);font-style:italic;font-size:13.5px;
+                  color:var(--m-muted);margin-top:4px;">{{ area.subtitle }}</div>
+      {% endif %}
+    </div>
+    <div class="page-meta">
+      {{ pulse.total_news }} BRIEFS · {{ pulse.total_reading }} PAPERS
+      · {{ corpus.documents }} DOCS
+    </div>
+  </div>
+
+  {# ── 1 · Pulse — what changed, and how stale ───────────────────────────── #}
+  <div id="focus-pulse">
+    {% include "partials/focus_pulse.html" %}
+  </div>
+
+  {# ── 2 · Overview — the standing narrative ─────────────────────────────── #}
+  {% if area.overview %}
+  <div style="margin-top:28px;">
+    {{ sec_label("Overview", tail="WHAT MATTERS HERE", style="margin-bottom:8px;") }}
+    <div class="panel" style="padding:18px 20px;">
+      <div class="focus-prose">{{ area.overview | md | safe }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── 3 · Feed ──────────────────────────────────────────────────────────── #}
+  <div style="margin-top:28px;">
+    {{ sec_label("Latest", tail="NEWS THROUGH THIS LENS", style="margin-bottom:8px;") }}
+    <div id="focus-feed">{% include "partials/focus_feed.html" %}</div>
+  </div>
+
+  {# ── 4 · Reading ───────────────────────────────────────────────────────── #}
+  <div style="margin-top:28px;">
+    {{ sec_label("Reading", tail="LITERATURE THROUGH THIS LENS", style="margin-bottom:8px;") }}
+    <div id="focus-reading">{% include "partials/focus_reading.html" %}</div>
+  </div>
+
+  {# ── 5 · Thinking — the brainstorm half ────────────────────────────────── #}
+  <div style="margin-top:28px;">
+    {{ sec_label("Your thinking", tail="NOTES · IDEAS · TAGGED focus:" ~ area.slug,
+                 style="margin-bottom:8px;") }}
+    <div id="focus-thinking">{% include "partials/focus_thinking.html" %}</div>
+  </div>
+
+  {# ── Shelf management ──────────────────────────────────────────────────── #}
+  <div style="margin-top:32px;">
+    {{ sec_label("Shelf", tail=(shelf|length) ~ " / " ~ max_shelf ~ " SLOTS",
+                 style="margin-bottom:8px;") }}
+    <div class="panel" style="padding:14px 16px;">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+        {% for a in all_areas %}
+        <span style="font-family:var(--m-mono);font-size:10.5px;padding:4px 9px;
+                     border:1px solid var(--m-line);border-radius:4px;
+                     {% if a.slug == area.slug %}border-color:var(--m-accent);{% endif %}
+                     {% if a.state == 'archived' %}opacity:.55;{% endif %}">
+          <a href="/focus/{{ a.slug }}" style="text-decoration:none;color:inherit;">
+            {% if a.shelf_slot %}{{ a.shelf_slot }}·{% endif %}{{ a.title }}
+          </a>
+          <span style="color:var(--m-muted);"> {{ a.state }}</span>
+        </span>
+        {% endfor %}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        {% for s, label in [('active','Put on shelf'), ('following','Follow only'),
+                            ('archived','Archive')] %}
+          {% if area.state != s %}
+          <button hx-post="/api/focus/{{ area.slug }}/state"
+                  hx-vals='{"state": "{{ s }}"}'
+                  hx-swap="none"
+                  hx-on::after-request="window.location.reload()"
+                  style="font-family:var(--m-mono);font-size:10.5px;padding:5px 11px;
+                         border:1px solid var(--m-line);border-radius:4px;
+                         background:transparent;color:var(--m-fg);cursor:pointer;">
+            {{ label }}
+          </button>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <p style="margin:12px 0 0;font-size:12px;color:var(--m-muted);line-height:1.55;">
+        Archiving files the <strong>lens</strong>, not the contents. Every note and
+        idea keeps its <code>focus:{{ area.slug }}</code> tag, papers stay in your
+        library, briefs stay in the news history — a focus never owned them, so
+        removing it cannot take them away.
+      </p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

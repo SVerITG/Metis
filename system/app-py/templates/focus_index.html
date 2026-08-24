@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% from "partials/_section.html" import sec_label %}
+{% block title %}Focus areas{% endblock %}
+
+{#
+  ══════════════════════════════════════════════════════════════════════════════
+  THE FOCUS INDEX — where focus areas are made, and where the ones off the shelf
+  live.
+
+  Two gaps this closes. Creating a focus previously required an MCP call, which
+  contradicts the premise: a surface is not one a user can add if adding one needs
+  a tool call. And `following` / `archived` areas appeared nowhere — only active
+  areas reach the navbar, so an interest set aside could be reopened only by
+  typing its slug, which is exactly the slug nobody remembers.
+
+  The form asks for keyword GROUPS in separate fields rather than for JSON. The
+  conjunction is the one thing a user must understand for the lens to behave, and
+  two boxes labelled "must mention one of" and "AND one of" teach it by
+  construction. The live preview then shows what the lens catches before it is
+  saved — previously the only way to find out was to create the focus and find the
+  surface empty.
+  ══════════════════════════════════════════════════════════════════════════════
+#}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <div class="page-eyebrow">FOCUS AREAS</div>
+      <h1 class="page-title">Focus</h1>
+      <div style="font-family:var(--m-display);font-style:italic;font-size:13.5px;
+                  color:var(--m-muted);margin-top:4px;">
+        Subjects you want to stay current on — not courses you finish
+      </div>
+    </div>
+    <div class="page-meta">{{ n_active }} / {{ max_shelf }} SHELF SLOTS USED</div>
+  </div>
+
+  {# ── Existing areas ────────────────────────────────────────────────────── #}
+  <div>
+    {{ sec_label("Your focus areas", style="margin-bottom:8px;") }}
+    {% if not areas %}
+    <div class="panel" style="padding:16px 18px;">
+      <p style="margin:0;font-size:13px;color:var(--m-muted);">
+        None yet. Create one below.
+      </p>
+    </div>
+    {% else %}
+    <div class="panel" style="padding:4px 0;">
+      {% for a in areas %}
+      <div style="padding:12px 18px;display:flex;gap:14px;align-items:baseline;
+                  {% if not loop.last %}border-bottom:1px solid var(--m-line);{% endif %}
+                  {% if a.state == 'archived' %}opacity:.6;{% endif %}">
+        <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:.1em;
+                     text-transform:uppercase;color:var(--m-muted);width:74px;
+                     flex-shrink:0;">
+          {% if a.shelf_slot %}SLOT {{ a.shelf_slot }}{% else %}{{ a.state }}{% endif %}
+        </span>
+        <div style="flex:1;min-width:0;">
+          <a href="/focus/{{ a.slug }}"
+             style="font-size:14px;color:inherit;text-decoration:none;
+                    border-bottom:1px solid var(--m-line);">{{ a.title }}</a>
+          {% if a.subtitle %}
+          <div style="font-size:12px;color:var(--m-muted);margin-top:2px;">{{ a.subtitle }}</div>
+          {% endif %}
+        </div>
+        <span style="font-family:var(--m-mono);font-size:10.5px;color:var(--m-muted);
+                     white-space:nowrap;font-variant-numeric:tabular-nums;">
+          {{ a.n_news }} news · {{ a.n_reading }} papers · {{ a.n_thinking }} notes
+        </span>
+        <div style="display:flex;gap:6px;">
+          {% for s, label in [('active','Shelf'), ('following','Follow'), ('archived','Archive')] %}
+            {% if a.state != s %}
+            <button hx-post="/api/focus/{{ a.slug }}/state"
+                    hx-vals='{"state": "{{ s }}"}' hx-swap="none"
+                    hx-on::after-request="window.location.reload()"
+                    style="font-family:var(--m-mono);font-size:10px;padding:4px 8px;
+                           border:1px solid var(--m-line);border-radius:3px;
+                           background:transparent;color:var(--m-fg);cursor:pointer;">{{ label }}</button>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── Create ────────────────────────────────────────────────────────────── #}
+  <div style="margin-top:32px;">
+    {{ sec_label("New focus area", tail="TWO AXES, JOINED WITH AND",
+                 style="margin-bottom:8px;") }}
+    <form method="post" action="/api/focus/create" class="panel"
+          style="padding:18px 20px;display:grid;gap:14px;">
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+        <label style="display:grid;gap:4px;">
+          <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:.1em;
+                       text-transform:uppercase;color:var(--m-muted);">Title</span>
+          <input name="title" required placeholder="AI in Health &amp; Epidemiology"
+                 style="font-size:13.5px;padding:8px 10px;border:1px solid var(--m-line);
+                        border-radius:4px;background:transparent;color:var(--m-fg);">
+        </label>
+        <label style="display:grid;gap:4px;">
+          <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:.1em;
+                       text-transform:uppercase;color:var(--m-muted);">One line on what it is for</span>
+          <input name="subtitle" placeholder="Staying current on how AI is actually used"
+                 style="font-size:13.5px;padding:8px 10px;border:1px solid var(--m-line);
+                        border-radius:4px;background:transparent;color:var(--m-fg);">
+        </label>
+      </div>
+
+      <p style="margin:0;font-size:12.5px;color:var(--m-muted);line-height:1.55;">
+        A focus is usually <strong>two subjects crossed</strong>. Put one axis in each
+        box, comma-separated. An item must mention <em>something from every box</em> —
+        that is what keeps “AI in health” from returning
+        <em>“Can AI ever be conscious?”</em>.
+      </p>
+
+      <div style="display:grid;gap:10px;"
+           hx-post="/api/focus/preview" hx-target="#lens-preview" hx-swap="innerHTML"
+           hx-trigger="keyup changed delay:600ms from:find input, change from:find input"
+           hx-include="closest form">
+        {% for n, hint in [(1,'artificial intelligence, machine learning, llm, algorithm'),
+                           (2,'health, clinical, patient, epidemi, diagnos'),
+                           (3,'(optional third axis)')] %}
+        <label style="display:grid;gap:4px;">
+          <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:.1em;
+                       text-transform:uppercase;color:var(--m-muted);">
+            {% if n == 1 %}Must mention one of{% elif n == 2 %}AND one of{% else %}AND one of (optional){% endif %}
+          </span>
+          <input name="group{{ n }}" placeholder="{{ hint }}"
+                 style="font-size:13.5px;padding:8px 10px;border:1px solid var(--m-line);
+                        border-radius:4px;background:transparent;color:var(--m-fg);">
+        </label>
+        {% endfor %}
+      </div>
+
+      <div id="lens-preview">
+        <p style="margin:0;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
+          Type above to see what this lens would catch.
+        </p>
+      </div>
+
+      {% if layers %}
+      <label style="display:grid;gap:4px;">
+        <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:.1em;
+                     text-transform:uppercase;color:var(--m-muted);">
+          Knowledge layers to search (optional, comma-separated)</span>
+        <input name="layers" placeholder="{{ layers[:4] | map(attribute='slug') | join(', ') }}"
+               style="font-size:13.5px;padding:8px 10px;border:1px solid var(--m-line);
+                      border-radius:4px;background:transparent;color:var(--m-fg);">
+        <span style="font-size:11.5px;color:var(--m-muted);">
+          Available: {% for l in layers %}<code>{{ l.slug }}</code> ({{ l.docs }}){% if not loop.last %} · {% endif %}{% endfor %}
+        </span>
+      </label>
+      {% endif %}
+
+      <div style="display:flex;gap:12px;align-items:center;">
+        <label style="display:flex;gap:6px;align-items:center;font-size:12.5px;
+                      color:var(--m-muted);">
+          <input type="checkbox" name="activate" value="1"
+                 {% if n_active >= max_shelf %}disabled{% endif %}>
+          Put it on the shelf now
+          {% if n_active >= max_shelf %}
+          <span style="color:var(--m-muted);">— shelf is full ({{ n_active }}/{{ max_shelf }})</span>
+          {% endif %}
+        </label>
+        <button type="submit"
+                style="font-family:var(--m-mono);font-size:11px;padding:7px 14px;
+                       border:1px solid var(--m-accent);border-radius:4px;
+                       background:transparent;color:var(--m-fg);cursor:pointer;">
+          Create focus
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
