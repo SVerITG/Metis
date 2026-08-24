@@ -5,12 +5,17 @@ Two different clients reach this content by two different paths:
   * semantic_search(layers="procedural") → reads procedural_memory
 Writing it twice by hand is how the last inventory went stale. Generated instead.
 """
-import sqlite3, datetime, pathlib, sys
-RC = pathlib.Path("/mnt/c/Users/<user>/OneDrive/Documents/7. Software/Research Cortex")
+import os, sqlite3, datetime, pathlib, sys
+
+# Derived, never absolute — this file is published, and an absolute home
+# directory is both a personal-data leak and a break on any other machine.
+RC = pathlib.Path(os.environ.get("METIS_RC_ROOT")
+                  or pathlib.Path(__file__).resolve().parent.parent)
 src = RC / "agents/methods-coach/risk-mapping-runbook-context.md"
 body = src.read_text(encoding="utf-8")
 
-db="/home/<user>/.local/share/metis/metis.sqlite"
+db = os.environ.get("METIS_DB_PATH") or str(
+    pathlib.Path.home() / ".local/share/metis/metis.sqlite")
 con=sqlite3.connect(db, timeout=120.0); con.execute("PRAGMA busy_timeout=120000")
 now=datetime.datetime.now(datetime.timezone.utc).isoformat()
 steps = (f"*Generated from `agents/methods-coach/risk-mapping-runbook-context.md` "
