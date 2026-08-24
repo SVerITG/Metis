@@ -251,11 +251,19 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 #
 # Registered by slug so a course card's Open button can point at
 # /coursesite/<slug>/ and be guaranteed to land on the real course.
+# Paths are DERIVED, never absolute. A hardcoded home directory is both a
+# personal-data leak on a public repo and an instant break on the second
+# computer. METIS_COURSE_SITES_ROOT overrides; the default walks up from the
+# repo to the sibling Education folder, the same relative shape run.sh uses.
+_EDU_ROOT = Path(
+    os.environ.get("METIS_COURSE_SITES_ROOT")
+    or (Path(os.environ.get("METIS_RC_ROOT", BASE_DIR.parent.parent)).parent
+        / "9. Education")
+)
+
 COURSE_SITES: dict[str, Path] = {
-    "hat-diagnostics": Path(
-        "/mnt/c/Users/<user>/OneDrive/Documents/9. Education/"
-        "3. HAT Diagnostics/Course/hat-diagnostics-course/_site"
-    ),
+    "hat-diagnostics": _EDU_ROOT / "3. HAT Diagnostics" / "Course"
+                                 / "hat-diagnostics-course" / "_site",
 }
 for _slug, _dir in COURSE_SITES.items():
     if _dir.is_dir():

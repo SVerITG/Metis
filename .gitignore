@@ -345,3 +345,7 @@ system/config/mcp-health-*.json
 # The corpus-grounding hook's trigger cache — derived from the profile, rebuilt
 # twice a day, machine-local.
 system/config/.corpus-triggers.json
+
+# Codex hooks — machine-local, contains absolute Windows/WSL paths by design.
+# Same class as .claude/settings.local.json: a launcher config, not source.
+.codex/hooks.json
