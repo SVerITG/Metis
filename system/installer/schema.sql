@@ -395,6 +395,20 @@ CREATE TABLE IF NOT EXISTS memory_entries (
     created_at TEXT
 );
 
+-- The New Literature surface reads all of these. Keep this block in step with
+-- `_NEW_PUBLICATIONS_DDL` in mcp-server/src/metis_mcp/tools/intelligence.py.
+--
+-- The columns below the original ten were added for the New Literature surface
+-- and, for a while, existed ONLY in that module's DDL plus a hand-run script
+-- (tools/migrate_new_literature.py). That is not enough. `CREATE TABLE IF NOT
+-- EXISTS` never upgrades a table that already exists, so on any machine where
+-- the script had not been run by hand the surface queried columns that were not
+-- there — `no such column: title_key` (found 2026-08-24 on the second computer,
+-- whose code syncs over OneDrive while its database does not).
+--
+-- This file is the one place the dashboard consults on every startup to add
+-- missing columns to existing tables, so it is the only place that makes a
+-- schema change reach every machine on its own. New column → add it HERE.
 CREATE TABLE IF NOT EXISTS new_publications (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     title          TEXT NOT NULL,
@@ -405,7 +419,30 @@ CREATE TABLE IF NOT EXISTS new_publications (
     relevance_note TEXT DEFAULT '',
     source_url     TEXT DEFAULT '',
     read_at        TEXT DEFAULT '',
-    discovered_at  TEXT NOT NULL
+    discovered_at  TEXT NOT NULL,
+    -- Bibliographic: a catalogue row has to be readable on its own.
+    authors        TEXT DEFAULT '',
+    abstract       TEXT DEFAULT '',
+    feed_name      TEXT DEFAULT '',
+    -- Classification. entry_kind = what it is (article/review/preprint/book/
+    -- report); lane = where it belongs (field | general science).
+    entry_kind     TEXT DEFAULT 'article',
+    lane           TEXT DEFAULT 'field',
+    relevance      REAL DEFAULT 0,
+    -- Normalised publication date. pub_date keeps whatever the source sent;
+    -- pub_iso is the only field safe to compare or sort on.
+    pub_iso        TEXT DEFAULT '',
+    pub_precision  TEXT DEFAULT '',
+    -- Deduplication key derived from the title.
+    title_key      TEXT DEFAULT '',
+    -- Acquisition state — what the red dot reads.
+    acq_status     TEXT DEFAULT '',
+    acq_reason     TEXT DEFAULT '',
+    pdf_path       TEXT DEFAULT '',
+    -- Lifecycle, split apart: added is not the same as dismissed.
+    added_at       TEXT DEFAULT '',
+    dismissed_at   TEXT DEFAULT '',
+    zotero_key     TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS news_brief_topics (
@@ -766,7 +803,22 @@ CREATE TABLE IF NOT EXISTS pdf_index_state (
     total_pages INTEGER DEFAULT 0,
     chunk_count INTEGER DEFAULT 0,
     file_size   INTEGER DEFAULT 0,
-    indexed_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    indexed_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    -- Per-document provenance. Added 2026-08-24.
+    --
+    -- Background Maker's own instructions say "every document in the layer must
+    -- have a real, verifiable URL or DOI. If a source can't be verified, skip
+    -- it." That rule was not merely unenforced — there was NOWHERE TO RECORD THE
+    -- ANSWER. A layer could not state where its own documents came from, so
+    -- "verify at ingest and trust at read" had no substrate to stand on.
+    --
+    -- provenance: '' (never checked) | 'verified' (DOI/URL resolves)
+    --             | 'unresolved' (looked, found nothing) | 'local' (no external
+    --             source expected — own notes, meeting records)
+    doi                    TEXT DEFAULT '',
+    source_url             TEXT DEFAULT '',
+    provenance             TEXT DEFAULT '',
+    provenance_checked_at  TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS user_config (
@@ -938,3 +990,69 @@ CREATE TABLE IF NOT EXISTS open_decisions (
     source       TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_open_decisions_state ON open_decisions(state, last_seen DESC);
+
+-- ---------------------------------------------------------------------------
+-- Citation ledger — every verification verdict Metis has ever reached.
+--
+-- Declared HERE and not only in tools/verification.py, for the reason recorded
+-- on 2026-08-24: this file is the one mechanism that carries a schema change to
+-- the other computer on its own. The dashboard reads it on every startup and
+-- adds anything missing. A table that lives only in a module's DDL exists on
+-- whichever machine happened to run that module first.
+--
+-- Without this table a verification result lived for one reply and evaporated,
+-- which is why "which of my outputs rest on unverified citations?" was an
+-- archaeology problem rather than a query.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS citation_checks (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    claim         TEXT NOT NULL,
+    source_cited  TEXT DEFAULT '',
+    page_cited    INTEGER,
+    quote_cited   TEXT DEFAULT '',
+    doi           TEXT DEFAULT '',
+    tier          TEXT DEFAULT 'A',
+    verdict       TEXT NOT NULL,
+    detail        TEXT DEFAULT '',
+    artifact_path TEXT DEFAULT '',
+    session_id    TEXT DEFAULT '',
+    checked_at    TEXT NOT NULL
+);
+
+-- ---------------------------------------------------------------------------
+-- Focus areas — a lens over news, literature and your own thinking.
+--
+-- Added 2026-08-24. A focus is for a subject you want to stay CURRENT on, which
+-- is a different shape from a course you finish or a project you deliver. The
+-- "AI in Public Health course" was the case that made this obvious: it had no
+-- end, so a course was the wrong container for it.
+--
+-- A FOCUS OWNS NO CONTENT. It owns a query. News stays in news_briefs, papers in
+-- new_publications, thinking in ideas/personal_notes tagged `focus:<slug>`,
+-- documents in pdf_chunks. That is what makes removal safe: archiving a lens
+-- cannot remove what was seen through it, and two overlapping focuses do not
+-- duplicate a single paper.
+--
+-- keyword_groups is JSON list-of-lists: OR within a group, AND across groups.
+-- A flat keyword list for "AI in health" returns "Can AI ever be conscious?";
+-- the conjunction returns "AI model helps clinicians detect heart obstruction".
+--
+-- state: active (on the shelf, max 3, in the navbar) | following (off the
+--        navbar, still queryable) | archived (read-only, no refresh).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS focus_areas (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug              TEXT NOT NULL UNIQUE,
+    title             TEXT NOT NULL,
+    subtitle          TEXT DEFAULT '',
+    state             TEXT DEFAULT 'following',
+    shelf_slot        INTEGER,
+    keyword_groups    TEXT DEFAULT '[]',
+    layers            TEXT DEFAULT '',
+    overview          TEXT DEFAULT '',
+    created_at        TEXT NOT NULL,
+    activated_at      TEXT DEFAULT '',
+    archived_at       TEXT DEFAULT '',
+    last_visited_at   TEXT DEFAULT '',
+    last_refreshed_at TEXT DEFAULT ''
+);

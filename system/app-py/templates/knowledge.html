@@ -2,6 +2,39 @@
 {% from "partials/_section.html" import sec_label %}
 {% block title %}Library{% endblock %}
 
+{#
+  ══════════════════════════════════════════════════════════════════════════════
+  THE LIBRARY SURFACE — five tabs, not one long scroll.
+
+  This page used to stack NINE full-width sections vertically: search, semantic
+  search, slipcases, index cards, background layers, the Zotero browser, the
+  knowledge corpus, PDF full-text search, topic coverage and the coverage-gap
+  detector. Two things were wrong with that, and they compounded:
+
+    · IT COULD NOT BE READ. the researcher's words: "at the bottom there were several very
+      long sessions… not long lists of documents or items". A reference surface is
+      consulted with a purpose — you arrive wanting to review what is new, OR to
+      find something you own, OR to check where your coverage is thin. Stacking
+      all three means every visit scrolls past the other two.
+
+    · EVERY SECTION FETCHED ON ARRIVAL. Nine hx-trigger="load" blocks, several of
+      them heavy, all firing before the first one had rendered.
+
+  So the sections are grouped by the QUESTION they answer, and only the open tab
+  fetches. The grouping is deliberate:
+
+    New        — what appeared since I last looked        (the thing with a deadline)
+    Catalogue  — what do I already have                   (search + browse)
+    Shelf      — the books, as objects                    (clickable, openable)
+    Corpus     — what is indexed and searchable full-text (backgrounds, PDFs)
+    Landscape  — where am I thin                          (coverage, gaps)
+
+  Deferral uses a custom `loadtab` event rather than hx-trigger="load", because
+  "load" fires for hidden elements too — tabs would have hidden the scrollbar
+  while keeping all nine requests.
+  ══════════════════════════════════════════════════════════════════════════════
+#}
+
 {% block content %}
 <div class="page">
 
@@ -18,7 +51,59 @@
     </div>
   </div>
 
-  <!-- ===== Unified Search (first — primary interaction) ===== -->
+  <!-- ===== Tab strip ===== -->
+  <div class="news-tabs" role="tablist" aria-label="Library sections"
+       style="margin-bottom:22px;">
+      <button class="news-tab" role="tab" type="button" data-libtab="new"
+              aria-selected="true"
+              title="What has appeared since you last looked"
+              onclick="libTab('new')">New</button>
+      <button class="news-tab" role="tab" type="button" data-libtab="hat"
+              aria-selected="false"
+              title="Your sleeping-sickness corpus: what you hold, what Metis can read, and what your own citations say is missing"
+              onclick="libTab('hat')">HAT</button>
+      <button class="news-tab" role="tab" type="button" data-libtab="catalogue"
+              aria-selected="false"
+              title="Search and browse everything you already hold"
+              onclick="libTab('catalogue')">Catalogue</button>
+      <button class="news-tab" role="tab" type="button" data-libtab="shelf"
+              aria-selected="false"
+              title="Books and reports held locally, as objects"
+              onclick="libTab('shelf')">Shelf</button>
+      <button class="news-tab" role="tab" type="button" data-libtab="corpus"
+              aria-selected="false"
+              title="Indexed full text and specialist background layers"
+              onclick="libTab('corpus')">Corpus</button>
+      <button class="news-tab" role="tab" type="button" data-libtab="landscape"
+              aria-selected="false"
+              title="Where your coverage is strong, thin, or absent"
+              onclick="libTab('landscape')">Landscape</button>
+  </div>
+
+  <!-- ── panel: new ──────────────────────────────────────────────────── -->
+  <div class="lib-panel" id="libpanel-new" role="tabpanel"
+       >
+    <div style="margin-bottom:8px;"
+         hx-get="/api/partial/library/new-literature"
+         hx-trigger="load"
+         hx-swap="outerHTML">
+      <div class="panel skeleton skeleton-box" style="height:300px;"></div>
+    </div>
+  </div>
+
+  <!-- ── panel: hat ──────────────────────────────────────────────────── -->
+  <div class="lib-panel" id="libpanel-hat" role="tabpanel" hidden>
+    <div hx-get="/api/partial/library/hat"
+         hx-trigger="loadtab"
+         hx-swap="outerHTML">
+      <div class="panel skeleton skeleton-box" style="height:300px;"></div>
+    </div>
+  </div>
+
+  <!-- ── panel: catalogue ──────────────────────────────────────────────────── -->
+  <div class="lib-panel" id="libpanel-catalogue" role="tabpanel"
+       hidden>
+  <!-- ===== Unified Search (catalogue — what you already hold) ===== -->
   <div style="margin-bottom:28px;">
     {{ sec_label("Search", tail="PAPERS · DOMAIN CORPUS · CARDS · MEMORY", style="margin-bottom:12px;") }}
     <div class="panel" style="padding:16px 20px;">
@@ -73,12 +158,42 @@
     </div>
   </div>
 
+  <!-- ===== Zotero Library browser ===== -->
+  <div style="margin-top:32px;">
+    <!-- Sync status bar -->
+    <div id="lib-sync-bar"
+         hx-get="/api/partial/knowledge/sync-status"
+         hx-trigger="loadtab"
+         hx-swap="outerHTML">
+      <div class="skeleton" style="height:36px;border-radius:var(--m-radius);margin-bottom:12px;"></div>
+    </div>
+
+    <!-- Recently added strip -->
+    <div hx-get="/api/partial/knowledge/recently-added"
+         hx-trigger="loadtab"
+         hx-swap="outerHTML"></div>
+
+    <!-- Browser panel -->
+    <div hx-get="/api/partial/knowledge/library-browser"
+         hx-trigger="loadtab"
+         hx-swap="outerHTML">
+      <div>
+        {{ sec_label("Zotero Library", style="margin-bottom:8px;") }}
+        <div class="panel skeleton skeleton-box" style="height:200px;"></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ── panel: shelf ──────────────────────────────────────────────────── -->
+  <div class="lib-panel" id="libpanel-shelf" role="tabpanel"
+       hidden>
   <!-- ===== Slipcases sidebar + Index cards main ===== -->
   <div class="k-layout">
 
     <!-- Slipcases list -->
     <div hx-get="/api/partial/knowledge/slipcases"
-         hx-trigger="load"
+         hx-trigger="loadtab"
          hx-swap="outerHTML">
       <div>
         <h2 class="sec-label" style="margin-bottom:8px;">Slipcases</h2>
@@ -89,7 +204,7 @@
     <!-- Index cards main area -->
     <div id="knowledge-cards-area"
          hx-get="/api/partial/knowledge/cards"
-         hx-trigger="load"
+         hx-trigger="loadtab"
          hx-swap="outerHTML">
       <div>
         <h2 class="sec-label" style="margin-bottom:8px;">Index cards</h2>
@@ -98,45 +213,28 @@
     </div>
 
   </div>
+  </div>
+
+  <!-- ── panel: corpus ──────────────────────────────────────────────────── -->
+  <div class="lib-panel" id="libpanel-corpus" role="tabpanel"
+       hidden>
+  <!-- ===== What Metis can quote — the honest denominator ===== -->
+  <div hx-get="/api/partial/knowledge/quotable"
+       hx-trigger="loadtab"
+       hx-swap="outerHTML"></div>
 
   <!-- ===== Knowledge backgrounds (P4) ===== -->
   <div style="margin-top:32px;"
        hx-get="/api/partial/knowledge/layers"
-       hx-trigger="load"
+       hx-trigger="loadtab"
        hx-swap="outerHTML">
     <div class="skeleton" style="height:120px;border-radius:var(--m-radius);"></div>
-  </div>
-
-  <!-- ===== Zotero Library browser ===== -->
-  <div style="margin-top:32px;">
-    <!-- Sync status bar -->
-    <div id="lib-sync-bar"
-         hx-get="/api/partial/knowledge/sync-status"
-         hx-trigger="load"
-         hx-swap="outerHTML">
-      <div class="skeleton" style="height:36px;border-radius:var(--m-radius);margin-bottom:12px;"></div>
-    </div>
-
-    <!-- Recently added strip -->
-    <div hx-get="/api/partial/knowledge/recently-added"
-         hx-trigger="load"
-         hx-swap="outerHTML"></div>
-
-    <!-- Browser panel -->
-    <div hx-get="/api/partial/knowledge/library-browser"
-         hx-trigger="load"
-         hx-swap="outerHTML">
-      <div>
-        {{ sec_label("Zotero Library", style="margin-bottom:8px;") }}
-        <div class="panel skeleton skeleton-box" style="height:200px;"></div>
-      </div>
-    </div>
   </div>
 
   <!-- ===== Knowledge Corpus ===== -->
   <div style="margin-top:32px;">
     <div hx-get="/api/partial/knowledge/hat-corpus"
-         hx-trigger="load"
+         hx-trigger="loadtab"
          hx-swap="outerHTML">
       <div>
         {{ sec_label("Knowledge Corpus", style="margin-bottom:8px;") }}
@@ -151,7 +249,7 @@
     <!-- Index status + build control (so the search box is never a dead end) -->
     <div class="panel" style="padding:14px 20px;margin-bottom:12px;"
          hx-get="/api/partial/knowledge/pdf-stats"
-         hx-trigger="load"
+         hx-trigger="loadtab"
          hx-swap="innerHTML">
       <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">Checking your PDF index…</div>
     </div>
@@ -171,12 +269,16 @@
       </div>
     </div>
   </div>
+  </div>
 
+  <!-- ── panel: landscape ──────────────────────────────────────────────────── -->
+  <div class="lib-panel" id="libpanel-landscape" role="tabpanel"
+       hidden>
   <!-- ===== Research Landscape: Topic Coverage Map ===== -->
   <div style="margin-top:32px;">
     {{ sec_label("Research Landscape", tail="TOPIC COVERAGE · GOOD · PARTIAL · GAP", style="margin-bottom:12px;") }}
     <div hx-get="/api/partial/knowledge/topic-coverage"
-         hx-trigger="load"
+         hx-trigger="loadtab"
          hx-swap="outerHTML">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
         {% for _ in range(6) %}
@@ -207,6 +309,45 @@
       </div>
     </details>
   </div>
+  </div>
 
 </div><!-- /.page -->
+
+<script>
+// Tab switching + first-open lazy load.
+//
+// The deferral is the point: each panel's htmx blocks listen for `loadtab`
+// instead of `load`, so their requests are made the first time the panel is
+// actually opened and never again.
+function libTab(key) {
+  document.querySelectorAll('.lib-panel').forEach(function (p) {
+    p.hidden = (p.id !== 'libpanel-' + key);
+  });
+  document.querySelectorAll('[data-libtab]').forEach(function (b) {
+    b.setAttribute('aria-selected', b.dataset.libtab === key ? 'true' : 'false');
+  });
+
+  var panel = document.getElementById('libpanel-' + key);
+  if (!panel || panel.dataset.loaded === '1') return;
+  panel.dataset.loaded = '1';
+  // Fire the deferred fetches for everything inside this panel exactly once.
+  panel.querySelectorAll('[hx-trigger~="loadtab"]').forEach(function (el) {
+    htmx.trigger(el, 'loadtab');
+  });
+  // Remember the tab so a reload comes back where the researcher was, rather than
+  // resetting to New every time and re-fetching a list he just reviewed.
+  try { localStorage.setItem('metis.libtab', key); } catch (e) {}
+}
+
+// The New panel loads on arrival (hx-trigger="load"), so mark it done.
+(function () {
+  var np = document.getElementById('libpanel-new');
+  if (np) np.dataset.loaded = '1';
+  var saved = null;
+  try { saved = localStorage.getItem('metis.libtab'); } catch (e) {}
+  if (saved && saved !== 'new' && document.getElementById('libpanel-' + saved)) {
+    libTab(saved);
+  }
+})();
+</script>
 {% endblock %}
