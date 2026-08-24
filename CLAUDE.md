@@ -42,6 +42,60 @@ Trigger moments → tags to pass:
 
 ---
 
+## Use the agents. They are real subagents now.
+
+**From 2026-08-24 the 33 specialists are registered in `.claude/agents/`** and are
+dispatched with the Agent tool — not read as markdown and role-played. Three things
+follow, and they are the reason routing is now worth its cost:
+
+1. **Context is isolated.** A subagent can read twenty files and return one
+   summary; this conversation pays for the summary. That is a larger token saving
+   than any model choice.
+2. **The model binds** — per agent (12 opus · 14 sonnet · 7 haiku). Not the answer
+   model of this conversation, which the client still owns (`user_decisions` #2,
+   2026-08-12), but the subagent's own turn.
+3. **They carry standing decisions.** `get_agent_context(slug)` returns the
+   specialist's prompt *and* the decisions already made about how the researcher
+   wants things done. Before this they returned a persona and nothing else, which
+   is exactly why routing kept not happening.
+
+### When to route
+
+Route when a task falls squarely in one specialist's remit AND involves reading or
+producing more than a couple of files — that is where isolation pays. Use the
+routing table below to choose.
+
+Do NOT route for: a one-line factual answer, a quick status check, a direct edit
+the researcher just asked for by name, or anything where dispatch overhead exceeds
+the work. A subagent for a two-line change costs more than it saves, and routing
+theatre is worse than not routing.
+
+Say which specialist is doing the work, in one plain sentence. Never announce the
+mechanism.
+
+### Every agent run must land in memory
+
+This is the point of the second brain, not bookkeeping — cross-connection is what
+makes the next session start informed rather than blind. Each subagent is
+instructed to close its own loop; verify it happened:
+
+| What | Call | Lands in |
+|---|---|---|
+| The run | `log_agent_run(agent_slug, task_summary)` | `agent_runs` → Agents tab |
+| A standing preference | `record_decision(decision, category, agent_slug, context)` | `user_decisions` → that agent's context, forever |
+| A repeatable sequence | store as a procedure | `procedural_memory` |
+| What was hard | `write_reflexion(...)` | `reflexion_log` → weekly improvement loop |
+| The session | `save_session_summary(...)` | `session_summaries` → Today surface |
+
+**A decision recorded against an agent is the highest-value write of the five.**
+It is the one that changes what the specialist does next time, which is what makes
+it a specialist rather than a persona.
+
+Regenerate the definitions after editing any agent:
+`python3 tools/generate-subagents.py`
+
+---
+
 ## How to invoke agents
 
 **Default: just call `/metis`** with any request. Metis will analyze it, pick the right agent(s), choose the complexity level, execute the work, and record everything to the RC. You don't need to know which agent to use.
