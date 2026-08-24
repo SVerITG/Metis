@@ -68,7 +68,21 @@ cd "$APP_DIR"
 # ── Persistent, rotating logs (R7) ────────────────────────────────────────────
 # Off ephemeral /tmp; survives reboots; rotate at ~2 MB keeping 3 generations so a
 # crash is always diagnosable.
-LOG_DIR="${METIS_RC_ROOT}/system/config/logs"
+#
+# LOCAL, NOT SYNCED (changed 2026-08-24). These logs used to live in
+# $METIS_RC_ROOT/system/config/logs — inside the OneDrive tree. Metis runs on two
+# computers, both append to `dashboard.log`, and OneDrive cannot merge a file two
+# machines are writing: it forks each one into a conflict copy named after the
+# host. That left 16 MB of dashboard-<HOST>-N.log / course-server-<HOST>-N.log
+# debris, a permanent sync conflict on the busiest file in the repo, and — worst —
+# it made the log itself unreliable, because which file "the log" means depended
+# on which machine last won a sync.
+#
+# A log is machine-local state. It belongs beside the database, which was moved
+# off OneDrive for the same reason (June 2026, corrupted SQLite WAL sidecars).
+# METIS_LOG_DIR overrides, so a packaged/portable install can still redirect it.
+LOG_DIR="${METIS_LOG_DIR:-$HOME/.local/state/metis/logs}"
+mkdir -p "$LOG_DIR" 2>/dev/null || LOG_DIR="${METIS_RC_ROOT}/system/config/logs"
 mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/dashboard.log"
 if [ -f "$LOG_FILE" ] && [ "$(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0)" -gt 2097152 ]; then

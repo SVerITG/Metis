@@ -22,6 +22,19 @@ from threading import Thread
 
 log = logging.getLogger("metis.inbox_watcher")
 
+# The ONE definition of inbox_items. It lives here because this module is the
+# table's owner, and `ensure_inbox_table()` below is exported so every other
+# writer uses the same shape instead of inventing one.
+#
+# It had to become shared (2026-08-24). The nightly `inbox_process` job wrote to
+# this table with a completely different set of column names — source_path / type
+# / logged_at against filepath / file_type / created_at — and never created the
+# table at all. Two consequences, both silent:
+#   · the table did not exist on this machine, so every INSERT raised inside a
+#     bare `except Exception: pass` and the job reported "0 new items — ok";
+#   · had the watcher created it first, the job's INSERT would have failed
+#     forever against the real columns, still reporting success.
+# Nothing surfaced either one. A second spelling of a schema is a second schema.
 _DDL = """
 CREATE TABLE IF NOT EXISTS inbox_items (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,6 +45,27 @@ CREATE TABLE IF NOT EXISTS inbox_items (
     created_at  TEXT NOT NULL
 )
 """
+
+# Idempotency belongs in the schema, not in each caller's SELECT-then-INSERT.
+# With this, `INSERT OR IGNORE` is genuinely a no-op on a file already seen —
+# including when the watcher and the nightly job race on the same file.
+_DDL_INDEX = (
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_inbox_items_filepath "
+    "ON inbox_items(filepath)"
+)
+
+
+def ensure_inbox_table(con: sqlite3.Connection) -> None:
+    """Create inbox_items and its uniqueness guarantee. Safe to call repeatedly."""
+    con.execute(_DDL)
+    try:
+        con.execute(_DDL_INDEX)
+    except sqlite3.IntegrityError:
+        # A pre-existing table already holds duplicate filepaths (older installs
+        # deduped in Python). Leave the rows alone — dropping or merging them is
+        # the user's data, not ours to decide. The table still works.
+        log.warning("[inbox_watcher] duplicate filepaths present — "
+                    "unique index not applied")
 
 _LITERATURE_EXTS = {".pdf", ".docx", ".doc", ".txt", ".md", ".bib", ".ris"}
 _AUDIO_EXTS      = {".mp3", ".wav", ".m4a", ".ogg", ".flac", ".webm"}
@@ -56,21 +90,17 @@ def _classify(suffix: str) -> str:
 def _log_to_db(db_path: str, filepath: Path) -> None:
     try:
         con = sqlite3.connect(db_path)
-        con.execute(_DDL)
+        ensure_inbox_table(con)
         now = datetime.datetime.now().isoformat()
         file_type = _classify(filepath.suffix)
-        # Only insert if not already tracked (idempotent on re-watch)
-        existing = con.execute(
-            "SELECT id FROM inbox_items WHERE filepath = ? LIMIT 1",
-            (str(filepath),),
-        ).fetchone()
-        if not existing:
-            con.execute(
-                "INSERT INTO inbox_items (filename, filepath, file_type, status, created_at) "
-                "VALUES (?, ?, ?, 'new', ?)",
-                (filepath.name, str(filepath), file_type, now),
-            )
-            con.commit()
+        cur = con.execute(
+            "INSERT OR IGNORE INTO inbox_items "
+            "(filename, filepath, file_type, status, created_at) "
+            "VALUES (?, ?, ?, 'new', ?)",
+            (filepath.name, str(filepath), file_type, now),
+        )
+        con.commit()
+        if cur.rowcount:
             log.info("[inbox_watcher] logged %s (%s)", filepath.name, file_type)
         con.close()
     except Exception as e:

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 from typing import List
 
 log = logging.getLogger("metis.embeddings")
@@ -46,25 +47,97 @@ def _ensure_ssl_certs() -> None:
             os.environ["REQUESTS_CA_BUNDLE"] = _SYS_CA
 
 
+# A PERSISTENT, EXPLICIT model cache.
+#
+# fastembed defaults to `$TMPDIR/fastembed_cache` — i.e. /tmp — which does not
+# survive a reboot. Combined with `HF_HUB_OFFLINE=1`, which run.sh sets so the
+# dashboard never phones home, that produced a failure with two faces and one
+# cause (diagnosed 2026-08-21):
+#
+#   · the nightly `embedding_backfill` logged "0 embedded, 2238 failed" while
+#     the same script run by hand from a shell worked perfectly, because a shell
+#     has no HF_HUB_OFFLINE and could re-download into /tmp;
+#   · semantic search over the HAT corpus failed inside the dashboard with
+#     "Could not load any embedding model" while succeeding from the CLI.
+#
+# Both are the same thing: an offline process looking in a cache that a reboot
+# had emptied. Pinning the cache somewhere durable, beside the database, fixes
+# both and makes the offline guarantee actually hold.
+MODEL_CACHE = Path.home() / ".local" / "share" / "metis" / "models"
+
+# …but pinning ONE directory turned the fix into a second failure (diagnosed
+# 2026-08-24). Metis runs on two computers whose code syncs over OneDrive while
+# the model cache does NOT. So the *new* path arrived here in code while the
+# 132 MB model stayed behind in the *old* cache, and with HF_HUB_OFFLINE=1 there
+# was no way back: every embedding feature was dead on a machine that had a
+# perfectly good copy of the model 30 cm away on the same disk.
+#
+# The lesson is that a cache location is not a constant, it is a search path.
+# We look in every place a Metis install has ever put the model, use the first
+# that loads, and only then give up. FASTEMBED_CACHE_PATH is honoured first so a
+# user or launcher can always override.
+def _cache_candidates() -> List[Path]:
+    """Every directory a Metis install may have cached the model in, in order."""
+    cands = []
+    env = os.environ.get("FASTEMBED_CACHE_PATH", "").strip()
+    if env:
+        cands.append(Path(env))
+    cands.append(MODEL_CACHE)                        # durable, beside the DB
+    cands.append(Path.home() / ".cache" / "fastembed")  # fastembed/HF default
+    seen, out = set(), []
+    for c in cands:
+        r = str(c)
+        if r not in seen:
+            seen.add(r)
+            out.append(c)
+    return out
+
+
 def _get_model():
-    """Return the singleton embedding model, loading it on first call."""
+    """Return the singleton embedding model, loading it on first call.
+
+    Tries each (model, cache-dir) pair and returns the first that loads, so a
+    machine whose model sits in a legacy cache keeps working offline instead of
+    failing with the model already on disk.
+    """
     global _model
     if _model is None:
         _ensure_ssl_certs()
-        from fastembed import TextEmbedding
         try:
-            _model = TextEmbedding(model_name=MODEL_NAME)
-        except Exception as exc:
-            log.debug("Primary model failed (%s), trying fallback", exc)
-            try:
-                _model = TextEmbedding(model_name=_FALLBACK_MODEL)
-            except Exception as exc2:
-                log.warning("Embedding models unavailable: %s", exc2)
-                raise RuntimeError(
-                    f"Could not load any embedding model. "
-                    f"Primary ({MODEL_NAME}): {exc} | "
-                    f"Fallback ({_FALLBACK_MODEL}): {exc2}"
-                ) from exc2
+            MODEL_CACHE.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            pass
+        from fastembed import TextEmbedding
+
+        attempts: List[str] = []
+        for model_name in (MODEL_NAME, _FALLBACK_MODEL):
+            for cache in _cache_candidates():
+                try:
+                    _model = TextEmbedding(model_name=model_name,
+                                           cache_dir=str(cache))
+                except Exception as exc:
+                    attempts.append(f"{model_name} @ {cache}: {exc}")
+                    log.debug("Embedding load failed — %s", attempts[-1])
+                    continue
+                if cache != MODEL_CACHE:
+                    log.warning(
+                        "Embedding model loaded from %s, not the durable cache "
+                        "%s. Copy it there (or run tools/warm_embedding_model.py) "
+                        "so it survives a cache clear.", cache, MODEL_CACHE)
+                return _model
+
+        log.warning("Embedding models unavailable: %s", " | ".join(attempts))
+        offline = os.environ.get("HF_HUB_OFFLINE", "")
+        hint = (
+            f"\n\nHF_HUB_OFFLINE={offline} and the model is in none of "
+            f"{[str(c) for c in _cache_candidates()]}. Warm the cache once "
+            f"with network access:\n"
+            f"    python3 tools/warm_embedding_model.py"
+        ) if offline else ""
+        raise RuntimeError(
+            "Could not load any embedding model. Tried:\n  "
+            + "\n  ".join(attempts) + hint
+        )
     return _model
 
 
