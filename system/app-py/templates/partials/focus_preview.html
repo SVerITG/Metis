@@ -1,0 +1,44 @@
+{# Live lens preview.
+
+   The per-group breakdown is the point. A conjunction returning zero says nothing
+   about WHICH axis is at fault, so each group's own count is shown next to the
+   combined one — if group 1 finds 0 and group 2 finds 356, the answer needs no
+   interpretation. #}
+{% if not p %}
+<p style="margin:0;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
+  Type above to see what this lens would catch.
+</p>
+{% else %}
+<div style="border:1px solid var(--m-line);border-radius:4px;padding:12px 14px;">
+  <div style="display:flex;flex-wrap:wrap;gap:10px 22px;align-items:baseline;">
+    {% for g in p.per_group %}
+    <span style="font-family:var(--m-mono);font-size:10.5px;color:var(--m-muted);">
+      axis {{ g.index }} alone:
+      <strong style="color:var(--m-fg);">{{ g.news }}</strong> news /
+      <strong style="color:var(--m-fg);">{{ g.reading }}</strong> papers
+    </span>
+    {% endfor %}
+    <span style="margin-left:auto;font-family:var(--m-mono);font-size:11px;">
+      TOGETHER:
+      <strong style="font-size:15px;{% if p.combined.news %}color:var(--m-accent);{% endif %}">{{ p.combined.news }}</strong> news ·
+      <strong style="font-size:15px;{% if p.combined.reading %}color:var(--m-accent);{% endif %}">{{ p.combined.reading }}</strong> papers
+    </span>
+  </div>
+
+  <p style="margin:9px 0 0;font-size:12.5px;line-height:1.5;
+            {% if p.combined.news + p.combined.reading == 0 %}color:var(--m-warn,#b3541e);{% else %}color:var(--m-muted);{% endif %}">
+    {{ p.verdict }}
+  </p>
+
+  {% if p.samples %}
+  <div style="margin-top:10px;border-top:1px solid var(--m-line);padding-top:8px;">
+    {% for s in p.samples %}
+    <div style="font-size:12px;color:var(--m-muted);line-height:1.5;">
+      <span style="font-family:var(--m-mono);font-size:10.5px;">{{ s.date }}</span>
+      — {{ s.title[:110] }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}

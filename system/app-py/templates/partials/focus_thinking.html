@@ -1,0 +1,60 @@
+{# Notes and ideas WRITTEN on this focus, matched on the `focus:<slug>` tag.
+
+   The tag is the only association, and it is deliberately explicit rather than
+   inferred from keywords: a thought recorded here belongs to the focus, whereas
+   every note that happens to mention the subject does not.
+
+   It is also why archiving is safe. The rows live in `personal_notes` and
+   `ideas`; the tag survives the lens. #}
+<div class="panel" style="padding:16px 18px;">
+
+  <form hx-post="/api/focus/{{ area.slug }}/idea"
+        hx-target="#focus-thinking" hx-swap="innerHTML"
+        hx-on::after-request="this.reset()"
+        style="display:flex;gap:8px;margin-bottom:10px;">
+    <input name="text" placeholder="Capture an idea on this focus…" required
+           style="flex:1;font-size:13px;padding:8px 10px;border:1px solid var(--m-line);
+                  border-radius:4px;background:transparent;color:var(--m-fg);">
+    <button type="submit"
+            style="font-family:var(--m-mono);font-size:10.5px;padding:6px 12px;
+                   border:1px solid var(--m-line);border-radius:4px;
+                   background:transparent;color:var(--m-fg);cursor:pointer;">Idea</button>
+  </form>
+
+  <form hx-post="/api/focus/{{ area.slug }}/note"
+        hx-target="#focus-thinking" hx-swap="innerHTML"
+        hx-on::after-request="this.reset()"
+        style="display:flex;gap:8px;margin-bottom:14px;">
+    <input name="content" placeholder="Write a note — something you want to keep…" required
+           style="flex:1;font-size:13px;padding:8px 10px;border:1px solid var(--m-line);
+                  border-radius:4px;background:transparent;color:var(--m-fg);">
+    <button type="submit"
+            style="font-family:var(--m-mono);font-size:10.5px;padding:6px 12px;
+                   border:1px solid var(--m-line);border-radius:4px;
+                   background:transparent;color:var(--m-fg);cursor:pointer;">Note</button>
+  </form>
+
+  {% if not thinking.ideas and not thinking.notes %}
+  <p style="margin:0;font-size:12.5px;color:var(--m-muted);">
+    Nothing recorded on this focus yet. Anything written here is tagged
+    <code>focus:{{ area.slug }}</code> and stays in your notes and ideas whatever
+    happens to this surface.
+  </p>
+  {% else %}
+    {% for i in thinking.ideas %}
+    <div style="padding:8px 0;border-top:1px solid var(--m-line);">
+      <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
+        IDEA · {{ i.created_at[:10] }}</span>
+      <div style="font-size:13px;line-height:1.5;margin-top:2px;">{{ i.text }}</div>
+    </div>
+    {% endfor %}
+    {% for n in thinking.notes %}
+    <div style="padding:8px 0;border-top:1px solid var(--m-line);">
+      <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
+        NOTE · {{ n.created_at[:10] }}</span>
+      {% if n.title %}<div style="font-size:13px;font-weight:600;margin-top:2px;">{{ n.title }}</div>{% endif %}
+      <div style="font-size:13px;line-height:1.5;margin-top:2px;">{{ n.content }}</div>
+    </div>
+    {% endfor %}
+  {% endif %}
+</div>

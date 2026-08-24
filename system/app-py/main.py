@@ -23,14 +23,17 @@ from routers import (
     meetings,
     memory_health,
     metis_tab,
+    new_literature,
     planner,
     calendar_plan,
     setup,
     speakers,
     teach,
     thinking,
+    focus,
     today,
     transcription,
+    verification,
     work,
 )
 
@@ -240,8 +243,143 @@ else:
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
+# ── Rendered course sites ────────────────────────────────────────────────────
+# Static Quarto sites are served directly by the dashboard: no extra process,
+# no port to remember, no server to start. (The statistics course is the
+# exception — it is an Express APP, not a static site, so it keeps its own
+# port 3000 and a redirect. See routers/learning.py::course_reader_page.)
+#
+# Registered by slug so a course card's Open button can point at
+# /coursesite/<slug>/ and be guaranteed to land on the real course.
+COURSE_SITES: dict[str, Path] = {
+    "hat-diagnostics": Path(
+        "/mnt/c/Users/<user>/OneDrive/Documents/9. Education/"
+        "3. HAT Diagnostics/Course/hat-diagnostics-course/_site"
+    ),
+}
+for _slug, _dir in COURSE_SITES.items():
+    if _dir.is_dir():
+        app.mount(f"/coursesite/{_slug}",
+                  StaticFiles(directory=str(_dir), html=True),
+                  name=f"coursesite-{_slug}")
+    else:
+        log.warning("course site not mounted (missing render): %s -> %s", _slug, _dir)
+
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+
+# ── `| md` — render stored markdown in a template ────────────────────────────
+# Focus-area overviews are authored as markdown and stored as text, so the
+# surface needs to render them. `markdown` is already a dependency (the course
+# reader in routers/learning.py uses it); this exposes it once, globally, rather
+# than each router converting its own strings and returning HTML.
+#
+# `| safe` is still required at the call site: the filter converts markdown, it
+# does not assert the input was trustworthy. Only content the user authored
+# should ever be passed through it.
+def _md_filter(text: str) -> str:
+    if not text:
+        return ""
+    try:
+        import markdown as _mdlib
+        return _mdlib.markdown(
+            str(text), extensions=["fenced_code", "tables", "nl2br"])
+    except Exception:
+        # Never let a rendering dependency take a page down — show the source.
+        from markupsafe import escape
+        return f"<pre>{escape(str(text))}</pre>"
+
+
+templates.env.filters["md"] = _md_filter
+
+
+# ── The focus shelf, available to every render ───────────────────────────────
+# base.html is the layout for every page, so the navbar needs the active shelf on
+# every request. Registered as a GLOBAL CALLABLE rather than passed per-route:
+# threading it through ~30 route handlers would mean any new route silently loses
+# the shelf, which is the "control that depends on being remembered" pattern this
+# project keeps paying for.
+#
+# One indexed query on a table with at most a handful of rows. Fails to an empty
+# list — a missing navbar section is a far better outcome than a 500 on every page.
+def _focus_shelf() -> list:
+    try:
+        from db import db_query
+        return [dict(r) for r in (db_query(
+            "SELECT slug, title, subtitle, shelf_slot FROM focus_areas "
+            "WHERE state = 'active' ORDER BY COALESCE(shelf_slot, 99)") or [])]
+    except Exception:
+        return []
+
+
+templates.env.globals["focus_shelf"] = _focus_shelf
+
+
+# ── Shared template globals across EVERY environment ─────────────────────────
+# A "template global" is not global here. This app builds SEVENTEEN separate
+# Jinja2Templates instances — main.py plus one per router — and each has its own
+# `env`. Registering `focus_shelf` on main's environment made the navbar work on
+# every page main renders and threw `UndefinedError: 'focus_shelf' is undefined`
+# on /news, which routers/today.py renders from its own instance. A 500, not a
+# missing section.
+#
+# So shared globals get installed on all of them, from one place, after the
+# routers are imported. The alternative — remembering to register on each new
+# router's instance — is the same defect this project keeps paying for.
+_SHARED_GLOBALS = {"focus_shelf": _focus_shelf}
+_SHARED_FILTERS = {"md": _md_filter}
+
+
+def install_shared_globals() -> int:
+    """Make the shared globals/filters reach EVERY Jinja environment, now and later.
+
+    Two mechanisms, because one is not enough:
+
+    1. `jinja2.defaults.DEFAULT_NAMESPACE` / `DEFAULT_FILTERS`. Jinja copies these
+       into every Environment it constructs, so anything registered here is
+       inherited by environments created AFTER this call — a router imported
+       lazily, a module reloaded, a test that builds its own. Verified against
+       jinja2 3.1.6, including via Starlette's `Jinja2Templates`.
+
+    2. A walk over environments that already exist, since those were constructed
+       before step 1 ran and cannot inherit retroactively.
+
+    Step 1 is the one that matters, and it was missing from the first version.
+    That version walked existing environments only, which made correctness depend
+    on this function running AFTER every environment was built — an ordering
+    assumption held only by luck. The full test suite broke it immediately: four
+    router environments (knowledge, learning, planner, thinking) existed as second
+    instances created later and silently lacked every shared global. In production
+    the ordering happened to hold, so the defect would have surfaced the first time
+    a router was imported lazily. "It works if it runs last" is the same
+    remember-to-do-it dependency this whole mechanism exists to remove.
+
+    Returns the number of already-existing environments updated.
+    """
+    import sys as _sys
+
+    try:
+        from jinja2 import defaults as _jinja_defaults
+        _jinja_defaults.DEFAULT_NAMESPACE.update(_SHARED_GLOBALS)
+        _jinja_defaults.DEFAULT_FILTERS.update(_SHARED_FILTERS)
+    except Exception as _exc:  # pragma: no cover
+        log.warning("Could not seed Jinja defaults (%s) — falling back to a "
+                    "walk of existing environments only", _exc)
+
+    seen, n = set(), 0
+    for name, mod in list(_sys.modules.items()):
+        if not (name == "__main__" or name == "main" or name.startswith("routers.")):
+            continue
+        for attr in ("templates", "_TEMPLATES"):
+            env = getattr(getattr(mod, attr, None), "env", None)
+            if env is None or id(env) in seen:
+                continue
+            seen.add(id(env))
+            env.globals.update(_SHARED_GLOBALS)
+            env.filters.update(_SHARED_FILTERS)
+            n += 1
+    return n
 
 
 # ── Global error handler — catch unhandled 500s so the dashboard never shows a
@@ -271,12 +409,26 @@ async def _handle_500(request: Request, exc: Exception):
         status_code=500,
     )
 
-# Inject user name into every template so today.html greeting JS can use it
+# The user's name, in every template.
+#
+# It said "every template" and reached ONE environment. Measured 2026-08-24: with
+# `_metis_user_name` registered only here, `/news` served
+# `window.METIS_USER_NAME = "Researcher"` and an avatar initial of "R" while every
+# other surface served "the researcher" and "S" — because /news is rendered from
+# routers/today.py's own Jinja instance, not this one.
+#
+# It did not 500 only because base.html guards the call with `is defined`. So the
+# failure was invisible: the personalisation silently fell back on exactly the
+# surfaces that did not come through main. Registering it in _SHARED_GLOBALS below
+# is what makes "every template" true.
 try:
     from routers.today import _user_name as _get_metis_user_name
-    templates.env.globals["_metis_user_name"] = _get_metis_user_name
 except Exception:
-    templates.env.globals["_metis_user_name"] = lambda: "Researcher"
+    def _get_metis_user_name() -> str:
+        return "Researcher"
+
+templates.env.globals["_metis_user_name"] = _get_metis_user_name
+_SHARED_GLOBALS["_metis_user_name"] = _get_metis_user_name
 
 # ---------------------------------------------------------------------------
 # Register routers
@@ -286,6 +438,7 @@ except Exception:
 # the partials/api routes are registered without prefix via the router itself.
 app.include_router(today.router)
 app.include_router(knowledge.router)
+app.include_router(new_literature.router)
 app.include_router(meetings.router)
 app.include_router(learning.router)
 app.include_router(work.router)
@@ -305,6 +458,17 @@ app.include_router(transcription.router)
 app.include_router(speakers.router)
 app.include_router(jobs.router)
 app.include_router(setup.router)
+# The citation checker's HTTP surface — the Stop hook calls this rather than
+# shelling out to Python, so a per-turn check costs milliseconds against an
+# already-warm process instead of an interpreter start on every reply.
+app.include_router(verification.router)
+# Focus areas — user-added surfaces. One router and one template serve
+# every focus, which is what makes them addable without a developer.
+app.include_router(focus.router)
+
+# Must run AFTER all routers are imported, so every environment exists.
+_n_envs = install_shared_globals()
+log.info("Shared template globals installed on %d Jinja environment(s)", _n_envs)
 
 # ── PWA capture page — standalone mobile-friendly route ─────────────────────
 @app.get("/capture", response_class=HTMLResponse)

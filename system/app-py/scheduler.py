@@ -21,6 +21,7 @@ Default schedule (all overridable via user-config.yaml → jobs: section):
 
 import asyncio
 import datetime
+import inspect
 import logging
 import os
 import shutil
@@ -240,6 +241,283 @@ def job_morning_scan() -> None:
     msg = " · ".join(parts)
     _log_job("morning_scan", "ok", msg)
     log.info("[scheduler] morning_scan done: %s", msg)
+
+
+def job_library_scan() -> None:
+    """Daily: scan every LIBRARY source and put the results in new_publications.
+
+    WHY THIS JOB EXISTS
+        `scan_library_feeds()` — the function that reads the journal and preprint
+        table-of-contents feeds — had NO SCHEDULED CALLER anywhere in the repo.
+        `job_morning_scan` calls `scan_news_feeds` and `scan_literature_folder`,
+        and reports the latter as "Lit: N items", which reads like the literature
+        feeds ran when in fact it counted new PDFs in a local folder. So the
+        surface said "Lit: 0" every morning and looked like a quiet week in the
+        journals, while 21 healthy feeds were simply never being read. The last
+        rows in new_publications came from a hand-run scan.
+
+        That is the mirror image of the write-path-with-no-reader bug already
+        recorded in this codebase: a reader with no caller. Both are invisible by
+        eye, because the surface still renders and still shows old data.
+
+    WHAT "SEARCHED UPON UPDATE" MEANS HERE
+        the researcher asked that all sources be searched on update, so this job covers all
+        three routes literature can arrive by, and reports them separately:
+          1. Journal + preprint feeds  → new_publications  (breadth, no query)
+          2. Zotero                    → literature_metadata (his own catalogue)
+          3. PubMed + OpenAlex         → new_publications  (targeted by topic)
+
+        Zotero belongs in this job rather than on a button: it had gone THREE
+        MONTHS without a sync (last 2026-05-21) because a manual button is only
+        pressed by someone who already suspects it is stale.
+
+    Each route is independently guarded. A publisher 403 must not stop the Zotero
+    sync, and a missing Zotero key must not stop the feeds.
+    """
+    log.info("[scheduler] library_scan starting")
+    parts: list[str] = []
+
+    # ── 1. Journal + preprint feeds ─────────────────────────────────────────
+    try:
+        from metis_mcp.tools.content_scan import scan_library_feeds
+        r = scan_library_feeds(max_per_feed=12)
+        papers = r.get("papers_added", 0)
+        errs = r.get("errors") or []
+        parts.append(f"Feeds: {papers} papers")
+        if errs:
+            # Surfaced, not swallowed: a feed that starts 403ing must become
+            # visible the day it happens, not at the next manual audit.
+            parts.append(f"{len(errs)} feed error(s)")
+            for e in errs[:6]:
+                log.warning("[scheduler] library feed: %s", e)
+    except Exception as exc:
+        log.warning("[scheduler] library feed scan failed: %s", exc)
+        parts.append("Feeds: error")
+
+    # ── 2. Zotero ───────────────────────────────────────────────────────────
+    try:
+        n, route = _sync_zotero_incremental()
+        # The ROUTE is reported, not just the count. "Zotero: 506 (local)" tells
+        # you write-back is unavailable; a bare "506" hides that entirely.
+        parts.append(f"Zotero: {n} ({route})" if n >= 0
+                     else f"Zotero: unavailable — {route}")
+    except Exception as exc:
+        log.warning("[scheduler] zotero sync failed: %s", exc)
+        parts.append(f"Zotero: error — {str(exc)[:80]}")
+
+    # ── 3. Targeted topic search ────────────────────────────────────────────
+    try:
+        found = _topic_literature_search(days=2, per_topic=10)
+        parts.append(f"Topics: {found} papers")
+    except Exception as exc:
+        log.warning("[scheduler] topic literature search failed: %s", exc)
+        parts.append("Topics: error")
+
+    msg = " · ".join(parts)
+    _log_job("library_scan", "ok", msg)
+    log.info("[scheduler] library_scan done: %s", msg)
+
+
+def _sync_zotero_incremental() -> tuple[int, str]:
+    """Pull Zotero into literature_metadata. Returns (items_touched, route).
+
+    TWO ROUTES, and which one is available is not a detail:
+
+      · LOCAL — read `zotero.sqlite` directly. No credentials, works offline,
+        and it is the route that actually imported the existing 506 items.
+      · WEB   — the Zotero API. Needed for WRITING back to Zotero; nothing can
+        push an item without it.
+
+    Measured 2026-08-21: `ZOTERO_API_KEY` and `ZOTERO_USER_ID` in this install
+    were still the literal placeholders from .env.example, so every web call
+    returned 403 and the error was swallowed several frames up. The surface then
+    reported "last synced 21 May" as though a schedule had lapsed, when in fact
+    the web sync had never once run.
+
+    So: prefer local, because it works with no setup, and report the route used
+    so a stale library can never again look like a scheduling problem.
+    """
+    import sqlite3 as _sq
+    from metis_mcp.config import paths as _p
+    from metis_mcp.tools.zotero import (
+        zotero_credential_state, sync_zotero_into_db,
+    )
+
+    state = zotero_credential_state()
+
+    # Web first when genuinely configured — it is the only route that sees group
+    # libraries and remote edits made from another machine.
+    if state["web"]:
+        con = _sq.connect(str(_p.db))
+        try:
+            return sync_zotero_into_db(con, full=False), "web"
+        except Exception as exc:
+            log.warning("[scheduler] Zotero web sync failed (%s); trying local", exc)
+        finally:
+            con.close()
+
+    if state["local"]:
+        from metis_mcp.tools.zotero import _read_local_zotero, _upsert_lit_row
+        con = _sq.connect(str(_p.db))
+        con.row_factory = _sq.Row
+        try:
+            rows = _read_local_zotero(state["local"])
+            for row in rows:
+                _upsert_lit_row(con, row)
+            con.commit()
+            return len(rows), "local"
+        finally:
+            con.close()
+
+    return -1, state["reason"] or "no Zotero found"
+
+
+def _topic_literature_search(days: int = 7, per_topic: int = 15) -> int:
+    """PubMed + OpenAlex, one query per active topic, into new_publications.
+
+    Extracted from job_literature_discovery so the daily library scan and the
+    weekly deep sweep share one implementation. They differ only in window and
+    depth — duplicating the insert logic is how the two drift apart.
+    """
+    import sqlite3 as _sq
+    from metis_mcp.config import paths as _p
+
+    topics: list[str] = []
+    try:
+        con = _sq.connect(str(_p.db))
+        con.row_factory = _sq.Row
+        topics = [r["topic"] for r in
+                  con.execute("SELECT topic FROM user_topics WHERE active = 1")
+                  if r["topic"]]
+        con.close()
+    except Exception:
+        pass
+    if not topics:
+        return 0
+
+    from metis_mcp.tools.content_scan import classify_publication
+    from_date = (datetime.date.today() - datetime.timedelta(days=days)).isoformat()
+    now = datetime.datetime.now().isoformat(timespec="seconds")
+    added = 0
+
+    con = _sq.connect(str(_p.db))
+    try:
+        for topic in topics[:12]:
+            try:
+                from metis_mcp.tools.literature_monitor import (
+                    _pubmed_esearch, _pubmed_esummary,
+                )
+                pmids = _pubmed_esearch(f"{topic}[Title/Abstract]",
+                                        reldate=days, max_results=per_topic)
+                for item in (_pubmed_esummary(pmids) if pmids else []):
+                    url = f"https://pubmed.ncbi.nlm.nih.gov/{item['pmid']}/"
+                    if con.execute("SELECT 1 FROM new_publications WHERE source_url=? LIMIT 1",
+                                   (url,)).fetchone():
+                        continue
+                    kind, lane = classify_publication(
+                        item.get("title", ""), "", item.get("source", ""),
+                        topic, url, 1.0,   # a topic hit is by definition his field
+                    )
+                    con.execute(
+                        "INSERT INTO new_publications (title, journal, pub_date, doi, "
+                        "topic_tag, source_url, discovered_at, authors, abstract, "
+                        "feed_name, entry_kind, lane, relevance) "
+                        "VALUES (?,?,?,'',?,?,?,?,?,?,?,?,?)",
+                        (item.get("title", "")[:500], item.get("source", ""),
+                         item.get("pubdate", ""), topic[:60], url, now,
+                         item.get("authors", "")[:400], "", "PubMed",
+                         kind, lane, 0.9),
+                    )
+                    added += 1
+            except Exception as exc:
+                log.warning("[scheduler] PubMed '%s': %s", topic, exc)
+
+            try:
+                from metis_mcp.tools.literature_monitor import (
+                    _openalex_search, _reconstruct_abstract,
+                )
+                for item in (_openalex_search(topic, from_date=from_date,
+                                              max_results=per_topic) or []):
+                    doi = item.get("doi") or ""
+                    src = doi or item.get("id") or ""
+                    if not src:
+                        continue
+                    if con.execute(
+                        "SELECT 1 FROM new_publications WHERE source_url=? "
+                        "OR (doi != '' AND doi = ?) LIMIT 1", (src, doi)
+                    ).fetchone():
+                        continue
+                    journal = ((item.get("primary_location") or {})
+                               .get("source") or {}).get("display_name", "")
+                    authors = "; ".join(
+                        (a.get("author") or {}).get("display_name", "")
+                        for a in (item.get("authorships") or [])[:8]
+                    )
+                    # OpenAlex stores abstracts as an inverted index; reconstructing
+                    # it is the only way to show one without a second API call.
+                    abstract = _reconstruct_abstract(
+                        item.get("abstract_inverted_index")) or ""
+                    title = item.get("title") or "Untitled"
+                    kind, lane = classify_publication(
+                        title, abstract, journal, topic, src, 1.0,
+                    )
+                    con.execute(
+                        "INSERT INTO new_publications (title, journal, pub_date, doi, "
+                        "topic_tag, source_url, discovered_at, authors, abstract, "
+                        "feed_name, entry_kind, lane, relevance) "
+                        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        (title[:500], journal, item.get("publication_date", ""), doi,
+                         topic[:60], src, now, authors[:400], abstract[:4000],
+                         "OpenAlex", kind, lane, 0.9),
+                    )
+                    added += 1
+            except Exception as exc:
+                log.warning("[scheduler] OpenAlex '%s': %s", topic, exc)
+        con.commit()
+    finally:
+        con.close()
+    return added
+
+
+def job_download_pickup() -> None:
+    """File the PDFs the researcher downloaded through his browser.
+
+    The other half of acquisition. Metis fetches what is legally open; anything
+    behind ITM's OpenAthens login has to be opened in a browser, because a
+    federated SSO session cannot be held by a background process. This closes the
+    loop on that: he clicks, the browser downloads, and this puts the file where
+    it belongs and marks the paper obtained.
+
+    Runs often (hourly) rather than daily — the value is that a paper is filed
+    while he still remembers downloading it.
+    """
+    import sqlite3 as _sq
+    from metis_mcp.config import paths as _p
+
+    try:
+        from services.download_pickup import scan_downloads
+    except ImportError as exc:
+        _log_job("download_pickup", "skip", f"unavailable: {exc}")
+        return
+
+    con = _sq.connect(str(_p.db))
+    try:
+        r = scan_downloads(con)
+    except Exception as exc:
+        log.warning("[scheduler] download_pickup failed: %s", exc)
+        _log_job("download_pickup", "error", str(exc)[:200])
+        return
+    finally:
+        con.close()
+
+    if r.get("error"):
+        _log_job("download_pickup", "skip", r["error"])
+        return
+
+    msg = (f"Filed {r['filed']}, unmatched {r['unmatched']}, "
+           f"skipped {r['skipped']} — {r.get('folder', '?')}")
+    _log_job("download_pickup", "ok", msg)
+    log.info("[scheduler] download_pickup: %s", msg)
 
 
 def job_library_index() -> None:
@@ -465,15 +743,27 @@ def job_inbox_process() -> None:
         from db import db_query, db_execute
         import datetime as _dt
 
+        # The table and its column names are owned by inbox_watcher — the module
+        # that watches this same folder. This job used to spell them differently
+        # (source_path / type / logged_at) and never create the table, so it
+        # reported "0 new items — ok" forever while writing nothing at all.
+        # Borrow the owner's schema rather than restating it.
+        import sqlite3 as _sqlite3
+        from db import get_db_path
+        from inbox_watcher import ensure_inbox_table
+        with _sqlite3.connect(str(get_db_path())) as _con:
+            ensure_inbox_table(_con)
+
         # Load already-logged paths to avoid double-processing
         logged_paths = set()
         try:
-            rows = db_query("SELECT source_path FROM inbox_items")
-            logged_paths = {r.get("source_path") for r in rows}
+            rows = db_query("SELECT filepath FROM inbox_items")
+            logged_paths = {r.get("filepath") for r in rows}
         except Exception:
             pass
 
         processed = 0
+        failed = 0
         for f in inbox_dir.rglob("*"):
             if not f.is_file():
                 continue
@@ -489,15 +779,28 @@ def job_inbox_process() -> None:
             now_iso = _dt.datetime.now().isoformat(timespec="seconds")
             try:
                 db_execute(
-                    "INSERT OR IGNORE INTO inbox_items (filename, source_path, type, status, logged_at) VALUES (?, ?, ?, 'new', ?)",
+                    "INSERT OR IGNORE INTO inbox_items "
+                    "(filename, filepath, file_type, status, created_at) "
+                    "VALUES (?, ?, ?, 'new', ?)",
                     (f.name, str(f), ftype, now_iso),
                 )
                 processed += 1
-            except Exception:
-                pass
+            except Exception as exc:
+                # Count and report write failures. Swallowing them is what let a
+                # wrong-column INSERT report success indefinitely.
+                failed += 1
+                if failed == 1:
+                    log.warning("[scheduler] inbox_process write failed for %s: %s",
+                                f.name, exc)
 
-        _log_job("inbox_process", "ok", f"Processed {processed} new inbox item(s).")
-        log.info("[scheduler] inbox_process: %d new items", processed)
+        if failed:
+            _log_job("inbox_process", "error",
+                     f"Logged {processed} item(s); {failed} write(s) FAILED.")
+            log.error("[scheduler] inbox_process: %d logged, %d failed",
+                      processed, failed)
+        else:
+            _log_job("inbox_process", "ok", f"Processed {processed} new inbox item(s).")
+            log.info("[scheduler] inbox_process: %d new items", processed)
     except Exception as exc:
         _log_job("inbox_process", "error", str(exc)[:300])
         log.error("[scheduler] inbox_process failed: %s", exc)
@@ -933,11 +1236,138 @@ def job_promise_harness() -> None:
         _log_job("promise_harness", "error", str(exc)[:200])
 
 
+def job_citation_backfill() -> None:
+    """Resolve the DOI backlog in the citation ledger — Tier B, while the researcher sleeps.
+
+    The per-turn hook and the artifact gate both record DOIs as `doi_unchecked`
+    rather than resolving them inline: Tier B costs a network round trip, and a
+    check that makes a reply feel slow is a check that gets switched off. So the
+    backlog accumulates and this job works it overnight.
+
+    This is also the only place a RETRACTION is ever noticed. Citing a retracted
+    paper looks perfectly sourced, so nothing about the citation itself would ever
+    prompt a re-check — it has to be swept for.
+    """
+    log.info("[scheduler] citation_backfill starting")
+    try:
+        from db import db_query, db_execute, get_db_path
+        import datetime as _dt
+        import sqlite3 as _sq
+        from metis_mcp.tools.verification import check_doi, ensure_ledger
+
+        with _sq.connect(str(get_db_path())) as _con:
+            ensure_ledger(_con)
+
+        rows = db_query(
+            "SELECT id, doi FROM citation_checks "
+            "WHERE verdict = 'doi_unchecked' AND COALESCE(doi,'') <> '' "
+            "ORDER BY id LIMIT 60"
+        ) or []
+        if not rows:
+            _log_job("citation_backfill", "skip", "no unresolved DOIs in the ledger")
+            log.info("[scheduler] citation_backfill: nothing to resolve")
+            return
+
+        # De-duplicate: the same DOI cited in six lessons is one lookup, not six.
+        by_doi: dict[str, list[int]] = {}
+        for r in rows:
+            by_doi.setdefault((r["doi"] or "").strip().lower(), []).append(r["id"])
+
+        resolved = retracted = unresolved = 0
+        for doi, ids in by_doi.items():
+            try:
+                res = check_doi(doi)
+            except Exception as exc:
+                log.warning("[scheduler] citation_backfill %s failed: %s", doi, exc)
+                continue
+            if res["verdict"] == "doi_retracted":
+                retracted += 1
+            elif res["verdict"] == "doi_resolved":
+                resolved += 1
+            else:
+                unresolved += 1
+            for rid in ids:
+                db_execute(
+                    "UPDATE citation_checks SET verdict=?, detail=?, tier='B', "
+                    "checked_at=? WHERE id=?",
+                    (res["verdict"], (res["detail"] or "")[:800],
+                     _dt.datetime.now().isoformat(timespec="seconds"), rid),
+                )
+
+        msg = (f"{len(by_doi)} unique DOI(s): {resolved} resolved, "
+               f"{retracted} RETRACTED, {unresolved} unresolved")
+        # A retraction is not routine bookkeeping — surface it as an error so it
+        # shows up amber on the dashboard rather than scrolling past as "ok".
+        _log_job("citation_backfill", "error" if retracted else "ok", msg)
+        log.info("[scheduler] citation_backfill: %s", msg)
+    except Exception as exc:
+        _log_job("citation_backfill", "error", str(exc)[:300])
+        log.error("[scheduler] citation_backfill failed: %s", exc)
+
+
+def job_focus_refresh() -> None:
+    """Keep every ACTIVE focus area current — the "regular updating" half.
+
+    It deliberately does NOT fetch anything itself. `morning_scan` (09:00) and
+    `library_scan` (09:03) already pull news and literature into the shared
+    collection; a focus is a lens over that collection, so a focus-specific fetch
+    path would create items only one surface could ever see, and would re-request
+    the same feeds once per focus.
+
+    What this job does is the part nothing else can: stamp each active focus as
+    refreshed and record how much arrived through its lens, so the pulse on the
+    surface reflects a real scan rather than the last time someone opened the page.
+
+    A focus whose lens returns nothing for a week is reported as such. An empty
+    lens looks identical to a quiet field and is far more likely to be the cause.
+    """
+    log.info("[scheduler] focus_refresh starting")
+    try:
+        import datetime as _dt
+        from db import db_execute
+        from metis_mcp.tools.focus import list_focus, focus_news, focus_reading
+
+        active = list_focus("active")
+        if not active:
+            _log_job("focus_refresh", "skip", "no active focus areas")
+            return
+
+        now = _dt.datetime.now().isoformat(timespec="seconds")
+        week_ago = (_dt.date.today() - _dt.timedelta(days=7)).isoformat()
+        parts, quiet = [], []
+        for a in active:
+            slug = a["slug"]
+            try:
+                n_news = len(focus_news(slug, limit=300, since=week_ago))
+                n_read = len(focus_reading(slug, limit=300, since=week_ago))
+            except Exception as exc:
+                log.warning("[scheduler] focus_refresh %s failed: %s", slug, exc)
+                continue
+            db_execute("UPDATE focus_areas SET last_refreshed_at=? WHERE slug=?",
+                       (now, slug))
+            parts.append(f"{slug}: {n_news} briefs / {n_read} papers (7d)")
+            if n_news == 0 and n_read == 0:
+                quiet.append(slug)
+
+        msg = " · ".join(parts) or "nothing to refresh"
+        if quiet:
+            msg += f" · WARN nothing through the lens for: {', '.join(quiet)}"
+        _log_job("focus_refresh", "ok", msg)
+        log.info("[scheduler] focus_refresh: %s", msg)
+    except Exception as exc:
+        _log_job("focus_refresh", "error", str(exc)[:300])
+        log.error("[scheduler] focus_refresh failed: %s", exc)
+
+
 JOB_FUNCS: dict[str, callable] = {
     "db_sync":               job_db_sync,
+    "citation_backfill":     job_citation_backfill,
+    "focus_refresh":         job_focus_refresh,
     "embedding_backfill":    job_embedding_backfill,
     "brief_synthesis":       job_brief_synthesis,
     "morning_scan":          job_morning_scan,
+    "library_scan":          job_library_scan,
+    "download_pickup":       job_download_pickup,
     "library_index":         job_library_index,
     "background_index":      job_background_index,
     "office_sync":           job_office_sync,
@@ -958,10 +1388,14 @@ JOB_LABELS: dict[str, str] = {
     "embedding_backfill":   "Memory embedding reconcile",
     "brief_synthesis":      "Morning brief synthesis",
     "morning_scan":         "Morning scan (news + papers)",
+    "library_scan":         "Library scan (journals + Zotero + topics)",
+    "download_pickup":      "File PDFs downloaded in the browser",
     "library_index":        "Library index",
     "background_index":     "Knowledge backgrounds — index new papers",
     "office_sync":          "Office documents — re-read what changed",
     "inbox_process":        "Inbox processing",
+    "citation_backfill":    "Citation checks — resolve DOIs + find retractions",
+    "focus_refresh":        "Focus areas — refresh what came through each lens",
     "evening_reflexion":    "Evening reflexion",
     "promise_harness":      "Promise harness (drift)",
     "memory_consolidation": "Nightly memory consolidation",
@@ -984,6 +1418,12 @@ JOB_DEFAULTS: dict[str, dict] = {
     "db_sync":              {"enabled": True, "time": "22:15"},
     "embedding_backfill":   {"enabled": True, "time": "22:30"},
     "morning_scan":         {"enabled": True, "time": "09:00"},
+    # Before library_index (09:05), so a paper discovered this morning is in
+    # new_publications by the time the inventory and background indexers run.
+    "library_scan":         {"enabled": True, "time": "09:03"},
+    # Hourly: a paper downloaded at 14:00 should be filed by 15:00,
+    # while the reason for downloading it is still fresh.
+    "download_pickup":      {"enabled": True, "every_hours": 1},
     "library_index":        {"enabled": True, "time": "09:05"},
     # Right after the library scan, so a paper that arrived overnight is both
     # catalogued AND searchable by the time the morning brief is written. Without a
@@ -1003,6 +1443,12 @@ JOB_DEFAULTS: dict[str, dict] = {
     "memory_consolidation": {"enabled": True, "time": "09:45"},
     "weekly_summary":       {"enabled": True, "time": "09:50", "day": "mon"},
     "nightly_backup":       {"enabled": True, "time": "09:55"},
+    # After the backup, so a retraction found tonight is in tomorrow's
+    # database and not only in a log line.
+    "citation_backfill":    {"enabled": True, "time": "10:00"},
+    # After morning_scan (09:00) and library_scan (09:03), so the counts
+    # reflect the arrivals from today rather than from yesterday.
+    "focus_refresh":        {"enabled": True, "time": "09:12"},
 }
 
 
@@ -1096,6 +1542,8 @@ def setup_jobs() -> None:
     # Catch-up order: data-collection first, then analysis, then housekeeping.
     catchup_sequence = [
         ("morning_scan",        job_morning_scan),
+        ("library_scan",        job_library_scan),
+        ("download_pickup",     job_download_pickup),
         ("library_index",       job_library_index),
         ("inbox_process",       job_inbox_process),
         ("brief_synthesis",     job_brief_synthesis),
@@ -1157,7 +1605,16 @@ def setup_jobs() -> None:
             for jid, jfunc in jobs:
                 log.info("[scheduler] catch-up: running %s", jid)
                 try:
-                    jfunc()
+                    # Most jobs are plain functions, but `dataset_monitor` is a
+                    # coroutine. Calling it here only BUILT the coroutine and threw
+                    # it away — "coroutine 'job_dataset_monitor' was never awaited",
+                    # a RuntimeWarning in the log and a job that never caught up.
+                    # The cron path is fine (AsyncIOScheduler awaits coroutines);
+                    # this thread has no event loop, so it needs its own.
+                    if inspect.iscoroutinefunction(jfunc):
+                        asyncio.run(jfunc())
+                    else:
+                        jfunc()
                 except Exception as exc:
                     log.warning("[scheduler] catch-up %s failed: %s", jid, exc)
         _threading.Thread(target=_run_catchup, args=(missed,),
