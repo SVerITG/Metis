@@ -1,0 +1,58 @@
+{% from "partials/_section.html" import sec_label %}
+{# Quotable coverage — the honest denominator.
+
+   Added 2026-08-24. Metis can only VERIFY a claim against a document whose full
+   text is indexed. Without this number, "not found in your corpus" reads as
+   "not in your literature", when it may only mean "not indexed" — and every
+   grounding claim quietly borrows credibility it has not earned.
+
+   Three states, not two: quotable · known but unquotable · absent.
+#}
+<div id="knowledge-quotable" style="margin-top:32px;">
+  {{ sec_label("What Metis can quote", style="margin-bottom:8px;") }}
+  <div class="m-box" style="padding:14px 16px;">
+    <div style="display:flex;flex-wrap:wrap;gap:18px 28px;align-items:baseline;">
+      <div>
+        <div style="font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1;">
+          {{ cov.library_quotable }}<span style="font-size:15px;color:var(--m-muted);font-weight:400;">/{{ cov.library_total }}</span>
+        </div>
+        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--m-muted);margin-top:5px;">
+          papers with indexed full text
+        </div>
+      </div>
+      <div>
+        <div style="font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1;">{{ cov.quotable_pct }}%</div>
+        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--m-muted);margin-top:5px;">
+          quotable
+        </div>
+      </div>
+      <div>
+        <div style="font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1;">{{ cov.documents }}</div>
+        <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--m-muted);margin-top:5px;">
+          documents across {{ cov.layers|length }} layers
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;height:6px;border-radius:3px;overflow:hidden;background:var(--m-line);display:flex;">
+      <div style="width:{{ cov.quotable_pct }}%;background:var(--m-accent);"></div>
+    </div>
+
+    <p style="margin:10px 0 0;font-size:12.5px;color:var(--m-muted);line-height:1.55;">
+      {{ cov.library_unquotable }} paper{{ '' if cov.library_unquotable == 1 else 's' }}
+      {{ 'is' if cov.library_unquotable == 1 else 'are' }} <strong>known but not quotable</strong> —
+      Metis can name {{ 'it' if cov.library_unquotable == 1 else 'them' }} and cannot cite a page.
+      A citation check can only ever cover the quotable share, so this is the denominator
+      behind every “grounded in your library” claim.
+    </p>
+
+    {% if prov and prov.total %}
+    <p style="margin:8px 0 0;font-size:12.5px;color:var(--m-muted);line-height:1.55;">
+      Provenance: <strong>{{ prov.verified }}</strong> of {{ prov.total }} indexed documents
+      have a DOI on record.
+      {% if prov.unresolved %}{{ prov.unresolved }} could not be identified — many are WHO
+      reports or own notes that legitimately have none.{% endif %}
+    </p>
+    {% endif %}
+  </div>
+</div>

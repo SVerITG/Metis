@@ -1,5 +1,5 @@
 # Metis — Constitutional Policy
-# version: 1.1 | updated: 2026-06-16
+# version: 1.3 | updated: 2026-08-24
 # Format: machine-readable rules loaded by load_constitution() into every agent's context.
 
 ## Scope
@@ -138,6 +138,107 @@ RULE phd-alignment:
   Then: check that the change aligns with the PhD thesis backbone before proceeding
   Severity: HIGH
   Message: "PhD change requires thesis backbone alignment check."
+
+---
+
+## Verification Rules
+
+*Added 2026-08-24. Every rule above this section is advisory text: it is prepended to
+an agent's context and depends on the agent complying. The rules below are different
+— each one names a MECHANISM that runs whether or not anyone remembers it. Where a
+rule can be enforced, enforce it; a control that depends on being remembered is not
+a control.*
+
+RULE claim-provenance:
+  When: an agent states a factual claim drawn from a document
+  Then: mark which of three states it is in — QUOTED (traceable to a title and page
+        in the indexed corpus), ATTRIBUTED (a real external source whose text has
+        not been read), or UNSOURCED (model knowledge). Never let an attributed or
+        unsourced claim be presented as quoted.
+  Severity: HIGH
+  Mechanism: `verify_claim(claim, source, page)` — Tier A, deterministic, no model.
+
+RULE cited-page-must-contain-the-claim:
+  When: an agent cites a document and a page number
+  Then: the figures and any quoted string in the claim must actually appear on that
+        page. A real document with a real page number and a number that is not on
+        it is a fabrication, not a disagreement.
+  Severity: HIGH
+  Mechanism: the `Stop` hook (`.claude/hooks/verify-citations.mjs`) checks every
+        reply and records the verdict to `citation_checks`. `METIS_VERIFY_BLOCK=1`
+        makes a hard failure block the reply instead of only recording it.
+
+RULE no-retracted-evidence:
+  When: an agent cites a paper by DOI as evidence for a claim
+  Then: it must not be retracted or withdrawn. A retracted citation looks perfectly
+        sourced, so nothing about the citation itself will ever prompt a re-check.
+  Severity: HIGH
+  Mechanism: `verify_doi()` — Tier B. Checks four independent Crossref signals,
+        because publishers are inconsistent (the Wakefield 1998 retraction carries
+        no `update-to` entry at all and is marked only by its title prefix). The
+        `citation_backfill` job sweeps the ledger nightly.
+
+RULE report-the-denominator:
+  When: an agent reports how much of something was checked, searched or verified
+  Then: state what it was checked AGAINST. "18 citations verified" without "of 79
+        citation-shaped items" is not a weaker result, it is a misleading one — and
+        it is the same overclaim as implying a top-k similarity search read the
+        whole library.
+  Severity: HIGH
+  Mechanism: `library_coverage()` gives the corpus denominator;
+        `tools/verify_citations.py` always prints coverage alongside its counts.
+
+RULE tier-a-is-not-entailment:
+  When: a deterministic check returns `supported`
+  Then: this means the page exists and the figures are on it. It does NOT mean the
+        passage supports the claim. Do not report a Tier A pass as if the claim had
+        been substantively verified — escalate to Critic for entailment.
+  Severity: MEDIUM
+
+RULE artifacts-are-gated-conversation-is-annotated:
+  When: content is about to be WRITTEN to disk — a course, a manuscript, anything
+        under `outputs/`
+  Then: run the gate first. A wrong claim in conversation is corrected by the next
+        sentence; a wrong claim in a written artifact propagates for months.
+  Severity: HIGH
+  Mechanism: `python3 tools/verify_citations.py <path>` exits non-zero on a hard
+        failure. `verify_text_citations(text)` for content not yet on disk.
+
+RULE quantities-are-ranges:
+  When: an agent states a quantitative finding drawn from the literature — a
+        sensitivity, specificity, prevalence, coverage, effect size, case-fatality
+        or any other measured value
+  Then: report the RANGE across sources with the qualifiers that explain it —
+        reference standard, population, setting, sample size, confidence interval.
+        Never a single value unless the question is about one specific study, and
+        then say which. Fact-checking a number is not the same as checking a
+        citation: a figure can be correctly cited and still be one of many.
+  Severity: HIGH
+  Message: "A quantity without its spread and qualifiers is a choice disguised as
+        a fact."
+  Mechanism: `weigh_evidence(question)` — deterministic, reports every estimate
+        found with its provenance, the spread, and which qualifiers each source
+        omits. Measured in this corpus: 143 specificity estimates spanning
+        59–100%. The `UserPromptSubmit` hook detects a quantity question and
+        instructs this call, so it does not depend on being remembered.
+
+RULE know-how-stale-you-are:
+  When: an agent answers a quantitative or evidence-based question from the corpus
+  Then: establish how recent the local evidence is BEFORE answering, and say so if
+        the newest source is more than three years old. A correct answer from a
+        superseded literature is still the wrong answer.
+  Severity: MEDIUM
+  Mechanism: `check_for_newer_evidence(question)` — computes corpus recency
+        locally, with no network call. Only reaches PubMed/OpenAlex when
+        `search_online=True`, which requires asking the researcher first.
+
+RULE searched-is-not-read:
+  When: an agent surfaces a source found by a literature or web search
+  Then: label it as ATTRIBUTED — a title and a DOI nobody has read. Never present
+        it beside a corpus passage as though both were the same kind of evidence,
+        and never let it change a reported range until the paper is actually read
+        or indexed.
+  Severity: HIGH
 
 ---
 

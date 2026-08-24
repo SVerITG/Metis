@@ -42,11 +42,41 @@ TOOL_MODULES = [
     "paperqa_search", "voice_capture", "knowledge_db", "background_packs", "decisions_ledger", "office", "session_memory",
     "memory_curator", "memory_gateway", "research", "research_timeline", "project_tracker", "dhis2",
     "discovery", "code_repository", "script_analyzer", "tool_search", "prompts",
+    # MCP RESOURCES — the third protocol primitive, unused until 2026-08-21.
+    # Tools let the model act, prompts let the user pick, resources let the
+    # CLIENT attach standing context. Without them Claude Desktop had no way
+    # to see the persona, the learned-lesson ledger or the corpus at all —
+    # those live in files only Claude Code reads.
+    "resources",
+    # AUTHORING — the tools that let Metis MAKE things. Of 236 tools, three
+    # could write a file and all three wrote config; none could produce a
+    # document. Claude Code hid that gap by supplying Write/Edit/Bash itself.
+    # Desktop, Cursor and every other MCP client had no substitute.
+    "authoring",
+    # MAINTENANCE — named operations for clients with no shell. A whitelist,
+    # never run_command(): a model-driven RCE tool on a machine holding
+    # research data is not made safe by careful prompting.
+    "maintenance",
     # news_threads is listed explicitly even though intelligence.py imports it:
     # relying on another module's import chain meant a change there could silently
     # unregister the whole story-thread layer, and this list is where module
     # loading is meant to be visible.
     "news_threads", "continuity", "persona_growth",
+    # VERIFICATION — the other half of the grounding promise. Retrieval was
+    # enforced by a hook from 2026-08; nothing checked a citation after it was
+    # written, so "never invented" rested on six prompts saying "do not
+    # hallucinate". Contains no model on purpose: the checker has to be less
+    # fallible than the thing it checks.
+    "verification",
+    # EVIDENCE — the other half of fact-checking. `verification` asks whether a
+    # citation points where it claims; this asks what the evidence actually says.
+    # A number can be perfectly cited and still be one of many the literature
+    # reports: this corpus holds specificity estimates from 59% to 100%, and a
+    # single confident answer hides that completely.
+    "evidence",
+    # FOCUS — user-defined surfaces for a subject you want to stay current on.
+    # A lens, never a container: it owns a query, not the content it shows.
+    "focus",
 ]
 
 LOADED_MODULES: list[str] = []
@@ -154,24 +184,27 @@ def _startup_selfcheck() -> None:
 
     # 3) Stale-install detection — the failure mode from 2026-06-01: the server runs
     #    an installed COPY of the package, so source edits don't take effect until
-    #    reinstall. Warn loudly if the installed code looks older than the repo source.
+    #    reinstall.
+    #
+    #    This used to compare MTIMES, and that quietly failed on 2026-08-24. Metis
+    #    runs on two computers and syncs its source over OneDrive, which preserves
+    #    the ORIGINAL write time — so files edited on the other machine arrived here
+    #    stamped *older* than a local install performed days later. Source was newer
+    #    in content and older in mtime, the check said "fine", and the server ran
+    #    old code missing three whole tool modules (authoring, maintenance,
+    #    resources) that the dashboard could see and the MCP server could not.
+    #
+    #    So: no second opinion. `run_doctor()` already compares file CONTENTS with
+    #    filecmp, which no clock skew can fool. Read its verdict instead of
+    #    re-deriving a weaker one — a duplicated guarantee decays to its weakest copy.
     try:
-        import metis_mcp, os, datetime
-        installed_file = getattr(metis_mcp, "__file__", "") or ""
-        from metis_mcp.config import paths as _paths
-        src_server = _paths.root / "system" / "mcp-server" / "src" / "metis_mcp" / "server.py"
-        if installed_file and "site-packages" in installed_file and src_server.exists():
-            inst_server = os.path.join(os.path.dirname(installed_file), "server.py")
-            if os.path.exists(inst_server):
-                src_m = src_server.stat().st_mtime
-                inst_m = os.path.getmtime(inst_server)
-                if src_m > inst_m + 5:  # source newer than installed by >5s
-                    log.warning(
-                        "Metis MCP may be running STALE installed code "
-                        "(source is newer than the installed package). "
-                        "Run: bash tools/reinstall-mcp.sh  then reconnect the server."
-                    )
-                    report["stale_install"] = True
+        stale_check = next(
+            (c for c in report.get("checks", [])
+             if c.get("name") == "MCP install is current"), None)
+        if stale_check is not None and not stale_check.get("ok"):
+            log.warning("Metis MCP is running STALE installed code — %s",
+                        stale_check.get("detail", ""))
+            report["stale_install"] = True
     except Exception:
         pass
 

@@ -3729,6 +3729,61 @@ async def board_star_item(request: Request, board: str, item_id: int):
 _SEARCHABLE_BOARDS = {"outbreaks", "events", "funding"}
 
 
+def _extract_json_array(text: str) -> list | None:
+    """Pull the JSON array of items out of a model reply. None if there isn't one.
+
+    The old version was one greedy regex, `\\[\\s*\\{.*\\}\\s*\\]` with DOTALL, and
+    greedy is exactly wrong here. A web-search reply is a CONCATENATION of text
+    blocks — usually a sentence of preamble, the array, then a closing sentence or
+    citation list. The moment a second bracketed structure appears anywhere in that
+    text, the match runs from the first `[{` to the LAST `}]` and swallows the prose
+    in between, producing a string that cannot parse. Both boards failed that way
+    (`events:0(bad-json) funding:0(bad-json)`, 2026-08-24) — the model had answered
+    correctly and the parser threw the answer away.
+
+    So: find every plausible array by walking brackets (respecting strings and
+    escapes, so a `]` inside a title cannot end it early), parse each, and take the
+    first one that actually yields a list of objects. Longest first, because the
+    real payload is the substantial one, not a stray `[]` in a sentence.
+    """
+    import json as _json
+
+    # A fenced block, if present, is the most reliable signal — take it first.
+    fenced = re.findall(r"```(?:json)?\s*(\[.*?\])\s*```", text, re.DOTALL)
+
+    candidates: list[str] = list(fenced)
+    for start in (i for i, ch in enumerate(text) if ch == "["):
+        depth, in_str, esc = 0, False, False
+        for i in range(start, len(text)):
+            ch = text[i]
+            if in_str:
+                if esc:
+                    esc = False
+                elif ch == "\\":
+                    esc = True
+                elif ch == '"':
+                    in_str = False
+                continue
+            if ch == '"':
+                in_str = True
+            elif ch in "[{":
+                depth += 1
+            elif ch in "]}":
+                depth -= 1
+                if depth == 0:
+                    candidates.append(text[start:i + 1])
+                    break
+
+    for cand in sorted(set(candidates), key=len, reverse=True):
+        try:
+            parsed = _json.loads(cand)
+        except Exception:
+            continue
+        if isinstance(parsed, list) and any(isinstance(x, dict) for x in parsed):
+            return parsed
+    return None
+
+
 def _board_search_prompt(board: str, topics: str) -> str:
     who = topics or "tropical medicine, neglected tropical diseases, global health, epidemiology"
     if board == "outbreaks":
@@ -3813,14 +3868,15 @@ def _refresh_board_via_search(board: str) -> tuple[int, str]:
     except Exception as e:
         return 0, f"{type(e).__name__}"
 
-    import re as _re
-    match = _re.search(r"\[\s*\{.*\}\s*\]", text, _re.DOTALL)
-    if not match:
-        return 0, "no-items"
-    try:
-        raw = _json.loads(match.group(0))
-    except Exception:
-        return 0, "bad-json"
+    raw = _extract_json_array(text)
+    if raw is None:
+        # Log what actually came back. The previous version returned a bare
+        # "bad-json" and discarded the reply, so a recurring parse failure could
+        # only ever be guessed at. 600 chars is enough to see the shape.
+        _log.warning("[board_refresh] %s: could not parse an item array from the "
+                     "model reply (%d chars). Head: %s",
+                     board, len(text), text[:600].replace("\n", " "))
+        return 0, "bad-json" if "[" in text else "no-items"
 
     clean: list[tuple[str, str, str]] = []
     seen: set[str] = set()

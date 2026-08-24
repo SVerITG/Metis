@@ -69,6 +69,11 @@
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop.mjs\"",
             "timeout": 25
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/verify-citations.mjs\"",
+            "timeout": 10
           }
         ]
       }
@@ -79,6 +84,17 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-compact.mjs\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-submit.mjs\"",
+            "timeout": 8
           }
         ]
       }
