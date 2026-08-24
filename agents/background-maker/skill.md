@@ -2,7 +2,7 @@
 name: Background Maker
 slug: background-maker
 description: "background, knowledge layer, RAG, index domain, build corpus, download papers, scrub, specialist context, topic layer, knowledge base, background-maker"
-model: claude-opus-4-7
+model: claude-opus-5
 effort: thorough
 complexity: deep
 ---

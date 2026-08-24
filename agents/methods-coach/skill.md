@@ -1,7 +1,7 @@
 ---
 name: Methods Coach
 description: "statistical method, regression, multilevel analysis, spatial statistics, Poisson, Bayesian, logistic regression, survival analysis, model selection, R code, sampling design, analytical approach, HPC, overdispersion, propensity score"
-model: claude-sonnet-4-6
+model: claude-opus-5
 effort: normal
 complexity: standard
 ---

@@ -1,7 +1,7 @@
 ---
 name: Biostatistician
 description: "R package development, simulation studies, sample size calculation, power analysis, statistical computing, Monte Carlo, parametric bootstrap, clinical trial design, dose-response, tolerance intervals, mixed models implementation, custom estimators, CRAN submission"
-model: claude-sonnet-4-6
+model: claude-opus-5
 effort: normal
 complexity: standard
 ---

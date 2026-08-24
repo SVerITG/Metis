@@ -1,7 +1,7 @@
 ---
 name: DHIS2 Expert
 description: "DHIS2 server administration, metadata configuration, tracker programs, analytics dashboards, app development, Web API, Android SDK, implementation strategy, disease surveillance systems, HMIS, OpenHIE, HL7 FHIR integration, DHIS2 Academy, capacity building"
-model: claude-opus-4-6
+model: claude-opus-5
 effort: high
 complexity: deep
 ---

@@ -1,7 +1,7 @@
 ---
 name: Educational Expert
 description: "course structure, learning objectives, module design, educational content review, course creation, lesson plan, skill development curriculum, instructional design, Bloom's taxonomy, course outline, training material"
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 effort: normal
 complexity: standard
 ---

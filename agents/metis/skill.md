@@ -1,7 +1,7 @@
 ---
 name: Metis
 description: "route request, delegate, orchestrate, summarize, what agent should handle this, triage, coordinate, control room, daily summary, weekly summary, what to focus on, general request, project overview, open decisions, inbox"
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 effort: normal
 complexity: standard
 ---

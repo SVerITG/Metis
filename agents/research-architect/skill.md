@@ -1,7 +1,7 @@
 ---
 name: Research Architect
 description: "research structure, thesis structure, dissertation plan, article outline, research program, paper coherence, research narrative, PhD structure, conceptual gap, paper-to-thesis alignment, research trajectory, long-form research roadmap"
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 effort: normal
 complexity: standard
 ---

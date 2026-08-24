@@ -1,7 +1,7 @@
 ---
 name: News Radar
 description: "news alert, global health signal, outbreak news, WHO announcement, surveillance update, policy shift, AI development, geopolitics, emerging signal, news briefing, health intelligence, current events relevant to work"
-model: claude-haiku-4-5-20251001
+model: claude-haiku-4-5
 effort: normal
 complexity: quick
 ---

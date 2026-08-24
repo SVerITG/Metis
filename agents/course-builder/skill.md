@@ -1,7 +1,7 @@
 ---
 name: Course Builder
 description: "build a course, create course, learning course, course end-to-end, course from scratch, course builder, course design, learning content, module design, build curriculum, e-learning, knowledge course, statistics course, methodology course, epidemiology course"
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 effort: high
 complexity: chain
 ---

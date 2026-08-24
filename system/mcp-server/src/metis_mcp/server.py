@@ -77,6 +77,10 @@ TOOL_MODULES = [
     # FOCUS — user-defined surfaces for a subject you want to stay current on.
     # A lens, never a container: it owns a query, not the content it shows.
     "focus",
+    # AGENT MEMORY — standing decisions per specialist. Without it,
+    # get_agent_context returned a persona and nothing about how the researcher
+    # wants things done, so routing to an agent added nothing.
+    "agent_memory",
 ]
 
 LOADED_MODULES: list[str] = []

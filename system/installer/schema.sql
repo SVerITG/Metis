@@ -1056,3 +1056,32 @@ CREATE TABLE IF NOT EXISTS focus_areas (
     last_visited_at   TEXT DEFAULT '',
     last_refreshed_at TEXT DEFAULT ''
 );
+
+-- ---------------------------------------------------------------------------
+-- Standing decisions, attributable to an agent.
+--
+-- Added 2026-08-24. `user_decisions` held TWO rows while session summaries held
+-- 7,578 decision entries — the write path had no reader, again, and it was the
+-- most consequential instance yet: it is the reason invoking a specialist added
+-- nothing. An agent that cannot recall "how the researcher wants a dashboard
+-- built" is a persona, not a specialist, so there was never a reason to route to
+-- one.
+--
+-- agent_slug attributes a standing preference to the specialist that should
+-- apply it: frontend-designer-builder remembers layout decisions, writing-partner
+-- remembers prose decisions, librarian remembers what matters in the library.
+-- NULL/'' means it applies to every agent (a project-wide rule).
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS user_decisions (
+    decision_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category    TEXT DEFAULT '',
+    decision    TEXT NOT NULL,
+    context     TEXT DEFAULT '',
+    scope       TEXT DEFAULT 'always',
+    source      TEXT DEFAULT 'user',
+    hits        INTEGER DEFAULT 0,
+    created_at  TEXT NOT NULL,
+    agent_slug  TEXT DEFAULT '',
+    supersedes  INTEGER,
+    last_applied_at TEXT DEFAULT ''
+);

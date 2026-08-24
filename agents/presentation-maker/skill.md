@@ -1,7 +1,7 @@
 ---
 name: Presentation Maker
 description: "slide deck, presentation, PowerPoint, conference talk, briefing deck, one-pager, slide outline, speaker notes, visual summary, stakeholder presentation, narrative structure for slides"
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 effort: normal
 complexity: standard
 ---
