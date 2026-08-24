@@ -28,7 +28,7 @@ import datetime as dt
 from pathlib import Path
 
 from fastapi import APIRouter, Form, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_execute, db_query, db_scalar
@@ -115,6 +115,11 @@ def _chip(p: dict, compact: bool = True) -> str:
         icon = "◔"
         if p.get("remind_at"):
             label = f"{p['remind_at']} {label}"
+    elif kind == "learning":
+        # A scheduled lesson or study block. Text carries "Course — lesson".
+        label = p.get("text") or "study"
+        colour = "var(--m-accent-2, #4a7fa5)"
+        icon = "◈"
     else:
         label = p.get("text") or "focus"
         colour = "var(--m-muted)"
@@ -281,7 +286,7 @@ async def plan_create(
     view: str = Form("month"),
     anchor: str = Form(""),
 ) -> HTMLResponse:
-    kind = kind if kind in ("project", "focus", "reminder") else "focus"
+    kind = kind if kind in ("project", "focus", "reminder", "learning") else "focus"
     if kind == "project" and not project_id:
         kind = "focus"
     if kind != "project" and not text.strip():
@@ -294,6 +299,81 @@ async def plan_create(
          text.strip() or None, remind_at or None),
     )
     return await work_calendar(view=view, date=anchor or start_date)
+
+
+@router.post("/api/plan/learning/schedule", response_class=JSONResponse)
+async def schedule_course(
+    slug: str = Form(...),
+    title: str = Form(""),
+    start_date: str = Form(""),
+    weekdays: str = Form("1"),        # comma-separated, Mon=0 … Sun=6
+    per_slot: int = Form(1),          # lessons per scheduled day
+) -> JSONResponse:
+    """Lay a course's remaining lessons across the Work calendar.
+
+    One day_plan row per study block, kind='learning', so a course plans exactly
+    like a project and shows up beside project work. Idempotent per lesson: a
+    lesson already scheduled and not yet done is left where it is.
+    """
+    from routers.learning import _load_lessons_json  # local import avoids a cycle
+
+    data = _load_lessons_json(slug)
+    lessons = data.get("lessons", []) or []
+    if not lessons:
+        return JSONResponse({"status": "empty",
+                             "message": "That course has no lessons yet."}, status_code=400)
+
+    done_ids = set()
+    try:
+        rows = db_query("SELECT lesson_id FROM lesson_completions WHERE course_slug=?",
+                        (slug,), default=[]) or []
+        done_ids = {r["lesson_id"] for r in rows}
+    except Exception:
+        pass
+
+    already = set()
+    try:
+        rows = db_query("SELECT text FROM day_plan WHERE kind='learning' AND COALESCE(done,0)=0 "
+                        "AND text LIKE ?", (f"%[{slug}]%",), default=[]) or []
+        already = {r["text"] for r in rows}
+    except Exception:
+        pass
+
+    todo = [l for l in lessons if l["id"] not in done_ids]
+    if not todo:
+        return JSONResponse({"status": "complete",
+                             "message": "Every lesson in that course is already done."})
+
+    try:
+        days = sorted({int(x) for x in weekdays.split(",") if x.strip() != ""})
+    except ValueError:
+        days = [1]
+    days = [d for d in days if 0 <= d <= 6] or [1]
+    per_slot = max(1, min(per_slot, 5))
+
+    cursor = _parse(start_date) if start_date else _today()
+    label = title or slug.replace("-", " ").title()
+    written = 0
+    for i in range(0, len(todo), per_slot):
+        # advance to the next allowed weekday
+        guard = 0
+        while cursor.weekday() not in days and guard < 14:
+            cursor += dt.timedelta(days=1)
+            guard += 1
+        chunk = todo[i:i + per_slot]
+        text = f"{label} — " + "; ".join(l["title"][:48] for l in chunk) + f" [{slug}]"
+        if text not in already:
+            db_execute(
+                "INSERT INTO day_plan (start_date,end_date,kind,project_id,text,updated_at) "
+                "VALUES (?,NULL,'learning',NULL,?,datetime('now'))",
+                (cursor.isoformat(), text),
+            )
+            written += 1
+        cursor += dt.timedelta(days=1)
+
+    return JSONResponse({"status": "ok", "scheduled": written,
+                         "lessons": len(todo), "from": start_date or str(_today()),
+                         "message": f"Scheduled {written} study block(s) for {label}."})
 
 
 @router.post("/api/plan/{plan_id}/move", response_class=HTMLResponse)

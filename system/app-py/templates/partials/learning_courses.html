@@ -77,20 +77,24 @@
 
   <!-- Action buttons -->
   <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
-    {% if c.course_url %}
-    {# Course has an external URL — make that the primary, opens a new tab reliably #}
+    {# ONE launch button. `launch_url` is validated server-side by
+       learning.py::_launch_target, so this can never open a repository, a
+       filesystem path, or anything that is not the course itself. #}
     <button class="btn btn--primary btn--caps"
-            onclick="openCourseExternal('{{ c.course_url|e }}','{{ c.title|e }}')"
-            title="Open the course in a new browser tab">Open</button>
-    {% if c.slug %}
-    <button class="btn btn--ghost btn--caps"
-            onclick="openCourseReader('{{ c.slug }}')"
-            title="Open the in-app reader (lessons + progress)">In-app</button>
+            onclick="openCourseSite('{{ c.launch_url|e }}','{{ c.title|e }}')"
+            title="Open {{ c.title|e }}">
+      {% if (c.progress_pct or 0) > 0 %}Continue{% else %}Start{% endif %}
+    </button>
+    {% if c.next_lesson %}
+    <span style="font-family:var(--m-mono);font-size:10.5px;color:var(--m-muted);
+                 align-self:center;max-width:230px;overflow:hidden;
+                 text-overflow:ellipsis;white-space:nowrap;"
+          title="{{ c.next_lesson|e }}">next: {{ c.next_lesson }}</span>
     {% endif %}
-    {% elif c.slug %}
-    <button class="btn btn--primary btn--caps"
-            onclick="openCourseReader('{{ c.slug }}')"
-            title="Open course reader">Open</button>
+    {% if c.slug and (c.total_modules or 0) > 0 %}
+    <button class="btn btn--ghost btn--caps"
+            onclick="scheduleCourse('{{ c.slug }}','{{ c.title|e }}')"
+            title="Lay this course's remaining lessons across the Work calendar">Schedule</button>
     {% endif %}
     {% if c.project_id %}
     <button class="btn btn--ghost btn--caps"
@@ -143,3 +147,44 @@
 </div>
 {% endfor %}
 {% endif %}
+
+{% if truncated and truncated > 0 %}
+<div class="panel" style="margin-top:10px;">
+  <div class="empty-row" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;">
+    SHOWING {{ courses|length }} OF {{ n_active }} COURSES — {{ truncated }} NOT LISTED
+  </div>
+</div>
+{% endif %}
+
+<script>
+// One launch path for every course. The URL arrives already validated.
+function openCourseSite(url, title) {
+  if (!url) { showToast('No course target set.'); return; }
+  const win = window.open(url, '_blank', 'noopener');
+  if (!win) window.location.href = url;
+}
+
+// Lay a course's remaining lessons across the Work calendar as study blocks.
+function scheduleCourse(slug, title) {
+  const start = prompt(
+    `Schedule "${title}" from which date?  (YYYY-MM-DD, blank = today)`, '');
+  if (start === null) return;
+  const days = prompt(
+    'Which weekdays?  Mon=0 … Sun=6, comma separated.\ne.g. "1,3" for Tuesday and Thursday',
+    '1,3');
+  if (days === null) return;
+  const per = prompt('How many lessons per study block?', '1');
+  if (per === null) return;
+  const body = new URLSearchParams({
+    slug: slug, title: title, start_date: (start || '').trim(),
+    weekdays: (days || '1').trim(), per_slot: (per || '1').trim(),
+  });
+  fetch('/api/plan/learning/schedule', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: body.toString(),
+  }).then(r => r.json()).then(d => {
+    showToast(d.message || 'Scheduled.');
+  }).catch(() => showToast('Could not schedule — is the dashboard up to date?'));
+}
+</script>

@@ -1,0 +1,152 @@
+{# ══════════════════════════════════════════════════════════════════════════════
+   library_hat.html — the HAT Library.
+
+   One surface for the disease the researcher actually works on. Until 2026-08-21 the
+   material was split across three places that did not know about each other:
+
+     · the CATALOGUE   (literature_metadata)  — what he holds
+     · the CORPUS      (pdf_chunks)           — what Metis can read
+     · the QUEUE       (new_publications)     — what he might add
+
+   Each answered a different question and none answered "how complete is my HAT
+   library?". This puts the three side by side and adds the thing none of them
+   had: search across the FULL TEXT of his own papers.
+
+   Deliberately NO completeness score. Any single percentage would be invented —
+   there is no denominator for "all HAT literature that exists". Counts per theme
+   are honest; a score would not be.
+   ══════════════════════════════════════════════════════════════════════════════ #}
+{% from "partials/_section.html" import sec_label %}
+
+<div id="hat-library">
+
+  <div style="margin-bottom:16px;">
+    {{ sec_label("HAT Library", tail="SLEEPING SICKNESS · YOUR OWN CORPUS", style="margin-bottom:6px;") }}
+    <div style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);max-width:70ch;">
+      Everything Metis holds on human African trypanosomiasis — catalogued, indexed,
+      and searchable by what the papers say rather than what they are called.
+    </div>
+  </div>
+
+  <!-- ── The three numbers that matter ─────────────────────────────────── -->
+  <div class="grid grid-3" style="margin-bottom:22px;">
+
+    <div class="panel" style="padding:18px 20px;">
+      <div style="font-family:var(--m-mono);font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);margin-bottom:8px;">
+        In your catalogue
+      </div>
+      <div class="tnum" style="font-family:var(--m-display);font-size:34px;font-weight:500;color:var(--m-ink);line-height:1;">
+        {{ catalogue }}
+      </div>
+      <div class="ed" style="font-size:12.5px;margin:8px 0 0;">
+        References mentioning a trypanosome, tsetse or sleeping sickness.
+      </div>
+    </div>
+
+    <div class="panel" style="padding:18px 20px;">
+      <div style="font-family:var(--m-mono);font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);margin-bottom:8px;">
+        Readable by Metis
+      </div>
+      <div class="tnum" style="font-family:var(--m-display);font-size:34px;font-weight:500;color:var(--m-ink);line-height:1;">
+        {{ indexed_files }}
+      </div>
+      <div class="ed" style="font-size:12.5px;margin:8px 0 0;">
+        PDFs with their full text indexed — {{ '{:,}'.format(indexed_chunks) }} passages.
+        {% if last_built %}<br><span style="font-family:var(--m-mono);font-size:10.5px;color:var(--m-muted);">BUILT {{ last_built }}</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="panel" style="padding:18px 20px;{% if gaps_total %}border-color:var(--m-accent);{% endif %}">
+      <div style="font-family:var(--m-mono);font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);margin-bottom:8px;">
+        Known gaps
+      </div>
+      <div class="tnum" style="font-family:var(--m-display);font-size:34px;font-weight:500;color:{{ 'var(--m-accent)' if gaps_total else 'var(--m-ink)' }};line-height:1;">
+        {{ gaps_total }}
+      </div>
+      <div class="ed" style="font-size:12.5px;margin:8px 0 0;">
+        Papers your own library cites that you do not hold.
+        {% if pending %}<br>{{ pending }} awaiting review in total.{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Search the corpus itself ──────────────────────────────────────── -->
+  <div class="panel" style="padding:16px 20px;margin-bottom:22px;">
+    {{ sec_label("Ask your own papers", tail="FULL TEXT · NOT TITLES", style="margin-bottom:10px;") }}
+    <input type="search" id="hat-corpus-q" name="q"
+           placeholder="e.g. sensitivity of CATT in low-prevalence settings, or the role of animal reservoirs…"
+           autocomplete="off"
+           hx-get="/api/partial/library/hat/search"
+           hx-trigger="keyup changed delay:500ms"
+           hx-target="#hat-corpus-results" hx-swap="innerHTML"
+           hx-include="this"
+           style="width:100%;font-family:var(--m-ui);font-size:14px;padding:10px 14px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
+    <div id="hat-corpus-results" style="margin-top:10px;">
+      <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px 0;">
+        This searches inside the {{ indexed_files }} PDFs themselves — the passages, not the titles.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Coverage by theme ─────────────────────────────────────────────── -->
+  <div style="margin-bottom:22px;">
+    {{ sec_label("Coverage by theme", tail="COUNTS · NOT A SCORE", style="margin-bottom:10px;") }}
+    <div class="panel" style="padding:16px 20px;">
+      {% set top = themes[0].count if themes and themes[0].count else 1 %}
+      {% for t in themes %}
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:{{ '0' if loop.last else '9px' }};">
+        <div style="flex:0 0 150px;font-family:var(--m-ui);font-size:13px;color:var(--m-ink);">{{ t.label }}</div>
+        <div style="flex:1;height:7px;background:var(--m-surface-2);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:{{ (100 * t.count / top) | round(1) }}%;background:{{ 'var(--m-accent)' if t.count else 'var(--m-rule)' }};"></div>
+        </div>
+        <div class="tnum" style="flex:0 0 44px;text-align:right;font-family:var(--m-mono);font-size:12px;color:{{ 'var(--m-muted)' if t.count else '#b3261e' }};">
+          {{ t.count }}
+        </div>
+      </div>
+      {% endfor %}
+      <div class="ed" style="font-size:12px;margin:14px 0 0;padding-top:12px;border-top:1px solid var(--m-rule-soft);">
+        Bars are relative to your strongest theme, not to the literature as a whole —
+        there is no honest denominator for “all HAT research that exists”, so this
+        shows where <em>your</em> library is thin rather than pretending to score it.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── The gaps ──────────────────────────────────────────────────────── -->
+  {% if gaps %}
+  <div>
+    {{ sec_label("Most cited by your own library, and missing", tail="FROM REFERENCE MINING", style="margin-bottom:10px;") }}
+    <div class="panel" style="overflow:hidden;">
+      {% for g in gaps %}
+      <div style="padding:13px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}display:flex;gap:14px;align-items:flex-start;">
+        <div style="flex:0 0 auto;font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;color:var(--m-accent);padding-top:2px;white-space:nowrap;"
+             title="{{ g.relevance_note }}">
+          {{ g.relevance_note.split(' ')[2] if g.relevance_note and g.relevance_note.split(' ')|length > 2 else '—' }}×
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:var(--m-display);font-size:14.5px;color:var(--m-ink);line-height:1.35;">
+            {{ g.title | striptags }}
+          </div>
+          <div style="font-family:var(--m-mono);font-size:10.5px;letter-spacing:0.06em;color:var(--m-muted);margin-top:3px;">
+            {{ g.journal or '—' }}{% if g.pub_date %} · {{ g.pub_date[:4] }}{% endif %}
+          </div>
+        </div>
+        <div style="flex:0 0 auto;display:flex;gap:6px;">
+          <button type="button" onclick="nlAdd({{ g.id }}, this)"
+                  style="background:var(--m-accent-wash);border:1px solid var(--m-accent);border-radius:var(--m-radius);padding:4px 11px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--m-accent);cursor:pointer;">Add</button>
+          {% if g.doi %}
+          <a href="https://doi.org/{{ g.doi }}" target="_blank" rel="noopener"
+             style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.06em;color:var(--m-muted);text-decoration:none;align-self:center;">DOI</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="ed" style="font-size:12px;margin-top:10px;">
+      The multiplier is how many papers in <em>your</em> library cite it — a relevance
+      signal no keyword search can produce, because it comes from your own corpus.
+      {% if gaps_total > gaps|length %}Showing {{ gaps|length }} of {{ gaps_total }}; the rest are in the HAT tab above.{% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>

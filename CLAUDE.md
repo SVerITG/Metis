@@ -259,6 +259,40 @@ The Metis MCP server (`metis-rc`) is available. Use its tools to:
 
 Changes made via these tools appear immediately in the Metis dashboard.
 
+## Learning surface — checks before claiming a course works
+
+Two tools exist because both properties were silently broken and neither was visible by eye.
+
+```bash
+python3 tools/check_course_launch.py    # every active course's launch button opens the real course
+python3 tools/audit_quiz.py <manifest>  # MCQ manifest: position bias, length tells, duplicates
+```
+
+**`check_course_launch.py`** — asserts each active course's launch URL resolves to 200 *and* that
+the page mentions the course. Launch targets used to come raw from the `course_url` column, so one
+course opened a GitHub repository and another a bare filesystem path that 404'd. Targets are now
+validated server-side in `routers/learning.py::_launch_target`, and the tool restates the rules
+independently so drift between route and check is detectable.
+
+**`audit_quiz.py`** — checks correct-answer position bias, longest-is-correct rate against chance,
+length ratio, option spread and duplicate stems. Written after a first draft put **100% of correct
+answers in slot 1**, and after finding that 56.6% of the multilevel course's 661 questions have the
+correct answer as the uniquely longest option. See procedural memory #12; note in particular that
+**mechanical length rebalancing is forbidden** — it creates a worse tell than it fixes.
+
+**Course manifests:** `lessons.json` declares only lessons that *exist*. Intended outlines live
+under `planned_lessons`. An advertised lesson with no file renders a clickable button that 404s,
+which is worse than an empty course.
+
+**Static course sites** (rendered Quarto) are mounted in `main.py::COURSE_SITES` at
+`/coursesite/<slug>/` — no extra process, no port. Only `mlm-app` keeps its own port, because it is
+an Express *application* rather than a static site.
+
+**Scheduling:** `POST /api/plan/learning/schedule` lays a course's remaining lessons into
+`day_plan` as `kind='learning'`, idempotent per lesson, surfacing in the Work calendar.
+
+---
+
 ## graphify
 
 > ⚠️ **NOT INSTALLED on this machine, and the graph is stale (last built 2026-07-10).**

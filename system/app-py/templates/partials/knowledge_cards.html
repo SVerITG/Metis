@@ -1,7 +1,12 @@
-<div>
+{# The id lives on THIS root element, not on a wrapper in knowledge.html.
+   knowledge.html loads this partial with hx-swap="outerHTML", which REPLACES the
+   element carrying the id — so after the first load #knowledge-cards-area no
+   longer existed and every slipcase click was a no-op that looked like a dead
+   filter. Carrying the id in the partial makes it survive its own swap. #}
+<div id="knowledge-cards-area">
   <h2 class="sec-label" style="margin-bottom:12px;">
     <span>{{ first_domain | replace('-', ' ') | title if first_domain else 'Library' }}</span>
-    <span class="tail">SORT · LAST TOUCHED</span>
+    <span class="tail">{{ total_cards or 0 }} VOLUMES · CLICK TO OPEN</span>
   </h2>
 
   <!-- Slipcase header panel -->
@@ -17,7 +22,7 @@
       {{ first_domain | replace('-', ' ') | title if first_domain else 'Knowledge Archive' }}
     </h3>
     <p class="ed" style="margin:0;font-size:15px;">
-      Your collected notes, highlights, and reference cards.
+      Open-access books and reports held locally. Click any card to read it.
       {% if first_domain %}Showing the <em>{{ first_domain | replace('-', ' ') }}</em> slipcase.{% endif %}
     </p>
   </div>
@@ -26,7 +31,20 @@
   <div class="grid grid-3">
     {% if cards %}
       {% for card in cards %}
-      <div class="panel" style="padding:18px 20px;position:relative;">
+      {# CLICKABLE. These used to be inert <div class="panel"> with no href, no
+         handler and no detail route behind them — the thing the researcher clicked and
+         nothing happened. They are open-access books with a PDF on disk, so the
+         click opens a detail panel with an Open-PDF button (rendered only when
+         the file is genuinely there). #}
+      <div class="panel k-card" tabindex="0" role="button"
+           aria-label="Open {{ (card.title or 'card') | striptags }}"
+           style="padding:18px 20px;position:relative;cursor:pointer;transition:border-color 140ms, transform 140ms;"
+           onmouseover="this.style.borderColor='var(--m-accent)';this.style.transform='translateY(-1px)';"
+           onmouseout="this.style.borderColor='';this.style.transform='';"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"
+           hx-get="/api/partial/knowledge/card/{{ card.id }}"
+           hx-target="#knowledge-cards-area"
+           hx-swap="innerHTML">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
           <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;color:var(--m-muted);">
             {{ card.created_at[:7] if card.created_at else '—' }} · NOTE
@@ -42,9 +60,12 @@
         </div>
         {% if card.summary %}
         <div class="ed" style="font-size:13px;color:var(--m-text);margin:0;">
-          {{ card.summary | replace('> ', '') | truncate(160, True, '…') }}
+          {{ card.summary | striptags | replace('> ', '') | truncate(160, True, '…') }}
         </div>
         {% endif %}
+        <div style="margin-top:10px;font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);">
+          {% if card.status == 'read' %}✓ READ{% elif card.status == 'reading' %}◐ READING{% else %}OPEN ›{% endif %}
+        </div>
       </div>
       {% endfor %}
     {% else %}

@@ -137,10 +137,93 @@ async def course_reader_page(slug: str, request: Request):
 
 @router.get("/api/partial/learning/meta", response_class=HTMLResponse)
 async def learning_meta(request: Request):
-    total = db_scalar("SELECT COUNT(*) FROM learning_courses", default=0) or 0
+    # "Courses" means courses you can open. Ideas are counted separately —
+    # calling an idea a course made the surface claim 12 when 7 were real.
+    total = db_scalar(
+        "SELECT COUNT(*) FROM learning_courses WHERE status IN ('active','in_progress','building')",
+        default=0,
+    ) or 0
+    ideas = db_scalar("SELECT COUNT(*) FROM learning_courses WHERE status='idea'", default=0) or 0
     today = str(datetime.date.today())
     due = db_scalar("SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ?", (today,), default=0) or 0
-    return HTMLResponse(f"{total} COURSES · {due} DUE TODAY")
+    return HTMLResponse(f"{total} COURSES · {ideas} IDEAS · {due} DUE")
+
+
+# ---------------------------------------------------------------------------
+# Launch targets — one button, guaranteed to open the actual course
+# ---------------------------------------------------------------------------
+
+# Courses delivered by their own app rather than by this dashboard.
+# (mlm-app is an Express application, so it cannot be served as static files.)
+_EXTERNAL_APPS: dict[str, str] = {
+    "statistics": "http://127.0.0.1:3000/",
+}
+
+# Courses whose rendered static site is mounted by main.py at /coursesite/<key>.
+_MOUNTED_SITES: dict[str, str] = {
+    "hat-diagnostics": "/coursesite/hat-diagnostics/",
+}
+
+
+def _launch_target(slug: str, course_url: str | None) -> str:
+    """The single URL a course's Open button uses. Never a repo, never a file path.
+
+    Launch targets used to come straight from the `course_url` column, so
+    whatever happened to be stored got opened: one course pointed at a GitHub
+    repository, another at a bare filesystem path ("knowledge/courses/…") that
+    resolved to a 404. A course card's Open button must open the course, so the
+    value is validated here rather than trusted, and the template gets one
+    already-checked URL.
+
+    Order of preference:
+      1. a course delivered by its own app  -> that app
+      2. a rendered site mounted by main.py -> that mount
+      3. a stored course_url that is genuinely a course target
+      4. the in-app markdown reader
+    """
+    if slug in _EXTERNAL_APPS:
+        return _EXTERNAL_APPS[slug]
+    if slug in _MOUNTED_SITES:
+        return _MOUNTED_SITES[slug]
+
+    url = (course_url or "").strip()
+    if url:
+        low = url.lower()
+        # Source repositories and issue trackers are not the course.
+        bad_host = any(h in low for h in (
+            "github.com", "gitlab.com", "bitbucket.org", "docs.google.com",
+            "dropbox.com", "onedrive", "sharepoint",
+        ))
+        # A same-origin path, or an explicitly local server, is acceptable.
+        ok_shape = url.startswith("/") or low.startswith((
+            "http://127.0.0.1", "http://localhost", "https://127.0.0.1", "https://localhost",
+        ))
+        if ok_shape and not bad_host:
+            return url
+        # Anything else — a bare relative path like "knowledge/courses/x/", a
+        # remote host, a file:// URL — is not launched. Fall through.
+
+    return f"/course/{slug}"
+
+
+@router.get("/api/partial/learning/nav-meta", response_class=HTMLResponse)
+async def learning_nav_meta(request: Request):
+    """Tiny badge for the sidebar: how many cards are waiting.
+
+    Every nav item shipped with a hardcoded "—", so the sidebar carried no
+    information at all. This is the Learning one.
+    """
+    today = str(datetime.date.today())
+    due = db_scalar(
+        "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ?", (today,), default=0
+    ) or 0
+    if not due:
+        n = db_scalar(
+            "SELECT COUNT(*) FROM learning_courses "
+            "WHERE status IN ('active','in_progress','building')", default=0
+        ) or 0
+        return HTMLResponse(f"{n} courses" if n else "—")
+    return HTMLResponse(f"{due} due")
 
 
 @router.get("/api/partial/learning/courses-archive", response_class=HTMLResponse)
@@ -149,8 +232,19 @@ async def learning_courses_archive(request: Request):
         "SELECT id, title, category, progress_pct, total_modules, completed_modules, status, slug, "
         "project_id, current_lesson, next_lesson, course_url, lesson_notes "
         "FROM learning_courses WHERE status IN ('active','in_progress','building') "
-        "ORDER BY CASE status WHEN 'building' THEN 0 ELSE 1 END, progress_pct DESC LIMIT 6"
+        "ORDER BY CASE status WHEN 'building' THEN 0 ELSE 1 END, progress_pct DESC, id DESC LIMIT 24"
     ) or []
+    # Was LIMIT 6. With 7 active courses one vanished with no indicator, and
+    # because every course sat at 0% which one vanished was arbitrary. If the
+    # cap is ever hit again, say so rather than truncating silently.
+    n_active = db_scalar(
+        "SELECT COUNT(*) FROM learning_courses WHERE status IN ('active','in_progress','building')",
+        default=0,
+    ) or 0
+    truncated = max(0, n_active - len(courses))
+
+    for _c in courses:
+        _c["launch_url"] = _launch_target(_c.get("slug") or "", _c.get("course_url"))
 
     # Annotate building courses with their pipeline step from course_builds
     for c in courses:
@@ -173,7 +267,7 @@ async def learning_courses_archive(request: Request):
     return templates.TemplateResponse(
         request,
         "partials/learning_courses.html",
-        {"courses": courses},
+        {"courses": courses, "truncated": truncated, "n_active": n_active},
     )
 
 
@@ -189,15 +283,21 @@ async def learning_due_today(request: Request):
         "SELECT sr_id as id, front_text as topic, source_table as course_title, "
         "next_review as next_review_date, interval_days "
         "FROM spaced_repetition WHERE next_review <= ? "
-        "ORDER BY next_review LIMIT 20",
+        "ORDER BY next_review LIMIT 10",
         (today,),
     )
+    # A session, not a pile. 45 undifferentiated cards is not reviewable; ten is.
+    # The remainder is reported, never hidden.
+    total_due = db_scalar(
+        "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ?", (today,), default=0
+    ) or 0
     # Streak: consecutive calendar days with at least one completed review
     streak = _compute_streak()
     return templates.TemplateResponse(
         request,
         "partials/learning_due.html",
-        {"due": due, "today": today, "streak": streak},
+        {"due": due, "today": today, "streak": streak,
+         "total_due": total_due, "remaining": max(0, total_due - len(due or []))},
     )
 
 
@@ -285,6 +385,9 @@ async def learning_courses(request: Request):
         "FROM learning_courses WHERE status = 'active' ORDER BY progress_pct DESC",
         default=[],
     )
+    for _c in (courses or []):
+        _c["launch_url"] = _launch_target(_c.get("slug") or "", _c.get("course_url"))
+
     return templates.TemplateResponse(
         request,
         "partials/learning_courses.html",
@@ -936,12 +1039,25 @@ async def complete_lesson(slug: str, lesson_id: str, request: Request):
             next_lesson = lesson["title"]
             break
 
-    # Completed modules = modules where all lessons are done
-    modules = data.get("modules", [])
-    n_modules_done = sum(
-        1 for m in modules
-        if all(lid in completed_ids for lid in m.get("lessons", []))
-    )
+    # Completed modules = modules where all of that module's lessons are done.
+    #
+    # The previous version read m["lessons"], a key no course-builder emits, so
+    # the generator expression became all([]) — which is True — and EVERY module
+    # counted as complete on the first lesson finished. Where `modules` was
+    # absent it silently reported 0 forever instead. Both were wrong.
+    #
+    # Map modules to lessons from what manifests actually contain: an explicit
+    # lesson list if present, else a shared `section`, else order == module.
+    modules = data.get("modules", []) or []
+    n_modules_done = 0
+    for m in modules:
+        ids = [str(x) for x in (m.get("lessons") or [])]
+        if not ids:
+            ids = [l["id"] for l in lessons if l.get("section") == m.get("section")]
+        if not ids:
+            ids = [l["id"] for l in lessons if l.get("order") == m.get("module")]
+        if ids and all(i in completed_ids for i in ids):
+            n_modules_done += 1
 
     db_execute(
         "UPDATE learning_courses SET completed_modules=?, progress_pct=?, "
@@ -1088,26 +1204,55 @@ def _ensure_lesson_completions_table() -> None:
         pass
 
 
+def _load_qbank(slug: str) -> dict:
+    """Authored spaced-repetition cards for a course, from knowledge/courses/<slug>/qbank.json."""
+    p = _COURSES_DIR / slug / "qbank.json"
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
 def _seed_spaced_rep_card(slug: str, lesson: dict) -> int:
-    """Insert a spaced-rep card for one lesson. Returns 1 if inserted, 0 if already existed."""
+    """Insert spaced-rep card(s) for one lesson. Returns the number inserted.
+
+    Prefers *authored* cards from the course's qbank.json. Falling back to
+    (title, description) produces a table-of-contents entry, not a flashcard —
+    the same "stub teaches nothing" problem _generate_card() was written to
+    avoid for competencies. Authored cards win whenever they exist.
+    """
     lesson_id = lesson.get("id", "")
-    title = lesson.get("title", lesson_id)
     if not lesson_id:
         return 0
     today = str(datetime.date.today())
-    try:
-        existing = db_scalar(
-            "SELECT COUNT(*) FROM spaced_repetition WHERE source_id=? AND source_table=?",
-            (lesson_id, slug), default=0
-        )
-        if existing:
-            return 0
-        db_execute(
-            "INSERT INTO spaced_repetition "
-            "(sr_id, front_text, back_text, source_id, source_table, next_review, interval_days, ease_factor, repetitions, created_at) "
-            "VALUES (?,?,?,?,?,?,1,2.5,0,datetime('now'))",
-            (f"{slug}:{lesson_id}", title, lesson.get("description", ""), lesson_id, slug, today),
-        )
-        return 1
-    except Exception:
-        return 0
+
+    authored = (_load_qbank(slug).get(lesson_id) or {}).get("cards") or []
+    if authored:
+        cards = [
+            (f"{slug}:{lesson_id}:{i}", c.get("front", ""), c.get("back", ""))
+            for i, c in enumerate(authored, start=1)
+            if c.get("front") and c.get("back")
+        ]
+    else:
+        cards = [(f"{slug}:{lesson_id}",
+                  lesson.get("title", lesson_id),
+                  lesson.get("description", ""))]
+
+    inserted = 0
+    for sr_id, front, back in cards:
+        try:
+            if db_scalar("SELECT COUNT(*) FROM spaced_repetition WHERE sr_id=?",
+                         (sr_id,), default=0):
+                continue
+            db_execute(
+                "INSERT INTO spaced_repetition "
+                "(sr_id, front_text, back_text, source_id, source_table, next_review, interval_days, ease_factor, repetitions, created_at) "
+                "VALUES (?,?,?,?,?,?,1,2.5,0,datetime('now'))",
+                (sr_id, front, back, lesson_id, slug, today),
+            )
+            inserted += 1
+        except Exception:
+            continue
+    return inserted

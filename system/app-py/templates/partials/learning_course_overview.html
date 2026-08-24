@@ -16,11 +16,18 @@
   </div>
 
   <!-- Module + lesson list -->
-  {% for module in modules %}
-  {% set module_lessons = lessons | selectattr("module", "equalto", module.title) | list %}
+  {#- Group lessons by their own `section` field. Derived from the lessons
+      themselves (not from `modules`) so no lesson can be silently orphaned:
+      the previous version matched `lesson.module` against `module.title`, a
+      key the course-builder never emits, so every lesson vanished. -#}
+  {% set sections = lessons | map(attribute='section') | list %}
+  {% set ordered_sections = [] %}
+  {% for s in sections %}{% if s not in ordered_sections %}{% set _ = ordered_sections.append(s) %}{% endif %}{% endfor %}
+  {% for section in ordered_sections %}
+  {% set module_lessons = lessons | selectattr("section", "equalto", section) | list %}
   <div style="padding:12px 20px 4px;border-bottom:1px solid var(--m-line);">
     <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:8px;">
-      {{ module.title | upper }}
+      {{ (section or 'LESSONS') | upper }}
     </div>
     {% for lesson in module_lessons %}
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">

@@ -1,0 +1,183 @@
+{# ══════════════════════════════════════════════════════════════════════════════
+   library_new_literature.html — the New Literature block at the top of Library.
+
+   Structure: header → tab strip → window/kind controls → list body.
+
+   The list body lives in its own partial and is the ONLY thing swapped when a
+   tab, window or filter changes. Re-rendering the strip on every click would
+   move the button under the cursor and lose focus — the reason the News surface
+   splits the same way.
+   ══════════════════════════════════════════════════════════════════════════════ #}
+{% from "partials/_section.html" import sec_label %}
+
+<div id="new-literature">
+
+  <!-- ── Header: what this is, and the catch-up control ─────────────────── -->
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:14px;">
+    <div>
+      {{ sec_label("New Literature", tail="WHAT HAS APPEARED SINCE YOU LAST LOOKED", style="margin-bottom:6px;") }}
+      <div style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);max-width:66ch;">
+        Every journal, preprint server and topic search Metis watches — reviewed here,
+        then added to your library one at a time.
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      {% if last_reviewed %}
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);">
+        CAUGHT UP {{ last_reviewed }}
+      </span>
+      {% else %}
+      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);"
+            title="No catch-up recorded yet, so the catch-up window shows everything.">
+        NEVER CAUGHT UP
+      </span>
+      {% endif %}
+      <button type="button" id="nl-catchup-btn"
+              onclick="nlMarkCaughtUp(this)"
+              title="Record that you have reviewed everything up to now. This is what the 'Since I caught up' window measures from — so it is deliberately an explicit action, never automatic."
+              style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);padding:6px 14px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--m-ink);cursor:pointer;">
+        Mark caught up
+      </button>
+      {# The other half of acquisition. Anything behind ITM's OpenAthens login has
+         to be opened in a browser — a background process cannot hold a federated
+         SSO session — so this picks the resulting PDF out of the downloads
+         folder, matches it to the paper, files it and marks it obtained. #}
+      <button type="button" id="nl-pickup-btn"
+              onclick="nlPickup(this)"
+              title="Scan your browser's downloads folder for papers you saved by hand, match them to the queue, and file them. Personal documents are skipped by filename and never opened."
+              style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);padding:6px 14px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--m-ink);cursor:pointer;">
+        File my downloads
+      </button>
+      <button type="button"
+              hx-post="/api/library/scan"
+              hx-swap="none"
+              hx-on::after-request="htmx.trigger('#nl-list','refresh')"
+              title="Search every source now: journal feeds, Zotero, PubMed and OpenAlex."
+              style="background:var(--m-accent-wash);border:1px solid var(--m-accent);border-radius:var(--m-radius);padding:6px 14px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--m-accent);cursor:pointer;">
+        Search all sources
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Tab strip ─────────────────────────────────────────────────────── -->
+  <div class="news-tabs" role="tablist" aria-label="Literature categories">
+    {% for t in tabs %}
+      <button class="news-tab" role="tab" type="button"
+              aria-selected="{{ 'true' if t.key == active else 'false' }}"
+              title="{{ t.blurb }}"
+              hx-get="/api/partial/library/new-literature/list?tab={{ t.key }}&window={{ window }}&kind={{ active_kind }}&show={{ show }}&q={{ q | urlencode }}"
+              hx-target="#nl-list" hx-swap="innerHTML"
+              onclick="nlSetActive(this)">
+        {{ t.label }}{% if counts.get(t.key) %}<span class="nt-count">{{ counts.get(t.key) }}</span>{% endif %}
+      </button>
+    {% endfor %}
+  </div>
+
+  <!-- ── Window + kind controls ────────────────────────────────────────── -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:14px 0 18px;">
+
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <!-- Kind chips: articles and books are different things, reviewed differently -->
+      {% for kkey, kval in kind_groups.items() %}
+        <button type="button"
+                aria-pressed="{{ 'true' if kkey == active_kind else 'false' }}"
+                hx-get="/api/partial/library/new-literature/list?tab={{ active }}&window={{ window }}&kind={{ kkey }}&show={{ show }}&q={{ q | urlencode }}"
+                hx-target="#nl-list" hx-swap="innerHTML"
+                style="background:{{ 'var(--m-accent-wash)' if kkey == active_kind else 'var(--m-surface-2)' }};
+                       border:1px solid {{ 'var(--m-accent)' if kkey == active_kind else 'var(--m-rule-soft)' }};
+                       color:{{ 'var(--m-accent)' if kkey == active_kind else 'var(--m-muted)' }};
+                       border-radius:14px;padding:4px 12px;font-family:var(--m-mono);
+                       font-size:11px;letter-spacing:0.06em;cursor:pointer;">
+          {{ kval[0] }}
+        </button>
+      {% endfor %}
+    </div>
+
+    <div class="news-period" role="group" aria-label="Time window">
+      {% for wkey, wval in windows.items() %}
+        <button class="news-period-btn" type="button"
+                aria-pressed="{{ 'true' if wkey == window else 'false' }}"
+                title="{{ 'Measured from your last catch-up, however long ago that was.' if wkey == 'catchup' else '' }}"
+                hx-get="/api/partial/library/new-literature/list?tab={{ active }}&window={{ wkey }}&kind={{ active_kind }}&show={{ show }}&q={{ q | urlencode }}"
+                hx-target="#nl-list" hx-swap="innerHTML">{{ wval[1] }}</button>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── Search within what's new ──────────────────────────────────────── -->
+  <div style="margin-bottom:14px;">
+    <input type="search" id="nl-search" name="q" value="{{ q }}"
+           placeholder="Search within new literature — title, abstract, author, journal…"
+           autocomplete="off"
+           hx-get="/api/partial/library/new-literature/list?tab={{ active }}&window={{ window }}&kind={{ active_kind }}&show={{ show }}"
+           hx-trigger="keyup changed delay:350ms"
+           hx-target="#nl-list" hx-swap="innerHTML"
+           hx-include="this"
+           style="width:100%;font-family:var(--m-ui);font-size:14px;padding:9px 13px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
+  </div>
+
+  <!-- ── List body ─────────────────────────────────────────────────────── -->
+  <div id="nl-list"
+       hx-get="/api/partial/library/new-literature/list?tab={{ active }}&window={{ window }}&kind={{ active_kind }}&show={{ show }}"
+       hx-trigger="refresh"
+       hx-swap="innerHTML">
+    {% include "partials/library_new_literature_list.html" %}
+  </div>
+</div>
+
+<script>
+// Tab active state is set locally rather than by re-rendering the strip: the
+// server swaps only the list, so without this the clicked tab would stay
+// visually unselected until the next full panel load.
+function nlSetActive(btn) {
+  btn.parentElement.querySelectorAll('.news-tab').forEach(function (b) {
+    b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+  });
+}
+
+async function nlPickup(btn) {
+  const original = btn.textContent;
+  btn.textContent = 'Scanning…';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/library/pickup-downloads', { method: 'POST' });
+    const d = await r.json();
+    btn.textContent = d.ok ? d.message : (d.error || 'Failed');
+    if (d.ok && d.filed > 0) {
+      // Only reload the list when something actually changed — a refresh that
+      // shows the same rows reads as a bug.
+      setTimeout(function () { htmx.trigger('#nl-list', 'refresh'); }, 600);
+    }
+  } catch (e) {
+    btn.textContent = 'Failed';
+  }
+  setTimeout(function () {
+    btn.textContent = original;
+    btn.disabled = false;
+  }, 4000);
+}
+
+async function nlMarkCaughtUp(btn) {
+  const original = btn.textContent;
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/library/new-literature/catchup', { method: 'POST' });
+    const d = await r.json();
+    btn.textContent = d.ok ? 'Caught up ✓' : 'Failed';
+    // Reload the panel so the header timestamp and the catch-up window agree
+    // with what was just written — a stale "never caught up" label beside a
+    // working catch-up filter reads as a bug.
+    if (d.ok) setTimeout(function () {
+      htmx.ajax('GET', '/api/partial/library/new-literature', {
+        target: '#new-literature', swap: 'outerHTML'
+      });
+    }, 700);
+  } catch (e) {
+    btn.textContent = 'Failed';
+    btn.disabled = false;
+    setTimeout(function () { btn.textContent = original; }, 2000);
+  }
+}
+</script>
