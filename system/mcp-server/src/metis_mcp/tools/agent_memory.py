@@ -154,62 +154,16 @@ def touch(decision_ids: list[int]) -> None:
 # ---------------------------------------------------------------------------
 # MCP tools
 # ---------------------------------------------------------------------------
-@app.tool()
-async def record_decision(
-    decision: str,
-    category: str = "process",
-    agent_slug: str = "",
-    context: str = "",
-    supersedes: int = 0,
-) -> list[TextContent]:
-    """Record a standing decision so the right specialist applies it next time.
-
-    This is the mechanism that makes routing to an agent worth doing. Without it,
-    invoking a specialist returns a persona; with it, the specialist arrives
-    already knowing how you want a dashboard built, how prose should read, or what
-    matters in your library.
-
-    Record a decision the moment it is made — the moment you say "always do X" or
-    "never do Y", or choose between two real alternatives and give a reason.
-
-    Args:
-        decision: The rule, imperative and self-contained. "Charts use tabular
-            numerals in any column of digits" — not "we discussed charts".
-        category: One of design, writing, architecture, coding, method, library,
-            process, persona.
-        agent_slug: The specialist that should apply it (e.g.
-            "frontend-designer-builder"). Leave empty for a project-wide rule.
-        context: WHY, and what it was chosen over. The reason is what stops it
-            being re-litigated a year later.
-        supersedes: decision_id this replaces. The old row is kept, not deleted —
-            the history of a reversal is usually the useful part.
-
-    Returns:
-        The stored decision and how many the agent now carries.
-    """
-    if not decision.strip():
-        return [TextContent(type="text", text="decision text is required")]
-    cat = category.strip().lower()
-    if cat not in CATEGORIES:
-        cat = "process"
-    with connect(paths.db) as con:
-        _ensure(con)
-        cur = con.execute(
-            "INSERT INTO user_decisions (category, decision, context, scope, "
-            "source, hits, created_at, agent_slug, supersedes) "
-            "VALUES (?,?,?,'always','user',0,?,?,?)",
-            (cat, decision.strip(), context.strip(), _now(),
-             agent_slug.strip(), supersedes or None))
-        new_id = cur.lastrowid
-    n = len(decisions_for(agent_slug.strip()))
-    who = agent_slug.strip() or "every agent"
-    lines = [f"Recorded decision #{new_id} for **{who}** under `{cat}`.", "",
-             f"> {decision.strip()}"]
-    if supersedes:
-        lines += ["", f"Supersedes #{supersedes} — that row is kept, not deleted."]
-    lines += ["", f"{who} now carries {n} standing decision(s)."]
-    return [TextContent(type="text", text="\n".join(lines))]
-
+# NOTE — there is deliberately NO record_decision here.
+#
+# One was written and it COLLIDED: FastMCP logged "Tool already exists:
+# record_decision" because pipeline.py has registered that name since June,
+# and middleware.py advertises it by name in its standing-procedure prompts.
+# Two registrations of one tool name means one silently wins, which is the
+# decorator-drift hazard in a new costume.
+#
+# So the WRITER stays in pipeline.py (extended there with agent_slug) and this
+# module owns the READERS. One name, one registration.
 
 @app.tool()
 async def show_agent_decisions(agent_slug: str = "", limit: int = 30) -> list[TextContent]:
