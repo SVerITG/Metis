@@ -1327,10 +1327,41 @@ async def run_metis(
     ):
         try:
             from metis_mcp.tools.knowledge_db import search_pdf_knowledge as _rag_search
-            _rag = await _rag_search(request, top_k=4)
+            _rag = await _rag_search(request, top_k=5)
             _rag_text = _rag[0].text if _rag else ""
+
+            # RELEVANCE FLOOR — added 2026-08-21, matching the Claude Code hook.
+            #
+            # A top-k search ALWAYS returns k passages. For a question the corpus
+            # knows nothing about, that means injecting the five least-bad
+            # matches — which does not merely waste tokens, it makes unrelated
+            # papers look like supporting evidence. Measured the same day: a
+            # question about diagnostic algorithms pulled a 1978 general
+            # epidemiology textbook at 0.74 simply because nothing better existed.
+            #
+            # Below the floor the honest output is "your library has nothing on
+            # this", which is real information about a gap rather than a failure.
+            import re as _re
+            _scores = [float(s) for s in _re.findall(r"\(score:\s*([\d.]+)\)", _rag_text)]
+            _kept = [s for s in _scores if s >= 0.62]
             _low = _rag_text.lower()[:80]
-            if _rag_text and "nothing" not in _low and "no chunks" not in _low and "not indexed" not in _low:
+            _usable = (
+                _rag_text and _kept
+                and "nothing" not in _low and "no chunks" not in _low
+                and "not indexed" not in _low
+            )
+            if _rag_text and not _kept:
+                # Say so explicitly. Silence here would let the model imply corpus
+                # support it does not have.
+                context = ((context + "\n\n") if context else "") + (
+                    "GROUNDING — the researcher's own indexed library was searched for "
+                    "this question and returned NOTHING above the relevance threshold. "
+                    "Answer from general knowledge and say plainly that their library "
+                    "has nothing on this; that absence is itself worth knowing, and "
+                    "worth offering to fix. Do not imply the answer is grounded in "
+                    "their literature."
+                )
+            if _usable:
                 # The framing matters as much as the retrieval.
                 #
                 # A bare "grounding from your library" header, next to the standing
@@ -1353,6 +1384,10 @@ async def run_metis(
                     "the indexed corpus is a worse answer, not a safer one.\n"
                     "Make the provenance clear: cite these passages as theirs, and mark anything "
                     "from outside their library as not (yet) indexed — then offer to add it.\n"
+                    f"State what was consulted — '{len(_kept)} passages from the indexed "
+                    f"corpus' — and NEVER claim the whole library was read or checked. This "
+                    "is a top-k similarity search, not a literature review; overstating the "
+                    "provenance makes the grounding worthless.\n"
                     + _web_line() + "\n"
                     + _rag_text[:1400]
                 )

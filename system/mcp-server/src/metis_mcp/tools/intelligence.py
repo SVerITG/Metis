@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS daily_insights (
 )
 """
 
+# The full shape, so a FRESH INSTALL gets the same table an upgraded one has.
+# tools/migrate_new_literature.py adds these columns to an existing database;
+# without them here, a new user's New Literature surface would query columns
+# that do not exist yet and fail on first load — the classic asymmetry where a
+# migration is written and the DDL beside it is forgotten.
 _NEW_PUBLICATIONS_DDL = """
 CREATE TABLE IF NOT EXISTS new_publications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +49,51 @@ CREATE TABLE IF NOT EXISTS new_publications (
     relevance_note TEXT DEFAULT '',
     source_url TEXT DEFAULT '',
     read_at TEXT DEFAULT '',
-    discovered_at TEXT NOT NULL
+    discovered_at TEXT NOT NULL,
+    -- Bibliographic: a catalogue row has to be readable on its own.
+    authors TEXT DEFAULT '',
+    abstract TEXT DEFAULT '',
+    feed_name TEXT DEFAULT '',
+    -- Classification. entry_kind = what it is (article/review/preprint/book/
+    -- report); lane = where it belongs (field | general science).
+    entry_kind TEXT DEFAULT 'article',
+    lane TEXT DEFAULT 'field',
+    relevance REAL DEFAULT 0,
+    -- Normalised publication date. pub_date keeps whatever the source sent;
+    -- pub_iso is the only field safe to compare or sort on.
+    pub_iso TEXT DEFAULT '',
+    pub_precision TEXT DEFAULT '',
+    title_key TEXT DEFAULT '',
+    -- Acquisition state — what the red dot reads.
+    acq_status TEXT DEFAULT '',
+    acq_reason TEXT DEFAULT '',
+    pdf_path TEXT DEFAULT '',
+    -- Lifecycle, split apart: added is not the same as dismissed.
+    added_at TEXT DEFAULT '',
+    dismissed_at TEXT DEFAULT '',
+    zotero_key TEXT DEFAULT ''
+)
+"""
+
+_LIBRARY_REVIEW_STATE_DDL = """
+CREATE TABLE IF NOT EXISTS library_review_state (
+    surface          TEXT PRIMARY KEY,
+    last_reviewed_at TEXT NOT NULL,
+    items_seen       INTEGER DEFAULT 0,
+    updated_at       TEXT NOT NULL
+)
+"""
+
+_LIBRARY_ACQ_LOG_DDL = """
+CREATE TABLE IF NOT EXISTS library_acquisition_log (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    pub_id       INTEGER,
+    doi          TEXT DEFAULT '',
+    method       TEXT DEFAULT '',
+    outcome      TEXT DEFAULT '',
+    detail       TEXT DEFAULT '',
+    bytes        INTEGER DEFAULT 0,
+    attempted_at TEXT NOT NULL
 )
 """
 
@@ -64,6 +113,8 @@ def _ensure_tables(conn):
     conn.execute(_DAILY_INSIGHTS_DDL)
     conn.execute(_NEW_PUBLICATIONS_DDL)
     conn.execute(_USER_TOPICS_DDL)
+    conn.execute(_LIBRARY_REVIEW_STATE_DDL)
+    conn.execute(_LIBRARY_ACQ_LOG_DDL)
 
 
 @app.tool()

@@ -36,10 +36,10 @@
   <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
     <rect x="2" y="4" width="12" height="9"/><line x1="2" y1="7" x2="14" y2="7"/>
   </svg>
-  <span>SPACED REPETITION · {{ due | length }} CARD{% if due|length != 1 %}S{% endif %} DUE{% if streak %} · {{ streak }}-DAY STREAK{% endif %}</span>
+  <span>SPACED REPETITION · {{ due | length }} CARD{% if due|length != 1 %}S{% endif %} THIS SESSION{% if remaining and remaining > 0 %} OF {{ total_due }}{% endif %}{% if streak %} · {{ streak }}-DAY STREAK{% endif %}</span>
 </div>
 <h2 style="font-family:var(--m-display);font-size:24px;font-weight:500;letter-spacing:-0.015em;margin:10px 0 14px;color:var(--m-ink);">
-  {{ due | length }} review{% if due|length != 1 %}s{% endif %} for today
+  {{ due | length }} review{% if due|length != 1 %}s{% endif %} for today{% if remaining and remaining > 0 %}<span style="font-family:var(--m-mono);font-size:12px;color:var(--m-muted);letter-spacing:0.04em;"> — {{ remaining }} more waiting; finish these and reload for the next {{ due|length }}</span>{% endif %}
 </h2>
 <div id="sr-due-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px;max-height:280px;overflow-y:auto;">
   {% for item in due %}

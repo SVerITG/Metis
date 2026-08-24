@@ -1,0 +1,145 @@
+{# ══════════════════════════════════════════════════════════════════════════════
+   library_new_literature_row.html — ONE reviewable publication.
+
+   Its own partial because it is rendered from two places: inside the list, and
+   on its own after "Add to library" so the row can report what actually
+   happened. Duplicating the markup would guarantee the two drift, and the place
+   they would drift is the acquisition indicator — the one element whose whole
+   purpose is to be trustworthy.
+
+   THE ACQUISITION INDICATOR
+     Never colour alone. Every state carries a word AND a title attribute, because
+     a dot that only means something to someone who can distinguish red from grey
+     fails silently for everyone else.
+
+       (nothing)   never attempted
+       ● PDF       obtained and filed
+       ● NO PDF    attempted and failed — reason on hover, resolver link beside it
+       ◐ TRYING    in progress
+   ══════════════════════════════════════════════════════════════════════════════ #}
+{% set eff_date = item.pub_iso or (item.discovered_at or '')[:10] %}
+
+<div id="nl-row-{{ item.id }}"
+     style="padding:16px 20px;border-bottom:1px solid var(--m-rule-soft);{% if item.dismissed_at %}opacity:0.34;{% endif %}">
+
+  <!-- Line 1: acquisition state, provenance, kind, date, closeness -->
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:7px;">
+
+    {% if item.acq_status == 'ok' %}
+      <span title="PDF obtained and filed{% if item.pdf_path %} — {{ item.pdf_path }}{% endif %}"
+            style="display:inline-flex;align-items:center;gap:4px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.08em;color:#2e7d4f;">
+        <span style="width:7px;height:7px;border-radius:50%;background:#2e7d4f;display:inline-block;"></span>PDF
+      </span>
+    {% elif item.acq_status == 'failed' %}
+      <span title="Could not obtain the PDF — {{ item.acq_reason or 'reason not recorded' }}"
+            style="display:inline-flex;align-items:center;gap:4px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.08em;color:#b3261e;">
+        <span style="width:7px;height:7px;border-radius:50%;background:#b3261e;display:inline-block;"></span>NO PDF
+      </span>
+    {% elif item.acq_status == 'pending' %}
+      <span title="Acquisition in progress"
+            style="display:inline-flex;align-items:center;gap:4px;font-family:var(--m-mono);font-size:10px;letter-spacing:0.08em;color:#b26a00;">
+        ◐ TRYING
+      </span>
+    {% endif %}
+
+    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);">
+      {{ item.journal or item.feed_name or '—' }}
+    </span>
+
+    <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:1px 7px;border-radius:2px;background:var(--m-surface-2);color:var(--m-muted);">
+      {{ item.entry_kind or 'article' }}
+    </span>
+
+    {% if eff_date %}
+    <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"
+          title="{% if item.pub_iso %}Publication date{{ ' (month precision — the source gave no day)' if item.pub_precision == 'month' }}{{ ' (year only)' if item.pub_precision == 'year' }}{% else %}Date Metis discovered it — the source gave no publication date{% endif %}">
+      {% if item.pub_precision == 'year' %}{{ eff_date[:4] }}
+      {% elif item.pub_precision == 'month' %}{{ eff_date[:7] }}
+      {% else %}{{ eff_date }}{% endif %}
+    </span>
+    {% endif %}
+
+    {% if item.relevance and item.relevance > 0 %}
+    <span title="Closeness to your own corpus, 0–1. Computed locally against your library — not a citation count or an impact score."
+          style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);margin-left:auto;">
+      {{ '%.2f' | format(item.relevance) }}
+    </span>
+    {% endif %}
+  </div>
+
+  <!-- Title -->
+  <div style="font-family:var(--m-display);font-size:16px;font-weight:500;line-height:1.35;color:var(--m-ink);margin-bottom:5px;">
+    {% if item.source_url %}
+      <a href="{{ item.source_url }}" target="_blank" rel="noopener"
+         style="color:inherit;text-decoration:none;border-bottom:1px solid var(--m-rule);">{{ item.title | striptags }}</a>
+    {% else %}
+      {{ item.title | striptags }}
+    {% endif %}
+  </div>
+
+  <!-- Authors -->
+  {% if item.authors %}
+  <div style="font-family:var(--m-ui);font-size:12.5px;color:var(--m-text);margin-bottom:7px;">
+    {{ item.authors | truncate(150, True, '…') }}
+  </div>
+  {% endif %}
+
+  <!-- Abstract: one click away, not one page away. Collapsed so thirty of them
+       are still a list rather than an essay. -->
+  {% if item.abstract %}
+  <details style="margin:6px 0 9px;">
+    <summary style="cursor:pointer;list-style:none;font-family:var(--m-mono);font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-accent);">
+      Abstract ▾
+    </summary>
+    <div class="ed" style="font-size:13px;line-height:1.6;margin:8px 0 0;padding-left:12px;border-left:2px solid var(--m-rule-soft);color:var(--m-text);">
+      {{ item.abstract | striptags | truncate(1800, True, '…') }}
+    </div>
+  </details>
+  {% else %}
+  <div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:var(--m-muted);margin:4px 0 8px;"
+       title="This source's feed carried no abstract. Some feeds ship titles only.">
+    NO ABSTRACT FROM SOURCE
+  </div>
+  {% endif %}
+
+  <!-- Actions -->
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    {% if item.added_at %}
+      <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.1em;color:#2e7d4f;">
+        ✓ IN LIBRARY{{ ' · ZOTERO' if item.zotero_key }}
+      </span>
+    {% elif item.dismissed_at %}
+      <button type="button" onclick="nlRestore({{ item.id }})"
+              style="background:transparent;border:1px solid var(--m-rule-soft);border-radius:var(--m-radius);padding:5px 13px;font-family:var(--m-mono);font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);cursor:pointer;">
+        Undo dismiss
+      </button>
+    {% else %}
+      <button type="button" onclick="nlAdd({{ item.id }}, this)"
+              title="Fetch the PDF if it can legally be obtained, catalogue the item, and push it to Zotero."
+              style="background:var(--m-accent-wash);border:1px solid var(--m-accent);border-radius:var(--m-radius);padding:5px 13px;font-family:var(--m-mono);font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--m-accent);cursor:pointer;">
+        Add to library
+      </button>
+      <button type="button" onclick="nlDismiss({{ item.id }}, this)"
+              title="Not interested. Hidden from the unread view; reversible."
+              style="background:transparent;border:1px solid var(--m-rule-soft);border-radius:var(--m-radius);padding:5px 13px;font-family:var(--m-mono);font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);cursor:pointer;">
+        Not interested
+      </button>
+    {% endif %}
+
+    {% if item.doi %}
+    <a href="https://doi.org/{{ item.doi }}" target="_blank" rel="noopener"
+       style="font-family:var(--m-mono);font-size:10.5px;letter-spacing:0.08em;color:var(--m-muted);text-decoration:none;border-bottom:1px solid var(--m-rule-soft);">DOI</a>
+    {% endif %}
+
+    {% if item.acq_status == 'failed' %}
+    <a href="/api/library/resolve/{{ item.id }}" target="_blank" rel="noopener"
+       title="Opens through your institutional resolver in your own browser, where your session already exists. Save the PDF into your library folder and Metis files it."
+       style="font-family:var(--m-mono);font-size:10.5px;letter-spacing:0.08em;color:#b3261e;text-decoration:none;border-bottom:1px solid #b3261e;">GET VIA INSTITUTION</a>
+    {% endif %}
+
+    {% if item.pdf_path %}
+    <a href="/api/library/pdf/new/{{ item.id }}" target="_blank" rel="noopener"
+       style="font-family:var(--m-mono);font-size:10.5px;letter-spacing:0.08em;color:#2e7d4f;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);">OPEN PDF</a>
+    {% endif %}
+  </div>
+</div>

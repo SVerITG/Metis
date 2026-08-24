@@ -52,7 +52,37 @@ GUARDED_TABLES = [
     "semantic_memory", "procedural_memory", "session_summaries", "reflexion_log",
     "agent_runs", "user_decisions", "agent_routing_rules", "personal_notes",
     "literature_metadata", "pdf_chunks", "knowledge_databases",
+
+    # ── Library tables, added 2026-08-21 ───────────────────────────────────
+    # `literature_metadata` was guarded and everything else about the library
+    # was not, so an update could have emptied the reading list, the book shelf,
+    # the full-text index or the PDF-path index and still reported success. The
+    # verification step compares row counts, so an unlisted table is simply not
+    # checked — silence, not a warning.
+    #
+    # These hold work that cannot be recreated by re-scanning:
+    #   new_publications        — every reviewed/dismissed decision, and the
+    #                             acquisition state behind each red dot
+    #   library_review_state    — the catch-up marker; losing it silently widens
+    #                             the catch-up window to "everything"
+    #   library_acquisition_log — why a PDF could not be obtained
+    #   library_cards           — the book shelf, with read status
+    #   library_fulltext(+_chunks) — extracted PDF text and its embeddings, which
+    #                             cost real time to rebuild
+    #   library_inventory / library_seeded / library_item_status / zotero_sync_state
+    "new_publications", "library_review_state", "library_acquisition_log",
+    "library_cards", "library_fulltext", "library_fulltext_chunks",
+    "library_inventory", "library_seeded", "library_item_status",
+    "zotero_sync_state",
 ]
+
+# The PDFs themselves live OUTSIDE the repository — under the researcher's own
+# library_path (an OneDrive folder here) — so no git operation during an update
+# can touch them, which is the right arrangement and worth stating rather than
+# leaving as an accident. Metis therefore never backs them up either: that is
+# OneDrive's job, and duplicating gigabytes of PDFs into the repo would be worse
+# than the risk it removes. What Metis DOES own is the mapping from a catalogue
+# row to a path, and those tables are now guarded above.
 
 
 def _venv_python() -> str:

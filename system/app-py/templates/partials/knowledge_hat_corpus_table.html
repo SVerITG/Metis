@@ -134,4 +134,27 @@
   </div>
   {% endif %}
 
+  {# Pagination. Added with the route's page limit: this table returned 200 rows
+     in a single 623 KB response, which is the same defect the sibling
+     `library-table` had already been fixed for. A catalogue is read from the
+     top — WorldCat, a Koha OPAC and JSTOR all page at 20–50 with a count and a
+     next link — and 200 rows is the "long list of items" a reader gives up on. #}
+  {% if total_pages is defined and total_pages > 1 %}
+  <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 0;border-top:1px solid var(--m-rule-soft);">
+    {% if page > 1 %}
+    <button type="button" class="news-period-btn"
+            hx-get="/api/partial/knowledge/hat-corpus-table?page={{ page - 1 }}&q={{ q | urlencode }}&collection={{ collection | default('') | urlencode }}&sort={{ sort | default('title') | urlencode }}"
+            hx-target="#hat-table-area" hx-swap="outerHTML">← Previous</button>
+    {% endif %}
+    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);">
+      {{ page }} / {{ total_pages }} · {{ total }} PAPERS
+    </span>
+    {% if page < total_pages %}
+    <button type="button" class="news-period-btn"
+            hx-get="/api/partial/knowledge/hat-corpus-table?page={{ page + 1 }}&q={{ q | urlencode }}&collection={{ collection | default('') | urlencode }}&sort={{ sort | default('title') | urlencode }}"
+            hx-target="#hat-table-area" hx-swap="outerHTML">Next →</button>
+    {% endif %}
+  </div>
+  {% endif %}
+
 </div><!-- /#hat-table-area -->

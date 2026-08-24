@@ -1,0 +1,483 @@
+{
+  "_note": "Authored spaced-repetition cards. One entry per lesson_id; each `cards` item becomes one card. Preferred over the auto-seeder's title/description stub.",
+  "lesson-01": {
+    "cards": [
+      {
+        "front": "What are the six shapes every AI application in public health reduces to?",
+        "back": "Detect the unusual (anomaly detection) · Predict what happens next (forecasting) · Assign a label (classification, from tables or pixels) · Find structure without labels (clustering) · Turn language into data (NLP/LLMs) · Choose an action (decision support, optimisation). Plus two cross-cutting layers: evaluation, and deployment/governance."
+      },
+      {
+        "front": "A paper proposes a new ML method but never reports the classical comparator. What should your prior be, and why is that not cynicism?",
+        "back": "Assume the classical method won. It is a base rate, not cynicism: reporting a favourable comparison is free, so its absence is selective. The documented example is tabular deep learning, which reliably loses to gradient boosting on structured data."
+      },
+      {
+        "front": "Why did Google Flu Trends fail, expressed in terms of problem shapes?",
+        "back": "It was evaluated as shape 2 (does it track ILI?) but sold as shape 1 (does it warn you early?). Those require different evidence. A claim evaluated as one shape and marketed as another is the most common failure mode in the field."
+      },
+      {
+        "front": "Is 'shape' a property of the method or of the question?",
+        "back": "Of the question. The same gradient-boosted tree is shape 1 when scoring how surprising today's count is, shape 2 when predicting next month's, and shape 3 when labelling an X-ray. People argue about algorithms because algorithms have names, but the question determines what evidence you need."
+      }
+    ]
+  },
+  "lesson-02": {
+    "cards": [
+      {
+        "front": "An anomaly detector has two parts. Which one carries the scientific content, and what does the other one carry?",
+        "back": "A model of 'expected' and a threshold rule. The baseline model is the entire scientific content; the threshold is a policy decision about how many false alarms someone will tolerate. Most published effort goes into the detector, while most real-world failure comes from the baseline."
+      },
+      {
+        "front": "Name the six components that must be in a baseline model for routine weekly surveillance counts.",
+        "back": "Secular trend, seasonality, day-of-week and holiday effects, overdispersion (counts are almost never Poisson), past outbreaks in the reference window (must be downweighted or they mask the current one), and reporting delay (uncorrected, it makes every series look like it is declining now)."
+      },
+      {
+        "front": "What is the Farrington/Noufaily algorithm, mechanically?",
+        "back": "An overdispersed (quasi-Poisson) GLM fitted to counts from the same seasonal window in previous years, with a linear trend and reweighting of historical outliers, producing a one-sided prediction interval. An observation above the upper threshold raises an alarm. It is a regression model with a prediction interval — and it is the benchmark any ML detector must beat."
+      },
+      {
+        "front": "Where does machine learning genuinely beat the classical aberration-detection stack?",
+        "back": "Three places: (1) many signals at once — Farrington is univariate, so multivariate methods can flag a pattern unremarkable in every individual series; (2) signals with no natural baseline, such as text, images or mobility traces; (3) learned normality in high dimensions, e.g. autoencoder reconstruction error. It does NOT win on a single count series with good history."
+      },
+      {
+        "front": "Why must you never compare two detection methods at different false-alarm rates?",
+        "back": "Any detector looks earlier if it is allowed to alarm more often, so timeliness comparisons at unmatched false-alarm rates are meaningless. Fix the false-alarm rate first — e.g. by tuning alpha — then compare timeliness. Most papers claiming earlier detection skip this."
+      },
+      {
+        "front": "An alarm fires on a district's malaria counts. What is the first question, and why is it not a statistical one?",
+        "back": "Did the denominator or the data pipeline change? The algorithm has already told you the count exceeded expectation; it cannot tell you why. New clinics, changed case definitions, a lab switching assay, a clerk clearing a backlog, or altered referral patterns all produce highly significant, purely administrative anomalies — and in routine practice they outnumber real outbreaks."
+      },
+      {
+        "front": "Why is 'earlier detection' not automatically valuable, and what is the standing example?",
+        "back": "Earlier is only better if something can be done earlier. Syndromic surveillance genuinely is earlier than laboratory confirmation, and mostly did not change what anyone did, because response still required confirmation. Add alarm fatigue: once an alarm's PPV falls low enough, investigators stop investigating and system sensitivity goes to zero regardless of the algorithm."
+      }
+    ]
+  },
+  "lesson-09": {
+    "cards": [
+      {
+        "front": "Discrimination and calibration: what does each measure, and which one does a threshold decision require?",
+        "back": "Discrimination (AUC) measures whether the model ranks people correctly. Calibration measures whether a predicted 0.7 corresponds to a 70% observed rate. A threshold decision requires calibration: a perfectly discriminating, badly calibrated model tells you who is at higher risk but not whether anyone is at enough risk to act."
+      },
+      {
+        "front": "Why is AUC blind to predicted probabilities being inflated threefold?",
+        "back": "AUC is the Mann-Whitney U statistic — it depends only on the ordering of predictions, never their values. Multiplying every predicted probability by three leaves ranks unchanged, so AUC is identical, while calibration, PPV at a fixed threshold and alert burden are all destroyed."
+      },
+      {
+        "front": "A model has 80% sensitivity and 90% specificity. What is its PPV at 10% prevalence, and at 0.1%?",
+        "back": "47.1% at 10% prevalence; 0.79% at 0.1%. Nothing about the model changed — only the setting. Worse, the alert rate barely moves (17.0% to 10.1%), converging on the false-positive rate: the model keeps firing at the same volume while becoming almost entirely wrong."
+      },
+      {
+        "front": "To reach a PPV of 30% at 0.1% prevalence with 80% sensitivity, what specificity is needed?",
+        "back": "99.81% — a false-positive rate of about 1 in 535. Almost nothing in medicine achieves this, which is why WHO's chest X-ray CAD endorsement is worded as screening/triage with a threshold configured per setting from local prevalence. A single fixed 'recommended threshold' is a red flag on any product."
+      },
+      {
+        "front": "What does internal cross-validation actually measure, and which case illustrates the consequence?",
+        "back": "How the model performs on data like the data it was built from — nothing more. It corrects optimism, not generalisability. The Epic Sepsis Model reached that step and was sold as though impact-evaluated; external validation across a large health system found discrimination around 0.63 against vendor claims in the high 0.70s-low 0.80s, with poor calibration and alerts on a large share of admissions."
+      },
+      {
+        "front": "List the recurring forms of leakage in health prediction models.",
+        "back": "Post-outcome predictors (antibiotic orders 'predicting' sepsis); patient overlap across folds; temporal leakage from random splits on time series; preprocessing (imputation, scaling, feature selection) fitted before splitting; confounded acquisition (portable X-rays taken of sicker patients; surgical rulers in melanoma photographs). Heuristic: if performance beats a clinician's, suspect leakage before genius."
+      },
+      {
+        "front": "Why does scoring a point forecast with MAE or RMSE reward over-confidence?",
+        "back": "Because there is no penalty for a too-narrow interval. Forecasts are distributions and must be scored as such using proper scoring rules — log score, CRPS, or WIS for quantile forecasts — which cannot be gamed: the best expected score comes from reporting your honest belief. Also check interval coverage, and always against a seasonal-naive baseline."
+      },
+      {
+        "front": "What are the 'six shapes, six debts'?",
+        "back": "Each shape owes a specific evaluation. Shape 1: false-alarm rate and timeliness at a matched threshold. Shape 2: a proper scoring rule and a naive baseline. Shape 3: calibration and PPV at the deployment prevalence. Shape 4: replication in a second dataset. Shape 5: a definition of correct. Shape 6: an account of how it was evaluated without being deployed."
+      },
+      {
+        "front": "Why is aggregate accuracy an inadequate report of performance?",
+        "back": "It is a weighted average that hides who the model fails. Performance must be reported by subgroup. Dermatology models trained overwhelmingly on Fitzpatrick I-III skin are the standing example — and the deeper problem is that performance on darker skin is often not measured at all, so the failure is invisible rather than merely known."
+      }
+    ]
+  },
+  "lesson-07": {
+    "cards": [
+      {
+        "front": "In shape 5 (language into data), which of the six extraction failure modes are really case-definition problems rather than NLP problems?",
+        "back": "Four of six: negation, hedging, temporality and experiencer. Each is a decision about what counts as a case, not an engineering problem. Abbreviation collision and multilingual/code-switched text are genuine NLP problems. The epidemiologist's main contribution is writing the definition down before anyone builds anything."
+      },
+      {
+        "front": "Why does 'No improvement on TB therapy after 8 weeks' defeat a negation-aware extractor?",
+        "back": "The negation has scope, and here it falls on 'improvement' — the patient plainly has tuberculosis. No trigger-list tuning fixes this; it needs scope resolution, and scope requires the case definition to state what is being negated."
+      },
+      {
+        "front": "Why might a rule-based extractor be preferred over an LLM for a statutory notification pipeline?",
+        "back": "It is auditable — you can point at the line that produced a decision — and stable, returning the same output next month. Neither holds for a generative model. For anything feeding official statistics those properties can outweigh a few points of F1."
+      },
+      {
+        "front": "A RAG system answers incorrectly. What must be checked before blaming the model, and how is each part scored?",
+        "back": "Whether retrieval surfaced the relevant passage at all — if not, generation never had a chance and no prompt engineering fixes it. Score retrieval with recall@k and generation with groundedness against the retrieved text. Testing answers without separately testing retrieval is the most common evaluation error in this shape."
+      },
+      {
+        "front": "What is the ambient-documentation evidence actually strong on, and what is the trap?",
+        "back": "Strong on clinician documentation burden and burnout — real endpoints that drive workforce attrition. Weak on note accuracy and downstream consequences. The trap: a system can improve satisfaction while degrading record quality, because the clinicians best placed to notice are the ones relieved of checking, and the note feeds the next decision, the billing code, the audit trail and the research dataset."
+      },
+      {
+        "front": "State the AMIE result honestly, including the comparator's constraint.",
+        "back": "In synchronous text-based consultation with trained actors as patients, an LLM matched or exceeded primary-care physicians on diagnostic accuracy and several communication measures — where the physicians were also confined to text chat, without examination, gestalt or continuity. A real finding about telehealth-like settings; not 'AI is a better doctor'."
+      },
+      {
+        "front": "What is the characteristic safety failure of triage chatbots, and how must performance be reported?",
+        "back": "Under-triage of serious presentations — the failure direction that matters. Triage is an ordered-outcome classification, so it owes a full confusion matrix by acuity level. Under- and over-triage carry entirely different costs and must never be collapsed into a single accuracy figure."
+      },
+      {
+        "front": "Why should ROUGE/BLEU scores and LLM-as-judge results not reassure you about generated clinical text?",
+        "back": "Overlap metrics measure similarity to a reference, not correctness — a clinically dangerous omission barely moves them, and omission is far harder to notice than fabrication. LLM-as-judge inherits the grader's blind spots. Both are evidence; neither is measurement."
+      }
+    ]
+  },
+  "lesson-22": {
+    "cards": [
+      {
+        "front": "AMIE has a randomised blinded trial and no deployment; ambient scribes have enormous deployment and thin accuracy evidence. Why the inversion?",
+        "back": "Regulatory class is set by the product's claim, not by what it can break. Writing a note is 'documentation' — generally not a medical device, no clinical validation required. Producing a differential is 'diagnosis' — high-risk under the EU AI Act and MDR, or FDA SaMD. So the product with less oversight is the one in the room with patients."
+      },
+      {
+        "front": "Which error in an ambient scribe pipeline is hardest to detect, and why?",
+        "back": "Omission. The summarisation step's job is to discard the large majority of what was said, so a note missing the one sentence that mattered looks entirely normal — there is nothing anomalous to notice. Fabrication is detectable; omission is invisible, and omission rates are almost never reported because measuring them is expensive and unflattering."
+      },
+      {
+        "front": "Why is 'the clinician reviews and signs' a weak safety control for ambient documentation?",
+        "back": "Because the product's value proposition is precisely not having to read and type. When the human-in-the-loop step is the thing being sold away, the control is decorative — and automation bias makes fluent, confident output more likely to be signed unread."
+      },
+      {
+        "front": "State the AMIE result with its comparator constraint, and say what the constraint does to the conclusion.",
+        "back": "In synchronous text consultation with validated patient actors, AMIE matched or exceeded 20 primary-care physicians on most rated axes including diagnostic accuracy — where the physicians were also confined to text chat, with no examination, gestalt or continuity. That makes the comparison fairer (no medium advantage) and simultaneously narrower (bounded to text-based consultation). Both are true; say both."
+      },
+      {
+        "front": "What is the least mystical explanation for AMIE matching physicians on empathy ratings?",
+        "back": "Unlimited patience, no time pressure, no previous patient, no fatigue and no memory of the last difficult consultation are structural advantages in a rated conversation. This does not invalidate the finding — it suggests the comparison is partly about working conditions rather than capability."
+      },
+      {
+        "front": "Where is ambient documentation's value properly quantified, and what is its unmeasured liability?",
+        "back": "Value in clinician-hours returned: one to two minutes across twenty encounters a day is 20-40 minutes daily, and the after-hours reduction matters most because that is where attrition is generated. Liability: silent record degradation. Every note feeds the next clinical decision, the billing code, the medico-legal record and the research dataset."
+      },
+      {
+        "front": "What is the epidemiologist's specific stake in ambient documentation?",
+        "back": "Differential misclassification. If omission rates are worse for accented speech, interpreted consultations or interrupted encounters, the error is non-random with respect to population — so every study built on those records inherits it. A bias arriving through the records rather than the analysis."
+      },
+      {
+        "front": "AMIE was trained by self-play (model as doctor, model as patient, model as critic). What is the central hazard, and what offsets it?",
+        "back": "Being graded by a model on scenarios written by a model can amplify a shared blind spot rather than correct it. What offsets it is the external randomised evaluation against real physicians — which is why that trial carries all the evidential weight, and why running one was to the authors' credit."
+      },
+      {
+        "front": "What would change the assessment of AMIE from 'proof of capability' to 'evidence of benefit'?",
+        "back": "An evaluation with real patients, in the target setting, with a health-worker-in-the-loop design and patient outcomes as the endpoint. Its transformative potential is access — populations with no physician at all — which is precisely where the existing evidence (English, text, actors, versus PCPs) speaks least."
+      }
+    ]
+  },
+  "lesson-05": {
+    "cards": [
+      {
+        "front": "State the signature failure of medical imaging AI in one sentence, with its mechanism.",
+        "back": "Confounded acquisition: a medical image records a clinical encounter, not just a patient, and the encounter carries information about the diagnosis. Whoever took the image had already formed a suspicion, which shaped the equipment, the positioning and what else was in the frame — so if any of that correlates with the label, the model learns it instead of the pathology."
+      },
+      {
+        "front": "Name five documented imaging confounds and what put each in the frame.",
+        "back": "Surgical skin markings (the clinician marked the lesion they meant to excise); rulers (a scale placed beside the worrying lesion); portable vs fixed X-ray (portable machines go to patients too sick to move); chest drains (present because the pneumothorax was already diagnosed and treated); site artefacts (scanner signature identifies a referral centre, which predicts prevalence)."
+      },
+      {
+        "front": "Why can internal cross-validation never detect confounded acquisition?",
+        "back": "Because the confound is present and predictive in every fold, so cross-validation confirms it rather than exposing it. Overfitting is a variance problem that internal validation is designed to catch; this is a validity problem — the signal is real inside the archive and absent in deployment."
+      },
+      {
+        "front": "What is the practical bedside test for a confound in an imaging dataset?",
+        "back": "Ask what a radiologist shown only the non-anatomical parts of the image could guess about the diagnosis. If the answer is 'quite a lot', there is a confound, and the model will prefer it because it is easier to learn than the pathology."
+      },
+      {
+        "front": "Why is unmeasured subgroup performance worse than known-poor subgroup performance?",
+        "back": "A known limitation can be designed around — a different threshold, different referral, a warning to the user. An unmeasured one is simply distributed as harm. Dermatology is the standing case: skin type was often not recorded in evaluation sets, so the gap could not be stated until purpose-built diverse test sets were constructed."
+      },
+      {
+        "front": "List the features that predict an imaging model will generalise.",
+        "back": "Standardised acquisition; a label from a reference independent of the clinician being replaced; multi-site training AND multi-site external validation; a training population resembling the deployment population; a continuous score with a locally tunable threshold; and a confirmatory step downstream to absorb errors. The opposite column predicts failure — and both TB CAD and dermatology AI matched specialists on a benchmark, so the benchmark predicted nothing."
+      },
+      {
+        "front": "What does video's extra dimension buy, and what does it cost?",
+        "back": "Buys: motion is diagnostic (gait, tremor, wall motion, infant movement), and it enables guidance — telling an operator how to move a probe, which turns unskilled capture into usable capture. Costs: frames within a video are massively correlated, so splits must be at patient level or leakage is catastrophic; and video is identifiable in ways a chest X-ray is not."
+      },
+      {
+        "front": "Why is AI-guided obstetric ultrasound the strongest design pattern in imaging AI?",
+        "back": "It moves a skill down the cadre ladder rather than replacing a specialist's judgement — an untrained operator sweeps the probe and gets a reliable gestational-age estimate. Where there are no sonographers the counterfactual is no estimate at all. Replacing a missing specialist is a health-systems question with measurable benefit; matching a present one is a benchmark contest."
+      },
+      {
+        "front": "Two models, same data, same code, one uses the pathology and one uses a ruler. What distinguishes them, and what does not?",
+        "back": "Nothing in the modelling distinguishes them — both can be well fitted and cross-validate beautifully. Only external evaluation in the deployment population, where the confound no longer accompanies the disease, separates them. It is the course spine in two numbers: a cross-validated AUC and a deployment AUC from one model, disagreeing completely."
+      }
+    ]
+  },
+  "lesson-23": {
+    "cards": [
+      {
+        "front": "Name the two distinct ways a tabular health model fails, with a case for each.",
+        "back": "Never checked (Epic Sepsis) — a governance failure, fixed by requiring external validation before deployment. Checked and answered the wrong question (Obermeyer) — a construct-validity failure, fixed by interrogating the target variable. A rule that catches one does not catch the other."
+      },
+      {
+        "front": "Epic's sepsis label was defined from clinician actions. Why is that fatal to the product's premise?",
+        "back": "If the label is derived from the behaviour you want to improve, the model can only learn to imitate it. It cannot beat clinicians at recognising sepsis when the definition of sepsis is that clinicians recognised it — and the situations where label and disease coincide are exactly those where no model was needed."
+      },
+      {
+        "front": "Derive the alert burden: ~18% of admissions alerted, ~33% sensitivity, sepsis in ~7%. What does a clinician experience?",
+        "back": "Per 1,000 admissions: 180 alerts, of which ~23 are real sepsis and ~157 are false — roughly 8 alerts per true case, implied PPV ~13% — while ~47 sepsis cases are missed entirely. AUC reports none of this. Once clinicians disregard alerts, system sensitivity goes to zero regardless of the model."
+      },
+      {
+        "front": "Why was 'the model is accurate' no defence in the Obermeyer case?",
+        "back": "Because it was accurate at predicting healthcare cost, which was standing in for health need. At equal illness less is spent on Black patients because of unequal access, so cost is a directionally biased proxy. The model answered the question it was given, and the question encoded the inequity."
+      },
+      {
+        "front": "What were the headline numbers in Obermeyer, and what changed them?",
+        "back": "At the same risk score Black patients had about 26% more active chronic conditions. Among patients auto-enrolled for extra care, 17.7% were Black; correcting the target raised it to 46.5% — a 2.6-fold change. Retraining on a health-based rather than cost-based label removed roughly 84% of the disparity. The change was to the label, not the model."
+      },
+      {
+        "front": "How do you audit a proprietary model without its weights?",
+        "back": "Compare its scores against an independent construct it was never trained on — chronic-condition counts, biomarkers, anything measuring what you actually care about — and ask whether people at the same score are equally affected. You need the predictions and a yardstick, not the feature importances."
+      },
+      {
+        "front": "State the generalisation of the Obermeyer mechanism that matters for surveillance.",
+        "back": "Any proxy target inherits the inequities of the process that generated it. Cost proxies need. Diagnosis proxies disease, but only where people can reach a diagnosis. Reported cases proxy incidence, but only where surveillance reaches — which is the working epidemiologist's version of exactly this failure."
+      },
+      {
+        "front": "Where did the Epic Sepsis Model sit on the validation ladder, and where was it sold?",
+        "back": "It reached rung 2, internal validation, and was marketed as though it had reached rung 6, impact evaluation — skipping temporal validation, external validation, prospective evaluation and any trial of whether using it changes outcomes. External validation was eventually done by researchers with no commercial relationship to the vendor."
+      }
+    ]
+  },
+  "lesson-03": {
+    "cards": [
+      {
+        "front": "Distinguish nowcasting, forecasting and early warning, and say why it matters.",
+        "back": "Nowcasting: what is happening right now given incomplete reporting. Forecasting: what the number will be in k weeks. Early warning: is something unusual starting (shape 1). They need different evidence, and conflating them is the commonest error in this shape — Google Flu Trends was evaluated as a nowcast and marketed as early warning. Also: you cannot forecast what you cannot nowcast."
+      },
+      {
+        "front": "Why does an uncorrected real-time surveillance series always appear to be declining?",
+        "back": "Because the most recent points are incomplete — cases are reported over days to weeks through facility, district and national levels. The apparent fall is an artefact present at all times, including during exponential growth. Nowcasting corrects it by estimating the delay distribution, but the correction is largest exactly where you most want certainty, and the delay distribution itself changes during surges."
+      },
+      {
+        "front": "Two forecasters share a median of 100; one states [98,102], the other [60,140]. What does MAE say, and what does the interval score say?",
+        "back": "MAE is identical and always will be — it depends only on the median. The interval score separates them: 4.0 vs 80.0 when the truth is 100, crossing over at 104, just 2 beyond the narrow interval. A proper score rewards sharpness when justified and punishes it hard when not; a point metric creates an incentive to be over-confident."
+      },
+      {
+        "front": "State the ensemble finding and its two mechanisms.",
+        "back": "Across FluSight and the US and European COVID-19 Forecast Hubs, a simple combination — often the median of all submissions — beat almost every individual model, almost always, and was far more reliable over time. Mechanisms: error cancellation (independent models err in different directions) and robustness to regime change (every individual model fails somewhere; the ensemble is never best and never catastrophic)."
+      },
+      {
+        "front": "What does the ensemble finding require in order to work, and when does it fail?",
+        "back": "Diversity. An ensemble of twenty variants of the same SEIR shares assumptions, so it inherits rather than averages them — the members fail together. The organisational implication is larger than the statistical one: the right response to forecasting uncertainty is more models and an honest scoring rule, not a better model."
+      },
+      {
+        "front": "What can a mechanistic model do that a statistical one cannot, and vice versa?",
+        "back": "Only a mechanistic model answers a counterfactual — 'what if we close schools?' — because it has parameters that mean something and the intervention is in its structure. A statistical model answers what will happen, not what would happen if. Honest division of labour: statistical for prediction, mechanistic for intervention questions."
+      },
+      {
+        "front": "Why are tree-based methods structurally unsuited to forecasting a peak?",
+        "back": "A tree predicts by averaging observed outcomes within a leaf, so its output cannot exceed the training range. That is what a tree is, not a tuning problem — and it is fatal precisely when the quantity of interest is a peak higher than anything observed so far."
+      },
+      {
+        "front": "Someone reports an excellent RMSE for a forecast. What do you ask for, in order?",
+        "back": "First, skill relative to a seasonal-naive baseline — a raw error figure is uninterpretable without it, and it is often negative. Then prediction intervals and their empirical coverage at 50% and 95%. Under-coverage is the signature of over-confidence. A forecast reported without an interval has not been evaluated, whatever accuracy figure accompanies it."
+      }
+    ]
+  },
+  "lesson-04": {
+    "cards": [
+      {
+        "front": "State the central mechanism of tabular health prediction in one sentence.",
+        "back": "The row does not describe a patient, it describes what was done to a patient — which tests were ordered, which codes assigned, which visit recorded. So the strongest predictors are often traces of clinical judgement rather than measurements of biology, and they hold only as long as the practice that produced them."
+      },
+      {
+        "front": "Why did 'was a test ordered?' reach AUC 0.87 while the test's value reached only 0.61?",
+        "back": "Because ordering a test is a clinical judgement driven by severity, so the missingness indicator encodes the clinician's suspicion — an excellent predictor of outcome. The value is a noisier measurement of the same underlying severity. This is the tabular analogue of confounded acquisition in imaging: presence-of-a-value records the encounter."
+      },
+      {
+        "front": "What destroys a model that leans on a missingness indicator, and why is the failure silent?",
+        "back": "A policy change — the hospital decides to test everyone — makes the indicator constant, so it carries no information and AUC falls to 0.5. Nothing about the patients changed; a memo changed. The failure is silent because internal validation and monitoring see a feature that is still present, just no longer predictive."
+      },
+      {
+        "front": "List the tabular leakage patterns with their observational-study names.",
+        "back": "Post-outcome predictors (adjusting for a consequence of exposure); immortal time (a group defined by something requiring survival); target leakage via administrative fields (discharge codes, length of stay, billing); temporal leakage (random splits on longitudinal data); patient overlap across folds; and preprocessing fitted before splitting. Every one has a study-design equivalent you already know."
+      },
+      {
+        "front": "What are the three fingerprints of found data in health databases?",
+        "back": "Coding reflects incentives rather than biology (ICD codes serve billing; prevalence shifts when reimbursement rules change). Records exist only where care was reached, so the people who could not attend are absent non-randomly. And timestamps record when something was entered, not when it happened."
+      },
+      {
+        "front": "Why is a SHAP plot not evidence that a model is sound?",
+        "back": "Explainability is not validation. A confounded model produces a beautifully interpretable explanation of its confound — in the worked example SHAP would have shown 'test ordered' as the top feature and looked entirely sensible. Interpretability describes what happened inside the model; it says nothing about whether it will transfer."
+      },
+      {
+        "front": "What extra step does resampling for class imbalance require, and why?",
+        "back": "Recalibration. Over-sampling, SMOTE and class weights change the apparent outcome prevalence, so predicted probabilities stop meaning what they say — and calibration is exactly the property a threshold decision needs. Also: accuracy is meaningless on rare outcomes, since predicting 'no' for everyone scores 97% at 3% prevalence."
+      },
+      {
+        "front": "What does 'case' literally mean in a surveillance database, and what does a model trained on it learn?",
+        "back": "Detected and reported. So the model learns the geography of surveillance as much as the geography of disease — the epidemiologist's version of cost-standing-in-for-need. A proxy inherits the artefacts and inequities of whatever process produced it."
+      }
+    ]
+  },
+  "lesson-08": {
+    "cards": [
+      {
+        "front": "How is a decision threshold derived, and why is it not a technical choice?",
+        "back": "pt = 1/(N+1) if you would accept N unnecessary interventions to catch one true case. It encodes the exchange rate between a missed case and an unnecessary intervention, so it is elicited from the relative harms and from who bears them — and it legitimately differs between a well-resourced hospital and a rural clinic. A vendor's single fixed threshold makes that value judgement for you."
+      },
+      {
+        "front": "Give the net benefit formula and its two reference strategies.",
+        "back": "NB = TP/n − (FP/n) × pt/(1−pt). 'Treat nobody' scores exactly 0, always, and is the bar any model must clear. 'Treat everybody' scores prevalence − (1−prevalence) × pt/(1−pt). A model is only useful where its curve sits above both."
+      },
+      {
+        "front": "Can a model with better discrimination be worse than doing nothing? Show it.",
+        "back": "Yes. At 10% prevalence: model A (sens 0.95, spec 0.55, index 0.750) has net benefit −0.006 at pt=0.20 and −0.079 at pt=0.30, i.e. below the zero of 'treat nobody'. Model B (sens 0.45, spec 0.96, index 0.705) stays positive throughout. A discriminates better and would do less harm switched off. No summary of discrimination reveals this."
+      },
+      {
+        "front": "State the off-policy evaluation problem and why it matters most for surprising recommendations.",
+        "back": "Your data record the actions clinicians actually took and nothing about the actions they did not. Where a learned policy diverges most from observed practice, there is almost no data — and that is exactly where its recommendations are interesting. So an off-policy estimate is a hypothesis about a policy, not evidence about it."
+      },
+      {
+        "front": "Which epidemiological bias is total in learning treatment policy from observational data?",
+        "back": "Confounding by indication. Clinicians chose treatments because of severity the model cannot observe; the model sees treatment and outcome but not the reason. No algorithmic sophistication removes it — only randomisation, or a setting where the assignment mechanism is genuinely known. Target trial emulation is the credible alternative."
+      },
+      {
+        "front": "Why is health a hostile environment for reinforcement learning?",
+        "back": "RL needs cheap exploration, many episodes, fast unambiguous reward and a stationary environment. Health gives experimentation on patients, one life per patient, delayed and contested outcomes, and continually shifting practice, pathogens and policy. So health RL is almost always offline — which returns you to the off-policy problem."
+      },
+      {
+        "front": "What is the danger of optimising a stated objective exactly, and what is the most valuable output of a shape-6 exercise?",
+        "back": "An incomplete objective gets followed faithfully: maximise cases detected per euro and you systematically abandon remote populations because they are expensive. That is the objective, not a solver bug. The most valuable output is often not the optimum but the argument that forced you to write the objective down — programmes routinely discover they disagree about it only then."
+      },
+      {
+        "front": "State the key insight of shape 6 in one sentence.",
+        "back": "The objective function is a policy document: it states whose outcomes count, how a missed case trades against an unnecessary intervention, and which populations are worth reaching. Writing it in code does not make it technical — it makes a value judgement harder to see and harder to contest."
+      }
+    ]
+  },
+  "lesson-10": {
+    "cards": [
+      {
+        "front": "State the governing question of health-AI governance.",
+        "back": "What happens when it is wrong, and who finds out? Ask it of any application and the whole Atlas reorganises itself. If someone cannot answer it, the conversation about accuracy is premature."
+      },
+      {
+        "front": "Where does the AI chasm sit, and why does it exist?",
+        "back": "Between external validation (rung 4) and impact evaluation (rung 6) — almost the entire literature is below it. It exists because the published output and the deployed requirement are different objects: a paper needs a dataset and a metric, a deployment needs an integration, a threshold, a workflow, a trained user, monitoring, escalation and a maintenance budget."
+      },
+      {
+        "front": "Name the four kinds of bias and the distinct fix each requires.",
+        "back": "Label bias (the target is wrong) → change the target variable; that is the only one with a clean technical fix. Representation bias (data is not the population) → measure the subgroup first, then collect. Deployment bias (right model, wrong context) → study the workflow before deploying; this is ethnography. Feedback loops (the model changes its own training data) → deliberate exploration plus drift monitoring."
+      },
+      {
+        "front": "How does the feedback loop manifest in disease surveillance?",
+        "back": "A model trained on reported cases sends screening teams where cases were previously reported, which generates more reported cases there, which confirms the model — while unsurveyed areas stay quiet and therefore stay unsurveyed. The fix requires allocating some effort against the model's advice, i.e. knowingly spending sub-optimally by its own criterion."
+      },
+      {
+        "front": "When is automation bias strongest, and why is that the worst possible timing?",
+        "back": "When the output is plausible and the user is tired, junior or busy — which is exactly when the model is supposed to be helping. Plausible wrong answers are what modern systems produce, so the failure mode and the product's strength are the same property."
+      },
+      {
+        "front": "Explain the naming problem and its consequence.",
+        "back": "The regulatory class is set by the product's claim, not by what it can break. 'Documentation' is generally not a device and needs no clinical validation; 'diagnosis' lands in the EU AI Act's high-risk tier with an enormous evidence bar. The consequence is inverted: the product carrying less oversight is the one in the room with patients. So ask whether the classification matches the risk."
+      },
+      {
+        "front": "List the seven conditions that got TB CAD to a WHO recommendation, and note what is absent.",
+        "back": "A target product profile published first by the recommending body; a label independent of the reader being replaced; multi-site external validation in the deployment population; subgroup performance reported including where it does worse; a locally tunable threshold; a confirmatory test downstream to absorb errors; and a guideline home for procurement and monitoring. Absent: any claim about the architecture. None of the seven is about the model."
+      },
+      {
+        "front": "When does a human-in-the-loop control become decorative?",
+        "back": "When the loop is the thing being sold. If the safety case is 'the clinician reviews the output' and the product's value proposition is not having to review, the control cannot function. Ambient documentation is the live example."
+      }
+    ]
+  },
+  "lesson-06": {
+    "cards": [
+      {
+        "front": "Why is shape 4 structurally harder to evaluate than any other shape in this course?",
+        "back": "Because the model defines the answer. You ask what groups are in the data, the algorithm returns groups, and there is nothing to compare them against — 'anomalous' or 'grouped' is defined by the model, so it cannot be contradicted by its own output. Every difficulty in the shape follows from that."
+      },
+      {
+        "front": "What did 300 uniform random points yield under standard clustering diagnostics?",
+        "back": "Mean silhouette 0.36–0.41 across k=2 to 6, a smooth WSS decline (30→18→12→10→8) that reads as an elbow at k=3 or 4, and balanced plausible-looking clusters. Genuinely separated Gaussians gave silhouette 0.86 and a WSS collapse to 1.45. So internal metrics are interpretable only comparatively: 0.39 versus 0.86 is informative, 0.39 alone is not."
+      },
+      {
+        "front": "What is the cheap fix nobody applies in clustering work?",
+        "back": "Permute or simulate your data under a no-structure null, run the identical pipeline, and report the observed value beside the null distribution. If the null gives silhouette 0.39 and your data give 0.42, you have found nothing. The gap statistic formalises exactly this, and it is much less used than the elbow it should have replaced."
+      },
+      {
+        "front": "What does the spatial scan statistic do that the clustering literature usually omits?",
+        "back": "It compares the observed maximum likelihood ratio against the distribution of that maximum under a null model, by Monte Carlo. So it answers 'is the most extreme cluster more extreme than chance would produce, given that I looked in thousands of places?' rather than 'where is the most extreme cluster?', which always has an answer. It is shape 4 with multiple comparisons taken seriously."
+      },
+      {
+        "front": "With no labels, name the four honest validations of a discovered structure.",
+        "back": "Replication in an independent dataset (strongest, most often skipped); a null comparison; external validity — do the groups differ on something you did NOT cluster on; and stability under perturbation (resampling, dropping features, changing algorithm). Structure that vanishes when you switch from k-means to hierarchical was an artefact of k-means."
+      },
+      {
+        "front": "What may and may not be read from a UMAP or t-SNE plot?",
+        "back": "Only local neighbourhood structure is approximately preserved. Between-cluster distances are not meaningful, cluster sizes are not meaningful (sparse regions are expanded and dense ones compressed), and the number of visible blobs depends on hyperparameters and can be tuned into or out of existence. Use it to look, never to conclude."
+      },
+      {
+        "front": "What is the distinctive ethical question when clustering people rather than viruses?",
+        "back": "What happens to someone because of the group they were placed in, and can they contest it? A discovered subgroup becomes an administrative category, then a resource-allocation category, then a fact about people. HIV molecular clustering is the live case: it infers who may have infected whom, in settings where transmission can be criminalised, without those people's consent."
+      }
+    ]
+  },
+  "lesson-24": {
+    "cards": [
+      {
+        "front": "What was the actual innovation of the forecast hubs, and why did it work?",
+        "back": "Fix the target, truth source, horizons and format; everyone submits quantiles before the outcome is known; score all submissions with the same proper rule; publish everything. There is no algorithm in it. It worked because once scores are public and pre-registered, over-claiming stops working rather than having to be argued down — the field was fixed by changing the rules."
+      },
+      {
+        "front": "Besides the ensemble result, what did prospective public scoring reveal?",
+        "back": "That most models were worse than they claimed, and many worse than a seasonal-naive baseline at longer horizons. It also established where forecasting stops being useful — a public good in itself, since very little else in health AI can tell you where it stops working."
+      },
+      {
+        "front": "What is the survivorship problem in hub evaluations, and how is it handled?",
+        "back": "A hub can only score what is submitted, and teams tend to stop submitting when they do badly, which flatters the surviving distribution. Good hubs handle it by reporting who submitted when, so the attrition is visible rather than hidden."
+      },
+      {
+        "front": "Why is wastewater's lead time more useful than that of digital early-warning systems?",
+        "back": "Several digital systems were also earlier; the difference is trustworthiness. Wastewater measures a physical quantity rather than a proxy for attention, so viral RNA does not change meaning because a search engine updated its autocomplete. It is earlier AND stable enough to act on — and lesson 2's rule still applies: earlier only matters if something is done differently."
+      },
+      {
+        "front": "What does a wastewater sample not represent?",
+        "back": "The catchment is not a population — sewer networks do not match administrative boundaries and connection rates vary enormously. Dilution changes constantly with rain and discharge, so raw concentration needs normalising (flow, or PMMoV). Shedding is not infection and drifts by variant and immunity. And there is no individual data, which is both its privacy strength and its follow-up ceiling."
+      },
+      {
+        "front": "State the transferable lesson common to forecast hubs and wastewater surveillance.",
+        "back": "Neither win came from a better model. One came from a better institution — pre-registered public scoring — and the other from a better sample. That is usually where the win is, and the institutional option is generally available and generally ignored. Any question where several groups produce competing estimates, including elimination timelines and risk maps, could be run as a hub."
+      }
+    ]
+  },
+  "lesson-00": {
+    "cards": [
+      {
+        "front": "Name the six problem shapes and the two cross-cutting layers.",
+        "back": "Shapes: detect the unusual · predict what happens next · assign a label · find structure without labels · turn language into data · choose an action. Layers: evaluation (which decides whether a model is real) and deployment & governance (which decides whether a real model helps anyone). Almost every failure in the Atlas is an evaluation failure, not a modelling failure."
+      },
+      {
+        "front": "What are the five maturity labels, and which teaches most?",
+        "back": "Research only · piloted in the field · deployed at scale · regulator-cleared · withdrawn, failed or discredited. The withdrawn ones teach most, which is why the Atlas records them rather than quietly dropping them — a catalogue of successes would be a sales brochure."
+      },
+      {
+        "front": "Name the six-case cautionary canon and what each one is a story about.",
+        "back": "Google Flu Trends — big data does not fix unstable predictors. Epic Sepsis — internal validation is not validation. Obermeyer 2019 — the label carries the bias. The COVID prognostic review — a whole literature, no usable output. Beede's Thailand study — accuracy is not deployment. The AI Clinician — off-policy evaluation is not evidence. Not one is a story about the algorithm."
+      },
+      {
+        "front": "What four questions admit a new entry to the Atlas?",
+        "back": "Which of the six shapes is it (and if it fits none, that is a finding)? What classical method must it beat — no comparator, no claim? How was it evaluated: internal only, calibration, subgroups, external? And maturity, honestly? Thin answers make an Atlas row; rich answers make a deep-dive page; a contradiction becomes an update with the old claim struck through but visible."
+      },
+      {
+        "front": "Which single AI application is the strongest public-health-at-scale story, and what exactly was endorsed?",
+        "back": "Computer-aided detection on chest X-ray for TB screening, WHO-recommended since 2021 for people aged 15 and over. Note what was endorsed: a screening and triage tool with a configurable threshold set per setting from local prevalence — not a diagnosis, and not a single recommended cut-off. A fixed vendor threshold is a red flag on any product."
+      },
+      {
+        "front": "Which use of AI in global health is high-value and almost never called medical AI?",
+        "back": "Satellite and street-view imagery for building footprints, population estimates, housing quality and water access — because it builds denominators where no census exists. Much coverage estimation quietly depends on it."
+      },
+      {
+        "front": "What is the Atlas deliberately still missing, and why is that list visible?",
+        "back": "Federated learning in practice, foundation models for medical imaging, agentic clinical systems, multi-modal models, causal inference done properly, digital twins, AMR prediction from genomes, climate–health attribution, regional capacity programmes, and economic evaluation of AI interventions. The list is kept visible because it is the course's to-do queue — a living course that hides its gaps is not honest about being unfinished."
+      }
+    ]
+  }
+}

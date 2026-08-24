@@ -1,0 +1,92 @@
+{
+  "slug": "ai-in-public-health",
+  "title": "AI in Public Health & Epidemics",
+  "category": "ai & data science",
+  "status": "complete",
+  "living": true,
+  "total_modules": 16,
+  "estimated_hours": 10,
+  "audience": "Senior epidemiologist, fluent in R and classical epi methods, no ML background assumed. Peer register — no explaining p-values or case definitions.",
+  "bloom_ceiling": "Evaluate",
+  "spine": "Every AI application in public health is one of six pattern-recognition problems wearing different clothes — and what decides whether it works is never the model, it is the evaluation.",
+  "written": [
+    "lesson-00",
+    "lesson-01",
+    "lesson-02",
+    "lesson-03",
+    "lesson-04",
+    "lesson-05",
+    "lesson-06",
+    "lesson-07",
+    "lesson-08",
+    "lesson-09",
+    "lesson-10",
+    "lesson-20",
+    "lesson-21",
+    "lesson-22",
+    "lesson-23",
+    "lesson-24"
+  ],
+  "planned": [],
+  "deep_dive_queue": [],
+  "spaced_repetition": {
+    "retain_long_term": [
+      "The six shapes: detect the unusual · predict what happens next · assign a label · find structure · language into data · choose an action",
+      "Every shape has a boring classical comparator; absence of the comparator is evidence it lost",
+      "A claim evaluated as one shape and sold as another is the most common failure mode",
+      "AUC measures discrimination; only calibration supports a decision",
+      "PPV collapses at low prevalence no matter how good sensitivity and specificity are",
+      "Internal cross-validation measures the dataset, not the model (Epic Sepsis)",
+      "The label carries the bias (Obermeyer: cost as a proxy for need)",
+      "Tabular deep learning loses to gradient boosting",
+      "Forecast ensembles beat almost every individual model, almost always",
+      "Accuracy is not deployment (Beede: the model worked, the clinic did not)"
+    ]
+  },
+  "update_loop": "New entries derive from news, papers and applications. Each candidate is put through four questions — which shape, what comparator, how evaluated, maturity — and becomes either a new Atlas row, a new deep-dive page, or an update to an existing one.",
+  "cards_authored": 106,
+  "qbank": "qbank.json — authored spaced-repetition cards, preferred over the auto-seeder's title stub",
+  "quiz_questions": 97,
+  "manifest_shape": "Superset manifest. The dashboard reader consumes id/title/description/section/order; the multilevel-course learning layer consumes day/phase/emoji/topics/key_terms/time/optional/quiz/practical. One file, two consumers. NOTE: `section` is a human-readable string for the dashboard's grouping; `phase` (int) + `phase_title` carry the mlm-style phase structure.",
+  "phases": [
+    {
+      "phase": 1,
+      "title": "Orientation",
+      "lessons": [
+        "lesson-00",
+        "lesson-01"
+      ]
+    },
+    {
+      "phase": 2,
+      "title": "The six shapes in depth",
+      "lessons": [
+        "lesson-02",
+        "lesson-07"
+      ]
+    },
+    {
+      "phase": 3,
+      "title": "Judgement",
+      "lessons": [
+        "lesson-09"
+      ]
+    }
+  ],
+  "quiz_audit": "Clean 2026-08-21 via tools/audit_quiz.py: positions 25/24/24/24 (25.8%); longest-is-correct 33.0% vs 25% chance — left as-is deliberately: a mechanical rebalance drove it to 0.0% but made every padded option a distractor, a perfect syntactic tell, and was reverted. A weak length tell beats a perfect one. No ratio outliers, no wide spreads, no duplicates.",
+  "pedagogy": "UNDERSTAND, not memorise. The statistics course is drill — concepts that must be automatic. This one is for discovering and understanding the science and the application, from research question to conclusion, and judging what each application could be worth. Execution matters least; code appears only where running it is the fastest route to understanding. A further objective: the researcher must be able to EXPLAIN these applications to other people, so every deep dive carries an 'Explain it in 60 seconds' section and a reading list, and visuals are load-bearing rather than decorative.",
+  "deep_dive_arc": [
+    "the question someone actually asked",
+    "why it looked tractable",
+    "the data and what it does not represent",
+    "the method explained",
+    "what they found",
+    "how it was evaluated",
+    "what happened next",
+    "what it is actually worth",
+    "transferable lessons",
+    "explain it in 60 seconds",
+    "read more"
+  ],
+  "companion_artifact": "https://claude.ai/code/artifact/9247a225-de03-4f8c-9914-27db205f5824"
+}

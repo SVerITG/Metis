@@ -1,0 +1,1771 @@
+{
+  "modules": [
+    {
+      "module": 0,
+      "section": "Start here",
+      "title": "The Atlas",
+      "bloom_level": "Understand",
+      "hours": 1.0
+    },
+    {
+      "module": 1,
+      "section": "Core track",
+      "title": "The six shapes",
+      "bloom_level": "Analyze",
+      "hours": 1.0
+    },
+    {
+      "module": 2,
+      "section": "Core track",
+      "title": "Detect the unusual",
+      "bloom_level": "Apply",
+      "hours": 1.5
+    },
+    {
+      "module": 3,
+      "section": "Core track",
+      "title": "Predict what happens next",
+      "bloom_level": "Apply",
+      "hours": 1.5
+    },
+    {
+      "module": 4,
+      "section": "Core track",
+      "title": "Labels from databases",
+      "bloom_level": "Analyze",
+      "hours": 1.5
+    },
+    {
+      "module": 5,
+      "section": "Core track",
+      "title": "Labels from pixels",
+      "bloom_level": "Analyze",
+      "hours": 1.5
+    },
+    {
+      "module": 6,
+      "section": "Core track",
+      "title": "Finding structure",
+      "bloom_level": "Analyze",
+      "hours": 1.5
+    },
+    {
+      "module": 7,
+      "section": "Core track",
+      "title": "Language into data",
+      "bloom_level": "Apply",
+      "hours": 1.5
+    },
+    {
+      "module": 8,
+      "section": "Core track",
+      "title": "Choosing an action",
+      "bloom_level": "Evaluate",
+      "hours": 1.5
+    },
+    {
+      "module": 9,
+      "section": "Core track",
+      "title": "Evaluation",
+      "bloom_level": "Evaluate",
+      "hours": 1.5
+    },
+    {
+      "module": 10,
+      "section": "Core track",
+      "title": "Deployment, bias and governance",
+      "bloom_level": "Evaluate",
+      "hours": 1.5
+    },
+    {
+      "module": 20,
+      "section": "Deep dives",
+      "title": "Google Flu Trends",
+      "bloom_level": "Evaluate",
+      "hours": 0.75
+    },
+    {
+      "module": 21,
+      "section": "Deep dives",
+      "title": "Two imaging stories",
+      "bloom_level": "Evaluate",
+      "hours": 0.83
+    },
+    {
+      "module": 22,
+      "section": "Deep dives",
+      "title": "The consultation",
+      "bloom_level": "Evaluate",
+      "hours": 0.83
+    },
+    {
+      "module": 23,
+      "section": "Deep dives",
+      "title": "Two database failures",
+      "bloom_level": "Evaluate",
+      "hours": 0.83
+    },
+    {
+      "module": 24,
+      "section": "Deep dives",
+      "title": "Two that worked",
+      "bloom_level": "Evaluate",
+      "hours": 0.75
+    }
+  ],
+  "lessons": [
+    {
+      "id": "lesson-00",
+      "order": 0,
+      "section": "Start here",
+      "phase": 1,
+      "phase_title": "Orientation",
+      "day": "Atlas",
+      "emoji": "🗺️",
+      "time": 60,
+      "optional": false,
+      "title": "The Atlas — every use of AI in public health and medicine",
+      "subtitle": "The whole landscape on day one, so every later lesson has something to point at",
+      "description": "The catalogue: ~95 applications across six problem shapes, with maturity labels and the cautionary canon. The course's front door, never finished.",
+      "topics": [
+        "Taxonomy of health AI",
+        "Maturity labels",
+        "The cautionary canon",
+        "What the atlas is missing"
+      ],
+      "key_terms": [
+        "problem shape",
+        "maturity label",
+        "cautionary canon",
+        "AI chasm"
+      ],
+      "practical": "Add three rows to the Atlas from your own news feed this week. For each, answer the four questions. Note which question the source could not answer.",
+      "quiz": []
+    },
+    {
+      "id": "lesson-01",
+      "order": 1,
+      "section": "Core track",
+      "phase": 1,
+      "phase_title": "Orientation",
+      "day": "1.1",
+      "emoji": "🧭",
+      "time": 60,
+      "optional": false,
+      "title": "The six shapes",
+      "subtitle": "A sorting reflex for the several claims a week you will read for the rest of your career",
+      "description": "Classify any AI-in-health claim into one of six pattern-recognition problems in under a minute, and name the classical method it must beat.",
+      "topics": [
+        "The six shapes",
+        "The comparator rule",
+        "Shape straddling",
+        "Reading a claim in four questions"
+      ],
+      "key_terms": [
+        "shape",
+        "comparator",
+        "claims register",
+        "shape straddle"
+      ],
+      "practical": "Build the claims register from the worked example, then add the three most recent AI-in-health items you have read. Filter for 'no comparator or internal-only evaluation' and see what it flags.",
+      "quiz": [
+        {
+          "question": "A gradient-boosted tree scores how surprising today's case count is. The same model, unchanged, is then used to predict next month's count. What happened to the shape?",
+          "options": [
+            "It moved from shape 1 to shape 2",
+            "Nothing — the shape follows the algorithm",
+            "It became shape 3, because trees assign labels",
+            "Shapes do not apply to tree-based models"
+          ],
+          "correct": 0,
+          "explanation": "Shape is a property of the question, not the method. Scoring surprise is shape 1 (detect the unusual); predicting a future value is shape 2 (forecasting). The first option is the common error: people argue about algorithms because algorithms have names, but the question determines what evidence you need."
+        },
+        {
+          "question": "A paper proposes a new deep-learning method for tabular risk prediction and reports no comparison with logistic regression or gradient boosting. What is the best-supported inference?",
+          "options": [
+            "The authors ran out of space",
+            "The comparison was probably unfavourable",
+            "Deep learning has no tabular comparator",
+            "Nothing can be inferred from an absence"
+          ],
+          "correct": 1,
+          "explanation": "Reporting a favourable comparison is essentially free, so its absence is selective rather than accidental. This is a base rate, not cynicism, and it is well supported here specifically: tabular deep learning reliably loses to gradient boosting on structured data."
+        },
+        {
+          "question": "Why is Google Flu Trends best described as a shape-straddling failure?",
+          "options": [
+            "It relied on search data rather than clinical surveillance reports",
+            "It confused unsupervised clustering with supervised classification",
+            "It was evaluated as forecasting but sold as early warning",
+            "No classical comparator for influenza-like illness existed at the time"
+          ],
+          "correct": 2,
+          "explanation": "It was evaluated on whether it tracked ILI (shape 2) and marketed on whether it warned earlier (shape 1). Those require different evidence. A claim evaluated as one shape and sold as another is the most common failure mode in the field — and a sentinel ILI comparator did exist."
+        },
+        {
+          "question": "Which of these is the correct classical comparator for a claim in shape 5 (turn language into data)?",
+          "options": [
+            "A seasonal naive forecast",
+            "Farrington/CUSUM on the same series",
+            "A pre-specified stratification",
+            "A human chart abstractor"
+          ],
+          "correct": 3,
+          "explanation": "Shape 5's ancestor is manual chart abstraction or coding. The others belong to shapes 2, 1 and 4 respectively. Note the wrinkle: the human comparator is itself imperfect, so agreement between abstractors must also be reported."
+        },
+        {
+          "question": "An anomaly detector, a forecaster and an image classifier walk into a review. Which owes you a proper scoring rule?",
+          "options": [
+            "The forecaster only",
+            "All three",
+            "The classifier only",
+            "The anomaly detector only"
+          ],
+          "correct": 0,
+          "explanation": "Proper scoring rules (WIS, CRPS, log score) apply to probabilistic forecasts — shape 2. Shape 1 owes a false-alarm rate and timeliness at a matched threshold; shape 3 owes calibration and PPV at the deployment prevalence. Six shapes, six different debts."
+        },
+        {
+          "question": "A system flags unusual phrasing in outbreak reports to surface possible events. Which shape is it, and why is that not obvious?",
+          "options": [
+            "Shape 5, because the input being processed is unstructured free text",
+            "Shape 1, because the question is whether this differs from expected",
+            "Shape 3, because each incoming report is assigned a label",
+            "Shape 4, because it groups similar reports without using labels"
+          ],
+          "correct": 1,
+          "explanation": "The question asked is 'is this different from what I expected?', which is shape 1 — the input modality does not set the shape. Text is merely a signal with no natural baseline, which is one of the three places machine learning genuinely adds something in this shape."
+        },
+        {
+          "question": "What does the second half of the course spine claim?",
+          "options": [
+            "Larger models generalise better across settings and populations",
+            "Classical statistical methods win in essentially every application",
+            "What decides whether it works is the evaluation, not the model",
+            "Every shape eventually requires deep learning to reach usable accuracy"
+          ],
+          "correct": 2,
+          "explanation": "The spine has two halves: the field is six problems (which makes it learnable), and evaluation rather than modelling decides whether any of them works. The second half is why the course does not go out of date — methods churn, evaluation failures repeat."
+        }
+      ]
+    },
+    {
+      "id": "lesson-02",
+      "order": 2,
+      "section": "Core track",
+      "phase": 2,
+      "phase_title": "The six shapes in depth",
+      "day": "2.1",
+      "emoji": "🔔",
+      "time": 90,
+      "optional": false,
+      "title": "Detect the unusual — anomaly detection and early warning",
+      "subtitle": "The baseline is the science; the detector is the easy half",
+      "description": "Shape 1. Why the baseline carries the science, Farrington/Noufaily as the benchmark, where ML genuinely adds, and evaluation at a matched false-alarm rate.",
+      "topics": [
+        "Modelling 'expected'",
+        "CUSUM and EARS",
+        "Farrington/Noufaily",
+        "Multivariate anomaly detection",
+        "Event-based surveillance",
+        "Timeliness vs false alarms"
+      ],
+      "key_terms": [
+        "aberration detection",
+        "overdispersion",
+        "reference window",
+        "reweighting",
+        "false-alarm rate",
+        "probability of detection",
+        "timeliness",
+        "alarm fatigue",
+        "EIOS"
+      ],
+      "practical": "Run the alpha sweep from the worked example on salmonella.agona. Choose the row a team that can investigate one signal per week should operate at, and state what timeliness you gave up.",
+      "quiz": [
+        {
+          "question": "An anomaly detector has two parts. Which carries the scientific content?",
+          "options": [
+            "The threshold rule that converts a score into an alarm",
+            "The logic that routes an alarm to whoever investigates it",
+            "Both contribute roughly equally to detection performance",
+            "The model of 'expected'"
+          ],
+          "correct": 3,
+          "explanation": "The baseline model of what you expected is the entire scientific content; the threshold is a policy decision about tolerable false alarms. Most published effort goes into clever detectors, while most real-world failure comes from an inadequate baseline."
+        },
+        {
+          "question": "Weekly counts show variance far exceeding the mean. What breaks if you assume Poisson?",
+          "options": [
+            "Thresholds become too tight and false alarms explode",
+            "Sensitivity falls to zero because the variance term dominates",
+            "Seasonality can no longer be represented in the baseline model",
+            "The linear trend term becomes unidentifiable and must be dropped"
+          ],
+          "correct": 0,
+          "explanation": "Overdispersion means the true spread is wider than Poisson allows, so a Poisson prediction interval is too narrow and the observed false-alarm rate far exceeds the nominal one. This is why Farrington uses a quasi-Poisson fit and why Noufaily improved the handling further."
+        },
+        {
+          "question": "Why must historical outbreaks be downweighted in the reference window?",
+          "options": [
+            "They violate the independence assumption the GLM requires",
+            "They raise 'expected' and mask the current outbreak",
+            "They introduce spurious seasonality into the reference window",
+            "They shorten the effective baseline and widen the interval"
+          ],
+          "correct": 1,
+          "explanation": "If last year's epidemic sits in the baseline, expectation is inflated and this year's genuine excess falls below threshold. Every serious method in this family reweights or removes historical outliers for exactly this reason."
+        },
+        {
+          "question": "Mechanically, what is the Farrington/Noufaily algorithm?",
+          "options": [
+            "A recurrent neural network trained on historical count data",
+            "A hidden Markov model alternating between outbreak and baseline states",
+            "A quasi-Poisson GLM with a one-sided prediction interval",
+            "A permutation test computed over matched seasonal windows"
+          ],
+          "correct": 2,
+          "explanation": "It fits an overdispersed Poisson GLM to counts from the same seasonal window in past years, with a trend and outlier reweighting, then alarms when the observation exceeds a one-sided upper prediction limit. Recognising it as a regression model with an interval is what stops each new detector looking like a new idea."
+        },
+        {
+          "question": "Where does machine learning most clearly beat the classical aberration stack?",
+          "options": [
+            "A single weekly count series with five years of history",
+            "Series with strong seasonality",
+            "Low-count series near elimination",
+            "Many signals monitored simultaneously"
+          ],
+          "correct": 3,
+          "explanation": "Farrington is univariate, so 400 series means 400 multiple-comparison problems. Multivariate methods score a whole vector at once and can flag a pattern unremarkable in every individual series. On one well-behaved series with good history, the classical method is very hard to beat."
+        },
+        {
+          "question": "Two detectors are compared; the new one is earlier. What must be equalised first?",
+          "options": [
+            "The false-alarm rate",
+            "Training-set size",
+            "The seasonal window",
+            "The outcome definition"
+          ],
+          "correct": 0,
+          "explanation": "Any detector looks earlier if allowed to alarm more often, so timeliness at unmatched false-alarm rates is meaningless. Fix the false-alarm rate — for example by tuning alpha — and only then compare timeliness."
+        },
+        {
+          "question": "A district's malaria counts trigger a highly significant alarm. What do you check first?",
+          "options": [
+            "Whether the p-value survives correction for multiple comparisons",
+            "Whether the denominator or data pipeline changed",
+            "Whether the linear trend term was included in the baseline",
+            "Whether neighbouring districts alarmed in the same reporting week"
+          ],
+          "correct": 1,
+          "explanation": "The algorithm already established that the count exceeded expectation; it cannot say why. New clinics, changed case definitions, a lab switching assay, or a clerk clearing a backlog all produce significant, purely administrative anomalies — and in routine practice these outnumber real outbreaks."
+        },
+        {
+          "question": "Why is 'detected three weeks earlier' sometimes worth nothing?",
+          "options": [
+            "Early signals are usually false once investigated properly",
+            "Because timeliness cannot be measured without a gold standard",
+            "Because response may still require laboratory confirmation",
+            "Because detecting earlier necessarily lowers specificity"
+          ],
+          "correct": 2,
+          "explanation": "Earlier is only better if something can be done earlier. This is the syndromic surveillance finding: it genuinely is earlier than lab confirmation and mostly did not change anyone's actions. Add alarm fatigue — once alarm PPV falls far enough, investigators stop investigating and system sensitivity goes to zero."
+        }
+      ]
+    },
+    {
+      "id": "lesson-03",
+      "order": 3,
+      "section": "Core track",
+      "phase": 2,
+      "phase_title": "The six shapes in depth",
+      "day": "2.2",
+      "emoji": "📈",
+      "time": 90,
+      "optional": false,
+      "title": "Predict what happens next — forecasting, and why the ensemble wins",
+      "subtitle": "The shape where honesty is measurable, and is the thing being measured",
+      "description": "Shape 2. Nowcasting vs forecasting vs early warning, reporting delay and the false decline, the classical toolkit as comparator, proper scoring rules, and the ensemble finding.",
+      "topics": [
+        "Nowcasting vs forecasting vs early warning",
+        "Reporting delay",
+        "Seasonal naive as baseline",
+        "Mechanistic vs statistical",
+        "Proper scoring rules",
+        "Coverage",
+        "The ensemble finding"
+      ],
+      "key_terms": [
+        "nowcasting",
+        "reporting delay",
+        "seasonal naive",
+        "skill score",
+        "renewal equation",
+        "Rt",
+        "WIS",
+        "CRPS",
+        "interval score",
+        "coverage",
+        "forecast hub",
+        "error cancellation"
+      ],
+      "practical": "Plot the last twelve weeks of a surveillance series you work with as reported. Ask how much of the apparent decline is reporting delay. If you cannot answer, that is the finding.",
+      "quiz": [
+        {
+          "question": "An uncorrected real-time surveillance series appears to be declining. What is the most likely explanation?",
+          "options": [
+            "Seasonal forcing is reducing transmission at this point in the year",
+            "The underlying epidemic has genuinely passed its peak",
+            "Case definitions were tightened during the reporting period",
+            "Reporting delay: the most recent points are incomplete counts"
+          ],
+          "correct": 3,
+          "explanation": "Cases are reported over days to weeks, so the last points of any real-time series are partial. An uncorrected series looks like it is falling at all times, including during exponential growth. Programmes have relaxed on this artefact more than once; nowcasting is the correction."
+        },
+        {
+          "question": "Two forecasters report an identical median of 100. One states a 95% interval of [98,102], the other [60,140]. What does MAE tell you?",
+          "options": [
+            "Nothing — MAE depends only on the median, which is identical",
+            "That the narrow forecaster is better calibrated than the wide one",
+            "That the wide forecaster has higher uncertainty and worse accuracy",
+            "That neither forecast can be scored without the full distribution"
+          ],
+          "correct": 0,
+          "explanation": "MAE is a point-forecast metric and cannot distinguish them, ever. One claims to know the answer to plus or minus 2 and the other to plus or minus 40, and the metric is blind to the difference. That blindness is precisely the incentive to be over-confident."
+        },
+        {
+          "question": "Using the interval score, at what truth value does the narrow interval [98,102] become worse than the wide [60,140]?",
+          "options": [
+            "Only once the truth exceeds 140, outside both intervals",
+            "At 104 — just 2 beyond the stated interval",
+            "Not until roughly 180, where both are heavily penalised",
+            "At 110, once the median error exceeds ten percent"
+          ],
+          "correct": 1,
+          "explanation": "Computed: the narrow interval scores 4.0 when the truth is 100 and 44.0 at 103, crossing the wide interval's constant 80.0 at 104. A proper score rewards sharpness when it is justified and punishes it sharply when it is not — which is exactly the behaviour you want."
+        },
+        {
+          "question": "What is the central empirical finding of organised infectious-disease forecasting?",
+          "options": [
+            "Mechanistic transmission models consistently outperform statistical ones",
+            "Machine-learning methods dominate once enough covariates are included",
+            "A simple combination of many models beats almost every individual model",
+            "Forecast accuracy has improved steadily with increasing model complexity"
+          ],
+          "correct": 2,
+          "explanation": "Across FluSight, the US COVID-19 Forecast Hub and the European hub, the ensemble — often just the median of submissions — outperformed nearly every individual model and was far more reliable over time. Two mechanisms: error cancellation across independent models, and robustness to regime change."
+        },
+        {
+          "question": "Why can only a mechanistic model answer 'what if we close schools?'",
+          "options": [
+            "Mechanistic models are fitted to longer historical time series",
+            "Statistical models cannot produce probabilistic outputs at all",
+            "Mechanistic models have lower forecast error at long horizons",
+            "Because the intervention is not in a statistical model's feature space"
+          ],
+          "correct": 3,
+          "explanation": "Counterfactuals require parameters that mean something — contact rates, transmission probabilities. A time-series model can say what will happen but not what would happen if, because school closure is not a variable it contains. Statistical for prediction, mechanistic for counterfactuals."
+        },
+        {
+          "question": "Why are tree-based methods structurally unsuited to forecasting an epidemic peak?",
+          "options": [
+            "They cannot predict a value larger than any they have observed",
+            "They require far more training data than surveillance provides",
+            "They cannot incorporate seasonal or cyclical covariates",
+            "They produce point estimates without any uncertainty interval"
+          ],
+          "correct": 0,
+          "explanation": "A tree predicts by averaging observed outcomes in a leaf, so its output is bounded by the training range. That is what a tree is, not a tuning problem — and it is fatal when the quantity of interest is a peak higher than anything yet seen."
+        },
+        {
+          "question": "A colleague reports an excellent RMSE for their district-level forecast. What should you ask for first?",
+          "options": [
+            "The number of covariates included in the model",
+            "The skill relative to a seasonal-naive baseline",
+            "The software package and version they used",
+            "The computational cost of refitting the model weekly"
+          ],
+          "correct": 1,
+          "explanation": "A raw error figure is uninterpretable: an MAE of 12 means nothing until you know the naive forecast scores 15. Report skill relative to the boring baseline, and frequently it turns out to be negative. After that, ask for intervals and coverage."
+        },
+        {
+          "question": "An ensemble is built from twenty variants of the same SEIR model. Why is this not an ensemble in the useful sense?",
+          "options": [
+            "Twenty members is too few for error cancellation to operate",
+            "Mechanistic models cannot be combined by taking a median",
+            "They share assumptions, so the combination inherits them",
+            "Compartmental models are not scored by proper rules"
+          ],
+          "correct": 2,
+          "explanation": "Diversity does the work. Error cancellation requires members that err in different directions, and robustness to regime change requires members that fail under different conditions. Twenty variants of one model fail together, so the ensemble inherits the shared assumption rather than averaging it away."
+        }
+      ]
+    },
+    {
+      "id": "lesson-04",
+      "order": 4,
+      "section": "Core track",
+      "phase": 2,
+      "phase_title": "The six shapes in depth",
+      "day": "2.3",
+      "emoji": "🗂️",
+      "time": 90,
+      "optional": false,
+      "title": "Labels from databases — tabular pattern recognition and the record of the decision",
+      "subtitle": "The row does not describe a patient; it describes what was done to a patient",
+      "description": "Shape 3 from tables. Found data and its fingerprints, missingness as a clinical decision, the tabular leakage catalogue, the label as a measurement, and what a risk model owes you before it triggers anything.",
+      "topics": [
+        "Found data",
+        "Coding incentives",
+        "Missingness as decision",
+        "Tabular leakage",
+        "Immortal time",
+        "The label as measurement",
+        "Class imbalance and calibration",
+        "Explainability vs validation"
+      ],
+      "key_terms": [
+        "found data",
+        "informative missingness",
+        "post-outcome predictor",
+        "immortal time bias",
+        "temporal leakage",
+        "patient-level split",
+        "proxy target",
+        "SMOTE",
+        "calibration drift",
+        "decision curve",
+        "SHAP"
+      ],
+      "practical": "Take a risk score used where you work. List its features and mark each twice: available at prediction time or determined afterwards, and measurement of biology or trace of a decision.",
+      "quiz": [
+        {
+          "question": "In the worked example, 'was a test ordered?' reached AUC 0.87 while the test's value reached 0.61. What has the model learned?",
+          "options": [
+            "A genuine physiological signal that the test value measures imprecisely",
+            "An artefact of the simulation that would not occur in real records",
+            "The effect of the test itself on the patient's subsequent outcome",
+            "The clinician's suspicion, because ordering a test is a judgement"
+          ],
+          "correct": 3,
+          "explanation": "A troponin is measured because someone suspected a cardiac event. The missingness indicator therefore encodes clinical judgement, which predicts outcome well. It is the tabular analogue of confounded acquisition in imaging: the presence of a value records the encounter, just as an image records the encounter."
+        },
+        {
+          "question": "A hospital changes policy so that every admission gets the test. What happens to a model that leaned on the indicator?",
+          "options": [
+            "The indicator becomes constant and carries no information at all",
+            "It recalibrates automatically as the new data accumulate",
+            "Its discrimination improves because missing data are eliminated",
+            "It continues to perform as before, since the values are unchanged"
+          ],
+          "correct": 0,
+          "explanation": "Nothing about the patients changed. A memo changed. The feature that carried most of the model's performance becomes uninformative, and the failure is silent — which is why the question to ask of any feature is whether it will still exist and still mean the same thing where the model runs."
+        },
+        {
+          "question": "Why is standard advice to 'impute the missing values' hazardous in health records?",
+          "options": [
+            "Imputation methods assume normality that laboratory values rarely satisfy",
+            "Missingness is often signal, and signal contingent on a testing policy",
+            "Imputation is computationally prohibitive at electronic-record scale",
+            "Imputed values cannot be used in tree-based models without adjustment"
+          ],
+          "correct": 1,
+          "explanation": "Imputation treats missingness as a nuisance to repair. In health data it frequently carries the clinician's judgement — and that signal is valid today and gone tomorrow if testing policy changes. Neither imputing nor keeping the indicator is automatically right; making the choice silently is what is wrong."
+        },
+        {
+          "question": "Which observational-study bias does the 'patients who completed treatment' feature correspond to?",
+          "options": [
+            "Confounding by indication from the prescriber's choice",
+            "Differential misclassification of the treatment exposure",
+            "Immortal time bias, since the group requires survival to be defined",
+            "Regression dilution caused by measurement error in the exposure"
+          ],
+          "correct": 2,
+          "explanation": "Completing treatment requires surviving it, so the group cannot include those who died during it. It is a classic pharmaco-epidemiological trap and it walks straight into feature engineering — which is why every tabular leakage pattern has an observational-study name you already know."
+        },
+        {
+          "question": "What does a SHAP plot establish about a model?",
+          "options": [
+            "That its predictions are calibrated across the risk range",
+            "That its features were all available at prediction time",
+            "That its performance will transfer to an external site",
+            "What the model used, but not whether the model is right"
+          ],
+          "correct": 3,
+          "explanation": "Explainability is not validation. A confounded model produces a beautifully interpretable explanation of its confound — the SHAP plot would have shown 'test ordered' as the top feature and looked entirely sensible. Interpretability tells you what happened inside; it says nothing about external validity."
+        },
+        {
+          "question": "What is the documented finding about deep learning on tabular data?",
+          "options": [
+            "Gradient boosting reliably outperforms it across typical benchmarks",
+            "It surpasses gradient boosting once feature counts exceed a threshold",
+            "The two are equivalent given sufficient hyperparameter tuning",
+            "It performs better on imbalanced outcomes but worse on balanced ones"
+          ],
+          "correct": 0,
+          "explanation": "The finding is consistent rather than occasional, so when a neural network is proposed for a spreadsheet the burden of proof lies with the proposer. 'We used deep learning' describes effort, not quality."
+        },
+        {
+          "question": "Why does resampling to fix class imbalance require an extra step?",
+          "options": [
+            "It reduces the effective sample size and widens confidence intervals",
+            "It distorts calibration, which is the property a threshold decision needs",
+            "It introduces duplicate patients across the train and test partitions",
+            "It prevents tree-based methods from splitting on rare categories"
+          ],
+          "correct": 1,
+          "explanation": "Over-sampling, SMOTE and class weights change the apparent outcome prevalence, so predicted probabilities no longer mean what they say. If you resample, recalibrate afterwards and report that you did. And remember accuracy is meaningless on a rare outcome: predicting 'no' for everyone scores 97% at 3% prevalence."
+        },
+        {
+          "question": "What does 'case' mean in a surveillance database, and why does it matter for a model?",
+          "options": [
+            "A laboratory-confirmed infection meeting the standard case definition",
+            "An episode of care coded for reimbursement by the treating facility",
+            "Detected and reported, so the model learns the geography of surveillance",
+            "An incident infection dated by symptom onset rather than by report"
+          ],
+          "correct": 2,
+          "explanation": "A proxy inherits the artefacts and inequities of the process that produced it. Any model trained on reported cases learns where surveillance reaches as much as where disease is — the working epidemiologist's version of the cost-for-need substitution in the Obermeyer case."
+        }
+      ]
+    },
+    {
+      "id": "lesson-05",
+      "order": 5,
+      "section": "Core track",
+      "phase": 2,
+      "phase_title": "The six shapes in depth",
+      "day": "2.4",
+      "emoji": "🖼️",
+      "time": 90,
+      "optional": false,
+      "title": "Labels from pixels — images, video, and what the model is really looking at",
+      "subtitle": "You cannot audit the input, so you must audit the acquisition",
+      "description": "Shape 3 from pixels. What a convolutional network computes, confounded acquisition as the signature failure, who is in the training data, what predicts generalisation, and what video's extra dimension buys.",
+      "topics": [
+        "What a CNN computes",
+        "Confounded acquisition",
+        "Subgroup representation",
+        "Predicting generalisation",
+        "Video and temporal leakage",
+        "Task-shifting",
+        "What imaging AI is worth"
+      ],
+      "key_terms": [
+        "convolution",
+        "vision transformer",
+        "confounded acquisition",
+        "hidden stratification",
+        "Fitzpatrick skin type",
+        "site artefact",
+        "patient-level split",
+        "task-shifting",
+        "target product profile"
+      ],
+      "practical": "Run the worked example, then weaken the confound until the genuine signal dominates. Note the association strength at which it flips — that is how strong a confound must be to matter.",
+      "quiz": [
+        {
+          "question": "Why is confounded acquisition described as a validity problem rather than overfitting?",
+          "options": [
+            "Because the model has far too many free parameters for the available sample size",
+            "Because the validation split was drawn before the preprocessing steps were applied",
+            "Because the labels were assigned inconsistently by several different clinicians",
+            "Because the confounded signal is real and reproduces in every fold of the archive"
+          ],
+          "correct": 3,
+          "explanation": "The signal genuinely exists and is stable within the dataset, so cross-validation confirms rather than exposes it. What fails is the mapping to deployment, where the confound no longer accompanies the disease. Overfitting is a variance problem; this is a validity problem, and internal validation cannot detect it."
+        },
+        {
+          "question": "What is the shared mechanism behind surgical skin markings, rulers, portable X-rays and chest drains?",
+          "options": [
+            "All four are present because someone had already formed a diagnostic suspicion",
+            "All four degrade the effective image resolution in ways the network exploits",
+            "All four are introduced by lossy digital compression during image storage",
+            "All four occur disproportionately on older and poorly calibrated equipment"
+          ],
+          "correct": 0,
+          "explanation": "A medical image records a clinical encounter, not just a patient, and the encounter carries information about the diagnosis. The clinician marked the lesion they meant to excise, placed the scale beside the worrying one, sent the portable machine to the sicker patient, and inserted the drain after diagnosing the pneumothorax."
+        },
+        {
+          "question": "In the dermatology case, what makes the skin-tone problem worse than simply 'performs less well on darker skin'?",
+          "options": [
+            "Images of darker skin compress differently and lose diagnostic detail",
+            "Skin type was frequently not recorded in evaluation sets, so the gap was unmeasurable",
+            "The conditions themselves present identically across every skin phototype",
+            "Only dermoscopy images were affected, while clinical photographs were fine"
+          ],
+          "correct": 1,
+          "explanation": "A known limitation can be designed around — a different threshold, different referral, a warning to the user. An unmeasured one is simply distributed as harm. Purpose-built diverse test sets had to be constructed before the gap could even be stated, and when it could, performance dropped."
+        },
+        {
+          "question": "Which single feature best predicts that an imaging model will survive deployment?",
+          "options": [
+            "A larger and more recent network architecture than the published baseline",
+            "A higher area under the curve on the original development dataset",
+            "A label drawn from a reference independent of the clinician being replaced",
+            "A substantially greater total number of training images than competitors"
+          ],
+          "correct": 2,
+          "explanation": "A bacteriological or histopathological reference standard makes a far stronger claim than agreement with the person the model would replace. Architecture and dataset size are rarely the story in this shape; the data, the label and the acquisition are. Development AUC says nothing about transfer."
+        },
+        {
+          "question": "Why must video datasets be split at patient level rather than frame level?",
+          "options": [
+            "Frame-level splits produce class imbalance that cannot be corrected",
+            "Video frames cannot be shuffled without corrupting the codec",
+            "Patient-level splits are required by data protection law, not statistics",
+            "Frames within a video are highly correlated, so random splits put near-identical images on both sides"
+          ],
+          "correct": 3,
+          "explanation": "The same patient and nearly the same image end up in train and test, which is leakage and produces spectacular, entirely fake performance. This is the temporal-correlation form of the same leakage problem covered in lesson 9."
+        },
+        {
+          "question": "AI-guided obstetric ultrasound lets an untrained operator obtain a reliable gestational-age estimate. Why is this the strongest design pattern in imaging AI?",
+          "options": [
+            "It moves a skill down the cadre ladder rather than replacing a specialist's judgement",
+            "It reaches higher accuracy than trained sonographers",
+            "It removes the need for any imaging equipment",
+            "It works without any reference standard for validation"
+          ],
+          "correct": 0,
+          "explanation": "In a system with no sonographers the counterfactual is not a worse estimate, it is no estimate. Framing AI as replacing a missing specialist gives a measurable health-systems benefit, whereas matching a present specialist is a benchmark contest — the same distinction that separated TB CAD from dermatology AI."
+        },
+        {
+          "question": "A radiologist is shown only the non-anatomical parts of a set of images and can guess the diagnosis fairly well. What have you learned?",
+          "options": [
+            "The images are of insufficient diagnostic quality",
+            "There is a confound the model will preferentially learn",
+            "The radiologist is unusually skilled at pattern recognition",
+            "The label noise in the dataset is too high to model"
+          ],
+          "correct": 1,
+          "explanation": "That is the practical test for confounded acquisition. If non-anatomical content predicts the label, the model will use it, because it is easier to learn than the pathology — and internal validation will reward it for doing so."
+        }
+      ]
+    },
+    {
+      "id": "lesson-06",
+      "order": 6,
+      "section": "Core track",
+      "phase": 2,
+      "phase_title": "The six shapes in depth",
+      "day": "2.5",
+      "emoji": "🧩",
+      "time": 90,
+      "optional": false,
+      "title": "Finding structure — clustering, embeddings, and clusters that are not there",
+      "subtitle": "The only shape where the model defines the answer, so it cannot be contradicted by its own output",
+      "description": "Shape 4. Why standard diagnostics report structure in pure noise, replication as the only honest validation, what a UMAP does not license you to conclude, and the ethics of clustering people.",
+      "topics": [
+        "The algorithm always answers",
+        "Null comparisons",
+        "Scan statistics as the template",
+        "Replication",
+        "Embeddings",
+        "UMAP misreadings",
+        "Clustering people"
+      ],
+      "key_terms": [
+        "silhouette",
+        "within-cluster sum of squares",
+        "elbow",
+        "gap statistic",
+        "permutation null",
+        "spatial scan statistic",
+        "Monte Carlo null",
+        "latent class analysis",
+        "embedding",
+        "UMAP",
+        "t-SNE",
+        "transmission cluster"
+      ],
+      "practical": "Take any clustering you have done or read about and compute the permutation null: run the identical pipeline on data with the structure destroyed, and report the observed value beside the null distribution.",
+      "quiz": [
+        {
+          "question": "300 points drawn uniformly at random gave mean silhouette values of 0.36 to 0.41 across k=2 to 6. What does that establish?",
+          "options": [
+            "That the silhouette is an unreliable statistic and should not be used",
+            "That uniform random data contains weak but genuine latent structure",
+            "That internal metrics are interpretable only against a null comparison",
+            "That k-means is the wrong algorithm for low-dimensional data"
+          ],
+          "correct": 2,
+          "explanation": "A silhouette near 0.4 reads as moderate real structure in isolation, and here it came from noise. Genuinely separated Gaussians reached 0.86. So 0.39 versus 0.86 is informative while 0.39 alone is not — which makes running your pipeline on a null and reporting both the cheap fix nobody applies."
+        },
+        {
+          "question": "Why can a within-cluster sum of squares plot mislead on pure noise?",
+          "options": [
+            "It cannot be computed when clusters have unequal sizes",
+            "It is undefined for k greater than the intrinsic dimensionality",
+            "It requires the number of clusters to be specified in advance",
+            "It falls smoothly, so an elbow can be read where none exists"
+          ],
+          "correct": 3,
+          "explanation": "On the noise example WSS fell 30 to 18 to 12 to 10 to 8 — a smooth decline that an elbow reading interprets as k=3 or 4. The clusters were also balanced and plausible-looking, which is exactly how a real finding presents. The gap statistic formalises the null comparison the elbow lacks."
+        },
+        {
+          "question": "What does the spatial scan statistic do that most clustering methods omit?",
+          "options": [
+            "It compares the most extreme window against its null distribution",
+            "It constrains cluster shapes to administrative boundaries",
+            "It requires no assumptions about the underlying population at risk",
+            "It identifies the optimal number of clusters automatically"
+          ],
+          "correct": 0,
+          "explanation": "It asks whether the most extreme cluster is more extreme than chance would produce given that thousands of windows were examined, using a Monte Carlo null. That is shape 4 with the multiple-comparisons problem taken seriously, and it is the comparator any machine-learning clustering claim on spatial data should face."
+        },
+        {
+          "question": "With no labels, what is the strongest available validation of a discovered structure?",
+          "options": [
+            "A high silhouette coefficient on the derivation dataset",
+            "Replication of the same groups in an independent dataset",
+            "Stability of the solution across random initialisations",
+            "Agreement between two different clustering algorithms"
+          ],
+          "correct": 1,
+          "explanation": "Replication in a different cohort, country or year is the strongest evidence and the one most often skipped. Also useful: a null comparison, external validity of the groups on something you did not cluster on, and stability under perturbation. Internal metrics cannot establish reality."
+        },
+        {
+          "question": "In a UMAP plot, which feature is approximately trustworthy?",
+          "options": [
+            "The distances between separate clusters",
+            "The relative sizes of the visible clusters",
+            "Local neighbourhood structure around each point",
+            "The number of distinct blobs that appear"
+          ],
+          "correct": 2,
+          "explanation": "Only local neighbourhoods are approximately preserved. Between-cluster distances and cluster sizes are not meaningful — the algorithm deliberately expands sparse regions and compresses dense ones — and the number of visible blobs depends on hyperparameters and can be tuned into or out of existence. Use it to look, never to conclude."
+        },
+        {
+          "question": "Why does an embedding's notion of 'similar' require scrutiny?",
+          "options": [
+            "Embeddings are stochastic, so repeated runs disagree",
+            "High-dimensional distances are undefined without normalisation",
+            "Embeddings cannot represent categorical clinical variables",
+            "It is inherited from whatever data the embedding was trained on"
+          ],
+          "correct": 3,
+          "explanation": "A clinical-note embedding trained on US discharge summaries encodes US documentation habits as similarity. So the geometry you go on to cluster is not a neutral space but a model of someone else's data — and the clusters you find are partly a property of that inheritance."
+        },
+        {
+          "question": "What is the distinctive ethical question when the objects being clustered are people?",
+          "options": [
+            "What happens to someone because of their assigned group, and can they contest it",
+            "Whether the clustering algorithm satisfies a formal fairness criterion",
+            "Whether consent was obtained for the specific clustering method used",
+            "Whether the cluster labels are anonymised before publication"
+          ],
+          "correct": 0,
+          "explanation": "A discovered subgroup becomes an administrative category, then a resource-allocation category, and eventually a fact about people rather than a feature of a dataset. HIV molecular clustering is the live case: it identifies people whose viruses are related, which is an inference about transmission that they did not consent to."
+        }
+      ]
+    },
+    {
+      "id": "lesson-07",
+      "order": 7,
+      "section": "Core track",
+      "phase": 2,
+      "phase_title": "The six shapes in depth",
+      "day": "2.6",
+      "emoji": "🗣️",
+      "time": 90,
+      "optional": false,
+      "title": "Language into data — clinical NLP, LLMs, and AI in the consultation",
+      "subtitle": "The shape where the hard part is the label, not the model",
+      "description": "Shape 5. Negation and hedging as case-definition problems, the pre-LLM stack and why it survives, RAG scored twice, and what the AMIE and ambient-scribe evidence actually shows.",
+      "topics": [
+        "Extraction failure modes",
+        "NegEx and the rule-based stack",
+        "What LLMs changed",
+        "Ambient documentation",
+        "Diagnostic dialogue (AMIE)",
+        "Triage chatbots",
+        "Language for surveillance",
+        "Evaluating generation"
+      ],
+      "key_terms": [
+        "negation",
+        "hedging",
+        "temporality",
+        "experiencer",
+        "NegEx",
+        "RAG",
+        "groundedness",
+        "recall@k",
+        "omission rate",
+        "under-triage",
+        "verbal autopsy",
+        "LLM-as-judge"
+      ],
+      "practical": "Write the case definition you would hand an annotator for a confirmed case in your own disease area, then list the sentences that stay ambiguous under it. If none are ambiguous, the definition is too vague.",
+      "quiz": [
+        {
+          "question": "Of the six failure modes in clinical text extraction, how many are really case-definition problems?",
+          "options": [
+            "All six",
+            "Four",
+            "Two",
+            "None — they are all parsing problems"
+          ],
+          "correct": 1,
+          "explanation": "Negation, hedging, temporality and experiencer are all decisions about what counts as a case, not engineering problems. Abbreviation collision and multilingual text are genuine NLP problems. Recognising the split is the epidemiologist's main contribution to a language project."
+        },
+        {
+          "question": "'No improvement on TB therapy after 8 weeks.' A negation-aware extractor marks this as not a TB case. Why is it wrong?",
+          "options": [
+            "'No' does not function as a negation trigger in clinical text",
+            "Eight weeks falls outside the algorithm's negation scope window",
+            "The trigger negates the improvement, not the diagnosis",
+            "'TB therapy' is a treatment mention rather than a diagnosis mention"
+          ],
+          "correct": 2,
+          "explanation": "The negation has scope, and here it falls on 'improvement' — the patient plainly has tuberculosis. No amount of trigger-list tuning fixes this; it requires scope, and scope requires the case definition to state what is being negated."
+        },
+        {
+          "question": "Why might a rule-based extractor be preferred over an LLM for a statutory notification pipeline?",
+          "options": [
+            "It is more accurate on every task",
+            "It handles multilingual notes better",
+            "It needs no case definition",
+            "It is auditable and produces stable output"
+          ],
+          "correct": 3,
+          "explanation": "You can point at the line that produced a decision, and it returns the same output next month. Neither holds for a generative model. For anything feeding official statistics, auditability and stability can outweigh a few points of F1."
+        },
+        {
+          "question": "A RAG system answers a question incorrectly. What must be checked before blaming the model?",
+          "options": [
+            "Whether the right passage was retrieved at all",
+            "The sampling temperature used during generation",
+            "The parameter count of the underlying language model",
+            "Whether the prompt explicitly named the corpus being searched"
+          ],
+          "correct": 0,
+          "explanation": "If retrieval never surfaced the relevant passage, generation was never given a chance and no prompt engineering fixes it. Retrieval and generation must be scored separately — recall@k for retrieval, groundedness against retrieved text for generation."
+        },
+        {
+          "question": "The evidence base for ambient clinical documentation is strongest on which endpoint?",
+          "options": [
+            "Accuracy of the clinical note against an independent reference",
+            "Clinician documentation burden and burnout",
+            "Accuracy of downstream billing and diagnostic coding",
+            "Diagnostic concordance between the scribe and the clinician"
+          ],
+          "correct": 1,
+          "explanation": "Burnout and documentation load are the well-supported endpoints, and they matter. Note accuracy and downstream consequences are much weaker — and there is a trap: a system can improve satisfaction while degrading record quality, since the clinicians best placed to notice are the ones relieved of checking."
+        },
+        {
+          "question": "In the AMIE study, what most limits the claim that an LLM outperformed physicians?",
+          "options": [
+            "The sample of simulated consultations was too small to be conclusive",
+            "The specialist raters scoring the transcripts were not blinded",
+            "The physician comparator was also restricted to text chat",
+            "Only a single clinical specialty was represented in the scenarios"
+          ],
+          "correct": 2,
+          "explanation": "Patients were actors, the medium was text chat, and — decisively — physicians were confined to the same medium, without examination, gestalt or continuity. The honest statement is about synchronous text consultation, a real setting, not about being a better doctor."
+        },
+        {
+          "question": "What is the characteristic safety failure of patient-facing triage chatbots, and how must it be reported?",
+          "options": [
+            "Over-triage, reported as specificity",
+            "Refusal to answer, reported as coverage",
+            "Latency, reported as time-to-advice",
+            "Under-triage, reported by acuity level"
+          ],
+          "correct": 3,
+          "explanation": "Under-triage of serious presentations is the recurring finding and the failure direction that matters. Triage is an ordered-outcome classification, so it owes a full confusion matrix by acuity — under- and over-triage carry entirely different costs and cannot be collapsed into accuracy."
+        },
+        {
+          "question": "Why should ROUGE or BLEU scores not reassure you about a generated clinical summary?",
+          "options": [
+            "They measure overlap with a reference, not correctness",
+            "They are too computationally slow to run at scale",
+            "They require a human-written reference summary to exist",
+            "They systematically penalise appropriately brief summaries"
+          ],
+          "correct": 0,
+          "explanation": "A clinically dangerous omission barely moves an overlap score. The same caution applies to LLM-as-judge evaluation: convenient and increasingly standard, but it inherits the grader's blind spots. Both are evidence; neither is measurement."
+        }
+      ]
+    },
+    {
+      "id": "lesson-08",
+      "order": 8,
+      "section": "Core track",
+      "phase": 2,
+      "phase_title": "The six shapes in depth",
+      "day": "2.7",
+      "emoji": "🎯",
+      "time": 90,
+      "optional": false,
+      "title": "Choosing an action — decision support, optimisation, and the off-policy trap",
+      "subtitle": "The objective function is a policy document",
+      "description": "Shape 6. Thresholds as value judgements, net benefit and the model that is worse than nothing, off-policy evaluation and why it invalidated the AI Clinician, and the honest evaluable half of the shape.",
+      "topics": [
+        "Thresholds as values",
+        "Net benefit",
+        "Off-policy evaluation",
+        "Confounding by indication",
+        "Optimisation under constraints",
+        "RL in a hostile setting"
+      ],
+      "key_terms": [
+        "threshold probability",
+        "net benefit",
+        "decision curve",
+        "treat-all / treat-none",
+        "off-policy evaluation",
+        "importance weighting",
+        "confounding by indication",
+        "target trial emulation",
+        "offline RL"
+      ],
+      "practical": "Elicit pt for a decision you are involved in: how many unnecessary interventions would you accept per case found? Then check whether your current strategy beats treating everyone and treating nobody.",
+      "quiz": [
+        {
+          "question": "You would accept 9 unnecessary interventions to catch one true case. What is your threshold probability?",
+          "options": [
+            "Nine per cent, matching the number of interventions accepted",
+            "Ten per cent, since pt equals one over N plus one",
+            "Ninety per cent, the complement of the acceptable error",
+            "It cannot be derived without knowing the outcome prevalence"
+          ],
+          "correct": 1,
+          "explanation": "pt = 1/(N+1) = 1/10. The threshold encodes the exchange rate between a missed case and an unnecessary intervention, so it is elicited from the relative harms rather than tuned — and it differs legitimately between a well-resourced hospital and a rural clinic."
+        },
+        {
+          "question": "Model A has better discrimination than Model B but negative net benefit above pt=0.20. What does negative net benefit mean?",
+          "options": [
+            "Its calibration is poor and requires recalibration before use",
+            "Its confidence intervals include the null at that threshold",
+            "It performs worse than simply treating nobody at all",
+            "It requires a larger sample before the estimate stabilises"
+          ],
+          "correct": 2,
+          "explanation": "'Treat nobody' scores exactly zero, always, and is the bar any model must clear. A negative net benefit means you would do less harm by switching the model off — and no summary of discrimination can reveal this, which is the point of the decision framing."
+        },
+        {
+          "question": "What is the off-policy evaluation problem?",
+          "options": [
+            "Treatment policies change faster than models can be retrained",
+            "Policies cannot be represented in a supervised learning framework",
+            "Outcomes are censored, so long-run policy value is unidentifiable",
+            "Your data record the actions taken and nothing about those not taken"
+          ],
+          "correct": 3,
+          "explanation": "To evaluate a policy you need to know what happens when you follow it, but the data were generated by clinicians following their own policy. Where a learned policy diverges most from observed practice — exactly where its recommendations are interesting — there is almost no data, so the estimate is extrapolation dressed as measurement."
+        },
+        {
+          "question": "Which epidemiological bias is unavoidable when learning treatment policy from observational intensive-care data?",
+          "options": [
+            "Confounding by indication, since treatment followed unmeasured severity",
+            "Recall bias, since the record is completed retrospectively",
+            "Differential loss to follow-up between treatment arms",
+            "Regression dilution from measurement error in the exposure"
+          ],
+          "correct": 0,
+          "explanation": "Clinicians chose treatments because of severity the model cannot see. It observes the treatment and the outcome but not the reason, and no algorithmic sophistication removes that — only randomisation, or a setting where the assignment mechanism is genuinely known."
+        },
+        {
+          "question": "Why is health close to the worst possible setting for reinforcement learning?",
+          "options": [
+            "Health data are too high-dimensional for policy gradients to converge",
+            "Exploration means experimenting on patients, and the environment shifts",
+            "Reward functions in health cannot be expressed numerically at all",
+            "Electronic records lack the time resolution reinforcement learning needs"
+          ],
+          "correct": 1,
+          "explanation": "RL needs cheap exploration, many episodes, fast clear rewards and a stationary environment. Health offers experimentation on patients, one life per patient, delayed and contested outcomes, and continually changing practice, pathogens and policy. So health RL is almost always offline, which returns you to the off-policy problem."
+        },
+        {
+          "question": "What is the danger of optimising a stated objective exactly?",
+          "options": [
+            "Solvers converge to local optima that are hard to detect",
+            "Optimisation requires constraints that are rarely known precisely",
+            "An incomplete objective is followed faithfully, abandoning what it omits",
+            "The optimum is unstable to small changes in input data"
+          ],
+          "correct": 2,
+          "explanation": "Maximise cases detected per euro and you will systematically abandon remote populations because they are expensive. That is not a bug in the solver — it is the objective being followed. Which is why writing the objective down explicitly is often the most valuable output of the exercise."
+        },
+        {
+          "question": "A paper reports an 'optimal' allocation strategy for screening resources. What should you look for first?",
+          "options": [
+            "Whether the solver reached a certified global optimum",
+            "Whether the constraint set was validated against field data",
+            "Whether sensitivity analyses varied the input parameters",
+            "Whether the objective function is stated in the paper"
+          ],
+          "correct": 3,
+          "explanation": "An optimum is only defined relative to an objective, so an unstated objective makes 'optimal' meaningless — and it conceals a value judgement about whose outcomes count. The other three matter, but none of them can be interpreted until the objective is on the page."
+        }
+      ]
+    },
+    {
+      "id": "lesson-09",
+      "order": 9,
+      "section": "Core track",
+      "phase": 3,
+      "phase_title": "Judgement",
+      "day": "3.1",
+      "emoji": "⚖️",
+      "time": 90,
+      "optional": false,
+      "title": "Evaluation — the lesson that decides all the others",
+      "subtitle": "Discrimination is a property of the model; everything that matters is a property of the model in a setting",
+      "description": "Discrimination vs calibration, PPV at real prevalence, the validation ladder, leakage, dataset shift, proper scoring rules, net benefit, and TRIPOD+AI/PROBAST+AI.",
+      "topics": [
+        "Discrimination vs calibration",
+        "Prevalence and alert burden",
+        "The validation ladder",
+        "Leakage",
+        "Dataset shift",
+        "Proper scoring rules",
+        "Net benefit",
+        "Reporting frameworks"
+      ],
+      "key_terms": [
+        "AUC",
+        "Mann-Whitney U",
+        "calibration slope",
+        "calibration-in-the-large",
+        "PPV",
+        "alert burden",
+        "external validation",
+        "leakage",
+        "covariate shift",
+        "label shift",
+        "concept shift",
+        "WIS",
+        "CRPS",
+        "net benefit",
+        "TRIPOD+AI",
+        "PROBAST+AI"
+      ],
+      "practical": "Take the most recent AI-in-health paper you read. Find its AUC, then its validation-set prevalence, whether calibration is reported, and whether validation was external. Time how long each takes to find.",
+      "quiz": [
+        {
+          "question": "A model's predicted probabilities are all multiplied by three. What happens to its AUC?",
+          "options": [
+            "It is unchanged",
+            "It falls sharply",
+            "It rises",
+            "It becomes undefined"
+          ],
+          "correct": 0,
+          "explanation": "AUC is the Mann-Whitney U statistic and depends only on the ordering of predictions, never their values. Tripling every probability leaves ranks identical, so AUC is unchanged while calibration, PPV at a fixed threshold and alert burden are all destroyed."
+        },
+        {
+          "question": "Which quantity does a threshold-based decision actually require?",
+          "options": [
+            "Discrimination",
+            "Calibration",
+            "The c-statistic",
+            "Sensitivity alone"
+          ],
+          "correct": 1,
+          "explanation": "Calibration tells you a predicted 0.7 corresponds to a 70% observed rate, which is what a decision rule needs. A perfectly discriminating but badly calibrated model tells you who is at higher risk without telling you whether anyone is at enough risk to act."
+        },
+        {
+          "question": "At 80% sensitivity and 90% specificity, PPV is 47.1% when prevalence is 10%. What is it at 0.1%?",
+          "options": [
+            "About 8%",
+            "About 25%",
+            "About 0.8%",
+            "About 47% — PPV does not depend on prevalence"
+          ],
+          "correct": 2,
+          "explanation": "0.79%. Sensitivity and specificity are unchanged; only the setting moved. Worse, the alert rate barely falls (17.0% to 10.1%) because it converges on the false-positive rate — the model keeps firing at similar volume while becoming almost entirely wrong."
+        },
+        {
+          "question": "What does internal cross-validation estimate?",
+          "options": [
+            "Performance on data like the development data",
+            "Whether the model changes outcomes",
+            "Calibration under dataset shift",
+            "Performance in a new health system"
+          ],
+          "correct": 3,
+          "explanation": "It corrects optimism, not generalisability. The Epic Sepsis Model reached this rung and was marketed as though impact-evaluated; external validation across a large health system found much weaker discrimination, poor calibration and a heavy alert burden."
+        },
+        {
+          "question": "A sepsis prediction model uses antibiotic orders as a predictor. What is the defect?",
+          "options": [
+            "Leakage — the order followed the suspicion",
+            "Collinearity between the antibiotic and severity predictors",
+            "Immortal time bias introduced by the observation window",
+            "Non-linearity in the relationship between dose and outcome"
+          ],
+          "correct": 0,
+          "explanation": "The order exists because someone already suspected sepsis, so the model receives information about the outcome it could never have in true prospective use. Leakage produces spectacular, entirely fake performance and is hard to see from a methods section."
+        },
+        {
+          "question": "Why does evaluating a point forecast with MAE reward over-confidence?",
+          "options": [
+            "MAE is unduly sensitive to a small number of outliers",
+            "There is no penalty for a too-narrow interval",
+            "MAE ignores the mean of the predictive distribution entirely",
+            "MAE cannot be computed for count-valued forecast targets"
+          ],
+          "correct": 1,
+          "explanation": "A forecast is a distribution and must be scored as one. Proper rules — log score, CRPS, WIS for quantiles — cannot be gamed, because the best expected score comes from reporting your honest belief. Coverage of the 50% and 95% intervals should also be checked."
+        },
+        {
+          "question": "A dermatology model reports 94% overall accuracy. What is the most important missing number?",
+          "options": [
+            "The number of images in the training set",
+            "The learning-rate schedule used during training",
+            "Performance by Fitzpatrick skin type",
+            "The number of diagnostic classes the model distinguishes"
+          ],
+          "correct": 2,
+          "explanation": "Aggregate accuracy is a weighted average that hides who the model fails. Training sets skew to lighter skin, and the deeper problem is that performance on darker skin is frequently not measured at all — so the failure is invisible rather than merely known."
+        },
+        {
+          "question": "A vendor claims 92% accuracy for an outcome occurring in 3% of patients. What is the sharpest reply?",
+          "options": [
+            "Ask for the AUC on the same validation cohort instead",
+            "Ask for a substantially larger external validation set",
+            "Ask whether the model was regularised during development",
+            "Note that predicting 'no' for everyone scores 97%"
+          ],
+          "correct": 3,
+          "explanation": "The trivial constant classifier beats the product, which shows accuracy is the wrong metric on imbalanced outcomes. Asking for AUC is an improvement but still insufficient — you need calibration and PPV at the deployment prevalence."
+        },
+        {
+          "question": "What is meant by 'six shapes, six debts'?",
+          "options": [
+            "Each shape owes a specific kind of evaluation",
+            "Each shape requires exactly six evaluation metrics",
+            "There are six distinct reporting frameworks to apply",
+            "Each of the six shapes requires six lessons to cover"
+          ],
+          "correct": 0,
+          "explanation": "Once you know a claim's shape, you know what evaluation it owes. Shape 1 owes a false-alarm rate and timeliness at a matched threshold; shape 2 a proper scoring rule and a naive baseline; shape 3 calibration and PPV at deployment prevalence; shape 4 replication; shape 5 a definition of correct; shape 6 an account of evaluation without deployment."
+        }
+      ]
+    },
+    {
+      "id": "lesson-10",
+      "order": 10,
+      "section": "Core track",
+      "phase": 3,
+      "phase_title": "Judgement",
+      "day": "3.2",
+      "emoji": "⚖️",
+      "time": 90,
+      "optional": false,
+      "title": "Deployment, bias and governance — what happens when it is wrong, and who finds out",
+      "subtitle": "Nearly every failure in this course is a failure of the surrounding system",
+      "description": "The AI chasm, four kinds of bias with four different fixes, human factors, the EU regulatory tiers and the naming problem, and the seven conditions that got TB CAD to a WHO recommendation.",
+      "topics": [
+        "The AI chasm",
+        "Label / representation / deployment bias",
+        "Feedback loops",
+        "Automation bias and alert fatigue",
+        "EU AI Act and MDR",
+        "The naming problem",
+        "What good looks like"
+      ],
+      "key_terms": [
+        "AI chasm",
+        "label bias",
+        "representation bias",
+        "deployment bias",
+        "feedback loop",
+        "automation bias",
+        "alert fatigue",
+        "workaround",
+        "high-risk tier",
+        "MDR",
+        "SaMD",
+        "predetermined change control",
+        "DECIDE-AI"
+      ],
+      "practical": "Take any Atlas entry and answer the governing question in two sentences: what happens when it is wrong, and who finds out?",
+      "quiz": [
+        {
+          "question": "Where does the AI chasm sit on the validation ladder?",
+          "options": [
+            "Between apparent performance and internal cross-validation",
+            "Between external validation and impact evaluation",
+            "Between temporal validation and geographical validation",
+            "Between regulatory clearance and commercial procurement"
+          ],
+          "correct": 1,
+          "explanation": "Almost the entire published literature sits below impact evaluation. A paper needs a dataset and a metric; a deployment needs an integration, a threshold, a workflow, a trained user, monitoring, escalation and a maintenance budget. When someone says 'clinically validated', ask which rung they mean."
+        },
+        {
+          "question": "Which kind of bias has a genuinely clean technical fix, and what is it?",
+          "options": [
+            "Representation bias — reweight the training distribution",
+            "Deployment bias — retrain on data from the target site",
+            "Label bias — change the target variable",
+            "Feedback loops — add a regularisation penalty"
+          ],
+          "correct": 2,
+          "explanation": "Obermeyer's disparity largely disappeared on relabelling to a health-based target. The others need data collection, fieldwork or institutional will: representation bias needs measurement then collection, deployment bias needs workflow study, and feedback loops need deliberate exploration against the model's own advice."
+        },
+        {
+          "question": "How does the feedback loop appear in surveillance specifically?",
+          "options": [
+            "Reporting delay causes recent counts to appear artificially low",
+            "Case definitions tighten as programmes approach elimination targets",
+            "Laboratory capacity declines faster than case counts fall",
+            "Screening goes where cases were reported, generating more reports there"
+          ],
+          "correct": 3,
+          "explanation": "The model sends teams to previously positive areas, which produces more detections there, which confirms the model, while unsurveyed areas stay quiet and therefore stay unsurveyed. The fix is to allocate some effort against the model's advice — which means knowingly spending sub-optimally by its own criterion."
+        },
+        {
+          "question": "When is automation bias strongest?",
+          "options": [
+            "When the model's output is plausible and the user is tired or junior",
+            "When the model's confidence scores are poorly calibrated",
+            "When the interface presents several competing recommendations",
+            "When the user has been trained on the model's known limitations"
+          ],
+          "correct": 0,
+          "explanation": "People defer to a confident machine against their own correct judgement, and defer more when busy, tired or junior — exactly when the model is meant to help. The effect is strongest for plausible wrong answers, which is precisely what modern systems produce."
+        },
+        {
+          "question": "Ambient scribes are widely deployed while AMIE, with a randomised trial, is not. Why?",
+          "options": [
+            "Scribes were shown to improve patient outcomes in trials",
+            "The regulatory class follows the claim, not what the thing can break",
+            "Diagnostic models consistently fail external validation",
+            "Health systems will not fund diagnostic decision support"
+          ],
+          "correct": 1,
+          "explanation": "Writing a note is 'documentation' and generally not a regulated device; producing a differential is 'diagnosis' and lands in the EU AI Act's high-risk tier. The consequence is inverted — the product with less oversight is the one in the room with patients — so the reviewer's question is whether the classification matches the risk."
+        },
+        {
+          "question": "What is absent from the seven conditions that got TB CAD to a WHO recommendation?",
+          "options": [
+            "Any requirement for multi-site external validation",
+            "Any requirement for subgroup performance reporting",
+            "Any claim about the model architecture",
+            "Any requirement for a locally tunable threshold"
+          ],
+          "correct": 2,
+          "explanation": "All seven concern the label's independence, acquisition, population match, threshold tunability, a confirmatory step downstream, subgroup reporting and a guideline home. None is about the network. Which is the course's argument in one observation."
+        },
+        {
+          "question": "When does a human-in-the-loop control become decorative?",
+          "options": [
+            "When the reviewer lacks training in the model's failure modes",
+            "When the review step is not logged for later audit",
+            "When the model's output exceeds a certain volume per shift",
+            "When the product's value proposition is not having to review"
+          ],
+          "correct": 3,
+          "explanation": "If the safety case is 'the clinician reviews the output' while the reason for buying the product is to stop doing that work, the control cannot function. Ambient documentation is the live example: review is both the safety mechanism and the thing being sold away."
+        }
+      ]
+    },
+    {
+      "id": "lesson-20",
+      "order": 20,
+      "section": "Deep dives",
+      "phase": 4,
+      "phase_title": "Deep dives",
+      "day": "DD1",
+      "emoji": "📉",
+      "time": 45,
+      "optional": false,
+      "title": "Deep dive — Google Flu Trends",
+      "subtitle": "The parable: what a proxy can and cannot replace",
+      "description": "Full arc from research question to conclusion. Why it under-estimated 2009 and doubled the 2012-13 peak, and what the approach is actually worth.",
+      "topics": [
+        "Nowcasting vs early warning",
+        "Correlation-mined predictors",
+        "Algorithm dynamics",
+        "Big data hubris",
+        "What digital epidemiology became"
+      ],
+      "key_terms": [
+        "nowcasting",
+        "algorithm dynamics",
+        "big data hubris",
+        "seasonal-naive baseline",
+        "recalibration"
+      ],
+      "practical": "Explain the case out loud in 60 seconds using section 10, without notes. If you cannot say why it failed in BOTH directions, re-read sections 6 and 7.",
+      "quiz": []
+    },
+    {
+      "id": "lesson-21",
+      "order": 21,
+      "section": "Deep dives",
+      "phase": 4,
+      "phase_title": "Deep dives",
+      "day": "DD2",
+      "emoji": "🩻",
+      "time": 50,
+      "optional": false,
+      "title": "Deep dive — Two imaging stories: chest X-ray and skin",
+      "subtitle": "Both matched specialists. Only one reached practice. The difference is not accuracy",
+      "description": "TB CAD reached WHO recommendation and scale; dermatology AI mostly did not. Seven structural conditions explain why, and none of them is model performance.",
+      "topics": [
+        "Reference standards",
+        "Standardised acquisition",
+        "Tunable thresholds",
+        "Confirmatory tests downstream",
+        "Skin-tone representation",
+        "Target product profiles",
+        "Confounded acquisition"
+      ],
+      "key_terms": [
+        "CAD4TB",
+        "target product profile",
+        "Fitzpatrick skin type",
+        "confounded feature",
+        "triage vs diagnosis",
+        "task-shifting"
+      ],
+      "practical": "Take any AI application you have read about and score it against the seven conditions in section 8. The count predicts whether it will reach practice better than its AUC does.",
+      "quiz": []
+    },
+    {
+      "id": "lesson-22",
+      "order": 22,
+      "section": "Deep dives",
+      "phase": 4,
+      "phase_title": "Deep dives",
+      "day": "DD3",
+      "emoji": "🗨️",
+      "time": 50,
+      "optional": false,
+      "title": "Deep dive — The consultation: AMIE and the ambient scribe",
+      "subtitle": "One proved without shipping. The other shipped without proving. The difference is what you call it",
+      "description": "AMIE has a randomised blinded trial and no deployment; ambient scribes have enormous deployment and thin evidence on note accuracy. The regulatory class is set by the claim, not the risk — so the less-overseen product is the one in the room with patients.",
+      "topics": [
+        "What each delegates",
+        "Self-play training",
+        "Omission as the invisible error",
+        "Proxy endpoints vs real ones",
+        "Constrained comparators",
+        "Regulatory class set by naming",
+        "Differential misclassification in records"
+      ],
+      "key_terms": [
+        "ambient documentation",
+        "speaker diarisation",
+        "SOAP note",
+        "self-play",
+        "OSCE",
+        "omission rate",
+        "automation bias",
+        "software as a medical device",
+        "EU AI Act high-risk tier",
+        "DECIDE-AI",
+        "differential misclassification"
+      ],
+      "practical": "Take the 60-second explanation in section 10 and deliver it out loud to a colleague. The test of understanding is whether they grasp the naming argument without you re-reading section 7.",
+      "quiz": [
+        {
+          "question": "AMIE has a randomised blinded trial and no deployment; ambient scribes have enormous deployment and thin accuracy evidence. What best explains the inversion?",
+          "options": [
+            "The regulatory class is set by the product's claim, not by what it can break",
+            "Ambient scribes use a fundamentally simpler and safer technology",
+            "Diagnostic models have consistently failed external validation",
+            "Health systems will not pay for diagnostic support of any kind"
+          ],
+          "correct": 0,
+          "explanation": "Writing a note is 'documentation', so a scribe is generally not a regulated medical device and needs no clinical validation. Producing a differential is 'diagnosis', which triggers the high-risk tier under the EU AI Act and MDR, or the FDA SaMD route. The consequence is inverted: the product with less oversight is the one touching patients."
+        },
+        {
+          "question": "In an ambient scribe pipeline, which error is hardest to detect and why?",
+          "options": [
+            "Fabricated findings, because they are clinically implausible",
+            "Omission, because a note missing the key sentence looks entirely normal",
+            "Speaker mis-attribution, because it is rare in practice",
+            "Transcription errors, because they are corrected downstream"
+          ],
+          "correct": 1,
+          "explanation": "The summarisation step's job is to discard the large majority of what was said, so leaving out the one sentence that mattered produces a note with nothing anomalous about it. Fabrication is detectable; omission is invisible — and omission rates are almost never reported."
+        },
+        {
+          "question": "Why is 'the clinician reviews and signs the note' a weak safety control here?",
+          "options": [
+            "Clinicians lack the training to spot summarisation errors",
+            "Signing is a legal formality with no clinical content",
+            "The product's value proposition is precisely not having to read and type",
+            "The review happens too long after the encounter to be useful"
+          ],
+          "correct": 2,
+          "explanation": "The safety case rests on a review performed by someone who adopted the product to stop doing that work. When the human-in-the-loop step is the thing being sold away, the control becomes decorative — and automation bias makes confident output likelier to be signed unread."
+        },
+        {
+          "question": "AMIE matched or exceeded physicians on several empathy and communication measures. What is the least mystical explanation?",
+          "options": [
+            "Language models are optimised directly for empathic phrasing during training",
+            "Patient actors systematically prefer written to spoken clinical communication",
+            "Empathy ratings are too unreliable to support any comparison at all",
+            "It has unlimited patience, no time pressure, and no previous patient"
+          ],
+          "correct": 3,
+          "explanation": "Never tired, never rushed, no prior difficult consultation and no hunger are structural advantages in a rated conversation. That does not make the finding invalid — it makes it interpretable, and it suggests the comparison is partly about working conditions rather than about capability."
+        },
+        {
+          "question": "What did the AMIE trial's text-chat design do to the strength of its conclusion?",
+          "options": [
+            "It made the comparison fairer and simultaneously narrowed what it can support",
+            "It invalidated the comparison, since physicians never work this way",
+            "It had no material effect, because history-taking is purely verbal anyway",
+            "It biased results toward the physicians, who are trained writers"
+          ],
+          "correct": 0,
+          "explanation": "Confining both arms to text removes a medium advantage, which is methodologically defensible. It also bounds the conclusion tightly to synchronous text consultation with simulated patients — a real and growing setting, but not general clinical practice. Both statements are true and both should be said."
+        },
+        {
+          "question": "Where is ambient documentation's value best quantified?",
+          "options": [
+            "Words per note reduced compared with typed notes",
+            "Clinician-hours returned, especially after-hours work",
+            "Reduction in diagnostic error rate across encounters",
+            "Improvement in patient satisfaction with the consultation"
+          ],
+          "correct": 1,
+          "explanation": "The units of the decision are clinician-hours. One to two minutes across twenty encounters a day is 20-40 minutes daily, and the after-hours reduction matters most because that is where attrition is generated. In a system short of clinicians that is a workforce intervention, not a gadget."
+        },
+        {
+          "question": "What is the specifically epidemiological harm if scribes are used unevenly across populations?",
+          "options": [
+            "Reduced statistical power in studies using those records",
+            "Loss of patient consent for secondary use of the data",
+            "Differential misclassification entering every dataset built from those records",
+            "Increased missingness that standard imputation cannot handle"
+          ],
+          "correct": 2,
+          "explanation": "If omission rates are worse for accented speech, interpreted consultations or interrupted encounters, the error is non-random with respect to population. Every study built on those records inherits it as differential misclassification — a bias arriving through the back door, in the records rather than the analysis."
+        },
+        {
+          "question": "AMIE's training used self-play: a model as doctor, a model as patient, a model as critic. What is the central hazard?",
+          "options": [
+            "Simulated consultations are far too short to resemble real clinical encounters",
+            "Patient personas cannot be varied enough for the training to generalise",
+            "Self-play cannot be scaled to cover a broad enough range of conditions",
+            "A shared blind spot can be amplified rather than corrected"
+          ],
+          "correct": 3,
+          "explanation": "Being graded by a model on scenarios written by a model can reinforce a common error rather than expose it. This is precisely why the external randomised evaluation against real physicians carries all the evidential weight — and why running one was to the authors' credit."
+        }
+      ]
+    },
+    {
+      "id": "lesson-23",
+      "order": 23,
+      "section": "Deep dives",
+      "phase": 4,
+      "phase_title": "Deep dives",
+      "day": "DD4",
+      "emoji": "🗃️",
+      "time": 50,
+      "optional": false,
+      "title": "Deep dive — Two database failures: Epic Sepsis and Obermeyer",
+      "subtitle": "One was never checked. The other was checked, and answered the wrong question",
+      "description": "The two distinct ways a tabular health model goes wrong. A governance failure and a construct-validity failure, and why a rule that catches one misses the other.",
+      "topics": [
+        "Administrative outcome definitions",
+        "The validation ladder",
+        "Alert burden arithmetic",
+        "Proxy targets",
+        "Auditing without the weights",
+        "Fixing the label not the model"
+      ],
+      "key_terms": [
+        "administrative label",
+        "clinician recognition",
+        "alert fatigue",
+        "alert burden",
+        "proxy target",
+        "construct validity",
+        "label substitution",
+        "Algorithmic Bias Playbook"
+      ],
+      "practical": "Take a risk score used where you work. Write down (a) what its target variable literally is, and (b) what you actually care about. If they differ, name the wedge between them.",
+      "quiz": [
+        {
+          "question": "Epic's sepsis model had no biological reference standard, so sepsis was defined from clinician actions. What does the model therefore predict?",
+          "options": [
+            "Clinician recognition of sepsis, which is what you did not need a model for",
+            "Sepsis onset several hours before it becomes clinically apparent to the team",
+            "Mortality risk that is independent of the treating team's own behaviour",
+            "Antibiotic resistance patterns prevailing in the admitting clinical unit"
+          ],
+          "correct": 0,
+          "explanation": "If the label is derived from the behaviour you want to improve, the model can only learn to imitate that behaviour. It cannot beat clinicians at recognising sepsis when the definition of sepsis is that clinicians recognised it."
+        },
+        {
+          "question": "At the deployed threshold the model alerted on ~18% of admissions with ~33% sensitivity, sepsis occurring in ~7%. Roughly how many alerts per true case?",
+          "options": [
+            "About two",
+            "About eight",
+            "About twenty",
+            "About fifty"
+          ],
+          "correct": 1,
+          "explanation": "Derived: 180 alerts per 1,000 admissions, of which about 23 are real sepsis — roughly 8 alerts per true case, an implied PPV near 13%, with about 47 sepsis cases missed entirely. AUC reports none of this, and alert fatigue makes it worse than neutral."
+        },
+        {
+          "question": "Obermeyer's algorithm was accurate at predicting its target. Why was that not a defence?",
+          "options": [
+            "Its accuracy was only ever measured internally and never on external data",
+            "No calibration analysis was reported anywhere in the original publication",
+            "Its target was healthcare cost, used as a proxy for health need",
+            "The training data were too old to reflect contemporary clinical practice"
+          ],
+          "correct": 2,
+          "explanation": "The model was never broken; it answered the question it was given, and the question encoded the inequity. At equal illness less is spent on Black patients because of unequal access, so cost is a biased measure of need — and the bias has a direction."
+        },
+        {
+          "question": "What single change removed most of the disparity in the Obermeyer case?",
+          "options": [
+            "Adding race as an explicit predictor to correct for it",
+            "Rebalancing the training set across racial groups",
+            "Applying a different decision threshold per group",
+            "Retraining on a health-based rather than cost-based target"
+          ],
+          "correct": 3,
+          "explanation": "Relabelling. Predicting a direct health measure instead of cost removed roughly 84% of the disparity, and auto-enrolment of Black patients went from 17.7% to 46.5% — a 2.6-fold change driven by the target, not the model."
+        },
+        {
+          "question": "The Obermeyer team did not have the model's weights. How did they audit it?",
+          "options": [
+            "They compared its scores against independent health measures it was never trained on",
+            "They reverse-engineered the feature importances from the predictions",
+            "They obtained the source code under a research agreement",
+            "They rebuilt an equivalent model from public claims data"
+          ],
+          "correct": 0,
+          "explanation": "They took the predictions and asked whether patients at the same score were equally sick, using chronic-condition counts and biomarkers as an independent yardstick. That is the transferable technique: you do not need the weights, you need the predictions and a construct the model was not trained on."
+        },
+        {
+          "question": "Why will a rule requiring external validation before deployment not have prevented the Obermeyer failure?",
+          "options": [
+            "Because the algorithm was not classified as a medical device",
+            "Because external validation would have confirmed it predicted cost well",
+            "Because claims data cannot be validated across sites",
+            "Because the disparity only emerged after several years of use"
+          ],
+          "correct": 1,
+          "explanation": "It was a construct-validity failure, not a validation failure. The model transferred fine; the target was wrong. Epic needed external validation; Obermeyer needed someone to interrogate the target variable. A governance rule that catches one does not catch the other."
+        },
+        {
+          "question": "Which generalisation of the Obermeyer mechanism bears most directly on surveillance epidemiology?",
+          "options": [
+            "Cost data are simply unavailable in most low- and middle-income systems",
+            "Claims-based models cannot be transferred to infectious disease settings",
+            "Any proxy target inherits the inequities of the process that generated it",
+            "Risk scores need recalibrating whenever local coding practice changes"
+          ],
+          "correct": 2,
+          "explanation": "Cost proxies need; diagnosis proxies disease, but only where people can reach a diagnosis; reported cases proxy incidence, but only where surveillance reaches. The last is the working epidemiologist's version of exactly this failure."
+        }
+      ]
+    },
+    {
+      "id": "lesson-24",
+      "order": 24,
+      "section": "Deep dives",
+      "phase": 4,
+      "phase_title": "Deep dives",
+      "day": "DD5",
+      "emoji": "🧪",
+      "time": 45,
+      "optional": false,
+      "title": "Deep dive — Two that worked: forecast hubs and wastewater",
+      "subtitle": "One won by changing the institution, the other by changing the sample. Neither by changing the model",
+      "description": "The positive cases. Why prospective public scoring fixed a field, and why testing sewage beat a decade of algorithmic early warning — with both sets of limits stated as specifically as the findings.",
+      "topics": [
+        "Pre-registered evaluation",
+        "Ensemble combination",
+        "Survivorship among submitters",
+        "Catchment vs population",
+        "Normalisation for dilution",
+        "Lead time that can be acted on"
+      ],
+      "key_terms": [
+        "forecast hub",
+        "WIS",
+        "median ensemble",
+        "seasonal naive",
+        "composite sample",
+        "PMMoV normalisation",
+        "shedding",
+        "environmental surveillance",
+        "lead time"
+      ],
+      "practical": "Pick a question in your own field where several groups produce competing estimates — elimination timelines, risk maps, burden estimates. Sketch what running it as a hub would require. The barrier is never methodological.",
+      "quiz": [
+        {
+          "question": "What was the innovation of the forecast hubs?",
+          "options": [
+            "A new class of ensemble weighting algorithm",
+            "Access to higher-resolution surveillance data than teams had",
+            "A mechanistic model that outperformed statistical alternatives",
+            "Pre-registered public scoring of everyone by the same proper rule"
+          ],
+          "correct": 3,
+          "explanation": "Fix the target, the truth source and the format; everyone submits before the outcome is known; score all submissions with the same proper rule; publish everything. There is no algorithm in it. Once scores are public and pre-registered, over-claiming simply stops working rather than having to be argued down."
+        },
+        {
+          "question": "Besides the ensemble result, what did prospective public scoring reveal?",
+          "options": [
+            "That most models were worse than claimed, some worse than seasonal naive",
+            "That forecast accuracy improves steadily with model complexity",
+            "That mechanistic models dominate at horizons beyond four weeks",
+            "That ensemble weighting by past performance beats a simple median"
+          ],
+          "correct": 0,
+          "explanation": "This could only be discovered by scoring everyone the same way, prospectively, in public. It also established where forecasting stops being useful, which is a public good in itself — very little else in health AI can tell you where it stops working."
+        },
+        {
+          "question": "What is the survivorship problem in hub evaluations?",
+          "options": [
+            "Forecast targets are revised after submissions close",
+            "Teams that perform poorly tend to stop submitting",
+            "Ensemble membership changes the scoring denominator",
+            "Truth sources are retrospectively corrected"
+          ],
+          "correct": 1,
+          "explanation": "A hub can only score what is submitted, and teams tend to drop out when they do badly, which flatters the surviving distribution. Good hubs handle it by reporting who submitted when, so the reader can see the attrition rather than having it hidden."
+        },
+        {
+          "question": "Why is wastewater's lead time more useful than that of digital early-warning systems?",
+          "options": [
+            "It provides longer lead times than any search-based system achieved",
+            "It covers a larger population than search or social media data",
+            "It measures a physical quantity rather than a proxy for attention",
+            "It requires no statistical correction before interpretation"
+          ],
+          "correct": 2,
+          "explanation": "Several digital systems were also earlier. The difference is trustworthiness: viral RNA does not change meaning because a search engine updated its autocomplete. Wastewater is earlier AND stable enough to act on — and Lesson 2's rule still applies, since earlier is only valuable if something is done differently."
+        },
+        {
+          "question": "Which limitation of wastewater surveillance most constrains its use in your settings?",
+          "options": [
+            "Rainfall dilution cannot be corrected reliably",
+            "Shedding varies too much between individuals to be useful",
+            "Sequencing capacity is unavailable outside reference laboratories",
+            "It requires sewerage that much of the world lacks"
+          ],
+          "correct": 3,
+          "explanation": "Catchment boundaries not matching administrative units, drifting shedding-to-case relationships and dilution are all real and partly addressable through normalisation. The structural constraint is connection: where most people are not on a sewer, city-level sampling does not represent the population, and the frontier is pit-latrine and institutional sampling."
+        },
+        {
+          "question": "What is the transferable lesson common to both cases?",
+          "options": [
+            "The win came from an institution and a sample, not a better model",
+            "Larger datasets eventually overcome methodological weakness",
+            "Physical measurements should always replace statistical estimates",
+            "Public health should prioritise ensembles over individual models"
+          ],
+          "correct": 0,
+          "explanation": "One field was fixed by changing the rules of evaluation, the other by changing what was measured. Neither required a methodological advance — and the institutional option is usually available and usually ignored, including for questions like elimination timelines or risk maps where several groups produce competing estimates."
+        }
+      ]
+    }
+  ]
+}

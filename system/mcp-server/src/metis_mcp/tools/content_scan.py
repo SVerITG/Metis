@@ -1,6 +1,7 @@
 """Content scan tools — RSS feed ingestion, literature discovery, inbox scan.
 No LLM calls. Pure data fetching and dedup.
 """
+import html as _html
 import json
 import logging
 import re
@@ -91,7 +92,12 @@ NEWS_FEEDS = [
     ("Nature news",            "https://www.nature.com/nature.rss",                                     "science"),
     ("Nature health sci",      "https://www.nature.com/subjects/health-sciences.rss",                   "science,public-health"),
     ("Science news",           "https://www.science.org/rss/news_current.xml",                          "science"),
-    ("Lancet",                 "https://www.thelancet.com/rssFeed/lancet_current.xml",                  "science,public-health"),
+    # ("Lancet", ".../rssFeed/lancet_current.xml") — REMOVED 2026-08-21. That URL
+    # is the Lancet's journal TABLE OF CONTENTS, and a ToC in News is the precise
+    # failure the NEWS/LIBRARY split was built to make impossible; it had survived
+    # the 2026-08-19 split unnoticed. Now in LIBRARY_FEEDS as general-science.
+    # Lancet journalism still reaches News via STAT, Guardian Science and
+    # ScienceDaily, which report ON Lancet papers rather than listing them.
     # Research-integrity reporting. Directly useful when assessing a literature
     # base: a retracted paper you have cited is news you want early.
     ("Retraction Watch",       "https://retractionwatch.com/feed/",                                     "science,methods"),
@@ -199,6 +205,64 @@ LIBRARY_FEEDS = [
     ("Nature Medicine",        "https://www.nature.com/nm.rss",                                                    "methods,biomedical"),
     ("Nature Mach Intell",     "https://www.nature.com/natmachintell.rss",                                         "AI,methods"),
     ("arXiv cs.AI",            "https://rss.arxiv.org/rss/cs.AI",                                                   "AI,methods"),
+
+    # ── PARASITE BIOLOGY ──────────────────────────────────────────────────────
+    # Added 2026-08-21 after the researcher found that new VSG-differentiation evidence had
+    # never reached his library. The cause was structural, not a ranking failure:
+    # every feed above is epidemiology, surveillance, methods or global health,
+    # and NOT ONE was a molecular parasitology journal. HAT *biology* therefore
+    # had no route into the library at all — antigenic variation, VSG expression
+    # and switching, stumpy-form differentiation, host–parasite interaction.
+    #
+    # This is not adjacent curiosity. Serodiagnosis (CATT, trypanolysis, RDTs)
+    # rests directly on VSG variability, and an elimination argument that ignores
+    # parasite biology is a weaker argument.
+    #
+    # ALL VERIFIED LIVE 2026-08-21 by tools/verify_library_feeds.py.
+    ("PLOS Pathogens",         "https://journals.plos.org/plospathogens/feed/atom",                                "parasitology,trypanosome,molecular,infectious-disease"),
+    ("Nature Microbiology",    "https://www.nature.com/nmicrobiol.rss",                                            "parasitology,molecular,infectious-disease"),
+    ("Nature Rev Microbiol",   "https://www.nature.com/nrmicro.rss",                                               "parasitology,molecular,infectious-disease"),
+    ("Trends in Parasitology", "https://www.cell.com/trends/parasitology/current.rss",                             "parasitology,trypanosome,tropical-medicine"),
+    ("Cell Host & Microbe",    "https://www.cell.com/cell-host-microbe/current.rss",                               "parasitology,molecular,immunology"),
+    ("Mol Microbiology",       "https://onlinelibrary.wiley.com/feed/13652958/most-recent",                        "parasitology,molecular,trypanosome"),
+    ("mBio",                   "https://journals.asm.org/action/showFeed?type=etoc&feed=rss&jc=mbio",              "parasitology,molecular,infectious-disease"),
+    ("Emerg Microbes & Inf",   "https://www.tandfonline.com/feed/rss/temi20",                                      "parasitology,infectious-disease"),
+    # No publication dates in these three; date filters fall back to scan time.
+    ("Acta Tropica",           "https://rss.sciencedirect.com/publication/science/0001706X",                       "parasitology,tropical-medicine,ntd"),
+    ("Int J Parasitology",     "https://rss.sciencedirect.com/publication/science/00207519",                       "parasitology,trypanosome"),
+    ("Exp Parasitology",       "https://rss.sciencedirect.com/publication/science/00144894",                       "parasitology,trypanosome"),
+    # Preprints are where trypanosome molecular biology appears first, often by a
+    # year. bioRxiv 'all' is broad but the relevance centroid does the filtering.
+    ("bioRxiv microbiology",   "https://connect.biorxiv.org/biorxiv_xml.php?subject=microbiology",                 "preprint,parasitology,molecular"),
+    ("Wellcome Open Research", "https://wellcomeopenresearch.org/rss/site_articles",                               "parasitology,tropical-medicine,ntd"),
+
+    # ── GENERAL SCIENCE ───────────────────────────────────────────────────────
+    # The `general-science` tag is load-bearing, not decorative: it is what routes
+    # an item to the General Science lane instead of a topic tab. The tier exists
+    # for results important enough to matter outside their own field — which is a
+    # different job from tracking one's own literature, and mixing the two buries
+    # the NTD work under a much larger flow of high-profile biology.
+    #
+    # Deliberately the JOURNAL feeds, not the news desks: Nature's and Science's
+    # news feeds live in NEWS_FEEDS, where journalism belongs.
+    #
+    # ALL VERIFIED LIVE 2026-08-21. BMJ is absent because both its feed patterns
+    # return HTTP 403 to any automated client.
+    ("Nature",                 "https://www.nature.com/nature/current_issue/rss",                                  "general-science"),
+    ("Science",                "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science",            "general-science"),
+    ("NEJM",                   "https://www.nejm.org/action/showFeed?jc=nejm&type=etoc&feed=rss",                  "general-science,public-health"),
+    # Moved here from NEWS_FEEDS 2026-08-21: lancet_current.xml is a journal
+    # table of contents, and a ToC in News is the exact failure the two-list
+    # split was created to make impossible. It had survived the split unnoticed.
+    ("The Lancet",             "https://www.thelancet.com/rssFeed/lancet_current.xml",                             "general-science,public-health"),
+    ("Lancet Public Health",   "https://www.thelancet.com/rssFeed/lanpub_current.xml",                             "general-science,public-health,policy"),
+    ("JAMA",                   "https://jamanetwork.com/rss/site_3/67.xml",                                        "general-science,public-health"),
+    ("PNAS",                   "https://www.pnas.org/action/showFeed?type=etoc&feed=rss&jc=pnas",                  "general-science"),
+    ("Science Advances",       "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=sciadv",             "general-science"),
+    ("Nature Comms",           "https://www.nature.com/ncomms.rss",                                                "general-science"),
+    ("eLife",                  "https://elifesciences.org/rss/recent.xml",                                         "general-science"),
+    ("Cell",                   "https://www.cell.com/cell/current.rss",                                            "general-science"),
+    ("Nature Rev Dis Primers", "https://www.nature.com/nrdp.rss",                                                  "general-science,methods"),
 ]
 
 # Combined view, kept because existing callers and `check_news_feeds` iterate one
@@ -326,6 +390,55 @@ _DOMAIN_OVERRIDE.append((_AI_KEYWORDS, "AI"))
 
 
 import uuid as _uuid
+
+
+def _entry_authors(entry) -> str:
+    """Author list from a feed entry, '' if the feed omits it.
+
+    Feeds disagree wildly here: Atom gives `authors` as a list of dicts, RSS gives
+    a single `author` string, Springer and Wiley put a semicolon-joined list in
+    `dc_creator`, and preprint servers often give nothing at all. A catalogue row
+    without authors is close to unusable — you cannot recognise a paper you have
+    already read — so it is worth trying all four shapes.
+    """
+    names: list[str] = []
+    for a in (entry.get("authors") or []):
+        n = (a.get("name") or "").strip() if isinstance(a, dict) else str(a).strip()
+        if n and n not in names:
+            names.append(n)
+    if not names:
+        for key in ("author", "dc_creator", "creator"):
+            raw = entry.get(key)
+            if isinstance(raw, str) and raw.strip():
+                names = [p.strip() for p in raw.split(";") if p.strip()] or [raw.strip()]
+                break
+    return "; ".join(names[:10])[:400]
+
+
+_DOI_RE = re.compile(r"10\.\d{4,9}/[-._;()/:A-Za-z0-9]+")
+
+
+def _entry_doi(entry, link: str = "") -> str:
+    """Best-effort DOI for a feed entry.
+
+    Worth the effort because the DOI is the key to EVERYTHING downstream: the
+    open-access lookup, the institutional resolver, the Zotero item, and dedup
+    against a library that already holds the paper under a different title
+    spelling. A row without a DOI cannot be acquired automatically at all.
+
+    Publishers expose it in at least five places, none of them standard.
+    """
+    for key in ("prism_doi", "dc_identifier", "doi", "id", "guid"):
+        raw = entry.get(key)
+        if isinstance(raw, str):
+            m = _DOI_RE.search(raw)
+            if m:
+                return m.group(0).rstrip(".,;)").lower()
+    for field in (link, entry.get("link", "") or ""):
+        m = _DOI_RE.search(field or "")
+        if m:
+            return m.group(0).rstrip(".,;)").lower()
+    return ""
 
 
 def _entry_published(entry) -> str:
@@ -757,16 +870,44 @@ def _scan_feeds(feeds, max_per_feed: int = 10) -> dict:
                     # because a paper is by definition closer to a researcher's
                     # corpus than a BBC headline.
                     if kind == "paper":
+                        # The ABSTRACT. For a journal ToC feed, entry.summary IS
+                        # the abstract — and this branch used to discard it while
+                        # the news branch below kept the same field. That single
+                        # omission is why "let me read the abstract" was
+                        # impossible for exactly the items that had one.
+                        abstract = summary_raw[:4000]
+                        authors = _entry_authors(entry)
+                        doi = _entry_doi(entry, link)
+                        entry_kind, lane = classify_publication(
+                            title, abstract, name, tags, link, float(sim),
+                        )
+                        raw_date = (published_at[:10] if published_at
+                                    else datetime.now().date().isoformat())
+                        pub_iso, pub_prec = normalise_pub_date(raw_date)
+                        tkey = publication_title_key(title)
+                        # Title-key dedup, in ADDITION to the source_url check
+                        # above: the same paper arrives from a journal feed and a
+                        # preprint server under two different URLs and, when
+                        # PubMed omits the DOI, with no shared key at all.
+                        if tkey and conn.execute(
+                            "SELECT 1 FROM new_publications WHERE title_key=? LIMIT 1",
+                            (tkey,),
+                        ).fetchone():
+                            continue
                         conn.execute(
                             """INSERT INTO new_publications
-                               (title, journal, pub_date, doi, topic_tag, source_url, discovered_at)
-                               VALUES (?, ?, ?, '', ?, ?, ?)""",
+                               (title, journal, pub_date, doi, topic_tag, source_url,
+                                discovered_at, authors, abstract, feed_name,
+                                entry_kind, lane, relevance, pub_iso, pub_precision,
+                                title_key)
+                               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                             # pub_date is the paper's real date when the feed gives
                             # one; falling back to today made every backlog paper
                             # look published on the day it was scanned.
-                            (title, name, (published_at[:10] if published_at
-                                           else datetime.now().date().isoformat()),
-                             tags, link, datetime.now().isoformat()),
+                            (title, name, raw_date,
+                             doi, tags, link, datetime.now().isoformat(),
+                             authors, abstract, name, entry_kind, lane,
+                             round(float(sim), 4), pub_iso, pub_prec, tkey),
                         )
                         papers_added += 1
                         continue
@@ -813,6 +954,139 @@ def scan_news_feeds(max_per_feed: int = 10) -> dict:
     job (`scan_library_feeds`).
     """
     return _scan_feeds([(n, u, t, "news") for n, u, t in NEWS_FEEDS], max_per_feed)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CLASSIFYING A DISCOVERED PUBLICATION
+#
+# Two independent axes, and keeping them independent is the whole point:
+#
+#   entry_kind — WHAT the thing is (article, review, preprint, book, report).
+#       the researcher asked for articles and books to be listed separately, which is
+#       impossible if nothing records which is which.
+#
+#   lane       — WHERE it belongs on the surface (his field, or general science).
+#       A Nature paper about trypanosome antigenic variation is NOT general
+#       science to him; it is the middle of his field that happens to have been
+#       published somewhere prestigious. So the lane cannot be read off the
+#       journal alone — it needs corpus closeness too.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+GENERAL_SCIENCE_TAG = "general-science"
+
+_PUB_MONTHS = {m: i for i, m in enumerate(
+    ["jan", "feb", "mar", "apr", "may", "jun",
+     "jul", "aug", "sep", "oct", "nov", "dec"], start=1)}
+
+
+def normalise_pub_date(raw: str) -> tuple[str, str]:
+    """Normalise a publication date to (iso, precision).
+
+    Sources disagree completely: feeds and OpenAlex give '2026-08-18', PubMed
+    gives '2026 Jul 1', '2026 Aug', or bare '2026'. A time window built on the
+    raw string compares LEXICALLY, so '2026 Jul 1' sorts after '2026-08-20' and a
+    July paper shows up under Today while an August one does not — wrong, and
+    silently so.
+
+    Month precision resolves to the 1st and year precision to 1 January, with the
+    precision returned alongside so a surface can render "Aug 2026" instead of
+    implying a day it does not know.
+
+    Mirrored in tools/normalise_pub_dates.py, which backfills existing rows.
+    """
+    s = (raw or "").strip()
+    if not s:
+        return "", ""
+    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})", s)
+    if m:
+        return f"{m.group(1)}-{m.group(2)}-{m.group(3)}", "day"
+    m = re.match(r"^(\d{4})/(\d{1,2})/(\d{1,2})", s)
+    if m:
+        return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}", "day"
+    m = re.match(r"^(\d{4})\s+([A-Za-z]{3,9})\s+(\d{1,2})", s)
+    if m:
+        mi = _PUB_MONTHS.get(m.group(2)[:3].lower())
+        if mi:
+            day = min(max(int(m.group(3)), 1), 28 if mi == 2 else 30)
+            return f"{m.group(1)}-{mi:02d}-{day:02d}", "day"
+    m = re.match(r"^(\d{4})\s+([A-Za-z]{3,9})", s)
+    if m:
+        mi = _PUB_MONTHS.get(m.group(2)[:3].lower())
+        if mi:
+            return f"{m.group(1)}-{mi:02d}-01", "month"
+    m = re.match(r"^(\d{4})", s)
+    if m and 1800 <= int(m.group(1)) <= 2100:
+        return f"{m.group(1)}-01-01", "year"
+    return "", ""
+
+
+def publication_title_key(title: str) -> str:
+    """Normalised title used to dedup one paper arriving by several routes.
+
+    A paper reaches new_publications from a journal feed, a preprint server, a
+    PubMed query and an OpenAlex query. PubMed's esummary often omits the DOI, so
+    URL-and-DOI dedup let the same paper in three times — observed as triplicates
+    immediately after the first retrospective sweep.
+
+    Exact match on a normalised key, deliberately not fuzzy: a wrongly MERGED
+    paper is invisible and unrecoverable, while a missed duplicate is merely
+    untidy. Mirrored in tools/dedup_new_publications.py.
+    """
+    t = _html.unescape(title or "")
+    t = re.sub(r"<[^>]+>", " ", t)               # journals ship <i>…</i> in titles
+    t = re.sub(r"^\s*\[[^\]]{1,40}\]\s*", "", t)  # "[Comment] ", "[Correspondence] "
+    t = re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()
+    return t if len(t) >= 18 else ""
+
+# Above this centroid similarity an item counts as "close to my work" and stays
+# in a topic tab even when it came from a general-science feed. Calibrated
+# against the measurements recorded when relevance.py landed: NTD/HAT/malaria
+# scored 0.65–0.73, an AI paper 0.545, off-topic material ~0.52.
+FIELD_RELEVANCE_FLOOR = 0.62
+
+_KIND_PATTERNS = (
+    # Order matters — first match wins, most specific first.
+    ("preprint", ("biorxiv", "medrxiv", "arxiv", "preprint", "research square")),
+    ("review",   ("a review", "systematic review", "meta-analysis", "scoping review",
+                  "narrative review", "trends in", "nature rev", "annual review")),
+    ("book",     ("handbook", "textbook", "monograph", "second edition",
+                  "third edition", "(ed.)", "(eds.)")),
+    ("report",   ("world health report", "situation report", "technical report",
+                  "guideline", "guidelines", "position paper", "roadmap")),
+)
+
+
+def classify_publication(
+    title: str,
+    summary: str,
+    feed_name: str,
+    tags: str,
+    link: str,
+    relevance: float,
+) -> tuple[str, str]:
+    """Return (entry_kind, lane) for one discovered publication.
+
+    Deliberately conservative: anything unrecognised is an 'article' in the
+    'field' lane, because a misfiled item the researcher can still see beats one
+    quietly routed to a tab he never opens. The failure mode to avoid is silent
+    disappearance, not imprecise labelling.
+    """
+    haystack = f"{title} {feed_name} {link}".lower()
+
+    kind = "article"
+    for candidate, needles in _KIND_PATTERNS:
+        if any(n in haystack for n in needles):
+            kind = candidate
+            break
+
+    tag_set = {t.strip().lower() for t in (tags or "").split(",") if t.strip()}
+    from_general_feed = GENERAL_SCIENCE_TAG in tag_set
+
+    # A general-science feed only produces a general-science item when the paper
+    # is NOT close to his corpus. This is the rule that keeps a Nature paper on
+    # trypanosomes out of the "interesting but not mine" pile.
+    lane = "general" if (from_general_feed and relevance < FIELD_RELEVANCE_FLOOR) else "field"
+    return kind, lane
 
 
 def scan_library_feeds(max_per_feed: int = 10) -> dict:

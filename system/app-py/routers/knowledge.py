@@ -443,8 +443,8 @@ async def knowledge_cards(request: Request, domain: str = ""):
     """3-column index card grid from library_cards, optionally filtered by domain."""
     if domain:
         cards = db_query(
-            "SELECT id, title, domain, summary, tags, created_at "
-            "FROM library_cards WHERE domain = ? ORDER BY created_at DESC LIMIT 12",
+            "SELECT id, title, domain, summary, tags, status, source_path, authors, year, created_at "
+            "FROM library_cards WHERE domain = ? ORDER BY created_at DESC LIMIT 24",
             (domain,),
         )
         total_cards = db_scalar(
@@ -453,8 +453,8 @@ async def knowledge_cards(request: Request, domain: str = ""):
         first_domain = domain
     else:
         cards = db_query(
-            "SELECT id, title, domain, summary, tags, created_at "
-            "FROM library_cards ORDER BY created_at DESC LIMIT 12"
+            "SELECT id, title, domain, summary, tags, status, source_path, authors, year, created_at "
+            "FROM library_cards ORDER BY created_at DESC LIMIT 24"
         )
         total_cards = db_scalar("SELECT COUNT(*) FROM library_cards", default=0)
         first_domain = None
@@ -761,7 +761,7 @@ try:
                   'zotero'         AS status,
                   created_at
                 FROM literature_metadata
-                WHERE library_source='zotero'
+                WHERE library_source LIKE 'zotero%'
                   AND title IS NOT NULL AND title!='' AND title!='[No title found]'
             """)
             _cv.commit()
@@ -1003,9 +1003,20 @@ async def knowledge_hat_corpus(
     q: str = "",
     collection: str = "",
     sort: str = "title",
+    page: int = 1,
 ):
-    """Domain knowledge corpus browser — reads from library_seeded."""
-    items, total = _fetch_seeded_items(q=q, collection=collection, sort=sort, per_page=200)
+    """Domain knowledge corpus browser — reads from library_seeded.
+
+    PAGINATED at LIB_PAGE_SIZE. It used to return 200 rows in one response —
+    623 KB measured 2026-08-21 — which is the same defect `library-table` had
+    already been fixed for, in a route the fix did not reach. Two sibling
+    browsers, one paginated and one not, is how a "long list of items" survives
+    being told off once.
+    """
+    page = max(1, page)
+    items, total = _fetch_seeded_items(
+        q=q, collection=collection, sort=sort,
+        per_page=LIB_PAGE_SIZE, offset=(page - 1) * LIB_PAGE_SIZE)
     # Collection filter chips
     collection_rows = db_query(
         "SELECT top_folder, COUNT(*) as cnt FROM library_seeded "
@@ -1031,6 +1042,9 @@ async def knowledge_hat_corpus(
             "collections": collections,
             "seeded_count": seeded_count,
             "triage_count": triage_count,
+            "page": page,
+            "total_pages": max(1, (total + LIB_PAGE_SIZE - 1) // LIB_PAGE_SIZE),
+            "page_size": LIB_PAGE_SIZE,
         },
     )
 
@@ -1041,14 +1055,46 @@ async def knowledge_hat_corpus_table(
     q: str = "",
     collection: str = "",
     sort: str = "title",
+    page: int = 1,
 ):
     """Table rows only — swapped in for domain corpus live search/filter."""
-    items, total = _fetch_seeded_items(q=q, collection=collection, sort=sort, per_page=200)
+    page = max(1, page)
+    items, total = _fetch_seeded_items(
+        q=q, collection=collection, sort=sort,
+        per_page=LIB_PAGE_SIZE, offset=(page - 1) * LIB_PAGE_SIZE)
     return templates.TemplateResponse(
         request,
         "partials/knowledge_hat_corpus_table.html",
-        {"items": items, "total": total, "q": q},
+        {"items": items, "total": total, "q": q, "page": page,
+         "collection": collection, "sort": sort,
+         "total_pages": max(1, (total + LIB_PAGE_SIZE - 1) // LIB_PAGE_SIZE),
+         "page_size": LIB_PAGE_SIZE},
     )
+
+
+def _is_displayable(title: str) -> bool:
+    """Can this row be shown at all? Only an empty title disqualifies it.
+
+    THE BROWSER USED TO HIDE ROWS, and that was the real defect. Both library
+    routes dropped every title beginning "19" or "20", to suppress rows created by
+    `scan_literature_folder()` whose title is a PDF's filename stem. Two things
+    were wrong with it:
+
+      · It hid 179 REAL PAPERS — Fèvre 2004 on the 1900–1920 Ugandan epidemic,
+        Büscher 2005 on CSF, Lutumba 2005 on DRC trypanosomiasis control, Merlo
+        on multilevel analysis. Core material, owned, invisible, unannounced.
+      · It ran AFTER pagination, so a page of 25 rendered fewer than 25 rows
+        while the count still claimed 25.
+
+    Hiding was also the wrong REMEDY for the underlying problem, which was
+    unparsed metadata. `tools/repair_filename_titles.py` now parses those stems
+    into real title/author/year fields (174 rows repaired; authors-unknown fell
+    from 223 to 49), so there is nothing left to hide.
+
+    A catalogue that silently omits things you own is worse than one showing an
+    ugly title: the ugly title is findable and fixable, the omission is neither.
+    """
+    return bool((title or "").strip())
 
 
 @router.get("/api/partial/knowledge/library-browser", response_class=HTMLResponse)
@@ -1062,7 +1108,7 @@ async def knowledge_library_browser_panel(
     # Item type chips
     type_rows = db_query(
         "SELECT item_type, COUNT(*) as cnt FROM literature_metadata "
-        "WHERE library_source='zotero' AND item_type != '' "
+        "WHERE library_source LIKE 'zotero%' AND item_type != '' "
         "GROUP BY item_type ORDER BY cnt DESC"
     ) or []
     item_types = [(r.get("item_type", ""), r.get("cnt", 0)) for r in type_rows if r.get("item_type")]
@@ -1070,8 +1116,9 @@ async def knowledge_library_browser_panel(
     items, total = _fetch_library_items(
         q=q, item_type=item_type, sort=sort, per_page=LIB_PAGE_SIZE
     )
-    # Exclude manual/garbage entries from browser display
-    items = [i for i in items if i.get("title") and not i["title"].startswith(("19", "20"))]
+    # Only an empty title disqualifies a row — see _is_displayable for why this
+    # used to hide 179 real papers.
+    items = [i for i in items if _is_displayable(i.get("title"))]
     active_filter_count = sum(bool(v) for v in [q, item_type])
 
     return templates.TemplateResponse(
@@ -1117,7 +1164,7 @@ async def knowledge_library_table_partial(
         offset=(page - 1) * LIB_PAGE_SIZE,
         year_from=year_from, year_to=year_to, read_state=read_state,
     )
-    items = [i for i in items if i.get("title") and not i["title"].startswith(("19", "20"))]
+    items = [i for i in items if _is_displayable(i.get("title"))]
     active_filter_count = sum(bool(v) for v in [q, item_type, year_from, year_to, read_state])
     total_pages = max(1, (total + LIB_PAGE_SIZE - 1) // LIB_PAGE_SIZE)
     return templates.TemplateResponse(
@@ -1226,10 +1273,10 @@ async def knowledge_sources(request: Request):
 async def knowledge_sync_status(request: Request):
     """Sync status bar for the Zotero library browser."""
     zotero_count = db_scalar(
-        "SELECT COUNT(*) FROM literature_metadata WHERE library_source='zotero'", default=0
+        "SELECT COUNT(*) FROM literature_metadata WHERE library_source LIKE 'zotero%'", default=0
     ) or 0
     manual_count = db_scalar(
-        "SELECT COUNT(*) FROM literature_metadata WHERE library_source NOT IN ('zotero') AND library_source IS NOT NULL",
+        "SELECT COUNT(*) FROM literature_metadata WHERE library_source NOT LIKE 'zotero%' AND library_source IS NOT NULL",
         default=0,
     ) or 0
     sync_info = {"last_synced": None, "last_version": 0}
@@ -1408,7 +1455,7 @@ async def trigger_zotero_sync():
         try:
             new_version = zot.last_modified_version()
             total = con.execute(
-                "SELECT COUNT(*) FROM literature_metadata WHERE library_source='zotero'"
+                "SELECT COUNT(*) FROM literature_metadata WHERE library_source LIKE 'zotero%'"
             ).fetchone()[0]
             con.execute("DELETE FROM zotero_sync_state")
             con.execute(
@@ -1924,7 +1971,7 @@ async def knowledge_recently_added(request: Request):
     try:
         rows = db_query(
             "SELECT title, authors, year, item_type, COALESCE(is_read, 0) as is_read, created_at FROM literature_metadata "
-            "WHERE title IS NOT NULL AND title != '' AND library_source='zotero' "
+            "WHERE title IS NOT NULL AND title != '' AND library_source LIKE 'zotero%' "
             "ORDER BY created_at DESC LIMIT 6"
         ) or []
         now = _dt.datetime.now()
@@ -2703,3 +2750,120 @@ def _read_toggle_html(item_id: int, is_read: int) -> str:
         f'padding:2px 7px;border:1px solid var(--m-line);border-radius:10px;'
         f'background:transparent;color:{colour};cursor:pointer;">{label}</button>'
     )
+
+
+# ---------------------------------------------------------------------------
+# Index card detail + PDF — the cards that could not be clicked
+# ---------------------------------------------------------------------------
+#
+# `knowledge_cards.html` rendered 82 rows of `library_cards` as bare
+# `<div class="panel">` elements: no href, no onclick, no hx-get, and NO DETAIL
+# ROUTE EXISTED ANYWHERE. Clicking was never wired at any layer — which is why it
+# looked like a broken link rather than a missing feature.
+#
+# What the cards actually are matters for the fix. They are not scribbled notes:
+# all 82 are OPEN-ACCESS BOOKS AND REPORTS with a real PDF on disk under
+# `knowledge/library/open-access-books/<domain>/`. So the useful click target is
+# the book itself, and the useful detail panel is enough metadata to decide
+# whether to open it.
+#
+# This also answers the "articles and books are different things" requirement
+# from the other direction: these 82 ARE the book shelf, and they were the one
+# part of the Library with no way in.
+
+_CARD_LIB_ROOT_CANDIDATES = (
+    ("knowledge", "library"),
+    ("knowledge",),
+)
+
+
+def _card_library_root() -> Path | None:
+    """Base directory that `library_cards.source_path` is relative to."""
+    rc = os.environ.get("METIS_RC_ROOT", "")
+    roots: list[Path] = []
+    if rc:
+        roots.append(Path(rc))
+    roots.append(Path(__file__).resolve().parents[3])
+    for base in roots:
+        for parts in _CARD_LIB_ROOT_CANDIDATES:
+            cand = base.joinpath(*parts)
+            if cand.is_dir():
+                return cand
+    return None
+
+
+def _card_row(card_id: int) -> dict | None:
+    rows = db_query(
+        "SELECT id, title, domain, summary, source_path, authors, year, source, "
+        "       tags, status, created_at FROM library_cards WHERE id = ?",
+        (card_id,))
+    return rows[0] if rows else None
+
+
+@router.get("/api/partial/knowledge/card/{card_id}", response_class=HTMLResponse)
+async def knowledge_card_detail(request: Request, card_id: int):
+    """Detail panel for one index card."""
+    card = _card_row(card_id)
+    if not card:
+        return HTMLResponse(
+            '<div class="panel" style="padding:16px 20px;">'
+            '<div class="empty-row">That card no longer exists.</div></div>')
+
+    # Whether the file is actually there decides what the panel may offer. A
+    # button that 404s is worse than no button — the whole class of defect this
+    # surface has been accumulating.
+    root = _card_library_root()
+    rel = (card.get("source_path") or "").strip()
+    exists = bool(root and rel and (root / rel).is_file())
+    size_kb = 0
+    if exists:
+        try:
+            size_kb = (root / rel).stat().st_size // 1024
+        except OSError:
+            exists = False
+
+    # Anything in the catalogue about the same title, so the card links to the
+    # rest of the library rather than being a dead end.
+    related = db_query(
+        "SELECT id, title, authors, year, doi FROM literature_metadata "
+        "WHERE lower(title) LIKE ? LIMIT 5",
+        (f"%{(card.get('title') or '')[:40].lower()}%",)) or []
+
+    return templates.TemplateResponse(
+        request, "partials/knowledge_card_detail.html",
+        {"card": card, "file_exists": exists, "size_kb": size_kb,
+         "related": related},
+    )
+
+
+@router.get("/api/library/card-pdf/{card_id}", response_class=FileResponse)
+async def serve_card_pdf(card_id: int):
+    """Serve the PDF behind an index card."""
+    card = _card_row(card_id)
+    if not card:
+        return JSONResponse({"error": "no such card"}, status_code=404)
+    root = _card_library_root()
+    rel = (card.get("source_path") or "").strip()
+    if not root or not rel:
+        return JSONResponse({"error": "no file recorded for this card"},
+                            status_code=404)
+    full = (root / rel).resolve()
+    # Containment check — source_path is data, and serving a file by a stored
+    # relative path is the shape that becomes a traversal bug the moment anything
+    # else writes that column.
+    if not str(full).startswith(str(root.resolve())) or not full.is_file():
+        return JSONResponse({"error": "file not found on disk"}, status_code=404)
+    return FileResponse(str(full), media_type="application/pdf",
+                        filename=full.name)
+
+
+@router.post("/api/knowledge/card/{card_id}/status")
+async def set_card_status(card_id: int, request: Request):
+    """Mark a book read / reading / unread."""
+    body = await request.json()
+    status = (body.get("status") or "").strip().lower()
+    if status not in ("unread", "reading", "read"):
+        return JSONResponse({"ok": False, "error": "bad status"}, status_code=400)
+    db_execute("UPDATE library_cards SET status = ? WHERE id = ?",
+               (status, card_id))
+    return JSONResponse({"ok": True, "status": status})

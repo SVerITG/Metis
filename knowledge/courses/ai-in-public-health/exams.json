@@ -1,0 +1,37 @@
+{
+  "_note": "Phase checkpoints, modelled on the multilevel course's exams.json. Questions are drawn from the named lessons' quiz arrays rather than duplicated, so there is one source of truth per question.",
+  "exams": [
+    {
+      "id": "exam-1-orientation",
+      "title": "Orientation Checkpoint",
+      "phase": 1,
+      "optional": true,
+      "description": "A self-check on the Atlas and the six shapes. Not graded — use it to confirm the sorting reflex works before going deeper.",
+      "draws_from": [
+        "lesson-00",
+        "lesson-01"
+      ]
+    },
+    {
+      "id": "exam-2-shapes",
+      "title": "Shapes Checkpoint",
+      "phase": 2,
+      "optional": true,
+      "description": "Covers the individual shapes: anomaly detection, forecasting, labels from tables and pixels, structure, language, decisions. Each question names the shape's classical comparator or its evaluation debt.",
+      "draws_from": [
+        "lesson-02",
+        "lesson-07"
+      ]
+    },
+    {
+      "id": "exam-3-judgement",
+      "title": "Judgement Checkpoint",
+      "phase": 3,
+      "optional": true,
+      "description": "Evaluation and governance. The half of the course that decides the other half — discrimination vs calibration, PPV at prevalence, leakage, and the reporting frameworks.",
+      "draws_from": [
+        "lesson-09"
+      ]
+    }
+  ]
+}

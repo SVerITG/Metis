@@ -118,15 +118,39 @@ def _get_zotero_client():
     else:
         zot = pyz.Zotero(user_id, "user", api_key)
 
-    # Corporate proxy SSL bypass — some institutional networks use an intercepting
-    # proxy with a self-signed CA. Replace pyzotero's default httpx.Client with
-    # one that has verify=False but keeps the same auth headers.
+    # Corporate TLS-inspecting proxy.
+    #
+    # ITG's network terminates TLS with its own CA, so httpx — which verifies
+    # against certifi's bundle, not the system store — fails with
+    # "self-signed certificate in certificate chain" while urllib succeeds
+    # (verified 2026-08-21: urllib reached api.zotero.org fine, httpx did not).
+    #
+    # This used to be handled with verify=False, which disables verification
+    # ENTIRELY and sends the API key over a connection nothing has authenticated.
+    # The system CA bundle already contains the corporate root — that is why
+    # urllib works — so pointing httpx at it fixes the problem while KEEPING
+    # verification. verify=False remains only as a last resort, and now says so
+    # in the log rather than being silent about it.
     try:
         import httpx
-        zot.client = httpx.Client(
-            verify=False,
-            headers=zot.default_headers(),
-        )
+
+        client = None
+        for ca in ("/etc/ssl/certs/ca-certificates.crt",
+                   "/usr/lib/ssl/cert.pem",
+                   "/etc/pki/tls/certs/ca-bundle.crt"):
+            if os.path.exists(ca):
+                try:
+                    client = httpx.Client(verify=ca, headers=zot.default_headers())
+                    break
+                except Exception:
+                    client = None
+        if client is None:
+            log.warning(
+                "Zotero: no usable system CA bundle found; falling back to "
+                "UNVERIFIED TLS. The API key will be sent over a connection "
+                "that has not been authenticated.")
+            client = httpx.Client(verify=False, headers=zot.default_headers())
+        zot.client = client
     except Exception:
         pass
 
@@ -375,6 +399,131 @@ async def push_to_zotero(dry_run: bool = True, limit: int = 50) -> list[TextCont
         f"Pushed to Zotero: {created} created, {failed} failed. "
         "Local rows tagged with their new Zotero keys so they won't be pushed again."
     ))]
+
+
+# Placeholder values shipped in system/.env.example. A key that is literally
+# "your-zotero-api-key-here" is NOT a configured key, but every code path treated
+# a non-empty string as configured — so the web API returned 403 on every call and
+# the failure was swallowed. Measured 2026-08-21: both Zotero variables in this
+# install were still the placeholders, which is why the web sync had "not run"
+# since May. It had never run.
+_PLACEHOLDER_MARKERS = ("your-", "-here", "changeme", "xxx", "todo")
+
+
+def zotero_credential_state() -> dict:
+    """What Zotero access is actually available? Never raises.
+
+    Returns {web: bool, local: str, reason: str} so a surface can say which of the
+    two sync routes will work, instead of showing a Sync button that 403s.
+
+    The distinction matters because the two routes have different capabilities:
+      · LOCAL  (zotero.sqlite) — read only, no credentials, works offline. This is
+        what actually imported the existing items.
+      · WEB    (API key) — required for WRITING back to Zotero. Nothing can push
+        an item without it, because the local database belongs to Zotero and must
+        not be written by anything else.
+    """
+    import os as _os
+    from pathlib import Path as _P
+
+    rc = _os.environ.get("METIS_RC_ROOT", "")
+    if rc:
+        envp = _P(rc) / "system" / ".env"
+        if envp.exists():
+            for line in envp.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, _, v = line.partition("=")
+                    _os.environ.setdefault(k.strip(), v.strip())
+
+    key = (_os.environ.get("ZOTERO_API_KEY") or "").strip()
+    uid = (_os.environ.get("ZOTERO_USER_ID") or "").strip()
+    gid = (_os.environ.get("ZOTERO_GROUP_ID") or "").strip()
+
+    def placeholder(v: str) -> bool:
+        low = v.lower()
+        return not v or any(m in low for m in _PLACEHOLDER_MARKERS)
+
+    local = _find_local_zotero_db() or ""
+
+    if placeholder(key):
+        return {"web": False, "local": local,
+                "reason": "ZOTERO_API_KEY in system/.env is still the placeholder"}
+    if placeholder(uid) and placeholder(gid):
+        return {"web": False, "local": local,
+                "reason": "ZOTERO_USER_ID in system/.env is still the placeholder"}
+    return {"web": True, "local": local, "reason": ""}
+
+
+def sync_zotero_into_db(conn, full: bool = False) -> int:
+    """Pull Zotero into literature_metadata on an existing connection.
+
+    A PLAIN function, deliberately: `sync_zotero_library` is an async MCP tool
+    that returns TextContent, so the dashboard's scheduler could not call it and
+    a THIRD copy of this logic had been written inline in
+    `routers/knowledge.py::trigger_zotero_sync`. Three implementations of one
+    sync is three chances for them to disagree about what a "collection" is.
+
+    This is now the single implementation. It exists because the sync needed a
+    scheduled caller: the library had gone unsynced from 2026-05-21 to 2026-08-21
+    — three months — precisely because a manual button is only pressed by someone
+    who already suspects it is stale.
+
+    Returns the number of items added + updated. Raises on API failure so the
+    caller can log it; returning 0 on an error would be indistinguishable from a
+    genuinely quiet library.
+    """
+    state = zotero_credential_state()
+    if not state["web"]:
+        # Explicit, not a 403 swallowed three frames up. Callers log this.
+        raise RuntimeError(
+            f"Zotero web API not configured — {state['reason']}. "
+            "Reading still works via the local zotero.sqlite; WRITING to Zotero "
+            "needs a real key from https://www.zotero.org/settings/keys")
+    zot = _get_zotero_client()          # raises RuntimeError if unconfigured
+
+    # This function reads rows BY NAME (`row["last_version"]`), so a caller that
+    # hands over a plain sqlite3 connection gets
+    #     TypeError: tuple indices must be integers or slices, not str
+    # The MCP callers happen to set row_factory; the scheduler did not, so the
+    # web sync raised, the caller caught it, logged a warning nobody was
+    # watching, and silently fell back to the local route — reporting
+    # "Zotero: 512 (local)" as though the web API were unconfigured. Being the
+    # single shared implementation means not depending on how each caller
+    # happened to build its connection.
+    conn.row_factory = sqlite3.Row
+
+    _ensure_lit_schema(conn)
+    last_version = 0 if full else _get_last_version(conn)
+
+    items = (zot.everything(zot.items()) if (full or last_version == 0)
+             else zot.everything(zot.items(since=last_version)))
+    if not items:
+        return 0
+
+    touched = 0
+    for item in items:
+        data = item.get("data", {})
+        if data.get("itemType") in ("attachment", "note"):
+            continue
+        row = _item_to_row(item)
+        if not row["title"]:
+            continue
+        _upsert_lit_row(conn, row)
+        touched += 1
+
+    try:
+        total = conn.execute(
+            "SELECT COUNT(*) FROM literature_metadata WHERE library_source='zotero'"
+        ).fetchone()[0]
+        _set_last_version(conn, zot.last_modified_version(), total)
+    except Exception:
+        # A failed version stamp means the next sync re-reads more than it needed
+        # to. Wasteful, not wrong — and far better than losing the items just
+        # written because the bookkeeping call failed.
+        pass
+    conn.commit()
+    return touched
 
 
 @app.tool()

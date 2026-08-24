@@ -24,7 +24,24 @@
       {% if brief_read %}
         <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;padding:2px 8px;border-radius:var(--m-radius-pill);background:var(--m-surface-2);color:var(--m-muted);">READ</span>
       {% else %}
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;padding:2px 8px;border-radius:var(--m-radius-pill);background:var(--m-accent-wash);color:var(--m-accent);">NEW · UNREAD</span>
+        {# The UNREAD pill is now the button, not just a label.
+           the researcher asked (2026-08-21) to keep the explicit click as the only
+           read signal, reaffirming his 2026-08-19 preference — so the click
+           has to be easy to find. It was one button at the BOTTOM of a long
+           brief, in a row with three others.
+           Why it matters: `read_at` is what the whole anti-repetition ladder
+           joins on. On 20 August the brief went unmarked, so cooldown, the
+           mention-block and angle rotation were all inert, and
+           `tuberculosis-drc` led two days running with the identical
+           'operational' angle. An unclicked button is not a cosmetic problem
+           here; it is the input the rotation runs on. #}
+        <button type="button"
+                hx-post="/api/today/morning-brief/read" hx-vals='{"id": "{{ brief_id }}"}'
+                hx-target="#morning-brief" hx-swap="outerHTML"
+                title="Click when you have read this. It is the ONLY signal that the brief was delivered — tomorrow's brief uses it to put today's lead story on cooldown and to pick a fresh angle. Leave it unclicked and the same story can lead again."
+                style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;padding:3px 10px;border-radius:var(--m-radius-pill);background:var(--m-accent);color:var(--m-on-accent);border:0;cursor:pointer;text-transform:none;">
+          NEW · UNREAD — CLICK WHEN DONE
+        </button>
       {% endif %}
     {% endif %}
     {% set gap_label = gap_label|default('') %}

@@ -1,0 +1,563 @@
+                    National University of Sciences & Technology (NUST)
+                          School of Mechanical & Manufacturing Engineering (SMME)
+                            Department of Biomedical Engineering & Sciences (BMES)
+
+
+
+
+CREDIT CERTIFICATION COURSE · 2 CPD POINTS · BMES-826
+
+APPLIED AI IN
+EPIDEMIOLOGY
+PREPAREDNESS, DETECTION & RESPONSE READINESS
+16 WEEKS | PHYSICAL & ONLINE VIA MS TEAMS | HANDS-ON AI/ML LABS IN PYTHON
+| NO ADVANCED CODING REQUIRED
+APPLIED AI IN EPIDEMIOLOGY —
+STRENGTHENING HEALTH SECURITY
+                                                                      Artificial intelligence is becoming a critical
+                                                                      capability for modern public health.
+                                                                      Applied strategically, AI, machine learning
+                                                                      and data modelling can strengthen
+                                                                      disease surveillance, accelerate outbreak
+                                                                      detection, optimise immunisation and
+                                                                      vaccine logistics, and improve the
+                                                                      performance of health-security
+                                                                      programmes.
+                                                                      Yet a significant capability gap remains.
+                                                                      Public-sector health systems responsible
+                                                                      for surveillance, immunization and
+                                                                      epidemic preparedness increasingly need
+                                                                      professionals who can translate
+                                                                      heterogeneous surveillance, laboratory,
+                                                                      environmental and immunisation data
+                                                                      into timely, data-driven decisions.
+                                                                      This course meets that need. It is a
+                                                                      hands-on programme where AI meets
+                                                                      real public-health operations, equipping
+                                                                      epidemiologists, surveillance officers and
+                                                                      health managers to build practical
+                                                                      analytical and decision-support tools for
+                                                                      preparedness, detection and response.
+                                                                      Offered through NUST’s School of
+                                                                      Mechanical & Manufacturing Engineering
+                                                                      (SMME) in collaboration with
+                                                                      Development Synergies International, the
+                                                                      course prepares learners to lead AI-
+                                                                      enabled public-health action, epidemic
+                                                                      preparedness and global health-security
+                                                                      initiatives.
+
+
+
+
+     Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+ABOUT THE COURSE
+Applied Artificial Intelligence in Epidemiology (BMES-826) is a four-month, 3-credit certification course
+offered for the MS programme in Biomedical Engineering & Sciences at SMME, NUST, and convened for
+public-health managers, epidemiologists, disease-surveillance officers and laboratory managers.
+Participants learn to build practical analytical tools for disease surveillance, outbreak prediction,
+immunisation and vaccine logistics, and programme-performance monitoring.
+The course integrates engineering, data science and health-systems perspectives, enabling learners to
+work with heterogeneous, high-dimensional data — clinical, laboratory, surveillance, environmental and
+immunisation (VPD), infectious-disease and health-logistics (cLMIS) datasets. It is built around three
+flagship applied focus areas:
+▪ AI for Surveillance & Outbreak Detection: building an Early Epidemic & Pandemic Detection System
+   (EEPD) using anomaly-detection and time-series forecasting on multi-source surveillance signals for
+   early warning and rapid response.
+▪ AI for Health-System Readiness & Supply Chains: applying demand-forecasting and optimisation to
+   immunisation logistics, commodity quantification and AI-FASP for outbreak and emergency
+   preparedness.
+▪ Comparative Pandemic Intelligence: using a Comparative Pandemic Intelligence Framework (CPIF) to
+   benchmark multi-country preparedness and synthesise cross-national health-security intelligence.
+
+  Applied, project-based delivery. Structured instruction is combined with hands-on computational
+  labs in Python and R, scenario- and data-based quizzes, applied case studies built on real AI-in-
+  epidemiology deployments, and guest sessions with practitioners.
+  The course culminates in a capstone group project, where teams design and present a simulation-
+  based decision-support tool addressing a real public-health challenge — outbreak early-warning,
+  immunisation logistics or programme-performance monitoring.
+
+
+
+
+                   Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+ COURSE HIGHLIGHTS
+
+
+
+
+Duration
+16 weeks (16 lectures) · 8 Sep 2026 – 5 Jan 2027, one 3-hour session per week, Tuesdays 5:00–8:00 PM
+
+
+
+Format
+Physical & online via Microsoft Teams — interactive lectures, hands-on Python/R labs, applied case studies and a
+capstone
+
+
+Credit & CPD
+3 Credit Hours · 2 CPD Points (PEC Reference: PEB-F-SMMEI-0184)
+
+
+
+Learning Support
+Dedicated Course Coordinator plus invited guest practitioners and technical specialists for applied-AI sessions
+
+
+
+
+Hands-on Learning
+A simulation-based capstone project
+
+
+
+
+Recognition
+Professional certification from NUST
+
+
+
+
+                       Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+THE NUST · SMME ADVANTAGE
+NUST is one of Pakistan’s leading research universities. Through its School of Mechanical & Manufacturing
+Engineering and Department of Biomedical Engineering & Sciences, and in partnership with Development
+Synergies International, it is well positioned to deliver applied, health-security-focused AI education.
+
+
+Interdisciplinary Faculty                                                   Interdisciplinary Approach
+ Taught by faculty spanning biomedical engineering,                           Bridges biomedical engineering, epidemiology, artificial
+ public health and data science, blending academic                            intelligence and health informatics, giving learners a
+ rigour with real deployment experience in surveillance                       holistic view of AI’s impact across public-health systems.
+ and health security.
+
+
+Applied, Research-Driven                                                    Health-Security Network
+Curriculum
+                                                                              Aligned with national systems (NIH, EPI) and global
+ Built around real AI-in-epidemiology deployments —                           networks — Member, Global Outbreak Alert and
+ EEPD, intelligent supply-chain forecasting and the CPIF                      Response Network (GOARN) & International Pathogen
+ — so learning maps directly to operational practice.                         Surveillance Network (IPSN).
+
+
+
+
+                     Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+WHO IS THIS
+COURSE FOR?
+This course is designed for professionals and
+postgraduate students who want to apply AI
+to strengthen disease surveillance, outbreak
+response and health-security decision-making
+with no advanced programming background
+required. It is especially relevant to:
+Epidemiologists & Public-Health Managers:
+professionals who want to use AI/ML to
+forecast, detect and respond to disease
+events and to strengthen programme-
+performance monitoring across public-sector
+health systems.
+Disease-Surveillance & Laboratory Officers:
+practitioners working with surveillance,
+laboratory and immunisation data who want
+to build early-warning and decision-support
+tools for timely public-health action.
+Immunisation, EPI & Health-Logistics
+Professionals: those managing vaccine and
+commodity supply chains (cLMIS) who want
+AI-enabled demand forecasting, stockpiling
+and response optimisation.
+MS/PhD Students in Biomedical Engineering
+& Sciences: students interested in next-
+generation epidemiological analytics, AI-
+enabled public-health intelligence and
+biomedical modelling.
+Health-Security & Emergency-Preparedness
+Practitioners: professionals in institutions
+such as NIH and EPI, and partners of
+GOARN/IPSN, who want to design AI-enabled
+analytical and decision-support tools for
+preparedness and response.
+
+
+
+
+               Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+LEARNING
+OUTCOMES
+  Command the AI–Epidemiology Frontier
+  Pinpoint exactly where AI delivers decisive impact across surveillance, outbreak response and national
+  systems such as NIH and EPI.
+
+  Confront High-Risk Pathogens & Threats
+  Profile emerging pathogens, climate-driven outbreaks and biological threats — and reframe them as AI-
+  ready problems.
+
+  Own the AI & Machine-Learning Foundations
+  Command the core algorithms, assumptions and trade-offs behind modern AI, through an engineering-
+  and-health-sciences lens.
+
+  Master Methods & the Data Ecosystem
+  Wield epidemiological study design across surveillance, laboratory, immunisation and environmental data
+  with authority.
+
+  Interrogate Global & National Data Systems
+  Navigate DHIS2, HMIS, cLMIS and EPI/VPD registries and expose the data-quality gaps that make or break
+  real-time surveillance.
+
+  Engineer Early-Warning Systems (EEPD)
+  Design and deploy an AI-powered Early Epidemic & Pandemic Detection System that flags threats before
+  they escalate.
+
+  Model Outbreaks — Statistics vs Machine Learning
+  Deploy regression, time-series and SIR/SEIR models and pit them against machine learning to choose the
+  sharpest tool.
+
+  Ship End-to-End Python & R Pipelines
+  Drive raw public-health data from cleaning to prediction in reproducible, deployment-ready workflows.
+
+  Deploy ML for Detection & Surveillance
+  Put supervised and unsupervised learning to work for outbreak prediction and population-level
+  surveillance at scale.
+
+  Wield Advanced AI — Deep Learning, NLP & Ensembles
+  Unleash cutting-edge methods on real case studies and judge their power, limits and ethics with a critical
+  eye.
+
+  Forecast Supply Chains & Pandemic Intelligence
+  Power AI-driven demand forecasting, readiness and cross-national pandemic intelligence (CPIF) for health
+  security.
+
+  Lead with Explainable & Emerging AI
+  Turn model outputs into decisions leaders trust — and pioneer explainable AI, GANs and large language
+  models.
+
+
+
+
+         Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+CERTIFICATE OF COMPLETION
+
+
+
+
+       Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+COURSE CURRICULUM
+
+MODULE 1 · FOUNDATIONS OF AI & THE HEALTH-DATA
+ECOSYSTEM
+Establish the epidemiology, health-security and data foundations for applied AI — from public-health impact and
+high-risk pathogens to AI/ML principles, epidemiological methods and national and global health-data systems.
+
+
+Week 1 · Introduction to Epidemiology & Public Health
+Course orientation and faculty–student interaction, review of a previous capstone project, and the
+scope and significance of epidemiology and disease surveillance for population-health action within
+systems such as NIH and EPI.
+
+Week 2 · High-Risk Pathogens, Biological & Climate Emergencies & Global
+Health Security
+The epidemiological profile of high-risk pathogens and biological threats, the intersection of climate
+change with infectious-disease emergence, and global health-security frameworks for preparedness
+and response.
+
+Week 3 · Principles of AI, Data Science & Machine Learning
+Core AI/ML technologies, terminology and assumptions, with an interdisciplinary engineering-and-
+health-sciences perspective for framing analytical problems in public-health and biomedical
+contexts.
+
+Week 4 · Epidemiology Foundation & Data Ecosystem QUIZ
+Measures of frequency, association and study design, and how to navigate structured and
+unstructured surveillance, laboratory, immunisation and environmental data sources.
+
+Week 5 · Global & National Health Data Systems QUIZ
+Comparison of WHO DHIS2, HMIS, cLMIS and EPI/VPD registries; data-quality and interoperability
+challenges; and their role in real-time surveillance and evidence-based decisions.
+
+
+
+
+                   Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+MODULE 2 · AI APPLICATIONS FOR DETECTION, MODELLING &
+SURVEILLANCE
+Move from foundations to applied modelling — building early-warning systems, applying statistical and machine-
+learning methods, and running hands-on Python/R analysis on real and simulated public-health data.
+
+
+Week 6 · AI Application — Early Epidemic & Pandemic Detection System
+(EEPD) ASSIGNMENT
+Design and evaluate an AI-enabled EEPD, applying anomaly-detection and time-series forecasting to
+multi-source surveillance signals for early-warning and rapid-response decision support.
+
+Week 7 · Statistical Learning & Classical Modelling in Epidemiology
+Regression models, time-series analysis and compartmental models (SIR/SEIR) applied to
+epidemiological data, compared with machine-learning alternatives on assumptions, performance
+and interpretability.
+
+Week 8 · Mid-Semester Examination
+A written examination assessing epidemiological foundations, data systems, principles of AI/ML and
+statistical learning covered in Weeks 1–7. (Not applicable to certificate participants.)
+
+Week 9 · Practical Lab — Python/R for Epidemiological Data Analysis
+Hands-on coding, model building and dataset exploration: end-to-end workflows covering data
+cleaning, exploratory analysis, feature engineering and predictive modelling.
+
+Week 10 · Machine Learning for Detection, Prediction & Surveillance
+Supervised and unsupervised algorithms — classification, clustering and anomaly detection — for
+disease detection, outbreak prediction and population-level surveillance, with epidemiological
+performance metrics.
+
+Week 11 · Advanced AI Tools & Applied Case Studies ASSIGNMENT
+Deep learning, natural language processing and ensemble methods explored through real
+epidemiological case studies, with critical appraisal of their advantages, limitations and ethics.
+
+
+
+
+                   Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+MODULE 3 · APPLIED PANDEMIC INTELLIGENCE, SUPPLY CHAINS
+& FUTURE DIRECTIONS
+Apply AI to health-system readiness and cross-national intelligence, then look ahead to explainable and emerging
+methods shaping the future of epidemiological analytics.
+
+
+Week 12 · AI Application — Intelligent Healthcare Supply-Chain Forecasting
+QUIZ
+AI-enabled demand-forecasting and optimisation for immunisation logistics, commodity
+quantification, AI-FASP and health-system readiness data.
+
+Week 13 · AI Application — Comparative Pandemic Intelligence Framework
+(CPIF) QUIZ
+Systematic analysis and benchmarking of multi-country pandemic preparedness and response data,
+synthesising cross-national epidemiological intelligence for health-security decisions.
+
+Week 14 · Future Directions, Explainable AI & a Touch of GAN QUIZ
+Explainable-AI (XAI) methods to interpret and communicate model outputs to non-technical
+stakeholders, and emerging directions including Generative Adversarial Networks and large
+language models.
+
+CAPSTONE & EXAMINATION
+Teams collaboratively design, build and present a simulation-based AI decision-support tool addressing a real public-
+health challenge, followed by the final examination.
+
+
+Weeks 15–17 · Capstone Group Presentations
+Simulation-based presentation of a practical AI-enabled analytical or decision-support tool —
+outbreak early-warning, immunisation logistics or programme-performance monitoring — with
+structured faculty and peer feedback.
+
+Week 18 · Final Semester Examination
+A comprehensive written examination across the full breadth of the course. (Not applicable to
+certificate participants, who complete quizzes, assignments and a final project technical report.)
+
+
+
+
+                    Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+APPLIED CASE STUDIES
+The course is anchored in real-world, hands-on case studies so participants gain practical insight into
+how AI improves preparedness, detection and response — while weighing the ethical and governance
+considerations of deployment.
+EARLY EPIDEMIC & PANDEMIC DETECTION SYSTEM (EEPD)
+Build an early-warning system that fuses multi-source surveillance signals to flag anomalies and forecast
+emerging epidemic and pandemic risk.
+Skills you will learn: Anomaly detection, time-series forecasting, multi-source surveillance integration,
+early-warning decision support
+
+
+AI FOR DENGUE OUTBREAK PREDICTION
+Predict dengue outbreaks by integrating climate, demographic and satellite data, with early-warning
+systems and scalable public-health interventions.
+Skills you will learn: Outbreak prediction (INLA, XGBoost, YOLOv4), explainable modelling, multi-source
+data integration, governance
+
+
+INTELLIGENT HEALTHCARE SUPPLY-CHAIN FORECASTING
+Forecast demand and optimise immunisation logistics, commodity quantification and stockpiling for
+outbreak and emergency preparedness.
+Skills you will learn: Demand forecasting, optimisation, immunisation & cLMIS logistics, AI-FASP, health-
+system readiness
+
+
+COMPARATIVE PANDEMIC INTELLIGENCE FRAMEWORK (CPIF)
+Benchmark multi-country preparedness and response to synthesise cross-national intelligence for
+health-security decision-making.
+Skills you will learn: Cross-national benchmarking, evidence synthesis, health-security intelligence,
+decision support
+
+
+GLOBAL & NATIONAL HEALTH DATA SYSTEMS
+Work across DHIS2, HMIS, cLMIS and EPI/VPD registries, assessing data quality and interoperability for
+real-time surveillance.
+Skills you will learn: Health-data ecosystems, interoperability, data quality, real-time surveillance
+
+
+EXPLAINABLE & EMERGING AI FOR PUBLIC HEALTH
+Interpret and communicate model outputs to non-technical stakeholders and explore emerging
+methods reshaping epidemiological analytics.
+Skills you will learn: Explainable AI (XAI), stakeholder communication, GANs, large language models
+
+
+
+
+                    Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+COURSE FACULTY & ADVISORS
+
+      Prof. Dr. Javaid Iqbal
+      Principal, SMME
+      Provides institutional leadership and strategic direction for the programme,
+      supporting its alignment with NUST’s research, and education mission.
+
+
+      Prof. Dr. Muhammad Asim Waris
+       Head of Department, SMME
+      Provides academic oversight and guidance, anchoring the course within the MS
+      Biomedical Engineering & Sciences programme and its interdisciplinary engineering-
+      and-health-sciences mandate with industrial connectivity.
+
+      Prof. Dr. Muhammad Tariq
+      Course Director — Associate Professor, SMME · CEO, Development Synergies International
+      Leads the design and delivery of the course, bringing applied experience in AI for
+      public health, disease surveillance and health-security programmes, and connecting
+      classroom learning with operational practices across national health systems and
+      WHO GHS, GOARN, IPSN networks.
+
+      Ms. Nimra Mudassir
+      Course Coordinator
+      Coordinates course delivery and learner support, and facilitates the hands-on
+      Python/R labs and applied case-study sessions throughout the semester.
+
+
+
+
+       Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+PROGRAMME PARTNER
+                                                Development Synergies International (DSI) partners with
+                                                NUST’s School of Mechanical & Manufacturing Engineering to
+                                                deliver applied, operationally-relevant AI education for public
+                                                health and health security.
+                                                DSI focuses on translating artificial intelligence, machine
+                                                learning and data modelling into practical capability for
+                                                disease surveillance, outbreak detection, immunisation
+                                                logistics and health-emergency preparedness connecting
+                                                learners with real deployments and the wider health-security
+                                                community.
+                                                The course is aligned with national health systems, including
+                                                NIH and EPI, and with global networks the Global Outbreak
+                                                Alert and Response Network (GOARN) and the International
+                                                Pathogen Surveillance Network (IPSN).
+
+
+
+
+      Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+TESTIMONIALS FROM SPRING 2026
+COHORT
+
+      Dr. MoSh Abd, MD, DPH, PhD, RMT (Philippines)
+MA    Physician (MD) & Public-Health Practitioner
+      “Completing the Applied AI in Epidemiology programme at NUST equipped me to apply
+      epidemiological and health-data principles to strengthen preparedness, detection and response
+      and to harness statistical methods, machine learning and AI for disease surveillance, prediction
+      and outbreak detection. It reinforced my belief that the future of public health lies at the
+      intersection of science, innovation and the responsible use of artificial intelligence.”
+
+
+      Naveed Sadiq (Pakistan)
+NS    Academician, Researcher & Consultant · Fulbright PhD
+      “An inspiring course from the team at NUST SMME. Being encouraged to build our own end-of-
+      course project in Python on Google Colab with the instructors’ feedback was the icing on the
+      cake. I can now confidently build my own machine-learning models.”
+
+
+      Dr. Sobhan Qadir (Pakistan)
+SQ    Global Health Security & Public-Sector Strategy Consultant
+      “Integrating artificial intelligence with epidemiology, infection prevention and global health
+      security has enormous potential to improve preparedness, surveillance and response. This
+      certification from NUST has prepared me to apply these skills in advancing data-driven, evidence-
+      based public-health systems.”
+
+
+
+
+     Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+APPLIED AI IN EPIDEMIOLOGY:
+THE NUST · SMME & DSI ADVANTAGE
+Delivered by NUST’s School of Mechanical & Manufacturing Engineering in collaboration with Development
+Synergies International, this course blends academic rigour with applied, real-world practice in disease
+surveillance, outbreak response and health security.
+
+             Applied, Hands-On Curriculum
+             Built by NUST · SMME faculty around real deployments EEPD, supply-chain forecasting and the CPIF
+             so learning maps directly to operational practice.
+
+             Expert Mentorship
+             Guidance from faculty and invited practitioners across biomedical engineering, public health and data
+             science throughout the semester.
+
+             Real-World Case Studies
+             Learn on live epidemiology and health-security case studies and datasets — dengue outbreak
+             prediction, immunisation logistics and pandemic intelligence — not toy problems.
+
+             Hands-On Python & R Labs
+             Build and evaluate your own machine-learning models in Python and R on Google Colab, with direct
+             instructor feedback on your project.
+
+             Continuous Assessment & Certification
+             Structured quizzes, applied assignments and a simulation-based capstone, leading to a 3-credit
+             certification carrying 2 CPD points.
+
+
+
+
+                   Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+ADMISSION PROCESS
+
+
+
+
+Admission is conducted on a rolling basis and will close once the requisite number of participants are
+enrolled. Registration deadline: 31 August 2026.
+
+             APPLY
+             Complete the online registration form — scan the QR                                          SCAN TO REGISTER
+             code or use the registration link.
+    ↓
+
+             REVIEW
+             Eligible applications are reviewed by the course team
+             at SMME
+    ↓
+
+             JOIN THE COURSE
+             Selected participants receive confirmation and                                      Scan the code or contact the course office for the
+             onboarding ahead of the 8 September 2026 start.                                                     registration link.
+
+
+
+
+    COURSE FEE
+
+        Local Students                                                           International Students
+
+        PKR 85,000                                                               USD 350
+    .
+
+
+
+
+                     Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+   READY TO APPLY AI IN
+   EPIDEMIOLOGY?
+
+CONTACT US
+muhammad.tariq@smme.nust.edu.pk
+nimra@developmentsynergies.com                                                                        REGISTER NOW
+0333-5555291
+
+
+
+
+                 Applied Artificial Intelligence in Epidemiology (BMES-826) · NUST · SMME · Development Synergies International
+

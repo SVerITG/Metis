@@ -1,0 +1,102 @@
+{# ══════════════════════════════════════════════════════════════════════════════
+   library_new_literature_list.html — one screen of discovered publications.
+
+   The row markup lives in library_new_literature_row.html, included here, so
+   that the same template renders a row inside the list and on its own after an
+   "Add to library" call. One definition, no drift.
+   ══════════════════════════════════════════════════════════════════════════════ #}
+
+{% if not items %}
+  <div class="panel" style="padding:22px 24px;">
+    <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);margin-bottom:6px;">
+      Nothing new in {{ window_label | lower }}.
+    </div>
+    <div class="ed" style="font-size:13px;margin:0;">
+      {% if q %}
+        No match for “{{ q }}” in this tab. Try a wider window, or clear the search.
+      {% elif show == 'unread' %}
+        Everything in <em>{{ spec.label }}</em> for this window has been added or dismissed.
+        Widen the window, or switch tab.
+      {% else %}
+        This tab has no items for the selected window.
+      {% endif %}
+    </div>
+  </div>
+{% else %}
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;gap:12px;flex-wrap:wrap;">
+    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--m-muted);">
+      {{ total }} ITEM{{ 'S' if total != 1 else '' }} · {{ window_label }}
+      {% if active_kind %} · {{ active_kind | upper }}{% endif %}
+    </div>
+    <div style="font-family:var(--m-display);font-style:italic;font-size:12.5px;color:var(--m-muted);max-width:52ch;text-align:right;">
+      {{ spec.blurb }}
+    </div>
+  </div>
+
+  <div class="panel" style="overflow:hidden;">
+    {% for item in items %}
+      {% include "partials/library_new_literature_row.html" %}
+    {% endfor %}
+  </div>
+
+  {% if total_pages > 1 %}
+  <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;">
+    {% if page > 1 %}
+    <button type="button" class="news-period-btn"
+            hx-get="/api/partial/library/new-literature/list?tab={{ active }}&window={{ window }}&kind={{ active_kind }}&show={{ show }}&q={{ q | urlencode }}&page={{ page - 1 }}"
+            hx-target="#nl-list" hx-swap="innerHTML">← Previous</button>
+    {% endif %}
+    <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{{ page }} / {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <button type="button" class="news-period-btn"
+            hx-get="/api/partial/library/new-literature/list?tab={{ active }}&window={{ window }}&kind={{ active_kind }}&show={{ show }}&q={{ q | urlencode }}&page={{ page + 1 }}"
+            hx-target="#nl-list" hx-swap="innerHTML">Next →</button>
+    {% endif %}
+  </div>
+  {% endif %}
+{% endif %}
+
+<script>
+// Attached to window rather than declared locally: the list is swapped on every
+// tab, window and filter change, so a function scoped to this fragment would be
+// redefined constantly and any handler already bound to an old copy would break.
+// Re-assignment on each swap is idempotent and cheap.
+window.nlAdd = async function (id, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Fetching…';
+  try {
+    const r = await fetch('/api/library/new-literature/' + id + '/add',
+                          { method: 'POST' });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error || 'failed');
+    // Re-render THIS row from the server so the acquisition dot shows what
+    // actually happened. Optimistically showing success would recreate the exact
+    // failure the dot exists to prevent: a catalogue entry implying a PDF that
+    // was never obtained.
+    htmx.ajax('GET', '/api/partial/library/new-literature/row/' + id,
+              { target: '#nl-row-' + id, swap: 'outerHTML' });
+  } catch (e) {
+    btn.textContent = 'Failed — retry';
+    btn.disabled = false;
+  }
+};
+
+window.nlDismiss = async function (id, btn) {
+  btn.disabled = true;
+  try {
+    await fetch('/api/library/new-literature/' + id + '/dismiss',
+                { method: 'POST' });
+    htmx.ajax('GET', '/api/partial/library/new-literature/row/' + id,
+              { target: '#nl-row-' + id, swap: 'outerHTML' });
+  } catch (e) {
+    btn.disabled = false;
+  }
+};
+
+window.nlRestore = async function (id) {
+  await fetch('/api/library/new-literature/' + id + '/restore', { method: 'POST' });
+  htmx.ajax('GET', '/api/partial/library/new-literature/row/' + id,
+            { target: '#nl-row-' + id, swap: 'outerHTML' });
+};
+</script>
