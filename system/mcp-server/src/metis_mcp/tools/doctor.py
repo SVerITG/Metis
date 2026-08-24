@@ -20,6 +20,7 @@ Top-level status:
 
 from __future__ import annotations
 
+import re
 import os
 import sqlite3
 from pathlib import Path
@@ -130,7 +131,23 @@ def _check_user_config() -> dict:
         }
     try:
         text = cfg.read_text(encoding="utf-8")
-        if 'name: ""' in text or 'name: ''' in text:
+        # This was a substring test: `'name: ""' in text or 'name: ''' in text`.
+        # Python concatenates adjacent literals, so `'name: '''` is just
+        # `'name: '` — and the whole condition collapsed to "does the file
+        # contain the characters `name: `". It does, always. So the check warned
+        # "`name` is empty — run /metis_config" on every run of every install,
+        # including this one where the name is plainly `the researcher`. A permanent false
+        # warning is worse than no check: it trains you to ignore the report.
+        # Read the actual value.
+        name = ""
+        try:
+            import yaml
+            data = yaml.safe_load(text) or {}
+            name = str((data.get("user") or {}).get("name") or "").strip()
+        except Exception:
+            m = re.search(r"^\s*name:\s*(.*)$", text, re.MULTILINE)
+            name = (m.group(1).strip().strip('"\'') if m else "")
+        if not name:
             return {
                 "name": "user-config.yaml",
                 "ok": False,
@@ -141,7 +158,7 @@ def _check_user_config() -> dict:
             "name": "user-config.yaml",
             "ok": True,
             "severity": "info",
-            "detail": f"{cfg.relative_to(paths.root)} · {len(text)} bytes",
+            "detail": f"{cfg.relative_to(paths.root)} · name set to {name!r}",
         }
     except Exception as e:
         return {
@@ -408,7 +425,18 @@ def _check_env_files_safe() -> dict:
 
 
 def _check_embedding() -> dict:
-    """The RAG / semantic-search engine: fastembed + sqlite-vec must be installed."""
+    """Can the RAG / semantic-search engine actually EMBED something?
+
+    This used to check only that `fastembed` and `sqlite_vec` import. On
+    2026-08-24 it reported OK while every embedding feature was dead: the
+    packages were installed, but the 132 MB model file was on the other
+    computer's disk and `HF_HUB_OFFLINE=1` meant it could never be fetched.
+    Semantic search 500'd on every call and the health check said "ok".
+
+    An installed library is not a working feature. So embed one short string —
+    it costs one model load, and the model is a process-wide singleton the
+    server needs warm anyway, so the cost is paid once and not wasted.
+    """
     missing = []
     for mod, label in [("fastembed", "fastembed"), ("sqlite_vec", "sqlite-vec")]:
         try:
@@ -421,8 +449,23 @@ def _check_embedding() -> dict:
             "detail": f"missing {', '.join(missing)} — semantic search + knowledge layer are OFF. "
                       "Fix: reinstall with the [embedding] extra.",
         }
+    try:
+        from metis_mcp.embeddings import embed, EMBEDDING_DIM
+        vec = embed(["metis health check"])[0]
+    except Exception as e:
+        return {
+            "name": "Embedding / RAG engine", "ok": False, "severity": "fail",
+            "detail": f"packages installed but the model will NOT load — semantic "
+                      f"search and the knowledge layer are OFF. {str(e)[:220]}",
+        }
+    if len(vec) != EMBEDDING_DIM:
+        return {
+            "name": "Embedding / RAG engine", "ok": False, "severity": "fail",
+            "detail": f"model returned {len(vec)} dims, index expects {EMBEDDING_DIM} — "
+                      "stored vectors and new ones are incompatible.",
+        }
     return {"name": "Embedding / RAG engine", "ok": True, "severity": "info",
-            "detail": "fastembed + sqlite-vec installed"}
+            "detail": f"model loads and embeds ({EMBEDDING_DIM} dims)"}
 
 
 def _check_knowledge_layer() -> dict:

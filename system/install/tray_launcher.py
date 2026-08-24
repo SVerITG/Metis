@@ -44,7 +44,15 @@ _VENV       = _METIS_ROOT / "system" / "mcp-server" / ".venv-win"
 _PYTHON     = _VENV / "Scripts" / "pythonw.exe"
 _MCP_SRC    = _METIS_ROOT / "system" / "mcp-server" / "src"
 _APP_DIR    = _METIS_ROOT / "system" / "app-py"
-_LOG_DIR    = _METIS_ROOT / "system" / "config" / "logs"
+# Machine-local, NOT inside the OneDrive-synced repo — see the long note in
+# app-py/run.sh. Two computers appending to one log file makes OneDrive fork it
+# into per-host conflict copies, so "the log" stops having a single meaning.
+# Kept in step with run.sh's LOG_DIR, including the METIS_LOG_DIR override.
+_LOG_DIR = Path(
+    os.environ.get("METIS_LOG_DIR")
+    or (Path(os.environ.get("LOCALAPPDATA", Path.home() / ".local" / "state"))
+        / "metis" / "logs")
+)
 
 _DASHBOARD_URL = "http://127.0.0.1:{port}"
 _STARTUP_WAIT  = 4   # seconds to wait before opening browser

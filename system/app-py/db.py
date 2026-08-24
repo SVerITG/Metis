@@ -298,6 +298,25 @@ def run_migrations() -> list[str]:
         return []
 
     schema_sql = schema_path.read_text(encoding="utf-8")
+
+    # Strip `--` comments BEFORE matching table bodies.
+    #
+    # The block matcher below is non-greedy up to `);`, so it ends a table body at
+    # the FIRST `);` in the text — including one inside a comment. A perfectly
+    # ordinary explanatory line like
+    #     -- entry_kind = what it is (article/review/report); lane = where it goes
+    # therefore truncated `new_publications` after its third-from-last column, and
+    # every column below the comment silently stopped being migrated. Found while
+    # fixing exactly that table on 2026-08-24: the file said the columns existed,
+    # the parser never saw them, and nothing reported a problem.
+    #
+    # Comments carry no schema, so removing them first costs nothing and makes the
+    # file safe to document. Done line-wise on `--` only; schema.sql has no string
+    # literals containing `--`, and a stray one would merely truncate that line.
+    schema_sql = "\n".join(
+        line.split("--", 1)[0].rstrip() if "--" in line else line
+        for line in schema_sql.splitlines()
+    )
     changes: list[str] = []
 
     try:
