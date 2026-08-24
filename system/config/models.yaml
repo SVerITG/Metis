@@ -17,6 +17,22 @@
 # Roles — each maps a use case to a model + fallback chain
 # ---------------------------------------------------------------------------
 
+# WHICH OF THE TWO MODEL SETTINGS IS REAL
+#
+# This file BINDS. It drives the calls Metis makes itself — morning brief, news
+# relevance, board refresh, slide bulk generation, PaperQA — and those are the
+# only model choices Metis actually owns.
+#
+# The `model:` line in each agent's frontmatter is ADVISORY and always was:
+# `user_decisions` #2 (2026-08-12) settled that "Metis does not make the answer's
+# model call, the Claude client does." An MCP server cannot change the model of
+# the conversation calling it. That field documents what an agent was written
+# for; this file decides what actually runs.
+#
+# Prices per MTok, from the Anthropic model table (cached 2026-06-24):
+#   haiku-4-5   $1 / $5     200K ctx
+#   sonnet-5    $3 / $15    1M    ($2 / $10 intro through 2026-08-31)
+#   opus-5      $5 / $25    1M
 roles:
 
   # Fast, cheap synthesis: morning brief, lesson generation, fact extraction.
@@ -25,23 +41,30 @@ roles:
     primary: claude-haiku-4-5
     fallback:
       - claude-haiku-4-5
-      - claude-haiku-3-5
+      - claude-sonnet-5
 
   # Main work model: routing decisions, agent responses, document review.
   # Balance of speed + quality. The "default" if a caller doesn't specify a role.
   sonnet_default:
-    primary: claude-sonnet-4-6
+    # claude-sonnet-5 is both NEWER and, through 2026-08-31, CHEAPER than
+    # sonnet-4-6: $2/$10 per MTok on intro pricing against $3/$15. After the
+    # intro period it settles at $3/$15 — the same as what it replaced. There is
+    # no version of this trade that loses.
+    primary: claude-sonnet-5
     fallback:
+      - claude-sonnet-4-6
       - claude-sonnet-4-5
-      - claude-3-5-sonnet-latest
 
   # Deep reasoning, methodology challenge, long-form synthesis.
   # Used sparingly because it's slow + expensive.
   opus_deep:
-    primary: claude-opus-4-6
+    # claude-opus-5 is $5/$25 per MTok — IDENTICAL to opus-4-6 and opus-4-7.
+    # A newer model at the same price, so staying on 4-6 was a pure loss.
+    primary: claude-opus-5
     fallback:
-      - claude-opus-4-5
-      - claude-3-opus-latest
+      - claude-opus-4-8
+      - claude-opus-4-7
+      - claude-opus-4-6
 
 # ---------------------------------------------------------------------------
 # Aliases — short names callers can use instead of role names

@@ -768,7 +768,9 @@ def _ensure_decisions_table() -> None:
 
 
 @app.tool()
-def record_decision(decision: str, category: str = "preference", context: str = "", scope: str = "always") -> str:
+def record_decision(decision: str, category: str = "preference",
+                    context: str = "", scope: str = "always",
+                    agent_slug: str = "") -> str:
     """Record a user preference or decision so Metis adapts to the user over time.
 
     Use this whenever the user states (or confirms) a standing preference or makes a
@@ -782,6 +784,18 @@ def record_decision(decision: str, category: str = "preference", context: str = 
         category: preference | coding | citation | methodology | writing | article-ref | dataset | routing | other.
         context: optional — when/why it applies (e.g. "for HAT spatial analyses").
         scope: 'always' (persist) or 'once'.
+        agent_slug: the specialist that should APPLY this decision — e.g.
+            "frontend-designer-builder" for a layout rule, "writing-partner" for
+            a prose rule, "librarian" for what matters in the library. Leave
+            empty for a project-wide rule that every agent should carry.
+
+            Attribution is what makes the decision reachable. `get_agent_context`
+            injects an agent's own decisions plus the project-wide ones, and a
+            flat list of every preference injected into every agent is noise that
+            gets ignored. Measured 2026-08-24: user_decisions held 2 rows while
+            session summaries held 7,578 decision entries — so invoking a
+            specialist returned a persona and nothing about how the researcher
+            wants things done, which is why routing to one stopped being worth it.
     """
     decision = (decision or "").strip()
     if not decision:
@@ -790,13 +804,19 @@ def record_decision(decision: str, category: str = "preference", context: str = 
         return f"Noted for this once: {decision}"
     _ensure_decisions_table()
     with connect(paths.db) as con:
+        try:
+            con.execute("ALTER TABLE user_decisions ADD COLUMN agent_slug TEXT DEFAULT ''")
+        except Exception:
+            pass
         con.execute(
-            "INSERT INTO user_decisions (category, decision, context, scope, source) "
-            "VALUES (?, ?, ?, 'always', 'user')",
-            (category, decision, context),
+            "INSERT INTO user_decisions (category, decision, context, scope, source, "
+            "agent_slug) VALUES (?, ?, ?, 'always', 'user', ?)",
+            (category, decision, context, (agent_slug or "").strip()),
         )
         con.commit()
-    return f"Recorded ({category}): {decision}. I'll apply this going forward."
+    who = (agent_slug or "").strip() or "every agent"
+    return (f"Recorded ({category}) for {who}: {decision}. "
+            f"It is injected into that agent's context from now on.")
 
 
 @app.tool()
