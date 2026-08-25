@@ -5,6 +5,22 @@ All notable changes to Metis are documented here.
 ## [Unreleased]
 
 ### Added
+- **Verification layer** — `verify_claim`, `verify_text_citations`, `verify_doi`, `library_coverage`, `citation_debt`, `audit_background_provenance`; deterministic Tier A (indexed source, page exists, figures and quoted strings present) and network Tier B (Crossref resolution + retraction, detected on four independent signals). No model in the path (Aug 24).
+- **Artifact gate** — `tools/verify_citations.py` exits non-zero when a document cites a page that does not support its claim; conversation is annotated asynchronously instead, so the gate never slows a turn and never gets switched off (Aug 24).
+- **Evidence weighing** — `weigh_evidence` (value spread, attached qualifiers, dropped caveats, omissions) and `check_for_newer_evidence`, so fact-checking covers the substance of a claim and not only its citation (Aug 24).
+- **Focus areas** — `create_focus_area`, `set_focus_state`, `show_focus_areas`, `update_focus_overview`, `focus_brief`, `preview_focus_lens`. User-composed surfaces whose lens is a conjunction of keyword groups (OR within, AND across); shelf capped at 3 and refuses a fourth rather than evicting; archiving a focus leaves all notes, ideas and papers intact (Aug 24).
+- **Agent decision memory** — `decisions_for`, `render_for_prompt`, `touch`, `show_agent_decisions`; `record_decision` extended with `agent_slug` as the single canonical writer. 65 standing decisions mined from past session summaries; `user_decisions` 2 → 85 rows (Aug 24).
+- **33 dispatchable subagents** — every specialist registered in `.claude/agents/` with a bound model, so model assignment takes effect instead of being advisory; picker cost ~1,832 tokens (Aug 24).
+- **Office bridge** — PowerPoint/Excel taskpane over HTTPS, deck round-trip into Metis honouring a user template, and a JSON API over the brain for non-Claude clients (Aug 12).
+- **Backgrounds as portable packs** — see/switch/rebuild/remove a knowledge layer; layers can point at an external library; institutional PDFs via Zotero; `ph-foundations` textbook layer with curriculum-driven pack selection (Aug 13).
+- **AI in Public Health course** — 16 lessons, 97 MCQs, 106 cards; plus `tools/check_course_launch.py` and `tools/audit_quiz.py` as standing gates (Aug 21).
+- **Readable memory** — procedural memory is browsable rather than a count; decisions can be closed instead of restated; unified notes search; documents index on arrival (Aug 12–14).
+- **Calendar planning** — day/week/month views; a course's remaining lessons can be laid into the plan (Aug 14).
+
+### Fixed
+- **Ten faults from the two-computer split** — embedding cache treated as a search path rather than a pinned constant; stale-install detection by file contents not timestamps; one owner for the `inbox_items` DDL; `);` inside a SQL comment no longer truncates a table definition; `tools/restart-dashboard.sh` waits for the PID to change rather than for `/health` (Aug 24).
+- **Redactor ran partially while reporting success** — an invalid `re.sub` replacement raised inside a `git rebase --exec … || true`, so the identity strip stopped mid-run and three files kept personal paths in committed trees. The pattern is removed as redundant, a failing substitution now aborts the whole run, and the redactor itself is unpublished (Aug 25).
+- **Front-page and surface repairs** — 79 open tasks invisible behind a missing column; four blank Today panels; three Teach routes returning empty divs against 11 courses; meetings without a primary key; news briefs with NULL primary keys and raw HTML rendered as text (Aug 12).
 - **Today Surface sprint** — resume card, literature discovery, learning nudge, system health monitor, deadline nudges, brief bridges, memory pulse, focus memory, session thread, and trust badge redesign (Jul 13).
 - **Meeting assistant upgrade** — Whisper GPU activation with 3.5s chunks, Meetily transcript import, Voxtral cloud transcription backend (requires MISTRAL_API_KEY), speaker diarization improvements (Jul 13).
 - **Memory Cortex** — unified memory gateway with `recall()` (searches all 6 memory layers with RRF fusion) and `remember()` (auto-classifies into episodic/semantic/procedural/note); multi-scope identity (agent_id, project_id, scope columns); richer session bootstrap with semantically relevant memories; Memory Health dashboard tab (Jun 18).

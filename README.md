@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  🟢 <strong>Actively developed.</strong> &nbsp;Latest: learnable agent routing · a personalization layer that grows with you · a security pass. &nbsp;<a href="#changelog"><strong>See what's new ↓</strong></a>
+  🟢 <strong>Actively developed.</strong> &nbsp;Latest: fact-checking that actually checks · focus surfaces you add yourself · specialists that remember your standing decisions. &nbsp;<a href="#changelog"><strong>See what's new ↓</strong></a>
 </p>
 
 <br>
@@ -865,7 +865,42 @@ key journals + RSS feeds · specialist agents · a domain ontology · a curated 
 
 ## Changelog
 
-> **Metis is under active development** — see the latest below. (Recent: a routing brain that learns who should answer, a personalization layer that remembers how you like to work, and a security pass.)
+> **Metis is under active development** — see the latest below. (Recent: verification with a hard gate on artifacts and a denominator on every report, focus surfaces you compose yourself, and specialists that carry your standing decisions.)
+
+### August 2026
+
+| What changed |
+|---|
+| **Fact-checking became a mechanism instead of a convention** — a claim is now checked, not trusted. Two layers: a deterministic one (is the cited document indexed, does the page exist, do the figures and quoted strings actually appear on it, does the DOI resolve, **is the paper retracted**) and a judgement one (does the literature agree, are there qualifiers and caveats the summary dropped, has newer evidence arrived since). Conversation gets annotated; artifacts get a hard gate — `tools/verify_citations.py` exits non-zero on a document that cites a page which does not support the claim. Nothing about it is a model guessing: the checker is deliberately less fallible than the thing it checks. |
+| **Every report now carries its denominator** — the coverage line ("18 of 187 citation-shaped items were checkable as written") is printed whether or not it flatters the result. A verification report that omits what it did *not* cover reads as a clean bill of health, which is worse than no report. |
+| **Fact-checking beyond citations** — ask about a specificity figure and Metis weighs the *spread* of reported values across your library, surfaces the qualifiers attached to each, notes what the abstract omitted, and checks whether more recent work has moved the number. |
+| **Focus areas — surfaces you add yourself** — a focus is a subject you want to stay current on ("AI in health and epidemiology"), and it composes one page out of the parts Metis already has: news, reading, your notes and ideas, and a running overview. It owns a *query*, never content — so archiving one leaves every note, idea and paper exactly where it was. Its lens is a conjunction of keyword groups (OR within, AND across), which is what stops "Can AI ever be conscious?" from landing on a health surface. The shelf holds **three**, and it refuses a fourth rather than quietly evicting one: which subject loses your attention is your call, not the software's. |
+| **The specialists got a memory** — routing to an expert is only worth doing if the expert remembers something. Standing decisions (how you want a dashboard built, how something should be written, what matters in your library) are now recorded once and threaded into that specialist's context on every request. 65 were mined out of past session summaries and attributed conservatively — anything not confidently placeable becomes project-wide, because a wrong attribution hides a rule from the agent that needed it *and* clutters one that did not. |
+| **All 33 specialists are dispatchable** — each is registered as a real subagent with its own bound model, so the work runs in an isolated context and the model choice actually takes effect instead of being advice in a config file. |
+| **Ten silent faults from working across two computers** — the code syncs over OneDrive; the virtual environment, the database and the model cache do not. That gap produced ten failures with one cause: an embedding cache pinned to a path the model had never been copied to (fixed by treating a cache location as a *search path*, not a constant), a stale-install check that compared timestamps instead of contents, two owners of the same table definition, a `);` inside a SQL comment that silently truncated a table and dropped its columns, and a restart script that waited on health instead of on the process actually restarting — which alone caused three false diagnoses. |
+| **A briefing that doesn't repeat itself** — the daily brief rotates instead of restating yesterday, News was rebuilt around what *happened* (papers belong in the library, never the news feed), and research interests split into separate axes so a feed can be specific without being narrow. |
+| **The persona grows from what it knows** — presence now comes from recalled context rather than announced framing, plus a learned-lesson ledger and `/metis-review` for checking whether Metis is still pointed at the right things. |
+| **Backgrounds became portable packs** — see, switch, rebuild and finally *remove* a knowledge layer; point a layer at an external library (206 papers were unsearchable); pull institutional PDFs in through Zotero; and a new `ph-foundations` textbook layer, where the curriculum decides the pack rather than the reverse. Packs carry every folder their layer covers, and PH / methods / NTD ship separately. |
+| **Office and a plain JSON API** — a PowerPoint/Excel taskpane over an HTTPS bridge, decks that flow back into Metis on their own and honour your own template, and a JSON API over the brain for clients that are not Claude. |
+| **Memory you can read and close** — procedural memory was a number on a card; it is now readable. Decisions can be *closed* instead of restated forever. Notes search reaches both note stores. A document that lands now indexes itself. Metis volunteers a recorded procedure and remembers your answer. |
+| **A calendar you can plan in** — day, week and month views, with a course's remaining lessons layable into the plan. |
+| **AI in Public Health — a full course** — 16 lessons, 97 questions, 106 cards, built around six pattern-recognition shapes and one governing question: *what happens when it's wrong, and who finds out?* Shipped with two new gates, because both properties had been silently broken: `check_course_launch.py` (every launch button opens the real course — one used to open a GitHub repo, another a path that 404'd) and `audit_quiz.py` (position bias and length tells — a first draft put **100%** of correct answers in slot 1). |
+| **Front-page and surface repairs** — 79 open tasks were invisible behind a missing column; four Today panels were blank; three Teach routes returned an empty div while 11 courses sat in the database; meetings had no primary key, so their action items could never surface; every news brief had a NULL primary key and half rendered raw HTML as text. |
+| **Offline, updatable, and honest about dead code** — CDN assets vendored so the dashboard loads with no internet; update Metis from a button with a way back; and a standing detector for code that looks wired but never runs. |
+
+### July 2026
+
+| What changed |
+|---|
+| **The dashboard was never crashing** — it was deadlocked with no way back. A file-descriptor inheritance leak meant a child process held the lock file its parent had opened, so recovery was *impossible* rather than merely slow, and three separate silent faults meant nothing ever restarted it. This supersedes the earlier "it keeps crashing" story entirely. |
+| **Cross-pollination became ambient** — the README had promised for months that related work surfaces on its own. It now does: on the Today cockpit, across the library, and without being asked. |
+| **News is what happened; literature is what was published** — the two had been merged, so papers kept appearing in the news feed. It was a data-model problem (feeds carried no kind), not a display one, which is why relevance ranking had been *amplifying* it. |
+| **Spaced repetition actually works** — the last unkept README promise. |
+| **Action items from natural transcripts** — extraction from how people really talk, not from a structured template. |
+| **Planner merged into Work as a Board view** — 10 tabs to 9. |
+| **Zotero gained a write path** — push local papers up, not only pull down. |
+| **The app finally uses the design system it already had.** |
+| **Mark-done and delete never worked** — task IDs were unquoted in the generated JavaScript. |
 
 ### Late June 2026
 
