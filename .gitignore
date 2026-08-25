@@ -349,3 +349,8 @@ system/config/.corpus-triggers.json
 # Codex hooks — machine-local, contains absolute Windows/WSL paths by design.
 # Same class as .claude/settings.local.json: a launcher config, not source.
 .codex/hooks.json
+
+# The redactor names every identifier it removes, so it cannot be published by
+# the thing it exists to protect — same reason as agents/release-coordinator/.
+# It still reaches the second machine via OneDrive, which syncs untracked files.
+tools/strip-identity.py
