@@ -8,13 +8,13 @@
 
 <div id="metis-procedures">
 <div class="u-row u-row--wrap u-mb-4" style="gap:var(--m-space-3);">
-  <input class="u-grow" type="search" name="q" value="{{ q }}"
+  <input class="u-grow u-title u-title--sm" type="search" name="q" value="{{ q }}"
          placeholder="Search procedures — name, trigger, or a step…"
          hx-get="/api/partial/metis/procedures"
          hx-trigger="input changed delay:250ms, search"
          hx-target="#metis-procedures" hx-swap="outerHTML"
-         style="min-width:240px;font-family:var(--m-display);font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-rule);border-radius:6px;background:var(--m-surface,transparent);color:var(--m-ink);">
-  <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.14em;text-transform:uppercase;color:var(--m-muted);">
+         style="min-width:240px;padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-rule);border-radius:6px;background:var(--m-surface,transparent);">
+  <span class="u-mono" style="letter-spacing:0.14em;text-transform:uppercase;color:var(--m-muted);">
     {{ total }} procedure{{ '' if total == 1 else 's' }}{% if q %} matching{% endif %}
   </span>
 </div>
@@ -35,7 +35,7 @@
   <div class="u-mb-2" style="display:flex;align-items:baseline;gap:var(--m-space-3);">
     <span class="kicker" style="padding:0;color:var(--m-accent);">{{ family }}</span>
     <span class="u-grow" style="height:1px;background:var(--m-rule-soft);"></span>
-    <span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);">
+    <span class="u-mono" style="color:var(--m-muted);">
       {{ procs|length }}
     </span>
   </div>
@@ -47,7 +47,7 @@
     <summary style="padding:var(--m-space-3) var(--m-space-4);cursor:pointer;list-style:none;display:flex;align-items:flex-start;gap:var(--m-space-3);">
       <span class="u-label u-label--accent u-fixed" style="margin-top:var(--m-space-1);">▸</span>
       <span class="u-grow">
-        <span style="display:block;font-family:var(--m-display);font-size:var(--t-body);font-weight:500;color:var(--m-ink);line-height:1.35;">
+        <span class="u-title" style="display:block;font-weight:500;line-height:1.35;">
           {# The family prefix is already the group heading — don't repeat it #}
           {{ p.procedure_name.split('—')[-1].strip() if '—' in p.procedure_name else p.procedure_name }}
         </span>
@@ -58,15 +58,15 @@
         </span>
         {% endif %}
       </span>
-      <span class="u-fixed" style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);text-align:right;line-height:1.6;">
+      <span class="u-fixed u-mono" style="color:var(--m-muted);text-align:right;line-height:1.6;">
         {% if p.success_count %}used {{ p.success_count }}×<br>{% endif %}
         {% if p.last_used %}{{ p.last_used[:10] }}{% elif p.created_at %}{{ p.created_at[:10] }}{% endif %}
       </span>
     </summary>
     <div class="u-rule-t" style="padding:0 15px 14px 37px;">
-      <div style="font-family:var(--m-display);font-size:var(--t-small);line-height:1.6;color:var(--m-ink);white-space:pre-wrap;padding-top:11px;text-wrap:pretty;">{{ p.steps }}</div>
+      <div class="u-title u-title--sm" style="line-height:1.6;white-space:pre-wrap;padding-top:11px;text-wrap:pretty;">{{ p.steps }}</div>
       {% if p.scope or p.project_id %}
-      <div style="margin-top:var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
+      <div class="u-mono" style="margin-top:var(--m-space-3);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
         {{ p.scope or 'global' }}{% if p.project_id %} · {{ p.project_id }}{% endif %}
       </div>
       {% endif %}

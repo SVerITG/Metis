@@ -6,7 +6,7 @@
   {% if briefs %}
     {% for b in briefs %}
     <details class="u-rule" style="padding:var(--m-space-2) 0;">
-      <summary class="u-row" style="cursor:pointer;gap:var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-ink);list-style:none;">
+      <summary class="u-row u-mono" style="cursor:pointer;gap:var(--m-space-3);color:var(--m-ink);list-style:none;">
         <span class="tnum">{{ b['insight_date'] }}</span>
         {% if b['read_at'] %}
           <span style="font-size:var(--t-micro);letter-spacing:0.12em;color:var(--m-muted);">READ</span>

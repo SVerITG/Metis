@@ -106,10 +106,10 @@
   <div class="u-mb-6">
     {{ sec_label("Search", tail="PAPERS · DOMAIN CORPUS · CARDS · MEMORY") }}
     <div class="panel panel--md">
-      <input type="search"
+      <input class="u-tile" type="search"
              id="unified-search-input"
              placeholder="Search across all of your library and memory…"
-             style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
+             style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);color:var(--m-ink);outline:none;"
              hx-get="/api/partial/knowledge/unified-search"
              hx-trigger="keyup changed delay:400ms"
              hx-target="#unified-search-results"
@@ -253,10 +253,10 @@
       <div class="u-ed" style="font-size:var(--t-small);">Checking your PDF index…</div>
     </div>
     <div class="panel panel--md">
-      <input type="search"
+      <input class="u-tile" type="search"
              id="pdf-search-input"
              placeholder="Search across all indexed PDFs…"
-             style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
+             style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);color:var(--m-ink);outline:none;"
              hx-get="/api/partial/knowledge/pdf-search"
              hx-trigger="keyup changed delay:400ms"
              hx-target="#pdf-search-results"

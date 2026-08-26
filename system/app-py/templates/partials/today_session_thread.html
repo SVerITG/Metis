@@ -17,7 +17,7 @@
           {% if depth.level == 'deep' %}box-shadow:0 0 6px 1px var(--m-accent-wash-2);{% endif %}"
           title="{{ depth.total }} memories ({{ depth.level }})"></span>
         {# Thread title #}
-        <span class="u-grow" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">{{ thread.topic }}</span>
+        <span class="u-grow u-title">{{ thread.topic }}</span>
         {# Stats #}
         <span class="u-label" style="letter-spacing:0.08em;">
           {{ thread.session_count }} session{{ 's' if thread.session_count != 1 else '' }}

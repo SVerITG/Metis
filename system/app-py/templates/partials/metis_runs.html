@@ -1,9 +1,9 @@
 <!-- metis_runs.html — Editorial agent run rows -->
 {% if not runs %}
 <div style="text-align:center;padding:var(--m-space-5) var(--m-space-5);font-family:var(--m-ui);">
-  <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">Nothing here yet for this period.</div>
+  <div class="u-mb-2 u-title">Nothing here yet for this period.</div>
   <div style="font-size:var(--t-meta);color:var(--m-muted);">
-    Try <code style="font-family:var(--m-mono);font-size:var(--t-micro);">/metis</code> in Claude Code, or click <em>Scan now</em> on the Today tab.
+    Try <code class="u-mono">/metis</code> in Claude Code, or click <em>Scan now</em> on the Today tab.
   </div>
 </div>
 {% else %}
@@ -17,7 +17,7 @@
   <span class="chip chip--accent" style="justify-self:start;font-size:var(--t-micro);letter-spacing:0.12em;padding:var(--m-space-1) var(--m-space-2);background:var(--m-accent-wash);color:var(--m-accent);">
     {{ (r.agent_slug or 'unknown')[:14] }}
   </span>
-  <span class="u-truncate" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.4;">
+  <span class="u-truncate u-title">
     {{ r.task_summary or '—' }}
   </span>
   <span class="tnum u-label" style="text-align:right;">

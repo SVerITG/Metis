@@ -78,7 +78,7 @@
         <div class="u-row" style="gap:var(--m-space-3);">
           <span style="width:6px;height:6px;border-radius:50%;flex-shrink:0;
             background:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};"></span>
-          <span class="u-grow u-truncate" style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ p.title }}</span>
+          <span class="u-grow u-truncate u-title u-title--sm">{{ p.title }}</span>
           <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;
             color:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};">
             {{ mem.total }} memories &middot; {{ mem.level }}

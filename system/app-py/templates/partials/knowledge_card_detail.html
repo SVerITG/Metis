@@ -14,7 +14,7 @@
 
   <div class="u-mb-3" style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--m-space-4);">
     <div>
-      <div class="u-mb-2" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);">
+      <div class="u-mb-2 u-mono" style="letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);">
         {{ card.domain or 'Unfiled' }}
         {% if card.year %} · {{ card.year }}{% endif %}
         {% if file_exists %} · {{ size_kb }} KB{% endif %}
@@ -27,10 +27,10 @@
       {% endif %}
     </div>
 
-    <button class="u-fixed btn btn--sec" type="button"
+    <button class="u-fixed btn btn--sec u-mono" type="button"
             onclick="htmx.ajax('GET','/api/partial/knowledge/cards',{target:'#knowledge-cards-area',swap:'outerHTML'})"
             title="Back to the shelf"
-            style="padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
+            style="padding:var(--m-space-1) var(--m-space-3);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
       ← Shelf
     </button>
   </div>
@@ -44,13 +44,13 @@
   <!-- Actions -->
   <div class="u-row u-row--wrap u-mb-3">
     {% if file_exists %}
-      <a href="/api/library/card-pdf/{{ card.id }}" target="_blank" rel="noopener"
-         style="background:var(--m-accent-wash);border:1px solid var(--m-accent);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-accent);text-decoration:none;">
+      <a class="u-mono" href="/api/library/card-pdf/{{ card.id }}" target="_blank" rel="noopener"
+         style="background:var(--m-accent-wash);border:1px solid var(--m-accent);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-accent);text-decoration:none;">
         Open PDF
       </a>
     {% else %}
-      <span title="The card records this path but no file is there. Re-run the library scan, or the download never completed."
-            style="display:inline-flex;align-items:center;gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;color:#b3261e;">
+      <span class="u-mono" title="The card records this path but no file is there. Re-run the library scan, or the download never completed."
+            style="display:inline-flex;align-items:center;gap:var(--m-space-1);letter-spacing:0.08em;color:#b3261e;">
         <span style="width:7px;height:7px;border-radius:50%;background:#b3261e;display:inline-block;"></span>
         FILE MISSING ON DISK
       </span>
@@ -71,20 +71,20 @@
        navigable folder structure is that a human can go there and hand the file
        to Zotero without Metis in the loop. -->
   {% if card.source_path %}
-  <div class="u-rule-t" style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);word-break:break-all;padding-top:10px;">
+  <div class="u-rule-t u-mono" style="color:var(--m-muted);word-break:break-all;padding-top:10px;">
     knowledge/library/{{ card.source_path }}
   </div>
   {% endif %}
 
   {% if related %}
   <div class="u-rule-t" style="margin-top:var(--m-space-4);padding-top:12px;">
-    <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.14em;text-transform:uppercase;color:var(--m-muted);margin-bottom:var(--m-space-2);">
+    <div class="u-mono" style="letter-spacing:0.14em;text-transform:uppercase;color:var(--m-muted);margin-bottom:var(--m-space-2);">
       Also in your catalogue
     </div>
     {% for r in related %}
     <div style="font-family:var(--m-ui);font-size:var(--t-meta);color:var(--m-text);padding:var(--m-space-1) 0;">
       {{ r.title | truncate(90, True, '…') }}
-      {% if r.year %}<span style="color:var(--m-muted);font-family:var(--m-mono);font-size:var(--t-micro);"> · {{ r.year }}</span>{% endif %}
+      {% if r.year %}<span class="u-mono" style="color:var(--m-muted);"> · {{ r.year }}</span>{% endif %}
     </div>
     {% endfor %}
   </div>

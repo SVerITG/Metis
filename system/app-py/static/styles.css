@@ -4342,3 +4342,35 @@ details summary { outline: none; }
 @media (prefers-reduced-motion: reduce) {
   .sk-bar, .sk-card { animation: none; background: var(--m-surface-2); }
 }
+
+/* ── Three more idioms, from the residue after the first pass ──────────────
+   The first round named the top of the histogram. What survived it clusters
+   differently: a title in the display face (~50), mono without a colour (~25),
+   and a soft bordered tile (~190 declarations across background/border/radius).
+   Named for the same reason as the first eight — they were being retyped. */
+.u-title {
+  font-family: var(--m-display); font-size: var(--t-body);
+  color: var(--m-ink); line-height: 1.4; margin: 0;
+}
+.u-title--lg { font-size: var(--t-h4); }
+.u-title--sm { font-size: var(--t-small); }
+
+.u-mono { font-family: var(--m-mono); font-size: var(--t-micro); }
+
+/* A soft tile: the shape used for stat boxes, source chips and inline panels
+   that are not full `.panel`s. */
+.u-tile {
+  background: var(--m-surface-2); border: 1px solid var(--m-line);
+  border-radius: var(--m-radius);
+}
+.u-tile--quiet { background: transparent; }
+
+/* "What changed since I last looked" — one strip, every surface. */
+.wn { display: flex; align-items: baseline; gap: var(--m-space-2);
+      flex-wrap: wrap; font-family: var(--m-mono); font-size: var(--t-micro);
+      color: var(--m-muted); letter-spacing: .06em; }
+.wn-delta { color: var(--m-accent); text-transform: uppercase; }
+.wn-delta b { font-size: var(--t-small); font-variant-numeric: tabular-nums; }
+.wn-delta--quiet { color: var(--m-muted); }
+.wn-total { opacity: .75; text-transform: uppercase; }
+.wn-note { font-style: italic; opacity: .8; letter-spacing: 0; }

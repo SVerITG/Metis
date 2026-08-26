@@ -12,13 +12,13 @@
 <div style="border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-3) var(--m-space-4);">
   <div style="display:flex;flex-wrap:wrap;gap:10px 22px;align-items:baseline;">
     {% for g in p.per_group %}
-    <span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);">
+    <span class="u-mono" style="color:var(--m-muted);">
       axis {{ g.index }} alone:
       <strong style="color:var(--m-ink);">{{ g.news }}</strong> news /
       <strong style="color:var(--m-ink);">{{ g.reading }}</strong> papers
     </span>
     {% endfor %}
-    <span style="margin-left:auto;font-family:var(--m-mono);font-size:var(--t-micro);">
+    <span class="u-mono" style="margin-left:auto;">
       TOGETHER:
       <strong style="font-size:15px;{% if p.combined.news %}color:var(--m-accent);{% endif %}">{{ p.combined.news }}</strong> news ·
       <strong style="font-size:15px;{% if p.combined.reading %}color:var(--m-accent);{% endif %}">{{ p.combined.reading }}</strong> papers
@@ -34,7 +34,7 @@
   <div style="margin-top:var(--m-space-3);border-top:1px solid var(--m-line);padding-top:8px;">
     {% for s in p.samples %}
     <div style="font-size:var(--t-meta);color:var(--m-muted);line-height:1.5;">
-      <span style="font-family:var(--m-mono);font-size:var(--t-micro);">{{ s.date }}</span>
+      <span class="u-mono">{{ s.date }}</span>
       — {{ s.title[:110] }}
     </div>
     {% endfor %}

@@ -128,9 +128,15 @@ def _guess_back(request: Request) -> str:
 def render_stack_body(request: Request, state: str = "later", tag: str = "") -> str:
     from main import templates
     S = _s()
+    try:
+        import ui as _ui
+        wn = _ui.whats_new("stack", "reading_stack", "state_at")
+    except Exception:
+        wn = None
     return templates.get_template("partials/stack_body.html").render(
         items=S.stack(state=state, tag=tag, limit=300),
         state=state, tag=tag, counts=S.counts(), tags=S.all_tags(),
+        whatsnew_stack=wn,
     )
 
 
@@ -151,6 +157,8 @@ async def stack_page(request: Request, state: str = "later", tag: str = ""):
         "tag": tag,
         "counts": S.counts(),
         "tags": S.all_tags(),
+        "whatsnew_stack": (lambda: __import__("ui").whats_new(
+            "stack", "reading_stack", "state_at"))(),
     })
 
 
@@ -173,3 +181,33 @@ async def stack_nav_meta():
     S = _s()
     c = S.counts()
     return HTMLResponse(f"{c['later']}" if c["later"] else "—")
+
+
+# ---------------------------------------------------------------------------
+# "Seen" markers, for any surface
+# ---------------------------------------------------------------------------
+_SEEN_SURFACES = {
+    # key            → (what to re-render afterwards)
+    "news":    "news",
+    "library": "library",
+    "stack":   "stack",
+    "work":    "work",
+}
+
+
+@router.post("/api/seen/{key}", response_class=HTMLResponse)
+async def mark_surface_seen(request: Request, key: str):
+    """Mark a surface as looked at, then give back whatever it was showing.
+
+    Marking is an ACT, never a side effect of rendering. A surface that stamps
+    itself seen because you opened it can never tell you what you missed — which
+    is exactly how the news rail once showed the same 859 briefs every visit.
+    """
+    import sys
+    sys.path.insert(0, str(__import__("pathlib").Path(__file__).parent.parent))
+    import ui
+    if key.split(":")[0] not in _SEEN_SURFACES:
+        return HTMLResponse("", status_code=204)
+    ui.mark_seen(key)
+    body = await _rerender(request, _guess_back(request))
+    return HTMLResponse(body + _counts_oob())

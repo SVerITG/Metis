@@ -11,12 +11,12 @@
     <div>
       <span style="font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1;
                    {% if pulse.new_news %}color:var(--m-accent);{% endif %}">{{ pulse.new_news }}</span>
-      <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.11em;text-transform:uppercase;color:var(--m-muted);margin-left:6px;">new briefs</span>
+      <span class="u-mono" style="letter-spacing:.11em;text-transform:uppercase;color:var(--m-muted);margin-left:6px;">new briefs</span>
     </div>
     <div>
       <span style="font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1;
                    {% if pulse.new_reading %}color:var(--m-accent);{% endif %}">{{ pulse.new_reading }}</span>
-      <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.11em;text-transform:uppercase;color:var(--m-muted);margin-left:6px;">new papers</span>
+      <span class="u-mono" style="letter-spacing:.11em;text-transform:uppercase;color:var(--m-muted);margin-left:6px;">new papers</span>
     </div>
     {% else %}
     <div class="u-label">
@@ -25,7 +25,7 @@
     {% endif %}
 
     <div class="u-row" style="margin-left:auto;">
-      <span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);">
+      <span class="u-mono" style="color:var(--m-muted);">
         {% if pulse.newest_news_date %}
           newest item {{ pulse.newest_news_date }}
           {% if pulse.newest_news_date < today %}
@@ -35,9 +35,9 @@
           {% endif %}
         {% else %}nothing in the feed yet{% endif %}
       </span>
-      <button class="btn btn--sec btn--sm" hx-post="/api/focus/{{ area.slug }}/refresh"
+      <button class="btn btn--sec btn--sm u-mono" hx-post="/api/focus/{{ area.slug }}/refresh"
               hx-target="#focus-pulse" hx-swap="innerHTML"
-              style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-ink);">
+              style="color:var(--m-ink);">
         Refresh sources
       </button>
     </div>

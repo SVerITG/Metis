@@ -53,7 +53,7 @@
             <svg class="u-fixed" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="{% if is_seeded %}var(--m-chart-2){% else %}var(--m-muted){% endif %}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v6h6"/>
             </svg>
-            <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;">
+            <div class="u-title u-title--sm" style="line-height:1.35;">
               {{ item.title }}
             </div>
           </div>
@@ -74,7 +74,7 @@
         <!-- Method -->
         <td style="padding:var(--m-space-3) var(--m-space-3);vertical-align:top;">
           {% if item.method %}
-          <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">
+          <span class="u-mono" style="letter-spacing:0.08em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">
             {{ item.method | upper }}
           </span>
           {% else %}
@@ -85,12 +85,12 @@
         <!-- Status -->
         <td style="padding:var(--m-space-3) var(--m-space-3);text-align:center;vertical-align:top;">
           {% if is_seeded %}
-          <span style="display:inline-flex;align-items:center;gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
+          <span class="u-mono" style="display:inline-flex;align-items:center;gap:var(--m-space-1);letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
             <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="var(--m-chart-2)" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
             SEEDED
           </span>
           {% elif item.item_type == 'to_triage' %}
-          <span style="display:inline-flex;align-items:center;gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:rgba(180,83,9,0.08);color:var(--m-warn);">
+          <span class="u-mono" style="display:inline-flex;align-items:center;gap:var(--m-space-1);letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:rgba(180,83,9,0.08);color:var(--m-warn);">
             <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1"/></svg>
             TRIAGE
           </span>
@@ -104,8 +104,8 @@
         <!-- Actions -->
         <td style="padding:var(--m-space-3) var(--m-space-5);text-align:right;vertical-align:top;white-space:nowrap;">
           {% if item.pdf_url %}
-          <a href="{{ item.pdf_url }}" target="_blank" rel="noopener"
-             style="display:inline-block;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-ok);text-decoration:none;padding:var(--m-space-1) var(--m-space-2);border:1px solid var(--m-ok);border-radius:var(--m-radius-sm);transition:background 140ms,color 140ms;"
+          <a class="u-mono" href="{{ item.pdf_url }}" target="_blank" rel="noopener"
+             style="display:inline-block;letter-spacing:0.1em;color:var(--m-ok);text-decoration:none;padding:var(--m-space-1) var(--m-space-2);border:1px solid var(--m-ok);border-radius:var(--m-radius-sm);transition:background 140ms,color 140ms;"
              onmouseover="this.style.background='var(--m-ok)';this.style.color='var(--m-on-accent)'"
              onmouseout="this.style.background='';this.style.color='var(--m-ok)'"
              title="Open local PDF">PDF ↗</a>
@@ -123,7 +123,7 @@
       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
     </svg>
     <div class="u-label u-mb-3" style="letter-spacing:0.22em;">DOMAIN CORPUS</div>
-    <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);">No papers match your filters.</div>
+    <div class="u-mb-2 u-title u-title--lg" style="font-weight:500;">No papers match your filters.</div>
     <div class="u-ed" style="font-size:var(--t-small);">Try broadening your search or removing the folder filter.</div>
   </div>
   {% endif %}

@@ -116,6 +116,25 @@ RULES: list[tuple[str, set[str]]] = [
     ("u-truncate", {"overflow:hidden", "text-overflow:ellipsis",
                     "white-space:nowrap"}),
 
+    # ── a title in the display face ──
+    ("u-title", {"color:var(--m-ink)", "font-family:var(--m-display)",
+                 "font-size:var(--t-body)", "line-height:1.4"}),
+    ("u-title", {"color:var(--m-ink)", "font-family:var(--m-display)",
+                 "font-size:var(--t-body)"}),
+    ("u-title u-title--lg", {"color:var(--m-ink)", "font-family:var(--m-display)",
+                             "font-size:var(--t-h4)"}),
+    ("u-title u-title--sm", {"color:var(--m-ink)", "font-family:var(--m-display)",
+                             "font-size:var(--t-small)"}),
+
+    # ── mono, without a colour opinion ──
+    ("u-mono", {"font-family:var(--m-mono)", "font-size:var(--t-micro)"}),
+
+    # ── the soft tile ──
+    ("u-tile", {"background:var(--m-surface-2)", "border:1px solid var(--m-line)",
+                "border-radius:var(--m-radius)"}),
+    ("u-tile", {"background:var(--m-surface-2)", "border:1px solid var(--m-rule)",
+                "border-radius:var(--m-radius)"}),
+
     # ── hidden ──
     ("u-hide", {"display:none"}),
 ]

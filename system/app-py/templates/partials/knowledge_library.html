@@ -1,7 +1,7 @@
 <!-- knowledge_library.html — Library index cards (Archive system) -->
 {% if not cards %}
 <div class="panel panel-pad" style="text-align:center;padding:var(--m-space-6) var(--m-space-5);border:1px dashed var(--m-rule);">
-  <h4 style="font-family:var(--m-display);font-weight:500;margin:0 0 var(--m-space-2);font-size:var(--t-h4);color:var(--m-ink);">Your library is empty</h4>
+  <h4 class="u-title u-title--lg" style="font-weight:500;margin:0 0 var(--m-space-2);">Your library is empty</h4>
   <p class="ed" style="font-size:var(--t-body);color:var(--m-muted);margin:0 0 var(--m-space-4);max-width:420px;margin-left:auto;margin-right:auto;">
     Connect your reference manager — Zotero, Mendeley, or any BibTeX file — and your sources will gather here.
   </p>
@@ -23,7 +23,7 @@
       </span>
       {% endif %}
     </div>
-    <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);line-height:1.3;">
+    <div class="u-mb-2 u-title u-title--lg" style="font-weight:500;line-height:1.3;">
       {{ card.title }}
     </div>
     {% if card.summary %}

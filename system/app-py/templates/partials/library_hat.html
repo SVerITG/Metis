@@ -32,7 +32,7 @@
   <div class="grid grid-3 u-mb-5">
 
     <div class="panel panel--md">
-      <div class="u-mb-2" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);">
+      <div class="u-mb-2 u-mono" style="letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);">
         In your catalogue
       </div>
       <div class="tnum" style="font-family:var(--m-display);font-size:34px;font-weight:500;color:var(--m-ink);line-height:1;">
@@ -44,7 +44,7 @@
     </div>
 
     <div class="panel panel--md">
-      <div class="u-mb-2" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);">
+      <div class="u-mb-2 u-mono" style="letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);">
         Readable by Metis
       </div>
       <div class="tnum" style="font-family:var(--m-display);font-size:34px;font-weight:500;color:var(--m-ink);line-height:1;">
@@ -52,12 +52,12 @@
       </div>
       <div class="ed" style="font-size:var(--t-meta);margin:var(--m-space-2) 0 0;">
         PDFs with their full text indexed — {{ '{:,}'.format(indexed_chunks) }} passages.
-        {% if last_built %}<br><span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);">BUILT {{ last_built }}</span>{% endif %}
+        {% if last_built %}<br><span class="u-mono" style="color:var(--m-muted);">BUILT {{ last_built }}</span>{% endif %}
       </div>
     </div>
 
     <div class="panel" style="padding:18px 20px;{% if gaps_total %}border-color:var(--m-accent);{% endif %}">
-      <div class="u-mb-2" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);">
+      <div class="u-mb-2 u-mono" style="letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);">
         Known gaps
       </div>
       <div class="tnum" style="font-family:var(--m-display);font-size:34px;font-weight:500;color:{{ 'var(--m-accent)' if gaps_total else 'var(--m-ink)' }};line-height:1;">
@@ -73,14 +73,14 @@
   <!-- ── Search the corpus itself ──────────────────────────────────────── -->
   <div class="panel u-mb-5 panel--md">
     {{ sec_label("Ask your own papers", tail="FULL TEXT · NOT TITLES") }}
-    <input type="search" id="hat-corpus-q" name="q"
+    <input class="u-tile" type="search" id="hat-corpus-q" name="q"
            placeholder="e.g. sensitivity of CATT in low-prevalence settings, or the role of animal reservoirs…"
            autocomplete="off"
            hx-get="/api/partial/library/hat/search"
            hx-trigger="keyup changed delay:500ms"
            hx-target="#hat-corpus-results" hx-swap="innerHTML"
            hx-include="this"
-           style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
+           style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);color:var(--m-ink);outline:none;">
     <div id="hat-corpus-results" style="margin-top:var(--m-space-3);">
       <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2) 0;">
         This searches inside the {{ indexed_files }} PDFs themselves — the passages, not the titles.
@@ -124,19 +124,19 @@
           {{ g.relevance_note.split(' ')[2] if g.relevance_note and g.relevance_note.split(' ')|length > 2 else '—' }}×
         </div>
         <div class="u-grow">
-          <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.35;">
+          <div class="u-title" style="line-height:1.35;">
             {{ g.title | striptags }}
           </div>
-          <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.06em;color:var(--m-muted);margin-top:var(--m-space-1);">
+          <div class="u-mono" style="letter-spacing:0.06em;color:var(--m-muted);margin-top:var(--m-space-1);">
             {{ g.journal or '—' }}{% if g.pub_date %} · {{ g.pub_date[:4] }}{% endif %}
           </div>
         </div>
         <div style="flex:0 0 auto;display:flex;gap:var(--m-space-2);">
-          <button class="btn btn--soft" type="button" onclick="nlAdd({{ g.id }}, this)"
-                  style="padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;text-transform:uppercase;color:var(--m-accent);">Add</button>
+          <button class="btn btn--soft u-mono" type="button" onclick="nlAdd({{ g.id }}, this)"
+                  style="padding:var(--m-space-1) var(--m-space-3);letter-spacing:0.08em;text-transform:uppercase;color:var(--m-accent);">Add</button>
           {% if g.doi %}
-          <a href="https://doi.org/{{ g.doi }}" target="_blank" rel="noopener"
-             style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.06em;color:var(--m-muted);text-decoration:none;align-self:center;">DOI</a>
+          <a class="u-mono" href="https://doi.org/{{ g.doi }}" target="_blank" rel="noopener"
+             style="letter-spacing:0.06em;color:var(--m-muted);text-decoration:none;align-self:center;">DOI</a>
           {% endif %}
         </div>
       </div>

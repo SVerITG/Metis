@@ -79,7 +79,7 @@
           <path d="M4 4h12a4 4 0 0 1 4 4v12"/><path d="M4 4v16h16"/><path d="M8 9h8M8 13h6"/>
         </svg>
         <div>
-          <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);margin-bottom:var(--m-space-1);">Your library is quiet.</div>
+          <div class="u-title" style="margin-bottom:var(--m-space-1);">Your library is quiet.</div>
           <div style="font-size:var(--t-meta);color:var(--m-muted);line-height:1.55;">Sync your Zotero library on the Metis tab → Integrations, or drop a PDF into the basket and ask me to add it.</div>
         </div>
       </div>
@@ -146,7 +146,7 @@
           <span class="lib-row-title">{{ item.title }}</span>
         </div>
         <div class="lib-row-meta" style="padding-left:17px;">
-          <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:1px 6px;border-radius:var(--m-radius-pill,10px);background:rgba(180,83,9,0.08);color:var(--m-warn);">CORPUS</span>
+          <span class="u-mono" style="letter-spacing:0.1em;padding:1px 6px;border-radius:var(--m-radius-pill,10px);background:rgba(180,83,9,0.08);color:var(--m-warn);">CORPUS</span>
           {% if item.domain %}<span class="lib-row-domain">{{ item.domain }}</span>{% endif %}
         </div>
         {% if item.abstract %}

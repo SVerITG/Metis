@@ -44,15 +44,15 @@
 
           <div class="u-mb-4">
             <label class="u-label" style="display:block;margin-bottom:var(--m-space-1);">COURSE TITLE</label>
-            <input id="teach-title" type="text" autofocus
+            <input class="u-tile" id="teach-title" type="text" autofocus
                    placeholder="e.g. Introduction to Disease Epidemiology"
-                   style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);outline:none;">
+                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);outline:none;">
           </div>
 
           <div class="u-mb-4" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--m-space-3);">
             <div>
               <label class="u-label" style="display:block;margin-bottom:var(--m-space-1);">AUDIENCE</label>
-              <select id="teach-audience" style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
+              <select class="u-tile" id="teach-audience" style="width:100%;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
                 <option value="expert">Expert / Specialist</option>
                 <option value="practitioner" selected>Health Practitioner</option>
                 <option value="student">Graduate Student</option>
@@ -61,7 +61,7 @@
             </div>
             <div>
               <label class="u-label" style="display:block;margin-bottom:var(--m-space-1);">DEPTH</label>
-              <select id="teach-depth" style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
+              <select class="u-tile" id="teach-depth" style="width:100%;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
                 <option value="overview" selected>Overview (8–12 slides)</option>
                 <option value="lecture">Full lecture (20–25 slides)</option>
                 <option value="workshop">Workshop (30–40 slides)</option>
@@ -90,9 +90,9 @@
 
           <div class="u-mb-5">
             <label class="u-label" style="display:block;margin-bottom:var(--m-space-1);">CONTEXT / OBJECTIVES <span style="opacity:.5;">(optional)</span></label>
-            <textarea id="teach-context" rows="3"
+            <textarea class="u-tile" id="teach-context" rows="3"
                       placeholder="Learning objectives, required sections, key messages to include…"
-                      style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;resize:vertical;"></textarea>
+                      style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;resize:vertical;"></textarea>
           </div>
 
           <div class="u-row u-row--wrap" style="gap:var(--m-space-3);">
@@ -228,7 +228,7 @@ function _showOutput(data, title) {
     data.html || '<em style="color:var(--m-muted);">The build didn\'t produce anything yet — adjust your selections and try again.</em>';
 
   const aiChip = data.ai_generated
-    ? `<span id="teach-mode-chip" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;padding:var(--m-space-1) var(--m-space-2);background:var(--m-accent);color:var(--m-on-accent);border-radius:var(--m-radius-sm);margin-left:8px;">AI</span>`
+    ? `<span class="u-mono" id="teach-mode-chip" style="letter-spacing:0.08em;padding:var(--m-space-1) var(--m-space-2);background:var(--m-accent);color:var(--m-on-accent);border-radius:var(--m-radius-sm);margin-left:8px;">AI</span>`
     : `<span class="u-label" id="teach-mode-chip" style="letter-spacing:0.08em;padding:var(--m-space-1) var(--m-space-2);border:1px solid var(--m-line);border-radius:var(--m-radius-sm);margin-left:8px;">TEMPLATE</span>`;
   const oldChip = document.getElementById('teach-mode-chip');
   if (oldChip) oldChip.remove();

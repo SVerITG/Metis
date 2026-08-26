@@ -38,7 +38,7 @@
   <span class="u-label">+{{ total_open - 5 }} more</span>
   {% endif %}
   {% if done_count %}
-  <span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-ok);">{{ done_count }} done</span>
+  <span class="u-mono" style="color:var(--m-ok);">{{ done_count }} done</span>
   {% endif %}
   <button class="u-label" onclick="openProjectDetail('{{ project_id }}')"
           style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-1) var(--m-space-2);cursor:pointer;">ALL TASKS ↗</button>
@@ -50,13 +50,13 @@
 <!-- Quick-add task form (hidden by default) -->
 <div class="u-rule-t u-hide" id="task-add-{{ project_id }}" style="padding-top:8px;margin-top:var(--m-space-2);">
   <div class="u-row" style="flex-wrap:wrap;">
-    <input class="u-grow" id="task-title-{{ project_id }}"
+    <input class="u-grow u-tile" id="task-title-{{ project_id }}"
            type="text"
            placeholder="Task title…"
            onkeydown="if(event.key==='Enter'){submitQuickTask('{{ project_id }}');}"
-           style="min-width:120px;font-family:var(--m-display);font-size:var(--t-meta);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-1) var(--m-space-2);background:var(--m-surface-2);color:var(--m-ink);outline:none;">
-    <select class="u-label" id="task-cat-{{ project_id }}"
-            style="border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-1) var(--m-space-2);background:var(--m-surface-2);">
+           style="min-width:120px;font-family:var(--m-display);font-size:var(--t-meta);padding:var(--m-space-1) var(--m-space-2);color:var(--m-ink);outline:none;">
+    <select class="u-label u-tile" id="task-cat-{{ project_id }}"
+            style="padding:var(--m-space-1) var(--m-space-2);">
       <option value="general">general</option>
       <option value="urgent">urgent</option>
       <option value="high">high</option>
@@ -65,8 +65,8 @@
       <option value="code">code</option>
       <option value="review">review</option>
     </select>
-    <button class="btn btn--primary" onclick="submitQuickTask('{{ project_id }}')"
-            style="border:none;padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);">Add</button>
+    <button class="btn btn--primary u-mono" onclick="submitQuickTask('{{ project_id }}')"
+            style="border:none;padding:var(--m-space-1) var(--m-space-3);">Add</button>
     <button class="btn btn--ghost" onclick="document.getElementById('task-add-{{ project_id }}').style.display='none';"
             style="padding:var(--m-space-1) var(--m-space-1);color:var(--m-muted);font-size:var(--t-small);">✕</button>
   </div>

@@ -2,7 +2,7 @@
 {% for n in notes %}
 <div class="panel panel-pad u-mb-2 panel--sm" style="position:relative;" data-note-id="{{ n.note_id }}">
   <div class="u-label u-mb-1">{{ n.created_at[:10] }}</div>
-  <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.5;white-space:pre-wrap;">{{ n.content }}</div>
+  <div class="u-title u-title--sm" style="line-height:1.5;white-space:pre-wrap;">{{ n.content }}</div>
   <button class="btn btn--ghost" onclick="pdDeleteNote('{{ n.note_id }}','{{ project_id }}')"
           style="position:absolute;top:8px;right:8px;font-size:var(--t-meta);color:var(--m-muted);opacity:.5;padding:var(--m-space-1) var(--m-space-1);"
           onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.5'">&#10005;</button>

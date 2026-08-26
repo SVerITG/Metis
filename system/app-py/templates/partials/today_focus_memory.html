@@ -43,14 +43,14 @@
         {% endif %}
       </div>
       {# Title #}
-      <div style="font-family:var(--m-display);font-size:var(--t-body);line-height:1.4;color:var(--m-ink);padding-right:16px;">{{ item.title }}</div>
+      <div class="u-title" style="padding-right:16px;">{{ item.title }}</div>
       {# Memory context hint (for deep items) #}
       {% if item.memory and item.memory.level == 'deep' %}
       <div class="u-label" style="margin-top:var(--m-space-2);letter-spacing:0.04em;">
         Deep context &middot; ready to pick up
       </div>
       {% elif item.memory and item.memory.level == 'shallow' %}
-      <div style="margin-top:var(--m-space-2);font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted-soft);letter-spacing:0.04em;">
+      <div class="u-mono" style="margin-top:var(--m-space-2);color:var(--m-muted-soft);letter-spacing:0.04em;">
         Shallow context &middot; may need ramp-up
       </div>
       {% endif %}

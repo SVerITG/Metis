@@ -102,12 +102,12 @@
             <span style="font-size:11px;flex-shrink:0;color:{% if t.status == 'blocked' %}var(--m-alert){% elif t.status == 'in_progress' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
               {% if t.status == 'blocked' %}&#9679;{% elif t.status == 'in_progress' %}&#9656;{% else %}&middot;{% endif %}
             </span>
-            <span class="pd-task-title u-grow"
-                  style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;cursor:pointer;"
+            <span class="pd-task-title u-grow u-title u-title--sm"
+                  style="line-height:1.35;cursor:pointer;"
                   onclick="pdStartTaskRename(this,'{{ t.task_id }}','{{ p.id }}')"
                   title="Click to rename">{{ t.title }}</span>
-            <select class="u-label u-fixed" onchange="pdSetTaskStatus('{{ t.task_id }}','{{ p.id }}',this.value)"
-                    style="border:1px solid var(--m-rule);border-radius:var(--m-radius);padding:var(--m-space-1) var(--m-space-1);background:var(--m-surface-2);">
+            <select class="u-label u-fixed u-tile" onchange="pdSetTaskStatus('{{ t.task_id }}','{{ p.id }}',this.value)"
+                    style="padding:var(--m-space-1) var(--m-space-1);">
               <option value="open" {% if t.status == 'open' %}selected{% endif %}>open</option>
               <option value="in_progress" {% if t.status == 'in_progress' %}selected{% endif %}>in progress</option>
               <option value="blocked" {% if t.status == 'blocked' %}selected{% endif %}>blocked</option>
@@ -128,11 +128,11 @@
       </div>
 
       <div class="u-row u-rule-t" style="padding-top:8px;">
-        <input class="u-grow" id="pd-new-task-{{ p.id }}" type="text" placeholder="Add a task…"
+        <input class="u-grow u-title u-title--sm u-tile" id="pd-new-task-{{ p.id }}" type="text" placeholder="Add a task…"
                onkeydown="if(event.key==='Enter')pdDetailAddTask('{{ p.id }}')"
-               style="font-family:var(--m-display);font-size:var(--t-small);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);outline:none;">
-        <select class="u-label" id="pd-new-task-cat-{{ p.id }}"
-                style="border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);background:var(--m-surface-2);">
+               style="padding:var(--m-space-2) var(--m-space-3);outline:none;">
+        <select class="u-label u-tile" id="pd-new-task-cat-{{ p.id }}"
+                style="padding:var(--m-space-2) var(--m-space-2);">
           <option value="general">general</option>
           <option value="urgent">urgent</option>
           <option value="research">research</option>
@@ -142,10 +142,10 @@
         </select>
         {# Due date — optional, and the reason every date view was empty. Zero of
            105 tasks had one because nothing ever asked for it. #}
-        <input class="u-label" id="pd-new-task-due-{{ p.id }}" type="date" title="Due date (optional)"
-               style="border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-1) var(--m-space-2);background:var(--m-surface-2);">
-        <button class="btn btn--primary" onclick="pdDetailAddTask('{{ p.id }}')"
-                style="border:none;padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);white-space:nowrap;">Add task</button>
+        <input class="u-label u-tile" id="pd-new-task-due-{{ p.id }}" type="date" title="Due date (optional)"
+               style="padding:var(--m-space-1) var(--m-space-2);">
+        <button class="btn btn--primary u-mono" onclick="pdDetailAddTask('{{ p.id }}')"
+                style="border:none;padding:var(--m-space-2) var(--m-space-4);white-space:nowrap;">Add task</button>
       </div>
 
       {% if done_tasks %}
@@ -158,7 +158,7 @@
         <div class="u-hide" id="pd-done-archive-{{ p.id }}" style="margin-top:var(--m-space-3);border-left:2px solid var(--m-rule-soft);padding-left:12px;">
           {% for t in done_tasks %}
           <div class="u-rule" style="display:flex;align-items:baseline;gap:var(--m-space-3);padding:var(--m-space-1) 0;">
-            <span class="u-fixed" style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-ok);">&#10003;</span>
+            <span class="u-fixed u-mono" style="color:var(--m-ok);">&#10003;</span>
             <span class="u-grow" style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);text-decoration:line-through;opacity:.7;">{{ t.title }}</span>
             {% if t.updated_at %}
             <span class="u-label u-fixed">{{ t.updated_at[:10] }}</span>
@@ -178,12 +178,12 @@
     <div class="u-hide" id="pd-panel-notes">
       <div class="u-mb-5">
         <div class="u-label u-mb-2" style="letter-spacing:.14em;">NEW NOTE</div>
-        <textarea id="pd-note-input-{{ p.id }}" rows="3"
+        <textarea class="u-title u-title--sm u-tile" id="pd-note-input-{{ p.id }}" rows="3"
                   placeholder="Write a note linked to this project…"
-                  style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:var(--t-small);line-height:1.6;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-3) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);resize:vertical;outline:none;"></textarea>
+                  style="width:100%;box-sizing:border-box;line-height:1.6;padding:var(--m-space-3) var(--m-space-3);resize:vertical;outline:none;"></textarea>
         <div style="display:flex;justify-content:flex-end;margin-top:var(--m-space-2);">
-          <button class="btn btn--primary" onclick="pdSaveNote('{{ p.id }}')"
-                  style="border:none;padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);">Save note</button>
+          <button class="btn btn--primary u-mono" onclick="pdSaveNote('{{ p.id }}')"
+                  style="border:none;padding:var(--m-space-2) var(--m-space-4);">Save note</button>
         </div>
       </div>
       <div id="pd-notes-list-{{ p.id }}">
@@ -191,7 +191,7 @@
           {% for n in linked_notes %}
           <div class="panel panel-pad u-mb-3 panel--md" style="position:relative;" data-note-id="{{ n.note_id }}">
             <div class="u-label u-mb-2" style="letter-spacing:.1em;">{{ n.created_at[:10] }} &middot; NOTE</div>
-            <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.6;white-space:pre-wrap;">{{ n.content }}</div>
+            <div class="u-title u-title--sm" style="line-height:1.6;white-space:pre-wrap;">{{ n.content }}</div>
             <button class="btn btn--ghost" onclick="pdDeleteNote('{{ n.note_id }}','{{ p.id }}')"
                     style="position:absolute;top:10px;right:10px;font-size:var(--t-meta);color:var(--m-muted);opacity:.5;padding:var(--m-space-1) var(--m-space-1);"
                     onmouseenter="this.style.opacity='1'"
@@ -211,24 +211,24 @@
       <div class="u-col" style="gap:var(--m-space-4);">
         <div>
           <div class="u-label u-mb-2" style="letter-spacing:.14em;">DESCRIPTION</div>
-          <textarea id="pd-desc-{{ p.id }}" rows="3"
-                    style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:var(--t-small);line-height:1.6;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);resize:vertical;outline:none;">{{ p.description or '' }}</textarea>
+          <textarea class="u-title u-title--sm u-tile" id="pd-desc-{{ p.id }}" rows="3"
+                    style="width:100%;box-sizing:border-box;line-height:1.6;padding:var(--m-space-2) var(--m-space-3);resize:vertical;outline:none;">{{ p.description or '' }}</textarea>
         </div>
         <div style="display:flex;gap:var(--m-space-4);flex-wrap:wrap;">
           <div class="u-grow" style="min-width:140px;">
             <div class="u-label" style="letter-spacing:.14em;margin-bottom:var(--m-space-1);">STARTED</div>
-            <input type="date" id="pd-started-{{ p.id }}" value="{{ p.started_at[:10] if p.started_at else '' }}"
-                   style="font-family:var(--m-mono);font-size:var(--t-meta);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);background:var(--m-surface-2);color:var(--m-ink);width:100%;box-sizing:border-box;">
+            <input class="u-tile" type="date" id="pd-started-{{ p.id }}" value="{{ p.started_at[:10] if p.started_at else '' }}"
+                   style="font-family:var(--m-mono);font-size:var(--t-meta);padding:var(--m-space-2) var(--m-space-2);color:var(--m-ink);width:100%;box-sizing:border-box;">
           </div>
           <div class="u-grow" style="min-width:140px;">
             <div class="u-label" style="letter-spacing:.14em;margin-bottom:var(--m-space-1);">COMPLETED / ENDED</div>
-            <input type="date" id="pd-completed-{{ p.id }}" value="{{ p.completed_at[:10] if p.completed_at else '' }}"
-                   style="font-family:var(--m-mono);font-size:var(--t-meta);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);background:var(--m-surface-2);color:var(--m-ink);width:100%;box-sizing:border-box;">
+            <input class="u-tile" type="date" id="pd-completed-{{ p.id }}" value="{{ p.completed_at[:10] if p.completed_at else '' }}"
+                   style="font-family:var(--m-mono);font-size:var(--t-meta);padding:var(--m-space-2) var(--m-space-2);color:var(--m-ink);width:100%;box-sizing:border-box;">
           </div>
           <div class="u-grow" style="min-width:140px;">
             <div class="u-label" style="letter-spacing:.14em;margin-bottom:var(--m-space-1);">STATUS</div>
-            <select id="pd-status-{{ p.id }}"
-                    style="font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);background:var(--m-surface-2);color:var(--m-ink);width:100%;">
+            <select class="u-mono u-tile" id="pd-status-{{ p.id }}"
+                    style="padding:var(--m-space-2) var(--m-space-2);color:var(--m-ink);width:100%;">
               <option value="active" {% if p.status=='active' %}selected{% endif %}>Active</option>
               <option value="paused" {% if p.status=='paused' %}selected{% endif %}>Paused</option>
               <option value="completed" {% if p.status=='completed' %}selected{% endif %}>Completed</option>
@@ -238,23 +238,23 @@
         </div>
         <div>
           <div class="u-label" style="letter-spacing:.14em;margin-bottom:var(--m-space-1);">PROJECT IMAGE URL (optional)</div>
-          <input type="url" id="pd-image-{{ p.id }}" value="{{ p.image_url or '' }}"
+          <input class="u-mono u-tile" type="url" id="pd-image-{{ p.id }}" value="{{ p.image_url or '' }}"
                  placeholder="https://… or leave blank"
-                 style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+                 style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);outline:none;">
         </div>
         <div>
           <div class="u-row u-mb-2">
             <div class="u-label" style="letter-spacing:.14em;">CONTEXT FOR CLAUDE</div>
-            <button class="btn btn--sec" id="ctx-copy-btn-{{ p.id }}" onclick="copyProjectContext('{{ p.id }}')"
-                    style="margin-left:auto;padding:var(--m-space-1) var(--m-space-2);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-text);">COPY</button>
+            <button class="btn btn--sec u-mono" id="ctx-copy-btn-{{ p.id }}" onclick="copyProjectContext('{{ p.id }}')"
+                    style="margin-left:auto;padding:var(--m-space-1) var(--m-space-2);letter-spacing:0.1em;color:var(--m-text);">COPY</button>
           </div>
-          <textarea id="ctx-textarea-{{ p.id }}" rows="5"
-                    style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:var(--t-small);line-height:1.65;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-3) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);resize:vertical;outline:none;"
+          <textarea class="u-title u-title--sm u-tile" id="ctx-textarea-{{ p.id }}" rows="5"
+                    style="width:100%;box-sizing:border-box;line-height:1.65;padding:var(--m-space-3) var(--m-space-3);resize:vertical;outline:none;"
                     placeholder="Goals, background, key decisions, stakeholders…">{{ p.context_doc or '' }}</textarea>
         </div>
         <div style="display:flex;gap:var(--m-space-2);padding-top:4px;">
-          <button class="btn btn--primary" onclick="pdSaveAbout('{{ p.id }}')"
-                  style="border:none;padding:var(--m-space-2) var(--m-space-5);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.06em;">Save</button>
+          <button class="btn btn--primary u-mono" onclick="pdSaveAbout('{{ p.id }}')"
+                  style="border:none;padding:var(--m-space-2) var(--m-space-5);letter-spacing:.06em;">Save</button>
           {% if p.github_url %}
           <a class="btn btn--ghost btn--caps" href="{{ p.github_url }}" target="_blank" rel="noopener" style="padding:var(--m-space-2) var(--m-space-4);">GitHub &#8599;</a>
           {% endif %}
@@ -273,7 +273,7 @@
         {% for e in history_entries %}
         <div class="u-rule" style="display:flex;gap:var(--m-space-4);padding:var(--m-space-2) 0;">
           <span class="u-label u-fixed" style="min-width:74px;padding-top:3px;">{{ e.date }}</span>
-          <span class="u-grow" style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.4;">{{ e.summary }}</span>
+          <span class="u-grow u-title u-title--sm" style="line-height:1.4;">{{ e.summary }}</span>
           <span class="u-label u-fixed" style="padding-top:3px;">{{ e.get('author','') }}</span>
         </div>
         {% endfor %}
@@ -283,9 +283,9 @@
       <div style="margin-top:var(--m-space-5);padding-top:16px;border-top:1px solid var(--m-rule);">
         <div class="u-label u-mb-2" style="letter-spacing:.14em;">LOG A SESSION NOTE</div>
         <div style="display:flex;gap:var(--m-space-2);">
-          <input class="u-grow" id="pd-history-input-{{ p.id }}" type="text" placeholder="What did you work on?"
+          <input class="u-grow u-title u-title--sm u-tile" id="pd-history-input-{{ p.id }}" type="text" placeholder="What did you work on?"
                  onkeydown="if(event.key==='Enter')pdLogHistory('{{ p.id }}')"
-                 style="font-family:var(--m-display);font-size:var(--t-small);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+                 style="padding:var(--m-space-2) var(--m-space-3);outline:none;">
           <button class="u-label" onclick="pdLogHistory('{{ p.id }}')"
                   style="background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);cursor:pointer;">Log</button>
         </div>

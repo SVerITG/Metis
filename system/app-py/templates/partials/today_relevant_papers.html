@@ -12,7 +12,7 @@
           <circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="21" y2="21"/>
         </svg>
         <div>
-          <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);margin-bottom:var(--m-space-1);">Nothing to surface yet.</div>
+          <div class="u-title u-title--sm" style="margin-bottom:var(--m-space-1);">Nothing to surface yet.</div>
           <div style="font-size:var(--t-meta);color:var(--m-muted);line-height:1.55;">
             Once you have active projects and papers in your library, Metis will surface the papers that connect to what you're working on right now.
           </div>
@@ -24,16 +24,16 @@
         <div class="u-grow">
           <div class="u-row u-row--base">
             {% if it.url %}
-            <a href="{{ it.url }}" target="_blank" style="font-family:var(--m-display);font-size:var(--t-small);font-weight:500;color:var(--m-ink);text-decoration:none;line-height:1.35;">{{ it.title }}</a>
+            <a class="u-title u-title--sm" href="{{ it.url }}" target="_blank" style="font-weight:500;text-decoration:none;line-height:1.35;">{{ it.title }}</a>
             {% else %}
-            <span style="font-family:var(--m-display);font-size:var(--t-small);font-weight:500;color:var(--m-ink);line-height:1.35;">{{ it.title }}</span>
+            <span class="u-title u-title--sm" style="font-weight:500;line-height:1.35;">{{ it.title }}</span>
             {% endif %}
             {% if not it.is_read %}<span class="u-label u-label--accent u-fixed" style="letter-spacing:0.1em;border:1px solid var(--m-accent);border-radius:var(--m-radius-sm);padding:1px 4px;">UNREAD</span>{% endif %}
           </div>
           <div class="u-label" style="margin-top:var(--m-space-1);">
             {% if it.authors %}{{ it.authors }}{% if it.year %} · {{ it.year }}{% endif %}{% elif it.year %}{{ it.year }}{% endif %}
           </div>
-          <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.06em;color:var(--m-ochre);margin-top:var(--m-space-1);">
+          <div class="u-mono" style="letter-spacing:0.06em;color:var(--m-ochre);margin-top:var(--m-space-1);">
             ↳ matches your work: {{ it.why }}
           </div>
         </div>

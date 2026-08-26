@@ -23,15 +23,15 @@
     </span>
 
     {% if overdue > 0 %}
-    <span class="chip chip--alert"
-          style="font-size:var(--t-micro);letter-spacing:0.14em;padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);text-transform:uppercase;background:var(--m-alert-wash);color:var(--m-alert);">
+    <span class="chip chip--alert u-mono"
+          style="letter-spacing:0.14em;padding:var(--m-space-1) var(--m-space-3);text-transform:uppercase;background:var(--m-alert-wash);color:var(--m-alert);">
       {{ overdue }} OVERDUE
     </span>
     {% endif %}
 
     {% for run in morning_runs %}
-    <span class="chip"
-          style="font-size:var(--t-micro);letter-spacing:0.14em;padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);text-transform:uppercase;background:var(--m-ok-wash);color:var(--m-ok);">
+    <span class="chip u-mono"
+          style="letter-spacing:0.14em;padding:var(--m-space-1) var(--m-space-3);text-transform:uppercase;background:var(--m-ok-wash);color:var(--m-ok);">
       {{ run.agent_slug }} · DONE
     </span>
     {% endfor %}

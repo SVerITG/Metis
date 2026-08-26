@@ -47,10 +47,10 @@
 
 <!-- ─── Add course idea form (hidden by default) ─────────────────────────── -->
 <div class="u-mb-5 u-hide" id="add-idea-form">
-  <form class="u-col" hx-post="/api/course/idea/add"
+  <form class="u-col u-tile" hx-post="/api/course/idea/add"
         hx-target="#course-ideas-section"
         hx-swap="outerHTML"
-        style="padding:var(--m-space-4) var(--m-space-4);background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);gap:var(--m-space-3);">
+        style="padding:var(--m-space-4) var(--m-space-4);gap:var(--m-space-3);">
     <div class="u-label">NEW COURSE IDEA</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--m-space-3);">
       <div>
@@ -98,7 +98,7 @@
   <div style="display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:center;
               padding:10px 16px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}"
        id="idea-row-{{ c.id }}">
-    <span style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.3;">{{ c.title }}</span>
+    <span class="u-title" style="line-height:1.3;">{{ c.title }}</span>
     <button class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-2);"
             onclick="openCourseWizard('{{ c.slug }}', {{ c.title | tojson }})">Build</button>
     <button class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-2);color:var(--m-danger);border-color:transparent;"

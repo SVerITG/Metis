@@ -5124,6 +5124,14 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
         stack_counts = _stack.counts()
     except Exception:
         stack_counts = {"later": 0, "saved": 0}
+    try:
+        import ui as _ui
+        whatsnew_news = _ui.whats_new(
+            "news", "news_briefs", "COALESCE(NULLIF(published_at,''), created_at)",
+            where="COALESCE(source_type,'news') != 'article'")
+    except Exception as _exc:
+        _log.warning("news: whats_new unavailable: %s", _exc)
+        whatsnew_news = None
 
     # ---- Overview: running stories, not a link list -----------------------
     if spec["kind"] == "overview":
@@ -5162,6 +5170,7 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
             {"threads": threads[:24], "tabs": _NEWS_TABS, "active": tab,
              "period": period, "periods": _NEWS_PERIODS, "period_label": plabel,
              "view": view, "views": NEWS_VIEWS, "stack_counts": stack_counts,
+         "whatsnew_news": whatsnew_news,
              "states": _ov_states, "all_tags": _ov_tags,
              "total_items": sum(len(t["items"]) for t in threads)},
         )
@@ -5254,6 +5263,7 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
          "period": period, "periods": _NEWS_PERIODS, "counts": counts,
          "subfilters": subfilters, "total": len(picked),
          "view": view, "views": NEWS_VIEWS, "stack_counts": stack_counts,
+         "whatsnew_news": whatsnew_news,
          "states": states, "all_tags": tag_list},
     )
 

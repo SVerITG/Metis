@@ -20,7 +20,7 @@
             <line x1="8" y1="14" x2="8" y2="16"/>
           </svg>
         </button>
-        <span class="u-hide" id="capture-rec-label" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-alert);"></span>
+        <span class="u-hide u-mono" id="capture-rec-label" style="letter-spacing:0.1em;color:var(--m-alert);"></span>
         <button class="u-label btn btn--ghost" onclick="closeCapture()" style="padding:var(--m-space-1) var(--m-space-2);" aria-label="Close">ESC</button>
       </div>
     </div>
@@ -40,12 +40,12 @@
           hx-swap="innerHTML"
           style="padding:var(--m-space-3) var(--m-space-5) var(--m-space-4);">
 
-      <textarea id="capture-text"
+      <textarea class="u-tile" id="capture-text"
                 name="text"
                 rows="3"
                 autofocus
                 required
-                style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);resize:vertical;line-height:1.5;outline:none;"
+                style="width:100%;box-sizing:border-box;padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);resize:vertical;line-height:1.5;outline:none;"
                 placeholder="Type or tap 🎤 to speak your idea, note, task, or question…"></textarea>
 
       <!-- Live type badge -->

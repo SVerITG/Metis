@@ -28,18 +28,18 @@
   <div class="u-row u-row--wrap" style="gap:var(--m-space-3);margin-bottom:var(--m-space-2);">
 
     {% if item.acq_status == 'ok' %}
-      <span title="PDF obtained and filed{% if item.pdf_path %} — {{ item.pdf_path }}{% endif %}"
-            style="display:inline-flex;align-items:center;gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;color:#2e7d4f;">
+      <span class="u-mono" title="PDF obtained and filed{% if item.pdf_path %} — {{ item.pdf_path }}{% endif %}"
+            style="display:inline-flex;align-items:center;gap:var(--m-space-1);letter-spacing:0.08em;color:#2e7d4f;">
         <span style="width:7px;height:7px;border-radius:50%;background:#2e7d4f;display:inline-block;"></span>PDF
       </span>
     {% elif item.acq_status == 'failed' %}
-      <span title="Could not obtain the PDF — {{ item.acq_reason or 'reason not recorded' }}"
-            style="display:inline-flex;align-items:center;gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;color:#b3261e;">
+      <span class="u-mono" title="Could not obtain the PDF — {{ item.acq_reason or 'reason not recorded' }}"
+            style="display:inline-flex;align-items:center;gap:var(--m-space-1);letter-spacing:0.08em;color:#b3261e;">
         <span style="width:7px;height:7px;border-radius:50%;background:#b3261e;display:inline-block;"></span>NO PDF
       </span>
     {% elif item.acq_status == 'pending' %}
-      <span title="Acquisition in progress"
-            style="display:inline-flex;align-items:center;gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;color:#b26a00;">
+      <span class="u-mono" title="Acquisition in progress"
+            style="display:inline-flex;align-items:center;gap:var(--m-space-1);letter-spacing:0.08em;color:#b26a00;">
         ◐ TRYING
       </span>
     {% endif %}
@@ -48,7 +48,7 @@
       {{ item.journal or item.feed_name or '—' }}
     </span>
 
-    <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;padding:1px 7px;border-radius:var(--m-radius-sm);background:var(--m-surface-2);color:var(--m-muted);">
+    <span class="u-mono" style="letter-spacing:0.1em;text-transform:uppercase;padding:1px 7px;border-radius:var(--m-radius-sm);background:var(--m-surface-2);color:var(--m-muted);">
       {{ item.entry_kind or 'article' }}
     </span>
 
@@ -62,15 +62,15 @@
     {% endif %}
 
     {% if item.relevance and item.relevance > 0 %}
-    <span title="Closeness to your own corpus, 0–1. Computed locally against your library — not a citation count or an impact score."
-          style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);margin-left:auto;">
+    <span class="u-mono" title="Closeness to your own corpus, 0–1. Computed locally against your library — not a citation count or an impact score."
+          style="color:var(--m-muted);margin-left:auto;">
       {{ '%.2f' | format(item.relevance) }}
     </span>
     {% endif %}
   </div>
 
   <!-- Title -->
-  <div style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;line-height:1.35;color:var(--m-ink);margin-bottom:var(--m-space-1);">
+  <div class="u-title u-title--lg" style="font-weight:500;line-height:1.35;margin-bottom:var(--m-space-1);">
     {% if item.source_url %}
       <a href="{{ item.source_url }}" target="_blank" rel="noopener"
          style="color:inherit;text-decoration:none;border-bottom:1px solid var(--m-rule);">{{ item.title | striptags }}</a>
@@ -90,7 +90,7 @@
        are still a list rather than an essay. -->
   {% if item.abstract %}
   <details style="margin:var(--m-space-2) 0 var(--m-space-2);">
-    <summary style="cursor:pointer;list-style:none;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;text-transform:uppercase;color:var(--m-accent);">
+    <summary class="u-mono" style="cursor:pointer;list-style:none;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-accent);">
       Abstract ▾
     </summary>
     <div class="ed" style="font-size:var(--t-small);line-height:1.6;margin:var(--m-space-2) 0 0;padding-left:12px;border-left:2px solid var(--m-rule-soft);color:var(--m-text);">
@@ -98,7 +98,7 @@
     </div>
   </details>
   {% else %}
-  <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-muted);margin:var(--m-space-1) 0 var(--m-space-2);"
+  <div class="u-mono" style="letter-spacing:0.1em;color:var(--m-muted);margin:var(--m-space-1) 0 var(--m-space-2);"
        title="This source's feed carried no abstract. Some feeds ship titles only.">
     NO ABSTRACT FROM SOURCE
   </div>
@@ -107,41 +107,41 @@
   <!-- Actions -->
   <div class="u-row u-row--wrap">
     {% if item.added_at %}
-      <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:#2e7d4f;">
+      <span class="u-mono" style="letter-spacing:0.1em;color:#2e7d4f;">
         ✓ IN LIBRARY{{ ' · ZOTERO' if item.zotero_key }}
       </span>
     {% elif item.dismissed_at %}
-      <button class="btn btn--sec" type="button" onclick="nlRestore({{ item.id }})"
-              style="padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
+      <button class="btn btn--sec u-mono" type="button" onclick="nlRestore({{ item.id }})"
+              style="padding:var(--m-space-1) var(--m-space-3);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
         Undo dismiss
       </button>
     {% else %}
-      <button class="btn btn--soft" type="button" onclick="nlAdd({{ item.id }}, this)"
+      <button class="btn btn--soft u-mono" type="button" onclick="nlAdd({{ item.id }}, this)"
               title="Fetch the PDF if it can legally be obtained, catalogue the item, and push it to Zotero."
-              style="padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-accent);">
+              style="padding:var(--m-space-1) var(--m-space-3);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-accent);">
         Add to library
       </button>
-      <button class="btn btn--sec" type="button" onclick="nlDismiss({{ item.id }}, this)"
+      <button class="btn btn--sec u-mono" type="button" onclick="nlDismiss({{ item.id }}, this)"
               title="Not interested. Hidden from the unread view; reversible."
-              style="padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
+              style="padding:var(--m-space-1) var(--m-space-3);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
         Not interested
       </button>
     {% endif %}
 
     {% if item.doi %}
-    <a class="u-rule" href="https://doi.org/{{ item.doi }}" target="_blank" rel="noopener"
-       style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;color:var(--m-muted);text-decoration:none;">DOI</a>
+    <a class="u-rule u-mono" href="https://doi.org/{{ item.doi }}" target="_blank" rel="noopener"
+       style="letter-spacing:0.08em;color:var(--m-muted);text-decoration:none;">DOI</a>
     {% endif %}
 
     {% if item.acq_status == 'failed' %}
-    <a href="/api/library/resolve/{{ item.id }}" target="_blank" rel="noopener"
+    <a class="u-mono" href="/api/library/resolve/{{ item.id }}" target="_blank" rel="noopener"
        title="Opens through your institutional resolver in your own browser, where your session already exists. Save the PDF into your library folder and Metis files it."
-       style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;color:#b3261e;text-decoration:none;border-bottom:1px solid #b3261e;">GET VIA INSTITUTION</a>
+       style="letter-spacing:0.08em;color:#b3261e;text-decoration:none;border-bottom:1px solid #b3261e;">GET VIA INSTITUTION</a>
     {% endif %}
 
     {% if item.pdf_path %}
-    <a class="u-rule" href="/api/library/pdf/new/{{ item.id }}" target="_blank" rel="noopener"
-       style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;color:#2e7d4f;text-decoration:none;">OPEN PDF</a>
+    <a class="u-rule u-mono" href="/api/library/pdf/new/{{ item.id }}" target="_blank" rel="noopener"
+       style="letter-spacing:0.08em;color:#2e7d4f;text-decoration:none;">OPEN PDF</a>
     {% endif %}
   </div>
 

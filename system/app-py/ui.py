@@ -195,3 +195,40 @@ def count_since(table: str, ts_col: str, iso: str, where: str = "") -> int:
             f"SELECT COUNT(*) FROM {table} WHERE {ts_col} > ?{clause}", (iso,), default=0) or 0)
     except Exception:
         return 0
+
+
+# ── "what changed since I last looked", for any surface ─────────────────────
+# The last item from the design audit: Today answered this, News, Library and
+# Work each answered it differently or not at all — and the machinery to answer
+# it properly (`ui_seen`, `count_since`, `since_label`) had been sitting here
+# used by one surface since it was written.
+#
+# THE RULE THIS ENCODES. The delta leads and the total is demoted, because a
+# number that only grows stops being information past the point a person can act
+# on it. 1,433 unread papers is not a call to action; 6 since Friday is.
+#
+# `mark_seen` is deliberately NOT called on render. A surface that marks itself
+# read by being looked at can never tell you what you missed — which was the
+# original news-rail bug, where 859 briefs showed the same items every visit
+# because nothing recorded the visit, and the naive fix (stamp on render) would
+# have hidden them all instead.
+
+def whats_new(key: str, table: str, ts_col: str, where: str = "") -> dict:
+    """How much has arrived in `table` since this surface was last marked seen."""
+    since = last_seen(key)
+    # `count_since("")` returns 0 by design — an empty timestamp means "no delta
+    # to compute", not "count everything". The total needs its own query.
+    clause = f" WHERE {where}" if where else ""
+    try:
+        total = int(db_scalar(f"SELECT COUNT(*) FROM {table}{clause}", default=0) or 0)
+    except Exception:
+        total = 0
+    newer = count_since(table, ts_col, since, where) if since else total
+    return {
+        "key": key,
+        "since": since,
+        "when": since_label(since),
+        "newer": newer,
+        "total": total,
+        "first_visit": not since,
+    }

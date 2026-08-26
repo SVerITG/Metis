@@ -10,7 +10,7 @@
        hx-target="#meeting-detail-panel"
        hx-swap="innerHTML">
     <div class="u-label">{{ (m.date or '—')[:10] }}</div>
-    <div class="u-truncate" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">{{ m.title or 'Meeting' }}</div>
+    <div class="u-truncate u-title">{{ m.title or 'Meeting' }}</div>
     <div class="u-truncate" style="font-family:var(--m-sans);font-size:var(--t-meta);color:var(--m-muted);">{{ m.participants or '—' }}</div>
     <div class="u-label">{% if m.duration_minutes %}{{ m.duration_minutes }}m{% else %}—{% endif %}</div>
     <div>
@@ -18,7 +18,7 @@
       {% if s == 'filed' %}
       <span class="u-label" style="display:inline-flex;padding:var(--m-space-1) var(--m-space-2);background:var(--m-surface-2);border-radius:var(--m-radius-sm);">FILED</span>
       {% elif s == 'processed' %}
-      <span style="display:inline-flex;padding:var(--m-space-1) var(--m-space-2);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;background:var(--m-ok-bg, rgba(74,164,102,0.1));color:var(--m-ok);border-radius:var(--m-radius-sm);">PROCESSED</span>
+      <span class="u-mono" style="display:inline-flex;padding:var(--m-space-1) var(--m-space-2);letter-spacing:0.12em;background:var(--m-ok-bg, rgba(74,164,102,0.1));color:var(--m-ok);border-radius:var(--m-radius-sm);">PROCESSED</span>
       {% else %}
       <span class="u-label" style="display:inline-flex;padding:var(--m-space-1) var(--m-space-2);background:var(--m-surface-2);border-radius:var(--m-radius-sm);">{{ s.upper() }}</span>
       {% endif %}

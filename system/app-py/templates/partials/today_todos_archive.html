@@ -11,7 +11,7 @@
           {% set ns.last_section = task.section %}
           <div class="u-rule" style="padding:var(--m-space-1) var(--m-space-3);background:var(--m-surface-2);">
             {% if task.section == 'blocked' %}
-            <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;color:var(--m-warn);">BLOCKED</span>
+            <span class="u-mono" style="letter-spacing:0.12em;color:var(--m-warn);">BLOCKED</span>
             {% elif task.section == 'starred' %}
             <span class="u-label">STARRED</span>
             {% else %}

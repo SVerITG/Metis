@@ -129,7 +129,7 @@
                            color:{% if item.is_read %}var(--m-muted){% else %}var(--m-accent){% endif %};"
             >{% if item.is_read %}READ{% else %}UNREAD{% endif %}</button>
             {# Title #}
-            <div class="u-grow" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.35;">
+            <div class="u-grow u-title" style="line-height:1.35;">
               {% if item.doi %}
               <a href="https://doi.org/{{ item.doi }}" target="_blank" rel="noopener"
                  style="color:inherit;text-decoration:none;"
@@ -179,14 +179,14 @@
         <td style="padding:var(--m-space-3) var(--m-space-3);text-align:center;vertical-align:top;">
           <div class="u-row" style="flex-direction:column;gap:var(--m-space-1);">
             {% if item.pdf_url %}
-            <span style="display:inline-flex;align-items:center;gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);"
+            <span class="u-mono" style="display:inline-flex;align-items:center;gap:var(--m-space-1);letter-spacing:0.08em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);"
               title="PDF indexed — full-text searchable">
               <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="var(--m-chart-2)" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
               INDEXED
             </span>
             {% endif %}
             {% if not item.is_read %}
-            <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;padding:1px 6px;border-radius:var(--m-radius-pill,10px);background:var(--m-accent);color:var(--m-on-accent);">NEW</span>
+            <span class="u-mono" style="letter-spacing:0.08em;padding:1px 6px;border-radius:var(--m-radius-pill,10px);background:var(--m-accent);color:var(--m-on-accent);">NEW</span>
             {% endif %}
           </div>
         </td>
@@ -206,8 +206,8 @@
              title="Open DOI">DOI ↗</a>
           {% endif %}
           {% if item.pdf_url %}
-          <a href="{{ item.pdf_url }}" target="_blank" rel="noopener"
-             style="display:inline-block;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-ok);text-decoration:none;padding:var(--m-space-1) var(--m-space-2);margin-left:2px;border:1px solid var(--m-ok);border-radius:var(--m-radius-sm);transition:background 140ms,color 140ms;"
+          <a class="u-mono" href="{{ item.pdf_url }}" target="_blank" rel="noopener"
+             style="display:inline-block;letter-spacing:0.1em;color:var(--m-ok);text-decoration:none;padding:var(--m-space-1) var(--m-space-2);margin-left:2px;border:1px solid var(--m-ok);border-radius:var(--m-radius-sm);transition:background 140ms,color 140ms;"
              onmouseover="this.style.background='var(--m-ok)';this.style.color='var(--m-on-accent)'"
              onmouseout="this.style.background='';this.style.color='var(--m-ok)'"
              title="Open local PDF">PDF ↗</a>
@@ -225,7 +225,7 @@
       <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
     </svg>
     <div class="u-label u-mb-3" style="letter-spacing:0.22em;">ZOTERO LIBRARY</div>
-    <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);">No papers match your filters.</div>
+    <div class="u-mb-2 u-title u-title--lg" style="font-weight:500;">No papers match your filters.</div>
     <div class="u-ed" style="font-size:var(--t-small);">Try broadening your search or removing a type filter.</div>
   </div>
   {% endif %}
@@ -236,7 +236,7 @@
      whole reason page numbers exist. Hidden entirely on a single page of results. #}
   {% if total_pages and total_pages > 1 %}
   <div class="u-row u-row--between u-rule-t" style="padding:var(--m-space-3) var(--m-space-5);gap:var(--m-space-3);">
-    <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-muted);">
+    <span class="u-mono" style="letter-spacing:0.1em;color:var(--m-muted);">
       {{ (page - 1) * page_size + 1 }}–{{ [page * page_size, total] | min }} OF {{ total }}
     </span>
     <div class="u-row">
@@ -247,7 +247,7 @@
                      border-radius:4px;background:var(--m-surface);color:var(--m-ink);
                      cursor:{% if page <= 1 %}default{% else %}pointer{% endif %};
                      opacity:{% if page <= 1 %}0.4{% else %}1{% endif %};">← Previous</button>
-      <span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);">
+      <span class="u-mono" style="color:var(--m-muted);">
         {{ page }} / {{ total_pages }}
       </span>
       <button {% if page >= total_pages %}disabled{% endif %}

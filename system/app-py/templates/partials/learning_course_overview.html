@@ -4,7 +4,7 @@
   <!-- Course header -->
   <div style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-4);border-bottom:1px solid var(--m-line);">
     <div class="kicker u-mb-2">{{ (course.category or course.title or 'COURSE') | upper }}</div>
-    <div class="u-mb-3" style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);">
+    <div class="u-mb-3 u-title u-title--lg" style="font-weight:500;">
       {{ course.title or "Untitled Course" }}
     </div>
     <div class="u-mb-2" style="height:3px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);">

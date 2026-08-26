@@ -10,9 +10,9 @@
     {# Course info #}
     <div class="u-grow" style="min-width:180px;">
       <div class="u-row u-mb-1">
-        <span style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ course.title|truncate(50) }}</span>
+        <span class="u-title u-title--sm">{{ course.title|truncate(50) }}</span>
         {% if due_cards > 0 %}
-        <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill);background:rgba(230,126,34,0.12);color:var(--m-ochre);">{{ due_cards }} CARD{{ 'S' if due_cards != 1 else '' }} DUE</span>
+        <span class="u-mono" style="letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill);background:rgba(230,126,34,0.12);color:var(--m-ochre);">{{ due_cards }} CARD{{ 'S' if due_cards != 1 else '' }} DUE</span>
         {% endif %}
       </div>
       <div class="u-row" style="gap:var(--m-space-3);">

@@ -26,8 +26,8 @@
             title="Drag to reorder"
             style="cursor:grab;color:var(--m-muted);font-size:var(--t-body);line-height:1;user-select:none;">⠿</span>
       <!-- Title (clickable → detail panel) -->
-      <div class="u-grow" onclick="openProjectDetail('{{ p.id }}')"
-           style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);line-height:1.2;cursor:pointer;"
+      <div class="u-grow u-title u-title--lg" onclick="openProjectDetail('{{ p.id }}')"
+           style="font-weight:500;line-height:1.2;cursor:pointer;"
            title="Open project details">{{ p.title }}</div>
       <!-- Category chip -->
       {% if p.category %}

@@ -55,7 +55,7 @@
           </span>
           {% endif %}
         </div>
-        <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);line-height:1.3;">
+        <div class="u-mb-2 u-title u-title--lg" style="font-weight:500;line-height:1.3;">
           {{ card.title or 'Untitled' }}
         </div>
         {% if card.summary %}
@@ -63,7 +63,7 @@
           {{ card.summary | striptags | replace('> ', '') | truncate(160, True, '…') }}
         </div>
         {% endif %}
-        <div style="margin-top:var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);">
+        <div class="u-mono" style="margin-top:var(--m-space-3);letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);">
           {% if card.status == 'read' %}✓ READ{% elif card.status == 'reading' %}◐ READING{% else %}OPEN ›{% endif %}
         </div>
       </div>

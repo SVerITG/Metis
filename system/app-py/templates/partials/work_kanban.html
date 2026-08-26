@@ -8,7 +8,7 @@
     <div class="u-col">
       {% for t in inbox %}
       <div class="kanban-card" data-task-id="{{ t.id }}">
-        <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.3;">{{ t.title }}</div>
+        <div class="u-mb-2 u-title" style="line-height:1.3;">{{ t.title }}</div>
         <div class="u-label u-row u-row--between">
           <span>{{ (t.tag or 'TASK').upper()[:12] }}</span>
           <select class="kanban-status-select u-label" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
@@ -36,8 +36,8 @@
       {% set is_high = (t.priority == 'high') %}
       <div class="kanban-card" data-task-id="{{ t.id }}"
            style="border-left:{% if is_overdue %}2px solid var(--m-alert){% elif is_high %}2px solid var(--m-accent){% else %}1px solid var(--m-rule){% endif %};">
-        <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.3;">{{ t.title }}</div>
-        <div class="u-row u-row--between" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;">
+        <div class="u-mb-2 u-title" style="line-height:1.3;">{{ t.title }}</div>
+        <div class="u-row u-row--between u-mono" style="letter-spacing:0.12em;">
           <span style="color:{% if is_overdue %}var(--m-alert){% else %}var(--m-muted){% endif %};">
             {{ t.due_date[:10] if t.due_date else '—' }}{% if is_overdue %} ⚠{% endif %}
           </span>
@@ -63,7 +63,7 @@
     <div class="u-col">
       {% for t in in_progress %}
       <div class="kanban-card" data-task-id="{{ t.id }}" style="border-left:2px solid var(--m-accent);">
-        <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.3;">{{ t.title }}</div>
+        <div class="u-mb-2 u-title" style="line-height:1.3;">{{ t.title }}</div>
         <div class="u-label u-row u-row--between">
           <span>{{ (t.tag or 'TASK').upper()[:12] }}</span>
           <select class="kanban-status-select u-label" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
@@ -88,7 +88,7 @@
     <div class="u-col">
       {% for t in closed %}
       <div class="kanban-card" style="opacity:0.7;">
-        <div class="u-mb-1" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.3;text-decoration:line-through;">{{ t.title }}</div>
+        <div class="u-mb-1 u-title" style="line-height:1.3;text-decoration:line-through;">{{ t.title }}</div>
         <div class="u-label">{{ (t.tag or 'TASK').upper()[:12] }}</div>
       </div>
       {% else %}

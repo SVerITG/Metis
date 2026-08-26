@@ -202,3 +202,44 @@ def test_skeletons_respect_reduced_motion():
     css = _css()
     block = css[css.index("@keyframes sk-sweep"):]
     assert "prefers-reduced-motion" in css[css.index(".sk-bar"):]
+
+
+# ── "what changed since I last looked" ───────────────────────────────────────
+# The last item from the design audit. Today answered it; News, Library and Work
+# each answered differently or not at all — while the machinery (ui_seen,
+# count_since, since_label) sat in ui.py used by one surface.
+
+def test_whats_new_is_one_component():
+    src = (TPL / "partials" / "_whatsnew.html").read_text(encoding="utf-8")
+    assert "macro whatsnew(" in src
+    for surface in ("_news_tabstrip.html", "stack_body.html"):
+        t = (TPL / "partials" / surface).read_text(encoding="utf-8")
+        assert "whatsnew(" in t, f"{surface} does not use the shared strip"
+
+
+def test_marking_seen_is_an_act_not_a_render():
+    """A surface that stamps itself seen because you opened it can never tell
+    you what you missed — the original news-rail bug, where 859 briefs showed
+    the same items every visit."""
+    ui_src = (ROOT / "system" / "app-py" / "ui.py").read_text(encoding="utf-8")
+    body = ui_src[ui_src.index("def whats_new("):]
+    assert "mark_seen" not in body, "whats_new() marks on render"
+    routes = (ROOT / "system" / "app-py" / "routers" / "stack.py").read_text(encoding="utf-8")
+    assert '@router.post("/api/seen/{key}"' in routes, "no explicit mark route"
+
+
+def test_the_delta_leads_and_the_total_is_demoted():
+    """A number that only grows stops being information past what a person can
+    act on. 1,433 unread is not a call to action; 6 since Friday is."""
+    src = (TPL / "partials" / "_whatsnew.html").read_text(encoding="utf-8")
+    assert src.index("wn-delta") < src.index("wn-total")
+
+
+def test_whats_new_counts_the_total_correctly():
+    """`count_since("")` returns 0 BY DESIGN — an empty timestamp means 'no
+    delta to compute', not 'count everything'. The first draft used it for the
+    total, so every surface reported zero items on a first visit."""
+    ui_src = (ROOT / "system" / "app-py" / "ui.py").read_text(encoding="utf-8")
+    body = ui_src[ui_src.index("def whats_new("):]
+    assert 'count_since(table, ts_col, "", where)' not in body
+    assert "SELECT COUNT(*) FROM {table}" in body

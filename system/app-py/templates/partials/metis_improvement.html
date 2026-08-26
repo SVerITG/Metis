@@ -4,7 +4,7 @@
 <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
   <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--m-space-3);">
     <div>
-      <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">What I&rsquo;ve learned</div>
+      <div class="u-title u-title--lg">What I&rsquo;ve learned</div>
       <div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">
         {% if learned %}
           {{ learned|length }} change{{ '' if learned|length == 1 else 's' }} applied to specialist skills.
@@ -14,8 +14,8 @@
       </div>
     </div>
     <div class="u-row u-fixed" style="gap:var(--m-space-4);">
-      <button class="btn btn--primary" type="button" onclick="improveMetisOODA()"
-              style="gap:var(--m-space-2);border:0;padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;white-space:nowrap;"
+      <button class="btn btn--primary u-mono" type="button" onclick="improveMetisOODA()"
+              style="gap:var(--m-space-2);border:0;padding:var(--m-space-2) var(--m-space-4);letter-spacing:0.12em;white-space:nowrap;"
               title="Opens Claude (Code recommended) primed to run an OODA self-improvement cycle over your reflexions — Observe · Orient · Decide · Act, in plan mode.">
         ✦ IMPROVE METIS (OODA)
       </button>
@@ -30,7 +30,7 @@
 {# Recent reflexion log — raw signal feeding the loop #}
 {% if recent_reflexions %}
 <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
-  <div class="u-mb-3" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">
+  <div class="u-mb-3 u-title">
     Recent reflexions
     <span class="u-label" style="margin-left:8px;">LAST {{ recent_reflexions|length }} · NEWEST FIRST</span>
   </div>
@@ -42,17 +42,17 @@
     </div>
     {% if r.went_well %}
     <div class="u-mb-2" style="font-size:var(--t-meta);line-height:1.6;color:var(--m-ink);">
-      <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;color:var(--m-ok);margin-right:6px;">+ WENT WELL</span>{{ r.went_well[:280] }}{% if r.went_well|length > 280 %}…{% endif %}
+      <span class="u-mono" style="letter-spacing:0.12em;color:var(--m-ok);margin-right:6px;">+ WENT WELL</span>{{ r.went_well[:280] }}{% if r.went_well|length > 280 %}…{% endif %}
     </div>
     {% endif %}
     {% if r.could_improve %}
     <div class="u-mb-2" style="font-size:var(--t-meta);line-height:1.6;color:var(--m-ink);">
-      <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;color:var(--m-ochre-deep);margin-right:6px;">~ COULD IMPROVE</span>{{ r.could_improve[:280] }}{% if r.could_improve|length > 280 %}…{% endif %}
+      <span class="u-mono" style="letter-spacing:0.12em;color:var(--m-ochre-deep);margin-right:6px;">~ COULD IMPROVE</span>{{ r.could_improve[:280] }}{% if r.could_improve|length > 280 %}…{% endif %}
     </div>
     {% endif %}
     {% if r.tool_wishes %}
     <div style="font-size:var(--t-meta);line-height:1.6;color:var(--m-muted);font-style:italic;">
-      <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;color:var(--m-info);margin-right:6px;font-style:normal;">→ TOOL WISH</span>{{ r.tool_wishes[:200] }}{% if r.tool_wishes|length > 200 %}…{% endif %}
+      <span class="u-mono" style="letter-spacing:0.12em;color:var(--m-info);margin-right:6px;font-style:normal;">→ TOOL WISH</span>{{ r.tool_wishes[:200] }}{% if r.tool_wishes|length > 200 %}…{% endif %}
     </div>
     {% endif %}
   </div>
@@ -66,7 +66,7 @@
   <div class="learned-row">
     <div class="learned-head">
       <span class="chip chip--ok" style="font-size:var(--t-micro);">APPLIED</span>
-      <span style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">{{ L.agent_slug }}</span>
+      <span class="u-title">{{ L.agent_slug }}</span>
       <span class="learned-when">{{ (L.applied_at or L.proposed_at or '')[:16] }}</span>
     </div>
     {% if L.rationale %}
@@ -82,12 +82,12 @@
 <div class="u-rule u-rule-t" style="padding:var(--m-space-4) var(--m-space-5);">
   <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--m-space-3);">
     <div>
-      <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">Reflexion themes — last {{ days }} days</div>
+      <div class="u-title">Reflexion themes — last {{ days }} days</div>
       <div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">
         {% if totals and totals.reflexions %}
           {{ totals.reflexions }} reflexion{{ '' if totals.reflexions == 1 else 's' }} across {{ totals.agents }} agent{{ '' if totals.agents == 1 else 's' }}.
         {% else %}
-          No reflexions yet. Agents need to call <code style="font-family:var(--m-mono);font-size:var(--t-micro);">write_reflexion</code> at the end of every run.
+          No reflexions yet. Agents need to call <code class="u-mono">write_reflexion</code> at the end of every run.
         {% endif %}
       </div>
     </div>
@@ -98,7 +98,7 @@
   {% for a in themes.agents %}
   <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
     <div class="u-mb-2" style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--m-space-3);">
-      <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">
+      <div class="u-title">
         {{ a.agent_slug }}
         <span class="u-label" style="margin-left:8px;">{{ a.n_reflexions }} REFLEXIONS</span>
       </div>
@@ -129,14 +129,14 @@
 {% endif %}
 
 <div style="padding:var(--m-space-4) var(--m-space-5);">
-  <div class="u-mb-3" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">Pending proposals</div>
+  <div class="u-mb-3 u-title">Pending proposals</div>
   {% if proposals %}
     {% for p in proposals %}
     <div class="u-rule" style="padding:var(--m-space-3) 0;">
       <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--m-space-3);">
         <div>
           <span class="u-label">#{{ p.id }} · {{ p.status|upper }}</span>
-          <span style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);margin-left:8px;">{{ p.agent_slug }}</span>
+          <span class="u-title" style="margin-left:8px;">{{ p.agent_slug }}</span>
           <span class="u-ed" style="font-size:var(--t-meta);margin-left:8px;">{{ (p.proposed_at or '')[:16] }}</span>
         </div>
         <div style="display:flex;gap:var(--m-space-2);flex-wrap:wrap;">

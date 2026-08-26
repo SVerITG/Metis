@@ -12,7 +12,7 @@
   <a class="u-rule" href="/tab/knowledge"
      onclick="document.getElementById('search-results-drop').style.display='none';"
      style="display:block;padding:var(--m-space-2) var(--m-space-5);text-decoration:none;transition:background 120ms;">
-    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:var(--m-space-1);">
+    <div class="u-title u-title--sm" style="line-height:1.35;margin-bottom:var(--m-space-1);">
       {{ p.title or 'Untitled' }}
     </div>
     <div class="u-label">
@@ -29,7 +29,7 @@
   <a class="u-rule" href="/tab/work"
      onclick="document.getElementById('search-results-drop').style.display='none';"
      style="display:block;padding:var(--m-space-2) var(--m-space-5);text-decoration:none;transition:background 120ms;">
-    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:var(--m-space-1);">
+    <div class="u-title u-title--sm" style="line-height:1.35;margin-bottom:var(--m-space-1);">
       {{ p.title or 'Untitled' }}
     </div>
     {% if p.description %}
@@ -51,7 +51,7 @@
         {{ n.domain|upper }}
       </span>
       {% endif %}
-      <span style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;">
+      <span class="u-title u-title--sm" style="line-height:1.35;">
         {{ n.title or 'Untitled' }}
       </span>
     </div>
@@ -69,7 +69,7 @@
       <span class="u-label u-fixed" style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);padding:var(--m-space-1) var(--m-space-2);">
         {{ (t.status or 'open')|upper }}
       </span>
-      <span style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ t.title }}</span>
+      <span class="u-title u-title--sm">{{ t.title }}</span>
     </div>
   </a>
   {% endfor %}
@@ -81,7 +81,7 @@
   <a class="u-rule" href="javascript:void(0)"
      onclick="openCourseReader('{{ c.slug }}');document.getElementById('search-results-drop').style.display='none';"
      style="display:block;padding:var(--m-space-2) var(--m-space-5);text-decoration:none;transition:background 120ms;">
-    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:var(--m-space-1);">
+    <div class="u-title u-title--sm" style="line-height:1.35;margin-bottom:var(--m-space-1);">
       {{ c.title or 'Untitled Course' }}
     </div>
     <div class="u-label">
@@ -91,7 +91,7 @@
   {% endfor %}
   {% endif %}
 
-  <div style="padding:var(--m-space-2) var(--m-space-5);font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted-soft);text-align:right;">
+  <div class="u-mono" style="padding:var(--m-space-2) var(--m-space-5);color:var(--m-muted-soft);text-align:right;">
     Press Esc to close
   </div>
 </div>
