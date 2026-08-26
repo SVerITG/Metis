@@ -62,16 +62,39 @@ follow, and they are the reason routing is now worth its cost:
 ### When to route
 
 Route when a task falls squarely in one specialist's remit AND involves reading or
-producing more than a couple of files — that is where isolation pays. Use the
-routing table below to choose.
+producing more than a couple of files — that is where isolation pays.
 
 Do NOT route for: a one-line factual answer, a quick status check, a direct edit
 the researcher just asked for by name, or anything where dispatch overhead exceeds
 the work. A subagent for a two-line change costs more than it saves, and routing
 theatre is worse than not routing.
 
-Say which specialist is doing the work, in one plain sentence. Never announce the
-mechanism.
+### How to route — the table decides, the Agent tool executes
+
+**Call `run_metis(request=..., client="code")` to choose the specialist.** Do not
+pick from the table below by eye. Two reasons, and the second is the one that
+matters:
+
+1. The same rules then apply in Claude Code and Claude Desktop, so a preference
+   recorded in one holds in the other. Choosing by eye here made the table
+   Desktop-only — an audit on 2026-08-25 found the routing pipeline had run 34
+   times ever, all of them from the test harness.
+2. `run_metis` returns **several** specialists when a request needs several, and
+   writes a live `agent_runs` row for each one so the researcher can watch the
+   work on the dashboard. Choosing by eye produces neither.
+
+Then dispatch each returned agent with the **Agent tool** — that is what gives
+context isolation and the per-agent model binding, which `run_metis` does not do.
+The table decides *who*; the Agent tool decides *how it runs*.
+
+`run_metis` returns a plain-English line under **"Say this to the researcher"**.
+Use it — in your own words, not verbatim — and never show the `Routing:` or
+`Model:` lines underneath. Those name slugs and models; the line above them is
+written for someone who does not know an agent roster exists.
+
+When each agent finishes, call `log_agent_run(agent_slug=..., session_id=...)`.
+That closes its live row; without it the dashboard shows "working…" until the
+15-minute stale guard clears it.
 
 ### Every agent run must land in memory
 
