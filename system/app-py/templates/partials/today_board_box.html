@@ -2,17 +2,46 @@
    Context: board (str), items (list of dicts), total (int), show_all (bool).
    Each item: id, title, url, source, starred, auto_added, created_at. #}
 {% from "partials/_update_menu.html" import update_menu %}
+{#- The three board markers were ⚠ / 📅 / ★ — three emoji standing where the rest
+    of this application draws inline SVG. Two problems, and the second is the one
+    that showed: they render at different weights and, on most platforms, 📅 comes
+    out as a full-colour glyph that ignores the theme entirely, so the Events card
+    carried a bright blue calendar into every dark palette. Stroke icons inherit
+    `currentColor`, so each one now takes its own board's accent and follows the
+    theme like everything else.
+
+    NOT touched, deliberately: ★/☆ on the star button, ✓, and ✦ for "Claude
+    Desktop". Those are controls and status marks used consistently across the
+    whole app — swapping them would be a redesign, not a fix. -#}
 {% set bm = {
-  'outbreaks': {'label': 'Outbreaks',  'cls': 'alert',  'icon': '⚠'},
-  'events':    {'label': 'Events',     'cls': 'accent', 'icon': '📅'},
-  'funding':   {'label': 'Funding',    'cls': 'ok',     'icon': '★'}
+  'outbreaks': {'label': 'Outbreaks',  'cls': 'alert'},
+  'events':    {'label': 'Events',     'cls': 'accent'},
+  'funding':   {'label': 'Funding',    'cls': 'ok'}
 } %}
 {% set m = bm[board] %}
+
+{% macro board_icon(board) %}
+<svg class="board-box-icon" viewBox="0 0 16 16" width="14" height="14" fill="none"
+     stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+     stroke-linejoin="round" aria-hidden="true">
+  {%- if board == 'outbreaks' -%}
+    {#- a spreading point: the thing itself, not a warning about it -#}
+    <circle cx="8" cy="8" r="1.6"/><circle cx="8" cy="8" r="4.2" opacity=".65"/>
+    <circle cx="8" cy="8" r="6.8" opacity=".35"/>
+  {%- elif board == 'events' -%}
+    <rect x="2" y="3.5" width="12" height="10.5" rx="1.5"/>
+    <path d="M2 6.5h12"/><path d="M5.5 2v3M10.5 2v3"/>
+  {%- else -%}
+    {#- funding: an award ribbon -#}
+    <circle cx="8" cy="6" r="4"/><path d="M5.6 9.4L4.5 14l3.5-2 3.5 2-1.1-4.6"/>
+  {%- endif -%}
+</svg>
+{% endmacro %}
 <div class="board-box board-box--{{ m.cls }}" id="board-{{ board }}">
 
   {# ── Header ── #}
   <div class="board-box-head">
-    <span class="board-box-icon">{{ m.icon }}</span>
+    {{ board_icon(board) }}
     <span class="board-box-label">{{ m.label }}</span>
     {% if total %}<span class="board-box-count">{{ total }}</span>{% endif %}
   </div>

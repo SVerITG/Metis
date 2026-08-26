@@ -7,7 +7,15 @@
 {% set period = period|default('daily') %}
 {% set pending = pending|default(false) %}
 {% set brief_error = brief_error|default('') %}
-{% set collapsed = false %}
+{# A brief you have already read starts folded. The collapse machinery was
+   already here and `collapsed` was hardcoded false, so a read brief still put
+   ~460 words between the reader and everything below it — the single largest
+   visible panel on the surface (audit 2026-08-25).
+
+   This does not touch the read SIGNAL: the explicit click stays the only thing
+   that marks a brief read (the researcher's standing decision, 2026-08-21,
+   reaffirming 2026-08-19). It only changes what a brief looks like afterwards. #}
+{% set collapsed = brief_read|default(false) %}
 <div class="panel panel-pad" id="morning-brief" style="padding:28px 40px;margin-bottom:32px;">
 
   {# Header: label · date · read badge · daily/weekly · collapse chevron #}

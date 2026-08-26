@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "partials/_section.html" import sec_label %}
 {% from "partials/_section.html" import section, skeleton_block, skeleton_box %}
+{% from "partials/_section.html" import zone %}
 {% block title %}Today{% endblock %}
 
 {% block content %}
@@ -35,19 +36,54 @@
   })();
   </script>
 
-  {# ── Load strategy: stagger HTMX so the page doesn't waterfall skeletons.
-       Wave 1 (immediate):  morning brief — the thing you read first.
-       Wave 1b (+50ms):     resume card — where we left off.
-       Wave 2 (+100ms):     board boxes — outbreaks · events · funding.
-       Wave 2b (+150ms):    literature discovery — new papers in your field.
-       Wave 3 (+200ms):     focus (with memory depth + deadline nudges).
-       Wave 3b (+250ms):    learning nudge — course progress reminder.
-       Wave 4 (+300ms):     research threads — session narrative arcs.
-       Wave 5 (+400ms):     memory pulse — 8-week activity heatmap.
-       Wave 6 (+500ms):     brief bridges — memory connections to brief.
-       Wave 7 (+600ms):     dispatch: news — topic slipcases.
-       Wave 8 (+700ms):     memory landscape — topic depth map.
-       Wave 9 (+800ms):     system health footer. -#}
+  {# ── ORDER: you first, then the world, then the archive.
+       Reordered 2026-08-26. The page was laid out oldest-feature-first, which put
+       Today's focus SIXTH — behind the brief, the resume card, three board boxes
+       and the literature list. On a surface you open to decide what to do, the
+       answer to "what am I doing" should not be below the fold.
+
+         1  find              — the fastest route to a thing you can name
+         2  morning brief     — what happened; collapses itself once read
+         2b resume card       — where we left off
+         3  today's focus     — what to do now            (was 6th)
+         4  connections       — what it links to          (was 7th)
+         5  boards            — outbreaks · events · funding
+         6  literature        — new papers in your field
+         7  learning nudge
+         8  what Metis knows  — one closed fold, fetched only if opened
+         9  dispatch: news
+        10  system health
+
+       The brief keeps the top slot despite being "the world" rather than "you":
+       it is the morning ritual, and since the read-state fix it folds to a single
+       line once read, so on any second visit the actionable panels rise anyway.
+
+       Load stagger follows the visual order — if it does not, the page fills out
+       of sequence and jumps as each skeleton resolves. Panels inside the closed
+       fold use `intersect once` and are never fetched at all unless opened. -#}
+
+  <!-- ===== 1b. Find — the fastest route to a known thing =================
+       Audit 2026-08-25: with 3,291 memories, 1,433 unread papers and 787 news
+       signals on this machine, the quickest way to a thing you can NAME was to
+       remember which tab it lived under. There was nowhere to type.
+
+       This reuses knowledge.py's `unified-search`, which already fans out across
+       the three library silos and episodic memory. A second search that returns
+       different answers to the same question would be worse than none. ======== -->
+  <form class="today-find" role="search" onsubmit="return false;"
+        style="margin-bottom:22px;">
+    <label for="today-find-input" class="sr-only">Search your library and memory</label>
+    <input id="today-find-input" type="search" name="q" autocomplete="off"
+           placeholder="Find a paper, a memory, a decision…"
+           hx-get="/api/partial/knowledge/unified-search"
+           hx-trigger="keyup changed delay:350ms, search"
+           hx-target="#today-find-results"
+           hx-indicator="#today-find-spin">
+    <span id="today-find-spin" class="htmx-indicator"
+          style="font-family:var(--m-mono);font-size:10.5px;letter-spacing:.12em;
+                 text-transform:uppercase;color:var(--m-muted);">searching…</span>
+  </form>
+  <div id="today-find-results" style="margin-bottom:26px;"></div>
 
   <!-- ===== 2. Morning brief — full-width hero ===== -->
   <div hx-get="/api/partial/today/morning-brief"
@@ -66,39 +102,9 @@
        hx-trigger="load delay:50ms"
        hx-swap="outerHTML"></div>
 
-  <!-- ===== 3. Board strip — Outbreaks · Events · Funding ===== -->
-  <div class="board-strip" style="margin-bottom:32px;">
-    <div hx-get="/api/partial/today/board/outbreaks"
-         hx-trigger="load delay:100ms"
-         hx-swap="outerHTML">
-      <div class="board-box" style="min-height:180px;">
-        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
-      </div>
-    </div>
-    <div hx-get="/api/partial/today/board/events"
-         hx-trigger="load delay:100ms"
-         hx-swap="outerHTML">
-      <div class="board-box" style="min-height:180px;">
-        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
-      </div>
-    </div>
-    <div hx-get="/api/partial/today/board/funding"
-         hx-trigger="load delay:100ms"
-         hx-swap="outerHTML">
-      <div class="board-box" style="min-height:180px;">
-        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== 3b. Literature discovery — new papers in your field ===== -->
-  <div hx-get="/api/partial/today/literature-discovery"
-       hx-trigger="load delay:150ms"
-       hx-swap="outerHTML"></div>
-
-  <!-- ===== 4. Today's Focus — with memory depth + deadline nudges ===== -->
+  <!-- ===== 3. Today's Focus — with memory depth + deadline nudges ===== -->
   <div hx-get="/api/partial/today/focus-memory"
-       hx-trigger="load delay:200ms"
+       hx-trigger="load delay:100ms"
        hx-swap="outerHTML">
     {{ sec_label("Today's focus", tail="LOADING", style="margin-bottom:14px;") }}
     <div class="grid grid-3" style="margin-bottom:32px;">
@@ -106,39 +112,83 @@
     </div>
   </div>
 
-  <!-- ===== 4a2. Cross-pollination — connections for what you're working on ===== -->
+  <!-- ===== 4. Cross-pollination — connections for what you're working on ===== -->
   <!-- The README's core promise, greeting you daily on the cockpit. Seeds from
        the most recently touched project; endpoint lives in routers/connections.py
        (not today.py) so it stays isolated. -->
   <div style="margin-bottom:32px;"
        hx-get="/api/partial/connections/today"
-       hx-trigger="load delay:300ms"
+       hx-trigger="load delay:150ms"
        hx-swap="innerHTML">
     {{ sec_label("Connections", tail="ACROSS YOUR WORK", style="margin-bottom:14px;") }}
     {{ skeleton_box(size="sm") }}
   </div>
 
-  <!-- ===== 4b. Learning nudge ===== -->
-  <div hx-get="/api/partial/today/learning-nudge"
+  <!-- ===== 5. Board strip — Outbreaks · Events · Funding ===== -->
+  <div class="board-strip" style="margin-bottom:32px;">
+    <div hx-get="/api/partial/today/board/outbreaks"
+         hx-trigger="load delay:200ms"
+         hx-swap="outerHTML">
+      <div class="board-box" style="min-height:180px;">
+        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
+      </div>
+    </div>
+    <div hx-get="/api/partial/today/board/events"
+         hx-trigger="load delay:200ms"
+         hx-swap="outerHTML">
+      <div class="board-box" style="min-height:180px;">
+        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
+      </div>
+    </div>
+    <div hx-get="/api/partial/today/board/funding"
+         hx-trigger="load delay:200ms"
+         hx-swap="outerHTML">
+      <div class="board-box" style="min-height:180px;">
+        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 6. Literature discovery — new papers in your field ===== -->
+  <div hx-get="/api/partial/today/literature-discovery"
        hx-trigger="load delay:250ms"
        hx-swap="outerHTML"></div>
 
-  <!-- ===== 5. Research threads — session narrative arcs ===== -->
-  <div hx-get="/api/partial/today/session-thread"
+  <!-- ===== 7. Learning nudge ===== -->
+  <div hx-get="/api/partial/today/learning-nudge"
        hx-trigger="load delay:300ms"
        hx-swap="outerHTML"></div>
 
-  <!-- ===== 5b. Memory Pulse — 8-week heatmap ===== -->
-  <div hx-get="/api/partial/today/memory-pulse"
-       hx-trigger="load delay:400ms"
-       hx-swap="outerHTML"></div>
+  <!-- ===== 8. What Metis knows — ONE zone, closed by default ==============
+       Audit 2026-08-25: research threads (830 visible words — a third of the
+       whole surface), memory pulse, brief bridges and the memory landscape were
+       four panels answering one question in four visual languages. They are now
+       one fold. Closed by default; the header line carries the fact, the body
+       carries the detail.
 
-  <!-- ===== 5c. Brief Bridges — memory connections to today's brief ===== -->
-  <div hx-get="/api/partial/today/brief-bridges"
-       hx-trigger="load delay:500ms"
-       hx-swap="outerHTML"></div>
+       `hx-trigger="intersect once"` rather than `load`: a panel nobody opens
+       should not be fetched at all. Four requests on every page load, for
+       content behind a closed fold, is work done for no reader. ================ -->
+  {% call zone("What Metis knows", key="today-memory",
+               tail="threads · pulse · connections · landscape") %}
+    <div hx-get="/api/partial/today/session-thread"
+         hx-trigger="intersect once"
+         hx-swap="outerHTML"></div>
 
-  <!-- ===== 6. Dispatch — News ===== -->
+    <div hx-get="/api/partial/today/memory-pulse"
+         hx-trigger="intersect once"
+         hx-swap="outerHTML"></div>
+
+    <div hx-get="/api/partial/today/brief-bridges"
+         hx-trigger="intersect once"
+         hx-swap="outerHTML"></div>
+
+    <div hx-get="/api/partial/today/memory-landscape"
+         hx-trigger="intersect once"
+         hx-swap="outerHTML"></div>
+  {% endcall %}
+
+  <!-- ===== 9. Dispatch — News ===== -->
   <div hx-get="/api/partial/today/news-rail"
        hx-trigger="load delay:600ms"
        hx-swap="outerHTML">
@@ -151,12 +201,7 @@
     </div>
   </div>
 
-  <!-- ===== 7. Memory Landscape — topic depth map ===== -->
-  <div hx-get="/api/partial/today/memory-landscape"
-       hx-trigger="load delay:700ms"
-       hx-swap="outerHTML"></div>
-
-  <!-- ===== 8. System health footer ===== -->
+  <!-- ===== 10. System health footer ===== -->
   <div hx-get="/api/partial/today/system-health"
        hx-trigger="load delay:800ms"
        hx-swap="outerHTML"></div>

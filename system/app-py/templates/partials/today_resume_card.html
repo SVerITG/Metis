@@ -2,6 +2,13 @@
    Context: session (dict|None), agents (list), time_label (str), total_sessions (int), deeplink (str). #}
 {% if session %}
 <div id="today-resume-card" style="margin-bottom:28px;">
+  {# The card opened with an icon and went straight into content: no heading, so
+     nothing in the document outline and nothing for the eye to catch as a seam
+     (audit 2026-08-25). `sec-label` is the heading style the app already uses. #}
+  <h2 class="sec-label" style="margin-bottom:10px;">
+    <span>Where you left off</span>
+    {%- if time_label %}<span class="tail">{{ time_label|upper }}</span>{% endif %}
+  </h2>
   <div class="panel" style="padding:20px 28px;border-left:3px solid var(--m-accent);">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
