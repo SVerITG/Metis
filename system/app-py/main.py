@@ -35,6 +35,7 @@ from routers import (
     transcription,
     verification,
     work,
+    stack,
 )
 
 log = logging.getLogger("metis")
@@ -473,6 +474,8 @@ app.include_router(verification.router)
 # Focus areas — user-added surfaces. One router and one template serve
 # every focus, which is what makes them addable without a developer.
 app.include_router(focus.router)
+# READING STACK — the triage store Today feeds and the /stack surface drains.
+app.include_router(stack.router)
 
 # Must run AFTER all routers are imported, so every environment exists.
 _n_envs = install_shared_globals()

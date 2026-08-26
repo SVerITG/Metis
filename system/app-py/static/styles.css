@@ -562,10 +562,15 @@ pre code { background: transparent; padding: 0; color: inherit; }
   gap: 8px;
   padding: 14px 18px 10px;
 }
+/* Was a 14px emoji glyph. Now an inline SVG, so it inherits the board's accent
+   through currentColor and follows the theme instead of ignoring it. */
 .board-box-icon {
-  font-size: 14px;
-  line-height: 1;
+  flex: 0 0 auto;
+  display: block;
 }
+.board-box--alert  .board-box-icon { color: var(--m-alert); }
+.board-box--accent .board-box-icon { color: var(--m-accent); }
+.board-box--ok     .board-box-icon { color: var(--m-ok); }
 .board-box-label {
   font-family: var(--m-mono);
   font-size: 11px;
@@ -3304,3 +3309,594 @@ details summary { outline: none; }
 .ov-pill--new  { background: var(--m-accent); color: var(--m-on-accent); }
 .ov-pill--esc  { background: var(--m-ochre-wash); color: var(--m-ochre-deep); }
 .ov-pill--seen { background: var(--m-surface-2); color: var(--m-muted); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PROGRESSIVE DISCLOSURE  (audit 2026-08-25)
+   ──────────────────────────────────────────────────────────────────────────
+   Today rendered 14 panels / 4,894 words / ~19.6 screens in one column with no
+   collapse anywhere — there were four <details> in the whole application. These
+   are the three primitives that were missing, styled from the existing tokens
+   so nothing about the visual identity changes. See system/app-py/ui.py.
+
+   Rule: a peek NEVER produces an inner scrollbar. A scroll region inside a page
+   that also scrolls is the defect this was built to remove.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.ui-peek { display: block; }
+.ui-peek-head > * + *,
+.ui-peek-rest > * + * { margin-top: 0; }
+.ui-peek-rest[hidden] { display: none; }
+
+.ui-peek-toggle,
+.ui-zone-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 8px 2px 4px;
+  margin: 2px 0 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--m-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  border-top: 1px solid var(--m-rule-soft, var(--m-rule));
+}
+.ui-peek-toggle:hover,
+.ui-zone-head:hover { color: var(--m-ink); }
+.ui-peek-toggle:focus-visible,
+.ui-zone-head:focus-visible {
+  outline: 2px solid var(--m-accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* The chevron is the only thing that moves. Rotation reads as "this opened"
+   without a height animation, which on a long list is a scroll-jump. */
+.ui-chev {
+  display: inline-block;
+  color: var(--m-accent);
+  font-size: 11px;
+  transition: transform 120ms ease;
+}
+[aria-expanded="true"] .ui-chev { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .ui-chev { transition: none; } }
+
+/* ── zones: a whole group folded behind one line ── */
+.ui-zone {
+  border: 1px solid var(--m-rule);
+  border-radius: 6px;
+  background: var(--m-surface);
+  margin-bottom: var(--m-gap, 18px);
+  overflow: hidden;
+}
+.ui-zone-head {
+  border-top: 0;
+  padding: 12px 16px;
+  margin: 0;
+  background: var(--m-surface-2);
+  border-bottom: 1px solid transparent;
+}
+.ui-zone-head[aria-expanded="true"] { border-bottom-color: var(--m-rule); }
+.ui-zone-title {
+  color: var(--m-ink);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+.ui-zone-tail {
+  margin-left: auto;
+  color: var(--m-muted);
+  letter-spacing: 0.08em;
+  text-transform: none;
+  font-size: 10.5px;
+}
+.ui-zone-body { padding: 14px 16px; }
+.ui-zone-body[hidden] { display: none; }
+
+/* ── the counter rule: a delta you can act on, a total demoted ── */
+.ui-delta {
+  font-family: var(--m-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--m-accent);
+  font-weight: 600;
+}
+.ui-delta--quiet { color: var(--m-muted); font-weight: 500; }
+.ui-total {
+  font-family: var(--m-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  margin-left: 10px;
+  opacity: 0.75;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FIND — search on the Today surface.   (audit 2026-08-25)
+
+   With 3,291 memories and 787 signals on the machine, the fastest route to a
+   thing you can name was to remember which tab it lived under. Reuses
+   knowledge.py's unified-search rather than adding a second search that could
+   answer the same question differently.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Visually hidden, still read aloud. The search input needs a label; the design
+   does not need to show one. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.today-find {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.today-find input[type="search"] {
+  flex: 1;
+  min-width: 0;
+  background: var(--m-surface);
+  border: 1px solid var(--m-rule);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: var(--m-display, inherit);
+  font-size: 14px;
+  color: var(--m-ink);
+  transition: border-color 120ms ease;
+}
+.today-find input[type="search"]::placeholder {
+  color: var(--m-muted);
+  font-style: italic;
+}
+.today-find input[type="search"]:hover { border-color: var(--m-muted); }
+.today-find input[type="search"]:focus-visible {
+  outline: 2px solid var(--m-accent);
+  outline-offset: 1px;
+  border-color: var(--m-accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .today-find input[type="search"] { transition: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOCUS SURFACE — the safe, the verdicts, the folds
+   Added 2026-08-26 when a focus stopped being a reading list.
+
+   Every colour here is an existing token. The design audit's conclusion was that
+   the visual system is not the problem, so a new surface that introduced its own
+   palette would be contradicting the finding it was built after.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── The counts strip ──────────────────────────────────────────────────── */
+.fc-strip {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 22px;
+  padding: 14px 18px; margin-bottom: 18px;
+  border: 1px solid var(--m-line); border-radius: var(--m-radius, 6px);
+  background: var(--m-panel, transparent);
+}
+.fc-cell { display: flex; align-items: baseline; gap: 6px; }
+.fc-n {
+  font-family: var(--m-mono); font-size: 17px; font-variant-numeric: tabular-nums;
+  color: var(--m-ink); line-height: 1;
+}
+.fc-cell--lead .fc-n { font-size: 22px; color: var(--m-accent); }
+.fc-l {
+  font-family: var(--m-mono); font-size: 10.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--m-muted);
+}
+/* The totals that only ever grow, demoted to the far side of a rule. */
+.fc-sep { flex: 1 1 24px; min-width: 12px; border-top: 1px solid var(--m-line);
+          align-self: center; opacity: .6; }
+.fc-cell--quiet .fc-n { font-size: 13px; color: var(--m-muted); }
+.fc-cell--quiet .fc-l { color: var(--m-muted-soft, var(--m-muted)); opacity: .8; }
+
+.fc-warn {
+  margin: -8px 0 18px; padding: 10px 14px;
+  border: 1px solid var(--m-line); border-left: 3px solid var(--m-ochre);
+  border-radius: var(--m-radius, 6px);
+  font-size: 12.5px; line-height: 1.6; color: var(--m-muted);
+}
+.fc-warn strong { color: var(--m-ink); }
+.fc-warn code { font-family: var(--m-mono); font-size: 11.5px; color: var(--m-ink); }
+.fc-warn a { color: var(--m-accent); text-decoration: none; white-space: nowrap; }
+
+/* ── An item row, in either list ───────────────────────────────────────── */
+.fv-row { display: flex; gap: 12px; padding: 11px 18px; }
+.fv-row + .fv-row { border-top: 1px solid var(--m-line); }
+.fv-row--muted { opacity: .72; }
+.fv-date {
+  font-family: var(--m-mono); font-size: 10.5px; color: var(--m-muted);
+  white-space: nowrap; font-variant-numeric: tabular-nums; padding-top: 2px;
+}
+.fv-body { min-width: 0; flex: 1; }
+.fv-title { font-size: 13.5px; line-height: 1.45; }
+.fv-title a { color: inherit; text-decoration: none;
+              border-bottom: 1px solid var(--m-line); }
+.fv-title a:hover { border-bottom-color: var(--m-accent); }
+.fv-sum { font-size: 12px; color: var(--m-muted); margin-top: 3px; line-height: 1.5; }
+.fv-meta { font-family: var(--m-mono); font-size: 10.5px; color: var(--m-muted);
+           margin-top: 3px; }
+.fv-more { font-family: var(--m-mono); font-size: 11px; color: var(--m-muted);
+           margin: 8px 0 0; padding-left: 18px; }
+.fv-note { font-size: 12px; color: var(--m-muted); line-height: 1.6;
+           margin: 0 0 10px; }
+
+/* ── Keep / Not for me ─────────────────────────────────────────────────── */
+.fv-acts { display: flex; align-items: center; gap: 6px; margin-top: 7px;
+           flex-wrap: wrap; }
+.fv-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: .08em;
+  text-transform: uppercase; padding: 3px 9px;
+  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill, 999px);
+  background: transparent; color: var(--m-muted); cursor: pointer;
+  transition: color .12s, border-color .12s, background .12s;
+}
+.fv-btn:hover { color: var(--m-ink); border-color: var(--m-ink); }
+.fv-keep:hover { color: var(--m-accent); border-color: var(--m-accent);
+                 background: var(--m-accent-wash, transparent); }
+.fv-decline:hover { color: var(--m-ochre); border-color: var(--m-ochre); }
+.fv-mark {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: .1em;
+  padding: 3px 9px; border-radius: var(--m-radius-pill, 999px);
+}
+.fv-mark--kept { background: var(--m-accent-wash); color: var(--m-accent); }
+.fv-mark--declined { color: var(--m-muted); border: 1px solid var(--m-line); }
+.fv-mark--kind { color: var(--m-muted); border: 1px solid var(--m-line);
+                 text-transform: uppercase; }
+.fv-why {
+  display: inline-block; margin-top: 5px;
+  font-family: var(--m-mono); font-size: 10.5px; color: var(--m-muted);
+  border-bottom: 1px dotted var(--m-line); cursor: help;
+}
+
+/* ── A fold inside a section ───────────────────────────────────────────── */
+.fv-fold { margin-top: 10px; border-top: 1px solid var(--m-line); }
+.fv-fold > summary {
+  list-style: none; cursor: pointer; padding: 9px 2px;
+  font-family: var(--m-mono); font-size: 10.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--m-muted);
+  display: flex; align-items: center; gap: 7px;
+}
+.fv-fold > summary::-webkit-details-marker { display: none; }
+.fv-fold > summary:hover { color: var(--m-ink); }
+.fv-chev { display: inline-block; transition: transform .14s; }
+.fv-fold[open] > summary .fv-chev { transform: rotate(90deg); }
+.fv-fold-body { padding: 4px 0 12px; }
+
+/* ── The taste table ───────────────────────────────────────────────────── */
+.fv-taste { display: flex; flex-wrap: wrap; gap: 5px; }
+.fv-term {
+  font-family: var(--m-mono); font-size: 11px; padding: 2px 8px;
+  border-radius: var(--m-radius-pill, 999px); border: 1px solid var(--m-line);
+  color: var(--m-muted);
+}
+.fv-term b { font-variant-numeric: tabular-nums; }
+.fv-term--up { color: var(--m-accent); border-color: var(--m-accent); }
+.fv-term--down { opacity: .75; }
+
+/* ── Thinking: three forms, one row each ───────────────────────────────── */
+.ft-forms { display: grid; gap: 8px; margin-bottom: 12px; }
+.ft-forms form { display: flex; gap: 8px; }
+.ft-forms input {
+  flex: 1; font-size: 13px; padding: 8px 10px;
+  border: 1px solid var(--m-line); border-radius: 4px;
+  background: transparent; color: var(--m-fg);
+}
+.ft-forms input:focus { outline: none; border-color: var(--m-accent); }
+.ft-btn {
+  font-family: var(--m-mono); font-size: 10.5px; padding: 6px 12px;
+  border: 1px solid var(--m-line); border-radius: 4px;
+  background: transparent; color: var(--m-fg); cursor: pointer;
+  white-space: nowrap;
+}
+.ft-btn:hover { border-color: var(--m-accent); color: var(--m-accent); }
+.ft-btn--q { border-color: var(--m-accent); color: var(--m-accent); }
+
+.ft-entry { padding: 9px 0; border-top: 1px solid var(--m-line); }
+.ft-entry--q { border-left: 2px solid var(--m-accent); padding-left: 10px; }
+.ft-kind { font-family: var(--m-mono); font-size: 10px; color: var(--m-muted);
+           letter-spacing: .08em; }
+.ft-text { font-size: 13px; line-height: 1.55; margin-top: 2px; }
+.ft-explore {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 7px;
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; padding: 4px 11px;
+  border: 1px solid var(--m-accent); border-radius: var(--m-radius-pill, 999px);
+  background: transparent; color: var(--m-accent); cursor: pointer;
+}
+.ft-explore:hover { background: var(--m-accent-wash); }
+.ft-ask {
+  display: inline-block; margin-top: 12px;
+  font-family: var(--m-mono); font-size: 10.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--m-accent); text-decoration: none;
+}
+.ft-ask:hover { text-decoration: underline; }
+
+/* ── Explore results ───────────────────────────────────────────────────── */
+.fx-head { display: flex; justify-content: space-between; align-items: baseline;
+           gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+           padding-bottom: 8px; border-bottom: 1px solid var(--m-line); }
+.fx-q { font-family: var(--m-display); font-size: 14.5px; color: var(--m-ink); }
+.fx-n { font-family: var(--m-mono); font-size: 10.5px; color: var(--m-muted);
+        letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.fx-group + .fx-group { margin-top: 14px; }
+.fx-h { font-family: var(--m-mono); font-size: 10.5px; letter-spacing: .1em;
+        text-transform: uppercase; color: var(--m-muted); margin: 0 0 7px; }
+.fx-item + .fx-item { margin-top: 8px; }
+.fx-src { font-family: var(--m-mono); font-size: 10.5px; color: var(--m-muted); }
+.fx-quote {
+  margin: 4px 0 0; padding: 6px 0 6px 12px;
+  border-left: 2px solid var(--m-line);
+  font-size: 12.5px; line-height: 1.6; color: var(--m-ink);
+}
+.fx-line { font-size: 13px; line-height: 1.5; display: flex; gap: 9px;
+           align-items: baseline; }
+.fx-line a { color: inherit; text-decoration: none;
+             border-bottom: 1px solid var(--m-line); }
+
+/* ── Brief ─────────────────────────────────────────────────────────────── */
+.fb-head { display: flex; justify-content: space-between; align-items: center;
+           gap: 12px; flex-wrap: wrap; }
+.fb-when { font-family: var(--m-mono); font-size: 10.5px; letter-spacing: .08em;
+           text-transform: uppercase; color: var(--m-muted); }
+.fb-acts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fb-spin { font-family: var(--m-mono); font-size: 10.5px; color: var(--m-muted); }
+.fb-body { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--m-line); }
+
+/* Wide content must scroll inside its own box, never the page. */
+.focus-prose pre, .focus-prose table { overflow-x: auto; max-width: 100%; }
+
+.fs-suggest{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;padding:10px 14px;border:1px dashed var(--m-line);border-radius:var(--m-radius,6px);font-size:12.5px;color:var(--m-muted);}
+.fs-hint{flex:1 1 100%;font-size:11.5px;color:var(--m-muted);opacity:.85;line-height:1.5;}
+
+/* Delete control on a thinking entry. Positioned in the flow rather than
+   floated, so it cannot land on top of a long question on a narrow window. */
+.ft-entry { position: relative; }
+.ft-forget {
+  position: absolute; top: 6px; right: 0;
+  border: 0; background: transparent; cursor: pointer;
+  font-size: 14px; line-height: 1; padding: 2px 5px;
+  color: var(--m-muted); opacity: .45;
+}
+.ft-forget:hover { opacity: 1; color: var(--m-alert); }
+.ft-entry .ft-text { padding-right: 22px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NEWS ITEMS · TRIAGE · THE READING STACK              added 2026-08-26
+
+   One item component, three densities. `list` / `detailed` / `cards` change
+   what is SHOWN, never how anything behaves — the markup and the controls are
+   identical, so nothing can drift between views.
+
+   Every colour is an existing token. The design audit's conclusion was that the
+   visual system is not the problem; a new surface inventing its own palette
+   would contradict the finding it was built after.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── the controls row above the list ─────────────────────────────────────── */
+.news-controls {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px 20px; flex-wrap: wrap; margin-bottom: 18px;
+}
+.news-blurb {
+  font-family: var(--m-display); font-style: italic; font-size: 14px;
+  color: var(--m-muted); max-width: 52ch; flex: 1 1 22ch;
+}
+.news-ctl-group { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+.news-view { display: inline-flex; border: 1px solid var(--m-line);
+             border-radius: var(--m-radius, 6px); overflow: hidden; }
+.news-view-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border: 0; background: transparent; cursor: pointer;
+  font-family: var(--m-mono); font-size: 10.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--m-muted);
+  border-left: 1px solid var(--m-line);
+}
+.news-view-btn:first-child { border-left: 0; }
+.news-view-btn:hover { color: var(--m-ink); }
+.news-view-btn[aria-pressed="true"] {
+  color: var(--m-accent); background: var(--m-accent-wash, transparent);
+}
+/* On a narrow window the icon carries it — three labels wrap the strip. */
+@media (max-width: 900px) { .news-view-lbl { display: none; } }
+
+/* ── what you filed, always in reach ─────────────────────────────────────── */
+.stk-counts {
+  display: inline-flex; align-items: baseline; gap: 7px;
+  font-family: var(--m-mono); font-size: 11px; color: var(--m-muted);
+}
+.stk-link { color: var(--m-muted); text-decoration: none; white-space: nowrap; }
+.stk-link b { color: var(--m-accent); font-size: 13px;
+              font-variant-numeric: tabular-nums; }
+.stk-link:hover { color: var(--m-ink); }
+.stk-sep { opacity: .5; }
+
+/* ── the item, in three densities ────────────────────────────────────────── */
+.ni-wrap--list, .ni-wrap--detailed { display: block; }
+.ni-wrap--list .ni + .ni,
+.ni-wrap--detailed .ni + .ni { border-top: 1px solid var(--m-line); }
+.ni-wrap--cards {
+  display: grid; gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+.ni { display: flex; gap: 14px; }
+.ni--list     { padding: 7px 0; align-items: baseline; }
+.ni--detailed { padding: 14px 0; }
+.ni--cards {
+  flex-direction: column; gap: 0;
+  border: 1px solid var(--m-line); border-radius: var(--m-radius, 6px);
+  overflow: hidden; background: var(--m-panel, transparent);
+}
+.ni-body { min-width: 0; flex: 1; }
+.ni--cards .ni-body { padding: 12px 14px 10px; }
+
+/* A judged item recedes but never disappears — same rule as the focus safe. */
+.ni--declined { opacity: .45; }
+.ni--read     { opacity: .62; }
+
+.ni-head {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  font-family: var(--m-mono); font-size: 10.5px; color: var(--m-muted);
+  margin-bottom: 4px;
+}
+.ni--list .ni-head { margin-bottom: 0; order: 2; margin-left: auto;
+                     flex: 0 0 auto; }
+.ni-src { letter-spacing: .06em; text-transform: uppercase; }
+.ni-when { color: var(--m-muted-soft, var(--m-muted)); white-space: nowrap; }
+.ni-close {
+  padding: 1px 7px; border-radius: var(--m-radius-pill, 999px);
+  background: var(--m-accent-wash); color: var(--m-accent);
+  letter-spacing: .06em; text-transform: uppercase;
+}
+
+.ni-title { margin: 0; font-size: 14px; font-weight: 500; line-height: 1.4; }
+.ni--list .ni-title { font-size: 13.5px; order: 1; flex: 1; }
+.ni--cards .ni-title { font-size: 13.5px; }
+.ni-title a { color: var(--m-ink); text-decoration: none;
+              border-bottom: 1px solid transparent; }
+.ni-title a:hover { border-bottom-color: var(--m-accent); color: var(--m-accent); }
+
+.ni-sum {
+  margin: 5px 0 0; font-size: 12.5px; line-height: 1.55; color: var(--m-text);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ni--cards .ni-sum { -webkit-line-clamp: 2; }
+
+.ni-thumb {
+  display: block; aspect-ratio: 16 / 9; background-size: cover;
+  background-position: center; background-color: var(--m-line);
+}
+.ni-typecard {
+  display: flex; flex-direction: column; gap: 8px; justify-content: flex-end;
+  aspect-ratio: 16 / 9; padding: 14px; text-decoration: none;
+  background: var(--m-surface-2, rgba(127,127,127,.06));
+  border-bottom: 1px solid var(--m-line);
+}
+.ni-wordmark {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--m-muted);
+}
+.ni-typecard-hd {
+  font-family: var(--m-display); font-size: 15px; line-height: 1.3;
+  color: var(--m-ink);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── triage row ──────────────────────────────────────────────────────────── */
+.tri { display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+       margin-top: 8px; }
+.ni--list .tri { margin-top: 0; order: 3; flex: 0 0 auto; }
+/* In the compact view the buttons appear on hover or focus, so a list of sixty
+   is a list of headlines rather than a list of toolbars. Focus-within keeps it
+   reachable by keyboard, where hover does not exist. */
+.ni--list .tri > .tri-btn,
+.ni--list .tri > .tri-tags { opacity: 0; transition: opacity .12s; }
+.ni--list:hover .tri > .tri-btn,
+.ni--list:focus-within .tri > .tri-btn,
+.ni--list:hover .tri > .tri-tags,
+.ni--list:focus-within .tri > .tri-tags { opacity: 1; }
+.ni--list .tri .tri-state { opacity: 1; }
+@media (hover: none) {
+  .ni--list .tri > .tri-btn, .ni--list .tri > .tri-tags { opacity: 1; }
+}
+
+.tri-btn {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: .07em;
+  text-transform: uppercase; padding: 3px 9px;
+  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill, 999px);
+  background: transparent; color: var(--m-muted); cursor: pointer;
+  white-space: nowrap; transition: color .12s, border-color .12s, background .12s;
+}
+.tri-btn:hover { color: var(--m-ink); border-color: var(--m-ink); }
+.tri-later:hover  { color: var(--m-accent); border-color: var(--m-accent);
+                    background: var(--m-accent-wash, transparent); }
+.tri-saved:hover  { color: var(--m-ok, var(--m-accent));
+                    border-color: var(--m-ok, var(--m-accent)); }
+.tri-declined:hover { color: var(--m-ochre); border-color: var(--m-ochre); }
+.tri-tag { font-size: 12px; padding: 2px 8px; line-height: 1.1; }
+
+.tri-state {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: .09em;
+  text-transform: uppercase; padding: 3px 9px;
+  border-radius: var(--m-radius-pill, 999px);
+}
+.tri-state--saved    { background: var(--m-accent-wash); color: var(--m-accent); }
+.tri-state--later    { background: var(--m-accent-wash); color: var(--m-accent); }
+.tri-state--read     { border: 1px solid var(--m-line); color: var(--m-muted); }
+.tri-state--declined { border: 1px solid var(--m-line); color: var(--m-muted); }
+
+.tri-tags { display: flex; gap: 5px; align-items: center; }
+.tri-tags.is-hidden { display: none; }
+.tri-tags input {
+  font-family: var(--m-mono); font-size: 11px; padding: 3px 8px; width: 20ch;
+  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill, 999px);
+  background: transparent; color: var(--m-fg);
+}
+.tri-tags input:focus { outline: none; border-color: var(--m-accent); }
+
+.tri-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.tri-chip {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: .05em;
+  padding: 2px 7px; border-radius: var(--m-radius-pill, 999px);
+  background: var(--m-surface-2, rgba(127,127,127,.09)); color: var(--m-muted);
+}
+
+/* ── the stack surface ───────────────────────────────────────────────────── */
+.stk-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+               margin-bottom: 18px; }
+.stk-filter {
+  font-family: var(--m-mono); font-size: 10.5px; letter-spacing: .08em;
+  text-transform: uppercase; padding: 5px 12px; text-decoration: none;
+  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill, 999px);
+  color: var(--m-muted);
+}
+.stk-filter[aria-current="true"] {
+  border-color: var(--m-accent); color: var(--m-accent);
+  background: var(--m-accent-wash, transparent);
+}
+.stk-filter b { font-variant-numeric: tabular-nums; }
+.stk-tagbar { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 18px; }
+
+/* ── Foldable section headings ───────────────────────────────────────────────
+   The heading IS the control. Only the affordances live here; the behaviour is
+   in app.js, and the rule is that a section added tomorrow gets both for free
+   because it will use `.sec-label` like every other section already does. */
+.sec-label.is-foldable { cursor: pointer; user-select: none; }
+.sec-label.is-foldable:hover { color: var(--m-ink); }
+.sec-label.is-foldable:focus-visible {
+  outline: 2px solid var(--m-accent); outline-offset: 3px; border-radius: 3px;
+}
+.sec-chev {
+  display: inline-block; margin-right: 6px; font-size: 9px; line-height: 1;
+  color: var(--m-muted); transition: transform .14s;
+}
+.sec-label.is-folded .sec-chev { transform: rotate(-90deg); }
+/* A folded heading keeps its tail — what folds is the detail, never the fact. */
+.sec-label.is-folded { opacity: .82; }
+
+/* An item inside an overview thread — same triage affordances as a card. */
+.ov-item + .ov-item { margin-top: 8px; }
+.ov-item--declined { opacity: .45; }
+.ov-item--read { opacity: .62; }
+.ov-item .tri { margin-top: 5px; }
+.ov-item .tri > .tri-btn, .ov-item .tri > .tri-tags { opacity: 0; transition: opacity .12s; }
+.ov-item:hover .tri > .tri-btn, .ov-item:focus-within .tri > .tri-btn,
+.ov-item:hover .tri > .tri-tags, .ov-item:focus-within .tri > .tri-tags { opacity: 1; }
+.ov-item .tri .tri-state { opacity: 1; }
+@media (hover: none) { .ov-item .tri > .tri-btn, .ov-item .tri > .tri-tags { opacity: 1; } }

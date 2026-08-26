@@ -13,7 +13,11 @@
    which is useless as an overview row.
    ══════════════════════════════════════════════════════════════════════════════ #}
 
+{% from "partials/_triage.html" import triage, tag_datalist, tag_chips %}
+{% set T = "#news-tab-body" %}
+{% set BACK = "news:" ~ active ~ ":" ~ period ~ ":" ~ (view | default("detailed")) %}
 {% include "partials/_news_tabstrip.html" %}
+{{ tag_datalist(all_tags or []) }}
 
 {% if not threads %}
   <div class="panel" style="padding:22px;">
@@ -40,15 +44,38 @@
             {% if t.material %}<span class="ov-pill ov-pill--esc">&#9650; changed</span>{% endif %}
             {% if t.routine %}<span class="ov-pill ov-pill--seen">routine</span>{% endif %}
           </div>
+          {#- The three headlines under a thread are now triageable like every
+              other item on the surface. They were plain text and a link, which
+              made the overview the one tab where you could read but not act —
+              and it is the tab you land on. -#}
           <div class="ov-thread-items">
             {% for it in t['items'][:3] %}
-              {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener"
-                  style="color:var(--m-text);text-decoration:none;border-bottom:1px solid var(--m-rule);">{{ it.title[:130] }}</a>{% else %}{{ it.title[:130] }}{% endif %}{% if not loop.last %}<br>{% endif %}
+              {% set st = (states or {}).get(it.id) %}
+              <div class="ov-item{% if st and st.state %} ov-item--{{ st.state }}{% endif %}">
+                {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener"
+                    style="color:var(--m-text);text-decoration:none;border-bottom:1px solid var(--m-rule);">{{ it.title[:130] }}</a>{% else %}{{ it.title[:130] }}{% endif %}
+                {{ tag_chips(st) }}
+                {% if it.id %}{{ triage('news', it.id, it.title, it.url, it.domain, st, T, BACK) }}{% endif %}
+              </div>
             {% endfor %}
             {% if t['items']|length > 3 %}
-              <div style="color:var(--m-muted);font-size:12px;margin-top:4px;">
-                + {{ t['items']|length - 3 }} more in this story
-              </div>
+              {#- Fetched only if opened. Rendering the rest inline meant 233
+                  items on this tab where 72 are visible, and the triage row on
+                  each — the tab weighed 669 KB for content nobody had asked to
+                  see. `toggle once` is the whole fix: HTMX fires on the
+                  <details> element's own toggle event, so the cost is paid by
+                  the reader who opens the story, not by everyone who loads the
+                  page. -#}
+              <details class="fv-fold" style="margin-top:2px;">
+                <summary><span class="fv-chev">▸</span>
+                  + {{ t['items']|length - 3 }} more in this story</summary>
+                <div class="fv-fold-body"
+                     hx-get="/api/partial/news/thread-items?thread={{ t.thread_id | urlencode }}&period={{ period }}&skip=3"
+                     hx-trigger="toggle once from:closest details"
+                     hx-swap="innerHTML">
+                  <span class="fb-spin">loading…</span>
+                </div>
+              </details>
             {% endif %}
           </div>
         </div>

@@ -836,7 +836,10 @@ def thread_window(conn: sqlite3.Connection, since_iso: str,
 
     try:
         rows = conn.execute(
-            "SELECT i.thread_id, b.title, b.summary, b.domain, "
+            # `brief_id` is carried so the overview can offer triage on a
+            # thread's items. rowid is the JOIN key here and stays that way, but
+            # a verdict OUTLIVES the request and rowid is reassigned by VACUUM.
+            "SELECT i.thread_id, b.brief_id, b.title, b.summary, b.domain, "
             "       COALESCE(b.signal_strength,'low') AS signal_strength, b.created_at, "
             "       b.source_url, t.label, t.first_seen, t.item_count, t.max_number "
             "FROM news_thread_items i "
@@ -864,6 +867,7 @@ def thread_window(conn: sqlite3.Connection, since_iso: str,
             "newest": "",
         })
         g["items"].append({
+            "id": r["brief_id"] or "",
             "title": r["title"] or "",
             "summary": (r["summary"] or "")[:220],
             "domain": r["domain"] or "",

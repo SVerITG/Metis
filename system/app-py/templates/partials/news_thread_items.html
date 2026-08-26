@@ -1,0 +1,16 @@
+{#- The rest of a story thread, fetched when the fold is opened. Same item
+    markup as the three shown inline — one macro would be better still, but the
+    inline three live inside a loop over threads and this renders one thread, so
+    they share the CSS class and the triage row instead. -#}
+{% from "partials/_triage.html" import triage, tag_chips %}
+{% for it in items %}
+{% set st = (states or {}).get(it.id) %}
+<div class="ov-item{% if st and st.state %} ov-item--{{ st.state }}{% endif %}">
+  {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener"
+      style="color:var(--m-text);text-decoration:none;border-bottom:1px solid var(--m-rule);">{{ it.title[:130] }}</a>{% else %}{{ it.title[:130] }}{% endif %}
+  {{ tag_chips(st) }}
+  {% if it.id %}{{ triage('news', it.id, it.title, it.url, it.domain, st, T, BACK) }}{% endif %}
+</div>
+{% else %}
+<span class="fv-note">Nothing more in this story.</span>
+{% endfor %}

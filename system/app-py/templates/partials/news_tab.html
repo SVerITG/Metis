@@ -1,16 +1,32 @@
 {# ══════════════════════════════════════════════════════════════════════════════
-   news_tab.html — one category tab: a card grid for a single topic and period.
+   news_tab.html — one category tab, in one of three densities.
 
-   Photo and typographic cards are equal citizens (see the .nf-* block in
-   styles.css). Measured coverage: policy/world-news 100% have thumbnails,
-   epidemiology 0% — so treating an image-less card as degraded would mean the researcher's
-   own field loses to BBC headlines on every screen.
+   REBUILT 2026-08-26. Two things were wrong, and the first caused the second.
 
-   The grid is intrinsic (auto-fill minmax), so a wide monitor gets MORE cards
-   rather than wider ones.
+   1. THE WHOLE CARD WAS AN <a href>. That is why this surface had ZERO actions
+      across seven tabs and 337 links: you cannot nest a button inside an anchor
+      and have it work, because every click navigates away. The card is now a
+      <div>, the TITLE is the link, and the triage buttons sit beside it. This is
+      also the accessible shape — a card-wide anchor swallowing controls hands a
+      screen reader one enormous link and no way to reach them.
+
+   2. THERE WAS ONE DENSITY. Sixty thumbnails is a beautiful wall and a poor way
+      to skim. List / Detailed / Thumbnails now share one item macro and differ
+      only in what they show, so nothing can drift between them.
+
+   Photo and typographic cards remain equal citizens. Measured coverage:
+   policy/world-news 100% have thumbnails, epidemiology 0% — so treating an
+   image-less card as degraded would mean the researcher's own field loses to
+   BBC headlines on every screen.
    ══════════════════════════════════════════════════════════════════════════════ #}
+{% from "partials/_triage.html" import triage, tag_datalist, tag_chips %}
 
 {% include "partials/_news_tabstrip.html" %}
+{{ tag_datalist(all_tags or []) }}
+
+{% set T = "#news-tab-body" %}
+{#- Where to send the re-render back to: the exact list this click came from. -#}
+{% set BACK = "news:" ~ active ~ ":" ~ period ~ ":" ~ view %}
 
 {% if subfilters %}
   {# Sub-filters inside "Related to my work" — client-side, because the set is
@@ -51,7 +67,7 @@
       {% if period != 'month' %}
         Try a longer period —
         <button type="button" class="btn btn--ghost btn--caps"
-                hx-get="/api/partial/news/tab?tab={{ active }}&period=month"
+                hx-get="/api/partial/news/tab?tab={{ active }}&period=month&view={{ view }}"
                 hx-target="#news-tab-body" hx-swap="innerHTML"
                 style="padding:2px 9px;font-size:11px;">this month</button>
       {% else %}
@@ -78,33 +94,50 @@
     </div>
   {% endif %}
 
-  <div class="nf-grid nf-grid-3" id="news-cards" style="margin-bottom:30px;">
-    {% for c in cards %}
-      <a class="nf-card" href="{{ c.url or '#' }}" {% if c.url %}target="_blank" rel="noopener"{% endif %}
-         data-subj="{{ c.subject or '' }}">
-        {% if c.has_image %}
-          <div class="nf-thumb" style="background-image:url('{{ c.image }}');"></div>
-        {% else %}
-          <div class="nf-typecard">
-            <div class="nf-wordmark">{{ c.source or c.domain }}</div>
-            <div class="nf-typecard-hd">{{ c.title }}</div>
-          </div>
-        {% endif %}
-        <div class="nf-card-body">
-          {% if c.has_image %}<div class="nf-card-title">{{ c.title }}</div>{% endif %}
-          {% if c.summary %}
-            <div style="font-size:12.5px;color:var(--m-text);line-height:1.5;
-                        display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">
-              {{ c.summary[:190] }}
-            </div>
-          {% endif %}
-          <div class="nf-meta">
-            {% if c.close %}<span class="nf-close">your work</span>{% endif %}
-            <span class="src">{{ c.source }}</span>
-            <span class="ago" style="margin-left:auto;">{{ c.when }}</span>
-          </div>
-        </div>
+  {#- ── ONE item macro, three densities ───────────────────────────────────
+      `view` decides what is shown, never how it behaves. Keeping the actions
+      and the link in one place is what stops "save" meaning something subtly
+      different in the compact view six months from now. -#}
+  {% macro news_item(c, view, st) %}
+  <article class="ni ni--{{ view }}{% if st and st.state %} ni--{{ st.state }}{% endif %}"
+           data-subj="{{ c.subject or '' }}">
+    {% if view == 'cards' and c.has_image %}
+      <a class="ni-thumb" href="{{ c.url }}" target="_blank" rel="noopener"
+         style="background-image:url('{{ c.image }}');" aria-label="{{ c.title }}"></a>
+    {% elif view == 'cards' %}
+      <a class="ni-typecard" href="{{ c.url }}" target="_blank" rel="noopener">
+        <span class="ni-wordmark">{{ c.source or c.domain }}</span>
+        <span class="ni-typecard-hd">{{ c.title }}</span>
       </a>
+    {% endif %}
+
+    <div class="ni-body">
+      <div class="ni-head">
+        {% if c.close %}<span class="ni-close" title="Close to your library">your work</span>{% endif %}
+        <span class="ni-src">{{ c.source or c.domain }}</span>
+        <span class="ni-when">{{ c.when }}</span>
+      </div>
+
+      {% if not (view == 'cards' and not c.has_image) %}
+      <h3 class="ni-title">
+        {% if c.url %}<a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.title }}</a>
+        {% else %}{{ c.title }}{% endif %}
+      </h3>
+      {% endif %}
+
+      {% if view != 'list' and c.summary %}
+      <p class="ni-sum">{{ c.summary[:230] }}{% if c.summary|length > 230 %}…{% endif %}</p>
+      {% endif %}
+
+      {{ tag_chips(st) }}
+      {{ triage('news', c.id, c.title, c.url, c.source, st, T, BACK) }}
+    </div>
+  </article>
+  {% endmacro %}
+
+  <div class="ni-wrap ni-wrap--{{ view }}" id="news-cards">
+    {% for c in cards %}
+      {{ news_item(c, view, (states or {}).get(c.id)) }}
     {% endfor %}
   </div>
 {% endif %}

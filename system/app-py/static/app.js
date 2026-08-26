@@ -2424,3 +2424,218 @@ document.addEventListener('keydown', function (e) {
 });
 window.addEventListener('scroll', _closeAllUpdateMenus, true);
 window.addEventListener('resize', _closeAllUpdateMenus);
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Progressive disclosure — peek/expand and zones.   (audit 2026-08-25)
+
+   Delegated from document, so it works on HTMX-swapped content without
+   rebinding. State is remembered per key in localStorage: a panel that
+   re-expands on every visit is not collapsed, it is annoying.
+
+   localStorage can throw outright in a private window or with site data
+   blocked, so every read and write is guarded and the page works with none.
+   ══════════════════════════════════════════════════════════════════════════ */
+(function () {
+  var NS = 'metis.disclosure.';
+
+  function remembered(key) {
+    try { return localStorage.getItem(NS + key); } catch (e) { return null; }
+  }
+  function remember(key, val) {
+    try { localStorage.setItem(NS + key, val); } catch (e) { /* fine */ }
+  }
+
+  function setOpen(btn, body, open) {
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) { body.removeAttribute('hidden'); } else { body.setAttribute('hidden', ''); }
+    var chev = btn.querySelector('.ui-chev');
+    if (chev) { chev.textContent = open ? '▾' : '▸'; }
+    var label = btn.querySelector('.ui-peek-text');
+    if (label) {
+      label.textContent = open ? 'show fewer' : (btn.getAttribute('data-peek-more') || 'more');
+    }
+  }
+
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('.ui-peek-toggle, .ui-zone-head');
+    if (!btn) return;
+    var body = document.getElementById(btn.getAttribute('aria-controls'));
+    if (!body) return;
+    var open = btn.getAttribute('aria-expanded') !== 'true';
+    setOpen(btn, body, open);
+    var host = btn.closest('[data-peek-key], [data-zone-key]');
+    if (host) {
+      remember(host.getAttribute('data-peek-key') || host.getAttribute('data-zone-key'),
+               open ? '1' : '0');
+    }
+  });
+
+  /* Re-apply remembered state after any HTMX swap, and once at load. */
+  function restore(root) {
+    (root || document).querySelectorAll('[data-peek-key], [data-zone-key]').forEach(function (host) {
+      var key = host.getAttribute('data-peek-key') || host.getAttribute('data-zone-key');
+      var want = remembered(key);
+      if (want === null) return;
+      var btn = host.querySelector('.ui-peek-toggle, .ui-zone-head');
+      if (!btn) return;
+      var body = document.getElementById(btn.getAttribute('aria-controls'));
+      if (body) setOpen(btn, body, want === '1');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', function () { restore(document); });
+  document.body && document.body.addEventListener('htmx:afterSwap', function (e) {
+    restore(e.target);
+  });
+})();
+
+/* ── Triage: the tag field toggle ────────────────────────────────────────────
+   The only JS the reading stack needs. Everything else is HTMX, deliberately:
+   a triage button posts and swaps back the list it came from, so there is no
+   client state to keep in step with the server. */
+window.metis = window.metis || {};
+metis.triage = {
+  toggleTags: function (btn) {
+    var row = btn.closest('.tri');
+    if (!row) return;
+    var box = row.querySelector('.tri-tags');
+    if (!box) return;
+    var hidden = box.classList.toggle('is-hidden');
+    if (!hidden) { var i = box.querySelector('input[name="tags"]'); if (i) i.focus(); }
+  }
+};
+
+/* Remember the chosen news density. The server owns which view RENDERS (the
+   markup genuinely differs), so this only restores the preference on arrival —
+   it never re-renders on its own, or every visit would cost an extra request. */
+(function () {
+  function restore() {
+    var strip = document.querySelector('.news-view');
+    if (!strip || strip.dataset.restored) return;
+    strip.dataset.restored = '1';
+    var want;
+    try { want = localStorage.getItem('metis.news.view'); } catch (e) { return; }
+    if (!want) return;
+    var btn = strip.querySelector('[aria-pressed="true"]');
+    if (btn && btn.getAttribute('onclick') &&
+        btn.getAttribute('onclick').indexOf("'" + want + "'") > -1) return;
+    var target = Array.prototype.find.call(
+      strip.querySelectorAll('.news-view-btn'),
+      function (b) { var o = b.getAttribute('onclick') || '';
+                     return o.indexOf("'" + want + "'") > -1; });
+    if (target) target.click();
+  }
+  document.addEventListener('DOMContentLoaded', restore);
+  document.body && document.body.addEventListener('htmx:afterSwap', restore);
+})();
+
+
+/* ── Every section folds, on every surface ───────────────────────────────────
+   the researcher, 2026-08-26: "I also thought we were working on artefacts for every
+   surface, so every section is collapsible?"
+
+   ONE MECHANISM, NOT EIGHT TEMPLATES. Every section heading in this application
+   is already `.sec-label` — about a hundred of them across Today, Library, Work,
+   Meetings, Learning, Reflection, News and Teach. Hand-wrapping each one in a
+   `zone()` would be a week of edits, would miss the ones added next month, and
+   would give eight surfaces eight slightly different folds.
+
+   So the heading itself becomes the control: click it, and everything between it
+   and the next heading of the same rank folds away. A section added tomorrow
+   gets the behaviour for free, because it will use `.sec-label` like the rest.
+
+   THE RULES THAT MATTER
+     · Open by default. A surface that greets you closed is a surface you have to
+       excavate. Folding is the reader's choice, and it is remembered.
+     · The heading keeps its tail. What is folded is the DETAIL, never the fact —
+       the same rule the Today audit landed on, so a collapsed section still tells
+       you how many of something there are.
+     · Headings already inside a `.ui-zone` are skipped: they have a fold already,
+       and nesting one inside another gives two chevrons that disagree.
+     · Real keyboard semantics — role, tabindex, aria-expanded, Enter and Space.
+       A div you can only click is not a control.
+     · State is keyed on surface + heading text, and every read and write is
+       wrapped: localStorage throws outright in a private window. */
+(function () {
+  var KEY = 'metis.fold.v1';
+
+  function load() {
+    try { return JSON.parse(localStorage.getItem(KEY) || '{}'); }
+    catch (e) { return {}; }
+  }
+  function save(state) {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* fine */ }
+  }
+  function idOf(h) {
+    var page = (location.pathname || '/').replace(/\/+$/, '') || '/';
+    var label = (h.querySelector('span') ? h.querySelector('span').textContent : h.textContent);
+    return page + '::' + (label || '').trim().slice(0, 60);
+  }
+
+  /* Everything up to the next heading of the same rank or higher. Stopping at
+     "same or higher" is what lets an h3 subsection fold inside an open h2
+     without swallowing the h2's siblings. */
+  function bodyOf(h) {
+    var rank = parseInt(h.tagName.slice(1), 10) || 2;
+    var out = [], n = h.nextElementSibling;
+    while (n) {
+      var m = /^H([1-6])$/.exec(n.tagName);
+      if (m && parseInt(m[1], 10) <= rank && n.classList.contains('sec-label')) break;
+      out.push(n);
+      n = n.nextElementSibling;
+    }
+    return out;
+  }
+
+  function apply(h, open) {
+    bodyOf(h).forEach(function (el) { el.hidden = !open; });
+    h.setAttribute('aria-expanded', open ? 'true' : 'false');
+    h.classList.toggle('is-folded', !open);
+  }
+
+  function wire(h) {
+    if (h.dataset.foldable) return;
+    if (h.closest('.ui-zone-body')) return;      // already inside a fold
+    var body = bodyOf(h);
+    if (!body.length) return;                    // a heading over nothing
+    h.dataset.foldable = '1';
+
+    var chev = document.createElement('span');
+    chev.className = 'sec-chev';
+    chev.setAttribute('aria-hidden', 'true');
+    chev.textContent = '▾';
+    h.insertBefore(chev, h.firstChild);
+
+    h.setAttribute('role', 'button');
+    h.setAttribute('tabindex', '0');
+    h.classList.add('is-foldable');
+
+    var state = load();
+    apply(h, state[idOf(h)] !== false);
+
+    function toggle() {
+      var open = h.getAttribute('aria-expanded') !== 'true';
+      apply(h, open);
+      var s = load();
+      if (open) { delete s[idOf(h)]; } else { s[idOf(h)] = false; }
+      save(s);
+    }
+    h.addEventListener('click', function (e) {
+      /* A heading often carries its own controls — a period switcher, an update
+         menu, a link. Clicking those must not fold the section under them. */
+      if (e.target.closest('a, button, input, select, .update-menu')) return;
+      toggle();
+    });
+    h.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+    });
+  }
+
+  function scan(root) {
+    (root || document).querySelectorAll('h2.sec-label, h3.sec-label').forEach(wire);
+  }
+
+  document.addEventListener('DOMContentLoaded', function () { scan(document); });
+  document.addEventListener('htmx:afterSwap', function (e) { scan(e.target || document); });
+  document.addEventListener('htmx:afterSettle', function (e) { scan(e.target || document); });
+})();

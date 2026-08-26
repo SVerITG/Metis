@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "partials/_section.html" import sec_label %}
+{% from "partials/_triage.html" import tag_datalist %}
+{% block title %}Stack{% endblock %}
+
+{#
+  ══════════════════════════════════════════════════════════════════════════════
+  THE READING STACK — where Today sends what you did not have time for.
+
+  the researcher, 2026-08-26: "The today page is really to see what is new, open them if I
+  want to see them straight away but often that they get categorized for future
+  reading so they become a stack of things to read connected to the News and
+  Library surfaces."
+
+  So Today answers "what is new", and this answers "what did I say I would come
+  back to". Keeping them apart is the point: a page that tries to be both is why
+  the news rail felt like a wall — every unread item competing for attention with
+  no way to defer one.
+  ══════════════════════════════════════════════════════════════════════════════
+#}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <div class="page-eyebrow">READING STACK</div>
+      <h1 class="page-title">Your stack</h1>
+      <div style="font-family:var(--m-display);font-style:italic;font-size:13.5px;
+                  color:var(--m-muted);margin-top:4px;">
+        What you filed from Today, News and the Library — read it when you have time
+      </div>
+    </div>
+    <div class="page-meta">
+      {{ counts.later }} TO READ · {{ counts.saved }} SAVED
+    </div>
+  </div>
+
+  {{ tag_datalist(tags) }}
+  <div id="stack-body">{% include "partials/stack_body.html" %}</div>
+
+</div>
+{% endblock %}
