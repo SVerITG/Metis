@@ -14,8 +14,8 @@
 
     <!-- Tabs: File upload vs Paste -->
     <div class="u-rule" style="display:flex;">
-      <button class="u-grow" id="meetily-tab-file" onclick="switchMeetilyTab('file')"
-              style="padding:var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;border:none;cursor:pointer;background:var(--m-surface-2);color:var(--m-ink);border-bottom:2px solid var(--m-accent);">
+      <button class="u-grow u-mono" id="meetily-tab-file" onclick="switchMeetilyTab('file')"
+              style="padding:var(--m-space-3);letter-spacing:0.12em;border:none;cursor:pointer;background:var(--m-surface-2);color:var(--m-ink);border-bottom:2px solid var(--m-accent);">
         UPLOAD .MD FILE
       </button>
       <button class="u-label u-grow" id="meetily-tab-paste" onclick="switchMeetilyTab('paste')"
@@ -60,9 +60,9 @@
 
       <div class="u-mb-3">
         <label class="u-label u-mb-1" style="display:block;">MEETILY MARKDOWN</label>
-        <textarea name="markdown" rows="12"
+        <textarea class="u-tile" name="markdown" rows="12"
                   placeholder="Paste the Meetily export here.&#10;&#10;Metis will parse:&#10;- YAML front matter (title, date, participants)&#10;- ## Summary sections&#10;- ## Action Items&#10;- ## Transcript with speaker labels&#10;&#10;Then run cross-pollination against your library."
-                  style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-meta);color:var(--m-ink);resize:vertical;line-height:1.6;outline:none;"></textarea>
+                  style="width:100%;box-sizing:border-box;padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-meta);color:var(--m-ink);resize:vertical;line-height:1.6;outline:none;"></textarea>
       </div>
 
       <div id="meetily-import-result-paste"></div>

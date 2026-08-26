@@ -11,27 +11,27 @@
           style="padding:var(--m-space-4) var(--m-space-5);display:flex;gap:var(--m-space-2);align-items:flex-end;flex-wrap:wrap;">
       <div class="u-grow" style="min-width:260px;">
         <div class="u-label u-label--wide u-mb-1">Search OpenAlex for</div>
-        <input name="query" type="text"
+        <input class="u-tile" name="query" type="text"
                value="{{ query or '' }}"
                placeholder="e.g. disease surveillance elimination"
-               style="width:100%;font-family:var(--m-ui);font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
+               style="width:100%;font-family:var(--m-ui);font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);outline:none;">
       </div>
       <div style="min-width:100px;">
         <div class="u-label u-label--wide u-mb-1">Max results</div>
-        <select name="max_results"
-                style="font-family:var(--m-mono);font-size:var(--t-micro);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;cursor:pointer;">
+        <select class="u-mono u-tile" name="max_results"
+                style="padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);outline:none;cursor:pointer;">
           <option value="20">20</option>
           <option value="50">50</option>
         </select>
       </div>
-      <button class="btn btn--primary" type="submit"
-              style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.14em;text-transform:uppercase;padding:var(--m-space-2) var(--m-space-4);border:none;white-space:nowrap;align-self:flex-end;">
+      <button class="btn btn--primary u-mono" type="submit"
+              style="letter-spacing:0.14em;text-transform:uppercase;padding:var(--m-space-2) var(--m-space-4);border:none;white-space:nowrap;align-self:flex-end;">
         CHECK GAPS
       </button>
     </form>
 
     {% if error %}
-    <div style="padding:var(--m-space-4) var(--m-space-5);font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-warn);">
+    <div class="u-mono" style="padding:var(--m-space-4) var(--m-space-5);color:var(--m-warn);">
       {{ error }}
     </div>
     {% endif %}
@@ -65,7 +65,7 @@
             onmouseout="this.style.background=''">
           <td class="u-label" style="padding:var(--m-space-3) var(--m-space-5);vertical-align:top;">{{ p.year or '—' }}</td>
           <td style="padding:var(--m-space-3) var(--m-space-3);vertical-align:top;">
-            <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;">
+            <div class="u-title u-title--sm" style="line-height:1.35;">
               {% if p.doi_url %}
               <a href="{{ p.doi_url }}" target="_blank" rel="noopener"
                  style="color:inherit;text-decoration:none;"

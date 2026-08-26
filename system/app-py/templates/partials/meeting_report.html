@@ -52,11 +52,11 @@
 
     <!-- Action items -->
     <div>
-      <div class="u-mb-3" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.16em;color:var(--m-ochre);">ACTION ITEMS ({{ extracted.actions|length }})</div>
+      <div class="u-mb-3 u-mono" style="letter-spacing:0.16em;color:var(--m-ochre);">ACTION ITEMS ({{ extracted.actions|length }})</div>
       {% if extracted.actions %}
         {% for a in extracted.actions %}
         <div class="u-rule" style="display:flex;gap:var(--m-space-3);padding:var(--m-space-2) 0;">
-          <span class="u-fixed" style="color:var(--m-ochre);font-family:var(--m-mono);font-size:var(--t-micro);margin-top:var(--m-space-1);">→</span>
+          <span class="u-fixed u-mono" style="color:var(--m-ochre);margin-top:var(--m-space-1);">→</span>
           <span style="font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);line-height:1.5;">{{ a }}</span>
         </div>
         {% endfor %}
@@ -86,7 +86,7 @@
       {% set src_colors = {'library': 'var(--m-accent)', 'meeting': 'var(--m-ochre)', 'news': 'var(--m-ok)', 'idea': 'var(--m-muted)'} %}
       <div style="display:flex;align-items:baseline;gap:10px;padding:9px 16px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
         <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:{{ src_colors.get(c.source, 'var(--m-muted)') }};flex-shrink:0;width:52px;">{{ c.source.upper() }}</span>
-        <span style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">{{ (c.title or '')[:80] }}</span>
+        <span class="u-title">{{ (c.title or '')[:80] }}</span>
       </div>
       {% endfor %}
     </div>

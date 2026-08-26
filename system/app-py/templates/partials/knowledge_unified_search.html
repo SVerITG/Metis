@@ -16,7 +16,7 @@
   </div>
   {% for p in papers %}
   <div class="u-rule" style="padding:var(--m-space-2) 0;">
-    <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.3;">
+    <div class="u-title" style="line-height:1.3;">
       {% if p.doi %}
       <a href="https://doi.org/{{ p.doi }}" target="_blank" rel="noopener"
          style="color:inherit;text-decoration:none;"
@@ -52,12 +52,12 @@
 <!-- ── Domain corpus ── -->
 {% if seeded %}
 <div class="u-mb-5">
-  <div class="u-mb-2 u-rule" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.18em;text-transform:uppercase;color:var(--m-ok);padding-bottom:4px;">
+  <div class="u-mb-2 u-rule u-mono" style="letter-spacing:0.18em;text-transform:uppercase;color:var(--m-ok);padding-bottom:4px;">
     DOMAIN CORPUS — {{ seeded | length }} PAPER{% if seeded | length != 1 %}S{% endif %}
   </div>
   {% for s in seeded %}
   <div class="u-rule" style="padding:var(--m-space-2) 0;">
-    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ s.title }}</div>
+    <div class="u-title u-title--sm">{{ s.title }}</div>
     <div class="u-label" style="margin-top:var(--m-space-1);display:flex;gap:var(--m-space-3);">
       {% if s.top_folder %}<span>{{ s.top_folder | upper }}</span>{% endif %}
       {% if s.method %}<span>{{ s.method | upper }}</span>{% endif %}
@@ -75,7 +75,7 @@
   </div>
   {% for c in cards %}
   <div class="u-rule" style="padding:var(--m-space-2) 0;">
-    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ c.title }}</div>
+    <div class="u-title u-title--sm">{{ c.title }}</div>
     {% if c.summary %}
     <div style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">
       {{ c.summary | truncate(120, True, '…') }}

@@ -14,7 +14,7 @@
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M8 1v6l4 2"/><circle cx="8" cy="8" r="7"/>
       </svg>
-      <span style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">Where we left off</span>
+      <span class="u-title">Where we left off</span>
       <span class="u-label" style="letter-spacing:0.08em;margin-left:4px;">{{ time_label }}</span>
       {% if total_sessions > 1 %}
       <button hx-get="/api/partial/today/all-sessions" hx-target="#resume-all-sessions-modal" hx-swap="innerHTML"

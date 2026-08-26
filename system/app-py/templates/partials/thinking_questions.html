@@ -13,7 +13,7 @@
   <div style="display:grid;grid-template-columns:24px 1fr;gap:12px;align-items:start;padding:14px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
     <span style="font-family:var(--m-display);font-style:italic;font-size:var(--t-h4);color:var(--m-alert);line-height:1;">?</span>
     <div>
-      <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.5;">{{ q.content }}</div>
+      <div class="u-title" style="line-height:1.5;">{{ q.content }}</div>
       <div class="u-label" style="margin-top:var(--m-space-1);">{{ (q.created_at or '')[:10] }}</div>
     </div>
   </div>

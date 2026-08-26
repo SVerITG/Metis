@@ -28,7 +28,7 @@
   <tbody>
     {% for r in rows %}
     <tr class="u-rule">
-      <td style="padding:var(--m-space-2) 0;font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ r.domain or '(unknown)' }}</td>
+      <td class="u-title u-title--sm" style="padding:var(--m-space-2) 0;">{{ r.domain or '(unknown)' }}</td>
       <td class="u-label" style="padding:var(--m-space-2) var(--m-space-3);text-align:right;">{{ r.docs }}</td>
       <td class="u-label" style="padding:var(--m-space-2) 0 var(--m-space-2) var(--m-space-3);text-align:right;">{{ "{:,}".format(r.chunks or 0) }}</td>
     </tr>
@@ -41,4 +41,4 @@
 </div>
 {% endif %}
 
-<div id="pdf-index-status" style="margin-top:var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);"></div>
+<div class="u-mono" id="pdf-index-status" style="margin-top:var(--m-space-3);"></div>

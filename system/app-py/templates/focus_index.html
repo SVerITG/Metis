@@ -51,7 +51,7 @@
       <div style="padding:12px 18px;display:flex;gap:14px;align-items:baseline;
                   {% if not loop.last %}border-bottom:1px solid var(--m-line);{% endif %}
                   {% if a.state == 'archived' %}opacity:.6;{% endif %}">
-        <span class="u-fixed" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);width:74px;">
+        <span class="u-fixed u-mono" style="letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);width:74px;">
           {% if a.shelf_slot %}SLOT {{ a.shelf_slot }}{% else %}{{ a.state }}{% endif %}
         </span>
         <div class="u-grow">
@@ -61,16 +61,16 @@
           <div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">{{ a.subtitle }}</div>
           {% endif %}
         </div>
-        <span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);white-space:nowrap;font-variant-numeric:tabular-nums;">
+        <span class="u-mono" style="color:var(--m-muted);white-space:nowrap;font-variant-numeric:tabular-nums;">
           {{ a.n_news }} news · {{ a.n_reading }} papers · {{ a.n_thinking }} notes
         </span>
         <div style="display:flex;gap:var(--m-space-2);">
           {% for s, label in [('active','Shelf'), ('following','Follow'), ('archived','Archive')] %}
             {% if a.state != s %}
-            <button class="btn btn--sec" hx-post="/api/focus/{{ a.slug }}/state"
+            <button class="btn btn--sec u-mono" hx-post="/api/focus/{{ a.slug }}/state"
                     hx-vals='{"state": "{{ s }}"}' hx-swap="none"
                     hx-on::after-request="window.location.reload()"
-                    style="font-family:var(--m-mono);font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-2);color:var(--m-ink);">{{ label }}</button>
+                    style="padding:var(--m-space-1) var(--m-space-2);color:var(--m-ink);">{{ label }}</button>
             {% endif %}
           {% endfor %}
         </div>
@@ -87,12 +87,12 @@
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--m-space-3);">
         <label style="display:grid;gap:var(--m-space-1);">
-          <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);">Title</span>
+          <span class="u-mono" style="letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);">Title</span>
           <input name="title" required placeholder="AI in Health &amp; Epidemiology"
                  style="font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);">
         </label>
         <label style="display:grid;gap:var(--m-space-1);">
-          <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);">One line on what it is for</span>
+          <span class="u-mono" style="letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);">One line on what it is for</span>
           <input name="subtitle" placeholder="Staying current on how AI is actually used"
                  style="font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);">
         </label>
@@ -134,7 +134,7 @@
                            (2,'health, clinical, patient, epidemi, diagnos'),
                            (3,'(optional third axis)')] %}
         <label style="display:grid;gap:var(--m-space-1);">
-          <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);">
+          <span class="u-mono" style="letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);">
             {% if n == 1 %}Must mention one of{% elif n == 2 %}AND one of{% else %}AND one of (optional){% endif %}
           </span>
           <input name="group{{ n }}" placeholder="{{ hint }}"
@@ -151,7 +151,7 @@
 
       {% if layers %}
       <label style="display:grid;gap:var(--m-space-1);">
-        <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);">
+        <span class="u-mono" style="letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);">
           Knowledge layers to search (optional, comma-separated)</span>
         <input name="layers" placeholder="{{ layers[:4] | map(attribute='slug') | join(', ') }}"
                style="font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);">
@@ -170,8 +170,8 @@
           <span style="color:var(--m-muted);">— shelf is full ({{ n_active }}/{{ max_shelf }})</span>
           {% endif %}
         </label>
-        <button type="submit"
-                style="font-family:var(--m-mono);font-size:var(--t-micro);padding:var(--m-space-2) var(--m-space-4);border:1px solid var(--m-accent);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);cursor:pointer;">
+        <button class="u-mono" type="submit"
+                style="padding:var(--m-space-2) var(--m-space-4);border:1px solid var(--m-accent);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);cursor:pointer;">
           Create focus
         </button>
       </div>

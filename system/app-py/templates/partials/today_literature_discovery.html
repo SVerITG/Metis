@@ -44,7 +44,7 @@ Find recent publications relevant to my research (sleeping sickness / HAT, negle
     <div id="lit-paper-{{ p.id }}" style="display:flex;align-items:flex-start;gap:12px;padding:12px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
       <div class="u-grow">
         {# Title #}
-        <div class="u-mb-1" style="font-family:var(--m-display);font-size:var(--t-small);line-height:1.45;color:var(--m-ink);">
+        <div class="u-mb-1 u-title u-title--sm" style="line-height:1.45;">
           {% if p.source_url or p.doi %}
           <a class="u-rule" href="{{ p.source_url or ('https://doi.org/' + p.doi) }}" target="_blank" rel="noopener"
              style="color:inherit;text-decoration:none;"

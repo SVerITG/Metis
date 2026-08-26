@@ -5,9 +5,9 @@
     <span>PROJECT NOTES</span>
     <span style="font-size:var(--t-micro);color:var(--m-ok);" id="notes-saved-{{ project_id }}"></span>
   </div>
-  <textarea id="notes-area-{{ project_id }}"
+  <textarea class="u-tile" id="notes-area-{{ project_id }}"
             rows="5"
             placeholder="Jot ideas, links, decisions for this project…"
             onblur="saveProjectNotes('{{ project_id }}')"
-            style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:var(--t-meta);line-height:1.6;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);resize:vertical;outline:none;">{{ notes }}</textarea>
+            style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:var(--t-meta);line-height:1.6;padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);resize:vertical;outline:none;">{{ notes }}</textarea>
 </div>

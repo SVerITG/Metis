@@ -4,7 +4,7 @@
     {% for p in projects %}
     <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
       <div style="display:flex;justify-content:space-between;align-items:baseline;">
-        <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">{{ p.title }}</div>
+        <div class="u-title">{{ p.title }}</div>
         <div class="tnum u-label">{{ (p.priority or 'ACTIVE') | upper }}</div>
       </div>
       {% set bar_w = prio_pct[p.priority] if p.priority in prio_pct else 45 %}

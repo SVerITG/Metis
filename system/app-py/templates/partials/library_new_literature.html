@@ -33,20 +33,20 @@
         NEVER CAUGHT UP
       </span>
       {% endif %}
-      <button type="button" id="nl-catchup-btn"
+      <button class="u-mono u-tile" type="button" id="nl-catchup-btn"
               onclick="nlMarkCaughtUp(this)"
               title="Record that you have reviewed everything up to now. This is what the 'Since I caught up' window measures from — so it is deliberately an explicit action, never automatic."
-              style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-ink);cursor:pointer;">
+              style="padding:var(--m-space-2) var(--m-space-4);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-ink);cursor:pointer;">
         Mark caught up
       </button>
       {# The other half of acquisition. Anything behind ITM's OpenAthens login has
          to be opened in a browser — a background process cannot hold a federated
          SSO session — so this picks the resulting PDF out of the downloads
          folder, matches it to the paper, files it and marks it obtained. #}
-      <button type="button" id="nl-pickup-btn"
+      <button class="u-mono u-tile" type="button" id="nl-pickup-btn"
               onclick="nlPickup(this)"
               title="Scan your browser's downloads folder for papers you saved by hand, match them to the queue, and file them. Personal documents are skipped by filename and never opened."
-              style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-ink);cursor:pointer;">
+              style="padding:var(--m-space-2) var(--m-space-4);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-ink);cursor:pointer;">
         File my downloads
       </button>
       <button class="u-label u-label--accent btn btn--soft" type="button"
@@ -107,14 +107,14 @@
 
   <!-- ── Search within what's new ──────────────────────────────────────── -->
   <div class="u-mb-4">
-    <input type="search" id="nl-search" name="q" value="{{ q }}"
+    <input class="u-tile" type="search" id="nl-search" name="q" value="{{ q }}"
            placeholder="Search within new literature — title, abstract, author, journal…"
            autocomplete="off"
            hx-get="/api/partial/library/new-literature/list?tab={{ active }}&window={{ window }}&kind={{ active_kind }}&show={{ show }}"
            hx-trigger="keyup changed delay:350ms"
            hx-target="#nl-list" hx-swap="innerHTML"
            hx-include="this"
-           style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
+           style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);outline:none;">
   </div>
 
   <!-- ── List body ─────────────────────────────────────────────────────── -->

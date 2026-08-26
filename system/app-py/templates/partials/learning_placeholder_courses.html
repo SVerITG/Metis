@@ -22,7 +22,7 @@
   </div>
   {% for c in courses if c.category == cat %}
   <div class="catalog-row" style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px 18px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
-    <span style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.3;">{{ c.title }}</span>
+    <span class="u-title" style="line-height:1.3;">{{ c.title }}</span>
     <button class="btn btn--ghost btn--caps catalog-build" onclick="buildCourseIdea('{{ c.slug }}','{{ c.title|e }}')">Build</button>
   </div>
   {% endfor %}

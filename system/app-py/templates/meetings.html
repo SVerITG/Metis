@@ -75,13 +75,13 @@
       <!-- Search + filter bar -->
       <div class="u-row u-row--wrap u-mb-3">
         {{ sec_label("All meetings", style="margin:0;flex:1;") }}
-        <input class="u-grow" type="search" placeholder="Search…"
+        <input class="u-grow u-tile" type="search" placeholder="Search…"
                hx-get="/api/partial/meetings/search"
                hx-trigger="keyup delay:300ms, search"
                hx-target="#meetings-list"
                hx-swap="innerHTML"
                name="q"
-               style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;min-width:100px;max-width:180px;">
+               style="padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;min-width:100px;max-width:180px;">
         <button class="btn btn--ghost btn--caps"
                 hx-get="/api/partial/meetings/list?filter=week"
                 hx-target="#meetings-list"
@@ -157,12 +157,12 @@
         Upload any meeting recording. Transcribed on your own machine — nothing is uploaded, and the audio is deleted afterwards. WAV files transcribe instantly; other formats may take a little longer to process.
       </p>
       <label class="u-label u-mb-1" style="display:block;">MEETING TITLE (optional)</label>
-      <input class="u-mb-3" id="audio-meeting-title" type="text" placeholder="e.g. Research coordination call"
-             style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);color:var(--m-ink);">
+      <input class="u-mb-3 u-tile" id="audio-meeting-title" type="text" placeholder="e.g. Research coordination call"
+             style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);">
       <label class="u-label u-mb-1" style="display:block;">AUDIO FILE</label>
-      <input class="u-mb-4" id="audio-file-input" type="file" accept=".wav,.mp3,.m4a,.ogg,.webm,.flac"
-             style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);color:var(--m-ink);">
-      <div class="u-mb-3" id="audio-upload-status" style="min-height:20px;font-family:var(--m-mono);font-size:var(--t-micro);"></div>
+      <input class="u-mb-4 u-tile" id="audio-file-input" type="file" accept=".wav,.mp3,.m4a,.ogg,.webm,.flac"
+             style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);">
+      <div class="u-mb-3 u-mono" id="audio-upload-status" style="min-height:20px;"></div>
       <div style="display:flex;gap:var(--m-space-2);">
         <button class="btn btn--primary btn--caps u-grow" onclick="submitAudioUpload()">Transcribe &amp; Save</button>
         <button class="btn btn--ghost btn--caps" onclick="closeAudioUpload()">Cancel</button>

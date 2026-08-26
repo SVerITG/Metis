@@ -7,7 +7,7 @@
 
   {% if not sessions %}
   <div style="padding:var(--m-space-5) var(--m-space-5);">
-    <p style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.6;margin:0 0 var(--m-space-3);">
+    <p class="u-title" style="line-height:1.6;margin:0 0 var(--m-space-3);">
       No brainstorms yet.
     </p>
     <p style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-muted);line-height:1.6;margin:0 0 var(--m-space-4);">
@@ -27,7 +27,7 @@
          onmouseover="this.style.background='var(--m-surface-2)';"
          onmouseout="this.style.background='transparent';">
       <div class="u-grow">
-        <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);line-height:1.35;">
+        <div class="u-mb-2 u-title u-title--lg" style="line-height:1.35;">
           {{ s.topic }}
         </div>
         {% if s.summary %}

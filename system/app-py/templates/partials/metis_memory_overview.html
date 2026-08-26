@@ -10,7 +10,7 @@
       <span class="kicker" style="padding:0;color:{{ 'var(--m-accent)' if l.count else 'var(--m-muted)' }};">{{ l.kicker }}</span>
       <span style="font-family:var(--m-mono);font-size:var(--t-h4);font-weight:600;color:var(--m-ink);">{{ '{:,}'.format(l.count) }}</span>
     </div>
-    <div style="font-family:var(--m-display);font-size:var(--t-body);font-weight:500;color:var(--m-ink);margin:var(--m-space-2) 0 var(--m-space-1);">{{ l.name }}</div>
+    <div class="u-title" style="font-weight:500;margin:var(--m-space-2) 0 var(--m-space-1);">{{ l.name }}</div>
     <div class="u-mb-3" style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);line-height:1.4;text-wrap:pretty;">{{ l.desc }}</div>
     <div style="height:3px;background:var(--m-rule-soft);border-radius:var(--m-radius-sm);overflow:hidden;">
       <div style="height:100%;width:{{ l.pct }}%;background:{{ 'var(--m-accent)' if l.count else 'var(--m-rule)' }};border-radius:2px;transition:width .4s;"></div>
@@ -18,7 +18,7 @@
   </div>
   {% endfor %}
 </div>
-<div class="u-mb-5" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);text-align:right;">
+<div class="u-mb-5 u-mono" style="letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);text-align:right;">
   {{ '{:,}'.format(total_all) }} entries held across every layer
 </div>
 
@@ -89,7 +89,7 @@
 <div class="metis-setting-row">
   <div>
     <div class="ms-title">Export memories</div>
-    <div class="ms-help">A snapshot of the memory store, written to <code style="font-family:var(--m-mono);font-size:var(--t-micro);">journal/exports/</code>.</div>
+    <div class="ms-help">A snapshot of the memory store, written to <code class="u-mono">journal/exports/</code>.</div>
   </div>
   <div class="ms-control">
     <button class="btn btn--sec btn--caps" onclick="openMetisExport()">Export</button>

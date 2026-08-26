@@ -38,7 +38,7 @@
   {% for key, label, help_text, options in settings %}
   <div class="panel panel-pad u-mb-3 panel--md">
     <div class="u-mb-2" style="display:flex;justify-content:space-between;align-items:baseline;">
-      <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">{{ label }}</div>
+      <div class="u-title">{{ label }}</div>
       <span class="u-label">
         {{ (persona.get(key, options[0][0]))|upper }}
       </span>

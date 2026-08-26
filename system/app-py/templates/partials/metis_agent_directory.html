@@ -3,7 +3,7 @@
 <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
   <div style="display:flex;align-items:baseline;justify-content:space-between;">
     <div>
-      <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">Agent registry</div>
+      <div class="u-title u-title--lg">Agent registry</div>
       <div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">
         {{ agent_count }} specialist{{ '' if agent_count == 1 else 's' }} available · invoke any one with the slash command shown · run count shows how often each agent has been used.
       </div>
@@ -14,7 +14,7 @@
 
 <div style="padding:var(--m-space-4) var(--m-space-5);">
   {% if not agents %}
-    <div class="u-ed" style="font-size:var(--t-body);">No agent registry found at <code style="font-family:var(--m-mono);font-size:var(--t-micro);">system/config/agent-registry.json</code>.</div>
+    <div class="u-ed" style="font-size:var(--t-body);">No agent registry found at <code class="u-mono">system/config/agent-registry.json</code>.</div>
   {% else %}
   <div class="agent-card-grid">
     {% for a in agents %}

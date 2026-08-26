@@ -12,7 +12,7 @@
     <div class="panel panel--clip">
       <!-- Domain header -->
       <div class="u-row u-row--between u-rule" style="padding:var(--m-space-3) var(--m-space-4);">
-        <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.16em;text-transform:uppercase;color:var(--m-ink);">{{ domain }}</span>
+        <span class="u-mono" style="letter-spacing:0.16em;text-transform:uppercase;color:var(--m-ink);">{{ domain }}</span>
         <span class="u-label">
           {{ items | length }} SIGNAL{% if items | length != 1 %}S{% endif %}
         </span>
@@ -25,7 +25,7 @@
           <div style="margin-top:4px;flex-shrink:0;width:6px;height:6px;border-radius:50%;
                       background:{% set _str = (s.signal_strength or '')|upper %}{% if _str == 'HIGH' %}var(--m-accent){% elif _str == 'MEDIUM' %}var(--m-ochre-deep){% else %}var(--m-muted){% endif %};"></div>
           <div class="u-grow">
-            <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:var(--m-space-1);">
+            <div class="u-title u-title--sm" style="line-height:1.35;margin-bottom:var(--m-space-1);">
               {% if s.source_url %}
               <a href="{{ s.source_url }}" target="_blank" rel="noopener"
                  style="color:inherit;text-decoration:none;"

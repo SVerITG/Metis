@@ -1,0 +1,40 @@
+{#-
+  _whatsnew.html — "what changed since I last looked", the same way everywhere.
+
+  The last item from the design audit. Today answered this question; News,
+  Library and Work each answered it differently or not at all — and the
+  machinery (`ui_seen`, `count_since`, `since_label`) had been in ui.py used by
+  one surface since the day it was written.
+
+  TWO RULES IT ENCODES:
+
+  · The delta leads, the total is demoted. A number that only ever grows stops
+    being information past the point a person can act on it. "1,433 unread" is
+    not a call to action; "6 since Friday" is.
+
+  · Marking seen is an ACT, never a side effect of rendering. A surface that
+    marks itself read by being looked at can never tell you what you missed.
+-#}
+
+{% macro whatsnew(w, label, mark_target='body') %}
+<div class="wn">
+  {% if w.first_visit %}
+    <span class="wn-delta">{{ '{:,}'.format(w.total) }} {{ label }}</span>
+    <span class="wn-note">first visit — nothing marked seen yet</span>
+  {% elif w.newer %}
+    <span class="wn-delta"><b>{{ '{:,}'.format(w.newer) }}</b> new {{ w.when }}</span>
+    {% if w.total > w.newer %}
+    <span class="wn-total">{{ '{:,}'.format(w.total) }} {{ label }} in all</span>
+    {% endif %}
+    <button type="button" class="btn btn--ghost btn--sm"
+            hx-post="/api/seen/{{ w.key }}"
+            hx-target="{{ mark_target }}" hx-swap="outerHTML"
+            title="Mark everything currently here as seen">Mark seen</button>
+  {% else %}
+    <span class="wn-delta wn-delta--quiet">nothing new {{ w.when }}</span>
+    {% if w.total %}
+    <span class="wn-total">{{ '{:,}'.format(w.total) }} {{ label }} in all</span>
+    {% endif %}
+  {% endif %}
+</div>
+{% endmacro %}

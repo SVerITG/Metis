@@ -3,7 +3,7 @@
   <h2 class="sec-label u-mb-3">
     <span>Due Today</span>
     {% if overdue %}
-    <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-alert);">{{ overdue|length }} OVERDUE</span>
+    <span class="u-mono" style="letter-spacing:0.1em;color:var(--m-alert);">{{ overdue|length }} OVERDUE</span>
     {% endif %}
   </h2>
   <div class="panel">

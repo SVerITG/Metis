@@ -10,7 +10,7 @@
   <div style="padding:var(--m-space-4) var(--m-space-5);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-muted);line-height:1.6;">
     <strong style="color:var(--m-warn);">resemblyzer not installed.</strong>
     Voice recognition is unavailable. Run:<br>
-    <code style="font-family:var(--m-mono);font-size:var(--t-micro);background:var(--m-surface-2);padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius);">
+    <code class="u-mono" style="background:var(--m-surface-2);padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius);">
       python3 -m pip install resemblyzer
     </code>
     in the Metis venv.
@@ -22,10 +22,10 @@
     {% for sp in speakers %}
     <div class="u-row u-rule" style="gap:var(--m-space-3);padding:var(--m-space-2) 0;">
       <div class="u-row u-fixed" style="width:32px;height:32px;border-radius:50%;background:var(--m-accent);justify-content:center;">
-        <span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-on-accent);font-weight:600;">{{ sp.name[0].upper() }}</span>
+        <span class="u-mono" style="color:var(--m-on-accent);font-weight:600;">{{ sp.name[0].upper() }}</span>
       </div>
       <div class="u-grow">
-        <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">{{ sp.name }}</div>
+        <div class="u-title">{{ sp.name }}</div>
         <div class="u-label">
           {{ sp.sample_count }} SAMPLE{% if sp.sample_count != 1 %}S{% endif %}
           &middot; UPDATED {{ (sp.updated_at or '')[:10] }}
@@ -47,17 +47,17 @@
   <div class="u-rule-t" style="padding:var(--m-space-4) var(--m-space-5);">
     <div class="u-label u-mb-3">ENROLL NEW VOICE</div>
     <div class="u-mb-2" style="display:grid;grid-template-columns:1fr auto;gap:var(--m-space-2);">
-      <input id="spk-enroll-name" type="text" placeholder="Full name (e.g. Alex)"
-             style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;width:100%;box-sizing:border-box;">
+      <input class="u-tile" id="spk-enroll-name" type="text" placeholder="Full name (e.g. Alex)"
+             style="padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;width:100%;box-sizing:border-box;">
     </div>
     <div class="u-mb-2">
       <label class="u-label u-mb-1" style="display:block;">
         AUDIO SAMPLE — WAV, MP3, M4A &middot; at least 10 seconds of speech
       </label>
-      <input id="spk-enroll-file" type="file" accept=".wav,.mp3,.m4a,.ogg,.flac,.webm"
-             style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-meta);color:var(--m-ink);width:100%;box-sizing:border-box;">
+      <input class="u-tile" id="spk-enroll-file" type="file" accept=".wav,.mp3,.m4a,.ogg,.flac,.webm"
+             style="padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-meta);color:var(--m-ink);width:100%;box-sizing:border-box;">
     </div>
-    <div class="u-mb-2" id="spk-enroll-status" style="min-height:18px;font-family:var(--m-mono);font-size:var(--t-micro);"></div>
+    <div class="u-mb-2 u-mono" id="spk-enroll-status" style="min-height:18px;"></div>
     <div style="display:flex;gap:var(--m-space-2);">
       <button class="btn btn--primary btn--caps u-grow" onclick="enrollSpeaker()">Save Voice</button>
       <button class="btn btn--ghost btn--caps" onclick="recordSpeakerSample()">
@@ -72,7 +72,7 @@
 
 <div class="u-mb-4 u-hide" id="spk-record-area" style="padding:var(--m-space-4) var(--m-space-5);background:var(--m-surface);border:1px solid var(--m-line);border-radius:var(--m-radius);">
   <div class="u-label u-mb-2">RECORDING VOICE SAMPLE</div>
-  <div class="u-mb-3" id="spk-record-status" style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">Press Start, speak for 15–30 seconds, press Stop.</div>
+  <div class="u-mb-3 u-title u-title--sm" id="spk-record-status">Press Start, speak for 15–30 seconds, press Stop.</div>
   <div style="display:flex;gap:var(--m-space-2);">
     <button class="btn btn--primary btn--caps" id="spk-rec-start" onclick="startSpeakerRecording()">Start Recording</button>
     <button class="btn btn--sec btn--caps u-hide" id="spk-rec-stop" onclick="stopSpeakerRecording()">Stop</button>

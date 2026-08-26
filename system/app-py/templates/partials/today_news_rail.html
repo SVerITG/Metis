@@ -29,10 +29,10 @@
       {# What arrived since you last looked, stated first — an editor leads with
          what is new, not with the total. #}
       {% if unseen_count %}
-      <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:10px;background:color-mix(in srgb, var(--m-accent) 15%, transparent);color:var(--m-accent);">{{ unseen_count }} NEW</span>
-      <button class="btn btn--sec" hx-post="/api/news/mark-seen?period={{ period }}"
+      <span class="u-mono" style="letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:10px;background:color-mix(in srgb, var(--m-accent) 15%, transparent);color:var(--m-accent);">{{ unseen_count }} NEW</span>
+      <button class="btn btn--sec u-mono" hx-post="/api/news/mark-seen?period={{ period }}"
               hx-target="#news-surface" hx-swap="outerHTML"
-              style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:10px;color:var(--m-muted);">MARK ALL SEEN</button>
+              style="letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:10px;color:var(--m-muted);">MARK ALL SEEN</button>
       {% endif %}
       <span>
         {% if slipcases %}{{ slipcases | sum(attribute='count') }} SIGNALS{% endif %}
@@ -49,7 +49,7 @@
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>
         </svg>
-        <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;color:var(--m-ink);">
+        <span class="u-mono" style="letter-spacing:0.12em;color:var(--m-ink);">
           {% if period == 'week' %}THIS WEEK{% else %}THIS MONTH{% endif %}
         </span>
       </div>
@@ -88,7 +88,7 @@ Update my Metis news dispatch. Using the metis-rc tools, scan the latest global-
       <div class="u-label u-mb-2">SELECT TOPICS FOR SUMMARY UPDATE:</div>
       <div class="u-mb-3" style="display:flex;flex-wrap:wrap;gap:var(--m-space-1);">
         {% for topic in all_topics %}
-        <label class="u-row" style="gap:var(--m-space-1);cursor:pointer;font-family:var(--m-mono);font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-3);border:1px solid var(--m-rule);border-radius:var(--m-radius-pill);background:var(--m-surface);transition:all 120ms;"
+        <label class="u-row u-mono" style="gap:var(--m-space-1);cursor:pointer;padding:var(--m-space-1) var(--m-space-3);border:1px solid var(--m-rule);border-radius:var(--m-radius-pill);background:var(--m-surface);transition:all 120ms;"
                onmouseover="this.style.borderColor='var(--m-accent)'"
                onmouseout="this.style.borderColor='var(--m-rule)'">
           <input type="checkbox" class="news-topic-cb" value="{{ topic }}" checked style="margin:0;accent-color:var(--m-accent);"> {{ topic }}
@@ -96,7 +96,7 @@ Update my Metis news dispatch. Using the metis-rc tools, scan the latest global-
         {% endfor %}
       </div>
       <div class="u-row">
-        <button class="btn btn--primary" style="padding:var(--m-space-1) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;border:none;" onclick="runSummaryUpdate('{{ period }}')">GENERATE</button>
+        <button class="btn btn--primary u-mono" style="padding:var(--m-space-1) var(--m-space-4);letter-spacing:0.1em;border:none;" onclick="runSummaryUpdate('{{ period }}')">GENERATE</button>
         <button class="u-label btn btn--sec" style="padding:var(--m-space-1) var(--m-space-4);" onclick="document.getElementById('news-topic-selector').style.display='none'">Cancel</button>
         <span class="u-label" id="news-summary-status" style="margin-left:8px;"></span>
       </div>
@@ -138,7 +138,7 @@ Update my Metis news dispatch. Using the metis-rc tools, scan the latest global-
             {{ sc.count }}
           </span>
           {% if sc.age_label %}
-          <span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted-soft);">{{ sc.age_label }}</span>
+          <span class="u-mono" style="color:var(--m-muted-soft);">{{ sc.age_label }}</span>
           {% endif %}
         </div>
 
@@ -155,7 +155,7 @@ Update my Metis news dispatch. Using the metis-rc tools, scan the latest global-
               <span class="u-label u-label--accent" style="letter-spacing:0.12em;">AI DIGEST</span>
               {% if sc.summary_age %}<span class="u-label" style="margin-left:4px;">{{ sc.summary_age }}</span>{% endif %}
             </div>
-            <p style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.55;margin:0;">{{ sc.summary }}</p>
+            <p class="u-title u-title--sm" style="line-height:1.55;margin:0;">{{ sc.summary }}</p>
           </div>
           {% elif not is_highlight %}
           <div class="u-label u-mb-3" style="padding:var(--m-space-2) var(--m-space-4);background:var(--m-surface-2);border-radius:var(--m-radius);letter-spacing:0.04em;">
@@ -179,14 +179,14 @@ Update my Metis news dispatch. Using the metis-rc tools, scan the latest global-
               <div class="u-row u-mb-1" style="flex-wrap:wrap;">
                 <span class="u-label">{{ item.time }}</span>
                 {% if item.match == 'top' %}
-                <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;padding:1px 7px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
+                <span class="u-mono" style="letter-spacing:0.08em;padding:1px 7px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
                   <svg viewBox="0 0 16 16" width="8" height="8" fill="var(--m-chart-2)" stroke="none" style="vertical-align:-1px;margin-right:2px;">
                     <polygon points="8 1 10 6 16 6.5 11.5 10.5 13 16 8 13 3 16 4.5 10.5 0 6.5 6 6"/>
                   </svg>
                   YOUR WORK
                 </span>
                 {% elif item.match == 'yes' %}
-                <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;padding:1px 7px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">RELEVANT</span>
+                <span class="u-mono" style="letter-spacing:0.08em;padding:1px 7px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">RELEVANT</span>
                 {% endif %}
                 {% if item.signal %}
                 <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
@@ -246,7 +246,7 @@ Update my Metis news dispatch. Using the metis-rc tools, scan the latest global-
       <svg class="u-mb-3" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--m-muted)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.45;">
         <path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2Z"/>
       </svg>
-      <div class="u-mb-1" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">No news yet.</div>
+      <div class="u-mb-1 u-title">No news yet.</div>
       <div style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);line-height:1.5;">
         Run a content scan to populate the dispatch — ask me to <em>scan for news</em>, or set up the news aggregator feeds.
       </div>

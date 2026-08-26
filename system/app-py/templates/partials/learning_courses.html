@@ -20,7 +20,7 @@
   </div>
 
   <!-- Title -->
-  <div style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);line-height:1.25;">{{ c.title }}</div>
+  <div class="u-title u-title--lg" style="font-weight:500;line-height:1.25;">{{ c.title }}</div>
 
   {% if c.status == 'building' %}
   <!-- Build pipeline progress -->
@@ -86,7 +86,7 @@
       {% if (c.progress_pct or 0) > 0 %}Continue{% else %}Start{% endif %}
     </button>
     {% if c.next_lesson %}
-    <span class="u-truncate" style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);align-self:center;max-width:230px;"
+    <span class="u-truncate u-mono" style="color:var(--m-muted);align-self:center;max-width:230px;"
           title="{{ c.next_lesson|e }}">next: {{ c.next_lesson }}</span>
     {% endif %}
     {% if c.slug and (c.total_modules or 0) > 0 %}
@@ -111,7 +111,7 @@
   </div>
 
   <!-- Inline lesson editor (hidden by default) -->
-  <div class="u-hide" id="lesson-edit-{{ c.id }}" style="margin-top:var(--m-space-2);padding:var(--m-space-4);background:var(--m-surface-2);border-radius:var(--m-radius);border:1px solid var(--m-line);">
+  <div class="u-hide u-tile" id="lesson-edit-{{ c.id }}" style="margin-top:var(--m-space-2);padding:var(--m-space-4);">
     <div class="u-label u-mb-3">UPDATE PROGRESS</div>
     <div class="u-col">
       <div>
@@ -148,7 +148,7 @@
 
 {% if truncated and truncated > 0 %}
 <div class="panel" style="margin-top:var(--m-space-3);">
-  <div class="empty-row" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;">
+  <div class="empty-row u-mono" style="letter-spacing:0.08em;">
     SHOWING {{ courses|length }} OF {{ n_active }} COURSES — {{ truncated }} NOT LISTED
   </div>
 </div>

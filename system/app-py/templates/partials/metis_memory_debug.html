@@ -19,7 +19,7 @@
         {% set layer_list = [('episodic','Episodic'),('semantic','Semantic'),('procedural','Procedural'),('session','Session')] %}
         {% for slug, label in layer_list %}
         {% set active = slug in layers %}
-        <label class="u-row" style="gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);cursor:pointer;">
+        <label class="u-row u-mono" style="gap:var(--m-space-1);cursor:pointer;">
           <input type="checkbox" name="layers_cb_{{ slug }}" value="{{ slug }}"
                  {% if active %}checked{% endif %}
                  onchange="syncDebugLayers(this)"> {{ label }}
@@ -42,7 +42,7 @@
   </div>
 
   {% if error %}
-  <div class="u-mb-3" style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-alert);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);">
+  <div class="u-mb-3 u-mono u-tile" style="color:var(--m-alert);padding:var(--m-space-2) var(--m-space-3);">
     Vector search error: {{ error }}
   </div>
   {% endif %}

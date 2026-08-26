@@ -20,7 +20,7 @@
     <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--{{ color }});font-weight:600;text-transform:uppercase;">{{ cls[:5] }}</div>
     <div class="u-label" style="margin-top:var(--m-space-1);">{{ (r.created_at or '')[:10] }}</div>
     {% if r.score is not none %}
-    <div style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted-soft);margin-top:1px;">{{ (r.score * 100)|int }}%</div>
+    <div class="u-mono" style="color:var(--m-muted-soft);margin-top:1px;">{{ (r.score * 100)|int }}%</div>
     {% endif %}
   </div>
   <div>

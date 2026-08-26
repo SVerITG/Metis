@@ -21,8 +21,8 @@
      horizon (week ahead · intentions · project pipeline) that the task-centric
      List view doesn't show. One dataset, two lenses, one surface. #}
   <div class="u-mb-5" style="display:flex;gap:var(--m-space-1);border:1px solid var(--m-rule);border-radius:6px;width:max-content;padding:var(--m-space-1);">
-    <button class="btn btn--primary" id="work-toggle-list" onclick="workSetView('list')"
-            style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;padding:var(--m-space-1) var(--m-space-4);border:none;">List</button>
+    <button class="btn btn--primary u-mono" id="work-toggle-list" onclick="workSetView('list')"
+            style="letter-spacing:0.1em;text-transform:uppercase;padding:var(--m-space-1) var(--m-space-4);border:none;">List</button>
     <button class="u-label u-label--wide btn btn--ghost" id="work-toggle-board" onclick="workSetView('board')"
             style="padding:var(--m-space-1) var(--m-space-4);">Board</button>
     {# Third lens: WHEN. List answers "what exists", Board answers "what stage",
@@ -90,22 +90,22 @@
         <div class="u-col" style="gap:var(--m-space-3);">
           <div>
             <label class="u-label u-mb-1" style="display:block;">FOLDER PATH</label>
-            <input id="np-path" type="text" placeholder="C:\Users\you\Documents\MyProject"
+            <input class="u-mono u-tile" id="np-path" type="text" placeholder="C:\Users\you\Documents\MyProject"
                    oninput="npAutoTitle()"
-                   style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);outline:none;">
             <div class="u-label" style="margin-top:var(--m-space-1);">Leave blank if this project has no folder on your computer yet.</div>
           </div>
           <div>
             <label class="u-label u-mb-1" style="display:block;">PROJECT NAME *</label>
-            <input id="np-title" type="text" placeholder="My project name…"
-                   style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:var(--t-body);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+            <input class="u-title u-tile" id="np-title" type="text" placeholder="My project name…"
+                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);outline:none;">
           </div>
         </div>
         <div style="display:flex;gap:var(--m-space-2);justify-content:flex-end;margin-top:var(--m-space-5);">
           <button class="u-label" onclick="closeAddProjectModal()"
                   style="background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);cursor:pointer;">Cancel</button>
-          <button class="btn btn--primary" onclick="npGoStep2()"
-                  style="border:none;padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.06em;">Next →</button>
+          <button class="btn btn--primary u-mono" onclick="npGoStep2()"
+                  style="border:none;padding:var(--m-space-2) var(--m-space-4);letter-spacing:0.06em;">Next →</button>
         </div>
       </div>
 
@@ -114,42 +114,42 @@
         <div class="u-col" style="gap:var(--m-space-3);">
           <div>
             <label class="u-label u-mb-1" style="display:block;">WHAT IS THIS PROJECT ABOUT?</label>
-            <input id="np-desc" type="text" placeholder="One sentence about the purpose…"
-                   style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:var(--t-small);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+            <input class="u-title u-title--sm u-tile" id="np-desc" type="text" placeholder="One sentence about the purpose…"
+                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);outline:none;">
           </div>
           <div>
             <label class="u-label u-mb-1" style="display:block;">MAIN TASKS (one per line, optional)</label>
-            <textarea id="np-tasks" rows="3" placeholder="Write a literature review&#10;Analyse the dataset&#10;Submit to journal"
-                      style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:var(--t-small);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);resize:vertical;background:var(--m-surface-2);color:var(--m-ink);outline:none;"></textarea>
+            <textarea class="u-title u-title--sm u-tile" id="np-tasks" rows="3" placeholder="Write a literature review&#10;Analyse the dataset&#10;Submit to journal"
+                      style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);resize:vertical;outline:none;"></textarea>
           </div>
           <div>
             <label class="u-label u-mb-2" style="display:block;">HOW DO YOU OPEN THIS PROJECT?</label>
             <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-2);" id="np-launcher-btns">
-              <label class="u-row" style="cursor:pointer;font-family:var(--m-mono);font-size:var(--t-micro);">
+              <label class="u-row u-mono" style="cursor:pointer;">
                 <input type="radio" name="np-launcher" value="vscode" checked> VS Code
               </label>
-              <label class="u-row" style="cursor:pointer;font-family:var(--m-mono);font-size:var(--t-micro);">
+              <label class="u-row u-mono" style="cursor:pointer;">
                 <input type="radio" name="np-launcher" value="rstudio"> RStudio
               </label>
-              <label class="u-row" style="cursor:pointer;font-family:var(--m-mono);font-size:var(--t-micro);">
+              <label class="u-row u-mono" style="cursor:pointer;">
                 <input type="radio" name="np-launcher" value="explorer"> Just open the folder
               </label>
-              <label class="u-row" style="cursor:pointer;font-family:var(--m-mono);font-size:var(--t-micro);">
+              <label class="u-row u-mono" style="cursor:pointer;">
                 <input type="radio" name="np-launcher" value="none"> No folder yet
               </label>
             </div>
           </div>
           <div>
             <label class="u-label u-mb-1" style="display:block;">GITHUB URL (optional)</label>
-            <input id="np-github" type="text" placeholder="https://github.com/…"
-                   style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+            <input class="u-mono u-tile" id="np-github" type="text" placeholder="https://github.com/…"
+                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);outline:none;">
           </div>
         </div>
         <div style="display:flex;gap:var(--m-space-2);justify-content:flex-end;margin-top:var(--m-space-5);">
           <button class="u-label" onclick="npGoStep1()"
                   style="background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);cursor:pointer;">← Back</button>
-          <button class="btn btn--primary" onclick="submitAddProject()"
-                  style="border:none;padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.06em;">Create Project</button>
+          <button class="btn btn--primary u-mono" onclick="submitAddProject()"
+                  style="border:none;padding:var(--m-space-2) var(--m-space-4);letter-spacing:0.06em;">Create Project</button>
         </div>
       </div>
 

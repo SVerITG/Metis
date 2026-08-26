@@ -63,7 +63,7 @@
       </div>
 
       <!-- Focus selector -->
-      <select id="kg-focus" style="padding:var(--m-space-1) var(--m-space-2);font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);color:var(--m-ink);cursor:pointer;"
+      <select class="u-mono" id="kg-focus" style="padding:var(--m-space-1) var(--m-space-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);color:var(--m-ink);cursor:pointer;"
               onchange="kgReload()">
         <option value="">All contexts</option>
         {% for p in projects %}
@@ -72,8 +72,8 @@
       </select>
 
       <!-- Search -->
-      <input type="search" id="kg-search" placeholder="Filter…"
-             style="width:120px;padding:var(--m-space-1) var(--m-space-2);font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);color:var(--m-ink);outline:none;"
+      <input class="u-mono" type="search" id="kg-search" placeholder="Filter…"
+             style="width:120px;padding:var(--m-space-1) var(--m-space-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);color:var(--m-ink);outline:none;"
              oninput="kgFilter(this.value)">
     </div>
 
@@ -166,7 +166,7 @@
       document.getElementById('kg-loading').style.display = 'none';
     }).catch(e => {
       document.getElementById('kg-loading').innerHTML =
-        '<div style="color:var(--m-alert);font-family:var(--m-mono);font-size:var(--t-micro);">Error loading graph</div>';
+        '<div class="u-mono" style="color:var(--m-alert);">Error loading graph</div>';
     });
   };
 
@@ -415,9 +415,9 @@
     let html = `
       <div class="u-mb-3">
         <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};vertical-align:middle;margin-right:6px;"></span>
-        <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:${color};">${(TYPE_LABELS[d.type]||d.type).toUpperCase()}</span>
+        <span class="u-mono" style="letter-spacing:0.1em;color:${color};">${(TYPE_LABELS[d.type]||d.type).toUpperCase()}</span>
       </div>
-      <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-body);font-weight:600;color:var(--m-ink);line-height:1.35;">
+      <div class="u-mb-2 u-title" style="font-weight:600;line-height:1.35;">
         ${d.title}
       </div>`;
 
@@ -428,7 +428,7 @@
     if (d.doi) html += `<div class="u-label u-mb-1">DOI: ${d.doi}</div>`;
     if (d.domain) html += `<div class="u-label u-mb-1">Domain: ${d.domain}</div>`;
     if (d.status) html += `<div class="u-label u-mb-1">Status: ${d.status}</div>`;
-    if (d.signal) html += `<div class="u-mb-1" style="font-family:var(--m-mono);font-size:var(--t-micro);color:${color};">Signal: ${d.signal}</div>`;
+    if (d.signal) html += `<div class="u-mb-1 u-mono" style="color:${color};">Signal: ${d.signal}</div>`;
     if (d.feasibility) html += `<div class="u-label u-mb-1">Feasibility: ${d.feasibility}</div>`;
     if (d.definition) html += `<div style="font-family:var(--m-display);font-size:var(--t-micro);color:var(--m-ink);line-height:1.45;margin:var(--m-space-2) 0;padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);border-radius:var(--m-radius);">${d.definition}</div>`;
     if (d.summary) html += `<div style="font-family:var(--m-display);font-size:var(--t-micro);color:var(--m-ink);line-height:1.45;margin:var(--m-space-2) 0;padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);border-radius:var(--m-radius);">${d.summary}</div>`;

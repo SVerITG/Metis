@@ -15,7 +15,7 @@
     <span class="u-label" style="letter-spacing:0.18em;text-transform:uppercase;">Recently added</span>
     {% set unread_new = items | rejectattr("is_read") | list | length %}
     {% if unread_new %}
-    <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:1px 6px;border-radius:10px;background:var(--m-accent);color:var(--m-on-accent);">{{ unread_new }} NEW</span>
+    <span class="u-mono" style="letter-spacing:0.1em;padding:1px 6px;border-radius:10px;background:var(--m-accent);color:var(--m-on-accent);">{{ unread_new }} NEW</span>
     {% endif %}
   </div>
   <div style="display:flex;gap:var(--m-space-2);flex-wrap:wrap;">

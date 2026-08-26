@@ -22,7 +22,7 @@
     <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--{{ color }});font-weight:600;">{{ label }}</div>
     <div class="u-label" style="margin-top:var(--m-space-1);">{{ (e.created_at or '')[:10] }}</div>
     {% if e.agent_slug %}
-    <div style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted-soft);margin-top:1px;">{{ e.agent_slug }}</div>
+    <div class="u-mono" style="color:var(--m-muted-soft);margin-top:1px;">{{ e.agent_slug }}</div>
     {% endif %}
   </div>
   <div>

@@ -16,6 +16,7 @@
    labelled five weeks of July news as today's. A period control has to filter on
    when things happened or it is actively misleading.
    ══════════════════════════════════════════════════════════════════════════════ #}
+{% from "partials/_whatsnew.html" import whatsnew %}
 {% set _view = view | default('detailed') %}
 {% set _views = views | default({'list': 'List', 'detailed': 'Detailed', 'cards': 'Thumbnails'}) %}
 
@@ -35,6 +36,9 @@
   <div class="toolbar-lead">{{ (spec.blurb if spec is defined else tabs[0].blurb) }}</div>
 
   <div class="toolbar-group">
+    {#- What has arrived since you last marked this surface seen. -#}
+    {% if whatsnew_news %}{{ whatsnew(whatsnew_news, "briefs", "#news-tab-body") }}{% endif %}
+
     {#- What you filed, always in reach from the surface that fills it. -#}
     <span id="stack-counts" class="stk-counts">
       <a href="/stack" class="stk-link" title="Everything you filed for later">

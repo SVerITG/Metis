@@ -45,7 +45,7 @@
 
 <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-2);">
   <div class="u-mb-3" style="display:flex;align-items:baseline;justify-content:space-between;">
-    <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">Daily activity</div>
+    <div class="u-title">Daily activity</div>
     {% if all_tokens_zero %}
       <span class="u-label">LAST 7 DAYS · RUNS</span>
     {% else %}
@@ -54,7 +54,7 @@
   </div>
   {% if not any_runs and all_tokens_zero %}
     <div class="u-ed" style="font-size:var(--t-meta);padding:var(--m-space-1) 0 var(--m-space-3);">
-      No activity yet. Start with <code style="font-family:var(--m-mono);font-size:var(--t-micro);">/metis</code> in Claude Code — activity will appear here.
+      No activity yet. Start with <code class="u-mono">/metis</code> in Claude Code — activity will appear here.
     </div>
   {% else %}
     <div class="token-day-strip">
@@ -78,7 +78,7 @@
 
 <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
   <div class="u-mb-4" style="display:flex;align-items:baseline;justify-content:space-between;">
-    <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">By specialist</div>
+    <div class="u-title u-title--lg">By specialist</div>
     <span class="u-label">LAST {{ days }}D · TOP 12</span>
   </div>
   {% if by_agent %}
@@ -101,7 +101,7 @@
 
 <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
   <div class="u-mb-4" style="display:flex;align-items:baseline;justify-content:space-between;">
-    <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">By model</div>
+    <div class="u-title u-title--lg">By model</div>
     <span class="u-label">DEFAULT · {{ active_model|upper }}</span>
   </div>
   {% if by_model and by_model|length > 0 and (by_model|length > 1 or by_model[0].model != 'unspecified') %}
@@ -116,7 +116,7 @@
     {% endfor %}
   {% else %}
     <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2) 0;">
-      No per-model data yet. Newer agent runs will start recording the model used; older runs show as <code style="font-family:var(--m-mono);font-size:var(--t-micro);">unspecified</code>.
+      No per-model data yet. Newer agent runs will start recording the model used; older runs show as <code class="u-mono">unspecified</code>.
     </div>
   {% endif %}
 </div>

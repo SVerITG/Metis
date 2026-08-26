@@ -8,7 +8,7 @@
     <li>
       {{ a.description or 'Follow-up item' }}
       {% if a.due_date %}
-      <span style="display:inline-flex;align-items:center;padding:1px 6px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;background:var(--m-ochre-wash);color:var(--m-ochre-deep);border-radius:var(--m-radius-sm);margin-left:6px;">DUE {{ a.due_date[:10] }}</span>
+      <span class="u-mono" style="display:inline-flex;align-items:center;padding:1px 6px;letter-spacing:0.12em;background:var(--m-ochre-wash);color:var(--m-ochre-deep);border-radius:var(--m-radius-sm);margin-left:6px;">DUE {{ a.due_date[:10] }}</span>
       {% endif %}
     </li>
     {% endfor %}
