@@ -675,6 +675,11 @@ def _notify_windows(title: str, message: str) -> None:
         ps = shutil.which("powershell.exe") or shutil.which("pwsh.exe")
         if not ps:
             return
+        # PowerShell escapes a single quote by doubling it. Without this an
+        # apostrophe ends the string early: "the researcher's meeting" produced no toast at
+        # all, and any text reaching here became executable PowerShell.
+        title = str(title).replace("'", "''")
+        message = str(message).replace("'", "''")
         # Try BurntToast first; fall back to basic Windows notification API
         script = (
             f"if (Get-Module -ListAvailable -Name BurntToast -ErrorAction SilentlyContinue) {{"
@@ -696,6 +701,100 @@ def _notify_windows(title: str, message: str) -> None:
         )
     except Exception:
         pass
+
+
+def _db_exec(sql: str, args: tuple = ()) -> None:
+    """Use the app's own db helpers, as every other job here does, so the
+    reminder path shares connection handling rather than opening its own."""
+    try:
+        from db import db_execute
+        db_execute(sql, args)
+    except Exception as exc:
+        log.debug("[reminders] write failed: %s", exc)
+
+
+def _db_scalar(sql: str, args: tuple = ()):
+    try:
+        from db import db_scalar
+        return db_scalar(sql, args, default=None)
+    except Exception:
+        return None
+
+
+def job_reminder_due() -> None:
+    """Fire Windows toasts for reminders whose time has come.
+
+    Until this existed, `remind_at` was stored and read by nothing: a reminder
+    set for 14:30 was only ever seen if the calendar happened to be open at 14:30,
+    which is the one moment you are least likely to be looking at it.
+
+    Occurrences come from the calendar's own `_plans_between`, not a second copy
+    of the recurrence maths — a notifier that disagrees with the calendar about
+    which days a repeat falls on is worse than no notifier.
+
+    Scope is deliberately TODAY only. Firing a week of missed reminders at once
+    because the dashboard was off is noise, not a service.
+    """
+    import datetime as _d
+    try:
+        from routers.calendar_plan import _plans_between
+    except Exception as exc:
+        log.warning("[reminders] calendar unavailable: %s", exc)
+        return
+
+    today = _d.date.today()
+    now = _d.datetime.now()
+    try:
+        plans = _plans_between(today, today).get(today.isoformat(), [])
+    except Exception as exc:
+        log.warning("[reminders] could not read the plan: %s", exc)
+        return
+
+    _db_exec(
+        "CREATE TABLE IF NOT EXISTS day_plan_occurrence ("
+        "plan_id INTEGER NOT NULL, occurred_on TEXT NOT NULL, "
+        "status TEXT NOT NULL DEFAULT '', moved_to TEXT, notified_at TEXT, "
+        "updated_at TEXT NOT NULL DEFAULT (datetime('now')), "
+        "PRIMARY KEY (plan_id, occurred_on))")
+
+    sent = 0
+    for pl in plans:
+        if (pl.get("kind") or "") != "reminder" or pl.get("done"):
+            continue
+        if not pl.get("_is_start", True):
+            continue  # a continuation day of a span is not a fresh reminder
+
+        # Its identity is the RULE date for a repeat, the start date otherwise.
+        occ = pl.get("_occ") or str(pl.get("start_date") or today.isoformat())
+
+        at = (pl.get("remind_at") or "").strip()
+        if at:
+            try:
+                hh, mm = (int(x) for x in at.split(":")[:2])
+                if now < _d.datetime.combine(today, _d.time(hh, mm)):
+                    continue  # not yet
+            except (ValueError, TypeError):
+                pass  # an unreadable time should still notify, not vanish
+
+        pid = pl.get("plan_id")
+        already = _db_scalar(
+            "SELECT notified_at FROM day_plan_occurrence "
+            "WHERE plan_id=? AND occurred_on=?", (pid, occ))
+        if already:
+            continue
+
+        _notify_windows("Metis reminder", str(pl.get("text") or "")[:180])
+        _db_exec(
+            "INSERT INTO day_plan_occurrence (plan_id, occurred_on, notified_at, updated_at) "
+            "VALUES (?,?,datetime('now'),datetime('now')) "
+            "ON CONFLICT(plan_id, occurred_on) DO UPDATE SET "
+            "notified_at=datetime('now'), updated_at=datetime('now')",
+            (pid, occ))
+        sent += 1
+
+    if sent:
+        log.info("[reminders] %d reminder(s) notified", sent)
+        _log_job("reminder_due", "ok", f"{sent} notified")
 
 
 def job_brief_synthesis() -> None:
@@ -1528,6 +1627,25 @@ def setup_jobs() -> None:
             coalesce=True,            # collapse multiple misfires into one run
         )
         registered.append(f"{job_id}@{time_str}" + (f"({day_of_week})" if day_of_week else ""))
+
+    # Reminders are checked every few minutes rather than on the daily cron the
+    # other jobs use: a reminder set for 14:30 that fires at the next daily run
+    # is not a reminder. Five minutes is close enough to feel prompt and far
+    # enough apart to cost nothing.
+    try:
+        from apscheduler.triggers.interval import IntervalTrigger
+        scheduler.add_job(
+            job_reminder_due,
+            IntervalTrigger(minutes=5),
+            id="reminder_due",
+            name="Due reminders",
+            replace_existing=True,
+            misfire_grace_time=300,
+            coalesce=True,
+        )
+        registered.append("reminder_due@5min")
+    except Exception as exc:
+        log.warning("[scheduler] could not register the reminder check: %s", exc)
 
     log.info("[scheduler] jobs registered: %s", ", ".join(registered))
 

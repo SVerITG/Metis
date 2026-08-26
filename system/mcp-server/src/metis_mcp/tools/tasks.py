@@ -362,3 +362,242 @@ async def delete_task(task_id: str) -> list[TextContent]:
         return [TextContent(type="text", text=f"Task deleted: **{task_id}**")]
     except Exception as e:
         return [TextContent(type="text", text=f"Error deleting task: {e}")]
+
+
+# ── Calendar reminders ───────────────────────────────────────────────────────
+# The researcher, 2026-08-25: "if I need to remember something you can put it
+# there, in the appropriate project or not linked to a project."
+#
+# Reminders live in `day_plan`, the table the dashboard's Work calendar already
+# reads. `kind='reminder'` was ALREADY a rendered chip colour and an accepted
+# form value — the calendar could always show reminders, but nothing outside the
+# dashboard could write one, so the capability existed and was unreachable from a
+# conversation. This closes that.
+#
+# `project_id` is nullable on purpose: a reminder that belongs to no project is a
+# first-class thing, not a degraded one.
+
+_DAY_PLAN_DDL = """
+CREATE TABLE IF NOT EXISTS day_plan (
+    plan_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    start_date  TEXT NOT NULL,
+    end_date    TEXT,
+    kind        TEXT NOT NULL DEFAULT 'focus',
+    project_id  TEXT,
+    text        TEXT,
+    remind_at   TEXT,
+    done        INTEGER NOT NULL DEFAULT 0,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at  TEXT
+)
+"""
+
+# A recurring plan is ONE row plus a rule, expanded when the calendar is drawn —
+# the same choice `_plans_between` already makes for multi-day spans, and for the
+# same reason: editing "every Monday" should edit one row, not fifty-two.
+#
+# Everything that can differ BETWEEN occurrences therefore has to live somewhere
+# else, and this is that somewhere. Completing one Monday, skipping one Monday,
+# moving one Monday, and having been reminded about one Monday are all facts
+# about an occurrence, not about the rule. Putting any of them on the row would
+# apply them to every occurrence at once.
+#
+# Single-date plans keep using day_plan.done and are untouched by all of this.
+_DAY_PLAN_OCC_DDL = """
+CREATE TABLE IF NOT EXISTS day_plan_occurrence (
+    plan_id     INTEGER NOT NULL,
+    occurred_on TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT '',
+    moved_to    TEXT,
+    notified_at TEXT,
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (plan_id, occurred_on)
+)
+"""
+
+# 'weekdays' is here because it is the common case for work reminders and is
+# clumsy to express otherwise — "every weekday" as five weekly rules is five
+# rows to edit. Outlook, Google and iCal all ship it as a first-class option.
+_VALID_REPEAT = {"", "daily", "weekdays", "weekly", "monthly", "yearly"}
+
+
+def _ensure_day_plan(conn) -> None:
+    conn.execute(_DAY_PLAN_DDL)
+    conn.execute(_DAY_PLAN_OCC_DDL)
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(day_plan)")}
+    if "recurrence" not in cols:
+        conn.execute("ALTER TABLE day_plan ADD COLUMN recurrence TEXT DEFAULT ''")
+    if "duration_days" not in cols:
+        # How many days ONE occurrence covers. Lets a repeat also be a span —
+        # "the first three days of every month" — which the earlier version
+        # refused outright.
+        conn.execute("ALTER TABLE day_plan ADD COLUMN duration_days INTEGER DEFAULT 1")
+
+    # Carry over the short-lived day_plan_done table this replaced.
+    have = {r[0] for r in conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'")}
+    if "day_plan_done" in have:
+        conn.execute(
+            "INSERT OR IGNORE INTO day_plan_occurrence "
+            "(plan_id, occurred_on, status, updated_at) "
+            "SELECT plan_id, occurred_on, 'done', done_at FROM day_plan_done")
+
+
+def _resolve_reminder_date(date: str) -> tuple[str, str]:
+    """Accept an ISO date or a small set of plain-English offsets.
+
+    Returns (iso_date, error). Natural phrasing is supported because the caller
+    is usually relaying something the researcher said out loud — "in a week" —
+    and forcing the conversion at the call site is where off-by-one errors get
+    introduced silently.
+    """
+    raw = (date or "").strip().lower()
+    if not raw:
+        return "", "a date is required"
+    today = datetime.date.today()
+    offsets = {
+        "today": 0, "tomorrow": 1,
+        "in a week": 7, "next week": 7, "in one week": 7,
+        "in two weeks": 14, "in a fortnight": 14,
+        "in a month": 30, "next month": 30,
+    }
+    if raw in offsets:
+        return (today + datetime.timedelta(days=offsets[raw])).isoformat(), ""
+    m = re.fullmatch(r"in (\d{1,3}) (day|days|week|weeks|month|months)", raw)
+    if m:
+        n = int(m.group(1))
+        mult = {"day": 1, "days": 1, "week": 7, "weeks": 7, "month": 30, "months": 30}
+        return (today + datetime.timedelta(days=n * mult[m.group(2)])).isoformat(), ""
+    try:
+        return datetime.date.fromisoformat(raw).isoformat(), ""
+    except ValueError:
+        return "", (f"could not read {date!r} as a date — use YYYY-MM-DD, or a "
+                    f"phrase like 'in a week' or 'in 3 days'")
+
+
+@app.tool()
+def add_reminder(
+    text: str,
+    date: str,
+    project_id: str = "",
+    remind_at: str = "",
+    until: str = "",
+    repeat: str = "",
+    duration_days: int = 1,
+) -> list[TextContent]:
+    """Put a reminder on the researcher's dashboard calendar.
+
+    Use this whenever they ask to be reminded of something, or whenever you agree
+    to come back to something later. It appears as a chip on the Work calendar on
+    the chosen day.
+
+    Args:
+        text: What to remind them of. Write it so it still makes sense in a week
+            with no other context — "re-run the routing audit", not "check that".
+        date: When. Either YYYY-MM-DD, or a phrase: "tomorrow", "in a week",
+            "in 3 days", "in two weeks", "in a month".
+        project_id: Optional project slug to file it under (e.g. "metis-dashboard").
+            Leave empty for a reminder that belongs to no project — that is a
+            normal case, not a fallback.
+        remind_at: Optional time of day, "HH:MM".
+        until: Optional end date, same formats as `date`. Its meaning depends on
+            `repeat`, and the two readings are mutually exclusive:
+              * without `repeat` — a MULTI-DAY event. `date`..`until` is one
+                continuous block (a conference, a field trip, leave).
+              * with `repeat` — when the SERIES stops. Leave empty for open-ended.
+            A recurring multi-day event is not supported; say so rather than
+            silently picking one of the two readings.
+        repeat: "" (default), "daily", "weekdays", "weekly", "monthly" or
+            "yearly". A repeating plan is stored as one row plus this rule and
+            expanded when the calendar is drawn, so changing it changes every
+            future occurrence at once.
+        duration_days: How many days ONE occurrence covers, default 1. Use it with
+            `repeat` for something like "the first three days of every month".
+            Without `repeat`, prefer `until` — it says the same thing more clearly.
+
+    Returns:
+        Confirmation naming the date, span or schedule it was placed on.
+    """
+    text = (text or "").strip()
+    if not text:
+        return [TextContent(type="text", text="Nothing to remind you of — text is required.")]
+
+    iso, err = _resolve_reminder_date(date)
+    if err:
+        return [TextContent(type="text", text=f"Could not set the reminder: {err}.")]
+
+    repeat = (repeat or "").strip().lower()
+    if repeat in ("weekday", "every weekday", "workdays"):
+        repeat = "weekdays"
+    if repeat not in _VALID_REPEAT:
+        return [TextContent(type="text", text=(
+            f"Could not set the reminder: {repeat!r} is not a repeat I understand. "
+            "Use daily, weekdays, weekly, monthly or yearly."))]
+    try:
+        duration_days = max(1, int(duration_days))
+    except (TypeError, ValueError):
+        duration_days = 1
+
+    end_iso = None
+    if (until or "").strip():
+        end_iso, err = _resolve_reminder_date(until)
+        if err:
+            return [TextContent(type="text", text=f"Could not set the reminder: {err}.")]
+        if end_iso < iso:
+            return [TextContent(type="text", text=(
+                f"Could not set the reminder: {end_iso} is before the start date {iso}."))]
+
+    if duration_days > 1 and not repeat:
+        # Without a rule there is only one occurrence, so a duration and an end
+        # date say the same thing. Fold it into end_date rather than storing two
+        # descriptions of one span that can disagree later.
+        span_end = (datetime.date.fromisoformat(iso)
+                    + datetime.timedelta(days=duration_days - 1)).isoformat()
+        if end_iso and end_iso != span_end:
+            return [TextContent(type="text", text=(
+                "Could not set the reminder: `until` and `duration_days` describe "
+                "different spans. Give one or the other."))]
+        end_iso, duration_days = span_end, 1
+
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    try:
+        with connect(paths.db) as conn:
+            _ensure_day_plan(conn)
+            if project_id:
+                known = conn.execute(
+                    "SELECT 1 FROM projects WHERE project_id = ?", (project_id,)
+                ).fetchone()
+                if not known:
+                    # Better an unfiled reminder that shows up than a filed one
+                    # that vanishes behind a project that does not exist.
+                    project_id = ""
+            cur = conn.execute(
+                "INSERT INTO day_plan (start_date, end_date, kind, project_id, text, "
+                "remind_at, done, recurrence, duration_days, created_at, updated_at) "
+                "VALUES (?, ?, 'reminder', ?, ?, ?, 0, ?, ?, ?, ?)",
+                (iso, end_iso, project_id or None, text,
+                 (remind_at or "").strip() or None, repeat, duration_days, now, now),
+            )
+            conn.commit()
+            plan_id = cur.lastrowid
+    except Exception as exc:
+        return [TextContent(type="text", text=f"Could not save the reminder: {exc}")]
+
+    when = datetime.date.fromisoformat(iso)
+    days = (when - datetime.date.today()).days
+    rel = "today" if days == 0 else "tomorrow" if days == 1 else f"in {days} days"
+    where = f" under {project_id}" if project_id else ""
+    if repeat:
+        stop = (f", until {datetime.date.fromisoformat(end_iso).strftime('%d %B %Y')}"
+                if end_iso else ", open-ended")
+        each = f", {duration_days} days each" if duration_days > 1 else ""
+        head = (f"Repeating {repeat} from {when.strftime('%A %d %B %Y')} "
+                f"({rel}){each}{stop}")
+    elif end_iso:
+        end = datetime.date.fromisoformat(end_iso)
+        span = (end - when).days + 1
+        head = (f"Blocked out {when.strftime('%a %d %B')} to {end.strftime('%a %d %B %Y')} "
+                f"({span} days, starting {rel})")
+    else:
+        head = f"Reminder set for {when.strftime('%A %d %B %Y')} ({rel})"
+    return [TextContent(type="text", text=f"{head}{where}: {text} [plan #{plan_id}]")]
