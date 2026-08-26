@@ -1,41 +1,99 @@
-{# Literature through the lens. Reads `new_publications`.
+{#- Literature through the lens. Reads `new_publications`.
 
-   A publication date LATER than today is shown as-is and flagged, not hidden:
-   this corpus holds items stamped 2027 and 2030. They sort by discovery date so
-   they cannot squat at the top of the list, but the wrong claim stays visible. #}
-{% if not reading %}
+    A publication date LATER than today is shown as-is and flagged, not hidden:
+    this corpus holds items stamped 2027 and 2030. They sort by discovery date so
+    they cannot squat at the top of the list, but the wrong claim stays visible.
+
+    Same three-way sift as the feed — live, muted, judged — for the same reason:
+    every paper the lens caught is accounted for on the surface. -#}
+{% from "partials/_focus_item.html" import verdict_buttons, verdict_badge, why_muted %}
+{% set T = "#focus-reading" %}
+
+{% macro paper_link(r) %}
+  {% if r.doi %}<a href="https://doi.org/{{ r.doi }}" target="_blank" rel="noopener">{{ r.title }}</a>
+  {% elif r.source_url %}<a href="{{ r.source_url }}" target="_blank" rel="noopener">{{ r.title }}</a>
+  {% else %}{{ r.title }}{% endif %}
+{% endmacro %}
+
+{% macro paper_meta(r, today) %}
+<div class="fv-meta">
+  {{ r.kind }}{% if r.journal %} · {{ r.journal[:52] }}{% endif %}
+  {% if r.doi %} · {{ r.doi }}{% endif %}
+  {% if r.pub and r.pub[:10] > today %} · ⚠ dated in the future — sorted by when Metis found it{% endif %}
+</div>
+{% endmacro %}
+
+{% if not reading.live and not reading.muted and not reading.decided %}
 <div class="panel" style="padding:16px 18px;">
   <p style="margin:0;font-size:13px;color:var(--m-muted);">
     No literature matches this lens yet.
   </p>
 </div>
 {% else %}
+
+{% if reading.live %}
 <div class="panel" style="padding:4px 0;">
-  {% for r in reading %}
-  <div style="padding:11px 18px;{% if not loop.last %}border-bottom:1px solid var(--m-line);{% endif %}">
-    <div style="display:flex;gap:12px;align-items:baseline;">
-      <span style="font-family:var(--m-mono);font-size:10.5px;color:var(--m-muted);
-                   white-space:nowrap;font-variant-numeric:tabular-nums;">
-        {{ (r.pub or '')[:10] or '—' }}{% if r.pub and r.pub[:10] > today %} ⚠{% endif %}
-      </span>
-      <div style="min-width:0;flex:1;">
-        <div style="font-size:13.5px;line-height:1.45;">
-          {% if r.doi %}
-          <a href="https://doi.org/{{ r.doi }}" target="_blank" rel="noopener"
-             style="color:inherit;text-decoration:none;border-bottom:1px solid var(--m-line);">{{ r.title }}</a>
-          {% elif r.source_url %}
-          <a href="{{ r.source_url }}" target="_blank" rel="noopener"
-             style="color:inherit;text-decoration:none;border-bottom:1px solid var(--m-line);">{{ r.title }}</a>
-          {% else %}{{ r.title }}{% endif %}
-        </div>
-        <div style="font-family:var(--m-mono);font-size:10.5px;color:var(--m-muted);margin-top:3px;">
-          {{ r.kind }}{% if r.journal %} · {{ r.journal[:52] }}{% endif %}
-          {% if r.doi %} · {{ r.doi }}{% endif %}
-          {% if r.pub and r.pub[:10] > today %} · ⚠ dated in the future — sorted by when Metis found it{% endif %}
-        </div>
-      </div>
+  {% for r in reading.live[:14] %}
+  <div class="fv-row">
+    <span class="fv-date">
+      {{ (r.pub or '')[:10] or '—' }}{% if r.pub and r.pub[:10] > today %} ⚠{% endif %}
+    </span>
+    <div class="fv-body">
+      <div class="fv-title">{{ paper_link(r) }}</div>
+      {{ paper_meta(r, today) }}
+      {{ verdict_buttons(area.slug, "reading", r, T) }}
     </div>
   </div>
   {% endfor %}
 </div>
+{% if reading.n_live > 14 %}
+<p class="fv-more">{{ reading.n_live - 14 }} more waiting to be judged.</p>
+{% endif %}
+{% endif %}
+
+{% if reading.muted %}
+<details class="fv-fold">
+  <summary>
+    <span class="fv-chev">▸</span>
+    Quieter — {{ reading.n_muted }} like papers you declined
+  </summary>
+  <div class="fv-fold-body">
+    <p class="fv-note">
+      Demoted, not dropped. In a literature search an absence you were never told
+      about is the expensive kind of mistake, so these stay reachable.
+    </p>
+    {% for r in reading.muted[:12] %}
+    <div class="fv-row fv-row--muted">
+      <span class="fv-date">{{ (r.pub or '')[:10] or '—' }}</span>
+      <div class="fv-body">
+        <div class="fv-title">{{ paper_link(r) }}</div>
+        {{ why_muted(r) }}
+        {{ verdict_buttons(area.slug, "reading", r, T) }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</details>
+{% endif %}
+
+{% if reading.decided %}
+<details class="fv-fold">
+  <summary>
+    <span class="fv-chev">▸</span>
+    Judged — {{ reading.decided | length }}
+  </summary>
+  <div class="fv-fold-body">
+    {% for r in reading.decided[:20] %}
+    <div class="fv-row fv-row--muted">
+      <span class="fv-date">{{ (r.pub or '')[:10] or '—' }}</span>
+      <div class="fv-body">
+        <div class="fv-title">{{ paper_link(r) }}</div>
+        {{ verdict_badge(area.slug, "reading", r, T) }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</details>
+{% endif %}
+
 {% endif %}

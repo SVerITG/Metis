@@ -1,5 +1,14 @@
-{# News through the lens. Reads `news_briefs` — the focus stores no copy. #}
-{% if not news %}
+{#- News through the lens. Reads `news_briefs` — the focus stores no copy.
+
+    `news` is now a SIFT, not a list: {live, muted, decided}. Every item the lens
+    caught is in exactly one of the three, and the template renders all three, so
+    the counts on the surface always add up to what the lens found. That property
+    is worth the extra branch — a feed that quietly holds items back is one you
+    cannot trust to tell you what you are missing. -#}
+{% from "partials/_focus_item.html" import verdict_buttons, verdict_badge, why_muted %}
+{% set T = "#focus-feed" %}
+
+{% if not news.live and not news.muted and not news.decided %}
 <div class="panel" style="padding:16px 18px;">
   <p style="margin:0;font-size:13px;color:var(--m-muted);">
     Nothing in the feed yet. That is a statement about the lens as much as the
@@ -8,27 +17,84 @@
   </p>
 </div>
 {% else %}
+
+{% if news.live %}
 <div class="panel" style="padding:4px 0;">
-  {% for n in news %}
-  <div style="padding:11px 18px;{% if not loop.last %}border-bottom:1px solid var(--m-line);{% endif %}">
-    <div style="display:flex;gap:12px;align-items:baseline;">
-      <span style="font-family:var(--m-mono);font-size:10.5px;color:var(--m-muted);
-                   white-space:nowrap;font-variant-numeric:tabular-nums;">{{ n.brief_date }}</span>
-      <div style="min-width:0;flex:1;">
-        <div style="font-size:13.5px;line-height:1.45;">
-          {% if n.source_url %}
-          <a href="{{ n.source_url }}" target="_blank" rel="noopener"
-             style="color:inherit;text-decoration:none;border-bottom:1px solid var(--m-line);">{{ n.title }}</a>
-          {% else %}{{ n.title }}{% endif %}
-        </div>
-        {% if n.summary %}
-        <div style="font-size:12px;color:var(--m-muted);margin-top:3px;line-height:1.5;">
-          {{ n.summary[:230] }}{% if n.summary|length > 230 %}…{% endif %}
-        </div>
-        {% endif %}
+  {% for n in news.live[:14] %}
+  <div class="fv-row">
+    <span class="fv-date">{{ n.brief_date }}</span>
+    <div class="fv-body">
+      <div class="fv-title">
+        {% if n.source_url %}
+        <a href="{{ n.source_url }}" target="_blank" rel="noopener">{{ n.title }}</a>
+        {% else %}{{ n.title }}{% endif %}
       </div>
+      {% if n.summary %}
+      <div class="fv-sum">{{ n.summary[:230] }}{% if n.summary|length > 230 %}…{% endif %}</div>
+      {% endif %}
+      {{ verdict_buttons(area.slug, "news", n, T) }}
     </div>
   </div>
   {% endfor %}
 </div>
+{% if news.n_live > 14 %}
+<p class="fv-more">{{ news.n_live - 14 }} more waiting to be judged.</p>
+{% endif %}
+{% endif %}
+
+{#- Muted: present, counted, one click away. Never removed. -#}
+{% if news.muted %}
+<details class="fv-fold">
+  <summary>
+    <span class="fv-chev">▸</span>
+    Quieter — {{ news.n_muted }} like things you declined
+  </summary>
+  <div class="fv-fold-body">
+    <p class="fv-note">
+      Still here, and still yours to read. These share vocabulary with items you
+      said were not for you, so they sit below the rest rather than above it.
+      Nothing is ever removed from a focus.
+    </p>
+    {% for n in news.muted[:12] %}
+    <div class="fv-row fv-row--muted">
+      <span class="fv-date">{{ n.brief_date }}</span>
+      <div class="fv-body">
+        <div class="fv-title">
+          {% if n.source_url %}
+          <a href="{{ n.source_url }}" target="_blank" rel="noopener">{{ n.title }}</a>
+          {% else %}{{ n.title }}{% endif %}
+        </div>
+        {{ why_muted(n) }}
+        {{ verdict_buttons(area.slug, "news", n, T) }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</details>
+{% endif %}
+
+{% if news.decided %}
+<details class="fv-fold">
+  <summary>
+    <span class="fv-chev">▸</span>
+    Judged — {{ news.decided | length }}
+  </summary>
+  <div class="fv-fold-body">
+    {% for n in news.decided[:20] %}
+    <div class="fv-row fv-row--muted">
+      <span class="fv-date">{{ n.brief_date }}</span>
+      <div class="fv-body">
+        <div class="fv-title">
+          {% if n.source_url %}
+          <a href="{{ n.source_url }}" target="_blank" rel="noopener">{{ n.title }}</a>
+          {% else %}{{ n.title }}{% endif %}
+        </div>
+        {{ verdict_badge(area.slug, "news", n, T) }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</details>
+{% endif %}
+
 {% endif %}

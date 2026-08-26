@@ -1,60 +1,95 @@
-{# Notes and ideas WRITTEN on this focus, matched on the `focus:<slug>` tag.
+{#- Notes, ideas and QUESTIONS written on this focus, matched on the
+    `focus:<slug>` tag.
 
-   The tag is the only association, and it is deliberately explicit rather than
-   inferred from keywords: a thought recorded here belongs to the focus, whereas
-   every note that happens to mention the subject does not.
+    The tag is the only association, and it is deliberately explicit rather than
+    inferred from keywords: a thought recorded here belongs to the focus, whereas
+    every note that happens to mention the subject does not.
 
-   It is also why archiving is safe. The rows live in `personal_notes` and
-   `ideas`; the tag survives the lens. #}
+    It is also why archiving is safe. The rows live in `personal_notes` and
+    `ideas`; the tag survives the lens.
+
+    A question is an idea with `idea_type='question'` — not a fourth table. It
+    gets one thing the others do not: an EXPLORE button, which answers it from
+    this focus's own corpus, literature, notes and ideas. -#}
+{% macro forget(slug, kind, entry_id, what) %}
+<button type="button" class="ft-forget"
+        hx-post="/api/focus/{{ slug }}/forget"
+        hx-vals='{"kind": "{{ kind }}", "entry_id": "{{ entry_id }}"}'
+        hx-target="#focus-thinking" hx-swap="innerHTML"
+        hx-confirm="Delete this {{ what }}? It is removed from your {{ 'notes' if kind == 'note' else 'ideas' }} entirely, not just from this focus."
+        title="Delete this {{ what }}">&times;</button>
+{% endmacro %}
+
 <div class="panel" style="padding:16px 18px;">
 
-  <form hx-post="/api/focus/{{ area.slug }}/idea"
-        hx-target="#focus-thinking" hx-swap="innerHTML"
-        hx-on::after-request="this.reset()"
-        style="display:flex;gap:8px;margin-bottom:10px;">
-    <input name="text" placeholder="Capture an idea on this focus…" required
-           style="flex:1;font-size:13px;padding:8px 10px;border:1px solid var(--m-line);
-                  border-radius:4px;background:transparent;color:var(--m-fg);">
-    <button type="submit"
-            style="font-family:var(--m-mono);font-size:10.5px;padding:6px 12px;
-                   border:1px solid var(--m-line);border-radius:4px;
-                   background:transparent;color:var(--m-fg);cursor:pointer;">Idea</button>
-  </form>
+  <div class="ft-forms">
+    <form hx-post="/api/focus/{{ area.slug }}/question"
+          hx-target="#focus-thinking" hx-swap="innerHTML"
+          hx-on::after-request="this.reset()">
+      <input name="text" required
+             placeholder="Ask a question — you can explore it below…">
+      <button type="submit" class="ft-btn ft-btn--q">Question</button>
+    </form>
 
-  <form hx-post="/api/focus/{{ area.slug }}/note"
-        hx-target="#focus-thinking" hx-swap="innerHTML"
-        hx-on::after-request="this.reset()"
-        style="display:flex;gap:8px;margin-bottom:14px;">
-    <input name="content" placeholder="Write a note — something you want to keep…" required
-           style="flex:1;font-size:13px;padding:8px 10px;border:1px solid var(--m-line);
-                  border-radius:4px;background:transparent;color:var(--m-fg);">
-    <button type="submit"
-            style="font-family:var(--m-mono);font-size:10.5px;padding:6px 12px;
-                   border:1px solid var(--m-line);border-radius:4px;
-                   background:transparent;color:var(--m-fg);cursor:pointer;">Note</button>
-  </form>
+    <form hx-post="/api/focus/{{ area.slug }}/idea"
+          hx-target="#focus-thinking" hx-swap="innerHTML"
+          hx-on::after-request="this.reset()">
+      <input name="text" required placeholder="Capture an idea on this focus…">
+      <button type="submit" class="ft-btn">Idea</button>
+    </form>
 
-  {% if not thinking.ideas and not thinking.notes %}
-  <p style="margin:0;font-size:12.5px;color:var(--m-muted);">
+    <form hx-post="/api/focus/{{ area.slug }}/note"
+          hx-target="#focus-thinking" hx-swap="innerHTML"
+          hx-on::after-request="this.reset()">
+      <input name="content" required placeholder="Write a note — something you want to keep…">
+      <button type="submit" class="ft-btn">Note</button>
+    </form>
+  </div>
+
+  {% if not thinking.ideas and not thinking.notes and not questions %}
+  <p style="margin:10px 0 0;font-size:12.5px;color:var(--m-muted);line-height:1.6;">
     Nothing recorded on this focus yet. Anything written here is tagged
     <code>focus:{{ area.slug }}</code> and stays in your notes and ideas whatever
-    happens to this surface.
+    happens to this surface — archiving the focus never removes it. Deleting an
+    entry with <strong>&times;</strong> does, and that is the difference.
   </p>
   {% else %}
-    {% for i in thinking.ideas %}
-    <div style="padding:8px 0;border-top:1px solid var(--m-line);">
-      <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
-        IDEA · {{ i.created_at[:10] }}</span>
-      <div style="font-size:13px;line-height:1.5;margin-top:2px;">{{ i.text }}</div>
-    </div>
-    {% endfor %}
-    {% for n in thinking.notes %}
-    <div style="padding:8px 0;border-top:1px solid var(--m-line);">
-      <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
-        NOTE · {{ n.created_at[:10] }}</span>
-      {% if n.title %}<div style="font-size:13px;font-weight:600;margin-top:2px;">{{ n.title }}</div>{% endif %}
-      <div style="font-size:13px;line-height:1.5;margin-top:2px;">{{ n.content }}</div>
-    </div>
-    {% endfor %}
+
+  {#- Questions first: they are the only entries with something still to do. -#}
+  {% for q in questions %}
+  <div class="ft-entry ft-entry--q">
+    <span class="ft-kind">QUESTION · {{ q.created_at[:10] }}</span>
+    <div class="ft-text">{{ q.text }}</div>
+    {{ forget(area.slug, "question", q.idea_id, "question") }}
+    <button type="button" class="ft-explore"
+            hx-post="/api/focus/{{ area.slug }}/explore"
+            hx-vals='{"question": {{ q.text | tojson }}}'
+            hx-target="#focus-explore" hx-swap="innerHTML"
+            hx-indicator="#focus-explore-spin">
+      <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor"
+           stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/>
+      </svg>Explore
+    </button>
+  </div>
+  {% endfor %}
+
+  {% for i in thinking.ideas if i.idea_type != 'question' %}
+  <div class="ft-entry">
+    <span class="ft-kind">IDEA · {{ i.created_at[:10] }}</span>
+    {{ forget(area.slug, "idea", i.idea_id, "idea") }}
+    <div class="ft-text">{{ i.text }}</div>
+  </div>
+  {% endfor %}
+
+  {% for n in thinking.notes %}
+  <div class="ft-entry">
+    <span class="ft-kind">NOTE · {{ n.created_at[:10] }}</span>
+    {{ forget(area.slug, "note", n.note_id, "note") }}
+    {% if n.title %}<div class="ft-text" style="font-weight:600;">{{ n.title }}</div>{% endif %}
+    <div class="ft-text">{{ n.content }}</div>
+  </div>
+  {% endfor %}
+
   {% endif %}
 </div>

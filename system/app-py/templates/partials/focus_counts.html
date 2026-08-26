@@ -1,0 +1,77 @@
+{#- The overview line: "what is saved, how many ideas, articles, ..." (2026-08-26).
+
+    ORDER IS THE ARGUMENT, again. What you have SAVED comes first, because that is
+    the thing you built; what is WAITING comes second, because that is the thing
+    you can act on. The totals that only ever grow — 388 briefs, 212 papers — come
+    last and quiet. A counter that can only rise stops being information past the
+    point a person can act on it, which is the same rule the Today audit landed on.
+-#}
+<div class="fc-strip">
+  <div class="fc-cell fc-cell--lead">
+    <span class="fc-n">{{ counts.saved }}</span>
+    <span class="fc-l">in the safe</span>
+  </div>
+  <div class="fc-cell fc-cell--lead">
+    <span class="fc-n">{{ news.n_live + reading.n_live }}</span>
+    <span class="fc-l">waiting on you</span>
+  </div>
+  <div class="fc-cell">
+    <span class="fc-n">{{ counts.questions }}</span>
+    <span class="fc-l">question{{ '' if counts.questions == 1 else 's' }}</span>
+  </div>
+  <div class="fc-cell">
+    <span class="fc-n">{{ counts.ideas }}</span>
+    <span class="fc-l">idea{{ '' if counts.ideas == 1 else 's' }}</span>
+  </div>
+  <div class="fc-cell">
+    <span class="fc-n">{{ counts.notes }}</span>
+    <span class="fc-l">note{{ '' if counts.notes == 1 else 's' }}</span>
+  </div>
+  <div class="fc-sep"></div>
+  <div class="fc-cell fc-cell--quiet">
+    <span class="fc-n">{{ '{:,}'.format(counts.briefs) }}</span>
+    <span class="fc-l">briefs matched</span>
+  </div>
+  <div class="fc-cell fc-cell--quiet">
+    <span class="fc-n">{{ '{:,}'.format(counts.papers) }}</span>
+    <span class="fc-l">papers matched</span>
+  </div>
+  {% if counts.documents %}
+  <div class="fc-cell fc-cell--quiet">
+    <span class="fc-n">{{ counts.documents }}</span>
+    <span class="fc-l">indexed docs</span>
+  </div>
+  {% endif %}
+  {% if counts.declined %}
+  <div class="fc-cell fc-cell--quiet">
+    <span class="fc-n">{{ counts.declined }}</span>
+    <span class="fc-l">declined</span>
+  </div>
+  {% endif %}
+</div>
+
+{#- A named layer that matches no layer. Reported rather than silently applied:
+    a filter that quietly excludes the whole corpus is indistinguishable from an
+    empty corpus, and that is exactly what happened here — `layers = "all"` meant
+    "a layer called all", found nothing, and the surface reported 0 indexed
+    documents while sitting on 27,428 chunks. -#}
+{% if corpus and corpus.unknown_layers %}
+<div class="fc-warn">
+  <strong>Unknown knowledge layer{{ '' if corpus.unknown_layers|length == 1 else 's' }}:</strong>
+  {% for u in corpus.unknown_layers %}<code>{{ u }}</code>{% if not loop.last %}, {% endif %}{% endfor %}.
+  Searching every layer instead. Leave the field empty to mean “all”.
+</div>
+{% endif %}
+
+{#- The lens diagnosis. Only appears when it has something to say, and it says a
+    number rather than an opinion — a warning you cannot check is just noise. -#}
+{% if noise and noise.pct >= 5 %}
+<div class="fc-warn">
+  <strong>{{ noise.false_positives }} of {{ noise.total }}</strong>
+  matched briefs ({{ noise.pct }}%) only matched <em>inside longer words</em> —
+  {% for e in noise.examples[:2] %}<code>{{ e.kw }}</code> in “{{ e.word }}”{% if not loop.last %}, {% endif %}{% endfor %}.
+  Short keywords match as substrings, so <code>ai</code> catches “said” and
+  <code>gis</code> catches “radiologists”.
+  <a href="/focus">Tighten the lens →</a>
+</div>
+{% endif %}

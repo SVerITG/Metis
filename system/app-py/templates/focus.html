@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "partials/_section.html" import sec_label %}
+{% from "partials/_section.html" import sec_label, zone %}
 {% block title %}{{ area.title }}{% endblock %}
 
 {#
@@ -7,15 +7,29 @@
   A FOCUS SURFACE — one template, any number of surfaces.
 
   Every other surface here is a bespoke template. This one is not, and that is
-  the feature: the researcher adds and removes focus areas himself, so a surface that
-  needed a developer to exist would not be a surface a user can add. `area` is a
-  row from `focus_areas`; everything on the page is that row's lens applied to
-  tables that already own their content.
+  the feature: the researcher adds and removes focus areas himself, so a surface
+  that needed a developer to exist would not be a surface a user can add. `area`
+  is a row from `focus_areas`; everything on the page is that row's lens applied
+  to tables that already own their content.
 
-  ORDER IS AN ARGUMENT. Pulse first, overview second, feed third.
-  Opening a subject you have not looked at for a week, the first question is
-  "what happened", not "what is this" — so the answer to that is at the top, and
-  the standing narrative sits under it where it can be skipped.
+  ORDER IS AN ARGUMENT, and it changed on 2026-08-26 when the surface stopped
+  being a reading list and became a place you build something:
+
+      counts     what you have made, and what is waiting on you
+      safe       what you kept — the thing that grows over weeks
+      brief      the morning brief for one subject, on demand
+      thinking   notes, ideas, and questions you can EXPLORE
+      feed       news through the lens, keep / not-for-me
+      reading    literature through the lens, keep / not-for-me
+      shelf      lens management, last because you touch it least
+
+  The safe outranks the feed deliberately. A feed is what arrived; a safe is what
+  you decided. On a surface meant to accumulate, the second is the point and the
+  first is the raw material.
+
+  EVERY SECTION IS A FOLD. `zone()` remembers its state per key in localStorage,
+  so the shape of this page belongs to the reader — and the summary line always
+  carries the fact, so folding costs nothing but the detail.
   ══════════════════════════════════════════════════════════════════════════════
 #}
 
@@ -35,49 +49,73 @@
       {% endif %}
     </div>
     <div class="page-meta">
-      {{ pulse.total_news }} BRIEFS · {{ pulse.total_reading }} PAPERS
-      · {{ corpus.documents }} DOCS
+      {% if pulse.new_news is not none and (pulse.new_news or pulse.new_reading) %}
+      {{ pulse.new_news }} NEW BRIEF{{ '' if pulse.new_news == 1 else 'S' }}
+      · {{ pulse.new_reading }} NEW PAPER{{ '' if pulse.new_reading == 1 else 'S' }}
+      {% else %}
+      NOTHING NEW SINCE YOUR LAST VISIT
+      {% endif %}
     </div>
   </div>
 
-  {# ── 1 · Pulse — what changed, and how stale ───────────────────────────── #}
-  <div id="focus-pulse">
-    {% include "partials/focus_pulse.html" %}
-  </div>
+  {# ── 1 · The overview line — always visible, never folded ──────────────── #}
+  <div id="focus-counts">{% include "partials/focus_counts.html" %}</div>
 
-  {# ── 2 · Overview — the standing narrative ─────────────────────────────── #}
+  {# ── 2 · Pulse ─────────────────────────────────────────────────────────── #}
+  {% call zone("What changed", key="focus-" ~ area.slug ~ "-pulse",
+               tail="SINCE YOUR LAST VISIT") %}
+    <div id="focus-pulse">{% include "partials/focus_pulse.html" %}</div>
+  {% endcall %}
+
+  {# ── 3 · Overview — the standing narrative ─────────────────────────────── #}
   {% if area.overview %}
-  <div style="margin-top:28px;">
-    {{ sec_label("Overview", tail="WHAT MATTERS HERE", style="margin-bottom:8px;") }}
+  {% call zone("Overview", key="focus-" ~ area.slug ~ "-overview",
+               tail="WHAT MATTERS HERE", open=True) %}
     <div class="panel" style="padding:18px 20px;">
       <div class="focus-prose">{{ area.overview | md | safe }}</div>
     </div>
-  </div>
+  {% endcall %}
   {% endif %}
 
-  {# ── 3 · Feed ──────────────────────────────────────────────────────────── #}
-  <div style="margin-top:28px;">
-    {{ sec_label("Latest", tail="NEWS THROUGH THIS LENS", style="margin-bottom:8px;") }}
-    <div id="focus-feed">{% include "partials/focus_feed.html" %}</div>
-  </div>
+  {# ── 4 · The safe — what you kept, and what it taught this focus ───────── #}
+  {% call zone("The safe", key="focus-" ~ area.slug ~ "-safe",
+               tail=counts.saved ~ " KEPT FOR REFLECTION", open=True) %}
+    <div id="focus-safe">{% include "partials/focus_safe.html" %}</div>
+  {% endcall %}
 
-  {# ── 4 · Reading ───────────────────────────────────────────────────────── #}
-  <div style="margin-top:28px;">
-    {{ sec_label("Reading", tail="LITERATURE THROUGH THIS LENS", style="margin-bottom:8px;") }}
-    <div id="focus-reading">{% include "partials/focus_reading.html" %}</div>
-  </div>
+  {# ── 5 · Brief ─────────────────────────────────────────────────────────── #}
+  {% call zone("Brief", key="focus-" ~ area.slug ~ "-brief",
+               tail=("LAST " ~ counts.last_brief[:10]) if counts.last_brief else "NOT YET GENERATED") %}
+    <div id="focus-brief">{% include "partials/focus_brief.html" %}</div>
+  {% endcall %}
 
-  {# ── 5 · Thinking — the brainstorm half ────────────────────────────────── #}
-  <div style="margin-top:28px;">
-    {{ sec_label("Your thinking", tail="NOTES · IDEAS · TAGGED focus:" ~ area.slug,
-                 style="margin-bottom:8px;") }}
+  {# ── 6 · Thinking — notes, ideas, questions, and Explore ───────────────── #}
+  {% call zone("Your thinking", key="focus-" ~ area.slug ~ "-thinking",
+               tail="NOTES · IDEAS · QUESTIONS", open=True) %}
     <div id="focus-thinking">{% include "partials/focus_thinking.html" %}</div>
-  </div>
+    <span id="focus-explore-spin" class="htmx-indicator fb-spin"
+          style="display:block;margin-top:8px;">searching your own material…</span>
+    <div id="focus-explore" style="margin-top:10px;"></div>
+  {% endcall %}
 
-  {# ── Shelf management ──────────────────────────────────────────────────── #}
-  <div style="margin-top:32px;">
-    {{ sec_label("Shelf", tail=(shelf|length) ~ " / " ~ max_shelf ~ " SLOTS",
-                 style="margin-bottom:8px;") }}
+  {# ── 7 · Feed ──────────────────────────────────────────────────────────── #}
+  {% call zone("Latest", key="focus-" ~ area.slug ~ "-feed",
+               tail=news.n_live ~ " UNJUDGED"
+                    + (" · " ~ news.n_muted ~ " QUIETER" if news.n_muted else ""),
+               open=True) %}
+    <div id="focus-feed">{% include "partials/focus_feed.html" %}</div>
+  {% endcall %}
+
+  {# ── 8 · Reading ───────────────────────────────────────────────────────── #}
+  {% call zone("Reading", key="focus-" ~ area.slug ~ "-reading",
+               tail=reading.n_live ~ " UNJUDGED"
+                    + (" · " ~ reading.n_muted ~ " QUIETER" if reading.n_muted else "")) %}
+    <div id="focus-reading">{% include "partials/focus_reading.html" %}</div>
+  {% endcall %}
+
+  {# ── 9 · Shelf management ──────────────────────────────────────────────── #}
+  {% call zone("Shelf", key="focus-" ~ area.slug ~ "-shelf",
+               tail=(shelf|length) ~ " / " ~ max_shelf ~ " SLOTS") %}
     <div class="panel" style="padding:14px 16px;">
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
         {% for a in all_areas %}
@@ -100,22 +138,18 @@
                   hx-vals='{"state": "{{ s }}"}'
                   hx-swap="none"
                   hx-on::after-request="window.location.reload()"
-                  style="font-family:var(--m-mono);font-size:10.5px;padding:5px 11px;
-                         border:1px solid var(--m-line);border-radius:4px;
-                         background:transparent;color:var(--m-fg);cursor:pointer;">
-            {{ label }}
-          </button>
+                  class="ft-btn">{{ label }}</button>
           {% endif %}
         {% endfor %}
       </div>
       <p style="margin:12px 0 0;font-size:12px;color:var(--m-muted);line-height:1.55;">
-        Archiving files the <strong>lens</strong>, not the contents. Every note and
-        idea keeps its <code>focus:{{ area.slug }}</code> tag, papers stay in your
-        library, briefs stay in the news history — a focus never owned them, so
-        removing it cannot take them away.
+        Archiving files the <strong>lens</strong>, not the contents. Every note, idea,
+        question and kept item keeps its <code>focus:{{ area.slug }}</code> tag or its
+        row in the safe — papers stay in your library, briefs stay in the news
+        history. A focus never owned them, so removing it cannot take them away.
       </p>
     </div>
-  </div>
+  {% endcall %}
 
 </div>
 {% endblock %}

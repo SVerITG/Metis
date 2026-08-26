@@ -1,0 +1,68 @@
+{#- The safe: what you decided was worth keeping, for further reflection.
+
+    Titles are stored ON the verdict, not read back through a join. That is why
+    this list survives the feed moving on: `news_briefs` gets tidied, the safe
+    does not go blank. A safe whose contents can disappear is not a safe. -#}
+{% if not kept %}
+<div class="panel" style="padding:16px 18px;">
+  <p style="margin:0;font-size:13px;color:var(--m-muted);line-height:1.6;">
+    Nothing kept yet. Press <strong>Keep</strong> on anything in the feed or the
+    reading list and it lands here — and this focus starts learning which words
+    you reach for. Over a few weeks that is what turns a keyword search into
+    <em>your</em> focus.
+  </p>
+</div>
+{% else %}
+<div class="panel" style="padding:4px 0;">
+  {% for k in kept %}
+  <div class="fv-row">
+    <span class="fv-date">{{ k.created_at[:10] }}</span>
+    <div class="fv-body">
+      <div class="fv-title">
+        {% if k.url %}
+        <a href="{{ k.url if k.url.startswith('http') else 'https://doi.org/' ~ k.url }}"
+           target="_blank" rel="noopener">{{ k.title }}</a>
+        {% else %}{{ k.title }}{% endif %}
+      </div>
+      <div class="fv-acts">
+        <span class="fv-mark fv-mark--kind">{{ k.kind }}</span>
+        <button type="button" class="fv-btn fv-undo"
+                hx-post="/api/focus/{{ area.slug }}/unjudge"
+                hx-vals='{"kind": "{{ k.kind }}", "item_id": "{{ k.item_id }}"}'
+                hx-target="#focus-safe" hx-swap="innerHTML"
+                title="Take it back out of the safe">Remove</button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{#- What the focus has learned. Shown in full, because a preference model the
+    researcher cannot read is one he cannot correct — and correcting it is the
+    whole point of a surface built over weeks. -#}
+{% if taste %}
+<details class="fv-fold" style="margin-top:10px;">
+  <summary>
+    <span class="fv-chev">▸</span>
+    What this focus has learned — {{ taste | length }} term{{ '' if taste|length == 1 else 's' }}
+  </summary>
+  <div class="fv-fold-body">
+    <p class="fv-note">
+      Counted from the titles you kept and declined, with the lens’s own words
+      removed. If those counted, one “not for me” would down-weight
+      <em>{{ area.title | lower }}</em> itself and mute the whole focus.
+    </p>
+    <div class="fv-taste">
+      {% for t, w in taste | dictsort(by='value', reverse=true) %}
+      <span class="fv-term fv-term--{{ 'up' if w > 0 else 'down' }}">
+        {{ t }} <b>{{ '+' if w > 0 }}{{ w }}</b>
+      </span>
+      {% endfor %}
+    </div>
+    <p class="fv-note" style="margin-top:8px;">
+      Anything scoring {{ mute_at }} or lower is folded into “Quieter”, never removed.
+    </p>
+  </div>
+</details>
+{% endif %}
