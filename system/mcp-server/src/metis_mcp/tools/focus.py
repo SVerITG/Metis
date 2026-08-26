@@ -83,10 +83,53 @@ CREATE TABLE IF NOT EXISTS focus_areas (
 """
 
 
+# A verdict is the researcher's judgement on ONE item seen through ONE lens.
+#
+# `title` is denormalised on purpose, and it is not laziness. It is read for two
+# things the source row cannot guarantee: the taste model below needs the words
+# even for rows that later get pruned from `news_briefs`, and the Safe must still
+# render what you saved after the feed has moved on. A safe whose contents vanish
+# when upstream tidies up is not a safe.
+_DDL_VERDICT = """
+CREATE TABLE IF NOT EXISTS focus_verdict (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug       TEXT NOT NULL,
+    kind       TEXT NOT NULL,          -- 'news' | 'reading'
+    item_id    TEXT NOT NULL,
+    verdict    TEXT NOT NULL,          -- 'kept' | 'declined'
+    title      TEXT DEFAULT '',
+    url        TEXT DEFAULT '',
+    note       TEXT DEFAULT '',
+    created_at TEXT NOT NULL,
+    UNIQUE(slug, kind, item_id)
+)
+"""
+
+# A generated brief is kept, not recomputed on view. The morning brief works the
+# same way, and for the same reason: a brief you read on Tuesday should still say
+# on Friday what it said on Tuesday, or it is not a record of anything.
+_DDL_BRIEF = """
+CREATE TABLE IF NOT EXISTS focus_brief_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug       TEXT NOT NULL,
+    body       TEXT NOT NULL,
+    n_news     INTEGER DEFAULT 0,
+    n_reading  INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL
+)
+"""
+
+
 def ensure_schema(con) -> None:
     con.execute(_DDL)
     con.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_focus_slug "
                 "ON focus_areas(slug)")
+    con.execute(_DDL_VERDICT)
+    con.execute("CREATE INDEX IF NOT EXISTS idx_verdict_slug "
+                "ON focus_verdict(slug, verdict)")
+    con.execute(_DDL_BRIEF)
+    con.execute("CREATE INDEX IF NOT EXISTS idx_focus_brief_slug "
+                "ON focus_brief_log(slug, created_at)")
 
 
 def slugify(s: str) -> str:
@@ -122,6 +165,69 @@ def lens_sql(groups: list[list[str]], expr: str) -> tuple[str, list]:
         parts.append("(" + " OR ".join(f"lower({expr}) LIKE ?" for _ in grp) + ")")
         params += [f"%{k}%" for k in grp]
     return " AND ".join(parts), params
+
+
+# ---------------------------------------------------------------------------
+# How a keyword matches
+# ---------------------------------------------------------------------------
+# Changed 2026-08-26, on measured evidence and with the researcher's go-ahead.
+#
+# THE PROBLEM. Keywords matched as bare substrings (`LIKE '%kw%'`). On his
+# AI-in-health lens that made 70 of 388 briefs (18%) false positives, and the
+# examples are not marginal:
+#
+#     'ai'  inside 'avait'        -> Sénégal: le Conseil constitutionnel…
+#     'gis' inside 'enregistre'   -> Ligue 1: à Nice, l'Ivoirien Wahi…
+#     'gis' inside 'radiologists' -> AI won't replace radiologists…
+#
+# THE RULE. A keyword must now start at a WORD BOUNDARY. It may still run into a
+# longer word from there, which is what keeps a deliberate stem working:
+# 'epidemi' catches epidemiology and epidemic, while 'ai' stops catching 'said'.
+#
+# WHAT IT COSTS, STATED PLAINLY. That third example is a real loss: "AI won't
+# replace radiologists" is genuinely relevant and reached group 2 only through
+# 'gis' inside 'radiologists'. A lens is a filter, and any filter tightened
+# enough to remove noise removes something worth keeping. The surface therefore
+# reports what the change dropped rather than quietly banking the improvement.
+#
+# HOW, given SQLite has no word-boundary operator: LIKE stays as a cheap,
+# index-friendly first pass, and a boundary regex confirms in Python. The SQL can
+# only over-return, never under-return, so the confirmation is sound.
+_WORD_START = {}
+
+
+def _boundary_re(kw: str):
+    """A cached compiled regex for one keyword, anchored at a word start."""
+    r = _WORD_START.get(kw)
+    if r is None:
+        r = re.compile(r"\b" + re.escape(kw.lower()))
+        _WORD_START[kw] = r
+    return r
+
+
+def matches_lens(groups: list, text: str) -> bool:
+    """AND across groups, OR within — with word-boundary matching."""
+    if not groups:
+        return False
+    t = (text or "").lower()
+    return all(any(_boundary_re(k).search(t) for k in grp) for grp in groups)
+
+
+def confirm(groups: list, rows: list, fields: list) -> list:
+    """Keep only rows whose lens match survives word-boundary checking.
+
+    `fields` are the columns the SQL matched on, joined the same way, so this
+    cannot disagree with the query about WHAT was searched — only about how
+    strictly.
+    """
+    if not groups:
+        return rows
+    out = []
+    for r in rows:
+        blob = " ".join(str(r.get(f) or "") for f in fields)
+        if matches_lens(groups, blob):
+            out.append(r)
+    return out
 
 
 def get_focus(slug: str) -> dict | None:
@@ -167,9 +273,12 @@ def focus_news(slug: str, limit: int = 12, since: str = "") -> list[dict]:
     if since:
         sql += " AND brief_date >= ?"
         params = params + [since]
+    # Over-fetch, then confirm: the boundary check can only REMOVE rows, so a
+    # limit applied before it would silently return short.
     sql += " ORDER BY brief_date DESC, created_at DESC LIMIT ?"
     with connect(paths.db) as con:
-        return [dict(r) for r in con.execute(sql, tuple(params + [limit]))]
+        rows = [dict(r) for r in con.execute(sql, tuple(params + [limit * 3 + 30]))]
+    return confirm(_groups(f), rows, ["title", "summary"])[:limit]
 
 
 def focus_reading(slug: str, limit: int = 12, since: str = "") -> list[dict]:
@@ -204,7 +313,18 @@ def focus_reading(slug: str, limit: int = 12, since: str = "") -> list[dict]:
     sql += (" ORDER BY CASE WHEN pub > date('now') THEN discovered_at ELSE pub END "
             "DESC, id DESC LIMIT ?")
     with connect(paths.db) as con:
-        return [dict(r) for r in con.execute(sql, tuple(params + [limit]))]
+        rows = [dict(r) for r in con.execute(sql, tuple(params + [limit * 3 + 30]))]
+    # `abstract` is matched by the SQL but not selected, so confirming on the
+    # title alone would drop every row whose match lives in the abstract.
+    ids = [r["id"] for r in rows]
+    if ids and _groups(f):
+        with connect(paths.db) as con:
+            abstracts = {r["id"]: r["abstract"] or "" for r in con.execute(
+                "SELECT id, abstract FROM new_publications WHERE id IN (%s)"
+                % ",".join("?" * len(ids)), tuple(ids))}
+        for r in rows:
+            r["_abstract"] = abstracts.get(r["id"], "")
+    return confirm(_groups(f), rows, ["title", "_abstract"])[:limit]
 
 
 def focus_thinking(slug: str, limit: int = 20) -> dict:
@@ -227,24 +347,67 @@ def focus_thinking(slug: str, limit: int = 20) -> dict:
     return {"notes": notes, "ideas": ideas}
 
 
+# ---------------------------------------------------------------------------
+# Which knowledge layers a focus searches
+# ---------------------------------------------------------------------------
+# A trap worth naming, found 2026-08-26 on the researcher's own focus. The create form
+# says "Knowledge layers to search (optional, comma-separated)" and lists the
+# slugs available. He typed `all`, meaning "search everything" — the reading any
+# person would give it. `all` is not a slug, so `k.slug IN ('all')` matched
+# nothing and the surface reported **0 indexed documents** while sitting on a
+# corpus of 27,428 chunks. Explore's corpus half returned nothing, silently.
+#
+# Empty meaning "everything" and `all` meaning "nothing" is exactly backwards.
+# Two rules follow, and the second matters more than the first:
+#   1. The obvious synonyms for "everything" mean everything.
+#   2. A layer name that matches NO layer is reported, never silently applied. A
+#      filter that quietly excludes the entire corpus is indistinguishable from
+#      an empty corpus, and the reader has no way to tell which they are looking
+#      at.
+_ALL_LAYERS = {"all", "any", "*", "everything", "every", "-", "none"}
+
+
+def layer_filter(f: dict) -> dict:
+    """Resolve a focus's `layers` field against the layers that actually exist.
+
+    Returns {"slugs": [...], "unknown": [...], "all": bool}. `slugs` is empty
+    when nothing should be filtered — which is the safe default, because
+    searching too much is a nuisance and searching nothing looks like an empty
+    library.
+    """
+    raw = [s.strip().lower() for s in (f.get("layers") or "").split(",") if s.strip()]
+    if not raw or all(r in _ALL_LAYERS for r in raw):
+        return {"slugs": [], "unknown": [], "all": True}
+    with connect(paths.db) as con:
+        known = {r["slug"] for r in con.execute(
+            "SELECT slug FROM knowledge_databases WHERE COALESCE(slug,'') != ''")}
+    wanted = [r for r in raw if r not in _ALL_LAYERS]
+    slugs = [r for r in wanted if r in known]
+    unknown = [r for r in wanted if r not in known]
+    # Every named layer was a typo: fall back to searching everything and SAY so,
+    # rather than returning an empty corpus that looks like a missing library.
+    return {"slugs": slugs, "unknown": unknown, "all": not slugs}
+
+
 def focus_corpus(slug: str) -> dict:
     """How much of the indexed corpus this focus can actually quote."""
     f = get_focus(slug)
     if not f:
         return {"documents": 0, "layers": []}
     where, params = lens_sql(_groups(f), "p.chunk_text")
-    layers = [s.strip() for s in (f["layers"] or "").split(",") if s.strip()]
+    lf = layer_filter(f)
     sql = ("SELECT COALESCE(k.slug,'(unfiled)') AS layer, "
            "COUNT(DISTINCT p.source_file) AS docs FROM pdf_chunks p "
            "LEFT JOIN knowledge_databases k ON k.id = p.db_id "
            f"WHERE {where}")
-    if layers:
-        sql += " AND k.slug IN (%s)" % ",".join("?" * len(layers))
-        params = params + layers
+    if lf["slugs"]:
+        sql += " AND k.slug IN (%s)" % ",".join("?" * len(lf["slugs"]))
+        params = params + lf["slugs"]
     sql += " GROUP BY 1 ORDER BY 2 DESC"
     with connect(paths.db) as con:
         rows = [dict(r) for r in con.execute(sql, tuple(params))]
-    return {"documents": sum(r["docs"] for r in rows), "layers": rows}
+    return {"documents": sum(r["docs"] for r in rows), "layers": rows,
+            "unknown_layers": lf["unknown"]}
 
 
 def focus_pulse(slug: str) -> dict:
@@ -272,6 +435,323 @@ def touch_visit(slug: str) -> None:
         ensure_schema(con)
         con.execute("UPDATE focus_areas SET last_visited_at = ? WHERE slug = ?",
                     (_now(), slug))
+
+
+# ---------------------------------------------------------------------------
+# The safe, and the taste that grows out of it
+# ---------------------------------------------------------------------------
+# The researcher's brief, 2026-08-26: keep an item "in a safe, that will be used
+# for further reflection"; decline one so "similar things are less (not entirely
+# not) suggested in the future".
+#
+# THE PARENTHESIS IS THE SPECIFICATION. Declining must demote, never delete. In a
+# research tool, silently stopping a whole literature from appearing is worse than
+# showing too much, because an absence cannot be audited: you never learn what you
+# stopped being shown. So a muted item stays on the surface, folded, counted, and
+# one click from view — and every mute can be asked WHY, below.
+
+# Words that carry no taste. Kept deliberately short: this filters function words,
+# not domain vocabulary, because domain vocabulary is exactly the signal.
+_TASTE_STOP = {
+    "the", "and", "for", "with", "that", "this", "from", "have", "has", "had",
+    "are", "was", "were", "been", "will", "would", "could", "should", "can",
+    "its", "their", "there", "these", "those", "then", "than", "such", "into",
+    "over", "under", "after", "before", "between", "during", "about", "against",
+    "new", "using", "used", "use", "study", "studies", "based", "results",
+    "paper", "article", "report", "review", "analysis", "more", "most",
+    "other", "also", "how", "why", "what", "when", "which", "who", "you", "your",
+    "our", "not", "via", "per", "may", "might", "one", "two", "three",
+}
+
+
+def _taste_terms(text: str) -> set:
+    """Content words, lowercased, four characters or more."""
+    return {w for w in re.findall(r"[a-z]{4,}", (text or "").lower())
+            if w not in _TASTE_STOP}
+
+
+def _lens_terms(f: dict) -> set:
+    """Every word the lens itself matches on.
+
+    These are EXCLUDED from taste, and that exclusion is what stops the feature
+    eating itself. Every item on an "AI in health" focus contains "ai" and
+    "health" — they are why it is here. Learn from them and the first decline
+    down-weights the whole subject, muting the focus with one click. Taste has to
+    be learned from what varies WITHIN the lens, not from the lens.
+    """
+    out: set = set()
+    for grp in _groups(f):
+        for kw in grp:
+            out |= {w for w in re.findall(r"[a-z]{3,}", kw.lower())}
+    return out
+
+
+def focus_verdicts(slug: str, verdict: str = "") -> list:
+    """Everything judged on this focus, newest first."""
+    sql = ("SELECT kind, item_id, verdict, title, url, note, created_at "
+           "FROM focus_verdict WHERE slug = ?")
+    params: list = [slug]
+    if verdict:
+        sql += " AND verdict = ?"
+        params.append(verdict)
+    sql += " ORDER BY created_at DESC"
+    with connect(paths.db) as con:
+        ensure_schema(con)
+        return [dict(r) for r in con.execute(sql, tuple(params))]
+
+
+def judge(slug: str, kind: str, item_id: str, verdict: str,
+          title: str = "", url: str = "", note: str = "") -> None:
+    """Record (or change) a verdict. Re-judging replaces, so nothing is stranded."""
+    if verdict not in ("kept", "declined"):
+        raise ValueError(f"verdict must be kept|declined, got {verdict!r}")
+    with connect(paths.db) as con:
+        ensure_schema(con)
+        con.execute(
+            "INSERT INTO focus_verdict (slug, kind, item_id, verdict, title, url, "
+            "note, created_at) VALUES (?,?,?,?,?,?,?,?) "
+            "ON CONFLICT(slug, kind, item_id) DO UPDATE SET "
+            "verdict=excluded.verdict, note=excluded.note, created_at=excluded.created_at",
+            (slug, kind, str(item_id), verdict, title[:400], url[:600], note[:400],
+             _now()))
+
+
+def unjudge(slug: str, kind: str, item_id: str) -> None:
+    """Undo a verdict entirely — back to undecided."""
+    with connect(paths.db) as con:
+        ensure_schema(con)
+        con.execute("DELETE FROM focus_verdict WHERE slug=? AND kind=? AND item_id=?",
+                    (slug, kind, str(item_id)))
+
+
+def focus_taste(slug: str) -> dict:
+    """term -> (times kept) minus (times declined), lens words removed.
+
+    Deliberately a plain count, not a learned weight. The researcher has to be
+    able to read this table and recognise his own judgements in it; a score he
+    cannot explain is one he cannot correct, and correcting it is the whole point
+    of a surface that is supposed to be built over weeks.
+    """
+    f = get_focus(slug)
+    if not f:
+        return {}
+    lens = _lens_terms(f)
+    taste: dict = {}
+    for v in focus_verdicts(slug):
+        step = 1 if v["verdict"] == "kept" else -1
+        for t in _taste_terms(v["title"]) - lens:
+            taste[t] = taste.get(t, 0) + step
+    return {k: v for k, v in taste.items() if v}
+
+
+def taste_verdict(taste: dict, text: str) -> tuple:
+    """Score one item against the taste, and say which words did it.
+
+    Returning the reasons is not decoration. An item is only ever demoted, and a
+    demotion the reader cannot interrogate is indistinguishable from a bug.
+    """
+    if not taste:
+        return 0, []
+    hits = [(t, taste[t]) for t in _taste_terms(text) if t in taste]
+    if not hits:
+        return 0, []
+    score = sum(w for _, w in hits)
+    reasons = [t for t, w in sorted(hits, key=lambda h: h[1]) if w < 0][:3]
+    return score, reasons
+
+
+# The bar for muting. One decline is an opinion about one item; it should not
+# reshape the feed. Two independent declines sharing a word is a pattern.
+MUTE_AT = -2
+
+
+def sift(slug: str, items: list, kind: str, text_key: str, id_key: str) -> dict:
+    """Split a lens result into decided, live and muted.
+
+    Returns every input item — nothing is discarded here or anywhere downstream.
+    """
+    judged = {v["item_id"]: v for v in focus_verdicts(slug) if v["kind"] == kind}
+    taste = focus_taste(slug)
+    live, muted, decided = [], [], []
+    for it in items:
+        iid = str(it.get(id_key) or "")
+        it = {**it, "_id": iid, "_kind": kind}
+        if iid in judged:
+            it["_verdict"] = judged[iid]["verdict"]
+            decided.append(it)
+            continue
+        score, reasons = taste_verdict(taste, it.get(text_key) or "")
+        it["_score"], it["_why"] = score, reasons
+        (muted if score <= MUTE_AT else live).append(it)
+    live.sort(key=lambda i: -i["_score"])
+    return {"live": live, "muted": muted, "decided": decided,
+            "n_live": len(live), "n_muted": len(muted)}
+
+
+
+
+# ---------------------------------------------------------------------------
+# Questions, and exploring them
+# ---------------------------------------------------------------------------
+# A question is an idea with `idea_type='question'`, tagged `focus:<slug>` like
+# every other thought written here. It is NOT a new table, deliberately: the file
+# header's rule is that a focus writes no copies, and a question the researcher
+# later answers should surface in idea search like any other, not be trapped
+# inside a surface he might archive.
+
+def focus_questions(slug: str, limit: int = 30) -> list:
+    tag = f"focus:{slug}"
+    with connect(paths.db) as con:
+        return [dict(r) for r in con.execute(
+            "SELECT idea_id, text, created_at FROM ideas "
+            "WHERE COALESCE(tags,'') LIKE ? AND idea_type = 'question' "
+            "ORDER BY created_at DESC LIMIT ?", (f"%{tag}%", limit))]
+
+
+def explore(slug: str, question: str, limit: int = 6) -> dict:
+    """Answer a question from what the researcher already holds.
+
+    "Explore ... will answer the questions in relationship with notes and ideas
+    or it might look for specific literature of that topic" (2026-08-26).
+
+    It does BOTH, in that order, and it composes nothing. The dashboard has no
+    model; what it can do — and what a chat window cannot — is find the passage on
+    page 12 of a PDF this researcher indexed himself, next to the note he wrote
+    about it in March. Retrieval is the half worth automating. The composed answer
+    is one deeplink away, carrying this material with it.
+
+    Every search is scoped by the lens as well as the question, so exploring
+    "what about resistance" on an AI focus cannot wander into drug resistance.
+    """
+    f = get_focus(slug)
+    if not f or not question.strip():
+        return {"question": question, "passages": [], "papers": [],
+                "notes": [], "ideas": []}
+
+    q_terms = sorted(_taste_terms(question), key=len, reverse=True)[:6]
+    if not q_terms:
+        q_terms = [w for w in re.findall(r"[a-z]{3,}", question.lower())][:6]
+    lens_where, lens_params = lens_sql(_groups(f), "p.chunk_text")
+
+    def _any(expr: str) -> tuple:
+        if not q_terms:
+            return "1", []
+        return ("(" + " OR ".join(f"lower({expr}) LIKE ?" for _ in q_terms) + ")",
+                [f"%{t}%" for t in q_terms])
+
+    passages, papers, notes, ideas = [], [], [], []
+    layers = layer_filter(f)["slugs"]
+
+    with connect(paths.db) as con:
+        ensure_schema(con)
+        # 1. The indexed corpus — the part no chat window can reach.
+        q_where, q_params = _any("p.chunk_text")
+        sql = ("SELECT p.source_file, p.title, p.page_start, p.chunk_text, "
+               "COALESCE(k.slug,'(unfiled)') AS layer "
+               "FROM pdf_chunks p LEFT JOIN knowledge_databases k ON k.id = p.db_id "
+               f"WHERE {lens_where} AND {q_where}")
+        params = list(lens_params) + list(q_params)
+        if layers:
+            sql += " AND k.slug IN (%s)" % ",".join("?" * len(layers))
+            params += layers
+        sql += " LIMIT ?"
+        try:
+            _raw = [dict(r) for r in con.execute(sql, tuple(params + [limit * 4]))]
+            # Boundary-confirmed like the feed and the reading list. The document
+            # COUNT above is not confirmed and deliberately so: it is a scale
+            # indicator ("how much of your corpus is in scope"), not a claim about
+            # any one passage, and re-checking 8,211 chunks on every page load
+            # would cost far more than the number is worth. What is SHOWN is
+            # confirmed; what is counted is an estimate, and the two are used for
+            # different things.
+            passages = confirm(_groups(f), _raw, ["chunk_text"])[:limit]
+        except Exception:
+            passages = []
+
+        # 2. Literature through the lens that also mentions the question.
+        lit_lens, lit_params = lens_sql(_groups(f), 'title || " " || COALESCE(abstract,"")')
+        lit_q, lit_qp = _any('title || " " || COALESCE(abstract,"")')
+        try:
+            papers = [dict(r) for r in con.execute(
+                "SELECT id, title, journal, doi, source_url, "
+                "COALESCE(NULLIF(pub_iso,''), NULLIF(pub_date,''), discovered_at) AS pub "
+                f"FROM new_publications WHERE {lit_lens} AND {lit_q} "
+                "ORDER BY pub DESC LIMIT ?",
+                tuple(list(lit_params) + list(lit_qp) + [limit]))]
+        except Exception:
+            papers = []
+
+        # 3. What he already thought about it — the "in relationship with" half.
+        tag = f"focus:{slug}"
+        n_q, n_p = _any("content || ' ' || COALESCE(title,'')")
+        try:
+            notes = [dict(r) for r in con.execute(
+                "SELECT note_id, title, content, created_at FROM personal_notes "
+                f"WHERE COALESCE(tags,'') LIKE ? AND {n_q} "
+                "ORDER BY created_at DESC LIMIT ?",
+                tuple([f"%{tag}%"] + list(n_p) + [limit]))]
+        except Exception:
+            notes = []
+        i_q, i_p = _any("text")
+        try:
+            ideas = [dict(r) for r in con.execute(
+                "SELECT idea_id, text, idea_type, created_at FROM ideas "
+                f"WHERE COALESCE(tags,'') LIKE ? AND {i_q} "
+                "ORDER BY created_at DESC LIMIT ?",
+                tuple([f"%{tag}%"] + list(i_p) + [limit]))]
+        except Exception:
+            ideas = []
+
+    return {"question": question.strip(), "terms": q_terms, "passages": passages,
+            "papers": papers, "notes": notes, "ideas": ideas,
+            "total": len(passages) + len(papers) + len(notes) + len(ideas)}
+
+
+# ---------------------------------------------------------------------------
+# A brief per focus, kept
+# ---------------------------------------------------------------------------
+def save_brief(slug: str, body: str, n_news: int = 0, n_reading: int = 0) -> None:
+    with connect(paths.db) as con:
+        ensure_schema(con)
+        con.execute("INSERT INTO focus_brief_log (slug, body, n_news, n_reading, "
+                    "created_at) VALUES (?,?,?,?,?)",
+                    (slug, body, n_news, n_reading, _now()))
+
+
+def latest_brief(slug: str) -> dict:
+    with connect(paths.db) as con:
+        ensure_schema(con)
+        r = con.execute(
+            "SELECT body, n_news, n_reading, created_at FROM focus_brief_log "
+            "WHERE slug = ? ORDER BY created_at DESC LIMIT 1", (slug,)).fetchone()
+        return dict(r) if r else {}
+
+
+def focus_counts(slug: str) -> dict:
+    """The header line: what is saved, and how much of everything there is.
+
+    The one number a researcher actually acts on is the first: how many items are
+    waiting to be judged. Totals that only grow are demoted behind it, which is
+    the same rule the Today audit landed on — a counter that can only rise stops
+    being information past what a person can do about it.
+    """
+    verdicts = focus_verdicts(slug)
+    think = focus_thinking(slug)
+    p = focus_pulse(slug)
+    kept = [v for v in verdicts if v["verdict"] == "kept"]
+    declined = [v for v in verdicts if v["verdict"] == "declined"]
+    return {
+        "saved": len(kept),
+        "declined": len(declined),
+        "ideas": len([i for i in think["ideas"] if i.get("idea_type") != "question"]),
+        "questions": len(focus_questions(slug)),
+        "notes": len(think["notes"]),
+        "briefs": p.get("total_news", 0),
+        "papers": p.get("total_reading", 0),
+        "documents": focus_corpus(slug).get("documents", 0),
+        "taste_terms": len(focus_taste(slug)),
+        "last_brief": (latest_brief(slug) or {}).get("created_at", ""),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -462,44 +942,98 @@ async def update_focus_overview(slug: str, overview: str) -> list[TextContent]:
             f"Overview updated for `{slug}` ({len(overview)} chars).")]
 
 
-@app.tool()
-async def focus_brief(slug: str) -> list[TextContent]:
-    """Everything on one focus area: pulse, news, reading, thinking, corpus.
+def build_brief(slug: str, n: int = 8) -> str:
+    """The brief for one focus, as markdown.
 
-    The text form of the surface — for Claude Desktop, which has no dashboard.
+    Shared by the MCP tool (Claude Desktop, which has no dashboard) and the
+    dashboard button, so the two can never drift into telling different stories
+    about the same focus.
+
+    It is assembled, not written: no model runs here. That is the honest division
+    of labour — Metis knows what is in the safe, what is still unjudged and what
+    questions are open; composing prose about it is what the deeplink at the
+    bottom of the surface is for. A brief that claimed to be authored would be a
+    template pretending, and this researcher would spot it in one reading.
     """
     f = get_focus(slug)
     if not f:
-        return [TextContent(type="text", text=f"No focus `{slug}`.")]
-    p, corp = focus_pulse(slug), focus_corpus(slug)
-    news, read, think = focus_news(slug, 8), focus_reading(slug, 8), focus_thinking(slug)
+        return f"No focus `{slug}`."
+    p, corp, c = focus_pulse(slug), focus_corpus(slug), focus_counts(slug)
+    news = sift(slug, focus_news(slug, 60), "news", "title", "brief_id")
+    read = sift(slug, focus_reading(slug, 60), "reading", "title", "id")
+    think = focus_thinking(slug)
+    kept = [v for v in focus_verdicts(slug, "kept")]
+    questions = focus_questions(slug)
 
     out = [f"# {f['title']}", ""]
     if f["subtitle"]:
         out += [f"*{f['subtitle']}*", ""]
-    out += [f"State `{f['state']}`"
-            + (f" · shelf slot {f['shelf_slot']}" if f["shelf_slot"] else "")
-            + f" · {p['total_news']} briefs · {p['total_reading']} papers · "
-            f"{corp['documents']} indexed documents", ""]
+    out += [f"{datetime.now().strftime('%A %d %B %Y, %H:%M')}", ""]
+
+    # What changed leads, because that is the question you open a focus with.
     if p.get("new_news") is not None:
-        out += [f"Since your last visit ({p['last_visited_at'][:16]}): "
-                f"**{p['new_news']} new brief(s)**, **{p['new_reading']} new paper(s)**.", ""]
+        out += [f"**Since your last visit** ({p['last_visited_at'][:16]}): "
+                f"{p['new_news']} new brief(s), {p['new_reading']} new paper(s).", ""]
+    out += [f"{c['saved']} saved · {c['questions']} open question(s) · "
+            f"{c['ideas']} idea(s) · {c['notes']} note(s) · "
+            f"{news['n_live']} unjudged brief(s) · {corp['documents']} indexed documents",
+            ""]
+
     if f["overview"]:
         out += ["## Overview", "", f["overview"], ""]
-    if news:
-        out += ["## Latest", ""] + [
-            f"- {n['brief_date']} — {n['title']}" for n in news] + [""]
-    if read:
-        out += ["## Reading", ""] + [
-            f"- {(r['pub'] or '')[:10]} — {r['title'][:110]}"
-            + (f" · `{r['doi']}`" if r["doi"] else "") for r in read] + [""]
-    if think["notes"] or think["ideas"]:
+
+    if kept:
+        out += ["## In the safe", ""]
+        out += [f"- {k['title'][:140]}" + (f"\n  <{k['url']}>" if k["url"] else "")
+                for k in kept[:12]]
+        out += [""]
+
+    if questions:
+        out += ["## Open questions", ""]
+        out += [f"- {q['text'][:180]}" for q in questions[:8]] + [""]
+
+    if news["live"]:
+        out += ["## Worth a look", ""]
+        out += [f"- {i['brief_date']} — {i['title']}" for i in news["live"][:n]] + [""]
+    if news["n_muted"]:
+        out += [f"*{news['n_muted']} brief(s) muted by your declines — still on the "
+                f"surface, folded.*", ""]
+
+    if read["live"]:
+        out += ["## Reading", ""]
+        out += [f"- {(r['pub'] or '')[:10]} — {r['title'][:120]}"
+                + (f" · `{r['doi']}`" if r.get("doi") else "")
+                for r in read["live"][:n]] + [""]
+
+    ideas = [i for i in think["ideas"] if i.get("idea_type") != "question"]
+    if ideas or think["notes"]:
         out += ["## Your thinking", ""]
-        out += [f"- 💡 {i['text'][:140]}" for i in think["ideas"]]
-        out += [f"- 📝 {n['title'] or n['content'][:80]}" for n in think["notes"]]
-    else:
-        out += ["## Your thinking", "", "Nothing recorded on this focus yet."]
-    return [TextContent(type="text", text="\n".join(out))]
+        out += [f"- 💡 {i['text'][:160]}" for i in ideas[:6]]
+        out += [f"- 📝 {n_['title'] or n_['content'][:100]}" for n_ in think["notes"][:6]]
+        out += [""]
+
+    taste = focus_taste(slug)
+    if taste:
+        up = sorted((t for t in taste.items() if t[1] > 0), key=lambda x: -x[1])[:6]
+        down = sorted((t for t in taste.items() if t[1] < 0), key=lambda x: x[1])[:6]
+        out += ["## What this focus has learned", ""]
+        if up:
+            out += ["Drawn to: " + ", ".join(f"{t} (+{w})" for t, w in up)]
+        if down:
+            out += ["Cooling on: " + ", ".join(f"{t} ({w})" for t, w in down)]
+        out += ["", "*Learned only from what you kept and declined — never from the "
+                "lens words themselves, or one decline would mute the whole subject.*",
+                ""]
+    return "\n".join(out).rstrip() + "\n"
+
+
+@app.tool()
+async def focus_brief(slug: str) -> list[TextContent]:
+    """Everything on one focus area: what is saved, what is new, what is open.
+
+    The text form of the surface — for Claude Desktop, which has no dashboard.
+    """
+    return [TextContent(type="text", text=build_brief(slug))]
 
 
 # ---------------------------------------------------------------------------
@@ -666,4 +1200,99 @@ async def preview_focus_lens(keyword_groups: str) -> list[TextContent]:
     if p["samples"]:
         out += ["", "Sample matches:"] + [
             f"- {s['date']} — {s['title'][:100]}" for s in p["samples"]]
+    return [TextContent(type="text", text="\n".join(out))]
+
+
+# ---------------------------------------------------------------------------
+# The safe, from Claude Desktop
+# ---------------------------------------------------------------------------
+# Desktop has no dashboard, and a safe you can only fill by clicking is a safe
+# that stays empty on the days the researcher works in Desktop. Same store, same
+# taste model, same demotion rule — only the door is different.
+
+@app.tool()
+async def focus_keep(slug: str, title: str, item_id: str = "", kind: str = "news",
+                     url: str = "", note: str = "") -> list[TextContent]:
+    """Save an item to a focus area's safe, for further reflection."""
+    if not get_focus(slug):
+        return [TextContent(type="text", text=f"No focus `{slug}`.")]
+    judge(slug, kind, item_id or slugify(title)[:40], "kept", title, url, note)
+    c = focus_counts(slug)
+    return [TextContent(type="text", text=(
+        f"Kept on **{slug}**: {title[:120]}\n\n"
+        f"{c['saved']} in the safe · this focus now recognises "
+        f"{c['taste_terms']} term(s) from what you have kept and declined."))]
+
+
+@app.tool()
+async def focus_decline(slug: str, title: str, item_id: str = "",
+                        kind: str = "news", note: str = "") -> list[TextContent]:
+    """Say an item does not interest you, so similar ones rank lower in future.
+
+    Lower, not gone: declining demotes and folds, it never deletes. Nothing stops
+    being shown, or you could never audit what you were no longer being offered.
+    """
+    if not get_focus(slug):
+        return [TextContent(type="text", text=f"No focus `{slug}`.")]
+    judge(slug, kind, item_id or slugify(title)[:40], "declined", title, "", note)
+    taste = focus_taste(slug)
+    cooling = sorted((t for t in taste.items() if t[1] < 0), key=lambda x: x[1])[:5]
+    msg = [f"Declined on **{slug}**: {title[:120]}", ""]
+    if cooling:
+        msg += ["Cooling on: " + ", ".join(f"{t} ({w})" for t, w in cooling)]
+    msg += [f"Items scoring {MUTE_AT} or below are folded on the surface, not removed."]
+    return [TextContent(type="text", text="\n".join(msg))]
+
+
+@app.tool()
+async def focus_safe(slug: str) -> list[TextContent]:
+    """What is in a focus area's safe, and what it has learned to cool on."""
+    if not get_focus(slug):
+        return [TextContent(type="text", text=f"No focus `{slug}`.")]
+    kept = focus_verdicts(slug, "kept")
+    declined = focus_verdicts(slug, "declined")
+    taste = focus_taste(slug)
+    out = [f"# Safe — {slug}", "", f"{len(kept)} kept · {len(declined)} declined", ""]
+    out += [f"- {k['created_at'][:10]} — {k['title'][:140]}" for k in kept[:30]] or \
+           ["Nothing saved yet."]
+    if taste:
+        out += ["", "## Taste", ""]
+        out += ["Drawn to: " + ", ".join(
+            f"{t} (+{w})" for t, w in sorted(
+                ((t, w) for t, w in taste.items() if w > 0), key=lambda x: -x[1])[:10])]
+        out += ["Cooling on: " + ", ".join(
+            f"{t} ({w})" for t, w in sorted(
+                ((t, w) for t, w in taste.items() if w < 0), key=lambda x: x[1])[:10])]
+    return [TextContent(type="text", text="\n".join(out))]
+
+
+@app.tool()
+async def focus_explore(slug: str, question: str) -> list[TextContent]:
+    """Answer a question against a focus area's own corpus, notes and ideas.
+
+    Retrieval only — this returns the material, it does not compose the answer.
+    """
+    if not get_focus(slug):
+        return [TextContent(type="text", text=f"No focus `{slug}`.")]
+    r = explore(slug, question, limit=8)
+    if not r["total"]:
+        return [TextContent(type="text", text=(
+            f"Nothing in this focus touches that question yet — "
+            f"which is itself worth knowing. Searched the indexed corpus, the "
+            f"literature through this lens, and everything tagged `focus:{slug}`."))]
+    out = [f"# {question}", "",
+           f"From your own material only — {r['total']} item(s).", ""]
+    if r["passages"]:
+        out += ["## Indexed passages", ""]
+        for p_ in r["passages"]:
+            out += [f"**{p_['title'] or p_['source_file']}** · p.{p_['page_start']} "
+                    f"· `{p_['layer']}`", f"> {(p_['chunk_text'] or '')[:400]}…", ""]
+    if r["papers"]:
+        out += ["## Literature", ""]
+        out += [f"- {(x['pub'] or '')[:10]} — {x['title'][:130]}"
+                + (f" · `{x['doi']}`" if x.get("doi") else "") for x in r["papers"]] + [""]
+    if r["notes"] or r["ideas"]:
+        out += ["## What you already thought", ""]
+        out += [f"- 💡 {i['text'][:170]}" for i in r["ideas"]]
+        out += [f"- 📝 {n_['title'] or n_['content'][:120]}" for n_ in r["notes"]]
     return [TextContent(type="text", text="\n".join(out))]

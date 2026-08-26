@@ -118,6 +118,27 @@
         <em>“Can AI ever be conscious?”</em>.
       </p>
 
+      {#- "Not sure? Let Metis suggest one" — it SEEDS the form, it does not replace
+          it. The form does two things a conversation cannot: it previews the lens
+          against the real corpus before you commit, and it writes the structured
+          `keyword_groups` the shelf and the news filter actually consume. What a
+          conversation is better at is the part before that — knowing what you have
+          been reading and working on, and proposing two axes worth crossing. So
+          the deeplink carries your recent work and asks for keywords you paste
+          back into these boxes. -#}
+      {% if suggest_link %}
+      <div class="fs-suggest">
+        <span>Not sure what to focus on?</span>
+        <a class="ft-ask" href="{{ suggest_link }}" style="margin-top:0;">
+          Let Metis suggest one →
+        </a>
+        <span class="fs-hint">
+          Opens Claude with your recent projects, ideas and reading, and asks for
+          two axes to cross. Paste the keywords it gives you into the boxes below.
+        </span>
+      </div>
+      {% endif %}
+
       <div style="display:grid;gap:10px;"
            hx-post="/api/focus/preview" hx-target="#lens-preview" hx-swap="innerHTML"
            hx-trigger="keyup changed delay:600ms from:find input, change from:find input"

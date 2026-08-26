@@ -1,0 +1,40 @@
+{#- A brief for one focus, generated on demand and KEPT.
+
+    Kept, not recomputed on view, for the same reason the morning brief is kept: a
+    brief you read on Tuesday should still say on Friday what it said on Tuesday,
+    or it is not a record of anything. `focus_brief_log` holds every one, so the
+    weeks this focus is meant to be built over leave a trail. -#}
+<div class="panel" style="padding:18px 22px;">
+  <div class="fb-head">
+    <div>
+      {% if brief %}
+      <span class="fb-when">Generated {{ brief.created_at[:16] | replace('T', ' ') }}</span>
+      {% else %}
+      <span class="fb-when">No brief yet for this focus.</span>
+      {% endif %}
+    </div>
+    <div class="fb-acts">
+      <button type="button" class="ft-btn"
+              hx-post="/api/focus/{{ area.slug }}/brief"
+              hx-target="#focus-brief" hx-swap="innerHTML"
+              hx-indicator="#focus-brief-spin">
+        {{ 'Generate again' if brief else 'Generate brief' }}
+      </button>
+      <span id="focus-brief-spin" class="htmx-indicator fb-spin">composing…</span>
+      {% if deeplink %}
+      <a class="ft-ask" href="{{ deeplink }}">Have Claude write it up →</a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if brief %}
+  <div class="focus-prose fb-body">{{ brief.body | md | safe }}</div>
+  {% else %}
+  <p class="fv-note" style="margin:10px 0 0;">
+    A focus brief is the morning brief for one subject: what is in the safe, what
+    is still unjudged, which questions are open, and what this focus has learned
+    from your keeps and declines. It is assembled from your own material — no
+    model runs here, which is why it works offline and never invents a source.
+  </p>
+  {% endif %}
+</div>

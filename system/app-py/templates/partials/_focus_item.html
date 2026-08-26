@@ -1,0 +1,64 @@
+{#-
+  _focus_item.html — the verdict controls, shared by the feed and the reading list.
+
+  ONE MACRO, BOTH LISTS. News and literature are different rows in different
+  tables, but the judgement is the same judgement: keep it for reflection, or say
+  it does not interest you. Two implementations would drift, and a "keep" that
+  behaved differently depending on which list you were looking at would be a
+  worse feature than no keep at all.
+
+  THE DECLINE BUTTON NEVER DELETES. It records a verdict; the item then appears
+  under "Judged", and items sharing its vocabulary sink toward the muted fold.
+  Nothing leaves the surface. the researcher's brief, 2026-08-26: "similar things are less
+  (not entirely not) suggested in the future" — the parenthesis is the design.
+-#}
+
+{% macro verdict_buttons(slug, kind, item, target) %}
+<div class="fv-acts">
+  <button type="button" class="fv-btn fv-keep"
+          hx-post="/api/focus/{{ slug }}/judge"
+          hx-vals='{"kind": "{{ kind }}", "item_id": "{{ item._id }}", "verdict": "kept", "title": {{ item.title | tojson }}, "url": {{ (item.source_url or item.doi or "") | tojson }}}'
+          hx-target="{{ target }}" hx-swap="innerHTML"
+          title="Keep this in the safe, for further reflection">
+    <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor"
+         stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3.5 2h9v12l-4.5-3-4.5 3z"/>
+    </svg>Keep</button>
+  <button type="button" class="fv-btn fv-decline"
+          hx-post="/api/focus/{{ slug }}/judge"
+          hx-vals='{"kind": "{{ kind }}", "item_id": "{{ item._id }}", "verdict": "declined", "title": {{ item.title | tojson }}}'
+          hx-target="{{ target }}" hx-swap="innerHTML"
+          title="Not for me — rank similar items lower (they are folded, never removed)">
+    <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor"
+         stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 8h10"/>
+    </svg>Not for me</button>
+</div>
+{% endmacro %}
+
+
+{#- The verdict already given, with the way back. A judgement you cannot revise
+    is a judgement you will hesitate to make. -#}
+{% macro verdict_badge(slug, kind, item, target) %}
+<div class="fv-acts">
+  <span class="fv-mark fv-mark--{{ item._verdict }}">
+    {{ 'IN THE SAFE' if item._verdict == 'kept' else 'DECLINED' }}
+  </span>
+  <button type="button" class="fv-btn fv-undo"
+          hx-post="/api/focus/{{ slug }}/unjudge"
+          hx-vals='{"kind": "{{ kind }}", "item_id": "{{ item._id }}"}'
+          hx-target="{{ target }}" hx-swap="innerHTML"
+          title="Undo — back to undecided">Undo</button>
+</div>
+{% endmacro %}
+
+
+{#- Why an item was demoted. Shown on the muted items themselves, because a
+    demotion the reader cannot interrogate is indistinguishable from a bug. -#}
+{% macro why_muted(item) %}
+{% if item._why %}
+<span class="fv-why" title="Words you have declined before, in this item's title">
+  looks like: {{ item._why | join(', ') }}
+</span>
+{% endif %}
+{% endmacro %}

@@ -1,0 +1,75 @@
+{#- The result of pressing Explore on a question.
+
+    WHAT THIS IS AND IS NOT. It is retrieval, not composition: the dashboard runs
+    no model, and pretending otherwise would be the one thing this researcher
+    would spot instantly. What it does is the half a chat window cannot — reach
+    the passage on page 12 of a PDF he indexed himself, and set it beside the note
+    he wrote in March. The composed answer is the button at the bottom, which
+    carries all of this into Claude rather than making him retype it. -#}
+
+{% if not result.total %}
+<div class="panel" style="padding:16px 18px;">
+  <p style="margin:0;font-size:13px;color:var(--m-muted);line-height:1.6;">
+    Nothing in this focus touches that question yet — which is itself worth
+    knowing. Searched your indexed corpus, the literature through this lens, and
+    everything tagged <code>focus:{{ area.slug }}</code>
+    {%- if result.terms %} for <em>{{ result.terms | join(', ') }}</em>{% endif %}.
+  </p>
+  {% if deeplink %}
+  <a class="ft-ask" href="{{ deeplink }}">Ask Claude anyway →</a>
+  {% endif %}
+</div>
+{% else %}
+<div class="panel" style="padding:16px 18px;">
+  <div class="fx-head">
+    <span class="fx-q">{{ result.question }}</span>
+    <span class="fx-n">{{ result.total }} from your own material</span>
+  </div>
+
+  {% if result.passages %}
+  <div class="fx-group">
+    <h4 class="fx-h">Indexed passages</h4>
+    {% for p in result.passages %}
+    <div class="fx-item">
+      <div class="fx-src">{{ p.title or p.source_file }} · p.{{ p.page_start }} · <code>{{ p.layer }}</code></div>
+      <blockquote class="fx-quote">{{ (p.chunk_text or '')[:380] }}…</blockquote>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if result.papers %}
+  <div class="fx-group">
+    <h4 class="fx-h">Literature through this lens</h4>
+    {% for r in result.papers %}
+    <div class="fx-item">
+      <div class="fx-line">
+        <span class="fv-date">{{ (r.pub or '')[:10] or '—' }}</span>
+        {% if r.doi %}<a href="https://doi.org/{{ r.doi }}" target="_blank" rel="noopener">{{ r.title }}</a>
+        {% elif r.source_url %}<a href="{{ r.source_url }}" target="_blank" rel="noopener">{{ r.title }}</a>
+        {% else %}{{ r.title }}{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if result.notes or result.ideas %}
+  <div class="fx-group">
+    <h4 class="fx-h">What you already thought</h4>
+    {% for i in result.ideas %}
+    <div class="fx-item"><div class="fx-line">💡 {{ i.text }}</div></div>
+    {% endfor %}
+    {% for n in result.notes %}
+    <div class="fx-item"><div class="fx-line">📝 {{ n.title or n.content[:200] }}</div></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if deeplink %}
+  <a class="ft-ask" href="{{ deeplink }}">
+    Ask Claude to answer it with this material →
+  </a>
+  {% endif %}
+</div>
+{% endif %}
