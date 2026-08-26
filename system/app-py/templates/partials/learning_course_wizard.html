@@ -2,7 +2,7 @@
      Follows the .metis-modal-overlay + .metis-modal pattern (styles.css:1767-1835). -->
 
 <div class="metis-modal-overlay" id="course-wizard-overlay" data-open="false"
-     onclick="if(event.target===this)closeCourseWizard()">
+     onclick="if(event.target===this)closeCourseWizard()" role="button" tabindex="0">
   <div class="metis-modal" style="max-width:600px;">
 
     <!-- ─── Step indicator ──────────────────────────────────────────── -->
@@ -164,13 +164,13 @@
 
       <label>Include</label>
       <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-2);" id="cw-includes">
-        <span class="chip cw-include-chip chip--active" data-value="worked-examples" onclick="_cwToggleChip(this)">Worked examples</span>
-        <span class="chip cw-include-chip chip--active" data-value="exercises" onclick="_cwToggleChip(this)">Exercises</span>
-        <span class="chip cw-include-chip chip--active" data-value="spaced-rep" onclick="_cwToggleChip(this)">Spaced repetition</span>
-        <span class="chip cw-include-chip" data-value="quizzes" onclick="_cwToggleChip(this)">Quizzes</span>
-        <span class="chip cw-include-chip" data-value="code-snippets" onclick="_cwToggleChip(this)">Code snippets</span>
-        <span class="chip cw-include-chip" data-value="reading-list" onclick="_cwToggleChip(this)">Reading list</span>
-        <span class="chip cw-include-chip" data-value="cheat-sheets" onclick="_cwToggleChip(this)">Cheat sheets</span>
+        <span class="chip cw-include-chip chip--active" data-value="worked-examples" onclick="_cwToggleChip(this)" role="button" tabindex="0">Worked examples</span>
+        <span class="chip cw-include-chip chip--active" data-value="exercises" onclick="_cwToggleChip(this)" role="button" tabindex="0">Exercises</span>
+        <span class="chip cw-include-chip chip--active" data-value="spaced-rep" onclick="_cwToggleChip(this)" role="button" tabindex="0">Spaced repetition</span>
+        <span class="chip cw-include-chip" data-value="quizzes" onclick="_cwToggleChip(this)" role="button" tabindex="0">Quizzes</span>
+        <span class="chip cw-include-chip" data-value="code-snippets" onclick="_cwToggleChip(this)" role="button" tabindex="0">Code snippets</span>
+        <span class="chip cw-include-chip" data-value="reading-list" onclick="_cwToggleChip(this)" role="button" tabindex="0">Reading list</span>
+        <span class="chip cw-include-chip" data-value="cheat-sheets" onclick="_cwToggleChip(this)" role="button" tabindex="0">Cheat sheets</span>
       </div>
     </div>
 

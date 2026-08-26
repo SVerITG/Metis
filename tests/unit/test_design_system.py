@@ -243,3 +243,69 @@ def test_whats_new_counts_the_total_correctly():
     body = ui_src[ui_src.index("def whats_new("):]
     assert 'count_since(table, ts_col, "", where)' not in body
     assert "SELECT COUNT(*) FROM {table}" in body
+
+
+# ── Accessibility, ratcheted ─────────────────────────────────────────────────
+# Found after the inline-style count reached its floor: the remaining attributes
+# were mostly single declarations already written in the design language, so the
+# question became what is actually WRONG rather than what is untidy.
+
+def test_no_template_removes_the_focus_ring():
+    """Inline `outline:none` applies ALWAYS, not only on focus, and a style
+    attribute cannot express `:focus-visible` — so 54 of these were removing
+    keyboard focus permanently with nothing in its place."""
+    bad = [f.name for f in _templates()
+           if re.search(r"outline:\s*none", f.read_text(encoding="utf-8"))]
+    assert not bad, f"templates killing the focus ring: {sorted(set(bad))}"
+
+
+def test_the_focus_ring_is_declared_once_for_everything():
+    css = _css()
+    assert ":focus-visible" in css
+    assert re.search(r":where\([^)]*button[^)]*\):focus-visible", css), (
+        "no blanket focus-visible rule — rings will be inconsistent again")
+
+
+def test_every_input_can_be_named_by_a_screen_reader():
+    """A placeholder is not a label: it disappears on focus and is not reliably
+    announced. Where no honest label existed the tool REPORTED rather than
+    invented one — a made-up label lies confidently."""
+    bad = []
+    for f in _templates():
+        s = f.read_text(encoding="utf-8")
+        for m in re.finditer(r"<input\b[^>]*>", s):
+            t = m.group(0)
+            if re.search(r'type="(hidden|submit|button|checkbox|radio)"', t):
+                continue
+            if "aria-label" in t or "aria-labelledby" in t:
+                continue
+            idm = re.search(r'id="([^"]+)"', t)
+            if idm and f'for="{idm.group(1)}"' in s:
+                continue
+            bad.append(f"{f.name}: {t[:56]}")
+    assert not bad, f"unlabelled inputs: {bad}"
+
+
+def test_clickable_elements_have_a_keyboard_path():
+    """44 divs carried an onclick and nothing else: reachable with a mouse,
+    unreachable with a keyboard."""
+    bad = []
+    for f in _templates():
+        for m in re.finditer(r"<(?:div|span)\b[^>]*\bonclick=[^>]*>",
+                             f.read_text(encoding="utf-8")):
+            if "tabindex" not in m.group(0) and 'role="' not in m.group(0):
+                bad.append(f"{f.name}: {m.group(0)[:52]}")
+    assert not bad, f"mouse-only controls: {bad}"
+
+
+def test_keyboard_activation_is_delegated_not_repeated():
+    js = (ROOT / "system" / "app-py" / "static" / "app.js").read_text(encoding="utf-8")
+    assert "role') !== 'button'" in js or 'role") !== "button"' in js, (
+        "no delegated Enter/Space handler for role=button elements")
+
+
+def test_external_links_do_not_hand_over_the_window():
+    bad = [f.name for f in _templates()
+           if re.search(r'<a\b[^>]*target="_blank"(?![^>]*rel=)[^>]*>',
+                        f.read_text(encoding="utf-8"))]
+    assert not bad, f'target="_blank" without rel="noopener": {sorted(set(bad))}'

@@ -111,8 +111,8 @@ Update my Metis {{ m.label }} board. Search the web for current, real {% if boar
     <form hx-post="/api/today/board/{{ board }}/add"
           hx-target="#board-{{ board }}" hx-swap="outerHTML"
           hx-encoding="multipart/form-data">
-      <input type="text" name="title" placeholder="Title" required class="board-input">
-      <input type="url" name="url" placeholder="URL (optional)" class="board-input board-input--mono">
+      <input type="text" name="title" placeholder="Title" required class="board-input" aria-label="Title">
+      <input type="url" name="url" placeholder="URL (optional)" class="board-input board-input--mono" aria-label="URL (optional)">
       <div style="display:flex;gap:var(--m-space-2);">
         <button type="submit" class="btn btn--primary btn--caps board-box-btn">Save</button>
         <button type="button" class="btn btn--ghost btn--caps board-box-btn"

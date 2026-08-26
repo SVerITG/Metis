@@ -54,7 +54,7 @@
            type="text"
            placeholder="Task title…"
            onkeydown="if(event.key==='Enter'){submitQuickTask('{{ project_id }}');}"
-           style="min-width:120px;font-family:var(--m-display);font-size:var(--t-meta);padding:var(--m-space-1) var(--m-space-2);color:var(--m-ink);outline:none;">
+           style="min-width:120px;font-family:var(--m-display);font-size:var(--t-meta);padding:var(--m-space-1) var(--m-space-2);color:var(--m-ink);" aria-label="Task title">
     <select class="u-label u-tile" id="task-cat-{{ project_id }}"
             style="padding:var(--m-space-1) var(--m-space-2);">
       <option value="general">general</option>

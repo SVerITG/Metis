@@ -2677,3 +2677,20 @@ metis.density = {
   document.addEventListener('DOMContentLoaded', sync);
   document.addEventListener('htmx:afterSwap', sync);
 })();
+
+/* ── A keyboard path for clickable elements ──────────────────────────────────
+   44 <div> and <span> elements carried an onclick and nothing else: reachable
+   with a mouse, unreachable with a keyboard. `fix_accessibility.py` gave them
+   role="button" and tabindex="0"; this supplies the other half of what a real
+   button does for free — Enter and Space activate it.
+
+   Delegated once rather than written onto forty-four elements, and it checks
+   role="button" so it cannot hijack Space inside a text field or a link. */
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+  var el = e.target;
+  if (!el || el.getAttribute('role') !== 'button') return;
+  if (el.tagName === 'BUTTON' || el.tagName === 'A' || el.tagName === 'INPUT') return;
+  e.preventDefault();
+  el.click();
+});

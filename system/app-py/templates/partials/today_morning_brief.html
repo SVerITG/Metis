@@ -20,7 +20,7 @@
 
   {# Header: label · date · read badge · daily/weekly · collapse chevron #}
   <h2 class="kicker kicker--accent u-row u-row--wrap" style="gap:var(--m-space-3);">
-    <span class="m-brief-toggle" onclick="toggleBrief()" style="display:inline-flex;align-items:center;gap:var(--m-space-2);cursor:pointer;user-select:none;">
+    <span class="m-brief-toggle" onclick="toggleBrief()" style="display:inline-flex;align-items:center;gap:var(--m-space-2);cursor:pointer;user-select:none;" role="button" tabindex="0">
       <span id="brief-chevron" style="font-family:var(--m-mono);font-size:18px;line-height:1;color:var(--m-accent);transition:transform .2s;transform:rotate({{ '0' if collapsed else '90' }}deg);">▸</span>
       <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--m-accent);"></span>
       {% if period == 'weekly' %}WEEKLY BRIEFING{% elif period == 'catchup' %}CATCH-UP BRIEFING{% else %}MORNING BRIEFING{% endif %}

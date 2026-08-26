@@ -117,18 +117,18 @@
       <div>
         <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:var(--m-space-1);">Last completed lesson</label>
         <input id="last-{{ c.id }}" type="text" value="{{ c.current_lesson or '' }}"
-               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);">
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);" aria-label="Last completed lesson">
       </div>
       <div>
         <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:var(--m-space-1);">Next lesson</label>
         <input id="next-{{ c.id }}" type="text" value="{{ c.next_lesson or '' }}"
-               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);">
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);" aria-label="Next lesson">
       </div>
       <div>
         <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:var(--m-space-1);">Course URL (localhost, if any)</label>
         <input id="url-{{ c.id }}" type="text" value="{{ c.course_url or '' }}"
                placeholder="e.g. http://localhost:3000"
-               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);">
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);" aria-label="e.g. http://localhost:3000">
       </div>
       <div>
         <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:var(--m-space-1);">Notes</label>

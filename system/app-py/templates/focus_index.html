@@ -89,12 +89,12 @@
         <label style="display:grid;gap:var(--m-space-1);">
           <span class="u-mono" style="letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);">Title</span>
           <input name="title" required placeholder="AI in Health &amp; Epidemiology"
-                 style="font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);">
+                 style="font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);" aria-label="AI in Health & Epidemiology">
         </label>
         <label style="display:grid;gap:var(--m-space-1);">
           <span class="u-mono" style="letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);">One line on what it is for</span>
           <input name="subtitle" placeholder="Staying current on how AI is actually used"
-                 style="font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);">
+                 style="font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);" aria-label="Staying current on how AI is actually used">
         </label>
       </div>
 
@@ -138,7 +138,7 @@
             {% if n == 1 %}Must mention one of{% elif n == 2 %}AND one of{% else %}AND one of (optional){% endif %}
           </span>
           <input name="group{{ n }}" placeholder="{{ hint }}"
-                 style="font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);">
+                 style="font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);" aria-label="{{ hint }}">
         </label>
         {% endfor %}
       </div>
@@ -154,7 +154,7 @@
         <span class="u-mono" style="letter-spacing:.1em;text-transform:uppercase;color:var(--m-muted);">
           Knowledge layers to search (optional, comma-separated)</span>
         <input name="layers" placeholder="{{ layers[:4] | map(attribute='slug') | join(', ') }}"
-               style="font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);">
+               style="font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);" aria-label="{{ layers[:4] | map(attribute='slug') | join(', ') }}">
         <span style="font-size:var(--t-meta);color:var(--m-muted);">
           Available: {% for l in layers %}<code>{{ l.slug }}</code> ({{ l.docs }}){% if not loop.last %} · {% endif %}{% endfor %}
         </span>

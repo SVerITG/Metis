@@ -20,32 +20,32 @@
         <div>
           <label class="u-label u-mb-1" style="display:block;">TITLE</label>
           <input class="u-tile" type="text" name="title" required placeholder="Meeting title"
-                 style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);outline:none;">
+                 style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);" aria-label="Meeting title">
         </div>
         <div>
           <label class="u-label u-mb-1" style="display:block;">DATE</label>
           <input class="u-tile" type="date" name="meeting_date" required
                  value="{{ today }}"
-                 style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);outline:none;">
+                 style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);" aria-label="Meeting date">
         </div>
         <div>
           <label class="u-label u-mb-1" style="display:block;">DURATION</label>
           <input class="u-tile" type="number" name="duration_minutes" placeholder="min"
-                 style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);outline:none;">
+                 style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);" aria-label="min">
         </div>
       </div>
 
       <div class="u-mb-3">
         <label class="u-label u-mb-1" style="display:block;">PARTICIPANTS</label>
         <input class="u-tile" type="text" name="attendees" placeholder="Name 1, Name 2, …"
-               style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);outline:none;">
+               style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);" aria-label="Name 1, Name 2,">
       </div>
 
       <div class="u-mb-3">
         <label class="u-label u-mb-1" style="display:block;">TRANSCRIPT / NOTES</label>
         <textarea class="u-tile" name="transcript" rows="10" autofocus
                   placeholder="Paste your meeting transcript or notes here.&#10;&#10;Metis will auto-extract:&#10;Action: Do X  → action items&#10;Decision: We agreed on Y  → decisions&#10;Follow-up: Check Z by Friday  → follow-ups&#10;&#10;Or use section headers:&#10;Actions:&#10;- Fix the report&#10;- Send to supervisor"
-                  style="width:100%;box-sizing:border-box;padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);resize:vertical;line-height:1.6;outline:none;"></textarea>
+                  style="width:100%;box-sizing:border-box;padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);resize:vertical;line-height:1.6;"></textarea>
       </div>
 
       <!-- Result area -->

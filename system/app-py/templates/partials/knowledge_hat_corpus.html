@@ -32,13 +32,13 @@
           hx-target="#hat-table-area"
           hx-swap="outerHTML"
           hx-include="#hat-hidden-fields"
-          style="width:100%;font-family:var(--m-ui);font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);outline:none;">
+          style="width:100%;font-family:var(--m-ui);font-size:var(--t-small);padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);" aria-label="Search title, disease, method, note">
       </div>
 
       <div style="min-width:160px;">
         <div class="u-label u-label--wide u-mb-1">Sort by</div>
         <select class="u-mono u-tile" id="hat-sort" name="sort"
-                style="letter-spacing:0.08em;padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);outline:none;cursor:pointer;"
+                style="letter-spacing:0.08em;padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);cursor:pointer;"
                 onchange="_refreshHatTable()">
           <option value="title"  {% if active_sort == 'title'  %}selected{% endif %}>Title A–Z</option>
           <option value="folder" {% if active_sort == 'folder' %}selected{% endif %}>Folder</option>

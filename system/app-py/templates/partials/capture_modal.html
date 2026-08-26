@@ -27,11 +27,11 @@
 
     <!-- Prefix chips -->
     <div style="display:flex;gap:var(--m-space-2);padding:var(--m-space-3) var(--m-space-5) 0;flex-wrap:wrap;">
-      <span class="chip chip--accent" style="cursor:pointer;" onclick="setPrefixMode('i:')">i: idea</span>
-      <span class="chip chip--muted" style="cursor:pointer;" onclick="setPrefixMode('n:')">n: note</span>
-      <span class="chip chip--ochre" style="cursor:pointer;" onclick="setPrefixMode('t:')">t: task</span>
-      <span class="chip chip--muted" style="cursor:pointer;" onclick="setPrefixMode('q:')">q: question</span>
-      <span class="chip chip--muted" style="cursor:pointer;" onclick="setPrefixMode('j:')">j: journal</span>
+      <span class="chip chip--accent" style="cursor:pointer;" onclick="setPrefixMode('i:')" role="button" tabindex="0">i: idea</span>
+      <span class="chip chip--muted" style="cursor:pointer;" onclick="setPrefixMode('n:')" role="button" tabindex="0">n: note</span>
+      <span class="chip chip--ochre" style="cursor:pointer;" onclick="setPrefixMode('t:')" role="button" tabindex="0">t: task</span>
+      <span class="chip chip--muted" style="cursor:pointer;" onclick="setPrefixMode('q:')" role="button" tabindex="0">q: question</span>
+      <span class="chip chip--muted" style="cursor:pointer;" onclick="setPrefixMode('j:')" role="button" tabindex="0">j: journal</span>
     </div>
 
     <!-- Form -->
@@ -45,7 +45,7 @@
                 rows="3"
                 autofocus
                 required
-                style="width:100%;box-sizing:border-box;padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);resize:vertical;line-height:1.5;outline:none;"
+                style="width:100%;box-sizing:border-box;padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);resize:vertical;line-height:1.5;"
                 placeholder="Type or tap 🎤 to speak your idea, note, task, or question…"></textarea>
 
       <!-- Live type badge -->

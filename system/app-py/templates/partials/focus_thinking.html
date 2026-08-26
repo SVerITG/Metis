@@ -27,21 +27,21 @@
           hx-target="#focus-thinking" hx-swap="innerHTML"
           hx-on::after-request="this.reset()">
       <input name="text" required
-             placeholder="Ask a question — you can explore it below…">
+             placeholder="Ask a question — you can explore it below…" aria-label="Ask a question — you can explore it below">
       <button type="submit" class="ft-btn ft-btn--q">Question</button>
     </form>
 
     <form hx-post="/api/focus/{{ area.slug }}/idea"
           hx-target="#focus-thinking" hx-swap="innerHTML"
           hx-on::after-request="this.reset()">
-      <input name="text" required placeholder="Capture an idea on this focus…">
+      <input name="text" required placeholder="Capture an idea on this focus…" aria-label="Capture an idea on this focus">
       <button type="submit" class="ft-btn">Idea</button>
     </form>
 
     <form hx-post="/api/focus/{{ area.slug }}/note"
           hx-target="#focus-thinking" hx-swap="innerHTML"
           hx-on::after-request="this.reset()">
-      <input name="content" required placeholder="Write a note — something you want to keep…">
+      <input name="content" required placeholder="Write a note — something you want to keep…" aria-label="Write a note — something you want to keep">
       <button type="submit" class="ft-btn">Note</button>
     </form>
   </div>

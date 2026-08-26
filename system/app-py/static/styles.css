@@ -4374,3 +4374,36 @@ details summary { outline: none; }
 .wn-delta--quiet { color: var(--m-muted); }
 .wn-total { opacity: .75; text-transform: uppercase; }
 .wn-note { font-style: italic; opacity: .8; letter-spacing: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FOCUS — visible, once, everywhere
+
+   54 inline `outline:none` were removing the ring permanently (an inline style
+   applies always, not only on focus) and almost none replaced it, because a
+   style attribute cannot express `:focus-visible`. Someone tabbing through had
+   no idea where they were.
+
+   `:focus-visible` rather than `:focus`: a mouse click on a button should not
+   leave a ring behind, but a keyboard tab must. The browser decides which is
+   which, and it decides better than a heuristic would.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--m-accent);
+  outline-offset: 2px;
+  border-radius: var(--m-radius-sm);
+}
+/* Text fields also shift their border, because an outline around a field that
+   already has a border reads as two borders. */
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  border-color: var(--m-accent);
+}
+/* Never remove it without replacing it. Left here as the one place the rule is
+   written down. */
+:focus:not(:focus-visible) { outline: none; }
+
+/* The live-recording pulse. A ring expanding twice a second is exactly the
+   animation someone with a vestibular disorder cannot tolerate, and the meaning
+   is already carried by the text beside it. */
+@media (prefers-reduced-motion: reduce) {
+  [style*="metis-live-pulse"] { animation: none !important; }
+}

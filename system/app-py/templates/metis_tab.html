@@ -19,7 +19,7 @@
       <div class="u-row" id="metis-id-chip"
            style="padding:var(--m-space-2) var(--m-space-1);cursor:pointer;user-select:none;"
            onclick="toggleMetisIdentity()"
-           title="Show / hide identity">
+           title="Show / hide identity" role="button" tabindex="0">
         <div class="metis-id-avatar u-fixed" style="width:28px;height:28px;font-size:var(--t-meta);">{{ (user_name or 'R')[0]|upper }}</div>
         <div class="u-grow">
           <div class="u-truncate u-title u-title--sm" style="font-weight:500;">{{ user_name or "Researcher" }}</div>
@@ -166,7 +166,7 @@
           <h2 class="sec-label u-row" style="margin-bottom:0;pointer-events:none;">
             <span>Recent activity</span>
             <span class="tail" style="cursor:pointer;"
-                  onclick="event.stopPropagation();htmx.ajax('GET','/api/partial/metis/agent-runs',{target:'#metis-runs-body',swap:'innerHTML'})">REFRESH</span>
+                  onclick="event.stopPropagation();htmx.ajax('GET','/api/partial/metis/agent-runs',{target:'#metis-runs-body',swap:'innerHTML'})" role="button" tabindex="0">REFRESH</span>
             <svg class="u-fixed" id="metis-runs-chevron" viewBox="0 0 16 16" width="10" height="10" fill="none"
                  stroke="var(--m-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
                  style="margin-left:auto;transition:transform 200ms;">
@@ -360,7 +360,7 @@
         {% for mname, mver, muse, mchip, mslug in models %}
         {% set mon = (mslug == active_model) %}
         <div class="panel panel-pad{% if mon %} model-card-on{% endif %}" data-model="{{ mslug }}" style="padding:var(--m-space-5) var(--m-space-5);cursor:pointer;"
-             onclick="setActiveModel('{{ mslug }}', this.querySelector('button'))">
+             onclick="setActiveModel('{{ mslug }}', this.querySelector('button'))" role="button" tabindex="0">
           <div class="u-mb-2" style="display:flex;justify-content:space-between;align-items:baseline;">
             <div style="font-family:var(--m-display);font-size:var(--t-h3);font-weight:500;color:var(--m-ink);">{{ mname }}</div>
             <span class="chip chip--{{ mchip }} chip--plain">{{ mver }}</span>
@@ -664,7 +664,7 @@
         <div class="panel panel-pad panel--sm" style="cursor:pointer;transition:background 120ms;"
              onclick="copyPromptToClipboard(this)"
              data-prompt="{{ prompt }}"
-             title="Click to copy to clipboard">
+             title="Click to copy to clipboard" role="button" tabindex="0">
           <div class="u-label u-mb-1">{{ label }}</div>
           <div style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-ink);line-height:1.45;">{{ prompt }}</div>
           <div class="prompt-copy-hint u-label u-label--accent u-hide" style="margin-top:var(--m-space-1);">COPIED</div>

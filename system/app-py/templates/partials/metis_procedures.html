@@ -13,7 +13,7 @@
          hx-get="/api/partial/metis/procedures"
          hx-trigger="input changed delay:250ms, search"
          hx-target="#metis-procedures" hx-swap="outerHTML"
-         style="min-width:240px;padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-rule);border-radius:6px;background:var(--m-surface,transparent);">
+         style="min-width:240px;padding:var(--m-space-2) var(--m-space-3);border:1px solid var(--m-rule);border-radius:6px;background:var(--m-surface,transparent);" aria-label="Search procedures — name, trigger, or a step">
   <span class="u-mono" style="letter-spacing:0.14em;text-transform:uppercase;color:var(--m-muted);">
     {{ total }} procedure{{ '' if total == 1 else 's' }}{% if q %} matching{% endif %}
   </span>

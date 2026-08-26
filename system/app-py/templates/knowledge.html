@@ -109,7 +109,7 @@
       <input class="u-tile" type="search"
              id="unified-search-input"
              placeholder="Search across all of your library and memory…"
-             style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);color:var(--m-ink);outline:none;"
+             style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);color:var(--m-ink);"
              hx-get="/api/partial/knowledge/unified-search"
              hx-trigger="keyup changed delay:400ms"
              hx-target="#unified-search-results"
@@ -117,7 +117,7 @@
              name="q"
              autocomplete="off"
              autofocus
-             onkeyup="if(window.htmx){var sem=document.getElementById('unified-search-semantic-trigger');if(sem)htmx.trigger(sem,'refresh');}">
+             onkeyup="if(window.htmx){var sem=document.getElementById('unified-search-semantic-trigger');if(sem)htmx.trigger(sem,'refresh');}" aria-label="Search across all of your library and memory">
       <div id="unified-search-results" style="margin-top:var(--m-space-2);min-height:40px;">
         <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2) 0 var(--m-space-2);">Find papers, notes, and what you've read — all at once.</div>
         {# Ghost-button quick queries — gives the empty search a place to start #}
@@ -256,13 +256,13 @@
       <input class="u-tile" type="search"
              id="pdf-search-input"
              placeholder="Search across all indexed PDFs…"
-             style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);color:var(--m-ink);outline:none;"
+             style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);color:var(--m-ink);"
              hx-get="/api/partial/knowledge/pdf-search"
              hx-trigger="keyup changed delay:400ms"
              hx-target="#pdf-search-results"
              hx-include="[id='pdf-search-input']"
              name="q"
-             autocomplete="off">
+             autocomplete="off" aria-label="Search across all indexed PDFs">
       <div id="pdf-search-results" style="margin-top:var(--m-space-2);min-height:40px;">
         <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-3) 0;">Type to search indexed PDF content by keyword.</div>
       </div>

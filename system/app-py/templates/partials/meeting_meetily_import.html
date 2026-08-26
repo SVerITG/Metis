@@ -37,10 +37,10 @@
            ondragover="event.preventDefault();this.style.borderColor='var(--m-accent)'"
            ondragleave="this.style.borderColor='var(--m-line)'"
            ondrop="handleMeetilyDrop(event)"
-           onclick="document.getElementById('meetily-file-input').click()">
+           onclick="document.getElementById('meetily-file-input').click()" role="button" tabindex="0">
         <div class="u-label u-mb-2">DROP .MD FILE HERE</div>
         <div style="font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);" id="meetily-file-label">or click to browse</div>
-        <input class="u-hide" type="file" name="file" id="meetily-file-input" accept=".md,.txt,.markdown" onchange="meetilyFileSelected(this)">
+        <input class="u-hide" type="file" name="file" id="meetily-file-input" accept=".md,.txt,.markdown" onchange="meetilyFileSelected(this)" aria-label="Meetily .md file">
       </div>
 
       <div id="meetily-import-result"></div>
@@ -62,7 +62,7 @@
         <label class="u-label u-mb-1" style="display:block;">MEETILY MARKDOWN</label>
         <textarea class="u-tile" name="markdown" rows="12"
                   placeholder="Paste the Meetily export here.&#10;&#10;Metis will parse:&#10;- YAML front matter (title, date, participants)&#10;- ## Summary sections&#10;- ## Action Items&#10;- ## Transcript with speaker labels&#10;&#10;Then run cross-pollination against your library."
-                  style="width:100%;box-sizing:border-box;padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-meta);color:var(--m-ink);resize:vertical;line-height:1.6;outline:none;"></textarea>
+                  style="width:100%;box-sizing:border-box;padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-meta);color:var(--m-ink);resize:vertical;line-height:1.6;"></textarea>
       </div>
 
       <div id="meetily-import-result-paste"></div>

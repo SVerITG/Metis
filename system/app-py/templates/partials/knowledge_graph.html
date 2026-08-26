@@ -73,8 +73,8 @@
 
       <!-- Search -->
       <input class="u-mono" type="search" id="kg-search" placeholder="Filter…"
-             style="width:120px;padding:var(--m-space-1) var(--m-space-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);color:var(--m-ink);outline:none;"
-             oninput="kgFilter(this.value)">
+             style="width:120px;padding:var(--m-space-1) var(--m-space-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);color:var(--m-ink);"
+             oninput="kgFilter(this.value)" aria-label="Filter">
     </div>
 
     <!-- ── Graph container ── -->
@@ -451,7 +451,7 @@
       connections.slice(0, 15).forEach(c => {
         const cc = TYPE_COLORS[c.node.type] || '#666c63';
         html += `<div class="u-row" style="gap:var(--m-space-1);padding:var(--m-space-1) 0;font-family:var(--m-display);font-size:var(--t-micro);cursor:pointer;"
-                      onclick="(function(){var ns=document.querySelectorAll('.kg-node');/* TODO: focus */})()">
+                      onclick="(function(){var ns=document.querySelectorAll('.kg-node');/* TODO: focus */})()" role="button" tabindex="0">
           <span class="u-fixed" style="width:6px;height:6px;border-radius:50%;background:${cc};"></span>
           <span class="u-grow u-truncate" style="color:var(--m-ink);">${c.node.title}</span>
           <span class="u-label u-fixed">${c.label}</span>
