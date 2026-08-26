@@ -10,7 +10,7 @@
       </span>
       {% endif %}
       <button class="btn btn--ghost btn--caps" onclick="graphifyKnowledge(this)"
-              style="display:inline-flex;align-items:center;gap:5px;">
+              style="gap:var(--m-space-1);">
         <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
           <circle cx="4" cy="4" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="4" r="1.5"/>
           <path d="M5.5 5.5 10.5 10.5"/><path d="M5.5 4 10.5 4"/>
@@ -19,7 +19,7 @@
       </button>
       {% if graph_exists %}
       <button class="btn btn--ghost btn--caps" onclick="window.open('/api/graphify/view','_blank','noopener,noreferrer')"
-              style="display:inline-flex;align-items:center;gap:5px;">
+              style="gap:var(--m-space-1);">
         <svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
           <path d="M6 3H3v10h10v-3"/><path d="M9 2h5v5"/><path d="M14 2L7 9"/>
         </svg>
@@ -51,7 +51,7 @@
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--m-space-4);">
 
     <!-- Knowledge hubs (god nodes) -->
-    <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+    <div class="panel panel-pad panel--md">
       <div class="u-label u-mb-3">
         KNOWLEDGE HUBS
         <span style="float:right;font-family:var(--m-display);font-style:italic;font-size:var(--t-micro);letter-spacing:0;text-transform:none;">
@@ -61,7 +61,7 @@
       {% if god_nodes %}
       <div class="u-col" style="gap:var(--m-space-2);">
         {% for g in god_nodes %}
-        <div class="u-row" style="padding:5px 8px;border-radius:var(--m-radius);background:var(--m-bg);border:1px solid var(--m-rule-soft);">
+        <div class="u-row" style="padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius);background:var(--m-bg);border:1px solid var(--m-rule-soft);">
           <span style="width:7px;height:7px;border-radius:50%;background:{{ type_colors.get(g.type, 'var(--m-muted)') }};flex-shrink:0;"></span>
           <span class="u-grow u-truncate" style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);"
                 title="{{ g.label }}">
@@ -88,7 +88,7 @@
     <div class="u-col" style="gap:var(--m-space-4);">
 
       <!-- Communities overview -->
-      <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+      <div class="panel panel-pad panel--md">
         <div class="u-label u-mb-3">
           KNOWLEDGE CLUSTERS
           <span style="float:right;font-family:var(--m-display);font-style:italic;font-size:var(--t-micro);letter-spacing:0;text-transform:none;">
@@ -96,7 +96,7 @@
           </span>
         </div>
         {% if communities %}
-        <div class="u-col" style="gap:5px;">
+        <div class="u-col" style="gap:var(--m-space-1);">
           {% for c in communities %}
           <div class="u-row" style="font-family:var(--m-display);font-size:var(--t-meta);">
             <span style="width:7px;height:7px;border-radius:50%;background:{{ type_colors.get(c.dominant_type, 'var(--m-muted)') }};flex-shrink:0;"></span>
@@ -121,7 +121,7 @@
       </div>
 
       <!-- Surprising connections (bridges) -->
-      <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+      <div class="panel panel-pad panel--md">
         <div class="u-label u-mb-3">
           SURPRISING BRIDGES
         </div>

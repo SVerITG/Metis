@@ -1,5 +1,5 @@
 <div style="position:fixed;top:0;left:0;right:0;z-index:900;display:flex;justify-content:center;padding-top:72px;">
-  <div class="panel m-drawer-top" style="width:540px;max-width:92vw;padding:0;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+  <div class="panel m-drawer-top panel--flush" style="width:540px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
 
     <!-- Header -->
     <div class="u-row u-row--between u-rule" style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-3);">
@@ -21,7 +21,7 @@
           </svg>
         </button>
         <span class="u-hide" id="capture-rec-label" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-alert);"></span>
-        <button class="u-label" onclick="closeCapture()" style="background:none;border:none;cursor:pointer;padding:2px 6px;" aria-label="Close">ESC</button>
+        <button class="u-label btn btn--ghost" onclick="closeCapture()" style="padding:var(--m-space-1) var(--m-space-2);" aria-label="Close">ESC</button>
       </div>
     </div>
 
@@ -52,7 +52,7 @@
       <div id="capture-type-badge" style="min-height:20px;margin-top:var(--m-space-2);"></div>
 
       <!-- Feedback + cross-pollination results -->
-      <div id="capture-feedback" style="margin-top:2px;"></div>
+      <div id="capture-feedback" style="margin-top:var(--m-space-1);"></div>
 
       <div style="display:flex;gap:var(--m-space-2);margin-top:var(--m-space-3);">
         <button type="submit" class="btn btn--primary btn--caps u-grow">Save</button>

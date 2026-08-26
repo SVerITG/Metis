@@ -55,7 +55,7 @@
     <span class="tail">{{ total }} PAPERS</span>
   </h2>
 
-  <div class="panel" style="overflow:hidden;">
+  <div class="panel panel--clip">
 
     <!-- ── Row 1: Search + Sort ── -->
     <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-3);display:flex;gap:var(--m-space-2);align-items:flex-end;flex-wrap:wrap;">
@@ -122,8 +122,8 @@
 
       {% if active_filter_count %}
       <div style="align-self:flex-end;">
-        <button class="u-label u-label--accent" onclick="clearLibFilters()"
-                style="letter-spacing:0.12em;padding:var(--m-space-2) var(--m-space-3);background:transparent;border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);cursor:pointer;white-space:nowrap;">
+        <button class="u-label u-label--accent btn btn--sec" onclick="clearLibFilters()"
+                style="letter-spacing:0.12em;padding:var(--m-space-2) var(--m-space-3);white-space:nowrap;">
           CLEAR {{ active_filter_count }} FILTER{% if active_filter_count != 1 %}S{% endif %}
         </button>
       </div>
@@ -132,7 +132,7 @@
 
     <!-- ── Row 2: Item type chips ── -->
     {% if item_types %}
-    <div class="u-row u-row--wrap u-rule" style="padding:var(--m-space-2) var(--m-space-5);gap:5px;">
+    <div class="u-row u-row--wrap u-rule" style="padding:var(--m-space-2) var(--m-space-5);gap:var(--m-space-1);">
       <span class="u-label" style="margin-right:6px;">TYPE</span>
       <button class="lib-chip{% if not active_type %} active{% endif %}"
               data-type="" onclick="setLibType('')">All</button>

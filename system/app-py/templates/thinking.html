@@ -34,7 +34,7 @@
 
     <!-- ── Centre: Active thread / dialogue ── -->
     <div>
-      <div class="panel" style="padding:28px 36px;">
+      <div class="panel" style="padding:var(--m-space-6) var(--m-space-7);">
         <div class="u-mb-4" style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:12px;border-bottom:1px solid var(--m-rule);">
           <div>
             <div class="kicker kicker--accent">
@@ -67,7 +67,7 @@
           </div>
           <!-- Brainstorm — scoped to a work, a topic, a mindmap, or clustering -->
           <div style="margin-top:var(--m-space-3);">
-            <div class="u-label" style="margin-bottom:7px;">BRAINSTORM IN CLAUDE DESKTOP</div>
+            <div class="u-label" style="margin-bottom:var(--m-space-2);">BRAINSTORM IN CLAUDE DESKTOP</div>
             <div style="display:flex;gap:var(--m-space-2);flex-wrap:wrap;">
               <button class="btn btn--ghost btn--caps" onclick="launchBrainstorm('work')">This work</button>
               <button class="btn btn--ghost btn--caps" onclick="launchBrainstorm('topic')">A topic…</button>
@@ -79,12 +79,12 @@
           <div class="u-label u-row" style="gap:var(--m-space-3);margin-top:var(--m-space-3);">
             <span>CREATIVITY</span>
             <div id="bs-creativity" style="display:inline-flex;border:1px solid var(--m-rule-strong);border-radius:var(--m-radius);overflow:hidden;">
-              <button type="button" class="bs-seg u-label" data-creativity="grounded" onclick="setCreativity(this)"
-                      style="border:0;background:transparent;padding:5px 10px;cursor:pointer;">GROUNDED</button>
-              <button type="button" class="bs-seg" data-creativity="balanced" onclick="setCreativity(this)"
-                      style="border:0;border-left:1px solid var(--m-rule-strong);background:var(--m-accent);color:var(--m-on-accent);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;padding:5px 10px;cursor:pointer;">BALANCED</button>
-              <button type="button" class="bs-seg u-label" data-creativity="bold" onclick="setCreativity(this)"
-                      style="border:0;border-left:1px solid var(--m-rule-strong);background:transparent;padding:5px 10px;cursor:pointer;">BOLD</button>
+              <button type="button" class="bs-seg u-label btn btn--ghost" data-creativity="grounded" onclick="setCreativity(this)"
+                      style="padding:var(--m-space-1) var(--m-space-3);">GROUNDED</button>
+              <button type="button" class="bs-seg btn btn--primary" data-creativity="balanced" onclick="setCreativity(this)"
+                      style="border:0;border-left:1px solid var(--m-rule-strong);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;padding:var(--m-space-1) var(--m-space-3);">BALANCED</button>
+              <button type="button" class="bs-seg u-label btn btn--ghost" data-creativity="bold" onclick="setCreativity(this)"
+                      style="border-left:1px solid var(--m-rule-strong);padding:var(--m-space-1) var(--m-space-3);">BOLD</button>
             </div>
             <span style="margin-left:auto;font-style:normal;color:var(--m-muted-soft);text-transform:none;letter-spacing:0;font-family:var(--m-display);font-size:var(--t-meta);">opens primed in Claude Desktop, with your sources</span>
           </div>
@@ -98,7 +98,7 @@
       <div hx-get="/api/partial/thinking/marginalia"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div class="panel panel-pad skeleton u-mb-3" style="padding:var(--m-space-4) var(--m-space-5);">
+        <div class="panel panel-pad skeleton u-mb-3 panel--md">
           <div class="u-mb-2" style="height:9px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:50%;"></div>
           <div style="height:11px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);"></div>
         </div>
@@ -108,7 +108,7 @@
       <div hx-get="/api/partial/thinking/brainstorm"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div class="panel panel-pad skeleton" style="padding:var(--m-space-4) var(--m-space-5);">
+        <div class="panel panel-pad skeleton panel--md">
           <p class="u-ed" style="font-size:var(--t-small);margin:0;">Pulling your active brainstorm threads…</p>
         </div>
       </div>
@@ -117,7 +117,7 @@
   </div>
 
   <!-- ── Idea mindmap ── -->
-  <div style="margin-top:36px;">
+  <div style="margin-top:var(--m-space-7);">
     <h2 class="sec-label u-row u-mb-3" style="gap:var(--m-space-3);">
       <span>Idea mindmap</span>
       <span class="u-ed" style="font-size:var(--t-meta);text-transform:none;letter-spacing:0;">how your open ideas cluster and connect</span>
@@ -131,24 +131,24 @@
   </div>
 
   <!-- ── Personal Knowledge Graph ── -->
-  <div style="margin-top:36px;">
+  <div style="margin-top:var(--m-space-7);">
     <div hx-get="/api/partial/knowledge/graph"
          hx-trigger="load delay:300ms"
          hx-swap="outerHTML">
       <div>
-        {{ sec_label("Personal Knowledge Graph", tail="IDEAS · PAPERS · PROJECTS · CONNECTIONS", style="margin-bottom:8px;") }}
+        {{ sec_label("Personal Knowledge Graph", tail="IDEAS · PAPERS · PROJECTS · CONNECTIONS") }}
         <div class="panel skeleton skeleton-box" style="height:520px;"></div>
       </div>
     </div>
   </div>
 
   <!-- ── Graphify Knowledge Analysis ── -->
-  <div style="margin-top:36px;">
+  <div style="margin-top:var(--m-space-7);">
     <div hx-get="/api/partial/thinking/graphify-analytics"
          hx-trigger="load delay:500ms"
          hx-swap="outerHTML">
       <div>
-        {{ sec_label("Graphify Knowledge Analysis", tail="HUBS · BRIDGES · COMMUNITIES", style="margin-bottom:8px;") }}
+        {{ sec_label("Graphify Knowledge Analysis", tail="HUBS · BRIDGES · COMMUNITIES") }}
         <div class="panel skeleton skeleton-box" style="height:280px;"></div>
       </div>
     </div>

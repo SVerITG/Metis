@@ -12,13 +12,13 @@
 {% else %}
 <div class="grid grid-3">
   {% for card in cards %}
-  <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);">
+  <div class="panel panel--md">
     <div class="u-mb-3" style="display:flex;justify-content:space-between;align-items:baseline;gap:var(--m-space-3);">
       <div class="u-label" style="letter-spacing:0.18em;">
         {{ card.created_at[:7] if card.created_at else '—' }} · CARD
       </div>
       {% if card.domain %}
-      <span class="u-label u-label--accent u-fixed" style="display:inline-flex;align-items:center;padding:2px 8px;letter-spacing:0.12em;text-transform:uppercase;background:var(--m-accent-wash);border-radius:var(--m-radius-sm);">
+      <span class="u-label u-label--accent u-fixed" style="display:inline-flex;align-items:center;padding:var(--m-space-1) var(--m-space-2);letter-spacing:0.12em;text-transform:uppercase;background:var(--m-accent-wash);border-radius:var(--m-radius-sm);">
         {{ card.domain[:14] }}
       </span>
       {% endif %}
@@ -34,7 +34,7 @@
     {% if card.tags %}
     <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-2);">
       {% for tag in card.tags.split(',')[:3] %}
-      <span class="u-label" style="letter-spacing:0.08em;background:var(--m-surface-2);padding:2px 8px;border-radius:var(--m-radius-sm);">{{ tag.strip() }}</span>
+      <span class="u-label" style="letter-spacing:0.08em;background:var(--m-surface-2);padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-sm);">{{ tag.strip() }}</span>
       {% endfor %}
     </div>
     {% endif %}

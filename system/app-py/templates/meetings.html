@@ -59,12 +59,12 @@
       </div>
 
       <!-- Live assist status pane -->
-      {{ sec_label("Live assist", style="margin-bottom:12px;") }}
+      {{ sec_label("Live assist") }}
       <div class="u-mb-4"
            hx-get="/api/partial/meetings/live-assist"
            hx-trigger="load, every 30s"
            hx-swap="innerHTML">
-        <div class="panel panel-pad skeleton" style="padding:var(--m-space-4) var(--m-space-4);">
+        <div class="panel panel-pad skeleton panel--md">
           <p class="u-ed" style="font-size:var(--t-small);margin:0;">Checking whether a live meeting is running…</p>
         </div>
       </div>
@@ -108,15 +108,15 @@
 
     <!-- Right: follow-ups first (most actionable), then week ahead, then stats -->
     <div>
-      {{ sec_label("Open follow-ups", style="margin-bottom:12px;") }}
-      <div class="panel panel-pad u-mb-4" style="padding:var(--m-space-4) var(--m-space-5);"
+      {{ sec_label("Open follow-ups") }}
+      <div class="panel panel-pad u-mb-4 panel--md"
            hx-get="/api/partial/meetings/follow-ups"
            hx-trigger="load"
            hx-swap="outerHTML">
         <div class="ed" style="font-size:var(--t-body);opacity:.5;"><em>Looking up open follow-ups…</em></div>
       </div>
 
-      {{ sec_label("Week ahead", style="margin-bottom:12px;") }}
+      {{ sec_label("Week ahead") }}
       <div class="panel u-mb-4"
            hx-get="/api/partial/meetings/week-ahead"
            hx-trigger="load"
@@ -127,18 +127,18 @@
         </div>
       </div>
 
-      {{ sec_label("Stats", style="margin-bottom:12px;") }}
+      {{ sec_label("Stats") }}
       <div hx-get="/api/partial/meetings/stats"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div class="panel panel-pad skeleton" style="padding:var(--m-space-4) var(--m-space-5);"></div>
+        <div class="panel panel-pad skeleton panel--md"></div>
       </div>
 
-      {{ sec_label("Voice profiles", style="margin-bottom:12px;margin-top:18px;") }}
+      {{ sec_label("Voice profiles", style="margin-top:var(--m-space-4);") }}
       <div hx-get="/api/partial/speakers"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div class="panel panel-pad skeleton" style="padding:var(--m-space-4) var(--m-space-5);min-height:80px;"></div>
+        <div class="panel panel-pad skeleton panel--md" style="min-height:80px;"></div>
       </div>
     </div>
 
@@ -147,10 +147,10 @@
 
 <!-- Audio upload modal -->
 <div class="u-hide" id="audio-upload-overlay" style="position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.45);align-items:center;justify-content:center;">
-  <div class="panel" style="width:480px;max-width:92vw;padding:0;">
+  <div class="panel panel--flush" style="width:480px;max-width:92vw;">
     <div class="u-row u-row--between u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
       <div class="kicker" style="margin:0;">PROCESS AUDIO</div>
-      <button class="u-label" onclick="closeAudioUpload()" style="background:none;border:none;cursor:pointer;">✕</button>
+      <button class="u-label btn btn--ghost" onclick="closeAudioUpload()">✕</button>
     </div>
     <div style="padding:var(--m-space-5);">
       <p style="font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-muted);margin:0 0 var(--m-space-4);line-height:1.5;">

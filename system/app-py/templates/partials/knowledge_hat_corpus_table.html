@@ -1,6 +1,6 @@
 <div id="hat-table-area">
 
-  <div class="u-label u-row u-rule" style="padding:9px 20px;gap:var(--m-space-3);">
+  <div class="u-label u-row u-rule" style="padding:var(--m-space-2) var(--m-space-5);gap:var(--m-space-3);">
     {% if q %}
     <span>{{ total }} PAPER{% if total != 1 %}S{% endif %} MATCHING &ldquo;{{ q }}&rdquo;</span>
     {% else %}
@@ -35,7 +35,7 @@
           onmouseout="this.style.background=''">
 
         <!-- Folder with icon -->
-        <td style="padding:11px 20px;vertical-align:top;white-space:nowrap;">
+        <td style="padding:var(--m-space-3) var(--m-space-5);vertical-align:top;white-space:nowrap;">
           <div class="u-row">
             <svg class="u-fixed" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--m-warn)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -47,7 +47,7 @@
         </td>
 
         <!-- Title + tags -->
-        <td style="padding:11px 10px;vertical-align:top;">
+        <td style="padding:var(--m-space-3) var(--m-space-3);vertical-align:top;">
           <div class="u-row u-row--base">
             {# PDF icon #}
             <svg class="u-fixed" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="{% if is_seeded %}var(--m-chart-2){% else %}var(--m-muted){% endif %}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -63,7 +63,7 @@
           </div>
           {% endif %}
           {% if item.collection_tags | length > 1 %}
-          <div style="margin-top:5px;display:flex;gap:var(--m-space-1);flex-wrap:wrap;padding-left:22px;">
+          <div style="margin-top:var(--m-space-1);display:flex;gap:var(--m-space-1);flex-wrap:wrap;padding-left:22px;">
             {% for tag in item.collection_tags[1:] %}
             <span class="u-label" style="padding:1px 5px;border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);">{{ tag | upper }}</span>
             {% endfor %}
@@ -72,9 +72,9 @@
         </td>
 
         <!-- Method -->
-        <td style="padding:11px 10px;vertical-align:top;">
+        <td style="padding:var(--m-space-3) var(--m-space-3);vertical-align:top;">
           {% if item.method %}
-          <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;padding:2px 7px;border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">
+          <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">
             {{ item.method | upper }}
           </span>
           {% else %}
@@ -83,29 +83,29 @@
         </td>
 
         <!-- Status -->
-        <td style="padding:11px 10px;text-align:center;vertical-align:top;">
+        <td style="padding:var(--m-space-3) var(--m-space-3);text-align:center;vertical-align:top;">
           {% if is_seeded %}
-          <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:2px 8px;border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
+          <span style="display:inline-flex;align-items:center;gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
             <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="var(--m-chart-2)" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
             SEEDED
           </span>
           {% elif item.item_type == 'to_triage' %}
-          <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:2px 8px;border-radius:var(--m-radius-pill,10px);background:rgba(180,83,9,0.08);color:var(--m-warn);">
+          <span style="display:inline-flex;align-items:center;gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:rgba(180,83,9,0.08);color:var(--m-warn);">
             <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1"/></svg>
             TRIAGE
           </span>
           {% else %}
-          <span class="u-label" style="padding:2px 8px;border-radius:var(--m-radius-pill,10px);background:var(--m-surface-2);">
+          <span class="u-label" style="padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:var(--m-surface-2);">
             {{ item.item_type | upper }}
           </span>
           {% endif %}
         </td>
 
         <!-- Actions -->
-        <td style="padding:11px 20px;text-align:right;vertical-align:top;white-space:nowrap;">
+        <td style="padding:var(--m-space-3) var(--m-space-5);text-align:right;vertical-align:top;white-space:nowrap;">
           {% if item.pdf_url %}
           <a href="{{ item.pdf_url }}" target="_blank" rel="noopener"
-             style="display:inline-block;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-ok);text-decoration:none;padding:2px 6px;border:1px solid var(--m-ok);border-radius:var(--m-radius-sm);transition:background 140ms,color 140ms;"
+             style="display:inline-block;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-ok);text-decoration:none;padding:var(--m-space-1) var(--m-space-2);border:1px solid var(--m-ok);border-radius:var(--m-radius-sm);transition:background 140ms,color 140ms;"
              onmouseover="this.style.background='var(--m-ok)';this.style.color='var(--m-on-accent)'"
              onmouseout="this.style.background='';this.style.color='var(--m-ok)'"
              title="Open local PDF">PDF ↗</a>

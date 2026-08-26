@@ -73,7 +73,7 @@ set_research_interests(). I may not have any projects set up yet — just ask me
       <a class="btn btn--primary btn--caps"
          href="claude://claude.ai/new?q={{ interview_prompt | trim | urlencode }}"
          onclick="closeInterestWizard()"
-         style="text-align:center;padding:9px 14px;text-decoration:none;">
+         style="text-align:center;padding:var(--m-space-2) var(--m-space-4);text-decoration:none;">
         ✦ Start the interview in Claude Desktop
       </a>
       <div style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);text-align:center;margin-top:-4px;">
@@ -99,7 +99,7 @@ set_research_interests(). I may not have any projects set up yet — just ask me
 
     <div style="margin-top:var(--m-space-4);text-align:right;">
       <button type="button" class="btn btn--ghost btn--caps"
-              onclick="closeInterestWizard()" style="padding:5px 12px;font-size:var(--t-micro);">Close</button>
+              onclick="closeInterestWizard()" style="padding:var(--m-space-1) var(--m-space-3);font-size:var(--t-micro);">Close</button>
     </div>
   </div>
 </div>

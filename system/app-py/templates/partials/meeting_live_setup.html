@@ -1,12 +1,12 @@
 <div class="u-row" id="lm-setup-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:800;background:rgba(0,0,0,0.35);justify-content:center;">
-  <div class="panel m-drawer-top" style="width:540px;max-width:96vw;padding:0;box-shadow:0 8px 32px rgba(0,0,0,0.22);">
+  <div class="panel m-drawer-top panel--flush" style="width:540px;max-width:96vw;box-shadow:0 8px 32px rgba(0,0,0,0.22);">
 
     <div class="u-row u-row--between u-rule" style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-3);">
       <div class="kicker kicker--ochre" style="margin:0;">
         <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><line x1="8" y1="5" x2="8" y2="8"/></svg>
         LIVE MEETING — SETUP
       </div>
-      <button class="u-label" onclick="closeLiveSession()" style="background:none;border:none;cursor:pointer;padding:2px 6px;">ESC</button>
+      <button class="u-label btn btn--ghost" onclick="closeLiveSession()" style="padding:var(--m-space-1) var(--m-space-2);">ESC</button>
     </div>
 
     <div style="padding:var(--m-space-5);">
@@ -22,13 +22,13 @@
         <label class="u-label u-mb-2" style="display:block;">PARTICIPANTS — first name or full name</label>
         <div id="lm-speaker-inputs" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--m-space-2);">
           <input class="lm-setup-speaker" type="text" placeholder="Name 1 (first speaker)"
-                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
+                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
           <input class="lm-setup-speaker" type="text" placeholder="Name 2"
-                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
+                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
           <input class="lm-setup-speaker" type="text" placeholder="Name 3 (optional)"
-                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
+                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
           <input class="lm-setup-speaker" type="text" placeholder="Name 4 (optional)"
-                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
+                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
         </div>
       </div>
 
@@ -36,7 +36,7 @@
         <div>
           <label class="u-label u-mb-1" style="display:block;">LANGUAGE</label>
           <select id="lm-setup-lang"
-                  style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
+                  style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
             <option value="en-US">English (US)</option>
             <option value="en-GB">English (UK)</option>
             <option value="fr-FR">French</option>
@@ -52,7 +52,7 @@
         <div>
           <label class="u-label u-mb-1" style="display:block;">TRANSCRIPTION</label>
           <select id="lm-setup-mode"
-                  style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
+                  style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
             <option value="server">Whisper — stays on this computer (recommended)</option>
             <option value="voxtral">Voxtral — sent to Mistral's cloud · diarization built-in</option>
             <option value="browser">Browser — sent to Google · instant, Chrome/Edge only</option>

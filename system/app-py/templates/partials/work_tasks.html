@@ -23,7 +23,7 @@
     </span>
     <div style="min-width:0;">
       <div class="todo-title u-truncate">{{ t.title }}</div>
-      <div class="todo-meta" style="margin-top:3px;display:flex;gap:var(--m-space-3);">
+      <div class="todo-meta" style="margin-top:var(--m-space-1);display:flex;gap:var(--m-space-3);">
         {% if t.project %}<span>{{ t.project }}</span>{% endif %}
         {% if t.due_date %}<span>· DUE {{ t.due_date[:10] }}</span>{% endif %}
         {% if t.priority and t.priority != 'medium' %}

@@ -1,11 +1,11 @@
 {% if zotero_unconfigured %}
-<div class="u-row u-mb-2" style="gap:var(--m-space-3);padding:7px 14px;background:rgba(180,130,0,0.07);border:1px solid rgba(180,130,0,0.25);border-radius:var(--m-radius);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-warn);">
+<div class="u-row u-mb-2" style="gap:var(--m-space-3);padding:var(--m-space-2) var(--m-space-4);background:rgba(180,130,0,0.07);border:1px solid rgba(180,130,0,0.25);border-radius:var(--m-radius);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-warn);">
   <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><line x1="8" y1="5" x2="8" y2="8"/><circle cx="8" cy="11" r=".5" fill="currentColor"/></svg>
   <span>ZOTERO NOT CONFIGURED — enter your User ID in Metis tab → Integrations</span>
 </div>
 {% endif %}
 <div class="u-row u-row--between u-mb-3" id="lib-sync-bar"
-     style="gap:var(--m-space-4);padding:9px 16px;background:var(--m-surface-2);border-radius:var(--m-radius);border:1px solid var(--m-rule-soft);">
+     style="gap:var(--m-space-4);padding:var(--m-space-2) var(--m-space-4);background:var(--m-surface-2);border-radius:var(--m-radius);border:1px solid var(--m-rule-soft);">
   <div class="u-label u-row u-row--wrap" style="gap:var(--m-space-5);">
     <span>{{ zotero_count }} ZOTERO PAPERS</span>
     {% if manual_count %}<span>· {{ manual_count }} MANUAL</span>{% endif %}
@@ -19,9 +19,9 @@
     </span>
     {% endif %}
   </div>
-  <button class="u-label u-label--wide" id="zotero-sync-btn"
+  <button class="u-label u-label--wide btn btn--sec" id="zotero-sync-btn"
           onclick="syncZoteroLibrary()"
-          style="padding:5px 12px;background:transparent;border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);cursor:pointer;white-space:nowrap;transition:border-color .15s,color .15s;"
+          style="padding:var(--m-space-1) var(--m-space-3);white-space:nowrap;transition:border-color .15s,color .15s;"
           onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
           onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'">
     SYNC NOW

@@ -9,7 +9,7 @@
       {% if trend == 'rising' %}RISING &#9650;{% elif trend == 'cooling' %}COOLING &#9660;{% else %}STEADY &#9644;{% endif %}
     </span>
   </h2>
-  <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);">
+  <div class="panel panel--md">
     {# Heatmap grid #}
     <div class="u-mb-3" style="display:flex;align-items:end;gap:var(--m-space-2);">
       {% for w in weeks %}
@@ -50,7 +50,7 @@
         'other': 'var(--m-chart-8)'
       } %}
       {% for typ, count in all_types.items() %}
-      <div class="u-row" style="gap:5px;">
+      <div class="u-row" style="gap:var(--m-space-1);">
         <span style="width:8px;height:8px;border-radius:2px;background:{{ type_colors.get(typ, 'var(--m-chart-8)') }};"></span>
         <span class="u-label" style="letter-spacing:0.06em;">{{ typ|replace('_', ' ') }} ({{ count }})</span>
       </div>

@@ -92,7 +92,7 @@
     ================================================== -->
     <section class="metis-section" data-section="dashboard" data-active="true">
 
-      {{ sec_label("State of things", tail="RIGHT NOW", style="margin-bottom:12px;") }}
+      {{ sec_label("State of things", tail="RIGHT NOW") }}
       <div class="u-mb-5" id="metis-dashboard-body"
            hx-get="/api/partial/metis/dashboard"
            hx-trigger="load, every 60s"
@@ -100,7 +100,7 @@
         <div class="panel" style="padding:var(--m-space-5);">{{ skeleton_block(rows=3) }}</div>
       </div>
 
-      {{ sec_label("Connection", tail="CLAUDE ↔ METIS", style="margin-bottom:12px;") }}
+      {{ sec_label("Connection", tail="CLAUDE ↔ METIS") }}
       <div class="u-mb-5" id="metis-dashboard-mcp"
            hx-get="/api/partial/metis/mcp-health"
            hx-trigger="revealed once"
@@ -108,7 +108,7 @@
         <div class="panel" style="padding:var(--m-space-4);">{{ skeleton_block(rows=2) }}</div>
       </div>
 
-      {{ sec_label("Health check", tail="CHECK YOUR WHOLE SETUP", style="margin-bottom:12px;") }}
+      {{ sec_label("Health check", tail="CHECK YOUR WHOLE SETUP") }}
       <div class="metis-note u-mb-3">
         One click checks everything in plain language — the memory system, dependencies and packages,
         anything that needs installing or updating, whether your projects are registered, and whether
@@ -137,7 +137,7 @@
     ================================================== -->
     <section class="metis-section" data-section="activity" data-active="false">
 
-      {{ sec_label("At a glance", tail="RIGHT NOW", style="margin-bottom:12px;") }}
+      {{ sec_label("At a glance", tail="RIGHT NOW") }}
       <div class="panel u-mb-5" id="metis-overview-stats"
            hx-get="/api/partial/metis/stats"
            hx-trigger="revealed once, every 30s"
@@ -145,20 +145,20 @@
         <div style="padding:var(--m-space-5);">{{ skeleton_block(rows=2) }}</div>
       </div>
 
-      {{ sec_label("Who did what", tail="YOUR LAST SESSION", style="margin-bottom:12px;") }}
+      {{ sec_label("Who did what", tail="YOUR LAST SESSION") }}
       <div class="u-mb-5" id="metis-who-body"
            hx-get="/api/partial/metis/who-did-what"
            hx-trigger="revealed once, every 30s"
            hx-swap="innerHTML">
-        <div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">{{ skeleton_block(rows=2) }}</div>
+        <div class="panel panel--md">{{ skeleton_block(rows=2) }}</div>
       </div>
 
-      {{ sec_label("Sessions", tail="WHAT EACH ONE DID — CLICK TO OPEN", style="margin-bottom:12px;") }}
+      {{ sec_label("Sessions", tail="WHAT EACH ONE DID — CLICK TO OPEN") }}
       <div class="u-mb-5" id="metis-sessions-body"
            hx-get="/api/partial/metis/sessions"
            hx-trigger="revealed once"
            hx-swap="innerHTML">
-        <div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">{{ skeleton_block(rows=3) }}</div>
+        <div class="panel panel--md">{{ skeleton_block(rows=3) }}</div>
       </div>
 
       <details id="metis-runs-details">
@@ -221,7 +221,7 @@
     ================================================== -->
     <section class="metis-section" data-section="memory" data-active="false">
 
-      {{ sec_label("Memory overview", tail="WHAT METIS IS HOLDING", style="margin-bottom:12px;") }}
+      {{ sec_label("Memory overview", tail="WHAT METIS IS HOLDING") }}
       <div class="panel u-mb-5" id="metis-memory-overview-body"
            hx-get="/api/partial/metis/memory-overview"
            hx-trigger="revealed once"
@@ -240,7 +240,7 @@
         <div style="padding:var(--m-space-5);">{{ skeleton_block(rows=3) }}</div>
       </div>
 
-      {{ sec_label("Search tester", tail="TRY A SEARCH", style="margin-bottom:12px;") }}
+      {{ sec_label("Search tester", tail="TRY A SEARCH") }}
       <div class="panel u-mb-5" style="padding:var(--m-space-5);">
         <div hx-get="/api/partial/metis/memory-debug"
              hx-trigger="revealed once"
@@ -250,8 +250,8 @@
       </div>
 
       {# Merged from the retired Memory Health surface (S.4) #}
-      {{ sec_label("Where wisdom gathers", tail="BY SPECIALIST", style="margin-bottom:12px;") }}
-      <div class="panel u-mb-5" style="padding:var(--m-space-4) var(--m-space-5);"
+      {{ sec_label("Where wisdom gathers", tail="BY SPECIALIST") }}
+      <div class="panel u-mb-5 panel--md"
            hx-get="/api/partial/memory/agents"
            hx-trigger="revealed once"
            hx-swap="innerHTML">
@@ -259,13 +259,13 @@
       </div>
 
       <div class="grid grid-2 u-mb-5" style="gap:var(--m-space-3);">
-        <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);"
+        <div class="panel panel--md"
              hx-get="/api/partial/memory/topics"
              hx-trigger="revealed once"
              hx-swap="innerHTML">
           <div style="padding:var(--m-space-3);">{{ skeleton_block(rows=2) }}</div>
         </div>
-        <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);"
+        <div class="panel panel--md"
              hx-get="/api/partial/memory/staleness"
              hx-trigger="revealed once"
              hx-swap="innerHTML">
@@ -312,20 +312,20 @@
         <div style="padding:var(--m-space-5);">{{ skeleton_block(rows=3) }}</div>
       </div>
 
-      {{ sec_label("Startup self-check", tail="BOOT HEALTH", style="margin-bottom:12px;") }}
+      {{ sec_label("Startup self-check", tail="BOOT HEALTH") }}
       <div id="metis-startup-eval-body"
            hx-get="/api/partial/metis/startup-eval"
            hx-trigger="revealed once"
            hx-swap="innerHTML">
-        <div class="panel u-mb-5" style="padding:var(--m-space-4) var(--m-space-4);">{{ skeleton_block(rows=1) }}</div>
+        <div class="panel u-mb-5 panel--md">{{ skeleton_block(rows=1) }}</div>
       </div>
 
-      {{ sec_label("Promise drift", tail="ARE WE LOSING WHAT WE BUILT?", style="margin-bottom:12px;") }}
+      {{ sec_label("Promise drift", tail="ARE WE LOSING WHAT WE BUILT?") }}
       <div class="u-mb-5" id="metis-promise-trend-body"
            hx-get="/api/partial/metis/promise-trend"
            hx-trigger="revealed once"
            hx-swap="innerHTML">
-        <div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">{{ skeleton_block(rows=1) }}</div>
+        <div class="panel panel--md">{{ skeleton_block(rows=1) }}</div>
       </div>
 
     </section>
@@ -335,7 +335,7 @@
     ================================================== -->
     <section class="metis-section" data-section="persona" data-active="false">
 
-      {{ sec_label("How Metis talks to you", tail="PERSONA SETTINGS", style="margin-bottom:12px;") }}
+      {{ sec_label("How Metis talks to you", tail="PERSONA SETTINGS") }}
       <div class="metis-note u-mb-4">
         These settings shape how Metis communicates — its warmth, depth, and approach. Changes take effect in your next conversation.
       </div>
@@ -359,7 +359,7 @@
         ] %}
         {% for mname, mver, muse, mchip, mslug in models %}
         {% set mon = (mslug == active_model) %}
-        <div class="panel panel-pad{% if mon %} model-card-on{% endif %}" data-model="{{ mslug }}" style="padding:22px 24px;cursor:pointer;"
+        <div class="panel panel-pad{% if mon %} model-card-on{% endif %}" data-model="{{ mslug }}" style="padding:var(--m-space-5) var(--m-space-5);cursor:pointer;"
              onclick="setActiveModel('{{ mslug }}', this.querySelector('button'))">
           <div class="u-mb-2" style="display:flex;justify-content:space-between;align-items:baseline;">
             <div style="font-family:var(--m-display);font-size:var(--t-h3);font-weight:500;color:var(--m-ink);">{{ mname }}</div>
@@ -395,8 +395,8 @@
     ================================================== -->
     <section class="metis-section" data-section="appearance" data-active="false">
 
-      {{ sec_label("Theme", tail="PERSISTED ACROSS SESSIONS", style="margin-bottom:12px;") }}
-      <div class="panel u-mb-5" style="padding:18px 22px;" id="theme-swatches">
+      {{ sec_label("Theme", tail="PERSISTED ACROSS SESSIONS") }}
+      <div class="panel u-mb-5 panel--md" id="theme-swatches">
 
         <div class="theme-group-label">Light themes</div>
         <div class="theme-swatch-row">
@@ -446,27 +446,27 @@
       </div>
 
       {# Feature tips (contextual discovery) — moved here from the page header (S.0a) #}
-      {{ sec_label("Feature tips", tail="JUST-IN-TIME HELP", style="margin-bottom:12px;") }}
+      {{ sec_label("Feature tips", tail="JUST-IN-TIME HELP") }}
       <div class="u-mb-5" hx-get="/api/partial/metis/discovery" hx-trigger="revealed once" hx-swap="innerHTML">
-        <div class="panel" style="padding:18px 22px;">{{ skeleton_block(rows=2) }}</div>
+        <div class="panel panel--md">{{ skeleton_block(rows=2) }}</div>
       </div>
 
       {# Startup & persistence (autostart) — moved here from the page header (S.0a) #}
-      {{ sec_label("Startup & persistence", tail="START AT LOGIN", style="margin-bottom:12px;") }}
+      {{ sec_label("Startup & persistence", tail="START AT LOGIN") }}
       <div class="u-mb-5" hx-get="/api/partial/metis/startup" hx-trigger="revealed once" hx-swap="innerHTML">
-        <div class="panel" style="padding:18px 22px;">{{ skeleton_block(rows=2) }}</div>
+        <div class="panel panel--md">{{ skeleton_block(rows=2) }}</div>
       </div>
 
       {# Where settings live — P2.5. Which files matter, which you can ignore. #}
-      {{ sec_label("Where settings live", tail="FILES vs METIS", style="margin-bottom:12px;") }}
+      {{ sec_label("Where settings live", tail="FILES vs METIS") }}
       <div class="u-mb-5" hx-get="/api/partial/metis/settings-map" hx-trigger="revealed once" hx-swap="innerHTML">
-        <div class="panel" style="padding:18px 22px;">{{ skeleton_block(rows=3) }}</div>
+        <div class="panel panel--md">{{ skeleton_block(rows=3) }}</div>
       </div>
 
       {# Update Metis — P2.4. Backed up, verified, and self-undoing on failure. #}
-      {{ sec_label("Update", tail="SAFE, WITH ROLLBACK", style="margin-bottom:12px;") }}
+      {{ sec_label("Update", tail="SAFE, WITH ROLLBACK") }}
       <div class="u-mb-5" hx-get="/api/partial/metis/update" hx-trigger="revealed once" hx-swap="outerHTML">
-        <div class="panel" style="padding:18px 22px;">{{ skeleton_block(rows=2) }}</div>
+        <div class="panel panel--md">{{ skeleton_block(rows=2) }}</div>
       </div>
 
     </section>
@@ -476,7 +476,7 @@
     ================================================== -->
     <section class="metis-section" data-section="integration" data-active="false">
 
-      {{ sec_label("Connection health", tail="IS METIS REACHABLE?", style="margin-bottom:12px;") }}
+      {{ sec_label("Connection health", tail="IS METIS REACHABLE?") }}
       <div class="u-mb-5" id="metis-integration-mcp"
            hx-get="/api/partial/metis/mcp-health"
            hx-trigger="revealed once"
@@ -495,7 +495,7 @@
         <div style="padding:var(--m-space-5);">{{ skeleton_block(rows=3) }}</div>
       </div>
 
-      {{ sec_label("API keys", tail="STORED SECURELY ON THIS COMPUTER", style="margin-bottom:12px;") }}
+      {{ sec_label("API keys", tail="STORED SECURELY ON THIS COMPUTER") }}
       <div class="metis-note u-mb-4">
         These keys are stored in a plain file on your local machine and are never sent anywhere except the service that uses them. The Anthropic key is used by the dashboard's agent runner. Zotero keys power the library sync. Use <strong style="color:var(--m-ink);">Test</strong> to confirm a key actually works — "present" only means it's saved.
       </div>
@@ -503,10 +503,10 @@
            hx-get="/api/partial/metis/api-keys"
            hx-trigger="revealed once"
            hx-swap="innerHTML">
-        <div style="padding:18px 22px;">{{ skeleton_block(rows=2) }}</div>
+        <div style="padding:var(--m-space-4) var(--m-space-5);">{{ skeleton_block(rows=2) }}</div>
       </div>
 
-      {{ sec_label("System", style="margin-bottom:12px;") }}
+      {{ sec_label("System") }}
       <div class="panel u-mb-5" id="metis-system-info-body"
            hx-get="/api/partial/metis/system-info"
            hx-trigger="revealed once"
@@ -514,7 +514,7 @@
         <div style="padding:var(--m-space-5);">{{ skeleton_block(rows=3) }}</div>
       </div>
 
-      {{ sec_label("Consent ledger", tail="ACCESS HISTORY", style="margin-bottom:12px;") }}
+      {{ sec_label("Consent ledger", tail="ACCESS HISTORY") }}
       <div class="panel u-mb-5" id="metis-consent-body"
            hx-get="/api/partial/metis/consent"
            hx-trigger="revealed once"
@@ -522,8 +522,8 @@
         <div style="padding:var(--m-space-5);">{{ skeleton_block(rows=2) }}</div>
       </div>
 
-      {{ sec_label("Network", style="margin-bottom:12px;") }}
-      <div class="panel u-mb-5" style="padding:18px 22px;">
+      {{ sec_label("Network") }}
+      <div class="panel u-mb-5 panel--md">
         <div class="u-row" style="gap:var(--m-space-3);">
           <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">Network policy</div>
           <span hx-get="/api/partial/metis/network-policy" hx-trigger="revealed once" hx-swap="innerHTML">…</span>
@@ -538,13 +538,13 @@
     ================================================== -->
     <section class="metis-section" data-section="howto" data-active="false">
 
-      {{ sec_label("Open Metis", tail="LAUNCH THE RIGHT TOOL", style="margin-bottom:16px;") }}
+      {{ sec_label("Open Metis", tail="LAUNCH THE RIGHT TOOL") }}
 
       <!-- Launcher buttons -->
       <div class="grid grid-3 u-mb-6" style="gap:var(--m-space-3);">
 
         <!-- Claude Code -->
-        <div class="panel panel-pad" style="padding:20px 22px;">
+        <div class="panel panel-pad" style="padding:var(--m-space-5) var(--m-space-5);">
           <div class="u-row u-mb-3" style="gap:var(--m-space-3);">
             <div class="u-row u-fixed" style="width:32px;height:32px;border-radius:var(--m-radius);background:var(--m-accent);justify-content:center;">
               <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -567,7 +567,7 @@
         </div>
 
         <!-- Claude Desktop -->
-        <div class="panel panel-pad" style="padding:20px 22px;">
+        <div class="panel panel-pad" style="padding:var(--m-space-5) var(--m-space-5);">
           <div class="u-row u-mb-3" style="gap:var(--m-space-3);">
             <div class="u-row u-fixed" style="width:32px;height:32px;border-radius:var(--m-radius);background:var(--m-ochre);justify-content:center;">
               <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -590,7 +590,7 @@
         </div>
 
         <!-- RStudio / VS Code -->
-        <div class="panel panel-pad" style="padding:20px 22px;">
+        <div class="panel panel-pad" style="padding:var(--m-space-5) var(--m-space-5);">
           <div class="u-row u-mb-3" style="gap:var(--m-space-3);">
             <div class="u-row u-fixed" style="width:32px;height:32px;border-radius:var(--m-radius);background:var(--m-ok);justify-content:center;">
               <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -614,7 +614,7 @@
       </div>
 
       <!-- Claude Code guide -->
-      {{ sec_label("Claude Code is simple", tail="HOW IT WORKS", style="margin-bottom:12px;") }}
+      {{ sec_label("Claude Code is simple", tail="HOW IT WORKS") }}
 
       <div class="metis-note u-mb-4" style="padding:var(--m-space-4) var(--m-space-4);">
         <div style="font-size:var(--t-small);line-height:1.65;color:var(--m-text);">
@@ -623,7 +623,7 @@
       </div>
 
       <!-- Command reference -->
-      <div class="panel u-mb-5" style="overflow:hidden;">
+      <div class="panel u-mb-5 panel--clip">
         <div class="u-rule" style="padding:var(--m-space-3) var(--m-space-4) var(--m-space-3);">
           <span class="u-label" style="letter-spacing:0.16em;">MOST USEFUL COMMANDS</span>
         </div>
@@ -650,7 +650,7 @@
       </div>
 
       <!-- Example prompts -->
-      {{ sec_label("Try these", tail="CLICK TO COPY", style="margin-bottom:12px;") }}
+      {{ sec_label("Try these", tail="CLICK TO COPY") }}
       <div class="u-mb-5" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--m-space-2);">
         {% set examples = [
           ("I have a meeting tomorrow about a field study. Help me prepare.", "Meeting prep"),
@@ -661,8 +661,7 @@
           ("Review my R script for data cleaning — is there anything I should improve?", "Code review"),
         ] %}
         {% for prompt, label in examples %}
-        <div class="panel panel-pad"
-             style="padding:var(--m-space-3) var(--m-space-4);cursor:pointer;transition:background 120ms;"
+        <div class="panel panel-pad panel--sm" style="cursor:pointer;transition:background 120ms;"
              onclick="copyPromptToClipboard(this)"
              data-prompt="{{ prompt }}"
              title="Click to copy to clipboard">
@@ -674,8 +673,8 @@
       </div>
 
       <!-- FAQ -->
-      {{ sec_label("Common questions", tail="FAQ", style="margin-bottom:12px;") }}
-      <div class="panel u-mb-5" style="overflow:hidden;">
+      {{ sec_label("Common questions", tail="FAQ") }}
+      <div class="panel u-mb-5 panel--clip">
         {% set faqs = [
           ("Metis isn't answering in Claude — what do I check?",
            "Open the <strong>Dashboard</strong> at the top of this surface and look at <strong>Connection</strong>. If it isn't green, go to <strong>Integration &amp; Keys</strong>: it shows whether the Metis server is installed and registered with Claude Desktop and Claude Code, with the exact fix for each."),

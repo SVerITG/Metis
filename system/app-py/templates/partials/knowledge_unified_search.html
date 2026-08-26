@@ -24,7 +24,7 @@
          onmouseout="this.style.color='var(--m-ink)'">{{ p.title }}</a>
       {% else %}{{ p.title }}{% endif %}
     </div>
-    <div class="u-label u-row" style="margin-top:3px;gap:var(--m-space-3);">
+    <div class="u-label u-row" style="margin-top:var(--m-space-1);gap:var(--m-space-3);">
       {% if p.authors %}<span>{{ p.authors[:60] }}</span>{% endif %}
       {% if p.year %}<span>{{ p.year }}</span>{% endif %}
       {% if p.source %}<span>{{ p.source[:40] }}</span>{% endif %}
@@ -35,8 +35,8 @@
       {# Ambient cross-pollination for this paper — click to reveal what across the
          whole corpus relates to it. Lazy, so results only load on demand. #}
       {% if p.id %}
-      <button class="u-label u-label--accent" type="button"
-              style="background:none;border:none;padding:0;cursor:pointer;letter-spacing:0.1em;"
+      <button class="u-label u-label--accent btn btn--ghost" type="button"
+              style="padding:0;letter-spacing:0.1em;"
               hx-get="/api/partial/connections/paper/{{ p.id }}"
               hx-target="#conn-paper-{{ p.id }}"
               hx-swap="innerHTML"
@@ -56,9 +56,9 @@
     DOMAIN CORPUS — {{ seeded | length }} PAPER{% if seeded | length != 1 %}S{% endif %}
   </div>
   {% for s in seeded %}
-  <div class="u-rule" style="padding:7px 0;">
+  <div class="u-rule" style="padding:var(--m-space-2) 0;">
     <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ s.title }}</div>
-    <div class="u-label" style="margin-top:3px;display:flex;gap:var(--m-space-3);">
+    <div class="u-label" style="margin-top:var(--m-space-1);display:flex;gap:var(--m-space-3);">
       {% if s.top_folder %}<span>{{ s.top_folder | upper }}</span>{% endif %}
       {% if s.method %}<span>{{ s.method | upper }}</span>{% endif %}
     </div>
@@ -74,10 +74,10 @@
     KNOWLEDGE CARDS — {{ cards | length }} CARD{% if cards | length != 1 %}S{% endif %}
   </div>
   {% for c in cards %}
-  <div class="u-rule" style="padding:7px 0;">
+  <div class="u-rule" style="padding:var(--m-space-2) 0;">
     <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ c.title }}</div>
     {% if c.summary %}
-    <div style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);margin-top:3px;">
+    <div style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">
       {{ c.summary | truncate(120, True, '…') }}
     </div>
     {% endif %}
@@ -93,11 +93,11 @@
     MEMORY — {{ memory | length }} ENTR{{ 'IES' if memory | length != 1 else 'Y' }}
   </div>
   {% for m in memory %}
-  <div class="u-rule" style="padding:7px 0;">
+  <div class="u-rule" style="padding:var(--m-space-2) 0;">
     <div style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-text);line-height:1.5;">
       {{ m.content | truncate(200, True, '…') }}
     </div>
-    <div class="u-label" style="margin-top:3px;">
+    <div class="u-label" style="margin-top:var(--m-space-1);">
       {{ m.event_type | upper }} · {{ m.created_at[:10] if m.created_at else '—' }}
     </div>
   </div>

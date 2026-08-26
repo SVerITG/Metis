@@ -32,11 +32,11 @@
   {# Sub-filters inside "Related to my work" — client-side, because the set is
      small and a round-trip to hide cards would be wasteful. #}
   <div class="u-mb-4" style="display:flex;flex-wrap:wrap;gap:var(--m-space-2);" id="news-subfilters">
-    <button type="button" class="btn btn--ghost btn--caps news-sub" data-subj=""
-            style="padding:3px 10px;font-size:var(--t-micro);" aria-pressed="true">All</button>
+    <button type="button" class="btn btn--ghost btn--caps news-sub btn--sm" data-subj=""
+            style="font-size:var(--t-micro);" aria-pressed="true">All</button>
     {% for subj, n in subfilters %}
-      <button type="button" class="btn btn--ghost btn--caps news-sub" data-subj="{{ subj }}"
-              style="padding:3px 10px;font-size:var(--t-micro);" aria-pressed="false">
+      <button type="button" class="btn btn--ghost btn--caps news-sub btn--sm" data-subj="{{ subj }}"
+              style="font-size:var(--t-micro);" aria-pressed="false">
         {{ subj.replace('-', ' ') }} <span style="color:var(--m-muted-soft);">{{ n }}</span>
       </button>
     {% endfor %}
@@ -61,7 +61,7 @@
 {% endif %}
 
 {% if not cards %}
-  <div class="panel" style="padding:22px;">
+  <div class="panel" style="padding:var(--m-space-5);">
     <div class="u-ed" style="font-size:var(--t-body);">
       Nothing here for {{ periods[period][1]|lower }}.
       {% if period != 'month' %}
@@ -69,7 +69,7 @@
         <button type="button" class="btn btn--ghost btn--caps"
                 hx-get="/api/partial/news/tab?tab={{ active }}&period=month&view={{ view }}"
                 hx-target="#news-tab-body" hx-swap="innerHTML"
-                style="padding:2px 9px;font-size:var(--t-micro);">this month</button>
+                style="padding:var(--m-space-1) var(--m-space-2);font-size:var(--t-micro);">this month</button>
       {% else %}
         If a whole month is empty, the feeds for this topic may have stopped
         answering rather than the world going quiet.

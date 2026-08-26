@@ -199,12 +199,28 @@ FONT_SIZE = {
     "24px": "var(--t-h2)", "26px": "var(--t-h2)",
     "28px": "var(--t-h1)", "30px": "var(--t-h1)", "32px": "var(--t-h1)",
 }
-SPACE = {"4px": "var(--m-space-1)", "6px": "var(--m-space-2)",
-         "8px": "var(--m-space-2)", "10px": "var(--m-space-3)",
-         "12px": "var(--m-space-3)", "14px": "var(--m-space-4)",
-         "16px": "var(--m-space-4)", "18px": "var(--m-space-4)",
-         "20px": "var(--m-space-5)", "24px": "var(--m-space-5)",
-         "28px": "var(--m-space-6)", "32px": "var(--m-space-6)"}
+# Every value the templates actually use, mapped to the nearest step. The first
+# version stopped at 32px and skipped the odd numbers, so `padding:18px 22px`
+# never snapped — 22px was simply absent — and 76 panels kept writing raw
+# pixels. A partial map is worse than none: it leaves a residue that looks like
+# a deliberate exception.
+SPACE = {"2px": "var(--m-space-1)", "3px": "var(--m-space-1)",
+         "4px": "var(--m-space-1)", "5px": "var(--m-space-1)",
+         "6px": "var(--m-space-2)", "7px": "var(--m-space-2)",
+         "8px": "var(--m-space-2)", "9px": "var(--m-space-2)",
+         "10px": "var(--m-space-3)", "11px": "var(--m-space-3)",
+         "12px": "var(--m-space-3)", "13px": "var(--m-space-3)",
+         "14px": "var(--m-space-4)", "15px": "var(--m-space-4)",
+         "16px": "var(--m-space-4)", "17px": "var(--m-space-4)",
+         "18px": "var(--m-space-4)", "19px": "var(--m-space-5)",
+         "20px": "var(--m-space-5)", "21px": "var(--m-space-5)",
+         "22px": "var(--m-space-5)", "23px": "var(--m-space-5)",
+         "24px": "var(--m-space-5)", "26px": "var(--m-space-6)",
+         "28px": "var(--m-space-6)", "30px": "var(--m-space-6)",
+         "32px": "var(--m-space-6)", "36px": "var(--m-space-7)",
+         "40px": "var(--m-space-7)", "44px": "var(--m-space-7)",
+         "48px": "var(--m-space-7)", "56px": "var(--m-space-8)",
+         "64px": "var(--m-space-8)"}
 RADIUS = {"2px": "var(--m-radius-sm)", "3px": "var(--m-radius)",
           "4px": "var(--m-radius)", "100px": "var(--m-radius-pill)",
           "999px": "var(--m-radius-pill)", "50%": "50%"}
@@ -254,11 +270,127 @@ def snap_tag(tag: str, stats: Counter) -> str:
     return tag.replace(m.group(0), 'style="' + ";".join(out) + ';"')
 
 
+# ── Buttons ────────────────────────────────────────────────────────────────
+# Element-aware, unlike the idiom rules above: these fire only on a <button>,
+# because `cursor:pointer` on a div means something different from
+# `cursor:pointer` on a button, and a rule that cannot tell them apart would
+# turn every clickable row into a button.
+#
+# The audit's revealing number was not the 62 buttons with no class — it was the
+# 108 that HAVE a class and carry an inline style overriding it. That is what a
+# system covering four cases looks like when the templates need seven: people
+# take the nearest class and patch the difference. The variants added alongside
+# this (soft, danger, sm, lg, icon) are those patches, named.
+#
+# `.btn` already supplies these, so an inline copy is redundant whatever the
+# variant: they are stripped from any element that ends up carrying `.btn`.
+BTN_BASE = {
+    "display:inline-flex", "align-items:center", "cursor:pointer",
+    "text-decoration:none", "font-weight:500",
+    "border:1px solid transparent", "background:transparent",
+    "border-radius:var(--m-radius)", "border-radius:var(--m-radius-sm)",
+    "transition:background 120ms, border-color 120ms, color 120ms",
+}
+
+# (variant classes, declarations that identify AND are reproduced by it)
+BTN_LOOKS = [
+    ("btn btn--primary", {"background:var(--m-accent)", "color:var(--m-on-accent)"}),
+    ("btn btn--primary", {"background:var(--m-accent)"}),
+    ("btn btn--soft", {"background:var(--m-accent-wash)",
+                       "border:1px solid var(--m-accent)"}),
+    ("btn btn--sec", {"background:transparent", "border:1px solid var(--m-line)"}),
+    ("btn btn--sec", {"background:transparent", "border:1px solid var(--m-rule)"}),
+    ("btn btn--sec", {"background:transparent",
+                      "border:1px solid var(--m-rule-soft)"}),
+    ("btn btn--sec", {"background:transparent",
+                      "border:1px solid var(--m-rule-strong)"}),
+    ("btn btn--ghost", {"background:transparent", "border:none"}),
+    ("btn btn--ghost", {"background:transparent", "border:0"}),
+    ("btn btn--ghost", {"background:none", "border:none"}),
+    ("btn btn--ghost", {"background:none", "border:0"}),
+]
+
+BTN_SIZE = {
+    "padding:4px 10px": "btn--sm", "padding:3px 10px": "btn--sm",
+    "padding:4px 12px": "btn--sm", "padding:5px 11px": "btn--sm",
+    "padding:10px 20px": "btn--lg", "padding:12px 24px": "btn--lg",
+}
+
+# Bootstrap classes leaking into a hand-built system. They are not "another
+# variant" — they are a second design language, and five buttons wearing it look
+# like a different application.
+BOOTSTRAP = {"btn-outline-secondary": "btn--sec", "btn-sm": "btn--sm",
+             "btn-primary": "btn--primary", "btn-secondary": "btn--sec",
+             "btn-outline-primary": "btn--soft", "btn-lg": "btn--lg",
+             "btn-danger": "btn--danger", "btn-light": "btn--ghost"}
+
+
+def migrate_button(tag: str, stats: Counter) -> str:
+    if not tag.lstrip("<").lower().startswith("button"):
+        return tag
+    cls_m = re.search(r'class="([^"]*)"', tag)
+    have = set((cls_m.group(1) if cls_m else "").split())
+
+    # Bootstrap first: translate the foreign language before reading the look.
+    if have & set(BOOTSTRAP):
+        new = {BOOTSTRAP.get(c, c) for c in have}
+        new.add("btn")
+        stats["bootstrap → btn"] += 1
+        tag = re.sub(r'class="[^"]*"', f'class="{" ".join(sorted(new))}"', tag, 1)
+        have = new
+
+    st_m = re.search(r'style="([^"]*)"', tag)
+    if not st_m or JINJA.search(st_m.group(1)):
+        return tag
+    decls = [norm(d) for d in st_m.group(1).split(";") if ":" in d]
+    remaining = list(decls)
+    add = []
+
+    if "btn" not in have:
+        for cls, want in BTN_LOOKS:
+            if want <= set(remaining):
+                add += [c for c in cls.split() if c not in have]
+                remaining = [d for d in remaining if d not in want]
+                stats[cls] += 1
+                break
+
+    if "btn" in have or "btn" in add:
+        for d in list(remaining):
+            if d in BTN_BASE:
+                remaining.remove(d)
+                stats["redundant with .btn"] += 1
+            elif d in BTN_SIZE and BTN_SIZE[d] not in have:
+                add.append(BTN_SIZE[d])
+                remaining.remove(d)
+                stats[BTN_SIZE[d]] += 1
+
+    if not add and len(remaining) == len(decls):
+        return tag
+
+    if remaining:
+        tag = re.sub(r'style="[^"]*"', 'style="' + ";".join(remaining) + ';"', tag, 1)
+    else:
+        tag = re.sub(r'\s*style="[^"]*"', "", tag, 1)
+    if add:
+        if re.search(r'class="[^"]*"', tag):
+            tag = re.sub(r'class="([^"]*)"',
+                         lambda m: f'class="{m.group(1)} {" ".join(add)}"'.strip(),
+                         tag, 1)
+        else:
+            tag = re.sub(r"^<(\w+)", lambda m: f'<{m.group(1)} class="{" ".join(add)}"',
+                         tag, 1)
+    return tag
+
+
 def process(text: str, stats: Counter) -> str:
     text = re.sub(r"<\w[^>]*style=\"[^\"]*\"[^>]*>",
                   lambda m: migrate_tag(m.group(0), stats), text)
-    return re.sub(r"<\w[^>]*style=\"[^\"]*\"[^>]*>",
+    text = re.sub(r"<\w[^>]*style=\"[^\"]*\"[^>]*>",
                   lambda m: snap_tag(m.group(0), stats), text)
+    # Buttons last: the passes above may have moved declarations onto classes,
+    # and this reads what is left on the element as it finally stands.
+    return re.sub(r"<button\b[^>]*>",
+                  lambda m: migrate_button(m.group(0), stats), text)
 
 
 def main() -> int:

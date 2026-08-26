@@ -3,7 +3,7 @@
     <span>Research progress</span>
     {% if active_projects %}<span class="tail">{{ active_projects }} ACTIVE PROJECT{{ 's' if active_projects != 1 else '' }}</span>{% endif %}
   </h2>
-  <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);">
+  <div class="panel panel--md">
 
     {% if days_since_commit is not none %}
     <div class="u-row u-mb-4 u-rule" style="gap:var(--m-space-3);padding-bottom:12px;">
@@ -13,7 +13,7 @@
       <div>
         <div class="u-label">DAYS SINCE LAST COMMIT</div>
         {% if last_commit_msg %}
-        <div class="u-truncate" style="font-family:var(--m-sans);font-size:var(--t-micro);color:var(--m-ink-soft);margin-top:2px;max-width:260px;" title="{{ last_commit_msg }}">{{ last_commit_msg }}</div>
+        <div class="u-truncate" style="font-family:var(--m-sans);font-size:var(--t-micro);color:var(--m-muted);margin-top:var(--m-space-1);max-width:260px;" title="{{ last_commit_msg }}">{{ last_commit_msg }}</div>
         {% endif %}
       </div>
     </div>

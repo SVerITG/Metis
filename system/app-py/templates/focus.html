@@ -70,7 +70,7 @@
   {% if area.overview %}
   {% call zone("Overview", key="focus-" ~ area.slug ~ "-overview",
                tail="WHAT MATTERS HERE", open=True) %}
-    <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);">
+    <div class="panel panel--md">
       <div class="focus-prose">{{ area.overview | md | safe }}</div>
     </div>
   {% endcall %}
@@ -115,7 +115,7 @@
   {# ── 9 · Shelf management ──────────────────────────────────────────────── #}
   {% call zone("Shelf", key="focus-" ~ area.slug ~ "-shelf",
                tail=(shelf|length) ~ " / " ~ max_shelf ~ " SLOTS") %}
-    <div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
+    <div class="panel panel--md">
       <div class="u-row u-row--wrap">
         {% for a in all_areas %}
         <span style="font-family:var(--m-mono);font-size:10.5px;padding:4px 9px;

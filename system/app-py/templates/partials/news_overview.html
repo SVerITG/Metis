@@ -20,7 +20,7 @@
 {{ tag_datalist(all_tags or []) }}
 
 {% if not threads %}
-  <div class="panel" style="padding:22px;">
+  <div class="panel" style="padding:var(--m-space-5);">
     <div class="u-ed" style="font-size:var(--t-body);">
       Nothing in this window. That can mean a quiet period — or that the feeds
       have stopped answering. Ask Metis to check the feeds if it looks too quiet.
@@ -66,7 +66,7 @@
                   <details> element's own toggle event, so the cost is paid by
                   the reader who opens the story, not by everyone who loads the
                   page. -#}
-              <details class="fv-fold" style="margin-top:2px;">
+              <details class="fv-fold" style="margin-top:var(--m-space-1);">
                 <summary><span class="fv-chev">▸</span>
                   + {{ t['items']|length - 3 }} more in this story</summary>
                 <div class="fv-fold-body"

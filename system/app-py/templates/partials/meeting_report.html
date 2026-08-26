@@ -40,8 +40,8 @@
       <div class="u-label u-label--accent u-mb-3" style="letter-spacing:0.16em;">DECISIONS ({{ extracted.decisions|length }})</div>
       {% if extracted.decisions %}
         {% for d in extracted.decisions %}
-        <div class="u-rule" style="display:flex;gap:var(--m-space-3);padding:7px 0;">
-          <span class="u-label u-label--accent u-fixed" style="margin-top:3px;">■</span>
+        <div class="u-rule" style="display:flex;gap:var(--m-space-3);padding:var(--m-space-2) 0;">
+          <span class="u-label u-label--accent u-fixed" style="margin-top:var(--m-space-1);">■</span>
           <span style="font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);line-height:1.5;">{{ d }}</span>
         </div>
         {% endfor %}
@@ -55,8 +55,8 @@
       <div class="u-mb-3" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.16em;color:var(--m-ochre);">ACTION ITEMS ({{ extracted.actions|length }})</div>
       {% if extracted.actions %}
         {% for a in extracted.actions %}
-        <div class="u-rule" style="display:flex;gap:var(--m-space-3);padding:7px 0;">
-          <span class="u-fixed" style="color:var(--m-ochre);font-family:var(--m-mono);font-size:var(--t-micro);margin-top:3px;">→</span>
+        <div class="u-rule" style="display:flex;gap:var(--m-space-3);padding:var(--m-space-2) 0;">
+          <span class="u-fixed" style="color:var(--m-ochre);font-family:var(--m-mono);font-size:var(--t-micro);margin-top:var(--m-space-1);">→</span>
           <span style="font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);line-height:1.5;">{{ a }}</span>
         </div>
         {% endfor %}
@@ -81,7 +81,7 @@
   {% if all_connections %}
   <div class="u-mb-6">
     <div class="u-label u-mb-3" style="letter-spacing:0.16em;">KNOWLEDGE CONNECTIONS SURFACED ({{ all_connections|length }})</div>
-    <div class="panel" style="padding:0;">
+    <div class="panel panel--flush">
       {% for c in all_connections %}
       {% set src_colors = {'library': 'var(--m-accent)', 'meeting': 'var(--m-ochre)', 'news': 'var(--m-ok)', 'idea': 'var(--m-muted)'} %}
       <div style="display:flex;align-items:baseline;gap:10px;padding:9px 16px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">

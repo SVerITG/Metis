@@ -3535,15 +3535,6 @@ details summary { outline: none; }
 /* ── Keep / Not for me ─────────────────────────────────────────────────── */
 .fv-acts { display: flex; align-items: center; gap: 6px; margin-top: 7px;
            flex-wrap: wrap; }
-.fv-btn {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-family: var(--m-mono); font-size: 10px; letter-spacing: .08em;
-  text-transform: uppercase; padding: 3px 9px;
-  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill);
-  background: transparent; color: var(--m-muted); cursor: pointer;
-  transition: color .12s, border-color .12s, background .12s;
-}
-.fv-btn:hover { color: var(--m-ink); border-color: var(--m-ink); }
 .fv-keep:hover { color: var(--m-accent); border-color: var(--m-accent);
                  background: var(--m-accent-wash); }
 .fv-decline:hover { color: var(--m-ochre); border-color: var(--m-ochre); }
@@ -3595,13 +3586,6 @@ details summary { outline: none; }
   background: transparent; color: var(--m-ink);
 }
 .ft-forms input:focus { outline: none; border-color: var(--m-accent); }
-.ft-btn {
-  font-family: var(--m-mono); font-size: 10.5px; padding: 6px 12px;
-  border: 1px solid var(--m-line); border-radius: 4px;
-  background: transparent; color: var(--m-ink); cursor: pointer;
-  white-space: nowrap;
-}
-.ft-btn:hover { border-color: var(--m-accent); color: var(--m-accent); }
 .ft-btn--q { border-color: var(--m-accent); color: var(--m-accent); }
 
 .ft-entry { padding: 9px 0; border-top: 1px solid var(--m-line); }
@@ -3816,14 +3800,6 @@ details summary { outline: none; }
   .ni--list .tri > .tri-btn, .ni--list .tri > .tri-tags { opacity: 1; }
 }
 
-.tri-btn {
-  font-family: var(--m-mono); font-size: 10px; letter-spacing: .07em;
-  text-transform: uppercase; padding: 3px 9px;
-  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill);
-  background: transparent; color: var(--m-muted); cursor: pointer;
-  white-space: nowrap; transition: color .12s, border-color .12s, background .12s;
-}
-.tri-btn:hover { color: var(--m-ink); border-color: var(--m-ink); }
 .tri-later:hover  { color: var(--m-accent); border-color: var(--m-accent);
                     background: var(--m-accent-wash); }
 .tri-saved:hover  { color: var(--m-ok);
@@ -4230,3 +4206,139 @@ details summary { outline: none; }
 .panel--auto  { padding: var(--d-panel) calc(var(--d-panel) * 1.2); }
 .panel--clip  { overflow: hidden; }
 .panel--rows > * + * { border-top: 1px solid var(--m-rule-soft); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BUTTONS — the variants the 79 combinations were reaching for
+
+   An audit found 355 buttons in 79 distinct class combinations. The revealing
+   number was not the 62 with no class at all — it was the 108 that HAVE a class
+   and carry an inline style on top of it, overriding the thing they just asked
+   for. That happens when the system covers four cases and the templates need
+   seven, so people take the nearest class and patch the difference.
+
+   The class-less ones collapse to four looks:
+       10  accent fill, no border          → .btn--primary   (existed)
+       15  no fill, no border              → .btn--ghost     (existed)
+       13  transparent, 1px border         → .btn--sec       (existed)
+        2  accent wash + accent border     → .btn--soft      (new)
+
+   So three of the four were already there and unreachable. What was genuinely
+   missing was a soft variant, sizes, a destructive variant, and an icon-only
+   shape — the things people were patching in by hand.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Soft: reads as chosen without the weight of a primary. The most common
+   hand-rolled look after ghost, and the one with no home. */
+.btn--soft {
+  background: var(--m-accent-wash); border-color: var(--m-accent);
+  color: var(--m-accent);
+}
+.btn--soft:hover { background: var(--m-accent-wash-2); }
+
+/* Destructive. Never the only signal — pair it with a confirm. */
+.btn--danger { color: var(--m-alert); border-color: transparent; }
+.btn--danger:hover { background: var(--m-alert-wash);
+                     border-color: var(--m-alert); }
+
+/* Sizes. 40 buttons set their own padding and font-size inline; three steps
+   covers every one of them. */
+.btn--sm { padding: 4px 10px; font-size: var(--t-meta); gap: 4px; }
+.btn--lg { padding: 10px 20px; font-size: var(--t-h4); }
+.btn--block { width: 100%; justify-content: center; }
+
+/* Icon-only. A 30px target and an accessible name, never a bare glyph. */
+.btn--icon { padding: 0; width: 30px; height: 30px; justify-content: center; }
+.btn--icon svg { width: 15px; height: 15px; }
+
+/* Disabled has to LOOK disabled, or the only feedback is that nothing happens. */
+.btn:disabled, .btn[aria-disabled="true"] {
+  opacity: .45; cursor: not-allowed; pointer-events: none;
+}
+
+/* Keyboard focus, on every button, once. Focus rings were visible on some
+   surfaces and invisible on others — which makes keyboard navigation a guess. */
+.btn:focus-visible, .act:focus-visible, .seg > :focus-visible,
+.news-tab:focus-visible, .nav-item:focus-visible {
+  outline: 2px solid var(--m-accent); outline-offset: 2px; border-radius: 2px;
+}
+
+/* ── Aliases ───────────────────────────────────────────────────────────────
+   Three button classes invented earlier the same day, before the .btn variants
+   existed. Aliased rather than renamed across the templates: the names read
+   well where they are used (`ft-btn` in the focus thinking panel), and one
+   selector list means they cannot drift from the system they now belong to.
+
+   The lesson is in the dates. Every one of these was written by someone — me —
+   who needed a small button and did not find .btn--sm because it did not exist
+   yet. That is how sixty variants happen: not carelessness, absence. */
+.ft-btn, .fv-btn, .tri-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; font-family: var(--m-mono); font-size: var(--t-meta);
+  letter-spacing: .07em; text-transform: uppercase; white-space: nowrap;
+  border: 1px solid var(--m-rule); border-radius: var(--m-radius-pill);
+  background: transparent; color: var(--m-muted); cursor: pointer;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+.ft-btn:hover, .fv-btn:hover, .tri-btn:hover {
+  color: var(--m-ink); border-color: var(--m-ink);
+}
+.ft-btn--q { border-color: var(--m-accent); color: var(--m-accent); }
+.fv-keep:hover  { color: var(--m-accent); border-color: var(--m-accent);
+                  background: var(--m-accent-wash); }
+.fv-decline:hover { color: var(--m-ochre); border-color: var(--m-ochre); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   EMPTY STATES AND SKELETONS
+
+   104 templates were writing their own "nothing here yet" prose while a
+   component sat unused — because that component is a first-run HERO and what
+   they needed was one quiet line. Three sizes now, and the voice rules live in
+   the macro file where the words are written.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.empty { color: var(--m-muted); }
+.empty--quiet {
+  margin: 0; font-family: var(--m-display); font-style: italic;
+  font-size: var(--t-small); line-height: 1.6;
+  display: flex; align-items: baseline; gap: var(--m-space-2); flex-wrap: wrap;
+}
+.empty--panel {
+  display: flex; flex-direction: column; align-items: flex-start;
+  gap: var(--m-space-2); padding: var(--d-panel) calc(var(--d-panel) * 1.2);
+}
+.empty-icon { color: var(--m-muted-soft); }
+.empty-icon svg { width: 18px; height: 18px; }
+.empty-title {
+  margin: 0; font-family: var(--m-display); font-size: var(--t-h4);
+  color: var(--m-ink);
+}
+.empty-body {
+  margin: 0; font-size: var(--t-small); line-height: 1.6; max-width: 62ch;
+}
+/* Emptiness that is a finding reads differently from emptiness that is normal. */
+.empty--suspect { border-left: 3px solid var(--m-ochre); }
+.empty--suspect .empty-title { color: var(--m-ochre-deep); }
+
+/* ── Skeletons ─────────────────────────────────────────────────────────────
+   A skeleton is a promise about the SHAPE of what is coming. Get it wrong and
+   the content jumps when it lands, which is worse than showing a spinner.
+   Animation is a slow sweep, not a pulse: a pulse at list length reads as an
+   error state. Disabled entirely under reduced-motion. */
+.sk { display: flex; flex-direction: column; gap: var(--m-space-3); }
+.sk-row { display: flex; flex-direction: column; gap: var(--m-space-1);
+          padding: var(--d-row-y) 0; }
+.sk-bar, .sk-card {
+  background: linear-gradient(90deg,
+    var(--m-surface-2) 0%, var(--m-surface-3) 50%, var(--m-surface-2) 100%);
+  background-size: 200% 100%;
+  animation: sk-sweep 1.6s ease-in-out infinite;
+  border-radius: var(--m-radius-sm);
+}
+.sk-bar { height: 11px; }
+.sk-bar--sub { height: 9px; opacity: .6; }
+.sk-bar--inline { display: inline-block; vertical-align: middle; min-width: 40px; }
+.sk-card { aspect-ratio: 16/9; border-radius: var(--m-radius); }
+@keyframes sk-sweep { from { background-position: 200% 0; }
+                        to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .sk-bar, .sk-card { animation: none; background: var(--m-surface-2); }
+}

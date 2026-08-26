@@ -50,7 +50,7 @@
             {{ card.created_at[:7] if card.created_at else '—' }} · NOTE
           </div>
           {% if card.domain %}
-          <span class="u-label u-label--accent" style="display:inline-flex;align-items:center;padding:2px 8px;letter-spacing:0.12em;text-transform:uppercase;background:var(--m-accent-wash);border-radius:var(--m-radius-sm);">
+          <span class="u-label u-label--accent" style="display:inline-flex;align-items:center;padding:var(--m-space-1) var(--m-space-2);letter-spacing:0.12em;text-transform:uppercase;background:var(--m-accent-wash);border-radius:var(--m-radius-sm);">
             {{ card.domain[:14] }}
           </span>
           {% endif %}
@@ -69,7 +69,7 @@
       </div>
       {% endfor %}
     {% else %}
-      <div class="panel" style="grid-column:1/-1;padding:var(--m-space-4) var(--m-space-5);">
+      <div class="panel panel--md" style="grid-column:1/-1;">
         <div class="empty-row">No index cards yet. The librarian can help you build your archive.</div>
       </div>
     {% endif %}

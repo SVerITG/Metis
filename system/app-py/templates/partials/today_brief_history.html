@@ -1,11 +1,11 @@
 {# today_brief_history.html — every past morning briefing, newest first.
    Each is an expandable entry (full text on click) with date + read state.
    Context: briefs — sqlite rows (id, insight_date, read_at, content) #}
-<div class="panel" style="background:var(--m-surface-2);padding:var(--m-space-4) var(--m-space-4);border:1px solid var(--m-rule-soft);">
+<div class="panel panel--md" style="background:var(--m-surface-2);border:1px solid var(--m-rule-soft);">
   <div class="label-caps u-mb-3">Previous briefings · {{ briefs|length }}</div>
   {% if briefs %}
     {% for b in briefs %}
-    <details class="u-rule" style="padding:9px 0;">
+    <details class="u-rule" style="padding:var(--m-space-2) 0;">
       <summary class="u-row" style="cursor:pointer;gap:var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-ink);list-style:none;">
         <span class="tnum">{{ b['insight_date'] }}</span>
         {% if b['read_at'] %}

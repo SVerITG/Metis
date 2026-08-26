@@ -13,7 +13,7 @@
     <div hx-get="/api/partial/memory/overview"
          hx-trigger="load"
          hx-swap="innerHTML">
-      <div style="text-align:center;padding:40px;color:var(--m-muted);font-size:var(--t-meta);">
+      <div style="text-align:center;padding:var(--m-space-7);color:var(--m-muted);font-size:var(--t-meta);">
         Loading memory overview...
       </div>
     </div>
@@ -24,7 +24,7 @@
       <!-- Left: Agent wisdom + Staleness -->
       <div class="u-col" style="gap:var(--m-space-5);">
 
-        <div style="background:var(--m-card);border-radius:8px;padding:var(--m-space-4);border:1px solid var(--m-rule-soft);"
+        <div style="background:var(--m-surface);border-radius:8px;padding:var(--m-space-4);border:1px solid var(--m-rule-soft);"
              hx-get="/api/partial/memory/agents"
              hx-trigger="load"
              hx-swap="innerHTML">
@@ -33,7 +33,7 @@
           </div>
         </div>
 
-        <div style="background:var(--m-card);border-radius:8px;padding:var(--m-space-4);border:1px solid var(--m-rule-soft);"
+        <div style="background:var(--m-surface);border-radius:8px;padding:var(--m-space-4);border:1px solid var(--m-rule-soft);"
              hx-get="/api/partial/memory/staleness"
              hx-trigger="load"
              hx-swap="innerHTML">
@@ -45,7 +45,7 @@
       </div>
 
       <!-- Right: Topic coverage -->
-      <div style="background:var(--m-card);border-radius:8px;padding:var(--m-space-4);border:1px solid var(--m-rule-soft);"
+      <div style="background:var(--m-surface);border-radius:8px;padding:var(--m-space-4);border:1px solid var(--m-rule-soft);"
            hx-get="/api/partial/memory/topics"
            hx-trigger="load"
            hx-swap="innerHTML">

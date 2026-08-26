@@ -9,7 +9,7 @@
     <span>Where you left off</span>
     {%- if time_label %}<span class="tail">{{ time_label|upper }}</span>{% endif %}
   </h2>
-  <div class="panel" style="padding:var(--m-space-5) var(--m-space-6);border-left:3px solid var(--m-accent);">
+  <div class="panel panel--lg" style="border-left:3px solid var(--m-accent);">
     <div class="u-row u-mb-3" style="gap:var(--m-space-3);">
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M8 1v6l4 2"/><circle cx="8" cy="8" r="7"/>
@@ -18,7 +18,7 @@
       <span class="u-label" style="letter-spacing:0.08em;margin-left:4px;">{{ time_label }}</span>
       {% if total_sessions > 1 %}
       <button hx-get="/api/partial/today/all-sessions" hx-target="#resume-all-sessions-modal" hx-swap="innerHTML"
-              class="btn btn--ghost btn--caps" style="margin-left:auto;font-size:var(--t-micro);padding:3px 10px;">
+              class="btn btn--ghost btn--caps btn--sm" style="margin-left:auto;font-size:var(--t-micro);">
         ALL SESSIONS ({{ total_sessions }})
       </button>
       {% endif %}
@@ -40,7 +40,7 @@
     <div class="u-row u-row--wrap">
       {% if agents %}
       {% for a in agents %}
-      <span class="u-label u-label--accent" style="letter-spacing:0.08em;padding:2px 8px;border-radius:var(--m-radius-pill);background:var(--m-accent-wash);">{{ a.agent_slug }}</span>
+      <span class="u-label u-label--accent" style="letter-spacing:0.08em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill);background:var(--m-accent-wash);">{{ a.agent_slug }}</span>
       {% endfor %}
       {% endif %}
       {% if deeplink %}

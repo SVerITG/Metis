@@ -1,0 +1,104 @@
+{#-
+  _empty.html — nothing to show, said well. And the skeletons that precede it.
+
+  WHY 104 TEMPLATES WROTE THEIR OWN. `empty_state.html` already existed, and is
+  used exactly once. It is a FIRST-RUN HERO: 48px of padding, centred, dashed
+  border, a kicker reading "FIRST RUN". Nobody reaches for that to say "no new
+  papers this week" inside one panel — so everyone wrote a <p> instead, in their
+  own voice, at their own size.
+
+  The gap was never the component. It was the SIZE. Three now exist:
+
+      quiet   one line inside a panel that has other content    (the common case)
+      panel   a panel whose whole job is currently empty
+      hero    first run, or a surface with nothing in it at all  (the original)
+
+  THE VOICE, which is the part that actually matters. An empty state is read by
+  someone wondering whether the thing is broken. So:
+
+    · Say what WILL fill it, not that it is empty. "New papers land here every
+      Monday" beats "No papers found".
+    · Give the action if there is one, as a real control, not a sentence telling
+      them to go and find it.
+    · Never apologise, and never blame the reader for not having done something.
+    · If emptiness is itself a finding — a feed that should be active and is not
+      — say THAT. Silence and nothing-to-report look identical and are not.
+-#}
+
+{% macro quiet(text, action_label=None, action_attrs=None) %}
+<p class="empty empty--quiet">
+  {{ text }}
+  {%- if action_label %}
+  <button type="button" class="btn btn--ghost btn--sm" {{ action_attrs | safe }}>{{ action_label }}</button>
+  {%- endif %}
+</p>
+{% endmacro %}
+
+
+{% macro panel(title, body=None, action_label=None, action_attrs=None, icon='none') %}
+<div class="panel empty empty--panel">
+  {% if icon != 'none' %}<span class="empty-icon">{{ empty_icon(icon) }}</span>{% endif %}
+  <p class="empty-title">{{ title }}</p>
+  {% if body %}<p class="empty-body">{{ body | safe }}</p>{% endif %}
+  {% if action_label %}
+  <button type="button" class="btn btn--soft btn--sm" {{ action_attrs | safe }}>{{ action_label }}</button>
+  {% endif %}
+</div>
+{% endmacro %}
+
+
+{#- Emptiness that is a FINDING, not an absence. A feed with nothing in it for a
+    month is telling you the feed stopped, and that reads differently. -#}
+{% macro suspect(title, body) %}
+<div class="panel empty empty--panel empty--suspect">
+  <p class="empty-title">{{ title }}</p>
+  <p class="empty-body">{{ body | safe }}</p>
+</div>
+{% endmacro %}
+
+
+{% macro empty_icon(name) %}
+<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  {%- if name == 'inbox' -%}
+    <path d="M1.5 9.5h3l1 2h5l1-2h3"/><path d="M2.5 9.5L4 3h8l1.5 6.5v3h-11z"/>
+  {%- elif name == 'search' -%}
+    <circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/>
+  {%- elif name == 'paper' -%}
+    <path d="M4 1.5h5L12.5 5v9.5h-8.5z"/><path d="M9 1.5V5h3.5"/>
+  {%- else -%}
+    <circle cx="8" cy="8" r="6"/>
+  {%- endif -%}
+</svg>
+{% endmacro %}
+
+
+{#-
+  SKELETONS. Three shapes were in use and a fourth arrived with each new panel.
+  A skeleton is a promise about the shape of what is coming — get it wrong and
+  the content jumps when it lands, which is worse than a spinner.
+
+  `rows` mirrors a list; `card` mirrors a card; `line` is one value arriving.
+-#}
+{% macro sk_rows(n=3) %}
+<div class="sk" aria-busy="true" aria-live="polite">
+  <span class="sr-only">Loading…</span>
+  {% for i in range(n) %}
+  <div class="sk-row">
+    <div class="sk-bar" style="width:{{ [92, 76, 84, 68][i % 4] }}%;"></div>
+    <div class="sk-bar sk-bar--sub" style="width:{{ [44, 58, 38, 50][i % 4] }}%;"></div>
+  </div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro sk_cards(n=3) %}
+<div class="sk list--cards" aria-busy="true" aria-live="polite">
+  <span class="sr-only">Loading…</span>
+  {% for i in range(n) %}<div class="sk-card"></div>{% endfor %}
+</div>
+{% endmacro %}
+
+{% macro sk_line(width='60%') %}
+<span class="sk-bar sk-bar--inline" style="width:{{ width }};" aria-busy="true"></span>
+{% endmacro %}

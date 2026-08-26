@@ -9,7 +9,7 @@
     <span class="tail" style="display:inline-flex;align-items:center;gap:var(--m-space-2);">
       {% if total > 0 %}
       {# A delta you can act on today, with the total demoted beside it. #}
-      <span style="display:inline-flex;align-items:baseline;gap:2px;">{{ delta_html|safe }}</span>
+      <span style="display:inline-flex;align-items:baseline;gap:var(--m-space-1);">{{ delta_html|safe }}</span>
       {% endif %}
       {# Period toggle #}
       <span style="display:inline-flex;gap:0;border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);overflow:hidden;">
@@ -38,7 +38,7 @@ Find recent publications relevant to my research (sleeping sickness / HAT, negle
   </h2>
 
   {% if papers %}
-  <div class="panel" style="padding:0;overflow:hidden;">
+  <div class="panel panel--flush panel--clip">
     {# Five in the peek; the rest fetched but folded. Never an inner scrollbar. #}
     {% for p in papers[:5] %}
     <div id="lit-paper-{{ p.id }}" style="display:flex;align-items:flex-start;gap:12px;padding:12px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
@@ -94,15 +94,16 @@ Find recent publications relevant to my research (sleeping sickness / HAT, negle
     {% endif %}
   </div>
   {% else %}
-  <div class="panel" style="padding:var(--m-space-5) var(--m-space-6);">
+  <div class="panel panel--lg">
     <div class="u-mb-2 u-ed" style="font-size:var(--t-small);">
-      No new papers this {{ period }}. Scan runs every Monday, or click "Scan now".
+      Nothing new this {{ period }}. The scan runs every Monday and files what it
+      finds here — so an empty week usually means a quiet week, not a broken feed.
     </div>
     {% if topics %}
     <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-1);margin-top:var(--m-space-2);">
       <span class="u-label" style="margin-right:4px;">Your topics:</span>
       {% for t in topics %}
-      <span class="u-label" style="letter-spacing:0.06em;padding:2px 7px;border-radius:var(--m-radius-pill);background:var(--m-surface-2);">{{ t.topic|truncate(30) }}</span>
+      <span class="u-label" style="letter-spacing:0.06em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill);background:var(--m-surface-2);">{{ t.topic|truncate(30) }}</span>
       {% endfor %}
     </div>
     {% endif %}

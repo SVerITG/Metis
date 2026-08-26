@@ -1,5 +1,5 @@
 <div id="meeting-import-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:800;background:rgba(0,0,0,0.3);display:flex;align-items:flex-start;justify-content:center;padding-top:60px;">
-  <div class="panel m-drawer-top" style="width:640px;max-width:96vw;padding:0;box-shadow:0 8px 32px rgba(0,0,0,0.18);max-height:88vh;overflow-y:auto;">
+  <div class="panel m-drawer-top panel--flush" style="width:640px;max-width:96vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);max-height:88vh;overflow-y:auto;">
 
     <!-- Header -->
     <div class="u-row u-row--between u-rule" style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-3);position:sticky;top:0;background:var(--m-surface);z-index:1;">
@@ -7,7 +7,7 @@
         <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><polyline points="8 4.5 8 8 10.5 9.5"/></svg>
         IMPORT MEETING
       </div>
-      <button class="u-label" onclick="closeMeetingImport()" style="background:none;border:none;cursor:pointer;padding:2px 6px;">ESC</button>
+      <button class="u-label btn btn--ghost" onclick="closeMeetingImport()" style="padding:var(--m-space-1) var(--m-space-2);">ESC</button>
     </div>
 
     <!-- Form -->

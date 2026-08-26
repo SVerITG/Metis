@@ -1,17 +1,17 @@
 <div class="all-sessions-overlay" onclick="if(event.target===this)this.remove()"
-     style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:flex;align-items:flex-start;justify-content:center;padding:48px 16px;overflow:auto;">
-  <div class="panel" style="max-width:680px;width:100%;padding:0;background:var(--m-surface);border:1px solid var(--m-rule-strong);border-radius:var(--m-radius);">
+     style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;display:flex;align-items:flex-start;justify-content:center;padding:var(--m-space-7) var(--m-space-4);overflow:auto;">
+  <div class="panel panel--flush" style="max-width:680px;width:100%;background:var(--m-surface);border:1px solid var(--m-rule-strong);border-radius:var(--m-radius);">
     <div class="u-row u-row--between u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
       <span class="u-label u-label--accent" style="letter-spacing:0.14em;">ALL SESSIONS · {{ sessions|length }}</span>
-      <button onclick="this.closest('.all-sessions-overlay').remove()"
-              style="background:transparent;border:none;color:var(--m-muted);font-size:var(--t-h4);cursor:pointer;line-height:1;">×</button>
+      <button class="btn btn--ghost" onclick="this.closest('.all-sessions-overlay').remove()"
+              style="color:var(--m-muted);font-size:var(--t-h4);line-height:1;">×</button>
     </div>
     <div style="max-height:70vh;overflow:auto;padding:var(--m-space-1) 0;">
       {% for s in sessions %}
       <div class="u-rule" style="padding:var(--m-space-3) var(--m-space-5);">
         <div class="u-label u-mb-2">{{ s.date }}</div>
         {% if s.did %}
-        <ul class="u-col" style="margin:0 0 var(--m-space-2);padding-left:0;list-style:none;gap:3px;">
+        <ul class="u-col" style="margin:0 0 var(--m-space-2);padding-left:0;list-style:none;gap:var(--m-space-1);">
           {% for d in s.did %}
           <li style="font-size:var(--t-meta);color:var(--m-ink);line-height:1.4;">
             <span class="u-label u-label--accent">{{ d.agent_slug }}</span>
@@ -25,7 +25,7 @@
         {% if s.topics %}
         <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-1);">
           {% for t in s.topics %}
-          <span class="u-label" style="padding:2px 6px;background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-sm);">{{ t[:40] }}</span>
+          <span class="u-label" style="padding:var(--m-space-1) var(--m-space-2);background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-sm);">{{ t[:40] }}</span>
           {% endfor %}
         </div>
         {% endif %}

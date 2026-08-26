@@ -16,7 +16,7 @@
     <em>No briefing notes yet. Use /meeting-memory to prepare.</em>
   </p>
   {% endif %}
-  <div style="display:flex;gap:var(--m-space-2);margin-top:22px;padding-top:18px;border-top:1px solid var(--m-rule);">
+  <div style="display:flex;gap:var(--m-space-2);margin-top:var(--m-space-5);padding-top:18px;border-top:1px solid var(--m-rule);">
     <button class="btn btn--primary" onclick="launchPrompt('meeting')">Open briefing</button>
     <button class="btn btn--sec btn--caps" onclick="openTranscript('{{ meeting.id or '' }}')">Transcript (after)</button>
     <button class="btn btn--ghost btn--caps" onclick="rescheduleMeeting('{{ meeting.id or '' }}')">Reschedule</button>

@@ -1,5 +1,5 @@
 {% if course %}
-<div class="panel" style="padding:40px 56px;">
+<div class="panel" style="padding:var(--m-space-7) var(--m-space-8);">
   <div class="u-label u-mb-5" style="letter-spacing:0.22em;">{{ (course.category or 'COURSE').upper() }} · IN PROGRESS · {{ course.progress_pct or 0 }}% COMPLETE</div>
   <h1 style="font-family:var(--m-display);font-size:36px;font-weight:500;letter-spacing:-0.02em;color:var(--m-ink);line-height:1.15;margin:0 0 var(--m-space-3);">{{ course.title }}</h1>
   <div class="u-mb-6 u-ed" style="font-size:var(--t-h4);">
@@ -26,7 +26,7 @@
   </div>
 </div>
 {% else %}
-<div class="panel" style="padding:40px 56px;">
+<div class="panel" style="padding:var(--m-space-7) var(--m-space-8);">
   <div class="u-ed" style="font-size:var(--t-h4);">
     No active course. Use <em>/course-builder</em> to start one.
   </div>

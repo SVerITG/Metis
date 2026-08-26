@@ -32,12 +32,12 @@
   </div>
   {% endfor %}
 {% else %}
-  <div class="u-ed" style="padding:18px 22px;font-size:var(--t-body);">
+  <div class="u-ed" style="padding:var(--m-space-4) var(--m-space-5);font-size:var(--t-body);">
     No keys configured yet.
   </div>
 {% endif %}
 
-<div class="u-rule-t" style="padding:10px 22px 14px;margin-top:2px;">
+<div class="u-rule-t" style="padding:var(--m-space-3) var(--m-space-5) var(--m-space-4);margin-top:var(--m-space-1);">
   <button class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);"
           onclick="openApiKeyReplace('', 'New custom key')">
     + Add custom key

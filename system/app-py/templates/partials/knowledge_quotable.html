@@ -9,26 +9,26 @@
    Three states, not two: quotable · known but unquotable · absent.
 #}
 <div id="knowledge-quotable" style="margin-top:var(--m-space-6);">
-  {{ sec_label("What Metis can quote", style="margin-bottom:8px;") }}
+  {{ sec_label("What Metis can quote") }}
   <div class="m-box" style="padding:var(--m-space-4) var(--m-space-4);">
     <div style="display:flex;flex-wrap:wrap;gap:18px 28px;align-items:baseline;">
       <div>
         <div style="font-size:var(--t-h2);font-weight:600;font-variant-numeric:tabular-nums;line-height:1;">
           {{ cov.library_quotable }}<span style="font-size:var(--t-body);color:var(--m-muted);font-weight:400;">/{{ cov.library_total }}</span>
         </div>
-        <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--m-muted);margin-top:5px;">
+        <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--m-muted);margin-top:var(--m-space-1);">
           papers with indexed full text
         </div>
       </div>
       <div>
         <div style="font-size:var(--t-h2);font-weight:600;font-variant-numeric:tabular-nums;line-height:1;">{{ cov.quotable_pct }}%</div>
-        <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--m-muted);margin-top:5px;">
+        <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--m-muted);margin-top:var(--m-space-1);">
           quotable
         </div>
       </div>
       <div>
         <div style="font-size:var(--t-h2);font-weight:600;font-variant-numeric:tabular-nums;line-height:1;">{{ cov.documents }}</div>
-        <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--m-muted);margin-top:5px;">
+        <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--m-muted);margin-top:var(--m-space-1);">
           documents across {{ cov.layers|length }} layers
         </div>
       </div>

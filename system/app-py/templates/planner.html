@@ -22,7 +22,7 @@
        hx-trigger="load"
        hx-swap="outerHTML">
     {% for label in ['QUARTER · Q4', 'WEEK · 46', 'TODAY'] %}
-    <div class="panel panel-pad skeleton" style="padding:22px 24px;">
+    <div class="panel panel-pad skeleton" style="padding:var(--m-space-5) var(--m-space-5);">
       <div class="u-mb-3" style="height:9px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:55%;"></div>
       <div class="u-mb-2" style="height:18px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);"></div>
       <div class="u-mb-4" style="height:12px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:70%;"></div>
@@ -32,12 +32,12 @@
   </div>
 
   <!-- Focus board: top 3 projects + open task counts -->
-  {{ sec_label("What you're focused on right now", tail="TOP 3 · OPEN TASKS", style="margin-bottom:16px;") }}
+  {{ sec_label("What you're focused on right now", tail="TOP 3 · OPEN TASKS") }}
   <div class="u-mb-6"
        hx-get="/api/partial/planner/focus-board"
        hx-trigger="load"
        hx-swap="innerHTML">
-    <div class="panel panel-pad skeleton" style="padding:18px 22px;">
+    <div class="panel panel-pad skeleton panel--md">
       <p class="u-ed" style="font-size:var(--t-small);margin:0;">Surfacing your top three projects…</p>
     </div>
   </div>
@@ -67,7 +67,7 @@
   <div class="grid grid-2">
 
     <div>
-      {{ sec_label("Intentions · Q4", style="margin-bottom:12px;") }}
+      {{ sec_label("Intentions · Q4") }}
       <div class="panel"
            hx-get="/api/partial/planner/intentions"
            hx-trigger="load"
@@ -85,8 +85,8 @@
     </div>
 
     <div>
-      {{ sec_label("Notes from the planner", style="margin-bottom:12px;") }}
-      <div class="panel panel-pad" style="padding:22px 24px;"
+      {{ sec_label("Notes from the planner") }}
+      <div class="panel panel-pad" style="padding:var(--m-space-5) var(--m-space-5);"
            hx-get="/api/partial/planner/notes"
            hx-trigger="load"
            hx-swap="outerHTML">
@@ -105,7 +105,7 @@
        hx-swap="innerHTML">
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--m-space-4);">
       {% for label in ['SOMEDAY','INCUBATING','ACTIVE','DONE'] %}
-      <div class="panel skeleton" style="padding:0;min-height:280px;">
+      <div class="panel skeleton panel--flush" style="min-height:280px;">
         <div class="u-rule" style="height:38px;"></div>
       </div>
       {% endfor %}

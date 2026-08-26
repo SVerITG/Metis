@@ -16,7 +16,7 @@
    that marks a brief read (the researcher's standing decision, 2026-08-21,
    reaffirming 2026-08-19). It only changes what a brief looks like afterwards. #}
 {% set collapsed = brief_read|default(false) %}
-<div class="panel panel-pad u-mb-6" id="morning-brief" style="padding:28px 40px;">
+<div class="panel panel-pad u-mb-6" id="morning-brief" style="padding:var(--m-space-6) var(--m-space-7);">
 
   {# Header: label · date · read badge · daily/weekly · collapse chevron #}
   <h2 class="kicker kicker--accent u-row u-row--wrap" style="gap:var(--m-space-3);">
@@ -30,7 +30,7 @@
     {% endif %}
     {% if brief %}
       {% if brief_read %}
-        <span class="u-label" style="padding:2px 8px;border-radius:var(--m-radius-pill);background:var(--m-surface-2);">READ</span>
+        <span class="u-label" style="padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill);background:var(--m-surface-2);">READ</span>
       {% else %}
         {# The UNREAD pill is now the button, not just a label.
            the researcher asked (2026-08-21) to keep the explicit click as the only
@@ -43,11 +43,11 @@
            `tuberculosis-drc` led two days running with the identical
            'operational' angle. An unclicked button is not a cosmetic problem
            here; it is the input the rotation runs on. #}
-        <button type="button"
+        <button class="btn btn--primary btn--sm" type="button"
                 hx-post="/api/today/morning-brief/read" hx-vals='{"id": "{{ brief_id }}"}'
                 hx-target="#morning-brief" hx-swap="outerHTML"
                 title="Click when you have read this. It is the ONLY signal that the brief was delivered — tomorrow's brief uses it to put today's lead story on cooldown and to pick a fresh angle. Leave it unclicked and the same story can lead again."
-                style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.14em;padding:3px 10px;border-radius:var(--m-radius-pill);background:var(--m-accent);color:var(--m-on-accent);border:0;cursor:pointer;text-transform:none;">
+                style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.14em;border-radius:var(--m-radius-pill);border:0;text-transform:none;">
           NEW · UNREAD — CLICK WHEN DONE
         </button>
       {% endif %}
@@ -79,7 +79,7 @@
     <div style="margin-top:var(--m-space-2);font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-alert);max-width:720px;">
       &#9888; Brief generation failed: {{ brief_error }}
       <button hx-post="/api/morning-brief/refresh" hx-vals='{"period":"daily"}' hx-target="#morning-brief" hx-swap="outerHTML"
-              class="btn btn--ghost btn--caps" style="margin-left:8px;font-size:var(--t-micro);padding:2px 8px;">Retry</button>
+              class="btn btn--ghost btn--caps" style="margin-left:8px;font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-2);">Retry</button>
     </div>
     {% endif %}
   {% elif brief_error == 'no-api-key' %}
@@ -102,7 +102,7 @@
     <div class="u-row" style="gap:var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-alert);max-width:720px;">
       <span>&#9888; {{ brief_error }}</span>
       <button hx-post="/api/morning-brief/refresh" hx-vals='{"period":"daily"}' hx-target="#morning-brief" hx-swap="outerHTML"
-              class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);padding:2px 8px;">Retry</button>
+              class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-2);">Retry</button>
     </div>
   {% elif brief %}
     {# Reading measure comes from the shared token (in ch, so it tracks the type
@@ -114,12 +114,12 @@
       <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-2);">
         {% for s in sources %}
           {% if s.url %}
-            <a href="{{ s.url }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;padding:var(--m-space-1) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-text);text-decoration:none;">
+            <a href="{{ s.url }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:var(--m-space-1);padding:var(--m-space-1) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-text);text-decoration:none;">
               {% if s.domain %}<span style="color:var(--m-accent);letter-spacing:0.08em;">{{ s.domain|upper }}</span>{% endif %}
               <span style="color:var(--m-muted);">{{ s.title[:55] }}{% if s.title|length > 55 %}…{% endif %}</span>
             </a>
           {% else %}
-            <span class="u-label" style="display:inline-flex;align-items:center;gap:5px;padding:var(--m-space-1) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);">{{ s.title[:55] }}</span>
+            <span class="u-label" style="display:inline-flex;align-items:center;gap:var(--m-space-1);padding:var(--m-space-1) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);">{{ s.title[:55] }}</span>
           {% endif %}
         {% endfor %}
       </div>
@@ -127,7 +127,7 @@
     {% endif %}
   {% elif fallback_headlines %}
     <div class="ed u-mb-4 u-ed" style="font-size:var(--t-body);max-width:720px;">The morning scan hasn't run yet. Here are the latest signals while the brief is written.</div>
-    <div class="u-col" style="gap:2px;">
+    <div class="u-col" style="gap:var(--m-space-1);">
       {% for h in fallback_headlines %}
       <div class="m-edge-left u-rule" style="display:flex;align-items:baseline;gap:var(--m-space-3);padding:var(--m-space-2) var(--m-space-2) var(--m-space-2) var(--m-space-3);position:relative;">
         {% if h.domain %}<span class="u-label u-label--accent u-fixed" style="letter-spacing:0.08em;">{{ h.domain|upper }}</span>{% endif %}
@@ -153,36 +153,36 @@
     {% if coverage.led %}
     <div class="u-mb-2" style="font-size:var(--t-meta);color:var(--m-text);line-height:1.65;">
       {% if brief_read %}Quieted by this brief{% else %}Marking this read will quiet{% endif %}:
-      {% for c in coverage.led %}<span class="u-label u-label--accent" style="padding:2px 7px;margin-right:4px;background:var(--m-accent-wash);border-radius:var(--m-radius-pill);">{{ c.label }}</span>{% endfor %}
+      {% for c in coverage.led %}<span class="u-label u-label--accent" style="padding:var(--m-space-1) var(--m-space-2);margin-right:4px;background:var(--m-accent-wash);border-radius:var(--m-radius-pill);">{{ c.label }}</span>{% endfor %}
     </div>
     {% endif %}
     {% if coverage.held %}
     <div style="font-size:var(--t-meta);color:var(--m-muted);line-height:1.65;">
       Held back today (already delivered):
-      {% for c in coverage.held %}<span style="font-family:var(--m-mono);font-size:var(--t-micro);padding:2px 7px;margin-right:4px;background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);">{{ c.label }}{% if c.days is not none %} · {{ c.days }}d{% endif %}</span>{% endfor %}
+      {% for c in coverage.held %}<span style="font-family:var(--m-mono);font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-2);margin-right:4px;background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);">{{ c.label }}{% if c.days is not none %} · {{ c.days }}d{% endif %}</span>{% endfor %}
     </div>
     {% endif %}
     {% if coverage.escalated %}
     <div style="font-size:var(--t-meta);color:var(--m-ochre-deep);line-height:1.65;margin-top:var(--m-space-2);">
       &#9650; Broke silence — something changed:
-      {% for c in coverage.escalated %}<span style="font-family:var(--m-mono);font-size:var(--t-micro);padding:2px 7px;margin-right:4px;background:var(--m-ochre-wash);border-radius:var(--m-radius-pill);">{{ c.label }}</span>{% endfor %}
+      {% for c in coverage.escalated %}<span style="font-family:var(--m-mono);font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-2);margin-right:4px;background:var(--m-ochre-wash);border-radius:var(--m-radius-pill);">{{ c.label }}</span>{% endfor %}
     </div>
     {% endif %}
   </div>
   {% endif %}
 
     {# Action row #}
-    <div class="u-row u-row--wrap u-rule-t" style="margin-top:22px;padding-top:16px;">
+    <div class="u-row u-row--wrap u-rule-t" style="margin-top:var(--m-space-5);padding-top:16px;">
       {% if brief and not brief_read %}
       <button type="button" class="btn btn--primary btn--caps"
               hx-post="/api/today/morning-brief/read" hx-vals='{"id": "{{ brief_id }}"}' hx-target="#morning-brief" hx-swap="outerHTML"
               title="Mark this brief read. It collapses, tomorrow's brief won't repeat the stories it led with, and you'll see at a glance whether the brief is new."
-              style="padding:5px 12px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;">✓ Mark as read</button>
+              style="padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;">✓ Mark as read</button>
       {% endif %}
       <button type="button" class="btn btn--ghost btn--caps"
               hx-get="/api/partial/today/morning-brief/history" hx-target="#brief-history" hx-swap="innerHTML"
               onclick="var h=document.getElementById('brief-history');h.style.display=h.style.display==='none'?'block':'none';"
-              style="padding:5px 12px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;">Previous briefings</button>
+              style="padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;">Previous briefings</button>
       {%- set claude_brief_prompt -%}
 Produce my Metis {% if period == 'weekly' %}weekly{% elif period == 'catchup' %}catch-up{% else %}daily{% endif %} brief now. Using the metis-rc tools: scan today's news and any new literature, rank by closeness to my work, write a short brief of the 5-7 most relevant items, save it with the Metis tool, then show me the brief.
       {%- endset -%}

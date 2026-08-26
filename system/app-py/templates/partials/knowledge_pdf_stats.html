@@ -5,7 +5,7 @@
     &nbsp;·&nbsp;
     <span style="color:var(--m-ink);font-weight:600;">{{ "{:,}".format(total_chunks) }}</span> INDEXED CHUNKS
   </span>
-  <button class="u-label u-label--wide" style="padding:5px 12px;background:transparent;border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);cursor:pointer;white-space:nowrap;transition:border-color .15s,color .15s;"
+  <button class="u-label u-label--wide btn btn--sec" style="padding:var(--m-space-1) var(--m-space-3);white-space:nowrap;transition:border-color .15s,color .15s;"
           onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
           onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'"
           hx-post="/api/knowledge/build-index"
@@ -28,9 +28,9 @@
   <tbody>
     {% for r in rows %}
     <tr class="u-rule">
-      <td style="padding:7px 0;font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ r.domain or '(unknown)' }}</td>
-      <td class="u-label" style="padding:7px 10px;text-align:right;">{{ r.docs }}</td>
-      <td class="u-label" style="padding:7px 0 7px 10px;text-align:right;">{{ "{:,}".format(r.chunks or 0) }}</td>
+      <td style="padding:var(--m-space-2) 0;font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ r.domain or '(unknown)' }}</td>
+      <td class="u-label" style="padding:var(--m-space-2) var(--m-space-3);text-align:right;">{{ r.docs }}</td>
+      <td class="u-label" style="padding:var(--m-space-2) 0 var(--m-space-2) var(--m-space-3);text-align:right;">{{ "{:,}".format(r.chunks or 0) }}</td>
     </tr>
     {% endfor %}
   </tbody>

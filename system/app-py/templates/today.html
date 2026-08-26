@@ -81,13 +81,13 @@
     <span id="today-find-spin" class="htmx-indicator"
           style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--m-muted);">searching…</span>
   </form>
-  <div id="today-find-results" style="margin-bottom:26px;"></div>
+  <div id="today-find-results" style="margin-bottom:var(--m-space-6);"></div>
 
   <!-- ===== 2. Morning brief — full-width hero ===== -->
   <div hx-get="/api/partial/today/morning-brief"
        hx-trigger="load"
        hx-swap="outerHTML">
-    <div class="panel u-mb-6" style="padding:var(--m-space-5) var(--m-space-6);">
+    <div class="panel u-mb-6 panel--lg">
       <div class="skeleton skeleton-bar w-30 u-mb-4"></div>
       <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:14px;"></div>
       <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:14px;"></div>
@@ -104,7 +104,7 @@
   <div hx-get="/api/partial/today/focus-memory"
        hx-trigger="load delay:100ms"
        hx-swap="outerHTML">
-    {{ sec_label("Today's focus", tail="LOADING", style="margin-bottom:14px;") }}
+    {{ sec_label("Today's focus", tail="LOADING") }}
     <div class="grid grid-3 u-mb-6">
       {{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}
     </div>
@@ -118,7 +118,7 @@
        hx-get="/api/partial/connections/today"
        hx-trigger="load delay:150ms"
        hx-swap="innerHTML">
-    {{ sec_label("Connections", tail="ACROSS YOUR WORK", style="margin-bottom:14px;") }}
+    {{ sec_label("Connections", tail="ACROSS YOUR WORK") }}
     {{ skeleton_box(size="sm") }}
   </div>
 
@@ -190,7 +190,7 @@
   <div hx-get="/api/partial/today/news-rail"
        hx-trigger="load delay:600ms"
        hx-swap="outerHTML">
-    {{ sec_label("Dispatch", tail="LOADING NEWS", style="margin-bottom:10px;") }}
+    {{ sec_label("Dispatch", tail="LOADING NEWS") }}
     <div class="panel" style="padding:var(--m-space-5) var(--m-space-5);min-height:120px;">
       <div class="skeleton skeleton-bar w-40 u-mb-4"></div>
       <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:12px;"></div>

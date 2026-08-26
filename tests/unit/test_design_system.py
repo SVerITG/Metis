@@ -99,7 +99,7 @@ def test_density_shifts_every_row_token_at_once():
 # ── 3. the ratchet ───────────────────────────────────────────────────────────
 # A budget, not a ban. The 2,709 that remain are real work still to do; what
 # this stops is the next feature quietly adding three hundred more.
-INLINE_BUDGET = 2_750
+INLINE_BUDGET = 2_600  # measured 2,555
 
 
 def test_inline_styling_does_not_climb_back():
@@ -137,3 +137,68 @@ def test_the_migration_tool_is_idempotent():
     m = re.search(r"(\d[\d,]*)\s+total substitutions", out.stdout)
     n = int(m.group(1).replace(",", "")) if m else 0
     assert n == 0, f"a second run would change {n} more things — not settled"
+
+
+def test_templates_never_reference_a_token_that_does_not_exist():
+    """An undefined custom property with no fallback invalidates the ENTIRE
+    declaration at computed-value time — `padding: var(--d-panel) var(--s-5)`
+    sets no padding at all. Two templates were left pointing at a scale that had
+    been deleted an hour earlier, and both rendered without complaint."""
+    css_tokens = set(re.findall(r"(--[\w-]+)\s*:", _css()))
+    bad = []
+    for f in _templates():
+        src = f.read_text(encoding="utf-8")
+        # A template may define tokens for itself in its own <style> block —
+        # capture.html does, and that is legitimate scoping, not a bug.
+        known = css_tokens | set(re.findall(r"(--[\w-]+)\s*:", src))
+        for m in re.finditer(r"var\((--[\w-]+)\s*([,)])", src):
+            if m.group(2) == ")" and m.group(1) not in known:
+                bad.append(f"{f.name}: {m.group(1)}")
+    assert not bad, f"templates using undefined tokens: {sorted(set(bad))}"
+
+
+def test_section_headings_do_not_override_their_own_default():
+    """`.sec-label` declares `margin: 0 0 16px`. Seventy-eight call sites passed
+    a `style=` argument to change it by a few pixels, in eight different amounts
+    — overriding a default that was already right. Section spacing is a rhythm
+    or it is eighty-six separate opinions."""
+    bad = []
+    for f in _templates():
+        for m in re.finditer(r"sec_label\([^)]*style=\"(margin-bottom:\\s*\\d+px[^\"]*)\"",
+                             f.read_text(encoding="utf-8")):
+            bad.append(f"{f.name}: {m.group(1)}")
+    # `margin-bottom:0` alongside `pointer-events:none` is a functional
+    # override, not a spacing opinion. Only pixel spacing is the smell.
+    assert not bad, f"sec_label calls overriding the default margin: {bad}"
+
+
+def test_panels_use_a_variant_not_a_padding():
+    """113 of 155 panels carried an inline override; almost all were saying one
+    of five things about padding. `.panel--sm/md/lg/tight/flush` say it in the
+    class attribute, where it is greppable."""
+    bad = []
+    for f in _templates():
+        for m in re.finditer(r'class="(panel[^"]*)"\s+style="([^"]*padding[^"]*)"',
+                             f.read_text(encoding="utf-8")):
+            if "panel--" not in m.group(1):
+                bad.append(f"{f.name}: {m.group(2)[:40]}")
+    # 63 remain, all on page-level templates not yet migrated. A ratchet, not
+    # a ban: it stops the number climbing while the migration continues.
+    assert len(bad) <= 65, f"panels writing raw padding: {len(bad)} — {bad[:6]}"
+
+
+def test_the_empty_state_has_three_sizes():
+    """One component existed and was used once, because it is a first-run HERO
+    and 104 templates needed a quiet line inside a panel. The gap was the size,
+    not the component."""
+    src = (TPL / "partials" / "_empty.html").read_text(encoding="utf-8")
+    for macro in ("quiet", "panel", "suspect", "sk_rows", "sk_cards"):
+        assert f"macro {macro}(" in src, f"_empty.html is missing {macro}()"
+
+
+def test_skeletons_respect_reduced_motion():
+    """A sweeping gradient at list length is exactly the animation someone with
+    a vestibular disorder cannot use."""
+    css = _css()
+    block = css[css.index("@keyframes sk-sweep"):]
+    assert "prefers-reduced-motion" in css[css.index(".sk-bar"):]

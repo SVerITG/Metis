@@ -6,7 +6,7 @@
       <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">{{ m.title or 'Meeting' }}</div>
       <div class="tnum u-label">{{ m.duration_minutes or '—' }} MIN</div>
       <div style="text-align:right;">
-        <span class="u-label" style="display:inline-flex;align-items:center;padding:2px 8px;background:var(--m-surface-2);border-radius:var(--m-radius-sm);">
+        <span class="u-label" style="display:inline-flex;align-items:center;padding:var(--m-space-1) var(--m-space-2);background:var(--m-surface-2);border-radius:var(--m-radius-sm);">
           {{ (m.status or 'FILED').upper() }}
         </span>
       </div>

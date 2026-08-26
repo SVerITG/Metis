@@ -41,7 +41,7 @@
        hx-trigger="load"
        hx-swap="innerHTML">
     <div class="news-tabs" aria-hidden="true">
-      {% for _ in range(7) %}<div class="skeleton skeleton-box" style="height:34px;width:118px;margin:0 2px;"></div>{% endfor %}
+      {% for _ in range(7) %}<div class="skeleton skeleton-box" style="height:34px;width:118px;margin:0 var(--m-space-1);"></div>{% endfor %}
     </div>
     <div class="panel skeleton skeleton-box" style="height:320px;margin-top:var(--m-space-4);"></div>
   </div>

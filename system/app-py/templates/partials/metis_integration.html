@@ -3,7 +3,7 @@
            desktop_prompt, user_name #}
 
 {# ── Claude Code ──────────────────────────────────────────────────── #}
-<div class="u-rule" style="padding:18px 22px;">
+<div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
   <div class="u-row u-row--between u-mb-4">
     <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">Claude Code</div>
     {% if mode == 'background' %}
@@ -64,7 +64,7 @@
 </div>
 
 {# ── Claude Desktop ───────────────────────────────────────────────── #}
-<div class="u-rule" style="padding:18px 22px;">
+<div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
   <div class="u-mb-3" style="display:flex;align-items:baseline;justify-content:space-between;">
     <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">Claude Desktop</div>
     <span class="chip chip--info" style="font-size:var(--t-micro);">PER-PROJECT ONLY</span>
@@ -94,7 +94,7 @@
 </div>
 
 {# ── Opt-out reminder ─────────────────────────────────────────────── #}
-<div style="padding:14px 22px;">
+<div style="padding:var(--m-space-4) var(--m-space-5);">
   <div class="metis-note">
     <strong>Opt out for one message</strong> — in both Claude Code and Claude Desktop, start any message with <code style="font-family:var(--m-mono);font-size:var(--t-micro);">direct:</code> and Metis steps back for that turn. Useful for quick shell commands, unrelated code fixes, or anything where you just want plain Claude.
   </div>

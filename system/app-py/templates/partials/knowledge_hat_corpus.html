@@ -2,11 +2,11 @@
   <h2 class="sec-label u-mb-3">
     <span>Knowledge Corpus</span>
     <span class="tail">{{ total }} PAPERS · {{ seeded_count }} ANNOTATED · {{ triage_count }} TO TRIAGE</span>
-    <button class="u-label u-label--wide" hx-post="/api/knowledge/build-hat-index"
+    <button class="u-label u-label--wide btn btn--sec btn--sm" hx-post="/api/knowledge/build-hat-index"
             hx-target="#hat-index-status"
             hx-swap="innerHTML"
             hx-confirm="This will index all knowledge corpus PDFs for semantic search (10–40 min, runs in background). Continue?"
-            style="padding:3px 10px;background:transparent;border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);cursor:pointer;margin-left:12px;"
+            style="margin-left:12px;"
             onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
             onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'">
       INDEX FOR SEMANTIC SEARCH
@@ -14,7 +14,7 @@
     <span id="hat-index-status" style="font-family:var(--m-mono);font-size:var(--t-micro);margin-left:8px;"></span>
   </h2>
 
-  <div class="panel" style="overflow:hidden;">
+  <div class="panel panel--clip">
 
     <!-- ── Row 1: Search + Sort ── -->
     <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-3);display:flex;gap:var(--m-space-2);align-items:flex-end;flex-wrap:wrap;">
@@ -50,7 +50,7 @@
 
     <!-- ── Row 2: Collection chips ── -->
     {% if collections %}
-    <div class="u-row u-row--wrap u-rule" style="padding:var(--m-space-2) var(--m-space-5);gap:5px;">
+    <div class="u-row u-row--wrap u-rule" style="padding:var(--m-space-2) var(--m-space-5);gap:var(--m-space-1);">
       <span class="u-label" style="margin-right:6px;">FOLDER</span>
       <button style="padding:3px 10px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;border:1px solid var(--m-rule);border-radius:2px;cursor:pointer;white-space:nowrap;background:{% if not active_collection %}var(--m-accent){% else %}var(--m-surface-2){% endif %};color:{% if not active_collection %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
               data-coll="" onclick="setHatCollection('')">All</button>
