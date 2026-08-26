@@ -21,19 +21,19 @@
 
 {% if not threads %}
   <div class="panel" style="padding:22px;">
-    <div style="font-family:var(--m-display);font-style:italic;font-size:15px;color:var(--m-muted);">
+    <div class="u-ed" style="font-size:var(--t-body);">
       Nothing in this window. That can mean a quiet period — or that the feeds
       have stopped answering. Ask Metis to check the feeds if it looks too quiet.
     </div>
   </div>
 {% else %}
-  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px;">
+  <div class="u-mb-2" style="display:flex;align-items:baseline;gap:var(--m-space-3);">
     <h2 class="sec-label" style="margin:0;">Running stories
       <span class="sec-label-tail">{{ threads|length }} THREADS · {{ total_items }} ITEMS · {{ period_label|upper }}</span>
     </h2>
   </div>
 
-  <div style="margin-bottom:28px;">
+  <div class="u-mb-6">
     {% for t in threads %}
       <div class="ov-thread">
         <div>

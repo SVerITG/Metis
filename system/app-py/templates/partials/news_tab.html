@@ -31,12 +31,12 @@
 {% if subfilters %}
   {# Sub-filters inside "Related to my work" — client-side, because the set is
      small and a round-trip to hide cards would be wasteful. #}
-  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;" id="news-subfilters">
+  <div class="u-mb-4" style="display:flex;flex-wrap:wrap;gap:var(--m-space-2);" id="news-subfilters">
     <button type="button" class="btn btn--ghost btn--caps news-sub" data-subj=""
-            style="padding:3px 10px;font-size:11px;" aria-pressed="true">All</button>
+            style="padding:3px 10px;font-size:var(--t-micro);" aria-pressed="true">All</button>
     {% for subj, n in subfilters %}
       <button type="button" class="btn btn--ghost btn--caps news-sub" data-subj="{{ subj }}"
-              style="padding:3px 10px;font-size:11px;" aria-pressed="false">
+              style="padding:3px 10px;font-size:var(--t-micro);" aria-pressed="false">
         {{ subj.replace('-', ' ') }} <span style="color:var(--m-muted-soft);">{{ n }}</span>
       </button>
     {% endfor %}
@@ -62,14 +62,14 @@
 
 {% if not cards %}
   <div class="panel" style="padding:22px;">
-    <div style="font-family:var(--m-display);font-style:italic;font-size:15px;color:var(--m-muted);">
+    <div class="u-ed" style="font-size:var(--t-body);">
       Nothing here for {{ periods[period][1]|lower }}.
       {% if period != 'month' %}
         Try a longer period —
         <button type="button" class="btn btn--ghost btn--caps"
                 hx-get="/api/partial/news/tab?tab={{ active }}&period=month&view={{ view }}"
                 hx-target="#news-tab-body" hx-swap="innerHTML"
-                style="padding:2px 9px;font-size:11px;">this month</button>
+                style="padding:2px 9px;font-size:var(--t-micro);">this month</button>
       {% else %}
         If a whole month is empty, the feeds for this topic may have stopped
         answering rather than the world going quiet.
@@ -77,7 +77,7 @@
     </div>
   </div>
 {% else %}
-  <h2 class="sec-label" style="margin-bottom:10px;">{{ spec.label }}
+  <h2 class="sec-label u-mb-3">{{ spec.label }}
     <span class="sec-label-tail">
       {{ total }} ITEM{{ '' if total == 1 else 'S' }} · {{ periods[period][1]|upper }}
       {%- if total > cards|length %} · SHOWING {{ cards|length }}{% endif %}
@@ -87,7 +87,7 @@
     {# Never cap silently: a grid of 60 with no note reads as "that is all there
        is", and the period switcher then looks inert because every period fills
        the cap. Say what was left out. #}
-    <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:12px;">
+    <div class="u-label u-mb-3">
       {{ total - cards|length }} more item{{ '' if total - cards|length == 1 else 's' }} in this
       period than shown — narrow the window
       {%- if subfilters %} or pick a sub-topic above{% endif %}.

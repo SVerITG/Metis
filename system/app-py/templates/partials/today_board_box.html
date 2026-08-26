@@ -107,13 +107,13 @@ Update my Metis {{ m.label }} board. Search the web for current, real {% if boar
   </div>
 
   {# ── Hidden add form ── #}
-  <div id="board-add-{{ board }}" class="board-box-addform" style="display:none;">
+  <div id="board-add-{{ board }}" class="board-box-addform u-hide">
     <form hx-post="/api/today/board/{{ board }}/add"
           hx-target="#board-{{ board }}" hx-swap="outerHTML"
           hx-encoding="multipart/form-data">
       <input type="text" name="title" placeholder="Title" required class="board-input">
       <input type="url" name="url" placeholder="URL (optional)" class="board-input board-input--mono">
-      <div style="display:flex;gap:6px;">
+      <div style="display:flex;gap:var(--m-space-2);">
         <button type="submit" class="btn btn--primary btn--caps board-box-btn">Save</button>
         <button type="button" class="btn btn--ghost btn--caps board-box-btn"
                 onclick="toggleBoardAdd('{{ board }}')">Cancel</button>

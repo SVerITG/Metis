@@ -1,6 +1,6 @@
 <!-- today_inbox.html — Agent inbox feed-row, editorial -->
 <div id="today-inbox-card">
-  <h2 class="sec-label" style="margin-bottom:8px;">
+  <h2 class="sec-label u-mb-2">
     <span>Agent inbox</span>
     <span class="tail">{{ items | length }} RECENT</span>
   </h2>
@@ -17,7 +17,7 @@
         <span class="feed-dot">·</span>
         <span>{{ item.time }}</span>
       </div>
-      <a class="feed-title" href="javascript:void(0)" style="font-size:15px;">{{ item.task_summary }}</a>
+      <a class="feed-title" href="javascript:void(0)" style="font-size:var(--t-body);">{{ item.task_summary }}</a>
       <div class="feed-actions" aria-label="actions">
         <button class="feed-act feed-act-dismiss" title="Dismiss"
                 onclick="document.getElementById('inbox-item-{{ loop.index }}').classList.add('feed-row--out');setTimeout(function(){var n=document.getElementById('inbox-item-{{ loop.index }}');if(n)n.remove();},220);">

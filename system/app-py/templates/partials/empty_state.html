@@ -4,19 +4,19 @@
      {% include "partials/empty_state.html" with context %}
 #}
 <div class="panel panel-pad" style="text-align:center;padding:48px 32px;border:1px dashed var(--m-line);background:var(--m-surface-soft);">
-  <div class="kicker kicker--accent" style="justify-content:center;margin-bottom:14px;">
+  <div class="kicker kicker--accent u-mb-4" style="justify-content:center;">
     <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="8" cy="8" r="6"/>
       <path d="M8 5v3l2 1.5"/>
     </svg>
     <span>FIRST RUN</span>
   </div>
-  <h3 class="ed" style="font-size:20px;margin:0 0 10px;">{{ es_title | default("This space is ready when you are") }}</h3>
-  <p class="ed" style="font-size:15px;color:var(--m-muted);max-width:520px;margin:0 auto 20px;">
+  <h3 class="ed" style="font-size:var(--t-h3);margin:0 0 var(--m-space-3);">{{ es_title | default("This space is ready when you are") }}</h3>
+  <p class="ed" style="font-size:var(--t-body);color:var(--m-muted);max-width:520px;margin:0 auto 20px;">
     {{ es_body | default("This tab will fill in as you use Metis. Run a scan, capture an idea, or import your library to seed it.") | safe }}
   </p>
   {% if es_primary_label %}
-  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+  <div style="display:flex;gap:var(--m-space-2);justify-content:center;flex-wrap:wrap;">
     <button class="btn btn--primary" {{ es_primary_action | safe }}>{{ es_primary_label }}</button>
     {% if es_secondary_label %}
     <button class="btn btn--sec" {{ es_secondary_action | safe }}>{{ es_secondary_label }}</button>

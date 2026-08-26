@@ -70,8 +70,7 @@
        This reuses knowledge.py's `unified-search`, which already fans out across
        the three library silos and episodic memory. A second search that returns
        different answers to the same question would be worse than none. ======== -->
-  <form class="today-find" role="search" onsubmit="return false;"
-        style="margin-bottom:22px;">
+  <form class="today-find u-mb-5" role="search" onsubmit="return false;">
     <label for="today-find-input" class="sr-only">Search your library and memory</label>
     <input id="today-find-input" type="search" name="q" autocomplete="off"
            placeholder="Find a paper, a memory, a decision…"
@@ -80,8 +79,7 @@
            hx-target="#today-find-results"
            hx-indicator="#today-find-spin">
     <span id="today-find-spin" class="htmx-indicator"
-          style="font-family:var(--m-mono);font-size:10.5px;letter-spacing:.12em;
-                 text-transform:uppercase;color:var(--m-muted);">searching…</span>
+          style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.12em;text-transform:uppercase;color:var(--m-muted);">searching…</span>
   </form>
   <div id="today-find-results" style="margin-bottom:26px;"></div>
 
@@ -89,10 +87,10 @@
   <div hx-get="/api/partial/today/morning-brief"
        hx-trigger="load"
        hx-swap="outerHTML">
-    <div class="panel" style="margin-bottom:28px;padding:24px 32px;">
-      <div class="skeleton skeleton-bar w-30" style="margin-bottom:16px;"></div>
-      <div class="skeleton skeleton-bar w-100" style="height:14px;margin-bottom:8px;"></div>
-      <div class="skeleton skeleton-bar w-100" style="height:14px;margin-bottom:8px;"></div>
+    <div class="panel u-mb-6" style="padding:var(--m-space-5) var(--m-space-6);">
+      <div class="skeleton skeleton-bar w-30 u-mb-4"></div>
+      <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:14px;"></div>
+      <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:14px;"></div>
       <div class="skeleton skeleton-bar w-70"  style="height:14px;"></div>
     </div>
   </div>
@@ -107,7 +105,7 @@
        hx-trigger="load delay:100ms"
        hx-swap="outerHTML">
     {{ sec_label("Today's focus", tail="LOADING", style="margin-bottom:14px;") }}
-    <div class="grid grid-3" style="margin-bottom:32px;">
+    <div class="grid grid-3 u-mb-6">
       {{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}
     </div>
   </div>
@@ -116,7 +114,7 @@
   <!-- The README's core promise, greeting you daily on the cockpit. Seeds from
        the most recently touched project; endpoint lives in routers/connections.py
        (not today.py) so it stays isolated. -->
-  <div style="margin-bottom:32px;"
+  <div class="u-mb-6"
        hx-get="/api/partial/connections/today"
        hx-trigger="load delay:150ms"
        hx-swap="innerHTML">
@@ -125,7 +123,7 @@
   </div>
 
   <!-- ===== 5. Board strip — Outbreaks · Events · Funding ===== -->
-  <div class="board-strip" style="margin-bottom:32px;">
+  <div class="board-strip u-mb-6">
     <div hx-get="/api/partial/today/board/outbreaks"
          hx-trigger="load delay:200ms"
          hx-swap="outerHTML">
@@ -193,10 +191,10 @@
        hx-trigger="load delay:600ms"
        hx-swap="outerHTML">
     {{ sec_label("Dispatch", tail="LOADING NEWS", style="margin-bottom:10px;") }}
-    <div class="panel" style="padding:20px 24px;min-height:120px;">
-      <div class="skeleton skeleton-bar w-40" style="margin-bottom:14px;"></div>
-      <div class="skeleton skeleton-bar w-100" style="height:12px;margin-bottom:8px;"></div>
-      <div class="skeleton skeleton-bar w-80" style="height:12px;margin-bottom:8px;"></div>
+    <div class="panel" style="padding:var(--m-space-5) var(--m-space-5);min-height:120px;">
+      <div class="skeleton skeleton-bar w-40 u-mb-4"></div>
+      <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:12px;"></div>
+      <div class="skeleton skeleton-bar w-80 u-mb-2" style="height:12px;"></div>
       <div class="skeleton skeleton-bar w-60" style="height:12px;"></div>
     </div>
   </div>

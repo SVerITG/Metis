@@ -11,7 +11,7 @@
     <a href="javascript:void(0)" onclick="generateHandoff()" style="margin-left:1rem;" title="Save a summary of where we left off">
       <i class="bi bi-box-arrow-up-right"></i> Handoff
     </a>
-    <span id="scheduler-next" style="margin-left:1rem;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);"
+    <span class="u-label" id="scheduler-next" style="margin-left:1rem;"
           hx-get="/api/partial/today/automation-next"
           hx-trigger="load, every 60s"
           hx-swap="outerHTML"></span>

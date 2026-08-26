@@ -5,29 +5,27 @@
 
    `new_news` is None on a first visit — that is different from zero and is shown
    differently, because "nothing new" and "never opened" are not the same fact. #}
-<div class="panel" style="padding:14px 16px;">
+<div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
   <div style="display:flex;flex-wrap:wrap;gap:16px 26px;align-items:baseline;">
     {% if pulse.new_news is not none %}
     <div>
       <span style="font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1;
                    {% if pulse.new_news %}color:var(--m-accent);{% endif %}">{{ pulse.new_news }}</span>
-      <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:.11em;
-                   text-transform:uppercase;color:var(--m-muted);margin-left:6px;">new briefs</span>
+      <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.11em;text-transform:uppercase;color:var(--m-muted);margin-left:6px;">new briefs</span>
     </div>
     <div>
       <span style="font-size:24px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1;
                    {% if pulse.new_reading %}color:var(--m-accent);{% endif %}">{{ pulse.new_reading }}</span>
-      <span style="font-family:var(--m-mono);font-size:10px;letter-spacing:.11em;
-                   text-transform:uppercase;color:var(--m-muted);margin-left:6px;">new papers</span>
+      <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:.11em;text-transform:uppercase;color:var(--m-muted);margin-left:6px;">new papers</span>
     </div>
     {% else %}
-    <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
+    <div class="u-label">
       FIRST VISIT — nothing marked read yet
     </div>
     {% endif %}
 
-    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-      <span style="font-family:var(--m-mono);font-size:10px;color:var(--m-muted);">
+    <div class="u-row" style="margin-left:auto;">
+      <span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);">
         {% if pulse.newest_news_date %}
           newest item {{ pulse.newest_news_date }}
           {% if pulse.newest_news_date < today %}
@@ -39,14 +37,12 @@
       </span>
       <button hx-post="/api/focus/{{ area.slug }}/refresh"
               hx-target="#focus-pulse" hx-swap="innerHTML"
-              style="font-family:var(--m-mono);font-size:10.5px;padding:5px 11px;
-                     border:1px solid var(--m-line);border-radius:4px;
-                     background:transparent;color:var(--m-fg);cursor:pointer;">
+              style="font-family:var(--m-mono);font-size:var(--t-micro);padding:5px 11px;border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);cursor:pointer;">
         Refresh sources
       </button>
     </div>
   </div>
-  <p style="margin:10px 0 0;font-size:12px;color:var(--m-muted);line-height:1.5;">
+  <p style="margin:var(--m-space-3) 0 0;font-size:var(--t-meta);color:var(--m-muted);line-height:1.5;">
     {{ corpus.documents }} indexed document(s) mention this subject
     {% if corpus.layers %}—
       {% for l in corpus.layers %}<code>{{ l.layer }}</code> {{ l.docs }}{% if not loop.last %} · {% endif %}{% endfor %}

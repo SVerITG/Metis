@@ -9,8 +9,8 @@
 {% set T = "#focus-feed" %}
 
 {% if not news.live and not news.muted and not news.decided %}
-<div class="panel" style="padding:16px 18px;">
-  <p style="margin:0;font-size:13px;color:var(--m-muted);">
+<div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
+  <p style="margin:0;font-size:var(--t-small);color:var(--m-muted);">
     Nothing in the feed yet. That is a statement about the lens as much as the
     news: if this stays empty while the subject is clearly active, the keyword
     groups are too narrow.
@@ -19,7 +19,7 @@
 {% else %}
 
 {% if news.live %}
-<div class="panel" style="padding:4px 0;">
+<div class="panel" style="padding:var(--m-space-1) 0;">
   {% for n in news.live[:14] %}
   <div class="fv-row">
     <span class="fv-date">{{ n.brief_date }}</span>

@@ -1,5 +1,5 @@
 <div>
-  <h2 class="sec-label" style="margin-bottom:8px;">
+  <h2 class="sec-label u-mb-2">
     Priority Tasks
     <span class="sec-label-tail">BLOCKED · STARRED · OPEN</span>
   </h2>
@@ -9,13 +9,13 @@
       {% for task in tasks %}
         {% if task.section != ns.last_section %}
           {% set ns.last_section = task.section %}
-          <div style="padding:3px 12px;background:var(--m-surface-2);border-bottom:1px solid var(--m-rule-soft);">
+          <div class="u-rule" style="padding:3px 12px;background:var(--m-surface-2);">
             {% if task.section == 'blocked' %}
-            <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-warn);">BLOCKED</span>
+            <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;color:var(--m-warn);">BLOCKED</span>
             {% elif task.section == 'starred' %}
-            <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">STARRED</span>
+            <span class="u-label">STARRED</span>
             {% else %}
-            <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">OLDEST OPEN</span>
+            <span class="u-label">OLDEST OPEN</span>
             {% endif %}
           </div>
         {% endif %}
@@ -31,10 +31,10 @@
             {% endif %}
           </span>
           <!-- title + project badge -->
-          <span class="todo-title" style="flex:1;">
+          <span class="todo-title u-grow">
             {{ task.title or 'Untitled task' }}
             {% if task.project %}
-            <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-left:6px;letter-spacing:.06em;">{{ task.project[:22] }}</span>
+            <span class="u-label" style="margin-left:6px;letter-spacing:.06em;">{{ task.project[:22] }}</span>
             {% endif %}
           </span>
           <!-- status badge -->
@@ -46,10 +46,9 @@
           </span>
           {% if task.starred %}
           <!-- unstar -->
-          <button onclick="todayTaskUnstar('{{ task.id }}', this)"
+          <button class="u-fixed" onclick="todayTaskUnstar('{{ task.id }}', this)"
                   title="Remove from Today (unstar)"
-                  style="background:none;border:none;padding:0 4px;cursor:pointer;
-                         font-size:11px;color:var(--m-ochre-deep);opacity:.7;flex-shrink:0;line-height:1;"
+                  style="background:none;border:none;padding:0 var(--m-space-1);cursor:pointer;font-size:var(--t-micro);color:var(--m-ochre-deep);opacity:.7;line-height:1;"
                   onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.7'">&#9733;</button>
           {% endif %}
         </div>
@@ -82,7 +81,7 @@ function addTodoRow(input) {
   row.className = 'todo-row';
   row.style.borderLeft = '2px solid transparent';
   row.innerHTML = '<span class="todo-check"></span>'
-    + '<span class="todo-title" style="flex:1;">' + val.replace(/</g,'&lt;') + '</span>'
+    + '<span class="todo-title u-grow">' + val.replace(/</g,'&lt;') + '</span>'
     + '<span class="todo-meta">ADDED</span>';
   panel.insertBefore(row, compose);
   input.value = '';

@@ -7,10 +7,10 @@
 
   <div class="page-head">
     <div>
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);margin-bottom:4px;">SURFACE 06</div>
+      <div class="u-label u-mb-1" style="letter-spacing:0.2em;text-transform:uppercase;">SURFACE 06</div>
       <h1 style="font-family:var(--m-display);font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0;">Meetings</h1>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <div class="u-row u-row--wrap" style="gap:var(--m-space-3);">
       <div class="page-meta"
            hx-get="/api/partial/meetings/meta"
            hx-trigger="load"
@@ -39,11 +39,11 @@
   <!-- Import modal container -->
   <div id="meeting-import-container"></div>
 
-  <div class="grid grid-main" style="gap:28px;">
+  <div class="grid grid-main" style="gap:var(--m-space-6);">
 
     <!-- Left: upcoming + transcripts + list -->
     <div>
-      <h2 class="sec-label" style="margin-bottom:12px;"
+      <h2 class="sec-label u-mb-3"
            hx-get="/api/partial/meetings/next-label"
            hx-trigger="load"
            hx-swap="outerHTML">
@@ -55,17 +55,17 @@
       <div hx-get="/api/partial/meetings/upcoming"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div class="panel skeleton" style="padding:28px 32px;margin-bottom:18px;min-height:120px;"></div>
+        <div class="panel skeleton u-mb-4" style="padding:var(--m-space-6) var(--m-space-6);min-height:120px;"></div>
       </div>
 
       <!-- Live assist status pane -->
       {{ sec_label("Live assist", style="margin-bottom:12px;") }}
-      <div style="margin-bottom:18px;"
+      <div class="u-mb-4"
            hx-get="/api/partial/meetings/live-assist"
            hx-trigger="load, every 30s"
            hx-swap="innerHTML">
-        <div class="panel panel-pad skeleton" style="padding:14px 18px;">
-          <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Checking whether a live meeting is running…</p>
+        <div class="panel panel-pad skeleton" style="padding:var(--m-space-4) var(--m-space-4);">
+          <p class="u-ed" style="font-size:var(--t-small);margin:0;">Checking whether a live meeting is running…</p>
         </div>
       </div>
 
@@ -73,15 +73,15 @@
       <div id="meeting-detail-panel"></div>
 
       <!-- Search + filter bar -->
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+      <div class="u-row u-row--wrap u-mb-3">
         {{ sec_label("All meetings", style="margin:0;flex:1;") }}
-        <input type="search" placeholder="Search…"
+        <input class="u-grow" type="search" placeholder="Search…"
                hx-get="/api/partial/meetings/search"
                hx-trigger="keyup delay:300ms, search"
                hx-target="#meetings-list"
                hx-swap="innerHTML"
                name="q"
-               style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:6px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;min-width:100px;max-width:180px;flex:1;">
+               style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;min-width:100px;max-width:180px;">
         <button class="btn btn--ghost btn--caps"
                 hx-get="/api/partial/meetings/list?filter=week"
                 hx-target="#meetings-list"
@@ -101,7 +101,7 @@
            hx-get="/api/partial/meetings/list"
            hx-trigger="load, refresh"
            hx-swap="innerHTML">
-        <div class="panel skeleton" style="padding:20px;min-height:80px;"></div>
+        <div class="panel skeleton" style="padding:var(--m-space-5);min-height:80px;"></div>
       </div>
 
     </div>
@@ -109,21 +109,21 @@
     <!-- Right: follow-ups first (most actionable), then week ahead, then stats -->
     <div>
       {{ sec_label("Open follow-ups", style="margin-bottom:12px;") }}
-      <div class="panel panel-pad" style="padding:16px 20px;margin-bottom:18px;"
+      <div class="panel panel-pad u-mb-4" style="padding:var(--m-space-4) var(--m-space-5);"
            hx-get="/api/partial/meetings/follow-ups"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div class="ed" style="font-size:14px;opacity:.5;"><em>Looking up open follow-ups…</em></div>
+        <div class="ed" style="font-size:var(--t-body);opacity:.5;"><em>Looking up open follow-ups…</em></div>
       </div>
 
       {{ sec_label("Week ahead", style="margin-bottom:12px;") }}
-      <div class="panel" style="margin-bottom:18px;"
+      <div class="panel u-mb-4"
            hx-get="/api/partial/meetings/week-ahead"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div style="padding:14px 18px;">
-          <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:50%;margin-bottom:6px;"></div>
-          <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:80%;"></div>
+        <div style="padding:var(--m-space-4) var(--m-space-4);">
+          <div class="u-mb-2" style="height:9px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:50%;"></div>
+          <div style="height:12px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:80%;"></div>
         </div>
       </div>
 
@@ -131,14 +131,14 @@
       <div hx-get="/api/partial/meetings/stats"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div class="panel panel-pad skeleton" style="padding:18px 20px;"></div>
+        <div class="panel panel-pad skeleton" style="padding:var(--m-space-4) var(--m-space-5);"></div>
       </div>
 
       {{ sec_label("Voice profiles", style="margin-bottom:12px;margin-top:18px;") }}
       <div hx-get="/api/partial/speakers"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div class="panel panel-pad skeleton" style="padding:18px 20px;min-height:80px;"></div>
+        <div class="panel panel-pad skeleton" style="padding:var(--m-space-4) var(--m-space-5);min-height:80px;"></div>
       </div>
     </div>
 
@@ -146,25 +146,25 @@
 </div>
 
 <!-- Audio upload modal -->
-<div id="audio-upload-overlay" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.45);align-items:center;justify-content:center;">
+<div class="u-hide" id="audio-upload-overlay" style="position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.45);align-items:center;justify-content:center;">
   <div class="panel" style="width:480px;max-width:92vw;padding:0;">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);">
+    <div class="u-row u-row--between u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
       <div class="kicker" style="margin:0;">PROCESS AUDIO</div>
-      <button onclick="closeAudioUpload()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:11px;">✕</button>
+      <button class="u-label" onclick="closeAudioUpload()" style="background:none;border:none;cursor:pointer;">✕</button>
     </div>
-    <div style="padding:20px;">
-      <p style="font-family:var(--m-sans);font-size:13px;color:var(--m-muted);margin:0 0 16px;line-height:1.5;">
+    <div style="padding:var(--m-space-5);">
+      <p style="font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-muted);margin:0 0 var(--m-space-4);line-height:1.5;">
         Upload any meeting recording. Transcribed on your own machine — nothing is uploaded, and the audio is deleted afterwards. WAV files transcribe instantly; other formats may take a little longer to process.
       </p>
-      <label style="display:block;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:4px;">MEETING TITLE (optional)</label>
-      <input id="audio-meeting-title" type="text" placeholder="e.g. Research coordination call"
-             style="width:100%;box-sizing:border-box;padding:8px 10px;font-family:var(--m-sans);font-size:13px;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;color:var(--m-ink);margin-bottom:12px;">
-      <label style="display:block;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:4px;">AUDIO FILE</label>
-      <input id="audio-file-input" type="file" accept=".wav,.mp3,.m4a,.ogg,.webm,.flac"
-             style="width:100%;box-sizing:border-box;padding:8px 10px;font-family:var(--m-sans);font-size:13px;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;color:var(--m-ink);margin-bottom:16px;">
-      <div id="audio-upload-status" style="min-height:20px;font-family:var(--m-mono);font-size:11px;margin-bottom:12px;"></div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn--primary btn--caps" style="flex:1;" onclick="submitAudioUpload()">Transcribe &amp; Save</button>
+      <label class="u-label u-mb-1" style="display:block;">MEETING TITLE (optional)</label>
+      <input class="u-mb-3" id="audio-meeting-title" type="text" placeholder="e.g. Research coordination call"
+             style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);color:var(--m-ink);">
+      <label class="u-label u-mb-1" style="display:block;">AUDIO FILE</label>
+      <input class="u-mb-4" id="audio-file-input" type="file" accept=".wav,.mp3,.m4a,.ogg,.webm,.flac"
+             style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);color:var(--m-ink);">
+      <div class="u-mb-3" id="audio-upload-status" style="min-height:20px;font-family:var(--m-mono);font-size:var(--t-micro);"></div>
+      <div style="display:flex;gap:var(--m-space-2);">
+        <button class="btn btn--primary btn--caps u-grow" onclick="submitAudioUpload()">Transcribe &amp; Save</button>
         <button class="btn btn--ghost btn--caps" onclick="closeAudioUpload()">Cancel</button>
       </div>
     </div>

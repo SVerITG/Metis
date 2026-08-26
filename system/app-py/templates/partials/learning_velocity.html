@@ -1,14 +1,14 @@
 {# partials/learning_velocity.html — Sparkline + streak + 3 windows #}
 <div class="panel">
-  <div style="padding:14px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;align-items:baseline;justify-content:space-between;gap:10px;">
+  <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);display:flex;align-items:baseline;justify-content:space-between;gap:var(--m-space-3);">
     <div>
       <span class="kicker kicker--accent" style="margin:0;">VELOCITY</span>
-      <div style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);margin-top:4px;">
+      <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-muted);margin-top:var(--m-space-1);">
         Your learning pace, with a 14-day spark and a streak count.
       </div>
     </div>
     {% if any_data %}
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-accent);flex-shrink:0;"
+    <div class="u-label u-label--accent u-fixed" style="letter-spacing:0.12em;"
          title="{{ trend_label }}">
       {{ trend_glyph | safe }} {{ trend_label | upper }}
     </div>
@@ -16,19 +16,19 @@
   </div>
 
   {% if not any_data %}
-  <div style="padding:24px 20px;">
-    <p style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.6;margin:0 0 8px;">
+  <div style="padding:var(--m-space-5) var(--m-space-5);">
+    <p style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.6;margin:0 0 var(--m-space-2);">
       Nothing tracked yet.
     </p>
-    <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);line-height:1.6;margin:0;">
+    <p style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-muted);line-height:1.6;margin:0;">
       Complete your first lesson on the Learning tab and I'll start showing your pace here.
     </p>
   </div>
   {% else %}
 
   {# ---- 14-day sparkline ---- #}
-  <div style="padding:18px 20px 6px;">
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:8px;">
+  <div style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-2);">
+    <div class="u-label u-mb-2">
       LAST 14 DAYS
     </div>
     {% set bar_w = 16 %}
@@ -75,13 +75,13 @@
   </div>
 
   {# ---- Streak ---- #}
-  <div style="padding:14px 20px;border-top:1px solid var(--m-rule-soft);display:flex;align-items:baseline;gap:14px;">
+  <div class="u-rule-t" style="padding:var(--m-space-4) var(--m-space-5);display:flex;align-items:baseline;gap:var(--m-space-4);">
     <div style="font-family:var(--m-display);font-size:40px;color:var(--m-accent);line-height:1;">{{ streak }}</div>
     <div>
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;color:var(--m-muted);">
+      <div class="u-label" style="letter-spacing:0.18em;">
         DAY STREAK
       </div>
-      <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);margin-top:3px;">
+      <div style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);margin-top:3px;">
         {% if streak == 0 %}
         Pick a lesson today to start one.
         {% elif streak == 1 %}
@@ -94,18 +94,18 @@
   </div>
 
   {# ---- Three windows ---- #}
-  <div style="padding:18px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px;border-top:1px solid var(--m-rule-soft);">
+  <div class="u-rule-t" style="padding:var(--m-space-4) var(--m-space-5);display:grid;grid-template-columns:repeat(3,1fr);gap:var(--m-space-4);">
     <div>
-      <div style="font-family:var(--m-display);font-size:26px;color:var(--m-ink);line-height:1;">{{ d7 }}</div>
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">THIS WEEK</div>
+      <div style="font-family:var(--m-display);font-size:var(--t-h2);color:var(--m-ink);line-height:1;">{{ d7 }}</div>
+      <div class="u-label" style="margin-top:var(--m-space-1);">THIS WEEK</div>
     </div>
     <div>
-      <div style="font-family:var(--m-display);font-size:26px;color:var(--m-ink);line-height:1;">{{ d30 }}</div>
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">THIS MONTH</div>
+      <div style="font-family:var(--m-display);font-size:var(--t-h2);color:var(--m-ink);line-height:1;">{{ d30 }}</div>
+      <div class="u-label" style="margin-top:var(--m-space-1);">THIS MONTH</div>
     </div>
     <div>
-      <div style="font-family:var(--m-display);font-size:26px;color:var(--m-ink);line-height:1;">{{ d_all }}</div>
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">ALL TIME</div>
+      <div style="font-family:var(--m-display);font-size:var(--t-h2);color:var(--m-ink);line-height:1;">{{ d_all }}</div>
+      <div class="u-label" style="margin-top:var(--m-space-1);">ALL TIME</div>
     </div>
   </div>
   {% endif %}

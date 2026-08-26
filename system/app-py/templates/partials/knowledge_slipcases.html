@@ -1,5 +1,5 @@
 <div>
-  <h2 class="sec-label" style="margin-bottom:12px;">Collections</h2>
+  <h2 class="sec-label u-mb-3">Collections</h2>
   <div class="panel" style="overflow:hidden;">
     {% if domains %}
       {% for domain in domains %}
@@ -30,19 +30,19 @@
            })(this)"
            data-slipcase="{{ domain.name }}">
         <span>{{ domain.name | replace('-', ' ') | title }}</span>
-        <span class="tnum" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">{{ domain.count }}</span>
+        <span class="tnum u-label">{{ domain.count }}</span>
       </div>
       {% endfor %}
     {% else %}
-      <div style="padding:12px 16px;border-left:2px solid var(--m-accent);background:var(--m-accent-wash);font-size:13px;font-family:var(--m-display);color:var(--m-ink);display:flex;justify-content:space-between;">
-        <span>Library</span><span class="tnum" style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">0</span>
+      <div style="padding:var(--m-space-3) var(--m-space-4);border-left:2px solid var(--m-accent);background:var(--m-accent-wash);font-size:var(--t-small);font-family:var(--m-display);color:var(--m-ink);display:flex;justify-content:space-between;">
+        <span>Library</span><span class="tnum u-label">0</span>
       </div>
-      <div style="padding:12px 16px;border-left:2px solid transparent;font-size:13px;font-family:var(--m-display);color:var(--m-text);display:flex;justify-content:space-between;border-top:1px solid var(--m-rule-soft);">
-        <span>Unfiled</span><span class="tnum" style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">0</span>
+      <div class="u-rule-t" style="padding:var(--m-space-3) var(--m-space-4);border-left:2px solid transparent;font-size:var(--t-small);font-family:var(--m-display);color:var(--m-text);display:flex;justify-content:space-between;">
+        <span>Unfiled</span><span class="tnum u-label">0</span>
       </div>
     {% endif %}
   </div>
-  <div style="margin-top:14px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--m-muted);padding:0 4px;cursor:pointer;">
+  <div class="u-label" style="margin-top:var(--m-space-4);letter-spacing:0.2em;text-transform:uppercase;padding:0 var(--m-space-1);cursor:pointer;">
     ADD SLIPCASE · ⌘⇧N
   </div>
 </div>

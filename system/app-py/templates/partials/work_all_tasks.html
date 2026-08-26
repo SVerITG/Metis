@@ -1,7 +1,7 @@
 <!-- work_all_tasks.html — All open tasks across every project, sorted by priority -->
 {% if not tasks %}
-<div class="panel panel-pad" style="text-align:center;padding:20px;border:1px dashed var(--m-line);">
-  <p class="ed" style="margin:0;font-size:13px;color:var(--m-muted);">No open tasks across any project.</p>
+<div class="panel panel-pad" style="text-align:center;padding:var(--m-space-5);border:1px dashed var(--m-line);">
+  <p class="ed" style="margin:0;font-size:var(--t-small);color:var(--m-muted);">No open tasks across any project.</p>
 </div>
 {% else %}
 <div class="panel">
@@ -11,8 +11,8 @@
        style="grid-template-columns:28px 1fr auto auto;column-gap:14px;">
     <span class="todo-check" onclick="markTaskDone({{ t.id | tojson }}, this)" title="Mark done"></span>
     <div style="min-width:0;">
-      <div class="todo-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.title }}</div>
-      <div class="todo-meta" style="margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;">
+      <div class="todo-title u-truncate">{{ t.title }}</div>
+      <div class="todo-meta" style="margin-top:3px;display:flex;gap:var(--m-space-2);flex-wrap:wrap;">
         {% if t.project %}
         <span style="color:var(--m-muted);">{{ t.project }}</span>
         {% endif %}
@@ -22,17 +22,17 @@
         </span>
         {% endif %}
         {% if t.priority == 'high' %}
-        <span style="color:var(--m-alert);font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;">HIGH</span>
+        <span style="color:var(--m-alert);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;">HIGH</span>
         {% endif %}
         {% if t.category %}
-        <span style="color:var(--m-muted-soft);font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;">{{ t.category | upper }}</span>
+        <span style="color:var(--m-muted-soft);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;">{{ t.category | upper }}</span>
         {% endif %}
       </div>
     </div>
     <span class="todo-meta">
       {% if t.status == 'in_progress' %}<span style="color:var(--m-info);">IN PROGRESS</span>{% endif %}
     </span>
-    <span class="todo-actions" style="display:flex;gap:4px;">
+    <span class="todo-actions" style="display:flex;gap:var(--m-space-1);">
       <button class="feed-act" title="Mark done" onclick="markTaskDone({{ t.id | tojson }}, this)">
         <svg viewBox="0 0 16 16"><polyline points="4 8 7 11 12 5"/></svg>
       </button>
@@ -43,7 +43,7 @@
   </div>
   {% endfor %}
 </div>
-<div class="tnum" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-top:10px;">
+<div class="tnum u-label" style="margin-top:var(--m-space-3);">
   {{ tasks | length }} OPEN TASKS ACROSS ALL PROJECTS
 </div>
 {% endif %}

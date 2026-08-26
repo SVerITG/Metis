@@ -1,10 +1,10 @@
 <!-- work_projects.html — Project cards with drag-reorder + collapse + per-type launchers -->
 {% if not projects %}
 <div class="panel panel-pad" style="text-align:center;padding:24px 22px;border:1px dashed var(--m-line);">
-  <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 8px;">
+  <p class="ed" style="font-size:var(--t-body);color:var(--m-muted);margin:0 0 var(--m-space-2);">
     <strong>No active projects yet.</strong>
   </p>
-  <p class="ed" style="font-size:13px;color:var(--m-muted);margin:0 0 12px;">
+  <p class="ed" style="font-size:var(--t-small);color:var(--m-muted);margin:0 0 var(--m-space-3);">
     Add a project to track its tasks, progress, and notes in one place.
   </p>
   <button class="btn btn--primary btn--caps" onclick="openAddProjectModal()">+ Add your first project</button>
@@ -19,73 +19,71 @@
               border-left:3px solid {{ p.accent_color or 'transparent' }};">
 
     <!-- ── Header row (always visible) ── -->
-    <div class="proj-header"
-         style="display:flex;align-items:center;gap:8px;padding:16px 18px 12px;border-bottom:1px solid var(--m-rule-soft);">
+    <div class="proj-header u-row u-rule"
+         style="padding:var(--m-space-4) var(--m-space-4) var(--m-space-3);">
       <!-- Drag handle -->
-      <span class="proj-drag-handle"
+      <span class="proj-drag-handle u-fixed"
             title="Drag to reorder"
-            style="cursor:grab;color:var(--m-muted);font-size:15px;line-height:1;flex-shrink:0;user-select:none;">⠿</span>
+            style="cursor:grab;color:var(--m-muted);font-size:var(--t-body);line-height:1;user-select:none;">⠿</span>
       <!-- Title (clickable → detail panel) -->
-      <div onclick="openProjectDetail('{{ p.id }}')"
-           style="flex:1;font-family:var(--m-display);font-size:16px;font-weight:500;color:var(--m-ink);line-height:1.2;cursor:pointer;"
+      <div class="u-grow" onclick="openProjectDetail('{{ p.id }}')"
+           style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);line-height:1.2;cursor:pointer;"
            title="Open project details">{{ p.title }}</div>
       <!-- Category chip -->
       {% if p.category %}
-      <span class="chip chip--plain" style="flex-shrink:0;font-size:11px;">{{ p.category[:16] }}</span>
+      <span class="chip chip--plain u-fixed" style="font-size:var(--t-micro);">{{ p.category[:16] }}</span>
       {% endif %}
       <!-- Domain chip -->
       {% if p.domain %}
-      <span class="chip chip--info" style="flex-shrink:0;font-size:11px;">{{ p.domain[:16] }}</span>
+      <span class="chip chip--info u-fixed" style="font-size:var(--t-micro);">{{ p.domain[:16] }}</span>
       {% endif %}
       <!-- Tag chips (multiple) -->
       {% for tag in (p.tags_list or [])[:3] %}
-      <span class="chip chip--plain" style="flex-shrink:0;font-size:11px;opacity:.8;">{{ tag[:14] }}</span>
+      <span class="chip chip--plain u-fixed" style="font-size:var(--t-micro);opacity:.8;">{{ tag[:14] }}</span>
       {% endfor %}
       <!-- Type / article badge -->
       {% if p.launcher_type == 'article' or p.project_type == 'article' %}
-      <span class="chip" style="flex-shrink:0;font-size:11px;background:var(--m-ochre-wash);color:var(--m-ochre-deep);border:1px solid var(--m-ochre-soft);">ARTICLE</span>
+      <span class="chip u-fixed" style="font-size:var(--t-micro);background:var(--m-ochre-wash);color:var(--m-ochre-deep);border:1px solid var(--m-ochre-soft);">ARTICLE</span>
       {% elif p.project_type and p.project_type != 'research' %}
-      <span class="chip chip--plain" style="flex-shrink:0;font-size:11px;">{{ p.project_type | upper }}</span>
+      <span class="chip chip--plain u-fixed" style="font-size:var(--t-micro);">{{ p.project_type | upper }}</span>
       {% endif %}
       <!-- Notes toggle -->
-      <button onclick="toggleProjectNotes('{{ p.id }}')"
+      <button class="u-fixed" onclick="toggleProjectNotes('{{ p.id }}')"
               title="Project notes"
-              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-family:var(--m-mono);font-size:13px;color:var(--m-muted);line-height:1;flex-shrink:0;">📝</button>
+              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-family:var(--m-mono);font-size:var(--t-small);color:var(--m-muted);line-height:1;">📝</button>
       <!-- Untrack button -->
-      <button onclick="untrackProject({{ p.id | tojson }}, {{ p.title | tojson }})"
+      <button class="u-fixed" onclick="untrackProject({{ p.id | tojson }}, {{ p.title | tojson }})"
               title="Hide this project (doesn't delete it)"
-              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-size:13px;color:var(--m-muted);line-height:1;flex-shrink:0;opacity:.6;"
+              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-size:var(--t-small);color:var(--m-muted);line-height:1;opacity:.6;"
               onmouseenter="this.style.opacity='1';this.style.color='var(--m-danger)'"
               onmouseleave="this.style.opacity='.6';this.style.color='var(--m-muted)'">✕</button>
       <!-- Collapse toggle -->
-      <button class="proj-collapse-btn"
+      <button class="proj-collapse-btn u-fixed"
               onclick="toggleProjectCollapse('{{ p.id }}')"
               title="Collapse / expand"
-              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-family:var(--m-mono);font-size:16px;color:var(--m-muted);line-height:1;flex-shrink:0;">−</button>
+              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-family:var(--m-mono);font-size:var(--t-h4);color:var(--m-muted);line-height:1;">−</button>
     </div>
 
     <!-- ── Collapsible body ── -->
-    <div class="proj-body" style="display:flex;flex-direction:column;gap:10px;padding:14px 18px 16px;">
+    <div class="proj-body u-col" style="gap:var(--m-space-3);padding:var(--m-space-4) var(--m-space-4) var(--m-space-4);">
 
       <!-- Description -->
       {% if p.description %}
-      <div class="ed" style="font-size:13px;color:var(--m-muted);margin:0;line-height:1.5;
-                              overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">
+      <div class="ed" style="font-size:var(--t-small);color:var(--m-muted);margin:0;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">
         {{ p.description }}
       </div>
       {% endif %}
 
       <!-- Last session indicator -->
       {% if p.last_session_at %}
-      <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
+      <div class="u-label">
         Last session · {{ p.last_session_at[:10] }}
       </div>
       {% endif %}
 
       <!-- Next step -->
       {% if p.next_step %}
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-accent);
-                  padding:6px 10px;background:var(--m-accent-wash);border-radius:4px;">
+      <div class="u-label u-label--accent" style="letter-spacing:0.12em;padding:var(--m-space-2) var(--m-space-3);background:var(--m-accent-wash);border-radius:var(--m-radius);">
         NEXT → {{ p.next_step[:120] }}{% if p.next_step|length > 120 %}…{% endif %}
       </div>
       {% endif %}
@@ -96,11 +94,11 @@
            hx-trigger="intersect once, every 90s"
            hx-swap="innerHTML"
            style="min-height:20px;">
-        <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">Pulling tasks for this project…</div>
+        <div class="u-label">Pulling tasks for this project…</div>
       </div>
 
       <!-- Launcher rail (driven by launchers_list from DB) -->
-      <div style="display:flex;flex-wrap:wrap;gap:6px;padding-top:10px;border-top:1px solid var(--m-rule-soft);">
+      <div class="u-rule-t" style="display:flex;flex-wrap:wrap;gap:var(--m-space-2);padding-top:10px;">
 
         {% set ll = p.launchers_list %}
 
@@ -164,11 +162,11 @@
                 hx-target="#proj-tasks-{{ p.id }}"
                 hx-swap="innerHTML"
                 title="Refresh tasks"
-                style="margin-left:auto;padding:4px 8px;font-size:13px;">↻</button>
+                style="margin-left:auto;padding:var(--m-space-1) var(--m-space-2);font-size:var(--t-small);">↻</button>
       </div>
 
       <!-- Notes panel (lazy-loaded, hidden by default) -->
-      <div id="proj-notes-{{ p.id }}" style="display:none;"></div>
+      <div class="u-hide" id="proj-notes-{{ p.id }}"></div>
 
     </div><!-- /.proj-body -->
   </div>

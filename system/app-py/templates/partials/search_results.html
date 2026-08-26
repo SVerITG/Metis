@@ -1,8 +1,7 @@
-<div style="padding:8px 0;">
+<div style="padding:var(--m-space-2) 0;">
 
   {% macro section_header(label, count) %}
-  <div style="padding:8px 20px 4px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;
-              color:var(--m-muted);text-transform:uppercase;border-bottom:1px solid var(--m-rule-soft);">
+  <div class="u-label u-rule" style="padding:var(--m-space-2) var(--m-space-5) var(--m-space-1);letter-spacing:0.18em;text-transform:uppercase;">
     {{ label }} <span style="color:var(--m-accent);">{{ count }}</span>
   </div>
   {% endmacro %}
@@ -10,14 +9,13 @@
   {% if papers %}
   {{ section_header("Papers", papers|length) }}
   {% for p in papers %}
-  <a href="/tab/knowledge"
+  <a class="u-rule" href="/tab/knowledge"
      onclick="document.getElementById('search-results-drop').style.display='none';"
-     style="display:block;padding:9px 20px;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);
-            transition:background 120ms;">
-    <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;margin-bottom:2px;">
+     style="display:block;padding:9px 20px;text-decoration:none;transition:background 120ms;">
+    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:2px;">
       {{ p.title or 'Untitled' }}
     </div>
-    <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
+    <div class="u-label">
       {% if p.authors %}{{ (p.authors or '')[:60] }}{% if (p.authors or '')|length > 60 %}…{% endif %}{% endif %}
       {% if p.year %} · {{ p.year }}{% endif %}
     </div>
@@ -28,15 +26,14 @@
   {% if projects %}
   {{ section_header("Projects", projects|length) }}
   {% for p in projects %}
-  <a href="/tab/work"
+  <a class="u-rule" href="/tab/work"
      onclick="document.getElementById('search-results-drop').style.display='none';"
-     style="display:block;padding:9px 20px;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);
-            transition:background 120ms;">
-    <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;margin-bottom:2px;">
+     style="display:block;padding:9px 20px;text-decoration:none;transition:background 120ms;">
+    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:2px;">
       {{ p.title or 'Untitled' }}
     </div>
     {% if p.description %}
-    <div style="font-size:11px;color:var(--m-muted);">{{ (p.description or '')[:80] }}{% if (p.description or '')|length > 80 %}…{% endif %}</div>
+    <div style="font-size:var(--t-micro);color:var(--m-muted);">{{ (p.description or '')[:80] }}{% if (p.description or '')|length > 80 %}…{% endif %}</div>
     {% endif %}
   </a>
   {% endfor %}
@@ -45,17 +42,16 @@
   {% if news %}
   {{ section_header("News", news|length) }}
   {% for n in news %}
-  <a href="{{ n.source_url or '#' }}" target="_blank" rel="noopener"
+  <a class="u-rule" href="{{ n.source_url or '#' }}" target="_blank" rel="noopener"
      onclick="document.getElementById('search-results-drop').style.display='none';"
-     style="display:block;padding:9px 20px;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);
-            transition:background 120ms;">
-    <div style="display:flex;align-items:baseline;gap:8px;">
+     style="display:block;padding:9px 20px;text-decoration:none;transition:background 120ms;">
+    <div class="u-row u-row--base">
       {% if n.domain %}
-      <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-accent);letter-spacing:0.1em;flex-shrink:0;">
+      <span class="u-label u-label--accent u-fixed" style="letter-spacing:0.1em;">
         {{ n.domain|upper }}
       </span>
       {% endif %}
-      <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;">
+      <span style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;">
         {{ n.title or 'Untitled' }}
       </span>
     </div>
@@ -66,17 +62,14 @@
   {% if tasks %}
   {{ section_header("Tasks", tasks|length) }}
   {% for t in tasks %}
-  <a href="/tab/work"
+  <a class="u-rule" href="/tab/work"
      onclick="document.getElementById('search-results-drop').style.display='none';"
-     style="display:block;padding:9px 20px;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);
-            transition:background 120ms;">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);
-                   background:var(--m-surface-2);border:1px solid var(--m-rule);
-                   border-radius:2px;padding:2px 6px;flex-shrink:0;">
+     style="display:block;padding:9px 20px;text-decoration:none;transition:background 120ms;">
+    <div class="u-row">
+      <span class="u-label u-fixed" style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);padding:2px 6px;">
         {{ (t.status or 'open')|upper }}
       </span>
-      <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);">{{ t.title }}</span>
+      <span style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ t.title }}</span>
     </div>
   </a>
   {% endfor %}
@@ -85,21 +78,20 @@
   {% if courses %}
   {{ section_header("Courses", courses|length) }}
   {% for c in courses %}
-  <a href="javascript:void(0)"
+  <a class="u-rule" href="javascript:void(0)"
      onclick="openCourseReader('{{ c.slug }}');document.getElementById('search-results-drop').style.display='none';"
-     style="display:block;padding:9px 20px;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);
-            transition:background 120ms;">
-    <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;margin-bottom:2px;">
+     style="display:block;padding:9px 20px;text-decoration:none;transition:background 120ms;">
+    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:2px;">
       {{ c.title or 'Untitled Course' }}
     </div>
-    <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
+    <div class="u-label">
       {% if c.category %}{{ (c.category or '')|upper }} · {% endif %}{{ (c.progress_pct or 0)|int }}% COMPLETE
     </div>
   </a>
   {% endfor %}
   {% endif %}
 
-  <div style="padding:8px 20px;font-family:var(--m-mono);font-size:11px;color:var(--m-muted-soft);text-align:right;">
+  <div style="padding:var(--m-space-2) var(--m-space-5);font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted-soft);text-align:right;">
     Press Esc to close
   </div>
 </div>

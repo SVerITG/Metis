@@ -1,51 +1,51 @@
 {# today_resume_card.html — "Where we left off" first-class card.
    Context: session (dict|None), agents (list), time_label (str), total_sessions (int), deeplink (str). #}
 {% if session %}
-<div id="today-resume-card" style="margin-bottom:28px;">
+<div class="u-mb-6" id="today-resume-card">
   {# The card opened with an icon and went straight into content: no heading, so
      nothing in the document outline and nothing for the eye to catch as a seam
      (audit 2026-08-25). `sec-label` is the heading style the app already uses. #}
-  <h2 class="sec-label" style="margin-bottom:10px;">
+  <h2 class="sec-label u-mb-3">
     <span>Where you left off</span>
     {%- if time_label %}<span class="tail">{{ time_label|upper }}</span>{% endif %}
   </h2>
-  <div class="panel" style="padding:20px 28px;border-left:3px solid var(--m-accent);">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+  <div class="panel" style="padding:var(--m-space-5) var(--m-space-6);border-left:3px solid var(--m-accent);">
+    <div class="u-row u-mb-3" style="gap:var(--m-space-3);">
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M8 1v6l4 2"/><circle cx="8" cy="8" r="7"/>
       </svg>
-      <span style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);">Where we left off</span>
-      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;color:var(--m-muted);margin-left:4px;">{{ time_label }}</span>
+      <span style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">Where we left off</span>
+      <span class="u-label" style="letter-spacing:0.08em;margin-left:4px;">{{ time_label }}</span>
       {% if total_sessions > 1 %}
       <button hx-get="/api/partial/today/all-sessions" hx-target="#resume-all-sessions-modal" hx-swap="innerHTML"
-              class="btn btn--ghost btn--caps" style="margin-left:auto;font-size:11px;padding:3px 10px;">
+              class="btn btn--ghost btn--caps" style="margin-left:auto;font-size:var(--t-micro);padding:3px 10px;">
         ALL SESSIONS ({{ total_sessions }})
       </button>
       {% endif %}
     </div>
     {% if session.summary %}
-    <div style="font-size:13.5px;color:var(--m-ink);line-height:1.6;margin-bottom:10px;">
+    <div class="u-mb-3" style="font-size:var(--t-small);color:var(--m-ink);line-height:1.6;">
       {{ session.summary }}
     </div>
     {% endif %}
     {% if session.decisions %}
-    <div style="margin-bottom:10px;">
+    <div class="u-mb-3">
       {% for d in session.decisions %}
-      <div style="font-size:12px;color:var(--m-muted);line-height:1.5;">
+      <div style="font-size:var(--t-meta);color:var(--m-muted);line-height:1.5;">
         <span style="color:var(--m-accent);margin-right:5px;">&#10003;</span>{{ d[:140] }}
       </div>
       {% endfor %}
     </div>
     {% endif %}
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <div class="u-row u-row--wrap">
       {% if agents %}
       {% for a in agents %}
-      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:2px 8px;border-radius:var(--m-radius-pill);background:var(--m-accent-wash);color:var(--m-accent);">{{ a.agent_slug }}</span>
+      <span class="u-label u-label--accent" style="letter-spacing:0.08em;padding:2px 8px;border-radius:var(--m-radius-pill);background:var(--m-accent-wash);">{{ a.agent_slug }}</span>
       {% endfor %}
       {% endif %}
       {% if deeplink %}
       <a href="{{ deeplink }}" target="_blank" rel="noopener"
-         class="btn btn--ghost btn--caps" style="margin-left:auto;font-size:11px;padding:4px 12px;text-decoration:none;">
+         class="btn btn--ghost btn--caps" style="margin-left:auto;font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-3);text-decoration:none;">
         <svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
           <path d="M1 8l6-6v4c7 0 7 4 7 8-2-3-4-4-7-4v4z"/>
         </svg>

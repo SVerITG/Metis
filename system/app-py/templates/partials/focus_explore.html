@@ -8,8 +8,8 @@
     carries all of this into Claude rather than making him retype it. -#}
 
 {% if not result.total %}
-<div class="panel" style="padding:16px 18px;">
-  <p style="margin:0;font-size:13px;color:var(--m-muted);line-height:1.6;">
+<div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
+  <p style="margin:0;font-size:var(--t-small);color:var(--m-muted);line-height:1.6;">
     Nothing in this focus touches that question yet — which is itself worth
     knowing. Searched your indexed corpus, the literature through this lens, and
     everything tagged <code>focus:{{ area.slug }}</code>
@@ -20,7 +20,7 @@
   {% endif %}
 </div>
 {% else %}
-<div class="panel" style="padding:16px 18px;">
+<div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
   <div class="fx-head">
     <span class="fx-q">{{ result.question }}</span>
     <span class="fx-n">{{ result.total }} from your own material</span>

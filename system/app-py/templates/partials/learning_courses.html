@@ -1,14 +1,14 @@
 <!-- learning_courses.html — Editorial course cards with detailed progress -->
 {% if not courses %}
-<div class="panel panel-pad" style="grid-column:1/-1;text-align:center;padding:32px 24px;border:1px dashed var(--m-line);">
-  <h4 class="ed" style="margin:0 0 8px;font-size:17px;">No active courses</h4>
-  <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 14px;max-width:480px;margin-left:auto;margin-right:auto;">
+<div class="panel panel-pad" style="grid-column:1/-1;text-align:center;padding:var(--m-space-6) var(--m-space-5);border:1px dashed var(--m-line);">
+  <h4 class="ed" style="margin:0 0 var(--m-space-2);font-size:var(--t-h4);">No active courses</h4>
+  <p class="ed" style="font-size:var(--t-body);color:var(--m-muted);margin:0 0 var(--m-space-4);max-width:480px;margin-left:auto;margin-right:auto;">
     Pick a course idea from the catalog below and click <em>Build</em>, or run <code>/course-builder</code> in Claude Code.
   </p>
 </div>
 {% else %}
 {% for c in courses %}
-<div class="panel panel-pad course-card" style="padding:20px 22px;display:flex;flex-direction:column;gap:10px;" id="course-card-{{ c.id }}">
+<div class="panel panel-pad course-card u-col" style="padding:20px 22px;gap:var(--m-space-3);" id="course-card-{{ c.id }}">
 
   <!-- Kicker -->
   <div class="kicker" style="color:{% if c.status == 'building' %}var(--m-ochre){% elif c.status == 'active' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
@@ -20,7 +20,7 @@
   </div>
 
   <!-- Title -->
-  <div style="font-family:var(--m-display);font-size:18px;font-weight:500;color:var(--m-ink);line-height:1.25;">{{ c.title }}</div>
+  <div style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);line-height:1.25;">{{ c.title }}</div>
 
   {% if c.status == 'building' %}
   <!-- Build pipeline progress -->
@@ -35,7 +35,7 @@
                 background:{% if s <= step %}var(--m-ochre){% else %}var(--m-surface-3){% endif %};"></div>
     {% endfor %}
   </div>
-  <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);margin-top:4px;line-height:1.4;">
+  <div class="u-ed" style="font-size:var(--t-small);margin-top:var(--m-space-1);line-height:1.4;">
     This course is being built. Open Claude Desktop to continue the build pipeline.
   </div>
   {% else %}
@@ -47,36 +47,36 @@
   {% else %}
   <div class="todo-meta" style="margin:0;">{{ (c.progress_pct or 0)|int }}% COMPLETE</div>
   {% endif %}
-  <div style="height:7px;background:var(--m-surface-3);border-radius:4px;" role="progressbar" aria-valuenow="{{ (c.progress_pct or 0)|int }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ c.title }} progress">
+  <div style="height:7px;background:var(--m-surface-3);border-radius:var(--m-radius);" role="progressbar" aria-valuenow="{{ (c.progress_pct or 0)|int }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ c.title }} progress">
     <div style="height:100%;width:{{ (c.progress_pct or 0)|int }}%;background:var(--m-accent);border-radius:4px;transition:width 600ms ease;min-width:{% if (c.progress_pct or 0)|int > 0 %}4px{% else %}0{% endif %};"></div>
   </div>
   {% endif %}
 
   <!-- Last completed lesson -->
   {% if c.current_lesson %}
-  <div style="display:flex;gap:8px;align-items:flex-start;margin-top:2px;">
-    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);white-space:nowrap;padding-top:2px;">LAST</span>
-    <span style="font-size:13px;color:var(--m-muted);line-height:1.4;">{{ c.current_lesson }}</span>
+  <div class="u-row u-row--top" style="margin-top:2px;">
+    <span class="u-label" style="white-space:nowrap;padding-top:2px;">LAST</span>
+    <span style="font-size:var(--t-small);color:var(--m-muted);line-height:1.4;">{{ c.current_lesson }}</span>
   </div>
   {% endif %}
 
   <!-- Next lesson -->
   {% if c.next_lesson %}
-  <div style="display:flex;gap:8px;align-items:flex-start;">
-    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-accent);white-space:nowrap;padding-top:2px;">NEXT</span>
-    <span style="font-size:13px;font-weight:500;color:var(--m-ink);line-height:1.4;">{{ c.next_lesson }}</span>
+  <div class="u-row u-row--top">
+    <span class="u-label u-label--accent" style="letter-spacing:0.1em;white-space:nowrap;padding-top:2px;">NEXT</span>
+    <span style="font-size:var(--t-small);font-weight:500;color:var(--m-ink);line-height:1.4;">{{ c.next_lesson }}</span>
   </div>
   {% endif %}
 
   <!-- Lesson notes -->
   {% if c.lesson_notes %}
-  <div style="font-size:12px;color:var(--m-muted);line-height:1.5;padding:8px 10px;background:var(--m-surface-2);border-radius:3px;border-left:2px solid var(--m-accent-soft,var(--m-line));">
+  <div style="font-size:var(--t-meta);color:var(--m-muted);line-height:1.5;padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);border-radius:var(--m-radius);border-left:2px solid var(--m-accent-soft,var(--m-line));">
     {{ c.lesson_notes }}
   </div>
   {% endif %}
 
   <!-- Action buttons -->
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;">
+  <div style="display:flex;gap:var(--m-space-2);flex-wrap:wrap;margin-top:var(--m-space-1);">
     {# ONE launch button. `launch_url` is validated server-side by
        learning.py::_launch_target, so this can never open a repository, a
        filesystem path, or anything that is not the course itself. #}
@@ -86,9 +86,7 @@
       {% if (c.progress_pct or 0) > 0 %}Continue{% else %}Start{% endif %}
     </button>
     {% if c.next_lesson %}
-    <span style="font-family:var(--m-mono);font-size:10.5px;color:var(--m-muted);
-                 align-self:center;max-width:230px;overflow:hidden;
-                 text-overflow:ellipsis;white-space:nowrap;"
+    <span class="u-truncate" style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);align-self:center;max-width:230px;"
           title="{{ c.next_lesson|e }}">next: {{ c.next_lesson }}</span>
     {% endif %}
     {% if c.slug and (c.total_modules or 0) > 0 %}
@@ -113,31 +111,31 @@
   </div>
 
   <!-- Inline lesson editor (hidden by default) -->
-  <div id="lesson-edit-{{ c.id }}" style="display:none;margin-top:6px;padding:14px;background:var(--m-surface-2);border-radius:4px;border:1px solid var(--m-line);">
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:10px;">UPDATE PROGRESS</div>
-    <div style="display:flex;flex-direction:column;gap:8px;">
+  <div class="u-hide" id="lesson-edit-{{ c.id }}" style="margin-top:var(--m-space-2);padding:var(--m-space-4);background:var(--m-surface-2);border-radius:var(--m-radius);border:1px solid var(--m-line);">
+    <div class="u-label u-mb-3">UPDATE PROGRESS</div>
+    <div class="u-col">
       <div>
-        <label style="font-size:11px;color:var(--m-muted);display:block;margin-bottom:3px;">Last completed lesson</label>
+        <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:3px;">Last completed lesson</label>
         <input id="last-{{ c.id }}" type="text" value="{{ c.current_lesson or '' }}"
-               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:3px;padding:6px 8px;font-size:13px;background:var(--m-surface-1);color:var(--m-ink);">
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);">
       </div>
       <div>
-        <label style="font-size:11px;color:var(--m-muted);display:block;margin-bottom:3px;">Next lesson</label>
+        <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:3px;">Next lesson</label>
         <input id="next-{{ c.id }}" type="text" value="{{ c.next_lesson or '' }}"
-               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:3px;padding:6px 8px;font-size:13px;background:var(--m-surface-1);color:var(--m-ink);">
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);">
       </div>
       <div>
-        <label style="font-size:11px;color:var(--m-muted);display:block;margin-bottom:3px;">Course URL (localhost, if any)</label>
+        <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:3px;">Course URL (localhost, if any)</label>
         <input id="url-{{ c.id }}" type="text" value="{{ c.course_url or '' }}"
                placeholder="e.g. http://localhost:3000"
-               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:3px;padding:6px 8px;font-size:13px;background:var(--m-surface-1);color:var(--m-ink);">
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);">
       </div>
       <div>
-        <label style="font-size:11px;color:var(--m-muted);display:block;margin-bottom:3px;">Notes</label>
+        <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:3px;">Notes</label>
         <textarea id="notes-{{ c.id }}" rows="2"
-               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:3px;padding:6px 8px;font-size:13px;background:var(--m-surface-1);color:var(--m-ink);resize:vertical;line-height:1.5;">{{ c.lesson_notes or '' }}</textarea>
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);resize:vertical;line-height:1.5;">{{ c.lesson_notes or '' }}</textarea>
       </div>
-      <div style="display:flex;gap:6px;">
+      <div style="display:flex;gap:var(--m-space-2);">
         <button class="btn btn--primary btn--caps" onclick="saveLessonProgress({{ c.id }})">Save</button>
         <button class="btn btn--ghost btn--caps" onclick="toggleLessonEdit({{ c.id }})">Cancel</button>
       </div>
@@ -149,8 +147,8 @@
 {% endif %}
 
 {% if truncated and truncated > 0 %}
-<div class="panel" style="margin-top:10px;">
-  <div class="empty-row" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;">
+<div class="panel" style="margin-top:var(--m-space-3);">
+  <div class="empty-row" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;">
     SHOWING {{ courses|length }} OF {{ n_active }} COURSES — {{ truncated }} NOT LISTED
   </div>
 </div>

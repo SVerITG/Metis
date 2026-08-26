@@ -1,38 +1,38 @@
 {# today_learning_nudge.html — Compact learning progress nudge.
    Context: course (dict|None), days_since (int), due_cards (int). #}
 {% if course %}
-<div id="today-learning-nudge" style="margin-bottom:24px;">
-  <div class="panel" style="padding:14px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+<div class="u-mb-5" id="today-learning-nudge">
+  <div class="panel u-row u-row--wrap" style="padding:14px 22px;gap:var(--m-space-4);">
     {# Icon #}
-    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+    <svg class="u-fixed" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M2 3h12l-1 10H3z"/><path d="M5 3V1h6v2"/><path d="M6 6v4m4-4v4"/>
     </svg>
     {# Course info #}
-    <div style="flex:1;min-width:180px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-        <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);">{{ course.title|truncate(50) }}</span>
+    <div class="u-grow" style="min-width:180px;">
+      <div class="u-row u-mb-1">
+        <span style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ course.title|truncate(50) }}</span>
         {% if due_cards > 0 %}
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;padding:2px 7px;border-radius:var(--m-radius-pill);background:rgba(230,126,34,0.12);color:var(--m-ochre);">{{ due_cards }} CARD{{ 'S' if due_cards != 1 else '' }} DUE</span>
+        <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:2px 7px;border-radius:var(--m-radius-pill);background:rgba(230,126,34,0.12);color:var(--m-ochre);">{{ due_cards }} CARD{{ 'S' if due_cards != 1 else '' }} DUE</span>
         {% endif %}
       </div>
-      <div style="display:flex;align-items:center;gap:10px;">
+      <div class="u-row" style="gap:var(--m-space-3);">
         {# Mini progress bar #}
-        <div style="flex:1;max-width:120px;height:4px;border-radius:2px;background:var(--m-surface-2);overflow:hidden;">
+        <div class="u-grow" style="max-width:120px;height:4px;border-radius:var(--m-radius-sm);background:var(--m-surface-2);overflow:hidden;">
           <div style="width:{{ course.progress_pct or 0 }}%;height:100%;background:var(--m-accent);border-radius:2px;"></div>
         </div>
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">{{ course.progress_pct or 0 }}%</span>
+        <span class="u-label" style="letter-spacing:0.06em;">{{ course.progress_pct or 0 }}%</span>
         {% if days_since is not none and days_since > 0 %}
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">· {{ days_since }}d since last study</span>
+        <span class="u-label" style="letter-spacing:0.06em;">· {{ days_since }}d since last study</span>
         {% endif %}
       </div>
     </div>
     {# Actions #}
-    <div style="display:flex;gap:6px;flex-shrink:0;">
+    <div class="u-fixed" style="display:flex;gap:var(--m-space-2);">
       {% if course.slug %}
-      <a href="/tab/learning?course={{ course.slug }}" class="btn btn--ghost btn--caps" style="font-size:11px;padding:4px 12px;text-decoration:none;">Open course</a>
+      <a href="/tab/learning?course={{ course.slug }}" class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-3);text-decoration:none;">Open course</a>
       {% endif %}
       <button onclick="this.closest('#today-learning-nudge').style.display='none';localStorage.setItem('metis-nudge-dismiss',Date.now())"
-              class="btn btn--ghost btn--caps" style="font-size:11px;padding:4px 10px;color:var(--m-muted);">Not today</button>
+              class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-3);color:var(--m-muted);">Not today</button>
     </div>
   </div>
 </div>

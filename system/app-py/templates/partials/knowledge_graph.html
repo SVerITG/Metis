@@ -17,10 +17,10 @@
   'task':    {'color': 'var(--m-chart-8)', 'label': 'Tasks',     'icon': '☐'}
 } %}
 
-<div id="kg-surface" style="margin-bottom:32px;">
+<div class="u-mb-6" id="kg-surface">
 
   <!-- ── Section header ── -->
-  <h2 class="sec-label" style="margin-bottom:10px;">
+  <h2 class="sec-label u-mb-3">
     <span>Personal Knowledge Graph</span>
     <span class="tail" id="kg-stats-tail">LOADING</span>
   </h2>
@@ -28,11 +28,10 @@
   <div class="panel" style="overflow:hidden;">
 
     <!-- ── Controls bar ── -->
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-                padding:10px 16px;background:var(--m-surface-2);border-bottom:1px solid var(--m-rule-soft);">
+    <div class="u-row u-row--wrap u-rule" style="padding:var(--m-space-3) var(--m-space-4);background:var(--m-surface-2);">
 
       <!-- Entity type toggles -->
-      <div style="display:flex;flex-wrap:wrap;gap:4px;">
+      <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-1);">
         {% for tkey, tm in type_meta.items() %}
         {# NB: these were `{{ tm.color }}22` / `...0d` — hex-alpha suffixes. That only
            works when tm.color is a literal hex; now that it is a var() token the
@@ -41,8 +40,7 @@
                       padding:3px 9px;border-radius:100px;font-family:var(--m-mono);font-size:11px;
                       letter-spacing:0.08em;border:1px solid color-mix(in srgb, {{ tm.color }} 13%, transparent);
                       background:color-mix(in srgb, {{ tm.color }} 5%, transparent);color:{{ tm.color }};transition:all 120ms;user-select:none;">
-          <input type="checkbox" class="kg-type-cb" value="{{ tkey }}" checked
-                 style="display:none;" onchange="kgReload()">
+          <input type="checkbox" class="kg-type-cb u-hide" value="{{ tkey }}" checked onchange="kgReload()">
           <span style="width:7px;height:7px;border-radius:50%;background:{{ tm.color }};display:inline-block;flex-shrink:0;"></span>
           {{ tm.label | upper }}
           <span class="kg-type-count" data-type="{{ tkey }}" style="opacity:.6;">0</span>
@@ -50,7 +48,7 @@
         {% endfor %}
       </div>
 
-      <div style="flex:1;"></div>
+      <div class="u-grow"></div>
 
       <!-- Time range selector -->
       <div style="display:flex;border:1px solid var(--m-rule);border-radius:var(--m-radius);overflow:hidden;">
@@ -65,9 +63,7 @@
       </div>
 
       <!-- Focus selector -->
-      <select id="kg-focus" style="padding:3px 8px;font-family:var(--m-mono);font-size:11px;
-                                    border:1px solid var(--m-rule);border-radius:var(--m-radius);
-                                    background:var(--m-surface);color:var(--m-ink);cursor:pointer;"
+      <select id="kg-focus" style="padding:3px 8px;font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);color:var(--m-ink);cursor:pointer;"
               onchange="kgReload()">
         <option value="">All contexts</option>
         {% for p in projects %}
@@ -77,9 +73,7 @@
 
       <!-- Search -->
       <input type="search" id="kg-search" placeholder="Filter…"
-             style="width:120px;padding:3px 8px;font-family:var(--m-mono);font-size:11px;
-                    border:1px solid var(--m-rule);border-radius:var(--m-radius);
-                    background:var(--m-surface);color:var(--m-ink);outline:none;"
+             style="width:120px;padding:3px 8px;font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);color:var(--m-ink);outline:none;"
              oninput="kgFilter(this.value)">
     </div>
 
@@ -88,25 +82,18 @@
       <svg id="kg-svg" width="100%" height="100%"></svg>
 
       <!-- Detail panel (slides in from right) -->
-      <div id="kg-detail" style="display:none;position:absolute;top:0;right:0;bottom:0;width:280px;
-                                  background:var(--m-surface);border-left:1px solid var(--m-rule-soft);
-                                  padding:16px;overflow-y:auto;z-index:10;
-                                  box-shadow:-4px 0 16px rgba(0,0,0,.06);transition:transform 200ms;">
-        <button style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;
-                       font-size:16px;color:var(--m-muted);line-height:1;" onclick="kgCloseDetail()">✕</button>
+      <div class="u-hide" id="kg-detail" style="position:absolute;top:0;right:0;bottom:0;width:280px;background:var(--m-surface);border-left:1px solid var(--m-rule-soft);padding:var(--m-space-4);overflow-y:auto;z-index:10;box-shadow:-4px 0 16px rgba(0,0,0,.06);transition:transform 200ms;">
+        <button style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:var(--t-h4);color:var(--m-muted);line-height:1;" onclick="kgCloseDetail()">✕</button>
         <div id="kg-detail-body"></div>
       </div>
 
       <!-- Legend -->
-      <div id="kg-legend" style="position:absolute;bottom:10px;left:12px;display:flex;flex-wrap:wrap;gap:8px;
-                                  padding:6px 10px;background:var(--m-surface-2);border-radius:var(--m-radius);
-                                  border:1px solid var(--m-rule-soft);opacity:.9;"></div>
+      <div id="kg-legend" style="position:absolute;bottom:10px;left:12px;display:flex;flex-wrap:wrap;gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);border-radius:var(--m-radius);border:1px solid var(--m-rule-soft);opacity:.9;"></div>
 
       <!-- Loading overlay -->
-      <div id="kg-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-                                   background:var(--m-surface);z-index:20;">
+      <div class="u-row" id="kg-loading" style="position:absolute;inset:0;justify-content:center;background:var(--m-surface);z-index:20;">
         <div style="text-align:center;">
-          <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:8px;">BUILDING GRAPH</div>
+          <div class="u-label u-mb-2">BUILDING GRAPH</div>
           <div class="skeleton skeleton-bar" style="width:120px;height:3px;margin:0 auto;"></div>
         </div>
       </div>
@@ -179,7 +166,7 @@
       document.getElementById('kg-loading').style.display = 'none';
     }).catch(e => {
       document.getElementById('kg-loading').innerHTML =
-        '<div style="color:var(--m-alert);font-family:var(--m-mono);font-size:11px;">Error loading graph</div>';
+        '<div style="color:var(--m-alert);font-family:var(--m-mono);font-size:var(--t-micro);">Error loading graph</div>';
     });
   };
 
@@ -237,9 +224,9 @@
     el.innerHTML = '';
     for (const t of Object.keys(types)) {
       const c = TYPE_COLORS[t] || '#666c63';
-      el.innerHTML += `<div style="display:flex;align-items:center;gap:4px;">
+      el.innerHTML += `<div class="u-row" style="gap:var(--m-space-1);">
         <span style="width:8px;height:8px;border-radius:50%;background:${c};display:inline-block;"></span>
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;color:var(--m-muted);">${(TYPE_LABELS[t]||t).toUpperCase()} ${types[t]}</span>
+        <span class="u-label" style="letter-spacing:0.08em;">${(TYPE_LABELS[t]||t).toUpperCase()} ${types[t]}</span>
       </div>`;
     }
   }
@@ -426,52 +413,52 @@
     });
 
     let html = `
-      <div style="margin-bottom:12px;">
+      <div class="u-mb-3">
         <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};vertical-align:middle;margin-right:6px;"></span>
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:${color};">${(TYPE_LABELS[d.type]||d.type).toUpperCase()}</span>
+        <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:${color};">${(TYPE_LABELS[d.type]||d.type).toUpperCase()}</span>
       </div>
-      <div style="font-family:var(--m-display);font-size:14px;font-weight:600;color:var(--m-ink);line-height:1.35;margin-bottom:8px;">
+      <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-body);font-weight:600;color:var(--m-ink);line-height:1.35;">
         ${d.title}
       </div>`;
 
     // Type-specific details
-    if (d.date) html += `<div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:6px;">${d.date}</div>`;
-    if (d.authors) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);margin-bottom:4px;">${d.authors}</div>`;
-    if (d.journal) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-muted);font-style:italic;margin-bottom:4px;">${d.journal} ${d.year||''}</div>`;
-    if (d.doi) html += `<div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:4px;">DOI: ${d.doi}</div>`;
-    if (d.domain) html += `<div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:4px;">Domain: ${d.domain}</div>`;
-    if (d.status) html += `<div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:4px;">Status: ${d.status}</div>`;
-    if (d.signal) html += `<div style="font-family:var(--m-mono);font-size:11px;color:${color};margin-bottom:4px;">Signal: ${d.signal}</div>`;
-    if (d.feasibility) html += `<div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:4px;">Feasibility: ${d.feasibility}</div>`;
-    if (d.definition) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-ink);line-height:1.45;margin:8px 0;padding:8px 10px;background:var(--m-surface-2);border-radius:var(--m-radius);">${d.definition}</div>`;
-    if (d.summary) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-ink);line-height:1.45;margin:8px 0;padding:8px 10px;background:var(--m-surface-2);border-radius:var(--m-radius);">${d.summary}</div>`;
-    if (d.next_step) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-ink);line-height:1.45;margin:8px 0;"><strong>Next:</strong> ${d.next_step}</div>`;
-    if (d.decisions) html += `<div style="font-family:var(--m-display);font-size:11px;color:var(--m-ink);line-height:1.45;margin:8px 0;"><strong>Decisions:</strong> ${d.decisions}</div>`;
+    if (d.date) html += `<div class="u-label u-mb-2">${d.date}</div>`;
+    if (d.authors) html += `<div class="u-mb-1" style="font-family:var(--m-display);font-size:var(--t-micro);color:var(--m-muted);">${d.authors}</div>`;
+    if (d.journal) html += `<div class="u-mb-1 u-ed" style="font-size:var(--t-micro);">${d.journal} ${d.year||''}</div>`;
+    if (d.doi) html += `<div class="u-label u-mb-1">DOI: ${d.doi}</div>`;
+    if (d.domain) html += `<div class="u-label u-mb-1">Domain: ${d.domain}</div>`;
+    if (d.status) html += `<div class="u-label u-mb-1">Status: ${d.status}</div>`;
+    if (d.signal) html += `<div class="u-mb-1" style="font-family:var(--m-mono);font-size:var(--t-micro);color:${color};">Signal: ${d.signal}</div>`;
+    if (d.feasibility) html += `<div class="u-label u-mb-1">Feasibility: ${d.feasibility}</div>`;
+    if (d.definition) html += `<div style="font-family:var(--m-display);font-size:var(--t-micro);color:var(--m-ink);line-height:1.45;margin:var(--m-space-2) 0;padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);border-radius:var(--m-radius);">${d.definition}</div>`;
+    if (d.summary) html += `<div style="font-family:var(--m-display);font-size:var(--t-micro);color:var(--m-ink);line-height:1.45;margin:var(--m-space-2) 0;padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);border-radius:var(--m-radius);">${d.summary}</div>`;
+    if (d.next_step) html += `<div style="font-family:var(--m-display);font-size:var(--t-micro);color:var(--m-ink);line-height:1.45;margin:var(--m-space-2) 0;"><strong>Next:</strong> ${d.next_step}</div>`;
+    if (d.decisions) html += `<div style="font-family:var(--m-display);font-size:var(--t-micro);color:var(--m-ink);line-height:1.45;margin:var(--m-space-2) 0;"><strong>Decisions:</strong> ${d.decisions}</div>`;
 
     // Tags
     if (d.tags && d.tags.length) {
-      html += '<div style="display:flex;flex-wrap:wrap;gap:3px;margin:8px 0;">';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:3px;margin:var(--m-space-2) 0;">';
       d.tags.forEach(t => {
-        html += `<span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;padding:1px 7px;border-radius:100px;background:var(--m-surface-3);color:var(--m-muted);">${t}</span>`;
+        html += `<span class="u-label" style="letter-spacing:0.06em;padding:1px 7px;border-radius:var(--m-radius-pill);background:var(--m-surface-3);">${t}</span>`;
       });
       html += '</div>';
     }
 
     // Connections
     if (connections.length) {
-      html += `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--m-rule-soft);">
-        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);margin-bottom:6px;">${connections.length} CONNECTION${connections.length>1?'S':''}</div>`;
+      html += `<div class="u-rule-t" style="margin-top:var(--m-space-3);padding-top:10px;">
+        <div class="u-label u-mb-2">${connections.length} CONNECTION${connections.length>1?'S':''}</div>`;
       connections.slice(0, 15).forEach(c => {
         const cc = TYPE_COLORS[c.node.type] || '#666c63';
-        html += `<div style="display:flex;align-items:center;gap:5px;padding:3px 0;font-family:var(--m-display);font-size:11px;cursor:pointer;"
+        html += `<div class="u-row" style="gap:5px;padding:3px 0;font-family:var(--m-display);font-size:var(--t-micro);cursor:pointer;"
                       onclick="(function(){var ns=document.querySelectorAll('.kg-node');/* TODO: focus */})()">
-          <span style="width:6px;height:6px;border-radius:50%;background:${cc};flex-shrink:0;"></span>
-          <span style="flex:1;color:var(--m-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.node.title}</span>
-          <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);flex-shrink:0;">${c.label}</span>
+          <span class="u-fixed" style="width:6px;height:6px;border-radius:50%;background:${cc};"></span>
+          <span class="u-grow u-truncate" style="color:var(--m-ink);">${c.node.title}</span>
+          <span class="u-label u-fixed">${c.label}</span>
         </div>`;
       });
       if (connections.length > 15) {
-        html += `<div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-top:4px;">+ ${connections.length - 15} more</div>`;
+        html += `<div class="u-label" style="margin-top:var(--m-space-1);">+ ${connections.length - 15} more</div>`;
       }
       html += '</div>';
     }

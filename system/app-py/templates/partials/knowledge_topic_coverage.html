@@ -1,24 +1,24 @@
 <div id="topic-coverage-panel">
 
   <!-- ── Legend ── -->
-  <div style="display:flex;align-items:center;gap:20px;margin-bottom:16px;flex-wrap:wrap;">
-    <span style="display:flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">
-      <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--m-ok);"></span>GOOD COVERAGE
+  <div class="u-row u-row--wrap u-mb-4" style="gap:var(--m-space-5);">
+    <span class="u-label u-row">
+      <span style="display:inline-block;width:10px;height:10px;border-radius:var(--m-radius-sm);background:var(--m-ok);"></span>GOOD COVERAGE
     </span>
-    <span style="display:flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">
-      <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--m-warn);"></span>PARTIAL
+    <span class="u-label u-row">
+      <span style="display:inline-block;width:10px;height:10px;border-radius:var(--m-radius-sm);background:var(--m-warn);"></span>PARTIAL
     </span>
-    <span style="display:flex;align-items:center;gap:6px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">
-      <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--m-alert);"></span>GAP
+    <span class="u-label u-row">
+      <span style="display:inline-block;width:10px;height:10px;border-radius:var(--m-radius-sm);background:var(--m-alert);"></span>GAP
     </span>
-    <span style="margin-left:auto;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">
+    <span class="u-label" style="margin-left:auto;">
       {{ topics | length }} TOPICS · {{ total_papers }} SOURCES INDEXED
     </span>
   </div>
 
   <!-- ── Card grid ── -->
   {% if topics %}
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--m-space-3);">
     {% for t in topics %}
     {% set level = t.level %}
     {% if level == 'good' %}
@@ -43,37 +43,37 @@
          onmouseout="this.style.boxShadow='';this.style.transform=''">
 
       <!-- Badge + count row -->
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">
+      <div class="u-row u-row--between" style="margin-bottom:9px;">
         <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;padding:2px 7px;background:{{ badge_bg }};color:{{ badge_fg }};border-radius:2px;">
           {{ badge_text }}
         </span>
-        <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
+        <span class="u-label">
           {{ t.paper_count }}
         </span>
       </div>
 
       <!-- Topic name -->
-      <div style="font-family:var(--m-display);font-size:15px;font-weight:500;color:var(--m-ink);line-height:1.25;margin-bottom:6px;">
+      <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-body);font-weight:500;color:var(--m-ink);line-height:1.25;">
         {{ t.label }}
       </div>
 
       <!-- Description / keywords -->
       {% if t.description %}
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);line-height:1.45;margin-bottom:10px;">
+      <div class="u-label u-mb-3" style="letter-spacing:0.06em;line-height:1.45;">
         {{ t.description | truncate(70, True, '…') }}
       </div>
       {% endif %}
 
       <!-- Coverage bar -->
-      <div style="height:3px;background:var(--m-surface-2);border-radius:2px;overflow:hidden;">
+      <div style="height:3px;background:var(--m-surface-2);border-radius:var(--m-radius-sm);overflow:hidden;">
         <div style="height:100%;width:{{ t.bar_pct }}%;background:{{ border_color }};border-radius:2px;transition:width 400ms ease;"></div>
       </div>
 
       <!-- Source breakdown pill row -->
       {% if t.sources %}
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;">
+      <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-1);margin-top:var(--m-space-2);">
         {% for src_label, src_count in t.sources %}
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:1px 6px;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">
+        <span class="u-label" style="letter-spacing:0.08em;padding:1px 6px;background:var(--m-surface-2);border-radius:var(--m-radius-sm);">
           {{ src_label }} {{ src_count }}
         </span>
         {% endfor %}
@@ -85,11 +85,11 @@
 
   {% else %}
   <!-- Empty state -->
-  <div class="panel" style="padding:28px 24px;text-align:center;">
-    <div style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">
+  <div class="panel" style="padding:var(--m-space-6) var(--m-space-5);text-align:center;">
+    <div class="u-ed" style="font-size:var(--t-body);">
       No topics configured. Add research topics in Metis to enable coverage mapping.
     </div>
-    <div style="margin-top:12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">
+    <div class="u-label" style="margin-top:var(--m-space-3);">
       Try: /metis add a topic for your research domain
     </div>
   </div>

@@ -4,9 +4,9 @@
 <div id="today-focus">
 {% if items %}
   {{ sec_label("Today's focus", tail="STAR A TASK TO PIN IT HERE", style="margin-bottom:14px;") }}
-  <div class="grid grid-3" style="margin-bottom:32px;">
+  <div class="grid grid-3 u-mb-6">
     {% for item in items %}
-    <div class="panel" style="padding:16px 20px;position:relative;">
+    <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);position:relative;">
       {# Dismiss button #}
       <button type="button"
               hx-post="/api/today/focus/dismiss"
@@ -14,26 +14,26 @@
               hx-target="#today-focus"
               hx-swap="outerHTML"
               hx-headers='{"Content-Type": "application/json"}'
-              style="position:absolute;top:8px;right:10px;border:0;background:transparent;font-size:14px;color:var(--m-muted);cursor:pointer;line-height:1;padding:2px 4px;opacity:0.5;"
+              style="position:absolute;top:8px;right:10px;border:0;background:transparent;font-size:var(--t-body);color:var(--m-muted);cursor:pointer;line-height:1;padding:2px 4px;opacity:0.5;"
               title="Dismiss for today"
               onmouseover="this.style.opacity='1';this.style.color='var(--m-ink)'"
               onmouseout="this.style.opacity='0.5';this.style.color='var(--m-muted)'">&times;</button>
       {# Badge #}
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+      <div class="u-row u-mb-2">
         <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;padding:2px 8px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, {{ item.badge_color }} 15%, transparent);color:{{ item.badge_color }};">{{ item.badge }}</span>
         {% if item.subtitle %}
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;color:var(--m-muted);">{{ item.subtitle }}</span>
+        <span class="u-label" style="letter-spacing:0.08em;">{{ item.subtitle }}</span>
         {% endif %}
       </div>
       {# Title #}
-      <div style="font-family:var(--m-display);font-size:14px;line-height:1.4;color:var(--m-ink);padding-right:16px;">{{ item.title }}</div>
+      <div style="font-family:var(--m-display);font-size:var(--t-body);line-height:1.4;color:var(--m-ink);padding-right:16px;">{{ item.title }}</div>
     </div>
     {% endfor %}
   </div>
 {% else %}
   {{ sec_label("Today's focus", tail="ALL CLEAR", style="margin-bottom:14px;") }}
-  <div class="panel" style="padding:20px 28px;margin-bottom:32px;">
-    <div class="ed" style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">
+  <div class="panel u-mb-6" style="padding:var(--m-space-5) var(--m-space-6);">
+    <div class="ed u-ed" style="font-size:var(--t-body);">
       No open tasks or active ideas right now. Star a task or capture an idea to fill this section.
     </div>
   </div>

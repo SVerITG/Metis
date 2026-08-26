@@ -1,8 +1,8 @@
 <!-- thinking_questions.html — Editorial open-questions list -->
 {% if not questions %}
-<div class="panel panel-pad" style="text-align:center;padding:24px 20px;border:1px dashed var(--m-line);">
-  <p class="ed" style="font-size:14px;color:var(--m-muted);margin:0 0 8px;">No open questions.</p>
-  <p class="ed" style="font-size:13px;color:var(--m-muted);margin:0;">
+<div class="panel panel-pad" style="text-align:center;padding:var(--m-space-5) var(--m-space-5);border:1px dashed var(--m-line);">
+  <p class="ed" style="font-size:var(--t-body);color:var(--m-muted);margin:0 0 var(--m-space-2);">No open questions.</p>
+  <p class="ed" style="font-size:var(--t-small);color:var(--m-muted);margin:0;">
     Press <kbd>Ctrl+K</kbd> and prefix with <code>q:</code> to capture a question.
     Good research runs on unresolved questions — write them down when they surface.
   </p>
@@ -11,10 +11,10 @@
 <div class="panel">
   {% for q in questions %}
   <div style="display:grid;grid-template-columns:24px 1fr;gap:12px;align-items:start;padding:14px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
-    <span style="font-family:var(--m-display);font-style:italic;font-size:18px;color:var(--m-alert);line-height:1;">?</span>
+    <span style="font-family:var(--m-display);font-style:italic;font-size:var(--t-h4);color:var(--m-alert);line-height:1;">?</span>
     <div>
-      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);line-height:1.5;">{{ q.content }}</div>
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-top:4px;">{{ (q.created_at or '')[:10] }}</div>
+      <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.5;">{{ q.content }}</div>
+      <div class="u-label" style="margin-top:var(--m-space-1);">{{ (q.created_at or '')[:10] }}</div>
     </div>
   </div>
   {% endfor %}

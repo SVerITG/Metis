@@ -21,8 +21,7 @@
   <div id="setup-wizard" class="card" style="margin-bottom:1.5rem;padding:0;overflow:hidden;">
 
     <!-- Step indicators -->
-    <div id="wizard-steps" style="display:flex;border-bottom:1px solid var(--m-line);
-         background:var(--m-surface-2);padding:0 2rem;">
+    <div id="wizard-steps" style="display:flex;border-bottom:1px solid var(--m-line);background:var(--m-surface-2);padding:0 2rem;">
       {% for i, label in [('1','About you'),('2','Research'),('3','Working style'),('4','Projects')] %}
       <div class="wstep" data-step="{{ i }}"
            style="padding:0.875rem 1.25rem;font-family:var(--m-mono,monospace);font-size:11px;
@@ -63,7 +62,7 @@
       </div>
 
       <!-- Step 2: Research -->
-      <div class="wpage" id="wpage-2" style="display:none;">
+      <div class="wpage u-hide" id="wpage-2">
         <h2 style="margin:0 0 1.25rem;font-size:1.1rem;">Your research</h2>
         <div style="display:grid;gap:1rem;">
           <div>
@@ -89,7 +88,7 @@
       </div>
 
       <!-- Step 3: Working style -->
-      <div class="wpage" id="wpage-3" style="display:none;">
+      <div class="wpage u-hide" id="wpage-3">
         <h2 style="margin:0 0 1.25rem;font-size:1.1rem;">How you like to work</h2>
         <div style="display:grid;gap:1.25rem;">
           <div>
@@ -100,8 +99,7 @@
                 ('direct','Direct','Honest and clear, skip padding'),
                 ('blunt','Blunt','No hedging, challenge everything')
               ] %}
-              <label style="border:1px solid var(--m-line);border-radius:6px;
-                            padding:0.875rem;cursor:pointer;transition:border-color 0.15s;"
+              <label style="border:1px solid var(--m-line);border-radius:6px;padding:0.875rem;cursor:pointer;transition:border-color 0.15s;"
                      onmouseover="this.style.borderColor='var(--m-accent)'"
                      onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='var(--m-line)'">
                 <input type="radio" name="feedback_style" value="{{ val }}"
@@ -121,8 +119,7 @@
                 ('balanced','Balanced','Push back when something looks off'),
                 ('socratic','Socratic','Question my assumptions proactively')
               ] %}
-              <label style="border:1px solid var(--m-line);border-radius:6px;
-                            padding:0.875rem;cursor:pointer;transition:border-color 0.15s;"
+              <label style="border:1px solid var(--m-line);border-radius:6px;padding:0.875rem;cursor:pointer;transition:border-color 0.15s;"
                      onmouseover="this.style.borderColor='var(--m-accent)'"
                      onmouseout="if(!this.querySelector('input').checked)this.style.borderColor='var(--m-line)'">
                 <input type="radio" name="challenge_level" value="{{ val }}"
@@ -156,7 +153,7 @@
       </div>
 
       <!-- Step 4: Projects -->
-      <div class="wpage" id="wpage-4" style="display:none;">
+      <div class="wpage u-hide" id="wpage-4">
         <h2 style="margin:0 0 0.25rem;font-size:1.1rem;">Your active projects</h2>
         <p style="color:var(--m-muted);font-size:0.875rem;margin:0 0 1.25rem;line-height:1.6;">
           Tell Metis what you're working on. For each project it will create a tracking record,
@@ -165,17 +162,13 @@
         </p>
 
         <!-- Project cards list -->
-        <div id="project-cards" style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1rem;">
+        <div class="u-col" id="project-cards" style="gap:0.75rem;margin-bottom:1rem;">
           <!-- cards injected by JS -->
         </div>
 
         <!-- Add Project button -->
-        <button type="button" onclick="openProjectModal()"
-                style="width:100%;padding:0.875rem;background:transparent;
-                       border:2px dashed var(--m-line);border-radius:8px;
-                       cursor:pointer;font-family:var(--m-mono,monospace);font-size:11px;
-                       letter-spacing:0.14em;color:var(--m-muted);
-                       transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:0.5rem;"
+        <button class="u-row" type="button" onclick="openProjectModal()"
+                style="width:100%;padding:0.875rem;background:transparent;border:2px dashed var(--m-line);border-radius:8px;cursor:pointer;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.14em;color:var(--m-muted);transition:all 0.15s;justify-content:center;gap:0.5rem;"
                 onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
                 onmouseout="this.style.borderColor='var(--m-line)';this.style.color='var(--m-muted)'">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -184,18 +177,14 @@
           ADD A PROJECT
         </button>
 
-        <div style="margin-top:0.75rem;padding:0.75rem;background:var(--m-surface-2);
-                    border-radius:6px;font-size:0.8rem;color:var(--m-muted);line-height:1.5;">
+        <div style="margin-top:0.75rem;padding:0.75rem;background:var(--m-surface-2);border-radius:6px;font-size:0.8rem;color:var(--m-muted);line-height:1.5;">
           💡 <strong>Tip:</strong> To find a folder path in Windows Explorer, right-click the folder and choose
           <em>Copy as path</em>. Paste it in the folder field below.
         </div>
 
         <!-- Processing indicator -->
-        <div id="wizard-processing" style="display:none;margin-top:1.5rem;padding:1.5rem;
-             background:linear-gradient(135deg,rgba(22,163,74,0.04),rgba(22,163,74,0.08));
-             border:1px solid rgba(22,163,74,0.2);border-radius:8px;text-align:center;">
-          <div style="font-family:var(--m-mono,monospace);font-size:11px;letter-spacing:0.2em;
-                      color:var(--m-accent);margin-bottom:0.75rem;">CALIBRATING METIS</div>
+        <div class="u-hide" id="wizard-processing" style="margin-top:1.5rem;padding:1.5rem;background:linear-gradient(135deg,rgba(22,163,74,0.04),rgba(22,163,74,0.08));border:1px solid rgba(22,163,74,0.2);border-radius:8px;text-align:center;">
+          <div style="font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.2em;color:var(--m-accent);margin-bottom:0.75rem;">CALIBRATING METIS</div>
           <div style="font-size:0.9rem;font-weight:500;margin-bottom:0.375rem;">
             Building your personalised profile…
           </div>
@@ -206,33 +195,25 @@
           </div>
         </div>
 
-        <div id="wizard-error" style="display:none;margin-top:1rem;padding:0.875rem;
-             background:var(--m-alert-wash);border:1px solid color-mix(in srgb, var(--m-alert) 35%, transparent);border-radius:6px;
-             color:var(--m-alert);font-size:0.875rem;"></div>
+        <div class="u-hide" id="wizard-error" style="margin-top:1rem;padding:0.875rem;background:var(--m-alert-wash);border:1px solid color-mix(in srgb, var(--m-alert) 35%, transparent);border-radius:6px;color:var(--m-alert);font-size:0.875rem;"></div>
       </div>
 
       <!-- ── Project modal ──────────────────────────────────────────────── -->
-      <div id="project-modal" style="display:none;position:fixed;inset:0;z-index:1000;
-           background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);
-           align-items:center;justify-content:center;padding:1.5rem;">
-        <div style="background:var(--m-surface);border-radius:10px;width:100%;max-width:560px;
-                    max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+      <div class="u-hide" id="project-modal" style="position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:1.5rem;">
+        <div style="background:var(--m-surface);border-radius:10px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
 
           <!-- Modal header -->
-          <div style="padding:1.5rem 1.5rem 1rem;border-bottom:1px solid var(--m-line);
-                      display:flex;align-items:center;justify-content:space-between;">
+          <div class="u-row u-row--between" style="padding:1.5rem 1.5rem 1rem;border-bottom:1px solid var(--m-line);">
             <div>
-              <div style="font-family:var(--m-mono,monospace);font-size:11px;letter-spacing:0.2em;
-                          color:var(--m-accent);margin-bottom:0.25rem;">NEW PROJECT</div>
+              <div style="font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.2em;color:var(--m-accent);margin-bottom:0.25rem;">NEW PROJECT</div>
               <h3 style="margin:0;font-size:1.05rem;">Add a project to Metis</h3>
             </div>
             <button onclick="closeProjectModal()" type="button"
-                    style="background:transparent;border:none;cursor:pointer;
-                           color:var(--m-muted);font-size:1.25rem;line-height:1;padding:0.25rem;">×</button>
+                    style="background:transparent;border:none;cursor:pointer;color:var(--m-muted);font-size:1.25rem;line-height:1;padding:0.25rem;">×</button>
           </div>
 
           <!-- Modal body -->
-          <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1.1rem;">
+          <div class="u-col" style="padding:1.5rem;gap:1.1rem;">
 
             <!-- Name -->
             <div>
@@ -245,7 +226,7 @@
               <div>
                 <label class="field-label">Category</label>
                 <div style="display:flex;gap:0.5rem;">
-                  <select id="modal-category" class="field-input" style="flex:1;">
+                  <select id="modal-category" class="field-input u-grow">
                     <option value="Article">Article</option>
                     <option value="Grant">Grant</option>
                     <option value="Teaching">Teaching</option>
@@ -254,8 +235,8 @@
                     <option value="__new__">+ New category…</option>
                   </select>
                 </div>
-                <input id="modal-new-cat" class="field-input" placeholder="New category name"
-                       style="display:none;margin-top:0.375rem;">
+                <input id="modal-new-cat" class="field-input u-hide" placeholder="New category name"
+                       style="margin-top:0.375rem;">
               </div>
               <div>
                 <label class="field-label">Priority</label>
@@ -272,13 +253,10 @@
             <div>
               <label class="field-label">Project folder on your computer (optional)</label>
               <div style="display:flex;gap:0.5rem;">
-                <input id="modal-folder" class="field-input" style="flex:1;"
+                <input id="modal-folder" class="field-input u-grow"
                        placeholder="e.g. C:\Users\you\Documents\malaria-study">
                 <button type="button" onclick="pickFolder()"
-                        style="padding:0.5rem 0.875rem;background:var(--m-surface-2);
-                               border:1px solid var(--m-line);border-radius:4px;
-                               cursor:pointer;font-size:0.875rem;white-space:nowrap;
-                               color:var(--m-ink);" title="Browse for folder">
+                        style="padding:0.5rem 0.875rem;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);cursor:pointer;font-size:0.875rem;white-space:nowrap;color:var(--m-ink);" title="Browse for folder">
                   📂 Browse
                 </button>
               </div>
@@ -287,7 +265,7 @@
                 In Windows Explorer: right-click the folder → <em>Copy as path</em>, then paste above.
               </div>
               <!-- Hidden folder picker -->
-              <input type="file" id="folder-picker" webkitdirectory style="display:none;"
+              <input class="u-hide" type="file" id="folder-picker" webkitdirectory
                      onchange="handleFolderPick(this)">
             </div>
 
@@ -296,25 +274,22 @@
               <label class="field-label">How should Metis understand this project?</label>
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-top:0.375rem;">
                 <label id="scan-label-names" class="scan-opt"
-                       style="border:1px solid var(--m-accent);border-radius:6px;
-                              padding:0.6rem;cursor:pointer;text-align:center;">
-                  <input type="radio" name="modal-scan" value="names" checked style="display:none;">
+                       style="border:1px solid var(--m-accent);border-radius:6px;padding:0.6rem;cursor:pointer;text-align:center;">
+                  <input class="u-hide" type="radio" name="modal-scan" value="names" checked>
                   <div style="font-size:1.1rem;margin-bottom:0.2rem;">🗂️</div>
                   <div style="font-weight:500;font-size:0.82rem;">File names</div>
                   <div style="color:var(--m-muted);font-size:0.75rem;">Quick scan</div>
                 </label>
                 <label id="scan-label-content" class="scan-opt"
-                       style="border:1px solid var(--m-line);border-radius:6px;
-                              padding:0.6rem;cursor:pointer;text-align:center;">
-                  <input type="radio" name="modal-scan" value="content" style="display:none;">
+                       style="border:1px solid var(--m-line);border-radius:6px;padding:0.6rem;cursor:pointer;text-align:center;">
+                  <input class="u-hide" type="radio" name="modal-scan" value="content">
                   <div style="font-size:1.1rem;margin-bottom:0.2rem;">📄</div>
                   <div style="font-weight:500;font-size:0.82rem;">Read notes</div>
                   <div style="color:var(--m-muted);font-size:0.75rem;">Reads README</div>
                 </label>
                 <label id="scan-label-none" class="scan-opt"
-                       style="border:1px solid var(--m-line);border-radius:6px;
-                              padding:0.6rem;cursor:pointer;text-align:center;">
-                  <input type="radio" name="modal-scan" value="none" style="display:none;">
+                       style="border:1px solid var(--m-line);border-radius:6px;padding:0.6rem;cursor:pointer;text-align:center;">
+                  <input class="u-hide" type="radio" name="modal-scan" value="none">
                   <div style="font-size:1.1rem;margin-bottom:0.2rem;">✏️</div>
                   <div style="font-weight:500;font-size:0.82rem;">I'll describe</div>
                   <div style="color:var(--m-muted);font-size:0.75rem;">Type it below</div>
@@ -332,18 +307,13 @@
           </div>
 
           <!-- Modal footer -->
-          <div style="padding:1rem 1.5rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;
-                      border-top:1px solid var(--m-line);">
+          <div style="padding:1rem 1.5rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;border-top:1px solid var(--m-line);">
             <button type="button" onclick="closeProjectModal()"
-                    style="padding:0.6rem 1.25rem;background:transparent;
-                           border:1px solid var(--m-line);border-radius:4px;cursor:pointer;
-                           font-family:var(--m-mono,monospace);font-size:11px;letter-spacing:0.12em;">
+                    style="padding:0.6rem 1.25rem;background:transparent;border:1px solid var(--m-line);border-radius:var(--m-radius);cursor:pointer;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
               CANCEL
             </button>
             <button type="button" onclick="saveProject()"
-                    style="padding:0.6rem 1.5rem;background:var(--m-accent);color:white;
-                           border:none;border-radius:4px;cursor:pointer;
-                           font-family:var(--m-mono,monospace);font-size:11px;letter-spacing:0.12em;">
+                    style="padding:0.6rem 1.5rem;background:var(--m-accent);color:white;border:none;border-radius:var(--m-radius);cursor:pointer;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
               ADD PROJECT →
             </button>
           </div>
@@ -351,24 +321,17 @@
       </div>
 
       <!-- Nav buttons -->
-      <div style="display:flex;justify-content:space-between;margin-top:2rem;
-                  padding-top:1.25rem;border-top:1px solid var(--m-line);">
-        <button type="button" id="btn-back" onclick="wizardStep(-1)"
-                style="display:none;background:transparent;border:1px solid var(--m-line);
-                       padding:0.6rem 1.25rem;border-radius:4px;cursor:pointer;
-                       font-family:var(--m-mono,monospace);font-size:11px;letter-spacing:0.12em;">
+      <div style="display:flex;justify-content:space-between;margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--m-line);">
+        <button class="u-hide" type="button" id="btn-back" onclick="wizardStep(-1)"
+                style="background:transparent;border:1px solid var(--m-line);padding:0.6rem 1.25rem;border-radius:var(--m-radius);cursor:pointer;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
           ← BACK
         </button>
-        <div style="flex:1;"></div>
+        <div class="u-grow"></div>
         <button type="button" id="btn-next" onclick="wizardStep(1)"
-                style="background:var(--m-accent);color:white;border:none;
-                       padding:0.6rem 1.5rem;border-radius:4px;cursor:pointer;
-                       font-family:var(--m-mono,monospace);font-size:11px;letter-spacing:0.12em;">
+                style="background:var(--m-accent);color:white;border:none;padding:0.6rem 1.5rem;border-radius:var(--m-radius);cursor:pointer;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
           NEXT →
         </button>
-        <button type="submit" id="btn-submit" style="display:none;background:var(--m-accent);
-                color:white;border:none;padding:0.6rem 1.5rem;border-radius:4px;cursor:pointer;
-                font-family:var(--m-mono,monospace);font-size:11px;letter-spacing:0.12em;">
+        <button class="u-hide" type="submit" id="btn-submit" style="background:var(--m-accent);color:white;border:none;padding:0.6rem 1.5rem;border-radius:var(--m-radius);cursor:pointer;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
           FINISH SETUP →
         </button>
       </div>
@@ -569,21 +532,21 @@
         card.style.cssText = 'border:1px solid var(--m-line);border-radius:8px;padding:0.875rem 1rem;' +
           'display:flex;align-items:flex-start;gap:0.875rem;background:var(--m-surface);';
         card.innerHTML =
-          '<div style="width:36px;height:36px;border-radius:6px;background:var(--m-surface-2);' +
-          '     display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;">' +
+          '<div class="u-fixed" style="width:36px;height:36px;border-radius:6px;background:var(--m-surface-2);' +
+          '     display:flex;align-items:center;justify-content:center;font-size:1.1rem;">' +
           (p.category === 'Article' ? '📄' : p.category === 'Grant' ? '💰' : p.category === 'Teaching' ? '📚' :
            p.category === 'Software' ? '💻' : p.category === 'Review' ? '🔍' : '📁') +
           '</div>' +
-          '<div style="flex:1;min-width:0;">' +
+          '<div class="u-grow">' +
             '<div style="font-weight:500;font-size:0.9rem;margin-bottom:0.2rem;">' + _escHtml(p.name) + '</div>' +
             '<div style="font-size:0.78rem;color:var(--m-muted);display:flex;gap:0.75rem;flex-wrap:wrap;">' +
               '<span>' + _escHtml(p.category) + '</span>' +
               '<span>' + (_priorityLabels[p.priority] || p.priority) + '</span>' +
-              (p.folder ? '<span style="font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;" title="' + _escHtml(p.folder) + '">📂 ' + _escHtml(p.folder.split(/[/\\]/).pop()) + '</span>' : '') +
+              (p.folder ? '<span class="u-truncate" style="font-family:monospace;max-width:200px;" title="' + _escHtml(p.folder) + '">📂 ' + _escHtml(p.folder.split(/[/\\]/).pop()) + '</span>' : '') +
             '</div>' +
-            (p.description ? '<div style="font-size:0.8rem;color:var(--m-muted);margin-top:0.25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + _escHtml(p.description) + '</div>' : '') +
+            (p.description ? '<div class="u-truncate" style="font-size:0.8rem;color:var(--m-muted);margin-top:0.25rem;">' + _escHtml(p.description) + '</div>' : '') +
           '</div>' +
-          '<div style="display:flex;gap:0.375rem;flex-shrink:0;">' +
+          '<div class="u-fixed" style="display:flex;gap:0.375rem;">' +
             '<button type="button" onclick="openProjectModal(' + idx + ')" ' +
             '        style="padding:0.3rem 0.6rem;background:transparent;border:1px solid var(--m-line);' +
             '               border-radius:4px;cursor:pointer;font-size:0.75rem;color:var(--m-muted);">Edit</button>' +
@@ -693,7 +656,7 @@
   </div>
   {% else %}
   <div class="card" style="background:var(--m-ok-wash);border:1px solid var(--m-ok);margin-bottom:1.5rem;">
-    <div style="display:flex;align-items:center;gap:0.75rem;">
+    <div class="u-row" style="gap:0.75rem;">
       <span style="font-size:1.5rem;">✓</span>
       <div>
         <strong>Metis is configured.</strong>
@@ -709,7 +672,7 @@
     <h2 class="section-label" style="margin-bottom:1rem;">Wizard sections</h2>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.5rem;">
       {% for name, done in sections %}
-      <div style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.75rem;border-radius:8px;background:var(--m-surface-2);">
+      <div class="u-row" style="gap:0.6rem;padding:0.5rem 0.75rem;border-radius:8px;background:var(--m-surface-2);">
         <span style="font-size:1rem;{% if done %}color:var(--m-ok){% else %}color:var(--m-muted){% endif %}">
           {% if done %}✓{% else %}○{% endif %}
         </span>

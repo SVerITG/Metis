@@ -317,7 +317,7 @@ pre code { background: transparent; padding: 0; color: inherit; }
    ================================================================ */
 .app {
   display: grid;
-  grid-template-columns: var(--side-w, 220px) 1fr;
+  grid-template-columns: var(--side-w) 1fr;
   height: 100vh;
   min-height: 680px;
   transition: grid-template-columns 220ms cubic-bezier(0.4,0.1,0.2,1);
@@ -725,7 +725,7 @@ a.board-item-title:hover { color: var(--m-accent); }
   border-radius: 3px;
   background: var(--m-surface-2);
   color: var(--m-ink);
-  font-family: var(--m-body);
+  font-family: var(--m-text);
 }
 .board-input--mono { font-family: var(--m-mono); font-size: 11px; }
 .board-input:focus {
@@ -3592,13 +3592,13 @@ details summary { outline: none; }
 .ft-forms input {
   flex: 1; font-size: 13px; padding: 8px 10px;
   border: 1px solid var(--m-line); border-radius: 4px;
-  background: transparent; color: var(--m-fg);
+  background: transparent; color: var(--m-ink);
 }
 .ft-forms input:focus { outline: none; border-color: var(--m-accent); }
 .ft-btn {
   font-family: var(--m-mono); font-size: 10.5px; padding: 6px 12px;
   border: 1px solid var(--m-line); border-radius: 4px;
-  background: transparent; color: var(--m-fg); cursor: pointer;
+  background: transparent; color: var(--m-ink); cursor: pointer;
   white-space: nowrap;
 }
 .ft-btn:hover { border-color: var(--m-accent); color: var(--m-accent); }
@@ -3846,7 +3846,7 @@ details summary { outline: none; }
 .tri-tags input {
   font-family: var(--m-mono); font-size: 11px; padding: 3px 8px; width: 20ch;
   border: 1px solid var(--m-line); border-radius: var(--m-radius-pill);
-  background: transparent; color: var(--m-fg);
+  background: transparent; color: var(--m-ink);
 }
 .tri-tags input:focus { outline: none; border-color: var(--m-accent); }
 
@@ -3921,24 +3921,12 @@ details summary { outline: none; }
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Type scale. Seven steps, and everything lands on one. ─────────────
-     11 / 12 / 13 / 14 / 16 / 20 / 28. Named by ROLE, not by size, so a
-     later change to what "meta" means does not require finding every 11px. */
-  --t-micro:  10.5px;   /* eyebrows, counts, tabular marks */
-  --t-meta:   11.5px;   /* source, date, badges */
-  --t-small:  12.5px;   /* summaries, secondary prose */
-  --t-body:   13.5px;   /* item titles, body copy */
-  --t-lead:   15px;     /* card leads, panel intros */
-  --t-title:  20px;     /* section titles */
-  --t-page:   28px;     /* page titles */
-
-  /* ── Space scale. Six steps on a 4px grid. ──────────────────────────── */
-  --s-1: 4px;   --s-2: 8px;   --s-3: 12px;
-  --s-4: 16px;  --s-5: 24px;  --s-6: 32px;
-
-  /* ── Radius. Three, and the pill. ───────────────────────────────────── */
-  --r-sm: 3px;  --r-md: 6px;  --r-lg: 10px;  --r-pill: 999px;
-
+  /* ── Density. The only genuinely new scale here.
+     The type scale lives at the top of this file (--t-display … --t-micro) and
+     the space scale at --m-space-1…8. An earlier draft of this block redefined
+     both under new names; because it sits later in the file it silently won,
+     and every existing --t-body shrank from 15px to 13.5px. Do not add a scale
+     without searching for the one that exists. ─────────────────────────────── */
   /* ── Density. Overridden per user on <html data-density>. ───────────── */
   --d-row-y:   12px;    /* vertical padding inside a list row */
   --d-row-gap: 12px;    /* between a row's columns */
@@ -3973,7 +3961,7 @@ details summary { outline: none; }
   grid-template-areas: "media body actions";
   align-items: start;
   gap: var(--d-row-gap);
-  padding: var(--d-row-y) var(--s-4);
+  padding: var(--d-row-y) var(--m-space-4);
   position: relative;
 }
 .item + .item { border-top: 1px solid var(--m-rule-soft); }
@@ -3984,9 +3972,9 @@ details summary { outline: none; }
 .item-actions { grid-area: actions; }
 
 .item-meta {
-  display: flex; align-items: baseline; gap: var(--s-2); flex-wrap: wrap;
+  display: flex; align-items: baseline; gap: var(--m-space-2); flex-wrap: wrap;
   font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted);
-  letter-spacing: .06em; margin-bottom: var(--s-1);
+  letter-spacing: .06em; margin-bottom: var(--m-space-1);
 }
 .item-title {
   margin: 0; font-family: var(--m-display); font-size: var(--t-body);
@@ -4013,7 +4001,7 @@ details summary { outline: none; }
 /* Compact drops the summary and puts meta on the same line as the title. */
 :root[data-density="compact"] .item-sum { display: none; }
 :root[data-density="compact"] .item-body {
-  display: flex; align-items: baseline; gap: var(--s-3); flex-wrap: wrap;
+  display: flex; align-items: baseline; gap: var(--m-space-3); flex-wrap: wrap;
 }
 :root[data-density="compact"] .item-meta { margin-bottom: 0; order: 2; }
 :root[data-density="compact"] .item-title { order: 1; flex: 1 1 24ch; }
@@ -4023,20 +4011,20 @@ details summary { outline: none; }
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas: "media" "body" "actions";
   gap: 0; padding: 0;
-  border: 1px solid var(--m-rule); border-radius: var(--r-md);
+  border: 1px solid var(--m-rule); border-radius: var(--m-radius);
   overflow: hidden; background: var(--m-surface);
 }
 .item--card + .item--card { border-top: 1px solid var(--m-rule); }
 .item--card:hover { background: var(--m-surface); border-color: var(--m-rule-strong); }
-.item--card .item-body { padding: var(--s-3) var(--s-4) var(--s-2); }
-.item--card .item-actions { padding: 0 var(--s-3) var(--s-3); }
+.item--card .item-body { padding: var(--m-space-3) var(--m-space-4) var(--m-space-2); }
+.item--card .item-actions { padding: 0 var(--m-space-3) var(--m-space-3); }
 .item-thumb {
   display: block; aspect-ratio: 16/9; background-size: cover;
   background-position: center; background-color: var(--m-surface-3);
 }
 .item-typecard {
   display: flex; flex-direction: column; justify-content: flex-end;
-  gap: var(--s-2); aspect-ratio: 16/9; padding: var(--s-4);
+  gap: var(--m-space-2); aspect-ratio: 16/9; padding: var(--m-space-4);
   text-decoration: none; background: var(--m-surface-2);
   border-bottom: 1px solid var(--m-rule-soft);
 }
@@ -4045,7 +4033,7 @@ details summary { outline: none; }
   text-transform: uppercase; color: var(--m-muted);
 }
 .item-typecard-hd {
-  font-family: var(--m-display); font-size: var(--t-lead); line-height: 1.3;
+  font-family: var(--m-display); font-size: var(--t-h4); line-height: 1.3;
   color: var(--m-ink);
   display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
   overflow: hidden;
@@ -4053,7 +4041,7 @@ details summary { outline: none; }
 
 .list--rows  { display: block; }
 .list--cards {
-  display: grid; gap: var(--s-4);
+  display: grid; gap: var(--m-space-4);
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
 }
 
@@ -4069,12 +4057,12 @@ details summary { outline: none; }
    ═══════════════════════════════════════════════════════════════════════════ */
 .acts {
   display: inline-flex; align-items: center; gap: 2px;
-  border: 1px solid transparent; border-radius: var(--r-pill);
+  border: 1px solid transparent; border-radius: var(--m-radius-pill);
 }
 .act {
   display: inline-flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; padding: 0;
-  border: 0; border-radius: var(--r-pill);
+  border: 0; border-radius: var(--m-radius-pill);
   background: transparent; color: var(--m-muted); cursor: pointer;
   transition: background 120ms, color 120ms;
 }
@@ -4102,9 +4090,9 @@ details summary { outline: none; }
    fails silently for everyone else.
    ═══════════════════════════════════════════════════════════════════════════ */
 .badge {
-  display: inline-flex; align-items: center; gap: var(--s-1);
+  display: inline-flex; align-items: center; gap: var(--m-space-1);
   font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: .08em;
-  text-transform: uppercase; padding: 2px 8px; border-radius: var(--r-pill);
+  text-transform: uppercase; padding: 2px 8px; border-radius: var(--m-radius-pill);
   border: 1px solid transparent; white-space: nowrap;
 }
 .badge--accent { background: var(--m-accent-wash); color: var(--m-accent); }
@@ -4117,19 +4105,19 @@ details summary { outline: none; }
 /* ═══ TOOLBAR — the controls above a list ══════════════════════════════════ */
 .toolbar {
   display: flex; align-items: center; justify-content: space-between;
-  gap: var(--s-3) var(--s-5); flex-wrap: wrap; margin-bottom: var(--s-4);
+  gap: var(--m-space-3) var(--m-space-5); flex-wrap: wrap; margin-bottom: var(--m-space-4);
 }
 .toolbar-lead { font-family: var(--m-display); font-style: italic;
                 font-size: var(--t-body); color: var(--m-muted);
                 flex: 1 1 20ch; max-width: 52ch; }
-.toolbar-group { display: flex; align-items: center; gap: var(--s-3);
+.toolbar-group { display: flex; align-items: center; gap: var(--m-space-3);
                  flex-wrap: wrap; }
 
 /* A segmented control: period, density, view. One shape for all three. */
 .seg { display: inline-flex; border: 1px solid var(--m-rule);
-       border-radius: var(--r-md); overflow: hidden; }
+       border-radius: var(--m-radius); overflow: hidden; }
 .seg > button, .seg > a {
-  display: inline-flex; align-items: center; gap: var(--s-1);
+  display: inline-flex; align-items: center; gap: var(--m-space-1);
   padding: 5px 10px; border: 0; border-left: 1px solid var(--m-rule);
   background: transparent; color: var(--m-muted); cursor: pointer;
   font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: .08em;
@@ -4149,3 +4137,96 @@ details summary { outline: none; }
   stroke-linecap: round; stroke-linejoin: round;
 }
 .seg svg { stroke-width: 1.5; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   IDIOMS — the eight things 3,171 inline styles kept re-typing
+
+   Measured, not guessed. Across 191 templates the inline styling clusters into
+   a handful of combinations that repeat hundreds of times each:
+
+       698  mono + small + muted        the uppercase label
+       245  a bare margin-bottom        stack spacing
+       181  flex + align-items:center   a row of things
+       137  a bare padding              panel inner spacing
+       121  a hairline border-bottom    a list separator
+        91  display face + italic       editorial voice
+        90  flex:1 (+ min-width:0)      the growing column
+        31  display:none                a hidden branch
+
+   Note what this is NOT: a Tailwind-style utility set. Eight named idioms that
+   already existed conceptually and had no name — which is exactly why everyone
+   retyped them. Anything more granular would just move the entropy into the
+   class attribute.
+
+   Values snap to the existing scales (--m-space-*, --t-*). That IS a visual
+   change: 34 distinct margin-bottoms become 6, and a 10px gap becomes 8 or 12.
+   Snapping is the point; a rhythm you can see is worth more than a value nobody
+   chose deliberately.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* The uppercase label. `.kicker` already existed and is the flex variant of
+   this; `.u-label` is the inline one the templates actually reach for. */
+.u-label {
+  font-family: var(--m-mono); font-size: var(--t-micro);
+  letter-spacing: .12em; color: var(--m-muted);
+}
+.u-label--wide  { letter-spacing: .16em; text-transform: uppercase; }
+.u-label--accent{ color: var(--m-accent); }
+.u-label--ochre { color: var(--m-ochre-deep); }
+
+/* A row of things. `--u-gap` lets one class serve every gap without a class per
+   value; set it inline once where a row genuinely differs. */
+.u-row  { display: flex; align-items: center; gap: var(--u-gap, var(--m-space-2)); }
+.u-row--top   { align-items: flex-start; }
+.u-row--base  { align-items: baseline; }
+.u-row--wrap  { flex-wrap: wrap; }
+.u-row--between { justify-content: space-between; }
+.u-col  { display: flex; flex-direction: column; gap: var(--u-gap, var(--m-space-2)); }
+
+/* The growing column in a row. `min-width:0` is not optional — without it a
+   flex child refuses to shrink below its content and long titles blow the
+   layout out sideways. That pairing is why this is one idiom, not two. */
+.u-grow { flex: 1; min-width: 0; }
+.u-fixed{ flex-shrink: 0; }
+
+/* Stack spacing, on the scale. */
+.u-mb-1 { margin-bottom: var(--m-space-1); }
+.u-mb-2 { margin-bottom: var(--m-space-2); }
+.u-mb-3 { margin-bottom: var(--m-space-3); }
+.u-mb-4 { margin-bottom: var(--m-space-4); }
+.u-mb-5 { margin-bottom: var(--m-space-5); }
+.u-mb-6 { margin-bottom: var(--m-space-6); }
+
+/* A list separator. */
+.u-rule { border-bottom: 1px solid var(--m-rule-soft); }
+.u-rule-t { border-top: 1px solid var(--m-rule-soft); }
+
+/* Editorial voice — the italic display face used for prose asides. */
+.u-ed { font-family: var(--m-display); font-style: italic; color: var(--m-muted);
+        line-height: 1.55; }
+
+/* Hidden. */
+.u-hide { display: none !important; }
+
+/* One line, or a clamped block. */
+.u-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.u-clamp-2, .u-clamp-3 {
+  display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+}
+.u-clamp-2 { -webkit-line-clamp: 2; }
+.u-clamp-3 { -webkit-line-clamp: 3; }
+
+/* ── PANEL VARIANTS ────────────────────────────────────────────────────────
+   113 of 155 panels carried an inline override, and 58 distinct ones. Almost
+   all of them were saying one of five things about padding. Now they can say
+   it in the class attribute, where it is greppable and consistent. */
+.panel--flush { padding: 0; }
+.panel--tight { padding: var(--m-space-2) var(--m-space-3); }
+.panel--sm    { padding: var(--m-space-3) var(--m-space-4); }
+.panel--md    { padding: var(--m-space-4) var(--m-space-5); }
+.panel--lg    { padding: var(--m-space-5) var(--m-space-6); }
+/* Density-aware: the reader's density setting moves panel padding too, so a
+   compact list does not sit inside a spacious box. */
+.panel--auto  { padding: var(--d-panel) calc(var(--d-panel) * 1.2); }
+.panel--clip  { overflow: hidden; }
+.panel--rows > * + * { border-top: 1px solid var(--m-rule-soft); }

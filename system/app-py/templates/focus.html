@@ -44,8 +44,7 @@
       </div>
       <h1 class="page-title">{{ area.title }}</h1>
       {% if area.subtitle %}
-      <div style="font-family:var(--m-display);font-style:italic;font-size:13.5px;
-                  color:var(--m-muted);margin-top:4px;">{{ area.subtitle }}</div>
+      <div class="u-ed" style="font-size:var(--t-small);margin-top:var(--m-space-1);">{{ area.subtitle }}</div>
       {% endif %}
     </div>
     <div class="page-meta">
@@ -71,7 +70,7 @@
   {% if area.overview %}
   {% call zone("Overview", key="focus-" ~ area.slug ~ "-overview",
                tail="WHAT MATTERS HERE", open=True) %}
-    <div class="panel" style="padding:18px 20px;">
+    <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);">
       <div class="focus-prose">{{ area.overview | md | safe }}</div>
     </div>
   {% endcall %}
@@ -94,8 +93,8 @@
                tail="NOTES · IDEAS · QUESTIONS", open=True) %}
     <div id="focus-thinking">{% include "partials/focus_thinking.html" %}</div>
     <span id="focus-explore-spin" class="htmx-indicator fb-spin"
-          style="display:block;margin-top:8px;">searching your own material…</span>
-    <div id="focus-explore" style="margin-top:10px;"></div>
+          style="display:block;margin-top:var(--m-space-2);">searching your own material…</span>
+    <div id="focus-explore" style="margin-top:var(--m-space-3);"></div>
   {% endcall %}
 
   {# ── 7 · Feed ──────────────────────────────────────────────────────────── #}
@@ -116,8 +115,8 @@
   {# ── 9 · Shelf management ──────────────────────────────────────────────── #}
   {% call zone("Shelf", key="focus-" ~ area.slug ~ "-shelf",
                tail=(shelf|length) ~ " / " ~ max_shelf ~ " SLOTS") %}
-    <div class="panel" style="padding:14px 16px;">
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+    <div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
+      <div class="u-row u-row--wrap">
         {% for a in all_areas %}
         <span style="font-family:var(--m-mono);font-size:10.5px;padding:4px 9px;
                      border:1px solid var(--m-line);border-radius:4px;
@@ -130,7 +129,7 @@
         </span>
         {% endfor %}
       </div>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+      <div style="display:flex;gap:var(--m-space-2);margin-top:var(--m-space-3);flex-wrap:wrap;">
         {% for s, label in [('active','Put on shelf'), ('following','Follow only'),
                             ('archived','Archive')] %}
           {% if area.state != s %}
@@ -142,7 +141,7 @@
           {% endif %}
         {% endfor %}
       </div>
-      <p style="margin:12px 0 0;font-size:12px;color:var(--m-muted);line-height:1.55;">
+      <p style="margin:var(--m-space-3) 0 0;font-size:var(--t-meta);color:var(--m-muted);line-height:1.55;">
         Archiving files the <strong>lens</strong>, not the contents. Every note, idea,
         question and kept item keeps its <code>focus:{{ area.slug }}</code> tag or its
         row in the safe — papers stay in your library, briefs stay in the news

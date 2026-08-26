@@ -19,10 +19,7 @@
     <div class="news-modal-footer">
       {% if brief.source_url %}
       <a href="{{ brief.source_url }}" target="_blank" rel="noopener"
-         style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;
-                font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;
-                color:var(--m-ink);text-decoration:none;background:var(--m-surface);
-                border:1px solid var(--m-rule);border-radius:var(--m-radius);">
+         style="display:inline-flex;align-items:center;gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;text-transform:uppercase;color:var(--m-ink);text-decoration:none;background:var(--m-surface);border:1px solid var(--m-rule);border-radius:var(--m-radius);">
         <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 3.5H3.5v9h9V10"/><path d="M9 3.5h3.5V7"/><path d="M12 4 7 9"/>
         </svg>
@@ -30,9 +27,7 @@
       </a>
       {% endif %}
       <button onclick="closeNewsModal()"
-              style="padding:6px 14px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;
-                     text-transform:uppercase;color:var(--m-surface);background:var(--m-accent);
-                     border:1px solid var(--m-accent);border-radius:var(--m-radius);cursor:pointer;">
+              style="padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;text-transform:uppercase;color:var(--m-surface);background:var(--m-accent);border:1px solid var(--m-accent);border-radius:var(--m-radius);cursor:pointer;">
         Close
       </button>
     </div>

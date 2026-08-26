@@ -17,15 +17,15 @@
   </div>
 
   <!-- Horizon cards -->
-  <div class="grid grid-3" style="margin-bottom:32px;"
+  <div class="grid grid-3 u-mb-6"
        hx-get="/api/partial/planner/horizon"
        hx-trigger="load"
        hx-swap="outerHTML">
     {% for label in ['QUARTER · Q4', 'WEEK · 46', 'TODAY'] %}
     <div class="panel panel-pad skeleton" style="padding:22px 24px;">
-      <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:55%;margin-bottom:10px;"></div>
-      <div style="height:18px;background:var(--m-surface-3);border-radius:2px;margin-bottom:8px;"></div>
-      <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:70%;margin-bottom:16px;"></div>
+      <div class="u-mb-3" style="height:9px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:55%;"></div>
+      <div class="u-mb-2" style="height:18px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);"></div>
+      <div class="u-mb-4" style="height:12px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:70%;"></div>
       <div style="height:2px;background:var(--m-surface-3);border-radius:1px;"></div>
     </div>
     {% endfor %}
@@ -33,31 +33,31 @@
 
   <!-- Focus board: top 3 projects + open task counts -->
   {{ sec_label("What you're focused on right now", tail="TOP 3 · OPEN TASKS", style="margin-bottom:16px;") }}
-  <div style="margin-bottom:32px;"
+  <div class="u-mb-6"
        hx-get="/api/partial/planner/focus-board"
        hx-trigger="load"
        hx-swap="innerHTML">
     <div class="panel panel-pad skeleton" style="padding:18px 22px;">
-      <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Surfacing your top three projects…</p>
+      <p class="u-ed" style="font-size:var(--t-small);margin:0;">Surfacing your top three projects…</p>
     </div>
   </div>
 
   <!-- Week at a glance -->
-  <h2 class="sec-label" style="margin-bottom:16px;">
+  <h2 class="sec-label u-mb-4">
     <span>This week at a glance</span>
     <span class="tail"
           hx-get="/api/partial/planner/week-label"
           hx-trigger="load"
           hx-swap="innerHTML">WEEK —</span>
   </h2>
-  <div class="panel" style="padding:24px;margin-bottom:32px;overflow-x:auto;"
+  <div class="panel u-mb-6" style="padding:var(--m-space-5);overflow-x:auto;"
        hx-get="/api/partial/planner/week"
        hx-trigger="load"
        hx-swap="outerHTML">
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;min-width:700px;">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:var(--m-space-2);min-width:700px;">
       {% for d in ['MON','TUE','WED','THU','FRI','SAT','SUN'] %}
-      <div style="padding:12px 10px;border:1px solid var(--m-rule);min-height:150px;border-radius:2px;opacity:.35;">
-        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:8px;">{{ d }}</div>
+      <div style="padding:var(--m-space-3) var(--m-space-3);border:1px solid var(--m-rule);min-height:150px;border-radius:var(--m-radius-sm);opacity:.35;">
+        <div class="u-label u-mb-2" style="letter-spacing:0.16em;">{{ d }}</div>
       </div>
       {% endfor %}
     </div>
@@ -74,9 +74,9 @@
            hx-swap="outerHTML">
         {% for _ in range(4) %}
         <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
-          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-            <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:70%;"></div>
-            <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:10%;"></div>
+          <div class="u-mb-2" style="display:flex;justify-content:space-between;align-items:baseline;">
+            <div style="height:12px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:70%;"></div>
+            <div style="height:10px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:10%;"></div>
           </div>
           <div style="height:2px;background:var(--m-surface-3);border-radius:1px;"></div>
         </div>
@@ -90,7 +90,7 @@
            hx-get="/api/partial/planner/notes"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div class="ed" style="font-size:15px;margin-bottom:12px;opacity:.5;">
+        <div class="ed u-mb-3" style="font-size:var(--t-body);opacity:.5;">
           <em>Gathering your intentions and notes…</em>
         </div>
       </div>
@@ -103,10 +103,10 @@
   <div hx-get="/api/partial/planner/kanban"
        hx-trigger="load"
        hx-swap="innerHTML">
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--m-space-4);">
       {% for label in ['SOMEDAY','INCUBATING','ACTIVE','DONE'] %}
       <div class="panel skeleton" style="padding:0;min-height:280px;">
-        <div style="height:38px;border-bottom:1px solid var(--m-rule-soft);"></div>
+        <div class="u-rule" style="height:38px;"></div>
       </div>
       {% endfor %}
     </div>

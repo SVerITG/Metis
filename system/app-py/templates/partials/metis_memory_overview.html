@@ -3,30 +3,29 @@
    Inputs: layers[], total_all, total_memories, week_count, oldest, by_type{}, archive_days #}
 
 {# Full picture across every layer — the whole store, not just curated entries (S.0c/S.4) #}
-<div class="grid grid-4" style="margin-bottom:12px;gap:12px;">
+<div class="grid grid-4 u-mb-3" style="gap:var(--m-space-3);">
   {% for l in layers %}
-  <div class="panel" style="padding:14px 16px;">
+  <div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
     <div style="display:flex;justify-content:space-between;align-items:baseline;">
       <span class="kicker" style="padding:0;color:{{ 'var(--m-accent)' if l.count else 'var(--m-muted)' }};">{{ l.kicker }}</span>
-      <span style="font-family:var(--m-mono);font-size:17px;font-weight:600;color:var(--m-ink);">{{ '{:,}'.format(l.count) }}</span>
+      <span style="font-family:var(--m-mono);font-size:var(--t-h4);font-weight:600;color:var(--m-ink);">{{ '{:,}'.format(l.count) }}</span>
     </div>
-    <div style="font-family:var(--m-display);font-size:15px;font-weight:500;color:var(--m-ink);margin:6px 0 3px;">{{ l.name }}</div>
-    <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);line-height:1.4;margin-bottom:10px;text-wrap:pretty;">{{ l.desc }}</div>
-    <div style="height:3px;background:var(--m-rule-soft);border-radius:2px;overflow:hidden;">
+    <div style="font-family:var(--m-display);font-size:var(--t-body);font-weight:500;color:var(--m-ink);margin:6px 0 3px;">{{ l.name }}</div>
+    <div class="u-mb-3" style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);line-height:1.4;text-wrap:pretty;">{{ l.desc }}</div>
+    <div style="height:3px;background:var(--m-rule-soft);border-radius:var(--m-radius-sm);overflow:hidden;">
       <div style="height:100%;width:{{ l.pct }}%;background:{{ 'var(--m-accent)' if l.count else 'var(--m-rule)' }};border-radius:2px;transition:width .4s;"></div>
     </div>
   </div>
   {% endfor %}
 </div>
-<div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);text-align:right;margin-bottom:20px;">
+<div class="u-mb-5" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);text-align:right;">
   {{ '{:,}'.format(total_all) }} entries held across every layer
 </div>
 
 {# The Procedural layer used to be a count and nothing else. These are the ways of
    working Metis actually applies, so they have to be readable — and correctable. #}
 {{ sec_label("How things are done here", tail="PROCEDURAL MEMORY", style="margin-bottom:10px;") }}
-<div hx-get="/api/partial/metis/procedures" hx-trigger="load" hx-swap="outerHTML"
-     style="margin-bottom:22px;">
+<div class="u-mb-5" hx-get="/api/partial/metis/procedures" hx-trigger="load" hx-swap="outerHTML">
   <div class="panel panel-pad skeleton" style="min-height:120px;"></div>
 </div>
 
@@ -42,7 +41,7 @@
     <div class="token-stat-label">this week</div>
   </div>
   <div class="token-stat">
-    <div class="token-stat-num" style="font-size:18px;">{{ oldest or '—' }}</div>
+    <div class="token-stat-num" style="font-size:var(--t-h4);">{{ oldest or '—' }}</div>
     <div class="token-stat-label">oldest entry</div>
   </div>
   <div class="token-stat">
@@ -90,7 +89,7 @@
 <div class="metis-setting-row">
   <div>
     <div class="ms-title">Export memories</div>
-    <div class="ms-help">A snapshot of the memory store, written to <code style="font-family:var(--m-mono);font-size:11px;">journal/exports/</code>.</div>
+    <div class="ms-help">A snapshot of the memory store, written to <code style="font-family:var(--m-mono);font-size:var(--t-micro);">journal/exports/</code>.</div>
   </div>
   <div class="ms-control">
     <button class="btn btn--sec btn--caps" onclick="openMetisExport()">Export</button>

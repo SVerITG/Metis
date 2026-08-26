@@ -4,13 +4,13 @@
    longer existed and every slipcase click was a no-op that looked like a dead
    filter. Carrying the id in the partial makes it survive its own swap. #}
 <div id="knowledge-cards-area">
-  <h2 class="sec-label" style="margin-bottom:12px;">
+  <h2 class="sec-label u-mb-3">
     <span>{{ first_domain | replace('-', ' ') | title if first_domain else 'Library' }}</span>
     <span class="tail">{{ total_cards or 0 }} VOLUMES · CLICK TO OPEN</span>
   </h2>
 
   <!-- Slipcase header panel -->
-  <div class="panel" style="padding:20px 24px;margin-bottom:16px;">
+  <div class="panel u-mb-4" style="padding:var(--m-space-5) var(--m-space-5);">
     <div class="kicker">
       <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M2 3 h5 a2 2 0 0 1 2 2 v8 a2 2 0 0 0 -2 -2 H2 Z"/>
@@ -18,10 +18,10 @@
       </svg>
       <span>SLIPCASE · {{ total_cards or 0 }} CARDS</span>
     </div>
-    <h3 style="font-family:var(--m-display);font-size:24px;font-weight:500;margin:10px 0 6px;color:var(--m-ink);">
+    <h3 style="font-family:var(--m-display);font-size:var(--t-h2);font-weight:500;margin:var(--m-space-3) 0 var(--m-space-2);color:var(--m-ink);">
       {{ first_domain | replace('-', ' ') | title if first_domain else 'Knowledge Archive' }}
     </h3>
-    <p class="ed" style="margin:0;font-size:15px;">
+    <p class="ed" style="margin:0;font-size:var(--t-body);">
       Open-access books and reports held locally. Click any card to read it.
       {% if first_domain %}Showing the <em>{{ first_domain | replace('-', ' ') }}</em> slipcase.{% endif %}
     </p>
@@ -38,38 +38,38 @@
          the file is genuinely there). #}
       <div class="panel k-card" tabindex="0" role="button"
            aria-label="Open {{ (card.title or 'card') | striptags }}"
-           style="padding:18px 20px;position:relative;cursor:pointer;transition:border-color 140ms, transform 140ms;"
+           style="padding:var(--m-space-4) var(--m-space-5);position:relative;cursor:pointer;transition:border-color 140ms, transform 140ms;"
            onmouseover="this.style.borderColor='var(--m-accent)';this.style.transform='translateY(-1px)';"
            onmouseout="this.style.borderColor='';this.style.transform='';"
            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}"
            hx-get="/api/partial/knowledge/card/{{ card.id }}"
            hx-target="#knowledge-cards-area"
            hx-swap="innerHTML">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;">
-          <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;color:var(--m-muted);">
+        <div class="u-mb-3" style="display:flex;justify-content:space-between;align-items:baseline;">
+          <div class="u-label" style="letter-spacing:0.18em;">
             {{ card.created_at[:7] if card.created_at else '—' }} · NOTE
           </div>
           {% if card.domain %}
-          <span style="display:inline-flex;align-items:center;padding:2px 8px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;background:var(--m-accent-wash);color:var(--m-accent);border-radius:2px;">
+          <span class="u-label u-label--accent" style="display:inline-flex;align-items:center;padding:2px 8px;letter-spacing:0.12em;text-transform:uppercase;background:var(--m-accent-wash);border-radius:var(--m-radius-sm);">
             {{ card.domain[:14] }}
           </span>
           {% endif %}
         </div>
-        <div style="font-family:var(--m-display);font-size:16px;font-weight:500;color:var(--m-ink);line-height:1.3;margin-bottom:8px;">
+        <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);line-height:1.3;">
           {{ card.title or 'Untitled' }}
         </div>
         {% if card.summary %}
-        <div class="ed" style="font-size:13px;color:var(--m-text);margin:0;">
+        <div class="ed" style="font-size:var(--t-small);color:var(--m-text);margin:0;">
           {{ card.summary | striptags | replace('> ', '') | truncate(160, True, '…') }}
         </div>
         {% endif %}
-        <div style="margin-top:10px;font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);">
+        <div style="margin-top:var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;text-transform:uppercase;color:var(--m-muted);">
           {% if card.status == 'read' %}✓ READ{% elif card.status == 'reading' %}◐ READING{% else %}OPEN ›{% endif %}
         </div>
       </div>
       {% endfor %}
     {% else %}
-      <div class="panel" style="grid-column:1/-1;padding:18px 20px;">
+      <div class="panel" style="grid-column:1/-1;padding:var(--m-space-4) var(--m-space-5);">
         <div class="empty-row">No index cards yet. The librarian can help you build your archive.</div>
       </div>
     {% endif %}

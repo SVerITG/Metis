@@ -1,67 +1,67 @@
 <div style="max-width:780px;margin:0 auto;">
 
   <!-- Close button -->
-  <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+  <div class="u-mb-5" style="display:flex;justify-content:flex-end;">
     <button class="btn btn--ghost btn--caps" onclick="document.getElementById('lm-report-panel').style.display='none'">← Back to Session</button>
   </div>
 
   <!-- Report header -->
-  <div style="margin-bottom:32px;">
-    <div class="kicker kicker--ochre" style="margin-bottom:12px;">
+  <div class="u-mb-6">
+    <div class="kicker kicker--ochre u-mb-3">
       <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h10v10H3z"/><line x1="6" y1="7" x2="10" y2="7"/><line x1="6" y1="10" x2="10" y2="10"/></svg>
       MEETING REPORT
     </div>
-    <h1 style="font-family:var(--m-display);font-size:32px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0 0 12px;">{{ title }}</h1>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;">
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">{{ date }}</div>
+    <h1 style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0 0 var(--m-space-3);">{{ title }}</h1>
+    <div style="display:flex;gap:var(--m-space-4);flex-wrap:wrap;">
+      <div class="u-label">{{ date }}</div>
       {% if participants %}
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">{{ participants }}</div>
+      <div class="u-label">{{ participants }}</div>
       {% endif %}
       {% if duration %}
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">{{ duration }}</div>
+      <div class="u-label">{{ duration }}</div>
       {% endif %}
     </div>
   </div>
 
   <!-- Summary -->
   {% if summary_lines %}
-  <div style="margin-bottom:28px;">
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:10px;">SUMMARY</div>
-    <div style="font-family:var(--m-sans);font-size:15px;color:var(--m-ink);line-height:1.7;padding:16px 20px;background:var(--m-surface-2);border-radius:4px;">
+  <div class="u-mb-6">
+    <div class="u-label u-mb-3" style="letter-spacing:0.16em;">SUMMARY</div>
+    <div style="font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);line-height:1.7;padding:var(--m-space-4) var(--m-space-5);background:var(--m-surface-2);border-radius:var(--m-radius);">
       {% for line in summary_lines %}{{ line }} {% endfor %}
     </div>
   </div>
   {% endif %}
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;">
+  <div class="u-mb-6" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--m-space-5);">
 
     <!-- Decisions -->
     <div>
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-accent);margin-bottom:10px;">DECISIONS ({{ extracted.decisions|length }})</div>
+      <div class="u-label u-label--accent u-mb-3" style="letter-spacing:0.16em;">DECISIONS ({{ extracted.decisions|length }})</div>
       {% if extracted.decisions %}
         {% for d in extracted.decisions %}
-        <div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--m-rule-soft);">
-          <span style="color:var(--m-accent);font-family:var(--m-mono);font-size:11px;flex-shrink:0;margin-top:3px;">■</span>
-          <span style="font-family:var(--m-sans);font-size:14px;color:var(--m-ink);line-height:1.5;">{{ d }}</span>
+        <div class="u-rule" style="display:flex;gap:var(--m-space-3);padding:7px 0;">
+          <span class="u-label u-label--accent u-fixed" style="margin-top:3px;">■</span>
+          <span style="font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);line-height:1.5;">{{ d }}</span>
         </div>
         {% endfor %}
       {% else %}
-        <div style="font-family:var(--m-sans);font-size:13px;color:var(--m-muted);font-style:italic;">No decisions extracted. Add them with "Decision: …" in your notes.</div>
+        <div style="font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-muted);font-style:italic;">No decisions extracted. Add them with "Decision: …" in your notes.</div>
       {% endif %}
     </div>
 
     <!-- Action items -->
     <div>
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-ochre);margin-bottom:10px;">ACTION ITEMS ({{ extracted.actions|length }})</div>
+      <div class="u-mb-3" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.16em;color:var(--m-ochre);">ACTION ITEMS ({{ extracted.actions|length }})</div>
       {% if extracted.actions %}
         {% for a in extracted.actions %}
-        <div style="display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--m-rule-soft);">
-          <span style="color:var(--m-ochre);font-family:var(--m-mono);font-size:11px;flex-shrink:0;margin-top:3px;">→</span>
-          <span style="font-family:var(--m-sans);font-size:14px;color:var(--m-ink);line-height:1.5;">{{ a }}</span>
+        <div class="u-rule" style="display:flex;gap:var(--m-space-3);padding:7px 0;">
+          <span class="u-fixed" style="color:var(--m-ochre);font-family:var(--m-mono);font-size:var(--t-micro);margin-top:3px;">→</span>
+          <span style="font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);line-height:1.5;">{{ a }}</span>
         </div>
         {% endfor %}
       {% else %}
-        <div style="font-family:var(--m-sans);font-size:13px;color:var(--m-muted);font-style:italic;">No action items extracted. Add them with "Action: …" in your notes.</div>
+        <div style="font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-muted);font-style:italic;">No action items extracted. Add them with "Action: …" in your notes.</div>
       {% endif %}
     </div>
 
@@ -69,24 +69,24 @@
 
   <!-- Follow-ups -->
   {% if extracted.follow_ups %}
-  <div style="margin-bottom:28px;">
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:10px;">FOLLOW-UPS</div>
+  <div class="u-mb-6">
+    <div class="u-label u-mb-3" style="letter-spacing:0.16em;">FOLLOW-UPS</div>
     {% for f in extracted.follow_ups %}
-    <div style="padding:6px 0 6px 12px;border-left:2px solid var(--m-rule);font-family:var(--m-sans);font-size:14px;color:var(--m-ink);margin-bottom:4px;">{{ f }}</div>
+    <div class="u-mb-1" style="padding:var(--m-space-2) 0 var(--m-space-2) var(--m-space-3);border-left:2px solid var(--m-rule);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);">{{ f }}</div>
     {% endfor %}
   </div>
   {% endif %}
 
   <!-- Connections surfaced during meeting -->
   {% if all_connections %}
-  <div style="margin-bottom:28px;">
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);margin-bottom:10px;">KNOWLEDGE CONNECTIONS SURFACED ({{ all_connections|length }})</div>
+  <div class="u-mb-6">
+    <div class="u-label u-mb-3" style="letter-spacing:0.16em;">KNOWLEDGE CONNECTIONS SURFACED ({{ all_connections|length }})</div>
     <div class="panel" style="padding:0;">
       {% for c in all_connections %}
       {% set src_colors = {'library': 'var(--m-accent)', 'meeting': 'var(--m-ochre)', 'news': 'var(--m-ok)', 'idea': 'var(--m-muted)'} %}
       <div style="display:flex;align-items:baseline;gap:10px;padding:9px 16px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
         <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:{{ src_colors.get(c.source, 'var(--m-muted)') }};flex-shrink:0;width:52px;">{{ c.source.upper() }}</span>
-        <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">{{ (c.title or '')[:80] }}</span>
+        <span style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">{{ (c.title or '')[:80] }}</span>
       </div>
       {% endfor %}
     </div>
@@ -94,15 +94,15 @@
   {% endif %}
 
   <!-- Full transcript -->
-  <div style="margin-bottom:28px;">
+  <div class="u-mb-6">
     <details>
-      <summary style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);cursor:pointer;padding:6px 0;">FULL TRANSCRIPT</summary>
-      <div style="margin-top:12px;padding:16px 18px;background:var(--m-surface-2);border-radius:4px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);line-height:1.75;white-space:pre-wrap;max-height:480px;overflow-y:auto;">{{ transcript }}</div>
+      <summary class="u-label" style="letter-spacing:0.16em;cursor:pointer;padding:var(--m-space-2) 0;">FULL TRANSCRIPT</summary>
+      <div style="margin-top:var(--m-space-3);padding:var(--m-space-4) var(--m-space-4);background:var(--m-surface-2);border-radius:var(--m-radius);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);line-height:1.75;white-space:pre-wrap;max-height:480px;overflow-y:auto;">{{ transcript }}</div>
     </details>
   </div>
 
   <!-- Action buttons -->
-  <div style="display:flex;gap:10px;padding:20px 0;border-top:1px solid var(--m-rule-soft);flex-wrap:wrap;">
+  <div class="u-rule-t" style="display:flex;gap:var(--m-space-3);padding:var(--m-space-5) 0;flex-wrap:wrap;">
     <button class="btn btn--primary btn--caps" onclick="copyReportToClipboard()">Copy Report</button>
     <button class="btn btn--ghost btn--caps" onclick="openReportInClaude()">Polish with Claude</button>
     <button class="btn btn--ghost btn--caps" onclick="closeLiveSession()">Done</button>

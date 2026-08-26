@@ -1,5 +1,5 @@
 {% if not meetings %}
-<div style="padding:28px 20px;font-family:var(--m-sans);font-size:14px;color:var(--m-muted);font-style:italic;">
+<div style="padding:var(--m-space-6) var(--m-space-5);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-muted);font-style:italic;">
   No meetings yet. Click <strong>Import meeting</strong> above to add your first one, or paste notes with <code>/meeting-memory</code> in Claude Code.
 </div>
 {% else %}
@@ -9,18 +9,18 @@
        hx-get="/api/partial/meetings/detail/{{ m.id }}"
        hx-target="#meeting-detail-panel"
        hx-swap="innerHTML">
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">{{ (m.date or '—')[:10] }}</div>
-    <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.title or 'Meeting' }}</div>
-    <div style="font-family:var(--m-sans);font-size:12px;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ m.participants or '—' }}</div>
-    <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{% if m.duration_minutes %}{{ m.duration_minutes }}m{% else %}—{% endif %}</div>
+    <div class="u-label">{{ (m.date or '—')[:10] }}</div>
+    <div class="u-truncate" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">{{ m.title or 'Meeting' }}</div>
+    <div class="u-truncate" style="font-family:var(--m-sans);font-size:var(--t-meta);color:var(--m-muted);">{{ m.participants or '—' }}</div>
+    <div class="u-label">{% if m.duration_minutes %}{{ m.duration_minutes }}m{% else %}—{% endif %}</div>
     <div>
       {% set s = (m.status or 'filed').lower() %}
       {% if s == 'filed' %}
-      <span style="display:inline-flex;padding:2px 7px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">FILED</span>
+      <span class="u-label" style="display:inline-flex;padding:2px 7px;background:var(--m-surface-2);border-radius:var(--m-radius-sm);">FILED</span>
       {% elif s == 'processed' %}
-      <span style="display:inline-flex;padding:2px 7px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;background:var(--m-ok-bg, rgba(74,164,102,0.1));color:var(--m-ok);border-radius:2px;">PROCESSED</span>
+      <span style="display:inline-flex;padding:2px 7px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;background:var(--m-ok-bg, rgba(74,164,102,0.1));color:var(--m-ok);border-radius:var(--m-radius-sm);">PROCESSED</span>
       {% else %}
-      <span style="display:inline-flex;padding:2px 7px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">{{ s.upper() }}</span>
+      <span class="u-label" style="display:inline-flex;padding:2px 7px;background:var(--m-surface-2);border-radius:var(--m-radius-sm);">{{ s.upper() }}</span>
       {% endif %}
     </div>
     <div style="text-align:right;color:var(--m-muted);">

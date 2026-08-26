@@ -8,10 +8,10 @@
 
 {% if not items %}
   <div class="panel" style="padding:22px 24px;">
-    <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);margin-bottom:6px;">
+    <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">
       Nothing new in {{ window_label | lower }}.
     </div>
-    <div class="ed" style="font-size:13px;margin:0;">
+    <div class="ed" style="font-size:var(--t-small);margin:0;">
       {% if q %}
         No match for “{{ q }}” in this tab. Try a wider window, or clear the search.
       {% elif show == 'unread' %}
@@ -24,12 +24,12 @@
   </div>
 {% else %}
 
-  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;gap:12px;flex-wrap:wrap;">
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--m-muted);">
+  <div class="u-mb-3" style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--m-space-3);flex-wrap:wrap;">
+    <div class="u-label u-label--wide">
       {{ total }} ITEM{{ 'S' if total != 1 else '' }} · {{ window_label }}
       {% if active_kind %} · {{ active_kind | upper }}{% endif %}
     </div>
-    <div style="font-family:var(--m-display);font-style:italic;font-size:12.5px;color:var(--m-muted);max-width:52ch;text-align:right;">
+    <div class="u-ed" style="font-size:var(--t-meta);max-width:52ch;text-align:right;">
       {{ spec.blurb }}
     </div>
   </div>
@@ -41,13 +41,13 @@
   </div>
 
   {% if total_pages > 1 %}
-  <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;">
+  <div class="u-row" style="justify-content:center;gap:var(--m-space-3);margin-top:var(--m-space-4);">
     {% if page > 1 %}
     <button type="button" class="news-period-btn"
             hx-get="/api/partial/library/new-literature/list?tab={{ active }}&window={{ window }}&kind={{ active_kind }}&show={{ show }}&q={{ q | urlencode }}&page={{ page - 1 }}"
             hx-target="#nl-list" hx-swap="innerHTML">← Previous</button>
     {% endif %}
-    <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{{ page }} / {{ total_pages }}</span>
+    <span class="u-label">{{ page }} / {{ total_pages }}</span>
     {% if page < total_pages %}
     <button type="button" class="news-period-btn"
             hx-get="/api/partial/library/new-literature/list?tab={{ active }}&window={{ window }}&kind={{ active_kind }}&show={{ show }}&q={{ q | urlencode }}&page={{ page + 1 }}"

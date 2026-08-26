@@ -50,7 +50,7 @@
 </style>
 
 <div id="lib-browser-section">
-  <h2 class="sec-label" style="margin-bottom:12px;">
+  <h2 class="sec-label u-mb-3">
     <span>Literature Library</span>
     <span class="tail">{{ total }} PAPERS</span>
   </h2>
@@ -58,11 +58,10 @@
   <div class="panel" style="overflow:hidden;">
 
     <!-- ── Row 1: Search + Sort ── -->
-    <div style="padding:14px 20px 10px;border-bottom:1px solid var(--m-rule-soft);
-                display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+    <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-3);display:flex;gap:var(--m-space-2);align-items:flex-end;flex-wrap:wrap;">
 
       <!-- Search bar -->
-      <div style="flex:1;min-width:220px;">
+      <div class="u-grow" style="min-width:220px;">
         <div class="lib-field-label">Search</div>
         <input
           id="lib-q"
@@ -108,9 +107,7 @@
         <div class="lib-field-label">From</div>
         <input id="lib-year-from" name="year_from" type="number" min="1980" max="2030"
                placeholder="2000"
-               style="width:100%;font-family:var(--m-mono);font-size:11px;padding:8px 8px;
-                      background:var(--m-surface-2);border:1px solid var(--m-rule);
-                      border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
+               style="width:100%;font-family:var(--m-mono);font-size:var(--t-micro);padding:var(--m-space-2) var(--m-space-2);background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
                onchange="_refreshLibTable()">
       </div>
 
@@ -119,18 +116,14 @@
         <div class="lib-field-label">To</div>
         <input id="lib-year-to" name="year_to" type="number" min="1980" max="2030"
                placeholder="2026"
-               style="width:100%;font-family:var(--m-mono);font-size:11px;padding:8px 8px;
-                      background:var(--m-surface-2);border:1px solid var(--m-rule);
-                      border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
+               style="width:100%;font-family:var(--m-mono);font-size:var(--t-micro);padding:var(--m-space-2) var(--m-space-2);background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
                onchange="_refreshLibTable()">
       </div>
 
       {% if active_filter_count %}
       <div style="align-self:flex-end;">
-        <button onclick="clearLibFilters()"
-                style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;
-                       padding:8px 12px;background:transparent;border:1px solid var(--m-rule);
-                       border-radius:2px;color:var(--m-accent);cursor:pointer;white-space:nowrap;">
+        <button class="u-label u-label--accent" onclick="clearLibFilters()"
+                style="letter-spacing:0.12em;padding:var(--m-space-2) var(--m-space-3);background:transparent;border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);cursor:pointer;white-space:nowrap;">
           CLEAR {{ active_filter_count }} FILTER{% if active_filter_count != 1 %}S{% endif %}
         </button>
       </div>
@@ -139,14 +132,14 @@
 
     <!-- ── Row 2: Item type chips ── -->
     {% if item_types %}
-    <div style="padding:8px 20px;border-bottom:1px solid var(--m-rule-soft);display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
-      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-right:6px;">TYPE</span>
+    <div class="u-row u-row--wrap u-rule" style="padding:var(--m-space-2) var(--m-space-5);gap:5px;">
+      <span class="u-label" style="margin-right:6px;">TYPE</span>
       <button class="lib-chip{% if not active_type %} active{% endif %}"
               data-type="" onclick="setLibType('')">All</button>
       {% for itype, count in item_types %}
       <button class="lib-chip{% if active_type == itype %} active{% endif %}"
               data-type="{{ itype | e }}" onclick="setLibType(this.dataset.type)"
-              style="display:inline-flex;align-items:center;gap:4px;">
+              style="display:inline-flex;align-items:center;gap:var(--m-space-1);">
         {% if itype == 'journalArticle' %}
         <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h5"/></svg>
         Articles
@@ -175,7 +168,7 @@
     {% endif %}
 
     <!-- Hidden fields carrying filter state -->
-    <div id="lib-hidden-fields" style="display:none;">
+    <div class="u-hide" id="lib-hidden-fields">
       <input type="hidden" id="lib-type-hidden" name="item_type" value="{{ active_type }}">
       <input type="hidden" id="lib-sort-hidden" name="sort"      value="{{ active_sort }}">
     </div>

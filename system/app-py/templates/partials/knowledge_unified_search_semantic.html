@@ -1,48 +1,47 @@
 {# partials/knowledge_unified_search_semantic.html — Grouped semantic results #}
 {% if not q %}
-<div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">
+<div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-3) 0;">
   Type in the search box above &mdash; I'll search by meaning, not just exact words.
 </div>
 {% elif total == 0 %}
-<div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;line-height:1.5;">
+<div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-3) 0;line-height:1.5;">
   I couldn't find anything semantically close to <strong>&ldquo;{{ q }}&rdquo;</strong>.
   Try a broader query, or check the keyword results above.
 </div>
 {% else %}
-<div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);padding:6px 0 14px;">
+<div class="u-label" style="letter-spacing:0.16em;padding:var(--m-space-2) 0 var(--m-space-4);">
   {{ total }} SEMANTIC HIT{% if total != 1 %}S{% endif %} FOR &ldquo;{{ q }}&rdquo;
   {% if not used_semantic %}&middot; KEYWORD FALLBACK (embeddings unavailable){% endif %}
 </div>
 
 {% for group_name, items in groups %}
-<div style="margin-bottom:18px;">
-  <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;color:var(--m-accent);
-              border-bottom:1px solid var(--m-rule-soft);padding-bottom:4px;margin-bottom:8px;">
+<div class="u-mb-4">
+  <div class="u-label u-label--accent u-mb-2 u-rule" style="letter-spacing:0.18em;padding-bottom:4px;">
     {{ group_name | upper }} &middot; {{ items | length }}
   </div>
   {% for h in items %}
-  <div style="padding:10px 0;border-bottom:1px solid var(--m-rule-soft);">
-    <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.35;margin-bottom:4px;">
+  <div class="u-rule" style="padding:var(--m-space-3) 0;">
+    <div class="u-mb-1" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.35;">
       {{ h.title }}
     </div>
     {% if h.snippet_html %}
-    <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);line-height:1.55;margin-bottom:6px;">
+    <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);line-height:1.55;">
       {{ h.snippet_html | safe }}
     </div>
     {% endif %}
 
     {% if h.score_pct is not none %}
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-      <div style="flex:1;height:4px;background:var(--m-surface-3);border-radius:2px;overflow:hidden;max-width:240px;">
+    <div class="u-row u-mb-1" style="gap:var(--m-space-3);">
+      <div class="u-grow" style="height:4px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);overflow:hidden;max-width:240px;">
         <span style="display:block;height:100%;width:{{ h.score_pct }}%;background:var(--m-accent);"></span>
       </div>
-      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.10em;color:var(--m-muted);">
+      <span class="u-label" style="letter-spacing:0.10em;">
         {{ h.score_pct }}% MATCH
       </span>
     </div>
     {% endif %}
 
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.10em;color:var(--m-muted);">
+    <div class="u-label" style="letter-spacing:0.10em;">
       from {{ h.kind | lower }}{% if h.extra %} &middot; {{ h.extra }}{% endif %}
     </div>
   </div>
