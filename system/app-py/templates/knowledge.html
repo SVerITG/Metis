@@ -52,8 +52,7 @@
   </div>
 
   <!-- ===== Tab strip ===== -->
-  <div class="news-tabs" role="tablist" aria-label="Library sections"
-       style="margin-bottom:22px;">
+  <div class="news-tabs u-mb-5" role="tablist" aria-label="Library sections">
       <button class="news-tab" role="tab" type="button" data-libtab="new"
               aria-selected="true"
               title="What has appeared since you last looked"
@@ -83,7 +82,7 @@
   <!-- ── panel: new ──────────────────────────────────────────────────── -->
   <div class="lib-panel" id="libpanel-new" role="tabpanel"
        >
-    <div style="margin-bottom:8px;"
+    <div class="u-mb-2"
          hx-get="/api/partial/library/new-literature"
          hx-trigger="load"
          hx-swap="outerHTML">
@@ -104,13 +103,13 @@
   <div class="lib-panel" id="libpanel-catalogue" role="tabpanel"
        hidden>
   <!-- ===== Unified Search (catalogue — what you already hold) ===== -->
-  <div style="margin-bottom:28px;">
+  <div class="u-mb-6">
     {{ sec_label("Search", tail="PAPERS · DOMAIN CORPUS · CARDS · MEMORY", style="margin-bottom:12px;") }}
-    <div class="panel" style="padding:16px 20px;">
+    <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);">
       <input type="search"
              id="unified-search-input"
              placeholder="Search across all of your library and memory…"
-             style="width:100%;font-family:var(--m-ui);font-size:14px;padding:10px 14px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
+             style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
              hx-get="/api/partial/knowledge/unified-search"
              hx-trigger="keyup changed delay:400ms"
              hx-target="#unified-search-results"
@@ -119,10 +118,10 @@
              autocomplete="off"
              autofocus
              onkeyup="if(window.htmx){var sem=document.getElementById('unified-search-semantic-trigger');if(sem)htmx.trigger(sem,'refresh');}">
-      <div id="unified-search-results" style="margin-top:8px;min-height:40px;">
-        <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px 0 6px;">Find papers, notes, and what you've read — all at once.</div>
+      <div id="unified-search-results" style="margin-top:var(--m-space-2);min-height:40px;">
+        <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2) 0 var(--m-space-2);">Find papers, notes, and what you've read — all at once.</div>
         {# Ghost-button quick queries — gives the empty search a place to start #}
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+        <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-2);margin-top:var(--m-space-2);">
           {% set quick_queries = [
             ('Research domain', 'Research domain'),
             ('Recent papers', 'recent'),
@@ -132,9 +131,9 @@
             ('DRC', 'DRC')
           ] %}
           {% for label, q in quick_queries %}
-          <button type="button"
+          <button class="u-label" type="button"
                   onclick="(function(){var el=document.getElementById('unified-search-input');if(!el)return;el.value='{{ q }}';el.dispatchEvent(new Event('keyup'));el.focus();})()"
-                  style="background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:14px;padding:4px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);cursor:pointer;transition:all 120ms;"
+                  style="background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:14px;padding:var(--m-space-1) var(--m-space-3);letter-spacing:0.06em;cursor:pointer;transition:all 120ms;"
                   onmouseover="this.style.color='var(--m-ink)';this.style.borderColor='var(--m-accent)';this.style.background='var(--m-surface)';"
                   onmouseout="this.style.color='var(--m-muted)';this.style.borderColor='var(--m-rule-soft)';this.style.background='var(--m-surface-2)';">
             {{ label }}
@@ -144,7 +143,7 @@
       </div>
 
       <!-- Semantic / deep-search companion -->
-      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--m-rule-soft);">
+      <div class="u-rule-t" style="margin-top:var(--m-space-4);padding-top:14px;">
         {{ sec_label("Semantic matches", tail="MEANING · NOT JUST KEYWORDS", style="margin-bottom:8px;") }}
         <div id="unified-search-semantic-trigger"
              hx-get="/api/partial/knowledge/unified-search-semantic"
@@ -152,20 +151,20 @@
              hx-include="[id='unified-search-input']"
              hx-swap="innerHTML"
              hx-target="this">
-          <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px 0;">Type above — semantic matches will surface alongside the keyword results.</div>
+          <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2) 0;">Type above — semantic matches will surface alongside the keyword results.</div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ===== Zotero Library browser ===== -->
-  <div style="margin-top:32px;">
+  <div style="margin-top:var(--m-space-6);">
     <!-- Sync status bar -->
     <div id="lib-sync-bar"
          hx-get="/api/partial/knowledge/sync-status"
          hx-trigger="loadtab"
          hx-swap="outerHTML">
-      <div class="skeleton" style="height:36px;border-radius:var(--m-radius);margin-bottom:12px;"></div>
+      <div class="skeleton u-mb-3" style="height:36px;border-radius:var(--m-radius);"></div>
     </div>
 
     <!-- Recently added strip -->
@@ -196,7 +195,7 @@
          hx-trigger="loadtab"
          hx-swap="outerHTML">
       <div>
-        <h2 class="sec-label" style="margin-bottom:8px;">Slipcases</h2>
+        <h2 class="sec-label u-mb-2">Slipcases</h2>
         <div class="panel list-scroll skeleton" style="min-height:180px;"></div>
       </div>
     </div>
@@ -207,7 +206,7 @@
          hx-trigger="loadtab"
          hx-swap="outerHTML">
       <div>
-        <h2 class="sec-label" style="margin-bottom:8px;">Index cards</h2>
+        <h2 class="sec-label u-mb-2">Index cards</h2>
         <div class="panel skeleton skeleton-box" style="height:320px;"></div>
       </div>
     </div>
@@ -224,7 +223,7 @@
        hx-swap="outerHTML"></div>
 
   <!-- ===== Knowledge backgrounds (P4) ===== -->
-  <div style="margin-top:32px;"
+  <div style="margin-top:var(--m-space-6);"
        hx-get="/api/partial/knowledge/layers"
        hx-trigger="loadtab"
        hx-swap="outerHTML">
@@ -232,7 +231,7 @@
   </div>
 
   <!-- ===== Knowledge Corpus ===== -->
-  <div style="margin-top:32px;">
+  <div style="margin-top:var(--m-space-6);">
     <div hx-get="/api/partial/knowledge/hat-corpus"
          hx-trigger="loadtab"
          hx-swap="outerHTML">
@@ -244,28 +243,28 @@
   </div>
 
   <!-- ===== PDF Fulltext Search ===== -->
-  <div style="margin-top:32px;">
+  <div style="margin-top:var(--m-space-6);">
     {{ sec_label("PDF Fulltext Search", tail="KEYWORD · INDEXED DOCUMENTS", style="margin-bottom:12px;") }}
     <!-- Index status + build control (so the search box is never a dead end) -->
-    <div class="panel" style="padding:14px 20px;margin-bottom:12px;"
+    <div class="panel u-mb-3" style="padding:var(--m-space-4) var(--m-space-5);"
          hx-get="/api/partial/knowledge/pdf-stats"
          hx-trigger="loadtab"
          hx-swap="innerHTML">
-      <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">Checking your PDF index…</div>
+      <div class="u-ed" style="font-size:var(--t-small);">Checking your PDF index…</div>
     </div>
-    <div class="panel" style="padding:16px 20px;">
+    <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);">
       <input type="search"
              id="pdf-search-input"
              placeholder="Search across all indexed PDFs…"
-             style="width:100%;font-family:var(--m-ui);font-size:14px;padding:10px 14px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
+             style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-3) var(--m-space-4);background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;"
              hx-get="/api/partial/knowledge/pdf-search"
              hx-trigger="keyup changed delay:400ms"
              hx-target="#pdf-search-results"
              hx-include="[id='pdf-search-input']"
              name="q"
              autocomplete="off">
-      <div id="pdf-search-results" style="margin-top:8px;min-height:40px;">
-        <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">Type to search indexed PDF content by keyword.</div>
+      <div id="pdf-search-results" style="margin-top:var(--m-space-2);min-height:40px;">
+        <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-3) 0;">Type to search indexed PDF content by keyword.</div>
       </div>
     </div>
   </div>
@@ -275,12 +274,12 @@
   <div class="lib-panel" id="libpanel-landscape" role="tabpanel"
        hidden>
   <!-- ===== Research Landscape: Topic Coverage Map ===== -->
-  <div style="margin-top:32px;">
+  <div style="margin-top:var(--m-space-6);">
     {{ sec_label("Research Landscape", tail="TOPIC COVERAGE · GOOD · PARTIAL · GAP", style="margin-bottom:12px;") }}
     <div hx-get="/api/partial/knowledge/topic-coverage"
          hx-trigger="loadtab"
          hx-swap="outerHTML">
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--m-space-3);">
         {% for _ in range(6) %}
         <div class="panel skeleton skeleton-box" style="height:96px;"></div>
         {% endfor %}
@@ -289,17 +288,17 @@
   </div>
 
   <!-- ===== Coverage Gap Detector — OpenAlex (collapsed) ===== -->
-  <div style="margin-top:28px;">
+  <div style="margin-top:var(--m-space-6);">
     <details>
-      <summary style="list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:0;user-select:none;">
+      <summary class="u-row" style="list-style:none;cursor:pointer;margin-bottom:0;user-select:none;">
         {{ sec_label("Coverage Gap Detector", tail="ZOTERO VS. OPENALEX · CLICK TO EXPAND", style="margin-bottom:0;pointer-events:none;") }}
-        <svg id="gap-chevron" viewBox="0 0 16 16" width="10" height="10" fill="none"
+        <svg class="u-fixed" id="gap-chevron" viewBox="0 0 16 16" width="10" height="10" fill="none"
              stroke="var(--m-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
-             style="margin-left:auto;flex-shrink:0;transition:transform 200ms;">
+             style="margin-left:auto;transition:transform 200ms;">
           <polyline points="4 6 8 10 12 6"/>
         </svg>
       </summary>
-      <div style="margin-top:12px;"
+      <div style="margin-top:var(--m-space-3);"
            hx-get="/api/partial/knowledge/coverage-gap"
            hx-trigger="intersect once"
            hx-swap="outerHTML">

@@ -11,7 +11,7 @@
    tasks — the LLM that runs most agents can't self-report its own usage, so the
    token totals below are near-zero by design. Say so rather than mislead. #}
 {% if (tokens_window or 0) == 0 %}
-<div class="metis-note" style="margin-bottom:12px;">
+<div class="metis-note u-mb-3">
   Token usage isn't being recorded for most runs yet — Claude can't report its own
   token counts back to Metis, so only a few internal automated tasks show usage here.
   The counts below reflect that. <strong style="color:var(--m-ink);">Run counts are accurate.</strong>
@@ -43,18 +43,18 @@
 {% set max_runs = namespace(val=1) %}
 {% for d in by_day %}{% if d.runs > max_runs.val %}{% set max_runs.val = d.runs %}{% endif %}{% endfor %}
 
-<div style="padding:14px 22px 6px;border-bottom:1px solid var(--m-rule-soft);">
-  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px;">
-    <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">Daily activity</div>
+<div class="u-rule" style="padding:14px 22px 6px;">
+  <div class="u-mb-3" style="display:flex;align-items:baseline;justify-content:space-between;">
+    <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">Daily activity</div>
     {% if all_tokens_zero %}
-      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">LAST 7 DAYS · RUNS</span>
+      <span class="u-label">LAST 7 DAYS · RUNS</span>
     {% else %}
-      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">LAST 7 DAYS · TOKENS</span>
+      <span class="u-label">LAST 7 DAYS · TOKENS</span>
     {% endif %}
   </div>
   {% if not any_runs and all_tokens_zero %}
-    <div style="font-family:var(--m-display);font-style:italic;font-size:12px;color:var(--m-muted);padding:4px 0 10px;">
-      No activity yet. Start with <code style="font-family:var(--m-mono);font-size:11px;">/metis</code> in Claude Code — activity will appear here.
+    <div class="u-ed" style="font-size:var(--t-meta);padding:var(--m-space-1) 0 var(--m-space-3);">
+      No activity yet. Start with <code style="font-family:var(--m-mono);font-size:var(--t-micro);">/metis</code> in Claude Code — activity will appear here.
     </div>
   {% else %}
     <div class="token-day-strip">
@@ -76,10 +76,10 @@
   {% endif %}
 </div>
 
-<div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
-  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
-    <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">By specialist</div>
-    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">LAST {{ days }}D · TOP 12</span>
+<div class="u-rule" style="padding:18px 22px;">
+  <div class="u-mb-4" style="display:flex;align-items:baseline;justify-content:space-between;">
+    <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">By specialist</div>
+    <span class="u-label">LAST {{ days }}D · TOP 12</span>
   </div>
   {% if by_agent %}
     {% set max_runs_a = namespace(val=1) %}{% for a in by_agent %}{% if a.runs > max_runs_a.val %}{% set max_runs_a.val = a.runs %}{% endif %}{% endfor %}
@@ -95,14 +95,14 @@
     </div>
     {% endfor %}
   {% else %}
-    <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:6px 0;">No activity in the last {{ days }} days.</div>
+    <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2) 0;">No activity in the last {{ days }} days.</div>
   {% endif %}
 </div>
 
-<div style="padding:18px 22px;border-bottom:1px solid var(--m-rule-soft);">
-  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
-    <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">By model</div>
-    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">DEFAULT · {{ active_model|upper }}</span>
+<div class="u-rule" style="padding:18px 22px;">
+  <div class="u-mb-4" style="display:flex;align-items:baseline;justify-content:space-between;">
+    <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">By model</div>
+    <span class="u-label">DEFAULT · {{ active_model|upper }}</span>
   </div>
   {% if by_model and by_model|length > 0 and (by_model|length > 1 or by_model[0].model != 'unspecified') %}
     {% for m in by_model %}
@@ -115,8 +115,8 @@
     </div>
     {% endfor %}
   {% else %}
-    <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:6px 0;">
-      No per-model data yet. Newer agent runs will start recording the model used; older runs show as <code style="font-family:var(--m-mono);font-size:11px;">unspecified</code>.
+    <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2) 0;">
+      No per-model data yet. Newer agent runs will start recording the model used; older runs show as <code style="font-family:var(--m-mono);font-size:var(--t-micro);">unspecified</code>.
     </div>
   {% endif %}
 </div>

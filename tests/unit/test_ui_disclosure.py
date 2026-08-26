@@ -154,13 +154,26 @@ def test_the_search_input_is_labelled():
     assert ".sr-only" in css, "the visually-hidden label needs the class to exist"
 
 
+def _has_class(html: str, tag: str, token: str) -> bool:
+    """Does any `tag` carry `token` among its classes?
+
+    Matching the literal attribute string broke the moment a second class was
+    added — which is exactly what a class attribute is for. A class is a SET;
+    test it as one.
+    """
+    for m in re.finditer(rf"<{tag}\b[^>]*class=\"([^\"]*)\"", html):
+        if token in m.group(1).split():
+            return True
+    return False
+
+
 def test_panels_that_had_no_heading_now_have_one():
     """Both carried a visual label with no place in the document outline."""
     parts = ROOT / "system" / "app-py" / "templates" / "partials"
     resume = (parts / "today_resume_card.html").read_text(encoding="utf-8")
     bridges = (parts / "today_brief_bridges.html").read_text(encoding="utf-8")
-    assert 'class="sec-label"' in resume and "Where you left off" in resume
-    assert 'class="sec-label"' in bridges and "Connections to your research" in bridges
+    assert _has_class(resume, "h2", "sec-label") and "Where you left off" in resume
+    assert _has_class(bridges, "h[23]", "sec-label") and "Connections to your research" in bridges
 
 
 def test_search_pluralises_correctly():

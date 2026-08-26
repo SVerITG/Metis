@@ -45,14 +45,13 @@
    What's happening in the world, newest first — so the page isn't only your
    niche. A compact horizontal band, deliberately near the top. #}
 {% if world %}
-<h2 class="sec-label" style="margin-bottom:10px;">
+<h2 class="sec-label u-mb-3">
   World <span class="sec-label-tail">WHAT'S HAPPENING — NEWEST FIRST</span>
 </h2>
-<div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;margin-bottom:30px;">
+<div class="u-mb-6" style="display:flex;gap:var(--m-space-3);overflow-x:auto;padding-bottom:6px;">
   {% for c in world %}
-  <a href="{{ c.url }}" target="_blank" rel="noopener noreferrer"
-     style="flex:0 0 200px;border:1px solid var(--m-rule);border-radius:8px;overflow:hidden;
-            background:var(--m-surface);text-decoration:none;color:inherit;display:flex;flex-direction:column;">
+  <a class="u-col" href="{{ c.url }}" target="_blank" rel="noopener noreferrer"
+     style="flex:0 0 200px;border:1px solid var(--m-rule);border-radius:8px;overflow:hidden;background:var(--m-surface);text-decoration:none;color:inherit;">
     {% if c.has_image %}
       <div style="height:96px;background-size:cover;background-position:center;background-image:url('{{ c.image }}');"></div>
     {% else %}
@@ -60,9 +59,8 @@
         <span class="nf-wordmark">{{ c.source }}</span>
       </div>
     {% endif %}
-    <div style="padding:9px 11px 11px;display:flex;flex-direction:column;gap:5px;flex:1;">
-      <div style="font-size:12.5px;line-height:1.3;color:var(--m-ink);
-                  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">{{ c.title }}</div>
+    <div class="u-col u-grow" style="padding:9px 11px 11px;gap:5px;">
+      <div style="font-size:var(--t-meta);line-height:1.3;color:var(--m-ink);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">{{ c.title }}</div>
       <div class="nf-meta" style="margin-top:auto;"><span>{{ c.source }}</span><span>·</span><span>{{ c.when }}</span></div>
     </div>
   </a>
@@ -72,11 +70,11 @@
 
 {# ── CLOSEST TO YOUR WORK ─────────────────────────────────────────────────── #}
 {% if closest %}
-<h2 class="sec-label" style="margin-bottom:10px;">
+<h2 class="sec-label u-mb-3">
   Closest to your work
   <span class="sec-label-tail">RANKED BY PROXIMITY TO YOUR LIBRARY — NOT BY DATE</span>
 </h2>
-<div class="nf-grid nf-grid-4" style="margin-bottom:30px;">
+<div class="nf-grid nf-grid-4 u-mb-6">
   {% for c in closest %}
   <a class="nf-card" href="{{ c.url }}" target="_blank" rel="noopener noreferrer">
     {% if c.has_image %}
@@ -101,10 +99,10 @@
 
 {# ── TOP STORIES ──────────────────────────────────────────────────────────── #}
 {% if top %}
-<h2 class="sec-label" style="margin-bottom:10px;">
+<h2 class="sec-label u-mb-3">
   Top stories <span class="sec-label-tail">{{ total }} ITEMS · LAST {{ days }} DAYS</span>
 </h2>
-<div class="nf-grid nf-grid-3" style="margin-bottom:30px;">
+<div class="nf-grid nf-grid-3 u-mb-6">
   {% for c in top %}
   <a class="nf-card" href="{{ c.url }}" target="_blank" rel="noopener noreferrer">
     {% if c.has_image %}
@@ -118,8 +116,7 @@
     <div class="nf-card-body">
       {% if c.has_image %}<div class="nf-card-title">{{ c.title }}</div>{% endif %}
       {% if c.summary %}
-        <div style="font-size:12.5px;line-height:1.45;color:var(--m-muted);
-                    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+        <div style="font-size:var(--t-meta);line-height:1.45;color:var(--m-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
           {{ c.summary[:150] }}
         </div>
       {% endif %}
@@ -135,7 +132,7 @@
 
 {# ── THE WIRE — everything else, dense and scannable ──────────────────────── #}
 {% if wire %}
-<h2 class="sec-label" style="margin-bottom:10px;">
+<h2 class="sec-label u-mb-3">
   The wire <span class="sec-label-tail">EVERYTHING ELSE · {{ wire|length }} ITEMS</span>
 </h2>
 <div class="nf-wire">
@@ -150,7 +147,7 @@
 {% endif %}
 
 {% if not lead and not wire %}
-  <div class="panel" style="padding:28px;text-align:center;color:var(--m-muted);">
+  <div class="panel" style="padding:var(--m-space-6);text-align:center;color:var(--m-muted);">
     No news in the last {{ days }} days. Run a scan from the Today surface.
   </div>
 {% endif %}

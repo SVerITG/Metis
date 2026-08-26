@@ -1,12 +1,12 @@
 {# today_greeting.html — Archive (replaces Bootstrap card+chips) #}
-<div class="panel panel-pad" style="padding:32px 40px;margin-bottom:28px;">
+<div class="panel panel-pad u-mb-6" style="padding:32px 40px;">
 
-  <div class="kicker" style="margin-bottom:14px;">
+  <div class="kicker u-mb-4">
     <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--m-accent);margin-right:8px;vertical-align:middle;"></span>
     MORNING BRIEF · {{ today_label or '' }}
   </div>
 
-  <p style="font-family:var(--m-display);font-size:22px;line-height:1.45;color:var(--m-ink);margin:0 0 18px;font-style:italic;font-weight:400;letter-spacing:-0.005em;text-wrap:pretty;">
+  <p style="font-family:var(--m-display);font-size:var(--t-h3);line-height:1.45;color:var(--m-ink);margin:0 0 var(--m-space-4);font-style:italic;font-weight:400;letter-spacing:-0.005em;text-wrap:pretty;">
     {{ greeting }}, {{ user_name }}. Three threads waiting for you.
     {% if open_tasks > 0 %}
       <span style="font-style:normal;color:var(--m-text);">{{ open_tasks }} open task{% if open_tasks != 1 %}s{% endif %}{% if overdue > 0 %}, {{ overdue }} overdue{% endif %}.</span>
@@ -15,7 +15,7 @@
     {% endif %}
   </p>
 
-  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+  <div class="u-row u-row--wrap">
 
     <span class="chip {% if overdue > 0 %}chip--alert{% elif open_tasks > 0 %}chip--ochre{% else %}chip--accent{% endif %}"
           style="font-size:11px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;">
@@ -24,21 +24,21 @@
 
     {% if overdue > 0 %}
     <span class="chip chip--alert"
-          style="font-size:11px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;background:var(--m-alert-wash);color:var(--m-alert);">
+          style="font-size:var(--t-micro);letter-spacing:0.14em;padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);text-transform:uppercase;background:var(--m-alert-wash);color:var(--m-alert);">
       {{ overdue }} OVERDUE
     </span>
     {% endif %}
 
     {% for run in morning_runs %}
     <span class="chip"
-          style="font-size:11px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;background:var(--m-ok-wash);color:var(--m-ok);">
+          style="font-size:var(--t-micro);letter-spacing:0.14em;padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);text-transform:uppercase;background:var(--m-ok-wash);color:var(--m-ok);">
       {{ run.agent_slug }} · DONE
     </span>
     {% endfor %}
 
     {% if not morning_runs %}
-    <span class="chip"
-          style="font-size:11px;letter-spacing:0.14em;padding:4px 10px;font-family:var(--m-mono);text-transform:uppercase;background:var(--m-surface-2);color:var(--m-muted);">
+    <span class="chip u-label u-label--wide"
+          style="padding:var(--m-space-1) var(--m-space-3);background:var(--m-surface-2);">
       AGENTS · IDLE
     </span>
     {% endif %}

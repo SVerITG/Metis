@@ -24,15 +24,15 @@
 {% endmacro %}
 
 {% if not reading.live and not reading.muted and not reading.decided %}
-<div class="panel" style="padding:16px 18px;">
-  <p style="margin:0;font-size:13px;color:var(--m-muted);">
+<div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
+  <p style="margin:0;font-size:var(--t-small);color:var(--m-muted);">
     No literature matches this lens yet.
   </p>
 </div>
 {% else %}
 
 {% if reading.live %}
-<div class="panel" style="padding:4px 0;">
+<div class="panel" style="padding:var(--m-space-1) 0;">
   {% for r in reading.live[:14] %}
   <div class="fv-row">
     <span class="fv-date">

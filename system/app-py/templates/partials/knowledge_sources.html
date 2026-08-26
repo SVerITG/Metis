@@ -18,19 +18,19 @@
         </div>
         <!-- Title + author -->
         <div>
-          <div style="font-family:var(--m-display);font-size:16px;color:var(--m-ink);">{{ source.title }}</div>
+          <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">{{ source.title }}</div>
           {% if source.by %}
-          <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);margin-top:2px;">{{ source.by }}</div>
+          <div class="u-ed" style="font-size:var(--t-small);margin-top:2px;">{{ source.by }}</div>
           {% endif %}
         </div>
         <!-- Date -->
-        <div class="tnum" style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">
+        <div class="tnum u-label">
           {{ source.when }}
         </div>
         <!-- Chip -->
         <div style="text-align:right;">
           {% if source.doi %}
-          <span style="display:inline-flex;align-items:center;padding:2px 9px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;background:var(--m-surface-2);color:var(--m-muted);border-radius:2px;">
+          <span class="u-label" style="display:inline-flex;align-items:center;padding:2px 9px;background:var(--m-surface-2);border-radius:var(--m-radius-sm);">
             DOI
           </span>
           {% endif %}

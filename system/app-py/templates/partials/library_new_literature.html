@@ -13,22 +13,22 @@
 <div id="new-literature">
 
   <!-- ── Header: what this is, and the catch-up control ─────────────────── -->
-  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:14px;">
+  <div class="u-mb-4" style="display:flex;align-items:flex-end;justify-content:space-between;gap:var(--m-space-5);flex-wrap:wrap;">
     <div>
       {{ sec_label("New Literature", tail="WHAT HAS APPEARED SINCE YOU LAST LOOKED", style="margin-bottom:6px;") }}
-      <div style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);max-width:66ch;">
+      <div class="u-ed" style="font-size:var(--t-body);max-width:66ch;">
         Every journal, preprint server and topic search Metis watches — reviewed here,
         then added to your library one at a time.
       </div>
     </div>
 
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <div class="u-row u-row--wrap" style="gap:var(--m-space-3);">
       {% if last_reviewed %}
-      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);">
+      <span class="u-label">
         CAUGHT UP {{ last_reviewed }}
       </span>
       {% else %}
-      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);"
+      <span class="u-label"
             title="No catch-up recorded yet, so the catch-up window shows everything.">
         NEVER CAUGHT UP
       </span>
@@ -36,7 +36,7 @@
       <button type="button" id="nl-catchup-btn"
               onclick="nlMarkCaughtUp(this)"
               title="Record that you have reviewed everything up to now. This is what the 'Since I caught up' window measures from — so it is deliberately an explicit action, never automatic."
-              style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);padding:6px 14px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--m-ink);cursor:pointer;">
+              style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-ink);cursor:pointer;">
         Mark caught up
       </button>
       {# The other half of acquisition. Anything behind ITM's OpenAthens login has
@@ -46,15 +46,15 @@
       <button type="button" id="nl-pickup-btn"
               onclick="nlPickup(this)"
               title="Scan your browser's downloads folder for papers you saved by hand, match them to the queue, and file them. Personal documents are skipped by filename and never opened."
-              style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);padding:6px 14px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--m-ink);cursor:pointer;">
+              style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-ink);cursor:pointer;">
         File my downloads
       </button>
-      <button type="button"
+      <button class="u-label u-label--accent" type="button"
               hx-post="/api/library/scan"
               hx-swap="none"
               hx-on::after-request="htmx.trigger('#nl-list','refresh')"
               title="Search every source now: journal feeds, Zotero, PubMed and OpenAlex."
-              style="background:var(--m-accent-wash);border:1px solid var(--m-accent);border-radius:var(--m-radius);padding:6px 14px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--m-accent);cursor:pointer;">
+              style="background:var(--m-accent-wash);border:1px solid var(--m-accent);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">
         Search all sources
       </button>
     </div>
@@ -75,9 +75,9 @@
   </div>
 
   <!-- ── Window + kind controls ────────────────────────────────────────── -->
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:14px 0 18px;">
+  <div class="u-row u-row--between" style="gap:var(--m-space-4);flex-wrap:wrap;margin:var(--m-space-4) 0 var(--m-space-4);">
 
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <div class="u-row u-row--wrap">
       <!-- Kind chips: articles and books are different things, reviewed differently -->
       {% for kkey, kval in kind_groups.items() %}
         <button type="button"
@@ -106,7 +106,7 @@
   </div>
 
   <!-- ── Search within what's new ──────────────────────────────────────── -->
-  <div style="margin-bottom:14px;">
+  <div class="u-mb-4">
     <input type="search" id="nl-search" name="q" value="{{ q }}"
            placeholder="Search within new literature — title, abstract, author, journal…"
            autocomplete="off"
@@ -114,7 +114,7 @@
            hx-trigger="keyup changed delay:350ms"
            hx-target="#nl-list" hx-swap="innerHTML"
            hx-include="this"
-           style="width:100%;font-family:var(--m-ui);font-size:14px;padding:9px 13px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
+           style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:9px 13px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
   </div>
 
   <!-- ── List body ─────────────────────────────────────────────────────── -->

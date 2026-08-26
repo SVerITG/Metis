@@ -5,9 +5,9 @@
 {% if keys %}
   {% for k in keys %}
   <div class="metis-setting-row" style="align-items:center;">
-    <div style="min-width:0;flex:1;">
+    <div class="u-grow">
       <div class="ms-title">{{ k.label }}</div>
-      <div class="ms-help" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.04em;">
+      <div class="ms-help" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.04em;">
         {% if k.present %}
           {{ k.masked }}
         {% else %}
@@ -15,15 +15,15 @@
         {% endif %}
       </div>
     </div>
-    <div class="ms-control" style="display:flex;gap:8px;flex-shrink:0;">
+    <div class="ms-control u-fixed" style="display:flex;gap:var(--m-space-2);">
       <button class="btn btn--ghost btn--caps"
-              style="font-size:11px;padding:4px 10px;"
+              style="font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-3);"
               onclick="openApiKeyReplace('{{ k.name }}', '{{ k.label }}')">
         {{ 'Replace' if k.present else 'Add' }}
       </button>
       {% if k.present %}
       <button class="btn btn--ghost btn--caps"
-              style="font-size:11px;padding:4px 10px;color:var(--m-muted);"
+              style="font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-3);color:var(--m-muted);"
               onclick="removeApiKey('{{ k.name }}')">
         Remove
       </button>
@@ -32,13 +32,13 @@
   </div>
   {% endfor %}
 {% else %}
-  <div style="padding:18px 22px;font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);">
+  <div class="u-ed" style="padding:18px 22px;font-size:var(--t-body);">
     No keys configured yet.
   </div>
 {% endif %}
 
-<div style="padding:10px 22px 14px;border-top:1px solid var(--m-rule-soft);margin-top:2px;">
-  <button class="btn btn--ghost btn--caps" style="font-size:11px;"
+<div class="u-rule-t" style="padding:10px 22px 14px;margin-top:2px;">
+  <button class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);"
           onclick="openApiKeyReplace('', 'New custom key')">
     + Add custom key
   </button>

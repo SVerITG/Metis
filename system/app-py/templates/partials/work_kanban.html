@@ -1,18 +1,18 @@
-<div class="grid" style="grid-template-columns:repeat(4,1fr);gap:14px;" id="kanban-board">
+<div class="grid" style="grid-template-columns:repeat(4,1fr);gap:var(--m-space-4);" id="kanban-board">
 
   <!-- Inbox -->
-  <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;">
-    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+  <div style="background:var(--m-surface-3);border-radius:var(--m-radius);padding:var(--m-space-3);">
+    <div class="u-label" style="display:flex;justify-content:space-between;padding:var(--m-space-1) var(--m-space-2) var(--m-space-3);letter-spacing:0.22em;text-transform:uppercase;">
       <span>Inbox</span><span>{{ inbox|length }}</span>
     </div>
-    <div style="display:flex;flex-direction:column;gap:8px;">
+    <div class="u-col">
       {% for t in inbox %}
       <div class="kanban-card" data-task-id="{{ t.id }}">
-        <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;margin-bottom:6px;">{{ t.title }}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">
+        <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.3;">{{ t.title }}</div>
+        <div class="u-label u-row u-row--between">
           <span>{{ (t.tag or 'TASK').upper()[:12] }}</span>
-          <select class="kanban-status-select" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
-                  title="Move to…" style="background:transparent;border:none;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);cursor:pointer;padding:0;">
+          <select class="kanban-status-select u-label" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
+                  title="Move to…" style="background:transparent;border:none;cursor:pointer;padding:0;">
             <option value="open" selected>Inbox</option>
             <option value="in_progress">In Progress</option>
             <option value="done">Done</option>
@@ -20,29 +20,29 @@
         </div>
       </div>
       {% else %}
-      <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px;">Inbox clear.</div>
+      <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2);">Inbox clear.</div>
       {% endfor %}
     </div>
   </div>
 
   <!-- This week -->
-  <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;">
-    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+  <div style="background:var(--m-surface-3);border-radius:var(--m-radius);padding:var(--m-space-3);">
+    <div class="u-label" style="display:flex;justify-content:space-between;padding:var(--m-space-1) var(--m-space-2) var(--m-space-3);letter-spacing:0.22em;text-transform:uppercase;">
       <span>This week</span><span>{{ this_week|length }}</span>
     </div>
-    <div style="display:flex;flex-direction:column;gap:8px;">
+    <div class="u-col">
       {% for t in this_week %}
       {% set is_overdue = t.due_date and t.due_date[:10] < today %}
       {% set is_high = (t.priority == 'high') %}
       <div class="kanban-card" data-task-id="{{ t.id }}"
            style="border-left:{% if is_overdue %}2px solid var(--m-alert){% elif is_high %}2px solid var(--m-accent){% else %}1px solid var(--m-rule){% endif %};">
-        <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;margin-bottom:6px;">{{ t.title }}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;">
+        <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.3;">{{ t.title }}</div>
+        <div class="u-row u-row--between" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;">
           <span style="color:{% if is_overdue %}var(--m-alert){% else %}var(--m-muted){% endif %};">
             {{ t.due_date[:10] if t.due_date else '—' }}{% if is_overdue %} ⚠{% endif %}
           </span>
-          <select class="kanban-status-select" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
-                  title="Move to…" style="background:transparent;border:none;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);cursor:pointer;padding:0;">
+          <select class="kanban-status-select u-label" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
+                  title="Move to…" style="background:transparent;border:none;cursor:pointer;padding:0;">
             <option value="open" selected>This week</option>
             <option value="in_progress">In Progress</option>
             <option value="done">Done</option>
@@ -50,24 +50,24 @@
         </div>
       </div>
       {% else %}
-      <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px;">Nothing due this week.</div>
+      <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2);">Nothing due this week.</div>
       {% endfor %}
     </div>
   </div>
 
   <!-- In progress -->
-  <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;">
-    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+  <div style="background:var(--m-surface-3);border-radius:var(--m-radius);padding:var(--m-space-3);">
+    <div class="u-label" style="display:flex;justify-content:space-between;padding:var(--m-space-1) var(--m-space-2) var(--m-space-3);letter-spacing:0.22em;text-transform:uppercase;">
       <span>In progress</span><span>{{ in_progress|length }}</span>
     </div>
-    <div style="display:flex;flex-direction:column;gap:8px;">
+    <div class="u-col">
       {% for t in in_progress %}
       <div class="kanban-card" data-task-id="{{ t.id }}" style="border-left:2px solid var(--m-accent);">
-        <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;margin-bottom:6px;">{{ t.title }}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">
+        <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.3;">{{ t.title }}</div>
+        <div class="u-label u-row u-row--between">
           <span>{{ (t.tag or 'TASK').upper()[:12] }}</span>
-          <select class="kanban-status-select" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
-                  title="Move to…" style="background:transparent;border:none;font-family:var(--m-mono);font-size:11px;color:var(--m-muted);cursor:pointer;padding:0;">
+          <select class="kanban-status-select u-label" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
+                  title="Move to…" style="background:transparent;border:none;cursor:pointer;padding:0;">
             <option value="open">Inbox</option>
             <option value="in_progress" selected>In Progress</option>
             <option value="done">Done</option>
@@ -75,24 +75,24 @@
         </div>
       </div>
       {% else %}
-      <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px;">Nothing in progress.</div>
+      <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2);">Nothing in progress.</div>
       {% endfor %}
     </div>
   </div>
 
   <!-- Closed this week -->
-  <div style="background:var(--m-surface-3);border-radius:3px;padding:12px;opacity:0.85;">
-    <div style="display:flex;justify-content:space-between;padding:4px 8px 12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.22em;text-transform:uppercase;color:var(--m-muted);">
+  <div style="background:var(--m-surface-3);border-radius:var(--m-radius);padding:var(--m-space-3);opacity:0.85;">
+    <div class="u-label" style="display:flex;justify-content:space-between;padding:var(--m-space-1) var(--m-space-2) var(--m-space-3);letter-spacing:0.22em;text-transform:uppercase;">
       <span>Closed · this week</span><span>{{ closed|length }}</span>
     </div>
-    <div style="display:flex;flex-direction:column;gap:8px;">
+    <div class="u-col">
       {% for t in closed %}
       <div class="kanban-card" style="opacity:0.7;">
-        <div style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);line-height:1.3;text-decoration:line-through;margin-bottom:4px;">{{ t.title }}</div>
-        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">{{ (t.tag or 'TASK').upper()[:12] }}</div>
+        <div class="u-mb-1" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.3;text-decoration:line-through;">{{ t.title }}</div>
+        <div class="u-label">{{ (t.tag or 'TASK').upper()[:12] }}</div>
       </div>
       {% else %}
-      <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:8px;">Nothing closed yet.</div>
+      <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2);">Nothing closed yet.</div>
       {% endfor %}
     </div>
   </div>

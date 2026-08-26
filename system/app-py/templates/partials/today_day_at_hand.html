@@ -3,15 +3,15 @@
    No timeline. Customizable: starred tasks lead, so starring picks your focus.
    Type uses the design scale only (var(--t-*)) — no arbitrary sizes.
    Context: items [{title, project, project_id, label, color}] (max 3) #}
-<div style="margin-bottom:32px;">
+<div class="u-mb-6">
   {{ sec_label("Today's focus", tail="STAR A TASK TO PIN IT HERE", style="margin-bottom:14px;") }}
   {% if items %}
   <div class="grid grid-3">
     {% for it in items %}
-    <div class="panel panel-pad m-lift" style="padding:22px 24px;display:flex;flex-direction:column;gap:10px;">
+    <div class="panel panel-pad m-lift u-col" style="padding:22px 24px;gap:var(--m-space-3);">
       <div class="label-caps" style="color:{{ it.color }};">{{ it.label }}</div>
       <div style="font-family:var(--m-display);font-size:var(--t-h3);font-weight:500;line-height:1.3;color:var(--m-ink);text-wrap:pretty;">{{ it.title }}</div>
-      <div style="margin-top:auto;display:flex;align-items:baseline;justify-content:space-between;gap:10px;">
+      <div style="margin-top:auto;display:flex;align-items:baseline;justify-content:space-between;gap:var(--m-space-3);">
         {% if it.project %}<span class="meta" style="font-family:var(--m-mono);letter-spacing:0.1em;text-transform:uppercase;">{{ it.project[:24] }}</span>{% else %}<span></span>{% endif %}
         {% if it.project_id %}<a href="/work?project={{ it.project_id }}" class="label-caps" style="color:var(--m-accent);text-decoration:none;">Begin →</a>{% endif %}
       </div>

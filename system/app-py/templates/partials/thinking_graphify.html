@@ -1,11 +1,11 @@
 <!-- ── Graphify Knowledge Analysis ── -->
 <div id="graphify-section">
-  <h2 class="sec-label" style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+  <h2 class="sec-label u-row u-row--wrap u-mb-3" style="gap:var(--m-space-3);">
     <span>Graphify Knowledge Analysis</span>
     <span class="tail">HUBS · BRIDGES · COMMUNITIES</span>
-    <span style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+    <span class="u-row" style="margin-left:auto;">
       {% if built_at %}
-      <span style="font-family:var(--m-display);font-style:italic;font-size:11px;color:var(--m-muted);text-transform:none;letter-spacing:0;">
+      <span class="u-ed" style="font-size:var(--t-micro);text-transform:none;letter-spacing:0;">
         built {{ built_at }}
       </span>
       {% endif %}
@@ -31,46 +31,46 @@
 
   {% if not graph_exists %}
   <!-- Empty state -->
-  <div class="panel panel-pad" style="padding:32px 28px;text-align:center;">
-    <div style="font-family:var(--m-display);font-size:18px;color:var(--m-ink);margin-bottom:8px;">
+  <div class="panel panel-pad" style="padding:var(--m-space-6) var(--m-space-6);text-align:center;">
+    <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">
       No knowledge graph yet
     </div>
-    <p style="font-family:var(--m-display);font-size:14px;color:var(--m-muted);margin:0 0 16px;">
+    <p style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-muted);margin:0 0 var(--m-space-4);">
       Click <em>Graphify my knowledge</em> to build a semantic graph of your ideas, papers, projects, and notes.
       It takes about 20 seconds and opens an interactive visualization in a new tab.
     </p>
   </div>
 
   {% elif error %}
-  <div class="panel panel-pad" style="padding:20px;color:var(--m-warn);font-family:var(--m-mono);font-size:11px;">
+  <div class="panel panel-pad" style="padding:var(--m-space-5);color:var(--m-warn);font-family:var(--m-mono);font-size:var(--t-micro);">
     ⚠ Could not load analytics: {{ error }}
   </div>
 
   {% else %}
   <!-- Analytics cards -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--m-space-4);">
 
     <!-- Knowledge hubs (god nodes) -->
-    <div class="panel panel-pad" style="padding:18px 20px;">
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">
+    <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+      <div class="u-label u-mb-3">
         KNOWLEDGE HUBS
-        <span style="float:right;font-family:var(--m-display);font-style:italic;font-size:11px;letter-spacing:0;text-transform:none;">
+        <span style="float:right;font-family:var(--m-display);font-style:italic;font-size:var(--t-micro);letter-spacing:0;text-transform:none;">
           {{ stats.knowledge_nodes }} nodes · {{ stats.knowledge_edges }} edges
         </span>
       </div>
       {% if god_nodes %}
-      <div style="display:flex;flex-direction:column;gap:6px;">
+      <div class="u-col" style="gap:var(--m-space-2);">
         {% for g in god_nodes %}
-        <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:3px;background:var(--m-bg);border:1px solid var(--m-rule-soft);">
+        <div class="u-row" style="padding:5px 8px;border-radius:var(--m-radius);background:var(--m-bg);border:1px solid var(--m-rule-soft);">
           <span style="width:7px;height:7px;border-radius:50%;background:{{ type_colors.get(g.type, 'var(--m-muted)') }};flex-shrink:0;"></span>
-          <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+          <span class="u-grow u-truncate" style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);"
                 title="{{ g.label }}">
             {{ g.label }}
           </span>
-          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);text-transform:uppercase;flex-shrink:0;">
+          <span class="u-label u-label--wide u-fixed">
             {{ g.type }}
           </span>
-          <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-accent);flex-shrink:0;"
+          <span class="u-label u-label--accent u-fixed"
                 title="{{ g.degree }} connections">
             {{ g.degree }}
           </span>
@@ -78,67 +78,67 @@
         {% endfor %}
       </div>
       {% else %}
-      <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);font-style:italic;margin:0;">
+      <p class="u-ed" style="font-size:var(--t-small);margin:0;">
         No knowledge hubs detected yet. Run a deep extract for richer connections.
       </p>
       {% endif %}
     </div>
 
     <!-- Right column: Communities + Bridges -->
-    <div style="display:flex;flex-direction:column;gap:14px;">
+    <div class="u-col" style="gap:var(--m-space-4);">
 
       <!-- Communities overview -->
-      <div class="panel panel-pad" style="padding:18px 20px;">
-        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">
+      <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+        <div class="u-label u-mb-3">
           KNOWLEDGE CLUSTERS
-          <span style="float:right;font-family:var(--m-display);font-style:italic;font-size:11px;letter-spacing:0;text-transform:none;">
+          <span style="float:right;font-family:var(--m-display);font-style:italic;font-size:var(--t-micro);letter-spacing:0;text-transform:none;">
             {{ stats.knowledge_communities }} communities
           </span>
         </div>
         {% if communities %}
-        <div style="display:flex;flex-direction:column;gap:5px;">
+        <div class="u-col" style="gap:5px;">
           {% for c in communities %}
-          <div style="display:flex;align-items:center;gap:8px;font-family:var(--m-display);font-size:12.5px;">
+          <div class="u-row" style="font-family:var(--m-display);font-size:var(--t-meta);">
             <span style="width:7px;height:7px;border-radius:50%;background:{{ type_colors.get(c.dominant_type, 'var(--m-muted)') }};flex-shrink:0;"></span>
-            <span style="color:var(--m-ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+            <span class="u-grow u-truncate" style="color:var(--m-ink);"
                   title="{{ c.sample_members | join(', ') }}">
               {% if c.sample_members %}{{ c.sample_members[0] }}{% if c.size > 1 %} + {{ c.size - 1 }} more{% endif %}{% else %}{{ c.name }}{% endif %}
             </span>
-            <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);text-transform:uppercase;">
+            <span class="u-label u-label--wide">
               {{ c.dominant_type }}
             </span>
-            <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted-soft);min-width:20px;text-align:right;">
+            <span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted-soft);min-width:20px;text-align:right;">
               {{ c.size }}
             </span>
           </div>
           {% endfor %}
         </div>
         {% else %}
-        <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);font-style:italic;margin:0;">
+        <p class="u-ed" style="font-size:var(--t-small);margin:0;">
           No clusters detected.
         </p>
         {% endif %}
       </div>
 
       <!-- Surprising connections (bridges) -->
-      <div class="panel panel-pad" style="padding:18px 20px;">
-        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:10px;">
+      <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+        <div class="u-label u-mb-3">
           SURPRISING BRIDGES
         </div>
         {% if surprising %}
-        <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="u-col" style="gap:var(--m-space-2);">
           {% for s in surprising %}
-          <div style="font-family:var(--m-display);font-size:12.5px;color:var(--m-ink);display:flex;align-items:center;gap:6px;">
+          <div class="u-row" style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-ink);">
             <span style="width:7px;height:7px;border-radius:50%;background:{{ type_colors.get(s.from_type, 'var(--m-muted)') }};flex-shrink:0;"></span>
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40%;" title="{{ s.from_label }}">{{ s.from_label }}</span>
-            <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-accent);">↔</span>
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40%;" title="{{ s.to_label }}">{{ s.to_label }}</span>
-            <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-left:auto;">{{ s.relation }}</span>
+            <span class="u-truncate" style="max-width:40%;" title="{{ s.from_label }}">{{ s.from_label }}</span>
+            <span class="u-label u-label--accent">↔</span>
+            <span class="u-truncate" style="max-width:40%;" title="{{ s.to_label }}">{{ s.to_label }}</span>
+            <span class="u-label" style="margin-left:auto;">{{ s.relation }}</span>
           </div>
           {% endfor %}
         </div>
         {% else %}
-        <p style="font-family:var(--m-display);font-size:13px;color:var(--m-muted);font-style:italic;margin:0;">
+        <p class="u-ed" style="font-size:var(--t-small);margin:0;">
           No cross-cluster bridges yet. A deep extract with LLM will surface semantic connections between your ideas, papers, and projects.
         </p>
         {% endif %}

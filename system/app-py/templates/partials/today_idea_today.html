@@ -1,29 +1,29 @@
 <div>
-  <h2 class="sec-label" style="margin-bottom:8px;">
+  <h2 class="sec-label u-mb-2">
     <span>Idea for today</span>
     <span class="sec-label-tail">ROTATES DAILY</span>
   </h2>
 
   {% if xpoll_news or xpoll_idea %}
   <!-- Cross-pollination prompt -->
-  <div class="panel" style="margin-bottom:12px;">
-    <div style="padding:20px 24px;">
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-accent);margin-bottom:14px;text-transform:uppercase;">Cross-pollination &middot; Today</div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+  <div class="panel u-mb-3">
+    <div style="padding:var(--m-space-5) var(--m-space-5);">
+      <div class="u-label u-label--accent u-mb-4" style="letter-spacing:0.16em;text-transform:uppercase;">Cross-pollination &middot; Today</div>
+      <div class="u-col u-mb-4" style="gap:var(--m-space-3);">
         {% if xpoll_news %}
-        <div style="display:flex;align-items:flex-start;gap:10px;">
-          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);text-transform:uppercase;padding-top:3px;white-space:nowrap;">News</span>
-          <span style="font-family:var(--m-display);font-size:13.5px;font-weight:500;color:var(--m-ink);line-height:1.4;">{{ xpoll_news.title }}</span>
+        <div style="display:flex;align-items:flex-start;gap:var(--m-space-3);">
+          <span class="u-label u-label--wide" style="padding-top:3px;white-space:nowrap;">News</span>
+          <span style="font-family:var(--m-display);font-size:var(--t-small);font-weight:500;color:var(--m-ink);line-height:1.4;">{{ xpoll_news.title }}</span>
         </div>
         {% endif %}
         {% if xpoll_idea %}
-        <div style="display:flex;align-items:flex-start;gap:10px;">
-          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);text-transform:uppercase;padding-top:3px;white-space:nowrap;">Idea</span>
-          <span style="font-size:13px;color:var(--m-text);line-height:1.5;">{{ (xpoll_idea.text or "")[:120] }}{% if (xpoll_idea.text or "") | length > 120 %}&hellip;{% endif %}</span>
+        <div style="display:flex;align-items:flex-start;gap:var(--m-space-3);">
+          <span class="u-label u-label--wide" style="padding-top:3px;white-space:nowrap;">Idea</span>
+          <span style="font-size:var(--t-small);color:var(--m-text);line-height:1.5;">{{ (xpoll_idea.text or "")[:120] }}{% if (xpoll_idea.text or "") | length > 120 %}&hellip;{% endif %}</span>
         </div>
         {% endif %}
       </div>
-      <div style="font-family:var(--m-display);font-size:13px;font-style:italic;color:var(--m-accent);border-top:1px solid var(--m-rule-soft);padding-top:12px;">
+      <div class="u-rule-t" style="font-family:var(--m-display);font-size:var(--t-small);font-style:italic;color:var(--m-accent);padding-top:12px;">
         What&rsquo;s the connection?
       </div>
     </div>
@@ -33,15 +33,15 @@
   <!-- Today's highlighted idea -->
   <div class="panel">
     {% if idea %}
-    <div style="padding:20px 24px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-accent);padding:2px 7px;border:1px solid var(--m-accent);border-radius:2px;">{{ idea.idea_type }}</span>
-        <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{{ idea.age_label }} AGO</span>
+    <div style="padding:var(--m-space-5) var(--m-space-5);">
+      <div class="u-row u-mb-3">
+        <span class="u-label u-label--accent" style="letter-spacing:0.14em;padding:2px 7px;border:1px solid var(--m-accent);border-radius:var(--m-radius-sm);">{{ idea.idea_type }}</span>
+        <span class="u-label">{{ idea.age_label }} AGO</span>
       </div>
-      <p class="ed" style="font-size:13.5px;line-height:1.65;color:var(--m-text);margin:0 0 14px 0;max-width:600px;">
+      <p class="ed" style="font-size:var(--t-small);line-height:1.65;color:var(--m-text);margin:0 0 var(--m-space-4) 0;max-width:600px;">
         {{ idea.text }}
       </p>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:var(--m-space-2);">
         <button class="btn btn--ghost btn--caps"
                 onclick="setNavActive(document.querySelector('[data-tab=thinking]'),'thinking'); htmx.ajax('GET','/api/tab/thinking',{target:'#tab-content',swap:'innerHTML',select:'#tab-content'})">
           Open Thinking

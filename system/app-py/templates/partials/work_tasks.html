@@ -1,10 +1,10 @@
 <!-- work_tasks.html — Editorial todo-row list -->
 {% if not tasks %}
-<div class="panel panel-pad" style="text-align:center;padding:28px 24px;border:1px dashed var(--m-line);">
-  <h4 class="ed" style="margin:0 0 6px;font-size:16px;">
+<div class="panel panel-pad" style="text-align:center;padding:var(--m-space-6) var(--m-space-5);border:1px dashed var(--m-line);">
+  <h4 class="ed" style="margin:0 0 var(--m-space-2);font-size:var(--t-h4);">
     {% if status_filter == 'open' %}All tasks done. Take a breath.{% else %}No tasks yet.{% endif %}
   </h4>
-  <p class="ed" style="font-size:13px;color:var(--m-muted);margin:0 0 14px;">
+  <p class="ed" style="font-size:var(--t-small);color:var(--m-muted);margin:0 0 var(--m-space-4);">
     Press <kbd>Ctrl+K</kbd> from anywhere on the dashboard and prefix with <code>t:</code> to add a task.
     Or capture from Claude Code with <code>/metis_capture t: my task</code>.
   </p>
@@ -22,8 +22,8 @@
       {% endif %}
     </span>
     <div style="min-width:0;">
-      <div class="todo-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.title }}</div>
-      <div class="todo-meta" style="margin-top:3px;display:flex;gap:10px;">
+      <div class="todo-title u-truncate">{{ t.title }}</div>
+      <div class="todo-meta" style="margin-top:3px;display:flex;gap:var(--m-space-3);">
         {% if t.project %}<span>{{ t.project }}</span>{% endif %}
         {% if t.due_date %}<span>· DUE {{ t.due_date[:10] }}</span>{% endif %}
         {% if t.priority and t.priority != 'medium' %}
@@ -36,7 +36,7 @@
       {% elif t.status == 'done' %}<span style="color:var(--m-ok);">DONE</span>
       {% endif %}
     </span>
-    <span class="todo-actions" style="display:flex;gap:4px;">
+    <span class="todo-actions" style="display:flex;gap:var(--m-space-1);">
       <button class="feed-act" title="Mark done" onclick="markTaskDone({{ t.id | tojson }}, this)">
         <svg viewBox="0 0 16 16"><polyline points="4 8 7 11 12 5"/></svg>
       </button>

@@ -4,8 +4,8 @@
     this list survives the feed moving on: `news_briefs` gets tidied, the safe
     does not go blank. A safe whose contents can disappear is not a safe. -#}
 {% if not kept %}
-<div class="panel" style="padding:16px 18px;">
-  <p style="margin:0;font-size:13px;color:var(--m-muted);line-height:1.6;">
+<div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
+  <p style="margin:0;font-size:var(--t-small);color:var(--m-muted);line-height:1.6;">
     Nothing kept yet. Press <strong>Keep</strong> on anything in the feed or the
     reading list and it lands here — and this focus starts learning which words
     you reach for. Over a few weeks that is what turns a keyword search into
@@ -13,7 +13,7 @@
   </p>
 </div>
 {% else %}
-<div class="panel" style="padding:4px 0;">
+<div class="panel" style="padding:var(--m-space-1) 0;">
   {% for k in kept %}
   <div class="fv-row">
     <span class="fv-date">{{ k.created_at[:10] }}</span>
@@ -42,7 +42,7 @@
     researcher cannot read is one he cannot correct — and correcting it is the
     whole point of a surface built over weeks. -#}
 {% if taste %}
-<details class="fv-fold" style="margin-top:10px;">
+<details class="fv-fold" style="margin-top:var(--m-space-3);">
   <summary>
     <span class="fv-chev">▸</span>
     What this focus has learned — {{ taste | length }} term{{ '' if taste|length == 1 else 's' }}
@@ -60,7 +60,7 @@
       </span>
       {% endfor %}
     </div>
-    <p class="fv-note" style="margin-top:8px;">
+    <p class="fv-note" style="margin-top:var(--m-space-2);">
       Anything scoring {{ mute_at }} or lower is folded into “Quieter”, never removed.
     </p>
   </div>

@@ -24,14 +24,14 @@
     <div>
       <div class="page-eyebrow">SURFACE 08 · COURSES &amp; TALKS</div>
       <h1 class="page-title">Teach</h1>
-      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-muted);margin-top:6px;line-height:1.5;">Drafts outward — essays, lessons and talks made from what you already know.</div>
+      <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-muted);margin-top:var(--m-space-2);line-height:1.5;">Drafts outward — essays, lessons and talks made from what you already know.</div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;">
+    <div class="u-row">
       <button class="btn btn--ghost btn--caps" onclick="resetBuilder()">Reset</button>
     </div>
   </div>
 
-  <div class="grid" style="grid-template-columns:1.55fr 1fr;gap:32px;">
+  <div class="grid" style="grid-template-columns:1.55fr 1fr;gap:var(--m-space-6);">
 
     <!-- LEFT: Builder form / output -->
     <div>
@@ -40,19 +40,19 @@
       <div id="teach-builder-form">
         {{ sec_label("Course builder", tail="INTAKE", style="margin-bottom:12px;") }}
 
-        <div class="panel" style="padding:24px 24px 20px;">
+        <div class="panel" style="padding:var(--m-space-5) var(--m-space-5) var(--m-space-5);">
 
-          <div style="margin-bottom:16px;">
-            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">COURSE TITLE</label>
+          <div class="u-mb-4">
+            <label class="u-label" style="display:block;margin-bottom:5px;">COURSE TITLE</label>
             <input id="teach-title" type="text" autofocus
                    placeholder="e.g. Introduction to Disease Epidemiology"
-                   style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:9px 12px;font-family:var(--m-sans);font-size:14px;color:var(--m-ink);outline:none;">
+                   style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:9px 12px;font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);outline:none;">
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <div class="u-mb-4" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--m-space-3);">
             <div>
-              <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">AUDIENCE</label>
-              <select id="teach-audience" style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+              <label class="u-label" style="display:block;margin-bottom:5px;">AUDIENCE</label>
+              <select id="teach-audience" style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
                 <option value="expert">Expert / Specialist</option>
                 <option value="practitioner" selected>Health Practitioner</option>
                 <option value="student">Graduate Student</option>
@@ -60,8 +60,8 @@
               </select>
             </div>
             <div>
-              <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">DEPTH</label>
-              <select id="teach-depth" style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+              <label class="u-label" style="display:block;margin-bottom:5px;">DEPTH</label>
+              <select id="teach-depth" style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
                 <option value="overview" selected>Overview (8–12 slides)</option>
                 <option value="lecture">Full lecture (20–25 slides)</option>
                 <option value="workshop">Workshop (30–40 slides)</option>
@@ -69,8 +69,8 @@
             </div>
           </div>
 
-          <div style="margin-bottom:16px;">
-            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:8px;">KNOWLEDGE SOURCES</label>
+          <div class="u-mb-4">
+            <label class="u-label u-mb-2" style="display:block;">KNOWLEDGE SOURCES</label>
             <div style="display:flex;gap:7px;flex-wrap:wrap;" id="teach-source-chips">
               <button class="source-chip active" data-src="library" onclick="toggleSource(this)">Library</button>
               <button class="source-chip active" data-src="literature" onclick="toggleSource(this)">Literature</button>
@@ -79,8 +79,8 @@
             </div>
           </div>
 
-          <div style="margin-bottom:16px;">
-            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:8px;">OUTPUT FORMAT</label>
+          <div class="u-mb-4">
+            <label class="u-label u-mb-2" style="display:block;">OUTPUT FORMAT</label>
             <div style="display:flex;gap:7px;" id="teach-fmt-chips">
               <button class="source-chip active" data-fmt="pptx" onclick="toggleFormat(this)">PowerPoint (.pptx)</button>
               <button class="source-chip" data-fmt="outline" onclick="toggleFormat(this)">Outline only</button>
@@ -88,31 +88,31 @@
             </div>
           </div>
 
-          <div style="margin-bottom:20px;">
-            <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:5px;">CONTEXT / OBJECTIVES <span style="opacity:.5;">(optional)</span></label>
+          <div class="u-mb-5">
+            <label class="u-label" style="display:block;margin-bottom:5px;">CONTEXT / OBJECTIVES <span style="opacity:.5;">(optional)</span></label>
             <textarea id="teach-context" rows="3"
                       placeholder="Learning objectives, required sections, key messages to include…"
-                      style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:9px 12px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;resize:vertical;"></textarea>
+                      style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:9px 12px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;resize:vertical;"></textarea>
           </div>
 
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <div class="u-row u-row--wrap" style="gap:var(--m-space-3);">
             <button class="btn btn--primary btn--caps" onclick="buildCourse()" id="teach-build-btn">Build Course</button>
             <button class="btn btn--ghost btn--caps" onclick="buildOutline()">Outline First</button>
-            <span id="teach-build-status" style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"></span>
-            <span id="teach-ai-badge" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;color:var(--m-muted);margin-left:auto;">TEMPLATE MODE</span>
+            <span class="u-label" id="teach-build-status"></span>
+            <span class="u-label" id="teach-ai-badge" style="letter-spacing:0.08em;margin-left:auto;">TEMPLATE MODE</span>
           </div>
 
         </div>
       </div>
 
       <!-- Output panel (hidden until build runs) -->
-      <div id="teach-output-panel" style="display:none;">
-        <h2 class="sec-label" style="margin-bottom:12px;">
+      <div class="u-hide" id="teach-output-panel">
+        <h2 class="sec-label u-mb-3">
           <span id="teach-output-label">Build output</span>
-          <button class="btn btn--ghost btn--caps" style="font-size:11px;padding:3px 8px;" onclick="resetBuilder()">New Build</button>
+          <button class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);padding:3px 8px;" onclick="resetBuilder()">New Build</button>
         </h2>
-        <div id="teach-output-body" class="panel" style="padding:24px;min-height:300px;"></div>
-        <div id="teach-download-bar" style="margin-top:12px;display:none;gap:10px;align-items:center;"></div>
+        <div id="teach-output-body" class="panel" style="padding:var(--m-space-5);min-height:300px;"></div>
+        <div class="u-hide" id="teach-download-bar" style="margin-top:var(--m-space-3);gap:var(--m-space-3);align-items:center;"></div>
       </div>
 
     </div>
@@ -125,9 +125,9 @@
            hx-get="/api/partial/teach/past-builds"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div class="panel skeleton" style="padding:20px;">
-          <div style="height:10px;background:var(--m-surface-3);border-radius:2px;margin-bottom:8px;width:60%;"></div>
-          <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:80%;"></div>
+        <div class="panel skeleton" style="padding:var(--m-space-5);">
+          <div class="u-mb-2" style="height:10px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:60%;"></div>
+          <div style="height:10px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:80%;"></div>
         </div>
       </div>
 
@@ -135,9 +135,9 @@
       <div hx-get="/api/partial/teach/kb-stats"
            hx-trigger="load"
            hx-swap="outerHTML">
-        <div class="panel panel-pad skeleton" style="">
-          <div style="height:10px;background:var(--m-surface-3);border-radius:2px;margin-bottom:8px;width:70%;"></div>
-          <div style="height:10px;background:var(--m-surface-3);border-radius:2px;width:50%;"></div>
+        <div class="panel panel-pad skeleton" style=";">
+          <div class="u-mb-2" style="height:10px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:70%;"></div>
+          <div style="height:10px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:50%;"></div>
         </div>
       </div>
 
@@ -145,8 +145,8 @@
       <div hx-get="/api/partial/teach/gap-analysis"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div class="panel panel-pad skeleton" style="">
-          <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Looking for under-covered topics…</p>
+        <div class="panel panel-pad skeleton" style=";">
+          <p class="u-ed" style="font-size:var(--t-small);margin:0;">Looking for under-covered topics…</p>
         </div>
       </div>
 
@@ -154,8 +154,8 @@
       <div hx-get="/api/partial/teach/qbank"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div class="panel panel-pad skeleton" style="">
-          <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Pulling reusable assessment items…</p>
+        <div class="panel panel-pad skeleton" style=";">
+          <p class="u-ed" style="font-size:var(--t-small);margin:0;">Pulling reusable assessment items…</p>
         </div>
       </div>
 
@@ -225,11 +225,11 @@ function _showOutput(data, title) {
   panel.style.display = 'block';
   document.getElementById('teach-output-label').textContent = title;
   document.getElementById('teach-output-body').innerHTML =
-    data.html || '<em style="color:var(--m-muted)">The build didn\'t produce anything yet — adjust your selections and try again.</em>';
+    data.html || '<em style="color:var(--m-muted);">The build didn\'t produce anything yet — adjust your selections and try again.</em>';
 
   const aiChip = data.ai_generated
-    ? `<span id="teach-mode-chip" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:2px 6px;background:var(--m-accent);color:var(--m-on-accent);border-radius:2px;margin-left:8px;">AI</span>`
-    : `<span id="teach-mode-chip" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:2px 6px;border:1px solid var(--m-line);color:var(--m-muted);border-radius:2px;margin-left:8px;">TEMPLATE</span>`;
+    ? `<span id="teach-mode-chip" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;padding:2px 6px;background:var(--m-accent);color:var(--m-on-accent);border-radius:var(--m-radius-sm);margin-left:8px;">AI</span>`
+    : `<span class="u-label" id="teach-mode-chip" style="letter-spacing:0.08em;padding:2px 6px;border:1px solid var(--m-line);border-radius:var(--m-radius-sm);margin-left:8px;">TEMPLATE</span>`;
   const oldChip = document.getElementById('teach-mode-chip');
   if (oldChip) oldChip.remove();
   document.getElementById('teach-output-label').insertAdjacentHTML('afterend', aiChip);

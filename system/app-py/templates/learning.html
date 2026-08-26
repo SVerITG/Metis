@@ -15,17 +15,17 @@
 
   <!-- Velocity strip -->
   {{ sec_label("How fast you're moving", tail="PACE · STREAK · WINDOWS", style="margin-bottom:12px;") }}
-  <div style="margin-bottom:28px;"
+  <div class="u-mb-6"
        hx-get="/api/partial/learning/velocity"
        hx-trigger="load"
        hx-swap="innerHTML">
     <div class="panel panel-pad skeleton" style="padding:18px 22px;">
-      <p style="color:var(--m-muted);font-style:italic;font-family:var(--m-display);font-size:13px;margin:0;">Measuring your pace this week…</p>
+      <p class="u-ed" style="font-size:var(--t-small);margin:0;">Measuring your pace this week…</p>
     </div>
   </div>
 
   <!-- Spaced repetition panel + Streak panel -->
-  <div class="grid grid-3" style="margin-bottom:32px;">
+  <div class="grid grid-3 u-mb-6">
 
     <!-- Spaced repetition (spans 2 cols) — wrapped so the "build deck" button
          inside the partial can refresh it in place after seeding. -->
@@ -40,9 +40,9 @@
         </svg>
         <span>SPACED REPETITION · ONE MOMENT…</span>
       </div>
-      <h2 style="font-family:var(--m-display);font-size:24px;font-weight:500;letter-spacing:-0.015em;margin:10px 0 8px;color:var(--m-ink);">Looking up what's due today…</h2>
-      <div class="skeleton" style="height:52px;border-radius:2px;margin-bottom:14px;"></div>
-      <div class="tnum" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">NEW · — &nbsp;&nbsp; LEARNING · — &nbsp;&nbsp; REVIEW · —</div>
+      <h2 style="font-family:var(--m-display);font-size:var(--t-h2);font-weight:500;letter-spacing:-0.015em;margin:var(--m-space-3) 0 var(--m-space-2);color:var(--m-ink);">Looking up what's due today…</h2>
+      <div class="skeleton u-mb-4" style="height:52px;border-radius:var(--m-radius-sm);"></div>
+      <div class="tnum u-label">NEW · — &nbsp;&nbsp; LEARNING · — &nbsp;&nbsp; REVIEW · —</div>
     </div>
     </div><!-- /#sr-due-wrap -->
 
@@ -54,7 +54,7 @@
         </svg>
         <span>STREAK</span>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin:14px 0 10px;">
+      <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:var(--m-space-1);margin:var(--m-space-4) 0 var(--m-space-3);">
         {% for c in streak_cells %}
         <div title="{{ c.date }}{% if c.active %} · reviewed{% endif %}"
              style="aspect-ratio:1/1;border-radius:1px;
@@ -62,7 +62,7 @@
                     {% if c.is_today %}outline:1.5px solid var(--m-ochre);outline-offset:1px;{% endif %}"></div>
         {% endfor %}
       </div>
-      <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">
+      <div class="u-ed" style="font-size:var(--t-small);">
         {% if streak_has_data %}Keep the habit. <em>Don't gamify it.</em>{% else %}No reviews yet — your daily review activity will fill in here.{% endif %}
       </div>
     </div>
@@ -70,11 +70,11 @@
   </div>
 
   <!-- Courses grid -->
-  <h2 class="sec-label" style="margin-bottom:16px;">
+  <h2 class="sec-label u-mb-4">
     <span>Courses</span>
     <span class="tail">
       <a href="http://127.0.0.1:3000/" target="_blank" rel="noopener"
-         class="btn btn--ghost btn--caps" style="font-size:11px;">
+         class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);">
         Statistics to Multilevel Models ↗
       </a>
       <span hx-get="/api/partial/learning/meta" hx-trigger="load" hx-swap="innerHTML">—</span>
@@ -86,38 +86,36 @@
        hx-swap="outerHTML">
     {% for _ in range(3) %}
     <div class="panel panel-pad skeleton" style="padding:20px 22px;">
-      <div style="height:9px;background:var(--m-surface-3);border-radius:2px;width:40%;margin-bottom:8px;"></div>
-      <div style="height:16px;background:var(--m-surface-3);border-radius:2px;margin-bottom:4px;"></div>
-      <div style="height:12px;background:var(--m-surface-3);border-radius:2px;width:60%;margin-bottom:16px;"></div>
+      <div class="u-mb-2" style="height:9px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:40%;"></div>
+      <div class="u-mb-1" style="height:16px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);"></div>
+      <div class="u-mb-4" style="height:12px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:60%;"></div>
       <div style="height:2px;background:var(--m-surface-3);border-radius:1px;"></div>
     </div>
     {% endfor %}
   </div>
 
   <!-- Course reader (hidden until a course is opened) -->
-  <div id="course-reader-panel"
-       style="display:none;margin-top:32px;grid-template-columns:260px 1fr;
-              border:1px solid var(--m-line);border-radius:6px;overflow:hidden;
-              min-height:600px;background:var(--m-surface-1);">
+  <div class="u-hide" id="course-reader-panel"
+       style="margin-top:var(--m-space-6);grid-template-columns:260px 1fr;border:1px solid var(--m-line);border-radius:6px;overflow:hidden;min-height:600px;background:var(--m-surface-1);">
     <!-- Left: module/lesson list -->
     <div id="course-overview-panel"
          style="border-right:1px solid var(--m-line);overflow-y:auto;max-height:700px;">
-      <div style="padding:40px 20px;color:var(--m-muted);font-size:13px;">Opening the course…</div>
+      <div style="padding:40px 20px;color:var(--m-muted);font-size:var(--t-small);">Opening the course…</div>
     </div>
     <!-- Right: lesson content -->
     <div id="lesson-reader-panel"
          style="overflow-y:auto;max-height:700px;">
-      <div style="padding:40px 28px;color:var(--m-muted);font-size:14px;">
+      <div style="padding:40px 28px;color:var(--m-muted);font-size:var(--t-body);">
         Select a lesson from the left to begin.
       </div>
     </div>
   </div>
 
   <!-- Course ideas -->
-  <h2 class="sec-label" style="margin-top:32px;margin-bottom:16px;">
+  <h2 class="sec-label u-mb-4" style="margin-top:var(--m-space-6);">
     <span>Course Ideas</span>
     <span class="tail">
-      <button class="btn btn--ghost btn--caps" style="font-size:11px;"
+      <button class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);"
               onclick="openCourseWizard('', '')">+ New Course</button>
       CUSTOMISE YOUR CATALOG
     </span>

@@ -1,13 +1,13 @@
 <!-- learning_course_overview.html — Course module + lesson list sidebar -->
-<div style="display:flex;flex-direction:column;gap:0;">
+<div class="u-col" style="gap:0;">
 
   <!-- Course header -->
-  <div style="padding:16px 20px 14px;border-bottom:1px solid var(--m-line);">
-    <div class="kicker" style="margin-bottom:6px;">{{ (course.category or course.title or 'COURSE') | upper }}</div>
-    <div style="font-family:var(--m-display);font-size:17px;font-weight:500;color:var(--m-ink);margin-bottom:10px;">
+  <div style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-4);border-bottom:1px solid var(--m-line);">
+    <div class="kicker u-mb-2">{{ (course.category or course.title or 'COURSE') | upper }}</div>
+    <div class="u-mb-3" style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);">
       {{ course.title or "Untitled Course" }}
     </div>
-    <div style="height:3px;background:var(--m-surface-3);border-radius:2px;margin-bottom:6px;">
+    <div class="u-mb-2" style="height:3px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);">
       <div style="height:100%;width:{{ (course.progress_pct or 0)|int }}%;background:var(--m-accent);border-radius:2px;"></div>
     </div>
     <div class="todo-meta" style="margin:0;">
@@ -25,12 +25,12 @@
   {% for s in sections %}{% if s not in ordered_sections %}{% set _ = ordered_sections.append(s) %}{% endif %}{% endfor %}
   {% for section in ordered_sections %}
   {% set module_lessons = lessons | selectattr("section", "equalto", section) | list %}
-  <div style="padding:12px 20px 4px;border-bottom:1px solid var(--m-line);">
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:8px;">
+  <div style="padding:var(--m-space-3) var(--m-space-5) var(--m-space-1);border-bottom:1px solid var(--m-line);">
+    <div class="u-label u-mb-2">
       {{ (section or 'LESSONS') | upper }}
     </div>
     {% for lesson in module_lessons %}
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+    <div class="u-row u-mb-2">
       <!-- Completion dot -->
       <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;
                   background:{% if lesson.done %}var(--m-accent){% else %}var(--m-surface-3){% endif %};
@@ -52,8 +52,8 @@
   {% endfor %}
 
   <!-- Seed spaced rep button -->
-  <div style="padding:14px 20px;">
-    <button class="btn btn--ghost btn--caps" style="width:100%;font-size:11px;"
+  <div style="padding:var(--m-space-4) var(--m-space-5);">
+    <button class="btn btn--ghost btn--caps" style="width:100%;font-size:var(--t-micro);"
             hx-post="/api/course/{{ slug }}/seed-spaced-rep"
             hx-swap="none"
             onclick="showToast('Spaced repetition cards seeded — check the Due Today panel.')">

@@ -89,7 +89,7 @@
            hx-get="/api/course/{{ slug }}/overview"
            hx-trigger="load"
            hx-swap="innerHTML">
-        <div style="padding:40px 20px;color:var(--m-muted);font-size:13px;">Loading course…</div>
+        <div style="padding:40px 20px;color:var(--m-muted);font-size:var(--t-small);">Loading course…</div>
       </div>
     </div>
 
@@ -97,11 +97,11 @@
     <div class="reader-main">
       <div class="reader-topbar">
         <a href="/tab/learning">← Back to Learning</a>
-        <span style="font-family:var(--m-display);font-size:14px;color:var(--m-ink);">{{ course_title }}</span>
-        <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">METIS READER</span>
+        <span style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">{{ course_title }}</span>
+        <span class="u-label">METIS READER</span>
       </div>
       <div id="lesson-reader-panel">
-        <div style="padding:60px 40px;color:var(--m-muted);font-size:15px;font-family:var(--m-display);font-style:italic;max-width:600px;margin:0 auto;text-align:center;line-height:1.6;">
+        <div class="u-ed" style="padding:60px 40px;font-size:var(--t-body);max-width:600px;margin:0 auto;text-align:center;line-height:1.6;">
           Select a lesson from the sidebar to begin reading.
         </div>
       </div>

@@ -1,15 +1,15 @@
 {# today_memory_landscape.html — Topic map: circles by memory density, colored by recency.
    Context: topics (list), edges (list), projects (list), topics_json (str). #}
 {% if topics %}
-<div id="memory-landscape" style="margin-bottom:32px;">
-  <h2 class="sec-label" style="margin-bottom:12px;">
+<div class="u-mb-6" id="memory-landscape">
+  <h2 class="sec-label u-mb-3">
     <span>Memory landscape</span>
     <span class="tail">{{ topics|length }} TOPICS &middot; SIZED BY DEPTH &middot; COLORED BY FRESHNESS</span>
   </h2>
-  <div class="panel" style="padding:24px 28px;">
+  <div class="panel" style="padding:var(--m-space-5) var(--m-space-6);">
 
     {# Topic bubble grid — CSS-only, no D3 needed for this view #}
-    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:20px;">
+    <div class="u-mb-5" style="display:flex;flex-wrap:wrap;gap:var(--m-space-3);justify-content:center;">
       {% set max_count = topics[0].count if topics else 1 %}
       {% set recency_colors = {
         'fresh': 'var(--m-chart-2)',
@@ -46,39 +46,39 @@
     </div>
 
     {# Legend #}
-    <div style="display:flex;flex-wrap:wrap;gap:16px;padding-top:14px;border-top:1px solid var(--m-rule-soft);">
-      <div style="display:flex;align-items:center;gap:5px;">
+    <div class="u-rule-t" style="display:flex;flex-wrap:wrap;gap:var(--m-space-4);padding-top:14px;">
+      <div class="u-row" style="gap:5px;">
         <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-2);background:color-mix(in srgb, var(--m-chart-2) 12%, transparent);"></span>
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">Fresh (&lt;7d)</span>
+        <span class="u-label" style="letter-spacing:0.06em;">Fresh (&lt;7d)</span>
       </div>
-      <div style="display:flex;align-items:center;gap:5px;">
+      <div class="u-row" style="gap:5px;">
         <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-1);background:color-mix(in srgb, var(--m-chart-1) 10%, transparent);"></span>
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">Recent (&lt;30d)</span>
+        <span class="u-label" style="letter-spacing:0.06em;">Recent (&lt;30d)</span>
       </div>
-      <div style="display:flex;align-items:center;gap:5px;">
+      <div class="u-row" style="gap:5px;">
         <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-4);background:color-mix(in srgb, var(--m-chart-4) 10%, transparent);"></span>
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">Aging (&lt;90d)</span>
+        <span class="u-label" style="letter-spacing:0.06em;">Aging (&lt;90d)</span>
       </div>
-      <div style="display:flex;align-items:center;gap:5px;">
+      <div class="u-row" style="gap:5px;">
         <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-8);background:color-mix(in srgb, var(--m-chart-8) 8%, transparent);"></span>
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">Stale (&gt;90d)</span>
+        <span class="u-label" style="letter-spacing:0.06em;">Stale (&gt;90d)</span>
       </div>
-      <div style="display:flex;align-items:center;gap:5px;margin-left:auto;">
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;color:var(--m-muted);">Size = memory count</span>
+      <div class="u-row" style="gap:5px;margin-left:auto;">
+        <span class="u-label" style="letter-spacing:0.06em;">Size = memory count</span>
       </div>
     </div>
 
     {# Project memory depth (if we have projects) #}
     {% if projects %}
-    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--m-rule-soft);">
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:10px;">PROJECT MEMORY DEPTH</div>
-      <div style="display:flex;flex-direction:column;gap:6px;">
+    <div class="u-rule-t" style="margin-top:var(--m-space-5);padding-top:16px;">
+      <div class="u-label u-mb-3">PROJECT MEMORY DEPTH</div>
+      <div class="u-col" style="gap:var(--m-space-2);">
         {% for p in projects %}
         {% set mem = p.memory %}
-        <div style="display:flex;align-items:center;gap:10px;">
+        <div class="u-row" style="gap:var(--m-space-3);">
           <span style="width:6px;height:6px;border-radius:50%;flex-shrink:0;
             background:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};"></span>
-          <span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ p.title }}</span>
+          <span class="u-grow u-truncate" style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ p.title }}</span>
           <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;
             color:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};">
             {{ mem.total }} memories &middot; {{ mem.level }}
@@ -87,7 +87,7 @@
           {% set bar_width = ((mem.total / 50) * 100)|int %}
           {% if bar_width > 100 %}{% set bar_width = 100 %}{% endif %}
           {% if bar_width < 4 %}{% set bar_width = 4 %}{% endif %}
-          <div style="width:60px;height:4px;background:var(--m-surface-3);border-radius:2px;flex-shrink:0;">
+          <div class="u-fixed" style="width:60px;height:4px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);">
             <div style="width:{{ bar_width }}%;height:100%;border-radius:2px;
               background:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};"></div>
           </div>

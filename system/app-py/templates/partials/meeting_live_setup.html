@@ -1,42 +1,42 @@
-<div id="lm-setup-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:800;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;">
+<div class="u-row" id="lm-setup-modal" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:800;background:rgba(0,0,0,0.35);justify-content:center;">
   <div class="panel m-drawer-top" style="width:540px;max-width:96vw;padding:0;box-shadow:0 8px 32px rgba(0,0,0,0.22);">
 
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;border-bottom:1px solid var(--m-rule-soft);">
+    <div class="u-row u-row--between u-rule" style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-3);">
       <div class="kicker kicker--ochre" style="margin:0;">
         <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><line x1="8" y1="5" x2="8" y2="8"/></svg>
         LIVE MEETING — SETUP
       </div>
-      <button onclick="closeLiveSession()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:11px;padding:2px 6px;">ESC</button>
+      <button class="u-label" onclick="closeLiveSession()" style="background:none;border:none;cursor:pointer;padding:2px 6px;">ESC</button>
     </div>
 
-    <div style="padding:20px;">
+    <div style="padding:var(--m-space-5);">
 
-      <div style="margin-bottom:14px;">
-        <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">MEETING TITLE</label>
+      <div class="u-mb-4">
+        <label class="u-label u-mb-1" style="display:block;">MEETING TITLE</label>
         <input id="lm-setup-title" type="text" autofocus
                placeholder="e.g. Research coordination meeting"
-               style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:8px 10px;font-family:var(--m-sans);font-size:14px;color:var(--m-ink);outline:none;">
+               style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-ink);outline:none;">
       </div>
 
-      <div style="margin-bottom:14px;">
-        <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:6px;">PARTICIPANTS — first name or full name</label>
-        <div id="lm-speaker-inputs" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      <div class="u-mb-4">
+        <label class="u-label u-mb-2" style="display:block;">PARTICIPANTS — first name or full name</label>
+        <div id="lm-speaker-inputs" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--m-space-2);">
           <input class="lm-setup-speaker" type="text" placeholder="Name 1 (first speaker)"
-                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
           <input class="lm-setup-speaker" type="text" placeholder="Name 2"
-                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
           <input class="lm-setup-speaker" type="text" placeholder="Name 3 (optional)"
-                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
           <input class="lm-setup-speaker" type="text" placeholder="Name 4 (optional)"
-                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+                 style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+      <div class="u-mb-4" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--m-space-3);">
         <div>
-          <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">LANGUAGE</label>
+          <label class="u-label u-mb-1" style="display:block;">LANGUAGE</label>
           <select id="lm-setup-lang"
-                  style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+                  style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
             <option value="en-US">English (US)</option>
             <option value="en-GB">English (UK)</option>
             <option value="fr-FR">French</option>
@@ -44,15 +44,15 @@
             <option value="nl-BE">Dutch (Belgium)</option>
             <option value="fr-BE">French (Belgium)</option>
           </select>
-            <div style="font-family:var(--m-mono);font-size:9px;color:var(--m-muted);margin-top:4px;">
+            <div style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);margin-top:var(--m-space-1);">
               Local keeps the recording on this computer — the right choice if the meeting
               covers patients or unpublished work.
             </div>
         </div>
         <div>
-          <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">TRANSCRIPTION</label>
+          <label class="u-label u-mb-1" style="display:block;">TRANSCRIPTION</label>
           <select id="lm-setup-mode"
-                  style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:7px 10px;font-family:var(--m-sans);font-size:13px;color:var(--m-ink);outline:none;">
+                  style="width:100%;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;">
             <option value="server">Whisper — stays on this computer (recommended)</option>
             <option value="voxtral">Voxtral — sent to Mistral's cloud · diarization built-in</option>
             <option value="browser">Browser — sent to Google · instant, Chrome/Edge only</option>
@@ -61,18 +61,18 @@
       </div>
 
       <!-- Mode description — updates dynamically -->
-      <div id="lm-mode-hint" style="background:var(--m-surface-2);border-radius:4px;padding:10px 14px;margin-bottom:12px;font-family:var(--m-sans);font-size:12px;color:var(--m-muted);line-height:1.6;">
+      <div class="u-mb-3" id="lm-mode-hint" style="background:var(--m-surface-2);border-radius:var(--m-radius);padding:var(--m-space-3) var(--m-space-4);font-family:var(--m-sans);font-size:var(--t-meta);color:var(--m-muted);line-height:1.6;">
         <strong style="color:var(--m-ink);">Whisper (recommended):</strong> Transcribes every few seconds via your local GPU — works in any browser, no cloud needed. Connections to your library and past meetings appear alongside as you speak.
       </div>
 
       <!-- Voice ID status — loaded async -->
-      <div id="lm-voice-id-status" style="margin-bottom:12px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);">
+      <div class="u-label u-mb-3" id="lm-voice-id-status">
         Checking voice profiles…
       </div>
 
       <!-- Microphone permission hint — visible upfront so users don't get confused -->
-      <div style="display:flex;gap:10px;align-items:flex-start;background:var(--m-surface);border:1px dashed var(--m-line);border-radius:4px;padding:10px 14px;margin-bottom:16px;font-family:var(--m-sans);font-size:11.5px;color:var(--m-muted);line-height:1.55;">
-        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">
+      <div class="u-mb-4" style="display:flex;gap:var(--m-space-3);align-items:flex-start;background:var(--m-surface);border:1px dashed var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-3) var(--m-space-4);font-family:var(--m-sans);font-size:var(--t-meta);color:var(--m-muted);line-height:1.55;">
+        <svg class="u-fixed" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-top:1px;">
           <rect x="6" y="2" width="4" height="8" rx="2"/>
           <path d="M3.5 7v1a4.5 4.5 0 0 0 9 0V7"/>
           <line x1="8" y1="12.5" x2="8" y2="14.5"/>
@@ -82,8 +82,8 @@
         </div>
       </div>
 
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn--primary btn--caps" style="flex:1;" onclick="beginLiveMeeting()">
+      <div style="display:flex;gap:var(--m-space-2);">
+        <button class="btn btn--primary btn--caps u-grow" onclick="beginLiveMeeting()">
           <svg viewBox="0 0 16 16" width="11" height="11" fill="currentColor" style="margin-right:4px;"><circle cx="8" cy="8" r="6"/></svg>
           Start Listening
         </button>

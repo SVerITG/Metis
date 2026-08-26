@@ -1,28 +1,28 @@
 <!-- knowledge_pdf_search.html — PDF chunk keyword search results -->
 {% if not results %}
-<div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);padding:12px 0;">
+<div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-3) 0;">
   No documents found for <strong>{{ q }}</strong>{% if domain %} in <em>{{ domain }}</em>{% endif %}.
   Tip: ask Metis for semantic search across all content.
 </div>
 {% else %}
-<div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);padding:8px 0 10px;">
+<div class="u-label" style="padding:var(--m-space-2) 0 var(--m-space-3);">
   {{ results | length }} DOCUMENT{% if results | length != 1 %}S{% endif %} MATCHING &ldquo;{{ q }}&rdquo;{% if domain %} IN {{ domain | upper }}{% endif %}
 </div>
-<div style="display:flex;flex-direction:column;gap:8px;">
+<div class="u-col">
   {% for r in results %}
-  <div style="padding:12px 16px;background:var(--m-surface-2);border-radius:var(--m-radius);border-left:2px solid var(--m-accent);">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">
-      <span style="font-family:var(--m-display);font-size:14px;font-weight:500;color:var(--m-ink);">{{ r.title }}</span>
-      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);white-space:nowrap;padding:2px 7px;border:1px solid var(--m-rule);border-radius:2px;flex-shrink:0;">
+  <div style="padding:var(--m-space-3) var(--m-space-4);background:var(--m-surface-2);border-radius:var(--m-radius);border-left:2px solid var(--m-accent);">
+    <div class="u-row u-row--top u-mb-2" style="justify-content:space-between;">
+      <span style="font-family:var(--m-display);font-size:var(--t-body);font-weight:500;color:var(--m-ink);">{{ r.title }}</span>
+      <span class="u-label u-fixed" style="white-space:nowrap;padding:2px 7px;border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);">
         {{ r.domain | upper if r.domain else 'LIBRARY' }}
       </span>
     </div>
     {% if r.excerpt_html %}
-    <div style="font-family:var(--m-display);font-size:12px;color:var(--m-text);line-height:1.6;margin-bottom:6px;">
+    <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-text);line-height:1.6;">
       {{ r.excerpt_html | safe }}…
     </div>
     {% endif %}
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);display:flex;gap:16px;">
+    <div class="u-label" style="display:flex;gap:var(--m-space-4);">
       <span>{{ r.filename }}</span>
       {% if r.page_start %}
       <span>P. {{ r.page_start }}{% if r.page_end and r.page_end != r.page_start %}–{{ r.page_end }}{% endif %}</span>

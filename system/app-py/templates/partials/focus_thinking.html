@@ -20,7 +20,7 @@
         title="Delete this {{ what }}">&times;</button>
 {% endmacro %}
 
-<div class="panel" style="padding:16px 18px;">
+<div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
 
   <div class="ft-forms">
     <form hx-post="/api/focus/{{ area.slug }}/question"
@@ -47,7 +47,7 @@
   </div>
 
   {% if not thinking.ideas and not thinking.notes and not questions %}
-  <p style="margin:10px 0 0;font-size:12.5px;color:var(--m-muted);line-height:1.6;">
+  <p style="margin:var(--m-space-3) 0 0;font-size:var(--t-meta);color:var(--m-muted);line-height:1.6;">
     Nothing recorded on this focus yet. Anything written here is tagged
     <code>focus:{{ area.slug }}</code> and stays in your notes and ideas whatever
     happens to this surface — archiving the focus never removes it. Deleting an

@@ -10,15 +10,15 @@
   'conferencePaper': '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="var(--m-chart-5)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>'
 } %}
 {% set default_icon = '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="var(--m-chart-8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>' %}
-<div style="margin-bottom:14px;">
-  <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;">
-    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--m-muted);">Recently added</span>
+<div class="u-mb-4">
+  <div class="u-row u-row--base u-mb-2">
+    <span class="u-label" style="letter-spacing:0.18em;text-transform:uppercase;">Recently added</span>
     {% set unread_new = items | rejectattr("is_read") | list | length %}
     {% if unread_new %}
-    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;padding:1px 6px;border-radius:10px;background:var(--m-accent);color:var(--m-on-accent);">{{ unread_new }} NEW</span>
+    <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:1px 6px;border-radius:10px;background:var(--m-accent);color:var(--m-on-accent);">{{ unread_new }} NEW</span>
     {% endif %}
   </div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+  <div style="display:flex;gap:var(--m-space-2);flex-wrap:wrap;">
     {% for item in items %}
     <div style="display:flex;align-items:center;gap:6px;padding:5px 12px;
                 background:var(--m-surface-2);border:1px solid {% if not item.is_read %}var(--m-accent){% else %}var(--m-rule-soft){% endif %};
@@ -29,9 +29,8 @@
          onmouseout="this.style.borderColor='{% if not item.is_read %}var(--m-accent){% else %}var(--m-rule-soft){% endif %}';this.style.background='var(--m-surface-2)'">
       {# Type icon #}
       {{ type_icons.get(item.item_type, default_icon) }}
-      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.title }}</span>
-      <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
-                   color:var(--m-muted);flex-shrink:0;">{{ item.age }}</span>
+      <span class="u-truncate">{{ item.title }}</span>
+      <span class="u-label u-fixed">{{ item.age }}</span>
     </div>
     {% endfor %}
   </div>

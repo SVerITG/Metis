@@ -1,16 +1,16 @@
-<div id="lm-session" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:850;background:var(--m-bg);display:flex;flex-direction:column;">
+<div class="u-col" id="lm-session" style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:850;background:var(--m-bg);">
 
   <!-- Top bar -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--m-rule-soft);background:var(--m-surface);flex-shrink:0;">
-    <div style="display:flex;align-items:center;gap:14px;">
-      <div id="lm-status" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:flex;align-items:center;">
+  <div class="u-row u-row--between u-fixed u-rule" style="padding:var(--m-space-3) var(--m-space-5);background:var(--m-surface);">
+    <div class="u-row" style="gap:var(--m-space-4);">
+      <div class="u-label u-row" id="lm-status">
         <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--m-muted);margin-right:6px;"></span>STARTING
       </div>
-      <div style="font-family:var(--m-display);font-size:16px;font-weight:500;color:var(--m-ink);">{{ title }}</div>
-      <div id="lm-timer" style="font-family:var(--m-mono);font-size:12px;color:var(--m-muted);">00:00</div>
-      <div id="lm-mode" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);">detecting…</div>
+      <div style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);">{{ title }}</div>
+      <div id="lm-timer" style="font-family:var(--m-mono);font-size:var(--t-meta);color:var(--m-muted);">00:00</div>
+      <div class="u-label" id="lm-mode">detecting…</div>
     </div>
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:var(--m-space-2);">
       <button id="lm-pause-btn" class="btn btn--ghost btn--caps" onclick="toggleLmPause()">PAUSE</button>
       <button class="btn btn--sec btn--caps" onclick="endLiveMeeting()">End Meeting</button>
       <button class="btn btn--ghost btn--caps" onclick="if(confirm('End and discard?')) closeLiveSession()">✕</button>
@@ -18,49 +18,49 @@
   </div>
 
   <!-- Main two-column area -->
-  <div style="display:grid;grid-template-columns:1fr 320px;flex:1;min-height:0;overflow:hidden;">
+  <div class="u-grow" style="display:grid;grid-template-columns:1fr 320px;min-height:0;overflow:hidden;">
 
     <!-- LEFT: Transcript -->
-    <div style="display:flex;flex-direction:column;border-right:1px solid var(--m-rule-soft);">
-      <div style="padding:10px 20px 8px;border-bottom:1px solid var(--m-rule-soft);flex-shrink:0;">
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);">TRANSCRIPT</span>
+    <div class="u-col" style="border-right:1px solid var(--m-rule-soft);">
+      <div class="u-fixed u-rule" style="padding:var(--m-space-3) var(--m-space-5) var(--m-space-2);">
+        <span class="u-label" style="letter-spacing:0.16em;">TRANSCRIPT</span>
       </div>
       <!-- Scrollable transcript body -->
-      <div id="lm-transcript-body"
-           style="flex:1;overflow-y:auto;padding:16px 20px;scroll-behavior:smooth;">
-        <div style="font-family:var(--m-sans);font-size:13px;color:var(--m-muted);font-style:italic;">Listening… speak clearly near your microphone.</div>
+      <div class="u-grow" id="lm-transcript-body"
+           style="overflow-y:auto;padding:var(--m-space-4) var(--m-space-5);scroll-behavior:smooth;">
+        <div style="font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-muted);font-style:italic;">Listening… speak clearly near your microphone.</div>
       </div>
       <!-- Interim (live typing indicator) -->
-      <div id="lm-interim"
-           style="padding:8px 20px;border-top:1px solid var(--m-rule-soft);min-height:32px;font-family:var(--m-sans);font-size:13px;color:var(--m-muted);flex-shrink:0;background:var(--m-surface);"></div>
+      <div class="u-fixed u-rule-t" id="lm-interim"
+           style="padding:var(--m-space-2) var(--m-space-5);min-height:32px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-muted);background:var(--m-surface);"></div>
     </div>
 
     <!-- RIGHT: Connections -->
-    <div style="display:flex;flex-direction:column;overflow:hidden;">
-      <div style="padding:10px 16px 8px;border-bottom:1px solid var(--m-rule-soft);flex-shrink:0;">
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.16em;color:var(--m-muted);">CONNECTIONS SURFACED</span>
+    <div class="u-col" style="overflow:hidden;">
+      <div class="u-fixed u-rule" style="padding:var(--m-space-3) var(--m-space-4) var(--m-space-2);">
+        <span class="u-label" style="letter-spacing:0.16em;">CONNECTIONS SURFACED</span>
       </div>
-      <div id="lm-connections-body"
-           style="flex:1;overflow-y:auto;padding:10px 16px;">
-        <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">Connections appear as you speak…</div>
+      <div class="u-grow" id="lm-connections-body"
+           style="overflow-y:auto;padding:var(--m-space-3) var(--m-space-4);">
+        <div class="u-label">Connections appear as you speak…</div>
       </div>
     </div>
 
   </div>
 
   <!-- Bottom controls bar -->
-  <div style="padding:10px 20px;border-top:1px solid var(--m-rule-soft);background:var(--m-surface);display:flex;align-items:center;gap:12px;flex-shrink:0;flex-wrap:wrap;">
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">SPEAKER</div>
-    <div id="lm-speaker-bar" style="display:flex;gap:6px;flex-wrap:wrap;">
+  <div class="u-row u-row--wrap u-fixed u-rule-t" style="padding:var(--m-space-3) var(--m-space-5);background:var(--m-surface);gap:var(--m-space-3);">
+    <div class="u-label">SPEAKER</div>
+    <div id="lm-speaker-bar" style="display:flex;gap:var(--m-space-2);flex-wrap:wrap;">
       <!-- Speaker buttons injected by JS -->
     </div>
-    <div id="lm-controls" style="margin-left:auto;display:flex;gap:8px;">
+    <div id="lm-controls" style="margin-left:auto;display:flex;gap:var(--m-space-2);">
       <!-- End button becomes Generate Report after stop -->
     </div>
   </div>
 
   <!-- Report panel (hidden until generated) -->
-  <div id="lm-report-panel" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:var(--m-bg);overflow-y:auto;z-index:10;padding:40px max(40px,5vw);">
+  <div class="u-hide" id="lm-report-panel" style="position:absolute;top:0;left:0;right:0;bottom:0;background:var(--m-bg);overflow-y:auto;z-index:10;padding:40px max(40px,5vw);">
   </div>
 
 </div>

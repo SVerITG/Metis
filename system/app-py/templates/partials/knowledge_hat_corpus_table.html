@@ -1,6 +1,6 @@
 <div id="hat-table-area">
 
-  <div style="padding:9px 20px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);border-bottom:1px solid var(--m-rule-soft);display:flex;align-items:center;gap:10px;">
+  <div class="u-label u-row u-rule" style="padding:9px 20px;gap:var(--m-space-3);">
     {% if q %}
     <span>{{ total }} PAPER{% if total != 1 %}S{% endif %} MATCHING &ldquo;{{ q }}&rdquo;</span>
     {% else %}
@@ -9,7 +9,7 @@
     {# Count by status #}
     {% set seeded_count = items | selectattr("item_type", "equalto", "seeded") | list | length %}
     {% if seeded_count %}
-    <span style="margin-left:auto;display:inline-flex;align-items:center;gap:4px;">
+    <span style="margin-left:auto;display:inline-flex;align-items:center;gap:var(--m-space-1);">
       <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="var(--m-chart-2)" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
       <span style="color:var(--m-chart-2);">{{ seeded_count }} SEEDED</span>
     </span>
@@ -19,12 +19,12 @@
   {% if items %}
   <table style="width:100%;border-collapse:collapse;">
     <thead>
-      <tr style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;border-bottom:1px solid var(--m-rule);">
-        <th style="padding:8px 20px 8px 20px;text-align:left;font-weight:400;width:120px;">Folder</th>
-        <th style="padding:8px 10px;text-align:left;font-weight:400;">Title</th>
-        <th style="padding:8px 10px;text-align:left;font-weight:400;width:110px;">Method</th>
-        <th style="padding:8px 10px;text-align:center;font-weight:400;width:90px;">Status</th>
-        <th style="padding:8px 20px;text-align:right;font-weight:400;width:60px;"></th>
+      <tr class="u-label u-label--wide" style="border-bottom:1px solid var(--m-rule);">
+        <th style="padding:var(--m-space-2) var(--m-space-5) var(--m-space-2) var(--m-space-5);text-align:left;font-weight:400;width:120px;">Folder</th>
+        <th style="padding:var(--m-space-2) var(--m-space-3);text-align:left;font-weight:400;">Title</th>
+        <th style="padding:var(--m-space-2) var(--m-space-3);text-align:left;font-weight:400;width:110px;">Method</th>
+        <th style="padding:var(--m-space-2) var(--m-space-3);text-align:center;font-weight:400;width:90px;">Status</th>
+        <th style="padding:var(--m-space-2) var(--m-space-5);text-align:right;font-weight:400;width:60px;"></th>
       </tr>
     </thead>
     <tbody>
@@ -36,11 +36,11 @@
 
         <!-- Folder with icon -->
         <td style="padding:11px 20px;vertical-align:top;white-space:nowrap;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--m-warn)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+          <div class="u-row">
+            <svg class="u-fixed" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--m-warn)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
-            <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);">
+            <span class="u-label">
               {% if item.collection_tags %}{{ item.collection_tags[0] | upper }}{% else %}—{% endif %}
             </span>
           </div>
@@ -48,24 +48,24 @@
 
         <!-- Title + tags -->
         <td style="padding:11px 10px;vertical-align:top;">
-          <div style="display:flex;align-items:baseline;gap:8px;">
+          <div class="u-row u-row--base">
             {# PDF icon #}
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="{% if is_seeded %}var(--m-chart-2){% else %}var(--m-muted){% endif %}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+            <svg class="u-fixed" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="{% if is_seeded %}var(--m-chart-2){% else %}var(--m-muted){% endif %}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M6 2h8l6 6v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M14 2v6h6"/>
             </svg>
-            <div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;">
+            <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;">
               {{ item.title }}
             </div>
           </div>
           {% if item.abstract %}
-          <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);margin-top:4px;line-height:1.5;padding-left:22px;">
+          <div style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);line-height:1.5;padding-left:22px;">
             {{ item.abstract | truncate(140, True, '…') }}
           </div>
           {% endif %}
           {% if item.collection_tags | length > 1 %}
-          <div style="margin-top:5px;display:flex;gap:4px;flex-wrap:wrap;padding-left:22px;">
+          <div style="margin-top:5px;display:flex;gap:var(--m-space-1);flex-wrap:wrap;padding-left:22px;">
             {% for tag in item.collection_tags[1:] %}
-            <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;padding:1px 5px;border:1px solid var(--m-rule);border-radius:2px;color:var(--m-muted);">{{ tag | upper }}</span>
+            <span class="u-label" style="padding:1px 5px;border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);">{{ tag | upper }}</span>
             {% endfor %}
           </div>
           {% endif %}
@@ -74,32 +74,28 @@
         <!-- Method -->
         <td style="padding:11px 10px;vertical-align:top;">
           {% if item.method %}
-          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:2px 7px;border-radius:var(--m-radius-pill,10px);
-            background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">
+          <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;padding:2px 7px;border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">
             {{ item.method | upper }}
           </span>
           {% else %}
-          <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">—</span>
+          <span class="u-label">—</span>
           {% endif %}
         </td>
 
         <!-- Status -->
         <td style="padding:11px 10px;text-align:center;vertical-align:top;">
           {% if is_seeded %}
-          <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;padding:2px 8px;border-radius:var(--m-radius-pill,10px);
-                       background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
+          <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:2px 8px;border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
             <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="var(--m-chart-2)" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
             SEEDED
           </span>
           {% elif item.item_type == 'to_triage' %}
-          <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;padding:2px 8px;border-radius:var(--m-radius-pill,10px);
-                       background:rgba(180,83,9,0.08);color:var(--m-warn);">
+          <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:2px 8px;border-radius:var(--m-radius-pill,10px);background:rgba(180,83,9,0.08);color:var(--m-warn);">
             <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1"/></svg>
             TRIAGE
           </span>
           {% else %}
-          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;padding:2px 8px;border-radius:var(--m-radius-pill,10px);
-                       background:var(--m-surface-2);color:var(--m-muted);">
+          <span class="u-label" style="padding:2px 8px;border-radius:var(--m-radius-pill,10px);background:var(--m-surface-2);">
             {{ item.item_type | upper }}
           </span>
           {% endif %}
@@ -109,9 +105,7 @@
         <td style="padding:11px 20px;text-align:right;vertical-align:top;white-space:nowrap;">
           {% if item.pdf_url %}
           <a href="{{ item.pdf_url }}" target="_blank" rel="noopener"
-             style="display:inline-block;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
-                    color:var(--m-ok);text-decoration:none;padding:2px 6px;
-                    border:1px solid var(--m-ok);border-radius:2px;transition:background 140ms,color 140ms;"
+             style="display:inline-block;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-ok);text-decoration:none;padding:2px 6px;border:1px solid var(--m-ok);border-radius:var(--m-radius-sm);transition:background 140ms,color 140ms;"
              onmouseover="this.style.background='var(--m-ok)';this.style.color='var(--m-on-accent)'"
              onmouseout="this.style.background='';this.style.color='var(--m-ok)'"
              title="Open local PDF">PDF ↗</a>
@@ -125,12 +119,12 @@
 
   {% else %}
   <div style="padding:52px 24px;text-align:center;">
-    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--m-muted)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.4;margin-bottom:12px;">
+    <svg class="u-mb-3" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--m-muted)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.4;">
       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
     </svg>
-    <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.22em;color:var(--m-muted);margin-bottom:12px;">DOMAIN CORPUS</div>
-    <div style="font-family:var(--m-display);font-size:18px;font-weight:500;color:var(--m-ink);margin-bottom:8px;">No papers match your filters.</div>
-    <div style="font-family:var(--m-display);font-style:italic;font-size:13px;color:var(--m-muted);">Try broadening your search or removing the folder filter.</div>
+    <div class="u-label u-mb-3" style="letter-spacing:0.22em;">DOMAIN CORPUS</div>
+    <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;color:var(--m-ink);">No papers match your filters.</div>
+    <div class="u-ed" style="font-size:var(--t-small);">Try broadening your search or removing the folder filter.</div>
   </div>
   {% endif %}
 
@@ -140,13 +134,13 @@
      top — WorldCat, a Koha OPAC and JSTOR all page at 20–50 with a count and a
      next link — and 200 rows is the "long list of items" a reader gives up on. #}
   {% if total_pages is defined and total_pages > 1 %}
-  <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 0;border-top:1px solid var(--m-rule-soft);">
+  <div class="u-row u-rule-t" style="justify-content:center;gap:var(--m-space-3);padding:var(--m-space-4) 0;">
     {% if page > 1 %}
     <button type="button" class="news-period-btn"
             hx-get="/api/partial/knowledge/hat-corpus-table?page={{ page - 1 }}&q={{ q | urlencode }}&collection={{ collection | default('') | urlencode }}&sort={{ sort | default('title') | urlencode }}"
             hx-target="#hat-table-area" hx-swap="outerHTML">← Previous</button>
     {% endif %}
-    <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-muted);">
+    <span class="u-label">
       {{ page }} / {{ total_pages }} · {{ total }} PAPERS
     </span>
     {% if page < total_pages %}

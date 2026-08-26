@@ -4,22 +4,22 @@
   <div class="panel m-drawer-top" style="width:640px;max-width:96vw;padding:0;box-shadow:0 8px 32px rgba(0,0,0,0.18);max-height:88vh;overflow-y:auto;">
 
     <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;border-bottom:1px solid var(--m-rule-soft);position:sticky;top:0;background:var(--m-surface);z-index:1;">
+    <div class="u-row u-row--between u-rule" style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-3);position:sticky;top:0;background:var(--m-surface);z-index:1;">
       <div class="kicker kicker--ok" style="margin:0;">
         <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H2v12h12z"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
         IMPORT FROM MEETILY
       </div>
-      <button onclick="closeMeetilyImport()" style="background:none;border:none;cursor:pointer;color:var(--m-muted);font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;padding:2px 6px;">ESC</button>
+      <button class="u-label" onclick="closeMeetilyImport()" style="background:none;border:none;cursor:pointer;padding:2px 6px;">ESC</button>
     </div>
 
     <!-- Tabs: File upload vs Paste -->
-    <div style="display:flex;border-bottom:1px solid var(--m-rule-soft);">
-      <button id="meetily-tab-file" onclick="switchMeetilyTab('file')"
-              style="flex:1;padding:10px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;border:none;cursor:pointer;background:var(--m-surface-2);color:var(--m-ink);border-bottom:2px solid var(--m-accent);">
+    <div class="u-rule" style="display:flex;">
+      <button class="u-grow" id="meetily-tab-file" onclick="switchMeetilyTab('file')"
+              style="padding:var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;border:none;cursor:pointer;background:var(--m-surface-2);color:var(--m-ink);border-bottom:2px solid var(--m-accent);">
         UPLOAD .MD FILE
       </button>
-      <button id="meetily-tab-paste" onclick="switchMeetilyTab('paste')"
-              style="flex:1;padding:10px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;border:none;cursor:pointer;background:var(--m-surface);color:var(--m-muted);border-bottom:2px solid transparent;">
+      <button class="u-label u-grow" id="meetily-tab-paste" onclick="switchMeetilyTab('paste')"
+              style="padding:var(--m-space-3);border:none;cursor:pointer;background:var(--m-surface);border-bottom:2px solid transparent;">
         PASTE MARKDOWN
       </button>
     </div>
@@ -30,46 +30,45 @@
           hx-target="#meetily-import-result"
           hx-swap="innerHTML"
           hx-encoding="multipart/form-data"
-          style="padding:18px 20px 20px;">
+          style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-5);">
 
-      <div style="border:2px dashed var(--m-line);border-radius:6px;padding:28px 20px;text-align:center;margin-bottom:14px;cursor:pointer;transition:border-color 0.15s;"
+      <div class="u-mb-4" style="border:2px dashed var(--m-line);border-radius:6px;padding:var(--m-space-6) var(--m-space-5);text-align:center;cursor:pointer;transition:border-color 0.15s;"
            id="meetily-dropzone"
            ondragover="event.preventDefault();this.style.borderColor='var(--m-accent)'"
            ondragleave="this.style.borderColor='var(--m-line)'"
            ondrop="handleMeetilyDrop(event)"
            onclick="document.getElementById('meetily-file-input').click()">
-        <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);margin-bottom:6px;">DROP .MD FILE HERE</div>
-        <div style="font-family:var(--m-sans);font-size:13px;color:var(--m-ink);" id="meetily-file-label">or click to browse</div>
-        <input type="file" name="file" id="meetily-file-input" accept=".md,.txt,.markdown"
-               style="display:none;" onchange="meetilyFileSelected(this)">
+        <div class="u-label u-mb-2">DROP .MD FILE HERE</div>
+        <div style="font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);" id="meetily-file-label">or click to browse</div>
+        <input class="u-hide" type="file" name="file" id="meetily-file-input" accept=".md,.txt,.markdown" onchange="meetilyFileSelected(this)">
       </div>
 
       <div id="meetily-import-result"></div>
 
-      <div style="display:flex;gap:8px;margin-top:14px;">
-        <button type="submit" class="btn btn--primary btn--caps" style="flex:1;">Import &amp; Analyse</button>
+      <div style="display:flex;gap:var(--m-space-2);margin-top:var(--m-space-4);">
+        <button type="submit" class="btn btn--primary btn--caps u-grow">Import &amp; Analyse</button>
         <button type="button" class="btn btn--ghost btn--caps" onclick="closeMeetilyImport()">Cancel</button>
       </div>
     </form>
 
     <!-- Paste mode (hidden by default) -->
-    <form id="meetily-form-paste"
+    <form class="u-hide" id="meetily-form-paste"
           hx-post="/api/meeting/import-meetily"
           hx-target="#meetily-import-result-paste"
           hx-swap="innerHTML"
-          style="padding:18px 20px 20px;display:none;">
+          style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-5);">
 
-      <div style="margin-bottom:12px;">
-        <label style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--m-muted);display:block;margin-bottom:4px;">MEETILY MARKDOWN</label>
+      <div class="u-mb-3">
+        <label class="u-label u-mb-1" style="display:block;">MEETILY MARKDOWN</label>
         <textarea name="markdown" rows="12"
                   placeholder="Paste the Meetily export here.&#10;&#10;Metis will parse:&#10;- YAML front matter (title, date, participants)&#10;- ## Summary sections&#10;- ## Action Items&#10;- ## Transcript with speaker labels&#10;&#10;Then run cross-pollination against your library."
-                  style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:4px;padding:10px 12px;font-family:var(--m-mono);font-size:12px;color:var(--m-ink);resize:vertical;line-height:1.6;outline:none;"></textarea>
+                  style="width:100%;box-sizing:border-box;background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-meta);color:var(--m-ink);resize:vertical;line-height:1.6;outline:none;"></textarea>
       </div>
 
       <div id="meetily-import-result-paste"></div>
 
-      <div style="display:flex;gap:8px;margin-top:14px;">
-        <button type="submit" class="btn btn--primary btn--caps" style="flex:1;">Import &amp; Analyse</button>
+      <div style="display:flex;gap:var(--m-space-2);margin-top:var(--m-space-4);">
+        <button type="submit" class="btn btn--primary btn--caps u-grow">Import &amp; Analyse</button>
         <button type="button" class="btn btn--ghost btn--caps" onclick="closeMeetilyImport()">Cancel</button>
       </div>
     </form>

@@ -11,13 +11,13 @@
       </svg>
     </span>
     <div>
-      <div style="font-family:var(--m-display);font-size:15px;color:var(--m-ink);line-height:1.3;">{{ item.title }}</div>
+      <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.3;">{{ item.title }}</div>
       {% if item.category %}
-      <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);text-transform:uppercase;margin-top:2px;">{{ item.category }}</div>
+      <div class="u-label u-label--wide" style="margin-top:2px;">{{ item.category }}</div>
       {% endif %}
     </div>
     {% if item.completed_at %}
-    <span class="tnum" style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-muted);">{{ item.completed_at[:10] }}</span>
+    <span class="tnum u-label">{{ item.completed_at[:10] }}</span>
     {% endif %}
   </div>
   {% endfor %}

@@ -1,5 +1,5 @@
 <div>
-  <h2 class="sec-label" style="margin-bottom:8px;">
+  <h2 class="sec-label u-mb-2">
     News radar
     <span class="sec-label-tail">{{ news_briefs|length }} SIGNALS</span>
   </h2>
@@ -17,19 +17,19 @@
     <!-- Feed rows with signal badges + summaries -->
     {% if news_briefs %}
       {% for brief in news_briefs %}
-      <div class="feed-row feed-row--compact m-edge-left" data-cat="{{ (brief.domain or 'General')|upper }}"
-           style="padding:8px 0 8px 10px;border-bottom:1px solid var(--m-rule-soft);position:relative;">
-        <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px;">
+      <div class="feed-row feed-row--compact m-edge-left u-rule" data-cat="{{ (brief.domain or 'General')|upper }}"
+           style="padding:var(--m-space-2) 0 var(--m-space-2) var(--m-space-3);position:relative;">
+        <div class="u-row" style="gap:7px;margin-bottom:3px;">
           {% if brief.signal %}
           <span class="signal-dot signal-dot-{{ brief.signal }}"
                 aria-label="{{ brief.signal|capitalize }} signal"
                 title="{{ brief.signal }} signal"></span>
           {% endif %}
           {% if brief.domain %}
-          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:var(--m-accent);white-space:nowrap;flex-shrink:0;">{{ (brief.domain)|upper }}</span>
+          <span class="u-label u-label--accent u-fixed" style="letter-spacing:0.1em;white-space:nowrap;">{{ (brief.domain)|upper }}</span>
           {% endif %}
           {% if brief.age_label %}
-          <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);white-space:nowrap;flex-shrink:0;">{{ brief.age_label }}</span>
+          <span class="u-label u-fixed" style="white-space:nowrap;">{{ brief.age_label }}</span>
           {% endif %}
         </div>
         <a class="feed-title" href="{{ brief.source_url or '#' }}" target="_blank" rel="noopener"
@@ -37,14 +37,12 @@
           {{ brief.title or 'Untitled' }}
         </a>
         {% if brief.summary %}
-        <div style="font-size:11.5px;color:var(--m-muted);line-height:1.45;margin-bottom:4px;">
+        <div class="u-mb-1" style="font-size:var(--t-meta);color:var(--m-muted);line-height:1.45;">
           {{ brief.summary }}{% if brief.summary|length >= 160 %}…{% endif %}
         </div>
         {% endif %}
-        <button onclick="searchLibraryFor({{ brief.title | tojson }})"
-                style="background:none;border:none;padding:0;font-family:var(--m-mono);font-size:11px;
-                       color:var(--m-muted);cursor:pointer;letter-spacing:0.08em;
-                       transition:color 120ms;"
+        <button class="u-label" onclick="searchLibraryFor({{ brief.title | tojson }})"
+                style="background:none;border:none;padding:0;cursor:pointer;letter-spacing:0.08em;transition:color 120ms;"
                 onmouseover="this.style.color='var(--m-accent)'"
                 onmouseout="this.style.color='var(--m-muted)'"
                 title="Search your library for related papers">
@@ -53,18 +51,17 @@
       </div>
       {% endfor %}
     {% else %}
-      <div class="empty-row" style="padding:20px;text-align:center;">
-        <div style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);margin-bottom:8px;">No signals yet</div>
-        <div style="font-size:12px;color:var(--m-muted);">Run a content scan to populate the news radar.</div>
+      <div class="empty-row" style="padding:var(--m-space-5);text-align:center;">
+        <div class="u-label u-mb-2">No signals yet</div>
+        <div style="font-size:var(--t-meta);color:var(--m-muted);">Run a content scan to populate the news radar.</div>
       </div>
     {% endif %}
 
     {% if total_count and total_count > news_briefs|length %}
-    <div style="padding:8px 16px 10px;border-top:1px solid var(--m-rule-soft);text-align:right;">
-      <a hx-get="/api/tab/news" hx-target="#tab-content" hx-swap="innerHTML" hx-push-url="/news"
+    <div class="u-rule-t" style="padding:var(--m-space-2) var(--m-space-4) var(--m-space-3);text-align:right;">
+      <a class="u-label u-label--accent" hx-get="/api/tab/news" hx-target="#tab-content" hx-swap="innerHTML" hx-push-url="/news"
          onclick="setNavActive(document.querySelector('.nav-item[data-tab=\'news\']'),'news')"
-         style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.14em;color:var(--m-accent);
-                text-decoration:none;cursor:pointer;border:none;">
+         style="letter-spacing:0.14em;text-decoration:none;cursor:pointer;border:none;">
         ALL {{ total_count }} SIGNALS →
       </a>
     </div>

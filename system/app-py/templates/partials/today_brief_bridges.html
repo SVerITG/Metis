@@ -1,13 +1,13 @@
 {# today_brief_bridges.html — Memory connections to the morning brief.
    Context: bridges (list of dicts with brief_phrase, memory_type, memory_preview, memory_date, event_type). #}
 {% if bridges %}
-<div id="brief-bridges" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--m-rule-soft);">
+<div class="u-rule-t" id="brief-bridges" style="margin-top:var(--m-space-4);padding-top:14px;">
   {# Was a styled <div>: a visual label with no place in the document outline.
      `sec-label` is the same look, emitted as a real heading. #}
-  <h3 class="sec-label" style="margin-bottom:10px;">
+  <h3 class="sec-label u-mb-3">
     <span>Connections to your research</span>
   </h3>
-  <div style="display:flex;flex-direction:column;gap:8px;">
+  <div class="u-col">
     {% set bridge_colors = {
       'episodic': 'var(--m-chart-2)',
       'semantic': 'var(--m-chart-3)',
@@ -17,12 +17,12 @@
     } %}
     {% for b in bridges %}
     <div style="display:flex;align-items:start;gap:10px;padding:10px 14px;background:var(--m-surface-2);border-radius:var(--m-radius);border-left:3px solid {{ bridge_colors.get(b.event_type, 'var(--m-chart-8)') }};">
-      <div style="flex:1;min-width:0;">
+      <div class="u-grow">
         <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;color:{{ bridge_colors.get(b.event_type, 'var(--m-chart-8)') }};margin-bottom:4px;">
           {% if b.memory_type == 'semantic' %}CONCEPT{% elif b.event_type == 'decision' %}DECISION{% else %}MEMORY{% endif %}
           &middot; {{ b.memory_date }}
         </div>
-        <div style="font-size:12.5px;color:var(--m-ink);line-height:1.45;">
+        <div style="font-size:var(--t-meta);color:var(--m-ink);line-height:1.45;">
           {{ b.memory_preview }}
         </div>
       </div>
