@@ -30,7 +30,7 @@
   {% for m in matches %}
     {% set meta = source_meta.get(m.source, ("Memory", "var(--m-muted)", "/thinking")) %}
     <a class="u-rule" href="{{ meta[2] }}"
-       style="display:flex;align-items:baseline;gap:var(--m-space-3);padding:7px 0;text-decoration:none;color:inherit;">
+       style="display:flex;align-items:baseline;gap:var(--m-space-3);padding:var(--m-space-2) 0;text-decoration:none;color:inherit;">
       <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
                    text-transform:uppercase;color:{{ meta[1] }};flex-shrink:0;width:64px;">
         {{ meta[0] }}

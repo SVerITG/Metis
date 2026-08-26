@@ -6,7 +6,7 @@
     <span>Memory landscape</span>
     <span class="tail">{{ topics|length }} TOPICS &middot; SIZED BY DEPTH &middot; COLORED BY FRESHNESS</span>
   </h2>
-  <div class="panel" style="padding:var(--m-space-5) var(--m-space-6);">
+  <div class="panel panel--lg">
 
     {# Topic bubble grid — CSS-only, no D3 needed for this view #}
     <div class="u-mb-5" style="display:flex;flex-wrap:wrap;gap:var(--m-space-3);justify-content:center;">
@@ -47,23 +47,23 @@
 
     {# Legend #}
     <div class="u-rule-t" style="display:flex;flex-wrap:wrap;gap:var(--m-space-4);padding-top:14px;">
-      <div class="u-row" style="gap:5px;">
+      <div class="u-row" style="gap:var(--m-space-1);">
         <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-2);background:color-mix(in srgb, var(--m-chart-2) 12%, transparent);"></span>
         <span class="u-label" style="letter-spacing:0.06em;">Fresh (&lt;7d)</span>
       </div>
-      <div class="u-row" style="gap:5px;">
+      <div class="u-row" style="gap:var(--m-space-1);">
         <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-1);background:color-mix(in srgb, var(--m-chart-1) 10%, transparent);"></span>
         <span class="u-label" style="letter-spacing:0.06em;">Recent (&lt;30d)</span>
       </div>
-      <div class="u-row" style="gap:5px;">
+      <div class="u-row" style="gap:var(--m-space-1);">
         <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-4);background:color-mix(in srgb, var(--m-chart-4) 10%, transparent);"></span>
         <span class="u-label" style="letter-spacing:0.06em;">Aging (&lt;90d)</span>
       </div>
-      <div class="u-row" style="gap:5px;">
+      <div class="u-row" style="gap:var(--m-space-1);">
         <span style="width:10px;height:10px;border-radius:50%;border:2px solid var(--m-chart-8);background:color-mix(in srgb, var(--m-chart-8) 8%, transparent);"></span>
         <span class="u-label" style="letter-spacing:0.06em;">Stale (&gt;90d)</span>
       </div>
-      <div class="u-row" style="gap:5px;margin-left:auto;">
+      <div class="u-row" style="gap:var(--m-space-1);margin-left:auto;">
         <span class="u-label" style="letter-spacing:0.06em;">Size = memory count</span>
       </div>
     </div>

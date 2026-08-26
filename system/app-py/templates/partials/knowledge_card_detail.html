@@ -23,14 +23,14 @@
         {{ card.title or 'Untitled' }}
       </h3>
       {% if card.authors %}
-      <div style="font-family:var(--m-ui);font-size:var(--t-small);color:var(--m-text);margin-top:5px;">{{ card.authors }}</div>
+      <div style="font-family:var(--m-ui);font-size:var(--t-small);color:var(--m-text);margin-top:var(--m-space-1);">{{ card.authors }}</div>
       {% endif %}
     </div>
 
-    <button class="u-fixed" type="button"
+    <button class="u-fixed btn btn--sec" type="button"
             onclick="htmx.ajax('GET','/api/partial/knowledge/cards',{target:'#knowledge-cards-area',swap:'outerHTML'})"
             title="Back to the shelf"
-            style="background:transparent;border:1px solid var(--m-rule-soft);border-radius:var(--m-radius);padding:4px 11px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);cursor:pointer;">
+            style="padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
       ← Shelf
     </button>
   </div>
@@ -50,7 +50,7 @@
       </a>
     {% else %}
       <span title="The card records this path but no file is there. Re-run the library scan, or the download never completed."
-            style="display:inline-flex;align-items:center;gap:5px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;color:#b3261e;">
+            style="display:inline-flex;align-items:center;gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;color:#b3261e;">
         <span style="width:7px;height:7px;border-radius:50%;background:#b3261e;display:inline-block;"></span>
         FILE MISSING ON DISK
       </span>
@@ -78,11 +78,11 @@
 
   {% if related %}
   <div class="u-rule-t" style="margin-top:var(--m-space-4);padding-top:12px;">
-    <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.14em;text-transform:uppercase;color:var(--m-muted);margin-bottom:7px;">
+    <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.14em;text-transform:uppercase;color:var(--m-muted);margin-bottom:var(--m-space-2);">
       Also in your catalogue
     </div>
     {% for r in related %}
-    <div style="font-family:var(--m-ui);font-size:var(--t-meta);color:var(--m-text);padding:3px 0;">
+    <div style="font-family:var(--m-ui);font-size:var(--t-meta);color:var(--m-text);padding:var(--m-space-1) 0;">
       {{ r.title | truncate(90, True, '…') }}
       {% if r.year %}<span style="color:var(--m-muted);font-family:var(--m-mono);font-size:var(--t-micro);"> · {{ r.year }}</span>{% endif %}
     </div>

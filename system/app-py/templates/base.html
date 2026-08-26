@@ -590,7 +590,7 @@ Run my full Metis update. Using the metis-rc tools: scan the latest news and any
     <g id="i-undo"><path d="M3 8a5 5 0 1 1 1.6 3.7"/><path d="M2.2 4.6V8H5.6"/></g>
   </defs>
 </svg>
-    <div class="scroll surface-fade" id="tab-content" style="padding:28px 32px 64px;">
+    <div class="scroll surface-fade" id="tab-content" style="padding:var(--m-space-6) var(--m-space-6) var(--m-space-8);">
       {% block content %}{% endblock %}
     </div>
 
@@ -721,7 +721,7 @@ Run my full Metis update. Using the metis-rc tools: scan the latest news and any
       'display:flex;align-items:center;gap:var(--m-space-3);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius);">' +
       '<span style="color:var(--m-warn);">⚠</span> Something went wrong loading this section — I\'ll try again in a moment. ' +
       '<button onclick="htmx.trigger(this.closest(\'[hx-get],[hx-post]\') || document.body, \'load\')" ' +
-      'style="background:none;border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);padding:2px 8px;' +
+      'style="background:none;border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);padding:var(--m-space-1) var(--m-space-2);' +
       'font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);cursor:pointer;">Retry</button></div>';
   });
   document.addEventListener('htmx:sendError', function(evt) {

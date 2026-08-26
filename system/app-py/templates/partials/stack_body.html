@@ -44,7 +44,7 @@
 </div>
 
 {% if not items %}
-<div class="panel" style="padding:var(--d-panel) var(--s-5);">
+<div class="panel" style="padding:var(--d-panel) var(--m-space-5);">
   <p style="margin:0;font-size:var(--t-body);line-height:1.65;color:var(--m-muted);">
     {% if state == 'later' %}
       Nothing on the stack. On <a href="/news" style="color:var(--m-accent);">News</a>
@@ -52,10 +52,14 @@
       anything you want to come back to and it lands here. That is the whole point
       of this page: Today is for seeing what is new, not for reading it.
     {% elif state == 'declined' %}
-      Nothing declined. Items you mark <strong>Not for me</strong> come here — they
-      are folded away, never deleted, so you can always see what you passed on.
+      Nothing declined yet. What you mark <strong>Not for me</strong> comes here —
+      folded away, never deleted, so you can always see what you passed on.
+    {% elif state == 'saved' %}
+      Nothing kept yet. <strong>Keep</strong> is for things you want to hold on to
+      rather than read once — they stay here after the feed has moved on.
     {% else %}
-      Nothing {{ state }} yet.
+      Nothing marked read yet. Items you finish land here, so this becomes a
+      record of what you actually got through.
     {% endif %}
   </p>
 </div>

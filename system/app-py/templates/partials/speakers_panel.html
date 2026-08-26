@@ -1,5 +1,5 @@
 {# partials/speakers_panel.html — enrolled voice profiles #}
-<div id="speakers-panel" class="panel u-mb-4" style="padding:0;">
+<div id="speakers-panel" class="panel u-mb-4 panel--flush">
 
   <div class="u-row u-row--between u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
     <span class="kicker kicker--accent" style="margin:0;">VOICE PROFILES</span>
@@ -10,7 +10,7 @@
   <div style="padding:var(--m-space-4) var(--m-space-5);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-muted);line-height:1.6;">
     <strong style="color:var(--m-warn);">resemblyzer not installed.</strong>
     Voice recognition is unavailable. Run:<br>
-    <code style="font-family:var(--m-mono);font-size:var(--t-micro);background:var(--m-surface-2);padding:2px 6px;border-radius:var(--m-radius);">
+    <code style="font-family:var(--m-mono);font-size:var(--t-micro);background:var(--m-surface-2);padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius);">
       python3 -m pip install resemblyzer
     </code>
     in the Metis venv.
@@ -31,8 +31,8 @@
           &middot; UPDATED {{ (sp.updated_at or '')[:10] }}
         </div>
       </div>
-      <button class="u-label" onclick="deleteSpeaker({{ sp.id }}, '{{ sp.name }}')"
-              style="background:none;border:none;cursor:pointer;padding:var(--m-space-1) var(--m-space-2);"
+      <button class="u-label btn btn--ghost" onclick="deleteSpeaker({{ sp.id }}, '{{ sp.name }}')"
+              style="padding:var(--m-space-1) var(--m-space-2);"
               title="Remove {{ sp.name }}">✕</button>
     </div>
     {% endfor %}
@@ -48,14 +48,14 @@
     <div class="u-label u-mb-3">ENROLL NEW VOICE</div>
     <div class="u-mb-2" style="display:grid;grid-template-columns:1fr auto;gap:var(--m-space-2);">
       <input id="spk-enroll-name" type="text" placeholder="Full name (e.g. Alex)"
-             style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;width:100%;box-sizing:border-box;">
+             style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-small);color:var(--m-ink);outline:none;width:100%;box-sizing:border-box;">
     </div>
     <div class="u-mb-2">
       <label class="u-label u-mb-1" style="display:block;">
         AUDIO SAMPLE — WAV, MP3, M4A &middot; at least 10 seconds of speech
       </label>
       <input id="spk-enroll-file" type="file" accept=".wav,.mp3,.m4a,.ogg,.flac,.webm"
-             style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;font-family:var(--m-sans);font-size:var(--t-meta);color:var(--m-ink);width:100%;box-sizing:border-box;">
+             style="background:var(--m-surface-2);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);font-family:var(--m-sans);font-size:var(--t-meta);color:var(--m-ink);width:100%;box-sizing:border-box;">
     </div>
     <div class="u-mb-2" id="spk-enroll-status" style="min-height:18px;font-family:var(--m-mono);font-size:var(--t-micro);"></div>
     <div style="display:flex;gap:var(--m-space-2);">

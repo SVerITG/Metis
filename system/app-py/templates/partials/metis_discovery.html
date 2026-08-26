@@ -9,8 +9,8 @@
         {{ d_shown }}/{{ d_total }} discovered · {{ d_adopted }} now in use{% if d_mode == 'power' %} · power-user mode{% endif %}
       </div>
     </div>
-    <button hx-post="/api/metis/discovery/toggle" hx-target="#metis-discovery-card" hx-swap="outerHTML"
-            style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:5px 14px;background:transparent;border:1px solid var(--m-rule-strong);border-radius:var(--m-radius);color:var(--m-text);cursor:pointer;white-space:nowrap;">
+    <button class="btn btn--sec" hx-post="/api/metis/discovery/toggle" hx-target="#metis-discovery-card" hx-swap="outerHTML"
+            style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-4);color:var(--m-text);white-space:nowrap;">
       {% if d_enabled %}TURN OFF{% else %}TURN ON{% endif %}
     </button>
   </div>

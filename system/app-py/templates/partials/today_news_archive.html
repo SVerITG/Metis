@@ -19,7 +19,7 @@
       {% for brief in news_briefs %}
       <div class="feed-row feed-row--compact m-edge-left u-rule" data-cat="{{ (brief.domain or 'General')|upper }}"
            style="padding:var(--m-space-2) 0 var(--m-space-2) var(--m-space-3);position:relative;">
-        <div class="u-row" style="gap:7px;margin-bottom:3px;">
+        <div class="u-row" style="gap:var(--m-space-2);margin-bottom:var(--m-space-1);">
           {% if brief.signal %}
           <span class="signal-dot signal-dot-{{ brief.signal }}"
                 aria-label="{{ brief.signal|capitalize }} signal"
@@ -41,8 +41,8 @@
           {{ brief.summary }}{% if brief.summary|length >= 160 %}…{% endif %}
         </div>
         {% endif %}
-        <button class="u-label" onclick="searchLibraryFor({{ brief.title | tojson }})"
-                style="background:none;border:none;padding:0;cursor:pointer;letter-spacing:0.08em;transition:color 120ms;"
+        <button class="u-label btn btn--ghost" onclick="searchLibraryFor({{ brief.title | tojson }})"
+                style="padding:0;letter-spacing:0.08em;transition:color 120ms;"
                 onmouseover="this.style.color='var(--m-accent)'"
                 onmouseout="this.style.color='var(--m-muted)'"
                 title="Search your library for related papers">

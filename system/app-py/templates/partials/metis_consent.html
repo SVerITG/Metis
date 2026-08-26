@@ -7,11 +7,11 @@
 } %}
 
 {% if not events %}
-<div class="u-ed" style="padding:24px 22px;text-align:center;font-size:var(--t-small);">
+<div class="u-ed" style="padding:var(--m-space-5) var(--m-space-5);text-align:center;font-size:var(--t-small);">
   No consent events yet — agents log events via <code style="font-family:var(--m-mono);font-size:var(--t-micro);">log_consent_event()</code>.
 </div>
 {% else %}
-<div style="padding:14px 22px;">
+<div style="padding:var(--m-space-4) var(--m-space-5);">
   <div class="u-label" style="display:grid;grid-template-columns:120px 1fr 110px 100px;gap:var(--m-space-3);padding:var(--m-space-2) 0 var(--m-space-2);border-bottom:1px solid var(--m-rule-strong);letter-spacing:0.16em;text-transform:uppercase;">
     <div>Time</div>
     <div>Action</div>
@@ -19,7 +19,7 @@
     <div>Agent</div>
   </div>
   {% for ev in events %}
-  <div class="u-rule" style="display:grid;grid-template-columns:120px 1fr 110px 100px;gap:var(--m-space-3);padding:9px 0;align-items:center;">
+  <div class="u-rule" style="display:grid;grid-template-columns:120px 1fr 110px 100px;gap:var(--m-space-3);padding:var(--m-space-2) 0;align-items:center;">
     <div class="u-label">{{ ev.timestamp[:16] if ev.timestamp else '—' }}</div>
     <div class="u-truncate" style="font-family:var(--m-ui);font-size:var(--t-meta);color:var(--m-ink);" title="{{ ev.action }}">
       {{ ev.action }}

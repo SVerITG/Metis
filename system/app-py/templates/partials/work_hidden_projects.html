@@ -5,11 +5,11 @@
   </span>
   <div class="u-grow" style="display:flex;flex-wrap:wrap;gap:var(--m-space-2);">
     {% for p in hidden %}
-    <span style="display:inline-flex;align-items:center;gap:5px;background:var(--m-surface-3);border:1px solid var(--m-rule);border-radius:var(--m-radius);padding:2px 8px 2px 10px;font-size:var(--t-meta);color:var(--m-ink);">
+    <span style="display:inline-flex;align-items:center;gap:var(--m-space-1);background:var(--m-surface-3);border:1px solid var(--m-rule);border-radius:var(--m-radius);padding:var(--m-space-1) var(--m-space-2) var(--m-space-1) var(--m-space-3);font-size:var(--t-meta);color:var(--m-ink);">
       {{ p.title }}
-      <button onclick="retrackProject('{{ p.id }}')"
+      <button class="btn btn--ghost" onclick="retrackProject('{{ p.id }}')"
               title="Show again"
-              style="background:none;border:none;cursor:pointer;padding:0 2px;font-size:var(--t-micro);color:var(--m-accent);line-height:1;">+ show</button>
+              style="padding:0 var(--m-space-1);font-size:var(--t-micro);color:var(--m-accent);line-height:1;">+ show</button>
     </span>
     {% endfor %}
   </div>

@@ -11,7 +11,7 @@
       {% if total_sessions %}
       <button hx-get="/api/partial/today/all-sessions" hx-target="#all-sessions-modal" hx-swap="innerHTML"
               title="See everything you've worked on"
-              class="btn btn--ghost btn--caps" style="margin-left:auto;font-size:var(--t-micro);padding:3px 10px;">
+              class="btn btn--ghost btn--caps btn--sm" style="margin-left:auto;font-size:var(--t-micro);">
         ALL SESSIONS ({{ total_sessions }})
       </button>
       {% endif %}
@@ -49,7 +49,7 @@
       </summary>
       <ul style="margin:var(--m-space-2) 0 0;padding-left:18px;font-size:var(--t-meta);color:var(--m-ink);line-height:1.5;">
         {% for d in session.decisions %}
-        <li style="margin-bottom:3px;">{{ d }}</li>
+        <li style="margin-bottom:var(--m-space-1);">{{ d }}</li>
         {% endfor %}
       </ul>
     </details>

@@ -19,7 +19,7 @@
         {% set layer_list = [('episodic','Episodic'),('semantic','Semantic'),('procedural','Procedural'),('session','Session')] %}
         {% for slug, label in layer_list %}
         {% set active = slug in layers %}
-        <label class="u-row" style="gap:3px;font-family:var(--m-mono);font-size:var(--t-micro);cursor:pointer;">
+        <label class="u-row" style="gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);cursor:pointer;">
           <input type="checkbox" name="layers_cb_{{ slug }}" value="{{ slug }}"
                  {% if active %}checked{% endif %}
                  onchange="syncDebugLayers(this)"> {{ label }}

@@ -15,7 +15,7 @@
   <!-- ── Header: what this is, and the catch-up control ─────────────────── -->
   <div class="u-mb-4" style="display:flex;align-items:flex-end;justify-content:space-between;gap:var(--m-space-5);flex-wrap:wrap;">
     <div>
-      {{ sec_label("New Literature", tail="WHAT HAS APPEARED SINCE YOU LAST LOOKED", style="margin-bottom:6px;") }}
+      {{ sec_label("New Literature", tail="WHAT HAS APPEARED SINCE YOU LAST LOOKED") }}
       <div class="u-ed" style="font-size:var(--t-body);max-width:66ch;">
         Every journal, preprint server and topic search Metis watches — reviewed here,
         then added to your library one at a time.
@@ -49,12 +49,12 @@
               style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-ink);cursor:pointer;">
         File my downloads
       </button>
-      <button class="u-label u-label--accent" type="button"
+      <button class="u-label u-label--accent btn btn--soft" type="button"
               hx-post="/api/library/scan"
               hx-swap="none"
               hx-on::after-request="htmx.trigger('#nl-list','refresh')"
               title="Search every source now: journal feeds, Zotero, PubMed and OpenAlex."
-              style="background:var(--m-accent-wash);border:1px solid var(--m-accent);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;">
+              style="padding:var(--m-space-2) var(--m-space-4);letter-spacing:0.1em;text-transform:uppercase;">
         Search all sources
       </button>
     </div>
@@ -114,7 +114,7 @@
            hx-trigger="keyup changed delay:350ms"
            hx-target="#nl-list" hx-swap="innerHTML"
            hx-include="this"
-           style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:9px 13px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
+           style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius);color:var(--m-ink);outline:none;">
   </div>
 
   <!-- ── List body ─────────────────────────────────────────────────────── -->

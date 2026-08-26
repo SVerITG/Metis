@@ -1,6 +1,6 @@
 {% from "partials/_section.html" import sec_label %}
 <div>
-  {{ sec_label("Sources · recently clipped", tail="IN THE HAND", style="margin-bottom:12px;") }}
+  {{ sec_label("Sources · recently clipped", tail="IN THE HAND") }}
   <div class="panel">
     {% if sources %}
       {% for source in sources %}
@@ -20,7 +20,7 @@
         <div>
           <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">{{ source.title }}</div>
           {% if source.by %}
-          <div class="u-ed" style="font-size:var(--t-small);margin-top:2px;">{{ source.by }}</div>
+          <div class="u-ed" style="font-size:var(--t-small);margin-top:var(--m-space-1);">{{ source.by }}</div>
           {% endif %}
         </div>
         <!-- Date -->
@@ -30,7 +30,7 @@
         <!-- Chip -->
         <div style="text-align:right;">
           {% if source.doi %}
-          <span class="u-label" style="display:inline-flex;align-items:center;padding:2px 9px;background:var(--m-surface-2);border-radius:var(--m-radius-sm);">
+          <span class="u-label" style="display:inline-flex;align-items:center;padding:var(--m-space-1) var(--m-space-2);background:var(--m-surface-2);border-radius:var(--m-radius-sm);">
             DOI
           </span>
           {% endif %}

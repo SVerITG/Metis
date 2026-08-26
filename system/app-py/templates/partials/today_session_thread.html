@@ -5,10 +5,10 @@
 <div class="u-mb-6" id="today-session-handoff" {% if threads %}{% endif %}>
   {# ── Research threads — grouped sessions with narrative arc ── #}
   {% if threads %}
-  {{ sec_label("Research threads", tail="ACTIVE TOPICS ACROSS SESSIONS", style="margin-bottom:12px;") }}
+  {{ sec_label("Research threads", tail="ACTIVE TOPICS ACROSS SESSIONS") }}
   <div class="u-col u-mb-6">
     {% for thread in threads %}
-    <details class="panel" style="padding:0;overflow:hidden;">
+    <details class="panel panel--flush panel--clip">
       <summary class="u-row" style="gap:var(--m-space-3);padding:var(--m-space-4) var(--m-space-5);cursor:pointer;user-select:none;">
         {# Memory depth indicator #}
         {% set depth = thread.memory %}

@@ -4,7 +4,7 @@
    is that he can go and read the source. #}
 
 {% if error %}
-  <div class="panel" style="padding:var(--m-space-4) var(--m-space-4);border-color:#b3261e;">
+  <div class="panel panel--md" style="border-color:#b3261e;">
     <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;color:#b3261e;">SEARCH FAILED</div>
     <div class="ed" style="font-size:var(--t-small);margin:var(--m-space-2) 0 0;">{{ error }}</div>
   </div>
@@ -13,7 +13,7 @@
     Type a question — this searches the passages, not the titles.
   </div>
 {% elif not results %}
-  <div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
+  <div class="panel panel--md">
     <div class="ed" style="font-size:var(--t-small);margin:0;">
       Nothing in your indexed HAT corpus matches “{{ q }}”. Either the topic is
       genuinely absent from your library — worth knowing — or the relevant PDF
@@ -24,7 +24,7 @@
   <div class="u-mb-2" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.14em;text-transform:uppercase;color:var(--m-muted);">
     {{ results|length }} passage{{ 's' if results|length != 1 }} from your own papers
   </div>
-  <div class="panel" style="overflow:hidden;">
+  <div class="panel panel--clip">
     {% for r in results %}
     <div style="padding:14px 18px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
       <div class="u-mb-2" style="display:flex;align-items:baseline;gap:var(--m-space-3);flex-wrap:wrap;">

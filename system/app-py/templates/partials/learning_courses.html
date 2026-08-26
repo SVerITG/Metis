@@ -8,7 +8,7 @@
 </div>
 {% else %}
 {% for c in courses %}
-<div class="panel panel-pad course-card u-col" style="padding:20px 22px;gap:var(--m-space-3);" id="course-card-{{ c.id }}">
+<div class="panel panel-pad course-card u-col" style="padding:var(--m-space-5) var(--m-space-5);gap:var(--m-space-3);" id="course-card-{{ c.id }}">
 
   <!-- Kicker -->
   <div class="kicker" style="color:{% if c.status == 'building' %}var(--m-ochre){% elif c.status == 'active' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
@@ -29,7 +29,7 @@
   <div class="todo-meta" style="margin:0;">
     STEP {{ step }} OF 7 · {{ step_labels.get(step, 'INTAKE') | upper }}
   </div>
-  <div style="display:flex;gap:3px;margin-top:2px;">
+  <div style="display:flex;gap:var(--m-space-1);margin-top:var(--m-space-1);">
     {% for s in range(1, 8) %}
     <div style="flex:1;height:5px;border-radius:2px;
                 background:{% if s <= step %}var(--m-ochre){% else %}var(--m-surface-3){% endif %};"></div>
@@ -54,7 +54,7 @@
 
   <!-- Last completed lesson -->
   {% if c.current_lesson %}
-  <div class="u-row u-row--top" style="margin-top:2px;">
+  <div class="u-row u-row--top" style="margin-top:var(--m-space-1);">
     <span class="u-label" style="white-space:nowrap;padding-top:2px;">LAST</span>
     <span style="font-size:var(--t-small);color:var(--m-muted);line-height:1.4;">{{ c.current_lesson }}</span>
   </div>
@@ -115,23 +115,23 @@
     <div class="u-label u-mb-3">UPDATE PROGRESS</div>
     <div class="u-col">
       <div>
-        <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:3px;">Last completed lesson</label>
+        <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:var(--m-space-1);">Last completed lesson</label>
         <input id="last-{{ c.id }}" type="text" value="{{ c.current_lesson or '' }}"
                style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);">
       </div>
       <div>
-        <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:3px;">Next lesson</label>
+        <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:var(--m-space-1);">Next lesson</label>
         <input id="next-{{ c.id }}" type="text" value="{{ c.next_lesson or '' }}"
                style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);">
       </div>
       <div>
-        <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:3px;">Course URL (localhost, if any)</label>
+        <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:var(--m-space-1);">Course URL (localhost, if any)</label>
         <input id="url-{{ c.id }}" type="text" value="{{ c.course_url or '' }}"
                placeholder="e.g. http://localhost:3000"
                style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);">
       </div>
       <div>
-        <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:3px;">Notes</label>
+        <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:var(--m-space-1);">Notes</label>
         <textarea id="notes-{{ c.id }}" rows="2"
                style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);resize:vertical;line-height:1.5;">{{ c.lesson_notes or '' }}</textarea>
       </div>

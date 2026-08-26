@@ -25,7 +25,7 @@
     <span class="tail" id="kg-stats-tail">LOADING</span>
   </h2>
 
-  <div class="panel" style="overflow:hidden;">
+  <div class="panel panel--clip">
 
     <!-- ── Controls bar ── -->
     <div class="u-row u-row--wrap u-rule" style="padding:var(--m-space-3) var(--m-space-4);background:var(--m-surface-2);">
@@ -63,7 +63,7 @@
       </div>
 
       <!-- Focus selector -->
-      <select id="kg-focus" style="padding:3px 8px;font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);color:var(--m-ink);cursor:pointer;"
+      <select id="kg-focus" style="padding:var(--m-space-1) var(--m-space-2);font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);color:var(--m-ink);cursor:pointer;"
               onchange="kgReload()">
         <option value="">All contexts</option>
         {% for p in projects %}
@@ -73,7 +73,7 @@
 
       <!-- Search -->
       <input type="search" id="kg-search" placeholder="Filter…"
-             style="width:120px;padding:3px 8px;font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);color:var(--m-ink);outline:none;"
+             style="width:120px;padding:var(--m-space-1) var(--m-space-2);font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-rule);border-radius:var(--m-radius);background:var(--m-surface);color:var(--m-ink);outline:none;"
              oninput="kgFilter(this.value)">
     </div>
 
@@ -83,7 +83,7 @@
 
       <!-- Detail panel (slides in from right) -->
       <div class="u-hide" id="kg-detail" style="position:absolute;top:0;right:0;bottom:0;width:280px;background:var(--m-surface);border-left:1px solid var(--m-rule-soft);padding:var(--m-space-4);overflow-y:auto;z-index:10;box-shadow:-4px 0 16px rgba(0,0,0,.06);transition:transform 200ms;">
-        <button style="position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:var(--t-h4);color:var(--m-muted);line-height:1;" onclick="kgCloseDetail()">✕</button>
+        <button class="btn btn--ghost" style="position:absolute;top:8px;right:8px;font-size:var(--t-h4);color:var(--m-muted);line-height:1;" onclick="kgCloseDetail()">✕</button>
         <div id="kg-detail-body"></div>
       </div>
 
@@ -437,7 +437,7 @@
 
     // Tags
     if (d.tags && d.tags.length) {
-      html += '<div style="display:flex;flex-wrap:wrap;gap:3px;margin:var(--m-space-2) 0;">';
+      html += '<div style="display:flex;flex-wrap:wrap;gap:var(--m-space-1);margin:var(--m-space-2) 0;">';
       d.tags.forEach(t => {
         html += `<span class="u-label" style="letter-spacing:0.06em;padding:1px 7px;border-radius:var(--m-radius-pill);background:var(--m-surface-3);">${t}</span>`;
       });
@@ -450,7 +450,7 @@
         <div class="u-label u-mb-2">${connections.length} CONNECTION${connections.length>1?'S':''}</div>`;
       connections.slice(0, 15).forEach(c => {
         const cc = TYPE_COLORS[c.node.type] || '#666c63';
-        html += `<div class="u-row" style="gap:5px;padding:3px 0;font-family:var(--m-display);font-size:var(--t-micro);cursor:pointer;"
+        html += `<div class="u-row" style="gap:var(--m-space-1);padding:var(--m-space-1) 0;font-family:var(--m-display);font-size:var(--t-micro);cursor:pointer;"
                       onclick="(function(){var ns=document.querySelectorAll('.kg-node');/* TODO: focus */})()">
           <span class="u-fixed" style="width:6px;height:6px;border-radius:50%;background:${cc};"></span>
           <span class="u-grow u-truncate" style="color:var(--m-ink);">${c.node.title}</span>

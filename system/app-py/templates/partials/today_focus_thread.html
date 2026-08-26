@@ -36,7 +36,7 @@
   <div class="focus-section">
     <div class="caps-label">Continuous scan</div>
     {% if news_stale %}
-    <div class="focus-stale-warning u-row u-mb-2" style="padding:7px 10px;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:6px;font-size:var(--t-micro);color:var(--m-warn);">
+    <div class="focus-stale-warning u-row u-mb-2" style="padding:var(--m-space-2) var(--m-space-3);background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);border-radius:6px;font-size:var(--t-micro);color:var(--m-warn);">
       <i class="bi bi-exclamation-triangle-fill"></i>
       <span>
         {% if news_stale_hours >= 999 %}
@@ -62,9 +62,9 @@
     </div>
     {% for a in field_articles %}
     <a class="focus-field-article u-rule" href="javascript:void(0)" onclick="openNewsSummary({{ a.id }})"
-       style="display:block;padding:5px 0;text-decoration:none;">
+       style="display:block;padding:var(--m-space-1) 0;text-decoration:none;">
       <div style="font-size:var(--t-micro);color:var(--m-ink);line-height:1.4;">{{ a.title }}</div>
-      <div style="font-size:var(--t-micro);color:var(--m-muted);margin-top:2px;">{{ a.time }}</div>
+      <div style="font-size:var(--t-micro);color:var(--m-muted);margin-top:var(--m-space-1);">{{ a.time }}</div>
     </a>
     {% endfor %}
   </div>

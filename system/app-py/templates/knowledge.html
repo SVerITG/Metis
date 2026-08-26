@@ -104,8 +104,8 @@
        hidden>
   <!-- ===== Unified Search (catalogue — what you already hold) ===== -->
   <div class="u-mb-6">
-    {{ sec_label("Search", tail="PAPERS · DOMAIN CORPUS · CARDS · MEMORY", style="margin-bottom:12px;") }}
-    <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);">
+    {{ sec_label("Search", tail="PAPERS · DOMAIN CORPUS · CARDS · MEMORY") }}
+    <div class="panel panel--md">
       <input type="search"
              id="unified-search-input"
              placeholder="Search across all of your library and memory…"
@@ -144,7 +144,7 @@
 
       <!-- Semantic / deep-search companion -->
       <div class="u-rule-t" style="margin-top:var(--m-space-4);padding-top:14px;">
-        {{ sec_label("Semantic matches", tail="MEANING · NOT JUST KEYWORDS", style="margin-bottom:8px;") }}
+        {{ sec_label("Semantic matches", tail="MEANING · NOT JUST KEYWORDS") }}
         <div id="unified-search-semantic-trigger"
              hx-get="/api/partial/knowledge/unified-search-semantic"
              hx-trigger="refresh delay:600ms from:#unified-search-input"
@@ -177,7 +177,7 @@
          hx-trigger="loadtab"
          hx-swap="outerHTML">
       <div>
-        {{ sec_label("Zotero Library", style="margin-bottom:8px;") }}
+        {{ sec_label("Zotero Library") }}
         <div class="panel skeleton skeleton-box" style="height:200px;"></div>
       </div>
     </div>
@@ -236,7 +236,7 @@
          hx-trigger="loadtab"
          hx-swap="outerHTML">
       <div>
-        {{ sec_label("Knowledge Corpus", style="margin-bottom:8px;") }}
+        {{ sec_label("Knowledge Corpus") }}
         <div class="panel skeleton skeleton-box" style="height:200px;"></div>
       </div>
     </div>
@@ -244,15 +244,15 @@
 
   <!-- ===== PDF Fulltext Search ===== -->
   <div style="margin-top:var(--m-space-6);">
-    {{ sec_label("PDF Fulltext Search", tail="KEYWORD · INDEXED DOCUMENTS", style="margin-bottom:12px;") }}
+    {{ sec_label("PDF Fulltext Search", tail="KEYWORD · INDEXED DOCUMENTS") }}
     <!-- Index status + build control (so the search box is never a dead end) -->
-    <div class="panel u-mb-3" style="padding:var(--m-space-4) var(--m-space-5);"
+    <div class="panel u-mb-3 panel--md"
          hx-get="/api/partial/knowledge/pdf-stats"
          hx-trigger="loadtab"
          hx-swap="innerHTML">
       <div class="u-ed" style="font-size:var(--t-small);">Checking your PDF index…</div>
     </div>
-    <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);">
+    <div class="panel panel--md">
       <input type="search"
              id="pdf-search-input"
              placeholder="Search across all indexed PDFs…"
@@ -275,7 +275,7 @@
        hidden>
   <!-- ===== Research Landscape: Topic Coverage Map ===== -->
   <div style="margin-top:var(--m-space-6);">
-    {{ sec_label("Research Landscape", tail="TOPIC COVERAGE · GOOD · PARTIAL · GAP", style="margin-bottom:12px;") }}
+    {{ sec_label("Research Landscape", tail="TOPIC COVERAGE · GOOD · PARTIAL · GAP") }}
     <div hx-get="/api/partial/knowledge/topic-coverage"
          hx-trigger="loadtab"
          hx-swap="outerHTML">

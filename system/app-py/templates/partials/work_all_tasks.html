@@ -12,7 +12,7 @@
     <span class="todo-check" onclick="markTaskDone({{ t.id | tojson }}, this)" title="Mark done"></span>
     <div style="min-width:0;">
       <div class="todo-title u-truncate">{{ t.title }}</div>
-      <div class="todo-meta" style="margin-top:3px;display:flex;gap:var(--m-space-2);flex-wrap:wrap;">
+      <div class="todo-meta" style="margin-top:var(--m-space-1);display:flex;gap:var(--m-space-2);flex-wrap:wrap;">
         {% if t.project %}
         <span style="color:var(--m-muted);">{{ t.project }}</span>
         {% endif %}

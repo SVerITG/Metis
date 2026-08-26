@@ -25,7 +25,7 @@
      style="padding:16px 20px;border-bottom:1px solid var(--m-rule-soft);{% if item.dismissed_at %}opacity:0.34;{% endif %}">
 
   <!-- Line 1: acquisition state, provenance, kind, date, closeness -->
-  <div class="u-row u-row--wrap" style="gap:var(--m-space-3);margin-bottom:7px;">
+  <div class="u-row u-row--wrap" style="gap:var(--m-space-3);margin-bottom:var(--m-space-2);">
 
     {% if item.acq_status == 'ok' %}
       <span title="PDF obtained and filed{% if item.pdf_path %} — {{ item.pdf_path }}{% endif %}"
@@ -70,7 +70,7 @@
   </div>
 
   <!-- Title -->
-  <div style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;line-height:1.35;color:var(--m-ink);margin-bottom:5px;">
+  <div style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;line-height:1.35;color:var(--m-ink);margin-bottom:var(--m-space-1);">
     {% if item.source_url %}
       <a href="{{ item.source_url }}" target="_blank" rel="noopener"
          style="color:inherit;text-decoration:none;border-bottom:1px solid var(--m-rule);">{{ item.title | striptags }}</a>
@@ -81,7 +81,7 @@
 
   <!-- Authors -->
   {% if item.authors %}
-  <div style="font-family:var(--m-ui);font-size:var(--t-meta);color:var(--m-text);margin-bottom:7px;">
+  <div style="font-family:var(--m-ui);font-size:var(--t-meta);color:var(--m-text);margin-bottom:var(--m-space-2);">
     {{ item.authors | truncate(150, True, '…') }}
   </div>
   {% endif %}
@@ -89,7 +89,7 @@
   <!-- Abstract: one click away, not one page away. Collapsed so thirty of them
        are still a list rather than an essay. -->
   {% if item.abstract %}
-  <details style="margin:6px 0 9px;">
+  <details style="margin:var(--m-space-2) 0 var(--m-space-2);">
     <summary style="cursor:pointer;list-style:none;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;text-transform:uppercase;color:var(--m-accent);">
       Abstract ▾
     </summary>
@@ -111,19 +111,19 @@
         ✓ IN LIBRARY{{ ' · ZOTERO' if item.zotero_key }}
       </span>
     {% elif item.dismissed_at %}
-      <button type="button" onclick="nlRestore({{ item.id }})"
-              style="background:transparent;border:1px solid var(--m-rule-soft);border-radius:var(--m-radius);padding:5px 13px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);cursor:pointer;">
+      <button class="btn btn--sec" type="button" onclick="nlRestore({{ item.id }})"
+              style="padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
         Undo dismiss
       </button>
     {% else %}
-      <button type="button" onclick="nlAdd({{ item.id }}, this)"
+      <button class="btn btn--soft" type="button" onclick="nlAdd({{ item.id }}, this)"
               title="Fetch the PDF if it can legally be obtained, catalogue the item, and push it to Zotero."
-              style="background:var(--m-accent-wash);border:1px solid var(--m-accent);border-radius:var(--m-radius);padding:5px 13px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-accent);cursor:pointer;">
+              style="padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-accent);">
         Add to library
       </button>
-      <button type="button" onclick="nlDismiss({{ item.id }}, this)"
+      <button class="btn btn--sec" type="button" onclick="nlDismiss({{ item.id }}, this)"
               title="Not interested. Hidden from the unread view; reversible."
-              style="background:transparent;border:1px solid var(--m-rule-soft);border-radius:var(--m-radius);padding:5px 13px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);cursor:pointer;">
+              style="padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
         Not interested
       </button>
     {% endif %}

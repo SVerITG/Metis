@@ -16,11 +16,11 @@
     <div>
       {% set s = (m.status or 'filed').lower() %}
       {% if s == 'filed' %}
-      <span class="u-label" style="display:inline-flex;padding:2px 7px;background:var(--m-surface-2);border-radius:var(--m-radius-sm);">FILED</span>
+      <span class="u-label" style="display:inline-flex;padding:var(--m-space-1) var(--m-space-2);background:var(--m-surface-2);border-radius:var(--m-radius-sm);">FILED</span>
       {% elif s == 'processed' %}
-      <span style="display:inline-flex;padding:2px 7px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;background:var(--m-ok-bg, rgba(74,164,102,0.1));color:var(--m-ok);border-radius:var(--m-radius-sm);">PROCESSED</span>
+      <span style="display:inline-flex;padding:var(--m-space-1) var(--m-space-2);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;background:var(--m-ok-bg, rgba(74,164,102,0.1));color:var(--m-ok);border-radius:var(--m-radius-sm);">PROCESSED</span>
       {% else %}
-      <span class="u-label" style="display:inline-flex;padding:2px 7px;background:var(--m-surface-2);border-radius:var(--m-radius-sm);">{{ s.upper() }}</span>
+      <span class="u-label" style="display:inline-flex;padding:var(--m-space-1) var(--m-space-2);background:var(--m-surface-2);border-radius:var(--m-radius-sm);">{{ s.upper() }}</span>
       {% endif %}
     </div>
     <div style="text-align:right;color:var(--m-muted);">

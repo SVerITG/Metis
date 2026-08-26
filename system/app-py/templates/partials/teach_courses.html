@@ -6,7 +6,7 @@
 
 {% if not courses %}
   <div class="col-12">
-    <div class="panel panel-pad" style="text-align:center;padding:48px 32px;border:1px dashed var(--m-line);background:var(--m-surface-soft);">
+    <div class="panel panel-pad" style="text-align:center;padding:var(--m-space-7) var(--m-space-6);border:1px dashed var(--m-line);background:var(--m-surface-soft);">
       <svg class="u-mb-4" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--m-accent)" stroke-width="1.5"
            stroke-linecap="round" stroke-linejoin="round" style="display:block;margin-left:auto;margin-right:auto;">
         <rect x="2" y="3" width="20" height="14" rx="2"/>
@@ -80,32 +80,32 @@
 
         <!-- Action buttons — Teaching tools (creates prompts to paste into Claude Code) -->
         <div class="d-flex flex-wrap gap-2">
-          <button class="btn btn-sm btn-primary"
+          <button class="btn btn--primary btn--sm"
                   title="Create a lecture slide deck with speaker notes"
                   onclick="openCourseSlides({{ course.id }}, '{{ course.title | e }}')">
             <i class="bi bi-easel2 me-1"></i>Slides
           </button>
-          <button class="btn btn-sm btn-outline-secondary"
+          <button class="btn btn--sec btn--sm"
                   title="One-page lecture guide: objectives, key concepts, activities, assessment"
                   onclick="openTeachingBrief({{ course.id }}, '{{ course.title | e }}')">
             <i class="bi bi-journal-text me-1"></i>Teaching brief
           </button>
-          <button class="btn btn-sm btn-outline-secondary"
+          <button class="btn btn--sec btn--sm"
                   title="Build a graded exam or assessment"
                   onclick="openAssessmentBuilder({{ course.id }}, '{{ course.title | e }}')">
             <i class="bi bi-clipboard-check me-1"></i>Assessment
           </button>
-          <button class="btn btn-sm btn-outline-secondary"
+          <button class="btn btn--sec btn--sm"
                   title="Generate a student practice question bank"
                   onclick="openQuestionBank({{ course.id }}, '{{ course.title | e }}')">
             <i class="bi bi-question-circle me-1"></i>Q-bank
           </button>
-          <button class="btn btn-sm btn-outline-secondary"
+          <button class="btn btn--sec btn--sm"
                   title="Identify curriculum gaps vs recent literature and field standards"
                   onclick="openGapAnalysis({{ course.id }}, '{{ course.title | e }}')">
             <i class="bi bi-search me-1"></i>Gap analysis
           </button>
-          <button class="btn btn-sm btn-outline-secondary"
+          <button class="btn btn--sec btn--sm"
                   title="General teaching chat — pedagogy, content, explanations"
                   onclick="openCourseChat({{ course.id }}, '{{ course.title | e }}')">
             <i class="bi bi-chat-dots me-1"></i>Chat

@@ -1,11 +1,11 @@
 {# Self-improvement loop surface — Phase 9b, with "What I've learned" header #}
 {% set totals = themes.totals if themes else None %}
 
-<div class="u-rule" style="padding:18px 22px;">
+<div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
   <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--m-space-3);">
     <div>
       <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">What I&rsquo;ve learned</div>
-      <div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:2px;">
+      <div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">
         {% if learned %}
           {{ learned|length }} change{{ '' if learned|length == 1 else 's' }} applied to specialist skills.
         {% else %}
@@ -14,8 +14,8 @@
       </div>
     </div>
     <div class="u-row u-fixed" style="gap:var(--m-space-4);">
-      <button type="button" onclick="improveMetisOODA()"
-              style="display:inline-flex;align-items:center;gap:7px;background:var(--m-accent);color:var(--m-on-accent);border:0;border-radius:var(--m-radius);padding:7px 14px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;cursor:pointer;white-space:nowrap;"
+      <button class="btn btn--primary" type="button" onclick="improveMetisOODA()"
+              style="gap:var(--m-space-2);border:0;padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;white-space:nowrap;"
               title="Opens Claude (Code recommended) primed to run an OODA self-improvement cycle over your reflexions — Observe · Orient · Decide · Act, in plan mode.">
         ✦ IMPROVE METIS (OODA)
       </button>
@@ -29,7 +29,7 @@
 
 {# Recent reflexion log — raw signal feeding the loop #}
 {% if recent_reflexions %}
-<div class="u-rule" style="padding:18px 22px;">
+<div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
   <div class="u-mb-3" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">
     Recent reflexions
     <span class="u-label" style="margin-left:8px;">LAST {{ recent_reflexions|length }} · NEWEST FIRST</span>
@@ -79,11 +79,11 @@
 </div>
 {% endif %}
 
-<div class="u-rule u-rule-t" style="padding:18px 22px;">
+<div class="u-rule u-rule-t" style="padding:var(--m-space-4) var(--m-space-5);">
   <div style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--m-space-3);">
     <div>
       <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">Reflexion themes — last {{ days }} days</div>
-      <div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:2px;">
+      <div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">
         {% if totals and totals.reflexions %}
           {{ totals.reflexions }} reflexion{{ '' if totals.reflexions == 1 else 's' }} across {{ totals.agents }} agent{{ '' if totals.agents == 1 else 's' }}.
         {% else %}
@@ -96,7 +96,7 @@
 
 {% if themes and themes.agents %}
   {% for a in themes.agents %}
-  <div class="u-rule" style="padding:16px 22px;">
+  <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
     <div class="u-mb-2" style="display:flex;align-items:baseline;justify-content:space-between;gap:var(--m-space-3);">
       <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">
         {{ a.agent_slug }}
@@ -128,7 +128,7 @@
   {% endfor %}
 {% endif %}
 
-<div style="padding:18px 22px;">
+<div style="padding:var(--m-space-4) var(--m-space-5);">
   <div class="u-mb-3" style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">Pending proposals</div>
   {% if proposals %}
     {% for p in proposals %}

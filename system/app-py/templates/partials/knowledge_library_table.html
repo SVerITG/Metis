@@ -1,7 +1,7 @@
 <div id="lib-table-area">
 
   <!-- count line -->
-  <div class="u-label u-row u-rule" style="padding:9px 20px;gap:var(--m-space-3);">
+  <div class="u-label u-row u-rule" style="padding:var(--m-space-2) var(--m-space-5);gap:var(--m-space-3);">
     {% if q or item_type or active_filter_count %}
     <span>{{ total }} PAPER{% if total != 1 %}S{% endif %} MATCHING FILTERS</span>
     {% else %}
@@ -101,8 +101,8 @@
           onmouseout="this.style.background=''">
 
         <!-- Year + type icon -->
-        <td style="padding:11px 20px;vertical-align:top;white-space:nowrap;">
-          <div class="u-row" style="flex-direction:column;gap:3px;">
+        <td style="padding:var(--m-space-3) var(--m-space-5);vertical-align:top;white-space:nowrap;">
+          <div class="u-row" style="flex-direction:column;gap:var(--m-space-1);">
             {{ type_icon(item.item_type, 14) }}
             <span class="u-label">
               {{ item.year if item.year else '—' }}
@@ -111,7 +111,7 @@
         </td>
 
         <!-- Title + Authors + Type badge -->
-        <td style="padding:11px 10px;vertical-align:top;">
+        <td style="padding:var(--m-space-3) var(--m-space-3);vertical-align:top;">
           <div class="u-row u-row--base">
             {# Type badge #}
             {% if item.item_type %}
@@ -152,7 +152,7 @@
           {% endif %}
           {# Collection tags #}
           {% if item.collection_tags %}
-          <div style="display:flex;gap:var(--m-space-1);margin-top:5px;flex-wrap:wrap;">
+          <div style="display:flex;gap:var(--m-space-1);margin-top:var(--m-space-1);flex-wrap:wrap;">
             {% for tag in item.collection_tags %}
             <span class="u-label" style="padding:1px 6px;border-radius:var(--m-radius-sm);background:var(--m-surface-3);">{{ tag }}</span>
             {% endfor %}
@@ -169,17 +169,17 @@
         </td>
 
         <!-- Journal -->
-        <td style="padding:11px 10px;font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);vertical-align:top;">
+        <td style="padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);vertical-align:top;">
           {% if item.source %}
           {% if item.source | length > 40 %}{{ item.source[:40] }}…{% else %}{{ item.source }}{% endif %}
           {% endif %}
         </td>
 
         <!-- Status column — indexed + read indicators -->
-        <td style="padding:11px 10px;text-align:center;vertical-align:top;">
-          <div class="u-row" style="flex-direction:column;gap:3px;">
+        <td style="padding:var(--m-space-3) var(--m-space-3);text-align:center;vertical-align:top;">
+          <div class="u-row" style="flex-direction:column;gap:var(--m-space-1);">
             {% if item.pdf_url %}
-            <span style="display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;padding:2px 7px;border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);"
+            <span style="display:inline-flex;align-items:center;gap:var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill,10px);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);"
               title="PDF indexed — full-text searchable">
               <svg viewBox="0 0 16 16" width="9" height="9" fill="none" stroke="var(--m-chart-2)" stroke-width="2" stroke-linecap="round"><path d="M2 8l4 4 8-8"/></svg>
               INDEXED
@@ -192,22 +192,22 @@
         </td>
 
         <!-- Actions -->
-        <td style="padding:11px 20px;text-align:right;vertical-align:top;white-space:nowrap;">
+        <td style="padding:var(--m-space-3) var(--m-space-5);text-align:right;vertical-align:top;white-space:nowrap;">
           {% if item.has_abstract %}
           <button class="u-label" onclick="toggleAbstract({{ loop.index }})" id="abs-btn-{{ loop.index }}"
-                  style="background:none;border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);cursor:pointer;padding:2px 6px;transition:border-color 140ms,color 140ms;"
+                  style="background:none;border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);cursor:pointer;padding:var(--m-space-1) var(--m-space-2);transition:border-color 140ms,color 140ms;"
                   onmouseover="this.style.borderColor='{{ icolor }}';this.style.color='{{ icolor }}'"
                   onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'"
                   aria-label="Toggle abstract" title="Show/hide abstract">ABS</button>
           {% endif %}
           {% if item.doi %}
           <a class="u-label u-label--accent" href="https://doi.org/{{ item.doi }}" target="_blank" rel="noopener"
-             style="letter-spacing:0.1em;text-decoration:none;padding:0 3px;"
+             style="letter-spacing:0.1em;text-decoration:none;padding:0 var(--m-space-1);"
              title="Open DOI">DOI ↗</a>
           {% endif %}
           {% if item.pdf_url %}
           <a href="{{ item.pdf_url }}" target="_blank" rel="noopener"
-             style="display:inline-block;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-ok);text-decoration:none;padding:2px 6px;margin-left:2px;border:1px solid var(--m-ok);border-radius:var(--m-radius-sm);transition:background 140ms,color 140ms;"
+             style="display:inline-block;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;color:var(--m-ok);text-decoration:none;padding:var(--m-space-1) var(--m-space-2);margin-left:2px;border:1px solid var(--m-ok);border-radius:var(--m-radius-sm);transition:background 140ms,color 140ms;"
              onmouseover="this.style.background='var(--m-ok)';this.style.color='var(--m-on-accent)'"
              onmouseout="this.style.background='';this.style.color='var(--m-ok)'"
              title="Open local PDF">PDF ↗</a>

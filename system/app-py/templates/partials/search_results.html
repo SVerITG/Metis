@@ -11,8 +11,8 @@
   {% for p in papers %}
   <a class="u-rule" href="/tab/knowledge"
      onclick="document.getElementById('search-results-drop').style.display='none';"
-     style="display:block;padding:9px 20px;text-decoration:none;transition:background 120ms;">
-    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:2px;">
+     style="display:block;padding:var(--m-space-2) var(--m-space-5);text-decoration:none;transition:background 120ms;">
+    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:var(--m-space-1);">
       {{ p.title or 'Untitled' }}
     </div>
     <div class="u-label">
@@ -28,8 +28,8 @@
   {% for p in projects %}
   <a class="u-rule" href="/tab/work"
      onclick="document.getElementById('search-results-drop').style.display='none';"
-     style="display:block;padding:9px 20px;text-decoration:none;transition:background 120ms;">
-    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:2px;">
+     style="display:block;padding:var(--m-space-2) var(--m-space-5);text-decoration:none;transition:background 120ms;">
+    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:var(--m-space-1);">
       {{ p.title or 'Untitled' }}
     </div>
     {% if p.description %}
@@ -44,7 +44,7 @@
   {% for n in news %}
   <a class="u-rule" href="{{ n.source_url or '#' }}" target="_blank" rel="noopener"
      onclick="document.getElementById('search-results-drop').style.display='none';"
-     style="display:block;padding:9px 20px;text-decoration:none;transition:background 120ms;">
+     style="display:block;padding:var(--m-space-2) var(--m-space-5);text-decoration:none;transition:background 120ms;">
     <div class="u-row u-row--base">
       {% if n.domain %}
       <span class="u-label u-label--accent u-fixed" style="letter-spacing:0.1em;">
@@ -64,9 +64,9 @@
   {% for t in tasks %}
   <a class="u-rule" href="/tab/work"
      onclick="document.getElementById('search-results-drop').style.display='none';"
-     style="display:block;padding:9px 20px;text-decoration:none;transition:background 120ms;">
+     style="display:block;padding:var(--m-space-2) var(--m-space-5);text-decoration:none;transition:background 120ms;">
     <div class="u-row">
-      <span class="u-label u-fixed" style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);padding:2px 6px;">
+      <span class="u-label u-fixed" style="background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);padding:var(--m-space-1) var(--m-space-2);">
         {{ (t.status or 'open')|upper }}
       </span>
       <span style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);">{{ t.title }}</span>
@@ -80,8 +80,8 @@
   {% for c in courses %}
   <a class="u-rule" href="javascript:void(0)"
      onclick="openCourseReader('{{ c.slug }}');document.getElementById('search-results-drop').style.display='none';"
-     style="display:block;padding:9px 20px;text-decoration:none;transition:background 120ms;">
-    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:2px;">
+     style="display:block;padding:var(--m-space-2) var(--m-space-5);text-decoration:none;transition:background 120ms;">
+    <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;margin-bottom:var(--m-space-1);">
       {{ c.title or 'Untitled Course' }}
     </div>
     <div class="u-label">

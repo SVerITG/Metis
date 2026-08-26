@@ -1,18 +1,18 @@
 <!-- meetings_stats.html — Editorial 4-up stat row -->
 <div class="grid grid-4 u-mb-5">
-  <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+  <div class="panel panel-pad panel--md">
     <div class="todo-meta" style="margin:0 0 var(--m-space-1);">TOTAL MEETINGS</div>
     <div class="tnum" style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;color:var(--m-ink);line-height:1.1;">{{ total }}</div>
   </div>
-  <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+  <div class="panel panel-pad panel--md">
     <div class="todo-meta" style="margin:0 0 var(--m-space-1);">THIS MONTH</div>
     <div class="tnum" style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;color:var(--m-info);line-height:1.1;">{{ this_month }}</div>
   </div>
-  <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+  <div class="panel panel-pad panel--md">
     <div class="todo-meta" style="margin:0 0 var(--m-space-1);">OPEN ACTIONS</div>
     <div class="tnum" style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;color:var(--m-ochre-deep);line-height:1.1;">{{ open_actions }}</div>
   </div>
-  <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+  <div class="panel panel-pad panel--md">
     <div class="todo-meta" style="margin:0 0 var(--m-space-1);">AVG DURATION</div>
     <div class="tnum" style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;color:var(--m-muted);line-height:1.1;">{{ avg_dur or '—' }}{% if avg_dur %}<span style="font-size:var(--t-body);">m</span>{% endif %}</div>
   </div>

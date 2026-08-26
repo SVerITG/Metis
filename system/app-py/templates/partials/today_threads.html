@@ -3,12 +3,12 @@
    questions as editorial cards. Reference: TodaySurface > ThreadCard.
    Context: threads — list of {title, kind, kicker, domain, age} #}
 <div>
-  {{ sec_label("Active threads", tail="ACROSS YOUR SURFACES", style="margin-bottom:14px;") }}
+  {{ sec_label("Active threads", tail="ACROSS YOUR SURFACES") }}
   {% if threads %}
   <div class="grid grid-3 u-mb-6">
     {% for t in threads %}
     {% set accent = 'var(--m-ochre)' if t.kind == 'draft' else 'var(--m-accent)' %}
-    <div class="panel panel-pad m-lift" style="padding:22px 24px 18px;">
+    <div class="panel panel-pad m-lift" style="padding:var(--m-space-5) var(--m-space-5) var(--m-space-4);">
       <div style="display:flex;justify-content:space-between;align-items:baseline;">
         <span class="kicker" style="padding:0;color:{{ accent }};">{{ t.kicker }}</span>
         {% if t.age %}<span class="u-label">{{ t.age|upper }}</span>{% endif %}

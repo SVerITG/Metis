@@ -13,7 +13,7 @@
   {% endif %}
   <div style="display:grid;grid-template-columns:1fr auto;gap:var(--m-space-4);align-items:center;padding:var(--m-space-2) var(--m-space-5);">
     <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">{{ s.name }}</div>
-    <div style="display:flex;gap:3px;">
+    <div style="display:flex;gap:var(--m-space-1);">
       {% for i in range(5) %}
       <div style="width:7px;height:7px;border-radius:50%;background:{% if i < (s.level or 0) %}var(--m-accent){% else %}var(--m-surface-3){% endif %};"></div>
       {% endfor %}

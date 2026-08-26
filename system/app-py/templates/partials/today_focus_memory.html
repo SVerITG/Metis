@@ -3,7 +3,7 @@
    Context: items (list of dicts with item_type, item_id, title, subtitle, badge, badge_color, memory). #}
 <div id="today-focus">
 {% if items %}
-  {{ sec_label("Today's focus", tail="STAR A TASK TO PIN IT HERE", style="margin-bottom:6px;") }}
+  {{ sec_label("Today's focus", tail="STAR A TASK TO PIN IT HERE") }}
   {# Link to Work — Today's focus and the Work planning horizon are two ends of
      the same thread: what you intend (Work) → what you're doing today (here). #}
   <div class="u-mb-4">
@@ -11,15 +11,15 @@
   </div>
   <div class="grid grid-3 u-mb-6">
     {% for item in items %}
-    <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);position:relative;">
+    <div class="panel panel--md" style="position:relative;">
       {# Dismiss button #}
-      <button type="button"
+      <button class="btn btn--ghost" type="button"
               hx-post="/api/today/focus/dismiss"
               hx-vals='{"item_type": "{{ item.item_type }}", "item_id": "{{ item.item_id }}"}'
               hx-target="#today-focus"
               hx-swap="outerHTML"
               hx-headers='{"Content-Type": "application/json"}'
-              style="position:absolute;top:8px;right:10px;border:0;background:transparent;font-size:var(--t-body);color:var(--m-muted);cursor:pointer;line-height:1;padding:2px 4px;opacity:0.5;"
+              style="position:absolute;top:8px;right:10px;font-size:var(--t-body);color:var(--m-muted);line-height:1;padding:var(--m-space-1) var(--m-space-1);opacity:0.5;"
               title="Dismiss for today"
               onmouseover="this.style.opacity='1';this.style.color='var(--m-ink)'"
               onmouseout="this.style.opacity='0.5';this.style.color='var(--m-muted)'">&times;</button>
@@ -58,8 +58,8 @@
     {% endfor %}
   </div>
 {% else %}
-  {{ sec_label("Today's focus", tail="ALL CLEAR", style="margin-bottom:14px;") }}
-  <div class="panel u-mb-6" style="padding:var(--m-space-5) var(--m-space-6);">
+  {{ sec_label("Today's focus", tail="ALL CLEAR") }}
+  <div class="panel u-mb-6 panel--lg">
     <div class="ed u-ed" style="font-size:var(--t-body);">
       No open tasks or active ideas right now. Star a task or capture an idea to fill this section.
     </div>

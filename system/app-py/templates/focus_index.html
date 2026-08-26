@@ -38,9 +38,9 @@
 
   {# ── Existing areas ────────────────────────────────────────────────────── #}
   <div>
-    {{ sec_label("Your focus areas", style="margin-bottom:8px;") }}
+    {{ sec_label("Your focus areas") }}
     {% if not areas %}
-    <div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
+    <div class="panel panel--md">
       <p style="margin:0;font-size:var(--t-small);color:var(--m-muted);">
         None yet. Create one below.
       </p>
@@ -58,7 +58,7 @@
           <a href="/focus/{{ a.slug }}"
              style="font-size:var(--t-body);color:inherit;text-decoration:none;border-bottom:1px solid var(--m-line);">{{ a.title }}</a>
           {% if a.subtitle %}
-          <div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:2px;">{{ a.subtitle }}</div>
+          <div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">{{ a.subtitle }}</div>
           {% endif %}
         </div>
         <span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted);white-space:nowrap;font-variant-numeric:tabular-nums;">
@@ -67,10 +67,10 @@
         <div style="display:flex;gap:var(--m-space-2);">
           {% for s, label in [('active','Shelf'), ('following','Follow'), ('archived','Archive')] %}
             {% if a.state != s %}
-            <button hx-post="/api/focus/{{ a.slug }}/state"
+            <button class="btn btn--sec" hx-post="/api/focus/{{ a.slug }}/state"
                     hx-vals='{"state": "{{ s }}"}' hx-swap="none"
                     hx-on::after-request="window.location.reload()"
-                    style="font-family:var(--m-mono);font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-2);border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);cursor:pointer;">{{ label }}</button>
+                    style="font-family:var(--m-mono);font-size:var(--t-micro);padding:var(--m-space-1) var(--m-space-2);color:var(--m-ink);">{{ label }}</button>
             {% endif %}
           {% endfor %}
         </div>
@@ -82,10 +82,8 @@
 
   {# ── Create ────────────────────────────────────────────────────────────── #}
   <div style="margin-top:var(--m-space-6);">
-    {{ sec_label("New focus area", tail="TWO AXES, JOINED WITH AND",
-                 style="margin-bottom:8px;") }}
-    <form method="post" action="/api/focus/create" class="panel"
-          style="padding:var(--m-space-4) var(--m-space-5);display:grid;gap:var(--m-space-4);">
+    {{ sec_label("New focus area", tail="TWO AXES, JOINED WITH AND") }}
+    <form method="post" action="/api/focus/create" class="panel panel--md" style="display:grid;gap:var(--m-space-4);">
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--m-space-3);">
         <label style="display:grid;gap:var(--m-space-1);">
@@ -173,7 +171,7 @@
           {% endif %}
         </label>
         <button type="submit"
-                style="font-family:var(--m-mono);font-size:var(--t-micro);padding:7px 14px;border:1px solid var(--m-accent);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);cursor:pointer;">
+                style="font-family:var(--m-mono);font-size:var(--t-micro);padding:var(--m-space-2) var(--m-space-4);border:1px solid var(--m-accent);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);cursor:pointer;">
           Create focus
         </button>
       </div>

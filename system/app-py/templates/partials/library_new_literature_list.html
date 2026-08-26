@@ -7,7 +7,7 @@
    ══════════════════════════════════════════════════════════════════════════════ #}
 
 {% if not items %}
-  <div class="panel" style="padding:22px 24px;">
+  <div class="panel" style="padding:var(--m-space-5) var(--m-space-5);">
     <div class="u-mb-2" style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">
       Nothing new in {{ window_label | lower }}.
     </div>
@@ -34,7 +34,7 @@
     </div>
   </div>
 
-  <div class="panel" style="overflow:hidden;">
+  <div class="panel panel--clip">
     {% for item in items %}
       {% include "partials/library_new_literature_row.html" %}
     {% endfor %}

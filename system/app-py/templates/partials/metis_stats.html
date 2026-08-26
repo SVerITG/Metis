@@ -1,20 +1,20 @@
 <!-- metis_stats.html — Editorial 4-up stat row -->
 <div class="grid grid-4 u-mb-5">
-  <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+  <div class="panel panel-pad panel--md">
     <div class="todo-meta" style="margin:0 0 var(--m-space-1);">RUNS TODAY</div>
     <div class="tnum" style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;color:var(--m-accent);line-height:1.1;">{{ runs_today }}</div>
   </div>
-  <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+  <div class="panel panel-pad panel--md">
     <div class="todo-meta" style="margin:0 0 var(--m-space-1);">TOKENS TODAY</div>
     <div class="tnum" style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;color:var(--m-info);line-height:1.1;">
       {% if tokens_today > 1000 %}{{ (tokens_today // 1000) }}<span style="font-size:var(--t-body);">K</span>{% else %}{{ tokens_today }}{% endif %}
     </div>
   </div>
-  <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+  <div class="panel panel-pad panel--md">
     <div class="todo-meta" style="margin:0 0 var(--m-space-1);">TOTAL RUNS</div>
     <div class="tnum" style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;color:var(--m-ink);line-height:1.1;">{{ total_runs }}</div>
   </div>
-  <div class="panel panel-pad" style="padding:var(--m-space-4) var(--m-space-5);">
+  <div class="panel panel-pad panel--md">
     <div class="todo-meta" style="margin:0 0 var(--m-space-1);">AGENTS ACTIVE</div>
     <div class="tnum" style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;color:var(--m-ok);line-height:1.1;">{{ active_agents }}</div>
   </div>

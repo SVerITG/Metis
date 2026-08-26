@@ -70,16 +70,16 @@
     </a>
   </h2>
 
-  <div class="panel" style="overflow:hidden;">
+  <div class="panel panel--clip">
 
     {% if not items %}
       {# True empty state #}
-      <div style="padding:28px 22px;display:flex;gap:var(--m-space-4);align-items:flex-start;">
-        <svg class="u-fixed" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--m-muted)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;margin-top:2px;">
+      <div style="padding:var(--m-space-6) var(--m-space-5);display:flex;gap:var(--m-space-4);align-items:flex-start;">
+        <svg class="u-fixed" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--m-muted)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;margin-top:var(--m-space-1);">
           <path d="M4 4h12a4 4 0 0 1 4 4v12"/><path d="M4 4v16h16"/><path d="M8 9h8M8 13h6"/>
         </svg>
         <div>
-          <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);margin-bottom:3px;">Your library is quiet.</div>
+          <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);margin-bottom:var(--m-space-1);">Your library is quiet.</div>
           <div style="font-size:var(--t-meta);color:var(--m-muted);line-height:1.55;">Sync your Zotero library on the Metis tab → Integrations, or drop a PDF into the basket and ask me to add it.</div>
         </div>
       </div>

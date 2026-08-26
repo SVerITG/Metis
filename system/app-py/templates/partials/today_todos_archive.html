@@ -9,7 +9,7 @@
       {% for task in tasks %}
         {% if task.section != ns.last_section %}
           {% set ns.last_section = task.section %}
-          <div class="u-rule" style="padding:3px 12px;background:var(--m-surface-2);">
+          <div class="u-rule" style="padding:var(--m-space-1) var(--m-space-3);background:var(--m-surface-2);">
             {% if task.section == 'blocked' %}
             <span style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.12em;color:var(--m-warn);">BLOCKED</span>
             {% elif task.section == 'starred' %}
@@ -46,9 +46,9 @@
           </span>
           {% if task.starred %}
           <!-- unstar -->
-          <button class="u-fixed" onclick="todayTaskUnstar('{{ task.id }}', this)"
+          <button class="u-fixed btn btn--ghost" onclick="todayTaskUnstar('{{ task.id }}', this)"
                   title="Remove from Today (unstar)"
-                  style="background:none;border:none;padding:0 var(--m-space-1);cursor:pointer;font-size:var(--t-micro);color:var(--m-ochre-deep);opacity:.7;line-height:1;"
+                  style="padding:0 var(--m-space-1);font-size:var(--t-micro);color:var(--m-ochre-deep);opacity:.7;line-height:1;"
                   onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.7'">&#9733;</button>
           {% endif %}
         </div>

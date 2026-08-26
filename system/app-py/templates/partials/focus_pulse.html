@@ -5,7 +5,7 @@
 
    `new_news` is None on a first visit — that is different from zero and is shown
    differently, because "nothing new" and "never opened" are not the same fact. #}
-<div class="panel" style="padding:var(--m-space-4) var(--m-space-4);">
+<div class="panel panel--md">
   <div style="display:flex;flex-wrap:wrap;gap:16px 26px;align-items:baseline;">
     {% if pulse.new_news is not none %}
     <div>
@@ -35,9 +35,9 @@
           {% endif %}
         {% else %}nothing in the feed yet{% endif %}
       </span>
-      <button hx-post="/api/focus/{{ area.slug }}/refresh"
+      <button class="btn btn--sec btn--sm" hx-post="/api/focus/{{ area.slug }}/refresh"
               hx-target="#focus-pulse" hx-swap="innerHTML"
-              style="font-family:var(--m-mono);font-size:var(--t-micro);padding:5px 11px;border:1px solid var(--m-line);border-radius:var(--m-radius);background:transparent;color:var(--m-ink);cursor:pointer;">
+              style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-ink);">
         Refresh sources
       </button>
     </div>

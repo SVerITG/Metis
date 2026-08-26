@@ -17,10 +17,10 @@
 {% set label_pair = type_labels.get(cls, ('NOTE', 'm-muted')) %}
 {% set label = label_pair[0] %}
 {% set color = label_pair[1] %}
-<div class="feed-row u-rule" style="padding:10px 22px;display:grid;grid-template-columns:80px 1fr;gap:var(--m-space-3);align-items:start;">
+<div class="feed-row u-rule" style="padding:var(--m-space-3) var(--m-space-5);display:grid;grid-template-columns:80px 1fr;gap:var(--m-space-3);align-items:start;">
   <div style="padding-top:2px;">
     <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;color:var(--{{ color }});font-weight:600;">{{ label }}</div>
-    <div class="u-label" style="margin-top:2px;">{{ (e.created_at or '')[:10] }}</div>
+    <div class="u-label" style="margin-top:var(--m-space-1);">{{ (e.created_at or '')[:10] }}</div>
     {% if e.agent_slug %}
     <div style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-muted-soft);margin-top:1px;">{{ e.agent_slug }}</div>
     {% endif %}
@@ -28,7 +28,7 @@
   <div>
     <div style="font-family:var(--m-ui);font-size:var(--t-small);color:var(--m-ink);line-height:1.5;">{{ e.content[:220] }}{% if e.content|length > 220 %}…{% endif %}</div>
     {% if e.concepts %}
-    <div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:var(--m-space-1);">
+    <div style="margin-top:var(--m-space-1);display:flex;flex-wrap:wrap;gap:var(--m-space-1);">
       {% for c in e.concepts[:4] %}
       <span class="u-label" style="padding:1px 6px;background:var(--m-surface-2);border:1px solid var(--m-rule);border-radius:var(--m-radius-sm);">{{ c }}</span>
       {% endfor %}

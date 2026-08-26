@@ -1,8 +1,8 @@
 {% from "partials/_section.html" import sec_label %}
 <div id="coverage-gap-section">
-  {{ sec_label("Coverage Gap Detector", tail="ZOTERO vs. OPENALEX · MISSING PAPERS", style="margin-bottom:12px;") }}
+  {{ sec_label("Coverage Gap Detector", tail="ZOTERO vs. OPENALEX · MISSING PAPERS") }}
 
-  <div class="panel" style="overflow:hidden;">
+  <div class="panel panel--clip">
 
     <!-- Query form -->
     <form class="u-rule" hx-post="/api/knowledge/gap-check"
@@ -24,8 +24,8 @@
           <option value="50">50</option>
         </select>
       </div>
-      <button type="submit"
-              style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.14em;text-transform:uppercase;padding:var(--m-space-2) var(--m-space-4);background:var(--m-accent);border:none;border-radius:var(--m-radius-sm);color:var(--m-on-accent);cursor:pointer;white-space:nowrap;align-self:flex-end;">
+      <button class="btn btn--primary" type="submit"
+              style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.14em;text-transform:uppercase;padding:var(--m-space-2) var(--m-space-4);border:none;white-space:nowrap;align-self:flex-end;">
         CHECK GAPS
       </button>
     </form>
@@ -39,7 +39,7 @@
     {% if results is not none %}
 
     <!-- Summary line -->
-    <div class="u-label u-rule" style="padding:9px 20px;">
+    <div class="u-label u-rule" style="padding:var(--m-space-2) var(--m-space-5);">
       {% if results %}
       <span style="color:var(--m-warn);font-weight:600;">{{ results | length }} POTENTIALLY MISSING</span>
       from {{ checked }} OpenAlex results for &ldquo;{{ query }}&rdquo; · sorted by citation count
@@ -63,8 +63,8 @@
         <tr class="u-rule"
             onmouseover="this.style.background='var(--m-surface-2)'"
             onmouseout="this.style.background=''">
-          <td class="u-label" style="padding:11px 20px;vertical-align:top;">{{ p.year or '—' }}</td>
-          <td style="padding:11px 10px;vertical-align:top;">
+          <td class="u-label" style="padding:var(--m-space-3) var(--m-space-5);vertical-align:top;">{{ p.year or '—' }}</td>
+          <td style="padding:var(--m-space-3) var(--m-space-3);vertical-align:top;">
             <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);line-height:1.35;">
               {% if p.doi_url %}
               <a href="{{ p.doi_url }}" target="_blank" rel="noopener"
@@ -74,14 +74,14 @@
               {% else %}{{ p.title }}{% endif %}
             </div>
             {% if p.authors %}
-            <div class="u-label" style="margin-top:3px;">{{ p.authors }}</div>
+            <div class="u-label" style="margin-top:var(--m-space-1);">{{ p.authors }}</div>
             {% endif %}
             {% if p.abstract %}
-            <div style="font-family:var(--m-display);font-size:var(--t-micro);color:var(--m-muted);margin-top:5px;line-height:1.5;max-width:580px;">{{ p.abstract }}…</div>
+            <div style="font-family:var(--m-display);font-size:var(--t-micro);color:var(--m-muted);margin-top:var(--m-space-1);line-height:1.5;max-width:580px;">{{ p.abstract }}…</div>
             {% endif %}
           </td>
-          <td style="padding:11px 10px;font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);vertical-align:top;">{{ p.journal }}</td>
-          <td class="u-label" style="padding:11px 20px;text-align:right;vertical-align:top;">
+          <td style="padding:var(--m-space-3) var(--m-space-3);font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);vertical-align:top;">{{ p.journal }}</td>
+          <td class="u-label" style="padding:var(--m-space-3) var(--m-space-5);text-align:right;vertical-align:top;">
             {% if p.citations %}{{ p.citations }}{% else %}—{% endif %}
           </td>
         </tr>

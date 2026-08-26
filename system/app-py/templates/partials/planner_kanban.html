@@ -10,7 +10,7 @@
      style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--m-space-4);">
 
   {%- macro col(label, items, dot_color) -%}
-  <div class="panel u-col" style="padding:0;min-height:280px;">
+  <div class="panel u-col panel--flush" style="min-height:280px;">
     <h2 class="sec-label u-row u-row--between u-rule" style="padding:var(--m-space-3) var(--m-space-4) var(--m-space-3);margin:0;">
       <span style="display:inline-flex;align-items:center;gap:var(--m-space-2);">
         <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:{{ dot_color }};"></span>

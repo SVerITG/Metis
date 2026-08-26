@@ -6,7 +6,7 @@
 {% else %}
 
 {% for t in tasks %}
-<div class="u-row u-rule" style="padding:3px 0;">
+<div class="u-row u-rule" style="padding:var(--m-space-1) 0;">
   <span style="font-family:var(--m-mono);font-size:11px;flex-shrink:0;
                color:{% if t.status == 'blocked' %}var(--m-alert){% elif t.status == 'in_progress' %}var(--m-accent){% else %}var(--m-muted){% endif %};">
     {% if t.status == 'blocked' %}●{% elif t.status == 'in_progress' %}▸{% else %}·{% endif %}
@@ -19,14 +19,14 @@
           style="background:none;border:none;padding:0 2px;cursor:pointer;font-size:11px;flex-shrink:0;line-height:1;
                  color:{% if t.starred %}var(--m-ochre-deep){% else %}var(--m-muted){% endif %};opacity:{% if t.starred %}1{% else %}0.4{% endif %};">&#9733;</button>
   <!-- done -->
-  <button class="u-fixed" onclick="markProjectTaskDone('{{ t.task_id }}','{{ project_id }}')"
+  <button class="u-fixed btn btn--ghost" onclick="markProjectTaskDone('{{ t.task_id }}','{{ project_id }}')"
           title="Mark done"
-          style="background:none;border:none;padding:0 2px;cursor:pointer;color:var(--m-ok);font-size:var(--t-micro);line-height:1;opacity:0.5;"
+          style="padding:0 var(--m-space-1);color:var(--m-ok);font-size:var(--t-micro);line-height:1;opacity:0.5;"
           onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.5'">&#10003;</button>
   <!-- delete -->
-  <button class="u-fixed" onclick="miniTaskDelete('{{ t.task_id }}','{{ project_id }}')"
+  <button class="u-fixed btn btn--ghost" onclick="miniTaskDelete('{{ t.task_id }}','{{ project_id }}')"
           title="Delete task"
-          style="background:none;border:none;padding:0 2px;cursor:pointer;color:var(--m-muted);font-size:var(--t-micro);line-height:1;opacity:0.3;"
+          style="padding:0 var(--m-space-1);color:var(--m-muted);font-size:var(--t-micro);line-height:1;opacity:0.3;"
           onmouseenter="this.style.opacity='1';this.style.color='var(--m-alert)'"
           onmouseleave="this.style.opacity='.3';this.style.color='var(--m-muted)'">&#10005;</button>
 </div>
@@ -41,7 +41,7 @@
   <span style="font-family:var(--m-mono);font-size:var(--t-micro);color:var(--m-ok);">{{ done_count }} done</span>
   {% endif %}
   <button class="u-label" onclick="openProjectDetail('{{ project_id }}')"
-          style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:2px 8px;cursor:pointer;">ALL TASKS ↗</button>
+          style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-1) var(--m-space-2);cursor:pointer;">ALL TASKS ↗</button>
 </div>
 {% endif %}
 
@@ -65,14 +65,14 @@
       <option value="code">code</option>
       <option value="review">review</option>
     </select>
-    <button onclick="submitQuickTask('{{ project_id }}')"
-            style="background:var(--m-accent);color:var(--m-on-accent);border:none;border-radius:var(--m-radius);padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);cursor:pointer;">Add</button>
-    <button onclick="document.getElementById('task-add-{{ project_id }}').style.display='none';"
-            style="background:none;border:none;padding:2px 4px;cursor:pointer;color:var(--m-muted);font-size:var(--t-small);">✕</button>
+    <button class="btn btn--primary" onclick="submitQuickTask('{{ project_id }}')"
+            style="border:none;padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);">Add</button>
+    <button class="btn btn--ghost" onclick="document.getElementById('task-add-{{ project_id }}').style.display='none';"
+            style="padding:var(--m-space-1) var(--m-space-1);color:var(--m-muted);font-size:var(--t-small);">✕</button>
   </div>
 </div>
 
 <!-- "+ add task" trigger -->
-<button class="u-label" onclick="document.getElementById('task-add-{{ project_id }}').style.display='block';
+<button class="u-label btn btn--ghost" onclick="document.getElementById('task-add-{{ project_id }}').style.display='block';
                  document.getElementById('task-title-{{ project_id }}').focus();"
-        style="background:none;border:none;padding:var(--m-space-1) 0 0;cursor:pointer;text-decoration:underline dotted;text-underline-offset:2px;display:block;margin-top:var(--m-space-1);">+ add task</button>
+        style="padding:var(--m-space-1) 0 0;text-decoration:underline dotted;text-underline-offset:2px;display:block;margin-top:var(--m-space-1);">+ add task</button>

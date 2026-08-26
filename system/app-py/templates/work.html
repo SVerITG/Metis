@@ -20,21 +20,21 @@
      tasks/projects tables as Work. It is now the "Board" view here: the planning
      horizon (week ahead · intentions · project pipeline) that the task-centric
      List view doesn't show. One dataset, two lenses, one surface. #}
-  <div class="u-mb-5" style="display:flex;gap:2px;border:1px solid var(--m-rule);border-radius:6px;width:max-content;padding:2px;">
-    <button id="work-toggle-list" onclick="workSetView('list')"
-            style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;padding:5px 14px;border:none;border-radius:var(--m-radius);cursor:pointer;background:var(--m-accent);color:var(--m-on-accent);">List</button>
-    <button class="u-label u-label--wide" id="work-toggle-board" onclick="workSetView('board')"
-            style="padding:5px 14px;border:none;border-radius:var(--m-radius);cursor:pointer;background:transparent;">Board</button>
+  <div class="u-mb-5" style="display:flex;gap:var(--m-space-1);border:1px solid var(--m-rule);border-radius:6px;width:max-content;padding:var(--m-space-1);">
+    <button class="btn btn--primary" id="work-toggle-list" onclick="workSetView('list')"
+            style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.1em;text-transform:uppercase;padding:var(--m-space-1) var(--m-space-4);border:none;">List</button>
+    <button class="u-label u-label--wide btn btn--ghost" id="work-toggle-board" onclick="workSetView('board')"
+            style="padding:var(--m-space-1) var(--m-space-4);">Board</button>
     {# Third lens: WHEN. List answers "what exists", Board answers "what stage",
        Calendar answers "which day" — the question neither of the other two could
        hold, because a task has no date and a due-date is a deadline not a plan. #}
-    <button class="u-label u-label--wide" id="work-toggle-calendar" onclick="workSetView('calendar')"
-            style="padding:5px 14px;border:none;border-radius:var(--m-radius);cursor:pointer;background:transparent;">Calendar</button>
+    <button class="u-label u-label--wide btn btn--ghost" id="work-toggle-calendar" onclick="workSetView('calendar')"
+            style="padding:var(--m-space-1) var(--m-space-4);">Calendar</button>
   </div>
 
   <!-- ══════════ CALENDAR VIEW ══════════ -->
   <div class="u-hide" id="work-view-calendar">
-    {{ sec_label("Plan your days", tail="DRAG · WRITE · REMIND", style="margin-bottom:12px;") }}
+    {{ sec_label("Plan your days", tail="DRAG · WRITE · REMIND") }}
     <div id="work-calendar"
          hx-get="/api/partial/work/calendar?view=month"
          hx-trigger="load"
@@ -52,7 +52,7 @@
   <div class="u-mb-5" hx-get="/api/partial/planner/intentions"
        hx-trigger="load"
        hx-swap="innerHTML">
-    {{ sec_label("What you want to do", tail="INTENTIONS · THIS QUARTER", style="margin-bottom:12px;") }}
+    {{ sec_label("What you want to do", tail="INTENTIONS · THIS QUARTER") }}
     <div class="panel panel-pad skeleton" style="min-height:70px;"></div>
   </div>
 
@@ -65,21 +65,21 @@
   <h2 class="sec-label u-mb-4">
     <span>Active Projects</span>
     <button class="u-label" onclick="openAddProjectModal()"
-            style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:3px 10px;cursor:pointer;">+ Project</button>
+            style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-1) var(--m-space-3);cursor:pointer;">+ Project</button>
   </h2>
 
   <!-- Add Project wizard modal (2 steps) -->
   <div class="u-hide" id="add-project-overlay"
        onclick="if(event.target===this)closeAddProjectModal()"
        style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;">
-    <div style="background:var(--m-surface-1);border-radius:8px;padding:28px 30px;width:500px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.25);">
+    <div style="background:var(--m-surface-1);border-radius:8px;padding:var(--m-space-6) var(--m-space-6);width:500px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.25);">
 
       <!-- Step indicator -->
       <div class="u-row u-mb-5">
         <div class="u-fixed" id="np-step-dot-1" style="width:6px;height:6px;border-radius:50%;background:var(--m-accent);"></div>
         <div class="u-fixed" id="np-step-dot-2" style="width:6px;height:6px;border-radius:50%;background:var(--m-rule);"></div>
         <div class="u-grow" style="font-family:var(--m-display);font-size:var(--t-h4);font-weight:500;" id="np-step-title">Add Project — Where is it?</div>
-        <button onclick="closeAddProjectModal()" style="background:none;border:none;font-size:var(--t-h4);cursor:pointer;color:var(--m-muted);">✕</button>
+        <button class="btn btn--ghost" onclick="closeAddProjectModal()" style="font-size:var(--t-h4);color:var(--m-muted);">✕</button>
       </div>
 
       <!-- ── STEP 1 ── -->
@@ -103,9 +103,9 @@
         </div>
         <div style="display:flex;gap:var(--m-space-2);justify-content:flex-end;margin-top:var(--m-space-5);">
           <button class="u-label" onclick="closeAddProjectModal()"
-                  style="background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 14px;cursor:pointer;">Cancel</button>
-          <button onclick="npGoStep2()"
-                  style="background:var(--m-accent);color:var(--m-on-accent);border:none;border-radius:var(--m-radius);padding:7px 18px;font-family:var(--m-mono);font-size:var(--t-micro);cursor:pointer;letter-spacing:0.06em;">Next →</button>
+                  style="background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);cursor:pointer;">Cancel</button>
+          <button class="btn btn--primary" onclick="npGoStep2()"
+                  style="border:none;padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.06em;">Next →</button>
         </div>
       </div>
 
@@ -115,12 +115,12 @@
           <div>
             <label class="u-label u-mb-1" style="display:block;">WHAT IS THIS PROJECT ABOUT?</label>
             <input id="np-desc" type="text" placeholder="One sentence about the purpose…"
-                   style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:var(--t-small);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+                   style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:var(--t-small);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);outline:none;">
           </div>
           <div>
             <label class="u-label u-mb-1" style="display:block;">MAIN TASKS (one per line, optional)</label>
             <textarea id="np-tasks" rows="3" placeholder="Write a literature review&#10;Analyse the dataset&#10;Submit to journal"
-                      style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:var(--t-small);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;resize:vertical;background:var(--m-surface-2);color:var(--m-ink);outline:none;"></textarea>
+                      style="width:100%;box-sizing:border-box;font-family:var(--m-display);font-size:var(--t-small);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);resize:vertical;background:var(--m-surface-2);color:var(--m-ink);outline:none;"></textarea>
           </div>
           <div>
             <label class="u-label u-mb-2" style="display:block;">HOW DO YOU OPEN THIS PROJECT?</label>
@@ -142,14 +142,14 @@
           <div>
             <label class="u-label u-mb-1" style="display:block;">GITHUB URL (optional)</label>
             <input id="np-github" type="text" placeholder="https://github.com/…"
-                   style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 10px;background:var(--m-surface-2);color:var(--m-ink);outline:none;">
+                   style="width:100%;box-sizing:border-box;font-family:var(--m-mono);font-size:var(--t-micro);border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-3);background:var(--m-surface-2);color:var(--m-ink);outline:none;">
           </div>
         </div>
         <div style="display:flex;gap:var(--m-space-2);justify-content:flex-end;margin-top:var(--m-space-5);">
           <button class="u-label" onclick="npGoStep1()"
-                  style="background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:7px 14px;cursor:pointer;">← Back</button>
-          <button onclick="submitAddProject()"
-                  style="background:var(--m-accent);color:var(--m-on-accent);border:none;border-radius:var(--m-radius);padding:7px 18px;font-family:var(--m-mono);font-size:var(--t-micro);cursor:pointer;letter-spacing:0.06em;">Create Project</button>
+                  style="background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-4);cursor:pointer;">← Back</button>
+          <button class="btn btn--primary" onclick="submitAddProject()"
+                  style="border:none;padding:var(--m-space-2) var(--m-space-4);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.06em;">Create Project</button>
         </div>
       </div>
 
@@ -166,7 +166,7 @@
        hx-swap="innerHTML">
     <div class="grid grid-2">
       {% for _ in range(4) %}
-      <div class="panel panel-pad skeleton" style="padding:20px 22px;min-height:120px;">
+      <div class="panel panel-pad skeleton" style="padding:var(--m-space-5) var(--m-space-5);min-height:120px;">
         <div class="u-mb-3" style="height:10px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:60%;"></div>
         <div class="u-mb-2" style="height:14px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);"></div>
         <div style="height:10px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);width:80%;"></div>
@@ -176,10 +176,10 @@
   </div>
 
   <!-- Workbench -->
-  <div class="panel u-row u-row--wrap u-mb-4" style="padding:var(--m-space-4) var(--m-space-4);gap:var(--m-space-3);">
+  <div class="panel u-row u-row--wrap u-mb-4 panel--md" style="gap:var(--m-space-3);">
     <div class="u-label" style="letter-spacing:0.22em;text-transform:uppercase;padding-right:8px;border-right:1px solid var(--m-rule-soft);">Workbench</div>
     <button class="btn btn--sec"
-            style="display:inline-flex;align-items:center;gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-3);"
+            style="gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-3);"
             onclick="launchProjectTarget('rc-root','claude_chat')"
             title="Open Claude Desktop — Chat">
       <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><path d="M6 7c.5-1 2.5-1 2.5.5s-1.5 1.5-2 2v.5h3"/></svg>
@@ -187,7 +187,7 @@
       <span class="wb-dot wb-dot--on" style="margin-left:4px;"></span>
     </button>
     <button class="btn btn--sec"
-            style="display:inline-flex;align-items:center;gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-3);"
+            style="gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-3);"
             onclick="launchProjectTarget('rc-root','claude_cowork')"
             title="Open Claude Desktop — Cowork (copies RC path to clipboard)">
       <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="7" height="7" rx="1"/><path d="M7 5V4a2 2 0 0 1 4 0v7"/><line x1="10" y1="8" x2="14" y2="8"/></svg>
@@ -195,7 +195,7 @@
       <span class="wb-dot wb-dot--on" style="margin-left:4px;"></span>
     </button>
     <button class="btn btn--sec"
-            style="display:inline-flex;align-items:center;gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-3);"
+            style="gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-3);"
             onclick="launchProjectTarget('rc-root','claude_code')"
             title="Open Claude Code — Terminal in Research Cortex root">
       <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 6 9 3 12"/><line x1="9" y1="12" x2="13" y2="12"/></svg>
@@ -203,14 +203,14 @@
       <span class="wb-dot wb-dot--on" style="margin-left:4px;"></span>
     </button>
     <button class="btn btn--sec"
-            style="display:inline-flex;align-items:center;gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-3);"
+            style="gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-3);"
             onclick="launchProjectTarget('rc-root','vscode')">
       <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="1"/><path d="M5 6l3 2-3 2"/><line x1="9" y1="10" x2="13" y2="10"/></svg>
       <span style="font-family:var(--m-ui);font-size:var(--t-small);">VS Code</span>
       <span class="wb-dot wb-dot--on" style="margin-left:4px;"></span>
     </button>
     <button class="btn btn--sec"
-            style="display:inline-flex;align-items:center;gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-3);opacity:0.65;"
+            style="gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-3);opacity:0.65;"
             onclick="launchProjectTarget('rc-root','rstudio')">
       <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><path d="M6 6h2.5a1.5 1.5 0 0 1 0 3H6v3"/><line x1="9.5" y1="9" x2="12" y2="12"/></svg>
       <span style="font-family:var(--m-ui);font-size:var(--t-small);">RStudio</span>
@@ -219,7 +219,7 @@
   </div>
 
   <!-- Task kanban board -->
-  {{ sec_label("Tasks by Status", style="margin-bottom:16px;") }}
+  {{ sec_label("Tasks by Status") }}
   <div hx-get="/api/partial/work/kanban"
        hx-trigger="load"
        hx-swap="outerHTML">
@@ -238,7 +238,7 @@
   <h2 class="sec-label u-mb-4" style="margin-top:var(--m-space-6);">
     <span>All Open Tasks · Priority View</span>
     <button class="u-label" onclick="openCapture('t')"
-            style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:3px 10px;cursor:pointer;">+ Task</button>
+            style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-1) var(--m-space-3);cursor:pointer;">+ Task</button>
   </h2>
   <div hx-get="/api/partial/work/all-tasks"
        hx-trigger="load"
@@ -253,17 +253,17 @@
   <div class="u-hide" id="work-view-board">
     <!-- Week ahead -->
     <div class="u-mb-6" hx-get="/api/partial/planner/week" hx-trigger="revealed" hx-swap="innerHTML">
-      {{ sec_label("The week ahead", tail="SEVEN DAYS", style="margin-bottom:14px;") }}
+      {{ sec_label("The week ahead", tail="SEVEN DAYS") }}
       <div class="panel panel-pad skeleton" style="min-height:120px;"></div>
     </div>
     <!-- Intentions -->
     <div class="u-mb-6" hx-get="/api/partial/planner/intentions" hx-trigger="revealed" hx-swap="innerHTML">
-      {{ sec_label("Intentions", tail="THIS QUARTER", style="margin-bottom:14px;") }}
+      {{ sec_label("Intentions", tail="THIS QUARTER") }}
       <div class="panel panel-pad skeleton" style="min-height:80px;"></div>
     </div>
     <!-- Project pipeline -->
     <div hx-get="/api/partial/planner/kanban" hx-trigger="revealed" hx-swap="innerHTML">
-      {{ sec_label("The pipeline", tail="SOMEDAY · INCUBATING · ACTIVE · DONE", style="margin-bottom:14px;") }}
+      {{ sec_label("The pipeline", tail="SOMEDAY · INCUBATING · ACTIVE · DONE") }}
       <div class="panel panel-pad skeleton" style="min-height:160px;"></div>
     </div>
   </div>

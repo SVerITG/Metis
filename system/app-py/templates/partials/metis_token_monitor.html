@@ -43,7 +43,7 @@
 {% set max_runs = namespace(val=1) %}
 {% for d in by_day %}{% if d.runs > max_runs.val %}{% set max_runs.val = d.runs %}{% endif %}{% endfor %}
 
-<div class="u-rule" style="padding:14px 22px 6px;">
+<div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-2);">
   <div class="u-mb-3" style="display:flex;align-items:baseline;justify-content:space-between;">
     <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);">Daily activity</div>
     {% if all_tokens_zero %}
@@ -76,7 +76,7 @@
   {% endif %}
 </div>
 
-<div class="u-rule" style="padding:18px 22px;">
+<div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
   <div class="u-mb-4" style="display:flex;align-items:baseline;justify-content:space-between;">
     <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">By specialist</div>
     <span class="u-label">LAST {{ days }}D · TOP 12</span>
@@ -99,7 +99,7 @@
   {% endif %}
 </div>
 
-<div class="u-rule" style="padding:18px 22px;">
+<div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
   <div class="u-mb-4" style="display:flex;align-items:baseline;justify-content:space-between;">
     <div style="font-family:var(--m-display);font-size:var(--t-h4);color:var(--m-ink);">By model</div>
     <span class="u-label">DEFAULT · {{ active_model|upper }}</span>
@@ -121,7 +121,7 @@
   {% endif %}
 </div>
 
-<div style="padding:14px 22px;">
+<div style="padding:var(--m-space-4) var(--m-space-5);">
   <div class="metis-note">
     Session and weekly token limits are managed by Anthropic on the API side and are not exposed to client apps. The numbers above show what your local Metis runs have used.
   </div>

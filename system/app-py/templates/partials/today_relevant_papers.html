@@ -5,14 +5,14 @@
     <a class="u-label" href="/knowledge" style="margin-left:auto;text-decoration:none;">OPEN LIBRARY →</a>
   </h2>
 
-  <div class="panel" style="overflow:hidden;">
+  <div class="panel panel--clip">
     {% if not items %}
-      <div style="padding:22px;display:flex;gap:var(--m-space-4);align-items:flex-start;">
-        <svg class="u-fixed" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--m-muted)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;margin-top:2px;">
+      <div style="padding:var(--m-space-5);display:flex;gap:var(--m-space-4);align-items:flex-start;">
+        <svg class="u-fixed" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--m-muted)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="opacity:.55;margin-top:var(--m-space-1);">
           <circle cx="11" cy="11" r="7"/><line x1="16" y1="16" x2="21" y2="21"/>
         </svg>
         <div>
-          <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);margin-bottom:3px;">Nothing to surface yet.</div>
+          <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-ink);margin-bottom:var(--m-space-1);">Nothing to surface yet.</div>
           <div style="font-size:var(--t-meta);color:var(--m-muted);line-height:1.55;">
             Once you have active projects and papers in your library, Metis will surface the papers that connect to what you're working on right now.
           </div>
@@ -30,10 +30,10 @@
             {% endif %}
             {% if not it.is_read %}<span class="u-label u-label--accent u-fixed" style="letter-spacing:0.1em;border:1px solid var(--m-accent);border-radius:var(--m-radius-sm);padding:1px 4px;">UNREAD</span>{% endif %}
           </div>
-          <div class="u-label" style="margin-top:3px;">
+          <div class="u-label" style="margin-top:var(--m-space-1);">
             {% if it.authors %}{{ it.authors }}{% if it.year %} · {{ it.year }}{% endif %}{% elif it.year %}{{ it.year }}{% endif %}
           </div>
-          <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.06em;color:var(--m-ochre);margin-top:5px;">
+          <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.06em;color:var(--m-ochre);margin-top:var(--m-space-1);">
             ↳ matches your work: {{ it.why }}
           </div>
         </div>

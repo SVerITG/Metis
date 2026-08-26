@@ -21,7 +21,7 @@
 <div id="hat-library">
 
   <div class="u-mb-4">
-    {{ sec_label("HAT Library", tail="SLEEPING SICKNESS · YOUR OWN CORPUS", style="margin-bottom:6px;") }}
+    {{ sec_label("HAT Library", tail="SLEEPING SICKNESS · YOUR OWN CORPUS") }}
     <div class="u-ed" style="font-size:var(--t-body);max-width:70ch;">
       Everything Metis holds on human African trypanosomiasis — catalogued, indexed,
       and searchable by what the papers say rather than what they are called.
@@ -31,7 +31,7 @@
   <!-- ── The three numbers that matter ─────────────────────────────────── -->
   <div class="grid grid-3 u-mb-5">
 
-    <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);">
+    <div class="panel panel--md">
       <div class="u-mb-2" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);">
         In your catalogue
       </div>
@@ -43,7 +43,7 @@
       </div>
     </div>
 
-    <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);">
+    <div class="panel panel--md">
       <div class="u-mb-2" style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.16em;text-transform:uppercase;color:var(--m-muted);">
         Readable by Metis
       </div>
@@ -71,8 +71,8 @@
   </div>
 
   <!-- ── Search the corpus itself ──────────────────────────────────────── -->
-  <div class="panel u-mb-5" style="padding:var(--m-space-4) var(--m-space-5);">
-    {{ sec_label("Ask your own papers", tail="FULL TEXT · NOT TITLES", style="margin-bottom:10px;") }}
+  <div class="panel u-mb-5 panel--md">
+    {{ sec_label("Ask your own papers", tail="FULL TEXT · NOT TITLES") }}
     <input type="search" id="hat-corpus-q" name="q"
            placeholder="e.g. sensitivity of CATT in low-prevalence settings, or the role of animal reservoirs…"
            autocomplete="off"
@@ -90,8 +90,8 @@
 
   <!-- ── Coverage by theme ─────────────────────────────────────────────── -->
   <div class="u-mb-5">
-    {{ sec_label("Coverage by theme", tail="COUNTS · NOT A SCORE", style="margin-bottom:10px;") }}
-    <div class="panel" style="padding:var(--m-space-4) var(--m-space-5);">
+    {{ sec_label("Coverage by theme", tail="COUNTS · NOT A SCORE") }}
+    <div class="panel panel--md">
       {% set top = themes[0].count if themes and themes[0].count else 1 %}
       {% for t in themes %}
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:{{ '0' if loop.last else '9px' }};">
@@ -115,8 +115,8 @@
   <!-- ── The gaps ──────────────────────────────────────────────────────── -->
   {% if gaps %}
   <div>
-    {{ sec_label("Most cited by your own library, and missing", tail="FROM REFERENCE MINING", style="margin-bottom:10px;") }}
-    <div class="panel" style="overflow:hidden;">
+    {{ sec_label("Most cited by your own library, and missing", tail="FROM REFERENCE MINING") }}
+    <div class="panel panel--clip">
       {% for g in gaps %}
       <div style="padding:13px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}display:flex;gap:14px;align-items:flex-start;">
         <div class="u-label u-label--accent" style="flex:0 0 auto;letter-spacing:0.08em;padding-top:2px;white-space:nowrap;"
@@ -127,13 +127,13 @@
           <div style="font-family:var(--m-display);font-size:var(--t-body);color:var(--m-ink);line-height:1.35;">
             {{ g.title | striptags }}
           </div>
-          <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.06em;color:var(--m-muted);margin-top:3px;">
+          <div style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.06em;color:var(--m-muted);margin-top:var(--m-space-1);">
             {{ g.journal or '—' }}{% if g.pub_date %} · {{ g.pub_date[:4] }}{% endif %}
           </div>
         </div>
         <div style="flex:0 0 auto;display:flex;gap:var(--m-space-2);">
-          <button type="button" onclick="nlAdd({{ g.id }}, this)"
-                  style="background:var(--m-accent-wash);border:1px solid var(--m-accent);border-radius:var(--m-radius);padding:4px 11px;font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;text-transform:uppercase;color:var(--m-accent);cursor:pointer;">Add</button>
+          <button class="btn btn--soft" type="button" onclick="nlAdd({{ g.id }}, this)"
+                  style="padding:var(--m-space-1) var(--m-space-3);font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.08em;text-transform:uppercase;color:var(--m-accent);">Add</button>
           {% if g.doi %}
           <a href="https://doi.org/{{ g.doi }}" target="_blank" rel="noopener"
              style="font-family:var(--m-mono);font-size:var(--t-micro);letter-spacing:0.06em;color:var(--m-muted);text-decoration:none;align-self:center;">DOI</a>

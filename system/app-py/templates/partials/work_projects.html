@@ -1,6 +1,6 @@
 <!-- work_projects.html — Project cards with drag-reorder + collapse + per-type launchers -->
 {% if not projects %}
-<div class="panel panel-pad" style="text-align:center;padding:24px 22px;border:1px dashed var(--m-line);">
+<div class="panel panel-pad" style="text-align:center;padding:var(--m-space-5) var(--m-space-5);border:1px dashed var(--m-line);">
   <p class="ed" style="font-size:var(--t-body);color:var(--m-muted);margin:0 0 var(--m-space-2);">
     <strong>No active projects yet.</strong>
   </p>
@@ -48,20 +48,20 @@
       <span class="chip chip--plain u-fixed" style="font-size:var(--t-micro);">{{ p.project_type | upper }}</span>
       {% endif %}
       <!-- Notes toggle -->
-      <button class="u-fixed" onclick="toggleProjectNotes('{{ p.id }}')"
+      <button class="u-fixed btn btn--ghost" onclick="toggleProjectNotes('{{ p.id }}')"
               title="Project notes"
-              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-family:var(--m-mono);font-size:var(--t-small);color:var(--m-muted);line-height:1;">📝</button>
+              style="padding:var(--m-space-1) var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-small);color:var(--m-muted);line-height:1;">📝</button>
       <!-- Untrack button -->
-      <button class="u-fixed" onclick="untrackProject({{ p.id | tojson }}, {{ p.title | tojson }})"
+      <button class="u-fixed btn btn--ghost" onclick="untrackProject({{ p.id | tojson }}, {{ p.title | tojson }})"
               title="Hide this project (doesn't delete it)"
-              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-size:var(--t-small);color:var(--m-muted);line-height:1;opacity:.6;"
+              style="padding:var(--m-space-1) var(--m-space-1);font-size:var(--t-small);color:var(--m-muted);line-height:1;opacity:.6;"
               onmouseenter="this.style.opacity='1';this.style.color='var(--m-danger)'"
               onmouseleave="this.style.opacity='.6';this.style.color='var(--m-muted)'">✕</button>
       <!-- Collapse toggle -->
-      <button class="proj-collapse-btn u-fixed"
+      <button class="proj-collapse-btn u-fixed btn btn--ghost"
               onclick="toggleProjectCollapse('{{ p.id }}')"
               title="Collapse / expand"
-              style="background:none;border:none;padding:2px 5px;cursor:pointer;font-family:var(--m-mono);font-size:var(--t-h4);color:var(--m-muted);line-height:1;">−</button>
+              style="padding:var(--m-space-1) var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-h4);color:var(--m-muted);line-height:1;">−</button>
     </div>
 
     <!-- ── Collapsible body ── -->
