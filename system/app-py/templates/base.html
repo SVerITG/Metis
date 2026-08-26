@@ -90,6 +90,27 @@
     </div>
 
     <!-- Surfaces nav section -->
+    {#- `hx-disinherit="*"` on every nav item is load-bearing, not decoration.
+
+        htmx resolves hx-target, hx-select and hx-push-url by walking UP the DOM
+        (`getClosestAttributeValue`). So any child element inside a nav item that
+        makes its own request inherits that item's whole navigation contract.
+
+        The Learning item has exactly such a child — the `n-meta` badge, which
+        polls `/api/partial/learning/nav-meta` on load and every 300s. Without
+        disinherit that tiny "4 courses" fragment ran with hx-target="#tab-content",
+        hx-select="#tab-content" (which the fragment does not contain, so the swap
+        emptied the surface) and hx-push-url="/learning" — silently rewriting the
+        address bar to /learning seconds after every page load, and again every
+        five minutes. Reload, or open the dashboard from the shortcut, and you
+        landed on Learning no matter which surface you had chosen. Bug found
+        2026-08-26; it was the only nav item with a self-fetching child, which is
+        why the dashboard always drifted to Learning specifically.
+
+        `hx-swap="outerHTML"` (not innerHTML) pairs with hx-select="#tab-content":
+        hx-select hands htmx the matched ELEMENT, so an innerHTML swap nested a
+        second #tab-content inside the first on every nav click — duplicate IDs
+        and a fresh 28/32/64px of padding each time. -#}
     <div class="nav-sec">
       <div class="nav-label"><span>Surfaces</span></div>
 
@@ -98,8 +119,9 @@
            data-tab="today"
            hx-get="/api/tab/today"
            hx-target="#tab-content"
-           hx-swap="innerHTML"
+           hx-swap="outerHTML"
            hx-select="#tab-content"
+           hx-disinherit="*"
            hx-push-url="/today"
            onclick="setNavActive(this,'today')"
            role="button" tabindex="0"
@@ -123,8 +145,9 @@
            data-tab="news"
            hx-get="/api/tab/news"
            hx-target="#tab-content"
-           hx-swap="innerHTML"
+           hx-swap="outerHTML"
            hx-select="#tab-content"
+           hx-disinherit="*"
            hx-push-url="/news"
            onclick="setNavActive(this,'news')"
            role="button" tabindex="0"
@@ -141,13 +164,35 @@
         <span class="n-tip">News Radar</span>
       </div>
 
+      <!-- 02b Stack — what you filed to read later -->
+      <div class="nav-item {% if active_tab == 'stack' %}active{% endif %}"
+           data-tab="stack"
+           hx-get="/stack"
+           hx-target="#tab-content"
+           hx-swap="outerHTML"
+           hx-select="#tab-content"
+           hx-disinherit="*"
+           hx-push-url="/stack"
+           onclick="setNavActive(this,'stack')"
+           role="button" tabindex="0"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
+        <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+          <path d="M2 11.5l6 3 6-3"/><path d="M2 8l6 3 6-3"/><path d="M2 4.5l6-3 6 3-6 3z"/>
+        </svg>
+        <span class="n-label">Stack</span>
+        <span class="n-meta" hx-get="/api/partial/stack/nav-meta" hx-trigger="load, every 300s"
+              hx-swap="innerHTML" hx-target="this" hx-select="unset" hx-push-url="false">—</span>
+        <span class="n-tip">What you filed to read later</span>
+      </div>
+
       <!-- 03 Reflection -->
       <div class="nav-item {% if active_tab == 'thinking' %}active{% endif %}"
            data-tab="thinking"
            hx-get="/api/tab/thinking"
            hx-target="#tab-content"
-           hx-swap="innerHTML"
+           hx-swap="outerHTML"
            hx-select="#tab-content"
+           hx-disinherit="*"
            hx-push-url="/thinking"
            onclick="setNavActive(this,'thinking')"
            role="button" tabindex="0"
@@ -172,8 +217,9 @@
            data-tab="work"
            hx-get="/api/tab/work"
            hx-target="#tab-content"
-           hx-swap="innerHTML"
+           hx-swap="outerHTML"
            hx-select="#tab-content"
+           hx-disinherit="*"
            hx-push-url="/work"
            onclick="setNavActive(this,'work')"
            role="button" tabindex="0"
@@ -193,8 +239,9 @@
            data-tab="meetings"
            hx-get="/api/tab/meetings"
            hx-target="#tab-content"
-           hx-swap="innerHTML"
+           hx-swap="outerHTML"
            hx-select="#tab-content"
+           hx-disinherit="*"
            hx-push-url="/meetings"
            onclick="setNavActive(this,'meetings')"
            role="button" tabindex="0"
@@ -213,8 +260,9 @@
            data-tab="learning"
            hx-get="/api/tab/learning"
            hx-target="#tab-content"
-           hx-swap="innerHTML"
+           hx-swap="outerHTML"
            hx-select="#tab-content"
+           hx-disinherit="*"
            hx-push-url="/learning"
            onclick="setNavActive(this,'learning')"
            role="button" tabindex="0"
@@ -234,8 +282,9 @@
            data-tab="teach"
            hx-get="/api/tab/teach"
            hx-target="#tab-content"
-           hx-swap="innerHTML"
+           hx-swap="outerHTML"
            hx-select="#tab-content"
+           hx-disinherit="*"
            hx-push-url="/teach"
            onclick="setNavActive(this,'teach')"
            role="button" tabindex="0"
@@ -255,8 +304,9 @@
            data-tab="knowledge"
            hx-get="/api/tab/knowledge"
            hx-target="#tab-content"
-           hx-swap="innerHTML"
+           hx-swap="outerHTML"
            hx-select="#tab-content"
+           hx-disinherit="*"
            hx-push-url="/knowledge"
            onclick="setNavActive(this,'knowledge')"
            role="button" tabindex="0"
@@ -344,8 +394,9 @@
            data-tab="metis"
            hx-get="/api/tab/metis"
            hx-target="#tab-content"
-           hx-swap="innerHTML"
+           hx-swap="outerHTML"
            hx-select="#tab-content"
+           hx-disinherit="*"
            hx-push-url="/metis"
            onclick="setNavActive(this,'metis')"
            role="button" tabindex="0"

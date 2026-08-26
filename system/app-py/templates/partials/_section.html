@@ -71,3 +71,36 @@
 {% macro skeleton_box(size="md") %}
 <div class="skeleton skeleton-box skeleton-box--{{ size }}"></div>
 {% endmacro %}
+
+
+{#-
+  zone — a group of panels folded behind one line, remembered per key.
+
+  Added 2026-08-25 after an audit found Today rendered its panels in one column
+  with no collapse anywhere: four <details> elements in the whole application.
+  Four separate panels — research threads, memory pulse, connections and the
+  memory landscape — were four renderings of one question ("what does Metis know
+  and what am I working across"). This folds them into one.
+
+  Closed by default is the point. The summary line stays visible, so folding
+  costs the reader nothing: it is the detail that hides, never the fact.
+
+  Usage:
+    {% call zone("What Metis knows", key="today-memory", tail="4 threads") %}
+      ...panels...
+    {% endcall %}
+-#}
+{% macro zone(title, key, tail=None, open=False) %}
+<section class="ui-zone" data-zone-key="{{ key }}" style="margin-bottom:var(--m-gap,18px);">
+  <button type="button" class="ui-zone-head"
+          aria-expanded="{{ 'true' if open else 'false' }}"
+          aria-controls="zone-{{ key }}">
+    <span class="ui-chev" aria-hidden="true">{{ '▾' if open else '▸' }}</span>
+    <span class="ui-zone-title">{{ title }}</span>
+    {%- if tail %}<span class="ui-zone-tail">{{ tail }}</span>{% endif %}
+  </button>
+  <div class="ui-zone-body" id="zone-{{ key }}"{% if not open %} hidden{% endif %}>
+    {{ caller() }}
+  </div>
+</section>
+{% endmacro %}

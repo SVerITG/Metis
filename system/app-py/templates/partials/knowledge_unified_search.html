@@ -95,7 +95,7 @@
 <div style="margin-bottom:12px;">
   <div style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.18em;text-transform:uppercase;
               color:var(--m-muted);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--m-rule-soft);">
-    MEMORY — {{ memory | length }} ENTRY{% if memory | length != 1 %}IES{% endif %}
+    MEMORY — {{ memory | length }} ENTR{{ 'IES' if memory | length != 1 else 'Y' }}
   </div>
   {% for m in memory %}
   <div style="padding:7px 0;border-bottom:1px solid var(--m-rule-soft);">
