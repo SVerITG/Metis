@@ -113,7 +113,105 @@ function looksLikeDomainQuestion(prompt, terms) {
   const OPERATIONAL = /\b(commit|push|refactor|rename|delete|install|deploy|restart|debug|stack trace|traceback|npm |pip |git |sql\b|write a script|run the)\b/;
   if (OPERATIONAL.test(p)) return false;
 
-  const hits = terms.filter((t) => t.length > 3 && p.includes(t));
+  // Skip work ON Metis itself. The corpus is research literature; grounding a
+  // question about the dashboard, the MCP server or this repo in NTD papers
+  // helps nobody. Added 2026-08-25 after "what are the decisions to take now?"
+  // — a question about this session's open items — was grounded in Bayesian
+  // decision analysis, because "decision" is a corpus trigger term.
+  //
+  // Deliberately NOT in this list: "agent", "session", "endpoint", "database",
+  // "control". Each is system vocabulary here but ALSO field vocabulary for
+  // this researcher — a trypanocidal agent, a screening session, a primary
+  // endpoint, a DHIS2 database, vector control. Blocking them would suppress
+  // grounding on real research questions, which is the costlier error.
+  const SYSTEM_WORK = /\b(metis|dashboard|mcp|subagent|hook|hooks|repo|repository|venv|sqlite|backfill|pytest|reinstall|reconnect|changelog|claude|uvicorn|fastapi|htmx|handoff|hand[ -]?off)\b/;
+  if (SYSTEM_WORK.test(p)) return false;
+
+  // "agent" is Metis vocabulary (one of the 33 specialists) AND field vocabulary
+  // (a trypanocidal agent, the causative agent). The word alone settles nothing,
+  // so gate on the companions that only ever accompany the Metis sense — leaving
+  // "what agents are effective against gambiense HAT?" free to ground.
+  const METIS_AGENT = /\bagents?\b[^.?!]*\b(registered|dispatch\w*|routing|route|slug|subagent|specialist|system prompt)\b|\b(registered|dispatch\w*|routing|slug|subagent|specialist)\b[^.?!]*\bagents?\b/;
+  if (METIS_AGENT.test(p)) return false;
+
+  // Words that are ordinary English (or generic technical vocabulary) but appear
+  // in the corpus-trigger list anyway. The extractor emits raw stopwords — "what",
+  // "have" and "hand" are all live triggers — so without this filter ANY question
+  // grounds. That is the real defect; this is the guard until the extractor at
+  // /api/library/corpus-triggers stops producing them.
+  //
+  // Dropping a word only means grounding needs a SECOND, more specific term before
+  // it fires. A genuine research question almost always supplies one.
+  const GENERIC = new Set([
+    "about", "above", "activity", "after", "again", "against", "along",
+    "already", "also", "although", "always", "among", "amount", "another",
+    "answer", "answers", "anyone", "anything", "appear", "applied", "apply",
+    "approach", "area", "areas", "around", "aside", "aspect", "available",
+    "back", "based", "because", "become", "becomes", "been", "before",
+    "begin", "behind", "being", "below", "best", "better", "between",
+    "beyond", "both", "bring", "came", "cannot", "carry", "case", "cases",
+    "certain", "change", "changes", "clear", "close", "come", "coming",
+    "common", "compare", "complete", "consider", "contain", "continue",
+    "control", "could", "course", "current", "deal", "decision",
+    "decisions", "degree", "describe", "design", "despite", "detail",
+    "determine", "develop", "development", "difference", "different",
+    "difficult", "direct", "done", "down", "draw", "during", "each",
+    "early", "easy", "effect", "either", "else", "enough", "entire",
+    "especially", "essential", "even", "event", "ever", "every", "exactly",
+    "example", "except", "exist", "expect", "explain", "fact", "fall",
+    "field", "form", "forms", "further", "gave", "general", "generally",
+    "getting", "give", "given", "goes", "going", "gone", "good", "great",
+    "group", "half", "hand", "hands", "happen", "hard", "have", "having",
+    "held", "help", "hence", "here", "high", "hold", "home", "however",
+    "idea", "important", "include", "included", "includes", "including",
+    "increase", "indeed", "information", "inside", "instead", "into",
+    "issue", "itself", "just", "keep", "kind", "know", "known", "large",
+    "last", "late", "later", "least", "leave", "left", "less", "letting",
+    "level", "like", "likely", "limit", "line", "little", "long", "look",
+    "made", "main", "major", "make", "making", "management", "many",
+    "matter", "maybe", "mean", "means", "measure", "meet", "mention",
+    "merely", "might", "model", "models", "month", "months", "more", "most",
+    "move", "much", "must", "name", "near", "necessary", "need", "needed",
+    "neither", "never", "next", "none", "normal", "note", "noted",
+    "nothing", "notice", "number", "occur", "offer", "often", "once",
+    "only", "open", "order", "other", "others", "otherwise", "ought",
+    "over", "overall", "part", "particular", "particularly", "past",
+    "perhaps", "place", "plan", "please", "point", "poor", "position",
+    "possible", "present", "previous", "probably", "problem", "program",
+    "programme", "project", "provide", "provided", "purpose", "quality",
+    "quite", "rate", "rather", "reach", "real", "really", "reason",
+    "receive", "recent", "refer", "regard", "relate", "related", "relevant",
+    "remain", "remember", "report", "require", "required", "respect",
+    "response", "responses", "rest", "result", "results", "return", "right",
+    "role", "room", "round", "said", "same", "seem", "seems", "seen",
+    "sense", "separate", "series", "serve", "services", "several", "shall",
+    "short", "should", "show", "shown", "side", "similar", "simple",
+    "simply", "since", "single", "site", "sites", "situation", "small",
+    "some", "sometimes", "soon", "sort", "special", "specific", "standard",
+    "start", "state", "step", "steps", "still", "stop", "strong", "subject",
+    "substantial", "such", "suggest", "support", "suppose", "sure", "take",
+    "taken", "tell", "tend", "term", "terms", "test", "than", "that",
+    "their", "them", "then", "there", "these", "they", "thing", "things",
+    "think", "third", "this", "those", "though", "thought", "three",
+    "through", "throughout", "thus", "time", "today", "together", "took",
+    "tool", "tools", "total", "toward", "towards", "true", "turn", "twice",
+    "type", "under", "unless", "unlike", "until", "upon", "used", "useful",
+    "using", "usually", "value", "values", "various", "very", "view",
+    "want", "ways", "week", "weeks", "well", "went", "were", "what", "when",
+    "where", "whereas", "whether", "which", "while", "whole", "whom",
+    "whose", "wide", "will", "with", "within", "without", "word", "words",
+    "work", "working", "world", "would", "write", "written", "wrong",
+    "year", "years", "yesterday",
+  ]);
+
+  // Match on WORD BOUNDARIES, not substrings. `p.includes("cont")` is true of
+  // "continue" and `p.includes("area")` of "areas we searched" — short triggers
+  // were matching inside unrelated words and inflating the hit count.
+  const hits = terms.filter((t) => {
+    if (t.length <= 3 || GENERIC.has(t)) return false;
+    const esc = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`\\b${esc}\\b`).test(p);
+  });
   if (hits.length === 0) return false;
 
   // One passing mention is not a question about the field. Either ask something
