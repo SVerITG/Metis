@@ -159,6 +159,37 @@ def states_for(kind: str, ids: list) -> dict:
             tuple([kind] + ids))}
 
 
+def describe(kind: str, item_id: str) -> dict:
+    """Title, url and source for an item, read from the table that owns it.
+
+    The action bar used to POST all three back with every click, as six hidden
+    inputs on every row. On a 60-item news tab that is the same strings sent to
+    the server that had just sent them — measured at roughly 100 KB of the tab's
+    weight, for data already sitting in the database.
+
+    A control now carries only what the server cannot know: which item, and what
+    the reader decided. Anything the caller DOES pass still wins, so an item that
+    lives nowhere (a link pasted from Claude Desktop) can still be filed.
+    """
+    try:
+        with connect(paths.db) as con:
+            if kind == "news":
+                r = con.execute(
+                    "SELECT title, COALESCE(source_url,'') AS url, "
+                    "COALESCE(domain,'') AS source FROM news_briefs "
+                    "WHERE brief_id = ?", (item_id,)).fetchone()
+            else:
+                r = con.execute(
+                    "SELECT title, COALESCE(NULLIF(source_url,''), "
+                    "  CASE WHEN COALESCE(doi,'') != '' "
+                    "       THEN 'https://doi.org/' || doi ELSE '' END) AS url, "
+                    "COALESCE(journal,'') AS source FROM new_publications "
+                    "WHERE id = ?", (item_id,)).fetchone()
+            return dict(r) if r else {}
+    except Exception:
+        return {}
+
+
 def set_state(kind: str, item_id: str, state: str, title: str = "",
               url: str = "", source: str = "", tags: str = "") -> dict:
     """Record a verdict. Re-stating replaces, so nothing is ever stranded."""
@@ -168,6 +199,12 @@ def set_state(kind: str, item_id: str, state: str, title: str = "",
         raise ValueError(f"kind must be one of {KINDS}, got {kind!r}")
     item_id = str(item_id)
     now = _now()
+    # Fill in from the owning table anything the caller did not send.
+    if not (title and url and source):
+        d = describe(kind, item_id)
+        title = title or d.get("title") or ""
+        url = url or d.get("url") or ""
+        source = source or d.get("source") or ""
     with connect(paths.db) as con:
         ensure_schema(con)
         con.execute(

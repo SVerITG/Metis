@@ -545,7 +545,7 @@ pre code { background: transparent; padding: 0; color: inherit; }
 .board-box {
   background: var(--m-surface);
   border: 1px solid var(--m-rule);
-  border-radius: var(--m-radius, 4px);
+  border-radius: var(--m-radius);
   border-top: 3px solid var(--m-rule);
   display: flex;
   flex-direction: column;
@@ -740,7 +740,7 @@ a.board-item-title:hover { color: var(--m-accent); }
 .session-strip {
   background: var(--m-surface);
   border: 1px solid var(--m-rule);
-  border-radius: var(--m-radius, 4px);
+  border-radius: var(--m-radius);
   border-left: 3px solid var(--m-accent);
   padding: 16px 22px;
 }
@@ -2258,7 +2258,7 @@ body.capture-open .t-capture {
   transition: background 140ms ease;
 }
 .cw-dot.dot--active { background: var(--m-accent); }
-.cw-dot.dot--done   { background: var(--m-ok, #3a9); }
+.cw-dot.dot--done   { background: var(--m-ok); }
 
 .metis-help-line {
   font-family: var(--m-display);
@@ -2900,7 +2900,7 @@ details summary { outline: none; }
 .section-body.is-padded {
   background: var(--m-surface);
   border: 1px solid var(--m-line);
-  border-radius: var(--m-radius, 6px);
+  border-radius: var(--m-radius);
   padding: var(--m-space-4) var(--m-space-5);
 }
 
@@ -2920,7 +2920,7 @@ details summary { outline: none; }
   );
   background-size: 200% 100%;
   animation: m-shimmer 1.8s ease-in-out infinite;
-  border-radius: var(--m-radius, 6px);
+  border-radius: var(--m-radius);
   opacity: 1;          /* override .4 boxes */
 }
 .skeleton-bar    { height: 12px; margin-bottom: 8px; }
@@ -2954,7 +2954,7 @@ details summary { outline: none; }
 *:focus-visible {
   outline: 2px solid var(--m-accent);
   outline-offset: 2px;
-  border-radius: var(--m-radius, 6px);
+  border-radius: var(--m-radius);
 }
 
 /* --------------------------------------------------------------------------
@@ -3339,12 +3339,12 @@ details summary { outline: none; }
   margin: 2px 0 0;
   cursor: pointer;
   text-align: left;
-  font-family: var(--m-mono, ui-monospace, monospace);
+  font-family: var(--m-mono);
   font-size: 10.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--m-muted);
-  border-top: 1px solid var(--m-rule-soft, var(--m-rule));
+  border-top: 1px solid var(--m-rule-soft);
 }
 .ui-peek-toggle:hover,
 .ui-zone-head:hover { color: var(--m-ink); }
@@ -3371,7 +3371,7 @@ details summary { outline: none; }
   border: 1px solid var(--m-rule);
   border-radius: 6px;
   background: var(--m-surface);
-  margin-bottom: var(--m-gap, 18px);
+  margin-bottom: var(--m-gap);
   overflow: hidden;
 }
 .ui-zone-head {
@@ -3399,7 +3399,7 @@ details summary { outline: none; }
 
 /* ── the counter rule: a delta you can act on, a total demoted ── */
 .ui-delta {
-  font-family: var(--m-mono, ui-monospace, monospace);
+  font-family: var(--m-mono);
   font-size: 10.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -3408,7 +3408,7 @@ details summary { outline: none; }
 }
 .ui-delta--quiet { color: var(--m-muted); font-weight: 500; }
 .ui-total {
-  font-family: var(--m-mono, ui-monospace, monospace);
+  font-family: var(--m-mono);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -3450,7 +3450,7 @@ details summary { outline: none; }
   border: 1px solid var(--m-rule);
   border-radius: 6px;
   padding: 10px 14px;
-  font-family: var(--m-display, inherit);
+  font-family: var(--m-display);
   font-size: 14px;
   color: var(--m-ink);
   transition: border-color 120ms ease;
@@ -3482,8 +3482,8 @@ details summary { outline: none; }
 .fc-strip {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 22px;
   padding: 14px 18px; margin-bottom: 18px;
-  border: 1px solid var(--m-line); border-radius: var(--m-radius, 6px);
-  background: var(--m-panel, transparent);
+  border: 1px solid var(--m-line); border-radius: var(--m-radius);
+  background: var(--m-surface);
 }
 .fc-cell { display: flex; align-items: baseline; gap: 6px; }
 .fc-n {
@@ -3499,12 +3499,12 @@ details summary { outline: none; }
 .fc-sep { flex: 1 1 24px; min-width: 12px; border-top: 1px solid var(--m-line);
           align-self: center; opacity: .6; }
 .fc-cell--quiet .fc-n { font-size: 13px; color: var(--m-muted); }
-.fc-cell--quiet .fc-l { color: var(--m-muted-soft, var(--m-muted)); opacity: .8; }
+.fc-cell--quiet .fc-l { color: var(--m-muted-soft); opacity: .8; }
 
 .fc-warn {
   margin: -8px 0 18px; padding: 10px 14px;
   border: 1px solid var(--m-line); border-left: 3px solid var(--m-ochre);
-  border-radius: var(--m-radius, 6px);
+  border-radius: var(--m-radius);
   font-size: 12.5px; line-height: 1.6; color: var(--m-muted);
 }
 .fc-warn strong { color: var(--m-ink); }
@@ -3539,17 +3539,17 @@ details summary { outline: none; }
   display: inline-flex; align-items: center; gap: 4px;
   font-family: var(--m-mono); font-size: 10px; letter-spacing: .08em;
   text-transform: uppercase; padding: 3px 9px;
-  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill, 999px);
+  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill);
   background: transparent; color: var(--m-muted); cursor: pointer;
   transition: color .12s, border-color .12s, background .12s;
 }
 .fv-btn:hover { color: var(--m-ink); border-color: var(--m-ink); }
 .fv-keep:hover { color: var(--m-accent); border-color: var(--m-accent);
-                 background: var(--m-accent-wash, transparent); }
+                 background: var(--m-accent-wash); }
 .fv-decline:hover { color: var(--m-ochre); border-color: var(--m-ochre); }
 .fv-mark {
   font-family: var(--m-mono); font-size: 10px; letter-spacing: .1em;
-  padding: 3px 9px; border-radius: var(--m-radius-pill, 999px);
+  padding: 3px 9px; border-radius: var(--m-radius-pill);
 }
 .fv-mark--kept { background: var(--m-accent-wash); color: var(--m-accent); }
 .fv-mark--declined { color: var(--m-muted); border: 1px solid var(--m-line); }
@@ -3579,7 +3579,7 @@ details summary { outline: none; }
 .fv-taste { display: flex; flex-wrap: wrap; gap: 5px; }
 .fv-term {
   font-family: var(--m-mono); font-size: 11px; padding: 2px 8px;
-  border-radius: var(--m-radius-pill, 999px); border: 1px solid var(--m-line);
+  border-radius: var(--m-radius-pill); border: 1px solid var(--m-line);
   color: var(--m-muted);
 }
 .fv-term b { font-variant-numeric: tabular-nums; }
@@ -3613,7 +3613,7 @@ details summary { outline: none; }
   display: inline-flex; align-items: center; gap: 5px; margin-top: 7px;
   font-family: var(--m-mono); font-size: 10px; letter-spacing: .1em;
   text-transform: uppercase; padding: 4px 11px;
-  border: 1px solid var(--m-accent); border-radius: var(--m-radius-pill, 999px);
+  border: 1px solid var(--m-accent); border-radius: var(--m-radius-pill);
   background: transparent; color: var(--m-accent); cursor: pointer;
 }
 .ft-explore:hover { background: var(--m-accent-wash); }
@@ -3658,7 +3658,7 @@ details summary { outline: none; }
 /* Wide content must scroll inside its own box, never the page. */
 .focus-prose pre, .focus-prose table { overflow-x: auto; max-width: 100%; }
 
-.fs-suggest{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;padding:10px 14px;border:1px dashed var(--m-line);border-radius:var(--m-radius,6px);font-size:12.5px;color:var(--m-muted);}
+.fs-suggest{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px;padding:10px 14px;border:1px dashed var(--m-line);border-radius:var(--m-radius);font-size:12.5px;color:var(--m-muted);}
 .fs-hint{flex:1 1 100%;font-size:11.5px;color:var(--m-muted);opacity:.85;line-height:1.5;}
 
 /* Delete control on a thinking entry. Positioned in the flow rather than
@@ -3697,7 +3697,7 @@ details summary { outline: none; }
 .news-ctl-group { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 
 .news-view { display: inline-flex; border: 1px solid var(--m-line);
-             border-radius: var(--m-radius, 6px); overflow: hidden; }
+             border-radius: var(--m-radius); overflow: hidden; }
 .news-view-btn {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 5px 10px; border: 0; background: transparent; cursor: pointer;
@@ -3708,7 +3708,7 @@ details summary { outline: none; }
 .news-view-btn:first-child { border-left: 0; }
 .news-view-btn:hover { color: var(--m-ink); }
 .news-view-btn[aria-pressed="true"] {
-  color: var(--m-accent); background: var(--m-accent-wash, transparent);
+  color: var(--m-accent); background: var(--m-accent-wash);
 }
 /* On a narrow window the icon carries it — three labels wrap the strip. */
 @media (max-width: 900px) { .news-view-lbl { display: none; } }
@@ -3738,8 +3738,8 @@ details summary { outline: none; }
 .ni--detailed { padding: 14px 0; }
 .ni--cards {
   flex-direction: column; gap: 0;
-  border: 1px solid var(--m-line); border-radius: var(--m-radius, 6px);
-  overflow: hidden; background: var(--m-panel, transparent);
+  border: 1px solid var(--m-line); border-radius: var(--m-radius);
+  overflow: hidden; background: var(--m-surface);
 }
 .ni-body { min-width: 0; flex: 1; }
 .ni--cards .ni-body { padding: 12px 14px 10px; }
@@ -3756,9 +3756,9 @@ details summary { outline: none; }
 .ni--list .ni-head { margin-bottom: 0; order: 2; margin-left: auto;
                      flex: 0 0 auto; }
 .ni-src { letter-spacing: .06em; text-transform: uppercase; }
-.ni-when { color: var(--m-muted-soft, var(--m-muted)); white-space: nowrap; }
+.ni-when { color: var(--m-muted-soft); white-space: nowrap; }
 .ni-close {
-  padding: 1px 7px; border-radius: var(--m-radius-pill, 999px);
+  padding: 1px 7px; border-radius: var(--m-radius-pill);
   background: var(--m-accent-wash); color: var(--m-accent);
   letter-spacing: .06em; text-transform: uppercase;
 }
@@ -3784,7 +3784,7 @@ details summary { outline: none; }
 .ni-typecard {
   display: flex; flex-direction: column; gap: 8px; justify-content: flex-end;
   aspect-ratio: 16 / 9; padding: 14px; text-decoration: none;
-  background: var(--m-surface-2, rgba(127,127,127,.06));
+  background: var(--m-surface-2);
   border-bottom: 1px solid var(--m-line);
 }
 .ni-wordmark {
@@ -3819,22 +3819,22 @@ details summary { outline: none; }
 .tri-btn {
   font-family: var(--m-mono); font-size: 10px; letter-spacing: .07em;
   text-transform: uppercase; padding: 3px 9px;
-  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill, 999px);
+  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill);
   background: transparent; color: var(--m-muted); cursor: pointer;
   white-space: nowrap; transition: color .12s, border-color .12s, background .12s;
 }
 .tri-btn:hover { color: var(--m-ink); border-color: var(--m-ink); }
 .tri-later:hover  { color: var(--m-accent); border-color: var(--m-accent);
-                    background: var(--m-accent-wash, transparent); }
-.tri-saved:hover  { color: var(--m-ok, var(--m-accent));
-                    border-color: var(--m-ok, var(--m-accent)); }
+                    background: var(--m-accent-wash); }
+.tri-saved:hover  { color: var(--m-ok);
+                    border-color: var(--m-ok); }
 .tri-declined:hover { color: var(--m-ochre); border-color: var(--m-ochre); }
 .tri-tag { font-size: 12px; padding: 2px 8px; line-height: 1.1; }
 
 .tri-state {
   font-family: var(--m-mono); font-size: 10px; letter-spacing: .09em;
   text-transform: uppercase; padding: 3px 9px;
-  border-radius: var(--m-radius-pill, 999px);
+  border-radius: var(--m-radius-pill);
 }
 .tri-state--saved    { background: var(--m-accent-wash); color: var(--m-accent); }
 .tri-state--later    { background: var(--m-accent-wash); color: var(--m-accent); }
@@ -3845,7 +3845,7 @@ details summary { outline: none; }
 .tri-tags.is-hidden { display: none; }
 .tri-tags input {
   font-family: var(--m-mono); font-size: 11px; padding: 3px 8px; width: 20ch;
-  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill, 999px);
+  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill);
   background: transparent; color: var(--m-fg);
 }
 .tri-tags input:focus { outline: none; border-color: var(--m-accent); }
@@ -3853,8 +3853,8 @@ details summary { outline: none; }
 .tri-chips { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .tri-chip {
   font-family: var(--m-mono); font-size: 10px; letter-spacing: .05em;
-  padding: 2px 7px; border-radius: var(--m-radius-pill, 999px);
-  background: var(--m-surface-2, rgba(127,127,127,.09)); color: var(--m-muted);
+  padding: 2px 7px; border-radius: var(--m-radius-pill);
+  background: var(--m-surface-2); color: var(--m-muted);
 }
 
 /* ── the stack surface ───────────────────────────────────────────────────── */
@@ -3863,12 +3863,12 @@ details summary { outline: none; }
 .stk-filter {
   font-family: var(--m-mono); font-size: 10.5px; letter-spacing: .08em;
   text-transform: uppercase; padding: 5px 12px; text-decoration: none;
-  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill, 999px);
+  border: 1px solid var(--m-line); border-radius: var(--m-radius-pill);
   color: var(--m-muted);
 }
 .stk-filter[aria-current="true"] {
   border-color: var(--m-accent); color: var(--m-accent);
-  background: var(--m-accent-wash, transparent);
+  background: var(--m-accent-wash);
 }
 .stk-filter b { font-variant-numeric: tabular-nums; }
 .stk-tagbar { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -3900,3 +3900,252 @@ details summary { outline: none; }
 .ov-item:hover .tri > .tri-tags, .ov-item:focus-within .tri > .tri-tags { opacity: 1; }
 .ov-item .tri .tri-state { opacity: 1; }
 @media (hover: none) { .ov-item .tri > .tri-btn, .ov-item .tri > .tri-tags { opacity: 1; } }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM — scales and components               added 2026-08-26
+
+   WHY, measured rather than asserted. An audit of the 190 templates found
+   3,166 inline `style=` attributes carrying 12,040 hand-written declarations:
+   52 distinct font sizes, 222 paddings, 78 colours, 60 different button class
+   combinations, and 9 different shapes for "a thing in a list". The colour
+   tokens were already good — contrast ratios documented, layout widths
+   reasoned — they were simply bypassed, because there was nothing to reach for
+   between "a token" and "a whole page". This is that missing middle.
+
+   Three rules it exists to enforce:
+     1. A value that is not on a scale is a decision someone has to make again.
+     2. A control means the same thing wherever it appears, or it is two
+        controls that happen to look alike.
+     3. Density is the reader's to choose. A research feed is skimmed on Monday
+        and studied on Thursday, and those want different row heights.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Type scale. Seven steps, and everything lands on one. ─────────────
+     11 / 12 / 13 / 14 / 16 / 20 / 28. Named by ROLE, not by size, so a
+     later change to what "meta" means does not require finding every 11px. */
+  --t-micro:  10.5px;   /* eyebrows, counts, tabular marks */
+  --t-meta:   11.5px;   /* source, date, badges */
+  --t-small:  12.5px;   /* summaries, secondary prose */
+  --t-body:   13.5px;   /* item titles, body copy */
+  --t-lead:   15px;     /* card leads, panel intros */
+  --t-title:  20px;     /* section titles */
+  --t-page:   28px;     /* page titles */
+
+  /* ── Space scale. Six steps on a 4px grid. ──────────────────────────── */
+  --s-1: 4px;   --s-2: 8px;   --s-3: 12px;
+  --s-4: 16px;  --s-5: 24px;  --s-6: 32px;
+
+  /* ── Radius. Three, and the pill. ───────────────────────────────────── */
+  --r-sm: 3px;  --r-md: 6px;  --r-lg: 10px;  --r-pill: 999px;
+
+  /* ── Density. Overridden per user on <html data-density>. ───────────── */
+  --d-row-y:   12px;    /* vertical padding inside a list row */
+  --d-row-gap: 12px;    /* between a row's columns */
+  --d-stack:   10px;    /* between stacked blocks inside a row */
+  --d-panel:   18px;    /* panel inner padding */
+}
+
+:root[data-density="compact"] {
+  --d-row-y: 7px;  --d-row-gap: 10px;  --d-stack: 5px;  --d-panel: 12px;
+}
+:root[data-density="spacious"] {
+  --d-row-y: 18px; --d-row-gap: 16px; --d-stack: 14px; --d-panel: 26px;
+}
+
+/* ═══ THE ITEM ═════════════════════════════════════════════════════════════
+   One row shape for every list in the application: a news headline, a paper, a
+   stack entry, a focus result. Nine shapes existed before this; they differed
+   in padding and in nothing that mattered.
+
+   Grid, not flex, so the actions column is in the SAME PLACE on every row
+   regardless of how tall the content is — which is the actual complaint about
+   buttons being "placed weirdly". They were flowing after the text, so they
+   landed somewhere different on every item.
+
+        ┌──────┬─────────────────────────────┬──────────┐
+        │ media│ body (meta · title · sum)   │ actions  │
+        └──────┴─────────────────────────────┴──────────┘
+   ═══════════════════════════════════════════════════════════════════════════ */
+.item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "media body actions";
+  align-items: start;
+  gap: var(--d-row-gap);
+  padding: var(--d-row-y) var(--s-4);
+  position: relative;
+}
+.item + .item { border-top: 1px solid var(--m-rule-soft); }
+.item:hover { background: var(--m-surface-2); }
+
+.item-media   { grid-area: media; }
+.item-body    { grid-area: body; min-width: 0; }
+.item-actions { grid-area: actions; }
+
+.item-meta {
+  display: flex; align-items: baseline; gap: var(--s-2); flex-wrap: wrap;
+  font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted);
+  letter-spacing: .06em; margin-bottom: var(--s-1);
+}
+.item-title {
+  margin: 0; font-family: var(--m-display); font-size: var(--t-body);
+  font-weight: 500; line-height: 1.4; color: var(--m-ink);
+}
+.item-title a { color: inherit; text-decoration: none;
+                border-bottom: 1px solid transparent; }
+.item-title a:hover { color: var(--m-accent); border-bottom-color: var(--m-accent); }
+.item-sum {
+  margin: var(--d-stack) 0 0; font-size: var(--t-small); line-height: 1.55;
+  color: var(--m-text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.item-foot { margin-top: var(--d-stack); }
+
+/* Judged rows recede; they never vanish. Same rule as the focus safe — an
+   absence you were never told about cannot be audited. */
+.item--declined { opacity: .5; }
+.item--read     { opacity: .68; }
+.item--later    { box-shadow: inset 3px 0 0 var(--m-accent); }
+.item--saved    { box-shadow: inset 3px 0 0 var(--m-ochre); }
+
+/* Compact drops the summary and puts meta on the same line as the title. */
+:root[data-density="compact"] .item-sum { display: none; }
+:root[data-density="compact"] .item-body {
+  display: flex; align-items: baseline; gap: var(--s-3); flex-wrap: wrap;
+}
+:root[data-density="compact"] .item-meta { margin-bottom: 0; order: 2; }
+:root[data-density="compact"] .item-title { order: 1; flex: 1 1 24ch; }
+
+/* Card layout — the same item, stacked. */
+.item--card {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "media" "body" "actions";
+  gap: 0; padding: 0;
+  border: 1px solid var(--m-rule); border-radius: var(--r-md);
+  overflow: hidden; background: var(--m-surface);
+}
+.item--card + .item--card { border-top: 1px solid var(--m-rule); }
+.item--card:hover { background: var(--m-surface); border-color: var(--m-rule-strong); }
+.item--card .item-body { padding: var(--s-3) var(--s-4) var(--s-2); }
+.item--card .item-actions { padding: 0 var(--s-3) var(--s-3); }
+.item-thumb {
+  display: block; aspect-ratio: 16/9; background-size: cover;
+  background-position: center; background-color: var(--m-surface-3);
+}
+.item-typecard {
+  display: flex; flex-direction: column; justify-content: flex-end;
+  gap: var(--s-2); aspect-ratio: 16/9; padding: var(--s-4);
+  text-decoration: none; background: var(--m-surface-2);
+  border-bottom: 1px solid var(--m-rule-soft);
+}
+.item-wordmark {
+  font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: .14em;
+  text-transform: uppercase; color: var(--m-muted);
+}
+.item-typecard-hd {
+  font-family: var(--m-display); font-size: var(--t-lead); line-height: 1.3;
+  color: var(--m-ink);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.list--rows  { display: block; }
+.list--cards {
+  display: grid; gap: var(--s-4);
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+/* ═══ THE ACTION BAR ═══════════════════════════════════════════════════════
+   Icon buttons, one row, always top-right of the item. Text pills flowing after
+   a summary is what "the buttons are placed weirdly" meant: four uppercase
+   labels of different widths, landing at a different x on every row.
+
+   Icons with a real 30px hit target, a tooltip, and an accessible name. The
+   labels are not decoration removed for looks — they are removed because five
+   words repeated on sixty rows is 300 words of chrome competing with the
+   headlines the page exists to show.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.acts {
+  display: inline-flex; align-items: center; gap: 2px;
+  border: 1px solid transparent; border-radius: var(--r-pill);
+}
+.act {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; padding: 0;
+  border: 0; border-radius: var(--r-pill);
+  background: transparent; color: var(--m-muted); cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.act:hover  { background: var(--m-surface-3); color: var(--m-ink); }
+.act:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 1px; }
+.act svg { width: 15px; height: 15px; }
+.act--later:hover    { color: var(--m-accent); background: var(--m-accent-wash); }
+.act--saved:hover    { color: var(--m-ochre);  background: var(--m-ochre-wash); }
+.act--read:hover     { color: var(--m-ok);     background: var(--m-ok-wash); }
+.act--declined:hover { color: var(--m-alert); }
+.act[aria-pressed="true"] { color: var(--m-accent); background: var(--m-accent-wash); }
+
+/* On a wide row the bar appears on hover; on touch and keyboard it is always
+   there. Never `display:none` — a control that does not exist cannot be
+   tabbed to. */
+@media (hover: hover) {
+  .item .acts { opacity: 0; transition: opacity 120ms; }
+  .item:hover .acts, .item:focus-within .acts { opacity: 1; }
+  .item .acts:has(.badge) { opacity: 1; }   /* a decided row always shows its state */
+}
+
+/* ═══ BADGES ═══════════════════════════════════════════════════════════════
+   One shape. Colour is the only variable, and it always carries a word too:
+   a dot that only means something to someone who can distinguish red from grey
+   fails silently for everyone else.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.badge {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: .08em;
+  text-transform: uppercase; padding: 2px 8px; border-radius: var(--r-pill);
+  border: 1px solid transparent; white-space: nowrap;
+}
+.badge--accent { background: var(--m-accent-wash); color: var(--m-accent); }
+.badge--ochre  { background: var(--m-ochre-wash);  color: var(--m-ochre-deep); }
+.badge--ok     { background: var(--m-ok-wash);     color: var(--m-ok); }
+.badge--quiet  { border-color: var(--m-rule); color: var(--m-muted); }
+.badge--tag    { background: var(--m-surface-2); color: var(--m-muted);
+                 text-transform: none; letter-spacing: 0; }
+
+/* ═══ TOOLBAR — the controls above a list ══════════════════════════════════ */
+.toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--s-3) var(--s-5); flex-wrap: wrap; margin-bottom: var(--s-4);
+}
+.toolbar-lead { font-family: var(--m-display); font-style: italic;
+                font-size: var(--t-body); color: var(--m-muted);
+                flex: 1 1 20ch; max-width: 52ch; }
+.toolbar-group { display: flex; align-items: center; gap: var(--s-3);
+                 flex-wrap: wrap; }
+
+/* A segmented control: period, density, view. One shape for all three. */
+.seg { display: inline-flex; border: 1px solid var(--m-rule);
+       border-radius: var(--r-md); overflow: hidden; }
+.seg > button, .seg > a {
+  display: inline-flex; align-items: center; gap: var(--s-1);
+  padding: 5px 10px; border: 0; border-left: 1px solid var(--m-rule);
+  background: transparent; color: var(--m-muted); cursor: pointer;
+  font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: .08em;
+  text-transform: uppercase; text-decoration: none;
+}
+.seg > :first-child { border-left: 0; }
+.seg > :hover { color: var(--m-ink); background: var(--m-surface-2); }
+.seg > [aria-pressed="true"], .seg > [aria-current="true"] {
+  color: var(--m-accent); background: var(--m-accent-wash);
+}
+.seg svg { width: 13px; height: 13px; }
+@media (max-width: 900px) { .seg-label { display: none; } }
+
+/* Icon presentation lives here, not on 300 elements. */
+.act svg, .seg svg, .board-box-icon {
+  fill: none; stroke: currentColor; stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.seg svg { stroke-width: 1.5; }

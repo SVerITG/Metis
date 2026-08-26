@@ -1,4 +1,4 @@
-{% from "partials/_triage.html" import triage, tag_chips %}
+{% from "partials/_item.html" import actions, tags, tag_datalist %}
 {% set st = (states or {}).get(item.id|string) %}
 {# ══════════════════════════════════════════════════════════════════════════════
    library_new_literature_row.html — ONE reviewable publication.
@@ -158,8 +158,8 @@
       meaning the library holds it. This is also why `set_state` never writes
       `added_at`: that column is the acquisition's to claim. -#}
   <div style="margin-top:6px;">
-    {{ tag_chips(st) }}
-    {{ triage('paper', item.id, item.title,
+    {{ tags(st) }}
+    {{ actions('paper', item.id, item.title,
               item.source_url or ('https://doi.org/' ~ item.doi if item.doi else ''),
               item.journal or '', st, '#nl-row-' ~ item.id, '', 'outerHTML') }}
   </div>

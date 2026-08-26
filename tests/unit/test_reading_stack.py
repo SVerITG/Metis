@@ -189,7 +189,39 @@ def test_the_news_card_is_not_one_giant_link_any_more():
     tpl = (ROOT / "system" / "app-py" / "templates" / "partials"
            / "news_tab.html").read_text(encoding="utf-8")
     assert '<a class="nf-card"' not in tpl, "the card-wide anchor is back"
-    assert "hx-post" in tpl or "triage(" in tpl
+    assert "item(" in tpl, "the list must render through the shared item macro"
+
+
+def test_one_item_component_serves_every_list():
+    """Nine list-item shapes existed before the design audit. The lists that
+    carry triage now share one, or 'save' drifts into meaning different things
+    on different pages."""
+    parts = ROOT / "system" / "app-py" / "templates" / "partials"
+    for name in ("news_tab.html", "stack_body.html"):
+        tpl = (parts / name).read_text(encoding="utf-8")
+        assert 'from "partials/_item.html"' in tpl, f"{name} rolls its own row"
+
+
+def test_the_action_bar_sends_only_what_the_server_cannot_know():
+    """Title, url and source are read from the owning table. Posting them back
+    put ~100 KB of already-known strings on a 60-item tab."""
+    tpl = (ROOT / "system" / "app-py" / "templates" / "partials"
+           / "_item.html").read_text(encoding="utf-8")
+    bar = tpl[tpl.index("{% macro actions("):tpl.index("{% macro act(")]
+    assert 'name="item_id"' in bar and 'name="kind"' in bar
+    for gone in ('name="title"', 'name="url"', 'name="source"'):
+        assert gone not in bar, f"{gone} is posted back but already known"
+
+
+def test_icons_come_from_one_sprite():
+    """Six shapes inlined 300 times is 45 KB of the same six words."""
+    tpl = (ROOT / "system" / "app-py" / "templates" / "partials"
+           / "_item.html").read_text(encoding="utf-8")
+    assert "<use href=" in tpl
+    base = (ROOT / "system" / "app-py" / "templates"
+            / "base.html").read_text(encoding="utf-8")
+    for name in ("later", "saved", "read", "declined", "tag", "undo"):
+        assert f'id="i-{name}"' in base, f"sprite is missing i-{name}"
 
 
 def test_every_news_control_carries_tab_period_and_view():

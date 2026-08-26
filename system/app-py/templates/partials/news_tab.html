@@ -19,7 +19,7 @@
    image-less card as degraded would mean the researcher's own field loses to
    BBC headlines on every screen.
    ══════════════════════════════════════════════════════════════════════════════ #}
-{% from "partials/_triage.html" import triage, tag_datalist, tag_chips %}
+{% from "partials/_item.html" import item, tag_datalist %}
 
 {% include "partials/_news_tabstrip.html" %}
 {{ tag_datalist(all_tags or []) }}
@@ -94,50 +94,12 @@
     </div>
   {% endif %}
 
-  {#- ── ONE item macro, three densities ───────────────────────────────────
-      `view` decides what is shown, never how it behaves. Keeping the actions
-      and the link in one place is what stops "save" meaning something subtly
-      different in the compact view six months from now. -#}
-  {% macro news_item(c, view, st) %}
-  <article class="ni ni--{{ view }}{% if st and st.state %} ni--{{ st.state }}{% endif %}"
-           data-subj="{{ c.subject or '' }}">
-    {% if view == 'cards' and c.has_image %}
-      <a class="ni-thumb" href="{{ c.url }}" target="_blank" rel="noopener"
-         style="background-image:url('{{ c.image }}');" aria-label="{{ c.title }}"></a>
-    {% elif view == 'cards' %}
-      <a class="ni-typecard" href="{{ c.url }}" target="_blank" rel="noopener">
-        <span class="ni-wordmark">{{ c.source or c.domain }}</span>
-        <span class="ni-typecard-hd">{{ c.title }}</span>
-      </a>
-    {% endif %}
-
-    <div class="ni-body">
-      <div class="ni-head">
-        {% if c.close %}<span class="ni-close" title="Close to your library">your work</span>{% endif %}
-        <span class="ni-src">{{ c.source or c.domain }}</span>
-        <span class="ni-when">{{ c.when }}</span>
-      </div>
-
-      {% if not (view == 'cards' and not c.has_image) %}
-      <h3 class="ni-title">
-        {% if c.url %}<a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.title }}</a>
-        {% else %}{{ c.title }}{% endif %}
-      </h3>
-      {% endif %}
-
-      {% if view != 'list' and c.summary %}
-      <p class="ni-sum">{{ c.summary[:230] }}{% if c.summary|length > 230 %}…{% endif %}</p>
-      {% endif %}
-
-      {{ tag_chips(st) }}
-      {{ triage('news', c.id, c.title, c.url, c.source, st, T, BACK) }}
-    </div>
-  </article>
-  {% endmacro %}
-
-  <div class="ni-wrap ni-wrap--{{ view }}" id="news-cards">
+  {#- The shared item. `view` picks the layout; the row shape, the action bar
+      and their behaviour come from `_item.html` and are identical everywhere. -#}
+  <div class="list--{{ 'cards' if view == 'cards' else 'rows' }}" id="news-cards">
     {% for c in cards %}
-      {{ news_item(c, view, (states or {}).get(c.id)) }}
+      {{ item('news', c, (states or {}).get(c.id), T, BACK,
+              'card' if view == 'cards' else 'row') }}
     {% endfor %}
   </div>
 {% endif %}
