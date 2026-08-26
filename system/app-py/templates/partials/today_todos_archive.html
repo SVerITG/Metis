@@ -23,7 +23,7 @@
              style="border-left:{% if task.section == 'blocked' %}2px solid var(--m-warn){% elif task.section == 'starred' %}2px solid var(--m-ochre-deep){% else %}2px solid transparent{% endif %};">
           <!-- done toggle -->
           <span class="todo-check" onclick="todayTaskDone('{{ task.id }}', this)"
-                style="cursor:pointer;" title="Mark done">
+                style="cursor:pointer;" title="Mark done" role="button" tabindex="0">
             {% if task.status == 'done' or task.status == 'completed' %}
             <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="4 8 7 11 12 5"/>
@@ -65,7 +65,7 @@
       <input type="text"
              placeholder="Add a task for today…"
              onkeydown="if(event.key==='Enter'&&this.value.trim()){addTodoRow(this);}"
-             id="todo-compose-input">
+             id="todo-compose-input" aria-label="Add a task for today">
       <span class="todo-hint">&#8629;</span>
     </div>
   </div>

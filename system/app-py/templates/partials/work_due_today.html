@@ -9,7 +9,7 @@
   <div class="panel">
     {% for task in overdue %}
     <div class="todo-row" style="border-left:2px solid var(--m-alert);">
-      <span class="todo-check" onclick="workTaskDone('{{ task.id }}', this)" style="cursor:pointer;" title="Mark done"></span>
+      <span class="todo-check" onclick="workTaskDone('{{ task.id }}', this)" style="cursor:pointer;" title="Mark done" role="button" tabindex="0"></span>
       <span class="todo-title u-grow">
         {{ task.title or 'Untitled task' }}
         {% if task.project %}<span class="u-label" style="margin-left:6px;">{{ task.project[:22] }}</span>{% endif %}
@@ -19,7 +19,7 @@
     {% endfor %}
     {% for task in due_today %}
     <div class="todo-row" style="border-left:2px solid var(--m-accent);">
-      <span class="todo-check" onclick="workTaskDone('{{ task.id }}', this)" style="cursor:pointer;" title="Mark done"></span>
+      <span class="todo-check" onclick="workTaskDone('{{ task.id }}', this)" style="cursor:pointer;" title="Mark done" role="button" tabindex="0"></span>
       <span class="todo-title u-grow">
         {{ task.title or 'Untitled task' }}
         {% if task.project %}<span class="u-label" style="margin-left:6px;">{{ task.project[:22] }}</span>{% endif %}

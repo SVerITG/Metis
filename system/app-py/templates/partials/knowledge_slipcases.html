@@ -28,7 +28,7 @@
                '/api/partial/knowledge/cards?domain=' + encodeURIComponent(el.dataset.slipcase),
                {target: '#knowledge-cards-area', swap: 'outerHTML'});
            })(this)"
-           data-slipcase="{{ domain.name }}">
+           data-slipcase="{{ domain.name }}" role="button" tabindex="0">
         <span>{{ domain.name | replace('-', ' ') | title }}</span>
         <span class="tnum u-label">{{ domain.count }}</span>
       </div>

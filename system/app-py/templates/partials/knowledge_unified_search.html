@@ -30,7 +30,7 @@
       {% if p.source %}<span>{{ p.source[:40] }}</span>{% endif %}
       {% if p.pdf_url %}
       <a href="{{ p.pdf_url }}" target="_blank"
-         style="color:var(--m-ok);text-decoration:none;">PDF ↗</a>
+         style="color:var(--m-ok);text-decoration:none;" rel="noopener">PDF ↗</a>
       {% endif %}
       {# Ambient cross-pollination for this paper — click to reveal what across the
          whole corpus relates to it. Lazy, so results only load on demand. #}

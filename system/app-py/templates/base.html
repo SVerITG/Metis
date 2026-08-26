@@ -469,9 +469,9 @@
                  type="search"
                  placeholder="Find across the archive…"
                  autocomplete="off"
-                 style="background:transparent;border:none;outline:none;font-family:var(--m-mono);font-size:var(--t-meta);color:var(--m-ink);width:100%;min-width:0;"
+                 style="background:transparent;border:none;font-family:var(--m-mono);font-size:var(--t-meta);color:var(--m-ink);width:100%;min-width:0;"
                  hx-get="/api/search"
-                 hx-trigger="keyup changed delay:350ms, focus[this.value.length>1]"
+                 hx-trigger="keyup changed delay:350ms, focus[this.value.length aria-label="Find across the archive">1]"
                  hx-target="#search-results-drop"
                  hx-swap="innerHTML"
                  name="q"
@@ -601,7 +601,7 @@ Run my full Metis update. Using the metis-rc tools: scan the latest news and any
 <!-- =====================================================================
      Capture modal overlay
 ====================================================================== -->
-<div id="capture-overlay" onclick="handleOverlayClick(event)">
+<div id="capture-overlay" onclick="handleOverlayClick(event)" role="button" tabindex="0">
   <div id="capture-modal-inner"></div>
 </div>
 

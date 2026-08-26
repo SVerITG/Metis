@@ -16,7 +16,7 @@
        style="grid-template-columns:28px 1fr auto auto;column-gap:14px;">
     <span class="todo-check"
           onclick="markTaskDone({{ t.id | tojson }}, this)"
-          title="Mark done">
+          title="Mark done" role="button" tabindex="0">
       {% if t.status == 'done' %}
       <svg viewBox="0 0 16 16"><polyline points="4 8 7 11 12 5"/></svg>
       {% endif %}

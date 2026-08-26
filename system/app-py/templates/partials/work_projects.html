@@ -28,7 +28,7 @@
       <!-- Title (clickable → detail panel) -->
       <div class="u-grow u-title u-title--lg" onclick="openProjectDetail('{{ p.id }}')"
            style="font-weight:500;line-height:1.2;cursor:pointer;"
-           title="Open project details">{{ p.title }}</div>
+           title="Open project details" role="button" tabindex="0">{{ p.title }}</div>
       <!-- Category chip -->
       {% if p.category %}
       <span class="chip chip--plain u-fixed" style="font-size:var(--t-micro);">{{ p.category[:16] }}</span>

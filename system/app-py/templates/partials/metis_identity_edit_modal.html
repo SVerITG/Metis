@@ -1,7 +1,7 @@
 {# Identity edit modal — included from metis_tab.html so it lives in the DOM
    from page load. Toggled via .metis-modal-overlay[data-open]. #}
 <div class="metis-modal-overlay" id="metis-identity-overlay" data-open="false"
-     onclick="if(event.target===this) closeMetisIdentityEdit()">
+     onclick="if(event.target===this) closeMetisIdentityEdit()" role="button" tabindex="0">
   <div class="metis-modal" role="dialog" aria-modal="true" aria-labelledby="metis-identity-title">
     <h3 id="metis-identity-title">Your identity</h3>
     <div class="metis-modal-sub">Metis uses these to address you, route work, and shape news.</div>

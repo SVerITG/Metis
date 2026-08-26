@@ -1,5 +1,5 @@
-<div class="news-modal-overlay" onclick="closeNewsModal(event)">
-  <div class="news-modal-card" onclick="event.stopPropagation()">
+<div class="news-modal-overlay" onclick="closeNewsModal(event)" role="button" tabindex="0">
+  <div class="news-modal-card" onclick="event.stopPropagation()" role="button" tabindex="0">
     <div class="news-modal-header">
       <span class="news-domain-badge news-domain-{{ brief.domain_slug }}">{{ brief.domain }}</span>
       <h2 class="news-modal-title">{{ brief.title }}</h2>

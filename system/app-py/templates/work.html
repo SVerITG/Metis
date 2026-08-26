@@ -71,7 +71,7 @@
   <!-- Add Project wizard modal (2 steps) -->
   <div class="u-hide" id="add-project-overlay"
        onclick="if(event.target===this)closeAddProjectModal()"
-       style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;">
+       style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;" role="button" tabindex="0">
     <div style="background:var(--m-surface-1);border-radius:8px;padding:var(--m-space-6) var(--m-space-6);width:500px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.25);">
 
       <!-- Step indicator -->
@@ -92,13 +92,13 @@
             <label class="u-label u-mb-1" style="display:block;">FOLDER PATH</label>
             <input class="u-mono u-tile" id="np-path" type="text" placeholder="C:\Users\you\Documents\MyProject"
                    oninput="npAutoTitle()"
-                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);outline:none;">
+                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);" aria-label="C:\Users\you\Documents\MyProject">
             <div class="u-label" style="margin-top:var(--m-space-1);">Leave blank if this project has no folder on your computer yet.</div>
           </div>
           <div>
             <label class="u-label u-mb-1" style="display:block;">PROJECT NAME *</label>
             <input class="u-title u-tile" id="np-title" type="text" placeholder="My project name…"
-                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);outline:none;">
+                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);" aria-label="My project name">
           </div>
         </div>
         <div style="display:flex;gap:var(--m-space-2);justify-content:flex-end;margin-top:var(--m-space-5);">
@@ -115,12 +115,12 @@
           <div>
             <label class="u-label u-mb-1" style="display:block;">WHAT IS THIS PROJECT ABOUT?</label>
             <input class="u-title u-title--sm u-tile" id="np-desc" type="text" placeholder="One sentence about the purpose…"
-                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);outline:none;">
+                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);" aria-label="One sentence about the purpose">
           </div>
           <div>
             <label class="u-label u-mb-1" style="display:block;">MAIN TASKS (one per line, optional)</label>
             <textarea class="u-title u-title--sm u-tile" id="np-tasks" rows="3" placeholder="Write a literature review&#10;Analyse the dataset&#10;Submit to journal"
-                      style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);resize:vertical;outline:none;"></textarea>
+                      style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);resize:vertical;"></textarea>
           </div>
           <div>
             <label class="u-label u-mb-2" style="display:block;">HOW DO YOU OPEN THIS PROJECT?</label>
@@ -142,7 +142,7 @@
           <div>
             <label class="u-label u-mb-1" style="display:block;">GITHUB URL (optional)</label>
             <input class="u-mono u-tile" id="np-github" type="text" placeholder="https://github.com/…"
-                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);outline:none;">
+                   style="width:100%;box-sizing:border-box;padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);" aria-label="https://github.com/">
           </div>
         </div>
         <div style="display:flex;gap:var(--m-space-2);justify-content:flex-end;margin-top:var(--m-space-5);">

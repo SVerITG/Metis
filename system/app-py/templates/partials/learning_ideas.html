@@ -56,13 +56,13 @@
       <div>
         <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:var(--m-space-1);">Course title *</label>
         <input name="title" type="text" required placeholder="e.g. Network Analysis in R"
-               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);">
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);" aria-label="e.g. Network Analysis in R">
       </div>
       <div>
         <label style="font-size:var(--t-micro);color:var(--m-muted);display:block;margin-bottom:var(--m-space-1);">Group / category</label>
         <input name="category" type="text" placeholder="e.g. statistics, methods, tools"
                list="existing-categories"
-               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);">
+               style="width:100%;box-sizing:border-box;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-2) var(--m-space-2);font-size:var(--t-small);background:var(--m-surface-1);color:var(--m-ink);" aria-label="e.g. statistics, methods, tools">
         <datalist id="existing-categories">
           {% for cat in categories %}<option value="{{ cat }}">{% endfor %}
         </datalist>
