@@ -77,6 +77,11 @@ TOOL_MODULES = [
     # FOCUS — user-defined surfaces for a subject you want to stay current on.
     # A lens, never a container: it owns a query, not the content it shows.
     "focus",
+    # READING STACK — one triage store for everything that arrives: news,
+    # papers, anything. Before it, papers had triage on the Library surface and
+    # News had none at all — seven tabs, 337 links, zero actions — so "read it
+    # later" existed as an intention with nowhere to put it.
+    "stack",
     # AGENT MEMORY — standing decisions per specialist. Without it,
     # get_agent_context returned a persona and nothing about how the researcher
     # wants things done, so routing to an agent added nothing.

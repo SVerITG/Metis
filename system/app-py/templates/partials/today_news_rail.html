@@ -1,3 +1,4 @@
+{% from "partials/_triage.html" import triage, tag_datalist, tag_chips %}
 {# News Dispatch — topic slipcases with AI summaries, redesigned 2026-07-10.
    Context: slipcases, all_topics, active_topic, period, last_updated, total_topics, show_all_topics. #}
 {% from "partials/_update_menu.html" import update_menu %}
@@ -18,6 +19,7 @@
   'routine': 'color-mix(in srgb, var(--m-chart-8) 4%, transparent)'
 } %}
 
+{{ tag_datalist(all_tags or []) }}
 <div class="today-news-rail" id="news-surface" style="margin-bottom:32px;">
 
   <!-- ── Section header ── -->
@@ -180,10 +182,14 @@ Update my Metis news dispatch. Using the metis-rc tools, scan the latest global-
           {% if sc['items'] %}
           <div style="display:flex;flex-direction:column;gap:2px;">
             {% for item in sc['items'] %}
-            <a href="{{ item.source_url or item.url or '#' }}" target="_blank" rel="noopener"
-               style="text-decoration:none;display:block;padding:8px 12px;border-radius:var(--m-radius);transition:background 100ms;"
-               onmouseover="this.style.background='var(--m-surface-2)'"
-               onmouseout="this.style.background=''">
+            {#- The row was an <a> wrapping everything, which is exactly why this
+                rail had no actions: a button inside an anchor navigates away
+                instead of firing. Row is a div; the TITLE is the link. -#}
+            {% set st = (states or {}).get(item.id) %}
+            <div class="tnr-row{% if st and st.state %} tnr-row--{{ st.state }}{% endif %}"
+                 style="display:block;padding:8px 12px;border-radius:var(--m-radius);transition:background 100ms;"
+                 onmouseover="this.style.background='var(--m-surface-2)'"
+                 onmouseout="this.style.background=''">
               {# Meta row: time + signal badges #}
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
                 <span style="font-family:var(--m-mono);font-size:11px;color:var(--m-muted);">{{ item.time }}</span>
@@ -205,13 +211,23 @@ Update my Metis news dispatch. Using the metis-rc tools, scan the latest global-
                              color:{{ signal_colors.get(item.signal_class, 'var(--m-muted)') }};">{{ item.signal }}</span>
                 {% endif %}
               </div>
-              {# Title #}
-              <div style="font-family:var(--m-display);font-size:13.5px;color:var(--m-ink);line-height:1.4;font-weight:500;">{{ item.title }}</div>
+              {# Title — the link, and the only link #}
+              <div style="font-family:var(--m-display);font-size:13.5px;line-height:1.4;font-weight:500;">
+                {% if item.source_url or item.url %}
+                <a href="{{ item.source_url or item.url }}" target="_blank" rel="noopener"
+                   style="color:var(--m-ink);text-decoration:none;border-bottom:1px solid transparent;"
+                   onmouseover="this.style.borderBottomColor='var(--m-accent)'"
+                   onmouseout="this.style.borderBottomColor='transparent'">{{ item.title }}</a>
+                {% else %}<span style="color:var(--m-ink);">{{ item.title }}</span>{% endif %}
+              </div>
               {# Summary #}
               {% if item.summary %}
               <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);line-height:1.45;margin-top:3px;">{{ item.summary }}</div>
               {% endif %}
-            </a>
+              {{ tag_chips(st) }}
+              {{ triage('news', item.id, item.title, item.source_url or item.url or '',
+                        item.domain, st, '#news-surface', 'today-news', 'outerHTML') }}
+            </div>
             {% endfor %}
           </div>
           {% else %}

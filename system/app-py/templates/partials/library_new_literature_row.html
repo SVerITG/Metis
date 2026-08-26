@@ -1,3 +1,5 @@
+{% from "partials/_triage.html" import triage, tag_chips %}
+{% set st = (states or {}).get(item.id|string) %}
 {# ══════════════════════════════════════════════════════════════════════════════
    library_new_literature_row.html — ONE reviewable publication.
 
@@ -141,5 +143,24 @@
     <a href="/api/library/pdf/new/{{ item.id }}" target="_blank" rel="noopener"
        style="font-family:var(--m-mono);font-size:10.5px;letter-spacing:0.08em;color:#2e7d4f;text-decoration:none;border-bottom:1px solid var(--m-rule-soft);">OPEN PDF</a>
     {% endif %}
+  </div>
+
+  {#- The reading stack, ALONGSIDE the acquisition controls above — not instead
+      of them, and the distinction is real rather than pedantic:
+
+        "Add to library"  ACQUIRES. It fetches the PDF where that is legal,
+                          catalogues the item and pushes it to Zotero.
+        "Read later"      BOOKMARKS. It says you intend to read this, nothing
+                          more, and costs nothing.
+
+      They sound similar and are not the same act. Collapsing them would either
+      make every bookmark trigger a download, or make "add to library" stop
+      meaning the library holds it. This is also why `set_state` never writes
+      `added_at`: that column is the acquisition's to claim. -#}
+  <div style="margin-top:6px;">
+    {{ tag_chips(st) }}
+    {{ triage('paper', item.id, item.title,
+              item.source_url or ('https://doi.org/' ~ item.doi if item.doi else ''),
+              item.journal or '', st, '#nl-row-' ~ item.id, '', 'outerHTML') }}
   </div>
 </div>

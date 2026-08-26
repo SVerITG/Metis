@@ -1085,3 +1085,83 @@ CREATE TABLE IF NOT EXISTS user_decisions (
     supersedes  INTEGER,
     last_applied_at TEXT DEFAULT ''
 );
+
+-- ---------------------------------------------------------------------------
+-- READING STACK — one triage store for everything that arrives (2026-08-26).
+--
+-- Before it, "I will read this later" had three implementations and one hole:
+-- papers used new_publications.added_at/dismissed_at/read_at, focus areas used
+-- focus_verdict, and news had nothing at all — the News surface rendered seven
+-- tabs and 337 links with zero actions on any of them.
+--
+-- A paper's verdict is ALSO mirrored onto the new_publications columns, because
+-- the Library surface reads those directly; without the mirror the two pages
+-- disagree the first time either is used alone. `added_at` is deliberately never
+-- written from here: on this schema it means "acquired, with a PDF".
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS reading_stack (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind       TEXT NOT NULL,          -- 'news' | 'paper'
+    item_id    TEXT NOT NULL,
+    state      TEXT NOT NULL,          -- saved | later | declined | read
+    title      TEXT DEFAULT '',
+    url        TEXT DEFAULT '',
+    source     TEXT DEFAULT '',
+    tags       TEXT DEFAULT '',
+    note       TEXT DEFAULT '',
+    added_at   TEXT NOT NULL,
+    state_at   TEXT NOT NULL,
+    UNIQUE(kind, item_id)
+);
+CREATE INDEX IF NOT EXISTS idx_stack_state ON reading_stack(state, state_at);
+CREATE INDEX IF NOT EXISTS idx_stack_kind  ON reading_stack(kind, item_id);
+
+-- ---------------------------------------------------------------------------
+-- FOCUS SAFE — one researcher's judgement on one item seen through one lens.
+--
+-- `title` is denormalised on purpose: the taste model needs the words even for
+-- rows later pruned from news_briefs, and a safe whose contents vanish when
+-- upstream tidies up is not a safe.
+--
+-- Declining DEMOTES, it never deletes. In a research tool an absence you were
+-- never told about cannot be audited.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS focus_verdict (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug       TEXT NOT NULL,
+    kind       TEXT NOT NULL,          -- 'news' | 'reading'
+    item_id    TEXT NOT NULL,
+    verdict    TEXT NOT NULL,          -- 'kept' | 'declined'
+    title      TEXT DEFAULT '',
+    url        TEXT DEFAULT '',
+    note       TEXT DEFAULT '',
+    created_at TEXT NOT NULL,
+    UNIQUE(slug, kind, item_id)
+);
+CREATE INDEX IF NOT EXISTS idx_verdict_slug ON focus_verdict(slug, verdict);
+
+-- A generated focus brief is KEPT, not recomputed on view — same reason as the
+-- morning brief: a brief read on Tuesday must still say on Friday what it said.
+CREATE TABLE IF NOT EXISTS focus_brief_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug       TEXT NOT NULL,
+    body       TEXT NOT NULL,
+    n_news     INTEGER DEFAULT 0,
+    n_reading  INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_focus_brief_slug ON focus_brief_log(slug, created_at);
+
+-- Per-occurrence state for a repeating calendar plan. One row plus a rule is
+-- expanded at draw time, so "done", "skipped" and "moved" cannot live on the
+-- plan itself — they belong to a single occurrence of it.
+CREATE TABLE IF NOT EXISTS day_plan_occurrence (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    plan_id      INTEGER NOT NULL,
+    occurred_on  TEXT NOT NULL,
+    done         INTEGER DEFAULT 0,
+    skipped      INTEGER DEFAULT 0,
+    moved_to     TEXT DEFAULT '',
+    notified_at  TEXT DEFAULT '',
+    UNIQUE(plan_id, occurred_on)
+);

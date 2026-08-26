@@ -324,6 +324,7 @@ async def new_literature_panel(
             "windows": LIT_WINDOWS, "window": window, "window_label": window_label,
             "kind_groups": KIND_GROUPS, "active_kind": kind,
             "items": items, "total": total, "counts": counts,
+            "states": _stack_states(items),
             "q": q, "show": show, "page": page,
             "total_pages": max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE),
             "last_reviewed": last[:16].replace("T", " ") if last else "",
@@ -331,6 +332,19 @@ async def new_literature_panel(
                 "SELECT COUNT(*) FROM new_publications", default=0) or 0,
         },
     )
+
+
+def _stack_states(items) -> dict:
+    """Triage state for every row on screen — one query, not one per row.
+
+    Lives here rather than in `_fetch` because `_fetch` is also used by the
+    counters, and counting rows should not pay for state nobody renders.
+    """
+    try:
+        from metis_mcp.tools import stack as _stack
+        return _stack.states_for("paper", [i["id"] for i in items])
+    except Exception:
+        return {}
 
 
 @router.get("/api/partial/library/new-literature/list", response_class=HTMLResponse)
@@ -356,6 +370,7 @@ async def new_literature_list(
         "partials/library_new_literature_list.html",
         {
             "items": items, "total": total, "active": tab,
+            "states": _stack_states(items),
             "spec": LIT_TABS_BY_KEY[tab], "window": window,
             "window_label": window_label, "active_kind": kind,
             "q": q, "show": show, "page": page,
@@ -433,7 +448,8 @@ async def new_literature_row(request: Request, pub_id: int):
     if not item:
         return HTMLResponse("")
     return templates.TemplateResponse(
-        request, "partials/library_new_literature_row.html", {"item": item})
+        request, "partials/library_new_literature_row.html",
+        {"item": item, "states": _stack_states([item])})
 
 
 @router.post("/api/library/new-literature/{pub_id}/add")
@@ -1012,3 +1028,23 @@ async def corpus_triggers():
     terms = {t for t in terms if not t.isdigit() and len(t) > 3}
 
     return JSONResponse({"ok": True, "terms": sorted(terms)})
+
+
+async def render_row(request: Request, pub_id: str) -> str:
+    """One publication row, as a string.
+
+    The reading stack calls this so a "read later" pressed on the Library surface
+    gives back that row and nothing else — re-rendering the whole list would lose
+    the reader's scroll position for a one-line change.
+    """
+    rows = db_query(
+        "SELECT id, title, journal, pub_date, doi, topic_tag, relevance_note, "
+        "       source_url, authors, abstract, feed_name, entry_kind, "
+        "       lane, relevance, acq_status, acq_reason, pdf_path, added_at, "
+        "       dismissed_at, read_at, zotero_key, discovered_at, pub_iso "
+        "FROM new_publications WHERE id = ?", (pub_id,)) or []
+    if not rows:
+        return ""
+    from main import templates
+    return templates.get_template("partials/library_new_literature_row.html").render(
+        item=dict(rows[0]), states=_stack_states([{"id": pub_id}]))

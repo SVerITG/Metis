@@ -1,9 +1,14 @@
 {# ══════════════════════════════════════════════════════════════════════════════
-   _news_tabstrip.html — the tab strip + period switcher, shared by every tab.
+   _news_tabstrip.html — tabs, period, view. Shared by every News tab.
 
    Included by news_overview.html and news_tab.html so the strip is defined once.
-   Each tab swaps #news-tab-body, so switching tab or period is one request and
-   the rest of the page (masthead) never re-renders.
+   Each control swaps #news-tab-body, so the masthead never re-renders.
+
+   EVERY CONTROL CARRIES THE OTHER TWO. Tab, period and view are three
+   independent axes on one list; a button that sends only its own value silently
+   resets the others, so picking "Thumbnails" would throw you back to This Week.
+   That class of bug is invisible in review and infuriating in use, which is why
+   all three appear in every URL below.
 
    The period switcher reads COALESCE(published_at, created_at). Before
    published_at existed (2026-08-19) the only available date was the SCAN time,
@@ -11,12 +16,14 @@
    labelled five weeks of July news as today's. A period control has to filter on
    when things happened or it is actively misleading.
    ══════════════════════════════════════════════════════════════════════════════ #}
+{% set _view = view | default('detailed') %}
+{% set _views = views | default({'list': 'List', 'detailed': 'Detailed', 'cards': 'Thumbnails'}) %}
 
 <div class="news-tabs" role="tablist" aria-label="News categories">
   {% for t in tabs %}
     <button class="news-tab" role="tab" type="button"
             aria-selected="{{ 'true' if t.key == active else 'false' }}"
-            hx-get="/api/partial/news/tab?tab={{ t.key }}&period={{ period }}"
+            hx-get="/api/partial/news/tab?tab={{ t.key }}&period={{ period }}&view={{ _view }}"
             hx-target="#news-tab-body" hx-swap="innerHTML"
             title="{{ t.blurb }}">
       {{ t.label }}{% if counts is defined and counts.get(t.key) is not none %}<span class="nt-count">{{ counts.get(t.key) }}</span>{% endif %}
@@ -24,16 +31,49 @@
   {% endfor %}
 </div>
 
-<div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px;">
-  <div style="font-family:var(--m-display);font-style:italic;font-size:14px;color:var(--m-muted);max-width:60ch;">
-    {{ (spec.blurb if spec is defined else tabs[0].blurb) }}
-  </div>
-  <div class="news-period" role="group" aria-label="Time period">
-    {% for pkey, pval in periods.items() %}
-      <button class="news-period-btn" type="button"
-              aria-pressed="{{ 'true' if pkey == period else 'false' }}"
-              hx-get="/api/partial/news/tab?tab={{ active }}&period={{ pkey }}"
-              hx-target="#news-tab-body" hx-swap="innerHTML">{{ pval[1] }}</button>
-    {% endfor %}
+<div class="news-controls">
+  <div class="news-blurb">{{ (spec.blurb if spec is defined else tabs[0].blurb) }}</div>
+
+  <div class="news-ctl-group">
+    {#- What you filed, always in reach from the surface that fills it. -#}
+    <span id="stack-counts" class="stk-counts">
+      <a href="/stack" class="stk-link" title="Everything you filed for later">
+        <b>{{ stack_counts.later if stack_counts else 0 }}</b> to read</a>
+      <span class="stk-sep">·</span>
+      <a href="/stack?state=saved" class="stk-link"><b>{{ stack_counts.saved if stack_counts else 0 }}</b> saved</a>
+    </span>
+
+    <div class="news-period" role="group" aria-label="Time period">
+      {% for pkey, pval in periods.items() %}
+        <button class="news-period-btn" type="button"
+                aria-pressed="{{ 'true' if pkey == period else 'false' }}"
+                hx-get="/api/partial/news/tab?tab={{ active }}&period={{ pkey }}&view={{ _view }}"
+                hx-target="#news-tab-body" hx-swap="innerHTML">{{ pval[1] }}</button>
+      {% endfor %}
+    </div>
+
+    <div class="news-view" role="group" aria-label="How to show the list">
+      {% for vkey, vlabel in _views.items() %}
+        <button class="news-view-btn" type="button"
+                aria-pressed="{{ 'true' if vkey == _view else 'false' }}"
+                title="{{ vlabel }} view"
+                hx-get="/api/partial/news/tab?tab={{ active }}&period={{ period }}&view={{ vkey }}"
+                hx-target="#news-tab-body" hx-swap="innerHTML"
+                onclick="try{localStorage.setItem('metis.news.view','{{ vkey }}')}catch(e){}">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+            {%- if vkey == 'list' -%}
+              <path d="M2 4h12M2 8h12M2 12h12"/>
+            {%- elif vkey == 'detailed' -%}
+              <path d="M2 3.5h12M2 6.5h8M2 10h12M2 13h8"/>
+            {%- else -%}
+              <rect x="2" y="2.5" width="5" height="5" rx="1"/><rect x="9" y="2.5" width="5" height="5" rx="1"/>
+              <rect x="2" y="9.5" width="5" height="4" rx="1"/><rect x="9" y="9.5" width="5" height="4" rx="1"/>
+            {%- endif -%}
+          </svg>
+          <span class="news-view-lbl">{{ vlabel }}</span>
+        </button>
+      {% endfor %}
+    </div>
   </div>
 </div>

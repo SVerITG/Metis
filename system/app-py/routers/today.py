@@ -17,6 +17,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_execute, db_query, db_scalar
+from ui import (count_since, delta_count, last_seen, mark_seen,  # noqa: E402
+                nothing, peek, zone)
 from models import model_for  # Resolves Claude model IDs from system/config/models.yaml
 
 router = APIRouter()
@@ -576,6 +578,22 @@ def _build_news_items(qrows) -> list[dict]:
     return items
 
 
+async def render_news_rail(request: Request, category: str = "",
+                           period: str = "week") -> str:
+    """The Today news rail, as a string, so a triage click can give it back.
+
+    Extracted 2026-08-26 alongside the reading stack: pressing "read later" on a
+    headline has to return the rail it came from, and a route that can only
+    answer HTTP cannot be reused for that.
+
+    `async`, and awaited by the caller. The first draft called
+    `run_until_complete` on the running loop, which raises — a route already runs
+    inside that loop, so there is nothing to run it from.
+    """
+    resp = await today_news_rail(request, category, period)
+    return resp.body.decode("utf-8")
+
+
 @router.get("/api/partial/today/news-rail", response_class=HTMLResponse)
 async def today_news_rail(request: Request, category: str = "", period: str = "week"):
     """News surface — topic slipcases with per-topic Haiku summaries."""
@@ -693,10 +711,22 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
     if not show_all_topics and total_topics > 8:
         slipcases = slipcases[:8]
 
+    # One lookup for every headline across every slipcase.
+    _ids = [i["id"] for sc in slipcases for i in sc.get("items") or []]
+    try:
+        from metis_mcp.tools import stack as _stack
+        _states = _stack.states_for("news", _ids)
+        _tags = _stack.all_tags()
+    except Exception as _exc:
+        _log.warning("news rail: stack state unavailable: %s", _exc)
+        _states, _tags = {}, []
+
     return templates.TemplateResponse(
         request,
         "partials/today_news_rail.html",
         {
+            "states": _states,
+            "all_tags": _tags,
             "slipcases": slipcases,
             "all_topics": all_topics,
             "active_topic": category,
@@ -4640,6 +4670,13 @@ async def today_learning_nudge(request: Request):
     if course and not (days_since is not None and days_since >= 3 or due_cards > 0):
         course = None  # suppress the nudge
 
+    # A suppressed nudge used to render a full-height wrapper containing zero
+    # words — 40 bytes of nothing holding its place in the stack. A panel that
+    # keeps its slot while saying nothing teaches the reader to skip that region
+    # of the page, and the habit then applies on the days it DOES have something.
+    if not course:
+        return HTMLResponse(nothing())
+
     return templates.TemplateResponse(
         request,
         "partials/today_learning_nudge.html",
@@ -4648,6 +4685,12 @@ async def today_learning_nudge(request: Request):
 
 
 # ── G: Literature Discovery ──────────────────────────────────────────────
+
+async def render_literature_discovery(request: Request) -> str:
+    """The Today literature panel, as a string — see `render_news_rail`."""
+    resp = await today_literature_discovery(request)
+    return resp.body.decode("utf-8")
+
 
 @router.get("/api/partial/today/literature-discovery", response_class=HTMLResponse)
 async def today_literature_discovery(request: Request):
@@ -4659,21 +4702,39 @@ async def today_literature_discovery(request: Request):
         cutoff = (datetime.date.today() - datetime.timedelta(days=7)).isoformat()
         period = "week"
 
+    # Fetch what is DISPLAYED and count the rest, rather than loading every
+    # unread paper to render ten of them. The panel was pulling 1,433 rows to
+    # show 10 and using len() as the badge (audit 2026-08-25).
+    _SHOWN = 12
     papers: list[dict] = []
     total = 0
+    newer = 0
+    seen_key = "today.literature"
     try:
+        total = int(db_scalar(
+            "SELECT COUNT(*) FROM new_publications "
+            "WHERE (read_at IS NULL OR read_at = '') AND discovered_at >= ?",
+            (cutoff,), default=0) or 0)
         papers = db_query(
             "SELECT id, title, journal, pub_date, doi, topic_tag, "
             "relevance_note, source_url, discovered_at "
             "FROM new_publications "
             "WHERE (read_at IS NULL OR read_at = '') "
             "AND discovered_at >= ? "
-            "ORDER BY discovered_at DESC",
-            (cutoff,),
+            "ORDER BY discovered_at DESC LIMIT ?",
+            (cutoff, _SHOWN),
         ) or []
-        total = len(papers)
     except Exception:
         pass
+
+    # THE COUNTER RULE. "1433 UNREAD" is not information — nobody reads 1,433
+    # papers, so past a certain size the number's only job is to make the panel
+    # feel like a debt. What is actionable is what arrived since the last visit.
+    _prev = last_seen(seen_key)
+    newer = count_since("new_publications", "discovered_at", _prev,
+                        where="(read_at IS NULL OR read_at = '')")
+    delta_html = delta_count(seen_key, total, newer)
+    mark_seen(seen_key)
 
     topics: list[dict] = []
     try:
@@ -4684,10 +4745,19 @@ async def today_literature_discovery(request: Request):
     except Exception:
         pass
 
+    try:
+        from metis_mcp.tools import stack as _stack
+        _states = _stack.states_for("paper", [p["id"] for p in papers])
+        _tags = _stack.all_tags()
+    except Exception:
+        _states, _tags = {}, []
+
     return templates.TemplateResponse(
         request,
         "partials/today_literature_discovery.html",
-        {"papers": papers, "total": total, "topics": topics, "period": period},
+        {"papers": papers, "total": total, "topics": topics, "period": period,
+         "delta_html": delta_html, "newer": newer,
+         "states": _states, "all_tags": _tags},
     )
 
 
@@ -4871,6 +4941,12 @@ def _news_card(r: dict) -> dict:
     rel = r.get("relevance") or 0
     img = (r.get("image_url") or "").strip()
     return {
+        # `brief_id`, never `rowid`. rowid is the surface's join key for thread
+        # subjects and is fine for that inside one request, but a verdict OUTLIVES
+        # the request — and rowid is reassigned by VACUUM. Keyed on rowid, a
+        # "not for me" would silently reattach itself to a different story the
+        # first time the database was compacted.
+        "id": r.get("brief_id") or "",
         "title": r.get("title") or "Untitled",
         "summary": (r.get("summary") or "").strip(),
         "url": r.get("source_url") or "",
@@ -4962,8 +5038,8 @@ def _news_rows(period: str = "week", limit: int = 400) -> list[dict]:
     days, _ = _NEWS_PERIODS.get(period, _NEWS_PERIODS["week"])
     cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
     return db_query(
-        """SELECT b.rowid AS ref, b.title, b.summary, b.domain, b.signal_strength,
-                  b.source_url, b.created_at, b.relevance,
+        """SELECT b.rowid AS ref, b.brief_id, b.title, b.summary, b.domain,
+                  b.signal_strength, b.source_url, b.created_at, b.relevance,
                   COALESCE(b.image_url,'') AS image_url,
                   COALESCE(NULLIF(b.published_at,''), b.created_at) AS when_at
            FROM news_briefs b
@@ -5002,14 +5078,52 @@ def _tab_matches(tab: dict, card: dict, subject: str) -> bool:
     return bool(dom) and dom in {d.lower() for d in tab.get("domains", ())}
 
 
+# The three ways to look at the same list. the researcher asked for "list, detailed list
+# or thumbnails" — the density control every reader of a long feed expects, and
+# the one thing that makes 60 items skimmable instead of a wall.
+#
+# The view is a QUERY PARAMETER, not a client-side class toggle: the row markup
+# genuinely differs (a compact row has no summary and no thumbnail to download),
+# so switching view in the browser alone would still pay for images nobody sees.
+NEWS_VIEWS = {
+    "list":     "List",
+    "detailed": "Detailed",
+    "cards":    "Thumbnails",
+}
+
+
+def render_news_tab(request: Request, tab: str = "overview", period: str = "week",
+                    view: str = "detailed") -> str:
+    """One News tab, as a string, so any surface can re-render it.
+
+    Extracted from the route on 2026-08-26 when triage buttons arrived: pressing
+    "read later" on a card has to give back the list it came from, and a route
+    that can only answer HTTP cannot be reused for that.
+    """
+    resp = _news_tab_response(request, tab, period, view)
+    return resp.body.decode("utf-8")
+
+
 @router.get("/api/partial/news/tab", response_class=HTMLResponse)
-async def news_tab(request: Request, tab: str = "overview", period: str = "week"):
+async def news_tab(request: Request, tab: str = "overview", period: str = "week",
+                   view: str = "detailed"):
     """Render one News tab. Overview is thread-based; the rest are card grids."""
+    return _news_tab_response(request, tab, period, view)
+
+
+def _news_tab_response(request: Request, tab: str, period: str, view: str):
     if tab not in _NEWS_TABS_BY_KEY:
         tab = "overview"
     if period not in _NEWS_PERIODS:
         period = "week"
+    if view not in NEWS_VIEWS:
+        view = "detailed"
     spec = _NEWS_TABS_BY_KEY[tab]
+    try:
+        from metis_mcp.tools import stack as _stack
+        stack_counts = _stack.counts()
+    except Exception:
+        stack_counts = {"later": 0, "saved": 0}
 
     # ---- Overview: running stories, not a link list -----------------------
     if spec["kind"] == "overview":
@@ -5034,10 +5148,21 @@ async def news_tab(request: Request, tab: str = "overview", period: str = "week"
         except Exception as _exc:
             _log.warning("news overview: thread window failed: %s", _exc)
 
+        # One lookup across every item in every thread on screen.
+        _ov_ids = [i.get("id") for t in threads[:24] for i in t.get("items") or []]
+        try:
+            from metis_mcp.tools import stack as _stack
+            _ov_states = _stack.states_for("news", _ov_ids)
+            _ov_tags = _stack.all_tags()
+        except Exception:
+            _ov_states, _ov_tags = {}, []
+
         return templates.TemplateResponse(
             request, "partials/news_overview.html",
             {"threads": threads[:24], "tabs": _NEWS_TABS, "active": tab,
              "period": period, "periods": _NEWS_PERIODS, "period_label": plabel,
+             "view": view, "views": NEWS_VIEWS, "stack_counts": stack_counts,
+             "states": _ov_states, "all_tags": _ov_tags,
              "total_items": sum(len(t["items"]) for t in threads)},
         )
 
@@ -5111,11 +5236,67 @@ async def news_tab(request: Request, tab: str = "overview", period: str = "week"
         subfilters = []
 
     counts = _news_tab_counts(period)
+    shown = picked[:60]
+
+    # One query for all 60 cards, not one per card. Without this the grid would
+    # make sixty round trips just to decide which button to draw.
+    states, tag_list = {}, []
+    try:
+        from metis_mcp.tools import stack as _stack
+        states = _stack.states_for("news", [c.get("id") for c in shown])
+        tag_list = _stack.all_tags()
+    except Exception as _exc:
+        _log.warning("news tab: stack state unavailable: %s", _exc)
+
     return templates.TemplateResponse(
         request, "partials/news_tab.html",
-        {"cards": picked[:60], "tabs": _NEWS_TABS, "active": tab, "spec": spec,
+        {"cards": shown, "tabs": _NEWS_TABS, "active": tab, "spec": spec,
          "period": period, "periods": _NEWS_PERIODS, "counts": counts,
-         "subfilters": subfilters, "total": len(picked)},
+         "subfilters": subfilters, "total": len(picked),
+         "view": view, "views": NEWS_VIEWS, "stack_counts": stack_counts,
+         "states": states, "all_tags": tag_list},
+    )
+
+
+@router.get("/api/partial/news/thread-items", response_class=HTMLResponse)
+async def news_thread_items(request: Request, thread: str, period: str = "week",
+                            skip: int = 3):
+    """The rest of one story thread, fetched when its fold is opened.
+
+    Exists because rendering every thread's every item inline cost 669 KB on a
+    tab where 72 of 233 items are visible. The reader who opens a story pays for
+    that story; nobody else does.
+    """
+    import sqlite3 as _sq
+    days, _ = _NEWS_PERIODS.get(period, _NEWS_PERIODS["week"])
+    items: list[dict] = []
+    try:
+        _src = str(Path(__file__).parent.parent.parent / "mcp-server" / "src")
+        if _src not in sys.path:
+            sys.path.insert(0, _src)
+        from metis_mcp.tools import news_threads as _nt
+        conn = _sq.connect(_get_db_path())
+        conn.row_factory = _sq.Row
+        since = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
+        for t in _nt.thread_window(conn, since):
+            if t.get("thread_id") == thread:
+                items = (t.get("items") or [])[max(0, skip):]
+                break
+        conn.close()
+    except Exception as _exc:
+        _log.warning("thread-items %s: %s", thread, _exc)
+
+    try:
+        from metis_mcp.tools import stack as _stack
+        states = _stack.states_for("news", [i.get("id") for i in items])
+    except Exception:
+        states = {}
+
+    return templates.TemplateResponse(
+        request, "partials/news_thread_items.html",
+        {"items": items, "states": states,
+         "T": "#news-tab-body",
+         "BACK": f"news:overview:{period}:detailed"},
     )
 
 
