@@ -219,24 +219,37 @@ async def log_agent_run(
             # complete THAT row instead of inserting a duplicate — so the live
             # "who's working now" resolves to a single finished run. Preserve the
             # dispatch-written model when the completion call doesn't supply one.
+            #
+            # Matching includes agent_slug. Routing may put several specialists on
+            # one request, so a session can hold several open 'running' rows; a
+            # session-only match would close whichever was newest and relabel it
+            # with THIS agent's name, silently losing one agent and duplicating
+            # another. Fall back to a session-only match so a run dispatched under
+            # a different slug still completes rather than orphaning.
             _updated = False
             if session_id:
-                cur = conn.execute(
-                    """UPDATE agent_runs
-                          SET agent_slug=?, task_summary=?, input_path=?, output_path=?,
-                              status=?, created_at=?, input_tokens=?, output_tokens=?,
-                              model=CASE WHEN ?='' THEN model ELSE ? END
-                        WHERE rowid = (
-                              SELECT rowid FROM agent_runs
-                               WHERE session_id=? AND status='running'
-                               ORDER BY created_at DESC, rowid DESC LIMIT 1)""",
-                    (
-                        agent_slug, task_summary, input_path, output_path,
-                        complexity, _now, input_tokens, output_tokens,
-                        model, model, session_id,
-                    ),
-                )
-                _updated = (cur.rowcount or 0) > 0
+                for _where, _args in (
+                    ("session_id=? AND agent_slug=? AND status='running'", (session_id, agent_slug)),
+                    ("session_id=? AND status='running'", (session_id,)),
+                ):
+                    cur = conn.execute(
+                        f"""UPDATE agent_runs
+                              SET agent_slug=?, task_summary=?, input_path=?, output_path=?,
+                                  status=?, created_at=?, input_tokens=?, output_tokens=?,
+                                  model=CASE WHEN ?='' THEN model ELSE ? END
+                            WHERE rowid = (
+                                  SELECT rowid FROM agent_runs
+                                   WHERE {_where}
+                                   ORDER BY created_at DESC, rowid DESC LIMIT 1)""",
+                        (
+                            agent_slug, task_summary, input_path, output_path,
+                            complexity, _now, input_tokens, output_tokens,
+                            model, model, *_args,
+                        ),
+                    )
+                    _updated = (cur.rowcount or 0) > 0
+                    if _updated:
+                        break
             if not _updated:
                 conn.execute(
                     """INSERT INTO agent_runs

@@ -530,12 +530,67 @@ _DEFAULT_ROUTING_SEED: list[tuple[list[str], str, str, int]] = [
     (["brainstorm", "connect ideas", "cross-pollinate", "explore connections"], "metis", "idea", 50),
 ]
 
+# How many specialists one request may put to work. Three is the point past
+# which a plain-English "who is on this" line stops being readable to someone
+# who does not know the agent roster.
+_MAX_ROUTED_AGENTS = 3
+
 _DEEP_KEYWORDS = ["review", "critique", "analyse", "analyze", "evaluate", "challenge", "assess"]
 _QUICK_KEYWORDS = ["find", "get", "what is", "list", "show", "check", "status", "how many"]
 _CHAIN_KEYWORDS = ["and also", "then review", "both", "multiple agents", "all three"]
 
 # Back-compat alias for older imports expecting (keywords, agent, task_type) triples.
 _ROUTING_TABLE = [(kws, agent, t) for kws, agent, t, _p in _DEFAULT_ROUTING_SEED]
+
+
+# Agents the original seed could not reach by keyword at all. Found by
+# tools/audit_routing.py on 2026-08-25: the table named 21 agents, the registry
+# held 33, and the missing 23 were reachable only by the semantic backstop or by
+# being called by name. A non-technical user cannot call an agent by name, so for
+# them those specialists did not exist.
+#
+# Priorities sit BELOW the domain specialists (which run 10-40) so a research
+# question still reaches the epidemiologist rather than a system agent.
+_COVERAGE_ROUTING_SEED: list[tuple[list[str], str, str, int]] = [
+    # very specific system audits — safe to place early, they cannot false-fire
+    (["audit features", "feature audit"], "metis-audit-features", "audit", 20),
+    (["audit install", "installation audit"], "metis-audit-install", "audit", 20),
+    (["audit memory", "memory audit"], "metis-audit-memory", "audit", 20),
+    (["audit security", "security audit"], "metis-audit-security", "audit", 20),
+    (["audit ui", "audit the interface"], "metis-audit-ui", "audit", 20),
+    (["audit vision", "vision audit"], "metis-audit-vision", "audit", 20),
+    (["audit workflow", "workflow audit"], "metis-audit-workflow", "audit", 20),
+    (["self-audit", "drift check", "quarterly review"], "metis-self-reflexion", "audit", 22),
+    # build / extend
+    (["extend metis", "modify metis", "new mcp tool", "dashboard phase", "new agent"], "rc-builder", "rc", 42),
+    (["build an app", "new tool", "mcp server", "scaffold"], "builder", "build", 45),
+    (["dashboard tab", "htmx", "kpi panel", "blank panel", "dashboard bug"], "dashboard-engineer", "dashboard", 42),
+    (["component design", "frontend", "front end"], "frontend-designer-builder", "ui", 45),
+    (["design audit", "ui critique", "design review"], "design-auditor", "ui", 42),
+    # quality / safety
+    (["double-check", "second opinion", "challenge this", "verify this"], "critic", "verify", 45),
+    (["prompt injection", "malicious", "is this link safe", "phishing"], "cybersecurity", "security", 40),
+    # knowledge / memory
+    (["what did we decide", "consolidate session", "past context", "previous session"], "memory-curator", "memory", 45),
+    (["rss", "feed", "news pipeline"], "news-aggregator", "news", 45),
+    # learning
+    (["competency map", "backward design", "curriculum design"], "learning-architect", "learning", 45),
+    (["lesson plan", "instructional design", "learning objectives"], "edu-expert", "education", 45),
+    # research + release
+    (["research programme", "research program", "article state", "journal-readiness"], "research-architect", "research", 42),
+    (["release", "publish", "version bump", "changelog"], "release-coordinator", "release", 45),
+    (["capability gap", "missing specialist", "do we need an agent"], "hr-talent", "hr", 45),
+    (["refresh metis", "run scans", "update knowledge base"], "metis-update", "update", 48),
+]
+
+# Claude Code's own built-in agents. The researcher asked for these to be
+# routable alongside the Metis specialists (2026-08-25). They are marked
+# source='claude' so the audit can tell them apart from Metis's own roster, and
+# they sit last: a built-in generalist should never outrank a domain specialist.
+_CLAUDE_AGENT_SEED: list[tuple[list[str], str, str, int]] = [
+    (["find where", "search the codebase", "where is", "locate the"], "Explore", "explore", 55),
+    (["implementation plan", "plan the implementation", "how should i build", "architecture for"], "Plan", "plan", 55),
+]
 
 
 def _ensure_routing_table() -> None:
@@ -557,6 +612,15 @@ def _ensure_routing_table() -> None:
             " created_at TEXT DEFAULT (datetime('now')),"
             " UNIQUE(keyword, agent_slug))"
         )
+        # `matches` counts every time a rule's keyword was PRESENT, whether or
+        # not it changed the routing. `hits` counts only when it put an agent on
+        # the job. The pair is what separates a shadowed rule (matches > 0,
+        # hits == 0) from one whose requests never arrive (matches == 0) — the
+        # question the 2026-08-25 audit could not answer from `hits` alone.
+        cols = {r[1] for r in con.execute("PRAGMA table_info(agent_routing_rules)")}
+        if "matches" not in cols:
+            con.execute("ALTER TABLE agent_routing_rules ADD COLUMN matches INTEGER DEFAULT 0")
+
         if con.execute("SELECT COUNT(*) FROM agent_routing_rules").fetchone()[0] == 0:
             for kws, agent, t, prio in _DEFAULT_ROUTING_SEED:
                 for kw in kws:
@@ -565,6 +629,22 @@ def _ensure_routing_table() -> None:
                         "(keyword, agent_slug, task_type, priority, match_mode, source) "
                         "VALUES (?, ?, ?, ?, 'word', 'seed')",
                         (kw.lower(), agent, t, prio),
+                    )
+
+        # Coverage top-up, for installs seeded before these agents were routable.
+        # Only agents with NO rule at all are topped up, so a rule the user
+        # deliberately deleted is never resurrected.
+        covered = {r[0] for r in con.execute("SELECT DISTINCT agent_slug FROM agent_routing_rules")}
+        for seed, src in ((_COVERAGE_ROUTING_SEED, "seed"), (_CLAUDE_AGENT_SEED, "claude")):
+            for kws, agent, t, prio in seed:
+                if agent in covered:
+                    continue
+                for kw in kws:
+                    con.execute(
+                        "INSERT OR IGNORE INTO agent_routing_rules "
+                        "(keyword, agent_slug, task_type, priority, match_mode, source) "
+                        "VALUES (?, ?, ?, ?, 'word', ?)",
+                        (kw.lower(), agent, t, prio, src),
                     )
         con.commit()
 
@@ -658,6 +738,62 @@ def _semantic_route(request: str, min_top: float = 0.56, margin: float = 0.05):
         return None, 0.0
 
 
+# Slugs whose plain de-hyphenation reads badly in a sentence. Everything else
+# de-hyphenates fine ("writing-partner" -> "writing partner"), so this stays
+# small on purpose rather than becoming a second registry to maintain.
+_AGENT_DISPLAY = {
+    "metis": "Metis",
+    "cybersecurity": "security specialist",
+    "dhis2-expert": "DHIS2 expert",
+    "rc-builder": "Metis builder",
+    "hr-talent": "talent scout",
+    "critic": "critic",
+    "edu-expert": "education specialist",
+    "Explore": "code explorer",
+    "Plan": "planner",
+}
+
+
+def _friendly_agent_name(slug: str) -> str:
+    """A name a non-technical reader recognises, usable inside "the ___"."""
+    if slug in _AGENT_DISPLAY:
+        return _AGENT_DISPLAY[slug]
+    if slug.startswith("metis-audit-"):
+        return f"{slug[len('metis-audit-'):].replace('-', ' ')} auditor"
+    if slug.startswith("metis-"):
+        return slug[len("metis-"):].replace("-", " ") + " specialist"
+    return slug.replace("-", " ")
+
+
+def _who_is_on_it(routed_because: list) -> str:
+    """The line the assistant reads out to the researcher.
+
+    Written for someone who does not know that an agent roster exists. It names
+    each specialist in plain words and says WHY it was chosen — and the reason is
+    honest rather than invented, because it is the keyword that actually did the
+    routing. "Because you said 'study design'" is something a person can check,
+    disagree with, and correct. "Based on your request" is not.
+    """
+    if not routed_because:
+        return ""
+
+    # The generalist fallback is not a specialist assignment and should not be
+    # dressed up as one — saying "I've put Metis on it" to someone who thinks
+    # Metis IS the assistant is confusing rather than informative.
+    if len(routed_because) == 1 and routed_because[0][0] == "metis":
+        return "No specialist fits this one, so I'll take it myself."
+
+    if len(routed_because) == 1:
+        slug, why = routed_because[0]
+        return f"I've asked the {_friendly_agent_name(slug)} to look at this \u2014 {why}."
+    count = {2: "two", 3: "three"}.get(len(routed_because), str(len(routed_because)))
+    bullets = "\n".join(
+        f"  \u2022 the {_friendly_agent_name(slug)} \u2014 {why}"
+        for slug, why in routed_because
+    )
+    return f"I've asked {count} specialists to look at this:\n{bullets}"
+
+
 def _parse_intent_stage(request: str, session_id: str) -> dict:
     """Stage 5: select agent(s) + complexity from the DB routing rules (seeded +
     user-learned), word-boundary matched, most-specific first. No match → the
@@ -667,13 +803,37 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
     agents: list[str] = []
     task_type = "general"
     matched_rule_id = None
+    contributing_rule_ids: list[int] = []
+    routed_because: list[tuple[str, str]] = []
+    all_matching_rule_ids: list[int] = []
 
+    # Collect up to MAX_AGENTS specialists rather than breaking on the first.
+    # A real request often needs two perspectives ("review my methods AND the
+    # grammar"), and the single-agent break made that impossible to express —
+    # the second specialist was silently dropped. Order is preserved, so the
+    # most-specific rule still leads.
     for kw, agent, t_type, mode, rule_id, _src in _load_routing_rules():
-        if _kw_match(kw, lower, mode or "word"):
-            agents.append(agent)
-            task_type = t_type
-            matched_rule_id = rule_id
-            break  # most-specific first; first match wins
+        if not _kw_match(kw, lower, mode or "word"):
+            continue
+
+        # Every keyword that is PRESENT is recorded, whether or not it changed
+        # the outcome. This is what makes the routing table auditable: a rule
+        # with matches > 0 and hits == 0 was shadowed by an earlier rule, while
+        # matches == 0 means the request never arrived. Those two call for
+        # opposite fixes and were previously indistinguishable — see
+        # tools/audit_routing.py and the 2026-08-25 routing audit.
+        if rule_id and rule_id > 0 and rule_id not in all_matching_rule_ids:
+            all_matching_rule_ids.append(rule_id)
+
+        if agent in agents or len(agents) >= _MAX_ROUTED_AGENTS:
+            continue
+        agents.append(agent)
+        routed_because.append((agent, f"you said \u201c{kw}\u201d"))
+        if not contributing_rule_ids:
+            task_type = t_type          # the leading rule names the task type
+            matched_rule_id = rule_id   # back-compat: the primary rule
+        if rule_id and rule_id > 0:
+            contributing_rule_ids.append(rule_id)
 
     uncovered = not agents
     if uncovered:
@@ -684,16 +844,28 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
         sem_slug, _sem_score = _semantic_route(request)
         if sem_slug:
             agents = [sem_slug]
+            routed_because = [(sem_slug, "the closest match to what you asked")]
             task_type = "semantic"  # not a keyword match → still measurable as fallback-routed
             uncovered = False       # a specialist WAS found (via the semantic backstop)
         else:
             agents = ["metis"]
+            routed_because = [("metis", "")]
             task_type = "uncovered"  # explicit: nothing matched → generalist
 
-    if matched_rule_id and matched_rule_id > 0:
+    if all_matching_rule_ids:
         try:
             with connect(paths.db) as con:
-                con.execute("UPDATE agent_routing_rules SET hits = hits + 1 WHERE rule_id = ?", (matched_rule_id,))
+                if contributing_rule_ids:
+                    con.execute(
+                        "UPDATE agent_routing_rules SET hits = hits + 1 WHERE rule_id IN "
+                        f"({','.join('?' * len(contributing_rule_ids))})",
+                        contributing_rule_ids,
+                    )
+                con.execute(
+                    "UPDATE agent_routing_rules SET matches = matches + 1 WHERE rule_id IN "
+                    f"({','.join('?' * len(all_matching_rule_ids))})",
+                    all_matching_rule_ids,
+                )
                 con.commit()
         except Exception:
             pass
@@ -708,7 +880,8 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
     else:
         complexity = "standard"
 
-    return {"agents": agents, "complexity": complexity, "task_type": task_type, "uncovered": uncovered}
+    return {"agents": agents, "complexity": complexity, "task_type": task_type,
+            "uncovered": uncovered, "routed_because": routed_because}
 
 
 @app.tool()
@@ -1291,6 +1464,13 @@ async def run_metis(
     # ── Stage 5: Intent parsing ────────────────────────────────────────────
     intent = _parse_intent_stage(request, session_id)
     intent["_request"] = request
+    _who = _who_is_on_it(intent.get("routed_because") or [])
+    if _who:
+        lines.append("")
+        lines.append("**Say this to the researcher in your own words. Never show "
+                     "them the Routing/Model lines below \u2014 those are machinery.**")
+        lines.append(_who)
+        lines.append("")
     lines.append(
         f"**Routing:** {', '.join(intent['agents'])} | complexity={intent['complexity']}"
     )
@@ -1308,27 +1488,34 @@ async def run_metis(
     )
 
     # ── Stage 6b: Live dispatch-write (S.2) ────────────────────────────────
-    # Record a 'running' agent_runs row for the primary agent the moment we route,
-    # so the dashboard's "who's working now" is real rather than dead code. The
-    # agent's later log_agent_run(session_id=...) UPDATES this row to its final
-    # status (matched on session_id), and a stale-guard on the dashboard stops a
-    # perpetual "working…" if that completion never arrives. Best-effort only.
+    # Record a 'running' agent_runs row for EVERY routed agent the moment we
+    # route, so the dashboard's "who's working now" shows the whole team rather
+    # than only the first name. Each agent's later log_agent_run(session_id=...)
+    # UPDATES its own row to a final status — matched on session_id AND
+    # agent_slug, because with several rows open, matching on session alone
+    # would complete whichever row happened to be newest and mislabel it.
+    #
+    # A stale-guard on the dashboard stops a perpetual "working…" if a
+    # completion never arrives. Best-effort only: routing must not fail because
+    # the activity surface could not be written.
     try:
-        _primary_agent = (intent.get("agents") or ["metis"])[0]
+        _routed = list(intent.get("agents") or ["metis"])
+        _now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
         with connect(paths.db) as _con:
-            _con.execute(
-                """INSERT INTO agent_runs
-                   (agent_slug, task_summary, input_path, output_path, status,
-                    created_at, input_tokens, output_tokens, model, session_id)
-                   VALUES (?, ?, '', '', 'running', ?, 0, 0, ?, ?)""",
-                (
-                    _primary_agent,
-                    request[:200],
-                    datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                    budget.get("model", ""),
-                    session_id,
-                ),
-            )
+            for _agent in _routed:
+                _con.execute(
+                    """INSERT INTO agent_runs
+                       (agent_slug, task_summary, input_path, output_path, status,
+                        created_at, input_tokens, output_tokens, model, session_id)
+                       VALUES (?, ?, '', '', 'running', ?, 0, 0, ?, ?)""",
+                    (
+                        _agent,
+                        request[:200],
+                        _now_iso,
+                        budget.get("model", ""),
+                        session_id,
+                    ),
+                )
             _con.commit()
     except Exception:
         pass
