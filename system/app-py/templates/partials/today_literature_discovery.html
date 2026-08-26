@@ -1,4 +1,4 @@
-{% from "partials/_triage.html" import triage, tag_datalist, tag_chips %}
+{% from "partials/_item.html" import actions, tags, tag_datalist %}
 {# today_literature_discovery.html — New papers in your field.
    Context: papers (list), total (int), topics (list), period (str). #}
 {% from "partials/_update_menu.html" import update_menu %}
@@ -82,8 +82,8 @@ Find recent publications relevant to my research (sleeping sickness / HAT, negle
     </div>
     {% set st = (states or {}).get(p.id|string) %}
     <div style="padding:0 20px 12px;margin-top:-6px;">
-      {{ tag_chips(st) }}
-      {{ triage('paper', p.id, p.title, p.source_url or ('https://doi.org/' ~ p.doi if p.doi else ''),
+      {{ tags(st) }}
+      {{ actions('paper', p.id, p.title, p.source_url or ('https://doi.org/' ~ p.doi if p.doi else ''),
                 p.journal or '', st, '#today-lit-discovery', 'today-lit', 'outerHTML') }}
     </div>
     {% endfor %}

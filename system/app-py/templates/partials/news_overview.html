@@ -13,7 +13,7 @@
    which is useless as an overview row.
    ══════════════════════════════════════════════════════════════════════════════ #}
 
-{% from "partials/_triage.html" import triage, tag_datalist, tag_chips %}
+{% from "partials/_item.html" import actions, tags, tag_datalist %}
 {% set T = "#news-tab-body" %}
 {% set BACK = "news:" ~ active ~ ":" ~ period ~ ":" ~ (view | default("detailed")) %}
 {% include "partials/_news_tabstrip.html" %}
@@ -54,8 +54,8 @@
               <div class="ov-item{% if st and st.state %} ov-item--{{ st.state }}{% endif %}">
                 {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener"
                     style="color:var(--m-text);text-decoration:none;border-bottom:1px solid var(--m-rule);">{{ it.title[:130] }}</a>{% else %}{{ it.title[:130] }}{% endif %}
-                {{ tag_chips(st) }}
-                {% if it.id %}{{ triage('news', it.id, it.title, it.url, it.domain, st, T, BACK) }}{% endif %}
+                {{ tags(st) }}
+                {% if it.id %}{{ actions('news', it.id, it.title, it.url, it.domain, st, T, BACK) }}{% endif %}
               </div>
             {% endfor %}
             {% if t['items']|length > 3 %}

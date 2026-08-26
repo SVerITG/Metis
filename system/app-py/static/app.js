@@ -2639,3 +2639,41 @@ metis.triage = {
   document.addEventListener('htmx:afterSwap', function (e) { scan(e.target || document); });
   document.addEventListener('htmx:afterSettle', function (e) { scan(e.target || document); });
 })();
+
+/* ── Density: the reader chooses how tight the lists are ─────────────────────
+   A research feed is skimmed on Monday and studied on Thursday, and those want
+   different row heights. Three steps, applied to <html data-density> so every
+   `--d-*` token shifts at once and no component needs to know about it.
+
+   The initial value is set in base.html BEFORE the stylesheet paints; this only
+   handles changes. */
+window.metis = window.metis || {};
+metis.density = {
+  set: function (value) {
+    var el = document.documentElement;
+    if (value === 'cosy') { delete el.dataset.density; }
+    else { el.dataset.density = value; }
+    try {
+      if (value === 'cosy') localStorage.removeItem('metis.density');
+      else localStorage.setItem('metis.density', value);
+    } catch (e) { /* the change still applies for this page */ }
+    document.querySelectorAll('[data-density-btn]').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.dataset.densityBtn === value ? 'true' : 'false');
+    });
+  },
+  current: function () {
+    return document.documentElement.dataset.density || 'cosy';
+  }
+};
+
+/* Reflect the active density on the control after any swap. */
+(function () {
+  function sync() {
+    var v = metis.density.current();
+    document.querySelectorAll('[data-density-btn]').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.dataset.densityBtn === v ? 'true' : 'false');
+    });
+  }
+  document.addEventListener('DOMContentLoaded', sync);
+  document.addEventListener('htmx:afterSwap', sync);
+})();

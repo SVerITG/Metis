@@ -1,49 +1,56 @@
 {#- stack_body.html — the pile, filtered.
 
-    This is the surface the researcher described: "they get categorized for future reading
-    so they become a stack of things to read connected to the News and Library
+    The surface the researcher described: "they get categorized for future reading so they
+    become a stack of things to read connected to the News and Library
     surfaces". It is NOT a fourth copy of the news list — it reads
-    `reading_stack`, the only table that knows what he decided about an item. -#}
-{% from "partials/_triage.html" import triage, tag_chips %}
+    `reading_stack`, the only table that knows what he decided about an item,
+    and it renders the same `item()` every other list uses.
+
+    NOTE the import. `_item.html` exports a macro called `tags`, and this
+    template's context already has a variable called `tags` (the tag counts for
+    the filter bar). Importing it here would shadow one with the other —
+    silently, and only on the line that happened to use it. -#}
+{% from "partials/_item.html" import item %}
 {% set T = "#stack-body" %}
 {% set BACK = "stack" %}
 
-<div class="stk-filters">
-  {% for key, label in [('later', 'To read'), ('saved', 'Saved'),
-                        ('read', 'Read'), ('declined', 'Not for me')] %}
-  <a class="stk-filter" href="/stack?state={{ key }}{% if tag %}&tag={{ tag }}{% endif %}"
-     aria-current="{{ 'true' if state == key else 'false' }}"
-     hx-get="/api/partial/stack/body?state={{ key }}{% if tag %}&tag={{ tag }}{% endif %}"
-     hx-target="#stack-body" hx-swap="innerHTML" hx-push-url="false">
-    {{ label }} <b>{{ counts[key] }}</b>
-  </a>
-  {% endfor %}
-</div>
+<div class="toolbar">
+  <div class="seg" role="group" aria-label="Filter by state">
+    {% for key, label in [('later', 'To read'), ('saved', 'Kept'),
+                          ('read', 'Read'), ('declined', 'Not for me')] %}
+    <a href="/stack?state={{ key }}{% if tag %}&tag={{ tag }}{% endif %}"
+       aria-current="{{ 'true' if state == key else 'false' }}"
+       hx-get="/api/partial/stack/body?state={{ key }}{% if tag %}&tag={{ tag }}{% endif %}"
+       hx-target="#stack-body" hx-swap="innerHTML" hx-push-url="false">
+      {{ label }} <b>{{ counts[key] }}</b>
+    </a>
+    {% endfor %}
+  </div>
 
-{% if tags %}
-<div class="stk-tagbar">
-  <a class="tri-chip" href="/stack?state={{ state }}"
-     hx-get="/api/partial/stack/body?state={{ state }}"
-     hx-target="#stack-body" hx-swap="innerHTML" hx-push-url="false"
-     style="text-decoration:none;{% if not tag %}color:var(--m-accent);{% endif %}">all tags</a>
-  {% for t, n in tags %}
-  <a class="tri-chip" href="/stack?state={{ state }}&tag={{ t }}"
-     hx-get="/api/partial/stack/body?state={{ state }}&tag={{ t }}"
-     hx-target="#stack-body" hx-swap="innerHTML" hx-push-url="false"
-     style="text-decoration:none;{% if tag == t %}color:var(--m-accent);{% endif %}">{{ t }} {{ n }}</a>
-  {% endfor %}
+  {% if tags %}
+  <div class="toolbar-group">
+    <a class="badge badge--{{ 'accent' if not tag else 'tag' }}"
+       href="/stack?state={{ state }}" style="text-decoration:none;"
+       hx-get="/api/partial/stack/body?state={{ state }}"
+       hx-target="#stack-body" hx-swap="innerHTML" hx-push-url="false">all</a>
+    {% for t, n in tags %}
+    <a class="badge badge--{{ 'accent' if tag == t else 'tag' }}"
+       href="/stack?state={{ state }}&tag={{ t }}" style="text-decoration:none;"
+       hx-get="/api/partial/stack/body?state={{ state }}&tag={{ t }}"
+       hx-target="#stack-body" hx-swap="innerHTML" hx-push-url="false">{{ t }} {{ n }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
-{% endif %}
 
 {% if not items %}
-<div class="panel" style="padding:22px 26px;">
-  <p style="margin:0;font-size:13.5px;line-height:1.65;color:var(--m-muted);">
+<div class="panel" style="padding:var(--d-panel) var(--s-5);">
+  <p style="margin:0;font-size:var(--t-body);line-height:1.65;color:var(--m-muted);">
     {% if state == 'later' %}
       Nothing on the stack. On <a href="/news" style="color:var(--m-accent);">News</a>
-      or <a href="/" style="color:var(--m-accent);">Today</a>, press
-      <strong>Read later</strong> on anything you want to come back to and it lands
-      here. That is the whole point of this page: Today is for seeing what is new,
-      not for reading it.
+      or <a href="/" style="color:var(--m-accent);">Today</a>, press the bookmark on
+      anything you want to come back to and it lands here. That is the whole point
+      of this page: Today is for seeing what is new, not for reading it.
     {% elif state == 'declined' %}
       Nothing declined. Items you mark <strong>Not for me</strong> come here — they
       are folded away, never deleted, so you can always see what you passed on.
@@ -53,23 +60,11 @@
   </p>
 </div>
 {% else %}
-<div class="ni-wrap ni-wrap--detailed">
+<div class="list--rows">
   {% for i in items %}
-  <article class="ni ni--detailed">
-    <div class="ni-body">
-      <div class="ni-head">
-        <span class="ni-close" style="background:var(--m-surface-2,rgba(127,127,127,.09));color:var(--m-muted);">{{ i.kind }}</span>
-        {% if i.source %}<span class="ni-src">{{ i.source }}</span>{% endif %}
-        <span class="ni-when">{{ i.state_at[:10] }}</span>
-      </div>
-      <h3 class="ni-title">
-        {% if i.url %}<a href="{{ i.url }}" target="_blank" rel="noopener">{{ i.title }}</a>
-        {% else %}{{ i.title }}{% endif %}
-      </h3>
-      {{ tag_chips(i) }}
-      {{ triage(i.kind, i.item_id, i.title, i.url, i.source, i, T, BACK) }}
-    </div>
-  </article>
+  {{ item(i.kind, {'id': i.item_id, 'title': i.title, 'url': i.url,
+                   'source': i.source or i.kind, 'when': i.state_at[:10]},
+          i, T, BACK) }}
   {% endfor %}
 </div>
 {% endif %}

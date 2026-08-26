@@ -1,0 +1,146 @@
+{#-
+  _item.html — ONE list row, and ONE action bar, for the whole application.
+
+  Rebuilt 2026-08-26 after a measured design audit: 190 templates carried 3,166
+  inline `style=` attributes with 12,040 hand-written declarations — 52 font
+  sizes, 222 paddings, 60 button class combinations, and NINE different shapes
+  for "a thing in a list". The triage row added earlier that day became the
+  sixtieth button variant, which is precisely why it read as bolted on.
+
+  WHY THE BUTTONS WERE IN THE WRONG PLACE. They were four text pills flowing
+  after the summary, so their x-position depended on how long the summary was —
+  a different spot on every row. The item is now a three-column grid
+  (media · body · actions) and the bar sits in the actions column, which puts it
+  at the same place on every row of every list, whatever the content does.
+
+  ICONS, NOT LABELS. Five words repeated across sixty rows is three hundred
+  words of chrome competing with the headlines the page exists to show. Each
+  button keeps a real 30px target, a `title`, and an `aria-label`, so nothing is
+  lost but the visual noise.
+-#}
+
+{#- One <use> per icon. The paths live once per page in the sprite in
+    base.html; repeating them inline put 300 copies of six shapes on the News
+    tab. `focusable="false"` matters for IE-era screen readers and costs
+    nothing. -#}
+{#- Just a reference. Every presentational attribute — fill, stroke, width,
+    linecap — lives in `.act svg` in the stylesheet, because repeating them on
+    300 elements is 45 KB of the same six words. -#}
+{% macro icon(name) %}<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><use href="#i-{{ name }}"/></svg>{% endmacro %}
+
+
+{#- The action bar. `st` is the item's row from `reading_stack`, or {}. -#}
+{% macro actions(kind, item_id, title, url, source, st, target, back='', swap='innerHTML') %}
+<div class="acts" data-kind="{{ kind }}" data-id="{{ item_id }}">
+  {#- Only what the server cannot work out for itself. Title, url and source
+      are read from the table that owns the item — posting them back with every
+      click meant sending the server strings it had just sent us, six hidden
+      inputs deep, on every one of sixty rows. -#}
+  <input type="hidden" name="kind" value="{{ kind }}">
+  <input type="hidden" name="item_id" value="{{ item_id }}">
+  <input type="hidden" name="back" value="{{ back }}">
+
+  {% if st and st.state %}
+    <span class="badge badge--{{ {'saved':'ochre','later':'accent','read':'ok','declined':'quiet'}[st.state] }}">
+      {{ {'saved':'Kept','later':'To read','read':'Read','declined':'Not for me'}[st.state] }}
+    </span>
+    <button type="button" class="act" title="Undo — back to undecided"
+            aria-label="Undo"
+            hx-post="/api/stack/clear" hx-include="closest .acts"
+            hx-target="{{ target }}" hx-swap="{{ swap }}">{{ icon('undo') }}</button>
+  {% else %}
+    {{ act(kind, 'later', 'Read later', target, swap) }}
+    {{ act(kind, 'saved', 'Keep' if kind == 'paper' else 'Save', target, swap) }}
+    {{ act(kind, 'read', 'Already read', target, swap) }}
+    {{ act(kind, 'declined', 'Not for me — ranks similar items lower, never hides them',
+           target, swap) }}
+  {% endif %}
+
+  <button type="button" class="act act--tag" title="Tag this"
+          aria-label="Tag this" aria-expanded="false"
+          onclick="metis.triage.toggleTags(this)">{{ icon('tag') }}</button>
+
+  <span class="tri-tags is-hidden">
+    <input name="tags" list="metis-tag-list" placeholder="tags, comma separated"
+           value="{{ st.tags if st else '' }}" autocomplete="off"
+           aria-label="Tags"
+           hx-post="/api/stack/tags" hx-include="closest .acts"
+           hx-target="{{ target }}" hx-swap="{{ swap }}"
+           hx-trigger="keyup[key=='Enter'], tagsave">
+  </span>
+</div>
+{% endmacro %}
+
+
+{% macro act(kind, state, label, target, swap) %}
+<button type="button" class="act act--{{ state }}"
+        title="{{ label }}" aria-label="{{ label }}"
+        hx-post="/api/stack/set" hx-vals='{"state": "{{ state }}"}'
+        hx-include="closest .acts"
+        hx-target="{{ target }}" hx-swap="{{ swap }}">{{ icon(state) }}</button>
+{% endmacro %}
+
+
+{#- Tags on an item, as chips. -#}
+{% macro tags(st) %}
+{% if st and st.tags %}
+{% for t in st.tags.split(',') %}{% if t.strip() %}<span class="badge badge--tag">{{ t.strip() }}</span>{% endif %}{% endfor %}
+{% endif %}
+{% endmacro %}
+
+
+{% macro tag_datalist(all_tags) %}
+<datalist id="metis-tag-list">
+  {% for t, n in (all_tags or []) %}<option value="{{ t }}">{{ t }} ({{ n }})</option>{% endfor %}
+</datalist>
+{% endmacro %}
+
+
+{#-
+  A whole row. `c` needs: id, title, url, source, when, summary, image/has_image,
+  close. Everything optional except id and title.
+
+  `layout` is 'row' or 'card'. It changes what is SHOWN, never how anything
+  behaves — keeping the link and the actions in one macro is what stops "save"
+  meaning something subtly different in the compact view six months from now.
+-#}
+{% macro item(kind, c, st, target, back='', layout='row', swap='innerHTML') %}
+<article class="item{% if layout == 'card' %} item--card{% endif %}{% if st and st.state %} item--{{ st.state }}{% endif %}"
+         data-subj="{{ c.subject or '' }}">
+  {% if layout == 'card' %}
+    <div class="item-media">
+      {% if c.has_image %}
+        <a class="item-thumb" href="{{ c.url }}" target="_blank" rel="noopener"
+           style="background-image:url('{{ c.image }}');" aria-label="{{ c.title }}"></a>
+      {% else %}
+        <a class="item-typecard" href="{{ c.url }}" target="_blank" rel="noopener">
+          <span class="item-wordmark">{{ c.source or c.domain }}</span>
+          <span class="item-typecard-hd">{{ c.title }}</span>
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <div class="item-body">
+    <div class="item-meta">
+      {% if c.close %}<span class="badge badge--accent">your work</span>{% endif %}
+      {% if c.source or c.domain %}<span>{{ c.source or c.domain }}</span>{% endif %}
+      {% if c.when %}<span>{{ c.when }}</span>{% endif %}
+      {{ tags(st) }}
+    </div>
+
+    {% if not (layout == 'card' and not c.has_image) %}
+    <h3 class="item-title">
+      {% if c.url %}<a href="{{ c.url }}" target="_blank" rel="noopener">{{ c.title }}</a>
+      {% else %}{{ c.title }}{% endif %}
+    </h3>
+    {% endif %}
+
+    {% if c.summary %}<p class="item-sum">{{ c.summary[:230] }}</p>{% endif %}
+  </div>
+
+  <div class="item-actions">
+    {{ actions(kind, c.id, c.title, c.url, c.source or c.domain, st, target, back, swap) }}
+  </div>
+</article>
+{% endmacro %}

@@ -1,4 +1,4 @@
-{% from "partials/_triage.html" import triage, tag_datalist, tag_chips %}
+{% from "partials/_item.html" import actions, tags, tag_datalist %}
 {# News Dispatch — topic slipcases with AI summaries, redesigned 2026-07-10.
    Context: slipcases, all_topics, active_topic, period, last_updated, total_topics, show_all_topics. #}
 {% from "partials/_update_menu.html" import update_menu %}
@@ -224,9 +224,12 @@ Update my Metis news dispatch. Using the metis-rc tools, scan the latest global-
               {% if item.summary %}
               <div style="font-family:var(--m-display);font-size:12px;color:var(--m-muted);line-height:1.45;margin-top:3px;">{{ item.summary }}</div>
               {% endif %}
-              {{ tag_chips(st) }}
-              {{ triage('news', item.id, item.title, item.source_url or item.url or '',
-                        item.domain, st, '#news-surface', 'today-news', 'outerHTML') }}
+              <div class="item-foot" style="display:flex;align-items:center;gap:var(--s-2);flex-wrap:wrap;">
+                {{ tags(st) }}
+                {{ actions('news', item.id, item.title,
+                           item.source_url or item.url or '', item.domain, st,
+                           '#news-surface', 'today-news', 'outerHTML') }}
+              </div>
             </div>
             {% endfor %}
           </div>
