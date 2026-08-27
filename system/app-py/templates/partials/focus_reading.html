@@ -18,7 +18,7 @@
 
 {% macro paper_meta(r, today) %}
 <div class="fv-meta">
-  {{ r.kind }}{% if r.journal %} · {{ r.journal[:52] }}{% endif %}
+  {{ r.kind }}{% if r.journal %} · {{ r.journal | clip(52) }}{% endif %}
   {% if r.doi %} · {{ r.doi }}{% endif %}
   {% if r.pub and r.pub[:10] > today %} · ⚠ dated in the future — sorted by when Metis found it{% endif %}
 </div>

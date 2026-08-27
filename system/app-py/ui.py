@@ -232,3 +232,29 @@ def whats_new(key: str, table: str, ts_col: str, where: str = "") -> dict:
         "total": total,
         "first_visit": not since,
     }
+
+
+def clip(text, n: int = 120, ellipsis: str = "…") -> str:
+    """Shorten to `n` characters, cutting at a WORD boundary.
+
+    Lives here rather than in main.py because truncation happens on BOTH sides:
+    templates slice with `{{ title[:80] }}` and routers slice with
+    `(t.get("content") or "")[:45]`. Two implementations would drift, and the
+    router half is the one that produced the worst example on the Reflection
+    surface — "Memory write-backs belong on the tool-dispatc".
+
+    Backs up to the last space inside the limit, unless that would throw away
+    more than 40% of the text (a single very long word). The ellipsis is added
+    only when something was actually removed: a string exactly at the limit
+    should not claim to continue.
+    """
+    if text is None:
+        return ""
+    t = str(text)
+    if len(t) <= n:
+        return t
+    cut = t[:n]
+    space = cut.rfind(" ")
+    if space > n * 0.6:
+        cut = cut[:space]
+    return cut.rstrip(" ,;:.-–—") + ellipsis

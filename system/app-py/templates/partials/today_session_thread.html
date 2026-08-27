@@ -43,7 +43,7 @@
             <div style="margin-top:var(--m-space-1);padding-left:0;">
               {% for d in s.decisions %}
               <div style="font-size:var(--t-micro);color:var(--m-muted);line-height:1.4;padding-left:0;">
-                <span style="color:var(--m-accent);margin-right:4px;">&#10003;</span> {{ d[:120] }}
+                <span style="color:var(--m-accent);margin-right:4px;">&#10003;</span> {{ d | clip(120) }}
               </div>
               {% endfor %}
             </div>
@@ -60,7 +60,7 @@
         {% if thread.all_topics %}
         <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-1);margin-top:var(--m-space-3);">
           {% for t in thread.all_topics %}
-          <span class="session-topic-chip">{{ t[:36] }}</span>
+          <span class="session-topic-chip">{{ t | clip(36) }}</span>
           {% endfor %}
         </div>
         {% endif %}

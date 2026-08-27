@@ -353,8 +353,16 @@ def _due_delta(due: str):
         return None
 
 
+def _clip(text, n: int = 120, ellipsis: str = "…"):
+    """The Jinja filter. One implementation, in ui.py — templates and routers
+    both truncate, and two copies of this rule would drift."""
+    from ui import clip
+    return clip(text, n, ellipsis)
+
+
 _SHARED_FILTERS = {"md": _md_filter,
-                   "due_delta": _due_delta}
+                   "due_delta": _due_delta,
+                   "clip": _clip}
 
 
 

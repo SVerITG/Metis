@@ -15,7 +15,7 @@
           {% for d in s.did %}
           <li style="font-size:var(--t-meta);color:var(--m-ink);line-height:1.4;">
             <span class="u-label u-label--accent">{{ d.agent_slug }}</span>
-            · {{ d.task_summary[:110] }}{% if d.task_summary|length > 110 %}…{% endif %}
+            · {{ d.task_summary | clip(110) }}
           </li>
           {% endfor %}
         </ul>
@@ -25,7 +25,7 @@
         {% if s.topics %}
         <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-1);">
           {% for t in s.topics %}
-          <span class="u-label" style="padding:var(--m-space-1) var(--m-space-2);background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-sm);">{{ t[:40] }}</span>
+          <span class="u-label" style="padding:var(--m-space-1) var(--m-space-2);background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-sm);">{{ t | clip(40) }}</span>
           {% endfor %}
         </div>
         {% endif %}

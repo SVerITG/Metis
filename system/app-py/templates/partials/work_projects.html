@@ -91,7 +91,7 @@
       <!-- Next step -->
       {% if p.next_step %}
       <div class="u-label u-label--accent" style="letter-spacing:0.12em;padding:var(--m-space-2) var(--m-space-3);background:var(--m-accent-wash);border-radius:var(--m-radius);">
-        NEXT → {{ p.next_step[:120] }}{% if p.next_step|length > 120 %}…{% endif %}
+        NEXT → {{ p.next_step | clip(120) }}
       </div>
       {% endif %}
 
@@ -104,72 +104,73 @@
         <div class="u-label">Pulling tasks for this project…</div>
       </div>
 
-      <!-- Launcher rail (driven by launchers_list from DB) -->
-      <div class="u-rule-t" style="display:flex;flex-wrap:wrap;gap:var(--m-space-2);padding-top:10px;">
+      {#- ONE launch row, the same shape on every card.
+
+          The buttons were already in a fixed order. The problem was that every
+          project has a DIFFERENT SUBSET — RStudio here, VS Code there, GitHub on
+          a third — so the row was a different width on each card and the eye
+          read the raggedness as disorder before it read the content. In a
+          screenshot of eight project cards, no two launch rows lined up.
+
+          Now: one primary, always in the same place, and everything else behind
+          a single overflow. Nothing is removed; the row simply stops changing
+          shape. -#}
+      <div class="u-rule-t proj-rail" style="padding-top:10px;">
 
         {% set ll = p.launchers_list %}
+        {% set _all = [
+          ('claude_code',   'Claude Code',  'Continue in Claude Code'),
+          ('rstudio',       'RStudio',      'Open in RStudio'),
+          ('vscode',        'VS Code',      'Open in VS Code'),
+          ('claude_chat',   'Chat',         'Open in Claude Chat'),
+          ('claude_cowork', 'Cowork',       'Open in Claude Cowork'),
+          ('explorer',      'Open Folder',  'Open the project folder'),
+          ('dashboard',     'Dashboard',    'Open the project dashboard'),
+          ('github',        'GitHub',       'Open the repository'),
+        ] %}
+        {% set _have = [] %}
+        {% for key, label, hint in _all %}
+          {% if key in ll and not (key == 'explorer' and not p.external_path) %}
+            {% set _ = _have.append((key, label, hint)) %}
+          {% elif key == 'claude_chat' and 'claude_desktop' in ll %}
+            {% set _ = _have.append((key, label, hint)) %}
+          {% endif %}
+        {% endfor %}
 
-        {% if 'rstudio' in ll %}
-        <button class="btn btn--sec btn--caps proj-launch"
-                onclick="launchProjectTarget('{{ p.id }}','rstudio')"
-                title="Open in RStudio">RStudio</button>
+        {% if _have %}
+          {% set _first = _have[0] %}
+          <button class="btn btn--primary btn--caps proj-launch"
+                  onclick="launchProjectTarget('{{ p.id }}','{{ _first[0] }}')"
+                  title="{{ _first[2] }}">{{ _first[1] }}</button>
+
+          {% if _have | length > 1 %}
+          <details class="proj-more">
+            <summary class="btn btn--sec btn--caps" title="Other ways to open this project">
+              Open in…
+            </summary>
+            <div class="proj-more-menu">
+              {% for key, label, hint in _have[1:] %}
+              <button type="button" class="proj-more-item"
+                      onclick="launchProjectTarget('{{ p.id }}','{{ key }}')"
+                      title="{{ hint }}">{{ label }}</button>
+              {% endfor %}
+            </div>
+          </details>
+          {% endif %}
         {% endif %}
 
-        {% if 'vscode' in ll %}
-        <button class="btn btn--sec btn--caps proj-launch"
-                onclick="launchProjectTarget('{{ p.id }}','vscode')"
-                title="Open in VS Code">VS Code</button>
-        {% endif %}
-
-        {% if 'claude_code' in ll %}
-        <button class="btn btn--primary btn--caps proj-launch"
-                onclick="launchProjectTarget('{{ p.id }}','claude_code')"
-                title="Continue in Claude Code">Claude Code</button>
-        {% endif %}
-
-        {% if 'claude_chat' in ll or 'claude_desktop' in ll %}
-        <button class="btn btn--ghost btn--caps proj-launch"
-                onclick="launchProjectTarget('{{ p.id }}','claude_chat')"
-                title="Open in Claude Chat">Chat</button>
-        {% endif %}
-
-        {% if 'claude_cowork' in ll %}
-        <button class="btn btn--ghost btn--caps proj-launch"
-                onclick="launchProjectTarget('{{ p.id }}','claude_cowork')"
-                title="Open in Claude Cowork (copies project path to clipboard)">Cowork</button>
-        {% endif %}
-
-        {% if 'explorer' in ll and p.external_path %}
-        <button class="btn btn--ghost btn--caps proj-launch"
-                onclick="launchProjectTarget('{{ p.id }}','explorer')"
-                title="Open the project folder in your file manager">Open Folder</button>
-        {% endif %}
-
-        {% if 'dashboard' in ll %}
-        <button class="btn btn--ghost btn--caps proj-launch"
-                onclick="launchProjectTarget('{{ p.id }}','dashboard')"
-                title="Open this project's dashboard in your browser (start the app first if it isn't running)"
-                style="background:var(--m-surface-3);border-color:var(--m-line);">📊 Dashboard</button>
-        {% endif %}
-
-        {% if 'course_launcher' in ll %}
-        <button class="btn btn--ghost btn--caps proj-launch"
-                onclick="launchProjectTarget('{{ p.id }}','vscode')"
-                title="Open course folder">Open Course</button>
-        {% endif %}
-
-        {% if p.github_url %}
-        <a class="btn btn--ghost btn--caps proj-launch"
-           href="{{ p.github_url }}" target="_blank" rel="noopener">GitHub</a>
-        {% endif %}
-
-        <!-- Refresh tasks -->
-        <button class="btn btn--ghost proj-launch"
+        {#- The original control, unchanged. My first version called
+            `refreshProjectCard()`, which does not exist — I invented the name
+            while moving the button and never checked. It would have failed
+            silently on every card, which is exactly the class of bug a
+            screenshot cannot catch either: a button that looks right and does
+            nothing. -#}
+        <button class="btn btn--ghost btn--caps proj-launch u-fixed"
+                style="margin-left:auto;"
                 hx-get="/api/partial/work/project-tasks/{{ p.id }}"
                 hx-target="#proj-tasks-{{ p.id }}"
                 hx-swap="innerHTML"
-                title="Refresh tasks"
-                style="margin-left:auto;padding:var(--m-space-1) var(--m-space-2);font-size:var(--t-small);">↻</button>
+                title="Refresh tasks">↻</button>
       </div>
 
       <!-- Notes panel (lazy-loaded, hidden by default) -->

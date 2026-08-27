@@ -43,7 +43,14 @@
   </div>
   {% endif %}
 
-  {# Enroll form #}
+  {#- Folded. This form took a QUARTER of the Meetings surface while zero
+      voices were enrolled — a setup step held permanently open, at the same
+      visual weight as content. Enrolling a voice is something you do once;
+      reading this page is something you do every week. -#}
+  <details class="fv-fold u-rule-t">
+    <summary style="padding:var(--m-space-3) var(--m-space-5);">
+      <span class="fv-chev">▸</span> Enrol a new voice
+    </summary>
   <div class="u-rule-t" style="padding:var(--m-space-4) var(--m-space-5);">
     <div class="u-label u-mb-3">ENROLL NEW VOICE</div>
     <div class="u-mb-2" style="display:grid;grid-template-columns:1fr auto;gap:var(--m-space-2);">
@@ -79,6 +86,7 @@
     <button class="btn btn--ghost btn--caps" onclick="cancelSpeakerRecording()">Cancel</button>
   </div>
 </div>
+  </details>
 
 <script>
 let _spkRecorder = null;

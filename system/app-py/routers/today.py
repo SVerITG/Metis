@@ -17,7 +17,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_execute, db_query, db_scalar
-from ui import (count_since, delta_count, last_seen, mark_seen,  # noqa: E402
+from ui import (count_since, delta_count, last_seen, mark_seen,  # noqa: E402, clip
                 nothing, peek, zone)
 from models import model_for  # Resolves Claude model IDs from system/config/models.yaml
 
@@ -422,7 +422,7 @@ async def today_activity_feed(request: Request):
                 "time": _hm(r["created_at"]),
                 "_ts": r["created_at"],
                 "title": (r.get("title") or "Untitled")[:110],
-                "summary": (r.get("summary") or "")[:140],
+                "summary": clip(r.get("summary") or "", 140),
                 "href": r.get("source_url"),
             })
     except Exception:
@@ -443,7 +443,7 @@ async def today_activity_feed(request: Request):
                 "time": _hm(r["created_at"]),
                 "_ts": r["created_at"],
                 "title": r.get("agent_slug", "agent"),
-                "summary": (r.get("task_summary") or "")[:140],
+                "summary": clip(r.get("task_summary") or "", 140),
                 "href": "/metis",
                 "htmx_target": True,
             })
@@ -487,7 +487,7 @@ async def today_activity_feed(request: Request):
                 "time": _hm(r["created_at"]),
                 "_ts": r["created_at"],
                 "title": f"Captured {r.get('idea_type') or 'idea'}",
-                "summary": (r.get("text") or "")[:140],
+                "summary": clip(r.get("text") or "", 140),
                 "href": "/thinking",
                 "htmx_target": True,
             })
@@ -563,7 +563,7 @@ def _build_news_items(qrows) -> list[dict]:
         items.append({
             "id": r["brief_id"],
             "title": r.get("title") or "Untitled",
-            "summary": (r.get("summary") or "")[:180],
+            "summary": clip(r.get("summary") or "", 180),
             "domain": dom,
             "domain_slug": dom.lower().replace(" ", "-").replace("_", "-"),
             "signal": (r.get("signal_strength") or "").strip(),
@@ -1592,7 +1592,7 @@ def _get_or_generate_brief(force: bool = False, period: str = "daily") -> str | 
                 conn3.close()
                 for r in src_rows:
                     source_items.append({
-                        "title": (r["title"] or "")[:80],
+                        "title": clip(r["title"] or "", 80),
                         "domain": r["domain"] or "",
                         "url": r["source_url"] or "",
                     })
@@ -1851,7 +1851,7 @@ async def today_morning_brief(request: Request):
             for r in rows:
                 if r.get("title"):
                     fallback_headlines.append({
-                        "title": (r["title"] or "")[:100],
+                        "title": clip(r["title"] or "", 100),
                         "domain": r.get("domain") or "",
                         "url": r.get("source_url") or "",
                     })
@@ -1973,7 +1973,7 @@ async def morning_brief_refresh(request: Request):
             for r in rows:
                 if r.get("title"):
                     fallback_headlines.append({
-                        "title": (r["title"] or "")[:100],
+                        "title": clip(r["title"] or "", 100),
                         "domain": r.get("domain") or "",
                         "url": r.get("source_url") or "",
                     })
@@ -2400,7 +2400,7 @@ async def today_news_archive(request: Request):
                 "brief_id": r.get("brief_id"),
                 "title": r.get("title") or "Untitled",
                 "domain": domain,
-                "summary": (r.get("summary") or "")[:100],
+                "summary": clip(r.get("summary") or "", 100),
                 "source_url": r.get("source_url"),
                 "age_label": _age_label(r["created_at"]) if r.get("created_at") else "",
                 "signal": sig if sig in ("high", "medium", "low") else "",
@@ -2506,7 +2506,7 @@ async def today_idea_today(request: Request):
         rows = db_query("SELECT text, idea_type, created_at FROM ideas ORDER BY created_at DESC LIMIT 20") or []
         if rows:
             r = rows[day_idx % len(rows)]
-            idea = {"text": (r.get("text") or "")[:500],
+            idea = {"text": clip(r.get("text") or "", 500),
                     "idea_type": (r.get("idea_type") or "idea").upper(),
                     "age_label": _age_label(r["created_at"]).upper() if r.get("created_at") else "RECENT"}
     except Exception:
@@ -2626,7 +2626,7 @@ async def today_library_archive(request: Request):
                     "authors": r.get("authors") or "",
                     "domain": r.get("domain") or "",
                     "card_type": r.get("card_type") or "NOTE",
-                    "content": (r.get("content") or "")[:200],
+                    "content": clip(r.get("content") or "", 200),
                     "source": r.get("card_type") or "NOTE",
                     "created_at": r.get("created_at") or "",
                     "is_read": True,
@@ -3012,7 +3012,7 @@ async def api_scan_content():
                 for item in items:
                     data = item.get("data", {})
                     if data.get("itemType") in ("attachment", "note"): continue
-                    title = (data.get("title") or "")[:500]
+                    title = clip(data.get("title") or "", 500)
                     if not title: continue
                     zk = data.get("key") or ""
                     ex = con.execute("SELECT id FROM literature_metadata WHERE zotero_key=?", (zk,)).fetchone()
@@ -3032,7 +3032,7 @@ async def api_scan_content():
                             "(title,authors,year,source,journal,doi,abstract,url,item_type,zotero_key,zotero_version,library_source,created_at) "
                             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                             (title,authors,yr,data.get("publicationTitle",""),data.get("publicationTitle",""),
-                             doi,(data.get("abstractNote","") or "")[:2000],
+                             doi,clip(data.get("abstractNote","") or "", 2000),
                              data.get("url","") or (f"https://doi.org/{doi}" if doi else ""),
                              data.get("itemType",""),zk,item.get("version",0),"zotero",_dt.now().isoformat())
                         )
@@ -4371,7 +4371,7 @@ async def today_brief_bridges(request: Request):
                 bridges.append({
                     "brief_phrase": phrase[:80],
                     "memory_type": "episodic",
-                    "memory_preview": (m["content"] or "")[:120],
+                    "memory_preview": clip(m["content"] or "", 120),
                     "memory_date": (m["created_at"] or "")[:10],
                     "event_type": m["event_type"] or "note",
                 })

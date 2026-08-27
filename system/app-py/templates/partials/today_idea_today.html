@@ -19,7 +19,7 @@
         {% if xpoll_idea %}
         <div style="display:flex;align-items:flex-start;gap:var(--m-space-3);">
           <span class="u-label u-label--wide" style="padding-top:3px;white-space:nowrap;">Idea</span>
-          <span style="font-size:var(--t-small);color:var(--m-text);line-height:1.5;">{{ (xpoll_idea.text or "")[:120] }}{% if (xpoll_idea.text or "") | length > 120 %}&hellip;{% endif %}</span>
+          <span style="font-size:var(--t-small);color:var(--m-text);line-height:1.5;">{{ (xpoll_idea.text or "") | clip(120) }}{% if (xpoll_idea.text or "") | length > 120 %}&hellip;{% endif %}</span>
         </div>
         {% endif %}
       </div>

@@ -42,17 +42,17 @@
     </div>
     {% if r.went_well %}
     <div class="u-mb-2" style="font-size:var(--t-meta);line-height:1.6;color:var(--m-ink);">
-      <span class="u-mono" style="letter-spacing:0.12em;color:var(--m-ok);margin-right:6px;">+ WENT WELL</span>{{ r.went_well[:280] }}{% if r.went_well|length > 280 %}…{% endif %}
+      <span class="u-mono" style="letter-spacing:0.12em;color:var(--m-ok);margin-right:6px;">+ WENT WELL</span>{{ r.went_well | clip(280) }}
     </div>
     {% endif %}
     {% if r.could_improve %}
     <div class="u-mb-2" style="font-size:var(--t-meta);line-height:1.6;color:var(--m-ink);">
-      <span class="u-mono" style="letter-spacing:0.12em;color:var(--m-ochre-deep);margin-right:6px;">~ COULD IMPROVE</span>{{ r.could_improve[:280] }}{% if r.could_improve|length > 280 %}…{% endif %}
+      <span class="u-mono" style="letter-spacing:0.12em;color:var(--m-ochre-deep);margin-right:6px;">~ COULD IMPROVE</span>{{ r.could_improve | clip(280) }}
     </div>
     {% endif %}
     {% if r.tool_wishes %}
     <div style="font-size:var(--t-meta);line-height:1.6;color:var(--m-muted);font-style:italic;">
-      <span class="u-mono" style="letter-spacing:0.12em;color:var(--m-info);margin-right:6px;font-style:normal;">→ TOOL WISH</span>{{ r.tool_wishes[:200] }}{% if r.tool_wishes|length > 200 %}…{% endif %}
+      <span class="u-mono" style="letter-spacing:0.12em;color:var(--m-info);margin-right:6px;font-style:normal;">→ TOOL WISH</span>{{ r.tool_wishes | clip(200) }}
     </div>
     {% endif %}
   </div>

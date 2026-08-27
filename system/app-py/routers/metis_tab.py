@@ -11,6 +11,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
+from ui import clip
 from db import db_query, db_scalar, db_execute
 
 router = APIRouter()
@@ -977,7 +978,7 @@ async def who_did_what(request: Request, session_id: str = ""):
             f'<span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.06em;'
             f'color:var(--m-accent);flex-shrink:0;min-width:130px;">{_esc(pretty)}</span>'
             f'<span style="font-size:13px;color:var(--m-ink);line-height:1.4;">{dot}'
-            f'{_esc((r.get("task_summary") or "")[:180])}<span style="{_m}">{meta}</span></span>'
+            f'{_esc(clip(r.get("task_summary") or "", 180))}<span style="{_m}">{meta}</span></span>'
             "</div>"
         )
     return HTMLResponse(
@@ -1551,7 +1552,7 @@ async def metis_memory_debug(request: Request, q: str = "", layers: str = "episo
                     results.append({
                         "layer": "session" if r["event_type"] == "session_summary" else "episodic",
                         "type": r["event_type"],
-                        "content": (r["content"] or "")[:200],
+                        "content": clip(r["content"] or "", 200),
                         "score": round(1 - float(r["distance"]), 4),
                         "date": (r["created_at"] or "")[:10],
                         "raw_distance": round(float(r["distance"]), 4),
@@ -1616,7 +1617,7 @@ async def metis_memory_debug(request: Request, q: str = "", layers: str = "episo
                     results.append({
                         "layer": "session" if r.get("event_type") == "session_summary" else "episodic",
                         "type": r.get("event_type") or "note",
-                        "content": (r.get("content") or "")[:200],
+                        "content": clip(r.get("content") or "", 200),
                         "score": None,
                         "date": (r.get("created_at") or "")[:10],
                         "raw_distance": None,

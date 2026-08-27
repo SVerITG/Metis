@@ -5,7 +5,7 @@
       <div class="u-label u-mb-1" style="letter-spacing:0.2em;">{{ m.date[:10] if m.date else '—' }}</div>
       <div class="u-title">{{ m.title or 'Meeting' }}</div>
       {% if m.participants %}
-      <div class="u-ed" style="font-size:var(--t-meta);margin-top:var(--m-space-1);">{{ m.participants[:50] }}</div>
+      <div class="u-ed" style="font-size:var(--t-meta);margin-top:var(--m-space-1);">{{ m.participants | clip(50) }}</div>
       {% endif %}
     </div>
     {% endfor %}

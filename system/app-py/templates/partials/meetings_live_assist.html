@@ -24,7 +24,7 @@
         {{ live.title }}
       </div>
       <div class="u-label" style="margin-top:var(--m-space-1);">
-        {% if elapsed_min is not none %}{{ elapsed_min }} MIN ELAPSED{% else %}STARTED TODAY{% endif %}{% if live.attendees %} &middot; {{ live.attendees[:60] }}{% endif %}
+        {% if elapsed_min is not none %}{{ elapsed_min }} MIN ELAPSED{% else %}STARTED TODAY{% endif %}{% if live.attendees %} &middot; {{ live.attendees | clip(60) }}{% endif %}
       </div>
     </div>
     {% else %}

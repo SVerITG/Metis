@@ -82,6 +82,27 @@
     {% endfor %}
   </div>
 
+  {#- FIVE ROWS OF CONTROLS stood between the header and the first paper:
+      the tab strip, two rows of topic chips, kind chips beside a period
+      switcher, and a search box. Each row is defensible on its own; the stack
+      is not. Counted from a screenshot, not from the template — in the source
+      they are five separate blocks and none of them looks like too much.
+
+      The topic tabs stay: they are the primary navigation and the thing you
+      actually steer with. Everything else folds behind one line that says what
+      is currently set, so a filtered view never hides the fact that it is
+      filtered. -#}
+  <details class="lit-filters"{% if q or active_kind or window != 'week' %} open{% endif %}>
+    <summary>
+      <span class="fv-chev">▸</span>
+      <span class="u-label">Filters</span>
+      <span class="lit-filters-state">
+        {{ windows[window][1] if windows[window] is defined else window }}
+        {%- if active_kind %} · {{ kind_groups[active_kind][0] if kind_groups[active_kind] is defined else active_kind }}{% endif %}
+        {%- if q %} · “{{ q | clip(30) }}”{% endif %}
+      </span>
+    </summary>
+    <div class="lit-filters-body">
   <!-- ── Window + kind controls ────────────────────────────────────────── -->
   <div class="u-row u-row--between" style="gap:var(--m-space-4);flex-wrap:wrap;margin:var(--m-space-4) 0 var(--m-space-4);">
 
@@ -124,6 +145,9 @@
            hx-include="this"
            style="width:100%;font-family:var(--m-ui);font-size:var(--t-body);padding:var(--m-space-2) var(--m-space-3);color:var(--m-ink);" aria-label="Search within new literature — title, abstract, author, journal">
   </div>
+
+    </div>
+  </details>
 
   <!-- ── List body ─────────────────────────────────────────────────────── -->
   <div id="nl-list"

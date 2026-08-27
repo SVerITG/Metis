@@ -13,7 +13,7 @@
         {% else %}
           <span style="font-size:var(--t-micro);letter-spacing:0.12em;color:var(--m-accent);">UNREAD</span>
         {% endif %}
-        <span class="u-ed u-truncate" style="font-size:var(--t-small);">{{ (b['content'] or '')[:80]|replace('*','') }}…</span>
+        <span class="u-ed u-truncate" style="font-size:var(--t-small);">{{ (b['content'] or '') | clip(80)|replace('*','') }}…</span>
       </summary>
       <div class="ed" style="margin-top:var(--m-space-3);white-space:pre-wrap;font-size:var(--t-body);color:var(--m-text);line-height:1.65;max-width:760px;">{{ b['content'] }}</div>
     </details>

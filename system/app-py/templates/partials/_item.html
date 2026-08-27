@@ -140,7 +140,7 @@
     </h3>
     {% endif %}
 
-    {% if c.summary %}<p class="item-sum">{{ c.summary[:230] }}</p>{% endif %}
+    {% if c.summary %}<p class="item-sum">{{ c.summary | clip(230) }}</p>{% endif %}
   </div>
 
   <div class="item-actions">

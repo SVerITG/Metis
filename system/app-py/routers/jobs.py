@@ -6,6 +6,7 @@ import asyncio
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from ui import clip
 
 router = APIRouter()
 
@@ -165,7 +166,7 @@ async def automation_log_partial():
     for r in rows:
         job_id  = r.get("job_type", "")
         status  = r.get("status", "")
-        details = (r.get("details") or "")[:80]
+        details = clip(r.get("details") or "", 80)
         ran_at  = (r.get("created_at") or "")[:16].replace("T", " ")
         label   = JOB_LABELS.get(job_id, job_id)
         dot_col = {"ok": "var(--m-ok)", "error": "var(--m-alert)", "skip": "var(--m-muted)"}.get(status, "var(--m-line)")

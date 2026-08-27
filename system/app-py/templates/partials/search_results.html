@@ -16,7 +16,7 @@
       {{ p.title or 'Untitled' }}
     </div>
     <div class="u-label">
-      {% if p.authors %}{{ (p.authors or '')[:60] }}{% if (p.authors or '')|length > 60 %}…{% endif %}{% endif %}
+      {% if p.authors %}{{ (p.authors or '') | clip(60) }}{% endif %}
       {% if p.year %} · {{ p.year }}{% endif %}
     </div>
   </a>
@@ -33,7 +33,7 @@
       {{ p.title or 'Untitled' }}
     </div>
     {% if p.description %}
-    <div style="font-size:var(--t-micro);color:var(--m-muted);">{{ (p.description or '')[:80] }}{% if (p.description or '')|length > 80 %}…{% endif %}</div>
+    <div style="font-size:var(--t-micro);color:var(--m-muted);">{{ (p.description or '') | clip(80) }}</div>
     {% endif %}
   </a>
   {% endfor %}

@@ -25,9 +25,9 @@
       {% else %}{{ p.title }}{% endif %}
     </div>
     <div class="u-label u-row" style="margin-top:var(--m-space-1);gap:var(--m-space-3);">
-      {% if p.authors %}<span>{{ p.authors[:60] }}</span>{% endif %}
+      {% if p.authors %}<span>{{ p.authors | clip(60) }}</span>{% endif %}
       {% if p.year %}<span>{{ p.year }}</span>{% endif %}
-      {% if p.source %}<span>{{ p.source[:40] }}</span>{% endif %}
+      {% if p.source %}<span>{{ p.source | clip(40) }}</span>{% endif %}
       {% if p.pdf_url %}
       <a href="{{ p.pdf_url }}" target="_blank"
          style="color:var(--m-ok);text-decoration:none;" rel="noopener">PDF ↗</a>

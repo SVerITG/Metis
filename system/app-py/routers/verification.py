@@ -24,6 +24,7 @@ import logging
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from ui import clip
 
 router = APIRouter()
 log = logging.getLogger("metis.verification")
@@ -57,7 +58,7 @@ async def verify_turn(request: Request):
                             status_code=503)
 
     session_id = (body.get("session_id") or "")[:80]
-    artifact = (body.get("artifact_path") or "")[:400]
+    artifact = clip(body.get("artifact_path") or "", 400)
 
     results = []
     try:

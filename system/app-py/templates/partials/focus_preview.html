@@ -35,7 +35,7 @@
     {% for s in p.samples %}
     <div style="font-size:var(--t-meta);color:var(--m-muted);line-height:1.5;">
       <span class="u-mono">{{ s.date }}</span>
-      — {{ s.title[:110] }}
+      — {{ s.title | clip(110) }}
     </div>
     {% endfor %}
   </div>
