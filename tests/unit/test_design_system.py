@@ -369,3 +369,26 @@ def test_rem_values_land_on_the_scale_too():
         for m in re.finditer(r'style="[^"]*font-size:\s*([\d.]+rem)', f.read_text(encoding="utf-8")):
             bad.append(f"{f.name}: {m.group(1)}")
     assert len(bad) <= 4, f"raw rem font sizes: {len(bad)} — {bad[:5]}"
+
+
+def test_no_attribute_value_contains_another_attribute():
+    """The bug a 455-test suite could not see.
+
+    An accessibility codemod appended `aria-label="…"` before "the closing `>`"
+    — and found the `>` inside `hx-trigger="focus[this.value.length>1]"`. The
+    label landed in the middle of another attribute, the element broke, and raw
+    markup printed across the top of every page in the dashboard.
+
+    Every check passed: 200 OK, template rendered, tests green. The leaked markup
+    even looked like content to the rendered-text comparison. It was found by
+    taking a screenshot and looking at it, which is why `tools/shoot.sh` now
+    exists — and why this test does too.
+    """
+    bad = []
+    for f in _templates():
+        src = f.read_text(encoding="utf-8")
+        for m in re.finditer(r'(\w[\w:-]*)="([^"]*\baria-label="|[^"]*\brole="button")', src):
+            if m.group(1) in ("aria-label", "role"):
+                continue
+            bad.append(f"{f.name}:{src[:m.start()].count(chr(10)) + 1} — inside {m.group(1)!r}")
+    assert not bad, f"attribute spliced into another attribute's value: {bad}"

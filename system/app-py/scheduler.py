@@ -721,6 +721,33 @@ def _db_scalar(sql: str, args: tuple = ()):
         return None
 
 
+def job_nature_briefings() -> None:
+    """Pull new Nature Briefing editions from the public campaign archive.
+
+    Scheduled because the alternative is the pattern this project keeps hitting:
+    working code with no path to it. `empty_state.html` was used once in months,
+    `ui_seen` by one surface, `tasks.due_date` on 1 of 71 rows — every one of
+    them correct and unreached. A scanner nobody calls is the same failure.
+
+    07:40 local: after Nature's overnight send (the archive lags the email by
+    minutes, not hours) and before the morning brief at 08:00, so today's
+    briefing is already in place when the brief is composed.
+    """
+    if _ran_today("nature_briefings"):
+        _log_job("nature_briefings", "skip", "already ran today")
+        return
+    try:
+        from metis_mcp.tools import briefings as B
+        r = B.scan()
+        msg = (f"{r['added']} new edition(s): "
+               + ", ".join(f"{k} x{n}" for k, n in r["by_kind"].items()))             if r["added"] else "nothing new"
+        _log_job("nature_briefings", "ok", msg)
+        log.info("[scheduler] nature briefings — %s", msg)
+    except Exception as exc:
+        _log_job("nature_briefings", "error", f"{type(exc).__name__}: {exc}")
+        log.warning("[scheduler] nature briefings failed: %s", exc)
+
+
 def job_reminder_due() -> None:
     """Fire Windows toasts for reminders whose time has come.
 
@@ -1634,6 +1661,15 @@ def setup_jobs() -> None:
     # enough apart to cost nothing.
     try:
         from apscheduler.triggers.interval import IntervalTrigger
+        scheduler.add_job(
+            job_nature_briefings,
+            CronTrigger(hour=7, minute=40),
+            id="nature_briefings",
+            name="Nature Briefing archive",
+            replace_existing=True,
+            misfire_grace_time=3600,
+            coalesce=True,
+        )
         scheduler.add_job(
             job_reminder_due,
             IntervalTrigger(minutes=5),
