@@ -50,7 +50,7 @@
   {% if items %}
   <div class="board-box-list">
     {% for item in items %}
-    <div class="board-item{% if item.auto_added %} board-item--scan{% endif %}">
+    <div class="board-item{% if item.auto_added %} board-item--scan{% endif %}{% if item._fresh %} is-new is-new--{{ item._fresh }}{% endif %}">
       <button type="button" class="board-star{% if item.starred %} board-star--on{% endif %}"
               hx-post="/api/today/board/{{ board }}/item/{{ item.id }}/star"
               hx-target="#board-{{ board }}" hx-swap="outerHTML"
@@ -64,6 +64,19 @@
         {% endif %}
         {% if item.source %}
         <span class="board-item-source">{{ item.source }}</span>
+        {% endif %}
+        {#- A running story shows once, with the rest reachable. Deleting the
+            earlier instalments would delete information: WHO's weekly Ebola
+            situation reports are each genuinely new. -#}
+        {% if item._n_earlier %}
+        <span class="board-item-series" title="Earlier instalments of this same running story">
+          +{{ item._n_earlier }} earlier
+        </span>
+        {% endif %}
+        {% if item._fresh %}
+        <span class="badge badge--{{ 'accent' if item._fresh == 'today' else 'quiet' }}">
+          {{ 'new today' if item._fresh == 'today' else 'this week' }}
+        </span>
         {% endif %}
       </div>
       <button type="button" class="board-dismiss"

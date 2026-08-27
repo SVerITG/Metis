@@ -1165,3 +1165,41 @@ CREATE TABLE IF NOT EXISTS day_plan_occurrence (
     notified_at  TEXT DEFAULT '',
     UNIQUE(plan_id, occurred_on)
 );
+
+
+-- ---------------------------------------------------------------------------
+-- NATURE BRIEFING (2026-08-27) — the editorial digests, as EDITIONS.
+--
+-- Not a wire feed: someone decided what mattered today and in what order, and
+-- that running order is the value. Shredding an edition into news_briefs would
+-- add its stories to a feed already carrying 3,700 and lose exactly that.
+--
+-- Reached through the public Mailchimp campaign archive linked in the footer of
+-- every issue. One feed carries every variant — Daily, AI & Robotics,
+-- Translational Research, and the translated editions — told apart by the
+-- masthead image's alt text. `lang` exists because Nature publishes the Arabic
+-- Briefing on the same list; it is the daily briefing and belongs in the table,
+-- just not in a panel read in English.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS briefing_edition (
+    edition_id   TEXT PRIMARY KEY,
+    kind         TEXT NOT NULL,
+    lang         TEXT DEFAULT 'en',
+    title        TEXT NOT NULL,
+    published_at TEXT NOT NULL,
+    url          TEXT DEFAULT '',
+    n_items      INTEGER DEFAULT 0,
+    fetched_at   TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_edition_kind ON briefing_edition(kind, published_at DESC);
+
+CREATE TABLE IF NOT EXISTS briefing_item (
+    item_id     TEXT PRIMARY KEY,
+    edition_id  TEXT NOT NULL,
+    ord         INTEGER DEFAULT 0,
+    headline    TEXT NOT NULL,
+    blurb       TEXT DEFAULT '',
+    url         TEXT DEFAULT '',
+    source      TEXT DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_item_edition ON briefing_item(edition_id, ord);

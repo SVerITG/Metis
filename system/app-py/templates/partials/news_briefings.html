@@ -1,0 +1,73 @@
+{#-
+  news_briefings.html — the Nature Briefings, as editions.
+
+  the researcher asked for the Daily and the AI & Robotics briefing to have "special
+  places in the news surface, in the beginning collapsed of course".
+
+  WHY THEY ARE NOT IN THE FEED. A briefing is not a wire source: someone decided
+  what mattered today and in what order, and that running order is the whole
+  value. Shredding an edition into `news_briefs` would add its stories to a feed
+  already carrying 3,700 and lose the only thing it has that the feed does not.
+  So the unit here is an EDITION, and its stories sit under it.
+
+  COLLAPSED, and the count is on the header — folding hides the detail, never
+  the fact. The newest edition's date is right there, so a closed fold still
+  tells you whether today's has arrived.
+
+  Each edition's stories load only when opened (`toggle once`). Six editions of
+  eleven stories each is sixty-six rows nobody asked to see.
+-#}
+{% from "partials/_section.html" import zone %}
+
+{% for b in briefings %}
+{% call zone(b.name, key="news-brief-" ~ b.kind,
+             tail=(b.latest ~ " · " ~ b.n_editions ~ " EDITIONS") if b.latest
+                  else "NOT FETCHED YET") %}
+
+  {% if not b.editions %}
+  <div class="panel empty empty--panel">
+    <p class="empty-title">No editions stored yet</p>
+    <p class="empty-body">
+      Metis reads these from Nature's public campaign archive — the same link
+      printed in the footer of every issue. Press refresh and they will appear.
+    </p>
+    <button type="button" class="btn btn--soft btn--sm"
+            hx-post="/api/news/briefings/refresh"
+            hx-target="#news-briefings" hx-swap="outerHTML"
+            hx-indicator="#brief-spin-{{ b.kind }}">Fetch now</button>
+    <span id="brief-spin-{{ b.kind }}" class="htmx-indicator fb-spin">reading the archive…</span>
+  </div>
+  {% else %}
+
+  <div class="panel panel--flush panel--clip">
+    {% for e in b.editions %}
+    <details class="ed-fold">
+      <summary>
+        <span class="fv-chev">▸</span>
+        <span class="ed-date">{{ e.published_at[:10] }}</span>
+        <span class="ed-title">{{ e.title }}</span>
+        <span class="ed-count">{{ e.n_items }}</span>
+      </summary>
+      <div class="ed-body"
+           hx-get="/api/partial/news/briefing/{{ e.edition_id }}"
+           hx-trigger="toggle once from:closest details"
+           hx-swap="innerHTML">
+        <span class="fb-spin">opening…</span>
+      </div>
+    </details>
+    {% endfor %}
+  </div>
+
+  <div class="u-row u-row--wrap" style="margin-top:var(--m-space-2);">
+    <a class="btn btn--ghost btn--sm" href="{{ b.editions[0].url }}"
+       target="_blank" rel="noopener">Read the latest in full</a>
+    <button type="button" class="btn btn--ghost btn--sm"
+            hx-post="/api/news/briefings/refresh"
+            hx-target="#news-briefings" hx-swap="outerHTML"
+            hx-indicator="#brief-spin-{{ b.kind }}">Check for new</button>
+    <span id="brief-spin-{{ b.kind }}" class="htmx-indicator fb-spin">reading the archive…</span>
+  </div>
+  {% endif %}
+
+{% endcall %}
+{% endfor %}

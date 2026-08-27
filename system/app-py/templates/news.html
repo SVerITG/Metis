@@ -36,6 +36,13 @@
 
   <!-- ===== Tabs + body. Every tab swaps this one container, so the masthead
              never re-renders and switching costs a single request. ===== -->
+  {#- The briefings come FIRST: they are the edited read, and everything
+    below is the raw feed. Both folds start closed. -#}
+  <div id="news-briefings"
+       hx-get="/api/partial/news/briefings"
+       hx-trigger="load"
+       hx-swap="outerHTML"></div>
+
   <div id="news-tab-body"
        hx-get="/api/partial/news/tab?tab=overview&period=week"
        hx-trigger="load"

@@ -1,0 +1,31 @@
+{#- The stories in one edition, in the editor's order. Loaded when the edition
+    is opened, never before: six editions of eleven stories is sixty-six rows
+    nobody asked to see. -#}
+{% from "partials/_item.html" import actions, tags %}
+{% if not items %}
+<p class="empty empty--quiet" style="padding:var(--m-space-3) var(--m-space-4);">
+  This edition's stories could not be read from the archive — the full issue is
+  still one click away above.
+</p>
+{% else %}
+<ol class="ed-items">
+  {% for it in items %}
+  {% set st = (states or {}).get(it.item_id) %}
+  <li class="ed-item{% if st and st.state %} ed-item--{{ st.state }}{% endif %}">
+    <div class="ed-item-body">
+      <h4 class="ed-item-head">
+        {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener">{{ it.headline }}</a>
+        {% else %}{{ it.headline }}{% endif %}
+      </h4>
+      {% if it.blurb %}<p class="ed-item-blurb">{{ it.blurb }}</p>{% endif %}
+      {% if it.source %}<span class="u-label">{{ it.source }}</span>{% endif %}
+      {{ tags(st) }}
+    </div>
+    <div class="ed-item-acts">
+      {{ actions('news', it.item_id, it.headline, it.url, it.source or 'Nature Briefing',
+                 st, '#ed-body-' ~ it.edition_id, 'briefing:' ~ it.edition_id, 'innerHTML') }}
+    </div>
+  </li>
+  {% endfor %}
+</ol>
+{% endif %}
