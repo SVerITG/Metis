@@ -35,7 +35,7 @@ WINTMP="C:\\Users\\${USER}\\AppData\\Local\\Temp"
 LINTMP="/mnt/c/Users/${USER}/AppData/Local/Temp"
 
 "$CHROME" --headless=new --disable-gpu --hide-scrollbars \
-          --virtual-time-budget=4000 \
+          --virtual-time-budget=9000 \
           --window-size="${WIDTH},${HEIGHT}" \
           --screenshot="${WINTMP}\\${OUT}" \
           "http://127.0.0.1:${PORT}${PATH_}" 2>&1 \
