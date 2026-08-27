@@ -49,10 +49,12 @@
       <div class="u-label" style="margin-top:var(--m-space-2);letter-spacing:0.04em;">
         Deep context &middot; ready to pick up
       </div>
-      {% elif item.memory and item.memory.level == 'shallow' %}
-      <div class="u-mono" style="margin-top:var(--m-space-2);color:var(--m-muted-soft);letter-spacing:0.04em;">
-        Shallow context &middot; may need ramp-up
-      </div>
+      {#- "Shallow context · may need ramp-up" used to render here. In a
+          screenshot it appeared on ALL SIX cards, which is the tell: a line
+          repeated on every item is not information, it is furniture. It was
+          meant to mark the exception and was marking the rule. The memory
+          count in the badge above already says the same thing, with a number.
+          "Deep context · ready to pick up" stays, because it is rare. -#}
       {% endif %}
     </div>
     {% endfor %}

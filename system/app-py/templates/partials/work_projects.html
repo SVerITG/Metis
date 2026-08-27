@@ -29,23 +29,30 @@
       <div class="u-grow u-title u-title--lg" onclick="openProjectDetail('{{ p.id }}')"
            style="font-weight:500;line-height:1.2;cursor:pointer;"
            title="Open project details" role="button" tabindex="0">{{ p.title }}</div>
-      <!-- Category chip -->
-      {% if p.category %}
-      <span class="chip chip--plain u-fixed" style="font-size:var(--t-micro);">{{ p.category[:16] }}</span>
+      {#- Four independent fields — category, domain, tags and project_type —
+          each rendered its own chip, and they overlap: a project filed as
+          category "software" with project_type "software" showed
+          "SOFTWARE SOFTWARE". Seen in a screenshot; invisible in the template,
+          where the four blocks sit apart and each looks correct.
+
+          Collected and de-duplicated case-insensitively, ARTICLE kept separate
+          because it is a state rather than a label. -#}
+      {% set _chips = [] %}
+      {% if p.category %}{% set _ = _chips.append(p.category[:16]) %}{% endif %}
+      {% if p.domain %}{% set _ = _chips.append(p.domain[:16]) %}{% endif %}
+      {% for tag in (p.tags_list or [])[:3] %}{% set _ = _chips.append(tag[:14]) %}{% endfor %}
+      {% if p.project_type and p.project_type not in ('research', 'article') %}
+        {% set _ = _chips.append(p.project_type) %}
       {% endif %}
-      <!-- Domain chip -->
-      {% if p.domain %}
-      <span class="chip chip--info u-fixed" style="font-size:var(--t-micro);">{{ p.domain[:16] }}</span>
-      {% endif %}
-      <!-- Tag chips (multiple) -->
-      {% for tag in (p.tags_list or [])[:3] %}
-      <span class="chip chip--plain u-fixed" style="font-size:var(--t-micro);opacity:.8;">{{ tag[:14] }}</span>
+      {% set _seen = [] %}
+      {% for c in _chips %}
+        {% if c and c.lower() not in _seen %}
+          {% set _ = _seen.append(c.lower()) %}
+          <span class="chip chip--plain u-fixed" style="font-size:var(--t-micro);">{{ c }}</span>
+        {% endif %}
       {% endfor %}
-      <!-- Type / article badge -->
       {% if p.launcher_type == 'article' or p.project_type == 'article' %}
       <span class="chip u-fixed" style="font-size:var(--t-micro);background:var(--m-ochre-wash);color:var(--m-ochre-deep);border:1px solid var(--m-ochre-soft);">ARTICLE</span>
-      {% elif p.project_type and p.project_type != 'research' %}
-      <span class="chip chip--plain u-fixed" style="font-size:var(--t-micro);">{{ p.project_type | upper }}</span>
       {% endif %}
       <!-- Notes toggle -->
       <button class="u-fixed btn btn--ghost" onclick="toggleProjectNotes('{{ p.id }}')"

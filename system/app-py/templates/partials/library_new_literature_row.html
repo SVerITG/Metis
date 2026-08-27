@@ -62,7 +62,7 @@
     {% endif %}
 
     {% if item.relevance and item.relevance > 0 %}
-    <span class="u-mono" title="Closeness to your own corpus, 0–1. Computed locally against your library — not a citation count or an impact score."
+    <span class="u-mono nl-score" title="Closeness to your own corpus, 0–1. Computed locally against your library — not a citation count or an impact score."
           style="color:var(--m-muted);margin-left:auto;">
       {{ '%.2f' | format(item.relevance) }}
     </span>
@@ -97,11 +97,13 @@
       {{ item.abstract | striptags | truncate(1800, True, '…') }}
     </div>
   </details>
-  {% else %}
-  <div class="u-mono" style="letter-spacing:0.1em;color:var(--m-muted);margin:var(--m-space-1) 0 var(--m-space-2);"
-       title="This source's feed carried no abstract. Some feeds ship titles only.">
-    NO ABSTRACT FROM SOURCE
-  </div>
+  {#- No `{% else %}`. "NO ABSTRACT FROM SOURCE" used to print as a full line on
+      every abstract-less paper, and in a screenshot of the Library that was
+      most of them — six of nine visible rows saying the same thing about
+      nothing. An absence does not need announcing at the same weight as
+      content: the row simply has no abstract, which is visible from its
+      absence. The explanation survives where it is useful, on the ABSTRACT
+      control's own title attribute. -#}
   {% endif %}
 
   <!-- Actions -->
@@ -143,24 +145,22 @@
     <a class="u-rule u-mono" href="/api/library/pdf/new/{{ item.id }}" target="_blank" rel="noopener"
        style="letter-spacing:0.08em;color:#2e7d4f;text-decoration:none;">OPEN PDF</a>
     {% endif %}
-  </div>
 
-  {#- The reading stack, ALONGSIDE the acquisition controls above — not instead
-      of them, and the distinction is real rather than pedantic:
+    {#- ONE row, not two.
 
-        "Add to library"  ACQUIRES. It fetches the PDF where that is legal,
-                          catalogues the item and pushes it to Zotero.
-        "Read later"      BOOKMARKS. It says you intend to read this, nothing
-                          more, and costs nothing.
+        This used to render the stack's icon buttons on a SECOND line beneath
+        the acquisition buttons. The distinction is real — "Add to library"
+        ACQUIRES (fetches the PDF, catalogues it, pushes to Zotero) while "Read
+        later" only BOOKMARKS — but a screenshot settled the argument about how
+        to SHOW it: two rows of controls per paper, one text and one icons,
+        doing things that sound alike, is worse than the ambiguity it avoided.
 
-      They sound similar and are not the same act. Collapsing them would either
-      make every bookmark trigger a download, or make "add to library" stop
-      meaning the library holds it. This is also why `set_state` never writes
-      `added_at`: that column is the acquisition's to claim. -#}
-  <div style="margin-top:var(--m-space-2);">
+        One row. Acquisition first because it is the consequential act, then a
+        hairline, then the quiet triage icons. -#}
+    <span class="lit-sep" aria-hidden="true"></span>
     {{ tags(st) }}
     {{ actions('paper', item.id, item.title,
-              item.source_url or ('https://doi.org/' ~ item.doi if item.doi else ''),
-              item.journal or '', st, '#nl-row-' ~ item.id, '', 'outerHTML') }}
+               item.source_url or ('https://doi.org/' ~ item.doi if item.doi else ''),
+               item.journal or '', st, '#nl-row-' ~ item.id, '', 'outerHTML') }}
   </div>
 </div>

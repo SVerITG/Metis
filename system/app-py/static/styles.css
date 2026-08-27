@@ -4517,3 +4517,16 @@ tr:hover .due-chip--none, li:hover .due-chip--none, .item:hover .due-chip--none,
   font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted);
   border-bottom: 1px dotted var(--m-rule); cursor: help; white-space: nowrap;
 }
+
+/* A hairline between two kinds of control in one row: the consequential act on
+   the left, the quiet triage on the right. Cheaper than a second row, which is
+   what this replaced. */
+.lit-sep {
+  display: inline-block; width: 1px; height: 16px; flex-shrink: 0;
+  background: var(--m-rule); margin: 0 var(--m-space-2);
+}
+
+/* The relevance score printed at the right of every literature row. Kept —
+   ranking IS the surface's argument — but demoted: a number repeated down a
+   column at full contrast competes with the titles it is ranking. */
+.nl-score { color: var(--m-muted-soft); font-variant-numeric: tabular-nums; }

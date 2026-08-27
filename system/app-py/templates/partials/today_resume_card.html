@@ -38,8 +38,12 @@
     </div>
     {% endif %}
     <div class="u-row u-row--wrap">
+      {#- One chip per AGENT, not per run. Four runs of `metis` in a session
+          rendered "metis metis metis metis", which reads as a rendering fault
+          rather than as four pieces of work. -#}
       {% if agents %}
-      {% for a in agents %}
+      {% set _seen = [] %}
+      {% for a in agents if a.agent_slug not in _seen and _seen.append(a.agent_slug) is none %}
       <span class="u-label u-label--accent" style="letter-spacing:0.08em;padding:var(--m-space-1) var(--m-space-2);border-radius:var(--m-radius-pill);background:var(--m-accent-wash);">{{ a.agent_slug }}</span>
       {% endfor %}
       {% endif %}
