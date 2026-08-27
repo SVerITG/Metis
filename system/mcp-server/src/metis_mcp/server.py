@@ -77,6 +77,11 @@ TOOL_MODULES = [
     # FOCUS — user-defined surfaces for a subject you want to stay current on.
     # A lens, never a container: it owns a query, not the content it shows.
     "focus",
+    # NATURE BRIEFING — the editorial digests, as EDITIONS rather than a wire
+    # feed. Reached through the public Mailchimp campaign archive that every
+    # issue links to in its own footer; one feed carries every variant, told
+    # apart by the masthead alt text.
+    "briefings",
     # READING STACK — one triage store for everything that arrives: news,
     # papers, anything. Before it, papers had triage on the Library surface and
     # News had none at all — seven tabs, 337 links, zero actions — so "read it

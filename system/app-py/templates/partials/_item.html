@@ -105,7 +105,7 @@
   meaning something subtly different in the compact view six months from now.
 -#}
 {% macro item(kind, c, st, target, back='', layout='row', swap='innerHTML') %}
-<article class="item{% if layout == 'card' %} item--card{% endif %}{% if st and st.state %} item--{{ st.state }}{% endif %}"
+<article class="item{% if layout == 'card' %} item--card{% endif %}{% if st and st.state %} item--{{ st.state }}{% endif %}{% if c._fresh %} is-new is-new--{{ c._fresh }}{% endif %}"
          data-subj="{{ c.subject or '' }}">
   {% if layout == 'card' %}
     <div class="item-media">
@@ -126,6 +126,10 @@
       {% if c.close %}<span class="badge badge--accent">your work</span>{% endif %}
       {% if c.source or c.domain %}<span>{{ c.source or c.domain }}</span>{% endif %}
       {% if c.when %}<span>{{ c.when }}</span>{% endif %}
+      {% if c._fresh %}<span class="badge badge--{{ 'accent' if c._fresh == 'today' else 'quiet' }}">{{ 'new today' if c._fresh == 'today' else 'this week' }}</span>{% endif %}
+      {#- One line per running story, with the earlier instalments reachable
+          rather than deleted. -#}
+      {% if c._n_earlier %}<span class="board-item-series" title="Earlier instalments of this same story">+{{ c._n_earlier }} earlier</span>{% endif %}
       {{ tags(st) }}
     </div>
 

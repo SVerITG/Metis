@@ -4452,3 +4452,68 @@ tr:hover .due-chip--none, li:hover .due-chip--none, .item:hover .due-chip--none,
 .due-opt--pick { cursor: pointer; }
 .due-opt--clear { color: var(--m-muted); border-top: 1px solid var(--m-rule-soft);
                   margin-top: 3px; padding-top: 7px; border-radius: 0; }
+
+/* ── Nature Briefing: editions, not a feed ─────────────────────────────────
+   A briefing has a running order that means something. So the unit on screen
+   is the EDITION, and its stories sit beneath it — numbered, because the order
+   is the editor's judgement and that is information, not decoration. */
+.ed-fold { border-bottom: 1px solid var(--m-rule-soft); }
+.ed-fold:last-child { border-bottom: 0; }
+.ed-fold > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: baseline;
+  gap: var(--m-space-3); padding: var(--m-space-3) var(--m-space-4);
+}
+.ed-fold > summary::-webkit-details-marker { display: none; }
+.ed-fold > summary:hover { background: var(--m-surface-2); }
+.ed-fold[open] > summary .fv-chev { transform: rotate(90deg); }
+.ed-date { font-family: var(--m-mono); font-size: var(--t-micro);
+           color: var(--m-muted); font-variant-numeric: tabular-nums;
+           white-space: nowrap; }
+.ed-title { font-family: var(--m-display); font-size: var(--t-small);
+            color: var(--m-ink); flex: 1; min-width: 0; }
+.ed-count { font-family: var(--m-mono); font-size: var(--t-micro);
+            color: var(--m-muted); }
+.ed-body { padding: 0 var(--m-space-4) var(--m-space-3); }
+
+.ed-items { list-style: none; margin: 0; padding: 0; counter-reset: story; }
+.ed-item {
+  counter-increment: story;
+  display: grid; grid-template-columns: 22px minmax(0,1fr) auto;
+  gap: var(--m-space-3); align-items: start;
+  padding: var(--m-space-3) 0;
+}
+.ed-item + .ed-item { border-top: 1px solid var(--m-rule-soft); }
+.ed-item::before {
+  content: counter(story); font-family: var(--m-mono);
+  font-size: var(--t-micro); color: var(--m-muted-soft);
+  font-variant-numeric: tabular-nums; padding-top: 2px;
+}
+.ed-item--declined { opacity: .45; }
+.ed-item--read { opacity: .66; }
+.ed-item-head { margin: 0; font-family: var(--m-display);
+                font-size: var(--t-small); line-height: 1.4; color: var(--m-ink); }
+.ed-item-head a { color: inherit; text-decoration: none;
+                  border-bottom: 1px solid transparent; }
+.ed-item-head a:hover { color: var(--m-accent); border-bottom-color: var(--m-accent); }
+.ed-item-blurb { margin: var(--m-space-1) 0 0; font-size: var(--t-meta);
+                 line-height: 1.55; color: var(--m-text); }
+@media (hover: hover) {
+  .ed-item .acts { opacity: 0; transition: opacity 120ms; }
+  .ed-item:hover .acts, .ed-item:focus-within .acts { opacity: 1; }
+}
+
+/* ── New, and running stories ──────────────────────────────────────────────
+   the researcher asked for new content highlighted AND on top. Both, because they are
+   different instructions: sorting by date already puts the newest first, but a
+   three-day-old item and a three-month-old one look identical in a list until
+   something says which arrived this week.
+
+   The mark is a left edge, not a background wash — a wash on every new row in a
+   list that is mostly new turns the whole panel a different colour and stops
+   meaning anything. */
+.is-new { box-shadow: inset 2px 0 0 var(--m-accent); padding-left: 8px; }
+.is-new--week { box-shadow: inset 2px 0 0 var(--m-rule-strong); }
+.board-item-series {
+  font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted);
+  border-bottom: 1px dotted var(--m-rule); cursor: help; white-space: nowrap;
+}

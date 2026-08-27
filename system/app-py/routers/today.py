@@ -3662,13 +3662,28 @@ def _board_context(board: str, show_all: bool = False) -> dict:
     """Build template context for a single board box."""
     _ensure_board_table()
     limit = 50 if show_all else 5
-    items = db_query(
+
+    # Fetch WIDE, then fold. Collapsing after a LIMIT 5 would show five rows
+    # that turn out to be two stories — which is precisely what the researcher was seeing
+    # with Ebola: WHO publishes a weekly situation report, so three of the five
+    # slots were instalments of one running story.
+    raw = db_query(
         "SELECT id, title, url, source, starred, auto_added, created_at "
         "FROM today_board_items "
         "WHERE board=? AND dismissed=0 "
-        "ORDER BY starred DESC, created_at DESC LIMIT ?",
-        (board, limit),
+        "ORDER BY starred DESC, created_at DESC LIMIT 120",
+        (board,),
     ) or []
+    try:
+        import freshness
+        folded = freshness.collapse([dict(r) for r in raw])
+    except Exception as _exc:
+        _log.warning("board %s: freshness unavailable: %s", board, _exc)
+        folded = [dict(r) for r in raw]
+    # Starred stays on top of everything — an explicit pin outranks recency.
+    folded.sort(key=lambda r: 0 if r.get("starred") else 1)
+    items = folded[:limit]
+    n_folded = len(raw) - len(folded)
     total = db_scalar(
         "SELECT COUNT(*) FROM today_board_items WHERE board=? AND dismissed=0",
         (board,),
@@ -3678,6 +3693,8 @@ def _board_context(board: str, show_all: bool = False) -> dict:
         "board": board,
         "items": items,
         "total": total,
+        "shown": len(folded),
+        "n_folded": n_folded,
         "show_all": show_all,
     }
 
@@ -5245,6 +5262,15 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
         subfilters = []
 
     counts = _news_tab_counts(period)
+
+    # Fold BEFORE the cap. Collapsing after slicing would show sixty rows that
+    # turn out to be forty stories, which is the same mistake the boards were
+    # making with WHO's weekly Ebola situation reports.
+    try:
+        import freshness
+        picked = freshness.collapse(picked, title_field="title", ts_field="_ts")
+    except Exception as _exc:
+        _log.warning("news tab: freshness unavailable: %s", _exc)
     shown = picked[:60]
 
     # One query for all 60 cards, not one per card. Without this the grid would
@@ -5499,3 +5525,74 @@ async def news_digest(request: Request, period: str = "week"):
       {f'<p style="margin:0;font-size:13px;color:var(--m-muted);line-height:1.5;">Closest to your work: <span style="color:var(--m-ink);">{lead[:150]}</span></p>' if lead else ''}
       {f'<ul style="margin:6px 0 0 16px;padding:0;font-size:12px;color:var(--m-muted);">{others}</ul>' if others else ''}
     </div>""")
+
+
+# ---------------------------------------------------------------------------
+# Nature Briefing — editions, not a feed
+# ---------------------------------------------------------------------------
+# the researcher asked for the Daily and AI & Robotics briefings to have "special places
+# in the news surface, in the beginning collapsed of course". They are editions:
+# someone decided what mattered today and in what order, and that running order
+# is the value. Shredding them into `news_briefs` would add their stories to a
+# feed already carrying 3,700 and lose exactly that.
+
+def _briefing_panels() -> list[dict]:
+    """The surfaced briefings, newest edition first.
+
+    English only by default — Nature publishes translated editions on the same
+    list, and the Arabic Briefing arriving in a panel the researcher reads in English is
+    noise, not reach. `briefings.editions(lang="")` still returns everything.
+    """
+    try:
+        from metis_mcp.tools import briefings as B
+    except Exception as exc:
+        _log.warning("briefings module unavailable: %s", exc)
+        return []
+    names = {slug: name for _needle, slug, name in B.KINDS}
+    out = []
+    for kind in B.SURFACED:
+        eds = B.editions(kind, 6)
+        out.append({
+            "kind": kind,
+            "name": names.get(kind, kind),
+            "editions": eds,
+            "n_editions": len(eds),
+            "latest": eds[0]["published_at"][:10] if eds else "",
+        })
+    return out
+
+
+@router.get("/api/partial/news/briefings", response_class=HTMLResponse)
+async def news_briefings(request: Request):
+    return templates.TemplateResponse(
+        request, "partials/news_briefings.html",
+        {"briefings": _briefing_panels()})
+
+
+@router.get("/api/partial/news/briefing/{edition_id}", response_class=HTMLResponse)
+async def news_briefing_items(request: Request, edition_id: str):
+    """One edition's stories, fetched when the reader opens it."""
+    from metis_mcp.tools import briefings as B
+    items = B.items_of(edition_id)
+    try:
+        from metis_mcp.tools import stack as _stack
+        states = _stack.states_for("news", [i["item_id"] for i in items])
+    except Exception:
+        states = {}
+    return templates.TemplateResponse(
+        request, "partials/news_briefing_items.html",
+        {"items": items, "states": states, "edition_id": edition_id})
+
+
+@router.post("/api/news/briefings/refresh", response_class=HTMLResponse)
+async def news_briefings_refresh(request: Request):
+    """Pull the archive feed now, then redraw both panels."""
+    try:
+        from metis_mcp.tools import briefings as B
+        r = B.scan()
+        _log.info("briefings: %s", r)
+    except Exception as exc:
+        _log.warning("briefings refresh failed: %s", exc)
+    return templates.TemplateResponse(
+        request, "partials/news_briefings.html",
+        {"briefings": _briefing_panels()})
