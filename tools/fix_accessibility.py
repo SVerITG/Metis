@@ -35,6 +35,40 @@ TPL = ROOT / "system" / "app-py" / "templates"
 JINJA = re.compile(r"\{\{|\{%")
 
 
+def _insert_attr(tag: str, attr: str) -> str:
+    """Add an attribute to a tag, safely.
+
+    The first version appended before `tag[-1]` — "the closing angle bracket".
+    But `<input ... hx-trigger="focus[this.value.length>1]">` has a `>` INSIDE an
+    attribute value, and the regex that matched the tag stopped there. So the
+    label was spliced into the middle of `hx-trigger`, which broke the element
+    and dumped raw markup onto every page of the dashboard.
+
+    No test caught it: the page still returned 200, the template still rendered,
+    and the leaked text looked like content. It was found by taking a screenshot
+    and looking at it.
+
+    So: find the real end of the tag by scanning OUTSIDE quoted values.
+    """
+    in_quote = None
+    for i, ch in enumerate(tag):
+        if in_quote:
+            if ch == in_quote:
+                in_quote = None
+        elif ch in "\"'":
+            in_quote = ch
+        elif ch == ">":
+            end = i
+            break
+    else:
+        return tag                     # no unquoted '>' — leave it alone
+    head = tag[:end].rstrip()
+    if head.endswith("/"):
+        head = head[:-1].rstrip()
+        return f"{head} {attr} />"
+    return f"{head} {attr}>"
+
+
 def fix_outline(s: str, stats: Counter) -> str:
     """Remove inline `outline:none`.
 
@@ -75,7 +109,7 @@ def fix_input_labels(s: str, stats: Counter, report: list, name: str) -> str:
         else:
             label = html.unescape(label).rstrip("… .")
             stats["aria-label from placeholder"] += 1
-        return tag[:-1].rstrip() + f' aria-label="{label}">'
+        return _insert_attr(tag, f'aria-label="{label}"')
     return re.sub(r"<input\b[^>]*>", sub, s)
 
 
@@ -91,14 +125,14 @@ def fix_clickable(s: str, stats: Counter) -> str:
         if "tabindex" in tag or 'role="' in tag:
             return tag
         stats["clickable div made reachable"] += 1
-        return tag[:-1].rstrip() + ' role="button" tabindex="0">'
+        return _insert_attr(tag, 'role="button" tabindex="0"')
     return re.sub(r"<(?:div|span)\b[^>]*\bonclick=[^>]*>", sub, s)
 
 
 def fix_blank_rel(s: str, stats: Counter) -> str:
     def sub(m):
         stats['rel="noopener" added'] += 1
-        return m.group(0)[:-1].rstrip() + ' rel="noopener">'
+        return _insert_attr(m.group(0), 'rel="noopener"')
     return re.sub(r'<a\b[^>]*target="_blank"(?![^>]*rel=)[^>]*>', sub, s)
 
 
