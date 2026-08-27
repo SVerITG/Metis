@@ -325,6 +325,7 @@ async def new_literature_panel(
             "kind_groups": KIND_GROUPS, "active_kind": kind,
             "items": items, "total": total, "counts": counts,
             "states": _stack_states(items),
+            "whatsnew_lit": _whats_new_lit(),
             "q": q, "show": show, "page": page,
             "total_pages": max(1, (total + PAGE_SIZE - 1) // PAGE_SIZE),
             "last_reviewed": last[:16].replace("T", " ") if last else "",
@@ -332,6 +333,21 @@ async def new_literature_panel(
                 "SELECT COUNT(*) FROM new_publications", default=0) or 0,
         },
     )
+
+
+def _whats_new_lit() -> dict | None:
+    """Papers that have arrived since this surface was last marked seen.
+
+    Backed by `ui_seen`, the same table Today and News use — the point of the
+    shared strip is that "since you last looked" means one thing across the
+    application rather than four.
+    """
+    try:
+        import ui
+        return ui.whats_new("library", "new_publications", "discovered_at",
+                            where="COALESCE(dismissed_at,'') = ''")
+    except Exception:
+        return None
 
 
 def _stack_states(items) -> dict:

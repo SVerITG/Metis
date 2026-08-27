@@ -1,3 +1,4 @@
+{% from "partials/_empty.html" import panel as empty_panel %}
 {% from "partials/_section.html" import sec_label %}
 {# today_focus.html — Merged dismissable focus cards (up to 6 items).
    Context: items (list of dicts with item_type, item_id, title, subtitle, badge, badge_color). #}
@@ -32,10 +33,6 @@
   </div>
 {% else %}
   {{ sec_label("Today's focus", tail="ALL CLEAR") }}
-  <div class="panel u-mb-6 panel--lg">
-    <div class="ed u-ed" style="font-size:var(--t-body);">
-      No open tasks or active ideas right now. Star a task or capture an idea to fill this section.
-    </div>
-  </div>
+  {{ empty_panel("No open tasks or active ideas right now", "Star a task or capture an idea to fill this section.") }}
 {% endif %}
 </div>

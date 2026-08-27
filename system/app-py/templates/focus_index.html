@@ -1,3 +1,4 @@
+{% from "partials/_empty.html" import panel as empty_panel %}
 {% extends "base.html" %}
 {% from "partials/_section.html" import sec_label %}
 {% block title %}Focus areas{% endblock %}
@@ -40,11 +41,7 @@
   <div>
     {{ sec_label("Your focus areas") }}
     {% if not areas %}
-    <div class="panel panel--md">
-      <p style="margin:0;font-size:var(--t-small);color:var(--m-muted);">
-        None yet. Create one below.
-      </p>
-    </div>
+    {{ empty_panel("None yet", "Create one below.") }}
     {% else %}
     <div class="panel" style="padding:var(--m-space-1) 0;">
       {% for a in areas %}

@@ -4407,3 +4407,48 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   [style*="metis-live-pulse"] { animation: none !important; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AN OPTIONAL TARGET DATE
+
+   The constraint is the design: not knowing when you will get to something is
+   the normal case. So an undated task is UNDATED, never late — no red, no
+   "overdue", no default. The control is quiet until you use it.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.due { position: relative; display: inline-flex; }
+.due-chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: .06em;
+  padding: 2px 8px; border-radius: var(--m-radius-pill);
+  border: 1px solid transparent; background: transparent;
+  color: var(--m-muted); cursor: pointer; white-space: nowrap;
+}
+/* Undated is the quiet state — it appears on hover, so a list of undated tasks
+   is a list of tasks, not a column of prompts to fill something in. */
+.due-chip--none { opacity: 0; transition: opacity 120ms; }
+tr:hover .due-chip--none, li:hover .due-chip--none, .item:hover .due-chip--none,
+.due-chip--none:focus-visible { opacity: 1; }
+@media (hover: none) { .due-chip--none { opacity: .6; } }
+.due-chip--set { border-color: var(--m-rule); color: var(--m-ink); }
+.due-chip:hover { border-color: var(--m-accent); color: var(--m-accent); }
+/* Late is the ONLY red, and only ever on a task that actually claimed a date. */
+.due-late { color: var(--m-alert); }
+
+.due-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 40;
+  display: flex; flex-direction: column; min-width: 150px; padding: 4px;
+  background: var(--m-surface); border: 1px solid var(--m-rule);
+  border-radius: var(--m-radius); box-shadow: 0 6px 20px rgba(0,0,0,.10);
+}
+.due-menu.is-hidden { display: none; }
+.due-opt {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 5px 9px; border: 0; border-radius: var(--m-radius-sm);
+  background: transparent; color: var(--m-ink); cursor: pointer;
+  font-size: var(--t-small); text-align: left; white-space: nowrap;
+}
+.due-opt:hover { background: var(--m-surface-2); }
+.due-opt--pick input { width: 0; opacity: 0; position: absolute; }
+.due-opt--pick { cursor: pointer; }
+.due-opt--clear { color: var(--m-muted); border-top: 1px solid var(--m-rule-soft);
+                  margin-top: 3px; padding-top: 7px; border-radius: 0; }

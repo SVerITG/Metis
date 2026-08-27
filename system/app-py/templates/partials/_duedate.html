@@ -1,0 +1,82 @@
+{#-
+  _duedate.html — an optional target date, quick enough to be worth setting.
+
+  the researcher, 2026-08-27: *"we can give the option to assign a date to a task … but
+  dont make it obligatory, because often i dont know when i will work on
+  something."*
+
+  THE CONSTRAINT IS THE DESIGN. Not knowing when you will get to something is
+  the NORMAL case, not a gap to nag about. So an undated task is undated, never
+  late — and the styling says so: no red, no "overdue", no default.
+
+  WHY THE FIELD SAT EMPTY. `tasks.due_date` has existed all along and 70 of 71
+  open tasks had nothing in it. The control was a bare `<input type="date">`,
+  which asks you to open a picker and know an exact day. But a date is not
+  usually decided that way — it is decided as "this week", "next week",
+  "tomorrow". Those are one click here, and the picker is still there for when
+  you do know.
+
+  `created_at` is NOT this. It is written automatically on every row and always
+  has been; the question "completion date or creation date?" answers itself from
+  the schema. What was missing was a TARGET, and a way to say it loosely.
+-#}
+
+{% macro due_control(task_id, due='', target='closest .due', swap='outerHTML', compact=false) %}
+<span class="due{% if compact %} due--compact{% endif %}" data-task="{{ task_id }}">
+  {% if due %}
+    <button type="button" class="due-chip due-chip--set"
+            title="Change or clear this date"
+            onclick="metis.due.open(this)">{{ due_label(due) }}</button>
+  {% else %}
+    <button type="button" class="due-chip due-chip--none"
+            title="Give this a target date — optional"
+            onclick="metis.due.open(this)">
+      <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><use href="#i-date"/></svg>
+      {%- if not compact %}<span>When?</span>{% endif %}
+    </button>
+  {% endif %}
+
+  <span class="due-menu is-hidden" role="group" aria-label="Set a target date">
+    {#- Relative first, because that is how a date actually gets decided. The
+        picker is for when you already know. -#}
+    {% for value, label in [('today', 'Today'), ('tomorrow', 'Tomorrow'),
+                            ('this-week', 'This week'), ('next-week', 'Next week'),
+                            ('this-month', 'This month')] %}
+    <button type="button" class="due-opt"
+            hx-post="/api/task/{{ task_id }}/due"
+            hx-vals='{"when": "{{ value }}"}'
+            hx-target="{{ target }}" hx-swap="{{ swap }}">{{ label }}</button>
+    {% endfor %}
+    <label class="due-opt due-opt--pick">
+      <span>Pick…</span>
+      <input type="date" value="{{ due }}" aria-label="Target date"
+             hx-post="/api/task/{{ task_id }}/due"
+             hx-trigger="change"
+             hx-vals='js:{when: event.target.value}'
+             hx-target="{{ target }}" hx-swap="{{ swap }}">
+    </label>
+    {% if due %}
+    <button type="button" class="due-opt due-opt--clear"
+            hx-post="/api/task/{{ task_id }}/due"
+            hx-vals='{"when": ""}'
+            hx-target="{{ target }}" hx-swap="{{ swap }}"
+            title="Back to undated — not late, just undated">Clear</button>
+    {% endif %}
+  </span>
+</span>
+{% endmacro %}
+
+
+{#- How a date reads once set. Relative near the present, absolute further out —
+    "in 3 days" is easier to act on than a date you have to compare against
+    today, but "in 47 days" is not, so past a fortnight it becomes the date. -#}
+{% macro due_label(due) %}
+{%- set d = due | due_delta -%}
+{%- if d is none -%}{{ due }}
+{%- elif d < 0 -%}<span class="due-late">{{ -d }}d late</span>
+{%- elif d == 0 -%}Today
+{%- elif d == 1 -%}Tomorrow
+{%- elif d <= 14 -%}in {{ d }}d
+{%- else -%}{{ due }}
+{%- endif -%}
+{% endmacro %}

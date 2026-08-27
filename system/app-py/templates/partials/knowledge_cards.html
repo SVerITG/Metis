@@ -1,3 +1,4 @@
+{% from "partials/_empty.html" import panel as empty_panel %}
 {# The id lives on THIS root element, not on a wrapper in knowledge.html.
    knowledge.html loads this partial with hx-swap="outerHTML", which REPLACES the
    element carrying the id — so after the first load #knowledge-cards-area no
@@ -69,9 +70,7 @@
       </div>
       {% endfor %}
     {% else %}
-      <div class="panel panel--md" style="grid-column:1/-1;">
-        <div class="empty-row">No index cards yet. The librarian can help you build your archive.</div>
-      </div>
+      {{ empty_panel("No index cards yet", "The librarian can help you build your archive.") }}
     {% endif %}
   </div>
 </div>

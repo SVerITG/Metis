@@ -1,3 +1,4 @@
+{% from "partials/_empty.html" import panel as empty_panel %}
 {% from "partials/_section.html" import sec_label %}
 {% if course or projects %}
 <div class="u-mb-6">
@@ -60,10 +61,6 @@
 {% else %}
 <div class="u-mb-6">
   {{ sec_label("Where you left off") }}
-  <div class="panel panel-pad panel--md">
-    <div class="u-ed" style="font-size:var(--t-small);line-height:1.5;">
-      Nothing in progress yet. Your active course and recently-worked projects will appear here once you start them.
-    </div>
-  </div>
+  {{ empty_panel("Nothing in progress yet", "Your active course and recently-worked projects will appear here once you start them.") }}
 </div>
 {% endif %}

@@ -337,7 +337,26 @@ templates.env.globals["focus_shelf"] = _focus_shelf
 # routers are imported. The alternative — remembering to register on each new
 # router's instance — is the same defect this project keeps paying for.
 _SHARED_GLOBALS = {"focus_shelf": _focus_shelf}
-_SHARED_FILTERS = {"md": _md_filter}
+def _due_delta(due: str):
+    """Days from today to `due`, or None if there is no usable date.
+
+    Returns None rather than 0 for an empty value — a task with no date is not
+    due today, it is undated, and collapsing those two is exactly how 69 open
+    tasks came to be shown as overdue.
+    """
+    import datetime as _d
+    if not due:
+        return None
+    try:
+        return (_d.date.fromisoformat(str(due)[:10]) - _d.date.today()).days
+    except Exception:
+        return None
+
+
+_SHARED_FILTERS = {"md": _md_filter,
+                   "due_delta": _due_delta}
+
+
 
 
 def install_shared_globals() -> int:

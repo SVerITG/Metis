@@ -18,10 +18,10 @@
 
   <!-- ===== First-run inline wizard ===== -->
   {% if first_run %}
-  <div id="setup-wizard" class="card" style="margin-bottom:1.5rem;padding:0;overflow:hidden;">
+  <div id="setup-wizard" class="card" style="margin-bottom:var(--m-space-5);padding:0;overflow:hidden;">
 
     <!-- Step indicators -->
-    <div id="wizard-steps" style="display:flex;border-bottom:1px solid var(--m-line);background:var(--m-surface-2);padding:0 2rem;">
+    <div id="wizard-steps" style="display:flex;border-bottom:1px solid var(--m-line);background:var(--m-surface-2);padding:0 var(--m-space-6);">
       {% for i, label in [('1','About you'),('2','Research'),('3','Working style'),('4','Projects')] %}
       <div class="wstep" data-step="{{ i }}"
            style="padding:0.875rem 1.25rem;font-family:var(--m-mono,monospace);font-size:11px;
@@ -32,12 +32,12 @@
       {% endfor %}
     </div>
 
-    <form id="wizard-form" novalidate style="padding:2rem;">
+    <form id="wizard-form" novalidate style="padding:var(--m-space-6);">
 
       <!-- Step 1: About you -->
       <div class="wpage" id="wpage-1">
-        <h2 style="margin:0 0 1.25rem;font-size:1.1rem;">About you</h2>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <h2 style="margin:0 0 var(--m-space-5);font-size:var(--t-h4);">About you</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--m-space-4);">
           <div>
             <label class="field-label">Full name *</label>
             <input name="name" class="field-input" placeholder="e.g. Jane Smith" required aria-label="e.g. Jane Smith">
@@ -63,8 +63,8 @@
 
       <!-- Step 2: Research -->
       <div class="wpage u-hide" id="wpage-2">
-        <h2 style="margin:0 0 1.25rem;font-size:1.1rem;">Your research</h2>
-        <div style="display:grid;gap:1rem;">
+        <h2 style="margin:0 0 var(--m-space-5);font-size:var(--t-h4);">Your research</h2>
+        <div style="display:grid;gap:var(--m-space-4);">
           <div>
             <label class="field-label">Primary research field *</label>
             <input name="field" class="field-input" placeholder="e.g. Infectious disease epidemiology" required aria-label="e.g. Infectious disease epidemiology">
@@ -89,11 +89,11 @@
 
       <!-- Step 3: Working style -->
       <div class="wpage u-hide" id="wpage-3">
-        <h2 style="margin:0 0 1.25rem;font-size:1.1rem;">How you like to work</h2>
-        <div style="display:grid;gap:1.25rem;">
+        <h2 style="margin:0 0 var(--m-space-5);font-size:var(--t-h4);">How you like to work</h2>
+        <div style="display:grid;gap:var(--m-space-5);">
           <div>
             <label class="field-label">Feedback style</label>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-top:0.5rem;">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--m-space-3);margin-top:var(--m-space-2);">
               {% for val, title, desc in [
                 ('gentle','Supportive','Encouraging, soften critique'),
                 ('direct','Direct','Honest and clear, skip padding'),
@@ -105,15 +105,15 @@
                 <input type="radio" name="feedback_style" value="{{ val }}"
                        {% if val == 'direct' %}checked{% endif %}
                        onchange="document.querySelectorAll('[name=feedback_style]').forEach(r=>{r.parentElement.style.borderColor=r.checked?'var(--m-accent)':'var(--m-line)'})">
-                <div style="font-weight:500;margin:0.375rem 0 0.25rem;font-size:0.9rem;">{{ title }}</div>
-                <div style="font-size:0.8rem;color:var(--m-muted);">{{ desc }}</div>
+                <div style="font-weight:500;margin:0.375rem 0 0.25rem;font-size:var(--t-body);">{{ title }}</div>
+                <div style="font-size:var(--t-meta);color:var(--m-muted);">{{ desc }}</div>
               </label>
               {% endfor %}
             </div>
           </div>
           <div>
             <label class="field-label">Challenge level</label>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-top:0.5rem;">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--m-space-3);margin-top:var(--m-space-2);">
               {% for val, title, desc in [
                 ('supportive','Supportive','Help me execute my plans'),
                 ('balanced','Balanced','Push back when something looks off'),
@@ -125,8 +125,8 @@
                 <input type="radio" name="challenge_level" value="{{ val }}"
                        {% if val == 'balanced' %}checked{% endif %}
                        onchange="document.querySelectorAll('[name=challenge_level]').forEach(r=>{r.parentElement.style.borderColor=r.checked?'var(--m-accent)':'var(--m-line)'})">
-                <div style="font-weight:500;margin:0.375rem 0 0.25rem;font-size:0.9rem;">{{ title }}</div>
-                <div style="font-size:0.8rem;color:var(--m-muted);">{{ desc }}</div>
+                <div style="font-weight:500;margin:0.375rem 0 0.25rem;font-size:var(--t-body);">{{ title }}</div>
+                <div style="font-size:var(--t-meta);color:var(--m-muted);">{{ desc }}</div>
               </label>
               {% endfor %}
             </div>
@@ -154,21 +154,21 @@
 
       <!-- Step 4: Projects -->
       <div class="wpage u-hide" id="wpage-4">
-        <h2 style="margin:0 0 0.25rem;font-size:1.1rem;">Your active projects</h2>
-        <p style="color:var(--m-muted);font-size:0.875rem;margin:0 0 1.25rem;line-height:1.6;">
+        <h2 style="margin:0 0 var(--m-space-1);font-size:var(--t-h4);">Your active projects</h2>
+        <p style="color:var(--m-muted);font-size:var(--t-body);margin:0 0 var(--m-space-5);line-height:1.6;">
           Tell Metis what you're working on. For each project it will create a tracking record,
           write context into the project folder so Claude understands it immediately,
           and register it in Claude Desktop. You can add as many as you like — more can be added after setup too.
         </p>
 
         <!-- Project cards list -->
-        <div class="u-col" id="project-cards" style="gap:0.75rem;margin-bottom:1rem;">
+        <div class="u-col" id="project-cards" style="gap:var(--m-space-3);margin-bottom:var(--m-space-4);">
           <!-- cards injected by JS -->
         </div>
 
         <!-- Add Project button -->
         <button class="u-row" type="button" onclick="openProjectModal()"
-                style="width:100%;padding:0.875rem;background:transparent;border:2px dashed var(--m-line);border-radius:8px;cursor:pointer;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.14em;color:var(--m-muted);transition:all 0.15s;justify-content:center;gap:0.5rem;"
+                style="width:100%;padding:0.875rem;background:transparent;border:2px dashed var(--m-line);border-radius:8px;cursor:pointer;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.14em;color:var(--m-muted);transition:all 0.15s;justify-content:center;gap:var(--m-space-2);"
                 onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
                 onmouseout="this.style.borderColor='var(--m-line)';this.style.color='var(--m-muted)'">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
@@ -177,43 +177,43 @@
           ADD A PROJECT
         </button>
 
-        <div style="margin-top:0.75rem;padding:0.75rem;background:var(--m-surface-2);border-radius:6px;font-size:0.8rem;color:var(--m-muted);line-height:1.5;">
+        <div style="margin-top:var(--m-space-3);padding:var(--m-space-3);background:var(--m-surface-2);border-radius:6px;font-size:var(--t-meta);color:var(--m-muted);line-height:1.5;">
           💡 <strong>Tip:</strong> To find a folder path in Windows Explorer, right-click the folder and choose
           <em>Copy as path</em>. Paste it in the folder field below.
         </div>
 
         <!-- Processing indicator -->
-        <div class="u-hide" id="wizard-processing" style="margin-top:1.5rem;padding:1.5rem;background:linear-gradient(135deg,rgba(22,163,74,0.04),rgba(22,163,74,0.08));border:1px solid rgba(22,163,74,0.2);border-radius:8px;text-align:center;">
-          <div style="font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.2em;color:var(--m-accent);margin-bottom:0.75rem;">CALIBRATING METIS</div>
-          <div style="font-size:0.9rem;font-weight:500;margin-bottom:0.375rem;">
+        <div class="u-hide" id="wizard-processing" style="margin-top:var(--m-space-5);padding:var(--m-space-5);background:linear-gradient(135deg,rgba(22,163,74,0.04),rgba(22,163,74,0.08));border:1px solid rgba(22,163,74,0.2);border-radius:8px;text-align:center;">
+          <div style="font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.2em;color:var(--m-accent);margin-bottom:var(--m-space-3);">CALIBRATING METIS</div>
+          <div style="font-size:var(--t-body);font-weight:500;margin-bottom:0.375rem;">
             Building your personalised profile…
           </div>
-          <div style="color:var(--m-muted);font-size:0.8rem;line-height:1.5;">
+          <div style="color:var(--m-muted);font-size:var(--t-meta);line-height:1.5;">
             Claude is reading your answers and generating a calibrated persona —
             tuned to your domain, your working style, and your projects.
             This takes about 15 seconds.
           </div>
         </div>
 
-        <div class="u-hide" id="wizard-error" style="margin-top:1rem;padding:0.875rem;background:var(--m-alert-wash);border:1px solid color-mix(in srgb, var(--m-alert) 35%, transparent);border-radius:6px;color:var(--m-alert);font-size:0.875rem;"></div>
+        <div class="u-hide" id="wizard-error" style="margin-top:var(--m-space-4);padding:0.875rem;background:var(--m-alert-wash);border:1px solid color-mix(in srgb, var(--m-alert) 35%, transparent);border-radius:6px;color:var(--m-alert);font-size:var(--t-body);"></div>
       </div>
 
       <!-- ── Project modal ──────────────────────────────────────────────── -->
-      <div class="u-hide" id="project-modal" style="position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:1.5rem;">
+      <div class="u-hide" id="project-modal" style="position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);backdrop-filter:blur(2px);align-items:center;justify-content:center;padding:var(--m-space-5);">
         <div style="background:var(--m-surface);border-radius:10px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
 
           <!-- Modal header -->
-          <div class="u-row u-row--between" style="padding:1.5rem 1.5rem 1rem;border-bottom:1px solid var(--m-line);">
+          <div class="u-row u-row--between" style="padding:var(--m-space-5) var(--m-space-5) var(--m-space-4);border-bottom:1px solid var(--m-line);">
             <div>
-              <div style="font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.2em;color:var(--m-accent);margin-bottom:0.25rem;">NEW PROJECT</div>
-              <h3 style="margin:0;font-size:1.05rem;">Add a project to Metis</h3>
+              <div style="font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.2em;color:var(--m-accent);margin-bottom:var(--m-space-1);">NEW PROJECT</div>
+              <h3 style="margin:0;font-size:var(--t-h4);">Add a project to Metis</h3>
             </div>
             <button class="btn btn--ghost" onclick="closeProjectModal()" type="button"
-                    style="color:var(--m-muted);font-size:1.25rem;line-height:1;padding:0.25rem;">×</button>
+                    style="color:var(--m-muted);font-size:var(--t-h3);line-height:1;padding:var(--m-space-1);">×</button>
           </div>
 
           <!-- Modal body -->
-          <div class="u-col" style="padding:1.5rem;gap:1.1rem;">
+          <div class="u-col" style="padding:var(--m-space-5);gap:var(--m-space-4);">
 
             <!-- Name -->
             <div>
@@ -225,7 +225,7 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.875rem;">
               <div>
                 <label class="field-label">Category</label>
-                <div style="display:flex;gap:0.5rem;">
+                <div style="display:flex;gap:var(--m-space-2);">
                   <select id="modal-category" class="field-input u-grow">
                     <option value="Article">Article</option>
                     <option value="Grant">Grant</option>
@@ -252,11 +252,11 @@
             <!-- Folder path -->
             <div>
               <label class="field-label">Project folder on your computer (optional)</label>
-              <div style="display:flex;gap:0.5rem;">
+              <div style="display:flex;gap:var(--m-space-2);">
                 <input id="modal-folder" class="field-input u-grow"
                        placeholder="e.g. C:\Users\you\Documents\malaria-study" aria-label="e.g. C:\Users\you\Documents\malaria-study">
                 <button class="u-tile" type="button" onclick="pickFolder()"
-                        style="padding:0.5rem 0.875rem;cursor:pointer;font-size:0.875rem;white-space:nowrap;color:var(--m-ink);" title="Browse for folder">
+                        style="padding:0.5rem 0.875rem;cursor:pointer;font-size:var(--t-body);white-space:nowrap;color:var(--m-ink);" title="Browse for folder">
                   📂 Browse
                 </button>
               </div>
@@ -272,27 +272,27 @@
             <!-- Scan type -->
             <div>
               <label class="field-label">How should Metis understand this project?</label>
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin-top:0.375rem;">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--m-space-2);margin-top:0.375rem;">
                 <label id="scan-label-names" class="scan-opt"
-                       style="border:1px solid var(--m-accent);border-radius:6px;padding:0.6rem;cursor:pointer;text-align:center;">
+                       style="border:1px solid var(--m-accent);border-radius:6px;padding:var(--m-space-2);cursor:pointer;text-align:center;">
                   <input class="u-hide" type="radio" name="modal-scan" value="names" checked>
-                  <div style="font-size:1.1rem;margin-bottom:0.2rem;">🗂️</div>
-                  <div style="font-weight:500;font-size:0.82rem;">File names</div>
-                  <div style="color:var(--m-muted);font-size:0.75rem;">Quick scan</div>
+                  <div style="font-size:var(--t-h4);margin-bottom:0.2rem;">🗂️</div>
+                  <div style="font-weight:500;font-size:var(--t-small);">File names</div>
+                  <div style="color:var(--m-muted);font-size:var(--t-meta);">Quick scan</div>
                 </label>
                 <label id="scan-label-content" class="scan-opt"
-                       style="border:1px solid var(--m-line);border-radius:6px;padding:0.6rem;cursor:pointer;text-align:center;">
+                       style="border:1px solid var(--m-line);border-radius:6px;padding:var(--m-space-2);cursor:pointer;text-align:center;">
                   <input class="u-hide" type="radio" name="modal-scan" value="content">
-                  <div style="font-size:1.1rem;margin-bottom:0.2rem;">📄</div>
-                  <div style="font-weight:500;font-size:0.82rem;">Read notes</div>
-                  <div style="color:var(--m-muted);font-size:0.75rem;">Reads README</div>
+                  <div style="font-size:var(--t-h4);margin-bottom:0.2rem;">📄</div>
+                  <div style="font-weight:500;font-size:var(--t-small);">Read notes</div>
+                  <div style="color:var(--m-muted);font-size:var(--t-meta);">Reads README</div>
                 </label>
                 <label id="scan-label-none" class="scan-opt"
-                       style="border:1px solid var(--m-line);border-radius:6px;padding:0.6rem;cursor:pointer;text-align:center;">
+                       style="border:1px solid var(--m-line);border-radius:6px;padding:var(--m-space-2);cursor:pointer;text-align:center;">
                   <input class="u-hide" type="radio" name="modal-scan" value="none">
-                  <div style="font-size:1.1rem;margin-bottom:0.2rem;">✏️</div>
-                  <div style="font-weight:500;font-size:0.82rem;">I'll describe</div>
-                  <div style="color:var(--m-muted);font-size:0.75rem;">Type it below</div>
+                  <div style="font-size:var(--t-h4);margin-bottom:0.2rem;">✏️</div>
+                  <div style="font-weight:500;font-size:var(--t-small);">I'll describe</div>
+                  <div style="color:var(--m-muted);font-size:var(--t-meta);">Type it below</div>
                 </label>
               </div>
             </div>
@@ -307,13 +307,13 @@
           </div>
 
           <!-- Modal footer -->
-          <div style="padding:1rem 1.5rem 1.5rem;display:flex;justify-content:flex-end;gap:0.75rem;border-top:1px solid var(--m-line);">
+          <div style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-5);display:flex;justify-content:flex-end;gap:var(--m-space-3);border-top:1px solid var(--m-line);">
             <button class="btn btn--sec" type="button" onclick="closeProjectModal()"
-                    style="padding:0.6rem 1.25rem;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
+                    style="padding:var(--m-space-2) var(--m-space-5);font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
               CANCEL
             </button>
             <button class="btn btn--primary" type="button" onclick="saveProject()"
-                    style="padding:0.6rem 1.5rem;color:white;border:none;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
+                    style="padding:var(--m-space-2) var(--m-space-5);color:white;border:none;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
               ADD PROJECT →
             </button>
           </div>
@@ -321,17 +321,17 @@
       </div>
 
       <!-- Nav buttons -->
-      <div style="display:flex;justify-content:space-between;margin-top:2rem;padding-top:1.25rem;border-top:1px solid var(--m-line);">
+      <div style="display:flex;justify-content:space-between;margin-top:var(--m-space-6);padding-top:1.25rem;border-top:1px solid var(--m-line);">
         <button class="u-hide btn btn--sec" type="button" id="btn-back" onclick="wizardStep(-1)"
-                style="padding:0.6rem 1.25rem;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
+                style="padding:var(--m-space-2) var(--m-space-5);font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
           ← BACK
         </button>
         <div class="u-grow"></div>
         <button class="btn btn--primary" type="button" id="btn-next" onclick="wizardStep(1)"
-                style="color:white;border:none;padding:0.6rem 1.5rem;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
+                style="color:white;border:none;padding:var(--m-space-2) var(--m-space-5);font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
           NEXT →
         </button>
-        <button class="u-hide btn btn--primary" type="submit" id="btn-submit" style="color:white;border:none;padding:0.6rem 1.5rem;font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
+        <button class="u-hide btn btn--primary" type="submit" id="btn-submit" style="color:white;border:none;padding:var(--m-space-2) var(--m-space-5);font-family:var(--m-mono,monospace);font-size:var(--t-micro);letter-spacing:0.12em;">
           FINISH SETUP →
         </button>
       </div>
@@ -533,26 +533,26 @@
           'display:flex;align-items:flex-start;gap:0.875rem;background:var(--m-surface);';
         card.innerHTML =
           '<div class="u-fixed" style="width:36px;height:36px;border-radius:6px;background:var(--m-surface-2);' +
-          '     display:flex;align-items:center;justify-content:center;font-size:1.1rem;">' +
+          '     display:flex;align-items:center;justify-content:center;font-size:var(--t-h4);">' +
           (p.category === 'Article' ? '📄' : p.category === 'Grant' ? '💰' : p.category === 'Teaching' ? '📚' :
            p.category === 'Software' ? '💻' : p.category === 'Review' ? '🔍' : '📁') +
           '</div>' +
           '<div class="u-grow">' +
-            '<div style="font-weight:500;font-size:0.9rem;margin-bottom:0.2rem;">' + _escHtml(p.name) + '</div>' +
-            '<div style="font-size:0.78rem;color:var(--m-muted);display:flex;gap:0.75rem;flex-wrap:wrap;">' +
+            '<div style="font-weight:500;font-size:var(--t-body);margin-bottom:0.2rem;">' + _escHtml(p.name) + '</div>' +
+            '<div style="font-size:var(--t-meta);color:var(--m-muted);display:flex;gap:var(--m-space-3);flex-wrap:wrap;">' +
               '<span>' + _escHtml(p.category) + '</span>' +
               '<span>' + (_priorityLabels[p.priority] || p.priority) + '</span>' +
               (p.folder ? '<span class="u-truncate" style="font-family:monospace;max-width:200px;" title="' + _escHtml(p.folder) + '">📂 ' + _escHtml(p.folder.split(/[/\\]/).pop()) + '</span>' : '') +
             '</div>' +
-            (p.description ? '<div class="u-truncate" style="font-size:0.8rem;color:var(--m-muted);margin-top:0.25rem;">' + _escHtml(p.description) + '</div>' : '') +
+            (p.description ? '<div class="u-truncate" style="font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">' + _escHtml(p.description) + '</div>' : '') +
           '</div>' +
           '<div class="u-fixed" style="display:flex;gap:0.375rem;">' +
             '<button class="btn btn--sec" type="button" onclick="openProjectModal(' + idx + ')" ' +
-            '        style="padding:0.3rem 0.6rem;' +
-            '               border-radius:4px;font-size:0.75rem;color:var(--m-muted);">Edit</button>' +
+            '        style="padding:var(--m-space-1) var(--m-space-2);' +
+            '               border-radius:4px;font-size:var(--t-meta);color:var(--m-muted);">Edit</button>' +
             '<button class="btn btn--sec" type="button" onclick="_projects.splice(' + idx + ',1);renderProjectCards()" ' +
-            '        style="padding:0.3rem 0.5rem;' +
-            '               border-radius:4px;font-size:0.75rem;color:var(--m-alert);">×</button>' +
+            '        style="padding:var(--m-space-1) var(--m-space-2);' +
+            '               border-radius:4px;font-size:var(--t-meta);color:var(--m-alert);">×</button>' +
           '</div>';
         container.appendChild(card);
       });
@@ -604,32 +604,32 @@
             var rows = (vres.checks || []).map(function (c) {
               var mark = c.ok ? '✓' : '✗';
               var color = c.ok ? 'var(--m-ok)' : (c.critical ? 'var(--m-alert)' : 'var(--m-warn)');
-              return '<div style="display:flex;align-items:baseline;gap:0.6rem;padding:var(--m-space-1) 0;">' +
+              return '<div style="display:flex;align-items:baseline;gap:var(--m-space-2);padding:var(--m-space-1) 0;">' +
                 '<span style="color:' + color + ';font-weight:600;width:1rem;">' + mark + '</span>' +
-                '<span>' + c.name + (c.detail ? ' <span style="color:var(--m-muted);font-size:0.8rem;">— ' + c.detail + '</span>' : '') + '</span></div>';
+                '<span>' + c.name + (c.detail ? ' <span style="color:var(--m-muted);font-size:var(--t-meta);">— ' + c.detail + '</span>' : '') + '</span></div>';
             }).join('');
             var allGood = !!vres.ok;
             document.getElementById('setup-wizard').innerHTML =
-              '<div style="padding:2rem;max-width:540px;margin:0 auto;text-align:center;">' +
-              '<div style="font-size:2rem;margin-bottom:0.5rem;">' + (allGood ? '✓' : '⚠') + '</div>' +
-              '<div style="font-size:1.1rem;font-weight:500;margin-bottom:0.25rem;">' +
+              '<div style="padding:var(--m-space-6);max-width:540px;margin:0 auto;text-align:center;">' +
+              '<div style="font-size:var(--t-h1);margin-bottom:var(--m-space-2);">' + (allGood ? '✓' : '⚠') + '</div>' +
+              '<div style="font-size:var(--t-h4);font-weight:500;margin-bottom:var(--m-space-1);">' +
                 (allGood ? 'Metis is configured and working.' : 'Metis is configured — a few things need attention.') + '</div>' +
               (result.ai_used
-                ? '<div style="color:var(--m-muted);font-size:0.85rem;margin-bottom:1rem;">Your profile was generated by Claude.</div>'
-                : '<div style="color:var(--m-muted);font-size:0.85rem;margin-bottom:1rem;">' + (result.warning || 'Basic config written.') + '</div>') +
-              '<div style="text-align:left;background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:6px;padding:0.9rem 1.1rem;margin-bottom:1rem;">' + rows + '</div>' +
+                ? '<div style="color:var(--m-muted);font-size:var(--t-small);margin-bottom:var(--m-space-4);">Your profile was generated by Claude.</div>'
+                : '<div style="color:var(--m-muted);font-size:var(--t-small);margin-bottom:var(--m-space-4);">' + (result.warning || 'Basic config written.') + '</div>') +
+              '<div style="text-align:left;background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:6px;padding:0.9rem 1.1rem;margin-bottom:var(--m-space-4);">' + rows + '</div>' +
               (allGood
-                ? '<div style="font-size:0.85rem;color:var(--m-muted);">Open Claude in this folder — Metis is ready. Fine-tune with <code>/metis_config</code>.</div>'
-                : '<div style="font-size:0.85rem;color:var(--m-muted);">The items marked ✗ need attention. ' +
+                ? '<div style="font-size:var(--t-small);color:var(--m-muted);">Open Claude in this folder — Metis is ready. Fine-tune with <code>/metis_config</code>.</div>'
+                : '<div style="font-size:var(--t-small);color:var(--m-muted);">The items marked ✗ need attention. ' +
                   '<button onclick="window.location.reload()" class="btn btn--ghost" style="margin-left:0.4rem;">Re-check</button></div>') +
               '</div>';
             if (allGood) { setTimeout(function () { window.location.reload(); }, 4000); }
           } catch (e) {
             // Verify endpoint unreachable — fall back to a plain success rather than block.
             document.getElementById('setup-wizard').innerHTML =
-              '<div style="padding:2.5rem;text-align:center;"><div style="font-size:2rem;">✓</div>' +
-              '<div style="font-size:1.1rem;font-weight:500;">Metis is configured.</div>' +
-              '<div style="color:var(--m-muted);font-size:0.875rem;margin-top:0.5rem;">Open Claude in this folder — Metis is ready.</div></div>';
+              '<div style="padding:var(--m-space-7);text-align:center;"><div style="font-size:var(--t-h1);">✓</div>' +
+              '<div style="font-size:var(--t-h4);font-weight:500;">Metis is configured.</div>' +
+              '<div style="color:var(--m-muted);font-size:var(--t-body);margin-top:var(--m-space-2);">Open Claude in this folder — Metis is ready.</div></div>';
             setTimeout(function () { window.location.reload(); }, 3000);
           }
         } else {
@@ -651,13 +651,13 @@
   </script>
 
   {% elif not has_config %}
-  <div class="card" style="background:var(--m-info-wash);border:1px solid var(--m-info);margin-bottom:1.5rem;">
+  <div class="card" style="background:var(--m-info-wash);border:1px solid var(--m-info);margin-bottom:var(--m-space-5);">
     <strong>Not configured yet.</strong> Click <em>Re-run wizard</em> below and then open Claude to begin.
   </div>
   {% else %}
-  <div class="card" style="background:var(--m-ok-wash);border:1px solid var(--m-ok);margin-bottom:1.5rem;">
-    <div class="u-row" style="gap:0.75rem;">
-      <span style="font-size:1.5rem;">✓</span>
+  <div class="card" style="background:var(--m-ok-wash);border:1px solid var(--m-ok);margin-bottom:var(--m-space-5);">
+    <div class="u-row" style="gap:var(--m-space-3);">
+      <span style="font-size:var(--t-h2);">✓</span>
       <div>
         <strong>Metis is configured.</strong>
         {% if display_name %}Welcome, {{ display_name }}.{% endif %}
@@ -668,22 +668,22 @@
   {% endif %}
 
   <!-- ===== Wizard sections checklist ===== -->
-  <div class="card" style="margin-bottom:1.5rem;">
-    <h2 class="section-label" style="margin-bottom:1rem;">Wizard sections</h2>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0.5rem;">
+  <div class="card" style="margin-bottom:var(--m-space-5);">
+    <h2 class="section-label" style="margin-bottom:var(--m-space-4);">Wizard sections</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--m-space-2);">
       {% for name, done in sections %}
-      <div class="u-row" style="gap:0.6rem;padding:0.5rem 0.75rem;border-radius:8px;background:var(--m-surface-2);">
+      <div class="u-row" style="gap:var(--m-space-2);padding:var(--m-space-2) var(--m-space-3);border-radius:8px;background:var(--m-surface-2);">
         <span style="font-size:1rem;{% if done %}color:var(--m-ok){% else %}color:var(--m-muted){% endif %}">
           {% if done %}✓{% else %}○{% endif %}
         </span>
-        <span style="{% if done %}color:var(--m-ink){% else %}color:var(--text-muted){% endif %}">{{ name }}</span>
+        <span style="{% if done %}color:var(--m-ink){% else %}color:var(--m-muted){% endif %}">{{ name }}</span>
       </div>
       {% endfor %}
     </div>
   </div>
 
   <!-- ===== Actions ===== -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-bottom:2rem;">
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--m-space-4);margin-bottom:var(--m-space-6);">
 
     <!-- Adapt Metis to my work (Keystone P1.5) — opens Claude with a prompt that
          drives the existing detect_projects / connect_project_folder /
@@ -692,8 +692,8 @@
 Adapt Metis to my existing work. Using the metis-rc tools: run detect_projects to find my research and code folders; for each real one, connect it with connect_project_folder and scan its scripts with scan_project_scripts to build a data dictionary; record each as a project and update my profile topics to match what you find. Then show me a summary of the projects and topics you added — and ask me before adding anything you're unsure about.
     {%- endset -%}
     <div class="card">
-      <h3 style="margin:0 0 0.5rem;">✦ Adapt Metis to my work</h3>
-      <p style="color:var(--text-muted);font-size:0.875rem;margin:0 0 1rem;">
+      <h3 style="margin:0 0 var(--m-space-2);">✦ Adapt Metis to my work</h3>
+      <p style="color:var(--m-muted);font-size:var(--t-body);margin:0 0 var(--m-space-4);">
         Let Metis scan your existing folders, projects and code and configure itself
         to what you're actually working on. Opens Claude Desktop — no API tokens.
       </p>
@@ -703,8 +703,8 @@ Adapt Metis to my existing work. Using the metis-rc tools: run detect_projects t
 
     <!-- Re-run full wizard -->
     <div class="card">
-      <h3 style="margin:0 0 0.5rem;">Re-run full wizard</h3>
-      <p style="color:var(--text-muted);font-size:0.875rem;margin:0 0 1rem;">
+      <h3 style="margin:0 0 var(--m-space-2);">Re-run full wizard</h3>
+      <p style="color:var(--m-muted);font-size:var(--t-body);margin:0 0 var(--m-space-4);">
         Resets the wizard marker. Open Claude after clicking this and the wizard will restart.
       </p>
       <button class="btn btn--primary" onclick="resetWizard()">Re-run wizard in Claude</button>
@@ -712,18 +712,18 @@ Adapt Metis to my existing work. Using the metis-rc tools: run detect_projects t
 
     <!-- Reconfigure a section -->
     <div class="card">
-      <h3 style="margin:0 0 0.5rem;">Reconfigure a section</h3>
-      <p style="color:var(--text-muted);font-size:0.875rem;margin:0 0 1rem;">
+      <h3 style="margin:0 0 var(--m-space-2);">Reconfigure a section</h3>
+      <p style="color:var(--m-muted);font-size:var(--t-body);margin:0 0 var(--m-space-4);">
         In Claude, type: <code>/metis-config</code> followed by the section name.
         <br>Example: <code>/metis-config news</code>
       </p>
-      <code style="background:var(--m-surface-2);padding:0.4rem 0.75rem;border-radius:6px;font-size:0.875rem;">/metis-config [section]</code>
+      <code style="background:var(--m-surface-2);padding:0.4rem 0.75rem;border-radius:6px;font-size:var(--t-body);">/metis-config [section]</code>
     </div>
 
     <!-- Claude Project setup -->
     <div class="card">
-      <h3 style="margin:0 0 0.5rem;">Run in claude.ai Projects</h3>
-      <p style="color:var(--text-muted);font-size:0.875rem;margin:0 0 1rem;">
+      <h3 style="margin:0 0 var(--m-space-2);">Run in claude.ai Projects</h3>
+      <p style="color:var(--m-muted);font-size:var(--t-body);margin:0 0 var(--m-space-4);">
         Create a Claude Project on claude.ai and paste these instructions as the system prompt.
         The wizard will run in the browser — no install needed.
       </p>
@@ -734,23 +734,23 @@ Adapt Metis to my existing work. Using the metis-rc tools: run detect_projects t
 
   <!-- ===== How the wizard works ===== -->
   <div class="card">
-    <h2 class="section-label" style="margin-bottom:1rem;">How the wizard works</h2>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;">
+    <h2 class="section-label" style="margin-bottom:var(--m-space-4);">How the wizard works</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--m-space-4);">
       <div>
-        <div style="font-weight:600;margin-bottom:0.25rem;">1. Opens in Claude</div>
-        <div style="color:var(--text-muted);font-size:0.875rem;">The wizard runs as a conversation in Claude Desktop or Claude Code — no web forms, no config files to edit.</div>
+        <div style="font-weight:600;margin-bottom:var(--m-space-1);">1. Opens in Claude</div>
+        <div style="color:var(--m-muted);font-size:var(--t-body);">The wizard runs as a conversation in Claude Desktop or Claude Code — no web forms, no config files to edit.</div>
       </div>
       <div>
-        <div style="font-weight:600;margin-bottom:0.25rem;">2. Asks 13 questions</div>
-        <div style="color:var(--text-muted);font-size:0.875rem;">Your domain, interests, projects, news topics, tools, working style, data sensitivity. About 10 minutes.</div>
+        <div style="font-weight:600;margin-bottom:var(--m-space-1);">2. Asks 13 questions</div>
+        <div style="color:var(--m-muted);font-size:var(--t-body);">Your domain, interests, projects, news topics, tools, working style, data sensitivity. About 10 minutes.</div>
       </div>
       <div>
-        <div style="font-weight:600;margin-bottom:0.25rem;">3. Configures everything</div>
-        <div style="color:var(--text-muted);font-size:0.875rem;">Writes your profile to <code>user-config.yaml</code> and <code>user-preferences.json</code> locally. Nothing is sent to the internet.</div>
+        <div style="font-weight:600;margin-bottom:var(--m-space-1);">3. Configures everything</div>
+        <div style="color:var(--m-muted);font-size:var(--t-body);">Writes your profile to <code>user-config.yaml</code> and <code>user-preferences.json</code> locally. Nothing is sent to the internet.</div>
       </div>
       <div>
-        <div style="font-weight:600;margin-bottom:0.25rem;">4. Personalisation grows</div>
-        <div style="color:var(--text-muted);font-size:0.875rem;">Every agent run adds to your profile. The longer you use Metis, the better every response gets.</div>
+        <div style="font-weight:600;margin-bottom:var(--m-space-1);">4. Personalisation grows</div>
+        <div style="color:var(--m-muted);font-size:var(--t-body);">Every agent run adds to your profile. The longer you use Metis, the better every response gets.</div>
       </div>
     </div>
   </div>

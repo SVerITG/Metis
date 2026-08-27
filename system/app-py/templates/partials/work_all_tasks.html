@@ -1,8 +1,8 @@
+{% from "partials/_duedate.html" import due_control %}
+{% from "partials/_empty.html" import panel as empty_panel %}
 <!-- work_all_tasks.html — All open tasks across every project, sorted by priority -->
 {% if not tasks %}
-<div class="panel panel-pad" style="text-align:center;padding:var(--m-space-5);border:1px dashed var(--m-line);">
-  <p class="ed" style="margin:0;font-size:var(--t-small);color:var(--m-muted);">No open tasks across any project.</p>
-</div>
+{{ empty_panel("No open tasks across any project") }}
 {% else %}
 <div class="panel">
   {% for t in tasks %}
@@ -16,11 +16,12 @@
         {% if t.project %}
         <span style="color:var(--m-muted);">{{ t.project }}</span>
         {% endif %}
-        {% if t.due_date %}
-        <span style="color:{% if t.id in overdue_ids %}var(--m-alert){% else %}var(--m-muted){% endif %};">
-          DUE {{ t.due_date[:10] }}{% if t.id in overdue_ids %} ⚠{% endif %}
-        </span>
-        {% endif %}
+        {#- The date is a CONTROL, not a label. It was rendered as text, so the
+            only way to set one was the project-detail form — which is why 70 of
+            71 open tasks had none. An undated task shows nothing here until you
+            hover; not knowing when you will get to something is normal, and a
+            column of empty prompts is how a field ends up ignored. -#}
+        {{ due_control(t.id, t.due_date[:10] if t.due_date else '', compact=true) }}
         {% if t.priority == 'high' %}
         <span class="u-mono" style="color:var(--m-alert);letter-spacing:0.1em;">HIGH</span>
         {% endif %}
