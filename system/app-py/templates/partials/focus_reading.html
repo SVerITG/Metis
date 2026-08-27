@@ -1,3 +1,4 @@
+{% from "partials/_empty.html" import panel as empty_panel %}
 {#- Literature through the lens. Reads `new_publications`.
 
     A publication date LATER than today is shown as-is and flagged, not hidden:
@@ -24,12 +25,7 @@
 {% endmacro %}
 
 {% if not reading.live and not reading.muted and not reading.decided %}
-<div class="panel panel--md">
-  <p style="margin:0;font-size:var(--t-small);color:var(--m-muted);">
-    No papers through this lens yet. Your library is scanned weekly and new
-    matches appear here without you doing anything.
-  </p>
-</div>
+{{ empty_panel("No papers through this lens yet", "Your library is scanned weekly and new matches appear here without you doing anything.") }}
 {% else %}
 
 {% if reading.live %}

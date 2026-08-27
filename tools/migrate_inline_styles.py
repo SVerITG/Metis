@@ -217,7 +217,33 @@ FONT_SIZE = {
     "20px": "var(--t-h3)", "21px": "var(--t-h3)", "22px": "var(--t-h3)",
     "24px": "var(--t-h2)", "26px": "var(--t-h2)",
     "28px": "var(--t-h1)", "30px": "var(--t-h1)", "32px": "var(--t-h1)",
+    # rem, which setup.html uses throughout — written before the px scale
+    # existed and never reconciled. The canonical scale is itself in rem
+    # (--t-body is 0.9375rem), so this is a translation, not a conversion.
+    "0.6875rem": "var(--t-micro)", "0.7rem": "var(--t-micro)",
+    "0.75rem": "var(--t-meta)", "0.8rem": "var(--t-meta)",
+    "0.8125rem": "var(--t-small)", "0.85rem": "var(--t-small)",
+    "0.875rem": "var(--t-body)", "0.9rem": "var(--t-body)",
+    "0.9375rem": "var(--t-body)", "1rem": "var(--t-h4)",
+    "1.05rem": "var(--t-h4)", "1.1rem": "var(--t-h4)",
+    "1.0625rem": "var(--t-h4)", "1.25rem": "var(--t-h3)",
+    "1.2rem": "var(--t-h3)", "1.3rem": "var(--t-h3)",
+    "1.5rem": "var(--t-h2)", "1.6rem": "var(--t-h2)",
+    "1.875rem": "var(--t-h1)", "2rem": "var(--t-h1)",
+    "2.625rem": "var(--t-display)",
 }
+# CSS allows a leading dot — `.82rem` is legal and identical to `0.82rem`. Both
+# spellings appear in these templates, and a map that knows only one leaves a
+# residue that looks like a deliberate exception.
+FONT_SIZE.update({
+    "0.6rem": "var(--t-micro)", "0.62rem": "var(--t-micro)",
+    "0.65rem": "var(--t-micro)", "0.68rem": "var(--t-micro)",
+    "0.72rem": "var(--t-meta)", "0.78rem": "var(--t-meta)",
+    "0.82rem": "var(--t-small)", "0.84rem": "var(--t-small)",
+    "0.95rem": "var(--t-body)",
+})
+FONT_SIZE.update({k.lstrip("0"): v for k, v in list(FONT_SIZE.items())
+                  if k.startswith("0.")})
 # Every value the templates actually use, mapped to the nearest step. The first
 # version stopped at 32px and skipped the odd numbers, so `padding:18px 22px`
 # never snapped — 22px was simply absent — and 76 panels kept writing raw
@@ -239,7 +265,16 @@ SPACE = {"2px": "var(--m-space-1)", "3px": "var(--m-space-1)",
          "32px": "var(--m-space-6)", "36px": "var(--m-space-7)",
          "40px": "var(--m-space-7)", "44px": "var(--m-space-7)",
          "48px": "var(--m-space-7)", "56px": "var(--m-space-8)",
-         "64px": "var(--m-space-8)"}
+         "64px": "var(--m-space-8)",
+         # rem spacing, same reason.
+         "0.25rem": "var(--m-space-1)", "0.3rem": "var(--m-space-1)",
+         "0.5rem": "var(--m-space-2)", "0.6rem": "var(--m-space-2)",
+         "0.75rem": "var(--m-space-3)", "0.8rem": "var(--m-space-3)",
+         "1rem": "var(--m-space-4)", "1.1rem": "var(--m-space-4)",
+         "1.25rem": "var(--m-space-5)", "1.5rem": "var(--m-space-5)",
+         "1.75rem": "var(--m-space-6)", "2rem": "var(--m-space-6)",
+         "2.5rem": "var(--m-space-7)", "3rem": "var(--m-space-7)",
+         "4rem": "var(--m-space-8)"}
 RADIUS = {"2px": "var(--m-radius-sm)", "3px": "var(--m-radius)",
           "4px": "var(--m-radius)", "100px": "var(--m-radius-pill)",
           "999px": "var(--m-radius-pill)", "50%": "50%"}

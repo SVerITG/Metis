@@ -1,3 +1,4 @@
+{% from "partials/_empty.html" import panel as empty_panel %}
 {# ══════════════════════════════════════════════════════════════════════════════
    news_overview.html — the opening tab: what is actually happening.
 
@@ -20,12 +21,7 @@
 {{ tag_datalist(all_tags or []) }}
 
 {% if not threads %}
-  <div class="panel" style="padding:var(--m-space-5);">
-    <div class="u-ed" style="font-size:var(--t-body);">
-      Nothing in this window. That can mean a quiet period — or that the feeds
-      have stopped answering. Ask Metis to check the feeds if it looks too quiet.
-    </div>
-  </div>
+  {{ empty_panel("Nothing in this window", "That can mean a quiet period — or that the feeds have stopped answering. Ask Metis to check the feeds if it looks too quiet.") }}
 {% else %}
   <div class="u-mb-2" style="display:flex;align-items:baseline;gap:var(--m-space-3);">
     <h2 class="sec-label" style="margin:0;">Running stories

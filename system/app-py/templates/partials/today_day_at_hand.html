@@ -1,3 +1,4 @@
+{% from "partials/_empty.html" import panel as empty_panel %}
 {% from "partials/_section.html" import sec_label %}
 {# today_day_at_hand.html — Archive: "Today's focus" — at most 3 focus items.
    No timeline. Customizable: starred tasks lead, so starring picks your focus.
@@ -19,8 +20,6 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="panel panel-pad">
-    <div class="ed" style="font-style:italic;color:var(--m-muted);">Nothing pinned. Star up to three tasks and they become today's focus.</div>
-  </div>
+  {{ empty_panel("Nothing pinned", "Star up to three tasks and they become today's focus.") }}
   {% endif %}
 </div>

@@ -61,6 +61,9 @@ async def _rerender(request: Request, back: str, ctx_extra: dict | None = None) 
     if back.startswith("lit-row:"):
         from routers import new_literature as L
         return await L.render_row(request, back.split(":", 1)[1])
+    if back == "library":
+        from routers import new_literature as L
+        return (await L.new_literature_panel(request)).body.decode("utf-8")
     return ""
 
 
@@ -119,7 +122,8 @@ def _guess_back(request: Request) -> str:
     if t.startswith("nl-row-"):
         return "lit-row:" + t[len("nl-row-"):]
     return {"stack-body": "stack", "news-surface": "today-news",
-            "today-lit-discovery": "today-lit"}.get(t, "")
+            "today-lit-discovery": "today-lit",
+            "new-literature": "library"}.get(t, "")
 
 
 # ---------------------------------------------------------------------------

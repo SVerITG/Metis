@@ -30,6 +30,21 @@ def _css():
     return re.sub(r"/\*.*?\*/", "", CSS.read_text(encoding="utf-8"), flags=re.S)
 
 
+def _code(f) -> str:
+    """A template with its comments stripped.
+
+    These checks scan for markup, and a comment that DESCRIBES markup is not
+    markup. `_duedate.html` documents the bare `<input type="date">` it
+    replaced, and the unlabelled-input check duly flagged the sentence about the
+    bug as the bug. An audit that reports prose as a defect gets silenced, and a
+    silenced audit protects nothing — the same lesson as the coloured-dot rule.
+    """
+    src = f.read_text(encoding="utf-8")
+    src = re.sub(r"\{#.*?#\}", "", src, flags=re.S)     # Jinja comments
+    src = re.sub(r"<!--.*?-->", "", src, flags=re.S)     # HTML comments
+    return src
+
+
 def _templates():
     return sorted(TPL.rglob("*.html"))
 
@@ -99,7 +114,7 @@ def test_density_shifts_every_row_token_at_once():
 # ── 3. the ratchet ───────────────────────────────────────────────────────────
 # A budget, not a ban. The 2,709 that remain are real work still to do; what
 # this stops is the next feature quietly adding three hundred more.
-INLINE_BUDGET = 2_600  # measured 2,555
+INLINE_BUDGET = 2_520  # measured 2,502
 
 
 def test_inline_styling_does_not_climb_back():
@@ -255,7 +270,7 @@ def test_no_template_removes_the_focus_ring():
     attribute cannot express `:focus-visible` — so 54 of these were removing
     keyboard focus permanently with nothing in its place."""
     bad = [f.name for f in _templates()
-           if re.search(r"outline:\s*none", f.read_text(encoding="utf-8"))]
+           if re.search(r"outline:\s*none", _code(f))]
     assert not bad, f"templates killing the focus ring: {sorted(set(bad))}"
 
 
@@ -272,7 +287,7 @@ def test_every_input_can_be_named_by_a_screen_reader():
     invented one — a made-up label lies confidently."""
     bad = []
     for f in _templates():
-        s = f.read_text(encoding="utf-8")
+        s = _code(f)
         for m in re.finditer(r"<input\b[^>]*>", s):
             t = m.group(0)
             if re.search(r'type="(hidden|submit|button|checkbox|radio)"', t):
@@ -291,8 +306,7 @@ def test_clickable_elements_have_a_keyboard_path():
     unreachable with a keyboard."""
     bad = []
     for f in _templates():
-        for m in re.finditer(r"<(?:div|span)\b[^>]*\bonclick=[^>]*>",
-                             f.read_text(encoding="utf-8")):
+        for m in re.finditer(r"<(?:div|span)\b[^>]*\bonclick=[^>]*>", _code(f)):
             if "tabindex" not in m.group(0) and 'role="' not in m.group(0):
                 bad.append(f"{f.name}: {m.group(0)[:52]}")
     assert not bad, f"mouse-only controls: {bad}"
@@ -306,6 +320,52 @@ def test_keyboard_activation_is_delegated_not_repeated():
 
 def test_external_links_do_not_hand_over_the_window():
     bad = [f.name for f in _templates()
-           if re.search(r'<a\b[^>]*target="_blank"(?![^>]*rel=)[^>]*>',
-                        f.read_text(encoding="utf-8"))]
+           if re.search(r'<a\b[^>]*target="_blank"(?![^>]*rel=)[^>]*>', _code(f))]
     assert not bad, f'target="_blank" without rel="noopener": {sorted(set(bad))}'
+
+
+def test_what_changed_is_answered_the_same_way_everywhere():
+    """The last item from the design audit. Today answered it, News, Library and
+    Work each answered differently or not at all — while `ui_seen`,
+    `count_since` and `since_label` sat in ui.py used by one surface.
+
+    The Library heading was the sharpest case: its tail READ "what has appeared
+    since you last looked" as a static string. It claimed to answer the question
+    and did not."""
+    users = [f.name for f in _templates()
+             if "whatsnew(" in f.read_text(encoding="utf-8")
+             and f.name != "_whatsnew.html"]
+    for surface in ("_news_tabstrip.html", "stack_body.html",
+                    "library_new_literature.html"):
+        assert surface in users, f"{surface} does not answer 'what changed'"
+    work = (ROOT / "system" / "app-py" / "routers" / "work.py").read_text(encoding="utf-8")
+    assert "whats_new(" in work, "Work does not answer 'what changed'"
+
+
+def test_the_empty_state_component_is_actually_used():
+    """Building the component is the easy half. `empty_state.html` existed for
+    months and was used once — leaving the replacement unused too would have
+    repeated the exact pathology this session was auditing."""
+    users = [f.name for f in _templates()
+             if "_empty.html" in f.read_text(encoding="utf-8") and f.name != "_empty.html"]
+    assert len(users) >= 8, f"only {len(users)} templates use it: {users}"
+
+
+def test_no_template_uses_a_legacy_colour_alias():
+    """--text-muted / --text-primary are a second vocabulary for colours that
+    already have names. Two names for one colour is how a palette drifts."""
+    bad = [f.name for f in _templates()
+           if re.search(r"var\(--text-(muted|primary|secondary)\)",
+                        f.read_text(encoding="utf-8"))]
+    assert not bad, f"legacy colour aliases still in use: {sorted(set(bad))}"
+
+
+def test_rem_values_land_on_the_scale_too():
+    """setup.html was written in rem before the px scale existed and never
+    reconciled — 23 uses of 0.875rem alone. The canonical scale is itself in rem
+    (--t-body is 0.9375rem), so this was a translation, not a conversion."""
+    bad = []
+    for f in _templates():
+        for m in re.finditer(r'style="[^"]*font-size:\s*([\d.]+rem)', f.read_text(encoding="utf-8")):
+            bad.append(f"{f.name}: {m.group(1)}")
+    assert len(bad) <= 4, f"raw rem font sizes: {len(bad)} — {bad[:5]}"

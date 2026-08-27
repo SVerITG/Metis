@@ -39,7 +39,7 @@
       <li class="list-group-item px-0 py-2">
         <div class="small fw-semibold">{{ t.title }}</div>
         {% if t.due_date %}
-        <div class="text-muted" style="font-size:0.72rem;">
+        <div class="text-muted" style="font-size:var(--t-meta);">
           <i class="bi bi-calendar3 me-1"></i>{{ t.due_date }}
         </div>
         {% endif %}

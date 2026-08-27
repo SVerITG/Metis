@@ -9,13 +9,21 @@
    splits the same way.
    ══════════════════════════════════════════════════════════════════════════════ #}
 {% from "partials/_section.html" import sec_label %}
+{% from "partials/_whatsnew.html" import whatsnew %}
 
 <div id="new-literature">
 
   <!-- ── Header: what this is, and the catch-up control ─────────────────── -->
   <div class="u-mb-4" style="display:flex;align-items:flex-end;justify-content:space-between;gap:var(--m-space-5);flex-wrap:wrap;">
     <div>
-      {{ sec_label("New Literature", tail="WHAT HAS APPEARED SINCE YOU LAST LOOKED") }}
+      {#- The tail used to READ "what has appeared since you last looked" as a
+          static string: the surface claimed to answer the question and did not.
+          It now answers it, from the same `ui_seen` table every other surface
+          uses. -#}
+      {{ sec_label("New Literature", tail="PAPERS THROUGH YOUR FILTERS") }}
+      {% if whatsnew_lit %}
+      <div class="u-mb-4">{{ whatsnew(whatsnew_lit, "papers", "#new-literature") }}</div>
+      {% endif %}
       <div class="u-ed" style="font-size:var(--t-body);max-width:66ch;">
         Every journal, preprint server and topic search Metis watches — reviewed here,
         then added to your library one at a time.

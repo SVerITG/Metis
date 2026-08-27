@@ -28,7 +28,7 @@
             <span class="news-signal-low"><i class="bi bi-reception-2"></i></span>
           {% endif %}
           {% if b.surprise_flag %}
-            <span title="Surprise signal"><i class="bi bi-stars text-warning" style="font-size:0.7rem;"></i></span>
+            <span title="Surprise signal"><i class="bi bi-stars text-warning" style="font-size:var(--t-micro);"></i></span>
           {% endif %}
         </div>
 
@@ -38,14 +38,14 @@
             {% if b.source_url %}
               <a href="{{ b.source_url }}" target="_blank" rel="noopener" class="text-decoration-none news-title-link">
                 {{ b.title }}
-                <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.65rem;"></i>
+                <i class="bi bi-box-arrow-up-right ms-1" style="font-size:var(--t-micro);"></i>
               </a>
             {% else %}
               {{ b.title }}
             {% endif %}
           </div>
           {% if b.summary %}
-          <div class="text-muted" style="font-size:0.78rem;line-height:1.45;">
+          <div class="text-muted" style="font-size:var(--t-meta);line-height:1.45;">
             {{ b.summary | truncate(180) }}
           </div>
           {% endif %}

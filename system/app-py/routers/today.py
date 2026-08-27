@@ -4219,7 +4219,7 @@ async def today_focus_with_memory(request: Request):
             "t.due_date, p.title AS project_title "
             "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
             "WHERE t.status NOT IN ('done','completed','cancelled','deleted') "
-            "AND t.due_date IS NOT NULL AND t.due_date != '' "
+            "AND COALESCE(t.due_date,'') != '' "
             "AND t.due_date <= date('now', '+7 days') "
             "ORDER BY t.due_date ASC LIMIT 3"
         ) or []

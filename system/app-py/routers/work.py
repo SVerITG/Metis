@@ -18,7 +18,10 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 
+import logging
 from db import db_execute, db_query, db_scalar
+
+log = logging.getLogger("metis.work")
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -55,7 +58,23 @@ async def work_meta(request: Request):
     projects = db_scalar("SELECT COUNT(*) FROM projects WHERE status='active'", default=0) or 0
     tasks = db_scalar("SELECT COUNT(*) FROM tasks WHERE status NOT IN ('done','cancelled')", default=0) or 0
     paused = db_scalar("SELECT COUNT(*) FROM projects WHERE status='incubating'", default=0) or 0
-    return HTMLResponse(f"{projects} PROJECTS · {tasks} TASKS · {paused} PAUSED")
+
+    # "What changed since I last looked", the same strip every other surface
+    # uses. Work is where new tasks arrive from Claude and from capture, so a
+    # count that only ever grows is exactly the number that stops being useful.
+    strip = ""
+    try:
+        import ui
+        from main import templates as _t
+        wn = ui.whats_new("work", "tasks", "created_at",
+                          where="status NOT IN ('done','cancelled','deleted')")
+        strip = _t.get_template("partials/_whatsnew.html").module.whatsnew(
+            wn, "tasks", ".page-meta")
+    except Exception as exc:
+        log.warning("work meta: whats_new unavailable: %s", exc)
+
+    return HTMLResponse(
+        f"{projects} PROJECTS · {tasks} TASKS · {paused} PAUSED{strip}")
 
 
 @router.get("/api/partial/work/filter-chips", response_class=HTMLResponse)
@@ -89,7 +108,7 @@ async def work_kanban(request: Request):
     ) or []
     this_week = db_query(
         "SELECT task_id as id, title, COALESCE(category,'') as tag, priority, due_date "
-        "FROM tasks WHERE status='open' AND due_date IS NOT NULL AND due_date <= ? ORDER BY due_date LIMIT 6",
+        "FROM tasks WHERE status='open' AND COALESCE(due_date,'') != '' AND due_date <= ? ORDER BY due_date LIMIT 6",
         (week_end,),
     ) or []
     in_progress = db_query(
@@ -125,7 +144,7 @@ async def work_stats(request: Request):
     )
     overdue = db_scalar(
         "SELECT COUNT(*) FROM tasks WHERE status NOT IN ('done', 'cancelled') "
-        "AND due_date IS NOT NULL AND due_date < ?",
+        "AND COALESCE(due_date,'') != '' AND due_date < ?",
         (today,),
         default=0,
     )
@@ -194,7 +213,7 @@ async def work_due_today(request: Request):
         "p.title as project "
         "FROM tasks t LEFT JOIN projects p ON p.project_id = t.project_id "
         "WHERE t.status NOT IN ('done','cancelled') "
-        "AND t.due_date IS NOT NULL AND t.due_date <= ? "
+        "AND COALESCE(t.due_date,'') != '' AND t.due_date <= ? "
         "ORDER BY t.due_date, "
         "CASE COALESCE(t.priority,'medium') WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END "
         "LIMIT 10",
@@ -234,7 +253,7 @@ async def work_all_tasks(request: Request):
     overdue_ids = {
         r["id"] for r in (db_query(
             "SELECT task_id as id FROM tasks WHERE status NOT IN ('done','cancelled') "
-            "AND due_date IS NOT NULL AND due_date < ?", (today,), default=[]
+            "AND COALESCE(due_date,'') != '' AND due_date < ?", (today,), default=[]
         ) or [])
     }
     return templates.TemplateResponse(
@@ -1581,3 +1600,55 @@ async def launch_claude_desktop():
         return JSONResponse({"status": "ok"})
     except Exception as e:
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+# ---------------------------------------------------------------------------
+# An optional target date
+# ---------------------------------------------------------------------------
+# the researcher, 2026-08-27: give the option to date a task, "but dont make it
+# obligatory, because often i dont know when i will work on something."
+#
+# `tasks.due_date` has existed all along; 70 of 71 open tasks had nothing in it,
+# because the only control was a bare date picker. These are the words a date
+# actually gets decided in.
+#
+# The empty string is stored as NULL, never ''. In SQLite '' sorts BEFORE any
+# date, so an empty-string due_date made every undated task overdue — which is
+# how 69 of 71 tasks came to be reported as late.
+_WHEN = {
+    "today":      lambda d: d,
+    "tomorrow":   lambda d: d + datetime.timedelta(days=1),
+    # "This week" means the end of the working week, not seven days out — a task
+    # you say you will do this week is not due next Wednesday.
+    "this-week":  lambda d: d + datetime.timedelta(days=(4 - d.weekday()) % 7),
+    "next-week":  lambda d: d + datetime.timedelta(days=(4 - d.weekday()) % 7 + 7),
+    "this-month": lambda d: (d.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+                            - datetime.timedelta(days=1),
+}
+
+
+@router.post("/api/task/{task_id}/due", response_class=HTMLResponse)
+async def set_task_due(request: Request, task_id: str, when: str = Form("")):
+    """Set, change or clear a task's target date. Always optional."""
+    from main import templates
+    when = (when or "").strip().lower()
+    today = datetime.date.today()
+
+    if not when:
+        due = None                       # cleared: undated, not late
+    elif when in _WHEN:
+        due = _WHEN[when](today).isoformat()
+    elif re.fullmatch(r"\d{4}-\d{2}-\d{2}", when):
+        due = when                       # straight from the picker
+    else:
+        log.warning("[due] unrecognised value %r for %s", when, task_id)
+        due = None
+
+    db_execute("UPDATE tasks SET due_date = ?, updated_at = ? WHERE task_id = ?",
+               (due, datetime.datetime.now().isoformat(), task_id))
+
+    row = (db_query("SELECT task_id, COALESCE(due_date,'') AS due FROM tasks "
+                    "WHERE task_id = ?", (task_id,)) or [{}])[0]
+    return templates.TemplateResponse(
+        request, "partials/_due_fragment.html",
+        {"task_id": task_id, "due": row.get("due", "")})

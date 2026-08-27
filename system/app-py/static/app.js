@@ -2694,3 +2694,38 @@ document.addEventListener('keydown', function (e) {
   e.preventDefault();
   el.click();
 });
+
+/* ── The optional target date ────────────────────────────────────────────────
+   One menu open at a time, closed by Escape or a click elsewhere. The control
+   is deliberately quiet when a task has no date: not knowing when you will get
+   to something is the normal case, and a column of prompts to fill something in
+   is how a field ends up ignored. */
+metis.due = {
+  open: function (btn) {
+    var wrap = btn.closest('.due');
+    if (!wrap) return;
+    var menu = wrap.querySelector('.due-menu');
+    if (!menu) return;
+    var wasHidden = menu.classList.contains('is-hidden');
+    document.querySelectorAll('.due-menu').forEach(function (m) {
+      m.classList.add('is-hidden');
+    });
+    if (wasHidden) {
+      menu.classList.remove('is-hidden');
+      var first = menu.querySelector('.due-opt');
+      if (first) first.focus();
+    }
+  }
+};
+document.addEventListener('click', function (e) {
+  if (e.target.closest('.due')) return;
+  document.querySelectorAll('.due-menu').forEach(function (m) {
+    m.classList.add('is-hidden');
+  });
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  document.querySelectorAll('.due-menu:not(.is-hidden)').forEach(function (m) {
+    m.classList.add('is-hidden');
+  });
+});
