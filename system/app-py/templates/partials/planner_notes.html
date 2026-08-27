@@ -1,7 +1,7 @@
 <div class="panel panel-pad" style="padding:var(--m-space-5) var(--m-space-5);">
   {% if stale_task %}
   <div class="ed u-mb-3" style="font-size:var(--t-body);">
-    <em>{{ stale_task[:80] }}</em> has been open for over 30 days. Retire, pause, or schedule it?
+    <em>{{ stale_task | clip(80) }}</em> has been open for over 30 days. Retire, pause, or schedule it?
   </div>
   <div style="display:flex;gap:var(--m-space-2);">
     <button class="btn btn--sec btn--caps" onclick="setTaskStatus('retire')">Retire</button>

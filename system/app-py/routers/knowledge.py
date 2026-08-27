@@ -11,6 +11,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
+from ui import clip
 from db import db_execute, db_query, db_scalar, get_db_path
 
 router = APIRouter()
@@ -1400,7 +1401,7 @@ async def trigger_zotero_sync():
             if data.get("itemType") in ("attachment", "note"):
                 skipped += 1
                 continue
-            title = (data.get("title") or "")[:500]
+            title = clip(data.get("title") or "", 500)
             if not title:
                 skipped += 1
                 continue
@@ -1419,7 +1420,7 @@ async def trigger_zotero_sync():
             journal = data.get("publicationTitle") or ""
             source = journal or data.get("bookTitle") or data.get("publisher") or ""
             doi = data.get("DOI") or ""
-            abstract = (data.get("abstractNote") or "")[:2000]
+            abstract = clip(data.get("abstractNote") or "", 2000)
             url = data.get("url") or (f"https://doi.org/{doi}" if doi else "")
             item_type = data.get("itemType") or ""
             zotero_key = data.get("key") or ""
@@ -1680,7 +1681,7 @@ async def knowledge_graph_data(
                       [], (r.get("meeting_date") or "")[:10],
                       {"domain": r.get("domain", ""),
                        "attendees": r.get("attendees", ""),
-                       "decisions": (r.get("decisions") or "")[:200]})
+                       "decisions": clip(r.get("decisions") or "", 200)})
             if r.get("project"):
                 _add_edge(mid, f"project:{r['project']}", "discussed-in")
             # meeting → domain-matched projects
@@ -1700,7 +1701,7 @@ async def knowledge_graph_data(
             concept_map[r["concept"].lower()] = cid
             _add_node(cid, "concept", r["concept"],
                       [], (r.get("created_at") or "")[:10],
-                      {"definition": (r.get("definition") or "")[:200]})
+                      {"definition": clip(r.get("definition") or "", 200)})
             if r.get("project_id"):
                 _add_edge(cid, f"project:{r['project_id']}", "context-of")
         # related_concepts edges
@@ -1730,7 +1731,7 @@ async def knowledge_graph_data(
             all_tags = raw_tags + raw_colls
             _add_node(pid_str, "paper", r["title"] or "(paper)",
                       all_tags, (r.get("created_at") or "")[:10],
-                      {"authors": (r.get("authors") or "")[:100],
+                      {"authors": clip(r.get("authors") or "", 100),
                        "year": r.get("year", ""),
                        "journal": r.get("journal", ""),
                        "doi": r.get("doi", "")})
@@ -1762,7 +1763,7 @@ async def knowledge_graph_data(
                       (r.get("created_at") or "")[:10],
                       {"domain": r.get("domain", ""),
                        "signal": r.get("signal_strength", ""),
-                       "summary": (r.get("summary") or "")[:200]})
+                       "summary": clip(r.get("summary") or "", 200)})
             # news → domain-matched projects
             for kw in _domain_keywords(r.get("domain") or ""):
                 for proj_nid in domain_index.get(kw, []):
@@ -2135,7 +2136,7 @@ async def knowledge_unified_search_semantic(request: Request, q: str = ""):
                         semantic_hits.append({
                             "kind": "pdf",
                             "title": (Path(row.get("pdf_path") or "").name)[:80] or "PDF chunk",
-                            "snippet": (row.get("text") or "")[:200],
+                            "snippet": clip(row.get("text") or "", 200),
                             "score": round(1 - float(row.get("distance") or 1), 3),
                             "extra": f"p. {row.get('page')}" if row.get("page") else "",
                         })
@@ -2156,7 +2157,7 @@ async def knowledge_unified_search_semantic(request: Request, q: str = ""):
                         semantic_hits.append({
                             "kind": "memory",
                             "title": (row.get("event_type") or "memory").upper(),
-                            "snippet": (row.get("content") or "")[:200],
+                            "snippet": clip(row.get("content") or "", 200),
                             "score": round(1 - float(row.get("distance") or 1), 3),
                             "extra": (row.get("created_at") or "")[:10],
                         })
@@ -2180,8 +2181,8 @@ async def knowledge_unified_search_semantic(request: Request, q: str = ""):
         for r in rows:
             semantic_hits.append({
                 "kind": "paper",
-                "title": (r.get("title") or "")[:80],
-                "snippet": (r.get("abstract") or "")[:200],
+                "title": clip(r.get("title") or "", 80),
+                "snippet": clip(r.get("abstract") or "", 200),
                 "score": None,
                 "extra": "",
             })
@@ -2504,7 +2505,7 @@ async def knowledge_gap_check(request: Request):
         try:
             pl = work.get("primary_location") or {}
             src = pl.get("source") or {}
-            journal = (src.get("display_name") or "")[:60]
+            journal = clip(src.get("display_name") or "", 60)
         except Exception:
             pass
 

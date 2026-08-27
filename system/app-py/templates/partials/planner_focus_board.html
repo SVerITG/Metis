@@ -38,7 +38,7 @@
       </div>
       {% if c.next_step %}
       <div class="u-mb-3 u-ed" style="font-size:var(--t-meta);line-height:1.5;">
-        Next: {{ c.next_step[:100] }}{% if c.next_step | length > 100 %}&hellip;{% endif %}
+        Next: {{ c.next_step | clip(100) }}{% if c.next_step | length > 100 %}&hellip;{% endif %}
       </div>
       {% endif %}
       <div class="u-label" style="display:flex;justify-content:space-between;align-items:baseline;gap:var(--m-space-3);letter-spacing:0.10em;">

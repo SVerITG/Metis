@@ -24,7 +24,7 @@
     {% endif %}
   </div>
   <div>
-    <div style="font-size:var(--t-small);color:var(--m-ink);line-height:1.5;">{{ r.content[:200] }}{% if r.content|length > 200 %}…{% endif %}</div>
+    <div style="font-size:var(--t-small);color:var(--m-ink);line-height:1.5;">{{ r.content | clip(200) }}</div>
     {% if r.concepts %}
     <div style="margin-top:var(--m-space-1);display:flex;flex-wrap:wrap;gap:var(--m-space-1);">
       {% for c in r.concepts[:3] %}

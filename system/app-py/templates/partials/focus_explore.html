@@ -32,7 +32,7 @@
     {% for p in result.passages %}
     <div class="fx-item">
       <div class="fx-src">{{ p.title or p.source_file }} · p.{{ p.page_start }} · <code>{{ p.layer }}</code></div>
-      <blockquote class="fx-quote">{{ (p.chunk_text or '')[:380] }}…</blockquote>
+      <blockquote class="fx-quote">{{ (p.chunk_text or '') | clip(380) }}</blockquote>
     </div>
     {% endfor %}
   </div>
@@ -61,7 +61,7 @@
     <div class="fx-item"><div class="fx-line">💡 {{ i.text }}</div></div>
     {% endfor %}
     {% for n in result.notes %}
-    <div class="fx-item"><div class="fx-line">📝 {{ n.title or n.content[:200] }}</div></div>
+    <div class="fx-item"><div class="fx-line">📝 {{ n.title or n.content | clip(200) }}</div></div>
     {% endfor %}
   </div>
   {% endif %}

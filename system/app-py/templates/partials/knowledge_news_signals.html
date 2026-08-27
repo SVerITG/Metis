@@ -38,7 +38,7 @@
             </div>
             {% if s.summary %}
             <div class="u-ed" style="font-size:var(--t-micro);line-height:1.5;">
-              {% if s.summary | length > 120 %}{{ s.summary[:120] }}…{% else %}{{ s.summary }}{% endif %}
+              {% if s.summary | length > 120 %}{{ s.summary | clip(120) }}{% else %}{{ s.summary }}{% endif %}
             </div>
             {% endif %}
             <div class="u-label" style="margin-top:var(--m-space-1);display:flex;gap:var(--m-space-3);">

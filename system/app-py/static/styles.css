@@ -4530,3 +4530,47 @@ tr:hover .due-chip--none, li:hover .due-chip--none, .item:hover .due-chip--none,
    ranking IS the surface's argument — but demoted: a number repeated down a
    column at full contrast competes with the titles it is ranking. */
 .nl-score { color: var(--m-muted-soft); font-variant-numeric: tabular-nums; }
+
+/* ── The project launch rail ───────────────────────────────────────────────
+   One primary plus an overflow, so every card's row is the same shape. The
+   buttons were always in a fixed ORDER; the raggedness came from each project
+   having a different subset, which made the row a different width on every
+   card. In a screenshot of eight cards, no two rows lined up. */
+.proj-rail { display: flex; align-items: center; gap: var(--m-space-2);
+             flex-wrap: wrap; }
+.proj-more { position: relative; }
+.proj-more > summary { list-style: none; cursor: pointer; }
+.proj-more > summary::-webkit-details-marker { display: none; }
+.proj-more > summary::after { content: " ▾"; opacity: .6; }
+.proj-more[open] > summary::after { content: " ▴"; }
+.proj-more-menu {
+  position: absolute; z-index: 30; top: calc(100% + 4px); left: 0;
+  display: flex; flex-direction: column; min-width: 150px; padding: 4px;
+  background: var(--m-surface); border: 1px solid var(--m-rule);
+  border-radius: var(--m-radius); box-shadow: 0 6px 20px rgba(0,0,0,.10);
+}
+.proj-more-item {
+  padding: 6px 10px; border: 0; border-radius: var(--m-radius-sm);
+  background: transparent; color: var(--m-ink); cursor: pointer;
+  text-align: left; white-space: nowrap; font-size: var(--t-small);
+}
+.proj-more-item:hover { background: var(--m-surface-2); color: var(--m-accent); }
+
+/* ── Library filters, folded ───────────────────────────────────────────────
+   Five rows of controls stood between the header and the first paper. The
+   topic tabs stay — they are the primary navigation — and the rest sits behind
+   one line that always states what is currently set, so a filtered view can
+   never hide the fact that it is filtered. Opens itself when a filter is
+   active, because a fold that conceals a non-default state is a trap. */
+.lit-filters { border-bottom: 1px solid var(--m-rule-soft);
+               margin-bottom: var(--m-space-4); }
+.lit-filters > summary {
+  list-style: none; cursor: pointer; display: flex; align-items: baseline;
+  gap: var(--m-space-2); padding: var(--m-space-2) 0;
+}
+.lit-filters > summary::-webkit-details-marker { display: none; }
+.lit-filters > summary:hover .u-label { color: var(--m-ink); }
+.lit-filters[open] > summary .fv-chev { transform: rotate(90deg); }
+.lit-filters-state { font-family: var(--m-mono); font-size: var(--t-micro);
+                     color: var(--m-accent); letter-spacing: .06em; }
+.lit-filters-body { padding-bottom: var(--m-space-2); }

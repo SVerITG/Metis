@@ -42,7 +42,7 @@
           </div>
           {% if p.last_task %}
           <div class="u-mono" style="letter-spacing:0.1em;color:var(--m-ok);margin-bottom:var(--m-space-1);">
-            ✓ {{ p.last_task[:60] }}{% if p.last_task|length > 60 %}…{% endif %}
+            ✓ {{ p.last_task | clip(60) }}
           </div>
           {% endif %}
           {% if p.next_step %}

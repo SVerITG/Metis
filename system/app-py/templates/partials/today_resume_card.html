@@ -32,7 +32,7 @@
     <div class="u-mb-3">
       {% for d in session.decisions %}
       <div style="font-size:var(--t-meta);color:var(--m-muted);line-height:1.5;">
-        <span style="color:var(--m-accent);margin-right:5px;">&#10003;</span>{{ d[:140] }}
+        <span style="color:var(--m-accent);margin-right:5px;">&#10003;</span>{{ d | clip(140) }}
       </div>
       {% endfor %}
     </div>

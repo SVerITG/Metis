@@ -116,10 +116,10 @@
           {% if s.url %}
             <a class="u-mono" href="{{ s.url }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:var(--m-space-1);padding:var(--m-space-1) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);color:var(--m-text);text-decoration:none;">
               {% if s.domain %}<span style="color:var(--m-accent);letter-spacing:0.08em;">{{ s.domain|upper }}</span>{% endif %}
-              <span style="color:var(--m-muted);">{{ s.title[:55] }}{% if s.title|length > 55 %}…{% endif %}</span>
+              <span style="color:var(--m-muted);">{{ s.title | clip(55) }}</span>
             </a>
           {% else %}
-            <span class="u-label" style="display:inline-flex;align-items:center;gap:var(--m-space-1);padding:var(--m-space-1) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);">{{ s.title[:55] }}</span>
+            <span class="u-label" style="display:inline-flex;align-items:center;gap:var(--m-space-1);padding:var(--m-space-1) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);">{{ s.title | clip(55) }}</span>
           {% endif %}
         {% endfor %}
       </div>

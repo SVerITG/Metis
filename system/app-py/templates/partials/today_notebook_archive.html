@@ -8,7 +8,7 @@
       {% for note in notes %}
       <div class="nb-row">
         <div class="nb-when">{{ note.age_label or 'RECENTLY' }}</div>
-        <div class="nb-body ed">"{{ (note.content or note.text or '')[:280] }}"</div>
+        <div class="nb-body ed">"{{ (note.content or note.text or '') | clip(280) }}"</div>
         <div class="nb-foot">
           <span class="nb-card">
             — {{ note.source or note.idea_type or note.tags or 'notebook' }}

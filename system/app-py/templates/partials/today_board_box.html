@@ -58,9 +58,9 @@
       <div class="board-item-body">
         {% if item.url %}
           <a href="{{ item.url }}" target="_blank" rel="noopener" class="board-item-title"
-             title="{{ item.title }}">{{ item.title[:72] }}{% if item.title|length > 72 %}…{% endif %}</a>
+             title="{{ item.title }}">{{ item.title | clip(72) }}</a>
         {% else %}
-          <span class="board-item-title" title="{{ item.title }}">{{ item.title[:72] }}{% if item.title|length > 72 %}…{% endif %}</span>
+          <span class="board-item-title" title="{{ item.title }}">{{ item.title | clip(72) }}</span>
         {% endif %}
         {% if item.source %}
         <span class="board-item-source">{{ item.source }}</span>

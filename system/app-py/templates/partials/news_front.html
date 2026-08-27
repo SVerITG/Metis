@@ -31,7 +31,7 @@
   <div class="nf-lead-body">
     {% if lead.close %}<div><span class="nf-close"><span class="nf-dot"></span>Closest to your work</span></div>{% endif %}
     {% if lead.has_image %}<h2>{{ lead.title }}</h2>{% endif %}
-    {% if lead.summary %}<p>{{ lead.summary[:260] }}{% if lead.summary|length > 260 %}…{% endif %}</p>{% endif %}
+    {% if lead.summary %}<p>{{ lead.summary | clip(260) }}</p>{% endif %}
     <div class="nf-meta">
       <span>{{ lead.source }}</span><span>·</span>
       <span>{{ lead.domain }}</span><span>·</span>
@@ -117,7 +117,7 @@
       {% if c.has_image %}<div class="nf-card-title">{{ c.title }}</div>{% endif %}
       {% if c.summary %}
         <div style="font-size:var(--t-meta);line-height:1.45;color:var(--m-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
-          {{ c.summary[:150] }}
+          {{ c.summary | clip(150) }}
         </div>
       {% endif %}
       <div class="nf-meta">

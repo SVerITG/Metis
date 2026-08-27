@@ -58,7 +58,7 @@
     {% if session and session.topics %}
     <div class="session-topics">
       {% for t in session.topics %}
-      <span class="session-topic-chip">{{ t[:48] }}{% if t|length > 48 %}…{% endif %}</span>
+      <span class="session-topic-chip">{{ t | clip(48) }}</span>
       {% endfor %}
     </div>
     {% endif %}

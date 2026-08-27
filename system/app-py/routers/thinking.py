@@ -13,6 +13,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
+from ui import clip
 from db import db_execute, db_query, db_scalar
 
 router = APIRouter()
@@ -56,7 +57,7 @@ async def thinking_threads(request: Request):
     today = datetime.date.today()
     items = ""
     for i, t in enumerate(threads):
-        title = (t.get("content") or "")[:45]
+        title = clip(t.get("content") or "", 45)
         date_str = (t.get("created_at") or "")[:10]
         # compute age in days
         age = None
@@ -111,7 +112,7 @@ async def thinking_dialogue(request: Request):
         )
     items = ""
     for idea in ideas:
-        content = (idea.get("content") or "")[:300]
+        content = clip(idea.get("content") or "", 300)
         date = (idea.get("created_at") or "")[:10]
         items += (
             f'<div style="padding:18px 0;border-bottom:1px solid var(--m-rule-soft);">'
@@ -129,7 +130,7 @@ async def thinking_marginalia(request: Request):
     ) or []
     items = ""
     for note in notes:
-        content = (note.get("content") or "")[:120]
+        content = clip(note.get("content") or "", 120)
         date = (note.get("created_at") or "")[:10]
         items += (
             f'<div class="panel panel-pad" style="padding:18px 20px;margin-bottom:12px;">'
@@ -248,7 +249,7 @@ async def thinking_brainstorm(request: Request):
             sessions.append({
                 "session_uuid": r.get("session_uuid") or "",
                 "topic": r.get("topic") or "Untitled brainstorm",
-                "summary": (r.get("summary") or "")[:160],
+                "summary": clip(r.get("summary") or "", 160),
                 "started_at": (r.get("created_at") or "")[:10],
                 "message_count": msg_count,
             })
@@ -344,39 +345,79 @@ def _mm_label(text: str, n: int = 34) -> str:
 
 
 def _build_mindmap_svg(ideas: list, links: list) -> str:
+    """Ideas as a radial map, laid out so the labels can be read.
+
+    WHAT WAS WRONG. Every domain got an equal angular share, and the sector each
+    one could use was capped at 1.1 radians. With two domains — which is the real
+    data, `ai-in-health-epidemiology` and `Other` — that put 28 ideas into 63
+    degrees at a single radius. Every label was drawn on top of its neighbours,
+    and the result was an illegible pile. Found by looking at a screenshot; the
+    code reads as perfectly reasonable.
+
+    Three changes, and the first is the one that matters:
+
+      · A domain's angular share is PROPORTIONAL to how many ideas it holds. A
+        branch with 28 gets most of the circle; a branch with 1 gets a sliver.
+        Equal shares are only correct when the groups are equal.
+      · Labels alternate between two radii, so neighbours are never on the same
+        ring and cannot collide even when the arc is tight.
+      · A branch is capped, with the remainder named rather than dropped. Past
+        about eight labels on one arc nothing is readable at any radius, and a
+        map that silently omits is worse than one that says "+14 more".
+    """
     import math
-    W, H = 860, 560
+
+    MAX_PER_BRANCH = 8
+    W, H = 900, 620
     cx, cy = W / 2, H / 2
-    R1, R2 = 132, 232
+    R1 = 128                      # hub ring
+    R_IN, R_OUT = 214, 262        # the two leaf rings labels alternate between
 
     groups: dict = {}
     for it in ideas:
         groups.setdefault((it.get("domain") or "Other"), []).append(it)
-    domains = list(groups.keys())
-    nD = max(1, len(domains))
+    # Biggest branch first, so the largest arc starts at the top where there is
+    # the most room for a long label.
+    domains = sorted(groups, key=lambda d: -len(groups[d]))
+    if not domains:
+        return ""
+
+    shown = {d: groups[d][:MAX_PER_BRANCH] for d in domains}
+    total = sum(len(shown[d]) for d in domains) or 1
 
     pos: dict = {}
     branch_svg, hub_svg, nodes_svg = [], [], []
 
-    for di, dom in enumerate(domains):
-        a = -math.pi / 2 + 2 * math.pi * di / nD
+    # Walk the circle handing each domain a slice sized by its own count.
+    cursor = -math.pi / 2
+    GAP = 0.16                                  # breathing room between branches
+    free = 2 * math.pi - GAP * len(domains)
+
+    for dom in domains:
+        items = shown[dom]
+        span = free * (len(items) / total)
+        a = cursor + span / 2                   # the hub sits mid-slice
         hx, hy = cx + R1 * math.cos(a), cy + R1 * math.sin(a)
+
         branch_svg.append(
             f'<path d="M{cx:.0f},{cy:.0f} Q{(cx+hx)/2:.0f},{(cy+hy)/2:.0f} {hx:.0f},{hy:.0f}" '
             f'fill="none" stroke="var(--m-rule-strong)" stroke-width="1"/>')
         anchor = "start" if math.cos(a) >= 0 else "end"
         hub_svg.append(f'<circle cx="{hx:.0f}" cy="{hy:.0f}" r="3.5" fill="var(--m-ink)"/>')
+        n_hidden = len(groups[dom]) - len(items)
+        hub_label = _xml(dom.upper()) + (f"  +{n_hidden}" if n_hidden else "")
         hub_svg.append(
             f'<text x="{hx + (6 if anchor=="start" else -6):.0f}" y="{hy+3:.0f}" '
             f'text-anchor="{anchor}" font-family="var(--m-mono)" font-size="9" '
-            f'fill="var(--m-ink)" letter-spacing="0.04em">{_xml(dom.upper())}</text>')
+            f'fill="var(--m-ink)" letter-spacing="0.04em">{hub_label}</text>')
 
-        items = groups[dom]
         k = len(items)
-        sector = min(2 * math.pi / nD * 0.85, 1.1)
         for ii, it in enumerate(items):
-            off = 0 if k == 1 else (sector * (ii / (k - 1) - 0.5))
-            ia = a + off
+            # Spread across the slice, inset so the first and last are not on
+            # the seam with the neighbouring branch.
+            frac = 0.5 if k == 1 else (ii + 0.5) / k
+            ia = cursor + span * frac
+            R2 = R_IN if ii % 2 == 0 else R_OUT
             ix, iy = cx + R2 * math.cos(ia), cy + R2 * math.sin(ia)
             pos[it.get("idea_id")] = (ix, iy)
             branch_svg.append(
@@ -386,12 +427,13 @@ def _build_mindmap_svg(ideas: list, links: list) -> str:
             ianchor = "start" if math.cos(ia) >= 0 else "end"
             lx = ix + (9 if ianchor == "start" else -9)
             nodes_svg.append(
-                f'<circle cx="{ix:.0f}" cy="{iy:.0f}" r="5.5" fill="{color}">'
+                f'<circle cx="{ix:.0f}" cy="{iy:.0f}" r="5" fill="{color}">'
                 f'<title>{_xml(_mm_clean(it.get("text","")))}</title></circle>')
             nodes_svg.append(
                 f'<text x="{lx:.0f}" y="{iy+3:.0f}" text-anchor="{ianchor}" '
-                f'font-family="var(--m-display)" font-size="11.5" fill="var(--m-text)">'
+                f'font-family="var(--m-display)" font-size="11" fill="var(--m-text)">'
                 f'{_xml(_mm_label(it.get("text","")))}</text>')
+        cursor += span + GAP
 
     link_svg = []
     for ln in links:
@@ -417,9 +459,10 @@ def _build_mindmap_svg(ideas: list, links: list) -> str:
     )
 
     return (
-        f'<svg viewBox="0 0 {W} {H}" width="100%" style="max-width:100%;height:auto;display:block;">'
-        + "".join(branch_svg) + "".join(link_svg) + "".join(hub_svg) + center_svg + "".join(nodes_svg)
-        + "</svg>"
+        f'<svg viewBox="0 0 {W} {H}" width="100%" style="max-width:100%;height:auto;display:block;" '
+        f'role="img" aria-label="Your open ideas, grouped by domain">'
+        + "".join(branch_svg) + "".join(link_svg) + "".join(hub_svg) + center_svg
+        + "".join(nodes_svg) + "</svg>"
     )
 
 

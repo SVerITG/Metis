@@ -42,6 +42,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
+from ui import clip
 from db import db_execute, db_query, db_scalar
 
 router = APIRouter()
@@ -615,10 +616,10 @@ def _push_one_to_zotero(pub: dict, pdf_rel: str = "") -> tuple[str, str]:
                 for n in (pub.get("authors") or "").split(";")[:20] if n.strip()]
     item = {
         "itemType": itype,
-        "title": (pub.get("title") or "")[:500],
+        "title": clip(pub.get("title") or "", 500),
         "creators": creators,
         "date": pub.get("pub_iso") or pub.get("pub_date") or "",
-        "abstractNote": (pub.get("abstract") or "")[:5000],
+        "abstractNote": clip(pub.get("abstract") or "", 5000),
         "url": pub.get("source_url") or "",
         "tags": [{"tag": tg.strip()} for tg in
                  (pub.get("topic_tag") or "").split(",") if tg.strip()][:12],

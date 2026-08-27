@@ -54,7 +54,7 @@
         {% if p.trigger_context %}
         <span style="display:block;font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);line-height:1.45;margin-top:var(--m-space-1);text-wrap:pretty;">
           <strong style="color:var(--m-ink);opacity:.75;">When:</strong>
-          {{ p.trigger_context[:210] }}{% if p.trigger_context|length > 210 %}…{% endif %}
+          {{ p.trigger_context | clip(210) }}
         </span>
         {% endif %}
       </span>

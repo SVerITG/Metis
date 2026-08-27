@@ -16,6 +16,7 @@ from fastapi import APIRouter, File, Form, Query, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
+from ui import clip
 from db import db_execute, db_query, db_scalar, _connect
 
 log = logging.getLogger("metis.meetings")
@@ -293,7 +294,7 @@ def _fast_keyword_connections(text: str, max_results: int = 6) -> list[dict]:
                 else:
                     rows = conn.execute(q + like_conds + " LIMIT ?", params + [max_results]).fetchall()
                 for r in rows:
-                    results.append({"title": (r["title"] or "")[:100], "source": source})
+                    results.append({"title": clip(r["title"] or "", 100), "source": source})
                     if len(results) >= max_results:
                         break
             except Exception:
@@ -1015,7 +1016,7 @@ async def meeting_live_connections(text: str = Form("")):
         f'color:{source_colors.get(c["source"], "var(--m-muted)")};flex-shrink:0;width:48px;">'
         f'{c["source"].upper()}</span>'
         f'<span style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);'
-        f'line-height:1.3;">{(c.get("title") or "")[:80]}</span>'
+        f'line-height:1.3;">{clip(c.get("title") or "", 80)}</span>'
         f'</div>'
         for c in connections
     )
@@ -1085,7 +1086,7 @@ async def meetings_live_assist(request: Request):
                 connections.append({
                     "title": c.get("title", "")[:80],
                     "source": c.get("source", ""),
-                    "from_meeting": (m.get("title") or "")[:60],
+                    "from_meeting": clip(m.get("title") or "", 60),
                 })
         except Exception:
             continue

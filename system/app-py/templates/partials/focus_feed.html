@@ -31,7 +31,7 @@
         {% else %}{{ n.title }}{% endif %}
       </div>
       {% if n.summary %}
-      <div class="fv-sum">{{ n.summary[:230] }}{% if n.summary|length > 230 %}…{% endif %}</div>
+      <div class="fv-sum">{{ n.summary | clip(230) }}</div>
       {% endif %}
       {{ verdict_buttons(area.slug, "news", n, T) }}
     </div>
