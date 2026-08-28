@@ -134,8 +134,20 @@ async def planner_week(request: Request):
 
 @router.get("/api/partial/planner/intentions", response_class=HTMLResponse)
 async def planner_intentions(request: Request):
+    # The bar beside each project used to be `{'high':85,'medium':55,'low':30}[priority]`
+    # — priority redrawn as a LENGTH, right next to the word "MEDIUM" that already
+    # said it. Two problems: it duplicated the label, and a horizontal bar means
+    # "progress" to every reader, so five medium-priority projects rendered five
+    # identical 55% bars that looked like five identical half-finished projects.
+    # It now shows what a bar should show here: tasks actually closed.
     projects = db_query(
-        "SELECT project_id as id, title, priority FROM projects WHERE status IN ('active','incubating') ORDER BY priority DESC LIMIT 5"
+        "SELECT p.project_id AS id, p.title, p.priority, "
+        "  (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.project_id "
+        "     AND t.status IN ('done','completed')) AS done_n, "
+        "  (SELECT COUNT(*) FROM tasks t WHERE t.project_id = p.project_id "
+        "     AND COALESCE(t.status,'') NOT IN ('cancelled','deleted')) AS total_n "
+        "FROM projects p WHERE p.status IN ('active','incubating') "
+        "ORDER BY p.priority DESC LIMIT 5"
     ) or []
     return templates.TemplateResponse(
         request,

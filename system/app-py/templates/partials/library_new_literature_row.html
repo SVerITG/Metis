@@ -48,9 +48,11 @@
       {{ item.journal or item.feed_name or '—' }}
     </span>
 
-    <span class="u-mono" style="letter-spacing:0.1em;text-transform:uppercase;padding:1px 7px;border-radius:var(--m-radius-sm);background:var(--m-surface-2);color:var(--m-muted);">
-      {{ item.entry_kind or 'article' }}
-    </span>
+    {#- Entry kind is a CATEGORY, and "article" is the value on the large
+        majority of rows, so it took the quiet form: no box, no fill. It sat in
+        a filled chip beside the journal name, which made the least surprising
+        fact on the row one of its loudest marks. -#}
+    <span class="tag">{{ item.entry_kind or 'article' }}</span>
 
     {% if eff_date %}
     <span class="u-label"
@@ -61,9 +63,16 @@
     </span>
     {% endif %}
 
+    {#- The score saturates: 0.90 is the maximum the scorer emits and 41 items
+        currently sit exactly on it, so the default relevance-sorted view opens
+        on a screenful of rows all printing the same number. The number is not
+        wrong, but two decimals imply a precision the ranking does not have at
+        the top of the list, so the tooltip now says when a row is tied at the
+        ceiling rather than letting the reader infer an order that isn't there.
+        Fixing the saturation itself is a scorer change, not a display one. -#}
     {% if item.relevance and item.relevance > 0 %}
-    <span class="u-mono nl-score" title="Closeness to your own corpus, 0–1. Computed locally against your library — not a citation count or an impact score."
-          style="color:var(--m-muted);margin-left:auto;">
+    <span class="u-mono nl-score tnum u-ml-auto"
+          title="Closeness to your own corpus, 0–1. Computed locally against your library — not a citation count or an impact score.{% if item.relevance >= 0.9 %} This is the top of the scale; items tied here are ordered by date.{% endif %}">
       {{ '%.2f' | format(item.relevance) }}
     </span>
     {% endif %}

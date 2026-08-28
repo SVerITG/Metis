@@ -1,0 +1,35 @@
+{#- thinking_threads.html — the Open threads rail.
+
+    Moved out of routers/thinking.py, where it was built with f-strings: eleven
+    rows of hand-written inline style, two inline onmouseover handlers per row,
+    and no class the stylesheet could reach.
+
+    Two content changes, both from counting what was on screen:
+
+    · "· OPEN" was printed on 11 of 11 rows, inside a panel headed "Open
+      threads", fed by a query that cannot return anything else. A label the
+      section title already guarantees is not information.
+
+    · The age was coloured alert at 30 days and ochre at 14. With real data
+      that painted 8 of 11 rows red — "going stale" applied to most of the
+      list, which is how a warning stops being one. Age is a MEASUREMENT, so
+      it is quiet by default; only genuinely abandoned threads (120 days, one
+      row here) carry a mark, and it says what it means rather than relying on
+      the reader to decode a colour. -#}
+{% if threads %}
+  {% for t in threads %}
+  <div class="th-row row-hit{% if loop.first %} is-active{% endif %}"
+       {% if loop.first %}data-active="1"{% endif %}
+       role="button" tabindex="0">
+    <div class="th-title">{{ t.title }}</div>
+    <div class="th-meta">
+      {% if t.age is not none %}
+      <span class="th-age">{{ t.age }}d</span>
+      {% if t.age >= 120 %}<span class="stat is-warn">stale</span>{% endif %}
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-row">No open threads. Capture a thought and it will open one here.</div>
+{% endif %}

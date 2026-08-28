@@ -109,10 +109,11 @@
     <!-- Right: follow-ups first (most actionable), then week ahead, then stats -->
     <div>
       {{ sec_label("Open follow-ups") }}
+      {#- innerHTML, not outerHTML: this element carries the layout/styling classes and the partial returns bare content, so an outerHTML swap deleted the wrapper and the panel silently lost its border, padding or grid on load. See tools/check_htmx_swaps.py. -#}
       <div class="panel panel-pad u-mb-4 panel--md"
            hx-get="/api/partial/meetings/follow-ups"
            hx-trigger="load"
-           hx-swap="outerHTML">
+           hx-swap="innerHTML">
         <div class="ed" style="font-size:var(--t-body);opacity:.5;"><em>Looking up open follow-ups…</em></div>
       </div>
 

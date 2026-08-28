@@ -49,10 +49,14 @@
   {# Planning horizon at the TOP — this is where the merged Planner lives now:
      your intentions ("what you want to do") sit above your projects, so the link
      between them is the first thing you see when you open Work. #}
+  {#- The heading sits OUTSIDE the hx-get element on purpose. HTMX replaces the
+      whole innerHTML of the element it is attached to, so a heading written into
+      the loading placeholder is deleted the moment the panel loads — it flashes
+      for one frame and is gone. That is why this panel looked untitled. -#}
+  {{ sec_label("What you want to do", tail="INTENTIONS · THIS QUARTER") }}
   <div class="u-mb-5" hx-get="/api/partial/planner/intentions"
        hx-trigger="load"
        hx-swap="innerHTML">
-    {{ sec_label("What you want to do", tail="INTENTIONS · THIS QUARTER") }}
     <div class="panel panel-pad skeleton" style="min-height:70px;"></div>
   </div>
 
@@ -252,18 +256,22 @@
   <!-- ══════════ BOARD VIEW (was the Planner tab) ══════════ -->
   <div class="u-hide" id="work-view-board">
     <!-- Week ahead -->
+    {{ sec_label("The week ahead", tail="SEVEN DAYS") }}
     <div class="u-mb-6" hx-get="/api/partial/planner/week" hx-trigger="revealed" hx-swap="innerHTML">
-      {{ sec_label("The week ahead", tail="SEVEN DAYS") }}
       <div class="panel panel-pad skeleton" style="min-height:120px;"></div>
     </div>
     <!-- Intentions -->
+    {{ sec_label("Intentions", tail="THIS QUARTER") }}
     <div class="u-mb-6" hx-get="/api/partial/planner/intentions" hx-trigger="revealed" hx-swap="innerHTML">
-      {{ sec_label("Intentions", tail="THIS QUARTER") }}
       <div class="panel panel-pad skeleton" style="min-height:80px;"></div>
     </div>
     <!-- Project pipeline -->
+    {#- No sec_label here: partials/planner_kanban.html emits its own <h2>. A
+        second one outside the swap target would render both. Checked, not
+        assumed — of the five panels whose heading sat inside an innerHTML swap,
+        three had no heading of their own and needed this fix; two already had
+        one and did not. -#}
     <div hx-get="/api/partial/planner/kanban" hx-trigger="revealed" hx-swap="innerHTML">
-      {{ sec_label("The pipeline", tail="SOMEDAY · INCUBATING · ACTIVE · DONE") }}
       <div class="panel panel-pad skeleton" style="min-height:160px;"></div>
     </div>
   </div>

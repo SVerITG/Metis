@@ -465,7 +465,8 @@
 
       {# Update Metis — P2.4. Backed up, verified, and self-undoing on failure. #}
       {{ sec_label("Update", tail="SAFE, WITH ROLLBACK") }}
-      <div class="u-mb-5" hx-get="/api/partial/metis/update" hx-trigger="revealed once" hx-swap="outerHTML">
+      {#- innerHTML, not outerHTML: this element carries the layout/styling classes and the partial returns bare content, so an outerHTML swap deleted the wrapper and the panel silently lost its border, padding or grid on load. See tools/check_htmx_swaps.py. -#}
+      <div class="u-mb-5" hx-get="/api/partial/metis/update" hx-trigger="revealed once" hx-swap="innerHTML">
         <div class="panel panel--md">{{ skeleton_block(rows=2) }}</div>
       </div>
 

@@ -33,7 +33,7 @@
     </p>
     <button type="button" class="btn btn--soft btn--sm"
             hx-post="/api/news/briefings/refresh"
-            hx-target="#news-briefings" hx-swap="outerHTML"
+            hx-target="#news-briefings" hx-swap="innerHTML"
             hx-indicator="#brief-spin-{{ b.kind }}">Fetch now</button>
     <span id="brief-spin-{{ b.kind }}" class="htmx-indicator fb-spin">reading the archive…</span>
   </div>
@@ -63,7 +63,7 @@
        target="_blank" rel="noopener">Read the latest in full</a>
     <button type="button" class="btn btn--ghost btn--sm"
             hx-post="/api/news/briefings/refresh"
-            hx-target="#news-briefings" hx-swap="outerHTML"
+            hx-target="#news-briefings" hx-swap="innerHTML"
             hx-indicator="#brief-spin-{{ b.kind }}">Check for new</button>
     <span id="brief-spin-{{ b.kind }}" class="htmx-indicator fb-spin">reading the archive…</span>
   </div>

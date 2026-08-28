@@ -10,7 +10,7 @@
   <button class="btn btn--primary btn--caps" onclick="openAddProjectModal()">+ Add your first project</button>
 </div>
 {% else %}
-<div class="grid grid-2" id="project-grid">
+<div class="grid grid-2 grid--top" id="project-grid">
   {% for p in projects %}
   <div class="panel panel-pad project-card"
        data-project-id="{{ p.id }}"
@@ -37,10 +37,17 @@
 
           Collected and de-duplicated case-insensitively, ARTICLE kept separate
           because it is a state rather than a label. -#}
+      {#- These are CATEGORIES — permanent facts about the project, not states.
+          They were pills in the same olive as OVERDUE and BLOCKED, so a card
+          announcing "software · sleeping-sickness" shouted exactly as loudly
+          as a card that was late. Per the vocabulary in styles.css: a pill is
+          a state, plain small text is a category. Text was NOT truncated in
+          Python any more — `[:16]` produced "SLEEPING-SICKNES"; .tag--clip
+          clips at the available width and draws a real ellipsis. -#}
       {% set _chips = [] %}
-      {% if p.category %}{% set _ = _chips.append(p.category[:16]) %}{% endif %}
-      {% if p.domain %}{% set _ = _chips.append(p.domain[:16]) %}{% endif %}
-      {% for tag in (p.tags_list or [])[:3] %}{% set _ = _chips.append(tag[:14]) %}{% endfor %}
+      {% if p.category %}{% set _ = _chips.append(p.category) %}{% endif %}
+      {% if p.domain %}{% set _ = _chips.append(p.domain) %}{% endif %}
+      {% for tag in (p.tags_list or [])[:3] %}{% set _ = _chips.append(tag) %}{% endfor %}
       {% if p.project_type and p.project_type not in ('research', 'article') %}
         {% set _ = _chips.append(p.project_type) %}
       {% endif %}
@@ -48,11 +55,11 @@
       {% for c in _chips %}
         {% if c and c.lower() not in _seen %}
           {% set _ = _seen.append(c.lower()) %}
-          <span class="chip chip--plain u-fixed" style="font-size:var(--t-micro);">{{ c }}</span>
+          <span class="tag tag--clip u-fixed" title="{{ c }}">{{ c }}</span>
         {% endif %}
       {% endfor %}
       {% if p.launcher_type == 'article' or p.project_type == 'article' %}
-      <span class="chip u-fixed" style="font-size:var(--t-micro);background:var(--m-ochre-wash);color:var(--m-ochre-deep);border:1px solid var(--m-ochre-soft);">ARTICLE</span>
+      <span class="tag tag--accent u-fixed" title="Opens a manuscript">article</span>
       {% endif %}
       <!-- Notes toggle -->
       <button class="u-fixed btn btn--ghost" onclick="toggleProjectNotes('{{ p.id }}')"

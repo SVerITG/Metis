@@ -11,10 +11,11 @@
     <a href="javascript:void(0)" onclick="generateHandoff()" style="margin-left:1rem;" title="Save a summary of where we left off">
       <i class="bi bi-box-arrow-up-right"></i> Handoff
     </a>
+    {#- innerHTML, not outerHTML: this element carries the layout/styling classes and the partial returns bare content, so an outerHTML swap deleted the wrapper and the panel silently lost its border, padding or grid on load. See tools/check_htmx_swaps.py. -#}
     <span class="u-label" id="scheduler-next" style="margin-left:1rem;"
           hx-get="/api/partial/today/automation-next"
           hx-trigger="load, every 60s"
-          hx-swap="outerHTML"></span>
+          hx-swap="innerHTML"></span>
     <a href="javascript:void(0)" onclick="runMetisDoctor()" style="margin-left:1rem;" title="Run a full health check on Metis">
       <i class="bi bi-stethoscope"></i> Doctor
     </a>

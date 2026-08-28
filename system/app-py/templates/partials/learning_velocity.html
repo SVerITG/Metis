@@ -31,14 +31,31 @@
     <div class="u-label u-mb-2">
       LAST 14 DAYS
     </div>
+    {#- An all-zero sparkline is a chart of nothing: 14 identical grey stubs on a
+        baseline, which takes a chart's worth of space to say "no data". Say it
+        in words instead. `any_data` is true here whenever there is a single
+        review EVER, so this window can legitimately be empty while the panel
+        below still has numbers to show. -#}
+    {% if not max_count %}
+    <p class="u-ed vel-empty">No reviews in the last 14 days.</p>
+    {% else %}
     {% set bar_w = 16 %}
     {% set gap = 4 %}
     {% set chart_h = 48 %}
     {% set total_w = 14 * bar_w + 13 * gap %}
+    {#- The explicit height is load-bearing. An <svg> with a viewBox, width:100%
+        and NO height scales proportionally: this viewBox is 276 x 62, so across
+        a ~1150px panel the element became ~258px tall — a quarter of a screen of
+        empty chart — and font-size="8" axis labels were scaled with it to ~33px,
+        which is why "TODAY" was rendered in giant letters under an empty box.
+        Pinning the height keeps the drawing 62px tall and lets
+        preserveAspectRatio="none" stretch the bars across the width, which is
+        what a sparkline wants. -#}
     <svg viewBox="0 0 {{ total_w }} {{ chart_h + 14 }}"
-         width="100%"
+         width="100%" height="{{ chart_h + 14 }}"
          preserveAspectRatio="none"
-         style="display:block;max-width:100%;">
+         role="img" aria-label="Reviews completed on each of the last 14 days"
+         style="display:block;width:100%;height:{{ chart_h + 14 }}px;">
       <line x1="0" y1="{{ chart_h }}" x2="{{ total_w }}" y2="{{ chart_h }}"
             stroke="var(--m-rule-soft)" stroke-width="1"/>
       {% for d in spark_days %}
@@ -72,6 +89,7 @@
             font-family="var(--m-mono)" font-size="8" fill="var(--m-muted)"
             letter-spacing="0.1em">TODAY</text>
     </svg>
+    {% endif %}
   </div>
 
   {# ---- Streak ---- #}

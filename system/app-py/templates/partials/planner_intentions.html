@@ -1,19 +1,52 @@
+{#- planner_intentions.html — the five projects you have said matter most.
+
+    Rewritten 2026-08-28. What was here before drew a progress bar whose width
+    came from `{'high': 85, 'medium': 55, 'low': 30}[priority]` — the project's
+    PRIORITY rendered as a length, immediately beside the word "MEDIUM" that
+    already stated it. Because every active project happened to be medium, the
+    panel drew five identical 55% bars, which reads as "five projects, all
+    exactly half done" — a statement about the data that was not true and was
+    never intended.
+
+    Now: priority is a CATEGORY, so it is quiet text (.tag). The bar shows the
+    one thing a bar legitimately shows here — the share of the project's tasks
+    that are closed — and is omitted entirely when there are no tasks to
+    measure, rather than drawn at zero, which would read as "no progress"
+    instead of "nothing tracked yet". -#}
 <div class="panel">
   {% if projects %}
-    {% set prio_pct = {'high': 85, 'medium': 55, 'low': 30} %}
     {% for p in projects %}
-    <div style="padding:16px 20px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %}">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;">
-        <div class="u-title">{{ p.title }}</div>
-        <div class="tnum u-label">{{ (p.priority or 'ACTIVE') | upper }}</div>
+    {% set total = p.total_n or 0 %}
+    {% set done  = p.done_n or 0 %}
+    {% set pct   = (done * 100 // total) if total else 0 %}
+    <div class="int-row{% if not loop.last %} int-row--ruled{% endif %}">
+      <div class="int-head">
+        <div class="u-title int-title">{{ p.title }}</div>
+        <div class="int-meta">
+          {% if total %}
+            <span class="tnum int-count">{{ done }}/{{ total }} done</span>
+          {% else %}
+            <span class="tnum int-count int-count--none">no tasks yet</span>
+          {% endif %}
+          {#- Priority is shown only when it is NOT the default. Every active
+              project is "medium", so printing it drew the same word on all five
+              rows — a label that appears on 100% of rows cannot distinguish
+              between them, and its absence here means exactly "normal". -#}
+          {% if p.priority and p.priority | lower not in ('medium', 'normal', '') %}
+          <span class="tag">{{ p.priority | lower }}</span>
+          {% endif %}
+        </div>
       </div>
-      {% set bar_w = prio_pct[p.priority] if p.priority in prio_pct else 45 %}
-      <div style="height:2px;background:var(--m-surface-3);margin-top:var(--m-space-2);border-radius:1px;">
-        <div style="height:100%;width:{{ bar_w }}%;background:var(--m-accent);border-radius:1px;"></div>
+      {% if total %}
+      <div class="int-bar" role="img"
+           aria-label="{{ done }} of {{ total }} tasks done ({{ pct }} percent)">
+        <div class="int-bar-fill{% if pct >= 100 %} is-complete{% endif %}"
+             style="width:{{ pct }}%;"></div>
       </div>
+      {% endif %}
     </div>
     {% endfor %}
   {% else %}
-  <div class="empty-row">No active projects yet — add one from the <a href="/work" onclick="setNavActive&&setNavActive('work')" style="color:var(--m-accent);">Work tab</a>.</div>
+  <div class="empty-row">No active projects yet — add one from the <a href="/work" onclick="setNavActive&&setNavActive('work')" class="u-link">Work tab</a>.</div>
   {% endif %}
 </div>

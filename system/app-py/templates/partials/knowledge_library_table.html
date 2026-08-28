@@ -113,21 +113,29 @@
         <!-- Title + Authors + Type badge -->
         <td style="padding:var(--m-space-3) var(--m-space-3);vertical-align:top;">
           <div class="u-row u-row--base">
-            {# Type badge #}
+            {#- Type badge. An item's type is a CATEGORY — a preprint is still a
+                preprint next month — so it is quiet text, not a pill. It was a
+                coloured pill sitting immediately beside the UNREAD pill, which
+                made a permanent fact and a changing state look identical. The
+                colour encoding is not lost: it stays on the type icon in the
+                year column, where it is a genuine data-series encoding rather
+                than decoration. ARTICLE is 60% of rows, so shouting it told
+                the reader nothing they could act on. -#}
             {% if item.item_type %}
-            <span style="flex-shrink:0;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
-              padding:2px 7px;border-radius:var(--m-radius-pill,10px);
-              background:color-mix(in srgb, {{ icolor }} 12%, transparent);
-              color:{{ icolor }};">{{ type_labels.get(item.item_type, item.item_type) | upper }}</span>
+            <span class="tag u-fixed">{{ type_labels.get(item.item_type, item.item_type) | lower }}</span>
             {% endif %}
             {# Read / unread toggle — the write half of a field that existed unused. #}
+            {#- Read / unread. UNREAD was drawn in accent on 25 of 26 rows, and the
+                row ALREADY carries a 2px accent left border when unread — the same
+                fact painted twice, loudly, on almost every row, while "read" (the
+                rare and therefore informative case) was the quiet one. Inverted to
+                follow the urgency ladder: the common state is .is-quiet, the
+                uncommon one earns the colour. -#}
             <button hx-post="/api/library/{{ item.id }}/read" hx-swap="outerHTML"
+                    class="stat u-fixed {% if item.is_read %}is-good{% else %}is-quiet{% endif %}"
+                    style="cursor:pointer;"
                     title="{% if item.is_read %}Mark unread{% else %}Mark read{% endif %}"
-                    style="flex-shrink:0;font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;
-                           padding:2px 7px;border:1px solid var(--m-line);border-radius:10px;
-                           background:transparent;cursor:pointer;
-                           color:{% if item.is_read %}var(--m-muted){% else %}var(--m-accent){% endif %};"
-            >{% if item.is_read %}READ{% else %}UNREAD{% endif %}</button>
+            >{% if item.is_read %}read{% else %}unread{% endif %}</button>
             {# Title #}
             <div class="u-grow u-title" style="line-height:1.35;">
               {% if item.doi %}

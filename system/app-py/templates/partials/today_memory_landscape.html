@@ -40,7 +40,7 @@
           text-align:center;line-height:1.2;max-width:{{ size - 8 }}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
           {{ t.name[:18] }}
         </span>
-        <span style="font-family:var(--m-mono);font-size:{% if size >= 60 %}8{% else %}7{% endif %}px;color:var(--m-muted-soft);margin-top:1px;">{{ t.count }}</span>
+        <span style="font-family:var(--m-mono);font-size:{% if size >= 60 %}8{% else %}7{% endif %}px;color:var(--m-muted);margin-top:1px;">{{ t.count }}</span>
       </div>
       {% endfor %}
     </div>

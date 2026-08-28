@@ -3,7 +3,7 @@
   <h2 class="sec-label u-mb-3">
     <span>Due Today</span>
     {% if overdue %}
-    <span class="u-mono" style="letter-spacing:0.1em;color:var(--m-alert);">{{ overdue|length }} OVERDUE</span>
+    <span class="stat is-urgent">{{ overdue|length }} overdue</span>
     {% endif %}
   </h2>
   <div class="panel">
@@ -14,7 +14,11 @@
         {{ task.title or 'Untitled task' }}
         {% if task.project %}<span class="u-label" style="margin-left:6px;">{{ task.project[:22] }}</span>{% endif %}
       </span>
-      <span class="todo-meta" style="color:var(--m-alert);">OVERDUE · {{ task.due_date }}</span>
+      {#- The row already carries an alert left border; this said "overdue" a
+          second time in the same colour. Kept, because on this strip it is the
+          one badge that earns .is-urgent and the date beside it is what the
+          reader acts on. -#}
+      <span class="stat is-urgent tnum">{{ task.due_date }}</span>
     </div>
     {% endfor %}
     {% for task in due_today %}
@@ -24,7 +28,7 @@
         {{ task.title or 'Untitled task' }}
         {% if task.project %}<span class="u-label" style="margin-left:6px;">{{ task.project[:22] }}</span>{% endif %}
       </span>
-      <span class="todo-meta">TODAY</span>
+      <span class="stat is-quiet">today</span>
     </div>
     {% endfor %}
   </div>

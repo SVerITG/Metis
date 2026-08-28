@@ -291,6 +291,20 @@ async def learning_due_today(request: Request):
     total_due = db_scalar(
         "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ?", (today,), default=0
     ) or 0
+    # How LATE each card is, in days. The row used to carry a flat "OVERDUE"
+    # chip, which on real data appeared on 10 of 10 rows — a mark on every row
+    # cannot rank rows, and ranking is the only thing the reader wants here
+    # ("which of these have I been avoiding longest?"). A number varies, so it
+    # informs; the word did not. 0 means due today, not late.
+    today_d = datetime.date.today()
+    for row in (due or []):
+        try:
+            row["days_late"] = max(
+                0, (today_d - datetime.date.fromisoformat(str(row["next_review_date"])[:10])).days
+            )
+        except Exception:
+            row["days_late"] = 0
+
     # Streak: consecutive calendar days with at least one completed review
     streak = _compute_streak()
     return templates.TemplateResponse(

@@ -50,6 +50,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import functools
 import re
 import sqlite3
 import unicodedata
@@ -388,6 +389,26 @@ def _norm(text: str) -> str:
     return f" {t} "
 
 
+@functools.lru_cache(maxsize=4096)
+def _alias_re(alias: str) -> "re.Pattern":
+    """An alias must be a WHOLE WORD, bounded on both sides.
+
+    THE BUG THIS FIXES, because it is not obvious from the code that was here:
+    the old probe was `" " + alias` — a boundary on the LEFT only, with
+    `f" {alias} "` as an alternative. A left-only boundary means the alias
+    `mali` matches "MALIgnant", so a STAT article headlined "FDA approves new
+    pancreatic cancer drug" was filed as a story about Mali. It also means
+    `chad` matches "chadian" (fine) but equally "chadwick" (not fine), and
+    `guinea` matches "guinea-pig".
+
+    A trailing letter or digit now disqualifies a match; anything else —
+    a space, an apostrophe in "congo's", a hyphen in "guinea-bissau" — still
+    counts as a boundary, so the plural and possessive forms the loose probe
+    was there to catch keep working.
+    """
+    return re.compile(r"(?<![a-z0-9])" + re.escape(alias.strip()) + r"(?![a-z0-9])")
+
+
 def _match_vocab(haystack: str, vocab: dict[str, tuple[str, ...]]) -> list[str]:
     """Canonical keys whose aliases appear in `haystack`, longest alias first.
 
@@ -398,8 +419,7 @@ def _match_vocab(haystack: str, vocab: dict[str, tuple[str, ...]]) -> list[str]:
     for key, aliases in vocab.items():
         best = 0
         for alias in aliases:
-            probe = alias if alias.startswith(" ") or alias.endswith(" ") else f" {alias}"
-            if probe in haystack or f" {alias} " in haystack:
+            if _alias_re(alias).search(haystack):
                 best = max(best, len(alias))
         if best:
             hits.append((best, key))
@@ -407,18 +427,65 @@ def _match_vocab(haystack: str, vocab: dict[str, tuple[str, ...]]) -> list[str]:
     return [k for _, k in hits]
 
 
+#: Words that are grammatically available to name a thread and semantically
+#: useless for it. A thread name answers "what is this story ABOUT", and a verb
+#: answers "what happened" — which is the headline's job, not the thread's.
+#:
+#: This is why one FDA drug approval appeared on the News overview as THREE
+#: separate running stories: the three headlines covering it shared no noun the
+#: vocabulary knew, so each was named from its own leftover verbs — "Approves
+#: treatment", "Agency approves", "Approves · Mali". Different names, so
+#: different thread ids, so no grouping. Removing the verbs does not merge them
+#: by itself, but it stops the fallback from manufacturing a name that LOOKS
+#: like a subject and is not.
+_NON_SUBJECT = {
+    "approves", "approved", "approval", "announces", "announced", "launches",
+    "launched", "declares", "declared", "confirms", "confirmed", "warns",
+    "warned", "urges", "urged", "calls", "called", "backs", "backed",
+    "expands", "expanded", "extends", "extended", "begins", "began",
+    "unveils", "unveiled", "issues", "issued", "grants", "granted",
+    "rejects", "rejected", "halts", "halted", "resumes", "resumed",
+    "agency", "authority", "committee", "commission", "regulator",
+    "treatment", "treatments", "breakthrough", "expected", "according",
+    "researchers", "scientists", "officials", "experts", "leaders",
+    "million", "billion", "percent", "despite", "following", "including",
+}
+
+
 def _distinctive_tokens(haystack: str, limit: int = 3) -> list[str]:
-    """Fallback identity for items no vocabulary entry matches."""
-    seen: list[str] = []
-    for tok in haystack.split():
-        tok = tok.strip("-'")
-        if len(tok) < 5 or tok in _STOPWORDS or tok.isdigit():
-            continue
-        if tok not in seen:
-            seen.append(tok)
-        if len(seen) >= limit:
-            break
-    return seen
+    """Fallback identity for items no vocabulary entry matches.
+
+    Candidates are ranked by LENGTH, not by where they appear. Taking them in
+    headline order sounds right — headlines front-load their subject — but the
+    filler comes first just as often, and the loop stopped at `limit` before
+    ever reaching the noun. "FDA approves new treatment for hard-to-treat
+    pancreatic cancer" yielded "treat pancreatic", because `treat` appears
+    first and `treat` is exactly five characters.
+
+    Length is a crude specificity proxy and a good one here: `pancreatic` beats
+    `treat`, `fungicide` beats `based`, `surveillance` beats `report`. Ties keep
+    headline order, and the tokens finally chosen are returned in the order they
+    appeared so the name still reads as English.
+    """
+    cands: list[tuple[int, int, str]] = []
+    seen: set[str] = set()
+    pos = 0
+    # Hyphenated compounds are SPLIT, not taken whole. "hard-to-treat" is one
+    # whitespace token and eleven characters long, so it sailed past the length
+    # floor as a single candidate — a modifier outranking the noun it modifies.
+    for raw in haystack.split():
+        for tok in raw.split("-"):
+            tok = tok.strip("-'")
+            if len(tok) < 5 or tok in _STOPWORDS or tok in _NON_SUBJECT or tok.isdigit():
+                continue
+            if tok in seen:
+                continue
+            seen.add(tok)
+            cands.append((-len(tok), pos, tok))
+            pos += 1
+    cands.sort()
+    chosen = sorted(cands[:limit], key=lambda c: c[1])
+    return [t for _, _, t in chosen]
 
 
 def _largest_number(text: str) -> int:
@@ -484,7 +551,14 @@ def classify(title: str, summary: str = "", domain: str = "") -> dict:
     # longer alias than 'central african republic' and won the longest-match
     # tie-break. The headline names the country the story is actually about.
     title_hay = _norm(title)
-    places = _match_vocab(title_hay, PLACES) or _match_vocab(hay, PLACES)
+    places = _match_vocab(title_hay, PLACES)
+    if not places and _match_vocab(hay, _subject_vocab()):
+        # A place found only in the SUMMARY may REFINE a story the vocabulary
+        # already recognises ("cholera" + a country named in the body). It may
+        # not DEFINE one: a summary mentions countries in passing constantly —
+        # datelines, author affiliations, "unlike in Mali" — and a story whose
+        # only claim to a country is one passing mention is not about it.
+        places = _match_vocab(hay, PLACES)
 
     subject = subjects[0] if subjects else ""
     # Prefer a country. A continental tag is recorded but never splits a thread.

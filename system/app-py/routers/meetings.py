@@ -377,16 +377,29 @@ async def meetings_next_label(request: Request):
         "WHERE meeting_date >= ? ORDER BY meeting_date LIMIT 1",
         (today,),
     )
+    # NOTE: the template swaps this in with hx-swap="outerHTML", which replaces
+    # the <h2 class="sec-label"> ELEMENT, not its contents. Returning only the
+    # inner spans therefore threw away the class, the styling and the heading
+    # semantics, and the section rendered as unstyled body text reading
+    # "Next meetingNONE SCHEDULED" — the missing space being the two spans
+    # colliding with no .sec-label flex gap between them. Always return the
+    # whole element for an outerHTML swap.
+    def _label(tail: str) -> HTMLResponse:
+        # No hx-get/hx-trigger on the returned element: the template's copy is
+        # triggered by "load", and HTMX fires load on content it has just
+        # inserted — so re-emitting the trigger here would make the heading
+        # request itself forever.
+        return HTMLResponse(
+            '<h2 class="sec-label u-mb-3">'
+            f'<span>Next meeting</span><span class="tail">{tail}</span></h2>'
+        )
+
     if nxt:
         m = nxt[0]
         status = (m.get("transcript_status") or "UPCOMING").upper()
         label = (m.get("meeting_date") or "")[:10]
-        return HTMLResponse(
-            f'<span>Next meeting</span><span class="tail">{status} · {label}</span>'
-        )
-    return HTMLResponse(
-        '<span>Next meeting</span><span class="tail">NONE SCHEDULED</span>'
-    )
+        return _label(f"{status} · {label}")
+    return _label("NONE SCHEDULED")
 
 
 @router.get("/api/partial/meetings/upcoming", response_class=HTMLResponse)

@@ -114,11 +114,13 @@
   <!-- The README's core promise, greeting you daily on the cockpit. Seeds from
        the most recently touched project; endpoint lives in routers/connections.py
        (not today.py) so it stays isolated. -->
+  {#- The heading is emitted by partials/connections_strip.html, because it
+      carries a live count ("· 5 across your work") that only the partial knows.
+      It is a real <h2 class="sec-label"> there, so the page outline is intact. -#}
   <div class="u-mb-6"
        hx-get="/api/partial/connections/today"
        hx-trigger="load delay:150ms"
        hx-swap="innerHTML">
-    {{ sec_label("Connections", tail="ACROSS YOUR WORK") }}
     {{ skeleton_box(size="sm") }}
   </div>
 

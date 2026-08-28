@@ -25,19 +25,29 @@
               onmouseout="this.style.opacity='0.5';this.style.color='var(--m-muted)'">&times;</button>
       {# Badge row — type badge + memory depth #}
       <div class="u-row u-mb-2">
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;padding:2px 8px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, {{ item.badge_color }} 15%, transparent);color:{{ item.badge_color }};">{{ item.badge }}</span>
+        <span class="{{ item.badge_class or 'stat is-quiet' }}">{{ item.badge }}</span>
         {% if item.subtitle %}
         <span class="u-label" style="letter-spacing:0.08em;">{{ item.subtitle }}</span>
         {% endif %}
-        {# Memory depth badge #}
-        {% if item.memory %}
+        {#- Memory depth. Two changes, both from looking at a screenshot:
+
+            1. `{% if item.memory %}` is true for a dict even when the count is
+               zero, so this rendered "● 0" on four of six cards. A badge whose
+               value is zero is not a quiet badge — it is a badge that says
+               nothing, taking the same space and the same eye movement as one
+               that says 207. It now renders only when there is something to
+               count, which is the same rule as the "shallow context" line
+               removed below.
+
+            2. It was a pill tinted from --m-chart-*. That ramp encodes DATA
+               SERIES, not UI meaning (see the note at the top of styles.css),
+               and a pill means "state". This is a measurement, so it takes the
+               quiet form, and only "deep" — the case worth acting on, because
+               it means you can pick the thread straight up — earns colour. -#}
+        {% if item.memory and (item.memory.total or 0) > 0 %}
         {% set mem = item.memory %}
-        <span style="margin-left:auto;display:inline-flex;align-items:center;gap:3px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:2px 7px;border-radius:var(--m-radius-pill);
-          background:{% if mem.level == 'deep' %}color-mix(in srgb, var(--m-chart-2) 12%, transparent){% elif mem.level == 'moderate' %}color-mix(in srgb, var(--m-chart-1) 10%, transparent){% else %}color-mix(in srgb, var(--m-chart-8) 10%, transparent){% endif %};
-          color:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};"
-          title="{{ mem.total }} related memories across {{ mem.layers|length }} layers">
-          <span style="width:5px;height:5px;border-radius:50%;
-            background:{% if mem.level == 'deep' %}var(--m-chart-2){% elif mem.level == 'moderate' %}var(--m-chart-1){% else %}var(--m-chart-8){% endif %};"></span>
+        <span class="stat u-ml-auto {{ 'is-good' if mem.level == 'deep' else 'is-quiet' }}"
+              title="{{ mem.total }} related memories across {{ mem.layers|length }} layers">
           {{ mem.total }}
         </span>
         {% endif %}

@@ -82,10 +82,11 @@
   <!-- ── panel: new ──────────────────────────────────────────────────── -->
   <div class="lib-panel" id="libpanel-new" role="tabpanel"
        >
+    {#- innerHTML, not outerHTML: this element carries the layout/styling classes and the partial returns bare content, so an outerHTML swap deleted the wrapper and the panel silently lost its border, padding or grid on load. See tools/check_htmx_swaps.py. -#}
     <div class="u-mb-2"
          hx-get="/api/partial/library/new-literature"
          hx-trigger="load"
-         hx-swap="outerHTML">
+         hx-swap="innerHTML">
       <div class="panel skeleton skeleton-box" style="height:300px;"></div>
     </div>
   </div>

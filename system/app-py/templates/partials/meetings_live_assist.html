@@ -47,9 +47,11 @@
     </div>
     {% for c in connections %}
     <div style="padding:var(--m-space-2) 0;display:flex;gap:var(--m-space-3);align-items:baseline;">
-      <span class="u-label u-label--accent u-fixed" style="letter-spacing:0.12em;width:54px;">
-        {{ c.source | upper }}
-      </span>
+      {#- Where the connection came from is a category, and on this panel it is
+          "library" on every row. It was set in accent — the loudest text colour
+          in the system — which made the least varying thing on the row the
+          first thing the eye landed on, ahead of the title you actually read. -#}
+      <span class="tag u-fixed conn-source">{{ c.source | lower }}</span>
       <span class="u-title u-title--sm" style="line-height:1.4;">
         {{ c.title }}
         {% if c.from_meeting %}

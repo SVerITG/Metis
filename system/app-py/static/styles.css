@@ -53,7 +53,13 @@
   --m-muted:         #5f665d;
   /* --m-muted-soft was #9aa098 = 2.39:1 — failed even the 3:1 non-text floor.
      RETIRED AS A TEXT COLOUR (see .nav-label et al). Now 4.18:1, i.e. legal for
-     borders/dividers/decorative marks only. Do not set type in it. */
+     borders/dividers/decorative marks only. Do not set type in it.
+
+     Re-audited 2026-08-28: the rule had drifted back into 7 stylesheet rules and
+     16 template attributes — .nl-score, .ni-when, .fc-l and others were setting
+     real, readable type in it, and one of them stacked opacity:.8 on top, which
+     takes 4.18:1 down to roughly 3.4:1. All converted to --m-muted (5.29:1).
+     .empty-icon keeps it: that one is a decorative glyph, not type. */
   --m-muted-soft:    #6f766d;
 
   /* Rules */
@@ -506,6 +512,131 @@ pre code { background: transparent; padding: 0; color: inherit; }
 .chip--sonnet { background: var(--m-sonnet-bg);   color: var(--m-sonnet-fg); }
 .chip--opus   { background: var(--m-opus-bg);     color: var(--m-opus-fg); }
 
+/* ================================================================
+   STATE vs CATEGORY — the vocabulary that was missing
+   ================================================================
+   THE PROBLEM, stated as a rule that was being broken:
+
+     A reader learns a UI's vocabulary by noticing that things which
+     LOOK alike BEHAVE alike. Metis had one visual treatment — a small
+     uppercase mono pill — doing five unrelated jobs at once. On the
+     News surface a single row carried "not yet briefed" (a state),
+     "changed" (a state), "high" (a measurement) and a topic label (a
+     category), all rendered as near-identical olive pills. Nothing
+     could be scanned, because scanning requires that the eye be able
+     to skip a whole class of thing, and no class was visually distinct.
+
+   THE RULE NOW, and it has two axes that never mix:
+
+     SHAPE encodes KIND.
+       A pill is a STATE — something that is true right now and will
+       stop being true later ("overdue", "changed", "new today").
+       Plain small text is a CATEGORY — a permanent fact about the
+       item ("software", "preprint", "sleeping-sickness"). Categories
+       are the majority of labels on screen, so they get the quietest
+       possible form: no background, no border, no box.
+
+     COLOUR encodes URGENCY, and the ladder is strict.
+       .is-quiet   the DEFAULT state. No fill. This is the important
+                   one and the one that was wrong: "not yet briefed"
+                   was rendered as SOLID ACCENT — the loudest treatment
+                   in the system — on almost every thread on the page.
+                   The most common state must be the quietest, or the
+                   loud treatment stops carrying information at all.
+       .is-info    noteworthy, no action needed.
+       .is-good    a good outcome, resolved, done.
+       .is-warn    needs attention soon.
+       .is-urgent  needs action NOW. Solid fill. If more than a couple
+                   of these are on screen at once, the mapping is wrong,
+                   not the design.
+   ================================================================ */
+
+.stat {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px; border-radius: 999px;
+  font-family: var(--m-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  line-height: 1.5; white-space: nowrap;
+  border: 1px solid transparent;
+}
+/* The default. Deliberately almost invisible — see the note above. */
+.stat.is-quiet  { background: transparent; color: var(--m-muted); border-color: var(--m-rule); }
+.stat.is-info   { background: var(--m-info-wash);  color: var(--m-info); }
+.stat.is-good   { background: var(--m-ok-wash);    color: var(--m-ok); }
+.stat.is-warn   { background: var(--m-warn-wash);  color: var(--m-ochre-deep); }
+.stat.is-urgent { background: var(--m-alert);      color: #fff; }
+
+/* A category is a FACT, not an event. No box, no colour, no weight —
+   it should read as a footnote to the title it sits beside. */
+.tag {
+  display: inline-flex; align-items: center;
+  font-family: var(--m-mono); font-size: 10px; font-weight: 400;
+  letter-spacing: 0.08em; color: var(--m-muted);
+  text-transform: lowercase; white-space: nowrap;
+}
+.tag + .tag { margin-left: 10px; }
+/* Separator drawn rather than typed, so it never wraps onto its own line. */
+.tag + .tag::before { content: ""; display: inline-block; width: 3px; height: 3px;
+  border-radius: 50%; background: var(--m-rule-strong); margin-right: 10px; }
+
+/* Truncation is a DISPLAY problem and belongs here, not in the template.
+   `p.category[:16]` in Jinja produced "SLEEPING-SICKNES" — a word cut mid-
+   syllable with no ellipsis, so the reader cannot tell whether the label is
+   clipped or simply spelled that way. CSS clips at the available width and
+   always draws the ellipsis, and the full text stays in the DOM for the
+   title attribute and for search. */
+.tag--clip { max-width: 24ch; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: bottom; }
+
+/* The one category allowed a colour, because it does not describe the subject
+   matter (like "software" or "sleeping-sickness") but what the card OPENS.
+   Still a category, so still no box — the rule holds. */
+.tag--accent { color: var(--m-ochre-deep); }
+[data-theme="observatory"] .tag--accent,
+[data-theme="midnight"] .tag--accent,
+[data-theme="cavern"] .tag--accent { color: var(--m-ochre-soft); }
+
+/* An inline text link. Existed as `style="color:var(--m-accent)"` in 30-odd
+   templates, which meant it had no hover, no focus ring and no underline —
+   i.e. it was accent-coloured text rather than a link. */
+.u-link { color: var(--m-accent); text-decoration: underline; text-underline-offset: 2px;
+  text-decoration-thickness: 1px; text-decoration-color: var(--m-rule-strong); }
+.u-link:hover { text-decoration-color: currentColor; }
+
+/* ── Intentions rows (Work · Planner) ───────────────────────────────
+   The bar here measures CLOSED TASKS, not priority. See the note in
+   partials/planner_intentions.html for what it used to measure and why
+   that was worse than showing nothing. */
+.int-row { padding: 14px 20px; }
+.int-row--ruled { border-bottom: 1px solid var(--m-rule-soft); }
+.int-head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.int-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.int-meta { display: flex; align-items: baseline; gap: 12px; flex: 0 0 auto; }
+.int-count { font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.08em;
+  color: var(--m-muted); }
+.int-count--none { font-style: italic; opacity: .75; }
+.int-bar { height: 2px; background: var(--m-surface-3); border-radius: 1px;
+  margin-top: 10px; overflow: hidden; }
+.int-bar-fill { height: 100%; background: var(--m-accent-soft); border-radius: 1px;
+  transition: width 240ms ease; }
+.int-bar-fill.is-complete { background: var(--m-ok); }
+@media (prefers-reduced-motion: reduce) { .int-bar-fill { transition: none; } }
+
+/* ── Interaction: the other half of "looks professional" ──────────
+   A surface where nothing responds to the cursor reads as a printed
+   page, not an application. Every clickable ROW gets the same tell. */
+.row-hit { transition: background-color 120ms ease; }
+.row-hit:hover { background: var(--m-accent-wash); }
+
+/* Keyboard focus was invisible in several places. One ring, everywhere. */
+.btn:focus-visible, .stat:focus-visible, .row-hit:focus-visible,
+summary:focus-visible, [role="button"]:focus-visible {
+  outline: 2px solid var(--m-accent); outline-offset: 2px; border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-hit, .btn { transition: none; }
+}
+
 /* Buttons — Archive system */
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
@@ -525,6 +656,23 @@ pre code { background: transparent; padding: 0; color: inherit; }
 
 /* Grids */
 .grid { display: grid; gap: 16px; }
+/* CSS Grid stretches every item to the height of the tallest in its row. For a
+   row of equal-weight tiles that is what you want; for CARDS whose height is
+   their content, it means a card with two tasks is padded out to match a card
+   with eight, and the padding reads as ~150px of blank space the card owns.
+   `start` lets each card be its own height. Opt-in, because the stretch is
+   correct for the tile grids elsewhere. */
+.grid--top { align-items: start; }
+
+/* A grid item's default `min-width` is `auto`, i.e. "never shrink below my
+   longest unbreakable content". One long NEXT-step line or one un-hyphenated
+   URL inside a project card therefore widens its whole 1fr column past the
+   track, the row overflows the page, and the second column is cut off at the
+   window edge — which is exactly what a 1600px screenshot of /work showed.
+   `min-width: 0` lets the track win and the text wrap or ellipsis instead.
+   This is the fix for horizontal page scroll in a `1fr 1fr` grid, and it is
+   safe: nothing here relies on a grid item refusing to shrink. */
+.grid > * { min-width: 0; }
 .grid-2 { grid-template-columns: 1fr 1fr; }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
 .grid-4 { grid-template-columns: repeat(4, 1fr); }
@@ -846,6 +994,11 @@ a.board-item-title:hover { color: var(--m-accent); }
 .chip-btn { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.18em; color: var(--m-muted); background: transparent; border: 1px solid transparent; padding: 4px 10px; cursor: pointer; border-radius: 2px; text-transform: uppercase; transition: color 140ms ease, border-color 140ms ease; }
 .chip-btn:hover { color: var(--m-ink); }
 .chip-btn--on { color: var(--m-accent); border-color: var(--m-accent); }
+/* A row of filter controls. The inline flex/gap lived in a Python f-string in
+   routers/work.py, which is why it could not be restyled from here. */
+.work-filter-bar { display: flex; gap: 7px; margin-bottom: 16px;
+  align-items: center; flex-wrap: wrap; }
+.work-filter-bar .chip-btn { letter-spacing: .08em; font-size: 10px; padding: 3px 11px; }
 
 /* ================================================================
    TODAY — Feed row (news & library)
@@ -951,6 +1104,28 @@ a.board-item-title:hover { color: var(--m-accent); }
 .ink     { color: var(--m-ink); }
 .accent  { color: var(--m-accent); }
 .tnum    { font-variant-numeric: tabular-nums; }
+.u-ml-auto { margin-left: auto; }
+
+/* ── Reflection: open-threads rail + marginalia ─────────────────────
+   Both were built as f-strings in routers/thinking.py with inline styles and
+   inline onmouseover handlers. The hover is .row-hit now, so it matches every
+   other clickable row in the app and respects prefers-reduced-motion. */
+.th-row { padding: 13px 16px 13px 14px; border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--m-rule-soft); cursor: pointer; }
+.th-row.is-active { border-left-color: var(--m-accent); background: var(--m-accent-wash); }
+.th-row.is-active:hover { background: var(--m-accent-wash-2); }
+.th-title { font-family: var(--m-display); font-size: 13px; color: var(--m-ink); line-height: 1.35; }
+.th-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.th-age { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.16em;
+  color: var(--m-muted); }
+
+.marg-card { padding: 18px 20px; margin-bottom: 12px; }
+.marg-date { font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.14em;
+  color: var(--m-muted); margin-bottom: 6px; }
+.marg-body { font-family: var(--m-display); font-size: 13px; color: var(--m-text); line-height: 1.5; }
+
+.vel-empty { margin: 0 0 var(--m-space-2); font-size: var(--t-small); color: var(--m-muted); }
+.conn-source { width: 54px; }
 .label-caps { font-family: var(--m-mono); font-size: var(--t-micro); font-weight: 500; letter-spacing: var(--t-tracking-label); text-transform: uppercase; color: var(--m-muted); }
 .caps-label { font-family: var(--m-mono); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--m-muted); font-weight: 500; margin-bottom: .4rem; }
 .caps-label-teal { color: var(--m-accent); }
@@ -3250,7 +3425,7 @@ details summary { outline: none; }
   .nf-wire .src   { font-family:var(--m-mono); font-size:11px; letter-spacing:0.08em;
                     text-transform:uppercase; color:var(--m-muted); }
   .nf-wire .hd    { font-size:13.5px; line-height:1.4; color:var(--m-ink); }
-  .nf-wire .ago   { font-family:var(--m-mono); font-size:11px; color:var(--m-muted-soft);
+  .nf-wire .ago   { font-family:var(--m-mono); font-size:11px; color:var(--m-muted);
                     white-space:nowrap; }
 
   @media (max-width: 760px) {
@@ -3276,7 +3451,7 @@ details summary { outline: none; }
 .news-tab:hover { color: var(--m-ink); }
 .news-tab[aria-selected="true"] { color: var(--m-ink); border-bottom-color: var(--m-accent); }
 .news-tab .nt-count {
-  margin-left: 6px; font-size: 10px; color: var(--m-muted-soft);
+  margin-left: 6px; font-size: 10px; color: var(--m-muted);
 }
 .news-period { display: flex; gap: 2px; align-items: center; }
 .news-period-btn {
@@ -3293,12 +3468,18 @@ details summary { outline: none; }
 /* Overview: one row per running story, not a card grid. */
 .ov-thread {
   display: grid; grid-template-columns: 1fr auto; gap: 14px;
+  align-items: start;   /* meta aligns with the TITLE, not the block's midpoint */
   padding: 13px 0; border-bottom: 1px solid var(--m-rule-soft);
 }
 .ov-thread-label { font-size: 15px; color: var(--m-ink); line-height: 1.35; }
+/* One line, right-aligned, aligned to the thread title's baseline rather
+   than floating at the top of a three-line stack. */
 .ov-thread-meta {
-  font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.08em;
-  color: var(--m-muted); text-transform: uppercase; white-space: nowrap;
+  display: flex; align-items: baseline; justify-content: flex-end;
+  min-width: 150px;   /* fixed, so the item column starts at the same x on every
+                         thread — "24 items" and "3 items" must not shift it */
+  padding-top: 2px;
+  gap: 0; white-space: nowrap;
 }
 .ov-thread-items { margin-top: 5px; font-size: 13px; color: var(--m-text); line-height: 1.5; }
 .ov-pill {
@@ -3499,7 +3680,7 @@ details summary { outline: none; }
 .fc-sep { flex: 1 1 24px; min-width: 12px; border-top: 1px solid var(--m-line);
           align-self: center; opacity: .6; }
 .fc-cell--quiet .fc-n { font-size: 13px; color: var(--m-muted); }
-.fc-cell--quiet .fc-l { color: var(--m-muted-soft); opacity: .8; }
+.fc-cell--quiet .fc-l { color: var(--m-muted); opacity: .8; }
 
 .fc-warn {
   margin: -8px 0 18px; padding: 10px 14px;
@@ -3740,7 +3921,7 @@ details summary { outline: none; }
 .ni--list .ni-head { margin-bottom: 0; order: 2; margin-left: auto;
                      flex: 0 0 auto; }
 .ni-src { letter-spacing: .06em; text-transform: uppercase; }
-.ni-when { color: var(--m-muted-soft); white-space: nowrap; }
+.ni-when { color: var(--m-muted); white-space: nowrap; }
 .ni-close {
   padding: 1px 7px; border-radius: var(--m-radius-pill);
   background: var(--m-accent-wash); color: var(--m-accent);
@@ -3870,12 +4051,31 @@ details summary { outline: none; }
 .ov-item + .ov-item { margin-top: 8px; }
 .ov-item--declined { opacity: .45; }
 .ov-item--read { opacity: .62; }
-.ov-item .tri { margin-top: 5px; }
-.ov-item .tri > .tri-btn, .ov-item .tri > .tri-tags { opacity: 0; transition: opacity .12s; }
-.ov-item:hover .tri > .tri-btn, .ov-item:focus-within .tri > .tri-btn,
-.ov-item:hover .tri > .tri-tags, .ov-item:focus-within .tri > .tri-tags { opacity: 1; }
-.ov-item .tri .tri-state { opacity: 1; }
-@media (hover: none) { .ov-item .tri > .tri-btn, .ov-item .tri > .tri-tags { opacity: 1; } }
+/* ── The triage row: PRESENT, but not SHOUTING ────────────────────
+   These rules were written against `.tri > .tri-btn`. On 2026-08-27 the
+   action bar was refactored into a shared macro and the wrapper became
+   `.acts` — so every selector below silently stopped matching, and five
+   identical grey glyphs went to full strength on every row of every
+   list. On a News tab of sixty items that is three hundred glyphs of
+   static competing with sixty headlines, and it is the single loudest
+   thing on the surface.
+
+   Nothing about the intent changed: the controls stay in the DOM and
+   stay reachable by keyboard (`:focus-within` covers tabbing to them),
+   they are simply dimmed until the row is under the cursor. A state
+   that has already been SET stays visible — that one is information,
+   not a control. Touch devices, which have no hover, get them always.
+
+   `opacity`, not `visibility` or `display`: the row must not change
+   height when the cursor crosses it. */
+.ov-item .acts, .acts { margin-top: 5px; }
+.ov-item .acts > .act,
+.ov-item .acts > .tri-tags { opacity: 0.25; transition: opacity .12s ease; }
+.ov-item:hover .acts > .act, .ov-item:focus-within .acts > .act,
+.ov-item:hover .acts > .tri-tags, .ov-item:focus-within .acts > .tri-tags { opacity: 1; }
+.ov-item .acts > .badge { opacity: 1; }
+@media (hover: none) { .ov-item .acts > .act, .ov-item .acts > .tri-tags { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .ov-item .acts > .act { transition: none; } }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DESIGN SYSTEM — scales and components               added 2026-08-26
@@ -4485,7 +4685,7 @@ tr:hover .due-chip--none, li:hover .due-chip--none, .item:hover .due-chip--none,
 .ed-item + .ed-item { border-top: 1px solid var(--m-rule-soft); }
 .ed-item::before {
   content: counter(story); font-family: var(--m-mono);
-  font-size: var(--t-micro); color: var(--m-muted-soft);
+  font-size: var(--t-micro); color: var(--m-muted);
   font-variant-numeric: tabular-nums; padding-top: 2px;
 }
 .ed-item--declined { opacity: .45; }
@@ -4529,7 +4729,7 @@ tr:hover .due-chip--none, li:hover .due-chip--none, .item:hover .due-chip--none,
 /* The relevance score printed at the right of every literature row. Kept —
    ranking IS the surface's argument — but demoted: a number repeated down a
    column at full contrast competes with the titles it is ranking. */
-.nl-score { color: var(--m-muted-soft); font-variant-numeric: tabular-nums; }
+.nl-score { color: var(--m-muted); font-variant-numeric: tabular-nums; }
 
 /* ── The project launch rail ───────────────────────────────────────────────
    One primary plus an overflow, so every card's row is the same shape. The
@@ -4574,3 +4774,34 @@ tr:hover .due-chip--none, li:hover .due-chip--none, .item:hover .due-chip--none,
 .lit-filters-state { font-family: var(--m-mono); font-size: var(--t-micro);
                      color: var(--m-accent); letter-spacing: .06em; }
 .lit-filters-body { padding-bottom: var(--m-space-2); }
+
+/* A single report needs no thread furniture — just the headline and its row
+   of quiet controls, on the same rhythm as an item inside a story. */
+.ov-single { padding: 9px 0; border-bottom: 1px solid var(--m-rule-soft); }
+.ov-single .acts > .act, .ov-single .acts > .tri-tags { opacity: 0.25; transition: opacity .12s ease; }
+.ov-single:hover .acts > .act, .ov-single:focus-within .acts > .act,
+.ov-single:hover .acts > .tri-tags, .ov-single:focus-within .acts > .tri-tags { opacity: 1; }
+@media (hover: none) { .ov-single .acts > .act, .ov-single .acts > .tri-tags { opacity: 1; } }
+
+/* ── An item row: title, then controls, ALWAYS in the same column ──
+   The action bar was inline after the headline, so its x position moved
+   with the length of the title and wrapped to a second line whenever the
+   headline was long. Down a list of sixty items the controls appeared at
+   sixty different horizontal positions — the raggedness the eye reads as
+   disorder well before it reads any of the words.
+
+   A two-column grid fixes the column; `align-items:start` keeps the icons
+   on the headline's first line rather than centred against a wrapped one. */
+.ov-item, .ov-single {
+  display: grid; grid-template-columns: 1fr auto; gap: 12px;
+  align-items: start;
+}
+.ov-item .acts, .ov-single .acts { margin-top: 0; }
+
+/* The text side of an item row: headline plus any small labels that qualify
+   it. One element, so the grid has exactly two children and the action bar
+   can never be displaced into a row of its own. */
+.ov-item-text { min-width: 0; }
+.ov-link { color: var(--m-text); text-decoration: none;
+           border-bottom: 1px solid var(--m-rule); }
+.ov-link:hover { border-bottom-color: var(--m-accent); color: var(--m-accent); }

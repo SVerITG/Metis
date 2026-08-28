@@ -1,0 +1,15 @@
+{#- thinking_marginalia.html — the notes rail.
+
+    "· NOTE" was printed on every card in a panel of nothing but notes: 3 of 3,
+    and structurally incapable of being anything else. Dropped. The date stays,
+    because it is the one thing that differs between cards. -#}
+{% if notes %}
+  {% for n in notes %}
+  <div class="panel panel-pad marg-card">
+    <div class="marg-date">{{ n.date }}</div>
+    <div class="marg-body">{{ n.content }}</div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="panel panel-pad"><div class="ed u-ed"><em>No notes yet.</em></div></div>
+{% endif %}

@@ -37,7 +37,7 @@
     {% for subj, n in subfilters %}
       <button type="button" class="btn btn--ghost btn--caps news-sub btn--sm" data-subj="{{ subj }}"
               style="font-size:var(--t-micro);" aria-pressed="false">
-        {{ subj.replace('-', ' ') }} <span style="color:var(--m-muted-soft);">{{ n }}</span>
+        {{ subj.replace('-', ' ') }} <span style="color:var(--m-muted);">{{ n }}</span>
       </button>
     {% endfor %}
   </div>

@@ -724,11 +724,15 @@ async function pdSetCategory(projectId) {
 }
 
 // — Work tab filter chips —
+// These are controls (.chip-btn), not badges. `aria-pressed` is kept in step with
+// the visual state: without it the only signal that a filter is active is a
+// border, which a screen reader does not report.
 function filterProjects(value, btn) {
   document.querySelectorAll('.work-filter-chip').forEach(function (c) {
-    c.classList.remove('chip--accent'); c.classList.add('chip--plain');
+    c.classList.remove('chip-btn--on');
+    c.setAttribute('aria-pressed', 'false');
   });
-  if (btn) { btn.classList.remove('chip--plain'); btn.classList.add('chip--accent'); }
+  if (btn) { btn.classList.add('chip-btn--on'); btn.setAttribute('aria-pressed', 'true'); }
   htmx.ajax('GET', '/api/partial/work/projects?filter=' + encodeURIComponent(value || ''), {
     target: '#projects-zone', swap: 'innerHTML',
   });

@@ -2742,14 +2742,25 @@ async def library_toggle_read(item_id: int, request: Request):
 
 
 def _read_toggle_html(item_id: int, is_read: int) -> str:
-    label = "READ" if is_read else "UNREAD"
-    colour = "var(--m-muted)" if is_read else "var(--m-accent)"
+    """The read/unread control, rendered server-side after a toggle.
+
+    This control is authored in TWO places — here and in
+    partials/knowledge_library_table.html — because HTMX swaps the button for
+    whatever this function returns. They must stay identical: when they drift,
+    the bug is invisible on load and only appears after the first click, which
+    is the hardest kind to notice. Keep the class list in sync with the
+    template if either changes.
+
+    "unread" is .is-quiet deliberately: it is true of ~96% of the library, and
+    the row already carries an accent left border to say so. The uncommon state
+    is the one that earns colour.
+    """
+    label = "read" if is_read else "unread"
+    tone = "is-good" if is_read else "is-quiet"
     return (
         f'<button hx-post="/api/library/{item_id}/read" hx-swap="outerHTML" '
-        f'title="Mark {"unread" if is_read else "read"}" '
-        f'style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.1em;'
-        f'padding:2px 7px;border:1px solid var(--m-line);border-radius:10px;'
-        f'background:transparent;color:{colour};cursor:pointer;">{label}</button>'
+        f'class="stat u-fixed {tone}" style="cursor:pointer;" '
+        f'title="Mark {"unread" if is_read else "read"}">{label}</button>'
     )
 
 
