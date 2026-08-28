@@ -223,6 +223,14 @@ Metis will:
 
 ## Agent routing guide (for Metis)
 
+> **DHIS2 is deliberately not in this table (2026-08-28).** the researcher has done one
+> mockup of a DHIS2 app and may return to it, but it was appearing in his
+> profile interests, his news monitoring, his RAG results and this routing
+> table — a footprint far larger than the work justifies. `/dhis2-expert` is
+> still there and still good; call it **by name** when a request is genuinely
+> about DHIS2. Do not route to it on a keyword.
+
+
 When a request arrives, route as follows:
 
 | Input type | Primary agent | Secondary |
@@ -231,7 +239,6 @@ When a request arrives, route as follows:
 | Paper, article, source | Librarian | PhD Architect |
 | Meeting note, audio, transcript | Meeting Memory | Metis |
 | R script, code, bug, FastAPI | Software Engineer | Frontend Designer Builder |
-| DHIS2 configuration, tracker, API | DHIS2 Expert | Software Engineer / Epidemiologist |
 | PhD structure, article fit | PhD Architect | Writing Partner |
 | Statistical method question | Methods Coach | PhD Architect |
 | News, world events, briefing | News Radar | Metis |
@@ -338,11 +345,13 @@ Changes made via these tools appear immediately in the Metis dashboard.
 
 ## Learning surface — checks before claiming a course works
 
-Two tools exist because both properties were silently broken and neither was visible by eye.
+Three tools exist because each property was silently broken and none was visible by eye.
 
 ```bash
 python3 tools/check_course_launch.py    # every active course's launch button opens the real course
 python3 tools/audit_quiz.py <manifest>  # MCQ manifest: position bias, length tells, duplicates
+python3 tools/unwrap_course_prose.py --check --all   # lesson prose renders as written
+python3 tools/check_course_dois.py --all             # every DOI resolves to the paper claimed
 ```
 
 **`check_course_launch.py`** — asserts each active course's launch URL resolves to 200 *and* that
@@ -356,6 +365,25 @@ length ratio, option spread and duplicate stems. Written after a first draft put
 answers in slot 1**, and after finding that 56.6% of the multilevel course's 661 questions have the
 correct answer as the uniquely longest option. See procedural memory #12; note in particular that
 **mechanical length rebalancing is forbidden** — it creates a worse tell than it fixes.
+
+**`unwrap_course_prose.py`** — the course reader renders with `nl2br`, so every hard wrap in a
+lesson's markdown becomes a forced `<br>` and the paragraph never reflows; and a list written
+without a blank line above it is not parsed as a list at all, rendering as flat text with
+literal `-` and `1.` markers. Both are invisible in the source, which looks fine. Run
+`--check --all` to survey, or name a course to fix it. Idempotent, and it refuses to write if
+the word count changes. Found 2026-08-28: 1,505 forced breaks and 396 orphan lists across the
+course library, 1,501 and 379 of them in `ai-in-public-health` alone. **Write lesson prose
+unwrapped — one line per paragraph — and the tool has nothing to do.**
+
+**`check_course_dois.py`** — resolves every DOI in a course against Crossref and compares the
+record's first author and year with what the citing line claims. Two failures matter and the
+second is the dangerous one: a DOI that does not exist (fabricated), and a DOI that exists but
+points at a *different* paper (checkable-looking and wrong). It runs a known-good and a
+known-bad DOI as a control **first** and refuses to judge anything unless those two come back
+different — because an earlier version negotiated CSL JSON, failed silently, and reported all
+ten `ai-in-public-health` citations as unresolvable when every one was fine. Result 2026-08-28
+across the library: **14 DOIs, 0 unresolvable, 0 misattributed.** It does NOT check that a paper
+says what the lesson claims it says; that is `evidence.py`'s job and has not been run.
 
 **Course manifests:** `lessons.json` declares only lessons that *exist*. Intended outlines live
 under `planned_lessons`. An advertised lesson with no file renders a clickable button that 404s,
