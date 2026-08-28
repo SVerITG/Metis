@@ -51,6 +51,53 @@ const TRIGGER_TIMEOUT_MS = 1500;
 const SEARCH_TIMEOUT_MS  = 4000;
 const TRIGGER_TTL_MS     = 6 * 60 * 60 * 1000;   // re-derive twice a day
 
+/* Work ON Metis, recognised by vocabulary. Module scope because BOTH the
+   per-prompt filter and the session-stickiness marker need it. */
+const IS_SYSTEM_WORK = /\b(metis|dashboards?|mcp|subagents?|hooks?|repos?|repositor(?:y|ies)|venvs?|sqlite|backfills?|pytest|reinstalls?|reconnects?|changelogs?|claude|uvicorn|fastapi|htmx|hand[ -]?offs?|css|stylesheets?|styling|templates?|partials?|front[- ]?end|backlogs?|artifacts?|screenshots?|sparklines?|codebase|\bui\b|\bux\b)\b/;
+
+/* ── Session stickiness ───────────────────────────────────────────────────
+   the researcher, 2026-08-28: "When we are working on metis you do not have to route
+   through the library if not indicated specifically."
+
+   Word-matching a single prompt cannot implement that, because a follow-up
+   inside a session about Metis carries none of the vocabulary. "Where can I
+   find the seven approved patterns?" and "build me mockups for all the
+   proposals" are both plainly about this repo and both contain nothing to
+   match on — the first grounded in WHO guideline-development procedure, the
+   second in Bayesian model comparison.
+
+   So the session remembers. Once any prompt is recognised as work ON Metis,
+   grounding stays off for the rest of that session unless a later prompt asks
+   for the library in so many words. State is one small file per session id in
+   /tmp, which the OS clears; a missing or unreadable file simply means "not
+   sticky yet" and the hook behaves as before.
+   ──────────────────────────────────────────────────────────────────────── */
+const STICKY_DIR = "/tmp/metis-corpus-hook";
+
+function stickyPath(sessionId) {
+  const safe = String(sessionId || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 64);
+  return safe ? join(STICKY_DIR, `${safe}.system`) : "";
+}
+
+function isSystemSession(sessionId) {
+  const f = stickyPath(sessionId);
+  return !!f && existsSync(f);
+}
+
+function markSystemSession(sessionId) {
+  const f = stickyPath(sessionId);
+  if (!f) return;
+  try {
+    mkdirSync(STICKY_DIR, { recursive: true });
+    writeFileSync(f, new Date().toISOString());
+  } catch { /* best effort — losing the marker only restores the old behaviour */ }
+}
+
+/* An explicit request for the library overrides the sticky flag, for that one
+   prompt only. This is the "if not indicated specifically" half of the rule. */
+const ASKS_FOR_LIBRARY =
+  /\b(?:my|the|your)\s+(?:librar|corpus|literature|papers|reading|sources)|\bsearch (?:my|the)\b|\bwhat does the (?:literature|evidence|research|corpus)\b|\bevidence (?:for|on|about)\b|\bpapers? (?:on|about)\b|\bcitations?\b|\bindexed\b|\bpubmed\b|\bsystematic review\b|\bground(?:ed)? in\b|\bcheck (?:my|the) (?:librar|corpus)\b/i;
+
 function out(context) {
   if (context) {
     process.stdout.write(JSON.stringify({
@@ -124,8 +171,14 @@ function looksLikeDomainQuestion(prompt, terms) {
   // this researcher — a trypanocidal agent, a screening session, a primary
   // endpoint, a DHIS2 database, vector control. Blocking them would suppress
   // grounding on real research questions, which is the costlier error.
-  const SYSTEM_WORK = /\b(metis|dashboard|mcp|subagent|hook|hooks|repo|repository|venv|sqlite|backfill|pytest|reinstall|reconnect|changelog|claude|uvicorn|fastapi|htmx|handoff|hand[ -]?off)\b/;
-  if (SYSTEM_WORK.test(p)) return false;
+  // PLURALS. This list was singular-only, and `\bdashboard\b` does not match
+  // "dashboards" — the trailing "s" is a word character, so the closing \b
+  // never lands. On 2026-08-28 the question "which are the dashboards you are
+  // comparing yourself with" was therefore grounded in a DHIS2 manual. It is
+  // the same defect as the news-thread alias matcher, where a one-sided \b let
+  // "mali" match "malignant": a boundary written without testing the inflected
+  // forms. Every term that can take an -s now says so.
+  if (IS_SYSTEM_WORK.test(p)) return false;
 
   // "agent" is Metis vocabulary (one of the 33 specialists) AND field vocabulary
   // (a trypanocidal agent, the causative agent). The word alone settles nothing,
@@ -264,17 +317,30 @@ async function main() {
     input = readFileSync(0, "utf8");
   } catch { out(null); }
 
-  let prompt = "";
+  let prompt = "", sessionId = "";
   try {
-    prompt = (JSON.parse(input).prompt || "").trim();
+    const parsed = JSON.parse(input);
+    prompt = (parsed.prompt || "").trim();
+    sessionId = parsed.session_id || parsed.sessionId || "";
   } catch { out(null); }
 
   // Very short prompts ("yes", "go on") carry no query.
   if (prompt.length < 15 || prompt.length > 4000) out(null);
 
+  // A session already established as work ON Metis stays un-grounded, unless
+  // this particular prompt asks for the library by name.
+  const optedIn = ASKS_FOR_LIBRARY.test(prompt);
+  if (!optedIn && isSystemSession(sessionId)) out(null);
+
   const terms = await triggerTerms();
   if (!terms.length) out(null);
-  if (!looksLikeDomainQuestion(prompt, terms)) out(null);
+
+  if (!looksLikeDomainQuestion(prompt, terms)) {
+    // Remember WHY it was skipped: if this prompt was about Metis itself, the
+    // whole session almost certainly is, and the follow-ups will not say so.
+    if (IS_SYSTEM_WORK.test(prompt.toLowerCase())) markSystemSession(sessionId);
+    out(null);
+  }
 
   const url = `${BASE}/api/library/corpus-search?q=${encodeURIComponent(prompt)}`
             + `&top_k=6&min_score=0.62`;
