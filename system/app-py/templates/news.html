@@ -38,10 +38,16 @@
              never re-renders and switching costs a single request. ===== -->
   {#- The briefings come FIRST: they are the edited read, and everything
     below is the raw feed. Both folds start closed. -#}
+  {#- innerHTML, not outerHTML. The partial returns one <section> per briefing —
+      several top-level elements, no wrapper — so an outerHTML swap replaced this
+      div with the first section and DESTROYED id="news-briefings". Two buttons
+      inside the partial ("Fetch now", "Check for new") target that id, so after
+      the first load they had nothing to hit and silently did nothing. Keeping
+      the container means the id survives every refresh. -#}
   <div id="news-briefings"
        hx-get="/api/partial/news/briefings"
        hx-trigger="load"
-       hx-swap="outerHTML"></div>
+       hx-swap="innerHTML"></div>
 
   <div id="news-tab-body"
        hx-get="/api/partial/news/tab?tab=overview&period=week"

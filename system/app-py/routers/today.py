@@ -2006,21 +2006,26 @@ async def morning_brief_refresh(request: Request):
 def _focus_item_from_task(row) -> dict:
     """Normalize a task row into a unified focus card dict."""
     status = row.get("status") or "open"
+    # A task's status IS a state — true now, false later — so it earns a pill,
+    # and the colour follows the urgency ladder in styles.css rather than a
+    # hand-picked var(). "OPEN" is the modal value across the whole board, so
+    # it takes .is-quiet: the most common state must be the quietest one, or
+    # the loud treatments stop carrying information.
     if status == "blocked":
-        badge, badge_color = "BLOCKED", "var(--m-alert)"
+        badge, badge_class = "BLOCKED", "stat is-warn"
     elif row.get("starred"):
-        badge, badge_color = "STARRED", "var(--m-ochre)"
+        badge, badge_class = "STARRED", "stat is-info"
     elif status == "in_progress":
-        badge, badge_color = "IN PROGRESS", "var(--m-accent)"
+        badge, badge_class = "IN PROGRESS", "stat is-info"
     else:
-        badge, badge_color = "OPEN", "var(--m-muted)"
+        badge, badge_class = "OPEN", "stat is-quiet"
     return {
         "item_type": "task",
         "item_id": str(row.get("task_id") or ""),
         "title": (row.get("title") or "Untitled task")[:90],
         "subtitle": row.get("project_title") or row.get("project_id") or "",
         "badge": badge,
-        "badge_color": badge_color,
+        "badge_class": badge_class,
     }
 
 
@@ -2028,19 +2033,22 @@ def _focus_item_from_idea(row) -> dict:
     """Normalize an idea row into a unified focus card dict."""
     tags = (row.get("tags") or "").lower()
     itype = (row.get("idea_type") or "").lower()
+    # An idea's TYPE is a category, not a state: an idea captured as a question
+    # is still a question next week. Categories get .tag — no pill, no colour —
+    # which is what stops the Today grid reading as six equally urgent alarms.
     if "question" in tags or "question" in itype:
-        badge, badge_color = "QUESTION", "var(--m-accent)"
+        badge, badge_class = "question", "tag"
     elif "draft" in tags or itype in ("draft", "article"):
-        badge, badge_color = "DRAFT", "var(--m-ochre)"
+        badge, badge_class = "draft", "tag"
     else:
-        badge, badge_color = "IDEA", "var(--m-muted)"
+        badge, badge_class = "idea", "tag"
     return {
         "item_type": "idea",
         "item_id": str(row.get("idea_id") or ""),
         "title": (row.get("text") or "").strip()[:90],
         "subtitle": (row.get("domain") or "").upper(),
         "badge": badge,
-        "badge_color": badge_color,
+        "badge_class": badge_class,
     }
 
 
@@ -4245,21 +4253,24 @@ async def today_focus_with_memory(request: Request):
             try:
                 due_dt = datetime.date.fromisoformat(due)
                 delta = (due_dt - datetime.date.today()).days
+                # Deadlines are the one place on the dashboard where .is-urgent
+                # is earned. The query caps this pool at 3 rows, so the solid
+                # fill stays rare enough to still mean something.
                 if delta < 0:
-                    due_label, due_color = "OVERDUE", "var(--m-alert)"
+                    due_label, due_class = "OVERDUE", "stat is-urgent"
                 elif delta == 0:
-                    due_label, due_color = "DUE TODAY", "var(--m-alert)"
+                    due_label, due_class = "DUE TODAY", "stat is-urgent"
                 elif delta == 1:
-                    due_label, due_color = "DUE TOMORROW", "var(--m-ochre)"
+                    due_label, due_class = "DUE TOMORROW", "stat is-warn"
                 elif delta <= 2:
-                    due_label, due_color = f"DUE IN {delta}d", "var(--m-ochre)"
+                    due_label, due_class = f"DUE IN {delta}d", "stat is-warn"
                 else:
-                    due_label, due_color = f"DUE IN {delta}d", "var(--m-accent)"
+                    due_label, due_class = f"DUE IN {delta}d", "stat is-quiet"
             except Exception:
-                due_label, due_color = "DUE", "var(--m-accent)"
+                due_label, due_class = "DUE", "stat is-quiet"
             item = _focus_item_from_task(r)
             item["badge"] = due_label
-            item["badge_color"] = due_color
+            item["badge_class"] = due_class
             _add(item)
     except Exception:
         pass
@@ -5170,11 +5181,48 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
                     continue
                 threads.append(t)
             conn.close()
+
         except Exception as _exc:
             _log.warning("news overview: thread window failed: %s", _exc)
 
+        # A ONE-ITEM THREAD IS NOT A RUNNING STORY. This tab's own standfirst
+        # promises "running stories, not a list of links", and then 93% of the
+        # threads it drew held exactly one item — a single link wearing a story's
+        # clothes, under a name the fallback tokeniser invented for it. That is
+        # what put "Approves treatment", "Agency approves" and "Approves · Mali"
+        # on screen as three separate developing stories when they were three
+        # write-ups of one FDA decision.
+        #
+        # The clustering is not going to reach every item: the vocabulary is
+        # subject + place, and most world news is neither a listed disease nor
+        # in a listed country. So the honest presentation is to STOP CLAIMING
+        # it did. Threads that genuinely accumulated coverage lead; everything
+        # else is listed plainly underneath as what it is — single reports.
+        singles = [t for t in threads if len(t.get("items") or []) < 2]
+        threads = [t for t in threads if len(t.get("items") or []) >= 2]
+
+        # A SERIES IS NOT THREE STORIES. Inside the Ebola · DR Congo thread the
+        # first three headlines were "…Uganda Weekly External Situation Report
+        # 13", "…Report 14" and "…Report 15" — one weekly bulletin, three
+        # instalments, filling the whole thread with the same sentence. This is
+        # what the researcher meant by seeing Ebola over and over: not a bug in the
+        # clustering, which correctly put them together, but a bug in showing
+        # every instalment as though it were new information.
+        #
+        # `collapse()` keeps the NEWEST instalment and hangs the rest off it as
+        # `_earlier`; nothing is dropped, so the count under the thread still
+        # adds up and the older editions are still reachable.
+        try:
+            import freshness as _fresh
+            for _t in threads:
+                _t["items"] = _fresh.collapse(
+                    _t.get("items") or [], title_field="title", ts_field="created_at")
+        except Exception as _exc:
+            _log.warning("news overview: series collapse unavailable: %s", _exc)
+
         # One lookup across every item in every thread on screen.
-        _ov_ids = [i.get("id") for t in threads[:24] for i in t.get("items") or []]
+        _ov_ids = ([i.get("id") for t in threads[:24] for i in t.get("items") or []]
+                   + [i.get("id") for t in singles[:30] for i in t.get("items") or []])
         try:
             from metis_mcp.tools import stack as _stack
             _ov_states = _stack.states_for("news", _ov_ids)
@@ -5189,6 +5237,7 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
              "view": view, "views": NEWS_VIEWS, "stack_counts": stack_counts,
          "whatsnew_news": whatsnew_news,
              "states": _ov_states, "all_tags": _ov_tags,
+             "singles": singles[:30], "singles_total": len(singles),
              "total_items": sum(len(t["items"]) for t in threads)},
         )
 

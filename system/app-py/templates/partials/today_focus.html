@@ -1,7 +1,7 @@
 {% from "partials/_empty.html" import panel as empty_panel %}
 {% from "partials/_section.html" import sec_label %}
 {# today_focus.html — Merged dismissable focus cards (up to 6 items).
-   Context: items (list of dicts with item_type, item_id, title, subtitle, badge, badge_color). #}
+   Context: items (list of dicts with item_type, item_id, title, subtitle, badge, badge_class). #}
 <div id="today-focus">
 {% if items %}
   {{ sec_label("Today's focus", tail="STAR A TASK TO PIN IT HERE") }}
@@ -21,7 +21,7 @@
               onmouseout="this.style.opacity='0.5';this.style.color='var(--m-muted)'">&times;</button>
       {# Badge #}
       <div class="u-row u-mb-2">
-        <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.12em;padding:2px 8px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, {{ item.badge_color }} 15%, transparent);color:{{ item.badge_color }};">{{ item.badge }}</span>
+        <span class="{{ item.badge_class or 'stat is-quiet' }}">{{ item.badge }}</span>
         {% if item.subtitle %}
         <span class="u-label" style="letter-spacing:0.08em;">{{ item.subtitle }}</span>
         {% endif %}

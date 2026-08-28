@@ -353,12 +353,22 @@ async def work_category_filters(request: Request):
     has_archived = (db_scalar("SELECT COUNT(*) FROM projects WHERE status='archived'", default=0) or 0) > 0
 
     def chip(label, value, active=False):
-        cls = "chip chip--accent" if active else "chip chip--plain"
+        """One filter control.
+
+        These are CONTROLS, not badges — you press them and the page changes.
+        They were filled pills in the same olive as the project category
+        labels beside them, so the row of things you can press and the row of
+        things that merely describe a project were the same shape. `.chip-btn`
+        is the existing control idiom: text, no fill, a border only when the
+        filter is on, which is also the only way to see WHICH filter is on.
+        `aria-pressed` says the same thing to a screen reader; the toggling
+        JS in work.html keeps it in step.
+        """
+        cls = "chip-btn work-filter-chip" + (" chip-btn--on" if active else "")
         return (
-            f'<button class="{cls} work-filter-chip" data-filter="{value}" '
-            f'onclick="filterProjects(\'{value}\', this)" '
-            f'style="cursor:pointer;border:none;font-family:var(--m-mono);font-size:10px;'
-            f'letter-spacing:.08em;padding:3px 11px;">{label}</button>'
+            f'<button type="button" class="{cls}" data-filter="{value}" '
+            f'aria-pressed="{"true" if active else "false"}" '
+            f'onclick="filterProjects(\'{value}\', this)">{label}</button>'
         )
 
     chips = [chip("ALL", "", active=True)]
@@ -367,8 +377,7 @@ async def work_category_filters(request: Request):
         chips.append(chip("ARCHIVED", "archived"))
 
     return HTMLResponse(
-        '<div class="work-filter-bar" style="display:flex;gap:7px;margin-bottom:16px;'
-        'align-items:center;flex-wrap:wrap;">' + "".join(chips) + "</div>"
+        '<div class="work-filter-bar">' + "".join(chips) + "</div>"
     )
 
 

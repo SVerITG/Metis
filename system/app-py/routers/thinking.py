@@ -51,53 +51,33 @@ async def thinking_meta(request: Request):
 
 @router.get("/api/partial/thinking/threads", response_class=HTMLResponse)
 async def thinking_threads(request: Request):
-    threads = db_query(
-        "SELECT idea_id AS id, text AS content, tags, created_at FROM ideas WHERE tags NOT LIKE '%archived%' ORDER BY created_at DESC LIMIT 12"
+    """The Open threads rail.
+
+    The markup used to be assembled here as f-strings — inline styles, inline
+    mouse handlers, no classes. It now lives in partials/thinking_threads.html;
+    this function's job is to hand it data. See that file for why "OPEN" and the
+    age colour ramp were dropped.
+    """
+    rows = db_query(
+        "SELECT idea_id AS id, text AS content, tags, created_at FROM ideas "
+        "WHERE tags NOT LIKE '%archived%' ORDER BY created_at DESC LIMIT 12"
     ) or []
     today = datetime.date.today()
-    items = ""
-    for i, t in enumerate(threads):
-        title = clip(t.get("content") or "", 45)
-        date_str = (t.get("created_at") or "")[:10]
-        # compute age in days
-        age = None
-        age_color = "var(--m-accent)"
+    threads = []
+    for r in rows:
+        date_str = (r.get("created_at") or "")[:10]
         try:
-            d = datetime.date.fromisoformat(date_str)
-            age = (today - d).days
-            if age >= 30:
-                age_color = "var(--m-alert)"
-            elif age >= 14:
-                age_color = "var(--m-ochre)"
+            age = (today - datetime.date.fromisoformat(date_str)).days
         except Exception:
-            pass
-        # mono meta line: "Nd · OPEN"
-        age_part = f"{age}D · " if age is not None else ""
-        meta = (
-            f'<div style="font-family:var(--m-mono);font-size:9px;letter-spacing:0.16em;'
-            f'color:{age_color};margin-top:6px;">{age_part}OPEN</div>'
-        )
-        # first thread reads as active — accent left border + wash
-        active = i == 0
-        edge = (
-            "border-left:2px solid var(--m-accent);background:var(--m-accent-wash);"
-            if active else "border-left:2px solid transparent;"
-        )
-        items += (
-            f'<div style="padding:13px 16px 13px 14px;{edge}'
-            f'border-bottom:1px solid var(--m-rule-soft);cursor:pointer;'
-            f'transition:background 120ms ease;" '
-            f'onmouseover="if(!this.dataset.active)this.style.background=\'var(--m-surface-2)\';" '
-            f'onmouseout="if(!this.dataset.active)this.style.background=\'transparent\';"'
-            f'{" data-active=1" if active else ""}>'
-            f'<div style="font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;">{title}</div>'
-            f'{meta}</div>'
-        )
-    if not items:
-        items = ('<div style="padding:24px 16px;font-family:var(--m-display);font-style:italic;'
-                 'font-size:14px;color:var(--m-muted);line-height:1.6;">'
-                 'No open threads. Capture a thought and it will open one here.</div>')
-    return HTMLResponse(items)
+            age = None
+        threads.append({
+            "id": r.get("id"),
+            "title": clip(r.get("content") or "", 45),
+            "age": age,
+        })
+    return templates.TemplateResponse(
+        request, "partials/thinking_threads.html", {"threads": threads}
+    )
 
 
 @router.get("/api/partial/thinking/dialogue", response_class=HTMLResponse)
@@ -125,22 +105,15 @@ async def thinking_dialogue(request: Request):
 
 @router.get("/api/partial/thinking/marginalia", response_class=HTMLResponse)
 async def thinking_marginalia(request: Request):
-    notes = db_query(
+    """The notes rail. Markup moved to partials/thinking_marginalia.html."""
+    rows = db_query(
         "SELECT content, created_at FROM personal_notes ORDER BY created_at DESC LIMIT 4"
     ) or []
-    items = ""
-    for note in notes:
-        content = clip(note.get("content") or "", 120)
-        date = (note.get("created_at") or "")[:10]
-        items += (
-            f'<div class="panel panel-pad" style="padding:18px 20px;margin-bottom:12px;">'
-            f'<div style="font-family:var(--m-mono);font-size:10px;letter-spacing:0.14em;color:var(--m-muted);margin-bottom:6px;">{date} · NOTE</div>'
-            f'<div style="font-family:var(--m-display);font-size:13px;color:var(--m-text);line-height:1.5;">{content}</div>'
-            f'</div>'
-        )
-    if not items:
-        items = '<div class="panel panel-pad" style="padding:18px 20px;"><div class="ed" style="font-size:13px;color:var(--m-muted);"><em>No notes yet.</em></div></div>'
-    return HTMLResponse(items)
+    notes = [{"content": clip(r.get("content") or "", 120),
+              "date": (r.get("created_at") or "")[:10]} for r in rows]
+    return templates.TemplateResponse(
+        request, "partials/thinking_marginalia.html", {"notes": notes}
+    )
 
 
 # ---------------------------------------------------------------------------

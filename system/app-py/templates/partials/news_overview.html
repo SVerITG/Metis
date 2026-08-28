@@ -25,7 +25,7 @@
 {% else %}
   <div class="u-mb-2" style="display:flex;align-items:baseline;gap:var(--m-space-3);">
     <h2 class="sec-label" style="margin:0;">Running stories
-      <span class="sec-label-tail">{{ threads|length }} THREADS · {{ total_items }} ITEMS · {{ period_label|upper }}</span>
+      <span class="sec-label-tail">{{ threads|length }} STOR{{ 'Y' if threads|length == 1 else 'IES' }} · {{ total_items }} REPORTS · {{ period_label|upper }}</span>
     </h2>
   </div>
 
@@ -35,10 +35,26 @@
         <div>
           <div class="ov-thread-label">
             {{ t.label }}
-            {% if t.never_delivered %}<span class="ov-pill ov-pill--new">not yet briefed</span>
-            {% elif t.read_leads %}<span class="ov-pill ov-pill--seen">briefed</span>{% endif %}
-            {% if t.material %}<span class="ov-pill ov-pill--esc">&#9650; changed</span>{% endif %}
-            {% if t.routine %}<span class="ov-pill ov-pill--seen">routine</span>{% endif %}
+{#- LOUDNESS FOLLOWS URGENCY, which is the inversion this row needed.
+                "not yet briefed" is the DEFAULT for a thread — most threads have
+                never been in a brief — and it was rendered as solid accent, the
+                loudest treatment in the whole system, on nearly every row. The
+                page was shouting its most boring fact. It is now the quiet one,
+                and "briefed" — the informative, rarer state — carries the colour. -#}
+{#- WHAT A BADGE HAS TO EARN. Counted on the rendered page rather than
+                guessed at: "high" was on 100% of the 24 threads and "not briefed"
+                on 92%. A mark that appears on almost every row cannot distinguish
+                between rows — it is ink, not information, and it makes the two
+                marks that DO discriminate harder to see.
+
+                So the rule applied here, and it is worth keeping: a state is shown
+                only when its ABSENCE is the common case. "briefed" (4%) is worth a
+                badge; "not briefed" is the default and is now simply the lack of
+                one. "changed" (12%) stays. "high" is gone from this view entirely —
+                every multi-item thread peaks high, so it separated nothing. -#}
+            {% if t.read_leads %}<span class="stat is-good">briefed</span>{% endif %}
+            {% if t.material %}<span class="stat is-warn">&#9650; changed</span>{% endif %}
+            {% if t.routine %}<span class="stat is-quiet">routine</span>{% endif %}
           </div>
           {#- The three headlines under a thread are now triageable like every
               other item on the surface. They were plain text and a link, which
@@ -48,9 +64,14 @@
             {% for it in t['items'][:3] %}
               {% set st = (states or {}).get(it.id) %}
               <div class="ov-item{% if st and st.state %} ov-item--{{ st.state }}{% endif %}">
-                {% if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener"
-                    style="color:var(--m-text);text-decoration:none;border-bottom:1px solid var(--m-rule);">{{ it.title | clip(130) }}</a>{% else %}{{ it.title | clip(130) }}{% endif %}
-                {{ tags(st) }}
+                <span class="ov-item-text">
+                  {%- if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener"
+                      class="ov-link">{{ it.title | clip(130) }}</a>{% else %}{{ it.title | clip(130) }}{% endif -%}
+                  {{ tags(st) }}
+                  {%- if it._earlier %}
+                    <span class="tag">+{{ it._earlier|length }} earlier edition{{ '' if it._earlier|length == 1 else 's' }}</span>
+                  {%- endif %}
+                </span>
                 {% if it.id %}{{ actions('news', it.id, it.title, it.url, it.domain, st, T, BACK) }}{% endif %}
               </div>
             {% endfor %}
@@ -75,21 +96,45 @@
             {% endif %}
           </div>
         </div>
-        <div class="ov-thread-meta" style="text-align:right;">
-          {{ t['items']|length }} item{{ '' if t['items']|length == 1 else 's' }}<br>
-          <span style="color:var(--m-muted-soft);">
-            {% if t.age_days is not none %}
-              {% if t.age_days < 1 %}new today
-              {% elif t.age_days < 14 %}{{ t.age_days|int }}d old
-              {% elif t.age_days < 60 %}{{ (t.age_days / 7)|int }}w old
-              {% else %}{{ (t.age_days / 30)|int }}mo old{% endif %}
-            {% else %}new{% endif %}
-          </span><br>
-          <span style="color:{{ 'var(--m-accent)' if t.top_signal == 'high' else 'var(--m-muted-soft)' }};">
-            {{ t.top_signal }}
-          </span>
+{#- THREE STACKED GREY LINES became one. Item count, age and signal were
+            each on their own line in the same muted grey at the same size, so the
+            column read as a block of noise rather than three facts — and it took
+            three lines of vertical space per thread to say almost nothing. Now one
+            line, with only the part that can be URGENT allowed to carry colour. -#}
+        <div class="ov-thread-meta">
+          <span class="tag">{{ t['items']|length }} item{{ '' if t['items']|length == 1 else 's' }}</span>
+          <span class="tag">{% if t.age_days is not none %}{% if t.age_days < 1 %}new today{% elif t.age_days < 14 %}{{ t.age_days|int }}d{% elif t.age_days < 60 %}{{ (t.age_days / 7)|int }}w{% else %}{{ (t.age_days / 30)|int }}mo{% endif %}{% else %}new{% endif %}</span>
         </div>
       </div>
     {% endfor %}
   </div>
+
+  {#- SINGLE REPORTS. Not a lesser class of news — just news that has been
+      covered once. Presenting these as "running stories" was the actual defect:
+      the label promised continuity that the content did not have, and the
+      thread name had to be invented to keep the promise. Listed plainly, they
+      need no invented name at all — the headline speaks for itself. -#}
+  {% if singles %}
+    <h2 class="sec-label u-mb-2" style="margin-top:var(--m-space-6);">Single reports
+      <span class="sec-label-tail">{{ singles_total }} STOR{{ 'Y' if singles_total == 1 else 'IES' }} · COVERED ONCE SO FAR</span>
+    </h2>
+    <div class="u-mb-6">
+      {% for t in singles %}
+        {% for it in t['items'][:1] %}
+          {% set st = (states or {}).get(it.id) %}
+          <div class="ov-item ov-single{% if st and st.state %} ov-item--{{ st.state }}{% endif %}">
+            <span class="ov-item-text">
+              {%- if it.url %}<a href="{{ it.url }}" target="_blank" rel="noopener"
+                  class="ov-link">{{ it.title | clip(130) }}</a>{% else %}{{ it.title | clip(130) }}{% endif -%}
+              {{ tags(st) }}
+            </span>
+            {% if it.id %}{{ actions('news', it.id, it.title, it.url, it.domain, st, T, BACK) }}{% endif %}
+          </div>
+        {% endfor %}
+      {% endfor %}
+      {% if singles_total > singles|length %}
+        <p class="u-label u-mt-3">{{ singles_total - singles|length }} more single reports in this period — open a category tab to see them all.</p>
+      {% endif %}
+    </div>
+  {% endif %}
 {% endif %}

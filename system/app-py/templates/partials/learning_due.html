@@ -45,9 +45,18 @@
       <div class="u-label u-label--wide" style="margin-top:var(--m-space-1);">{{ item.course_title }} · every {{ item.interval_days }}d</div>
       {% endif %}
     </div>
-    <span class="chip chip--{% if item.next_review_date < today %}alert{% else %}ochre{% endif %} u-fixed">
-      {% if item.next_review_date < today %}OVERDUE{% else %}TODAY{% endif %}
-    </span>
+    {#- How late, not whether late. "OVERDUE" was on 10 of 10 rows: it could not
+        tell the reader which card to do first, which is the only question this
+        list has to answer. The number can. The colour follows the urgency
+        ladder rather than being alert for everything: a card a couple of days
+        late is normal spaced repetition, a card a month late is the one that
+        has actually fallen out of the schedule. -#}
+    {% if item.days_late and item.days_late > 0 %}
+    <span class="stat u-fixed tnum {% if item.days_late >= 30 %}is-warn{% else %}is-quiet{% endif %}"
+          title="Was due {{ item.next_review_date }}">{{ item.days_late }}d late</span>
+    {% else %}
+    <span class="stat is-quiet u-fixed">due today</span>
+    {% endif %}
     <!-- Mark done buttons (quality 3=hard, 4=ok, 5=easy) -->
     <div class="u-fixed" style="display:flex;gap:var(--m-space-1);">
       <button class="u-label" title="Hard — remembered with effort" onclick="srReview({{ item.id | tojson }}, 3, this)"
@@ -60,7 +69,10 @@
   </div>
   {% endfor %}
 </div>
+{#- "TOTAL 10 · DUE 10" printed the same number twice, always, because `due` is
+    the session and every card in it is by definition due. It said nothing. The
+    honest pair is this session against the whole backlog. -#}
 <div class="tnum u-label">
-  TOTAL {{ due | length }} · DUE {{ due | length }}{% if streak %} · {{ streak }}-DAY STREAK 🔥{% endif %}
+  {{ due | length }} in this session{% if total_due %} · {{ total_due }} due in total{% endif %}{% if streak %} · {{ streak }}-day streak 🔥{% endif %}
 </div>
 {% endif %}

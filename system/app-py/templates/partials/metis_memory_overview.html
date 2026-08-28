@@ -25,7 +25,8 @@
 {# The Procedural layer used to be a count and nothing else. These are the ways of
    working Metis actually applies, so they have to be readable — and correctable. #}
 {{ sec_label("How things are done here", tail="PROCEDURAL MEMORY") }}
-<div class="u-mb-5" hx-get="/api/partial/metis/procedures" hx-trigger="load" hx-swap="outerHTML">
+{#- innerHTML, not outerHTML: this element carries the layout/styling classes and the partial returns bare content, so an outerHTML swap deleted the wrapper and the panel silently lost its border, padding or grid on load. See tools/check_htmx_swaps.py. -#}
+<div class="u-mb-5" hx-get="/api/partial/metis/procedures" hx-trigger="load" hx-swap="innerHTML">
   <div class="panel panel-pad skeleton" style="min-height:120px;"></div>
 </div>
 

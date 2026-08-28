@@ -22,10 +22,12 @@
 
 {% if matches %}
 <div style="margin-top:var(--m-space-4);border-top:1px solid var(--m-rule);padding-top:12px;">
-  <div class="u-label u-label--wide u-mb-2">
-    Connects to
-    <span style="color:var(--m-muted-soft);">· {{ matches|length }} across your work</span>
-  </div>
+    {#- A real <h2>, not a styled <div>: this is the section heading for the
+      panel and the page had no outline entry for it. -#}
+  <h2 class="sec-label u-mb-2">
+    <span>Connects to</span>
+    <span class="tail">· {{ matches|length }} across your work</span>
+  </h2>
 
   {% for m in matches %}
     {% set meta = source_meta.get(m.source, ("Memory", "var(--m-muted)", "/thinking")) %}
@@ -42,7 +44,7 @@
   {% endfor %}
 </div>
 {% else %}
-<div class="u-mono" style="margin-top:var(--m-space-4);border-top:1px solid var(--m-rule);padding-top:12px;letter-spacing:0.1em;color:var(--m-muted-soft);">
+<div class="u-mono" style="margin-top:var(--m-space-4);border-top:1px solid var(--m-rule);padding-top:12px;letter-spacing:0.1em;color:var(--m-muted);">
   No connections yet — they appear as your library and notes grow.
 </div>
 {% endif %}

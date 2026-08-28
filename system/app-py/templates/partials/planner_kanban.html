@@ -41,7 +41,7 @@
         </div>
         {% endfor %}
       {% else %}
-        <div style="font-family:var(--m-display);font-style:italic;font-size:var(--t-small);color:var(--m-muted-soft);text-align:center;padding:var(--m-space-5) var(--m-space-2);">
+        <div class="u-ed" style="font-size:var(--t-small);text-align:center;padding:var(--m-space-5) var(--m-space-2);">
           {% if label == 'ACTIVE' %}Nothing in motion.{% elif label == 'SOMEDAY' %}Empty shelf.{% elif label == 'INCUBATING' %}Quiet here.{% else %}—{% endif %}
         </div>
       {% endif %}
