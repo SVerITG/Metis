@@ -333,7 +333,16 @@ CREATE TABLE IF NOT EXISTS literature_metadata (
     zotero_key     TEXT DEFAULT '',
     zotero_version INTEGER DEFAULT 0,
     collection     TEXT DEFAULT '',
-    library_source TEXT DEFAULT 'manual'
+    library_source TEXT DEFAULT 'manual',
+    -- Reading state. `is_read` existed in the live database from the day the
+    -- read/unread toggle was built but was NEVER added here, so a fresh install
+    -- or the second computer had no such column and the toggle would have failed
+    -- there silently. Added to the schema 2026-08-29 (see the two-computer
+    -- silent-failure rules: a new column goes in schema.sql, always).
+    is_read        INTEGER DEFAULT 0,
+    -- WHEN it was read, which is what makes "new since you last looked"
+    -- answerable. Null means never read.
+    read_at        TEXT DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS meeting_actions (
@@ -1203,3 +1212,90 @@ CREATE TABLE IF NOT EXISTS briefing_item (
     source      TEXT DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS idx_item_edition ON briefing_item(edition_id, ord);
+
+-- ---------------------------------------------------------------------------
+-- VIZ LIBRARY (2026-08-28) — saved visual taste, as rows rather than prose.
+--
+-- Four tables and not one, because "multiple styles per type of visualization"
+-- is only expressible if kind, method and look vary independently:
+--   viz_exemplars  what was admired, and where it came from (provenance)
+--   viz_recipes    the METHOD — survives a complete restyle
+--   viz_styles     the LOOK — reusable across recipes
+--   viz_uses       every render: recipe x style x dataset x verdict
+--
+-- `viz_recipes.data_contract` is the load-bearing field: a JSON object of
+-- role -> meaning. Reproducing a figure with other data is mechanical only if
+-- the recipe declares what SHAPE of data it needs.
+--
+-- `unverified` on exemplars and styles exists because the first record was
+-- written from knowledge of a page that blocks automated fetching. A field
+-- known to be unconfirmed must say so in the row, or the library launders
+-- recollection into fact.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS viz_exemplars (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug            TEXT NOT NULL UNIQUE,
+    title           TEXT NOT NULL,
+    source          TEXT DEFAULT '',
+    url             TEXT DEFAULT '',
+    published       TEXT DEFAULT '',
+    kind            TEXT DEFAULT '',
+    what_you_liked  TEXT DEFAULT '',
+    screenshot_path TEXT DEFAULT '',
+    unverified      TEXT DEFAULT '',
+    created_at      TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS viz_recipes (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug          TEXT NOT NULL UNIQUE,
+    name          TEXT NOT NULL,
+    kind          TEXT NOT NULL,
+    one_liner     TEXT DEFAULT '',
+    encoding      TEXT DEFAULT '',
+    mark_unit     TEXT DEFAULT '',
+    data_contract TEXT DEFAULT '{}',
+    interaction   TEXT DEFAULT '',
+    medium        TEXT DEFAULT '',
+    code          TEXT DEFAULT '',
+    caveats       TEXT DEFAULT '',
+    default_style TEXT DEFAULT '',
+    derived_from  TEXT DEFAULT '',
+    created_at    TEXT NOT NULL,
+    updated_at    TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_viz_recipes_kind ON viz_recipes(kind);
+
+CREATE TABLE IF NOT EXISTS viz_styles (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    slug            TEXT NOT NULL UNIQUE,
+    name            TEXT NOT NULL,
+    one_liner       TEXT DEFAULT '',
+    good_for        TEXT DEFAULT '',
+    palette         TEXT DEFAULT '',
+    type_scale      TEXT DEFAULT '',
+    axis_treatment  TEXT DEFAULT '',
+    annotation_rule TEXT DEFAULT '',
+    motion          TEXT DEFAULT '',
+    theme_pair      TEXT DEFAULT '',
+    notes           TEXT DEFAULT '',
+    derived_from    TEXT DEFAULT '',
+    unverified      TEXT DEFAULT '',
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS viz_uses (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    recipe       TEXT NOT NULL,
+    style        TEXT DEFAULT '',
+    dataset      TEXT DEFAULT '',
+    project_id   TEXT DEFAULT '',
+    output_path  TEXT DEFAULT '',
+    artifact_url TEXT DEFAULT '',
+    verdict      TEXT DEFAULT '',
+    note         TEXT DEFAULT '',
+    created_at   TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_viz_uses_recipe ON viz_uses(recipe, verdict);
+CREATE INDEX IF NOT EXISTS idx_viz_uses_style  ON viz_uses(style, verdict);

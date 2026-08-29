@@ -2509,6 +2509,154 @@ metis.triage = {
   }
 };
 
+/* ── Keyboard triage ─────────────────────────────────────────────────────────
+   News draws five action buttons on every row. At sixty rows that is three
+   hundred small targets to clear one day's reading, and the icons sit at full
+   strength so the eye lands on controls rather than headlines.
+
+   The keys are the ACTIONS THAT EXIST, not a generic j/k/e set: the triage
+   verbs in _item.html are later / save / read / decline / tag, so the keys are
+   l / s / r / x / t. Guessing a mapping and then bending the product to it is
+   how you end up with shortcuts nobody can remember.
+
+   Rules this obeys:
+     · never steals a key while you are typing (input, textarea, select,
+       contenteditable) or while a modifier is held — otherwise ⌘R reloads and
+       "s" in the search box triages a story.
+     · the cursor row is a real focus target, so screen readers follow it and
+       Tab continues from the right place.
+     · no client state that the server also holds. Pressing a key CLICKS the
+       button that was already there, so HTMX does the work and the row comes
+       back from the server exactly as a mouse click would return it.
+     · re-collects after every HTMX swap, because the list is replaced wholesale.
+   ────────────────────────────────────────────────────────────────────────── */
+window.metis = window.metis || {};
+metis.keys = (function () {
+  var ROW_SEL = '.ov-item, [data-triage-row]';
+  var rows = [], idx = -1, sheet = null;
+
+  var ACTIONS = {           // key -> the button that already exists in the row
+    l: '.act--later',
+    s: '.act--saved',
+    r: '.act--read',
+    x: '.act--declined',
+    t: '.act--tag'
+  };
+
+  function collect() {
+    rows = Array.prototype.filter.call(
+      document.querySelectorAll(ROW_SEL),
+      function (r) { return r.offsetParent !== null; }   // skip anything folded away
+    );
+    if (idx >= rows.length) idx = rows.length - 1;
+  }
+
+  function paint() {
+    rows.forEach(function (r, i) {
+      var on = (i === idx);
+      r.classList.toggle('is-cursor', on);
+      if (on) {
+        r.setAttribute('tabindex', '-1');
+        r.focus({ preventScroll: true });
+        var box = r.getBoundingClientRect();
+        if (box.top < 80 || box.bottom > window.innerHeight - 40) {
+          r.scrollIntoView({ block: 'center',
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+              ? 'auto' : 'smooth' });
+        }
+      } else {
+        r.removeAttribute('tabindex');
+      }
+    });
+  }
+
+  function move(delta) {
+    collect();
+    if (!rows.length) return;
+    idx = (idx < 0) ? 0 : idx + delta;
+    if (idx < 0) idx = 0;
+    if (idx > rows.length - 1) idx = rows.length - 1;
+    paint();
+  }
+
+  function act(selector) {
+    if (idx < 0 || !rows[idx]) return;
+    var btn = rows[idx].querySelector(selector);
+    if (!btn) return;
+    var next = idx;                       // the row will be replaced; stay put
+    btn.click();
+    window.setTimeout(function () { collect(); idx = Math.min(next, rows.length - 1); paint(); }, 60);
+  }
+
+  function open() {
+    if (idx < 0 || !rows[idx]) return;
+    var link = rows[idx].querySelector('a[href]');
+    if (link) window.open(link.href, '_blank', 'noopener');
+  }
+
+  function typing(e) {
+    var t = e.target;
+    if (!t) return false;
+    if (t.isContentEditable) return true;
+    var tag = (t.tagName || '').toLowerCase();
+    return tag === 'input' || tag === 'textarea' || tag === 'select';
+  }
+
+  function help() {
+    if (sheet) { sheet.remove(); sheet = null; return; }
+    sheet = document.createElement('div');
+    sheet.className = 'keysheet';
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-label', 'Keyboard shortcuts');
+    sheet.innerHTML =
+      '<h2>Keys</h2><dl>' +
+      '<dt>j / k</dt><dd>next / previous</dd>' +
+      '<dt>↵</dt><dd>open in a new tab</dd>' +
+      '<dt>l</dt><dd>read later</dd>' +
+      '<dt>s</dt><dd>save</dd>' +
+      '<dt>r</dt><dd>already read</dd>' +
+      '<dt>x</dt><dd>not for me</dd>' +
+      '<dt>t</dt><dd>tag</dd>' +
+      '<dt>esc</dt><dd>clear the cursor</dd>' +
+      '</dl><p>The mouse still does everything it did.</p>';
+    document.body.appendChild(sheet);
+  }
+
+  function onKey(e) {
+    if (e.metaKey || e.ctrlKey || e.altKey || typing(e)) return;
+    var k = e.key;
+    if (k === '?') { e.preventDefault(); help(); return; }
+    if (k === 'Escape') {
+      if (sheet) { sheet.remove(); sheet = null; return; }
+      idx = -1; collect(); paint(); return;
+    }
+    if (k === 'j' || k === 'ArrowDown') { e.preventDefault(); move(1);  return; }
+    if (k === 'k' || k === 'ArrowUp')   { e.preventDefault(); move(-1); return; }
+    if (idx < 0) return;                       // the rest need a cursor first
+    if (k === 'Enter') { e.preventDefault(); open(); return; }
+    var sel = ACTIONS[k];
+    if (sel) { e.preventDefault(); act(sel); }
+  }
+
+  function init() {
+    collect();
+    if (!rows.length) return;
+    if (document.querySelector('.keyhint')) return;
+    var hint = document.createElement('div');
+    hint.className = 'keyhint';
+    hint.textContent = 'press ? for keys';
+    document.body.appendChild(hint);
+  }
+
+  document.addEventListener('keydown', onKey);
+  document.addEventListener('DOMContentLoaded', init);
+  document.body && document.body.addEventListener('htmx:afterSwap', function () {
+    collect(); paint(); init();
+  });
+
+  return { move: move, act: act, help: help };
+})();
+
 /* Remember the chosen news density. The server owns which view RENDERS (the
    markup genuinely differs), so this only restores the preference on arrival —
    it never re-renders on its own, or every visit would cost an extra request. */

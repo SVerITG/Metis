@@ -2,6 +2,7 @@
 routers/knowledge.py — Knowledge tab routes.
 """
 
+import datetime
 import json
 import os
 import re
@@ -2737,7 +2738,15 @@ async def library_toggle_read(item_id: int, request: Request):
     cur = db_scalar("SELECT COALESCE(is_read,0) FROM literature_metadata WHERE id=?",
                     (item_id,), default=0)
     new = 0 if cur else 1
-    db_execute("UPDATE literature_metadata SET is_read=? WHERE id=?", (new, item_id))
+    # read_at records WHEN, which is what makes "new since you last looked"
+    # answerable at all. Cleared on un-read so the column never claims a reading
+    # that was taken back. The whole library was reset to read on 2026-08-29 at
+    # the researcher's request — those rows share one timestamp, so a bulk reset stays
+    # distinguishable from 3,083 individual acts of reading.
+    db_execute(
+        "UPDATE literature_metadata SET is_read=?, read_at=? WHERE id=?",
+        (new, datetime.datetime.now().isoformat(timespec="seconds") if new else None, item_id),
+    )
     return HTMLResponse(_read_toggle_html(item_id, new))
 
 
@@ -2755,8 +2764,12 @@ def _read_toggle_html(item_id: int, is_read: int) -> str:
     the row already carries an accent left border to say so. The uncommon state
     is the one that earns colour.
     """
+    # See the note in partials/knowledge_library_table.html: after the
+    # 2026-08-29 reset, "read" is true of the whole library and therefore says
+    # nothing, while "unread" now means "arrived since the reset and not opened".
+    # The rare state takes the colour; the two must stay in step here and there.
     label = "read" if is_read else "unread"
-    tone = "is-good" if is_read else "is-quiet"
+    tone = "is-quiet" if is_read else "is-info"
     return (
         f'<button hx-post="/api/library/{item_id}/read" hx-swap="outerHTML" '
         f'class="stat u-fixed {tone}" style="cursor:pointer;" '

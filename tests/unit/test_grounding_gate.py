@@ -55,9 +55,20 @@ RESEARCH_PROMPTS = [
 DRIVER = r"""
 import { readFileSync } from "node:fs";
 const src = readFileSync(process.argv[2], "utf8");
+
+// The gate function is lifted out of the hook and run on its own, so anything
+// it references at MODULE scope has to come with it. IS_SYSTEM_WORK moved out
+// of the function on 2026-08-29 (the session-stickiness marker needs it too),
+// and this driver silently stopped working — a ReferenceError inside the eval,
+// surfacing only as "exit status 1". Hoist the constants the gate depends on
+// rather than duplicating their values here, which would let the test drift
+// away from the code it is checking.
+const consts = [...src.matchAll(/^const ([A-Z_]+) = (\/[\s\S]*?\/[gimsuy]*);$/gm)]
+  .map((c) => c[0]).join("\n");
+
 const m = src.match(/function looksLikeDomainQuestion[\s\S]*?\n}\n/);
 if (!m) { console.error("gate function not found"); process.exit(2); }
-const gate = eval(`(${m[0]})`);
+const gate = eval(`(() => { ${consts}\nreturn ${m[0]} })()`);
 const terms = JSON.parse(readFileSync(process.argv[3], "utf8")).terms;
 const prompts = JSON.parse(process.argv[4]);
 console.log(JSON.stringify(prompts.map((p) => gate(p, terms))));
@@ -108,3 +119,101 @@ def test_stopwords_are_filtered_not_merely_absent():
         "stopwords no longer present in the trigger list — the extractor may be "
         "fixed; re-check whether the GENERIC filter in the hook is still needed"
     )
+
+# ── Session stickiness ──────────────────────────────────────────────────────
+# Added 2026-08-29. the researcher: "When we are working on metis you do not have to route
+# through the library if not indicated specifically."
+#
+# The gate-function tests above cannot cover this, because the rule is not a
+# property of one prompt. "Where can I find the seven approved patterns?" and
+# "build me mockups for all the proposals" are both plainly about this repo and
+# contain NO system vocabulary at all — there is nothing for a word filter to
+# match. The session has to remember. So these run the whole hook, in order,
+# through its real stdin/stdout contract.
+
+import os
+import tempfile
+import uuid
+
+
+def _run_hook(prompt, session_id):
+    """Invoke the hook exactly as Claude Code does. True = grounding fired."""
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node not available")
+    env = dict(os.environ, CLAUDE_PROJECT_DIR=str(ROOT))
+    out = subprocess.run(
+        [node, str(HOOK)],
+        input=json.dumps({"prompt": prompt, "session_id": session_id}),
+        capture_output=True, text=True, timeout=40, env=env,
+    )
+    return "metis-corpus-grounding" in (out.stdout or "")
+
+
+@pytest.fixture()
+def fresh_session():
+    """A session id nothing has marked yet, cleaned up afterwards."""
+    sid = "test" + uuid.uuid4().hex[:12]
+    yield sid
+    marker = Path(tempfile.gettempdir()) / "metis-corpus-hook" / f"{sid}.system"
+    marker.unlink(missing_ok=True)
+
+
+def test_plural_system_words_are_caught(fresh_session):
+    """`\bdashboard\b` does not match "dashboards" — the trailing s is a word
+    character, so the closing boundary never lands. That one missing plural sent
+    a question about dashboard design to a DHIS2 manual on 2026-08-28."""
+    assert not _run_hook(
+        "which are the dashboards that you are comparing yourself with when "
+        "reflecting on design changes UI UX wise?", fresh_session)
+
+
+def test_followups_in_a_metis_session_stay_quiet(fresh_session):
+    """Neither of these carries a single system word. They must still be quiet,
+    because the SESSION is about Metis."""
+    assert not _run_hook("add a peek panel to the Work dashboard", fresh_session)
+    assert not _run_hook("where can i find the seven approved patterns?", fresh_session)
+    assert not _run_hook(
+        "Build me many mockups for all the proposals, so every time you do a "
+        "proposal i can compare the orginal with what you propose", fresh_session)
+
+
+LIBRARY_ASK = ("what does the literature say about tsetse control "
+               "effectiveness in Kwilu?")
+
+
+def test_asking_for_the_library_still_works_mid_session(fresh_session, request):
+    """The 'unless indicated specifically' half. A sticky session must not lock
+    the researcher out of their own corpus.
+
+    This one needs a CONTROL, and the reason is worth stating: a hook that
+    decides to ground still emits nothing if the corpus search behind it times
+    out, and the search is a real embedding query over ~48,000 chunks. Asserting
+    "grounding fired" therefore fails for two completely different reasons —
+    the gate refused, or the dashboard was slow. It failed exactly that way on
+    2026-08-29 when five hook invocations ran back to back.
+
+    So: run the same prompt in a clean session first. If THAT does not ground,
+    the environment is at fault and there is nothing here to test; skip rather
+    than report a defect in code that is fine. Only if the control grounds does
+    the mid-session assertion mean anything."""
+    control = "control" + fresh_session
+    if not _run_hook(LIBRARY_ASK, control):
+        Path(tempfile.gettempdir(), "metis-corpus-hook", f"{control}.system").unlink(missing_ok=True)
+        pytest.skip("corpus search did not answer in time — environment, not the gate")
+
+    assert not _run_hook("fix the dashboards stylesheet", fresh_session)
+    assert _run_hook(LIBRARY_ASK, fresh_session), (
+        "a sticky Metis session swallowed an explicit request for the library — "
+        "the 'unless indicated specifically' escape hatch is not working"
+    )
+
+
+def test_a_research_session_is_never_marked(fresh_session):
+    """A session that never touches Metis keeps grounding on every question."""
+    assert _run_hook(
+        "what is the specificity of CATT in a low prevalence setting for "
+        "gambiense HAT screening?", fresh_session)
+    assert _run_hook(
+        "is there evidence for livestock density predicting tsetse abundance?",
+        fresh_session)

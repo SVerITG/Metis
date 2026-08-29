@@ -88,10 +88,36 @@
       </div>
       {% endif %}
 
-      <!-- Last session indicator -->
-      {% if p.last_session_at %}
-      <div class="u-label">
-        Last session · {{ p.last_session_at[:10] }}
+      {#- HOW LONG, not WHEN. "Last session · 2026-06-11" is the same fact, but
+          it asks the reader to subtract dates on sixteen cards to find the ones
+          that have stalled — which is the only question this line exists to
+          answer. An age is comparable at a glance; a date is not.
+
+          MARKED THE OTHER WAY ROUND, and the count decided it. A "dormant" pill
+          at 60 days landed on 11 of 16 cards. The first instinct was to raise
+          the threshold until the page looked calm — but that hides a true thing
+          to satisfy a rule. Most of these projects ARE asleep, and saying so is
+          the most useful sentence on this surface. So dormancy is the quiet
+          default and RECENT WORK earns the mark: 3 of 16 in the last two days,
+          which is rare enough to mean something. Same inversion as read/unread
+          in the Library once everything was marked read.
+
+          This also replaces the sparkline approved on 2026-08-28: there is ONE
+          task event in the last fourteen days, and 58 of the last 100 share the
+          date 2026-08-14 — a bulk write. A chart of that draws a mountain where
+          a migration happened. See routers/work.py. -#}
+      {% if p.quiet_days is none and not p.last_session_at %}
+      <div class="u-label proj-quiet">Never opened</div>
+      {% elif p.quiet_days is none %}
+      <div class="u-label proj-quiet">Last session · {{ p.last_session_at[:10] }}</div>
+      {% elif p.quiet_days <= 2 %}
+      <div class="u-label proj-quiet" title="Last session {{ p.last_session_at[:10] }}">
+        {% if p.quiet_days == 0 %}Touched today{% elif p.quiet_days == 1 %}Touched yesterday{% else %}Touched 2 days ago{% endif %}
+        <span class="stat is-good">active</span>
+      </div>
+      {% else %}
+      <div class="u-label proj-quiet" title="Last session {{ p.last_session_at[:10] }}">
+        Quiet for {{ p.quiet_days }} days
       </div>
       {% endif %}
 
