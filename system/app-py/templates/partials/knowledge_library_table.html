@@ -125,14 +125,16 @@
             <span class="tag u-fixed">{{ type_labels.get(item.item_type, item.item_type) | lower }}</span>
             {% endif %}
             {# Read / unread toggle — the write half of a field that existed unused. #}
-            {#- Read / unread. UNREAD was drawn in accent on 25 of 26 rows, and the
-                row ALREADY carries a 2px accent left border when unread — the same
-                fact painted twice, loudly, on almost every row, while "read" (the
-                rare and therefore informative case) was the quiet one. Inverted to
-                follow the urgency ladder: the common state is .is-quiet, the
-                uncommon one earns the colour. -#}
+            {#- Which of these two is loud is NOT a fixed choice — it follows which is
+    rare, and that flipped on 2026-08-29. Before the reset, 3,083 of 3,083 items
+    were unread, so "unread" was the meaningless mark and "read" earned the
+    colour. After the reset everything is read, so "read" is now the mark that
+    appears on every row and says nothing, and "unread" means something new and
+    precise: it arrived after 2026-08-29 and you have not opened it.
+    The rule is unchanged — the most common state is the quietest — only the
+    data moved underneath it. -#}
             <button hx-post="/api/library/{{ item.id }}/read" hx-swap="outerHTML"
-                    class="stat u-fixed {% if item.is_read %}is-good{% else %}is-quiet{% endif %}"
+                    class="stat u-fixed {% if item.is_read %}is-quiet{% else %}is-info{% endif %}"
                     style="cursor:pointer;"
                     title="{% if item.is_read %}Mark unread{% else %}Mark read{% endif %}"
             >{% if item.is_read %}read{% else %}unread{% endif %}</button>

@@ -321,9 +321,29 @@ async def work_projects(request: Request, filter: str = ""):
             "ORDER BY COALESCE(display_order, 999) ASC LIMIT 50",
             (f, like, f),
         )
+    # HOW LONG SINCE THIS MOVED. The card already printed "Last session ·
+    # 2026-06-11", which contains the answer but makes the reader do date
+    # arithmetic on sixteen cards to find the stalled ones. An age is directly
+    # comparable; a date is not.
+    #
+    # This replaces the sparkline that was approved on 2026-08-28. The data does
+    # not support one: there is ONE task event in the last fourteen days, and
+    # widening the window makes it worse rather than better — 58 of the last 100
+    # events share the date 2026-08-14, which is a bulk write, so the chart would
+    # draw a mountain where a migration happened and call it activity. A flat
+    # line on fifteen of sixteen rows is a chart of nothing; a misleading spike
+    # is worse than nothing.
+    today = datetime.date.today()
     for p in (projects or []):
         p["launchers_list"] = _parse_launchers(p)
         p["tags_list"] = [t.strip() for t in (p.get("tags") or "").split(",") if t.strip()]
+        p["quiet_days"] = None
+        stamp = (p.get("last_session_at") or "")[:10]
+        if stamp:
+            try:
+                p["quiet_days"] = (today - datetime.date.fromisoformat(stamp)).days
+            except ValueError:
+                pass
     return templates.TemplateResponse(
         request,
         "partials/work_projects.html",

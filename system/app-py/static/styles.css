@@ -1125,6 +1125,54 @@ a.board-item-title:hover { color: var(--m-accent); }
 .marg-body { font-family: var(--m-display); font-size: 13px; color: var(--m-text); line-height: 1.5; }
 
 .vel-empty { margin: 0 0 var(--m-space-2); font-size: var(--t-small); color: var(--m-muted); }
+.proj-quiet { display: flex; align-items: center; gap: 8px; }
+
+/* ── Keyboard triage (metis.keys in app.js) ─────────────────────────────
+   The cursor row is the ONLY row whose action icons come up to full strength.
+   That is the point: the icons stay at .25 everywhere else, so the eye lands
+   on headlines, and the row you are actually on shows what you can do to it. */
+.ov-item.is-cursor,
+[data-triage-row].is-cursor {
+  background: var(--m-accent-wash);
+  box-shadow: inset 2px 0 0 var(--m-accent);
+  border-radius: 2px;
+}
+.ov-item.is-cursor:focus,
+[data-triage-row].is-cursor:focus { outline: none; }   /* the wash IS the tell */
+.ov-item.is-cursor .acts > .act,
+[data-triage-row].is-cursor .acts > .act { opacity: 1; }
+
+/* A quiet standing reminder that keys exist. Bottom-left so it never covers a
+   control, and it fades once you have used them. */
+.keyhint {
+  position: fixed; left: 14px; bottom: 12px; z-index: 40;
+  font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--m-muted);
+  background: var(--m-surface); border: 1px solid var(--m-rule);
+  border-radius: 2px; padding: 4px 9px; opacity: .55; pointer-events: none;
+}
+.keysheet {
+  position: fixed; right: 20px; bottom: 20px; z-index: 60;
+  background: var(--m-surface); border: 1px solid var(--m-rule-strong);
+  border-radius: 2px; padding: 18px 22px; min-width: 250px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.18);
+}
+.keysheet h2 {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--m-muted); margin: 0 0 12px; font-weight: 500;
+}
+.keysheet dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; }
+.keysheet dt {
+  font-family: var(--m-mono); font-size: 11px; color: var(--m-ink);
+  background: var(--m-surface-2); border: 1px solid var(--m-rule);
+  border-bottom-width: 2px; border-radius: 3px; padding: 0 6px; justify-self: start;
+}
+.keysheet dd { margin: 0; font-size: 13px; color: var(--m-text); }
+.keysheet p {
+  margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--m-rule-soft);
+  font-size: 12px; color: var(--m-muted); font-style: italic;
+}
+@media (prefers-reduced-motion: reduce) { .ov-item.is-cursor { transition: none; } }
 .conn-source { width: 54px; }
 .label-caps { font-family: var(--m-mono); font-size: var(--t-micro); font-weight: 500; letter-spacing: var(--t-tracking-label); text-transform: uppercase; color: var(--m-muted); }
 .caps-label { font-family: var(--m-mono); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--m-muted); font-weight: 500; margin-bottom: .4rem; }
