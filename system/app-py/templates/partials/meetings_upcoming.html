@@ -30,9 +30,22 @@
     </svg>
     <span>NO UPCOMING MEETINGS</span>
   </div>
-  <h2 style="font-family:var(--m-display);font-size:var(--t-h3);font-weight:500;margin:var(--m-space-3) 0 var(--m-space-2);color:var(--m-ink);">No meetings this week.</h2>
-  <p class="ed" style="font-size:var(--t-body);color:var(--m-muted);">
-    <em>The week is clear. Protect it.</em>
+  {#- The three parts an empty state owes the reader: what this is for, what
+      you actually HAVE, and one thing to do. "The week is clear. Protect it."
+      was charming and told him nothing — he cannot tell from it whether the
+      surface is empty because there are no meetings or because the import
+      never ran. The count settles that. -#}
+  <h2 class="me-title">The week is clear.</h2>
+  <p class="me-body">
+    {% if total %}{{ total }} meeting{{ '' if total == 1 else 's' }} recorded{% if last_date %},
+    the last on {{ last_date }}{% endif %}.
+    {% else %}Nothing has been recorded here yet.{% endif %}
+    Notes you import are read for decisions and follow-ups, and linked to the
+    projects they touch.
+  </p>
+  <p class="me-acts">
+    <button type="button" class="btn btn--soft btn--sm"
+            onclick="document.getElementById('meeting-import-open')?.click()">Import notes</button>
   </p>
 </div>
 {% endif %}

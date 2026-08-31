@@ -10,6 +10,9 @@
     </div>
     {% endfor %}
   {% else %}
-  <div class="empty-row">No meetings scheduled this week.</div>
+  {#- Deliberately the shortest of the three "no meetings" states on this
+    surface: it sits directly beneath one that already carries the totals and
+    the buttons, so repeating them here would be the same sentence twice. -#}
+<div class="empty-row">The week is clear.</div>
   {% endif %}
 </div>

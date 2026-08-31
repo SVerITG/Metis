@@ -1,0 +1,33 @@
+{#- _row.html — the shared row anatomy. See ".mrow" in styles.css for why.
+
+    Four slots, always in this order: state · title · meta · actions.
+    Everything is optional except the title, and an omitted state still holds
+    its width so the titles stay aligned down the list.
+
+    Usage:
+      {% from "partials/_row.html" import row %}
+      {{ row(title="Draft Angola risk-mapping parameters",
+             state="overdue", tone="is-urgent",
+             meta="SCREENING PERFORMANCE · 2026-08-20",
+             href="/work") }}
+
+    For a row whose actions are markup rather than text, call it with a body:
+      {% call row(title=..., state=...) %}<button …></button>{% endcall %}
+-#}
+{% macro row(title, state=None, tone='is-quiet', meta=None, href=None,
+             cls='', wrap=False, title_attr=None) %}
+<div class="mrow row-hit{{ ' mrow--wrap' if wrap }}{{ ' ' ~ cls if cls }}">
+  <span class="mrow-state">
+    {%- if state %}<span class="stat {{ tone }}">{{ state }}</span>{% endif -%}
+  </span>
+  <span class="mrow-body">
+    {% if href -%}
+    <a class="mrow-title hov-ink" href="{{ href }}"{% if title_attr %} title="{{ title_attr }}"{% endif %}>{{ title }}</a>
+    {%- else -%}
+    <span class="mrow-title"{% if title_attr %} title="{{ title_attr }}"{% endif %}>{{ title }}</span>
+    {%- endif %}
+    {% if meta %}<span class="mrow-meta">{{ meta }}</span>{% endif %}
+  </span>
+  {% if caller %}<span class="mrow-acts">{{ caller() }}</span>{% endif %}
+</div>
+{% endmacro %}
