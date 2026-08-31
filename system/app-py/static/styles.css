@@ -2094,15 +2094,29 @@ body.capture-open .t-capture {
 /* ================================================================
    PROJECT DETAIL OVERLAY
    ================================================================ */
+/* ── RETOUCH 2026-08-31 · this is a PEEK, so let it peek ────────────────
+   The slide-over already existed — the proposal to "build a peek panel" was
+   written from a screenshot without ever opening a project, and was simply
+   wrong about what Metis does. What was wrong is the SCRIM: at 48% black it
+   dimmed the list into illegibility, which makes this a modal that happens to
+   arrive from the right. The entire value of a peek is that you can still see
+   where you were, so the list is now readable behind it.
+
+   Lighter in dark mode, because the same 22% over a near-black ground reads as
+   nearly opaque. */
 .proj-detail-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, .48);
+  background: rgba(31, 42, 36, .22);
+  backdrop-filter: saturate(.8);
   z-index: 600;
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
 }
+[data-theme="observatory"] .proj-detail-overlay,
+[data-theme="midnight"] .proj-detail-overlay,
+[data-theme="cavern"] .proj-detail-overlay { background: rgba(0, 0, 0, .34); }
 .proj-detail-panel {
   background: var(--m-surface);
   width: min(680px, 92vw);
@@ -2110,12 +2124,18 @@ body.capture-open .t-capture {
   display: flex;
   flex-direction: column;
   box-shadow: -4px 0 32px rgba(0,0,0,.18);
-  animation: slideInRight .18s ease;
+  /* 10D · the spring, used where it belongs: a discrete arrival you see a few
+     times a day, not a gesture repeated down sixty rows. */
+  animation: slideInRight var(--m-dur-row) var(--m-ease-row);
   overflow: hidden;
 }
 @keyframes slideInRight {
-  from { transform: translateX(40px); opacity: 0; }
+  from { transform: translateX(56px); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .proj-detail-panel { animation: none; }
+  .proj-detail-overlay { backdrop-filter: none; }
 }
 
 /* ================================================================
@@ -5143,6 +5163,71 @@ summary:focus-visible,
   text-decoration: none;
 }
 a.num-lead:hover { border-bottom-color: var(--m-accent-hover); color: var(--m-accent); }
+
+/* ── RETOUCH · a title is not a bar across a box ────────────────────────
+   the researcher, 2026-08-31: "title bars not in boxes."
+
+   With 3D the panel became an object with a shadow, and every panel that drew
+   its heading as a full-width row with a rule beneath it turned into a box with
+   a title bar welded across the top — a second box inside the first. The
+   dominant idiom in this product is the opposite and always was: `sec_label`
+   puts the heading ABOVE the panel, with a hairline that trails off into space.
+
+   Fixed here rather than in the ~12 templates that do it, so it reaches every
+   surface at once and nothing can drift back. The heading keeps its position
+   and its padding; it simply stops being a bar — no rule under it, no fill
+   behind it. Where a panel genuinely needs a divided header (a toolbar with
+   controls), .panel-head--divided opts back in. */
+.panel > .u-rule:first-child,
+.panel > .card-header:first-child,
+.panel > .m-bar:first-child,
+.panel > .kicker:first-child {
+  border-bottom: 0;
+  background: transparent;
+}
+.panel > .u-rule:first-child.panel-head--divided,
+.panel > .m-bar:first-child.panel-head--divided {
+  border-bottom: 1px solid var(--m-rule-soft);
+}
+
+/* ── RETOUCH · the News "Display" fold ──────────────────────────────────
+   Presentation controls (detail + density) were six of the twenty buttons in
+   the News strip, set once and then left alone. They fold behind one summary
+   now. <details> rather than JS: keyboard-operable, works without script, and
+   Esc closes it at no cost. */
+.disp { position: relative; }
+.disp-summary {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--m-muted);
+  border: 1px solid var(--m-rule); border-radius: var(--m-radius-sm);
+  padding: 5px 10px; cursor: pointer; list-style: none; white-space: nowrap;
+}
+.disp-summary::-webkit-details-marker { display: none; }
+.disp-summary:hover { color: var(--m-ink); border-color: var(--m-rule-strong); }
+.disp[open] .disp-summary { color: var(--m-accent); border-color: var(--m-accent); }
+
+/* position:fixed would escape any overflow clipping, but this strip does not
+   clip — absolute keeps it anchored to the control when the page scrolls. */
+.disp-body {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 40;
+  background: var(--m-surface); border: 1px solid var(--m-rule-strong);
+  border-radius: var(--m-radius); box-shadow: var(--m-shadow-lg);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
+  min-width: 15rem;
+}
+.disp-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.disp-label {
+  font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--m-muted);
+}
+/* Inside the fold the labels carry the meaning, so the icons are dropped —
+   an icon AND its word in a 15rem popover is the same thing said twice. */
+.disp-body .seg-label { display: inline; }
+
+/* The stack link is a destination, not a control: quiet, and pushed to the end
+   so it stops competing with the period filter beside it. */
+.stk-counts { margin-left: auto; }
 
 /* 5A (mono caps headings) and 9A (hairline rows) were chosen as they already
    are. Nothing to write — recorded so a later reader knows they were decided

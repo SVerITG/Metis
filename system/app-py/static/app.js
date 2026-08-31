@@ -596,18 +596,40 @@ function filterNewsCategory(btn, category) {
 // Project detail overlay — full project panel with all tasks + history
 // ---------------------------------------------------------------------------
 
+/* The peek panel. It already slid in from the right; what it never did was
+   hand the keyboard anywhere, so opening it left focus on the row behind an
+   overlay the user could not tab into, and closing it dropped focus to the top
+   of the document — losing your place in a list of sixteen, which is the exact
+   thing a peek exists to preserve. */
+let _peekReturnTo = null;
+
 function openProjectDetail(projectId) {
   const existing = document.getElementById('proj-detail-overlay');
   if (existing) existing.remove();
+  _peekReturnTo = document.activeElement;      // come back here on close
   htmx.ajax('GET', '/api/partial/work/project-detail/' + projectId, {
     target: document.body,
     swap: 'beforeend',
+  }).then(function () {
+    const panel = document.querySelector('#proj-detail-overlay .proj-detail-panel');
+    if (!panel) return;
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    panel.setAttribute('tabindex', '-1');
+    panel.focus({ preventScroll: true });
   });
 }
 
 function closeProjectDetail() {
   const el = document.getElementById('proj-detail-overlay');
-  if (el) el.remove();
+  if (!el) return;
+  el.remove();
+  // Return focus to the row that opened it, if it is still in the document —
+  // an HTMX swap may have replaced the list while the panel was open.
+  if (_peekReturnTo && document.contains(_peekReturnTo)) {
+    _peekReturnTo.focus({ preventScroll: true });
+  }
+  _peekReturnTo = null;
 }
 
 document.addEventListener('keydown', function(e) {
