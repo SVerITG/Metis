@@ -5229,6 +5229,23 @@ a.num-lead:hover { border-bottom-color: var(--m-accent-hover); color: var(--m-ac
    so it stops competing with the period filter beside it. */
 .stk-counts { margin-left: auto; }
 
+/* ── Surface header figures — "every number is a door" ─────────────────
+   A count in a page header used to be dead text: no denominator, no direction,
+   and no way through to the list it named. Each figure is now a link, carries
+   what it is a fraction OF, and carries which way it moved. */
+.wm { display: flex; align-items: baseline; gap: 22px; flex-wrap: wrap; }
+.wm-fig {
+  display: inline-flex; align-items: baseline; gap: 7px;
+  text-decoration: none; color: inherit;
+}
+.wm-label {
+  font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--m-muted); white-space: nowrap;
+}
+.wm-fig:hover .wm-label { color: var(--m-ink); }
+.wm-alert { color: var(--m-alert); border-bottom-color: var(--m-alert); }
+.wm-strip { margin-left: auto; }
+
 /* 5A (mono caps headings) and 9A (hairline rows) were chosen as they already
    are. Nothing to write — recorded so a later reader knows they were decided
    rather than overlooked. */

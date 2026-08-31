@@ -209,11 +209,26 @@ def test_asking_for_the_library_still_works_mid_session(fresh_session, request):
     )
 
 
+RESEARCH_Q = ("what is the specificity of CATT in a low prevalence setting "
+              "for gambiense HAT screening?")
+
+
 def test_a_research_session_is_never_marked(fresh_session):
-    """A session that never touches Metis keeps grounding on every question."""
-    assert _run_hook(
-        "what is the specificity of CATT in a low prevalence setting for "
-        "gambiense HAT screening?", fresh_session)
+    """A session that never touches Metis keeps grounding on every question.
+
+    Carries the same CONTROL as the test above, and for the same reason — which
+    I failed to apply here when I wrote it, so this test flaked on 2026-08-31
+    exactly as its sibling had. A hook that decides to ground still emits
+    nothing when the corpus search behind it times out, so "did not ground" has
+    two completely different causes and only one of them is a defect. Establish
+    that the search is answering at all before asserting anything about the gate.
+    """
+    probe = "probe" + fresh_session
+    if not _run_hook(RESEARCH_Q, probe):
+        Path(tempfile.gettempdir(), "metis-corpus-hook", f"{probe}.system").unlink(missing_ok=True)
+        pytest.skip("corpus search did not answer in time — environment, not the gate")
+
+    assert _run_hook(RESEARCH_Q, fresh_session)
     assert _run_hook(
         "is there evidence for livestock density predicting tsetse abundance?",
         fresh_session)

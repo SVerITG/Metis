@@ -1,0 +1,41 @@
+{#- work_meta.html — the numbers at the head of Work.
+
+    Was: "16 PROJECTS · 53 TASKS · 0 PAUSED", built in an f-string, none of it
+    clickable and none of it comparable. Three problems, and the third decided
+    the design:
+
+      · no denominator — is 16 projects most of them, or a sixth of them?
+      · no direction — is 53 more or fewer than last week?
+      · no way in — the number names a list you then have to go and find.
+
+    "0 PAUSED" is gone. A count of zero, for a state this researcher has never
+    used, is the purest form of ink without information.
+
+    The figures use .num-lead (8C): serif, with an accent rule underneath that
+    says the number is a way in rather than a decoration. -#}
+<div class="wm">
+  <a class="wm-fig" href="#projects-zone" title="Active projects, of every project on file">
+    <span class="num-lead">{{ projects }}</span>
+    <span class="wm-label">of {{ projects_total }} projects</span>
+  </a>
+
+  <a class="wm-fig" href="#work-all-tasks" title="Everything still open">
+    <span class="num-lead">{{ tasks }}</span>
+    <span class="wm-label">open tasks</span>
+    {%- if delta %}
+    <span class="stat {{ 'is-good' if delta < 0 else 'is-quiet' }}" title="Change since you last looked">
+      {{ '+' if delta > 0 else '' }}{{ delta }} this week</span>
+    {%- endif %}
+  </a>
+
+  {#- Shown only when there ARE any. An "0 overdue" in alert red every morning
+      would train the eye to ignore the one morning it says 1. -#}
+  {% if overdue %}
+  <a class="wm-fig" href="#work-due-today" title="Past their date">
+    <span class="num-lead wm-alert">{{ overdue }}</span>
+    <span class="wm-label">overdue</span>
+  </a>
+  {% endif %}
+
+  {% if strip %}<span class="wm-strip">{{ strip | safe }}</span>{% endif %}
+</div>

@@ -58,6 +58,38 @@ def connect(db_path: Path) -> sqlite3.Connection:
     return con
 
 
+def same_document(a: str, b: str, max_lead: int = 2, min_chars: int = 25) -> bool:
+    """Two titles naming the same document, given identical text.
+
+    Three things make a plain string comparison fail here, and all three were
+    found the hard way on 2026-08-31:
+
+      · an AUTHOR PREFIX. "Simarro Mapping The Capacities…" and "Mapping The
+        Capacities…" are one paper. Proved by a live search returning the same
+        page of it twice, at the same score.
+      · DIFFERENT TRUNCATION. The two records are cut at different lengths.
+      · the cut lands MID-WORD — "On The Transm" against "On The Transmission" —
+        so comparing token by token fails on the final element even when the
+        titles are plainly the same. This is the same defect as the project
+        card that read "SLEEPING-SICKNES", and it hid 50 duplicate copies from
+        a token-wise version of this function.
+
+    So: compare on the STRING prefix, after allowing up to two leading words to
+    be an author name. The authored title is the one worth keeping — it carries
+    strictly more information.
+    """
+    norm = lambda t: re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()
+    A, B = norm(a), norm(b)
+    for x, y in ((A, B), (B, A)):
+        toks = x.split()
+        for k in range(0, max_lead + 1):
+            xs = " ".join(toks[k:])
+            n = min(len(xs), len(y))
+            if n >= min_chars and xs[:n] == y[:n]:
+                return True
+    return False
+
+
 def fingerprint(con: sqlite3.Connection, title: str) -> tuple[str, int]:
     rows = con.execute(
         "SELECT chunk_text FROM pdf_chunks WHERE title=? ORDER BY chunk_idx", (title,)
