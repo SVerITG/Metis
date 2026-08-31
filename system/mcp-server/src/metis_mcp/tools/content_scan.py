@@ -754,13 +754,38 @@ def _score_signal(title: str, summary: str, feed_name: str,
         score += 2  # an outbreak / approval / elimination is a strong signal on its own
     if user_topics and any(t in haystack for t in user_topics):
         score += 2  # keyword overlap with configured topics
-    # Semantic relevance to the user's library/projects/ideas/meetings (local, no API)
     if sem >= 0.64:
         score += 3
     elif sem >= 0.60:
         score += 2
     elif sem >= 0.575:
         score += 1
+
+    # ── "HIGH" NOW REQUIRES SEMANTIC EVIDENCE ─────────────────────────────
+    # the researcher, 2026-08-31: "When it says 'related to your work' it is not so close
+    # actually."
+    #
+    # He was right, and the arithmetic shows why: an urgency word scored +2 and
+    # one topic keyword another +2, so ANY item mentioning an outbreak and any
+    # configured term reached the threshold of 3 and was labelled high — with a
+    # semantic similarity of zero. A story could be called close to his work
+    # without ever being compared to his work.
+    #
+    # Urgency and keywords are still worth points; they can no longer buy the
+    # top label on their own. The floor is 0.60, where relevant items cluster
+    # on this corpus (unrelated ones sit at 0.57 and below).
+    #
+    # WHEN THE SIMILARITY IS MISSING (sem == 0.0 exactly — embeddings
+    # unavailable, not "measured as unrelated") the old heuristic still decides,
+    # so a scan without the model is degraded rather than flattened to low.
+    scored_semantically = sem > 0.0
+    if scored_semantically:
+        if score >= 3 and sem >= 0.60:
+            return "high"
+        if score >= 1 or sem >= 0.575:
+            return "medium"
+        return "low"
+
     if score >= 3:
         return "high"
     if score >= 1:
@@ -806,11 +831,17 @@ def _scan_feeds(feeds, max_per_feed: int = 10) -> dict:
         conn.commit()
 
         # Build the interest-profile centroid once (cached daily; local, no API).
+        # MAX-ANCHOR, not centroid. A centroid of 5 topics + ~100 work items +
+        # ~390 library titles means "public health in general", and on that
+        # measure a foodborne-bacteria paper outscored a paper on passive HAT
+        # screening. Scoring against the CLOSEST SINGLE project / idea / note
+        # separates his work from the middle ground; see relevance.py.
         centroid = None
         _score_batch = None
         try:
-            from metis_mcp.tools.relevance import build_centroid, score_batch as _score_batch
-            centroid = build_centroid(conn)
+            from metis_mcp.tools.relevance import (build_profile,
+                                                   score_batch_profile as _score_batch)
+            centroid = build_profile(conn)
         except Exception:
             _score_batch = None
 

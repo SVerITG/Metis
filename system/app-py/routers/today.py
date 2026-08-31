@@ -5087,7 +5087,34 @@ def _news_card(r: dict) -> dict:
         "relevance": rel,
         # The qualitative band, not a raw %: the embedding baseline sits ~0.5,
         # so "62%" would read as a coin-flip when it is in fact a strong match.
-        "close": rel >= 0.64,
+        # 0.72, and the number was READ OFF THE DATA rather than reasoned to.
+        # After the scorer was fixed (max similarity to the closest project /
+        # idea / note, not a centroid of everything), the top of the news file
+        # sorted like this:
+        #
+        #   0.808  Measuring elimination of gambiense HAT
+        #   0.800  Modelling the role of animals in gambiense HAT
+        #   0.787  Health economic evaluation of gambiense HAT elimination
+        #   0.758  DR Congo: Ebola outbreak situation report
+        #   0.750  World: Start Fund Monthly Risk Bulletin      <- quality falls off
+        #   0.694  COVID rates low but increasing across the US
+        #   0.687  Albania: UNHCR Western Balkans factsheet
+        #   0.681  Dogs may hold clues to human longevity
+        #
+        # A first attempt at 0.68 admitted the last three. 0.72 was then too
+        # tight: the highest scorers overall are PAPERS, and News excludes those
+        # (source_type='article'), so within the news stream alone 0.72 left one
+        # item in a month. Calibrated again on news only, where the top reads
+        # DRC / Ebola / avian influenza / zoonotic-AI and holds to ~0.743:
+        #
+        #   >= 0.70   258 items   COVID-US (0.694), Albania (0.687) and
+        #                         dog-longevity (0.681) all fall below
+        #   >= 0.72   101 items   too few per week to be a daily tab
+        #
+        # This is a FLOOR, not the ranking. The tab already sorts by relevance
+        # and caps at 60, so the floor's only job is to keep obvious noise out
+        # while leaving enough for the sort to be worth doing.
+        "close": rel >= 0.70,
         "signal": (r.get("signal_strength") or "").strip(),
         "when": _age_label(r["created_at"]) if r.get("created_at") else "",
         # Raw timestamp for correct chronological sorting (the "when" label is not
@@ -5380,11 +5407,26 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
                         s = _slugify(str(_v)) if _slugify else str(_v).lower().replace(" ", "-")
                         if s:
                             interest_slugs.add(s)
-                            # also index the individual words, so "sleeping sickness"
-                            # matches a 'sleeping-sickness' subject and an 'ntd' domain
-                            for w in re.split(r"[^a-z0-9]+", s):
-                                if len(w) > 3:
-                                    interest_slugs.add(w)
+                            # SINGLE WORDS ARE NO LONGER INDEXED. the researcher,
+                            # 2026-08-31: "when it says 'related to your work'
+                            # it is not so close actually."
+                            #
+                            # This split every interest into its words, so
+                            # "neglected tropical diseases" contributed
+                            # "diseases" and "AI in global health" contributed
+                            # "health". A domain of `health` or `global-health`
+                            # then counted as related to his work — which, in a
+                            # set of health feeds, is nearly everything. The tab
+                            # was not ranking badly; it was matching on a word
+                            # as generic as "health".
+                            #
+                            # Multi-word fragments are still useful, because a
+                            # subject slug may carry only part of an interest:
+                            # "sleeping sickness elimination" should still reach
+                            # a 'sleeping-sickness' subject.
+                            _parts = [w for w in re.split(r"[^a-z0-9]+", s) if len(w) > 3]
+                            for _i in range(len(_parts) - 1):
+                                interest_slugs.add("-".join(_parts[_i:_i + 2]))
         except Exception:
             pass
 

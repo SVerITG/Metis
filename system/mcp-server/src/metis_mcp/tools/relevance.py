@@ -22,48 +22,110 @@ _CACHE = paths.db.parent / "interest_centroid.json"
 _TTL = 86400  # rebuild the profile at most once per day
 
 
-def _corpus_texts(con: sqlite3.Connection) -> tuple[list[str], list[str]]:
-    """Return (topic_texts, corpus_texts).
+def _corpus_texts(con: sqlite3.Connection) -> tuple[list[str], list[str], list[str]]:
+    """Return (topic_texts, work_texts, library_texts).
 
-    topic_texts = the user's EXPLICIT stated research focus (configured topics /
-    field / methods). corpus_texts = the accumulated body of work (library,
-    projects, ideas, meetings). We deliberately EXCLUDE semantic_memory — it is
-    polluted with Metis-engineering concepts from build/audit sessions, which
-    otherwise pull unrelated AI/CS papers up the ranking.
+    THREE bands, not two, and the split is the whole point. the researcher, 2026-08-31:
+    "It should be close to things and topics in my projects, ideas and notes."
+
+    topic_texts   the EXPLICIT stated focus (configured topics / field / methods)
+    work_texts    what he is ACTUALLY DOING — projects, ideas, notes, meetings
+    library_texts what he has COLLECTED — 400 literature titles
+
+    These were previously one bucket, averaged together, and that is why results
+    felt off: 400 library titles against ~16 projects means the library decides
+    the centroid by weight of numbers alone. His library is broad public-health
+    material — WHO reports, epidemiology textbooks, methods papers — so the
+    profile drifted toward "public health in general" and happily scored a paper
+    on spiritual-care teaching as close to his work.
+
+    Notes were missing entirely, which is why a note recording a live line of
+    thinking could never influence the ranking.
+
+    semantic_memory stays EXCLUDED: it is full of Metis-engineering concepts
+    from build sessions and pulls unrelated AI/CS papers up the ranking.
     """
+    # ── STATED FOCUS, from the DATABASE first ─────────────────────────────
+    # This band was silently EMPTY. It read `paths.config / "user-config.yaml"`,
+    # and paths.config resolves inside the venv
+    # (~/.local/share/metis-mcp/.venv/system/config) where no such file exists —
+    # so the read raised, the bare `except` swallowed it, and the profile has
+    # never had the anchor it was designed around. Nothing failed loudly; the
+    # ranking was simply library-dominated for as long as this has existed.
+    #
+    # `user_topics` is the live, authoritative source — it is what the scheduler
+    # already queries, it carries a description as well as a name, and the
+    # researcher edits it through Metis rather than by hand. The yaml is kept as
+    # a fallback and now read from the repo, not from inside the venv.
     topic_texts: list[str] = []
     try:
-        import yaml
-        cfg = yaml.safe_load((paths.config / "user-config.yaml").read_text(encoding="utf-8")) or {}
-        research = cfg.get("research", {}) if isinstance(cfg.get("research"), dict) else {}
-        for t in (research.get("topics") or []):
-            if str(t).strip():
-                topic_texts.append(str(t).strip())
-        for k in ("field", "methods"):
-            if research.get(k):
-                topic_texts.append(str(research[k]))
+        for topic, desc in con.execute(
+            "SELECT topic, COALESCE(description,'') FROM user_topics WHERE active = 1"
+        ):
+            if topic and str(topic).strip():
+                topic_texts.append(" ".join(x for x in (str(topic), str(desc)) if x).strip())
     except Exception:
         pass
 
-    corpus_texts: list[str] = []
+    if not topic_texts:
+        try:
+            import yaml
+            for base in (Path(__file__).resolve().parents[4] / "system" / "config",
+                         paths.config):
+                f = base / "user-config.yaml"
+                if not f.exists():
+                    continue
+                cfg = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+                research = cfg.get("research", {}) if isinstance(cfg.get("research"), dict) else {}
+                for t in (research.get("topics") or []):
+                    if str(t).strip():
+                        topic_texts.append(str(t).strip())
+                for k in ("field", "methods"):
+                    if research.get(k):
+                        topic_texts.append(str(research[k]))
+                break
+        except Exception:
+            pass
+
+    library_texts: list[str] = []
     try:
         for row in con.execute(
             "SELECT title, COALESCE(tags,'') FROM literature_metadata ORDER BY id DESC LIMIT 400"
         ):
-            s = " ".join(str(x) for x in row if x).strip()
-            if s:
-                corpus_texts.append(s)
+            t = " ".join(str(x) for x in row if x).strip()
+            if t:
+                library_texts.append(t)
     except Exception:
         pass
+
+    # What he is actually working on. Projects carry their description and next
+    # step as well as their title, because the next step is the most current
+    # sentence about a project that exists anywhere.
+    work_texts: list[str] = []
     for sql in (
-        "SELECT title || ' ' || COALESCE(domain,'') || ' ' || COALESCE(next_step,'') FROM projects",
-        "SELECT text FROM ideas ORDER BY created_at DESC LIMIT 50",
+        # TOOLING PROJECTS ARE EXCLUDED. "Metis Dashboard" is domain=software,
+        # and its next_step currently reads "FIRST: the Library relevance
+        # scorer…" — build notes about Metis itself. Feeding that into a
+        # RESEARCH interest profile pulls unrelated AI and software-engineering
+        # papers up the ranking, which is the same pollution semantic_memory was
+        # excluded for. "HAT Dashboard" is category=Software but
+        # domain=sleeping-sickness, and stays: the domain is what says whether a
+        # project is about his field.
+        "SELECT title || ' ' || COALESCE(domain,'') || ' ' || COALESCE(description,'') "
+        "|| ' ' || COALESCE(next_step,'') FROM projects "
+        "WHERE status IN ('active','incubating') "
+        "AND LOWER(COALESCE(domain,'')) NOT IN ('software','tooling','personal')",
+        "SELECT text FROM ideas WHERE COALESCE(tags,'') NOT LIKE '%archived%' "
+        "ORDER BY created_at DESC LIMIT 120",
+        "SELECT content FROM personal_notes ORDER BY created_at DESC LIMIT 120",
+        "SELECT title FROM tasks WHERE status NOT IN ('done','completed','cancelled','deleted') "
+        "ORDER BY created_at DESC LIMIT 120",
         "SELECT title FROM meetings ORDER BY meeting_date DESC LIMIT 50",
     ):
         try:
-            for (s,) in con.execute(sql):
-                if s and str(s).strip():
-                    corpus_texts.append(str(s).strip())
+            for (t,) in con.execute(sql):
+                if t and str(t).strip():
+                    work_texts.append(str(t).strip())
         except Exception:
             pass
 
@@ -75,15 +137,28 @@ def _corpus_texts(con: sqlite3.Connection) -> tuple[list[str], list[str]]:
                 seen.add(t); out.append(t)
         return out
 
-    return _dedup(topic_texts), _dedup(corpus_texts)
+    return _dedup(topic_texts), _dedup(work_texts), _dedup(library_texts)
 
 
 def build_centroid(con: sqlite3.Connection, force: bool = False) -> list[float] | None:
     """Return the cached interest-profile centroid, rebuilding if stale/missing.
 
-    The profile is a blend that anchors on the user's STATED focus so a broad
-    library can't drown it out: ``normalize(0.5·topic_centroid + 0.5·corpus_centroid)``.
-    Returns None if there is no corpus or embeddings are unavailable.
+    WEIGHTED, because the three bands are not equally informative about what he
+    is working on THIS WEEK:
+
+        0.35 · stated topics   what he says his field is
+        0.45 · work            projects, ideas, notes, open tasks, meetings
+        0.20 · library         what he has collected
+
+    Work carries the most weight because it is the only band that moves. The
+    previous version averaged work and library into one bucket, where 400
+    library titles outvoted ~16 projects by weight of numbers and the profile
+    drifted toward general public health.
+
+    The library is not dropped, only quietened: it is real evidence of his
+    interests, just slower-moving and much broader than his current work.
+
+    Returns None if there is nothing to build from, or embeddings are missing.
     """
     if not force:
         try:
@@ -92,8 +167,8 @@ def build_centroid(con: sqlite3.Connection, force: bool = False) -> list[float] 
         except Exception:
             pass
 
-    topic_texts, corpus_texts = _corpus_texts(con)
-    if not topic_texts and not corpus_texts:
+    topic_texts, work_texts, library_texts = _corpus_texts(con)
+    if not (topic_texts or work_texts or library_texts):
         return None
     try:
         from metis_mcp.embeddings import embed
@@ -106,24 +181,115 @@ def build_centroid(con: sqlite3.Connection, force: bool = False) -> list[float] 
             n = np.linalg.norm(v)
             return v / n if n else v
 
-        tc = _centroid(topic_texts)
-        cc = _centroid(corpus_texts)
-        if tc is not None and cc is not None:
-            blended = 0.5 * tc + 0.5 * cc            # equal weight: stated focus anchors the corpus
-        else:
-            blended = tc if tc is not None else cc
+        bands = [(0.35, _centroid(topic_texts)),
+                 (0.45, _centroid(work_texts)),
+                 (0.20, _centroid(library_texts))]
+        present = [(w, v) for w, v in bands if v is not None]
+        if not present:
+            return None
+        # Re-normalise the weights over the bands that actually exist, so a
+        # missing band shifts emphasis rather than silently shrinking the
+        # profile toward the origin.
+        total_w = sum(w for w, _ in present)
+        blended = sum((w / total_w) * v for w, v in present)
         n = np.linalg.norm(blended)
         centroid = (blended / n).tolist() if n else blended.tolist()
         try:
             _CACHE.parent.mkdir(parents=True, exist_ok=True)
             _CACHE.write_text(json.dumps(
                 {"centroid": centroid, "n_topic": len(topic_texts),
-                 "n_corpus": len(corpus_texts), "built": time.time()}))
+                 "n_work": len(work_texts), "n_library": len(library_texts),
+                 "built": time.time()}))
         except Exception:
             pass
         return centroid
     except Exception:
         return None
+
+
+_PROFILE_CACHE = paths.db.parent / "interest_profile.json"
+
+
+def build_profile(con: sqlite3.Connection, force: bool = False) -> dict | None:
+    """The interest profile as a CENTROID **and** the individual vectors behind it.
+
+    WHY BOTH. A centroid answers "is this close to the average of everything he
+    does". Averaging 5 stated topics, ~100 work items and ~390 library titles
+    produces a vector that means "public health in general" — and on that
+    measure a well-written paper about foodborne bacteria scored 0.723 while
+    "Passive screening coverage for gambiense HAT" scored 0.709. The centroid
+    could separate his field from obvious noise (phenomenology, LED lighting)
+    but not from the enormous middle ground of competent public-health writing.
+
+    The question that actually matters is different: **is this close to ANY ONE
+    of his projects, ideas or notes?** A paper on tsetse control should be
+    ranked by its similarity to the Angola risk-mapping project, not diluted by
+    its distance from a multilevel-models course and 390 library titles.
+
+    So the profile keeps the per-item vectors for the STATED TOPICS and the WORK
+    band and scores on the maximum. The centroid survives as a minority term,
+    because a general fit is weak evidence and should count for something —
+    just not for everything.
+
+    The library band contributes to the centroid only. It is real evidence of
+    his interests but far too broad to justify a max-similarity hit.
+    """
+    if not force:
+        try:
+            if (_PROFILE_CACHE.exists()
+                    and (time.time() - _PROFILE_CACHE.stat().st_mtime) < _TTL):
+                return json.loads(_PROFILE_CACHE.read_text())
+        except Exception:
+            pass
+
+    centroid = build_centroid(con, force=force)
+    topic_texts, work_texts, _library = _corpus_texts(con)
+    anchors = topic_texts + work_texts
+    if not anchors:
+        return {"centroid": centroid, "anchors": []} if centroid else None
+    try:
+        from metis_mcp.embeddings import embed
+        vectors = embed(anchors, prefix="search_document: ", normalize=True)
+        profile = {"centroid": centroid,
+                   "anchors": [list(map(float, v)) for v in vectors],
+                   "n_topic": len(topic_texts), "n_work": len(work_texts),
+                   "built": time.time()}
+        try:
+            _PROFILE_CACHE.parent.mkdir(parents=True, exist_ok=True)
+            _PROFILE_CACHE.write_text(json.dumps(profile))
+        except Exception:
+            pass
+        return profile
+    except Exception:
+        return {"centroid": centroid, "anchors": []} if centroid else None
+
+
+def score_batch_profile(texts: list[str], profile: dict | None) -> list[float]:
+    """0.75 · closest single anchor + 0.25 · centroid fit.
+
+    The weights say what the evidence is worth: a strong match to one real
+    project or note is the signal; a general resemblance to the whole corpus is
+    a weak prior. With anchors missing this degrades to the centroid alone,
+    which is the previous behaviour rather than a failure.
+    """
+    if not profile or not texts:
+        return [0.0] * len(texts)
+    centroid = profile.get("centroid")
+    anchors = profile.get("anchors") or []
+    if not anchors:
+        return score_batch(texts, centroid)
+    try:
+        from metis_mcp.embeddings import embed
+        import numpy as np
+        v = np.array(embed([t[:500] for t in texts], prefix="search_query: ", normalize=True))
+        A = np.array(anchors)
+        best = (v @ A.T).max(axis=1)                     # closest single anchor
+        if centroid:
+            gen = v @ np.array(centroid)
+            return [float(0.75 * b + 0.25 * g) for b, g in zip(best, gen)]
+        return [float(b) for b in best]
+    except Exception:
+        return [0.0] * len(texts)
 
 
 def score_batch(texts: list[str], centroid: list[float] | None) -> list[float]:
