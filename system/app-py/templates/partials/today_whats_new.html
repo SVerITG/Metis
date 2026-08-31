@@ -1,0 +1,57 @@
+{% from "partials/_section.html" import sec_label %}
+{#- today_whats_new.html — what arrived in News and in Library, side by side.
+
+    the researcher, 2026-08-31: "Quick overview of what is new in News and what is new in
+    Library next to each other windows."
+
+    Two sources, one question, so they belong beside each other rather than
+    stacked half a screen apart. Deliberately SHORT — three lines each. This is
+    a glance that tells you whether to go and look, not a place to read from;
+    the surfaces themselves are one click away and are built for reading.
+
+    Both panels are the same shape on purpose, so the eye compares them rather
+    than learning each. -#}
+{{ sec_label("What changed in your field", tail="SINCE YESTERDAY") }}
+<div class="today-pair u-mb-6">
+
+  <div class="panel wn-card">
+    <div class="wn-card-head">
+      <span class="m-sec">News</span>
+      <a class="wn-count" href="/news" title="Open the News surface">
+        <span class="num-lead tnum">{{ news_new }}</span>
+        <span class="wn-unit">new</span>
+      </a>
+    </div>
+    {% if news %}
+    <ul class="wn-list">
+      {% for n in news %}
+      <li><a class="wn-item hov-ink" href="/news">{{ n.label }}</a>
+          <span class="wn-meta">{{ n.item_count }} report{{ '' if n.item_count == 1 else 's' }}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="wn-empty">Nothing new since yesterday.</p>
+    {% endif %}
+  </div>
+
+  <div class="panel wn-card">
+    <div class="wn-card-head">
+      <span class="m-sec">Library</span>
+      <a class="wn-count" href="/knowledge" title="Open the Library">
+        <span class="num-lead tnum">{{ lib_new }}</span>
+        <span class="wn-unit">new</span>
+      </a>
+    </div>
+    {% if papers %}
+    <ul class="wn-list">
+      {% for p in papers %}
+      <li><a class="wn-item hov-ink" href="/knowledge">{{ p.title }}</a>
+          <span class="wn-meta">{{ p.journal or p.feed_name or '—' }}</span></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="wn-empty">No new papers since yesterday.</p>
+    {% endif %}
+  </div>
+
+</div>

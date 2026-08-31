@@ -1,0 +1,60 @@
+{#- today_pick_focus.html — where you left off, and a way to act on it.
+
+    the researcher, 2026-08-31: "'todays focus' should include past sessions (collapsed,
+    'where you left off') from which you can chose a focus or from your other
+    projects in work, it should be an efficient use of space."
+
+    So it is FOLDED and it is ACTIONABLE. The resume card used to sit open,
+    high on the surface, describing yesterday — a paragraph you read and could
+    do nothing with. Now it is one summary line you can open, and every row in
+    it has a button that pins that project's next task to today's focus.
+
+    That is what makes it worth the space: it is not a record of yesterday, it
+    is the shortest route to deciding today. -#}
+<details class="pick" data-pick-fold>
+  <summary class="pick-sum">
+    <span class="pick-lead">Where you left off</span>
+    {% if last_when %}<span class="pick-when">{{ last_when }}</span>{% endif %}
+    <span class="pick-hint">pick something for today</span>
+  </summary>
+
+  <div class="pick-body">
+    {% if last_summary %}
+    <p class="pick-note">{{ last_summary }}</p>
+    {% endif %}
+
+    {% if projects %}
+    <ul class="pick-list">
+      {% for p in projects %}
+      <li class="mrow row-hit">
+        <span class="mrow-state">
+          {%- if p.quiet_days is not none and p.quiet_days <= 2 -%}
+          <span class="stat is-good">active</span>
+          {%- endif -%}
+        </span>
+        <span class="mrow-body">
+          <a class="mrow-title hov-ink" href="/work">{{ p.title }}</a>
+          {% if p.next_step %}<span class="mrow-meta">NEXT → {{ p.next_step }}</span>
+          {% elif p.quiet_days is not none %}<span class="mrow-meta">quiet for {{ p.quiet_days }} days</span>{% endif %}
+        </span>
+        <span class="mrow-acts">
+          {% if p.task_id %}
+          <button type="button" class="btn btn--ghost btn--sm"
+                  title="Pin “{{ p.task_title }}” to today's focus"
+                  hx-post="/api/task/{{ p.task_id }}/star"
+                  hx-target="#today-focus" hx-swap="none"
+                  hx-on::after-request="htmx.ajax('GET','/api/partial/today/focus-memory?bare=1',{target:'#today-focus',swap:'outerHTML'})">
+            pin to today
+          </button>
+          {% else %}
+          <span class="mrow-meta">no open task</span>
+          {% endif %}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="pick-note">Nothing recorded yet — a session gets written here when work is logged against a project.</p>
+    {% endif %}
+  </div>
+</details>

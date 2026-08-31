@@ -118,24 +118,43 @@
     </div>
   </div>
 
-  <!-- ===== 3. Today's Focus — with memory depth + deadline nudges ===== -->
-  <div hx-get="/api/partial/today/focus-memory"
-       hx-trigger="load delay:100ms"
-       hx-swap="outerHTML">
-    {{ sec_label("Today's focus", tail="LOADING") }}
-    <div class="grid grid-3 u-mb-6">
-      {{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}
-    </div>
-  </div>
+  {#- ══ ONE SECTION: WHAT NEEDS YOU TODAY ═══════════════════════════════
+      the researcher, 2026-08-31: "some sections are merged, visible."
 
-  {#- WORK COMES TO TODAY. What is due and what is overdue lived a tab away, so
-      "what needs me today" could not be answered on the surface whose whole job
-      is to answer it. Same partial as Work — one endpoint, two mounts, so the
-      two surfaces can never disagree about what is overdue. -#}
-  <div class="u-mb-6"
-       hx-get="/api/partial/work/due-today"
-       hx-trigger="load delay:120ms"
-       hx-swap="innerHTML"></div>
+      These were two panels under two headings, and they OVERLAPPED — the focus
+      cards drew from a deadline pool while the strip beneath showed the same
+      dated tasks, so one overdue task appeared twice on one screen. Merging
+      two panels that duplicate each other is the whole point; leaving them
+      adjacent under separate titles was the version of the merge that only
+      moved things closer together.
+
+      The division is now clean and legible:
+        · anything with a DATE   → the due strip (top, it is the commitment)
+        · anything you STARRED   → the cards (below, it is the choice)
+      One heading over both, and both render `bare` so neither brings its own.
+      ═══════════════════════════════════════════════════════════════════════ -#}
+  {{ sec_label("What needs you today", tail="DUE · STARRED") }}
+  <div class="needs-you u-mb-6">
+    <div hx-get="/api/partial/work/due-today?bare=1"
+         hx-trigger="load delay:80ms"
+         hx-swap="innerHTML"></div>
+
+    <div hx-get="/api/partial/today/focus-memory?bare=1"
+         hx-trigger="load delay:100ms"
+         hx-swap="outerHTML">
+      <div class="grid grid-3">
+        {{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}
+      </div>
+    </div>
+
+    {#- WHERE YOU LEFT OFF, folded, INSIDE this section — because it is not a
+        record of yesterday, it is the shortest route to deciding today. Every
+        row carries a button that pins that project's next task straight into
+        the focus cards above. -#}
+    <div hx-get="/api/partial/today/pick-focus"
+         hx-trigger="load delay:140ms"
+         hx-swap="innerHTML"></div>
+  </div>
 
   {#- WHAT SHOULD I READ. Renders nothing at all unless something in the reading
       stack has been flagged crucial — the stack is not a list to work through
@@ -157,12 +176,23 @@
     </div>
   </div>
 
+  {#- WHAT CHANGED, in one glance, both sources side by side. This replaces a
+      pair that showed "new literature" beside a learning nudge — two unrelated
+      things next to each other because they happened to be short. News and
+      Library are the same question asked of two sources, which is what makes
+      them worth comparing. -#}
+  {#- innerHTML: the partial returns an <h2> and a grid, not a single wrapper,
+      so an outerHTML swap would replace this div with the heading and drop the
+      rest of the structure. Caught by tools/check_htmx_swaps.py within a minute
+      of writing it — twice, in the same batch. -#}
+  <div hx-get="/api/partial/today/whats-new"
+       hx-trigger="load delay:220ms"
+       hx-swap="innerHTML"></div>
+
   <div class="today-pair u-mb-6">
-    <!-- ===== 6. Literature discovery — new papers in your field ===== -->
     <div hx-get="/api/partial/today/literature-discovery"
          hx-trigger="load delay:250ms"
          hx-swap="outerHTML"></div>
-    <!-- ===== 7. Learning nudge ===== -->
     <div hx-get="/api/partial/today/learning-nudge"
          hx-trigger="load delay:300ms"
          hx-swap="outerHTML"></div>
@@ -207,10 +237,12 @@
     {{ skeleton_box(size="sm") }}
   </div>
 
-  <!-- ===== 2b. Resume card — where we left off ===== -->
-  <div hx-get="/api/partial/today/resume-card"
-       hx-trigger="load delay:50ms"
-       hx-swap="outerHTML"></div>
+  {#- The resume card lived here as an open paragraph describing yesterday,
+      which you could read and do nothing with. It is now folded INTO "what
+      needs you today" as partials/today_pick_focus.html, where each row can
+      become today's focus with one press. Same information, one screen higher,
+      and actionable. -#}
+
 
   <!-- ===== 8. What Metis knows — ONE zone, closed by default ==============
        Audit 2026-08-25: research threads (830 visible words — a third of the

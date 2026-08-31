@@ -3,7 +3,7 @@
    Context: items (list of dicts with item_type, item_id, title, subtitle, badge, badge_color, memory). #}
 <div id="today-focus">
 {% if items %}
-  {{ sec_label("Today's focus", tail=(done_today|string) + " DONE TODAY" if done_today else "STAR A TASK TO PIN IT HERE") }}
+  {% if not bare %}{{ sec_label("Today's focus", tail=(done_today|string) + " DONE TODAY" if done_today else "STAR A TASK TO PIN IT HERE") }}{% endif %}
   {# Link to Work — Today's focus and the Work planning horizon are two ends of
      the same thread: what you intend (Work) → what you're doing today (here). #}
   <div class="u-mb-4">
@@ -78,7 +78,7 @@
       tasks or active ideas right now", which was never true — there are 53 open
       tasks. It was the FILLER POOL running dry, described as an empty world.
       Now the sentence is accurate: nothing you committed to is left. -#}
-  {{ sec_label("Today's focus", tail=(done_today|string) + " DONE TODAY" if done_today else "NOTHING PINNED") }}
+  {% if not bare %}{{ sec_label("Today's focus", tail=(done_today|string) + " DONE TODAY" if done_today else "NOTHING PINNED") }}{% endif %}
   <div class="panel u-mb-6 panel--lg focus-done">
     {% if done_today %}
     <p class="focus-done-line">That's your day.</p>
