@@ -956,6 +956,31 @@ async def corpus_search_json(
             "snippet": " ".join(m.group("snip").split())[:600],
         })
 
+    # ── Names this document was also filed under ──────────────────────────
+    # 96 records were merged on 2026-08-31: byte-identical text under two
+    # naming conventions, a descriptive title beside a journal id, a WHO code or
+    # a bare filename. The text is now held once and the other names live in
+    # pdf_title_aliases. Attaching them here is what makes it a MERGE rather
+    # than a tidier deletion — a passage can still be recognised by the name the
+    # reader remembers it by, and the twelve groups whose correct name is
+    # genuinely unclear carry both.
+    if results:
+        canon = {r["title"] for r in results}
+        alias_map: dict[str, list[str]] = {}
+        try:
+            rows = db_query(
+                "SELECT canonical_title, alias_title, needs_review FROM pdf_title_aliases "
+                "WHERE canonical_title IN ({})".format(",".join("?" * len(canon))),
+                tuple(canon)) or []
+            for row in rows:
+                alias_map.setdefault(row["canonical_title"], []).append(
+                    row["alias_title"] + (" ⚠" if row["needs_review"] else ""))
+        except Exception:
+            alias_map = {}
+        for r in results:
+            if alias_map.get(r["title"]):
+                r["also_known_as"] = alias_map[r["title"]]
+
     # How big is the corpus we just searched? The hook reports this so an answer
     # can say what was consulted without ever implying it read everything.
     corpus = db_scalar(
