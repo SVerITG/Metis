@@ -14,6 +14,15 @@
 - Prefer editing existing files over creating new ones.
 - Never commit data files (.csv, .rds, .cas, .geo, .pop, shapefiles) to git.
 - Never store secrets or API keys in source files.
+- **Commit messages and code comments ship.** `Metis_PH` is published and kept
+  current by the release coordinator, so everything written into git history
+  reaches its readers — the `.gitignore` guards personal *files*, nothing guards
+  prose. Describe the defect, not the person: "a badge appeared on 100% of rows",
+  never "the researcher noticed…". No researcher name, no disease/country specifics, no
+  library or project particulars in a message or a comment. (Audited 2026-08-31:
+  the last 40 commit messages alone carried 42 name mentions and 210 HAT
+  references. Rewriting that history is a separate, risky decision — this rule
+  is about not adding to it.)
 - When uncertain which agent applies, default to Metis routing.
 
 ---
