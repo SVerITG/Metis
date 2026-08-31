@@ -1,0 +1,45 @@
+{#- knowledge_meta.html — the numbers at the head of Library.
+
+    Was five facts run together in one uppercase line, none clickable:
+    "3743 CARDS · 70 COLLECTIONS · 257 ADDED THIS WEEK · 78% CATALOGUED
+     (673 MISSING YEAR OR DOI) · 0 UNREAD".
+
+    Two of them were doing nothing. COLLECTIONS is a structural fact that does
+    not change and cannot be acted on. UNREAD read "0" — true since the library
+    was marked read on 2026-08-29, and permanently uninformative: a counter
+    pinned at zero. It is replaced by what that reset actually made possible,
+    which is how many arrived SINCE.
+
+    What is left are the three questions a librarian asks: how big is it, what
+    came in, and how much of it is properly catalogued. -#}
+<div class="wm">
+  <a class="wm-fig" href="#libpanel-catalogue" title="Everything held — index cards and literature records">
+    <span class="num-lead tnum">{{ '{:,}'.format(total) }}</span>
+    <span class="wm-label">items</span>
+  </a>
+
+  {% if added_week %}
+  <a class="wm-fig" href="#libpanel-new" title="Added in the last seven days">
+    <span class="num-lead tnum">{{ added_week }}</span>
+    <span class="wm-label">added this week</span>
+  </a>
+  {% endif %}
+
+  {#- The actionable one, and the reason it is here: a record with no year
+      cannot be sorted and one with no DOI cannot be resolved to its source.
+      That is the difference between a catalogue and a pile. -#}
+  {% if lit %}
+  <a class="wm-fig" href="#libpanel-catalogue"
+     title="{{ missing }} records have no year or no DOI — they cannot be sorted or resolved">
+    <span class="num-lead tnum{{ ' wm-alert' if pct < 60 else '' }}">{{ pct }}%</span>
+    <span class="wm-label">catalogued{% if missing %} · {{ missing }} incomplete{% endif %}</span>
+  </a>
+  {% endif %}
+
+  {% if new_since %}
+  <a class="wm-fig" href="#libpanel-new" title="Arrived since you last looked">
+    <span class="num-lead tnum">{{ new_since }}</span>
+    <span class="wm-label">new since you looked</span>
+  </a>
+  {% endif %}
+</div>

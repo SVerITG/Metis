@@ -390,20 +390,26 @@ async def knowledge_stats_meta(request: Request):
         "WHERE year IS NOT NULL AND year != '' AND doi IS NOT NULL AND doi != ''",
         default=0,
     ) or 0
-    unread = db_scalar(
+    # "Unread" is pinned at 0 since the library was marked read on 2026-08-29,
+    # and a counter that can only read zero is not a statistic. What that reset
+    # made possible instead is NEW — arrived and not yet opened — which is the
+    # question the number was always standing in for.
+    new_since = db_scalar(
         "SELECT COUNT(*) FROM literature_metadata WHERE COALESCE(is_read,0) = 0",
         default=0,
     ) or 0
-    quality = ""
-    if lit:
-        pct = round(100 * complete / lit)
-        missing = lit - complete
-        quality = (f" · {pct}% CATALOGUED"
-                   + (f" ({missing} MISSING YEAR OR DOI)" if missing else ""))
 
-    return HTMLResponse(
-        f"{total} CARDS · {domain_count or 0} COLLECTIONS · {added_week or 0} ADDED THIS WEEK"
-        f"{quality} · {unread} UNREAD"
+    return templates.TemplateResponse(
+        request,
+        "partials/knowledge_meta.html",
+        {
+            "total": total,
+            "added_week": added_week or 0,
+            "lit": lit,
+            "pct": round(100 * complete / lit) if lit else 0,
+            "missing": lit - complete,
+            "new_since": new_since,
+        },
     )
 
 

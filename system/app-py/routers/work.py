@@ -73,8 +73,26 @@ async def work_meta(request: Request):
     except Exception as exc:
         log.warning("work meta: whats_new unavailable: %s", exc)
 
-    return HTMLResponse(
-        f"{projects} PROJECTS · {tasks} TASKS · {paused} PAUSED{strip}")
+    # Denominator, direction, and a door — see partials/work_meta.html.
+    projects_total = db_scalar("SELECT COUNT(*) FROM projects", default=0) or 0
+    overdue = db_scalar(
+        "SELECT COUNT(*) FROM tasks WHERE status NOT IN ('done','completed','cancelled','deleted') "
+        "AND COALESCE(due_date,'') != '' AND due_date < date('now')", default=0) or 0
+    # Net change over seven days: what arrived minus what was closed. A count
+    # that only ever grows tells you nothing about whether you are keeping up.
+    opened = db_scalar(
+        "SELECT COUNT(*) FROM tasks WHERE created_at >= date('now','-7 days')", default=0) or 0
+    closed = db_scalar(
+        "SELECT COUNT(*) FROM tasks WHERE status IN ('done','completed') "
+        "AND COALESCE(updated_at, created_at) >= date('now','-7 days')", default=0) or 0
+
+    return templates.TemplateResponse(
+        request,
+        "partials/work_meta.html",
+        {"projects": projects, "projects_total": projects_total,
+         "tasks": tasks, "overdue": overdue, "delta": opened - closed,
+         "strip": strip},
+    )
 
 
 @router.get("/api/partial/work/filter-chips", response_class=HTMLResponse)
