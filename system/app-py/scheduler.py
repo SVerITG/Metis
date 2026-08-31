@@ -401,6 +401,40 @@ def _topic_literature_search(days: int = 7, per_topic: int = 15) -> int:
     added = 0
 
     con = _sq.connect(str(_p.db))
+
+    # ── RELEVANCE IS MEASURED, NOT ASSUMED ────────────────────────────────
+    # Both inserts below used to hardcode `relevance = 0.9`, with the comment
+    # "a topic hit is by definition his field". It is not. A PubMed or OpenAlex
+    # topic query returns anything the query matches, and 56 rows reached 0.9
+    # that way — among them "Using Narrative Medicine to Teach Spiritual Care
+    # Competence" and "Cerebrovascular injury following manual strangulation",
+    # both presented to an NTD researcher under "close to my work".
+    #
+    # A score identical on every row cannot rank rows, and a score that is
+    # WRONG is worse than none: it puts unrelated papers at the top of the one
+    # view meant to save reading time.
+    #
+    # Scored against the interest profile instead (projects, ideas, notes, open
+    # tasks, stated topics, library — see tools/relevance.py). Falls back to 0.0
+    # rather than 0.9 when embeddings are unavailable: unknown must not
+    # masquerade as certain.
+    _centroid, _score_one = None, None
+    try:
+        from metis_mcp.tools.relevance import build_profile, score_batch_profile
+        _centroid = build_profile(con)
+        _score_one = score_batch_profile
+    except Exception as exc:
+        log.warning("[scheduler] relevance unavailable, scoring 0.0: %s", exc)
+
+    def _relevance(title: str, abstract: str = "") -> float:
+        if not (_centroid and _score_one):
+            return 0.0
+        try:
+            text = (title + " " + (abstract or ""))[:500]
+            return round(float(_score_one([text], _centroid)[0]), 4)
+        except Exception:
+            return 0.0
+
     try:
         for topic in topics[:12]:
             try:
@@ -426,7 +460,7 @@ def _topic_literature_search(days: int = 7, per_topic: int = 15) -> int:
                         (item.get("title", "")[:500], item.get("source", ""),
                          item.get("pubdate", ""), topic[:60], url, now,
                          item.get("authors", "")[:400], "", "PubMed",
-                         kind, lane, 0.9),
+                         kind, lane, _relevance(item.get("title", ""))),
                     )
                     added += 1
             except Exception as exc:
@@ -468,7 +502,7 @@ def _topic_literature_search(days: int = 7, per_topic: int = 15) -> int:
                         "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         (title[:500], journal, item.get("publication_date", ""), doi,
                          topic[:60], src, now, authors[:400], abstract[:4000],
-                         "OpenAlex", kind, lane, 0.9),
+                         "OpenAlex", kind, lane, _relevance(title, abstract)),
                     )
                     added += 1
             except Exception as exc:
