@@ -1108,6 +1108,38 @@ CREATE TABLE IF NOT EXISTS user_decisions (
 -- disagree the first time either is used alone. `added_at` is deliberately never
 -- written from here: on this schema it means "acquired, with a PDF".
 -- ---------------------------------------------------------------------------
+-- ── Corpus title aliases ────────────────────────────────────────────────
+-- One document indexed twice under two names is not two documents. 69 such
+-- groups were found on 2026-08-31 — 3,671 chunks, ~8% of the index — where the
+-- TEXT was byte-identical and only the naming convention differed: a
+-- descriptive title beside a journal id, a WHO document code, an author tag, or
+-- a bare filename ("Bumpyroadtoelimination", "Lancet").
+--
+-- They are MERGED rather than deleted. The text is kept once under the most
+-- informative title; every other name is recorded here. Three reasons, and the
+-- third is why this table exists at all:
+--   1. retrieval stops spending two of six slots on the same passage;
+--   2. searching for the old name still finds the document;
+--   3. NOTHING IS LOST in the handful where the right name is genuinely
+--      unclear — one group has a thesis and a paper by DIFFERENT AUTHORS
+--      sharing a fingerprint, so one file is mislabelled. Deleting the "copy"
+--      there would destroy the correct name for something still held; keeping
+--      both as aliases leaves the question open and answerable later.
+--
+-- needs_review marks exactly those. chunks_removed makes the operation
+-- auditable, and the row is what an undo would read.
+CREATE TABLE IF NOT EXISTS pdf_title_aliases (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    canonical_title TEXT NOT NULL,
+    alias_title     TEXT NOT NULL,
+    alias_file      TEXT DEFAULT '',
+    chunks_removed  INTEGER DEFAULT 0,
+    needs_review    INTEGER DEFAULT 0,
+    merged_at       TEXT NOT NULL,
+    UNIQUE(alias_title)
+);
+CREATE INDEX IF NOT EXISTS idx_alias_canonical ON pdf_title_aliases(canonical_title);
+
 CREATE TABLE IF NOT EXISTS reading_stack (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     kind       TEXT NOT NULL,          -- 'news' | 'paper'
