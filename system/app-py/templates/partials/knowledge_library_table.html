@@ -96,7 +96,16 @@
     <tbody>
       {% for item in items %}
       {% set icolor = type_colors.get(item.item_type, 'var(--m-chart-8)') %}
-      <tr class="row-hit" style="border-bottom:1px solid var(--m-rule-soft);border-left:{% if item.is_read %}2px solid transparent{% else %}2px solid var(--m-accent){% endif %};">
+      {#- 2C · a NEW row is a tinted band, not a mark on a row. This is the
+          loudest of the four options the researcher compared, so it must only ever apply
+          to something that genuinely arrived since he last looked. After the
+          2026-08-29 reset that is exactly what "not read" means: every item
+          that existed then was marked read and stamped with read_at, so an
+          unread row today is a new one.
+
+          The accent left border is dropped — it said the same thing a third
+          time, after the tint and the badge. -#}
+      <tr class="row-hit{% if not item.is_read %} is-new{% endif %} u-rule">
 
         <!-- Year + type icon -->
         <td style="padding:var(--m-space-3) var(--m-space-5);vertical-align:top;white-space:nowrap;">

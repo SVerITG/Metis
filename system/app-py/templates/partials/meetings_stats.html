@@ -1,19 +1,23 @@
+{#- 8C · the figure carries an accent rule under it, so it reads as a way
+    into the list rather than a decoration. The four inline declarations
+    here were four copies of one idea; .num-lead owns the type and the
+    rule, and only the per-stat colour stays inline. -#}
 <!-- meetings_stats.html — Editorial 4-up stat row -->
 <div class="grid grid-4 u-mb-5">
   <div class="panel panel-pad panel--md">
     <div class="todo-meta" style="margin:0 0 var(--m-space-1);">TOTAL MEETINGS</div>
-    <div class="tnum" style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;color:var(--m-ink);line-height:1.1;">{{ total }}</div>
+    <div class="tnum num-lead" style="color:var(--m-ink);">{{ total }}</div>
   </div>
   <div class="panel panel-pad panel--md">
     <div class="todo-meta" style="margin:0 0 var(--m-space-1);">THIS MONTH</div>
-    <div class="tnum" style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;color:var(--m-info);line-height:1.1;">{{ this_month }}</div>
+    <div class="tnum num-lead" style="color:var(--m-info);">{{ this_month }}</div>
   </div>
   <div class="panel panel-pad panel--md">
     <div class="todo-meta" style="margin:0 0 var(--m-space-1);">OPEN ACTIONS</div>
-    <div class="tnum" style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;color:var(--m-ochre-deep);line-height:1.1;">{{ open_actions }}</div>
+    <div class="tnum num-lead" style="color:var(--m-ochre-deep);">{{ open_actions }}</div>
   </div>
   <div class="panel panel-pad panel--md">
     <div class="todo-meta" style="margin:0 0 var(--m-space-1);">AVG DURATION</div>
-    <div class="tnum" style="font-family:var(--m-display);font-size:var(--t-h1);font-weight:500;color:var(--m-muted);line-height:1.1;">{{ avg_dur or '—' }}{% if avg_dur %}<span style="font-size:var(--t-body);">m</span>{% endif %}</div>
+    <div class="tnum num-lead" style="color:var(--m-muted);">{{ avg_dur or '—' }}{% if avg_dur %}<span style="font-size:var(--t-body);">m</span>{% endif %}</div>
   </div>
 </div>

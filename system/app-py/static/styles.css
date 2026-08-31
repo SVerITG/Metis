@@ -128,8 +128,11 @@
   --m-highlight: rgba(217, 154, 76, 0.32);
 
   /* Shape */
-  --m-radius:      3px;
-  --m-radius-sm:   2px;
+  /* 4C · soft corners, chosen 2026-08-31 (was 3px / 2px). The pill radius
+     below is untouched, so a box stays a box and a badge stays fully round —
+     that contrast is what keeps a state readable as a state. */
+  --m-radius:      6px;
+  --m-radius-sm:   4px;
   --m-radius-pill: 999px;
 
   /* Shadows */
@@ -4962,3 +4965,201 @@ tr:hover .due-chip--none, li:hover .due-chip--none, .item:hover .due-chip--none,
 .ov-link { color: var(--m-text); text-decoration: none;
            border-bottom: 1px solid var(--m-rule); }
 .ov-link:hover { border-bottom-color: var(--m-accent); color: var(--m-accent); }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CHOSEN STYLING — the researcher, 2026-08-31
+   1D · 2C · 3D · 4C · 5A · 6C · 7C · 8C · 9A · 10D
+   (from the "Ten Choices About Feel" studio)
+
+   Everything is in ONE block, at the END, on purpose. These ten decisions cut
+   across ~4,800 lines — the focus ring alone is declared in ten places — and
+   scattering them would make the next change a hunt. Later rules win ties, so
+   this block is the single place where the product's feel is decided, and the
+   single place to look when it needs to change again.
+
+   Two picks compound and it is worth knowing which: 1D moves the row and 10D
+   overshoots the movement, so passing a cursor down a sixty-row News list is
+   sixty small springs. That is the chosen direction, not an accident. If it
+   ever reads as restless, the fix is --m-ease-row and --m-dur-row below —
+   two numbers, nothing else.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* 4C lives with the rest of the scale, near the top of this file — a token
+     defined twice is a token nobody can find. Only the motion values, which
+     are new, are declared here. */
+
+  /* 10D — SPRING. cubic-bezier's third control point above 1 is what makes it
+     overshoot and settle. Used only for the row nudge; panels and colour
+     transitions keep a plain ease, because a springing background looks broken
+     rather than lively. */
+  --m-ease-row: cubic-bezier(.34, 1.56, .64, 1);
+  --m-dur-row:  320ms;
+}
+
+/* ── 4C · corners, on the elements that hard-coded a value ──────────────── */
+.panel,
+.panel.panel-pad,
+.board-box,
+.project-card,
+.course-card { border-radius: var(--m-radius); }
+
+/* ── 3D · LIFTED PANELS. Border AND shadow: the panel reads as an object
+      resting on the page rather than a region drawn on it. ───────────────── */
+.panel {
+  box-shadow: var(--m-shadow);
+}
+/* A panel nested inside another must not stack a second shadow — that reads as
+   a bug, not depth. */
+.panel .panel { box-shadow: none; }
+
+/* ── 1D + 10D · THE ROW NUDGE. The row steps aside and an accent edge is
+      revealed where it came from. box-shadow rather than a border so the row
+      does not change size and the list cannot reflow on hover. ───────────── */
+.row-hit,
+.ov-item,
+.th-row,
+.m-read-row,
+[data-triage-row] {
+  transition: transform var(--m-dur-row) var(--m-ease-row),
+              box-shadow 200ms ease,
+              background-color 200ms ease;
+  will-change: transform;
+}
+.row-hit:hover,   .row-hit:focus-visible,
+.ov-item:hover,   .ov-item:focus-visible,
+.th-row:hover,    .th-row:focus-visible,
+.m-read-row:hover,
+[data-triage-row]:hover {
+  transform: translateX(5px);
+  box-shadow: -5px 0 0 var(--m-accent);
+  background: var(--m-accent-wash);
+}
+/* A table row cannot be transformed reliably — the cells detach from the
+   border collapse. It gets the edge and the wash without the movement. */
+tr.row-hit:hover { transform: none; box-shadow: inset 5px 0 0 var(--m-accent); }
+
+/* The keyboard cursor is the same gesture, held rather than passing. */
+.ov-item.is-cursor,
+[data-triage-row].is-cursor {
+  transform: translateX(5px);
+  box-shadow: -5px 0 0 var(--m-accent);
+  background: var(--m-accent-wash);
+}
+
+/* ── 2C · NEW = A TINTED BAND. The whole row, not a mark on it. Deliberately
+      the loudest of the four options, so it must only ever apply to things
+      that genuinely arrived since you last looked — see read_at. ─────────── */
+.is-new,
+tr.is-new,
+.ov-item.is-new {
+  background: var(--m-info-wash);
+}
+/* Hovering a new row keeps it identifiable: the accent edge lands on top of the
+   tint rather than replacing it. */
+.is-new.row-hit:hover { background: var(--m-info-wash); }
+
+/* ── 6C · HALOED FOCUS RING. A ring of PAGE colour, then the accent. Chosen
+      over outline-offset because with 2C in play a focused control often sits
+      on a tinted row, and an offset would show the tint instead of a clean
+      gap. Re-declared against the same selectors that set the old outline —
+      ten of them — because equal specificity is decided by order, and this
+      block is last. ──────────────────────────────────────────────────────── */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+.btn:focus-visible,
+.act:focus-visible,
+.stat:focus-visible,
+.chip-btn:focus-visible,
+.news-tab:focus-visible,
+.fbtn:focus-visible,
+.row-hit:focus-visible,
+.hov-ink:focus-visible,
+.hov-edge:focus-visible,
+.hov-dim:focus-visible,
+[role="button"]:focus-visible,
+[onclick]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--m-bg), 0 0 0 4px var(--m-accent);
+  border-radius: var(--m-radius-sm);
+}
+/* The nudge sets its own box-shadow, so a focused row needs both: the halo AND
+   the edge it moved away from. Without this the ring silently replaces it. */
+.row-hit:focus-visible,
+.ov-item:focus-visible,
+[data-triage-row]:focus-visible {
+  box-shadow: -5px 0 0 var(--m-accent),
+              0 0 0 2px var(--m-bg),
+              0 0 0 4px var(--m-accent);
+}
+
+/* ── 7C · WAITING IS A WORD, NOT A SHAPE. Every shimmer bar is replaced by one
+      quiet line saying what is happening. The skeleton ELEMENTS stay in the
+      templates — they still reserve the right height, so nothing jumps when
+      the content lands — they simply stop pretending to be content. ─────── */
+@keyframes m-breathe { 0%, 100% { opacity: .45 } 50% { opacity: .9 } }
+
+.skeleton, .sk {
+  background: none !important;
+  animation: none !important;
+  position: relative;
+  min-height: 2.4em;
+}
+.skeleton > *, .sk > * { visibility: hidden; }
+.skeleton::after, .sk::after {
+  content: "reading the archive…";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding-left: var(--m-space-5);
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--m-muted);
+  animation: m-breathe 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+/* An inline skeleton (one value arriving mid-sentence) says less, or the line
+   would read as a paragraph interrupting itself. */
+.sk-bar--inline { background: none !important; animation: none !important; }
+.sk-bar--inline::after { content: "…"; font-family: var(--m-mono); color: var(--m-muted); }
+
+/* ── 8C · A NUMBER CARRIES ITS OWN RULE. Serif, with an accent underline that
+      says the figure is a way in rather than a decoration. ───────────────── */
+.num-lead {
+  font-family: var(--m-display);
+  font-size: 1.6em;
+  line-height: 1.1;
+  color: var(--m-ink);
+  border-bottom: 2px solid var(--m-accent);
+  padding-bottom: 1px;
+  font-variant-numeric: tabular-nums;
+  text-decoration: none;
+}
+a.num-lead:hover { border-bottom-color: var(--m-accent-hover); color: var(--m-accent); }
+
+/* 5A (mono caps headings) and 9A (hairline rows) were chosen as they already
+   are. Nothing to write — recorded so a later reader knows they were decided
+   rather than overlooked. */
+
+/* ── The motion escape hatch. 1D and 10D are both movement; someone who has
+      asked their system to stop animating must get the state without it. ─── */
+@media (prefers-reduced-motion: reduce) {
+  .row-hit, .ov-item, .th-row, .m-read-row, [data-triage-row] {
+    transition: background-color 1ms linear;
+    will-change: auto;
+  }
+  .row-hit:hover, .ov-item:hover, .th-row:hover,
+  .m-read-row:hover, [data-triage-row]:hover,
+  .ov-item.is-cursor, [data-triage-row].is-cursor {
+    transform: none;
+    box-shadow: inset 5px 0 0 var(--m-accent);
+  }
+  .skeleton::after, .sk::after { animation: none; opacity: .7; }
+}
