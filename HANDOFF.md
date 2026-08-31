@@ -1,145 +1,155 @@
-# Handoff — dashboard design work
+# Handoff — Metis design work
 
-**Updated 2026-08-28. Branch `feat/briefing-rotation-news-surface-interests`.**
-**Last commit `13fbd59e`. Nothing is pushed — the branch is still local.**
-
----
-
-## The finding that still governs this work
-
-*"Is it me or did nothing change to the design?"* — the answer was measurable.
-**The design system was never the problem. Its adoption was.**
-
-Count the *rendered* pages, not the templates: a Metis surface's first-paint HTML
-is an empty shell and everything that carries a badge arrives later over HTMX, so
-counting source files undercounts what actually ships. On seven surfaces:
-
-| | before | now |
-|---|---|---|
-| semantic state classes in use | 4 | **46** |
-| quiet category labels | 175 | **252** |
-| inline `style=` attributes | 9,142 | 8,940 |
-| inline backgrounds | 2,232 | 2,112 |
-
-`tools/` has no census script — the one used here lives in the session
-scratchpad. If you want it permanently, it is twenty lines: fetch each surface,
-follow its `hx-get`s one level, count.
+**Updated 2026-08-31, end of session. Branch `feat/briefing-rotation-news-surface-interests`.**
+**Everything is committed AND pushed to `metis-ph` (HEAD `268106c5`).**
 
 ---
 
-## The vocabulary, in one paragraph
+## Read this first
 
-**Shape encodes kind.** A pill (`.stat`) is a STATE — true now, false later. Plain
-small text (`.tag`) is a CATEGORY — a permanent fact. A bordered button
-(`.chip-btn`) is a CONTROL you press. These never mix.
-**Colour encodes urgency**, on a strict ladder: `.is-quiet` (the default, and the
-important one) → `.is-info` → `.is-good` → `.is-warn` → `.is-urgent`.
-The rule that decides most calls: **the most common state must be the quietest**,
-or the loud treatment stops carrying information at all.
-
-Now applied on: Today focus, Work cards + filter strip + Due Today, Library
-catalogue and new-literature rows, Learning reviews, Reflection threads and
-marginalia, Meetings connections.
-
----
-
-## Landed in `13fbd59e`
-
-Full detail is in the commit message — it is long on purpose. The short version:
-
-- **Categories quietened everywhere.** 24 identical olive pills on Work became
-  quiet text; `OVERDUE` is now the only coloured badge on that page.
-- **Labels removed because they were on every row**, each with a count behind it:
-  `ARTICLE` 60% · `UNREAD` 25/26 · `OVERDUE` 10/10 · `OPEN` 11/11 · `NOTE` 3/3 ·
-  `medium` 5/5 · a memory badge printing `0` on 4 of 6 cards.
-- **`OVERDUE` on spaced repetition became *how late*** — 45d, 44d, 8d, due today.
-  A constant label cannot rank; a number can, and ranking is the only question
-  that list has to answer.
-- **The Learning sparkline** had `width:100%` and no `height`, so a 276×62
-  viewBox scaled to ~258px tall across a wide panel — that was the giant empty
-  box, and the same scaling blew `font-size="8"` axis labels up to ~33px.
-- **`/work` scrolled sideways** — grid items default to `min-width:auto`.
-- **The Intentions bar** was priority drawn as a length beside the word that
-  already said it; five medium projects drew five identical 55% bars. It now
-  shows tasks actually closed (HAT Metric: 4/5) and is omitted when there is
-  nothing to measure.
-- **Five headings were deleted by HTMX on load** (they sat inside an
-  `innerHTML` swap target). Three needed fixing; two already emitted their own.
-- **`/meetings` "Next meetingNONE SCHEDULED"** — the route returned two bare
-  spans into an `outerHTML` swap on an `<h2 class="sec-label">`.
-- **`#news-briefings` was destroyed on load**, and the two refresh buttons
-  inside the partial target that id — so they did nothing after first paint.
-- **`--m-muted-soft`** had drifted back into 6 CSS rules and 13 templates as
-  real type, despite the stylesheet documenting it as retired for text.
-
-### New tool — `tools/check_htmx_swaps.py`
-Asserts an `outerHTML` swap returns the tag and classes it replaces, that no
-heading sits inside an `innerHTML` target, and that a swapped-in element does not
-re-trigger itself. Found 11 real defects. Currently green — run it after any
-template or partial-route change.
+**Screenshots work again, and they run inside Linux now.**
 
 ```bash
-python3 tools/check_htmx_swaps.py     # needs the dashboard running on 8080
+~/.local/share/metis-mcp/.venv/bin/python tools/shoot.py /work out.png 2200 1600
 ```
 
-### The test suite was not running at all
-`bs4` was missing from the venv, so collection aborted and the "456 tests"
-everyone was trusting had not executed. Installed. **456 pass, 4 skipped.**
+The old `tools/shoot.sh` drove `chrome.exe` across the WSL boundary. That bridge
+dropped mid-session and stayed down for a whole day — so the one tool that
+catches layout defects was unavailable for exactly the stretch that accumulated
+the most unverified visual change, and the documented fix (`wsl --shutdown`)
+would have killed the session doing the work.
+
+`tools/shoot.py` uses a browser Playwright keeps in `~/.cache`. It needs
+`libasound.so.2` (installed system-wide, and also copied into
+`~/.local/lib/metis-shoot` as a fallback).
+
+**The lesson, again:** every layout defect this week was found by a picture and
+none by a test. Shoot the surface before believing it.
+
+---
+
+## What the styling now is — decided, not inherited
+
+the researcher chose ten of them from a live studio on 31 August:
+**1D · 2C · 3D · 4C · 5A · 6C · 7C · 8C · 9A · 10D**
+
+| | |
+|---|---|
+| 1D | a row steps aside on hover, accent edge behind it |
+| 2C | a new item is a **tinted band**, not a mark on a row |
+| 3D | panels lift — border and shadow |
+| 4C | 6px corners (badges stay fully round) |
+| 5A | headings unchanged — mono caps, hairline |
+| 6C | haloed focus ring: page colour, then accent |
+| 7C | waiting says "reading the archive…" |
+| 8C | a number carries an accent rule under it |
+| 9A | list density unchanged |
+| 10D | spring easing |
+
+**All ten live in ONE block at the end of `styles.css`.** They cut across ~4,800
+lines — the focus ring alone was declared in ten places — so they are kept
+together as one dated decision record. That block is the single place to change
+the product's feel.
+
+Two picks compound: 1D moves the row, 10D overshoots it. If it ever reads as
+restless the fix is `--m-ease-row` and `--m-dur-row`. Two numbers.
+
+---
+
+## The vocabulary that decides everything else
+
+A pill (`.stat`) is a **state**. Plain text (`.tag`) is a **category**. A
+bordered button (`.chip-btn`) is a **control**. These never mix, and colour
+rides a strict ladder with `.is-quiet` as the default.
+
+**The rule that settled most calls: the most common state must be the quietest.**
+Applied by counting, never by taste. And it CUTS BOTH WAYS — when the Library
+was marked read, "read" became universal and "unread" became the rare,
+informative one, so the emphasis flipped within a session.
+
+**One row anatomy** (`.mrow`, see `_row.html`): `state · title · meta · actions`.
+The fixed-width state slot keeps its width even when empty — that is what makes
+titles start at the same x down a list.
+
+---
+
+## Built this week
+
+**Today** — reordered around the questions asked at 9am. Brief folded to its
+first paragraph. "What needs you today" is ONE section (dated → due strip,
+starred → cards). "Where you left off" is folded inside it and every row can pin
+its next task straight into the focus. "Connects to" names its seed project.
+News-new and Library-new sit side by side. It can reach zero and say so.
+
+**News** — filters sorted by what they do: period out in the open, detail and
+density folded behind "Display", the stack link quiet at the end. Keyboard
+triage: `j`/`k`, `Enter`, then `l` later, `s` save, `r` read, `x` decline, `?`.
+
+**Library** — 3,083 items marked read with a `read_at` date, so "new" finally
+means something. Reading is a tab here now, not a surface. Header figures carry
+denominators and are links.
+
+**Work** — categories quietened, "Quiet for 81 days" instead of a raw date,
+`active` marked on the rare recent ones.
+
+**The corpus — 48,624 → 40,747 chunks, 657 → 484 documents.** 16% was the same
+text stored twice. Merged under aliases rather than deleted: 96 names preserved,
+12 flagged. `tools/merge_corpus_aliases.py --undo` lists them.
+
+**New tools:** `check_htmx_swaps.py`, `merge_corpus_aliases.py`,
+`dedupe_corpus.py`, `migrate_hover.py`, `shoot.py`.
 
 ---
 
 ## Open, most valuable first
 
-### 1. The relevance score saturates — a scorer bug, not a display one
-`new_publications.relevance` maxes at exactly **0.90 and 41 items sit on it**,
-while **1,302 of 1,889 are exactly 0.0**. The default view sorts by relevance, so
-the first screen is a tie at the ceiling in date order, every row printing the
-same number. The tooltip now discloses the tie; the scoring itself is untouched
-because that is an algorithm decision, not a design one. **Ask the researcher whether the
-0.90 cap is intended before changing it.**
+### 1. The Library relevance scorer is broken
+The score saturates at **0.90** and 1,302 of 1,889 sit at **0.0**. The default
+"close to my work" view was showing phenomenology and school-nursing papers, all
+scored 0.90, to an NTD researcher. **The number is now hidden when it is at the
+ceiling** — but that hides a symptom. The scorer needs rebuilding, and the most
+promising direction is ResearchRabbit's: rank against a CHOSEN COLLECTION rather
+than the whole corpus.
 
-### 2. Surfaces still at zero semantic adoption
-`/meetings` and `/teach` have had only spot fixes. `/thinking` is at 1.
-Run the census, then apply the same two rules.
+### 2. Twelve flagged corpus aliases
+`python3 tools/merge_corpus_aliases.py --undo`. The one that matters: a thesis
+by **Mpanya** and a paper by **Kabeya** share a fingerprint — different authors,
+identical text, so one file is mislabelled. Both names are kept; open the two
+PDFs to settle it.
 
-### 3. Remaining dead space
-- Meetings: four stat boxes stacked full-width for four numbers; the whole
-  lower two-thirds of the page is empty when there are no meetings.
-- The morning-brief panel on Today draws a full-width bordered box around text
-  capped at 78ch, leaving ~440px of nothing inside the border on a wide screen.
-  Either cap the panel or use the right column.
+### 3. Personal detail is in the published git history
+`Metis_PH` is published and the release coordinator keeps it current. The last
+40 commit messages carried 42 name mentions and 210 HAT references. A rule is
+now in `CLAUDE.md` to stop it growing. **Rewriting 503 commits is a separate and
+risky decision** — see the redactor's silent partial failure on exactly that job.
 
 ### 4. The long tail
-- ~2,464 inline `style=` attributes. `tools/migrate_inline_styles.py` is
-  **exhausted** — 0 substitutions left under its current rules. Getting further
-  means adding rules for the next most common declaration sets.
-- Duplicate section headings on Meetings (`LIVE ASSIST`, `VOICE PROFILES` each
-  render twice — once as `sec_label`, once inside the partial).
+- 88 hand-written empty states remain in templates that never import `_empty.html`
+  (mostly search/filter empties that do not need the three-part treatment).
+- ~2,460 inline `style=` attributes; `migrate_inline_styles.py` is exhausted
+  under its current rules.
+- 22 inline hover handlers the codemod could not match (transforms, Jinja colours).
 - The 33 agent prompts have never been reviewed.
-- `system/config/feature-backlog.md` — 84 open items.
 
 ---
 
 ## Three things worth not forgetting
 
-**Screenshots find what tests cannot.** `bash tools/shoot.sh /news out.png` takes
-one second and found every layout bug in this commit. 456 tests found none of
-them, because in each case the *text* was correct and only its wrapper or its
-scale was wrong.
+**Count before deciding — then check what you are counting.** Every good call
+came from counting. But three first-pass counts were wrong: a heading-destruction
+check claimed 41 and the real number was 5; a swap audit reported 38 defects of
+which 27 were false positives; and a "redundant passage" metric counted a long
+page split across two chunks as duplication. A count is a hypothesis until you
+look at what it is measuring.
 
-⚠ **Screenshots are currently unavailable**: WSL's `WSLInterop` binfmt
-registration dropped mid-session, so `chrome.exe` fails with *"Exec format
-error"*. Re-registering needs root. Fix: `wsl --shutdown` from Windows, then
-reopen. Nothing else is affected.
+**An element authored in two places will drift.** The library read control, the
+Meetings heading, and the morning brief's collapse were each written twice — and
+in the brief's case the two collapses hid each other and rendered a BLANK panel.
+`tools/check_htmx_swaps.py` catches the HTMX half; it caught two defects within
+a minute of my writing them.
 
-**Count before deciding — then verify the count.** Every good call here came from
-counting. But *two* first-pass counts were badly wrong: a heading-destruction
-check claimed 41 sites and the real number was 5, and the first HTMX swap audit
-reported 38 defects of which 27 were false positives (it ignored `hx-target`,
-did not send the `HX-Request` header, and took a leading `<style>` as the root
-element). A count is a hypothesis until you check what it is actually counting.
-
-**An element authored in two places will drift.** Both the library read/unread
-control and the Meetings heading were written once in a template and once in a
-route, and the copies diverged. The bug is invisible on load and only appears
-after the first interaction. That is what `check_htmx_swaps.py` exists to catch.
+**When a fix looks like it needs a threshold, check whether the data is telling
+you something.** A "dormant" mark at 60 days landed on 11 of 16 projects. The
+instinct was to raise the threshold until the page looked calm. But most of
+those projects ARE asleep, and saying so is the most useful fact on the surface —
+so the mark inverted instead: activity is rare, and activity is what is marked.
