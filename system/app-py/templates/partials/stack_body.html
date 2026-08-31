@@ -15,10 +15,38 @@
 {% set T = "#stack-body" %}
 {% set BACK = "stack" %}
 
+{#- A QUEUE, NOT FOUR BUCKETS. These four states were rendered as four equal
+    filters, which is why the reading pile never felt like something you could
+    get to the end of. They are a journey: what is in front of you, what you
+    chose to keep, and what is behind you. Ordered that way, with the archive
+    set apart, so "to read" reads as a queue with a floor rather than one tab
+    among four.
+
+    The lead line is what makes finishing legible — the same reason Today needed
+    a terminal state. A number in front of you that can reach zero is a
+    different object from a number that only grows. -#}
+<p class="stk-lead">
+  <b class="tnum">{{ counts['later'] }}</b> in front of you
+  {%- if counts['saved'] %} · <b class="tnum">{{ counts['saved'] }}</b> kept{% endif %}
+  {%- set done = counts['read'] + counts['declined'] %}
+  {%- if done %} · <span class="stk-lead-done"><b class="tnum">{{ done }}</b> behind you</span>{% endif %}
+</p>
+
 <div class="toolbar">
-  <div class="seg" role="group" aria-label="Filter by state">
-    {% for key, label in [('later', 'To read'), ('saved', 'Kept'),
-                          ('read', 'Read'), ('declined', 'Not for me')] %}
+  <div class="seg" role="group" aria-label="Where in the queue">
+    {% for key, label in [('later', 'To read'), ('saved', 'Kept')] %}
+    <a href="/stack?state={{ key }}{% if tag %}&tag={{ tag }}{% endif %}"
+       aria-current="{{ 'true' if state == key else 'false' }}"
+       hx-get="/api/partial/stack/body?state={{ key }}{% if tag %}&tag={{ tag }}{% endif %}"
+       hx-target="#stack-body" hx-swap="innerHTML" hx-push-url="false">
+      {{ label }} <b>{{ counts[key] }}</b>
+    </a>
+    {% endfor %}
+  </div>
+
+  {#- Set apart, because what is behind you is not another queue to work. -#}
+  <div class="seg seg--past" role="group" aria-label="Already dealt with">
+    {% for key, label in [('read', 'Read'), ('declined', 'Not for me')] %}
     <a href="/stack?state={{ key }}{% if tag %}&tag={{ tag }}{% endif %}"
        aria-current="{{ 'true' if state == key else 'false' }}"
        hx-get="/api/partial/stack/body?state={{ key }}{% if tag %}&tag={{ tag }}{% endif %}"
@@ -52,10 +80,13 @@
 <div class="panel" style="padding:var(--d-panel) var(--m-space-5);">
   <p style="margin:0;font-size:var(--t-body);line-height:1.65;color:var(--m-muted);">
     {% if state == 'later' %}
-      Nothing on the stack. On <a href="/news" style="color:var(--m-accent);">News</a>
-      or <a href="/" style="color:var(--m-accent);">Today</a>, press the bookmark on
-      anything you want to come back to and it lands here. That is the whole point
-      of this page: Today is for seeing what is new, not for reading it.
+      Nothing filed to read. On <a href="/news" class="u-link">News</a> or
+      <a href="/" class="u-link">Today</a>, press the bookmark on anything you want to
+      come back to and it lands here — which is the point of the split: Today is for
+      seeing what is new, this is for reading it.
+      <br><br>
+      Flag one <strong>crucial</strong> and it also appears on Today the next morning,
+      under “what to read first”. One line, never a list.
     {% elif state == 'declined' %}
       Nothing declined yet. What you mark <strong>Not for me</strong> comes here —
       folded away, never deleted, so you can always see what you passed on.

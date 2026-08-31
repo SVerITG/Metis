@@ -11,25 +11,30 @@
   {{ sec_label("What to read first", tail="FLAGGED CRUCIAL") }}
   <div class="panel u-mb-6">
     {% for it in items %}
-    <div class="m-read-row row-hit">
-      <span class="stat is-warn u-fixed">crucial</span>
-      <span class="u-grow">
+    {#- Converted to the shared .mrow anatomy. This row had its own class an
+        hour before the anatomy existed — which is exactly how a product ends up
+        with four row shapes. -#}
+    <div class="mrow row-hit">
+      <span class="mrow-state"><span class="stat is-warn">crucial</span></span>
+      <span class="mrow-body">
         {% if it.url %}
-        <a class="u-title hov-ink" href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a>
+        <a class="mrow-title hov-ink" href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a>
         {% else %}
-        <span class="u-title">{{ it.title }}</span>
+        <span class="mrow-title">{{ it.title }}</span>
         {% endif %}
-        {% if it.source %}<div class="u-label">{{ it.source }}</div>{% endif %}
+        {% if it.source %}<span class="mrow-meta">{{ it.source }}</span>{% endif %}
       </span>
-      <button type="button" class="btn btn--ghost btn--sm u-fixed"
-              title="Unflag — keep it in the stack, stop suggesting it"
-              hx-post="/api/stack/crucial"
-              hx-vals='{"kind": "{{ it.kind }}", "item_id": "{{ it.item_id }}", "back": "today-reading"}'
-              hx-target="closest .panel" hx-swap="outerHTML">done</button>
+      <span class="mrow-acts">
+        <button type="button" class="btn btn--ghost btn--sm"
+                title="Unflag — keep it in the stack, stop suggesting it"
+                hx-post="/api/stack/crucial"
+                hx-vals='{"kind": "{{ it.kind }}", "item_id": "{{ it.item_id }}", "back": "today-reading"}'
+                hx-target="closest .panel" hx-swap="outerHTML">done</button>
+      </span>
     </div>
     {% endfor %}
     {% if more %}
-    <div class="m-read-more">
+    <div class="mrow-more">
       <a class="u-link" href="/knowledge#reading">{{ more }} more flagged · open the stack →</a>
     </div>
     {% endif %}

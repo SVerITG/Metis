@@ -1212,13 +1212,30 @@ a.board-item-title:hover { color: var(--m-accent); }
 }
 .today-pair > * { min-width: 0; }
 
-/* ── Today: the one reading suggestion ─────────────────────────────── */
-.m-read-row {
-  display: flex; align-items: baseline; gap: 12px;
-  padding: 13px 18px; border-bottom: 1px solid var(--m-rule-soft);
+/* Today's reading row uses the shared .mrow anatomy; only its footer link is
+   its own. `.m-read-row` was retired the day the anatomy was written. */
+.mrow-more { padding: 10px 18px; border-top: 1px solid var(--m-rule-soft); font-size: 13px; }
+
+/* An empty state, in three parts: what it is for · what you have · one action. */
+.me-title { font-family: var(--m-display); font-size: var(--t-h3); font-weight: 500;
+  margin: var(--m-space-3) 0 var(--m-space-2); color: var(--m-ink); }
+.me-body { font-size: var(--t-small); color: var(--m-muted); line-height: 1.6;
+  margin: 0; max-width: 56ch; }
+.me-acts { margin: var(--m-space-3) 0 0; }
+
+/* ── The reading queue reads as a queue ────────────────────────────────
+   Four states rendered as four equal filters never felt finishable. The lead
+   line carries the only number that matters — how many are in front of you —
+   and what is behind you is set apart and dimmed, because it is not another
+   queue to work through. */
+.stk-lead {
+  font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.08em;
+  color: var(--m-muted); margin: 0 0 var(--m-space-3);
 }
-.m-read-row:last-child { border-bottom: 0; }
-.m-read-more { padding: 10px 18px; border-top: 1px solid var(--m-rule-soft); font-size: 13px; }
+.stk-lead b { color: var(--m-ink); font-family: var(--m-display); font-size: 15px; }
+.stk-lead-done { opacity: .6; }
+.seg--past { margin-left: var(--m-space-4); opacity: .72; }
+.seg--past:hover { opacity: 1; }
 
 /* ── Today: finishing, and what is deliberately not on the cards ───────── */
 .focus-also {
@@ -5040,7 +5057,7 @@ tr:hover .due-chip--none, li:hover .due-chip--none, .item:hover .due-chip--none,
 .row-hit,
 .ov-item,
 .th-row,
-.m-read-row,
+.mrow,
 [data-triage-row] {
   transition: transform var(--m-dur-row) var(--m-ease-row),
               box-shadow 200ms ease,
@@ -5050,7 +5067,7 @@ tr:hover .due-chip--none, li:hover .due-chip--none, .item:hover .due-chip--none,
 .row-hit:hover,   .row-hit:focus-visible,
 .ov-item:hover,   .ov-item:focus-visible,
 .th-row:hover,    .th-row:focus-visible,
-.m-read-row:hover,
+.mrow:hover,
 [data-triage-row]:hover {
   transform: translateX(5px);
   box-shadow: -5px 0 0 var(--m-accent);
@@ -5246,6 +5263,104 @@ a.num-lead:hover { border-bottom-color: var(--m-accent-hover); color: var(--m-ac
 .wm-alert { color: var(--m-alert); border-bottom-color: var(--m-alert); }
 .wm-strip { margin-left: auto; }
 
+/* ── ONE ROW, LEARNED ONCE ──────────────────────────────────────────────
+   A row on News, a row on Work, a row in the Library and a row on Learning
+   were four different shapes: the title in a different place, the meta reading
+   left on one and right on another, the actions present or absent. Each
+   surface had to be learned separately and nothing you learned transferred.
+
+   ONE ANATOMY, four slots, always in this order:
+
+       [ state ]  [ title            ]  [ meta ]  [ actions ]
+        fixed      grows, truncates     quiet     dimmed until
+        width      before anything      one line  the row is
+        62px       else                           hovered
+
+   The CONTENT stays entirely surface-specific — a news thread and a review
+   card have nothing in common to say. Only the anatomy is shared, so the eye
+   lands in the same place on every list in the product.
+
+   Fixed-width state slot is the load-bearing part: it is what makes titles
+   start at the same x down the whole list, which is what lets you read a
+   column of titles rather than a ragged edge. */
+.mrow {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--m-rule-soft);
+}
+.mrow:last-child { border-bottom: 0; }
+
+.mrow-state {
+  flex: 0 0 62px;
+  display: flex;
+  justify-content: flex-start;
+}
+/* No state on this row? The slot still holds its width. An empty slot keeps the
+   titles aligned; collapsing it would make every unstated row start further
+   left, which is the ragged edge this exists to remove. */
+.mrow-state:empty { flex-basis: 62px; }
+
+.mrow-body { flex: 1 1 auto; min-width: 0; }
+.mrow-title {
+  font-family: var(--m-display);
+  font-size: 14px;
+  color: var(--m-ink);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+a.mrow-title { text-decoration: none; }
+.mrow-meta {
+  font-family: var(--m-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  color: var(--m-muted);
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mrow-acts {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: .25;
+  transition: opacity 120ms ease;
+}
+.mrow:hover .mrow-acts,
+.mrow:focus-within .mrow-acts,
+.mrow.is-cursor .mrow-acts { opacity: 1; }
+
+/* A row whose title should wrap rather than truncate — used where the title IS
+   the content, as in a review card's question. */
+.mrow--wrap .mrow-title { white-space: normal; overflow: visible; }
+
+/* A row that is past its date. The tint is the row saying so, which is why the
+   badge beside it carries the DATE rather than the word "overdue" again. */
+/* Grading buttons keep their colours: hard / good / easy is a SCALE and the
+   colour is the scale. They move into the shared actions slot, so they dim with
+   every other row action instead of shouting on sixty rows at once. */
+.sr-g {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.08em;
+  padding: 3px 9px; border: 1px solid var(--m-rule); border-radius: var(--m-radius-sm);
+  background: none; cursor: pointer; color: var(--m-muted);
+}
+.sr-g--good { border-color: var(--m-ok);   color: var(--m-ok); }
+.sr-g--easy { border-color: var(--m-info); color: var(--m-info); }
+.sr-g:hover { background: var(--m-surface-2); }
+
+.mrow.is-late { background: var(--m-alert-wash); }
+.mrow.is-late:hover { background: var(--m-alert-wash); }
+
+@media (max-width: 620px) {
+  .mrow-state { flex-basis: 52px; }
+}
+
 /* 5A (mono caps headings) and 9A (hairline rows) were chosen as they already
    are. Nothing to write — recorded so a later reader knows they were decided
    rather than overlooked. */
@@ -5253,12 +5368,12 @@ a.num-lead:hover { border-bottom-color: var(--m-accent-hover); color: var(--m-ac
 /* ── The motion escape hatch. 1D and 10D are both movement; someone who has
       asked their system to stop animating must get the state without it. ─── */
 @media (prefers-reduced-motion: reduce) {
-  .row-hit, .ov-item, .th-row, .m-read-row, [data-triage-row] {
+  .row-hit, .ov-item, .th-row, .mrow, [data-triage-row] {
     transition: background-color 1ms linear;
     will-change: auto;
   }
   .row-hit:hover, .ov-item:hover, .th-row:hover,
-  .m-read-row:hover, [data-triage-row]:hover,
+  .mrow:hover, [data-triage-row]:hover,
   .ov-item.is-cursor, [data-triage-row].is-cursor {
     transform: none;
     box-shadow: inset 5px 0 0 var(--m-accent);

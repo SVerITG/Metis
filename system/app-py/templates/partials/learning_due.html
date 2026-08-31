@@ -37,35 +37,37 @@
   {{ due | length }} review{% if due|length != 1 %}s{% endif %} for today{% if remaining and remaining > 0 %}<span style="font-family:var(--m-mono);font-size:var(--t-meta);color:var(--m-muted);letter-spacing:0.04em;"> — {{ remaining }} more waiting; finish these and reload for the next {{ due|length }}</span>{% endif %}
 </h2>
 <div class="u-col u-mb-4" id="sr-due-list" style="gap:var(--m-space-3);max-height:280px;overflow-y:auto;">
+  {#- ONE ROW ANATOMY (.mrow). The three grading buttons keep their own colours
+      — hard / good / easy is a scale, and the colour IS the scale — but they
+      now sit in the shared actions slot, dimmed until the row is reached for,
+      like every other list in the product.
+
+      .mrow--wrap because here the title IS the content: a review question
+      truncated at one line is unanswerable. -#}
   {% for item in due %}
-  <div class="u-row u-row--between u-rule" id="sr-row-{{ item.id }}" style="gap:var(--m-space-3);padding:var(--m-space-2) 0;">
-    <div class="u-grow">
-      <div class="u-truncate u-title">{{ item.topic }}</div>
+  <div class="mrow mrow--wrap row-hit" id="sr-row-{{ item.id }}">
+    <span class="mrow-state">
+      {%- if item.days_late and item.days_late > 0 -%}
+      <span class="stat tnum {{ 'is-warn' if item.days_late >= 30 else 'is-quiet' }}"
+            title="Was due {{ item.next_review_date }}">{{ item.days_late }}d late</span>
+      {%- else -%}
+      <span class="stat is-quiet">today</span>
+      {%- endif -%}
+    </span>
+    <span class="mrow-body">
+      <span class="mrow-title">{{ item.topic }}</span>
       {% if item.course_title %}
-      <div class="u-label u-label--wide" style="margin-top:var(--m-space-1);">{{ item.course_title }} · every {{ item.interval_days }}d</div>
+      <span class="mrow-meta">{{ item.course_title }} · every {{ item.interval_days }}d</span>
       {% endif %}
-    </div>
-    {#- How late, not whether late. "OVERDUE" was on 10 of 10 rows: it could not
-        tell the reader which card to do first, which is the only question this
-        list has to answer. The number can. The colour follows the urgency
-        ladder rather than being alert for everything: a card a couple of days
-        late is normal spaced repetition, a card a month late is the one that
-        has actually fallen out of the schedule. -#}
-    {% if item.days_late and item.days_late > 0 %}
-    <span class="stat u-fixed tnum {% if item.days_late >= 30 %}is-warn{% else %}is-quiet{% endif %}"
-          title="Was due {{ item.next_review_date }}">{{ item.days_late }}d late</span>
-    {% else %}
-    <span class="stat is-quiet u-fixed">due today</span>
-    {% endif %}
-    <!-- Mark done buttons (quality 3=hard, 4=ok, 5=easy) -->
-    <div class="u-fixed" style="display:flex;gap:var(--m-space-1);">
-      <button class="u-label" title="Hard — remembered with effort" onclick="srReview({{ item.id | tojson }}, 3, this)"
-              style="padding:var(--m-space-1) var(--m-space-2);border:1px solid var(--m-line);border-radius:var(--m-radius);background:none;cursor:pointer;">Hard</button>
-      <button class="u-mono" title="Good — got it" onclick="srReview({{ item.id | tojson }}, 4, this)"
-              style="padding:var(--m-space-1) var(--m-space-2);border:1px solid var(--m-ok);border-radius:var(--m-radius);background:none;color:var(--m-ok);cursor:pointer;">Good</button>
-      <button class="u-mono" title="Easy — no effort needed" onclick="srReview({{ item.id | tojson }}, 5, this)"
-              style="padding:var(--m-space-1) var(--m-space-2);border:1px solid var(--m-info);border-radius:var(--m-radius);background:none;color:var(--m-info);cursor:pointer;">Easy</button>
-    </div>
+    </span>
+    <span class="mrow-acts sr-grade">
+      <button class="sr-g sr-g--hard" title="Hard — remembered with effort"
+              onclick="srReview({{ item.id | tojson }}, 3, this)">Hard</button>
+      <button class="sr-g sr-g--good" title="Good — got it"
+              onclick="srReview({{ item.id | tojson }}, 4, this)">Good</button>
+      <button class="sr-g sr-g--easy" title="Easy — no effort needed"
+              onclick="srReview({{ item.id | tojson }}, 5, this)">Easy</button>
+    </span>
   </div>
   {% endfor %}
 </div>

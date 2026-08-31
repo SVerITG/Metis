@@ -412,8 +412,16 @@ async def meetings_upcoming(request: Request):
         (today,),
     ) or []
     meeting = rows[0] if rows else None
+    # The empty state needs to say what you HAVE, not only that this week is
+    # free — otherwise the reader cannot tell an empty diary from a broken
+    # import. See the note in partials/meetings_upcoming.html.
+    total = db_scalar("SELECT COUNT(*) FROM meetings", default=0) or 0
+    last_date = db_scalar(
+        "SELECT meeting_date FROM meetings ORDER BY meeting_date DESC LIMIT 1",
+        default="") or ""
     return templates.TemplateResponse(
-        request, "partials/meetings_upcoming.html", {"meeting": meeting}
+        request, "partials/meetings_upcoming.html",
+        {"meeting": meeting, "total": total, "last_date": last_date[:10]},
     )
 
 

@@ -7,28 +7,37 @@
     {% endif %}
   </h2>
   <div class="panel">
+    {#- ONE ROW ANATOMY (see .mrow in styles.css). State left in a fixed slot,
+        title, quiet meta, actions right — the same four slots as News, Library
+        and Learning, so the eye lands in the same place on every list.
+
+        The state slot carries WHEN, not "overdue": the word was already in the
+        section heading above ("1 overdue") and repeating it per row cannot
+        distinguish rows. The date can. -#}
     {% for task in overdue %}
-    <div class="todo-row" style="border-left:2px solid var(--m-alert);">
-      <span class="todo-check" onclick="workTaskDone('{{ task.id }}', this)" style="cursor:pointer;" title="Mark done" role="button" tabindex="0"></span>
-      <span class="todo-title u-grow">
-        {{ task.title or 'Untitled task' }}
-        {% if task.project %}<span class="u-label" style="margin-left:6px;">{{ task.project[:22] }}</span>{% endif %}
+    <div class="mrow row-hit is-late">
+      <span class="mrow-state"><span class="stat is-urgent tnum">{{ task.due_date }}</span></span>
+      <span class="mrow-body">
+        <span class="mrow-title">{{ task.title or 'Untitled task' }}</span>
+        {% if task.project %}<span class="mrow-meta">{{ task.project }}</span>{% endif %}
       </span>
-      {#- The row already carries an alert left border; this said "overdue" a
-          second time in the same colour. Kept, because on this strip it is the
-          one badge that earns .is-urgent and the date beside it is what the
-          reader acts on. -#}
-      <span class="stat is-urgent tnum">{{ task.due_date }}</span>
+      <span class="mrow-acts">
+        <button type="button" class="todo-check" title="Mark done"
+                onclick="workTaskDone('{{ task.id }}', this)"></button>
+      </span>
     </div>
     {% endfor %}
     {% for task in due_today %}
-    <div class="todo-row" style="border-left:2px solid var(--m-accent);">
-      <span class="todo-check" onclick="workTaskDone('{{ task.id }}', this)" style="cursor:pointer;" title="Mark done" role="button" tabindex="0"></span>
-      <span class="todo-title u-grow">
-        {{ task.title or 'Untitled task' }}
-        {% if task.project %}<span class="u-label" style="margin-left:6px;">{{ task.project[:22] }}</span>{% endif %}
+    <div class="mrow row-hit">
+      <span class="mrow-state"><span class="stat is-quiet">today</span></span>
+      <span class="mrow-body">
+        <span class="mrow-title">{{ task.title or 'Untitled task' }}</span>
+        {% if task.project %}<span class="mrow-meta">{{ task.project }}</span>{% endif %}
       </span>
-      <span class="stat is-quiet">today</span>
+      <span class="mrow-acts">
+        <button type="button" class="todo-check" title="Mark done"
+                onclick="workTaskDone('{{ task.id }}', this)"></button>
+      </span>
     </div>
     {% endfor %}
   </div>
