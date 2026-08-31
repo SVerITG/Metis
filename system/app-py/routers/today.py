@@ -4275,37 +4275,62 @@ async def today_focus_with_memory(request: Request):
     except Exception:
         pass
 
-    # Same 4 pools as today_focus
-    for query, mapper in [
-        ("SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
-         "p.title AS project_title "
-         "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
-         "WHERE t.starred = 1 AND t.status NOT IN ('done','completed','cancelled','deleted') "
-         "ORDER BY CASE t.status WHEN 'in_progress' THEN 1 WHEN 'blocked' THEN 2 ELSE 3 END, "
-         "t.created_at DESC LIMIT 6", _focus_item_from_task),
-        ("SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
-         "p.title AS project_title "
-         "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
-         "WHERE t.status = 'blocked' ORDER BY t.created_at ASC LIMIT 6", _focus_item_from_task),
-        ("SELECT idea_id, text, idea_type, tags, domain, created_at FROM ideas "
-         "WHERE tags NOT LIKE '%archived%' ORDER BY created_at DESC LIMIT 6", _focus_item_from_idea),
-        ("SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
-         "p.title AS project_title "
-         "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
-         "WHERE t.status IN ('open','in_progress') AND t.starred = 0 "
-         "ORDER BY CASE t.status WHEN 'in_progress' THEN 1 ELSE 2 END, "
-         "t.created_at ASC LIMIT 10", _focus_item_from_task),
-    ]:
+    # ── CHOSEN, then SUGGESTED — and the difference is the whole point ──────
+    #
+    # This list used to draw from five pools: deadlines, starred, blocked,
+    # ideas, and finally ANY open task. That last pool is why Today could never
+    # be finished — clear an item and the next of 53 open tasks slides in, so
+    # the surface refills exactly as fast as you empty it and "done" is a state
+    # it cannot express.
+    #
+    # the researcher, 2026-08-29: "Expand on the Today surface and that it should be
+    # finisheable."
+    #
+    # So only two pools now reach the cards: things with a DEADLINE (added
+    # above) and things you STARRED. Both are commitments — one made by the
+    # calendar, one made by you. Everything else becomes a count on one quiet
+    # line at the foot, which keeps it available and stops it demanding.
+    try:
+        for r in db_query(
+            "SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
+            "p.title AS project_title "
+            "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
+            "WHERE t.starred = 1 AND t.status NOT IN ('done','completed','cancelled','deleted') "
+            "ORDER BY CASE t.status WHEN 'in_progress' THEN 1 WHEN 'blocked' THEN 2 ELSE 3 END, "
+            "t.created_at DESC LIMIT 6"
+        ) or []:
+            _add(_focus_item_from_task(r))
+    except Exception:
+        pass
+
+    # What is NOT on the cards, counted rather than shown.
+    def _count(sql: str) -> int:
         try:
-            for r in db_query(query) or []:
-                _add(mapper(r))
+            return int(db_scalar(sql, default=0) or 0)
         except Exception:
-            pass
+            return 0
+
+    suggested = {
+        "blocked": _count(
+            "SELECT COUNT(*) FROM tasks WHERE status = 'blocked'"),
+        "open": _count(
+            "SELECT COUNT(*) FROM tasks WHERE status IN ('open','in_progress') "
+            "AND COALESCE(starred,0) = 0"),
+        "ideas": _count(
+            "SELECT COUNT(*) FROM ideas WHERE COALESCE(tags,'') NOT LIKE '%archived%'"),
+        "reviews": _count(
+            "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= date('now')"),
+    }
+
+    # Cleared TODAY, so the surface can say "3 done" rather than only "0 left".
+    done_today = _count(
+        "SELECT COUNT(*) FROM tasks WHERE status IN ('done','completed') "
+        "AND date(COALESCE(updated_at, created_at)) = date('now')")
 
     return templates.TemplateResponse(
         request,
         "partials/today_focus_memory.html",
-        {"items": items},
+        {"items": items, "suggested": suggested, "done_today": done_today},
     )
 
 
@@ -4651,6 +4676,28 @@ async def today_resume_card(request: Request):
 
 
 # ── F: Learning Nudge ────────────────────────────────────────────────────
+
+@router.get("/api/partial/today/reading", response_class=HTMLResponse)
+async def today_reading(request: Request):
+    """The single reading suggestion for the start of the day.
+
+    Returns an EMPTY body when nothing is flagged crucial, and that is
+    deliberate — HTMX swaps the mount away and the surface shows no trace of a
+    section that has nothing to say. An empty panel here would be worse than
+    none: it would recreate, on Today, the empty Stack surface we just removed
+    from the navbar.
+    """
+    rows = db_query(
+        "SELECT kind, item_id, title, url, source FROM reading_stack "
+        "WHERE COALESCE(crucial, 0) = 1 AND state != 'read' "
+        "ORDER BY state_at DESC LIMIT 3"
+    ) or []
+    return templates.TemplateResponse(
+        request,
+        "partials/today_reading.html",
+        {"items": rows[:2], "more": max(0, len(rows) - 2)},
+    )
+
 
 @router.get("/api/partial/today/learning-nudge", response_class=HTMLResponse)
 async def today_learning_nudge(request: Request):

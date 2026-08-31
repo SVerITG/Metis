@@ -1120,6 +1120,11 @@ CREATE TABLE IF NOT EXISTS reading_stack (
     note       TEXT DEFAULT '',
     added_at   TEXT NOT NULL,
     state_at   TEXT NOT NULL,
+    -- Flagged as worth the START of a day, not merely worth reading. This is
+    -- what reaches back to the Today surface: one line under "what should I
+    -- read", never a list. Added 2026-08-29 — the stack stops being a tab and
+    -- becomes a tab inside Library, so it needs a way to speak to Today.
+    crucial    INTEGER DEFAULT 0,
     UNIQUE(kind, item_id)
 );
 CREATE INDEX IF NOT EXISTS idx_stack_state ON reading_stack(state, state_at);

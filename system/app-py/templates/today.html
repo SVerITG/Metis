@@ -83,6 +83,29 @@
   </form>
   <div id="today-find-results" style="margin-bottom:var(--m-space-6);"></div>
 
+    {#- ══════════════════════════════════════════════════════════════════════
+      TODAY IS ORDERED BY THE QUESTIONS YOU ASK AT NINE IN THE MORNING.
+
+      It used to run in the order the panels were built: a ~900-word brief, then
+      last night's session, then the focus cards, then connections, then three
+      boards, then six more. the researcher, 2026-08-29: "We want the focus surface really
+      to be an overview that you can click through in the morning, setting up
+      your day and being informed."
+
+      So the sequence is now:
+        1  what happened overnight        the brief
+        2  what needs me today            due + starred, merged from Work
+        3  what should I read             only when something is flagged crucial
+        4  what changed in my field       news · new papers · boards
+        5  what connects to what          cross-pollination
+        6  where was I                    LAST SESSION, MOVED DOWN — it answers
+                                          yesterday's question, not today's
+        7  everything else                folded
+
+      Short panels are paired with `.today-pair` rather than each taking a full
+      row of a very wide screen. See the note on that class in styles.css.
+      ══════════════════════════════════════════════════════════════════════ -#}
+
   <!-- ===== 2. Morning brief — full-width hero ===== -->
   <div hx-get="/api/partial/today/morning-brief"
        hx-trigger="load"
@@ -95,11 +118,6 @@
     </div>
   </div>
 
-  <!-- ===== 2b. Resume card — where we left off ===== -->
-  <div hx-get="/api/partial/today/resume-card"
-       hx-trigger="load delay:50ms"
-       hx-swap="outerHTML"></div>
-
   <!-- ===== 3. Today's Focus — with memory depth + deadline nudges ===== -->
   <div hx-get="/api/partial/today/focus-memory"
        hx-trigger="load delay:100ms"
@@ -110,18 +128,44 @@
     </div>
   </div>
 
-  <!-- ===== 4. Cross-pollination — connections for what you're working on ===== -->
-  <!-- The README's core promise, greeting you daily on the cockpit. Seeds from
-       the most recently touched project; endpoint lives in routers/connections.py
-       (not today.py) so it stays isolated. -->
-  {#- The heading is emitted by partials/connections_strip.html, because it
-      carries a live count ("· 5 across your work") that only the partial knows.
-      It is a real <h2 class="sec-label"> there, so the page outline is intact. -#}
+  {#- WORK COMES TO TODAY. What is due and what is overdue lived a tab away, so
+      "what needs me today" could not be answered on the surface whose whole job
+      is to answer it. Same partial as Work — one endpoint, two mounts, so the
+      two surfaces can never disagree about what is overdue. -#}
   <div class="u-mb-6"
-       hx-get="/api/partial/connections/today"
-       hx-trigger="load delay:150ms"
-       hx-swap="innerHTML">
-    {{ skeleton_box(size="sm") }}
+       hx-get="/api/partial/work/due-today"
+       hx-trigger="load delay:120ms"
+       hx-swap="innerHTML"></div>
+
+  {#- WHAT SHOULD I READ. Renders nothing at all unless something in the reading
+      stack has been flagged crucial — the stack is not a list to work through
+      here, it is a single suggestion for the start of the day. -#}
+  <div hx-get="/api/partial/today/reading"
+       hx-trigger="load delay:160ms"
+       hx-swap="outerHTML"></div>
+
+  <!-- ===== 9. Dispatch — News ===== -->
+  <div hx-get="/api/partial/today/news-rail"
+       hx-trigger="load delay:600ms"
+       hx-swap="outerHTML">
+    {{ sec_label("Dispatch", tail="LOADING NEWS") }}
+    <div class="panel" style="padding:var(--m-space-5) var(--m-space-5);min-height:120px;">
+      <div class="skeleton skeleton-bar w-40 u-mb-4"></div>
+      <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:12px;"></div>
+      <div class="skeleton skeleton-bar w-80 u-mb-2" style="height:12px;"></div>
+      <div class="skeleton skeleton-bar w-60" style="height:12px;"></div>
+    </div>
+  </div>
+
+  <div class="today-pair u-mb-6">
+    <!-- ===== 6. Literature discovery — new papers in your field ===== -->
+    <div hx-get="/api/partial/today/literature-discovery"
+         hx-trigger="load delay:250ms"
+         hx-swap="outerHTML"></div>
+    <!-- ===== 7. Learning nudge ===== -->
+    <div hx-get="/api/partial/today/learning-nudge"
+         hx-trigger="load delay:300ms"
+         hx-swap="outerHTML"></div>
   </div>
 
   <!-- ===== 5. Board strip — Outbreaks · Events · Funding ===== -->
@@ -149,14 +193,23 @@
     </div>
   </div>
 
-  <!-- ===== 6. Literature discovery — new papers in your field ===== -->
-  <div hx-get="/api/partial/today/literature-discovery"
-       hx-trigger="load delay:250ms"
-       hx-swap="outerHTML"></div>
+  <!-- ===== 4. Cross-pollination — connections for what you're working on ===== -->
+  <!-- The README's core promise, greeting you daily on the cockpit. Seeds from
+       the most recently touched project; endpoint lives in routers/connections.py
+       (not today.py) so it stays isolated. -->
+  {#- The heading is emitted by partials/connections_strip.html, because it
+      carries a live count ("· 5 across your work") that only the partial knows.
+      It is a real <h2 class="sec-label"> there, so the page outline is intact. -#}
+  <div class="u-mb-6"
+       hx-get="/api/partial/connections/today"
+       hx-trigger="load delay:150ms"
+       hx-swap="innerHTML">
+    {{ skeleton_box(size="sm") }}
+  </div>
 
-  <!-- ===== 7. Learning nudge ===== -->
-  <div hx-get="/api/partial/today/learning-nudge"
-       hx-trigger="load delay:300ms"
+  <!-- ===== 2b. Resume card — where we left off ===== -->
+  <div hx-get="/api/partial/today/resume-card"
+       hx-trigger="load delay:50ms"
        hx-swap="outerHTML"></div>
 
   <!-- ===== 8. What Metis knows — ONE zone, closed by default ==============
@@ -187,19 +240,6 @@
          hx-trigger="intersect once"
          hx-swap="outerHTML"></div>
   {% endcall %}
-
-  <!-- ===== 9. Dispatch — News ===== -->
-  <div hx-get="/api/partial/today/news-rail"
-       hx-trigger="load delay:600ms"
-       hx-swap="outerHTML">
-    {{ sec_label("Dispatch", tail="LOADING NEWS") }}
-    <div class="panel" style="padding:var(--m-space-5) var(--m-space-5);min-height:120px;">
-      <div class="skeleton skeleton-bar w-40 u-mb-4"></div>
-      <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:12px;"></div>
-      <div class="skeleton skeleton-bar w-80 u-mb-2" style="height:12px;"></div>
-      <div class="skeleton skeleton-bar w-60" style="height:12px;"></div>
-    </div>
-  </div>
 
   <!-- ===== 10. System health footer ===== -->
   <div hx-get="/api/partial/today/system-health"

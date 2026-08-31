@@ -176,26 +176,19 @@
         <span class="n-tip">News Radar</span>
       </div>
 
-      <!-- 02b Stack — what you filed to read later -->
-      <div class="nav-item {% if active_tab == 'stack' %}active{% endif %}"
-           data-tab="stack"
-           hx-get="/stack"
-           hx-target="#tab-content"
-           hx-swap="outerHTML"
-           hx-select="#tab-content"
-           hx-disinherit="*"
-           hx-push-url="/stack"
-           onclick="setNavActive(this,'stack')"
-           role="button" tabindex="0"
-           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
-        <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-          <path d="M2 11.5l6 3 6-3"/><path d="M2 8l6 3 6-3"/><path d="M2 4.5l6-3 6 3-6 3z"/>
-        </svg>
-        <span class="n-label">Stack</span>
-        <span class="n-meta" hx-get="/api/partial/stack/nav-meta" hx-trigger="load, every 300s"
-              hx-swap="innerHTML" hx-target="this" hx-select="unset" hx-push-url="false">—</span>
-        <span class="n-tip">What you filed to read later</span>
-      </div>
+      {#- STACK IS NO LONGER A SURFACE. the researcher, 2026-08-29: "The reading stack
+          needs to live somewhere else, not as one of the surfaces but it needs
+          to exist yes."
+
+          It held ZERO items while occupying a tab the same rank as the
+          3,083-item Library. Reading is a state of a paper, not a place, so it
+          is now a tab inside Library at /knowledge#reading. The route /stack
+          still works and is still linked to — only the permanent navbar seat
+          is gone.
+
+          Its one claim on your attention survives: a paper flagged CRUCIAL
+          appears on Today under "what to read first", as a single line, never
+          a list. See partials/today_reading.html. -#}
 
       <!-- 03 Reflection -->
       <div class="nav-item {% if active_tab == 'thinking' %}active{% endif %}"

@@ -22,10 +22,7 @@
   {% else %}
   <div>
     {% for s in sessions %}
-    <div class="brainstorm-row u-rule"
-         style="padding:var(--m-space-4) var(--m-space-5);display:flex;align-items:flex-start;gap:var(--m-space-4);transition:background 120ms ease;cursor:default;"
-         onmouseover="this.style.background='var(--m-surface-2)';"
-         onmouseout="this.style.background='transparent';">
+    <div class="brainstorm-row u-rule row-hit" style="padding:var(--m-space-4) var(--m-space-5);display:flex;align-items:flex-start;gap:var(--m-space-4);transition:background 120ms ease;cursor:default;">
       <div class="u-grow">
         <div class="u-mb-2 u-title u-title--lg" style="line-height:1.35;">
           {{ s.topic }}

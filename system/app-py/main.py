@@ -621,6 +621,13 @@ async def restart_dashboard(request: Request):
 # and refreshes don't 404. Planner became the "Board" view of Work (2026-07-14).
 _TAB_ALIASES = {"planner": "/work"}
 
+# Surfaces whose full page needs server-side context, not just the HTMX shell.
+# Keyed the same as _TAB_TEMPLATES; the value is called with no arguments and
+# must return a dict. Add an entry when a template renders anything inline.
+_TAB_CONTEXT = {
+    "learning": lambda: learning._learning_context("learning"),
+}
+
 
 @app.get("/{tab}", response_class=HTMLResponse)
 async def tab_page(request: Request, tab: str):
@@ -629,9 +636,30 @@ async def tab_page(request: Request, tab: str):
     template_name = _TAB_TEMPLATES.get(tab)
     if template_name is None:
         return RedirectResponse(url="/", status_code=302)
-    return templates.TemplateResponse(
-        request, template_name, {"active_tab": tab}
-    )
+
+    # ── The context the surface's OWN router builds ────────────────────────
+    # This route used to pass {"active_tab": tab} and nothing else, while the
+    # matching /tab/<name> route passed the router's full context. Any content
+    # rendered INLINE in the template — as opposed to arriving later over HTMX —
+    # therefore saw undefined variables on the full page and real ones inside
+    # the app shell. Jinja renders an undefined as empty and falsy, so it failed
+    # silently and looked like an empty state.
+    #
+    # Found 2026-08-31 on /learning: the 14-day streak strip is inline, so the
+    # full page drew fourteen blank cells and the caption "No reviews yet" while
+    # 234 cards were overdue. Nothing errored; it simply told the truth about a
+    # context that was never passed.
+    #
+    # A router opts in by exposing `page_context()`. Nothing else changes, and a
+    # router without one behaves exactly as before.
+    ctx = {"active_tab": tab}
+    provider = _TAB_CONTEXT.get(tab)
+    if provider is not None:
+        try:
+            ctx.update(provider())
+        except Exception as exc:                       # never 500 a whole surface
+            log.warning("tab %s: page_context failed: %s", tab, exc)
+    return templates.TemplateResponse(request, template_name, ctx)
 
 
 # ---------------------------------------------------------------------------

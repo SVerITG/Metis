@@ -9,16 +9,7 @@
     {% for item in items %}
     <div class="panel panel--md" style="position:relative;">
       {# Dismiss button #}
-      <button class="btn btn--ghost" type="button"
-              hx-post="/api/today/focus/dismiss"
-              hx-vals='{"item_type": "{{ item.item_type }}", "item_id": "{{ item.item_id }}"}'
-              hx-target="#today-focus"
-              hx-swap="outerHTML"
-              hx-headers='{"Content-Type": "application/json"}'
-              style="position:absolute;top:8px;right:10px;font-size:var(--t-body);color:var(--m-muted);line-height:1;padding:var(--m-space-1) var(--m-space-1);opacity:0.5;"
-              title="Dismiss for today"
-              onmouseover="this.style.opacity='1';this.style.color='var(--m-ink)'"
-              onmouseout="this.style.opacity='0.5';this.style.color='var(--m-muted)'">&times;</button>
+      <button class="btn btn--ghost hov-dim" type="button" hx-post="/api/today/focus/dismiss" hx-vals='{"item_type": "{{ item.item_type }}", "item_id": "{{ item.item_id }}"}' hx-target="#today-focus" hx-swap="outerHTML" hx-headers='{"Content-Type": "application/json"}' style="position:absolute;top:8px;right:10px;font-size:var(--t-body);color:var(--m-muted);line-height:1;padding:var(--m-space-1) var(--m-space-1);opacity:0.5;" title="Dismiss for today">&times;</button>
       {# Badge #}
       <div class="u-row u-mb-2">
         <span class="{{ item.badge_class or 'stat is-quiet' }}">{{ item.badge }}</span>

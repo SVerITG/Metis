@@ -18,10 +18,7 @@
   <div class="u-rule" style="padding:var(--m-space-2) 0;">
     <div class="u-title" style="line-height:1.3;">
       {% if p.doi %}
-      <a href="https://doi.org/{{ p.doi }}" target="_blank" rel="noopener"
-         style="color:inherit;text-decoration:none;"
-         onmouseover="this.style.color='var(--m-accent)'"
-         onmouseout="this.style.color='var(--m-ink)'">{{ p.title }}</a>
+      <a class="hov-ink" href="https://doi.org/{{ p.doi }}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">{{ p.title }}</a>
       {% else %}{{ p.title }}{% endif %}
     </div>
     <div class="u-label u-row" style="margin-top:var(--m-space-1);gap:var(--m-space-3);">

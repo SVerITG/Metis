@@ -96,9 +96,7 @@
     <tbody>
       {% for item in items %}
       {% set icolor = type_colors.get(item.item_type, 'var(--m-chart-8)') %}
-      <tr style="border-bottom:1px solid var(--m-rule-soft);border-left:{% if item.is_read %}2px solid transparent{% else %}2px solid var(--m-accent){% endif %};"
-          onmouseover="this.style.background='var(--m-surface-2)'"
-          onmouseout="this.style.background=''">
+      <tr class="row-hit" style="border-bottom:1px solid var(--m-rule-soft);border-left:{% if item.is_read %}2px solid transparent{% else %}2px solid var(--m-accent){% endif %};">
 
         <!-- Year + type icon -->
         <td style="padding:var(--m-space-3) var(--m-space-5);vertical-align:top;white-space:nowrap;">
@@ -141,15 +139,9 @@
             {# Title #}
             <div class="u-grow u-title" style="line-height:1.35;">
               {% if item.doi %}
-              <a href="https://doi.org/{{ item.doi }}" target="_blank" rel="noopener"
-                 style="color:inherit;text-decoration:none;"
-                 onmouseover="this.style.color='var(--m-accent)'"
-                 onmouseout="this.style.color='var(--m-ink)'">{{ item.title }}</a>
+              <a class="hov-ink" href="https://doi.org/{{ item.doi }}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">{{ item.title }}</a>
               {% elif item.url %}
-              <a href="{{ item.url }}" target="_blank" rel="noopener"
-                 style="color:inherit;text-decoration:none;"
-                 onmouseover="this.style.color='var(--m-accent)'"
-                 onmouseout="this.style.color='var(--m-ink)'">{{ item.title }}</a>
+              <a class="hov-ink" href="{{ item.url }}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">{{ item.title }}</a>
               {% else %}
               {{ item.title }}
               {% endif %}

@@ -60,17 +60,12 @@
       </thead>
       <tbody>
         {% for p in results %}
-        <tr class="u-rule"
-            onmouseover="this.style.background='var(--m-surface-2)'"
-            onmouseout="this.style.background=''">
+        <tr class="u-rule row-hit">
           <td class="u-label" style="padding:var(--m-space-3) var(--m-space-5);vertical-align:top;">{{ p.year or '—' }}</td>
           <td style="padding:var(--m-space-3) var(--m-space-3);vertical-align:top;">
             <div class="u-title u-title--sm" style="line-height:1.35;">
               {% if p.doi_url %}
-              <a href="{{ p.doi_url }}" target="_blank" rel="noopener"
-                 style="color:inherit;text-decoration:none;"
-                 onmouseover="this.style.color='var(--m-accent)'"
-                 onmouseout="this.style.color='var(--m-ink)'">{{ p.title }}</a>
+              <a class="hov-ink" href="{{ p.doi_url }}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">{{ p.title }}</a>
               {% else %}{{ p.title }}{% endif %}
             </div>
             {% if p.authors %}

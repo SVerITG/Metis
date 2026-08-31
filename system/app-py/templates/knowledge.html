@@ -61,6 +61,14 @@
               aria-selected="false"
               title="Your sleeping-sickness corpus: what you hold, what Metis can read, and what your own citations say is missing"
               onclick="libTab('hat')">HAT</button>
+      {#- READING. The Stack used to be a top-level surface holding ZERO items,
+          ranked alongside a 3,083-item Library. the researcher, 2026-08-29: "The reading
+          stack needs to live somewhere else, not as one of the surfaces but it
+          needs to exist yes." Reading is a state of a paper, not a place. -#}
+      <button class="news-tab" role="tab" type="button" data-libtab="reading"
+              aria-selected="false"
+              title="What you filed to read, and what you flagged as crucial"
+              onclick="libTab('reading')">Reading</button>
       <button class="news-tab" role="tab" type="button" data-libtab="catalogue"
               aria-selected="false"
               title="Search and browse everything you already hold"
@@ -101,6 +109,16 @@
   </div>
 
   <!-- ── panel: catalogue ──────────────────────────────────────────────────── -->
+  <div class="lib-panel" id="libpanel-reading" role="tabpanel" hidden>
+    {#- `loadtab` rather than `load`: the panel is fetched when the tab is
+        first opened, not on every visit to Library. -#}
+    <div hx-get="/api/partial/stack/body"
+         hx-trigger="loadtab"
+         hx-swap="innerHTML">
+      <div class="panel panel-pad skeleton" style="min-height:160px;"></div>
+    </div>
+  </div>
+
   <div class="lib-panel" id="libpanel-catalogue" role="tabpanel"
        hidden>
   <!-- ===== Unified Search (catalogue — what you already hold) ===== -->
