@@ -3,7 +3,7 @@
    Context: items (list of dicts with item_type, item_id, title, subtitle, badge, badge_color, memory). #}
 <div id="today-focus">
 {% if items %}
-  {{ sec_label("Today's focus", tail="STAR A TASK TO PIN IT HERE") }}
+  {{ sec_label("Today's focus", tail=(done_today|string) + " DONE TODAY" if done_today else "STAR A TASK TO PIN IT HERE") }}
   {# Link to Work — Today's focus and the Work planning horizon are two ends of
      the same thread: what you intend (Work) → what you're doing today (here). #}
   <div class="u-mb-4">
@@ -13,16 +13,7 @@
     {% for item in items %}
     <div class="panel panel--md" style="position:relative;">
       {# Dismiss button #}
-      <button class="btn btn--ghost" type="button"
-              hx-post="/api/today/focus/dismiss"
-              hx-vals='{"item_type": "{{ item.item_type }}", "item_id": "{{ item.item_id }}"}'
-              hx-target="#today-focus"
-              hx-swap="outerHTML"
-              hx-headers='{"Content-Type": "application/json"}'
-              style="position:absolute;top:8px;right:10px;font-size:var(--t-body);color:var(--m-muted);line-height:1;padding:var(--m-space-1) var(--m-space-1);opacity:0.5;"
-              title="Dismiss for today"
-              onmouseover="this.style.opacity='1';this.style.color='var(--m-ink)'"
-              onmouseout="this.style.opacity='0.5';this.style.color='var(--m-muted)'">&times;</button>
+      <button class="btn btn--ghost hov-dim" type="button" hx-post="/api/today/focus/dismiss" hx-vals='{"item_type": "{{ item.item_type }}", "item_id": "{{ item.item_id }}"}' hx-target="#today-focus" hx-swap="outerHTML" hx-headers='{"Content-Type": "application/json"}' style="position:absolute;top:8px;right:10px;font-size:var(--t-body);color:var(--m-muted);line-height:1;padding:var(--m-space-1) var(--m-space-1);opacity:0.5;" title="Dismiss for today">&times;</button>
       {# Badge row — type badge + memory depth #}
       <div class="u-row u-mb-2">
         <span class="{{ item.badge_class or 'stat is-quiet' }}">{{ item.badge }}</span>
@@ -69,15 +60,51 @@
     </div>
     {% endfor %}
   </div>
+  {#- Everything that is NOT a commitment, counted rather than listed. This is
+      what makes finishing possible: the 53 open tasks and 224 due reviews are
+      still one click away, they simply stop presenting themselves as today's
+      work. A count invites; a card demands. -#}
+  {% if suggested %}
+  <div class="focus-also">
+    <span class="focus-also-lead">you might also</span>
+    {% if suggested.blocked %}<a class="u-link" href="/work">{{ suggested.blocked }} blocked</a>{% endif %}
+    {% if suggested.open %}<a class="u-link" href="/work">{{ suggested.open }} open</a>{% endif %}
+    {% if suggested.ideas %}<a class="u-link" href="/thinking">{{ suggested.ideas }} ideas</a>{% endif %}
+    {% if suggested.reviews %}<a class="u-link" href="/learning">{{ suggested.reviews }} reviews due</a>{% endif %}
+  </div>
+  {% endif %}
 {% else %}
-  {{ sec_label("Today's focus", tail="ALL CLEAR") }}
-  <div class="panel u-mb-6 panel--lg">
-    <div class="ed u-ed" style="font-size:var(--t-body);">
-      No open tasks or active ideas right now. Star a task or capture an idea to fill this section.
-    </div>
-    <div style="margin-top:var(--m-space-3);">
-      <a class="u-label u-label--accent" href="/work" style="letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;">Plan in Work →</a>
+  {#- THE STATE METIS COULD NOT PREVIOUSLY EXPRESS. The old copy said "No open
+      tasks or active ideas right now", which was never true — there are 53 open
+      tasks. It was the FILLER POOL running dry, described as an empty world.
+      Now the sentence is accurate: nothing you committed to is left. -#}
+  {{ sec_label("Today's focus", tail=(done_today|string) + " DONE TODAY" if done_today else "NOTHING PINNED") }}
+  <div class="panel u-mb-6 panel--lg focus-done">
+    {% if done_today %}
+    <p class="focus-done-line">That's your day.</p>
+    <p class="focus-done-sub">{{ done_today }} finished · nothing else you committed to is left.</p>
+    {% else %}
+    <p class="focus-done-line">Nothing is pinned for today.</p>
+    <p class="focus-done-sub">Star a task in Work, or give one a date, and it will appear here.</p>
+    {% endif %}
+    <div class="u-mt-3">
+      <a class="u-label u-label--accent hov-ink" href="/work"
+         style="letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;">Plan in Work →</a>
     </div>
   </div>
+  {#- Everything that is NOT a commitment, counted rather than listed. This is
+      what makes finishing possible: the 53 open tasks and 224 due reviews are
+      still one click away, they simply stop presenting themselves as today's
+      work. A count invites; a card demands. -#}
+  {% if suggested %}
+  <div class="focus-also">
+    <span class="focus-also-lead">you might also</span>
+    {% if suggested.blocked %}<a class="u-link" href="/work">{{ suggested.blocked }} blocked</a>{% endif %}
+    {% if suggested.open %}<a class="u-link" href="/work">{{ suggested.open }} open</a>{% endif %}
+    {% if suggested.ideas %}<a class="u-link" href="/thinking">{{ suggested.ideas }} ideas</a>{% endif %}
+    {% if suggested.reviews %}<a class="u-link" href="/learning">{{ suggested.reviews }} reviews due</a>{% endif %}
+  </div>
+  {% endif %}
+
 {% endif %}
 </div>

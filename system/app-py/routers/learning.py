@@ -96,6 +96,14 @@ def _learning_context(active_tab: str = "learning") -> dict:
         "active_tab": active_tab,
         "streak_cells": cells,
         "streak_has_data": any(c["active"] for c in cells),
+        # The streak panel used to say "No reviews yet" while 234 cards
+        # were overdue. It meant "you have not reviewed", but it READ as
+        # "there is nothing to review" — an empty state describing an
+        # empty world rather than an untouched one. It needs the count to
+        # say the true thing.
+        "streak_waiting": int(db_scalar(
+            "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= date('now')",
+            default=0) or 0),
     }
 
 

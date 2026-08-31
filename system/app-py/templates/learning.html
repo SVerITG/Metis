@@ -64,7 +64,16 @@
         {% endfor %}
       </div>
       <div class="u-ed" style="font-size:var(--t-small);">
-        {% if streak_has_data %}Keep the habit. <em>Don't gamify it.</em>{% else %}No reviews yet — your daily review activity will fill in here.{% endif %}
+        {#- "No reviews yet" was FALSE while 234 cards were overdue. It meant
+            "you have not reviewed yet"; it read as "there is nothing here".
+            An empty state is read by someone wondering whether the thing is
+            broken, so it has to describe the real situation. -#}
+        {% if streak_has_data %}Keep the habit. <em>Don't gamify it.</em>
+        {%- elif streak_waiting %}
+          <strong>{{ streak_waiting }} cards are waiting.</strong>
+          Ten a day clears them in {{ (streak_waiting / 10) | round(0, 'ceil') | int }} days —
+          this strip fills in as you go.
+        {%- else %}Nothing due. This strip fills in as you review.{% endif %}
       </div>
     </div>
 

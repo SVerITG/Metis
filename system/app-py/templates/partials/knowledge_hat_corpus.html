@@ -2,13 +2,7 @@
   <h2 class="sec-label u-mb-3">
     <span>Knowledge Corpus</span>
     <span class="tail">{{ total }} PAPERS · {{ seeded_count }} ANNOTATED · {{ triage_count }} TO TRIAGE</span>
-    <button class="u-label u-label--wide btn btn--sec btn--sm" hx-post="/api/knowledge/build-hat-index"
-            hx-target="#hat-index-status"
-            hx-swap="innerHTML"
-            hx-confirm="This will index all knowledge corpus PDFs for semantic search (10–40 min, runs in background). Continue?"
-            style="margin-left:12px;"
-            onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
-            onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'">
+    <button class="u-label u-label--wide btn btn--sec btn--sm hov-edge" hx-post="/api/knowledge/build-hat-index" hx-target="#hat-index-status" hx-swap="innerHTML" hx-confirm="This will index all knowledge corpus PDFs for semantic search (10–40 min, runs in background). Continue?" style="margin-left:12px;">
       INDEX FOR SEMANTIC SEARCH
     </button>
     <span class="u-mono" id="hat-index-status" style="margin-left:8px;"></span>

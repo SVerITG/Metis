@@ -30,9 +30,7 @@
     <tbody>
       {% for item in items %}
       {% set is_seeded = item.item_type == 'seeded' %}
-      <tr style="border-bottom:1px solid var(--m-rule-soft);border-left:2px solid {% if is_seeded %}var(--m-chart-2){% else %}var(--m-warn){% endif %};"
-          onmouseover="this.style.background='var(--m-surface-2)'"
-          onmouseout="this.style.background=''">
+      <tr class="row-hit" style="border-bottom:1px solid var(--m-rule-soft);border-left:2px solid {% if is_seeded %}var(--m-chart-2){% else %}var(--m-warn){% endif %};">
 
         <!-- Folder with icon -->
         <td style="padding:var(--m-space-3) var(--m-space-5);vertical-align:top;white-space:nowrap;">

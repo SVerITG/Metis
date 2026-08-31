@@ -1,0 +1,37 @@
+{% from "partials/_section.html" import sec_label %}
+{#- today_reading.html — the one reading suggestion for the start of the day.
+
+    Renders NOTHING when nothing is flagged. That is the design, not an empty
+    state: the reading stack is a queue you work through in Library, and the
+    only thing it is allowed to say on Today is "this one is worth your
+    morning". A list here would recreate the surface the researcher asked to remove.
+
+    At most two, and if there are more the line says so rather than growing. -#}
+{% if items %}
+  {{ sec_label("What to read first", tail="FLAGGED CRUCIAL") }}
+  <div class="panel u-mb-6">
+    {% for it in items %}
+    <div class="m-read-row row-hit">
+      <span class="stat is-warn u-fixed">crucial</span>
+      <span class="u-grow">
+        {% if it.url %}
+        <a class="u-title hov-ink" href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a>
+        {% else %}
+        <span class="u-title">{{ it.title }}</span>
+        {% endif %}
+        {% if it.source %}<div class="u-label">{{ it.source }}</div>{% endif %}
+      </span>
+      <button type="button" class="btn btn--ghost btn--sm u-fixed"
+              title="Unflag — keep it in the stack, stop suggesting it"
+              hx-post="/api/stack/crucial"
+              hx-vals='{"kind": "{{ it.kind }}", "item_id": "{{ it.item_id }}", "back": "today-reading"}'
+              hx-target="closest .panel" hx-swap="outerHTML">done</button>
+    </div>
+    {% endfor %}
+    {% if more %}
+    <div class="m-read-more">
+      <a class="u-link" href="/knowledge#reading">{{ more }} more flagged · open the stack →</a>
+    </div>
+    {% endif %}
+  </div>
+{% endif %}

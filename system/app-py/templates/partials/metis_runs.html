@@ -8,9 +8,7 @@
 </div>
 {% else %}
 {% for r in runs %}
-<div class="run-row" style="display:grid;grid-template-columns:96px 110px 1fr 70px 70px;gap:14px;align-items:center;padding:12px 18px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %};transition:background 140ms ease;"
-     onmouseover="this.style.background='var(--m-surface-2)';"
-     onmouseout="this.style.background='transparent';">
+<div class="run-row row-hit" style="display:grid;grid-template-columns:96px 110px 1fr 70px 70px;gap:14px;align-items:center;padding:12px 18px;{% if not loop.last %}border-bottom:1px solid var(--m-rule-soft);{% endif %};transition:background 140ms ease;">
   <span class="run-time tnum u-label">
     {{ (r.started_at or '')[5:16] | replace('T',' ') if r.started_at else '—' }}
   </span>

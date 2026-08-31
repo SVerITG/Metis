@@ -91,6 +91,37 @@ async def stack_clear(request: Request, kind: str = Form(...),
     return HTMLResponse(body + _counts_oob())
 
 
+@router.post("/api/stack/crucial", response_class=HTMLResponse)
+async def stack_crucial(request: Request, kind: str = Form(...),
+                        item_id: str = Form(...), back: str = Form("")):
+    """Flag (or unflag) this as worth the START of a day.
+
+    Distinct from "read later", which is a queue. Crucial is a much smaller
+    claim: it is the one thing that reaches back out to the Today surface, as a
+    single line under "what should I read" — never a list. the researcher, 2026-08-29:
+    "From the stack there can be a suggestion for the beginning of the day on
+    the today surface, when something was flagged as crucial to read."
+
+    Flagging something that is not yet in the stack puts it there as `later`
+    first, so a crucial row always has a state to return to when it is cleared.
+    """
+    from db import db_execute, db_scalar
+
+    cur = db_scalar(
+        "SELECT COALESCE(crucial, 0) FROM reading_stack WHERE kind=? AND item_id=?",
+        (kind, str(item_id)), default=None,
+    )
+    if cur is None:
+        _s().set_state(kind, str(item_id), "later")
+        cur = 0
+    db_execute(
+        "UPDATE reading_stack SET crucial=? WHERE kind=? AND item_id=?",
+        (0 if cur else 1, kind, str(item_id)),
+    )
+    body = await _rerender(request, back or _guess_back(request))
+    return HTMLResponse(body + _counts_oob())
+
+
 @router.post("/api/stack/tags", response_class=HTMLResponse)
 async def stack_tags(request: Request, kind: str = Form(...), item_id: str = Form(...),
                      tags: str = Form(""), title: str = Form(""),

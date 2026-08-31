@@ -5,13 +5,7 @@
     &nbsp;·&nbsp;
     <span style="color:var(--m-ink);font-weight:600;">{{ "{:,}".format(total_chunks) }}</span> INDEXED CHUNKS
   </span>
-  <button class="u-label u-label--wide btn btn--sec" style="padding:var(--m-space-1) var(--m-space-3);white-space:nowrap;transition:border-color .15s,color .15s;"
-          onmouseover="this.style.borderColor='var(--m-accent)';this.style.color='var(--m-accent)'"
-          onmouseout="this.style.borderColor='var(--m-rule)';this.style.color='var(--m-muted)'"
-          hx-post="/api/knowledge/build-index"
-          hx-target="#pdf-index-status"
-          hx-swap="innerHTML"
-          hx-confirm="This will index all PDFs in your library using local AI embeddings. It may take 5–20 minutes. Continue?">
+  <button class="u-label u-label--wide btn btn--sec hov-edge" style="padding:var(--m-space-1) var(--m-space-3);white-space:nowrap;transition:border-color .15s,color .15s;" hx-post="/api/knowledge/build-index" hx-target="#pdf-index-status" hx-swap="innerHTML" hx-confirm="This will index all PDFs in your library using local AI embeddings. It may take 5–20 minutes. Continue?">
     REBUILD INDEX
   </button>
 </div>
