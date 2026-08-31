@@ -32,21 +32,40 @@
   {% endfor %}
 </div>
 
+{#- ── RETOUCH 2026-08-31 · the filters, reorganised ────────────────────────
+    the researcher: "reorganization of filters in the news surface."
+
+    This strip carried THREE segmented controls of three buttons each — period,
+    view and density — rendered identically and sitting side by side, plus the
+    stack links and the what's-new pill. About twenty controls, with nothing to
+    say which of them changed WHAT IS IN THE LIST and which changed only how it
+    looked.
+
+    They are not the same kind of thing, so they no longer look the same:
+
+      PERIOD is a filter. It decides which items exist on the page, it is the
+      one you change often, and it stays out in the open beside the counts.
+
+      VIEW and DENSITY are presentation. Both answer "how should this look",
+      both are set once and then left alone for weeks, and together they were
+      six of the twenty buttons. They fold into one "Display" control that opens
+      when you want it — the two axes still separate INSIDE it, because a
+      compact detailed list is a real thing to want and merging them would take
+      that away.
+
+      THE STACK COUNTS are a destination, not a control at all. They moved to
+      the end as a quiet link, and they now point at the Library's Reading tab
+      rather than /stack — the stack stopped being a surface on 2026-08-29.
+    ────────────────────────────────────────────────────────────────────────── -#}
 <div class="toolbar">
   <div class="toolbar-lead">{{ (spec.blurb if spec is defined else tabs[0].blurb) }}</div>
 
   <div class="toolbar-group">
-    {#- What has arrived since you last marked this surface seen. -#}
+    {#- What has arrived since you last marked this surface seen. Beside the
+        period control because both are about time. -#}
     {% if whatsnew_news %}{{ whatsnew(whatsnew_news, "briefs", "#news-tab-body") }}{% endif %}
 
-    {#- What you filed, always in reach from the surface that fills it. -#}
-    <span id="stack-counts" class="stk-counts">
-      <a href="/stack" class="stk-link" title="Everything you filed for later">
-        <b>{{ stack_counts.later if stack_counts else 0 }}</b> to read</a>
-      <span class="stk-sep">·</span>
-      <a href="/stack?state=saved" class="stk-link"><b>{{ stack_counts.saved if stack_counts else 0 }}</b> kept</a>
-    </span>
-
+    {#- THE FILTER. Out in the open: it changes what is on the page. -#}
     <div class="seg" role="group" aria-label="Time period">
       {% for pkey, pval in periods.items() %}
         <button type="button"
@@ -56,50 +75,55 @@
       {% endfor %}
     </div>
 
-    <div class="seg" role="group" aria-label="How to show the list">
-      {% for vkey, vlabel in _views.items() %}
-        <button type="button"
-                aria-pressed="{{ 'true' if vkey == _view else 'false' }}"
-                title="{{ vlabel }} view"
-                hx-get="/api/partial/news/tab?tab={{ active }}&period={{ period }}&view={{ vkey }}"
-                hx-target="#news-tab-body" hx-swap="innerHTML"
-                onclick="try{localStorage.setItem('metis.news.view','{{ vkey }}')}catch(e){}">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
-               stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-            {%- if vkey == 'list' -%}
-              <path d="M2 4h12M2 8h12M2 12h12"/>
-            {%- elif vkey == 'detailed' -%}
-              <path d="M2 3.5h12M2 6.5h8M2 10h12M2 13h8"/>
-            {%- else -%}
-              <rect x="2" y="2.5" width="5" height="5" rx="1"/><rect x="9" y="2.5" width="5" height="5" rx="1"/>
-              <rect x="2" y="9.5" width="5" height="4" rx="1"/><rect x="9" y="9.5" width="5" height="4" rx="1"/>
-            {%- endif -%}
-          </svg>
-          <span class="seg-label">{{ vlabel }}</span>
-        </button>
-      {% endfor %}
-    </div>
+    {#- PRESENTATION, folded. <details> rather than JS: it is keyboard-operable,
+        works with no script, and Esc closes it for free. -#}
+    <details class="disp">
+      <summary class="disp-summary" title="How this list is shown">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" aria-hidden="true" width="13" height="13">
+          <path d="M2 4h12M2 8h12M2 12h12"/>
+        </svg>
+        <span>Display</span>
+      </summary>
+      <div class="disp-body">
+        <div class="disp-row">
+          <span class="disp-label">Detail</span>
+          <div class="seg" role="group" aria-label="How to show the list">
+            {% for vkey, vlabel in _views.items() %}
+              <button type="button"
+                      aria-pressed="{{ 'true' if vkey == _view else 'false' }}"
+                      title="{{ vlabel }} view"
+                      hx-get="/api/partial/news/tab?tab={{ active }}&period={{ period }}&view={{ vkey }}"
+                      hx-target="#news-tab-body" hx-swap="innerHTML"
+                      onclick="try{localStorage.setItem('metis.news.view','{{ vkey }}')}catch(e){}">
+                <span class="seg-label">{{ vlabel }}</span>
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="disp-row">
+          <span class="disp-label">Density</span>
+          <div class="seg" role="group" aria-label="Density">
+            {% for dkey, dlabel, dtitle in [
+                ('compact',  'Compact',  'Tight rows, no summaries'),
+                ('cosy',     'Cosy',     'The default'),
+                ('spacious', 'Spacious', 'Room to read')] %}
+              <button type="button" data-density-btn="{{ dkey }}" aria-pressed="false"
+                      title="{{ dtitle }}" onclick="metis.density.set('{{ dkey }}')">
+                <span class="seg-label">{{ dlabel }}</span>
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </details>
 
-    {#- Density. Not a view: the view picks WHAT is shown (summary, thumbnail),
-        density picks how tightly it is packed. Both matter and they are not the
-        same axis — a compact detailed list is a real thing to want. Client-side
-        only, so it never costs a request. -#}
-    <div class="seg" role="group" aria-label="Density">
-      {% for dkey, dlabel, dtitle in [
-          ('compact',  'Compact',  'Tight rows, no summaries'),
-          ('cosy',     'Cosy',     'The default'),
-          ('spacious', 'Spacious', 'Room to read')] %}
-        <button type="button" data-density-btn="{{ dkey }}" aria-pressed="false"
-                title="{{ dtitle }}" onclick="metis.density.set('{{ dkey }}')">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
-               stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-            {%- if dkey == 'compact' -%}<path d="M2 5h12M2 8h12M2 11h12"/>
-            {%- elif dkey == 'cosy' -%}<path d="M2 4.5h12M2 8h12M2 11.5h12"/>
-            {%- else -%}<path d="M2 3.5h12M2 8h12M2 12.5h12"/>{%- endif -%}
-          </svg>
-          <span class="seg-label">{{ dlabel }}</span>
-        </button>
-      {% endfor %}
-    </div>
+    {#- A DESTINATION, not a control. Quiet, and last. -#}
+    <span id="stack-counts" class="stk-counts">
+      <a href="/knowledge#reading" class="stk-link" title="Everything you filed for later, in Library">
+        <b>{{ stack_counts.later if stack_counts else 0 }}</b> to read</a>
+      <span class="stk-sep">·</span>
+      <a href="/knowledge#reading" class="stk-link"><b>{{ stack_counts.saved if stack_counts else 0 }}</b> kept</a>
+    </span>
   </div>
 </div>
