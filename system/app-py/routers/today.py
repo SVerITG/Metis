@@ -17,7 +17,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from db import db_execute, db_query, db_scalar
-from ui import (count_since, delta_count, last_seen, mark_seen,  # noqa: E402, clip
+from ui import (clip, count_since, delta_count, last_seen, mark_seen,  # noqa: E402
                 nothing, peek, zone)
 from models import model_for  # Resolves Claude model IDs from system/config/models.yaml
 
@@ -4208,7 +4208,7 @@ async def today_memory_pulse(request: Request):
 # ── C: Focus items with memory depth ─────────────────────────────────────
 
 @router.get("/api/partial/today/focus-memory", response_class=HTMLResponse)
-async def today_focus_with_memory(request: Request):
+async def today_focus_with_memory(request: Request, bare: int = 0):
     """Same as today_focus but enriches each item with memory depth + connections."""
     # Re-use the existing focus logic
     _ensure_focus_dismissed_table()
@@ -4237,43 +4237,16 @@ async def today_focus_with_memory(request: Request):
         item["memory"] = _memory_depth(item["title"])
         items.append(item)
 
-    # Pool 0: Tasks with approaching deadlines (≤ 7 days)
-    try:
-        upcoming = db_query(
-            "SELECT t.task_id, t.title, t.status, t.starred, t.project_id, "
-            "t.due_date, p.title AS project_title "
-            "FROM tasks t LEFT JOIN projects p ON t.project_id = p.project_id "
-            "WHERE t.status NOT IN ('done','completed','cancelled','deleted') "
-            "AND COALESCE(t.due_date,'') != '' "
-            "AND t.due_date <= date('now', '+7 days') "
-            "ORDER BY t.due_date ASC LIMIT 3"
-        ) or []
-        for r in upcoming:
-            due = r.get("due_date", "")
-            try:
-                due_dt = datetime.date.fromisoformat(due)
-                delta = (due_dt - datetime.date.today()).days
-                # Deadlines are the one place on the dashboard where .is-urgent
-                # is earned. The query caps this pool at 3 rows, so the solid
-                # fill stays rare enough to still mean something.
-                if delta < 0:
-                    due_label, due_class = "OVERDUE", "stat is-urgent"
-                elif delta == 0:
-                    due_label, due_class = "DUE TODAY", "stat is-urgent"
-                elif delta == 1:
-                    due_label, due_class = "DUE TOMORROW", "stat is-warn"
-                elif delta <= 2:
-                    due_label, due_class = f"DUE IN {delta}d", "stat is-warn"
-                else:
-                    due_label, due_class = f"DUE IN {delta}d", "stat is-quiet"
-            except Exception:
-                due_label, due_class = "DUE", "stat is-quiet"
-            item = _focus_item_from_task(r)
-            item["badge"] = due_label
-            item["badge_class"] = due_class
-            _add(item)
-    except Exception:
-        pass
+    # DATED TASKS ARE NOT HERE ANY MORE. They were, and the due strip mounted
+    # beside this one on Today showed them too, so "Draft Angola risk-mapping
+    # parameters" appeared twice on the same screen — once as a focus card and
+    # once as an overdue row. Two panels answering one question is what the
+    # merge was supposed to remove, not create.
+    #
+    # The division now: anything with a DATE belongs to the due strip, anything
+    # you STARRED belongs here. Both sit under one heading on Today, so they
+    # read as one answer to "what needs me today".
+    starred_only = True
 
     # ── CHOSEN, then SUGGESTED — and the difference is the whole point ──────
     #
@@ -4330,7 +4303,8 @@ async def today_focus_with_memory(request: Request):
     return templates.TemplateResponse(
         request,
         "partials/today_focus_memory.html",
-        {"items": items, "suggested": suggested, "done_today": done_today},
+        {"items": items, "suggested": suggested, "done_today": done_today,
+         "bare": bool(bare)},
     )
 
 
@@ -4676,6 +4650,87 @@ async def today_resume_card(request: Request):
 
 
 # ── F: Learning Nudge ────────────────────────────────────────────────────
+
+@router.get("/api/partial/today/pick-focus", response_class=HTMLResponse)
+async def today_pick_focus(request: Request):
+    """Where you left off — folded, and every row can become today's focus.
+
+    The resume card described yesterday in a paragraph you could not act on.
+    This carries the same information plus the one thing that was missing: each
+    project's top open task, and a button that stars it so it appears in
+    today's focus. Reading about yesterday is only useful if it shortens the
+    decision about today.
+    """
+    today_d = datetime.date.today()
+    rows = db_query(
+        "SELECT p.project_id AS id, p.title, p.next_step, p.last_session_at, "
+        "  (SELECT t.task_id FROM tasks t WHERE t.project_id = p.project_id "
+        "     AND t.status NOT IN ('done','completed','cancelled','deleted') "
+        "     AND COALESCE(t.starred,0) = 0 ORDER BY t.created_at LIMIT 1) AS task_id, "
+        "  (SELECT t.title FROM tasks t WHERE t.project_id = p.project_id "
+        "     AND t.status NOT IN ('done','completed','cancelled','deleted') "
+        "     AND COALESCE(t.starred,0) = 0 ORDER BY t.created_at LIMIT 1) AS task_title "
+        "FROM projects p WHERE p.status = 'active' "
+        "ORDER BY COALESCE(p.last_session_at, p.created_at) DESC LIMIT 5"
+    ) or []
+    for r in rows:
+        r["quiet_days"] = None
+        stamp = (r.get("last_session_at") or "")[:10]
+        if stamp:
+            try:
+                r["quiet_days"] = (today_d - datetime.date.fromisoformat(stamp)).days
+            except ValueError:
+                pass
+
+    last_summary, last_when = "", ""
+    try:
+        row = db_query(
+            "SELECT summary, created_at FROM session_summaries "
+            "ORDER BY created_at DESC LIMIT 1")
+        if row:
+            last_summary = clip(row[0].get("summary") or "", 260)
+            last_when = _fmt_relative_time(row[0].get("created_at") or "")
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        request, "partials/today_pick_focus.html",
+        {"projects": rows, "last_summary": last_summary, "last_when": last_when},
+    )
+
+
+@router.get("/api/partial/today/whats-new", response_class=HTMLResponse)
+async def today_whats_new(request: Request):
+    """News and Library arrivals, side by side.
+
+    Three lines each and no more. This answers "is there anything worth going
+    to look at" — it is not a place to read from, and making it longer would
+    turn Today back into the thing the reordering was meant to stop it being.
+    """
+    news = db_query(
+        "SELECT label, item_count FROM news_threads "
+        "WHERE COALESCE(last_seen, first_seen) >= date('now','-1 day') "
+        "AND COALESCE(item_count,0) > 1 "
+        "ORDER BY item_count DESC LIMIT 3"
+    ) or []
+    papers = db_query(
+        "SELECT title, journal, feed_name FROM new_publications "
+        "WHERE discovered_at >= date('now','-1 day') "
+        "ORDER BY COALESCE(relevance,0) DESC, discovered_at DESC LIMIT 3"
+    ) or []
+    news_new = db_scalar(
+        "SELECT COUNT(*) FROM news_threads "
+        "WHERE COALESCE(last_seen, first_seen) >= date('now','-1 day')", default=0) or 0
+    lib_new = db_scalar(
+        "SELECT COUNT(*) FROM new_publications "
+        "WHERE discovered_at >= date('now','-1 day')", default=0) or 0
+    for r in papers:
+        r["title"] = clip(r.get("title") or "", 88)
+    return templates.TemplateResponse(
+        request, "partials/today_whats_new.html",
+        {"news": news, "papers": papers, "news_new": news_new, "lib_new": lib_new},
+    )
+
 
 @router.get("/api/partial/today/reading", response_class=HTMLResponse)
 async def today_reading(request: Request):

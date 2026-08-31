@@ -25,8 +25,16 @@
     {#- A real <h2>, not a styled <div>: this is the section heading for the
       panel and the page had no outline entry for it. -#}
   <h2 class="sec-label u-mb-2">
-    <span>Connects to</span>
-    <span class="tail">· {{ matches|length }} across your work</span>
+    {#- NAME THE SUBJECT. the researcher, 2026-08-31: "the 'connects to' section, it is
+        not clear to what it relates." It was not clear because the heading
+        never said — the route has always passed `seed_title` (the most
+        recently touched project, which is what the matches are drawn from) and
+        the heading simply ignored it. A list of connections with no stated
+        subject is a list of unrelated links. -#}
+    <span>Connects to
+      {%- if seed_title %} <em class="conn-seed">{{ seed_title }}</em>{% endif %}</span>
+    <span class="tail">· {{ matches|length }} across your work
+      {%- if seed_title %} · your most recently touched project{% endif %}</span>
   </h2>
 
   {% for m in matches %}

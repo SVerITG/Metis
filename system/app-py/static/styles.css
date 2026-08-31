@@ -1237,6 +1237,116 @@ a.board-item-title:hover { color: var(--m-accent); }
 .seg--past { margin-left: var(--m-space-4); opacity: .72; }
 .seg--past:hover { opacity: 1; }
 
+/* ── RETOUCH · the triage icons dim EVERYWHERE, not only on News ────────
+   The dimming rule was written as `.ov-item .acts > .act`, so it applied on
+   the News overview and nowhere else. The Library's New tab draws the same
+   five icons on thirty rows and got none of it — a hundred and fifty glyphs at
+   full strength, which is what makes that surface read as controls with some
+   papers between them rather than papers you can act on.
+
+   `*:hover > .acts > .act` is the general form: any hovered element whose
+   child is an .acts row. It needs no row class, so it cannot fall out of step
+   with the markup the way the scoped version did. */
+.acts > .act,
+.acts > .tri-tags { opacity: .25; transition: opacity .12s ease; }
+*:hover > .acts > .act,
+*:hover > .acts > .tri-tags,
+.acts:focus-within > .act,
+.acts:focus-within > .tri-tags { opacity: 1; }
+.acts > .badge { opacity: 1; }
+@media (hover: none) { .acts > .act, .acts > .tri-tags { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .acts > .act { transition: none; } }
+
+/* ── RETOUCH · a headline is not underlined until you reach for it ──────
+   `.ov-link` carried a permanent 1px bottom border as its "this is a link"
+   tell. On a list of thirty running stories that is thirty ruled lines, and
+   the page reads as ruled paper rather than as headlines. With 1D the ROW
+   already announces itself under the cursor, so the underline can wait until
+   then and the resting state stays quiet. */
+.ov-link { border-bottom-color: transparent; }
+.ov-item:hover .ov-link,
+.ov-link:hover,
+.ov-link:focus-visible { border-bottom-color: var(--m-accent); }
+
+/* ── The morning brief, folded ─────────────────────────────────────────
+   ~900 words was taking about 60% of the first screen of the surface whose
+   job is to let a day be set up at a glance. The first paragraph stays open —
+   it is the part that earns the space — and the rest is one click away. */
+/* The lede is always visible; only the rest collapses. */
+.brief-lede {
+  display: block; line-height: 1.7; color: var(--m-ink);
+  white-space: pre-wrap; max-width: var(--m-prose-max);
+}
+.brief-more {
+  display: flex; align-items: baseline; gap: 10px; margin-top: 10px;
+  background: none; border: 0; padding: 0; cursor: pointer; width: 100%;
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--m-accent);
+}
+.brief-words { color: var(--m-muted); margin-left: auto; }
+.brief-more:hover { text-decoration: underline; }
+.brief-more:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
+.brief-body { line-height: 1.7; color: var(--m-ink); white-space: pre-wrap; }
+
+/* The subject a connection list is drawn FROM. Italic serif inside a mono
+   heading, so it reads as a name rather than as more label. */
+.conn-seed { font-family: var(--m-display); font-style: italic; font-size: 13px;
+  color: var(--m-ink); text-transform: none; letter-spacing: 0; }
+
+/* ── "What changed": News and Library, the same shape twice ────────────
+   Both panels identical on purpose, so the eye compares them instead of
+   learning each. Three lines each — a glance that says whether to go and look,
+   not a place to read from. */
+.wn-card { padding: 14px 16px 12px; }
+.wn-card-head { display: flex; align-items: baseline; gap: 12px;
+  padding-bottom: 10px; border-bottom: 1px solid var(--m-rule-soft); }
+.wn-count { display: inline-flex; align-items: baseline; gap: 6px;
+  margin-left: auto; text-decoration: none; }
+.wn-unit { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--m-muted); }
+.wn-list { list-style: none; margin: 10px 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 8px; }
+.wn-list li { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wn-item { font-family: var(--m-display); font-size: 13.5px; color: var(--m-ink);
+  line-height: 1.35; text-decoration: none; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+.wn-meta { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.08em;
+  color: var(--m-muted); }
+.wn-empty { margin: 12px 0 0; font-family: var(--m-display); font-style: italic;
+  font-size: 13px; color: var(--m-muted); }
+
+/* ── "Where you left off", folded into what needs you today ────────────
+   Closed by default: the summary line carries the fact, the body carries the
+   detail, and opening it is a choice rather than a scroll you have to make. */
+.needs-you { display: flex; flex-direction: column; gap: var(--m-space-3); }
+.pick { border-top: 1px solid var(--m-rule-soft); padding-top: var(--m-space-2); }
+.pick-sum {
+  list-style: none; cursor: pointer; display: flex; align-items: baseline;
+  gap: 10px; padding: 4px 0;
+}
+.pick-sum::-webkit-details-marker { display: none; }
+.pick-lead {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--m-muted);
+}
+.pick-sum::before {
+  content: "\25B8"; color: var(--m-muted); font-size: 10px; line-height: 1;
+}
+.pick[open] .pick-sum::before { content: "\25BE"; }
+.pick-when { font-family: var(--m-mono); font-size: 9.5px; color: var(--m-muted); }
+.pick-hint {
+  margin-left: auto; font-family: var(--m-mono); font-size: 9px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--m-accent);
+}
+.pick-sum:hover .pick-hint { text-decoration: underline; }
+.pick-sum:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
+.pick-body { padding-top: var(--m-space-2); }
+.pick-note {
+  font-family: var(--m-display); font-size: 13px; color: var(--m-muted);
+  line-height: 1.6; margin: 0 0 var(--m-space-2); max-width: var(--m-prose-max);
+}
+.pick-list { list-style: none; margin: 0; padding: 0; }
+
 /* ── Today: finishing, and what is deliberately not on the cards ───────── */
 .focus-also {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 14px;

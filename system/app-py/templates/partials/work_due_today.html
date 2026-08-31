@@ -1,11 +1,16 @@
 {% if overdue or due_today %}
 <div class="u-mb-6" id="work-due-today">
+  {#- `bare` on Today, where this sits UNDER a shared heading with the starred
+      cards. Two headings over two panels answering one question is what the
+      merge exists to remove. On Work it keeps its own. -#}
+  {% if not bare %}
   <h2 class="sec-label u-mb-3">
     <span>Due Today</span>
     {% if overdue %}
     <span class="stat is-urgent">{{ overdue|length }} overdue</span>
     {% endif %}
   </h2>
+  {% endif %}
   <div class="panel">
     {#- ONE ROW ANATOMY (see .mrow in styles.css). State left in a fixed slot,
         title, quiet meta, actions right — the same four slots as News, Library

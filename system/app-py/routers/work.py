@@ -59,17 +59,25 @@ async def work_meta(request: Request):
     tasks = db_scalar("SELECT COUNT(*) FROM tasks WHERE status NOT IN ('done','cancelled')", default=0) or 0
     paused = db_scalar("SELECT COUNT(*) FROM projects WHERE status='incubating'", default=0) or 0
 
-    # "What changed since I last looked", the same strip every other surface
-    # uses. Work is where new tasks arrive from Claude and from capture, so a
-    # count that only ever grows is exactly the number that stops being useful.
-    strip = ""
+    # ── "What changed" comes from the SHARED mechanism, not a second one ──
+    # The strip that rendered "53 TASKS · FIRST VISIT — NOTHING MARKED SEEN YET"
+    # is gone: it printed the same number the figures below already print, once
+    # with a direction and once without. But the answer it carried should not
+    # be gone with it, and a bespoke opened-minus-closed query here would be a
+    # SECOND way of answering a question ui.whats_new already answers for News,
+    # Library and the reading stack. Two mechanisms is how the surfaces drifted
+    # apart in the first place.
+    #
+    # So: same helper, different presentation. The number lands inside the
+    # figure instead of trailing after it.
+    delta = 0
     try:
         import ui
-        from main import templates as _t
         wn = ui.whats_new("work", "tasks", "created_at",
                           where="status NOT IN ('done','cancelled','deleted')")
-        strip = _t.get_template("partials/_whatsnew.html").module.whatsnew(
-            wn, "tasks", ".page-meta")
+        # On a first visit `newer` is the whole table, and "+53 since you looked"
+        # would be a lie about a number that has always been there.
+        delta = 0 if wn.get("first_visit") else int(wn.get("newer") or 0)
     except Exception as exc:
         log.warning("work meta: whats_new unavailable: %s", exc)
 
@@ -78,20 +86,12 @@ async def work_meta(request: Request):
     overdue = db_scalar(
         "SELECT COUNT(*) FROM tasks WHERE status NOT IN ('done','completed','cancelled','deleted') "
         "AND COALESCE(due_date,'') != '' AND due_date < date('now')", default=0) or 0
-    # Net change over seven days: what arrived minus what was closed. A count
-    # that only ever grows tells you nothing about whether you are keeping up.
-    opened = db_scalar(
-        "SELECT COUNT(*) FROM tasks WHERE created_at >= date('now','-7 days')", default=0) or 0
-    closed = db_scalar(
-        "SELECT COUNT(*) FROM tasks WHERE status IN ('done','completed') "
-        "AND COALESCE(updated_at, created_at) >= date('now','-7 days')", default=0) or 0
-
     return templates.TemplateResponse(
         request,
         "partials/work_meta.html",
         {"projects": projects, "projects_total": projects_total,
-         "tasks": tasks, "overdue": overdue, "delta": opened - closed,
-         "strip": strip},
+         "tasks": tasks, "overdue": overdue, "delta": delta,
+        },
     )
 
 
@@ -223,7 +223,7 @@ async def work_tasks(request: Request, status: str = "open"):
 
 
 @router.get("/api/partial/work/due-today", response_class=HTMLResponse)
-async def work_due_today(request: Request):
+async def work_due_today(request: Request, bare: int = 0):
     today = str(datetime.date.today())
     rows = db_query(
         "SELECT t.task_id as id, t.title, t.status, t.due_date, "
@@ -243,7 +243,7 @@ async def work_due_today(request: Request):
     return templates.TemplateResponse(
         request,
         "partials/work_due_today.html",
-        {"overdue": overdue, "due_today": due_today, "today": today},
+        {"overdue": overdue, "due_today": due_today, "today": today, "bare": bool(bare)},
     )
 
 

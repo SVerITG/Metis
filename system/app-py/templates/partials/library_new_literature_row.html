@@ -70,7 +70,14 @@
         the top of the list, so the tooltip now says when a row is tied at the
         ceiling rather than letting the reader infer an order that isn't there.
         Fixing the saturation itself is a scorer change, not a display one. -#}
-    {% if item.relevance and item.relevance > 0 %}
+    {#- SHOWN ONLY WHEN IT DISCRIMINATES. The scorer saturates at 0.90 and 41
+        items sit exactly there, so the default relevance-sorted view printed
+        "0.90" on every visible row — a ranking figure that ranks nothing, next
+        to papers on phenomenology and school nursing. Until the scorer is
+        fixed, a number that cannot separate two rows is not shown on either;
+        the tooltip on the tie is no substitute for not claiming a precision
+        the ranking does not have. -#}
+    {% if item.relevance and 0 < item.relevance < 0.9 %}
     <span class="u-mono nl-score tnum u-ml-auto"
           title="Closeness to your own corpus, 0–1. Computed locally against your library — not a citation count or an impact score.{% if item.relevance >= 0.9 %} This is the top of the scale; items tied here are ordered by date.{% endif %}">
       {{ '%.2f' | format(item.relevance) }}

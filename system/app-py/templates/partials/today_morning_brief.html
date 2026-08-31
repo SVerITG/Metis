@@ -64,6 +64,19 @@
   </h2>
 
   {# Collapsible body — collapsed by default once read #}
+  {#- THE LEDE, always visible. A collapsed brief used to show its header and
+      nothing else, which tells the reader only that a brief exists. One
+      paragraph is enough to decide whether to open the rest, and it is the
+      paragraph the writer put first for exactly that reason. -#}
+  {% if brief %}
+  <p class="brief-lede ed">{{ brief.split("\n\n")[0] }}</p>
+  {% if collapsed %}
+  <button type="button" class="brief-more" onclick="toggleBrief()">
+    read the rest <span class="brief-words">{{ brief.split() | length }} words</span>
+  </button>
+  {% endif %}
+  {% endif %}
+
   <div id="morning-brief-body" style="display:{{ 'none' if collapsed else 'block' }};margin-top:16px;">
   {% if pending %}
     {# Brief isn't written yet — it's generating in the background. Show a calm
@@ -107,7 +120,16 @@
   {% elif brief %}
     {# Reading measure comes from the shared token (in ch, so it tracks the type
        scale) rather than a fixed 760px that ignored the ≥1920px size bump. #}
-    <div class="ed prose-measure" style="line-height:1.7;color:var(--m-ink);white-space:pre-wrap;">{{ brief }}</div>
+    {#- The brief's REST. The first paragraph lives outside the collapsible
+        body (see below) so a read brief still shows its opening line instead
+        of an empty panel.
+
+        There was already a collapse here — `toggleBrief()` hides
+        #morning-brief-body when a brief is marked read. A second fold was
+        added inside it on 2026-08-31 without noticing, and the two together
+        rendered nothing at all: the outer one hid the inner one, lede and all.
+        One mechanism, and it now hides the right half. -#}
+    <div class="ed prose-measure brief-body">{{ brief.split("\n\n", 1)[1] if "\n\n" in brief else "" }}</div>
     {% if sources %}
     <div class="u-rule-t" style="margin-top:var(--m-space-5);padding-top:16px;">
       <div class="u-label u-mb-3">SOURCES FROM THIS BRIEF</div>

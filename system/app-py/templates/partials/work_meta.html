@@ -23,8 +23,8 @@
     <span class="num-lead">{{ tasks }}</span>
     <span class="wm-label">open tasks</span>
     {%- if delta %}
-    <span class="stat {{ 'is-good' if delta < 0 else 'is-quiet' }}" title="Change since you last looked">
-      {{ '+' if delta > 0 else '' }}{{ delta }} this week</span>
+    <span class="stat is-info" title="Arrived since you last marked this surface seen">
+      +{{ delta }} new</span>
     {%- endif %}
   </a>
 
@@ -37,5 +37,4 @@
   </a>
   {% endif %}
 
-  {% if strip %}<span class="wm-strip">{{ strip | safe }}</span>{% endif %}
 </div>
