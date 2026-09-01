@@ -26,9 +26,17 @@
         <span class="mrow-title">{{ task.title or 'Untitled task' }}</span>
         {% if task.project %}<span class="mrow-meta">{{ task.project }}</span>{% endif %}
       </span>
-      <span class="mrow-acts">
+      <span class="mrow-acts acts">
         <button type="button" class="todo-check" title="Mark done"
                 onclick="workTaskDone('{{ task.id }}', this)"></button>
+        {#- REMOVING A THING WAS ONLY POSSIBLE ON WORK. the researcher, 2026-09-01: "how
+            to easily add or delete tasks/things to do." A row you can finish
+            but not withdraw forces the wrong verb on anything entered by
+            mistake — you mark it done, and it counts as work you did. -#}
+        <button type="button" class="act" title="Remove this task"
+                hx-post="/api/task/{{ task.id }}/drop?bare={{ 1 if bare else 0 }}"
+                hx-target="#work-due-today" hx-swap="outerHTML"
+                hx-confirm="Remove “{{ task.title|default('this task') }}”?">&#215;</button>
       </span>
     </div>
     {% endfor %}
@@ -39,9 +47,17 @@
         <span class="mrow-title">{{ task.title or 'Untitled task' }}</span>
         {% if task.project %}<span class="mrow-meta">{{ task.project }}</span>{% endif %}
       </span>
-      <span class="mrow-acts">
+      <span class="mrow-acts acts">
         <button type="button" class="todo-check" title="Mark done"
                 onclick="workTaskDone('{{ task.id }}', this)"></button>
+        {#- REMOVING A THING WAS ONLY POSSIBLE ON WORK. the researcher, 2026-09-01: "how
+            to easily add or delete tasks/things to do." A row you can finish
+            but not withdraw forces the wrong verb on anything entered by
+            mistake — you mark it done, and it counts as work you did. -#}
+        <button type="button" class="act" title="Remove this task"
+                hx-post="/api/task/{{ task.id }}/drop?bare={{ 1 if bare else 0 }}"
+                hx-target="#work-due-today" hx-swap="outerHTML"
+                hx-confirm="Remove “{{ task.title|default('this task') }}”?">&#215;</button>
       </span>
     </div>
     {% endfor %}

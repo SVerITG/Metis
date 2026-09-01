@@ -14,13 +14,20 @@ WHY
     Nothing is deleted. Every baseline is a TIMESTAMP, so the items remain and
     remain searchable; they simply stop presenting themselves as undecided.
 
-FOUR BASELINES, because four different mechanisms answer "what is new" and
+FIVE BASELINES, because five different mechanisms answer "what is new" and
 they are not interchangeable:
 
     library_review_state   the Library's catch-up window — what the New tab hides
     ui_seen                per-surface "since you last looked" deltas
     literature_metadata    per-item read flag + read_at date
     new_publications       per-item read_at date
+    news_briefs.seen_at    the News surface's own per-brief seen flag
+
+    The fifth was MISSING until 2026-09-01, and its absence is the whole reason
+    "a lot of new items" survived a run of this tool: the News rail counts its
+    unseen rows directly from `news_briefs.seen_at` and consults none of the
+    other four. A reset that clears four of five counters looks exactly like a
+    reset that worked, right up until the surface is opened.
 
 USAGE
     python3 tools/start_fresh.py            # show what would change
@@ -51,7 +58,12 @@ def main() -> int:
     args = ap.parse_args()
 
     db = Path(args.db)
-    con = sqlite3.connect(db)
+    # A 30s busy timeout, because the dashboard is a live writer on this file.
+    # Without it the first run of this script died on "database is locked" —
+    # AFTER taking its backup and BEFORE writing a single baseline, which is the
+    # worst place for a maintenance script to stop.
+    con = sqlite3.connect(db, timeout=30)
+    con.execute("PRAGMA busy_timeout = 30000")
     c = con.cursor()
     now = datetime.datetime.now().isoformat(timespec="seconds")
 
@@ -66,13 +78,14 @@ def main() -> int:
     pubs_unread = n("SELECT COUNT(*) FROM new_publications WHERE COALESCE(read_at,'')=''")
     lit_unread = n("SELECT COUNT(*) FROM literature_metadata WHERE COALESCE(is_read,0)=0")
     briefs = n("SELECT COUNT(*) FROM news_briefs")
+    briefs_unseen = n("SELECT COUNT(*) FROM news_briefs WHERE seen_at IS NULL")
     seen_now = {k: v for k, v in c.execute("SELECT key, seen_at FROM ui_seen")} \
         if n("SELECT COUNT(*) FROM ui_seen") >= 0 else {}
 
     print(f"library catch-up window   : {pubs_untriaged} publications still asking to be triaged")
     print(f"new_publications.read_at  : {pubs_unread} without a read date")
     print(f"literature_metadata       : {lit_unread} unread")
-    print(f"news_briefs               : {briefs} stored")
+    print(f"news_briefs               : {briefs} stored · {briefs_unseen} still unseen")
     print(f"\nui_seen baselines:")
     for k in SEEN_KEYS:
         print(f"  {k:22s} {seen_now.get(k) or '— never marked —'}")
@@ -107,12 +120,19 @@ def main() -> int:
                     "WHERE COALESCE(is_read,0)=0", (now,)).rowcount
     pub = c.execute("UPDATE new_publications SET read_at=? "
                     "WHERE COALESCE(read_at,'')=''", (now,)).rowcount
+
+    # 4 · the News rail's own flag. Articles are excluded for the same reason
+    #     `/api/news/mark-seen` excludes them: a paper is not a news brief and
+    #     must never be silently marked as read news.
+    brf = c.execute("UPDATE news_briefs SET seen_at=? WHERE seen_at IS NULL "
+                    "AND COALESCE(source_type,'news') != 'article'", (now,)).rowcount
     con.commit()
 
     print(f"  library catch-up set    · {pubs_untriaged} publications no longer asking")
     print(f"  {len(SEEN_KEYS)} surface baselines set")
     print(f"  {lit} literature records marked read")
     print(f"  {pub} publications given a read date")
+    print(f"  {brf} news briefs marked seen")
     print(f"\nAll of it keyed to {now}. From here, 'new' means arrived after that.")
     return 0
 

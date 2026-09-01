@@ -965,6 +965,23 @@ def _scan_feeds(feeds, max_per_feed: int = 10) -> dict:
                     added += 1
             except Exception as e:
                 errors.append(f"{name}: {type(e).__name__}: {str(e)[:120]}")
+            # COMMIT PER FEED, not once at the end. Found 2026-09-01: this scan
+            # ran inside ONE write transaction spanning every feed — and the
+            # network fetch for feed N+1 happens inside it. In WAL mode a write
+            # transaction holds an exclusive lock, so for the whole run — over
+            # five minutes, measured — no other writer anywhere in Metis could
+            # commit: not the dashboard, not the MCP servers. Marking a task
+            # done returned 500; the boot scan starts 25s after the dashboard
+            # does, so this was the state of the system for minutes after every
+            # single restart.
+            #
+            # One commit per feed bounds the lock to one feed's inserts. It also
+            # means a scan that dies halfway keeps what it already found, which
+            # the all-or-nothing version did not.
+            try:
+                conn.commit()
+            except Exception as _commit_exc:
+                errors.append(f"{name}: commit failed: {str(_commit_exc)[:80]}")
         conn.commit()
     # Reported separately on purpose: "12 news, 30 papers" is the honest picture.
     # They are different things and they went to different places.

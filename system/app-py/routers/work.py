@@ -843,7 +843,14 @@ async def task_mark_done(task_id: str):
 
 
 @router.post("/api/task/{task_id}/delete")
-async def task_delete(task_id: int):
+async def task_delete(task_id: str):
+    # `int`, until 2026-09-01. Task ids are strings —
+    # "71e4cde6-clean-up-stray-placeholders-and-fix-cross-references" — so
+    # FastAPI rejected every real one with a 422 before the handler ran, and
+    # the three callers (two in app.js, one in the project detail panel) all
+    # ignore the status and redraw regardless. Deleting a task therefore did
+    # nothing, silently, everywhere, and the row reappeared on the next load.
+    # Every sibling route in this file was already `str`; this one was not.
     try:
         db_execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
         return JSONResponse({"status": "ok", "task_id": task_id})
@@ -854,6 +861,51 @@ async def task_delete(task_id: int):
 # ---------------------------------------------------------------------------
 # Task create (quick-add per project)
 # ---------------------------------------------------------------------------
+
+
+@router.post("/api/task/quick", response_class=HTMLResponse)
+async def task_quick_add(request: Request, bare: int = 0):
+    """Create a task due today and hand back the refreshed Due-Today strip.
+
+    the researcher, 2026-09-01: "its not clear to me how to add projects or tasks ... nor
+    how to easily add or delete tasks/things to do."
+
+    Everything he named already existed — on Work. `+ Project`, `+ add task` per
+    project card, a delete on every task row. What did not exist anywhere was a
+    way to do any of it from TODAY, which is the surface he starts on: its only
+    answer was the sentence "Star a task in Work, or give one a date", an
+    instruction to go somewhere else rather than a control.
+
+    This is separate from `/api/task/create` on purpose. That one is the
+    per-project quick-add and answers with the PROJECT's task list, which is the
+    wrong fragment for Today and needs a project_id Today does not have. A task
+    added here belongs to no project and is due today, so it appears in the strip
+    it was typed into — the shortest possible loop between wanting a thing
+    written down and seeing it written down.
+    """
+    form = await request.form()
+    title = (form.get("title") or "").strip()
+    if title:
+        db_execute(
+            "INSERT INTO tasks (task_id, project_id, title, status, category, due_date, "
+            "priority, created_at, updated_at) VALUES (?, '', ?, 'open', 'general', ?, "
+            "'medium', ?, ?)",
+            (uuid.uuid4().hex[:12], title, str(datetime.date.today()),
+             datetime.datetime.now().isoformat(), datetime.datetime.now().isoformat()),
+        )
+    return await work_due_today(request, bare=bare)
+
+
+@router.post("/api/task/{task_id}/drop", response_class=HTMLResponse)
+async def task_drop(request: Request, task_id: str, bare: int = 0):
+    """Delete a task and redraw the Due-Today strip.
+
+    `/api/task/{id}/delete` already does the deleting, but it answers with JSON
+    and is typed `int` while task_ids are 12-char hex — so it could not be
+    called from a list that has to redraw itself, and would 422 on a real id.
+    """
+    db_execute("DELETE FROM tasks WHERE task_id = ?", (task_id,))
+    return await work_due_today(request, bare=bare)
 
 
 @router.post("/api/task/create", response_class=HTMLResponse)
