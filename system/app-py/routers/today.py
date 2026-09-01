@@ -595,8 +595,17 @@ async def render_news_rail(request: Request, category: str = "",
 
 
 @router.get("/api/partial/today/news-rail", response_class=HTMLResponse)
-async def today_news_rail(request: Request, category: str = "", period: str = "week"):
-    """News surface — topic slipcases with per-topic Haiku summaries."""
+async def today_news_rail(
+    request: Request, category: str = "", period: str = "week", folded: int = 0
+):
+    """News surface — topic slipcases with per-topic Haiku summaries.
+
+    `folded=1` is Today asking for the rail without its own heading, because
+    there the <summary> of the fold IS the heading and two would read as a
+    stutter. The counts it would have shown are sent back out-of-band into
+    that summary instead, so the closed fold still states what is inside it.
+    The News surface passes nothing and keeps its heading.
+    """
     import sqlite3 as _sq3
 
     if period not in ("week", "month"):
@@ -731,6 +740,7 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
             "all_topics": all_topics,
             "active_topic": category,
             "period": period,
+            "folded": bool(folded),
             "last_updated": last_updated,
             "total_topics": total_topics,
             "show_all_topics": show_all_topics,
@@ -747,7 +757,7 @@ async def today_news_rail(request: Request, category: str = "", period: str = "w
 
 
 @router.post("/api/news/mark-seen", response_class=HTMLResponse)
-async def news_mark_seen(request: Request, period: str = "week"):
+async def news_mark_seen(request: Request, period: str = "week", folded: int = 0):
     """Mark everything currently in view as seen, then redraw the rail."""
     import datetime as _dt
 
@@ -756,7 +766,7 @@ async def news_mark_seen(request: Request, period: str = "week"):
         "AND COALESCE(source_type,'news') != 'article'",
         (_dt.datetime.now().isoformat(timespec="seconds"),),
     )
-    return await today_news_rail(request, category="", period=period)
+    return await today_news_rail(request, category="", period=period, folded=folded)
 
 
 # ---------------------------------------------------------------------------
@@ -5114,7 +5124,20 @@ def _news_card(r: dict) -> dict:
         # This is a FLOOR, not the ranking. The tab already sorts by relevance
         # and caps at 60, so the floor's only job is to keep obvious noise out
         # while leaving enough for the sort to be worth doing.
-        "close": rel >= 0.70,
+        #
+        # 0.68 after the anchor set was broadened on 2026-08-31. the researcher: "It can be
+        # sleeping sickness, NTDs, elimination of diseases, epidemiology,
+        # digitalisation of health care. There are many topics close to my work."
+        # Ten specific prose anchors were added for those, and the floor came
+        # down to let them through: 675 of 2,939 news items, against 358 at 0.70.
+        #
+        # ACCEPTED LIMIT, stated rather than tuned around: "COVID rates
+        # increasing across the United States" scores 0.685 and gets in. It IS
+        # topically a disease-surveillance story; what makes it irrelevant to him
+        # is the setting — US, COVID — and an embedding treats geography and
+        # pathogen as minor next to the dominant topic. No threshold separates
+        # those two, which is why the sort matters more than the cut.
+        "close": rel >= 0.68,
         "signal": (r.get("signal_strength") or "").strip(),
         "when": _age_label(r["created_at"]) if r.get("created_at") else "",
         # Raw timestamp for correct chronological sorting (the "when" label is not

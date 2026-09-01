@@ -22,6 +22,16 @@
 {{ tag_datalist(all_tags or []) }}
 <div class="today-news-rail u-mb-6" id="news-surface">
 
+  {#- THE HEADING, OR THE FOLD'S SUMMARY — never both. On Today this rail lives
+      inside <details class="dispatch-fold">, whose <summary> already says
+      "Dispatch"; rendering the h2 as well printed the word twice, one line
+      apart. So when folded, the counts are sent out-of-band into the summary
+      (`#dispatch-counts`) — the closed fold then states how much is inside it,
+      which is the difference between folded and hidden — and the seen-controls
+      move inside the body. They stay OUT of the <summary> deliberately: a
+      button inside a summary is a keyboard trap, because activating it also
+      toggles the disclosure. -#}
+  {% if not folded %}
   <!-- ── Section header ── -->
   <h2 class="sec-label u-mb-3">
     <span>Dispatch</span>
@@ -40,6 +50,21 @@
       </span>
     </span>
   </h2>
+  {% else %}
+  <span id="dispatch-counts" hx-swap-oob="innerHTML">
+    {% if unseen_count %}{{ unseen_count }} new · {% endif %}
+    {% if slipcases %}{{ slipcases | sum(attribute='count') }} signals{% endif %}
+    {%- if last_updated %} · updated {{ last_updated }}{% endif %}
+  </span>
+  {% if unseen_count %}
+  <div class="u-row u-mb-2" style="justify-content:flex-end;">
+    <button class="btn btn--sec u-mono"
+            hx-post="/api/news/mark-seen?period={{ period }}&folded=1"
+            hx-target="#news-surface" hx-swap="outerHTML"
+            style="letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);">MARK ALL SEEN</button>
+  </div>
+  {% endif %}
+  {% endif %}
 
   <div class="panel panel--clip">
 

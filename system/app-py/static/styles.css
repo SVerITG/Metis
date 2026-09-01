@@ -1347,6 +1347,48 @@ a.board-item-title:hover { color: var(--m-accent); }
 }
 .pick-list { list-style: none; margin: 0; padding: 0; }
 
+/* ── Dispatch, folded and capped ────────────────────────────────────────
+   The full news file was the longest thing on Today and sat in the middle, so
+   everything after it lived below a screen of news. It is the tail of the page
+   now, closed by default — and CAPPED when open: a fold that expands without a
+   limit just moves the problem to the second click. It scrolls inside itself,
+   so opening it costs a fixed amount of page. */
+/* Why THIS project — a sentence, set as one. See connections_strip.html. */
+.conn-why {
+  font-size: 11px; color: var(--m-muted); margin: 0 0 var(--m-space-2);
+  font-style: italic;
+}
+
+/* One quiet line, not a card — see today_focus_memory.html. */
+.focus-none {
+  font-size: 13px; color: var(--m-muted); padding: var(--m-space-2) 0;
+  border-top: 1px solid var(--m-rule-soft); display: flex; gap: 10px;
+  align-items: baseline; flex-wrap: wrap;
+}
+.focus-none .u-link { margin-left: auto; font-size: 11px; }
+
+.dispatch-sum {
+  list-style: none; cursor: pointer; display: flex; align-items: baseline;
+  gap: 12px; padding: 10px 0; border-top: 1px solid var(--m-rule);
+}
+.dispatch-sum::-webkit-details-marker { display: none; }
+.dispatch-sum::before { content: "\25B8"; color: var(--m-muted); font-size: 10px; }
+.dispatch-fold[open] .dispatch-sum::before { content: "\25BE"; }
+.dispatch-lead {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--m-muted);
+}
+.dispatch-hint {
+  margin-left: auto; font-family: var(--m-mono); font-size: 9px;
+  letter-spacing: 0.1em; color: var(--m-muted); opacity: .8;
+}
+.dispatch-sum:hover .dispatch-lead { color: var(--m-ink); }
+.dispatch-sum:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
+.dispatch-body {
+  max-height: 60vh; overflow-y: auto; padding-top: var(--m-space-2);
+  border-top: 1px solid var(--m-rule-soft);
+}
+
 /* ── Today: finishing, and what is deliberately not on the cards ───────── */
 .focus-also {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 14px;

@@ -91,7 +91,7 @@
     {% endcall %}
 -#}
 {% macro zone(title, key, tail=None, open=False) %}
-<section class="ui-zone" data-zone-key="{{ key }}" style="margin-bottom:var(--m-gap,18px);">
+<section class="ui-zone" data-zone-key="{{ key }}" style="margin-bottom:var(--m-gap);">
   <button type="button" class="ui-zone-head"
           aria-expanded="{{ 'true' if open else 'false' }}"
           aria-controls="zone-{{ key }}">

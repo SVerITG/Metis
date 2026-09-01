@@ -33,9 +33,15 @@
         subject is a list of unrelated links. -#}
     <span>Connects to
       {%- if seed_title %} <em class="conn-seed">{{ seed_title }}</em>{% endif %}</span>
-    <span class="tail">· {{ matches|length }} across your work
-      {%- if seed_title %} · your most recently touched project{% endif %}</span>
+    {#- The tail carries the COUNT only. The explanation of why this project was
+        chosen used to sit here too; in the Reflection rail that made a
+        four-line heading out of a label. It is a sentence, so it is set as one,
+        below. -#}
+    <span class="tail">· {{ matches|length }}</span>
   </h2>
+  {% if seed_title %}
+  <p class="conn-why">Drawn from your most recently touched project.</p>
+  {% endif %}
 
   {% for m in matches %}
     {% set meta = source_meta.get(m.source, ("Memory", "var(--m-muted)", "/thinking")) %}

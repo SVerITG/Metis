@@ -163,19 +163,6 @@
        hx-trigger="load delay:160ms"
        hx-swap="outerHTML"></div>
 
-  <!-- ===== 9. Dispatch — News ===== -->
-  <div hx-get="/api/partial/today/news-rail"
-       hx-trigger="load delay:600ms"
-       hx-swap="outerHTML">
-    {{ sec_label("Dispatch", tail="LOADING NEWS") }}
-    <div class="panel" style="padding:var(--m-space-5) var(--m-space-5);min-height:120px;">
-      <div class="skeleton skeleton-bar w-40 u-mb-4"></div>
-      <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:12px;"></div>
-      <div class="skeleton skeleton-bar w-80 u-mb-2" style="height:12px;"></div>
-      <div class="skeleton skeleton-bar w-60" style="height:12px;"></div>
-    </div>
-  </div>
-
   {#- WHAT CHANGED, in one glance, both sources side by side. This replaces a
       pair that showed "new literature" beside a learning nudge — two unrelated
       things next to each other because they happened to be short. News and
@@ -189,6 +176,9 @@
        hx-trigger="load delay:220ms"
        hx-swap="innerHTML"></div>
 
+  {#- "New in your field" sits beside "What changed in your field yesterday":
+      one is what ARRIVED, the other is what MOVED. Same question of two
+      timeframes, so they belong next to each other. -#}
   <div class="today-pair u-mb-6">
     <div hx-get="/api/partial/today/literature-discovery"
          hx-trigger="load delay:250ms"
@@ -223,19 +213,18 @@
     </div>
   </div>
 
-  <!-- ===== 4. Cross-pollination — connections for what you're working on ===== -->
-  <!-- The README's core promise, greeting you daily on the cockpit. Seeds from
-       the most recently touched project; endpoint lives in routers/connections.py
-       (not today.py) so it stays isolated. -->
-  {#- The heading is emitted by partials/connections_strip.html, because it
-      carries a live count ("· 5 across your work") that only the partial knows.
-      It is a real <h2 class="sec-label"> there, so the page outline is intact. -#}
-  <div class="u-mb-6"
-       hx-get="/api/partial/connections/today"
-       hx-trigger="load delay:150ms"
-       hx-swap="innerHTML">
-    {{ skeleton_box(size="sm") }}
-  </div>
+  {#- CROSS-POLLINATION MOVED TO REFLECTION. the researcher, 2026-08-31: "'Connects to'
+      can be put in reflection or another surface but not on the today surface
+      because now it is not clear what it is supposed to be or what it relates
+      to."
+
+      Naming its seed project was not enough. On Today it sits among things that
+      each answer a question you are asking at nine in the morning — what needs
+      me, what should I read, what changed — and "here are five things that
+      resemble a project you touched" is not one of those. It is a thinking
+      tool, and Reflection is where thinking happens.
+
+      The endpoint is unchanged and still mounted there. -#}
 
   {#- The resume card lived here as an open paragraph describing yesterday,
       which you could read and do nothing with. It is now folded INTO "what
@@ -272,6 +261,37 @@
          hx-trigger="intersect once"
          hx-swap="outerHTML"></div>
   {% endcall %}
+
+  {#- DISPATCH, LAST AND FOLDED. the researcher, 2026-08-31: "put the dispatch at the
+      bottom and collapsed, also taking less space when open."
+
+      It was the longest thing on the surface and sat in the middle of it, so
+      everything after it was below a screen of news. Today's job is to let a
+      day be set up; the full news file is what the News surface is for. This
+      is the tail of the page now, closed, and the summary line carries the
+      count so nothing is hidden — only folded. `.dispatch-fold` caps the open
+      height and scrolls inside itself, so opening it costs a fixed amount of
+      page rather than an unbounded one. -#}
+  <details class="dispatch-fold u-mb-6">
+    <summary class="dispatch-sum">
+      <span class="dispatch-lead">Dispatch</span>
+      <span id="dispatch-counts" class="dispatch-hint">the full news file</span>
+    </summary>
+    <div class="dispatch-body">
+
+  <div hx-get="/api/partial/today/news-rail?folded=1"
+       hx-trigger="load delay:600ms"
+       hx-swap="outerHTML">
+    {{ sec_label("Dispatch", tail="LOADING NEWS") }}
+    <div class="panel" style="padding:var(--m-space-5) var(--m-space-5);min-height:120px;">
+      <div class="skeleton skeleton-bar w-40 u-mb-4"></div>
+      <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:12px;"></div>
+      <div class="skeleton skeleton-bar w-80 u-mb-2" style="height:12px;"></div>
+      <div class="skeleton skeleton-bar w-60" style="height:12px;"></div>
+    </div>
+  </div>
+    </div>
+  </details>
 
   <!-- ===== 10. System health footer ===== -->
   <div hx-get="/api/partial/today/system-health"
