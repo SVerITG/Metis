@@ -182,3 +182,74 @@ def test_search_pluralises_correctly():
            / "knowledge_unified_search.html").read_text(encoding="utf-8")
     assert "ENTRYIES" not in tpl
     assert "ENTRY{%" not in tpl, "the concatenation bug is back"
+
+
+# ── 5. a fold must SAY which way it is folded ────────────────────────────────
+#
+# Written 2026-09-01, after "why does the morning briefing not collapse". It
+# always collapsed — `#morning-brief-body` went to `display:none` on every
+# click. What was missing was any evidence on screen that it had: the button
+# was rendered only when the server said `collapsed`, and its label came from
+# that same server-side flag, so it still read "read the rest" while the rest
+# was open. A control that keeps its opening label while open is indis-
+# tinguishable from a control that does nothing.
+#
+# These are static assertions on purpose. The behaviour is driven from a browser
+# in scratch checks, but the two properties that regressed are visible in the
+# source and cheap to hold here.
+
+BRIEF_TPL = ROOT / "system" / "app-py" / "templates" / "partials" / "today_morning_brief.html"
+
+
+def test_the_brief_toggle_is_rendered_in_both_states():
+    """It used to live inside `{% if collapsed %}`, so the only obvious way to
+    re-close an opened brief was a chevron most readers never find."""
+    # Jinja COMMENTS first. The template explains this very defect in prose,
+    # quoting `{% if collapsed %}` — and an earlier draft of this test read that
+    # sentence as markup and failed on the fix it was written to protect. A
+    # scanner that cannot tell a template from a description of one will keep
+    # finding things that are not there.
+    src = re.sub(r"{#.*?#}", "", BRIEF_TPL.read_text(encoding="utf-8"), flags=re.S)
+    m = re.search(r'<button[^>]*class="brief-more"', src)
+    assert m, "the brief's disclosure button is gone"
+    # Walk back to the nearest enclosing Jinja conditional and make sure it is
+    # not keyed on `collapsed`.
+    before = src[:m.start()]
+    opens = re.findall(r"{%-?\s*(if|endif)([^%]*)%}", before)
+    depth, guards = 0, []
+    for kind, expr in reversed(opens):
+        if kind == "endif":
+            depth += 1
+        else:
+            if depth == 0:
+                guards.append(expr)
+            else:
+                depth -= 1
+    assert not any("collapsed" in g for g in guards), (
+        f"the button is still gated on `collapsed` ({guards}) — it will be "
+        "missing exactly when the reader wants to close the brief again"
+    )
+
+
+def test_toggling_the_brief_rewrites_its_own_label():
+    """The label, the aria state and the lede clamp must all move with the fold.
+    Any one of them left behind is a fold that looks stuck."""
+    src = re.sub(r"{#.*?#}", "", BRIEF_TPL.read_text(encoding="utf-8"), flags=re.S)
+    fn = src[src.index("function toggleBrief()"):]
+    fn = fn[: fn.index("\n}") + 2]
+    for needle, why in [
+        ("aria-expanded", "screen readers are told the old state"),
+        ("show less", "the button keeps its opening label while open"),
+        ("is-clamped", "the lede stays full height, so closing changes little"),
+    ]:
+        assert needle in fn, f"toggleBrief() does not touch {needle!r} — {why}"
+
+
+def test_the_clamp_actually_clamps():
+    """`-webkit-line-clamp` needs its two companions or it does nothing at all."""
+    css = (ROOT / "system" / "app-py" / "static" / "styles.css").read_text(encoding="utf-8")
+    m = re.search(r"\.brief-lede\.is-clamped\s*\{([^}]*)\}", css)
+    assert m, ".brief-lede.is-clamped is not defined"
+    body = m.group(1)
+    for prop in ("-webkit-box", "-webkit-box-orient", "-webkit-line-clamp", "overflow"):
+        assert prop in body, f"clamp is inert without {prop}"

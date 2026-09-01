@@ -909,10 +909,19 @@ def job_inbox_process() -> None:
         # reported "0 new items — ok" forever while writing nothing at all.
         # Borrow the owner's schema rather than restating it.
         import sqlite3 as _sqlite3
+        from contextlib import closing as _closing
         from db import get_db_path
         from inbox_watcher import ensure_inbox_table
-        with _sqlite3.connect(str(get_db_path())) as _con:
-            ensure_inbox_table(_con)
+        # `with sqlite3.connect(...) as con:` is a TRANSACTION context manager,
+        # not a connection one — it commits or rolls back and leaves the
+        # connection open. This job runs on a schedule, so each fire leaked a
+        # connection; the dashboard was holding nine open handles on the
+        # database. `closing()` is what actually closes it. Same 30s busy
+        # timeout as every other writer, since the MCP servers write here too.
+        with _closing(_sqlite3.connect(str(get_db_path()), timeout=30)) as _con:
+            _con.execute("PRAGMA busy_timeout=30000")
+            with _con:
+                ensure_inbox_table(_con)
 
         # Load already-logged paths to avoid double-processing
         logged_paths = set()

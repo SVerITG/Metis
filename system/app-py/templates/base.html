@@ -517,6 +517,9 @@ Run my full Metis update. Using the metis-rc tools: scan the latest news and any
           {'icon': '✦', 'label': 'With Claude Desktop', 'sub': 'full update on your subscription · no API tokens',
            'href': 'claude://claude.ai/new?q=' ~ (claude_global_prompt | trim | urlencode), 'primary': true,
            'title': 'Open Claude Desktop and run a full Metis update — no API key needed.'},
+          {'icon': '↻', 'label': 'With the API', 'sub': 'boards · news summaries · your brief · uses API credit',
+           'onclick': 'runMetisUpdateApi()',
+           'title': 'Run the whole update here: local scan first, then the boards, the news summaries and your brief via the API.'},
           {'icon': '↻', 'label': 'Local scan', 'sub': 'news feeds · library · Zotero · projects · free',
            'onclick': 'runMetisUpdate()',
            'title': 'Scan your feeds, library and projects locally — no internet search, no tokens.'}

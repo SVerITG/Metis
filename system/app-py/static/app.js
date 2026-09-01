@@ -2097,6 +2097,109 @@ async function runMetisUpdate() {
   }
 }
 
+/* ── The full update, the paid path ─────────────────────────────────────────
+   The top bar offered exactly two ways to update everything: Claude Desktop,
+   and a local scan. Every SECTION menu had a third — "with the API" — but the
+   global one did not, so the one control that says "update everything" was the
+   one control that could not use the API. This is that path.
+
+   It is a chain of the endpoints the section menus already call, run from here
+   rather than server-side on purpose: each step is minutes long (three web
+   searches, a batch of summaries, a written brief), and a single blocking POST
+   would show a frozen button for all of it and lose everything if one step
+   timed out. Run this way, each step reports as it lands and a failure costs
+   only its own step.
+
+   Order matters. The local scan runs FIRST so the summaries and the brief are
+   written about today's items rather than yesterday's. */
+async function runMetisUpdateApi() {
+  const btn  = document.getElementById('update-btn');
+  const spin = document.getElementById('update-spinner');
+  const say  = (t) => { if (spin) { spin.textContent = t; spin.style.display = 'inline'; } };
+  if (btn) { btn.style.display = 'none'; }
+
+  // Ask once, before spending anything. See /api/update/api-available.
+  try {
+    const probe = await fetch('/api/update/api-available');
+    const pd = await probe.json();
+    if (!pd.has_key) {
+      if (btn) { btn.style.display = ''; }
+      if (spin) { spin.style.display = 'none'; }
+      showToast('No API key is configured, so there is nothing for this path to ' +
+                'use. Pick “With Claude Desktop” — it runs the same update on ' +
+                'your subscription — or add a key in Metis → Settings.', 9000);
+      return;
+    }
+  } catch (_) { /* if the probe itself fails, go ahead and let the steps report */ }
+
+  const done = [], failed = [];
+  const step = async (name, fn) => {
+    say(name.toUpperCase() + '…');
+    try {
+      const r = await fn();
+      if (r === false) { failed.push(name); } else { done.push(typeof r === 'string' ? r : name); }
+    } catch (e) {
+      failed.push(name);
+    }
+  };
+
+  // 1 · Feeds, library, Zotero, projects — free, and it has to precede the rest.
+  await step('feeds & library', async () => {
+    const res = await fetch('/api/scan/content', { method: 'POST' });
+    const d = await res.json();
+    const bits = [
+      d.news_added   ? d.news_added + ' news'    : null,
+      d.papers_added ? d.papers_added + ' papers' : null,
+      d.zotero_added ? d.zotero_added + ' Zotero' : null,
+    ].filter(Boolean);
+    return bits.length ? bits.join(' · ') : 'feeds & library';
+  });
+
+  // 2 · The three boards, each a live web search.
+  for (const board of ['outbreaks', 'events', 'funding']) {
+    await step(board, async () => {
+      const res = await fetch('/api/today/board/' + board + '/refresh', { method: 'POST' });
+      if (!res.ok) return false;
+      const host = document.getElementById('board-' + board);
+      if (host) { host.outerHTML = await res.text(); }
+      return board;
+    });
+  }
+
+  // 3 · News summaries. An empty topic list means "all of them".
+  await step('news summaries', async () => {
+    const res = await fetch('/api/news/summarize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topics: [], period: 'week' }),
+    });
+    const d = await res.json().catch(() => ({}));
+    // The one failure worth naming rather than counting.
+    if (d && d.ok === false && /api key/i.test(d.error || '')) { return false; }
+    return res.ok ? 'news summaries' : false;
+  });
+
+  // 4 · The brief, last, so it is written about everything above it.
+  await step('daily brief', async () => {
+    const res = await fetch('/api/morning-brief/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'period=daily',
+    });
+    if (!res.ok) return false;
+    const host = document.getElementById('morning-brief');
+    if (host) { host.outerHTML = await res.text(); }
+    return 'daily brief';
+  });
+
+  if (btn)  { btn.style.display = ''; }
+  if (spin) { spin.style.display = 'none'; spin.textContent = 'UPDATING…'; }
+
+  let msg = done.length ? 'Updated: ' + done.join(' · ') : 'Nothing updated.';
+  if (failed.length) { msg += ' — could not reach: ' + failed.join(', ') + '.'; }
+  showToast(msg, 8000);
+}
+
 async function syncZoteroLibrary() {
   const btn = document.getElementById('zotero-sync-btn');
   if (btn) { btn.textContent = 'SYNCING…'; btn.disabled = true; }

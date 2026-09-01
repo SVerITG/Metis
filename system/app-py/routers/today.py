@@ -967,6 +967,18 @@ def _haiku_news_summary(topic: str, titles: list[str], period: str, api_key: str
     return ""
 
 
+@router.get("/api/update/api-available")
+async def api_update_available():
+    """Is the paid update path usable at all? Asked BEFORE the chain starts.
+
+    Without this the full update discovers a missing key on step 5, having
+    already spent four steps and several minutes getting there. One cheap
+    question first is the difference between "no API key is configured" and
+    "four things failed and here is the last error".
+    """
+    return JSONResponse({"ok": True, "has_key": bool(_get_api_key())})
+
+
 @router.post("/api/news/summarize")
 async def api_news_summarize(request: Request):
     """Generate Haiku summaries for selected topics. Body: {topics: [...], period: 'week'|'month'}"""
@@ -4717,23 +4729,40 @@ async def today_whats_new(request: Request):
     to look at" — it is not a place to read from, and making it longer would
     turn Today back into the thing the reordering was meant to stop it being.
     """
+    # UNSEEN, not merely RECENT. the researcher, 2026-09-01: "there are still a lot of
+    # 'new' items, we would reset ... and start from zero today."
+    #
+    # These counts were `discovered_at >= date('now','-1 day')` — a rolling
+    # 24-hour window that consults no read state at all. Marking everything read
+    # therefore could not move them, and no reset ever would: the panel was
+    # reporting what the SCANNER did, under a heading that promises what is left
+    # for the READER. Twenty-four hours is still the window — "yesterday" is in
+    # the heading — but a row inside it only counts while it is unseen.
     news = db_query(
-        "SELECT label, item_count FROM news_threads "
-        "WHERE COALESCE(last_seen, first_seen) >= date('now','-1 day') "
-        "AND COALESCE(item_count,0) > 1 "
+        "SELECT t.label, COUNT(*) AS item_count FROM news_threads t "
+        "JOIN news_thread_items ti ON ti.thread_id = t.thread_id "
+        "JOIN news_briefs b ON b.brief_id = ti.brief_ref "
+        "WHERE COALESCE(t.last_seen, t.first_seen) >= date('now','-1 day') "
+        "AND b.seen_at IS NULL AND COALESCE(b.source_type,'news') != 'article' "
+        "GROUP BY t.thread_id HAVING COUNT(*) > 1 "
         "ORDER BY item_count DESC LIMIT 3"
     ) or []
     papers = db_query(
         "SELECT title, journal, feed_name FROM new_publications "
-        "WHERE discovered_at >= date('now','-1 day') "
+        "WHERE discovered_at >= date('now','-1 day') AND COALESCE(read_at,'') = '' "
         "ORDER BY COALESCE(relevance,0) DESC, discovered_at DESC LIMIT 3"
     ) or []
     news_new = db_scalar(
-        "SELECT COUNT(*) FROM news_threads "
-        "WHERE COALESCE(last_seen, first_seen) >= date('now','-1 day')", default=0) or 0
+        "SELECT COUNT(DISTINCT t.thread_id) FROM news_threads t "
+        "JOIN news_thread_items ti ON ti.thread_id = t.thread_id "
+        "JOIN news_briefs b ON b.brief_id = ti.brief_ref "
+        "WHERE COALESCE(t.last_seen, t.first_seen) >= date('now','-1 day') "
+        "AND b.seen_at IS NULL AND COALESCE(b.source_type,'news') != 'article'",
+        default=0) or 0
     lib_new = db_scalar(
         "SELECT COUNT(*) FROM new_publications "
-        "WHERE discovered_at >= date('now','-1 day')", default=0) or 0
+        "WHERE discovered_at >= date('now','-1 day') AND COALESCE(read_at,'') = ''",
+        default=0) or 0
     for r in papers:
         r["title"] = clip(r.get("title") or "", 88)
     return templates.TemplateResponse(

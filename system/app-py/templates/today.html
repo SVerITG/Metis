@@ -134,6 +134,31 @@
       One heading over both, and both render `bare` so neither brings its own.
       ═══════════════════════════════════════════════════════════════════════ -#}
   {{ sec_label("What needs you today", tail="DUE · STARRED") }}
+  {#- ADDING SOMETHING, FROM THE SURFACE YOU START ON. the researcher, 2026-09-01: "its
+      not clear to me how to add projects or tasks ... nor how to easily add or
+      delete tasks/things to do."
+
+      Every one of those controls existed — on Work. `+ Project` in the Active
+      Projects header, `+ add task` on each project card, a delete on each row.
+      What Today offered instead was the sentence "Star a task in Work, or give
+      one a date", which is directions, not a control. This is the control: one
+      line, always here whether or not anything is due, dated today so what you
+      type appears in the list directly beneath it.
+
+      It sits ABOVE the strip rather than below it because it is also the empty
+      state — when nothing is due, this line is what remains, and an empty
+      surface that still offers the one useful verb beats an empty surface that
+      explains where the verb lives. -#}
+  <form class="quick-add u-mb-3"
+        hx-post="/api/task/quick?bare=1"
+        hx-target="#work-due-today" hx-swap="outerHTML"
+        hx-on::after-request="this.reset()">
+    <span class="quick-add-mark" aria-hidden="true">+</span>
+    <input class="quick-add-input" type="text" name="title" required
+           placeholder="Something to do today…" aria-label="Add a task due today">
+    <button class="quick-add-go" type="submit">add</button>
+    <a class="quick-add-alt u-link hov-ink" href="/work">or plan it in Work &rarr;</a>
+  </form>
   <div class="needs-you u-mb-6">
     <div hx-get="/api/partial/work/due-today?bare=1"
          hx-trigger="load delay:80ms"

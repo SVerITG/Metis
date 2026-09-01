@@ -68,13 +68,30 @@
       nothing else, which tells the reader only that a brief exists. One
       paragraph is enough to decide whether to open the rest, and it is the
       paragraph the writer put first for exactly that reason. -#}
+  {#- TWO THINGS THAT MADE COLLAPSING LOOK BROKEN. the researcher, 2026-09-01: "why does
+      the morning briefing not collapse, when trying to do so, after having been
+      read." It always did collapse — the body's display went to none on every
+      click. What failed was the evidence that it had.
+
+      One: the button was rendered only `{% if collapsed %}` and its label came
+      from that SERVER-side flag, so it still read "read the rest" while the
+      rest was on screen. Pressing a control labelled "read the rest" and
+      watching the rest vanish reads as a broken control, not a working one. It
+      is now always present and says what it will do next.
+
+      Two: the lede is the brief's first paragraph, and here that was 135 of its
+      311 words — 272px of a 399px collapsed panel. Collapsing removed 741px and
+      left a screen still two-thirds full of prose that looks like the brief. So
+      the lede is clamped to three lines while closed, and only then does the
+      fold visibly change anything. -#}
   {% if brief %}
-  <p class="brief-lede ed">{{ brief.split("\n\n")[0] }}</p>
-  {% if collapsed %}
-  <button type="button" class="brief-more" onclick="toggleBrief()">
-    read the rest <span class="brief-words">{{ brief.split() | length }} words</span>
+  <p class="brief-lede ed{% if collapsed %} is-clamped{% endif %}" id="brief-lede">{{ brief.split("\n\n")[0] }}</p>
+  <button type="button" class="brief-more" id="brief-more" onclick="toggleBrief()"
+          aria-controls="morning-brief-body" aria-expanded="{{ 'false' if collapsed else 'true' }}"
+          data-words="{{ brief.split() | length }}">
+    {% if collapsed %}read the rest <span class="brief-words">{{ brief.split() | length }} words</span>
+    {%- else %}show less{% endif %}
   </button>
-  {% endif %}
   {% endif %}
 
   <div id="morning-brief-body" style="display:{{ 'none' if collapsed else 'block' }};margin-top:16px;">
@@ -229,8 +246,22 @@ Produce my Metis {% if period == 'weekly' %}weekly{% elif period == 'catchup' %}
 <script>
 function toggleBrief(){
   var b=document.getElementById('morning-brief-body'), c=document.getElementById('brief-chevron');
-  if(!b) return; var open=b.style.display!=='none';
-  b.style.display=open?'none':'block';
-  if(c) c.style.transform=open?'rotate(0deg)':'rotate(90deg)';
+  if(!b) return;
+  var open = b.style.display !== 'none';   // state BEFORE this click
+  b.style.display = open ? 'none' : 'block';
+  if(c) c.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+
+  // Everything that tells the reader which state they are now in. Without this
+  // the control kept its opening label while open, so collapsing looked like a
+  // no-op — the change happened below the fold and nothing on screen agreed.
+  var lede = document.getElementById('brief-lede');
+  if(lede) lede.classList.toggle('is-clamped', open);
+  var more = document.getElementById('brief-more');
+  if(more){
+    more.setAttribute('aria-expanded', open ? 'false' : 'true');
+    more.innerHTML = open
+      ? 'read the rest <span class="brief-words">' + (more.dataset.words || '') + ' words</span>'
+      : 'show less';
+  }
 }
 </script>

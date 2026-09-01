@@ -88,8 +88,13 @@ def _classify(suffix: str) -> str:
 
 
 def _log_to_db(db_path: str, filepath: Path) -> None:
+    con = None
     try:
-        con = sqlite3.connect(db_path)
+        # No timeout and no close-on-error, until 2026-09-01: any exception
+        # between here and the `con.close()` below abandoned an open connection
+        # mid-DDL, and `ensure_inbox_table` is DDL — which takes the write lock.
+        con = sqlite3.connect(db_path, timeout=30)
+        con.execute("PRAGMA busy_timeout=30000")
         ensure_inbox_table(con)
         now = datetime.datetime.now().isoformat()
         file_type = _classify(filepath.suffix)
@@ -102,9 +107,14 @@ def _log_to_db(db_path: str, filepath: Path) -> None:
         con.commit()
         if cur.rowcount:
             log.info("[inbox_watcher] logged %s (%s)", filepath.name, file_type)
-        con.close()
     except Exception as e:
         log.warning("[inbox_watcher] DB write failed: %s", e)
+    finally:
+        if con is not None:
+            try:
+                con.close()
+            except Exception:
+                pass
 
 
 def _poll_inbox(inbox_dir: Path, db_path: str, interval: int = 5) -> None:
