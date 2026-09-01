@@ -95,9 +95,14 @@
     </div>
   </div>
   {% else %}
+  {#- The directions are gone. This line used to say "Star a task in Work, or
+      give one a date, and it lands here", which was the only guidance on offer
+      when Today had no way to add anything. There is a box directly above this
+      one now, so pointing at another surface is worse than saying nothing —
+      it sends the reader away from the control they were looking for. -#}
   <p class="focus-none u-mb-4">
-    Nothing pinned. Star a task in Work, or give one a date, and it lands here.
-    <a class="u-link hov-ink" href="/work">Plan in Work →</a>
+    Nothing pinned yet.
+    <a class="u-link hov-ink" href="/work">See everything in Work →</a>
   </p>
   {% endif %}
   {#- Everything that is NOT a commitment, counted rather than listed. This is
