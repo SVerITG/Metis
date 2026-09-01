@@ -11,12 +11,18 @@
 
     Both panels are the same shape on purpose, so the eye compares them rather
     than learning each. -#}
-{{ sec_label("What changed in your field", tail="SINCE YESTERDAY") }}
+{#- THE PANELS CARRY THE NAMES, not a heading above them. the researcher, 2026-08-31:
+    "'What changed in your field yesterday' and 'New in your fiedl'." — two
+    names for the two windows he had just asked to sit side by side, which is
+    also the reading that makes them non-redundant: one is what MOVED out
+    there, the other is what ARRIVED here. A single heading over both had to
+    fall back to labelling each panel by its source, so neither said what its
+    number meant. -#}
 <div class="today-pair u-mb-6">
 
   <div class="panel wn-card">
     <div class="wn-card-head">
-      <span class="m-sec">News</span>
+      <span class="m-sec">What changed in your field yesterday</span>
       <a class="wn-count" href="/news" title="Open the News surface">
         <span class="num-lead tnum">{{ news_new }}</span>
         <span class="wn-unit">new</span>
@@ -36,7 +42,7 @@
 
   <div class="panel wn-card">
     <div class="wn-card-head">
-      <span class="m-sec">Library</span>
+      <span class="m-sec">New in your field</span>
       <a class="wn-count" href="/knowledge" title="Open the Library">
         <span class="num-lead tnum">{{ lib_new }}</span>
         <span class="wn-unit">new</span>

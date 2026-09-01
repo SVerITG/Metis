@@ -79,19 +79,27 @@
       tasks. It was the FILLER POOL running dry, described as an empty world.
       Now the sentence is accurate: nothing you committed to is left. -#}
   {% if not bare %}{{ sec_label("Today's focus", tail=(done_today|string) + " DONE TODAY" if done_today else "NOTHING PINNED") }}{% endif %}
+  {#- TWO EMPTY STATES, ONE OF WHICH IS NOT AN ACHIEVEMENT. Sizing them the same
+      put a large centred card reading "Nothing is pinned for today" directly
+      under a task that WAS due — the screen said, in effect, here is your work,
+      and below it, you have no work. "That's your day" earns the panel: it is
+      the reward for finishing. Nothing pinned earns one quiet line, because the
+      thing to look at is above it. -#}
+  {% if done_today %}
   <div class="panel u-mb-6 panel--lg focus-done">
-    {% if done_today %}
     <p class="focus-done-line">That's your day.</p>
     <p class="focus-done-sub">{{ done_today }} finished · nothing else you committed to is left.</p>
-    {% else %}
-    <p class="focus-done-line">Nothing is pinned for today.</p>
-    <p class="focus-done-sub">Star a task in Work, or give one a date, and it will appear here.</p>
-    {% endif %}
     <div class="u-mt-3">
       <a class="u-label u-label--accent hov-ink" href="/work"
          style="letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;">Plan in Work →</a>
     </div>
   </div>
+  {% else %}
+  <p class="focus-none u-mb-4">
+    Nothing pinned. Star a task in Work, or give one a date, and it lands here.
+    <a class="u-link hov-ink" href="/work">Plan in Work →</a>
+  </p>
+  {% endif %}
   {#- Everything that is NOT a commitment, counted rather than listed. This is
       what makes finishing possible: the 53 open tasks and 224 due reviews are
       still one click away, they simply stop presenting themselves as today's

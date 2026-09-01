@@ -5,7 +5,11 @@
 {{ tag_datalist(all_tags or []) }}
 <div class="u-mb-6" id="today-lit-discovery">
   <h2 class="sec-label u-mb-3">
-    <span>New in your field</span>
+    {#- Renamed 2026-08-31: this said "New in your field" while the Library
+        window on the same screen said "New in your field · 98 new". One name,
+        two panels, opposite answers. This one is not an inventory of what is
+        new — it is the FEED SCAN and its controls, so it is named for that. -#}
+    <span>Publication scan</span>
     <span class="tail" style="display:inline-flex;align-items:center;gap:var(--m-space-2);">
       {% if total > 0 %}
       {# A delta you can act on today, with the total demoted beside it. #}

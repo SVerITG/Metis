@@ -104,6 +104,21 @@
         </div>
       </div>
 
+      {#- CROSS-POLLINATION, MOVED HERE FROM TODAY on 2026-08-31. On Today it sat
+          among panels that each answer a question you are asking at nine in the
+          morning, and "here are five things that resemble a project you touched"
+          is not one of them — which is why it read as unclear no matter what the
+          heading said. It is a thinking tool. This is where thinking happens,
+          beside the marginalia and the brainstorms, where "what connects to
+          what" is the question being asked. The partial names its seed project
+          in its own heading. -#}
+      <div class="u-mb-4" style="margin-top:var(--m-space-5);"
+           hx-get="/api/partial/connections/today"
+           hx-trigger="load delay:200ms"
+           hx-swap="innerHTML">
+        <div class="panel panel-pad skeleton panel--md"></div>
+      </div>
+
       {{ sec_label("What you're brainstorming about", style="margin-top:24px;margin-bottom:12px;") }}
       <div hx-get="/api/partial/thinking/brainstorm"
            hx-trigger="load"
