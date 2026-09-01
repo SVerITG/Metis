@@ -131,6 +131,13 @@ LIT_WINDOWS: dict[str, tuple[int | None, str]] = {
     "week":    (7,    "This week"),
     "catchup": (None, "Since I caught up"),
     "month":   (30,   "This month"),
+    # EVERYTHING, added 2026-09-01. The longest window here was 30 days, and
+    # `catchup` collapses to nothing the moment a catch-up is recorded — so a
+    # paper older than a month was unreachable from this surface by any
+    # combination of filters. That is 2,286 papers that were never triaged and
+    # could not be. Reported as: a paper cited in a July brief, plainly close to
+    # the work, with nowhere to press "add to library" or "not interested".
+    "all":     (0,    "Everything"),
 }
 
 # Item-kind groups. the researcher asked for articles and books to be listed separately;
@@ -174,6 +181,12 @@ def _window_cutoff(window: str) -> tuple[str, str]:
         d = last[:10]
         span = (datetime.date.today() - datetime.date.fromisoformat(d)).days
         return d, f"Since {d} ({span} day{'s' if span != 1 else ''} ago)"
+    if days == 0:
+        # No lower bound. Deliberately distinct from `None`, which means "ask
+        # the catch-up state"; and it cannot be written as `days or 7`, because
+        # that is exactly the falsy-zero trap that would silently make
+        # "Everything" mean "this week".
+        return "", label
     cutoff = (datetime.date.today() - datetime.timedelta(days=days or 7)).isoformat()
     return cutoff, label
 
@@ -229,11 +242,24 @@ def _fetch(
         where.append(f"{_EFF_DATE} >= ?")
         params.append(cutoff)
 
-    # 'unread' means not yet acted on — neither added nor dismissed. `read_at`
-    # predates this surface and conflated both, so it is treated as either.
+    # THREE STATES, and the middle one was missing. `read_at` and the
+    # added/dismissed pair answer different questions: whether you have SEEN a
+    # paper, and whether you have DECIDED about it. The comment here always
+    # claimed 'unread' meant "not yet acted on", but the SQL below it also
+    # required an empty `read_at` — so a bulk "mark everything read" (which is a
+    # statement about attention) silently retired 2,286 papers that had never
+    # been triaged (which is a statement about intent), with no filter left that
+    # could find them.
+    #
+    #   unread     — not decided AND not seen. The quiet default; what a
+    #                "start fresh" is supposed to empty.
+    #   undecided  — not decided, seen or not. The backlog, reachable on demand.
+    #   added      — what you kept.
     if show == "unread":
         where.append("COALESCE(added_at,'') = '' AND COALESCE(dismissed_at,'') = '' "
                      "AND COALESCE(read_at,'') = ''")
+    elif show == "undecided":
+        where.append("COALESCE(added_at,'') = '' AND COALESCE(dismissed_at,'') = ''")
     elif show == "added":
         where.append("COALESCE(added_at,'') != ''")
 

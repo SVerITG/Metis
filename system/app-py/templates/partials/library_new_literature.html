@@ -92,12 +92,13 @@
       actually steer with. Everything else folds behind one line that says what
       is currently set, so a filtered view never hides the fact that it is
       filtered. -#}
-  <details class="lit-filters"{% if q or active_kind or window != 'week' %} open{% endif %}>
+  <details class="lit-filters"{% if q or active_kind or window != 'week' or (show and show != 'unread') %} open{% endif %}>
     <summary>
       <span class="fv-chev">▸</span>
       <span class="u-label">Filters</span>
       <span class="lit-filters-state">
         {{ windows[window][1] if windows[window] is defined else window }}
+        {%- if show and show != 'unread' %} · {{ 'Not yet decided' if show == 'undecided' else 'Added' }}{% endif %}
         {%- if active_kind %} · {{ kind_groups[active_kind][0] if kind_groups[active_kind] is defined else active_kind }}{% endif %}
         {%- if q %} · “{{ q | clip(30) }}”{% endif %}
       </span>
@@ -120,6 +121,24 @@
                        font-size:11px;letter-spacing:0.06em;cursor:pointer;">
           {{ kval[0] }}
         </button>
+      {% endfor %}
+    </div>
+
+    {#- WHAT COUNTS AS STILL-TO-DO. `show` existed but had no control — it could
+        only be changed by editing the URL, which means in practice it was
+        always "unread". That was survivable until a bulk mark-as-read stamped
+        2,286 never-triaged papers, at which point the only reachable view was
+        the empty one. Three states, named for what they mean to a reader
+        rather than for the columns behind them. -#}
+    <div class="news-period" role="group" aria-label="What to show">
+      {% for skey, slabel, stip in [
+           ('unread',    'New to me',       'Not decided and not yet seen — the quiet default.'),
+           ('undecided', 'Not yet decided', 'Everything you have not added or turned down, seen or not.'),
+           ('added',     'Added',           'What you kept.')] %}
+        <button class="news-period-btn" type="button" title="{{ stip }}"
+                aria-pressed="{{ 'true' if skey == show else 'false' }}"
+                hx-get="/api/partial/library/new-literature/list?tab={{ active }}&window={{ window }}&kind={{ active_kind }}&show={{ skey }}&q={{ q | urlencode }}"
+                hx-target="#nl-list" hx-swap="innerHTML">{{ slabel }}</button>
       {% endfor %}
     </div>
 
