@@ -1,7 +1,55 @@
 # Handoff — Metis design work
 
-**Updated 2026-08-31, end of session. Branch `feat/briefing-rotation-news-surface-interests`.**
-**Everything is committed AND pushed to `metis-ph` (HEAD `268106c5`).**
+**Updated 2026-09-01, end of session. Branch `feat/briefing-rotation-news-surface-interests`.**
+**Everything is committed AND pushed to `origin` and `metis-ph` (HEAD `20055719`).**
+
+---
+
+## What the last stretch changed (2026-09-01)
+
+**Today reads top to bottom again.** The Dispatch — the full news file — used to
+sit sixth of eleven sections and was the longest thing on the page, so the
+boards, the memory zone and the health footer all lived below a screen of news.
+It is now the last thing on the surface, closed, and capped at `60vh` when open.
+A fold that expands without a limit only moves the problem to the second click.
+
+**Folded is not hidden.** `GET /api/partial/today/news-rail?folded=1` suppresses
+the rail's own `<h2>` (it would have printed "Dispatch" one line under the
+summary that already says it) and sends the counts back **out-of-band** into
+`#dispatch-counts` in the summary. The closed line therefore reads
+*"DISPATCH · 482 signals · updated 3h ago"*. `mark_seen` carries `folded` through
+so the redraw keeps the right shape. Mark-all-seen deliberately sits **inside**
+the body, never in the `<summary>`: a button in a summary is a keyboard trap,
+because activating it also toggles the disclosure.
+
+**Cross-pollination now lives on Reflection.** Naming its seed project was not
+enough to make it legible on Today — Today's panels each answer a question you
+are asking at nine in the morning, and *"here are five things resembling a
+project you touched"* is not one of them. Same endpoint, mounted in
+`templates/thinking.html` beside the marginalia. Its heading also moved the
+"why this project" clause into a sentence below the label, because in a narrow
+rail that clause wrapped to four lines.
+
+**Two panels had one name and opposite answers.** *"New in your field · 98 new"*
+sat two inches above *"New in your field · Nothing new this week"*. They count
+different things — unread library items against this week's feed scan — so the
+second is now the **Publication scan**. The pair of windows carry the two names
+directly (`What changed in your field yesterday` / `New in your field`) instead
+of one heading above both, which had forced each panel to be labelled by its
+*source* rather than by what its number meant.
+
+**An empty state is not automatically an achievement.** "That's your day" and
+"Nothing is pinned for today" were the same large centred card, so the screen
+showed a task that *was* due and, directly under it, a panel announcing no work.
+Finishing earns the panel; nothing pinned earns one quiet line (`.focus-none`).
+
+Verification: 460 passing · 4 skipped · 47 HTMX swap sites clean ·
+`migrate_inline_styles.py --check` settles at 0.
+
+**Note on running the tools:** pytest and Playwright both live in
+`~/.local/share/metis-mcp/.venv/bin/python`, not in the system `python3`.
+Running `python3 -m pytest` reports *no module named pytest*, which is easy to
+misread as a passing run when it is piped through `tail`.
 
 ---
 
