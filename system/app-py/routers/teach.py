@@ -686,102 +686,86 @@ def _topic_words(topic: str) -> list[str]:
 
 @router.get("/api/partial/teach/gap-analysis", response_class=HTMLResponse)
 async def teach_gap_analysis(request: Request):
-    """For each active course, compare its topic keywords against the library."""
+    """Which of each course's topics the library actually covers.
+
+    READS A CACHED SEMANTIC SCORE, not a keyword match (rewritten 2026-09-02).
+    The keyword version failed in both directions — a one-word topic matched
+    dozens of unrelated papers while a phrased one matched nothing — so its
+    percentage was withdrawn. `tools/score_course_coverage.py` now scores each
+    topic against the 42,468-chunk embedded corpus and writes a band per topic;
+    a page must not wait on an embedding model, so this only reads the table.
+
+    THREE GROUPS, because they need different answers:
+      scored     topics on record and scored — the real coverage picture
+      unscored   an active course whose lessons live outside the repo, so there
+                 is no manifest to take topics from
+      ideas      a course that does not exist yet. Asked for on 2026-09-02:
+                 "topics for courses that are ideas should have their own
+                 section as well." Its topics cannot be extracted from lessons
+                 it has no lessons — but whether the library could SUPPORT
+                 building it is a fair question, and one this panel is the right
+                 place for.
+    """
     courses = db_query(
-        "SELECT id, title, slug, category, total_modules FROM learning_courses "
-        "WHERE status = 'active' ORDER BY title LIMIT 3",
+        "SELECT id, title, slug, category, status, total_modules "
+        "FROM learning_courses WHERE COALESCE(slug,'') != '' "
+        "ORDER BY CASE status WHEN 'active' THEN 0 ELSE 1 END, title",
         default=[],
     ) or []
 
-    # Check if course_topics table is present and seeded
-    topics_table = db_scalar(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='course_topics'",
-        default=None,
-    )
+    has_cov = db_scalar(
+        "SELECT name FROM sqlite_master WHERE type='table' "
+        "AND name='course_topic_coverage'", default=None)
 
-    course_rows = []
+    scored, unscored, ideas = [], [], []
     for c in courses:
-        keywords: list[str] = []
-        if topics_table:
-            kws = db_query(
-                "SELECT keyword FROM course_topics WHERE course_id = ? LIMIT 30",
-                (c.get("id"),),
-                default=[],
-            ) or []
-            keywords = [k["keyword"] for k in kws if k.get("keyword")]
-        # NO title-word fallback (removed 2026-09-02). It made this panel a check
-        # that could not fail. `course_topics` is empty for every course, so every
-        # course fell back to "the words in its own title longer than three
-        # characters" and then asked whether any abstract in the library contained
-        # them. A two-word course title yielded exactly ONE topic, and a longer
-        # one yielded four, of which one was the preposition in the subtitle.
-        # All three courses therefore reported 100% covered / 0% gap —
-        # three identical full bars and three identical sentences, under a heading
-        # that says "gap analysis". Saying "not assessed" is worth more than a
-        # reassuring number, and it is the state that can name its own fix.
-        if not keywords:
-            course_rows.append({
-                "title": c.get("title") or "Untitled course",
-                "category": c.get("category") or "",
-                "assessed": False,
-                "n_lessons": c.get("total_modules") or 0,
-                "covered": [], "gaps": [], "top_gaps": [],
-                "covered_n": 0, "gaps_n": 0, "total": 0,
-                "covered_pct": 0, "gap_pct": 0,
-            })
-            continue
-
-        covered: list[str] = []
-        gaps: list[str] = []
-        for kw in keywords:
-            # MATCH ON THE TOPIC'S CONTENT WORDS, NOT THE LITERAL PHRASE.
-            # A seeded topic is a phrase a lesson author wrote — "Class
-            # imbalance and calibration", "Coalescent intuition". No paper title
-            # contains that string, so `LIKE '%<phrase>%'` returns 0 for almost
-            # every real topic, and this panel would have gone from claiming
-            # 100% coverage to claiming ~0% — equally uninformative, just in the
-            # other direction. A topic counts as covered when every content word
-            # in it appears somewhere in the same record.
-            words = [w for w in _topic_words(kw)][:5]
-            if not words:
-                continue
-            clause = " AND ".join(["(title LIKE ? OR abstract LIKE ?)"] * len(words))
-            params: list[str] = []
-            for w in words:
-                params += [f"%{w}%", f"%{w}%"]
-            n = db_scalar(
-                f"SELECT COUNT(*) FROM literature_metadata WHERE {clause}",
-                tuple(params),
-                default=0,
-            ) or 0
-            if n > 0:
-                covered.append(f"{kw} ({n})")
-            else:
-                gaps.append(kw)
-
-        total = len(covered) + len(gaps)
-        covered_pct = int(round((len(covered) / total) * 100)) if total else 0
-        gap_pct = 100 - covered_pct if total else 0
-
-        course_rows.append({
+        cid = c.get("id")
+        rows = []
+        if has_cov:
+            rows = db_query(
+                "SELECT keyword, score, band, best_doc FROM course_topic_coverage "
+                "WHERE course_id = ? ORDER BY score DESC", (cid,), default=[]) or []
+        n_topics = db_scalar("SELECT COUNT(*) FROM course_topics WHERE course_id = ?",
+                             (cid,), default=0) or 0
+        entry = {
             "title": c.get("title") or "Untitled course",
             "category": c.get("category") or "",
-            "assessed": True,
+            "status": c.get("status") or "",
             "n_lessons": c.get("total_modules") or 0,
-            "covered": covered,
-            "gaps": gaps,
-            "top_gaps": gaps[:3],
-            "covered_n": len(covered),
-            "gaps_n": len(gaps),
+            "n_topics": n_topics,
+        }
+        if (c.get("status") or "") != "active":
+            ideas.append(entry)
+            continue
+        if not rows:
+            unscored.append(entry)
+            continue
+        covered = [r for r in rows if r.get("band") == "covered"]
+        thin    = [r for r in rows if r.get("band") == "thin"]
+        absent  = [r for r in rows if r.get("band") == "absent"]
+        total = len(rows)
+        entry.update({
             "total": total,
-            "covered_pct": covered_pct,
-            "gap_pct": gap_pct,
+            "covered_n": len(covered), "thin_n": len(thin), "absent_n": len(absent),
+            # Percentages for the BAR ONLY — the panel prints counts, never a
+            # coverage percentage. The withdrawn version invited "13% IN LIBRARY"
+            # to be read as a measured proportion of the subject.
+            "pct_covered": round(100 * len(covered) / total) if total else 0,
+            "pct_thin":    round(100 * len(thin) / total) if total else 0,
+            "pct_absent":  round(100 * len(absent) / total) if total else 0,
+            # Name the evidence in both directions: the strongest match tells
+            # you which paper is carrying a topic, and the absent list is the
+            # only part of this panel that is a shopping list.
+            "best": covered[0] if covered else (thin[0] if thin else None),
+            "top_absent": [r.get("keyword") for r in absent[:4]],
         })
+        scored.append(entry)
 
     return templates.TemplateResponse(
         request,
         "partials/teach_gap_analysis.html",
-        {"courses": course_rows},
+        {"scored": scored, "unscored": unscored, "ideas": ideas,
+         "has_cov": bool(has_cov)},
     )
 
 

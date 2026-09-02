@@ -141,24 +141,34 @@
         </div>
       </div>
 
-      {{ sec_label("Where your teaching has gaps", style="margin-top:var(--m-space-5);") }}
-      <div hx-get="/api/partial/teach/gap-analysis"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        <div class="panel panel-pad skeleton" style=";">
-          <p class="u-ed" style="font-size:var(--t-small);margin:0;">Looking for under-covered topics…</p>
-        </div>
-      </div>
+    </div>
+  </div>
 
-      {{ sec_label("Question bank", style="margin-top:var(--m-space-5);") }}
-      <div hx-get="/api/partial/teach/qbank"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        <div class="panel panel-pad skeleton" style=";">
-          <p class="u-ed" style="font-size:var(--t-small);margin:0;">Pulling reusable assessment items…</p>
-        </div>
-      </div>
+  {#- FULL WIDTH, out of the side rail (2026-09-02). The gap analysis used to
+      sit in the 1fr column beside the intake form. When it was a stub that was
+      fine; now it carries a scored three-band breakdown for nine courses and
+      runs about 1,300px, so the form's column ended a third of the way down and
+      the rest of the page was one narrow rail beside dead space.
 
+      A panel's home should follow its weight. This one is now the substantial
+      thing on the surface, so it gets the width — and its own rows breathe
+      instead of wrapping in a half column. -#}
+  {{ sec_label("Where your teaching has gaps", tail="SCORED AGAINST YOUR CORPUS",
+               style="margin-top:var(--m-space-6);") }}
+  <div hx-get="/api/partial/teach/gap-analysis"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="panel panel-pad skeleton">
+      <p class="u-ed" style="font-size:var(--t-small);margin:0;">Reading the archive…</p>
+    </div>
+  </div>
+
+  {{ sec_label("Question bank", style="margin-top:var(--m-space-6);") }}
+  <div hx-get="/api/partial/teach/qbank"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="panel panel-pad skeleton">
+      <p class="u-ed" style="font-size:var(--t-small);margin:0;">Pulling reusable assessment items…</p>
     </div>
   </div>
 </div>

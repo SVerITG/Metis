@@ -38,6 +38,7 @@ import ast
 import contextlib
 import json
 import os
+import re
 import sqlite3
 import sys
 from pathlib import Path
@@ -68,25 +69,58 @@ def _as_list(v) -> list[str]:
     return []
 
 
-def topics_for(slug: str) -> list[str]:
+def topics_for(slug: str) -> tuple[list[str], str]:
+    """(topics, where they came from).
+
+    THREE SOURCES, in order of how much they were authored as topics:
+
+      declared   a `topics` list per lesson. Two courses have full manifests
+                 like this and their topics are real subject topics.
+      titles     the five older manifests carry only
+                 `id/order/section/title/description`. A lesson TITLE is a
+                 topic someone chose deliberately ("Formulating Research
+                 Questions"), so it is a fair second source. `description` is
+                 NOT used: it is prose, and a sentence is not a topic.
+      none       an idea-stage course has an empty manifest. Nothing to
+                 extract, and inventing topics for a course that does not exist
+                 yet would be putting words in the author's mouth — the surface
+                 reports these separately instead.
+    """
     f = ROOT / "knowledge" / "courses" / slug / "lessons.json"
     if not f.is_file():
-        return []
+        return [], "no manifest"
     try:
         d = json.loads(f.read_text(encoding="utf-8"))
     except Exception as exc:
         print(f"  ! {slug}: lessons.json unreadable: {exc}", file=sys.stderr)
-        return []
+        return [], "unreadable"
     lessons = d if isinstance(d, list) else d.get("lessons", [])
-    seen: dict[str, str] = {}
-    for L in lessons:
-        if not isinstance(L, dict):
-            continue
-        for t in _as_list(L.get("topics")):
-            t = " ".join(t.split())
-            if MIN_LEN <= len(t) <= MAX_LEN:
-                seen.setdefault(t.lower(), t)   # first spelling wins
-    return list(seen.values())[:MAX_PER_COURSE]
+    if not lessons:
+        return [], "no lessons yet"
+
+    def collect(pick) -> dict[str, str]:
+        out: dict[str, str] = {}
+        for L in lessons:
+            if not isinstance(L, dict):
+                continue
+            for t in pick(L):
+                t = " ".join(str(t).split())
+                # Strip a leading "Lesson 3 — " / "Ch 0 — " label: the number is
+                # position, not subject.
+                t = re.sub(r"^(lesson|ch|chapter|module|part)\s*\d+\s*[—:\-]\s*",
+                           "", t, flags=re.I)
+                if MIN_LEN <= len(t) <= MAX_LEN:
+                    out.setdefault(t.lower(), t)
+        return out
+
+    declared = collect(lambda L: _as_list(L.get("topics")))
+    if declared:
+        return list(declared.values())[:MAX_PER_COURSE], "declared"
+
+    titled = collect(lambda L: [x for x in (L.get("title"), L.get("section")) if x])
+    if titled:
+        return list(titled.values())[:MAX_PER_COURSE], "lesson titles"
+    return [], "nothing usable"
 
 
 def main() -> int:
@@ -110,17 +144,15 @@ def main() -> int:
             "WHERE COALESCE(slug,'') != '' ORDER BY title").fetchall()
 
         total_written = 0
-        print(f"{'course':44s} {'lessons.json':13s} {'topics':>7s}  action")
+        print(f"{'course':40s} {'status':7s} {'source':14s} {'topics':>6s}  action")
         print("-" * 88)
         for r in rows:
             if args.slug and r["slug"] != args.slug:
                 continue
-            have_file = (ROOT / "knowledge" / "courses" / r["slug"] / "lessons.json").is_file()
-            topics = topics_for(r["slug"])
-            title = (r["title"] or r["slug"])[:44]
+            topics, origin = topics_for(r["slug"])
+            title = (r["title"] or r["slug"])[:40]
             if not topics:
-                print(f"{title:44s} {'yes' if have_file else 'no':13s} {0:>7d}  skip"
-                      f"{'' if have_file else ' (no lessons.json)'}")
+                print(f"{title:40s} {r['status'] or '?':7s} {origin:14s} {0:>6d}  skip")
                 continue
             if args.apply:
                 conn.execute("DELETE FROM course_topics WHERE course_id=?", (r["id"],))
@@ -131,7 +163,7 @@ def main() -> int:
                 action = "written"
             else:
                 action = "would write"
-            print(f"{title:44s} {'yes':13s} {len(topics):>7d}  {action}")
+            print(f"{title:40s} {r['status'] or '?':7s} {origin:14s} {len(topics):>6d}  {action}")
 
         if args.apply:
             conn.commit()
