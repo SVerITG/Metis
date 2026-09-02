@@ -1,7 +1,121 @@
 # Handoff — Metis design work
 
-**Updated 2026-09-01, end of session. Branch `feat/briefing-rotation-news-surface-interests`.**
-**Everything is committed AND pushed to `origin` and `metis-ph` (HEAD `20055719`).**
+**Updated 2026-09-02, end of session. Branch `feat/briefing-rotation-news-surface-interests`.**
+**Everything is committed AND pushed to `origin` and `metis-ph` (HEAD `69763e38`).**
+**Suite: 473 passed, 4 skipped · 47 HTMX swaps clean · MCP smoke test HEALTHY.**
+
+---
+
+## Start here (2026-09-02) — four defects that were invisible by design
+
+Each of these looked like a preference or a mystery and turned out to be a bug.
+They are grouped because they share a shape: **the thing that was broken was the
+evidence, not the mechanism.**
+
+### 1 · Every write in Metis failed for five minutes after each restart
+
+`_scan_feeds` in `metis_mcp/tools/content_scan.py` opened one connection, wrote,
+and committed **once at the end** — with the network fetch for every subsequent
+feed inside that transaction. In WAL mode a write transaction is exclusive, so
+nothing anywhere could commit: not the dashboard, not the MCP servers. The boot
+scan starts 25 s after the dashboard (`main.py::_boot_scan_and_brief`), so this
+was the state of the system for minutes after **every** restart.
+
+Measured with zero HTTP traffic: lock taken at t+40 s, still held at t+300 s,
+every write 500 from t+90 s. After committing per feed: **0 of 14 writes failed**
+over the same window.
+
+**Diagnose this class with `/proc/locks`, not `lsof`.** In WAL mode the write
+lock lives on the `-shm` file:
+
+```bash
+SHM=$(stat -c %i ~/.local/share/metis/metis.sqlite-shm)
+awk -v k=":$SHM" 'index($0,k) && $4=="WRITE" {print $5}' /proc/locks
+```
+
+If that PID is the live dashboard it is a long transaction, **not** a stale
+process — the runbook in the older `project_db_lock_onedrive_wal` memory does not
+apply and killing an MCP process breaks a working session for nothing.
+
+Two connection leaks went with it. **`with sqlite3.connect(...) as conn:` is a
+TRANSACTION context manager** — it commits and leaves the connection open. Use
+`contextlib.closing` when you mean close.
+
+### 2 · Deleting a task never worked, anywhere
+
+`/api/task/{task_id}/delete` was typed `int`; task ids are strings like
+`71e4cde6-clean-up-stray-placeholders…`. FastAPI rejected every real one with 422
+before the handler ran, and all three callers ignore the status and redraw — so
+the row came back on the next load. Every sibling route in `routers/work.py` was
+already `str`.
+
+### 3 · 2,282 papers that were never triaged and could not be reached
+
+Library → New had no filter setting that could display a paper older than a
+month: the longest window was 30 days and `catchup` collapses to nothing once a
+catch-up is recorded. And `show='unread'` required an empty `read_at` **as well
+as** an empty added/dismissed pair.
+
+Those answer different questions — whether a paper has been **seen**, and whether
+it has been **decided about**. So `tools/start_fresh.py`, which is about
+attention, silently retired every never-triaged paper, which is about intent.
+17 papers reachable out of 2,299; on the HAT tab, none at all.
+
+Now: an **Everything** window (explicit `days == 0` branch — `days or 7` reads
+zero as absent and would have made it a synonym for "This week") and a **Not yet
+decided** state that consults only the triage columns. HAT tab: 0 → **320**.
+
+`show` had also existed for months with no control of any kind — three valid
+values reachable only by editing the URL. **A filter the reader cannot reach is
+not a filter.**
+
+### 4 · The browser really was showing an old Metis
+
+`base.html` carried `styles.css?v=14` and `app.js?v=9m`, **typed by hand**. A
+number you must remember to bump is a number that does not get bumped, so weeks
+of edits shipped behind an unchanged stamp and any cached browser kept serving
+the old file. It is now a content hash exposed as the `asset_v` Jinja global.
+
+Content hash, not mtime — this repo syncs through OneDrive across two machines
+where mtimes are not trustworthy. It goes in through `_SHARED_GLOBALS`, which
+seeds `jinja2.defaults`, because several of the seventeen Jinja environments are
+built lazily.
+
+Alongside it, **one Metis at a time**: the newest tab claims the session over a
+BroadcastChannel and older ones draw a full-bleed curtain with one button that
+takes it back and reloads. The same curtain appears when a tab regains focus and
+`/api/build` disagrees with the stamp it loaded. **A page cannot close a tab it
+did not open** — every browser blocks it — so takeover is the only honest design,
+and a test asserts the guard never calls `window.close()`.
+
+### Also this session
+
+- **Today reordered as asked**: Dispatch last and folded (counts sent
+  out-of-band into its `<summary>`, so folded is not hidden); cross-pollination
+  moved to Reflection; the two windows named *What changed in your field
+  yesterday* / *New in your field*.
+- **Today can add and remove work** — a quick-add line that doubles as the empty
+  state, and a drop control on each due row.
+- **The morning brief's fold now says which way it is folded** — the button was
+  gated on the server's flag, so it read "read the rest" while the rest was open;
+  and the lede was 135 of 311 words, so closing changed little. Clamped to three
+  lines: 399px → 208px.
+- **News density**: the 40px headline pitch was set by 30px action buttons, not
+  by the 19.5px line. 24px (still WCAG 2.2 AA minimum) plus half the margin →
+  30px pitch, eight stories where six fit.
+- **The top-bar Update menu** gained the API path every section menu already had.
+- **`start_fresh.py`** gained the fifth baseline it was missing
+  (`news_briefs.seen_at`) and a busy timeout.
+
+### Running the tools — two interpreters, neither of them `python3`
+
+```bash
+~/.local/share/metis-mcp/.venv/bin/python -m pytest tests/ -q     # pytest
+~/.local/share/metis-mcp/.venv/bin/python tools/shoot.py /news out.png 2200
+```
+
+`python3 -m pytest` reports *no module named pytest*, which piped through `tail`
+looks exactly like a passing run. It cost a false green this session.
 
 ---
 
@@ -151,25 +265,43 @@ text stored twice. Merged under aliases rather than deleted: 96 names preserved,
 
 ## Open, most valuable first
 
-### 1. The Library relevance scorer is broken
-The score saturates at **0.90** and 1,302 of 1,889 sit at **0.0**. The default
-"close to my work" view was showing phenomenology and school-nursing papers, all
-scored 0.90, to an NTD researcher. **The number is now hidden when it is at the
-ceiling** — but that hides a symptom. The scorer needs rebuilding, and the most
-promising direction is ResearchRabbit's: rank against a CHOSEN COLLECTION rather
-than the whole corpus.
+### 1. 1,480 publications have no DOI recorded
+64% of the 2,299 rows in `new_publications` have an **empty `doi` column** — for
+288 of them the DOI exists only inside `source_url`, and for the rest not at all.
+So pasting a DOI into Library search mostly finds nothing, which is how "the
+brief cited this paper and the Library has never heard of it" happened. The fix
+is a backfill (parse `source_url`, then Crossref by title for the remainder).
+**Ask before running it** — it rewrites 1,480 rows.
 
-### 2. Twelve flagged corpus aliases
+### 2. Humanitarian-coordination noise in News
+3W mappings, cluster minutes and cyclone "green notification" bulletins keep
+scoring their way onto the News surface. Three rounds of threshold work did not
+shift it, which is the evidence: **these are not badly-scored items, they are
+badly-chosen feeds.** Next step is the feed list, not the scorer.
+
+### 3. Twelve flagged corpus aliases
 `python3 tools/merge_corpus_aliases.py --undo`. The one that matters: a thesis
-by **Mpanya** and a paper by **Kabeya** share a fingerprint — different authors,
-identical text, so one file is mislabelled. Both names are kept; open the two
-PDFs to settle it.
+and a paper by two different first authors share a fingerprint — identical text,
+so one file is mislabelled. Both titles are kept as aliases; open the two PDFs
+to settle it.
 
-### 3. Personal detail is in the published git history
+### 4. Personal detail is in the published git history
 `Metis_PH` is published and the release coordinator keeps it current. The last
-40 commit messages carried 42 name mentions and 210 HAT references. A rule is
-now in `CLAUDE.md` to stop it growing. **Rewriting 503 commits is a separate and
-risky decision** — see the redactor's silent partial failure on exactly that job.
+40 commit messages carried 42 name mentions and 210 disease-specific references.
+A rule is now in `CLAUDE.md` to stop it growing. **Rewriting 503 commits is a
+separate and risky decision** — see the redactor's silent partial failure on
+exactly that job.
+
+### 5. Whether "Not yet decided" should be the Library default
+It is opt-in, which preserves the quiet start-from-zero that was asked for. But
+2,282 undecided papers is an argument the other way, and the answer is a
+preference, not a bug.
+
+### 6. Metis as an app window rather than a tab
+Launching with `--app=http://127.0.0.1:8080` gives one window that is reused
+instead of a new tab each time. It would pair with the single-instance guard and
+mostly remove the problem at source. The Windows shortcut already goes through a
+launcher script, so it is a small change.
 
 ### 4. The long tail
 - 88 hand-written empty states remain in templates that never import `_empty.html`
