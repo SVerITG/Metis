@@ -148,7 +148,6 @@
           <line x1="13.5" y1="8" x2="14.5" y2="8"/>
         </svg>
         <span class="n-label">Today</span>
-        <span class="n-meta">—</span>
         <span class="n-tip">Today</span>
       </div>
 
@@ -172,7 +171,6 @@
           <circle cx="8" cy="8" r="1" fill="currentColor" stroke="none"/>
         </svg>
         <span class="n-label">News</span>
-        <span class="n-meta">—</span>
         <span class="n-tip">News Radar</span>
       </div>
 
@@ -208,7 +206,6 @@
           <path d="M6.2 7 C 7 8.5, 8.5 9, 9.8 9.2"/>
         </svg>
         <span class="n-label">Reflection</span>
-        <span class="n-meta">—</span>
         <span class="n-tip">Reflection</span>
       </div>
 
@@ -235,7 +232,6 @@
           <rect x="10.8" y="2.5" width="3.2" height="4.5"/>
         </svg>
         <span class="n-label">Work</span>
-        <span class="n-meta">—</span>
         <span class="n-tip">Work</span>
       </div>
 
@@ -256,7 +252,6 @@
           <polyline points="8 4.5 8 8 10.5 9.5"/>
         </svg>
         <span class="n-label">Meetings</span>
-        <span class="n-meta">—</span>
         <span class="n-tip">Meetings</span>
       </div>
 
@@ -278,6 +273,10 @@
           <line x1="14" y1="5" x2="14" y2="9"/>
         </svg>
         <span class="n-label">Learning</span>
+        {#- The ONLY live n-meta. Eight sibling items carried a hardcoded
+            "—" that never filled — eight em-dashes down the sidebar reading
+            as "nothing to report" when they meant "never wired". Removed
+            2026-09-02; add the span back only with a real source behind it. -#}
         <span class="n-meta" hx-get="/api/partial/learning/nav-meta" hx-trigger="load, every 300s" hx-swap="innerHTML">—</span>
         <span class="n-tip">Learning</span>
       </div>
@@ -300,7 +299,6 @@
           <line x1="11" y1="4" x2="12" y2="5"/>
         </svg>
         <span class="n-label">Teach</span>
-        <span class="n-meta">—</span>
         <span class="n-tip">Teach</span>
       </div>
 
@@ -323,7 +321,6 @@
           <line x1="10.5" y1="6.5" x2="12.5" y2="6.5"/>
         </svg>
         <span class="n-label">Library</span>
-        <span class="n-meta">—</span>
         <span class="n-tip">Library</span>
       </div>
 
@@ -411,7 +408,6 @@
           <path d="M8.5 4.5 C 8.8 6, 8.5 8, 9 10 C 9.3 11, 9.7 11.5, 10 12" opacity="0.7"/>
         </svg>
         <span class="n-label">Metis</span>
-        <span class="n-meta">—</span>
         <span class="n-tip">Metis</span>
       </div>
 
@@ -452,50 +448,29 @@
 
       <div class="topbar-controls u-row" style="gap:var(--m-space-4);margin-left:auto;min-width:0;flex-shrink:1;overflow:hidden;">
 
-        <!-- Global search -->
-        <div class="t-search" style="position:relative;" id="global-search-wrap">
-          <svg class="u-fixed" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="7" cy="7" r="4.5"/>
-            <line x1="10.2" y1="10.2" x2="13" y2="13"/>
+        {#- ── Search: a BUTTON, not a box ────────────────────────────────
+             Asked for 2026-09-02. There were two search inputs on Today, 150px
+             apart — one in this bar, one on the page — and they called DIFFERENT
+             endpoints, so the same question got two different answers. The page
+             one used knowledge.py's `unified-search`, which fans out across the
+             three library silos and episodic memory (27 results for "screening",
+             grouped by source). This bar's `/api/search` returned 7 papers whose
+             links ALL pointed at `/tab/knowledge` rather than at the paper, so
+             its results were not even navigable.
+
+             One control now, opening one dialog, calling the better endpoint.
+             A button also costs no width in a bar that was already overflowing,
+             and gives the field room to show grouped results when it is open. -#}
+        <button class="t-searchbtn" type="button" onclick="openSearch()"
+                aria-label="Search your archive"
+                title="Search papers, notes, meetings and memory — keyboard shortcut /">
+          <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor"
+               stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="7" cy="7" r="4.5"/><line x1="10.2" y1="10.2" x2="13" y2="13"/>
           </svg>
-          <input id="global-search-input"
-                 type="search"
-                 placeholder="Find across the archive…"
-                 autocomplete="off"
-                 style="background:transparent;border:none;font-family:var(--m-mono);font-size:var(--t-meta);color:var(--m-ink);width:100%;min-width:0;"
-                 hx-get="/api/search"
-                 aria-label="Find across the archive"
-                 hx-trigger="keyup changed delay:350ms, focus[this.value.length>1]"
-                 hx-target="#search-results-drop"
-                 hx-swap="innerHTML"
-                 name="q"
-                 onkeydown="if(event.key==='Escape'){this.value='';document.getElementById('search-results-drop').innerHTML='';this.blur();}"
-          />
-        </div>
-        <!-- Search results dropdown — anchored to the search wrapper, not the viewport -->
-        <div class="u-hide" id="search-results-drop"
-             style="position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);width:min(680px,90vw);max-height:70vh;overflow-y:auto;background:var(--m-surface);border:1px solid var(--m-rule);border-radius:var(--m-radius);box-shadow:0 8px 32px rgba(0,0,0,0.12);z-index:9999;">
-        </div>
-        <script>
-        (function(){
-          // Show/hide dropdown based on content
-          const obs = new MutationObserver(() => {
-            const drop = document.getElementById('search-results-drop');
-            if (drop) drop.style.display = drop.innerHTML.trim() ? 'block' : 'none';
-          });
-          document.addEventListener('DOMContentLoaded', () => {
-            const drop = document.getElementById('search-results-drop');
-            if (drop) obs.observe(drop, {childList:true, subtree:true});
-            // Close on outside click
-            document.addEventListener('click', e => {
-              if (!document.getElementById('global-search-wrap')?.contains(e.target) &&
-                  !drop?.contains(e.target)) {
-                if (drop) drop.style.display = 'none';
-              }
-            });
-          });
-        })();
-        </script>
+          <span class="t-searchbtn-label">Search</span>
+          <kbd class="t-searchbtn-kbd">/</kbd>
+        </button>
 
         <!-- MCP toggle button -->
         <button class="u-label u-label--wide" id="mcp-toggle-btn"
@@ -601,6 +576,49 @@ Run my full Metis update. Using the metis-rc tools: scan the latest news and any
 ====================================================================== -->
 <div id="capture-overlay" onclick="handleOverlayClick(event)" role="button" tabindex="0">
   <div id="capture-modal-inner"></div>
+</div>
+
+{#- ── Search dialog ──────────────────────────────────────────────────────────
+    Opened by the top-bar button or "/". Modelled on the capture overlay above
+    rather than invented separately, so there is one dialog behaviour in the app
+    and one Escape handler: same backdrop, same spring-in, same click-outside.
+
+    The field is NOT autofocused by the markup — it is focused from openSearch()
+    after the dialog is displayed, because focusing a hidden element silently
+    does nothing and then the first keystroke goes to the page behind. -#}
+<div id="search-overlay" onclick="handleSearchOverlayClick(event)" role="button" tabindex="-1"
+     aria-hidden="true">
+  <div id="search-modal" role="dialog" aria-modal="true" aria-labelledby="search-modal-title">
+    <h2 id="search-modal-title" class="sr-only">Search your archive</h2>
+
+    <div class="search-modal-head">
+      <svg class="search-modal-ico" viewBox="0 0 16 16" width="15" height="15" fill="none"
+           stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+           stroke-linejoin="round" aria-hidden="true">
+        <circle cx="7" cy="7" r="4.5"/><line x1="10.2" y1="10.2" x2="13" y2="13"/>
+      </svg>
+      <input id="search-modal-input" type="search" name="q" autocomplete="off"
+             placeholder="Find a paper, a meeting, a note, a decision…"
+             aria-label="Search papers, notes, meetings and memory"
+             hx-get="/api/partial/knowledge/unified-search"
+             hx-trigger="keyup changed delay:300ms, search"
+             hx-target="#search-modal-results"
+             hx-swap="innerHTML"
+             hx-indicator="#search-modal-spin">
+      <span id="search-modal-spin" class="htmx-indicator search-modal-spin">reading the archive…</span>
+      <button type="button" class="search-modal-close" onclick="closeSearch()"
+              aria-label="Close search" title="Close (Esc)">&times;</button>
+    </div>
+
+    <div id="search-modal-results" class="search-modal-results">
+      {#- The resting state names what is actually searched, so an empty dialog
+          still tells you something. It is replaced by the first result set. -#}
+      <p class="search-modal-hint">
+        Searches your papers, index cards, meetings, notes and past sessions.
+        <br><span class="search-modal-hint-k">Esc</span> closes.
+      </p>
+    </div>
+  </div>
 </div>
 
 <!-- =====================================================================

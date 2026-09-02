@@ -4,6 +4,7 @@ routers/knowledge.py — Knowledge tab routes.
 
 import datetime
 import json
+import logging
 import os
 import re
 from pathlib import Path
@@ -14,6 +15,8 @@ from fastapi.templating import Jinja2Templates
 
 from ui import clip
 from db import db_execute, db_query, db_scalar, get_db_path
+
+_log = logging.getLogger(__name__)
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -40,6 +43,13 @@ async def knowledge_tab_partial(request: Request):
 # ---------------------------------------------------------------------------
 
 
+# DEAD as of 2026-09-02 — no template calls this any more. It backed the top-bar
+# search box, which is now a button opening a dialog that calls
+# `unified-search` instead. Kept because it is a documented URL and something
+# outside this repo may hit it, but note WHY it lost: every result it rendered
+# linked to `/tab/knowledge` rather than to the item, so the results were not
+# navigable, and it saw fewer sources (7 hits for "screening" against 27).
+# Delete it, or fix its links, rather than wiring it to anything new.
 @router.get("/api/search", response_class=HTMLResponse)
 async def global_search(request: Request, q: str = ""):
     """Global search across papers, projects, news, and tasks."""
@@ -376,6 +386,14 @@ async def knowledge_stats_meta(request: Request):
         (week_ago,),
         default=0,
     )
+    # Kept for callers that want the grand total, but NOT the headline figure
+    # any more (2026-09-02). Printing this sum as "3,744 items" added papers to
+    # index cards and then printed "78% catalogued" beside it — a percentage
+    # computed over the 3,084 papers alone. A figure and its completeness rate
+    # with different denominators, side by side. Teach calls the same 660 rows
+    # "notes/ideas", so the two surfaces also disagreed about the same database.
+    # The head now states the two kinds separately and the percentage is
+    # unambiguously about the papers.
     total = (card_count or 0) + (lit_count or 0)
 
     # Catalogue completeness — the first question a librarian asks of a collection.
@@ -404,6 +422,7 @@ async def knowledge_stats_meta(request: Request):
         "partials/knowledge_meta.html",
         {
             "total": total,
+            "cards": card_count or 0,
             "added_week": added_week or 0,
             "lit": lit,
             "pct": round(100 * complete / lit) if lit else 0,
@@ -2042,13 +2061,42 @@ async def knowledge_unified_search(request: Request, q: str = ""):
     ) or []
 
     # 2. Zotero / literature_metadata
-    papers = db_query(
-        "SELECT id, title, authors, year, source, doi, abstract FROM literature_metadata "
+    #
+    # FETCH WIDE, THEN FOLD — the same order the Today boards use, and for the
+    # same reason: collapsing after a LIMIT 10 shows ten rows that turn out to be
+    # three papers. 64% of this table is redundant rows (3,084 rows carry 1,099
+    # distinct titles; one paper is stored 26 times, usually differing only in
+    # journal capitalisation — "PLOS Neglected Tropical Diseases" against "PLoS
+    # neglected tropical diseases"). Searching "reservoir hosts" returned the
+    # same paper six times, which is what a reader sees first now that search is
+    # the front door.
+    #
+    # `fold_series=False` deliberately: series folding groups instalments of a
+    # running title, which is right for weekly situation reports and wrong for
+    # papers, where "Part I" and "Part II" are different work. Only exact
+    # duplicates fold, and each survivor carries `_n_dupes` so the copies are
+    # reported rather than silently dropped.
+    #
+    # This dedupes the DISPLAY only. Removing the 1,985 redundant rows is a
+    # deletion and needs the researcher's say-so.
+    papers_raw = db_query(
+        "SELECT id, title, authors, year, source, doi, abstract, created_at "
+        "FROM literature_metadata "
         "WHERE title IS NOT NULL AND title != '' "
         "AND (title LIKE ? OR authors LIKE ? OR abstract LIKE ? OR tags LIKE ?) "
-        "ORDER BY created_at DESC LIMIT 10",
+        "ORDER BY created_at DESC LIMIT 80",
         (like, like, like, like),
     ) or []
+    try:
+        import freshness
+        papers = freshness.collapse([dict(r) for r in papers_raw],
+                                    title_field="title", ts_field="created_at",
+                                    fold_series=False)
+    except Exception as _exc:
+        _log.warning("unified-search: dedupe unavailable: %s", _exc)
+        papers = [dict(r) for r in papers_raw]
+    n_paper_copies = len(papers_raw) - len(papers)
+    papers = papers[:10]
     _ensure_pdf_cache()
     for p in papers:
         lit_id = p.get("id")
@@ -2077,7 +2125,7 @@ async def knowledge_unified_search(request: Request, q: str = ""):
         request,
         "partials/knowledge_unified_search.html",
         {"cards": cards, "papers": papers, "seeded": seeded, "memory": memory,
-         "q": q, "total": total},
+         "q": q, "total": total, "n_paper_copies": n_paper_copies},
     )
 
 

@@ -144,6 +144,11 @@ def collapse(rows: list, title_field: str = "title", ts_field: str = "created_at
     if not fold_series:
         for r in deduped:
             r["_fresh"] = band(ts(r))
+            # `_n_dupes` was set only on the series path, so a caller that asked
+            # for duplicate folding WITHOUT series folding got the `_dupes` list
+            # but no count — and a template checking `_n_dupes` silently showed
+            # nothing. Both paths now report the same fields. (2026-09-02)
+            r["_n_dupes"] = len(r.get("_dupes", []))
         return _fresh_first(deduped, ts)
 
     # 2. series — instalments of one running story

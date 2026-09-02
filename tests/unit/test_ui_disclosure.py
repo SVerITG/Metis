@@ -138,20 +138,60 @@ def test_styles_use_existing_tokens_not_new_colours():
 
 # ── 5. the closing items: search, and a real document outline ────────────────
 
-def test_today_has_a_search_that_reuses_the_existing_one():
+# The two tests below asserted a search FIELD on the Today page. That field was
+# removed on 2026-09-02 and replaced by one button in the top bar opening a
+# dialog — there had been two always-open inputs 150px apart calling DIFFERENT
+# endpoints, so the same question got two answers. The requirements they were
+# protecting are unchanged and still checked, just at the new location: ONE
+# search, pointed at unified-search, with a labelled input.
+
+def test_there_is_exactly_one_search_in_the_chrome():
+    """One search control, not two. This is the defect that prompted the change:
+    a box in the bar and a box on Today, calling different endpoints."""
+    base = (ROOT / "system" / "app-py" / "templates" / "base.html").read_text(encoding="utf-8")
+    today = (ROOT / "system" / "app-py" / "templates" / "today.html").read_text(encoding="utf-8")
+    assert 'id="search-modal-input"' in base, "no search field in the dialog"
+    assert base.count('type="search"') == 1, (
+        "base.html has more than one search input again — the whole point of the "
+        "dialog is that there is one"
+    )
+    assert 'type="search"' not in today, (
+        "Today has its own search box again; it is the second one, and the two "
+        "answered the same question differently"
+    )
+    assert 'class="t-searchbtn"' in base, "no button to open the dialog"
+
+
+def test_search_reuses_unified_search():
     """A second search that could answer the same question differently is worse
-    than none, so Today points at knowledge.py's unified-search."""
-    t = (ROOT / "system" / "app-py" / "templates" / "today.html").read_text(encoding="utf-8")
-    assert 'id="today-find-input"' in t
-    assert "/api/partial/knowledge/unified-search" in t
-    assert 'id="today-find-results"' in t
+    than none, so the dialog points at knowledge.py's unified-search."""
+    base = (ROOT / "system" / "app-py" / "templates" / "base.html").read_text(encoding="utf-8")
+    assert "/api/partial/knowledge/unified-search" in base
+    assert 'id="search-modal-results"' in base
 
 
 def test_the_search_input_is_labelled():
-    t = (ROOT / "system" / "app-py" / "templates" / "today.html").read_text(encoding="utf-8")
-    assert 'for="today-find-input"' in t, "an input with no label is unusable by screen reader"
+    base = (ROOT / "system" / "app-py" / "templates" / "base.html").read_text(encoding="utf-8")
+    assert 'aria-label="Search papers, notes, meetings and memory"' in base, (
+        "an input with no label is unusable by screen reader"
+    )
+    assert 'role="dialog"' in base and 'aria-modal="true"' in base, (
+        "a modal that does not announce itself traps a screen reader in the page behind"
+    )
     css = (ROOT / "system" / "app-py" / "static" / "styles.css").read_text(encoding="utf-8")
     assert ".sr-only" in css, "the visually-hidden label needs the class to exist"
+
+
+def test_search_dialog_can_be_dismissed_without_a_mouse():
+    """Escape must close it, and the slash shortcut must not fire while typing."""
+    js = (ROOT / "system" / "app-py" / "static" / "app.js").read_text(encoding="utf-8")
+    assert "closeSearch()" in js
+    esc = js[js.index("if (e.key === 'Escape')"):]
+    assert "closeSearch" in esc[:220], "Escape does not reach the search dialog"
+    assert "_isTyping" in js, (
+        "a bare '/' shortcut with no typing guard steals the slash from every "
+        "text field on the page, including the dialog's own input"
+    )
 
 
 def _has_class(html: str, tag: str, token: str) -> bool:

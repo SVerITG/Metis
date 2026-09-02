@@ -1,3 +1,7 @@
+{#- Titles go through `| sci`: 113 records here carry <i> around a species
+    name, which is correct scholarly typography and was printing as literal
+    tags. `sci` escapes everything and re-enables six inline tags only —
+    see the note on _SHARED_FILTERS in main.py. Never `| safe` on feed text. -#}
 {% if total == 0 %}
 <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-3) 0;">
   No results for <strong>{{ q }}</strong> across any part of your library.
@@ -13,17 +17,26 @@
 <div class="u-mb-5">
   <div class="u-label u-label--accent u-mb-2 u-rule" style="letter-spacing:0.18em;text-transform:uppercase;padding-bottom:4px;">
     ZOTERO LIBRARY — {{ papers | length }} PAPER{% if papers | length != 1 %}S{% endif %}
+    {#- Say that copies were folded. Silently showing 10 rows as 4 would be the
+        same class of dishonesty as showing the same paper six times. -#}
+    {% if n_paper_copies %}
+    <span class="u-ed" style="text-transform:none;letter-spacing:0;font-size:var(--t-micro);"
+          title="This library stores many papers more than once — 64% of the table is redundant rows, usually differing only in journal capitalisation. Nothing was deleted; the copies are folded into one row each.">
+      · {{ n_paper_copies }} duplicate record{% if n_paper_copies != 1 %}s{% endif %} folded
+    </span>
+    {% endif %}
   </div>
   {% for p in papers %}
   <div class="u-rule" style="padding:var(--m-space-2) 0;">
     <div class="u-title" style="line-height:1.3;">
       {% if p.doi %}
-      <a class="hov-ink" href="https://doi.org/{{ p.doi }}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">{{ p.title }}</a>
-      {% else %}{{ p.title }}{% endif %}
+      <a class="hov-ink" href="https://doi.org/{{ p.doi }}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">{{ p.title | sci }}</a>
+      {% else %}{{ p.title | sci }}{% endif %}
     </div>
     <div class="u-label u-row" style="margin-top:var(--m-space-1);gap:var(--m-space-3);">
       {% if p.authors %}<span>{{ p.authors | clip(60) }}</span>{% endif %}
       {% if p.year %}<span>{{ p.year }}</span>{% endif %}
+      {% if p._n_dupes %}<span title="This paper is stored {{ p._n_dupes + 1 }} times in your library">×{{ p._n_dupes + 1 }} copies</span>{% endif %}
       {% if p.source %}<span>{{ p.source | clip(40) }}</span>{% endif %}
       {% if p.pdf_url %}
       <a href="{{ p.pdf_url }}" target="_blank"
@@ -54,7 +67,7 @@
   </div>
   {% for s in seeded %}
   <div class="u-rule" style="padding:var(--m-space-2) 0;">
-    <div class="u-title u-title--sm">{{ s.title }}</div>
+    <div class="u-title u-title--sm">{{ s.title | sci }}</div>
     <div class="u-label" style="margin-top:var(--m-space-1);display:flex;gap:var(--m-space-3);">
       {% if s.top_folder %}<span>{{ s.top_folder | upper }}</span>{% endif %}
       {% if s.method %}<span>{{ s.method | upper }}</span>{% endif %}
@@ -72,7 +85,7 @@
   </div>
   {% for c in cards %}
   <div class="u-rule" style="padding:var(--m-space-2) 0;">
-    <div class="u-title u-title--sm">{{ c.title }}</div>
+    <div class="u-title u-title--sm">{{ c.title | sci }}</div>
     {% if c.summary %}
     <div style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">
       {{ c.summary | truncate(120, True, '…') }}

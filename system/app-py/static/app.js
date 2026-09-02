@@ -10,16 +10,68 @@ function setActiveTab(btn) {
   btn.classList.add('active');
 }
 
+// True when the keystroke belongs to something the user is typing into. A bare
+// "/" shortcut without this steals the slash from every search field, textarea
+// and contenteditable on the page — including the search dialog's own input.
+function _isTyping(el) {
+  if (!el) return false;
+  if (el.isContentEditable) return true;
+  const t = el.tagName;
+  return t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT';
+}
+
 document.addEventListener('keydown', function(e) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
     e.preventDefault();
     openCapture();
   }
+  // "/" opens search. Not Ctrl/⌘+K — that is Capture, and not Ctrl+F either,
+  // which belongs to the browser and which people rely on for find-in-page.
+  if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey && !_isTyping(e.target)) {
+    e.preventDefault();
+    openSearch();
+  }
   if (e.key === 'Escape') {
     closeCapture();
     closeNewsModal();
+    closeSearch();
   }
 });
+
+// ---------------------------------------------------------------------------
+// Search dialog — one control, one endpoint
+// ---------------------------------------------------------------------------
+// Replaced two always-visible search boxes (top bar + Today page) that called
+// different endpoints and so answered the same question differently. This uses
+// `unified-search`, the one that fans out across the library silos and memory.
+
+function openSearch() {
+  const overlay = document.getElementById('search-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'block';
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+  // Focus AFTER display: focusing a hidden element is a no-op, and then the
+  // first keystroke lands on the page behind the dialog.
+  requestAnimationFrame(() => {
+    const inp = document.getElementById('search-modal-input');
+    if (inp) { inp.focus(); inp.select(); }
+  });
+}
+
+function closeSearch() {
+  const overlay = document.getElementById('search-overlay');
+  if (!overlay || overlay.style.display !== 'block') return;
+  overlay.style.display = 'none';
+  overlay.setAttribute('aria-hidden', 'true');
+  // Only release the scroll lock if no other dialog still wants it.
+  const cap = document.getElementById('capture-overlay');
+  if (!cap || cap.style.display !== 'block') document.body.style.overflow = '';
+}
+
+function handleSearchOverlayClick(event) {
+  if (event.target === document.getElementById('search-overlay')) closeSearch();
+}
 
 // ---------------------------------------------------------------------------
 // Capture modal (Ctrl+K) — supports optional prefillMode

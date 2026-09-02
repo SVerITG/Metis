@@ -256,9 +256,16 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 # personal-data leak on a public repo and an instant break on the second
 # computer. METIS_COURSE_SITES_ROOT overrides; the default walks up from the
 # repo to the sibling Education folder, the same relative shape run.sh uses.
+# NOTE the double .parent (fixed 2026-09-02). "9. Education" is a sibling of
+# "7. Software", NOT of the repo — the repo lives at
+# <docs>/7. Software/Research Cortex, so reaching <docs> takes two steps up, not
+# one. With a single .parent this resolved to "7. Software/9. Education", which
+# does not exist, the mount was skipped with a log.warning nobody reads, and the
+# HAT Diagnostics launch button 404'd while its _site/ sat rendered on disk.
+# A path that silently resolves to nothing is worse than a hardcoded one.
 _EDU_ROOT = Path(
     os.environ.get("METIS_COURSE_SITES_ROOT")
-    or (Path(os.environ.get("METIS_RC_ROOT", BASE_DIR.parent.parent)).parent
+    or (Path(os.environ.get("METIS_RC_ROOT", BASE_DIR.parent.parent)).parent.parent
         / "9. Education")
 )
 
@@ -272,7 +279,11 @@ for _slug, _dir in COURSE_SITES.items():
                   StaticFiles(directory=str(_dir), html=True),
                   name=f"coursesite-{_slug}")
     else:
-        log.warning("course site not mounted (missing render): %s -> %s", _slug, _dir)
+        # Loud, because a skipped mount renders as a 404 on a launch button and
+        # nothing else says so. tools/check_course_launch.py is the real guard.
+        log.error("COURSE SITE NOT MOUNTED — launch button will 404: %s -> %s "
+                  "(check the path derivation and that the site is rendered)",
+                  _slug, _dir)
 
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -363,6 +374,8 @@ def _asset_version() -> str:
 
 ASSET_V = _asset_version()
 
+import re as _re
+
 _SHARED_GLOBALS = {"focus_shelf": _focus_shelf, "asset_v": ASSET_V}
 def _due_delta(due: str):
     """Days from today to `due`, or None if there is no usable date.
@@ -387,9 +400,34 @@ def _clip(text, n: int = 120, ellipsis: str = "…"):
     return clip(text, n, ellipsis)
 
 
+# Scholarly titles legitimately contain inline markup: 113 records in one test
+# library carried `<i>` around a species name, because that is how a genus and
+# species are written and it is what Crossref returns. Auto-escaping printed the
+# tags literally, so a title read "...reservoir hosts of &lt;i&gt;Genus
+# species&lt;/i&gt; in ..." — and `striptags` would throw the italics away,
+# losing real meaning rather than rendering it.
+#
+# So: escape EVERYTHING, then re-enable exactly six inline tags. A tag with any
+# attribute cannot come back, because escaping turns `<i class=…>` into
+# `&lt;i class=…&gt;` and the pattern below requires `&gt;` immediately after
+# the tag name. Feed and Crossref text is untrusted, so this stays a strict
+# allowlist and never `|safe`.
+_SCI_ALLOWED = ("i", "em", "b", "strong", "sub", "sup")
+_SCI_RE = _re.compile(r"&lt;(/?)(" + "|".join(_SCI_ALLOWED) + r")&gt;", _re.IGNORECASE)
+
+
+def _sci(text):
+    """Render a title's inline scientific markup, and nothing else."""
+    from markupsafe import Markup, escape
+    if text is None:
+        return ""
+    return Markup(_SCI_RE.sub(r"<\1\2>", str(escape(str(text)))))
+
+
 _SHARED_FILTERS = {"md": _md_filter,
                    "due_delta": _due_delta,
-                   "clip": _clip}
+                   "clip": _clip,
+                   "sci": _sci}
 
 
 
