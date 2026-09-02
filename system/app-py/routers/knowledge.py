@@ -2153,12 +2153,19 @@ async def knowledge_unified_search_semantic(request: Request, q: str = ""):
     used_semantic = False
 
     try:
-        from metis_mcp.embeddings import embed_one  # type: ignore
+        # `embed_query`, NOT `embed_one` (2026-09-02). `embed_one` defaults to
+        # prefix="search_document: " and normalize=False, so it produced a query
+        # vector of norm ~20 against a store of unit vectors. Under L2 the only
+        # things near such a vector were the handful of chunks that were also
+        # unnormalised — which is why every query here returned the same
+        # document and why nonsense outranked real subjects. The MCP side has
+        # always called embed_query and has always worked.
+        from metis_mcp.embeddings import embed_query  # type: ignore
         import struct
         import sqlite_vec  # type: ignore
         import sqlite3
 
-        query_vec = embed_one(q)
+        query_vec = embed_query(q, normalize=True)
         blob = struct.pack(f"{len(query_vec)}f", *query_vec)
 
         try:
@@ -2180,48 +2187,67 @@ async def knowledge_unified_search_semantic(request: Request, q: str = ""):
             if con is not None:
                 # 1. PDF chunks
                 try:
+                    # THREE fixes here. The columns `c.text`, `c.page` and
+                    # `c.pdf_path` do not exist — they are `chunk_text`,
+                    # `page_start` and `source_file` — and the parameter was
+                    # bound with no placeholder to bind it to, because the
+                    # `MATCH` clause sqlite-vec needs was missing entirely. So
+                    # this raised on every call, and the bare `except: pass`
+                    # below turned that into the message "embeddings
+                    # unavailable", blaming a component that was working.
                     rows = con.execute(
-                        "SELECT c.text, c.page, c.pdf_path, v.distance "
+                        "SELECT c.chunk_text, c.page_start, c.title, c.source_file, "
+                        "       v.distance "
                         "FROM vec_pdf_chunks v JOIN pdf_chunks c ON c.id = v.rowid "
-                        "ORDER BY v.distance ASC LIMIT 8",
+                        "WHERE v.embedding MATCH ? AND k = 8 "
+                        "ORDER BY v.distance",
                         (blob,),
                     ).fetchall()
                     for r in rows:
                         row = dict(r)
+                        # Unit vectors, so L2 distance d relates to cosine as
+                        # cos = 1 - d²/2. Report that rather than `1 - d`, which
+                        # is not a similarity and went negative past d=1.
+                        d = float(row.get("distance") or 0.0)
                         semantic_hits.append({
                             "kind": "pdf",
-                            "title": (Path(row.get("pdf_path") or "").name)[:80] or "PDF chunk",
-                            "snippet": clip(row.get("text") or "", 200),
-                            "score": round(1 - float(row.get("distance") or 1), 3),
-                            "extra": f"p. {row.get('page')}" if row.get("page") else "",
+                            "title": (row.get("title")
+                                      or Path(row.get("source_file") or "").name)[:80]
+                                     or "PDF chunk",
+                            "snippet": clip(row.get("chunk_text") or "", 200),
+                            "score": round(max(0.0, 1.0 - (d * d) / 2.0), 3),
+                            "extra": f"p. {row.get('page_start')}" if row.get("page_start") else "",
                         })
                     used_semantic = True
-                except Exception:
-                    pass
+                except Exception as _exc:
+                    _log.warning("semantic search: pdf chunks unavailable: %s", _exc)
 
                 # 2. Episodic memory
                 try:
                     rows = con.execute(
                         "SELECT e.content, e.event_type, e.created_at, v.distance "
                         "FROM vec_episodic v JOIN episodic_memory e ON e.id = v.rowid "
-                        "ORDER BY v.distance ASC LIMIT 6",
+                        "WHERE v.embedding MATCH ? AND k = 6 "
+                        "ORDER BY v.distance",
                         (blob,),
                     ).fetchall()
                     for r in rows:
                         row = dict(r)
+                        d = float(row.get("distance") or 0.0)
                         semantic_hits.append({
                             "kind": "memory",
                             "title": (row.get("event_type") or "memory").upper(),
                             "snippet": clip(row.get("content") or "", 200),
-                            "score": round(1 - float(row.get("distance") or 1), 3),
+                            "score": round(max(0.0, 1.0 - (d * d) / 2.0), 3),
                             "extra": (row.get("created_at") or "")[:10],
                         })
                     used_semantic = True
-                except Exception:
-                    pass
+                except Exception as _exc:
+                    _log.warning("semantic search: episodic memory unavailable: %s", _exc)
 
                 con.close()
-    except Exception:
+    except Exception as _exc:
+        _log.warning("semantic search unavailable, falling back to keywords: %s", _exc)
         used_semantic = False
 
     # Graceful fallback if retrieval is unavailable
