@@ -13,10 +13,22 @@
     What is left are the three questions a librarian asks: how big is it, what
     came in, and how much of it is properly catalogued. -#}
 <div class="wm">
-  <a class="wm-fig" href="#libpanel-catalogue" title="Everything held — index cards and literature records">
-    <span class="num-lead tnum">{{ '{:,}'.format(total) }}</span>
-    <span class="wm-label">items</span>
+  {#- Papers and notes are counted SEPARATELY (2026-09-02). They were summed
+      into one "items" figure, which put a total of 3,744 immediately left of a
+      "78% catalogued" computed over the 3,084 papers alone — two denominators
+      one inch apart — and disagreed with Teach, which calls the same 660 rows
+      "notes/ideas". A count without its denominator is not a statistic. -#}
+  <a class="wm-fig" href="#libpanel-catalogue" title="Literature records — the papers themselves">
+    <span class="num-lead tnum">{{ '{:,}'.format(lit) }}</span>
+    <span class="wm-label">papers</span>
   </a>
+
+  {% if cards %}
+  <a class="wm-fig" href="#libpanel-cards" title="Index cards — your own notes and summaries">
+    <span class="num-lead tnum">{{ '{:,}'.format(cards) }}</span>
+    <span class="wm-label">notes</span>
+  </a>
+  {% endif %}
 
   {% if added_week %}
   <a class="wm-fig" href="#libpanel-new" title="Added in the last seven days">
@@ -30,7 +42,7 @@
       That is the difference between a catalogue and a pile. -#}
   {% if lit %}
   <a class="wm-fig" href="#libpanel-catalogue"
-     title="{{ missing }} records have no year or no DOI — they cannot be sorted or resolved">
+     title="{{ missing }} of the {{ '{:,}'.format(lit) }} papers have no year or no DOI — they cannot be sorted or resolved">
     <span class="num-lead tnum{{ ' wm-alert' if pct < 60 else '' }}">{{ pct }}%</span>
     <span class="wm-label">catalogued{% if missing %} · {{ missing }} incomplete{% endif %}</span>
   </a>
