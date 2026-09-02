@@ -1,8 +1,49 @@
 # Handoff — Metis design work
 
 **Updated 2026-09-02, end of session. Branch `feat/briefing-rotation-news-surface-interests`.**
-**Everything is committed AND pushed to `origin` and `metis-ph` (HEAD `69763e38`).**
+**Everything is committed AND pushed to `origin` and `metis-ph` (HEAD `7096f8d6`).**
 **Suite: 473 passed, 4 skipped · 47 HTMX swaps clean · MCP smoke test HEALTHY.**
+
+---
+
+## ⚠ READ FIRST — both repos are PUBLIC, and a branch push bypasses the scrub
+
+Checked 2026-09-02, unauthenticated: **github.com/SVerITG/Metis and .../Metis_PH
+both return 200.** Anyone can read them. Everything below follows from that.
+
+**`origin` is the generated base shell** (`origin/main` = `b80f6ee9`, built by
+`tools/build-base-shell.sh`), and that script scrubs maintainer identity from
+every tracked text file. But **it only runs when building a base branch from
+`main`.** Pushing a feature branch straight to `origin` — which this session did,
+repeatedly — routes around the scrub completely. The standing rule covered
+pushing *main*; nothing covered a branch. **This is the gap worth closing first.**
+
+Note the scrub would not have been sufficient anyway: it substitutes `$HOME` and
+`user`, so an address becomes `user@example.org`, but `ITM Antwerp`, `PNLTHA-RCA`,
+`projet FOCAL` and `2. HAT disease` are not in its pattern set.
+
+**A second gate that cannot fail:** the `pre-commit` hook runs only
+`persona_linter.py`, whose `SCAN_EXTS` is `{.html, .js, .py}` — markdown is never
+examined, so a markdown-only commit prints *"clean (0 files scanned)"* having
+looked at nothing. There is **no pre-push hook at all**.
+
+**What was fixed (`7096f8d6`).** Commit `69763e38` earlier the same day added
+five previously-untracked tools after checking only that they *compile*, which is
+the wrong check on this rule. Between them they carried a home path, a real
+institutional address, an institution name and two named internal programmes.
+The three harvest/update tools are now untracked and gitignored — they are
+personal-overlay tooling, a layer the architecture defines but nothing enforced
+for *tools*. `check_course_dois.py` stays tracked (CLAUDE.md documents it) with
+its contact moved to `METIS_CROSSREF_MAILTO`. And 42 name mentions went to 0
+across the 17 tracked files the session published.
+
+Tree-wide `python3 tools/strip-identity.py --check` went **96 → 42** lines. Run
+it **unpiped** — through `tail`, `$?` is tail's status and it reads as a pass.
+Every remaining finding is in a file this session did not touch.
+
+**Still open, and not mine to decide:** the names remain in the *history* of both
+public repos. Removing them means rewriting 503 commits, and the redactor has
+already failed at exactly that job silently and partially. Decide deliberately.
 
 ---
 
