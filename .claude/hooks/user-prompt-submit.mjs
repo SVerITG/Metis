@@ -56,7 +56,7 @@ const TRIGGER_TTL_MS     = 6 * 60 * 60 * 1000;   // re-derive twice a day
 const IS_SYSTEM_WORK = /\b(metis|dashboards?|mcp|subagents?|hooks?|repos?|repositor(?:y|ies)|venvs?|sqlite|backfills?|pytest|reinstalls?|reconnects?|changelogs?|claude|uvicorn|fastapi|htmx|hand[ -]?offs?|css|stylesheets?|styling|templates?|partials?|front[- ]?end|backlogs?|artifacts?|screenshots?|sparklines?|codebase|\bui\b|\bux\b)\b/;
 
 /* ── Session stickiness ───────────────────────────────────────────────────
-   the researcher, 2026-08-28: "When we are working on metis you do not have to route
+   The researcher, 2026-08-28: "When we are working on metis you do not have to route
    through the library if not indicated specifically."
 
    Word-matching a single prompt cannot implement that, because a follow-up

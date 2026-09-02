@@ -1,6 +1,6 @@
 """An optional target date, and the rule that an undated task is not late.
 
-the researcher, 2026-08-27: *"we can give the option to assign a date to a task … but dont
+The researcher, 2026-08-27: *"we can give the option to assign a date to a task … but dont
 make it obligatory, because often i dont know when i will work on something."*
 
 THE CONSTRAINT IS THE FEATURE. Not knowing when you will get to something is the

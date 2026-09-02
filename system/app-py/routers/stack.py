@@ -98,7 +98,7 @@ async def stack_crucial(request: Request, kind: str = Form(...),
 
     Distinct from "read later", which is a queue. Crucial is a much smaller
     claim: it is the one thing that reaches back out to the Today surface, as a
-    single line under "what should I read" — never a list. the researcher, 2026-08-29:
+    single line under "what should I read" — never a list. The researcher, 2026-08-29:
     "From the stack there can be a suggestion for the beginning of the day on
     the today surface, when something was flagged as crucial to read."
 

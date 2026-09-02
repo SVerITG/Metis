@@ -232,7 +232,7 @@ Metis will:
 
 ## Agent routing guide (for Metis)
 
-> **DHIS2 is deliberately not in this table (2026-08-28).** the researcher has done one
+> **DHIS2 is deliberately not in this table (2026-08-28).** The researcher has done one
 > mockup of a DHIS2 app and may return to it, but it was appearing in his
 > profile interests, his news monitoring, his RAG results and this routing
 > table — a footprint far larger than the work justifies. `/dhis2-expert` is

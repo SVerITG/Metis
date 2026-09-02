@@ -1,6 +1,6 @@
 """What is new, and what is the same running story told again.
 
-the researcher, 2026-08-27: highlight new content and put it on top; and "in the lists
+The researcher, 2026-08-27: highlight new content and put it on top; and "in the lists
 there is the same item though (outbreak I have seen Ebola multiple times for
 example)".
 
@@ -92,7 +92,7 @@ def exact_key(title: str) -> str:
 
 
 # ── freshness ───────────────────────────────────────────────────────────────
-# the researcher asked for new content to be highlighted AND on top. Three bands, because
+# The researcher asked for new content to be highlighted AND on top. Three bands, because
 # two would put a five-day-old item in the same bucket as this morning's, and
 # four is more than anyone reads at a glance.
 def band(iso: str, now: _dt.datetime | None = None) -> str:
@@ -170,7 +170,7 @@ def collapse(rows: list, title_field: str = "title", ts_field: str = "created_at
 
 
 def _fresh_first(rows: list, ts) -> list:
-    """New on top, then newest first. the researcher asked for both, and they are not the
+    """New on top, then newest first. The researcher asked for both, and they are not the
     same instruction: 'newest first' already orders by time, but a 3-day-old
     item and a 3-month-old item look identical in a list until something says
     which arrived this week."""
