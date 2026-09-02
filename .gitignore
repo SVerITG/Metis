@@ -236,6 +236,14 @@ inputs/code/
 
 # Apply_proposal creates timestamped backups — never committed
 *.bak.20*
+# ...and the hyphenated form. Tools in this repo write BOTH shapes — `--suffix
+# .bak-20260828T151953` from the config writers, `.bak.20260828` from others —
+# and only the dotted one was ignored. Two personal-config backups
+# (domain-overrides.local.json, user-preferences.json) were sitting untracked
+# and offerable to any `git add -A`; `.local.` files are exactly what must not
+# reach a published repo.
+*.bak-20*
+*.bak-????????T??????
 skill.md.bak.*
 
 # Metis_PH domain courses (not part of virgin base)

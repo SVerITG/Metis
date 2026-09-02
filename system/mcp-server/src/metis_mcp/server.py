@@ -91,6 +91,13 @@ TOOL_MODULES = [
     # get_agent_context returned a persona and nothing about how the researcher
     # wants things done, so routing to an agent added nothing.
     "agent_memory",
+    # VIZ LIBRARY — saved visual styles and reusable figure methods, as ROWS.
+    # Visualization Maker advertised "7 visual styles" and "14 diagram types" in
+    # prose, in its own prompt file: a list nobody could append to by saying "I
+    # like this", that recorded nothing about which style was used where, and
+    # that kept method and look fused so neither could be reused without the
+    # other. `outputs/visualizations/` held one file after three months.
+    "viz_library",
 ]
 
 LOADED_MODULES: list[str] = []
