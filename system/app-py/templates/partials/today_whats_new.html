@@ -23,7 +23,7 @@
   <div class="panel wn-card">
     <div class="wn-card-head">
       <span class="m-sec">What changed in your field yesterday</span>
-      <a class="wn-count" href="/news" title="Open the News surface">
+      <a class="wn-count" href="/news" title="Open the News surface — {{ news_new }} unseen">
         <span class="num-lead tnum">{{ news_new }}</span>
         <span class="wn-unit">new</span>
       </a>
@@ -43,7 +43,9 @@
   <div class="panel wn-card">
     <div class="wn-card-head">
       <span class="m-sec">New in your field</span>
-      <a class="wn-count" href="/knowledge" title="Open the Library">
+      {#- Land on the New panel, not the bare tab: the figure promises "62 new"
+          and the tab opens on whatever was last selected. -#}
+      <a class="wn-count" href="/knowledge#libpanel-new" title="Open the Library's New papers — {{ lib_new }} not yet read">
         <span class="num-lead tnum">{{ lib_new }}</span>
         <span class="wn-unit">new</span>
       </a>
@@ -51,7 +53,10 @@
     {% if papers %}
     <ul class="wn-list">
       {% for p in papers %}
-      <li><a class="wn-item hov-ink" href="/knowledge">{{ p.title }}</a>
+      {#- One row, one paper. `link` is its DOI, or the source URL when there is
+          no DOI recorded — which is 63% of this table. -#}
+      <li>{% if p.link %}<a class="wn-item hov-ink" href="{{ p.link }}" target="_blank" rel="noopener">{{ p.title | sci }}</a>
+          {%- else %}<a class="wn-item hov-ink" href="/knowledge#libpanel-new">{{ p.title | sci }}</a>{% endif %}
           <span class="wn-meta">{{ p.journal or p.feed_name or '—' }}</span></li>
       {% endfor %}
     </ul>

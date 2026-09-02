@@ -3693,12 +3693,23 @@ def _ensure_board_table():
             "  auto_added INTEGER DEFAULT 1,"
             "  start_date TEXT DEFAULT '',"
             "  end_date TEXT DEFAULT '',"
+            "  seen_at TEXT DEFAULT '',"
             "  created_at TEXT NOT NULL DEFAULT (datetime('now')),"
             "  updated_at TEXT NOT NULL DEFAULT (datetime('now'))"
             ")"
         )
     except Exception:
         pass
+    # Migration for databases created before seen_at existed. Guarded by a
+    # PRAGMA rather than a try/except on the ALTER, because this runs on every
+    # board render and a swallowed exception per request hides real failures.
+    try:
+        cols = {r["name"] for r in (db_query("PRAGMA table_info(today_board_items)") or [])}
+        if "seen_at" not in cols:
+            db_execute("ALTER TABLE today_board_items ADD COLUMN seen_at TEXT DEFAULT ''")
+            _log.info("today_board_items: added seen_at column")
+    except Exception as exc:
+        _log.warning("today_board_items: seen_at migration skipped: %s", exc)
 
 
 def _board_context(board: str, show_all: bool = False) -> dict:
@@ -3711,7 +3722,8 @@ def _board_context(board: str, show_all: bool = False) -> dict:
     # with Ebola: WHO publishes a weekly situation report, so three of the five
     # slots were instalments of one running story.
     raw = db_query(
-        "SELECT id, title, url, source, starred, auto_added, created_at "
+        "SELECT id, title, url, source, starred, auto_added, created_at, "
+        "       seen_at, start_date, end_date, description "
         "FROM today_board_items "
         "WHERE board=? AND dismissed=0 "
         "ORDER BY starred DESC, created_at DESC LIMIT 120",
@@ -3725,6 +3737,21 @@ def _board_context(board: str, show_all: bool = False) -> dict:
         folded = [dict(r) for r in raw]
     # Starred stays on top of everything — an explicit pin outranks recency.
     folded.sort(key=lambda r: 0 if r.get("starred") else 1)
+    # UNSEEN, not RECENT, is what earns the highlight (2026-09-02).
+    # freshness.band() sets _fresh from created_at age, which meant the tint
+    # cleared after seven days whether it had been read or not — and because the
+    # default view is the five newest rows, all five were always tinted. A mark
+    # on 100% of rows carries no information. The age band is kept for the
+    # SHADE (this morning reads differently from last Tuesday) but an item that
+    # has been seen goes quiet regardless of how new it is.
+    for it in folded:
+        it["_unseen"] = not str(it.get("seen_at") or "").strip()
+        if not it["_unseen"]:
+            it["_fresh"] = ""
+        # The date a reader cares about is the event's, not the scrape's.
+        it["_when"] = str(it.get("start_date") or "").strip()
+    n_unseen = sum(1 for it in folded if it["_unseen"])
+
     items = folded[:limit]
     n_folded = len(raw) - len(folded)
     total = db_scalar(
@@ -3736,6 +3763,7 @@ def _board_context(board: str, show_all: bool = False) -> dict:
         "board": board,
         "items": items,
         "total": total,
+        "n_unseen": n_unseen,
         "shown": len(folded),
         "n_folded": n_folded,
         "show_all": show_all,
@@ -3786,7 +3814,7 @@ async def board_dismiss_item(request: Request, board: str, item_id: int):
         "UPDATE today_board_items SET dismissed=1, updated_at=? WHERE id=? AND board=?",
         (datetime.datetime.now().isoformat(), item_id, board),
     )
-    ctx = _board_context(board)
+    ctx = _board_context(board, request.query_params.get("all") == "1")
     return templates.TemplateResponse(
         request, "partials/today_board_box.html", ctx,
     )
@@ -3803,7 +3831,61 @@ async def board_star_item(request: Request, board: str, item_id: int):
         "updated_at=? WHERE id=? AND board=?",
         (datetime.datetime.now().isoformat(), item_id, board),
     )
-    ctx = _board_context(board)
+    ctx = _board_context(board, request.query_params.get("all") == "1")
+    return templates.TemplateResponse(
+        request, "partials/today_board_box.html", ctx,
+    )
+
+
+@router.post("/api/today/board/{board}/item/{item_id}/seen", response_class=HTMLResponse)
+async def board_seen_item(request: Request, board: str, item_id: int):
+    """Toggle 'I have seen this' on one board item.
+
+    The gesture the boards were missing. Before this the only way to make an
+    item stop looking new was to DELETE it — a destructive action offered as the
+    only acknowledgement, behind a confirm dialog, one row at a time. Marking
+    seen keeps the item and its link; dismissing it is still there for things
+    that should go away.
+
+    A toggle rather than a one-way flag, so an accidental click is recoverable
+    without touching the database.
+    """
+    if board not in _VALID_BOARDS:
+        return HTMLResponse("")
+    _ensure_board_table()
+    now = datetime.datetime.now().isoformat()
+    db_execute(
+        "UPDATE today_board_items "
+        "SET seen_at = CASE WHEN COALESCE(seen_at,'') = '' THEN ? ELSE '' END, "
+        "    updated_at = ? "
+        "WHERE id=? AND board=?",
+        (now, now, item_id, board),
+    )
+    ctx = _board_context(board, request.query_params.get("all") == "1")
+    return templates.TemplateResponse(
+        request, "partials/today_board_box.html", ctx,
+    )
+
+
+@router.post("/api/today/board/{board}/seen-all", response_class=HTMLResponse)
+async def board_seen_all(request: Request, board: str):
+    """Mark every visible item on one board as seen.
+
+    The news rail has had this for weeks; the boards never got it, so clearing
+    a morning's arrivals meant one confirm dialog per row. Marks only rows that
+    are actually live (not dismissed), and does not touch already-seen rows, so
+    the timestamps stay honest about when each was first acknowledged.
+    """
+    if board not in _VALID_BOARDS:
+        return HTMLResponse("")
+    _ensure_board_table()
+    now = datetime.datetime.now().isoformat()
+    db_execute(
+        "UPDATE today_board_items SET seen_at=?, updated_at=? "
+        "WHERE board=? AND dismissed=0 AND COALESCE(seen_at,'') = ''",
+        (now, now, board),
+    )
+    ctx = _board_context(board, request.query_params.get("all") == "1")
     return templates.TemplateResponse(
         request, "partials/today_board_box.html", ctx,
     )
@@ -4760,11 +4842,20 @@ async def today_whats_new(request: Request):
         "GROUP BY t.thread_id HAVING COUNT(*) > 1 "
         "ORDER BY item_count DESC LIMIT 3"
     ) or []
+    # `doi` and `source_url` come along so each line can open the PAPER.
+    # Every row here linked to `/knowledge` — the tab, not the item — so three
+    # different papers were three links to the same page, which is the defect
+    # that made the top-bar search results useless too. A glance panel may be
+    # short; its links still have to go somewhere specific.
     papers = db_query(
-        "SELECT title, journal, feed_name FROM new_publications "
+        "SELECT title, journal, feed_name, doi, source_url FROM new_publications "
         "WHERE discovered_at >= date('now','-1 day') AND COALESCE(read_at,'') = '' "
         "ORDER BY COALESCE(relevance,0) DESC, discovered_at DESC LIMIT 3"
     ) or []
+    for r in papers:
+        doi = str(r.get("doi") or "").strip()
+        r["link"] = (f"https://doi.org/{doi}" if doi
+                     else str(r.get("source_url") or "").strip())
     news_new = db_scalar(
         "SELECT COUNT(DISTINCT t.thread_id) FROM news_threads t "
         "JOIN news_thread_items ti ON ti.thread_id = t.thread_id "
