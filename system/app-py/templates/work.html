@@ -222,10 +222,26 @@
     </button>
   </div>
 
-  <!-- Task kanban board -->
-  {{ sec_label("Tasks by Status") }}
+  {#- ── The same tasks, other ways to see them — FOLDED ───────────────────
+      Both sections below re-present tasks that the project cards above already
+      list. Open, they took this page to 7,459px, so the reader scrolled past
+      the same work three times: once inside its project, once by status, once
+      by priority.
+
+      They are genuinely useful lenses, so they are not removed — they are
+      closed, and `hx-trigger="intersect once"` means a closed fold never
+      fetches at all (a display:none element cannot intersect). That also takes
+      two eager `hx-trigger="load"` requests off every visit to Work.
+
+      Same fold behaviour as Today's Dispatch, via the `.m-fold*` aliases. -#}
+  <details class="m-fold u-mb-5">
+    <summary class="m-fold-sum">
+      <span class="m-fold-lead">Tasks by status</span>
+      <span class="m-fold-hint">the same tasks, arranged as a board</span>
+    </summary>
+    <div class="m-fold-body">
   <div hx-get="/api/partial/work/kanban"
-       hx-trigger="load"
+       hx-trigger="intersect once"
        hx-swap="outerHTML">
     <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:var(--m-space-4);">
       {% for col in ['Inbox', 'This week', 'In progress', 'Closed · this week'] %}
@@ -238,18 +254,24 @@
     </div>
   </div>
 
+    </div>
+  </details>
+
   <!-- All tasks — cross-project view sorted by priority -->
-  <h2 class="sec-label u-mb-4" style="margin-top:var(--m-space-6);">
-    <span>All Open Tasks · Priority View</span>
-    <button class="u-label" onclick="openCapture('t')"
-            style="margin-left:auto;background:none;border:1px solid var(--m-line);border-radius:var(--m-radius);padding:var(--m-space-1) var(--m-space-3);cursor:pointer;">+ Task</button>
-  </h2>
+  <details class="m-fold u-mb-5">
+    <summary class="m-fold-sum">
+      <span class="m-fold-lead">All open tasks</span>
+      <span class="m-fold-hint">every project at once, by priority</span>
+    </summary>
+    <div class="m-fold-body">
   <div hx-get="/api/partial/work/all-tasks"
-       hx-trigger="load"
+       hx-trigger="intersect once"
        hx-swap="outerHTML"
        id="work-all-tasks">
     <div class="panel panel-pad skeleton" style="min-height:80px;"></div>
   </div>
+    </div>
+  </details>
 
   </div><!-- ══════════ /LIST VIEW ══════════ -->
 

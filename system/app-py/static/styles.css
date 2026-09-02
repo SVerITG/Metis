@@ -424,8 +424,37 @@ pre code { background: transparent; padding: 0; color: inherit; }
 .topbar .crumbs { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--m-muted); }
 .topbar .crumbs .sep { margin: 0 8px; color: var(--m-muted); }
 .topbar .crumbs .here { color: var(--m-ink); }
-.t-search { display: flex; align-items: center; background: var(--m-surface); border: 1px solid var(--m-rule); border-radius: 2px; padding: 5px 10px; font-family: var(--m-mono); font-size: 12px; gap: 8px; width: 220px; color: var(--m-muted); cursor: text; transition: border-color 150ms ease; }
-.t-search:hover { border-color: var(--m-rule-strong); }
+/* Search — a button in the bar, a dialog over the page.
+   Replaced .t-search (a 220px always-open input) 2026-09-02. Two always-visible
+   search boxes on Today, 150px apart, calling different endpoints. */
+.t-searchbtn { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; background: none; color: var(--m-muted); border: 1px solid var(--m-rule); border-radius: var(--m-radius-sm); cursor: pointer; flex-shrink: 0; transition: border-color 150ms ease, color 150ms ease; }
+.t-searchbtn:hover { border-color: var(--m-accent); color: var(--m-ink); }
+.t-searchbtn-kbd { font-family: var(--m-mono); font-size: 10px; letter-spacing: 0; padding: 0 5px; border: 1px solid var(--m-rule-soft); border-radius: var(--m-radius-sm); opacity: 0.8; }
+/* In rail mode the sidebar hides its labels; the bar does the same, keeping the
+   icon and the shortcut so the control stays recognisable at any width. */
+@media (max-width: 900px) { .t-searchbtn-label { display: none; } }
+
+#search-overlay { display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.45); }
+#search-overlay[style*="display: block"],
+#search-overlay[style*="display:block"] { animation: captureIn .18s ease forwards; }
+#search-modal { position: absolute; top: 11vh; left: 50%; transform: translateX(-50%); width: min(920px, 94vw); max-height: 74vh; display: flex; flex-direction: column; background: var(--m-surface); border: 1px solid var(--m-rule-strong); border-radius: var(--m-radius); box-shadow: 0 18px 48px rgba(0,0,0,.22); overflow: hidden; animation: captureCardIn .22s cubic-bezier(.34,1.56,.64,1) forwards; }
+.search-modal-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--m-rule); background: var(--m-surface-2); flex-shrink: 0; }
+.search-modal-ico { color: var(--m-muted); flex-shrink: 0; }
+#search-modal-input { flex: 1; min-width: 0; background: transparent; border: none; font-family: var(--m-ui); font-size: 16px; color: var(--m-ink); }
+#search-modal-input:focus { outline: none; }
+/* The browser's own clear-X sat immediately left of the dialog's close-X — two
+   crosses side by side meaning different things. The dialog's own close stays. */
+#search-modal-input::-webkit-search-cancel-button,
+#search-modal-input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+#search-modal-input::placeholder { color: var(--m-muted-soft); }
+.search-modal-spin { font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--m-muted); flex-shrink: 0; }
+.search-modal-close { background: none; border: none; color: var(--m-muted); font-size: 20px; line-height: 1; padding: 0 4px; cursor: pointer; flex-shrink: 0; transition: color 120ms ease; }
+.search-modal-close:hover { color: var(--m-ink); }
+/* The results pane is the ONLY scroller in the dialog, so the field stays put
+   while a long result set moves under it. */
+.search-modal-results { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 4px 0 8px; }
+.search-modal-hint { font-family: var(--m-ui); font-size: 13.5px; line-height: 1.6; color: var(--m-muted); padding: 22px 18px 24px; margin: 0; }
+.search-modal-hint-k { font-family: var(--m-mono); font-size: 11px; border: 1px solid var(--m-rule); border-radius: var(--m-radius-sm); padding: 0 5px; }
 
 /* Theme switch */
 .theme-switch { --track-w:52px; --track-h:22px; --pad:2px; position: relative; width: var(--track-w); height: var(--track-h); border: 1px solid var(--m-rule-strong); border-radius: 999px; background: var(--m-surface-2); cursor: pointer; flex-shrink: 0; transition: background 180ms ease, border-color 180ms ease; }
@@ -891,6 +920,65 @@ a.board-item-title:hover { color: var(--m-accent); }
   transition: opacity 120ms, color 120ms;
 }
 .board-dismiss:hover { opacity: 1; color: var(--m-alert); }
+
+/* ── Seen state, date, and the actions group ───────────────────────────────
+   Added 2026-09-02 with the seen_at column. The boards had two verbs (star,
+   dismiss) and no way to say "read". The state slot is a FIXED width and keeps
+   it whether or not the marker is drawn, which is what makes every title on a
+   board start at the same x — the same rule as .mrow's state slot. */
+.board-seen {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 10px;
+  width: 13px;                 /* fixed: holds its width when quiet */
+  flex-shrink: 0;
+  padding: 0;
+  line-height: 1;
+  margin-top: 4px;
+  text-align: center;
+  color: var(--m-rule-strong);
+  transition: color 120ms, transform 160ms var(--m-ease-row);
+}
+.board-seen:hover { color: var(--m-ink); transform: scale(1.25); }
+/* Unseen is the loud state, and it takes its board's own accent so the three
+   boxes stay distinguishable at a glance. */
+.board-box--alert  .board-seen--unseen { color: var(--m-alert); }
+.board-box--accent .board-seen--unseen { color: var(--m-accent); }
+.board-box--ok     .board-seen--unseen { color: var(--m-ok); }
+
+.board-item-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* The event date / deadline. Ink rather than muted: on these three boards it is
+   the most decision-relevant thing in the row. */
+.board-item-date {
+  display: inline-block;
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--m-ink);
+  border: 1px solid var(--m-rule-strong);
+  border-radius: var(--m-radius);
+  padding: 0 5px;
+  margin-top: 3px;
+  margin-right: 5px;
+  white-space: nowrap;
+}
+
+.board-box-count-new { color: var(--m-ink); font-weight: 500; }
+.board-box-btn--seen { color: var(--m-accent); }
+
+/* The footer holds four controls in a third of the page width. Without this the
+   browser broke WORDS instead — "Mark / all / seen" stacked three high, and
+   "Show all / 47" two — so the row of controls was taller than the list it
+   belonged to. Wrap BETWEEN buttons, never inside one. */
+.board-box-foot { flex-wrap: wrap; }
+.board-box-foot .board-box-btn { white-space: nowrap; }
 
 /* Empty state */
 .board-box-empty {
@@ -1404,25 +1492,35 @@ body.is-dormant { overflow: hidden; }
 }
 .focus-none .u-link { margin-left: auto; font-size: 11px; }
 
-.dispatch-sum {
+/* `.m-fold*` are aliases of the Dispatch fold, so Work and Today share ONE
+   fold behaviour instead of two implementations that drift. Added 2026-09-02
+   when Work's two redundant task views were folded away. */
+.dispatch-sum, .m-fold-sum {
   list-style: none; cursor: pointer; display: flex; align-items: baseline;
   gap: 12px; padding: 10px 0; border-top: 1px solid var(--m-rule);
 }
-.dispatch-sum::-webkit-details-marker { display: none; }
-.dispatch-sum::before { content: "\25B8"; color: var(--m-muted); font-size: 10px; }
-.dispatch-fold[open] .dispatch-sum::before { content: "\25BE"; }
-.dispatch-lead {
+.dispatch-sum::-webkit-details-marker, .m-fold-sum::-webkit-details-marker { display: none; }
+.dispatch-sum::before, .m-fold-sum::before { content: "\25B8"; color: var(--m-muted); font-size: 10px; }
+.dispatch-fold[open] .dispatch-sum::before,
+.m-fold[open] .m-fold-sum::before { content: "\25BE"; }
+.dispatch-lead, .m-fold-lead {
   font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.16em;
   text-transform: uppercase; color: var(--m-muted);
 }
-.dispatch-hint {
+.dispatch-hint, .m-fold-hint {
   margin-left: auto; font-family: var(--m-mono); font-size: 9px;
   letter-spacing: 0.1em; color: var(--m-muted); opacity: .8;
 }
-.dispatch-sum:hover .dispatch-lead { color: var(--m-ink); }
-.dispatch-sum:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
+.dispatch-sum:hover .dispatch-lead, .m-fold-sum:hover .m-fold-lead { color: var(--m-ink); }
+.dispatch-sum:focus-visible, .m-fold-sum:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
 .dispatch-body {
   max-height: 60vh; overflow-y: auto; padding-top: var(--m-space-2);
+  border-top: 1px solid var(--m-rule-soft);
+}
+/* Work's folds hold a four-column board and a long list; capping them at 60vh
+   would put a scrollbar inside a scrollbar. They cost nothing while closed. */
+.m-fold-body {
+  padding-top: var(--m-space-3);
   border-top: 1px solid var(--m-rule-soft);
 }
 
@@ -4003,37 +4101,6 @@ details summary { outline: none; }
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-.today-find {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.today-find input[type="search"] {
-  flex: 1;
-  min-width: 0;
-  background: var(--m-surface);
-  border: 1px solid var(--m-rule);
-  border-radius: 6px;
-  padding: 10px 14px;
-  font-family: var(--m-display);
-  font-size: 14px;
-  color: var(--m-ink);
-  transition: border-color 120ms ease;
-}
-.today-find input[type="search"]::placeholder {
-  color: var(--m-muted);
-  font-style: italic;
-}
-.today-find input[type="search"]:hover { border-color: var(--m-muted); }
-.today-find input[type="search"]:focus-visible {
-  outline: 2px solid var(--m-accent);
-  outline-offset: 1px;
-  border-color: var(--m-accent);
-}
-@media (prefers-reduced-motion: reduce) {
-  .today-find input[type="search"] { transition: none; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
