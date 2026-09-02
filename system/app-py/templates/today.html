@@ -62,26 +62,18 @@
        of sequence and jumps as each skeleton resolves. Panels inside the closed
        fold use `intersect once` and are never fetched at all unless opened. -#}
 
-  <!-- ===== 1b. Find — the fastest route to a known thing =================
-       Audit 2026-08-25: with 3,291 memories, 1,433 unread papers and 787 news
-       signals on this machine, the quickest way to a thing you can NAME was to
-       remember which tab it lived under. There was nowhere to type.
+  {#- ===== 1b. Find — now a dialog, not a box on the page ==================
+       The Today surface had its own search field here, and the top bar had
+       another one 150px above it. They called DIFFERENT endpoints, so the same
+       question returned different answers depending on which box you happened
+       to type into.
 
-       This reuses knowledge.py's `unified-search`, which already fans out across
-       the three library silos and episodic memory. A second search that returns
-       different answers to the same question would be worse than none. ======== -->
-  <form class="today-find u-mb-5" role="search" onsubmit="return false;">
-    <label for="today-find-input" class="sr-only">Search your library and memory</label>
-    <input id="today-find-input" type="search" name="q" autocomplete="off"
-           placeholder="Find a paper, a memory, a decision…"
-           hx-get="/api/partial/knowledge/unified-search"
-           hx-trigger="keyup changed delay:350ms, search"
-           hx-target="#today-find-results"
-           hx-indicator="#today-find-spin">
-    <span id="today-find-spin" class="htmx-indicator u-mono"
-          style="letter-spacing:.12em;text-transform:uppercase;color:var(--m-muted);">searching…</span>
-  </form>
-  <div id="today-find-results" style="margin-bottom:var(--m-space-6);"></div>
+       Asked for 2026-09-02: one search BUTTON that opens a dialog. It lives in
+       the top bar (`.t-searchbtn` in base.html), opens on "/" from anywhere,
+       and calls `unified-search` — the better of the two, which fans out across
+       the library silos and episodic memory. Removing the field from here also
+       gives Today its first screenful back to the brief and the day's work,
+       which is what this surface is for. ==================================== -#}
 
     {#- ══════════════════════════════════════════════════════════════════════
       TODAY IS ORDERED BY THE QUESTIONS YOU ASK AT NINE IN THE MORNING.
@@ -201,13 +193,32 @@
        hx-trigger="load delay:220ms"
        hx-swap="innerHTML"></div>
 
-  {#- "New in your field" sits beside "What changed in your field yesterday":
-      one is what ARRIVED, the other is what MOVED. Same question of two
-      timeframes, so they belong next to each other. -#}
-  <div class="today-pair u-mb-6">
+  {#- NOT PAIRED (changed 2026-09-02). These two were side by side in a
+      `.today-pair`, which pairs panels of SIMILAR height — and these are a
+      five-paper list with a control rail on each row, next to a single small
+      course card. `.today-pair` sets `align-items: start`, correctly, so the
+      right column simply stopped about a thousand pixels above the left one
+      and Today carried a dead half-column down the middle of the page.
+
+      Full width each instead. The paper list gains the room it actually needed
+      (its header ran "PUBLICATION SCAN · NOTHING NEW IN THE LAST HOUR · 62 IN
+      ALL · WEEK · UPDATE" across half a column), and the course card reads
+      fine as a slim band — the morning brief above it is full width too.
+
+      The pairing that DOES work is kept: the two glance windows in `whats-new`
+      above are the same shape and the same three lines, which is what makes
+      the eye compare them. -#}
+  {#- Spacing on an OUTER wrapper, not on the swap target. `hx-swap="outerHTML"`
+      replaces the element it is on, so a `u-mb-6` written there is discarded
+      with it the moment the partial arrives — caught by
+      tools/check_htmx_swaps.py within a minute of my writing it, which is the
+      third time that tool has paid for itself. -#}
+  <div class="u-mb-6">
     <div hx-get="/api/partial/today/literature-discovery"
          hx-trigger="load delay:250ms"
          hx-swap="outerHTML"></div>
+  </div>
+  <div class="u-mb-6">
     <div hx-get="/api/partial/today/learning-nudge"
          hx-trigger="load delay:300ms"
          hx-swap="outerHTML"></div>
