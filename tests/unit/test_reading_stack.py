@@ -1,6 +1,6 @@
 """The reading stack: one triage store, and the promises it makes.
 
-Built 2026-08-26. the researcher: "The today page is really to see what is new, open them
+Built 2026-08-26. The researcher: "The today page is really to see what is new, open them
 if I want to see them straight away but often that they get categorized for
 future reading so they become a stack of things to read connected to the News
 and Library surfaces."

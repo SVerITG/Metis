@@ -233,7 +233,7 @@ none by a test. Shoot the surface before believing it.
 
 ## What the styling now is — decided, not inherited
 
-the researcher chose ten of them from a live studio on 31 August:
+The researcher chose ten of them from a live studio on 31 August:
 **1D · 2C · 3D · 4C · 5A · 6C · 7C · 8C · 9A · 10D**
 
 | | |

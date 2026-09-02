@@ -97,7 +97,7 @@ def test_metis_work_does_not_ground():
     fired = _gate(SYSTEM_PROMPTS)
     leaks = [p for p, f in zip(SYSTEM_PROMPTS, fired) if f]
     assert not leaks, (
-        "corpus grounding fired on work about Metis itself — the researcher asked "
+        "corpus grounding fired on work about Metis itself — The researcher asked "
         f"for this to stop on 2026-08-25:\n  " + "\n  ".join(leaks)
     )
 
@@ -121,7 +121,7 @@ def test_stopwords_are_filtered_not_merely_absent():
     )
 
 # ── Session stickiness ──────────────────────────────────────────────────────
-# Added 2026-08-29. the researcher: "When we are working on metis you do not have to route
+# Added 2026-08-29. The researcher: "When we are working on metis you do not have to route
 # through the library if not indicated specifically."
 #
 # The gate-function tests above cannot cover this, because the rule is not a

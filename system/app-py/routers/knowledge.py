@@ -2821,7 +2821,7 @@ async def library_toggle_read(item_id: int, request: Request):
     # read_at records WHEN, which is what makes "new since you last looked"
     # answerable at all. Cleared on un-read so the column never claims a reading
     # that was taken back. The whole library was reset to read on 2026-08-29 at
-    # the researcher's request — those rows share one timestamp, so a bulk reset stays
+    # The researcher's request — those rows share one timestamp, so a bulk reset stays
     # distinguishable from 3,083 individual acts of reading.
     db_execute(
         "UPDATE literature_metadata SET is_read=?, read_at=? WHERE id=?",

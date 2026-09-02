@@ -1,6 +1,6 @@
 """The safe, the taste model, and the promise that nothing is ever removed.
 
-Built 2026-08-26. the researcher asked for a focus where you can "keep or save a new item
+Built 2026-08-26. The researcher asked for a focus where you can "keep or save a new item
 or article in a safe, that will be used for further reflection", and decline
 others so "similar things are less (not entirely not) suggested in the future".
 

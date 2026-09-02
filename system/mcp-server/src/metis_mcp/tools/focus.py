@@ -1,7 +1,7 @@
 """focus.py — a focus area is a LENS, not a container.
 
 WHAT THIS IS FOR
-    the researcher, 2026-08-24: the "AI in Public Health course" turned out not to be a
+    The researcher, 2026-08-24: the "AI in Public Health course" turned out not to be a
     course. A course has an end; an ongoing interest does not. What he actually
     wanted was a surface that stays current on one subject — news, literature,
     an overview, and somewhere to put notes and ideas — and that can be pushed

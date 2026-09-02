@@ -25,7 +25,7 @@ _TTL = 86400  # rebuild the profile at most once per day
 def _corpus_texts(con: sqlite3.Connection) -> tuple[list[str], list[str], list[str]]:
     """Return (topic_texts, work_texts, library_texts).
 
-    THREE bands, not two, and the split is the whole point. the researcher, 2026-08-31:
+    THREE bands, not two, and the split is the whole point. The researcher, 2026-08-31:
     "It should be close to things and topics in my projects, ideas and notes."
 
     topic_texts   the EXPLICIT stated focus (configured topics / field / methods)

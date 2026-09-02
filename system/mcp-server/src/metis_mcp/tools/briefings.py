@@ -1,7 +1,7 @@
 """Nature Briefing — the editorial digests, kept apart from the news feed.
 
 WHY THIS IS NOT JUST ANOTHER RSS SOURCE
-    the researcher asked for the Nature Daily Briefing and the AI & Robotics Briefing to
+    The researcher asked for the Nature Daily Briefing and the AI & Robotics Briefing to
     have "special places in the news surface". They are not a wire feed: each one
     is an EDITION, edited as a whole, with a running order that means something.
     Shredding them into `news_briefs` would drop 3,700 more headlines into a feed

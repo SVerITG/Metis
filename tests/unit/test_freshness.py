@@ -1,6 +1,6 @@
 """New on top, and one line per running story.
 
-the researcher, 2026-08-27: highlight new content and put it on top; and "in the lists
+The researcher, 2026-08-27: highlight new content and put it on top; and "in the lists
 there is the same item though (outbreak I have seen Ebola multiple times for
 example)".
 
