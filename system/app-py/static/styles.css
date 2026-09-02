@@ -5232,7 +5232,7 @@ tr:hover .due-chip--none, li:hover .due-chip--none, .item:hover .due-chip--none,
 }
 
 /* ── NEWS DENSITY ──────────────────────────────────────────────────────────
-   the researcher, 2026-09-01: "reduce spacing in the News surface between lines."
+   Reported 2026-09-01: "reduce spacing in the News surface between lines."
 
    The lines were not what was spacing them. A headline is 13px at a 19.5px
    line-height, but the measured pitch between two headlines was 40px — because
@@ -5432,7 +5432,7 @@ summary:focus-visible,
 a.num-lead:hover { border-bottom-color: var(--m-accent-hover); color: var(--m-accent); }
 
 /* ── RETOUCH · a title is not a bar across a box ────────────────────────
-   the researcher, 2026-08-31: "title bars not in boxes."
+   Reported 2026-08-31: "title bars not in boxes."
 
    With 3D the panel became an object with a shadow, and every panel that drew
    its heading as a full-width row with a rule beneath it turned into a box with

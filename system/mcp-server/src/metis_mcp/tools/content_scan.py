@@ -762,7 +762,7 @@ def _score_signal(title: str, summary: str, feed_name: str,
         score += 1
 
     # ── "HIGH" NOW REQUIRES SEMANTIC EVIDENCE ─────────────────────────────
-    # the researcher, 2026-08-31: "When it says 'related to your work' it is not so close
+    # Reported 2026-08-31: "When it says 'related to your work' it is not so close
     # actually."
     #
     # He was right, and the arithmetic shows why: an urgency word scored +2 and

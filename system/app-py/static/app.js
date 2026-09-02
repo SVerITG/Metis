@@ -2808,7 +2808,7 @@ metis.keys = (function () {
 
 
 /* ── Every section folds, on every surface ───────────────────────────────────
-   the researcher, 2026-08-26: "I also thought we were working on artefacts for every
+   Reported 2026-08-26: "I also thought we were working on artefacts for every
    surface, so every section is collapsible?"
 
    ONE MECHANISM, NOT EIGHT TEMPLATES. Every section heading in this application
@@ -3011,7 +3011,7 @@ document.addEventListener('keydown', function (e) {
 /* ══════════════════════════════════════════════════════════════════════════
    ONE METIS AT A TIME
    ─────────────────────────────────────────────────────────────────────────
-   the researcher, 2026-09-02: "every day I open Metis but there are still old Metis'
+   Reported 2026-09-02: "every day I open Metis but there are still old Metis'
    version open in my browsers ... what would be an elegant way to have only
    one Metis version open at a time."
 
