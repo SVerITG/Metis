@@ -552,16 +552,46 @@ _URGENCY_WORDS = {
 # surveillance feeds), not keyword-gated, to avoid false positives from research
 # articles that merely mention "outbreak". Events and Funding use keywords but
 # require specific multi-word phrases to stay selective.
-_OUTBREAK_SOURCES = {
+# NO board is filled from the news scan any more (2026-09-02, at the
+# researcher's request: "I just want to follow the outbreaks that there are in
+# the world ... the closest is the WHO DON outbreak news, where they only
+# mention the main outbreaks").
+#
+# Source-gating Outbreaks looked more careful than keyword-gating, and it was
+# still wrong: half of these sources no longer exist (see the REMOVED block
+# above — WHO retired the DON feed outright), so in practice the gate resolved
+# to WHO AFRO, whose RSS carries everything that regional office publishes. The
+# board filled with 41 of 47 rows from one press feed, including a cancer
+# services blueprint and a Regional Committee session. A whole-feed mirror is
+# the opposite of "only the main outbreaks".
+#
+# What DOES match the DON model is the path that was already there: the board's
+# Update control asks Claude to look at what is actually happening and save the
+# handful that matter, via `update_today_board`. That is a selection, which is
+# what DON is. The prompt now names DON as the reference to mirror.
+_RETIRED_OUTBREAK_SOURCES = {
     "who outbreak news", "who don (full)", "promed-mail", "goarn",
     "africa cdc", "ecdc threat reports", "who afro", "who wer",
 }
-_EVENT_KEYWORDS = {
+# Events and Funding are NOT filled from the news scan (2026-09-02). They were,
+# by keyword, and it produced a board that was 81% cardiology news: the phrase
+# "annual meeting" matches every study reported FROM a congress, so the Events
+# board filled with "After TAVI, anticoagulants outperform antiplatelet agents"
+# instead of congresses anyone could attend. 17 of 21 rows.
+#
+# The keyword list is not the fix and tightening it is not either — a headline
+# about a conference and a conference are indistinguishable at this level, and
+# three earlier rounds of threshold work did not shift it. These two boards have
+# no RSS source by design and are curated by hand or by `update_today_board`,
+# which is a decision already on record. This function now honours it.
+#
+# Kept as a record of what was tried, and so nothing re-adds it by accident:
+_RETIRED_EVENT_KEYWORDS = {
     "call for abstracts", "registration open", "annual meeting",
     "congress 2026", "congress 2027", "symposium 2026", "symposium 2027",
     "conference 2026", "conference 2027", "workshop 2026", "workshop 2027",
 }
-_FUNDING_KEYWORDS = {
+_RETIRED_FUNDING_KEYWORDS = {
     "call for proposals", "call for applications", "request for applications",
     "request for proposals", "funding opportunity", "grant opportunity",
     "fellowship opportunity", "scholarship deadline",
@@ -577,6 +607,7 @@ CREATE TABLE IF NOT EXISTS today_board_items (
     source      TEXT DEFAULT '',
     starred     INTEGER DEFAULT 0,
     dismissed   INTEGER DEFAULT 0,
+    seen_at     TEXT DEFAULT '',
     auto_added  INTEGER DEFAULT 1,
     start_date  TEXT DEFAULT '',
     end_date    TEXT DEFAULT '',
@@ -587,42 +618,37 @@ CREATE TABLE IF NOT EXISTS today_board_items (
 
 
 def _maybe_add_to_board(conn, title: str, url: str, summary: str, source_name: str):
-    """Route a scanned article to a Today board if it qualifies.
+    """Deliberately does nothing. Kept so the call site stays explicit.
 
-    Outbreaks: source-gated — only items from actual surveillance feeds (WHO DON,
-    ProMED, GOARN, etc.). A journal article mentioning "outbreak" is NOT an outbreak.
-    Events/Funding: keyword-gated with selective multi-word phrases.
+    All three Today boards are curated: by hand, or by `update_today_board`
+    after Claude has looked at what is happening. No RSS feed is a substitute —
+    a feed mirrors a publisher, and these boards are meant to hold a selection.
+    See the note above `_RETIRED_OUTBREAK_SOURCES` for what was tried.
     """
-    board = None
-    # Outbreaks: only from surveillance sources
-    if source_name.lower() in _OUTBREAK_SOURCES:
-        board = "outbreaks"
-    else:
-        haystack = (title + " " + summary).lower()
-        if any(w in haystack for w in _EVENT_KEYWORDS):
-            board = "events"
-        elif any(w in haystack for w in _FUNDING_KEYWORDS):
-            board = "funding"
-    if not board:
-        return
-    if conn.execute("SELECT 1 FROM today_board_items WHERE url=? LIMIT 1", (url,)).fetchone():
-        return
-    conn.execute(
-        "INSERT INTO today_board_items (board, title, url, source, auto_added) "
-        "VALUES (?, ?, ?, ?, 1)",
-        (board, title[:300], url, source_name),
-    )
+    # Nothing is routed from the scan any more — Outbreaks, Events and Funding
+    # are all curated, by hand or through `update_today_board`. Kept as a
+    # deliberate no-op rather than deleted, because the call site is inside the
+    # scan loop and a reader finding it gone would reasonably re-add it.
+    #
+    # The INSERT that used to live here is deleted, not commented out: dead code
+    # after an unconditional `return` reads as reachable to anyone skimming, and
+    # it kept this function looking like it still wrote to a board.
+    return
 
 
 @app.tool()
 def update_today_board(board: str, items: list[dict]) -> dict:
     """Fill a Today-surface board (Outbreaks, Events or Funding) with items you found on the web.
 
-    Use this after web-searching for the researcher's field. The Outbreaks board holds
-    current active disease outbreaks / public-health emergencies; the Events board holds
-    upcoming scientific congresses/conferences/symposia; the Funding board holds open
-    or upcoming research funding calls, grants and fellowships. These boards have no
-    RSS source, so this tool is how Claude Desktop (on the user's subscription, no API
+    Use this after web-searching for the researcher's field. The Outbreaks board is
+    modelled on WHO's Disease Outbreak News: the handful of outbreaks that MATTER
+    right now, each with a location and a date — not a mirror of any one
+    publisher's feed. (WHO retired the DON RSS feed; the page is the reference,
+    and ECDC's Communicable Disease Threats Report covers the gap.) The Events
+    board holds upcoming scientific congresses/conferences/symposia; the Funding
+    board holds open or upcoming research funding calls, grants and fellowships.
+    All three are curated — no RSS feed writes to them — so this tool is how
+    Claude Desktop (on the user's subscription, no API
     rate limit) keeps them current — the dashboard's "Update" buttons open
     a chat that calls this tool.
 
@@ -657,9 +683,13 @@ def update_today_board(board: str, items: list[dict]) -> dict:
         seen.add(url)
         date = str(it.get("date", "")).strip()
         desc = str(it.get("description", "")).strip()
-        if date:
-            desc = (desc + f" · {date}").strip(" ·")
-        clean.append((title[:300], url[:500], desc[:400]))
+        # The date goes in start_date, which is the column that exists for it
+        # and which the board row renders. It used to be appended to
+        # `description` instead — a field the template never printed — so every
+        # date collected here was discarded on the way to the screen while
+        # start_date sat empty on all 70 rows. On boards whose whole purpose is
+        # deadlines, that was the single most useful field going missing.
+        clean.append((title[:300], url[:500], desc[:400], date[:60]))
 
     if not clean:
         return {"ok": False, "error": "no valid items — each needs a title and an http(s) url"}
@@ -668,21 +698,28 @@ def update_today_board(board: str, items: list[dict]) -> dict:
         conn = _sqlite3.connect(str(paths.db))
         conn.execute(_DDL_BOARD)
         now = _dt.datetime.now().isoformat()
-        # Refresh = replace previous auto/tool-added rows; keep curated & manual.
+        # Refresh = replace every AUTO-added row; keep curated & manual.
+        #
+        # This used to name two sources explicitly, which meant a refresh cleared
+        # the good rows and left the scanner's behind — so the noise accumulated
+        # permanently and each refresh made the ratio worse. `auto_added` is the
+        # honest predicate: 0 is set only by a human (the manual add form) or by
+        # curation, and it marks exactly the rows that must survive.
         conn.execute(
-            "DELETE FROM today_board_items WHERE board=? AND source IN ('web-search','claude')",
+            "DELETE FROM today_board_items WHERE board=? AND auto_added=1",
             (board,),
         )
         added = 0
-        for title, url, desc in clean:
+        for title, url, desc, date in clean:
             if conn.execute(
                 "SELECT 1 FROM today_board_items WHERE board=? AND url=? LIMIT 1", (board, url)
             ).fetchone():
                 continue  # don't shadow a curated/manual item with the same URL
             conn.execute(
-                "INSERT INTO today_board_items (board, title, url, description, source, auto_added, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, 'claude', 1, ?, ?)",
-                (board, title, url, desc, now, now),
+                "INSERT INTO today_board_items (board, title, url, description, "
+                "start_date, source, auto_added, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, ?, 'claude', 1, ?, ?)",
+                (board, title, url, desc, date, now, now),
             )
             added += 1
         conn.commit()

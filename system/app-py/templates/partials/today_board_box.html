@@ -43,7 +43,14 @@
   <div class="board-box-head">
     {{ board_icon(board) }}
     <span class="board-box-label">{{ m.label }}</span>
-    {% if total %}<span class="board-box-count">{{ total }}</span>{% endif %}
+    {#- "3 new · 21" beats "21". The bare total was the same number every
+        morning, so it answered a question nobody was asking; what a reader
+        wants at 9am is how much of it they have not looked at. -#}
+    {% if total %}
+    <span class="board-box-count">
+      {% if n_unseen %}<span class="board-box-count-new">{{ n_unseen }} new</span> · {% endif %}{{ total }}
+    </span>
+    {% endif %}
   </div>
 
   {# ── Items ── #}
@@ -51,10 +58,18 @@
   <div class="board-box-list">
     {% for item in items %}
     <div class="board-item{% if item.auto_added %} board-item--scan{% endif %}{% if item._fresh %} is-new is-new--{{ item._fresh }}{% endif %}">
-      <button type="button" class="board-star{% if item.starred %} board-star--on{% endif %}"
-              hx-post="/api/today/board/{{ board }}/item/{{ item.id }}/star"
+      {#- The STATE slot (see _row.html's anatomy: state · title · meta · actions).
+          A filled ring means "you have not looked at this yet"; clicking it
+          records that you have. This is the control the boards were missing —
+          previously the only way to clear a new item was the × beside it, which
+          deletes. Star moved into the actions group on the right, where the
+          other verbs live, because it is a decision and not a state. -#}
+      <button type="button" class="board-seen{% if item._unseen %} board-seen--unseen{% endif %}"
+              hx-post="/api/today/board/{{ board }}/item/{{ item.id }}/seen{% if show_all %}?all=1{% endif %}"
               hx-target="#board-{{ board }}" hx-swap="outerHTML"
-              title="{% if item.starred %}Unstar{% else %}Star{% endif %}">{% if item.starred %}★{% else %}☆{% endif %}</button>
+              aria-pressed="{{ 'false' if item._unseen else 'true' }}"
+              title="{% if item._unseen %}Mark as seen{% else %}Seen{% if item.seen_at %} {{ item.seen_at[:10] }}{% endif %} — click to mark unseen{% endif %}"
+              >{% if item._unseen %}●{% else %}○{% endif %}</button>
       <div class="board-item-body">
         {% if item.url %}
           <a href="{{ item.url }}" target="_blank" rel="noopener" class="board-item-title"
@@ -73,16 +88,32 @@
           +{{ item._n_earlier }} earlier
         </span>
         {% endif %}
-        {% if item._fresh %}
-        <span class="badge badge--{{ 'accent' if item._fresh == 'today' else 'quiet' }}">
-          {{ 'new today' if item._fresh == 'today' else 'this week' }}
-        </span>
+        {#- `_when` is the EVENT's date (start_date), not the scrape's. It used
+            to be neither: update_today_board folded the date it collected into
+            `description`, which this template never rendered, while start_date
+            sat empty on every row — so the only date shown was "this week",
+            meaning when Metis found it, which reads as when the congress is. -#}
+        {% if item._when %}
+        <span class="board-item-date" title="Event date / deadline">{{ item._when }}</span>
+        {% endif %}
+        {#- Only "new today" earns a pill. The state slot's filled dot already
+            says "unseen", and a pill repeating it put the same fact on the row
+            twice AND added the third line that made every row three lines tall.
+            One mark per state. -#}
+        {% if item._unseen and item._fresh == 'today' %}
+        <span class="badge badge--accent">new today</span>
         {% endif %}
       </div>
-      <button type="button" class="board-dismiss"
-              hx-delete="/api/today/board/{{ board }}/item/{{ item.id }}"
-              hx-target="#board-{{ board }}" hx-swap="outerHTML"
-              hx-confirm="Remove this item?" title="Dismiss">×</button>
+      <span class="board-item-actions">
+        <button type="button" class="board-star{% if item.starred %} board-star--on{% endif %}"
+                hx-post="/api/today/board/{{ board }}/item/{{ item.id }}/star{% if show_all %}?all=1{% endif %}"
+                hx-target="#board-{{ board }}" hx-swap="outerHTML"
+                title="{% if item.starred %}Unstar{% else %}Star{% endif %}">{% if item.starred %}★{% else %}☆{% endif %}</button>
+        <button type="button" class="board-dismiss"
+                hx-delete="/api/today/board/{{ board }}/item/{{ item.id }}{% if show_all %}?all=1{% endif %}"
+                hx-target="#board-{{ board }}" hx-swap="outerHTML"
+                hx-confirm="Remove this item?" title="Dismiss">×</button>
+      </span>
     </div>
     {% endfor %}
   </div>
@@ -94,6 +125,12 @@
 
   {# ── Footer ── #}
   <div class="board-box-foot">
+    {% if n_unseen %}
+    <button type="button" class="btn btn--ghost btn--caps board-box-btn board-box-btn--seen"
+            hx-post="/api/today/board/{{ board }}/seen-all{% if show_all %}?all=1{% endif %}"
+            hx-target="#board-{{ board }}" hx-swap="outerHTML"
+            title="Mark all {{ n_unseen }} unseen {{ m.label|lower }} items as seen">✓ Seen all</button>
+    {% endif %}
     {% if total > 5 and not show_all %}
     <button type="button" class="btn btn--ghost btn--caps board-box-btn"
             hx-get="/api/partial/today/board/{{ board }}?all=1"
@@ -104,7 +141,7 @@
             hx-target="#board-{{ board }}" hx-swap="outerHTML">Collapse</button>
     {% endif %}
     {%- set claude_board_prompt -%}
-Update my Metis {{ m.label }} board. Search the web for current, real {% if board == 'outbreaks' %}active disease outbreaks and public-health emergencies (each with the location and a recent date) — prioritise neglected tropical diseases, sleeping sickness / HAT, malaria and epidemic-prone diseases, especially in West and Central Africa{% elif board == 'events' %}scientific congresses, conferences, symposia and short courses (each with a date) in tropical medicine, neglected tropical diseases, global health and epidemiology{% else %}research funding calls, grants and fellowships (each with an application deadline) in tropical medicine, neglected tropical diseases, global health and epidemiology{% endif %} relevant to my work. Then save the best 6-8 to the "{{ board }}" board using the metis-rc update_today_board tool — pass each as {title, url, date, description}. Only include items with a real working URL, then show me what you saved.
+Update my Metis {{ m.label }} board. Search the web for current, real {% if board == 'outbreaks' %}active disease outbreaks and public-health emergencies. Mirror what WHO's Disease Outbreak News (DON) is reporting — https://www.who.int/emergencies/disease-outbreak-news — which lists only the outbreaks that matter rather than every regional press release; check ECDC's Communicable Disease Threats Report for anything DON has not posted yet. I want the main outbreaks in the world, 6-8 of them, each with its location and the date of the most recent update, and each with a start_date I can see. Where two outbreaks compete for a slot, prefer neglected tropical diseases, sleeping sickness, malaria and epidemic-prone diseases, and West and Central Africa{% elif board == 'events' %}scientific congresses, conferences, symposia and short courses (each with a date) in tropical medicine, neglected tropical diseases, global health and epidemiology{% else %}research funding calls, grants and fellowships (each with an application deadline) in tropical medicine, neglected tropical diseases, global health and epidemiology{% endif %} relevant to my work. Then save the best 6-8 to the "{{ board }}" board using the metis-rc update_today_board tool — pass each as {title, url, date, description}. Only include items with a real working URL, then show me what you saved.
     {%- endset -%}
     {% set board_update_opts = [
       {'icon': '✦', 'label': 'With Claude Desktop', 'sub': 'free · runs on your subscription, no API tokens',

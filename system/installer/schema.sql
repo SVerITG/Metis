@@ -951,6 +951,12 @@ CREATE TABLE IF NOT EXISTS today_board_items (
     source      TEXT DEFAULT '',        -- 'WHO DON', 'ProMED', 'manual', etc.
     starred     INTEGER DEFAULT 0,      -- 1 = favorited
     dismissed   INTEGER DEFAULT 0,      -- 1 = soft-deleted by user
+    -- seen_at answers a DIFFERENT question from starred/dismissed: those two
+    -- record a decision, this records attention. Without it the only way to
+    -- stop an item looking new was to delete it, and the "new" highlight was
+    -- computed from created_at age — so it cleared on a clock rather than on
+    -- being read, and every visible row was highlighted at once.
+    seen_at     TEXT DEFAULT '',        -- ISO ts when the reader acknowledged it
     auto_added  INTEGER DEFAULT 1,      -- 1 = from scan, 0 = manually added
     start_date  TEXT DEFAULT '',        -- event start date / outbreak onset
     end_date    TEXT DEFAULT '',        -- event end date
