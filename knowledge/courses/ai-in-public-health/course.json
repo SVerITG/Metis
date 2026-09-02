@@ -44,9 +44,9 @@
     ]
   },
   "update_loop": "New entries derive from news, papers and applications. Each candidate is put through four questions — which shape, what comparator, how evaluated, maturity — and becomes either a new Atlas row, a new deep-dive page, or an update to an existing one.",
-  "cards_authored": 106,
+  "cards_authored": 116,
   "qbank": "qbank.json — authored spaced-repetition cards, preferred over the auto-seeder's title stub",
-  "quiz_questions": 97,
+  "quiz_questions": 115,
   "manifest_shape": "Superset manifest. The dashboard reader consumes id/title/description/section/order; the multilevel-course learning layer consumes day/phase/emoji/topics/key_terms/time/optional/quiz/practical. One file, two consumers. NOTE: `section` is a human-readable string for the dashboard's grouping; `phase` (int) + `phase_title` carry the mlm-style phase structure.",
   "phases": [
     {
@@ -62,14 +62,31 @@
       "title": "The six shapes in depth",
       "lessons": [
         "lesson-02",
-        "lesson-07"
+        "lesson-03",
+        "lesson-04",
+        "lesson-05",
+        "lesson-06",
+        "lesson-07",
+        "lesson-08"
       ]
     },
     {
       "phase": 3,
       "title": "Judgement",
       "lessons": [
-        "lesson-09"
+        "lesson-09",
+        "lesson-10"
+      ]
+    },
+    {
+      "phase": 4,
+      "title": "Deep dives",
+      "lessons": [
+        "lesson-20",
+        "lesson-21",
+        "lesson-22",
+        "lesson-23",
+        "lesson-24"
       ]
     }
   ],
@@ -88,5 +105,10 @@
     "explain it in 60 seconds",
     "read more"
   ],
-  "companion_artifact": "https://claude.ai/code/artifact/9247a225-de03-4f8c-9914-27db205f5824"
+  "companion_artifact": "https://claude.ai/code/artifact/9247a225-de03-4f8c-9914-27db205f5824",
+  "citations_warning": "Graded, not blanket. See sources/source-ledger.md. Checked 2026-08-28: all 10 DOIs in the course resolve against Crossref AND match their claimed first author and year — 0 unresolvable, 0 misattributed (tools/check_course_dois.py). A further 16 sources carry inline verification markers from the authoring session, 3 are flagged as uncertain by the author, and 80 named references are unconfirmed at the level of the specific volume, page or number attributed to them. The old blanket 'every citation is an unverified lead' priced every source at the level of the weakest one; this course is more reliable than that warning claimed. What is still NOT checked is whether each paper says what the lesson says it says.",
+  "source_ledger": "sources/source-ledger.md — CROSSREF-VERIFIED / MARKED-VERIFIED / FLAGGED / SEARCH / STANDING",
+  "maintenance_2026_08_28": "Prose reflow fixed with tools/unwrap_course_prose.py (1,501 forced line breaks and 379 orphan list blocks; learning objectives had been rendering as flat text with literal dashes). 5 duplicated author lists removed, left by an earlier pass that expanded short author forms without deleting them. DOIs verified. Source ledger added.",
+  "phases_note": "Completed 2026-08-29. The hand-written block listed 5 of 16 lessons, leaving 11 in no phase at all; it is now derived from the per-lesson `phase` field in lessons.json, which was always complete.",
+  "coverage_note": "Audit 2026-08-29 found lesson-00, lesson-20 and lesson-21 with empty quiz arrays, and lesson-20/21 with no qbank entry — a learner reaching any of the three got no self-check, and the two deep dives contributed nothing to the review queue. Filled: every lesson now carries both. Option order for the new questions was shuffled with a fixed seed; the existing 97 were left untouched because they already audit clean."
 }

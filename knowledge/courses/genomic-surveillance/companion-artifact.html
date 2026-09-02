@@ -1,0 +1,927 @@
+<title>From DNA to Decisions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+/* ---------- tokens: complete light palette on bare :root ---------- */
+:root{
+  /* Neutrals biased cool-blue, not inherited grey */
+  --paper:      #F4F6F7;
+  --surface:    #FFFFFF;
+  --surface-2:  #EAEEF0;
+  --ink:        #0F1720;
+  --ink-2:      #3A4750;
+  --ink-3:      #64737E;
+  --rule:       #D3DBDF;
+  --rule-soft:  #E3E9EC;
+
+  /* The four bases, as a sequencing trace colours them.
+     Each of the course's four questions takes one. */
+  --base-a:     #1B7A52;   /* A — green  · same outbreak?      */
+  --base-c:     #24608F;   /* C — blue   · where from?         */
+  --base-g:     #9A6B0E;   /* G — amber  · how fast?           */
+  --base-t:     #B23A2E;   /* T — red    · has it changed?     */
+
+  --accent:     #1B7A52;
+  --accent-ink: #0E4B32;
+  --warn-bg:    #FBF2EC;
+  --warn-rule:  #E0BFA9;
+
+  --shadow:     0 1px 2px rgba(15,23,32,.05), 0 8px 24px -12px rgba(15,23,32,.16);
+
+  --display: "Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+  --body:    "Newsreader", Georgia, "Times New Roman", serif;
+  --mono:    "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --measure: 66ch;
+  --pad: clamp(1.1rem, 4vw, 2.5rem);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:      #0C1218;
+    --surface:    #131C24;
+    --surface-2:  #1B262F;
+    --ink:        #E7EDF1;
+    --ink-2:      #B4C2CB;
+    --ink-3:      #8496A2;
+    --rule:       #2B3944;
+    --rule-soft:  #202C35;
+
+    --base-a:     #4FC08D;
+    --base-c:     #66A9DE;
+    --base-g:     #D8A741;
+    --base-t:     #E8796B;
+
+    --accent:     #4FC08D;
+    --accent-ink: #9BDCBB;
+    --warn-bg:    #221913;
+    --warn-rule:  #5A4032;
+
+    --shadow:     0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0C1218; --surface:#131C24; --surface-2:#1B262F;
+  --ink:#E7EDF1; --ink-2:#B4C2CB; --ink-3:#8496A2;
+  --rule:#2B3944; --rule-soft:#202C35;
+  --base-a:#4FC08D; --base-c:#66A9DE; --base-g:#D8A741; --base-t:#E8796B;
+  --accent:#4FC08D; --accent-ink:#9BDCBB;
+  --warn-bg:#221913; --warn-rule:#5A4032;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -14px rgba(0,0,0,.7);
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--body); font-size:1.0625rem; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{ max-width:1180px; margin:0 auto; padding:0 var(--pad) 6rem; }
+.col{ max-width:var(--measure); }
+
+h1,h2,h3,h4{ font-family:var(--display); font-weight:700; line-height:1.12; text-wrap:balance; margin:0; }
+p{ margin:0; }
+a{ color:var(--accent-ink); text-decoration-thickness:1px; text-underline-offset:2px; }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:2px; }
+
+.eyebrow{
+  font-family:var(--mono); font-size:.6875rem; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3);
+}
+
+/* ---------- masthead ---------- */
+.mast{ padding: clamp(3rem,9vw,6rem) 0 clamp(2rem,5vw,3.5rem); border-bottom:1px solid var(--rule); }
+.mast h1{
+  font-size:clamp(2.5rem,7.5vw,5rem); font-weight:800; letter-spacing:-.03em;
+  margin:.7rem 0 0; max-width:16ch;
+}
+.mast .sub{ font-size:clamp(1.05rem,2.2vw,1.3rem); color:var(--ink-2); margin-top:1.1rem; max-width:56ch; }
+.spine{
+  margin-top:2rem; padding:1.15rem 1.35rem; background:var(--surface);
+  border:1px solid var(--rule); border-left:3px solid var(--accent); border-radius:3px;
+  max-width:70ch; box-shadow:var(--shadow);
+}
+.spine p{ font-size:1.05rem; }
+.spine strong{ font-weight:500; color:var(--ink); background:linear-gradient(transparent 62%, color-mix(in srgb, var(--accent) 26%, transparent) 62%); }
+
+/* trace strip: the four bases, as a sequencing read */
+.trace{ display:flex; gap:2px; margin-top:2.2rem; height:6px; max-width:70ch; }
+.trace span{ flex:1; border-radius:1px; }
+
+/* ---------- sections ---------- */
+section{ padding-top: clamp(3rem,7vw,5rem); }
+.shead{ border-top:1px solid var(--rule-soft); padding-top:1.5rem; margin-bottom:1.6rem; }
+.shead h2{ font-size:clamp(1.5rem,3.4vw,2.1rem); letter-spacing:-.02em; margin-top:.45rem; }
+.lede{ color:var(--ink-2); margin-top:.85rem; max-width:var(--measure); }
+.stack > * + *{ margin-top:1.1rem; }
+
+/* ---------- the four questions ---------- */
+.qgrid{ display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); margin-top:1.8rem; }
+.q{
+  background:var(--surface); border:1px solid var(--rule); border-radius:4px;
+  padding:1.2rem 1.15rem 1.3rem; border-top:4px solid var(--hue);
+  display:flex; flex-direction:column; gap:.7rem; box-shadow:var(--shadow);
+}
+.q .base{
+  font-family:var(--mono); font-size:1.35rem; font-weight:600; color:var(--hue); line-height:1;
+}
+.q h3{ font-family:var(--display); font-size:1.08rem; font-weight:700; letter-spacing:-.01em; }
+.q dl{ margin:0; display:grid; gap:.45rem; font-size:.875rem; }
+.q dt{ font-family:var(--mono); font-size:.625rem; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3); }
+.q dd{ margin:0; color:var(--ink-2); line-height:1.45; }
+.q--a{ --hue:var(--base-a); } .q--c{ --hue:var(--base-c); }
+.q--g{ --hue:var(--base-g); } .q--t{ --hue:var(--base-t); }
+
+/* ---------- figures ---------- */
+figure{ margin:2rem 0 0; }
+figure svg{ display:block; width:100%; max-width:100%; height:auto; }
+.figbox{
+  background:var(--surface); border:1px solid var(--rule); border-radius:4px;
+  padding:clamp(1rem,3vw,1.9rem); overflow-x:auto; box-shadow:var(--shadow);
+}
+figcaption{
+  margin-top:.9rem; font-size:.875rem; color:var(--ink-3); line-height:1.55; max-width:74ch;
+}
+figcaption b{ color:var(--ink-2); font-weight:500; }
+
+/* ---------- calculator ---------- */
+.calc{
+  margin-top:1.8rem; background:var(--surface); border:1px solid var(--rule);
+  border-radius:4px; overflow:hidden; box-shadow:var(--shadow);
+}
+.calc-formula{
+  padding:1rem 1.25rem; background:var(--surface-2); border-bottom:1px solid var(--rule);
+  font-family:var(--mono); font-size:.8125rem; color:var(--ink-2); line-height:1.7;
+}
+.calc-formula b{ color:var(--ink); font-weight:600; }
+.presets{ display:flex; flex-wrap:wrap; gap:.4rem; padding:1rem 1.25rem 0; }
+.presets button{
+  font-family:var(--mono); font-size:.6875rem; letter-spacing:.04em;
+  padding:.4rem .65rem; border:1px solid var(--rule); background:var(--paper);
+  color:var(--ink-2); border-radius:2px; cursor:pointer; transition:border-color .12s, color .12s;
+}
+.presets button:hover{ border-color:var(--accent); color:var(--accent-ink); }
+.presets button[aria-pressed="true"]{ border-color:var(--accent); color:var(--accent-ink); background:color-mix(in srgb, var(--accent) 9%, transparent); }
+.inputs{ display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); padding:1.25rem; }
+.inputs label{ display:flex; flex-direction:column; gap:.35rem; }
+.inputs .lab{ font-family:var(--mono); font-size:.625rem; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3); }
+.inputs input{
+  font-family:var(--mono); font-size:.9375rem; padding:.5rem .6rem;
+  border:1px solid var(--rule); border-radius:2px; background:var(--paper); color:var(--ink);
+  width:100%; font-variant-numeric:tabular-nums;
+}
+.inputs .hint{ font-size:.75rem; color:var(--ink-3); font-family:var(--body); }
+.readout{ border-top:1px solid var(--rule); padding:1.25rem; display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); }
+.stat .k{ font-family:var(--mono); font-size:.625rem; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3); }
+.stat .v{ font-family:var(--display); font-size:1.65rem; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums; margin-top:.2rem; }
+.stat .u{ font-size:.8125rem; color:var(--ink-3); }
+.verdict{
+  border-top:1px solid var(--rule); padding:1.1rem 1.25rem;
+  background:color-mix(in srgb, var(--vhue, var(--accent)) 8%, transparent);
+  border-left:3px solid var(--vhue, var(--accent));
+}
+.verdict .vt{ font-family:var(--display); font-weight:700; font-size:1rem; color:var(--ink); }
+.verdict .vd{ font-size:.9375rem; color:var(--ink-2); margin-top:.25rem; }
+
+/* ---------- tables ---------- */
+.tablebox{ overflow-x:auto; margin-top:1.6rem; border:1px solid var(--rule); border-radius:4px; background:var(--surface); box-shadow:var(--shadow); }
+table{ border-collapse:collapse; width:100%; font-size:.875rem; min-width:560px; }
+th,td{ text-align:left; padding:.7rem .9rem; border-bottom:1px solid var(--rule-soft); vertical-align:top; }
+thead th{ font-family:var(--mono); font-size:.625rem; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3); background:var(--surface-2); }
+tbody tr:last-child td{ border-bottom:0; }
+td code, .m{ font-family:var(--mono); font-size:.8125em; }
+
+/* ---------- callout ---------- */
+.warn{
+  margin-top:1.6rem; background:var(--warn-bg); border:1px solid var(--warn-rule);
+  border-left:3px solid var(--base-t); border-radius:3px; padding:1.05rem 1.25rem;
+  max-width:74ch;
+}
+.warn .wl{ font-family:var(--mono); font-size:.625rem; letter-spacing:.12em; text-transform:uppercase; color:var(--base-t); }
+.warn p{ margin-top:.4rem; font-size:.9375rem; color:var(--ink-2); }
+
+/* ---------- three strengths ---------- */
+.strengths{ display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); margin-top:1.8rem; }
+.st{ background:var(--surface); border:1px solid var(--rule); border-radius:4px; padding:1.15rem; box-shadow:var(--shadow); }
+.st .n{ font-family:var(--mono); font-size:.625rem; letter-spacing:.12em; text-transform:uppercase; color:var(--hue); }
+.st h3{ font-size:1.02rem; margin:.35rem 0 .55rem; }
+.st blockquote{ margin:0; font-size:.875rem; color:var(--ink-2); border-left:2px solid var(--hue); padding-left:.8rem; font-style:italic; }
+.st--x{ --hue:var(--base-a); } .st--c{ --hue:var(--base-g); } .st--i{ --hue:var(--base-t); }
+
+/* ---------- footer ---------- */
+footer{ margin-top:5rem; border-top:1px solid var(--rule); padding-top:1.6rem; font-size:.8125rem; color:var(--ink-3); max-width:74ch; }
+footer p + p{ margin-top:.7rem; }
+
+@media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <p class="eyebrow">Companion to the short course · 22 lessons · 6 recent applications</p>
+  <h1>From DNA to Decisions</h1>
+  <p class="sub">A pathogen genome is a clock and a family tree at the same time. This is the machinery that turns one into epidemiological evidence — and the places where it quietly stops being true.</p>
+
+  <div class="spine">
+    <p class="eyebrow" style="margin-bottom:.5rem">The spine</p>
+    <p>Every claim in genomic surveillance answers one of four questions. And <strong>what decides whether the answer is trustworthy is almost never the sequencer — it is the sampling and the metadata.</strong></p>
+  </div>
+
+  <div class="trace" aria-hidden="true">
+    <span style="background:var(--base-a)"></span>
+    <span style="background:var(--base-c)"></span>
+    <span style="background:var(--base-g)"></span>
+    <span style="background:var(--base-t)"></span>
+  </div>
+</header>
+
+<!-- ============ 1 · FOUR QUESTIONS ============ -->
+<section id="questions">
+  <div class="shead">
+    <p class="eyebrow">01 · The sorting reflex</p>
+    <h2>Four questions, four kinds of evidence</h2>
+  </div>
+  <p class="lede">Sort every claim into one of these before arguing about methods. Each owes you a different kind of evidence, and answering one question with another question's evidence is the most common error in the field. The colours are the four bases as a sequencing trace draws them; they recur in every figure below.</p>
+
+  <div class="qgrid">
+    <article class="q q--a">
+      <span class="base">A</span>
+      <h3>Is this the same outbreak?</h3>
+      <dl>
+        <dt>Genomes give</dt><dd>Genetic distance and the shape of the tree connecting isolates.</dd>
+        <dt>Competing with</dt><dd>Contact tracing and epidemiological linkage.</dd>
+        <dt>Owes you</dt><dd>The <em>local background</em> diversity. Three SNPs means nothing until you know how far apart unlinked isolates usually sit.</dd>
+      </dl>
+    </article>
+    <article class="q q--c">
+      <span class="base">C</span>
+      <h3>Where did it come from?</h3>
+      <dl>
+        <dt>Genomes give</dt><dd>Phylogeography — reconstructed ancestral locations or hosts.</dd>
+        <dt>Competing with</dt><dd>Travel histories, exposure questionnaires, animal surveillance.</dd>
+        <dt>Owes you</dt><dd>Sampling proportions per location. The model will place origins wherever you sequenced most.</dd>
+      </dl>
+    </article>
+    <article class="q q--g">
+      <span class="base">G</span>
+      <h3>How fast is it spreading?</h3>
+      <dl>
+        <dt>Genomes give</dt><dd>Growth rate and effective population size from the shape of a time-scaled tree.</dd>
+        <dt>Competing with</dt><dd>The case-based epidemic curve and R<sub>t</sub> from incidence.</dd>
+        <dt>Owes you</dt><dd>Agreement or disagreement with the case data, explained. Disagreement is the finding.</dd>
+      </dl>
+    </article>
+    <article class="q q--t">
+      <span class="base">T</span>
+      <h3>Has the pathogen changed?</h3>
+      <dl>
+        <dt>Genomes give</dt><dd>Mutations, lineage assignment, resistance-marker calls.</dd>
+        <dt>Competing with</dt><dd>Phenotype — an MIC, a neutralisation assay, a treatment failure rate.</dd>
+        <dt>Owes you</dt><dd>The phenotypic link. <em>A mutation is a hypothesis about a phenotype, not a phenotype.</em></dd>
+      </dl>
+    </article>
+  </div>
+</section>
+
+<!-- ============ 2 · THE CHAIN ============ -->
+<section id="chain">
+  <div class="shead">
+    <p class="eyebrow">02 · The chain</p>
+    <h2>Every step throws something away</h2>
+  </div>
+  <p class="lede">The physical and computational chain from a molecule to a decision. Information is only ever lost moving rightward, so the skill is knowing what each step discarded and whether your question needed it. The two boxes that determine all of it — sampling and metadata — sit outside the chain.</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 1000 300" role="img" aria-label="The chain from pathogen genome to decision, in five stages, with what each stage discards shown beneath it, and sampling and metadata governing the whole chain from below.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>
+          </marker>
+          <marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--base-t)"/>
+          </marker>
+        </defs>
+
+        <!-- stage boxes -->
+        <g font-family="IBM Plex Mono, monospace" fill="currentColor">
+          <g>
+            <rect x="8"   y="46" width="172" height="70" rx="3" fill="none" stroke="currentColor" stroke-width="1.25"/>
+            <text x="94"  y="30"  text-anchor="middle" font-size="10.5" letter-spacing="1.6" opacity=".62">THE MOLECULE</text>
+            <text x="94"  y="76"  text-anchor="middle" font-size="13">pathogen genome</text>
+            <text x="94"  y="95"  text-anchor="middle" font-size="11" opacity=".7">mutation · rate</text>
+            <text x="94"  y="132" text-anchor="middle" font-size="10" opacity=".5">Lessons 1–2</text>
+          </g>
+          <g>
+            <rect x="212" y="46" width="172" height="70" rx="3" fill="none" stroke="currentColor" stroke-width="1.25"/>
+            <text x="298" y="30"  text-anchor="middle" font-size="10.5" letter-spacing="1.6" opacity=".62">THE MACHINE</text>
+            <text x="298" y="76"  text-anchor="middle" font-size="13">reads · FASTQ</text>
+            <text x="298" y="95"  text-anchor="middle" font-size="11" opacity=".7">extract · amplify · call</text>
+            <text x="298" y="132" text-anchor="middle" font-size="10" opacity=".5">Lessons 3–4</text>
+          </g>
+          <g>
+            <rect x="416" y="46" width="172" height="70" rx="3" fill="none" stroke="currentColor" stroke-width="1.25"/>
+            <text x="502" y="30"  text-anchor="middle" font-size="10.5" letter-spacing="1.6" opacity=".62">THE DATA</text>
+            <text x="502" y="76"  text-anchor="middle" font-size="13">consensus genome</text>
+            <text x="502" y="95"  text-anchor="middle" font-size="11" opacity=".7">map · mask · name</text>
+            <text x="502" y="132" text-anchor="middle" font-size="10" opacity=".5">Lessons 5–6</text>
+          </g>
+          <g>
+            <rect x="620" y="46" width="172" height="70" rx="3" fill="none" stroke="currentColor" stroke-width="1.25"/>
+            <text x="706" y="30"  text-anchor="middle" font-size="10.5" letter-spacing="1.6" opacity=".62">THE TREE</text>
+            <text x="706" y="76"  text-anchor="middle" font-size="13">time-scaled tree</text>
+            <text x="706" y="95"  text-anchor="middle" font-size="11" opacity=".7">align · root · date</text>
+            <text x="706" y="132" text-anchor="middle" font-size="10" opacity=".5">Lessons 7–12</text>
+          </g>
+          <g>
+            <rect x="824" y="46" width="168" height="70" rx="3" fill="var(--base-a)" fill-opacity=".1" stroke="var(--base-a)" stroke-width="1.5"/>
+            <text x="908" y="30"  text-anchor="middle" font-size="10.5" letter-spacing="1.6" fill="var(--base-a)">THE DECISION</text>
+            <text x="908" y="76"  text-anchor="middle" font-size="13">what changes</text>
+            <text x="908" y="95"  text-anchor="middle" font-size="11" opacity=".7">and who acts</text>
+            <text x="908" y="132" text-anchor="middle" font-size="10" opacity=".5">Lessons 13–15</text>
+          </g>
+        </g>
+
+        <!-- flow arrows -->
+        <g stroke="currentColor" stroke-width="1.25" marker-end="url(#ar)" fill="none">
+          <line x1="182" y1="81" x2="207" y2="81"/>
+          <line x1="386" y1="81" x2="411" y2="81"/>
+          <line x1="590" y1="81" x2="615" y2="81"/>
+          <line x1="794" y1="81" x2="819" y2="81"/>
+        </g>
+
+        <!-- discards -->
+        <g font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--base-t)" text-anchor="middle">
+          <line x1="298" y1="150" x2="298" y2="168" stroke="var(--base-t)" stroke-width="1" stroke-dasharray="2 2"/>
+          <text x="298" y="182">discards</text><text x="298" y="195">what did not amplify</text>
+          <line x1="502" y1="150" x2="502" y2="168" stroke="var(--base-t)" stroke-width="1" stroke-dasharray="2 2"/>
+          <text x="502" y="182">discards</text><text x="502" y="195">within-host diversity</text>
+          <line x1="706" y1="150" x2="706" y2="168" stroke="var(--base-t)" stroke-width="1" stroke-dasharray="2 2"/>
+          <text x="706" y="182">discards</text><text x="706" y="195">everything but topology</text>
+        </g>
+
+        <!-- governing bar -->
+        <rect x="8" y="228" width="984" height="52" rx="3" fill="var(--base-c)" fill-opacity=".08" stroke="var(--base-c)" stroke-width="1.25" stroke-dasharray="5 3"/>
+        <text x="500" y="250" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" letter-spacing="1.6" fill="var(--base-c)">SAMPLING FRAME  ·  METADATA</text>
+        <text x="500" y="268" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="currentColor" opacity=".78">outside the chain, and determining every box in it</text>
+        <g stroke="var(--base-c)" stroke-width="1" stroke-dasharray="3 3" opacity=".6">
+          <line x1="94" y1="228" x2="94" y2="206"/>
+          <line x1="298" y1="228" x2="298" y2="206"/>
+          <line x1="502" y1="228" x2="502" y2="206"/>
+          <line x1="706" y1="228" x2="706" y2="206"/>
+          <line x1="908" y1="228" x2="908" y2="206"/>
+        </g>
+      </svg>
+    </div>
+    <figcaption><b>Information is only ever lost moving rightward.</b> A consensus genome cannot show a mixed infection because the consensus step already averaged it away; a phylodynamic summary cannot recover a tip the tree never had. Archiving only consensus FASTA files forecloses every within-host question permanently — that is a policy decision, usually made by default.</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 3 · THE CALCULATION ============ -->
+<section id="arithmetic">
+  <div class="shead">
+    <p class="eyebrow">03 · The calculation to run first</p>
+    <h2>What can this pathogen's genome possibly resolve?</h2>
+  </div>
+  <p class="lede">Genomic epidemiology works because a pathogen's genome changes at roughly the speed the pathogen spreads. One multiplication tells you, before any money is spent, whether sequencing can distinguish individual transmissions, only clusters, or only broad lineages. Run it at the start of every study.</p>
+
+  <div class="calc">
+    <div class="calc-formula">
+      substitutions per transmission &nbsp;=&nbsp; <b>rate</b> <span style="opacity:.55">(subs · site⁻¹ · year⁻¹)</span> &nbsp;×&nbsp; <b>genome length</b> <span style="opacity:.55">(bases)</span> &nbsp;×&nbsp; <b>serial interval</b> <span style="opacity:.55">(years)</span>
+    </div>
+
+    <div class="presets" id="presets" role="group" aria-label="Pathogen presets"></div>
+
+    <div class="inputs">
+      <label>
+        <span class="lab">Evolutionary rate</span>
+        <input id="rate" type="text" inputmode="decimal" value="8.5e-4" aria-describedby="rate-h">
+        <span class="hint" id="rate-h">substitutions per site per year</span>
+      </label>
+      <label>
+        <span class="lab">Genome length</span>
+        <input id="len" type="text" inputmode="numeric" value="18900" aria-describedby="len-h">
+        <span class="hint" id="len-h">bases in the analysed alignment</span>
+      </label>
+      <label>
+        <span class="lab">Serial interval</span>
+        <input id="si" type="text" inputmode="decimal" value="15" aria-describedby="si-h">
+        <span class="hint" id="si-h">days between successive cases</span>
+      </label>
+    </div>
+
+    <div class="readout">
+      <div class="stat"><div class="k">Per genome per year</div><div class="v" id="o-year">—</div><div class="u">substitutions</div></div>
+      <div class="stat"><div class="k">One substitution every</div><div class="v" id="o-days">—</div><div class="u">days</div></div>
+      <div class="stat"><div class="k">Per transmission</div><div class="v" id="o-tx">—</div><div class="u">substitutions</div></div>
+    </div>
+
+    <div class="verdict" id="verdict">
+      <div class="vt" id="v-title">—</div>
+      <div class="vd" id="v-desc">—</div>
+    </div>
+  </div>
+
+  <div class="warn">
+    <div class="wl">Read these as teaching figures</div>
+    <p>Preset values are order-of-magnitude, for building intuition in a meeting. Real rates vary by gene, by lineage, by whether you are looking within or between hosts, and by how they were estimated. Do not put them in a manuscript — do use them to decide whether a proposed study can possibly work.</p>
+  </div>
+</section>
+
+<!-- ============ 4 · COALESCENT ============ -->
+<section id="coalescent">
+  <div class="shead">
+    <p class="eyebrow">04 · Phylodynamics</p>
+    <h2>Why the shape of a tree is data about an epidemic</h2>
+  </div>
+  <p class="lede">Run time backwards. Two lineages sampled today had a common ancestor at some point in the past, and how far back depends on how many infections there were to choose from. That inverse relationship is the whole engine of phylodynamics: node times are a noisy measurement of effective population size through time.</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 880 330" role="img" aria-label="Two phylogenies with identical branching order, drawn root at left and tips at right. In the small effective population size tree the four coalescence events are bunched close to the tips. In the large effective population size tree the same four events are spread out and pushed back in time, leaving long internal branches.">
+        <g font-family="IBM Plex Mono, monospace" fill="currentColor">
+
+          <!-- ---------- LEFT: small Ne ---------- -->
+          <text x="24" y="28" font-size="10.5" letter-spacing="1.5" fill="var(--base-g)">SMALL N&#8337;  ·  EARLY, OR CONTAINED</text>
+          <rect x="176" y="46" width="60" height="222" fill="var(--base-g)" fill-opacity=".12"/>
+          <g stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="square">
+            <!-- tip branches -->
+            <line x1="205" y1="70"  x2="255" y2="70"/>
+            <line x1="205" y1="105" x2="255" y2="105"/>
+            <line x1="192" y1="140" x2="255" y2="140"/>
+            <line x1="200" y1="175" x2="255" y2="175"/>
+            <line x1="200" y1="210" x2="255" y2="210"/>
+            <!-- coalescences, all crowded near the tips -->
+            <line x1="205" y1="70"  x2="205" y2="105"/>
+            <line x1="192" y1="87.5" x2="205" y2="87.5"/>
+            <line x1="200" y1="175" x2="200" y2="210"/>
+            <line x1="185" y1="192.5" x2="200" y2="192.5"/>
+            <line x1="192" y1="87.5" x2="192" y2="140"/>
+            <line x1="185" y1="113.75" x2="192" y2="113.75"/>
+            <line x1="185" y1="113.75" x2="185" y2="192.5"/>
+            <line x1="40"  y1="153"  x2="185" y2="153"/>
+          </g>
+          <g fill="var(--base-g)">
+            <circle cx="255" cy="70" r="3.5"/><circle cx="255" cy="105" r="3.5"/>
+            <circle cx="255" cy="140" r="3.5"/><circle cx="255" cy="175" r="3.5"/>
+            <circle cx="255" cy="210" r="3.5"/>
+          </g>
+          <text x="206" y="290" font-size="11" fill="var(--base-g)" text-anchor="middle">all four coalescences</text>
+          <text x="206" y="304" font-size="11" fill="var(--base-g)" text-anchor="middle">inside this window</text>
+          <line x1="176" y1="268" x2="176" y2="276" stroke="var(--base-g)" stroke-width="1"/>
+          <line x1="236" y1="268" x2="236" y2="276" stroke="var(--base-g)" stroke-width="1"/>
+          <line x1="176" y1="272" x2="236" y2="272" stroke="var(--base-g)" stroke-width="1.4"/>
+
+          <!-- ---------- RIGHT: large Ne ---------- -->
+          <text x="470" y="28" font-size="10.5" letter-spacing="1.5" fill="var(--base-c)">LARGE N&#8337;  ·  ESTABLISHED</text>
+          <rect x="500" y="46" width="196" height="222" fill="var(--base-c)" fill-opacity=".1"/>
+          <g stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="square">
+            <line x1="676" y1="70"  x2="800" y2="70"/>
+            <line x1="676" y1="105" x2="800" y2="105"/>
+            <line x1="596" y1="140" x2="800" y2="140"/>
+            <line x1="626" y1="175" x2="800" y2="175"/>
+            <line x1="626" y1="210" x2="800" y2="210"/>
+            <line x1="676" y1="70"  x2="676" y2="105"/>
+            <line x1="596" y1="87.5" x2="676" y2="87.5"/>
+            <line x1="626" y1="175" x2="626" y2="210"/>
+            <line x1="516" y1="192.5" x2="626" y2="192.5"/>
+            <line x1="596" y1="87.5" x2="596" y2="140"/>
+            <line x1="516" y1="113.75" x2="596" y2="113.75"/>
+            <line x1="516" y1="113.75" x2="516" y2="192.5"/>
+            <line x1="450" y1="153" x2="516" y2="153"/>
+          </g>
+          <g fill="var(--base-c)">
+            <circle cx="800" cy="70" r="3.5"/><circle cx="800" cy="105" r="3.5"/>
+            <circle cx="800" cy="140" r="3.5"/><circle cx="800" cy="175" r="3.5"/>
+            <circle cx="800" cy="210" r="3.5"/>
+          </g>
+          <text x="598" y="290" font-size="11" fill="var(--base-c)" text-anchor="middle">the same four coalescences, spread out</text>
+          <text x="598" y="304" font-size="11" fill="var(--base-c)" text-anchor="middle">and pushed back — long internal branches</text>
+          <line x1="500" y1="268" x2="500" y2="276" stroke="var(--base-c)" stroke-width="1"/>
+          <line x1="696" y1="268" x2="696" y2="276" stroke="var(--base-c)" stroke-width="1"/>
+          <line x1="500" y1="272" x2="696" y2="272" stroke="var(--base-c)" stroke-width="1.4"/>
+
+          <!-- shared time direction -->
+          <line x1="410" y1="46" x2="410" y2="250" stroke="currentColor" stroke-width="1" opacity=".18"/>
+          <text x="40"  y="322" font-size="10.5" opacity=".6">← past</text>
+          <text x="840" y="322" font-size="10.5" opacity=".6" text-anchor="end">present · sampling →</text>
+          <text x="440" y="322" font-size="10.5" opacity=".6" text-anchor="middle">identical branching order in both trees</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption><b>Coalescence rate is inversely proportional to effective population size.</b> Which is why the number that comes out is N<sub>e</sub> and not prevalence: overdispersed transmission, generation time and population structure all separate them. Read the trend of a skyline plot; never read its axis as a case count.</figcaption>
+  </figure>
+
+  <div class="warn">
+    <div class="wl">The hazard that eats phylodynamics</div>
+    <p>A change in sampling looks exactly like a change in dynamics. Fewer recent samples means fewer recent coalescences means N<sub>e</sub> appears to fall — the epidemic looks controlled because surveillance weakened. The fix is a nested-truncation analysis: re-run the whole thing on progressively longer windows of your own data, with identical curation at each cutoff, and show the answer is stable.</p>
+  </div>
+</section>
+
+<!-- ============ 5 · TREES ============ -->
+<section id="trees">
+  <div class="shead">
+    <p class="eyebrow">05 · The limit</p>
+    <h2>The transmission tree is not the phylogenetic tree</h2>
+  </div>
+  <p class="lede">Three mechanisms separate a tree of sequences from a tree of people, and all three operate at once: incomplete sampling, within-host diversity creating a pre-transmission interval, and simply not enough mutations per link to order what happened.</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 860 300" role="img" aria-label="On the left, a transmission tree among five people, one of whom was never sampled. On the right, the phylogeny that results: the unsampled person is absent entirely, two people appear as an unresolved polytomy, and the person two transmissions downstream attaches with no sign of the gap.">
+        <defs><marker id="ar-tx" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs>
+        <g font-family="IBM Plex Mono, monospace" fill="currentColor">
+          <text x="24" y="26" font-size="10.5" letter-spacing="1.5" opacity=".62">TRANSMISSION TREE  ·  PEOPLE</text>
+          <text x="490" y="26" font-size="10.5" letter-spacing="1.5" opacity=".62">PHYLOGENETIC TREE  ·  SEQUENCES</text>
+
+          <!-- transmission tree -->
+          <g stroke="currentColor" stroke-width="1.3" fill="none" marker-end="url(#ar-tx)">
+            <line x1="110" y1="72"  x2="62"  y2="118"/>
+            <line x1="110" y1="72"  x2="176" y2="118"/>
+            <line x1="176" y1="118" x2="176" y2="164"/>
+            <line x1="176" y1="164" x2="176" y2="210"/>
+          </g>
+          <g>
+            <circle cx="110" cy="62" r="14" fill="var(--base-a)" fill-opacity=".18" stroke="var(--base-a)" stroke-width="1.4"/>
+            <text x="110" y="66" text-anchor="middle" font-size="10.5" fill="currentColor">Ann</text>
+            <circle cx="52"  cy="128" r="14" fill="var(--base-a)" fill-opacity=".18" stroke="var(--base-a)" stroke-width="1.4"/>
+            <text x="52"  y="132" text-anchor="middle" font-size="10.5">Ben</text>
+            <circle cx="186" cy="128" r="14" fill="var(--base-a)" fill-opacity=".18" stroke="var(--base-a)" stroke-width="1.4"/>
+            <text x="186" y="132" text-anchor="middle" font-size="10.5">Cal</text>
+            <circle cx="176" cy="182" r="14" fill="none" stroke="var(--base-t)" stroke-width="1.4" stroke-dasharray="3 2.5"/>
+            <text x="176" y="186" text-anchor="middle" font-size="10.5" fill="var(--base-t)">Dee</text>
+            <circle cx="176" cy="236" r="14" fill="var(--base-a)" fill-opacity=".18" stroke="var(--base-a)" stroke-width="1.4"/>
+            <text x="176" y="240" text-anchor="middle" font-size="10.5">Eve</text>
+          </g>
+          <text x="216" y="186" font-size="10.5" fill="var(--base-t)">never sampled</text>
+          <text x="24" y="278" font-size="10.5" opacity=".62">four sampled, one missing</text>
+
+          <!-- divider -->
+          <line x1="420" y1="44" x2="420" y2="264" stroke="currentColor" stroke-width="1" opacity=".2"/>
+
+          <!-- phylogeny -->
+          <g stroke="currentColor" stroke-width="1.4" fill="none">
+            <line x1="500" y1="150" x2="560" y2="150"/>
+            <line x1="560" y1="86"  x2="560" y2="214"/>
+            <line x1="560" y1="86"  x2="700" y2="86"/>
+            <line x1="560" y1="150" x2="700" y2="150"/>
+            <line x1="560" y1="214" x2="640" y2="214"/>
+            <line x1="640" y1="214" x2="640" y2="214"/>
+            <line x1="640" y1="214" x2="700" y2="214"/>
+          </g>
+          <circle cx="560" cy="150" r="4.5" fill="none" stroke="var(--base-c)" stroke-width="1.6"/>
+          <text x="546" y="252" font-size="10.5" fill="var(--base-c)" text-anchor="middle">polytomy —</text>
+          <text x="546" y="266" font-size="10.5" fill="var(--base-c)" text-anchor="middle">order unresolved</text>
+          <g fill="var(--base-a)">
+            <circle cx="700" cy="86" r="3.5"/><circle cx="700" cy="150" r="3.5"/><circle cx="700" cy="214" r="3.5"/>
+          </g>
+          <g font-size="11">
+            <text x="714" y="90">Ann</text>
+            <text x="714" y="154">Ben</text>
+            <text x="714" y="218">Cal</text>
+          </g>
+          <line x1="560" y1="86" x2="560" y2="46" stroke="currentColor" stroke-width="1.4"/>
+          <line x1="560" y1="46" x2="700" y2="46" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="700" cy="46" r="3.5" fill="var(--base-a)"/>
+          <text x="714" y="50" font-size="11">Eve</text>
+          <text x="714" y="64" font-size="10" fill="var(--base-t)">no sign of Dee</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption><b>Even a perfect tree is not a diagram of who infected whom.</b> Which is why the defensible genomic statements in an outbreak are usually the negative ones — a large genetic distance is strong evidence <em>against</em> a direct link, because it would require an improbable burst of mutation. A small distance is consistent with a direct link and with a dozen other histories.</figcaption>
+  </figure>
+
+  <div class="strengths">
+    <article class="st st--x">
+      <div class="n">Strength 1 · the strong one</div>
+      <h3>Exclusion</h3>
+      <blockquote>"These isolates differ by 27 substitutions. Given a rate of ~16 per genome per year, this is inconsistent with direct transmission during the outbreak period."</blockquote>
+    </article>
+    <article class="st st--c">
+      <div class="n">Strength 2 · the honest middle</div>
+      <h3>Consistency</h3>
+      <blockquote>"These isolates are identical. This is consistent with direct transmission, and equally consistent with a short chain through unsampled cases or with two infections from a common source."</blockquote>
+    </article>
+    <article class="st st--i">
+      <div class="n">Strength 3 · the one people skip</div>
+      <h3>Indeterminacy</h3>
+      <blockquote>"Coverage was 71%, and the differentiating positions fall in a dropout region. These sequences cannot be compared at the resolution required."</blockquote>
+    </article>
+  </div>
+  <p class="lede" style="margin-top:1.4rem">The word <em>confirmed</em> should almost never appear in a genomic linkage statement. Genomics confirms exclusions. It supports, is consistent with, or fails to exclude everything else.</p>
+</section>
+
+<!-- ============ 6 · EDITING ============ -->
+<section id="editing">
+  <div class="shead">
+    <p class="eyebrow">06 · Signal or artefact</p>
+    <h2>When the host writes the mutations</h2>
+  </div>
+  <p class="lede">Your immune system attacks pathogen genomes chemically. Those edits look exactly like mutations to a sequencing pipeline, but they are host-imposed damage rather than the pathogen's own replication error — and whether you use them or delete them depends entirely on whether the pathogen has an adequate clock of its own.</p>
+
+  <div class="tablebox">
+    <table>
+      <thead>
+        <tr><th>Process</th><th>Base change</th><th>Pattern</th><th>Viral clock without it</th><th>Therefore</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>APOBEC3</b><br><span class="m" style="color:var(--ink-3)">cytosine deaminase, ssDNA</span></td>
+          <td><span class="m" style="color:var(--base-c)">C→T</span> <span style="color:var(--ink-3)">(G→A)</span></td>
+          <td>TC context, genome-wide</td>
+          <td>Mpox: ~0.2 subs / genome / year — unusable</td>
+          <td><b style="color:var(--base-a)">Use it as the clock</b>, and as a direct test of human passage</td>
+        </tr>
+        <tr>
+          <td><b>ADAR</b><br><span class="m" style="color:var(--ink-3)">adenosine deaminase, dsRNA</span></td>
+          <td><span class="m" style="color:var(--base-t)">T→C</span> <span style="color:var(--ink-3)">(A→G)</span></td>
+          <td><b>Short consecutive spans</b> — the enzyme is processive</td>
+          <td>Filoviruses: ~16 subs / genome / year — adequate</td>
+          <td><b style="color:var(--base-t)">Remove it as an artefact</b> before the clock is estimated</td>
+        </tr>
+        <tr>
+          <td><b>Oxidative damage</b><br><span class="m" style="color:var(--ink-3)">from your own lab</span></td>
+          <td><span class="m" style="color:var(--base-g)">G→T</span></td>
+          <td>Low frequency, strand-biased</td>
+          <td>n/a — introduced during library prep</td>
+          <td>Fix the protocol; filter on strand balance</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="lede" style="margin-top:1.2rem">Same class of biology, opposite treatment. In the 2026 Bundibugyo analysis, 32 of 626 genomes were deleted for carrying ADAR signatures — and the removal was <em>iterative</em>, because a bout of editing on an internal branch affects multiple tips, so the outliers are not independent of each other.</p>
+</section>
+
+<!-- ============ 7 · CASCADE + TIMELINE ============ -->
+<section id="bundibugyo">
+  <div class="shead">
+    <p class="eyebrow">07 · The flagship · Bundibugyo virus, Ituri, DRC, 2026</p>
+    <h2>What 626 genomes over 100 days actually said</h2>
+  </div>
+  <p class="lede">INRB Kinshasa with Edinburgh, Oxford, Birmingham, ITM Antwerp, WHO, Africa CDC and US CDC, analysing an active filovirus outbreak in the open, during the outbreak. Two figures carry most of it: what happened to the samples on the way in, and what the clock said about when this started.</p>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 880 250" role="img" aria-label="A cascade from 3,748 reported cases down to 525 analysed genomes, showing the losses at each stage: selection by Ct value, exclusion of 32 genomes for ADAR editing signatures, and removal of 69 phylogenetic outliers.">
+        <defs><marker id="ar-casc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--base-t)"/></marker></defs>
+        <g font-family="IBM Plex Mono, monospace" fill="currentColor">
+          <!-- bars, width proportional to count -->
+          <g>
+            <rect x="20" y="30" width="700" height="34" rx="2" fill="var(--base-c)" fill-opacity=".22" stroke="var(--base-c)" stroke-width="1"/>
+            <text x="34" y="52" font-size="13" fill="currentColor">3,748</text>
+            <text x="110" y="52" font-size="11.5" opacity=".8">cases reported to 1 August 2026</text>
+          </g>
+          <g>
+            <rect x="20" y="88" width="117" height="34" rx="2" fill="var(--base-c)" fill-opacity=".38" stroke="var(--base-c)" stroke-width="1"/>
+            <text x="34" y="110" font-size="13">626</text>
+            <text x="150" y="110" font-size="11.5" opacity=".8">genomes generated — all PCR-positive with Ct &lt; 31</text>
+          </g>
+          <g>
+            <rect x="20" y="146" width="111" height="34" rx="2" fill="var(--base-c)" fill-opacity=".5" stroke="var(--base-c)" stroke-width="1"/>
+            <text x="34" y="168" font-size="13">594</text>
+            <text x="150" y="168" font-size="11.5" opacity=".8">after removing 32 with ADAR editing signatures</text>
+          </g>
+          <g>
+            <rect x="20" y="204" width="98" height="34" rx="2" fill="var(--base-a)" fill-opacity=".28" stroke="var(--base-a)" stroke-width="1.4"/>
+            <text x="34" y="226" font-size="13" fill="currentColor">525</text>
+            <text x="150" y="226" font-size="11.5" opacity=".8">analysed — after 69 iterative root-to-tip outliers</text>
+          </g>
+          <!-- loss arrows -->
+          <g stroke="var(--base-t)" stroke-width="1.1" marker-end="url(#ar-casc)" fill="none">
+            <path d="M 745 47 L 790 47 L 790 74"/>
+          </g>
+          <text x="798" y="52" font-size="10.5" fill="var(--base-t)">86% lost</text>
+          <text x="798" y="66" font-size="10.5" fill="var(--base-t)">before analysis</text>
+          <line x1="20" y1="72" x2="860" y2="72" stroke="currentColor" stroke-width=".75" opacity=".18"/>
+          <line x1="20" y1="130" x2="860" y2="130" stroke="currentColor" stroke-width=".75" opacity=".18"/>
+          <line x1="20" y1="188" x2="860" y2="188" stroke="currentColor" stroke-width=".75" opacity=".18"/>
+        </g>
+      </svg>
+    </div>
+    <figcaption><b>The Ct &lt; 31 gate is a sampling frame wearing laboratory clothes.</b> It selects on viral load, and load tracks time since onset, severity and how fast someone reached care — so the sequenced set is enriched for people who presented early and sick. Reported cases are themselves a fraction of infections, so the true first bar is unknown. This is the figure almost no genomic surveillance paper draws.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="figbox">
+      <svg viewBox="0 0 880 200" role="img" aria-label="A timeline from January to August 2026 showing the inferred common ancestor on 22 February with a credible interval from 16 January to 24 March, the index case on 24 April, the WHO alert on 5 May and the outbreak declaration on 15 May, with the gap between the ancestor and the declaration marked as the detection lag.">
+        <defs><marker id="ar-time" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="var(--base-c)"/></marker></defs>
+        <g font-family="IBM Plex Mono, monospace" fill="currentColor">
+          <!-- axis Jan 1 = x40, Aug 31 = x840 : 242 days over 800px -->
+          <line x1="40" y1="140" x2="840" y2="140" stroke="currentColor" stroke-width="1.2"/>
+          <g font-size="10" opacity=".6" text-anchor="middle">
+            <text x="40"  y="162">Jan</text><text x="142" y="162">Feb</text><text x="235" y="162">Mar</text>
+            <text x="337" y="162">Apr</text><text x="436" y="162">May</text><text x="538" y="162">Jun</text>
+            <text x="637" y="162">Jul</text><text x="739" y="162">Aug</text>
+          </g>
+          <g stroke="currentColor" stroke-width="1" opacity=".28">
+            <line x1="40" y1="136" x2="40" y2="144"/><line x1="142" y1="136" x2="142" y2="144"/>
+            <line x1="235" y1="136" x2="235" y2="144"/><line x1="337" y1="136" x2="337" y2="144"/>
+            <line x1="436" y1="136" x2="436" y2="144"/><line x1="538" y1="136" x2="538" y2="144"/>
+            <line x1="637" y1="136" x2="637" y2="144"/><line x1="739" y1="136" x2="739" y2="144"/>
+          </g>
+
+          <!-- HPD band for tMRCA: 16 Jan (day 15) to 24 Mar (day 82) -->
+          <rect x="90" y="96" width="222" height="26" rx="2" fill="var(--base-g)" fill-opacity=".22" stroke="var(--base-g)" stroke-width="1" stroke-dasharray="3 2"/>
+          <text x="201" y="88" font-size="10" fill="var(--base-g)" text-anchor="middle">95% HPDI · 16 Jan – 24 Mar</text>
+          <!-- tMRCA point: 22 Feb = day 52 -->
+          <line x1="212" y1="96" x2="212" y2="140" stroke="var(--base-g)" stroke-width="2"/>
+          <circle cx="212" cy="109" r="5" fill="var(--base-g)"/>
+          <text x="212" y="60" font-size="11.5" fill="var(--base-g)" text-anchor="middle">tMRCA</text>
+          <text x="212" y="74" font-size="10.5" fill="var(--base-g)" text-anchor="middle">22 Feb 2026</text>
+
+          <!-- events -->
+          <g stroke="var(--base-t)" stroke-width="1.6">
+            <line x1="416" y1="118" x2="416" y2="140"/>
+            <line x1="452" y1="118" x2="452" y2="140"/>
+            <line x1="485" y1="104" x2="485" y2="140"/>
+          </g>
+          <g fill="var(--base-t)">
+            <circle cx="416" cy="118" r="3.5"/><circle cx="452" cy="118" r="3.5"/><circle cx="485" cy="104" r="4.5"/>
+          </g>
+          <text x="400" y="112" font-size="10" fill="var(--base-t)" text-anchor="end">index case</text>
+          <text x="400" y="124" font-size="10" fill="var(--base-t)" text-anchor="end">24 Apr</text>
+          <text x="466" y="112" font-size="10" fill="var(--base-t)">alert 5 May</text>
+          <text x="497" y="86" font-size="11.5" fill="var(--base-t)">outbreak declared</text>
+          <text x="497" y="99" font-size="10.5" fill="var(--base-t)">15 May 2026</text>
+
+          <!-- the gap -->
+          <g stroke="var(--base-c)" stroke-width="1.2" marker-end="url(#ar-time)" fill="none" color="var(--base-c)">
+            <line x1="212" y1="178" x2="485" y2="178"/>
+          </g>
+          <line x1="212" y1="170" x2="212" y2="186" stroke="var(--base-c)" stroke-width="1.2"/>
+          <text x="348" y="196" font-size="11" fill="var(--base-c)" text-anchor="middle">detection lag ≈ 12 weeks of unseen transmission</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption><b>Read the tMRCA correctly: it is a lower bound.</b> It dates the common ancestor of the 525 <em>sequenced</em> cases — real transmission almost certainly began earlier, and earlier lineages that died out or were never sampled leave no trace. It is also not the spillover date, which sits somewhere on the branch leading to that node. The right sentence is: <em>"transmission was established at least six to eight weeks before the outbreak was recognised."</em></figcaption>
+  </figure>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Quantity</th><th>Estimate</th><th>95% HPDI</th><th>What to notice</th></tr></thead>
+      <tbody>
+        <tr><td>Evolutionary rate</td><td class="m">8.5 × 10⁻⁴ /site/yr</td><td class="m">7.3 – 9.8 × 10⁻⁴</td><td>Tight, and matches the independent root-to-tip slope of 7.9 × 10⁻⁴</td></tr>
+        <tr><td>tMRCA (SkyGrid)</td><td class="m">22 Feb 2026</td><td class="m">16 Jan – 24 Mar</td><td>Over two months wide — quote the interval, not the point</td></tr>
+        <tr><td>Doubling time</td><td class="m">21.0 days</td><td class="m">15.0 – 40.7 days</td><td>Strongly right-skewed; growth as slow as six weeks fits the data</td></tr>
+        <tr><td>Lineage dominance</td><td class="m">none</td><td class="m">—</td><td><b>The negative finding, and the most operationally useful one</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="warn" style="border-left-color:var(--base-a); --warn-bg:transparent;">
+    <div class="wl" style="color:var(--base-a)">Why "nothing has changed" is a result</div>
+    <p>There is no licensed vaccine or specific therapeutic for Bundibugyo virus — it is a distinct species from Zaire ebolavirus, which is what ERVEBO and the licensed monoclonals target. So the entire response rested on diagnostics, isolation and contact tracing. Finding that phylogenetic diversity was maintained and increasing, with no fitness-altering mutations and no lineage sweeping to dominance, is what told the response those three things still worked. It cost as much work as a positive finding.</p>
+  </div>
+</section>
+
+<!-- ============ 8 · THE TEST ============ -->
+<section id="sowhat">
+  <div class="shead">
+    <p class="eyebrow">08 · Before it is funded</p>
+    <h2>The four questions that decide whether it is surveillance</h2>
+  </div>
+  <p class="lede">A genomic surveillance programme can be technically excellent and epidemiologically useless. Sequences accumulate, trees are built, dashboards update — and no decision is different from what it would have been. Ask these in order.</p>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th style="width:2.5rem">#</th><th>Ask</th><th>And if you cannot answer it</th></tr></thead>
+      <tbody>
+        <tr><td class="m" style="color:var(--base-a)">1</td><td><b>What decision could this change, and who makes it?</b></td><td>You are doing research — legitimate, but fund and evaluate it as research.</td></tr>
+        <tr><td class="m" style="color:var(--base-c)">2</td><td><b>What result would change it, and in which direction?</b> Stated in advance.</td><td>You have interpretation-after-the-fact. Almost every activity fails this one.</td></tr>
+        <tr><td class="m" style="color:var(--base-g)">3</td><td><b>By when must the answer arrive?</b> Work backwards from the decision point.</td><td>The result may be excellent and arrive after the decision, at which point it is worth nothing.</td></tr>
+        <tr><td class="m" style="color:var(--base-t)">4</td><td><b>What confidence is needed, and does the sampling support it?</b></td><td>A proportion needs a representative frame; detection needs roughly 3/<i>p</i> sequences.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="lede" style="margin-top:1.6rem">And the hardest professional skill in the field is saying that sequencing is the wrong tool: when the clock is too slow for the question, when the question is about magnitude rather than relatedness, when the decision does not depend on the answer, or when the same money spent on metadata would buy more epidemiology. In a programme where a large share of cases have no recorded onset date, <b>the opportunity cost of a sequencer is a data manager — and the data manager frequently wins.</b></p>
+</section>
+
+
+<!-- ============ 9 · THE COUNTER-EXAMPLE ============ -->
+<section id="counterexample">
+  <div class="shead">
+    <p class="eyebrow">09 · The counter-example · <em>T. b. gambiense</em></p>
+    <h2>The disease where most of this does not apply</h2>
+  </div>
+  <p class="lede">Every case above shows genomic surveillance working. This one mostly does not, and it is here deliberately — a course that only shows successes teaches the tools but not the judgement. Gambiense sleeping sickness is targeted for zero transmission by 2030, verified by five consecutive years of zero reported human cases. The parasite that causes it is clonal and monophyletic: every isolate looks like every other.</p>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th style="width:3rem">Q</th><th>The question</th><th>Applies to gHAT?</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td class="m" style="color:var(--base-a)"><b>A</b></td><td>Is this the same outbreak?</td><td><b style="color:var(--base-t)">No</b></td><td>Insufficient diversity to resolve chains, clusters or links — at any sequencing depth</td></tr>
+        <tr><td class="m" style="color:var(--base-c)"><b>C</b></td><td>Where did it come from?</td><td><b style="color:var(--base-g)">Only with a baseline</b></td><td>Import vs residual is answerable <em>if</em> historical sequences from that focus exist</td></tr>
+        <tr><td class="m" style="color:var(--base-g)"><b>G</b></td><td>How fast is it spreading?</td><td><b style="color:var(--base-t)">No</b></td><td>Phylodynamics needs coalescent signal in a time-scaled tree; there is not enough to build one</td></tr>
+        <tr><td class="m" style="color:var(--base-t)"><b>T</b></td><td>Has the pathogen changed?</td><td><b style="color:var(--base-a)">Yes — the value is here</b></td><td>Subspecies identification, drug-resistance markers as acoziborole scales, diagnostic-target integrity</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="warn">
+    <div class="wl">The sampling frame and the reservoir are in different tissues</div>
+    <p>Trypanosome DNA is found in the <b>blood</b> of 67% of confirmed cases but only 9% of unconfirmed seropositives — and in the <b>skin</b> of up to 71% of confirmed and <b>41% of unconfirmed seropositives</b>. Unconfirmed seropositives are never treated. The standard specimen misses much of the reservoir in exactly the group that matters most for elimination. A blood-only sample bank is a bank of the wrong compartment.</p>
+  </div>
+
+  <div class="spine" style="margin-top:1.6rem; max-width:74ch">
+    <p class="eyebrow" style="margin-bottom:.5rem">The one operational recommendation in the whole course</p>
+    <p><strong>Archive before elimination.</strong> Once a focus reaches zero and a case appears in year three of the five-year clock, exactly one question matters: importation, or residual transmission that was never interrupted? They demand opposite responses. Genomes answer it — but only against a baseline collected beforehand. <em>You cannot go back and sequence the transmission you have just successfully stopped.</em></p>
+  </div>
+</section>
+
+<footer>
+  <p><b style="color:var(--ink-2)">Companion to</b> the 22-lesson short course <i>Genomic Surveillance — From DNA to Decisions</i>, built around the virological.org analysis of the 2026 Bundibugyo virus outbreak in Ituri, DRC (Wawina-Bokalanga, Mbala-Kingebeni et al., post 1046).</p>
+  <p><b style="color:var(--ink-2)">On the numbers.</b> The Bundibugyo figures — 3,748 cases, 626/594/525 genomes, the rate, tMRCA and doubling time — come from the virological.org post, which was read in full. Case counts and outbreak dates come from WHO and reporting summaries seen as search results and are not individually verified. The preset rates in the calculator are order-of-magnitude teaching figures. The gambiense HAT figures — the dermal-reservoir percentages and the elimination criterion — come from search extracts and are graded SEARCH in the ledger: verify before quoting. The course's <span class="m">sources/source-ledger.md</span> grades every source as fetched, search-derived, or standing field knowledge; check it before any of this enters a manuscript.</p>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var PRESETS = [
+    { id:'bdbv',  label:'Bundibugyo virus',  rate:8.5e-4, len:18900,   si:15  },
+    { id:'cov',   label:'SARS-CoV-2',        rate:8.0e-4, len:29900,   si:5   },
+    { id:'flu',   label:'Influenza A (HA)',  rate:5.0e-3, len:1700,    si:3   },
+    { id:'meas',  label:'Measles',           rate:6.0e-4, len:15900,   si:14  },
+    { id:'mpoxh', label:'Mpox · human chains',rate:5.0e-5, len:197000, si:14  },
+    { id:'mpoxz', label:'Mpox · zoonotic',   rate:1.0e-6, len:197000,  si:14  },
+    { id:'tb',    label:'M. tuberculosis',   rate:1.1e-7, len:4411532, si:550 }
+  ];
+
+  var rateEl = document.getElementById('rate');
+  var lenEl  = document.getElementById('len');
+  var siEl   = document.getElementById('si');
+  var host   = document.getElementById('presets');
+
+  PRESETS.forEach(function(p){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = p.label;
+    b.setAttribute('aria-pressed','false');
+    b.dataset.id = p.id;
+    b.addEventListener('click', function(){
+      rateEl.value = String(p.rate);
+      lenEl.value  = String(p.len);
+      siEl.value   = String(p.si);
+      compute(p.id);
+    });
+    host.appendChild(b);
+  });
+
+  function fmt(x, dp){
+    if (!isFinite(x)) return '—';
+    if (x >= 1000) return Math.round(x).toLocaleString('en-GB');
+    return x.toFixed(dp).replace(/\.0+$/,'').replace(/(\.\d*?)0+$/,'$1');
+  }
+
+  var BANDS = [
+    { max:0.1,  hue:'var(--base-t)', t:'Lineages only',
+      d:'Under one mutation per ten transmissions. The genome is near-static across an outbreak: it answers questions about origins and about change, and answers linkage questions barely at all.' },
+    { max:0.25, hue:'var(--base-g)', t:'Introductions and broad clusters',
+      d:'Enough change to separate introductions and large clusters over time, not enough to resolve chains. Expect many identical genomes between epidemiologically distant cases.' },
+    { max:1.5,  hue:'var(--base-a)', t:'The productive zone',
+      d:'Clusters separate, chains of a few partially resolve, growth rates are estimable — and individual links still are not, because identical genomes remain common between directly linked cases. Nearly everything in this course lives here.' },
+    { max:1e9,  hue:'var(--base-c)', t:'High resolution — and a new problem',
+      d:'Enough change to start distinguishing individual transmissions. But you are now usually in a chronic infection, where within-host diversity stops being a nuisance and becomes the dominant complication.' }
+  ];
+
+  function compute(activeId){
+    var r = parseFloat(rateEl.value);
+    var L = parseFloat(lenEl.value);
+    var s = parseFloat(siEl.value);
+    var ok = isFinite(r) && isFinite(L) && isFinite(s) && r > 0 && L > 0 && s > 0;
+
+    var perYear = ok ? r * L : NaN;
+    var days    = ok ? 365 / perYear : NaN;
+    var perTx   = ok ? perYear * (s / 365) : NaN;
+
+    document.getElementById('o-year').textContent = ok ? fmt(perYear, 2) : '—';
+    document.getElementById('o-days').textContent = ok ? fmt(days, 1)    : '—';
+    document.getElementById('o-tx').textContent   = ok ? fmt(perTx, 2)   : '—';
+
+    var v = document.getElementById('verdict');
+    if (!ok){
+      v.style.setProperty('--vhue','var(--ink-3)');
+      document.getElementById('v-title').textContent = 'Enter three positive numbers';
+      document.getElementById('v-desc').textContent  = 'Rate in substitutions per site per year, genome length in bases, serial interval in days.';
+    } else {
+      var band = BANDS[0];
+      for (var i=0;i<BANDS.length;i++){ if (perTx < BANDS[i].max){ band = BANDS[i]; break; } }
+      v.style.setProperty('--vhue', band.hue);
+      document.getElementById('v-title').textContent = band.t;
+      document.getElementById('v-desc').textContent  = band.d;
+    }
+
+    Array.prototype.forEach.call(host.children, function(b){
+      b.setAttribute('aria-pressed', b.dataset.id === activeId ? 'true' : 'false');
+    });
+  }
+
+  [rateEl, lenEl, siEl].forEach(function(el){
+    el.addEventListener('input', function(){ compute(null); });
+  });
+
+  compute('bdbv');
+})();
+</script>

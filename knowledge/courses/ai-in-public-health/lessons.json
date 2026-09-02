@@ -140,7 +140,74 @@
         "AI chasm"
       ],
       "practical": "Add three rows to the Atlas from your own news feed this week. For each, answer the four questions. Note which question the source could not answer.",
-      "quiz": []
+      "quiz": [
+        {
+          "question": "The atlas claims there are six shapes rather than hundreds of kinds of health AI. What does 'shape' refer to?",
+          "options": [
+            "The data modality — tabular, image, text, or time series",
+            "The question being asked, which determines what evidence the claim owes you",
+            "The algorithm family being used, which determines the computational requirements and the training data volume",
+            "The clinical specialty in which the application is deployed"
+          ],
+          "correct": 1,
+          "explanation": "A shape is a property of the question, not of the method or the data. That is why the same gradient-boosted tree is shape 1 when it scores how surprising today's count is and shape 2 when it predicts next month's — and why each shape owes a different kind of evidence."
+        },
+        {
+          "question": "Match the shape to its classical ancestor: which pairing is correct?",
+          "options": [
+            "Turn language into data — manual chart abstraction and coding",
+            "Detect the unusual — logistic regression and diagnostic tests",
+            "Choose an action — control charts and CUSUM applied to the decision variable",
+            "Find structure without labels — ARIMA and compartmental models"
+          ],
+          "correct": 0,
+          "explanation": "Shape 5's ancestor is manual chart abstraction. The others are misassigned: clustering's ancestor is cluster and factor analysis, anomaly detection's is control charts and CUSUM, and decision support's is operations research and decision analysis. Naming the ancestor is how you find the comparator a claim must beat."
+        },
+        {
+          "question": "The atlas names two cross-cutting layers alongside the six shapes. What does it claim about the first of them?",
+          "options": [
+            "Evaluation and deployment are the same layer viewed at different scales",
+            "Almost every failure in the atlas is an evaluation failure, not a modelling failure",
+            "Evaluation matters most for regulator-cleared applications and least for early-stage research work",
+            "Evaluation is a reporting requirement that follows the modelling work"
+          ],
+          "correct": 1,
+          "explanation": "Evaluation decides whether a model is real, and deployment and governance decide whether a real model helps anyone. The stronger claim is the first: nearly everything in the cautionary canon failed on how it was evaluated rather than on how it was built."
+        },
+        {
+          "question": "A colleague brings you a new AI-in-health claim. What are the four questions the atlas puts it through?",
+          "options": [
+            "Which shape · what comparator · how evaluated · maturity, honestly",
+            "Which population · what outcome · what comparator · what effect size",
+            "Which specialty · what regulator · what cost · what evidence grade",
+            "Which shape · what data · which model · what accuracy"
+          ],
+          "correct": 0,
+          "explanation": "Answer those four and the item becomes an atlas row; answer them in depth and it becomes a deep-dive page. Note the first one's escape hatch: if it does not fit any of the six shapes, that is itself a finding worth saying out loud."
+        },
+        {
+          "question": "Which of these is NOT one of the six cases in the atlas's cautionary canon?",
+          "options": [
+            "Google Flu Trends — big data does not fix unstable predictors",
+            "AlphaFold — structural prediction outran its validation set",
+            "The AI Clinician — off-policy evaluation is not evidence",
+            "Obermeyer et al. 2019 — the label carries the bias"
+          ],
+          "correct": 1,
+          "explanation": "The canon is Google Flu Trends, the Epic Sepsis Model, Obermeyer et al., the Wynants COVID prognostic review, Beede et al. in Thailand, and the AI Clinician. Each teaches a distinct evaluation failure, which is why the atlas says the six read together teach more than a methods textbook."
+        },
+        {
+          "question": "The atlas keeps a visible list of what it is still missing. Why is that in the course rather than removed?",
+          "options": [
+            "Regulatory guidance on medical education requires explicit disclosure of scope limitations in any training material",
+            "It is the course's to-do queue, and a living course states what it does not yet cover",
+            "To signal the course is provisional and should be treated with caution",
+            "Because the missing items are too technical for the intended audience"
+          ],
+          "correct": 1,
+          "explanation": "The course is marked `living`, and the gap list is where new entries come from. Stating what is not covered is also what stops a reader assuming the atlas is exhaustive — the same reason the genomic surveillance course carries an explicit `not_covered` block."
+        }
+      ]
     },
     {
       "id": "lesson-01",
@@ -1391,7 +1458,74 @@
         "recalibration"
       ],
       "practical": "Explain the case out loud in 60 seconds using section 10, without notes. If you cannot say why it failed in BOTH directions, re-read sections 6 and 7.",
-      "quiz": []
+      "quiz": [
+        {
+          "question": "Google Flu Trends failed twice, in opposite directions. What were the two failures?",
+          "options": [
+            "It failed only in 2012-13; the 2009 performance was accurate but arrived too late",
+            "It over-estimated 2009 and under-estimated 2012-13, both from search-volume drift",
+            "It over-estimated both seasons, increasingly, as the model aged without recalibration",
+            "It under-estimated the 2009 pandemic and over-estimated the 2012-13 peak"
+          ],
+          "correct": 3,
+          "explanation": "It under-estimated the 2009 swine flu pandemic because the event was out of season and the model had only ever learned normal winters — so the one event it existed to catch was the one it could not catch. Then in 2012-13 it over-estimated the peak by roughly double."
+        },
+        {
+          "question": "Why does the deep dive describe the 2009 under-estimate as structural rather than bad luck?",
+          "options": [
+            "Pandemic influenza produces a different symptom profile, so the population searched an entirely different set of terms",
+            "It was fitted on seasonal influenza, so an out-of-season pandemic was outside everything it had learned",
+            "The model was retrained annually and 2009 fell between two retraining cycles",
+            "The search index had not yet accumulated enough historical volume to fit on"
+          ],
+          "correct": 1,
+          "explanation": "The model learned the relationship between search volume and ILI across normal winters. A pandemic arriving out of season is precisely the case with no analogue in the training data — which is why the failure is a property of the design rather than of that particular year."
+        },
+        {
+          "question": "Two causes are given for the 2012-13 over-estimate. What are they?",
+          "options": [
+            "Overfitting to the 2009 pandemic, and a shift in the age distribution of searchers",
+            "Predictors selected for correlation rather than sense, and Google changing what searchers saw",
+            "A change in the CDC's ILI case definition, and reduced clinic attendance that season",
+            "Loss of the original engineering team, and migration to a new data warehouse"
+          ],
+          "correct": 1,
+          "explanation": "Predictors chosen by correlation alone have no reason to keep working when the world shifts. And Google kept changing what people saw when they searched — autocomplete, suggested terms, related searches — so the inputs quietly changed meaning underneath a model nobody was recalibrating."
+        },
+        {
+          "question": "What does the deep dive say the lesson is NOT?",
+          "options": [
+            "That 'big data does not work'",
+            "That unstable predictors are a hazard when selected purely by correlation",
+            "That proxies require the real measurement to stay honest",
+            "That a nowcast can supplement surveillance but not replace it"
+          ],
+          "correct": 0,
+          "explanation": "The failure was not about volume of data. It was about a proxy drifting away from what it proxied, with no ground truth left in place to notice. That is why the durable conclusion is that a proxy can supplement surveillance and can never replace it."
+        },
+        {
+          "question": "Google Flu Trends is described in the course as the canonical shape-straddling failure. What does that mean here?",
+          "options": [
+            "It combined tabular and text data in one model without ever declaring which of the two dominated the prediction",
+            "It was evaluated on whether it tracked ILI, and marketed on whether it warned earlier",
+            "It reported accuracy on one population and calibration on another",
+            "It switched from a regression to a classification framing partway through"
+          ],
+          "correct": 1,
+          "explanation": "Tracking ILI is shape 2, forecasting. Warning earlier than surveillance is shape 1, detecting the unusual. Those require different evidence, and a claim evaluated as one shape and sold as another is the most common failure mode in the field."
+        },
+        {
+          "question": "What is the appropriate present-day reading of this case for a surveillance programme?",
+          "options": [
+            "The approach works if the model is retrained continuously on recent data",
+            "Digital proxies are unusable for public health and should not be resourced",
+            "Digital proxies are usable where a ground truth is maintained alongside them",
+            "The failure was specific to search data; social media proxies avoid it"
+          ],
+          "correct": 2,
+          "explanation": "Retraining helps but does not solve it, because retraining needs the ground truth the proxy was meant to replace. The honest position is that a proxy earns its place as a supplement to a maintained measurement, and loses it the moment the measurement is switched off."
+        }
+      ]
     },
     {
       "id": "lesson-21",
@@ -1424,7 +1558,74 @@
         "task-shifting"
       ],
       "practical": "Take any AI application you have read about and score it against the seven conditions in section 8. The count predicts whether it will reach practice better than its AUC does.",
-      "quiz": []
+      "quiz": [
+        {
+          "question": "Chest X-ray AI for TB reached scale and dermatology AI largely did not, despite both matching specialists. What does the deep dive identify as the decisive difference?",
+          "options": [
+            "The volume of training data available in each speciality",
+            "The regulatory route each product chose to pursue, and how long clearance took in each case",
+            "The pathway each was placed in, not the accuracy either achieved",
+            "The absolute accuracy achieved on external validation sets"
+          ],
+          "correct": 2,
+          "explanation": "Both matched specialists on accuracy. The TB system was built as a triage step with a confirmatory laboratory test behind it; the skin apps were built to be the answer itself. Whether medical AI helps anyone depends far more on the pathway you put it in than on how good the model is."
+        },
+        {
+          "question": "What is the practical consequence of the TB system being a triage step rather than a diagnosis?",
+          "options": [
+            "It removes the need for country-specific threshold setting, since a single global cut-off can then be applied",
+            "When it is wrong it costs a molecular test, rather than a missed cancer",
+            "It can be deployed without regulatory clearance in most jurisdictions",
+            "It requires a lower accuracy threshold, so evaluation is less demanding"
+          ],
+          "correct": 1,
+          "explanation": "It gives a score, each country sets its own cut-off, and anyone flagged gets a molecular test. The cost of a false positive is a test. For a skin app built as the answer itself, at a fixed threshold with no laboratory behind it, the cost of a false negative is someone with a melanoma being told not to worry."
+        },
+        {
+          "question": "The two applications also differed in what they were validated against. How?",
+          "options": [
+            "Both against expert consensus, but TB used more experts per image",
+            "TB against prospective outcomes; dermatology against retrospective chart review",
+            "TB against a laboratory result; dermatology largely against clinicians' opinions",
+            "TB against dermatologist consensus; dermatology against biopsy results"
+          ],
+          "correct": 2,
+          "explanation": "TB models were validated against a culture or molecular result — an objective reference. Dermatology models were largely validated against dermatologists' opinions, which is a comparator that inherits the comparator's own error and cannot exceed it."
+        },
+        {
+          "question": "What does the deep dive say about the populations each was trained on?",
+          "options": [
+            "TB models were trained on the populations they would be used in; dermatology mostly on light skin",
+            "Dermatology models were trained on more diverse populations but tested on fewer",
+            "TB models used synthetic augmentation; dermatology used only real images",
+            "Both were trained on image sets assembled to be globally representative of the populations they would serve"
+          ],
+          "correct": 0,
+          "explanation": "And the compounding detail is that skin type was often not even recorded, so the gap could not be seen in the evaluation. A subgroup failure you have no field for is a subgroup failure nobody will find."
+        },
+        {
+          "question": "Which finding best illustrates that a dermatology model can learn the wrong thing entirely?",
+          "options": [
+            "Accuracy fell sharply whenever images were resized below the resolution the model had been trained at",
+            "Surgical skin markings raised melanoma probability and increased false positives on benign lesions",
+            "Performance varied by anatomical site more than by lesion type",
+            "Models performed worse on images captured with older camera hardware"
+          ],
+          "correct": 1,
+          "explanation": "Clinicians mark lesions they are already concerned about, so the marking is a proxy for clinical suspicion rather than for melanoma. The model learned the marking. It is the cleanest demonstration in the course that high accuracy can rest on a feature that will not be there — or will be there for the wrong reason — in deployment."
+        },
+        {
+          "question": "What should a programme take from this pair when assessing any new diagnostic AI?",
+          "options": [
+            "Require external validation on at least three independent datasets from different health systems",
+            "Ask what happens when it is wrong, and what sits downstream to catch it",
+            "Prefer applications where the model matches or exceeds specialist accuracy",
+            "Choose applications with an existing regulatory clearance in a comparable market"
+          ],
+          "correct": 1,
+          "explanation": "External validation and accuracy both matter, but they are not what separated these two cases. The separating question is about the pathway: what the failure costs, and whether anything downstream catches it. That is the question the whole course is organised around."
+        }
+      ]
     },
     {
       "id": "lesson-22",

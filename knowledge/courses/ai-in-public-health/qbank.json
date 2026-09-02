@@ -479,5 +479,53 @@
         "back": "Federated learning in practice, foundation models for medical imaging, agentic clinical systems, multi-modal models, causal inference done properly, digital twins, AMR prediction from genomes, climate–health attribution, regional capacity programmes, and economic evaluation of AI interventions. The list is kept visible because it is the course's to-do queue — a living course that hides its gaps is not honest about being unfinished."
       }
     ]
+  },
+  "lesson-20": {
+    "cards": [
+      {
+        "front": "Google Flu Trends: what were the two failures, and why is that pairing the point?",
+        "back": "It UNDER-estimated the 2009 swine flu pandemic — out of season, and the model had only learned normal winters, so the one event it existed to catch was the one it could not. Then it OVER-estimated the 2012-13 peak by roughly double. Failing in both directions rules out a simple bias and points at the design."
+      },
+      {
+        "front": "Name the two causes of the 2012-13 Google Flu Trends over-estimate.",
+        "back": "Predictors selected for correlation rather than for making sense, so they had no reason to keep working when the world shifted; and Google changing what searchers saw — autocomplete, suggestions, related searches — so the inputs quietly changed meaning underneath a model nobody was recalibrating."
+      },
+      {
+        "front": "What is the durable lesson of Google Flu Trends, stated so it does not collapse into 'big data doesn't work'?",
+        "back": "A proxy needs the real measurement to stay honest. It can supplement surveillance and can never replace it — because the moment you switch off the ground truth, you also switch off your ability to notice the proxy drifting, and you cannot retrain without it either."
+      },
+      {
+        "front": "Why is Google Flu Trends the canonical shape-straddling failure?",
+        "back": "It was evaluated on whether it tracked ILI (shape 2, forecasting) and marketed on whether it warned earlier than surveillance (shape 1, detection). Those need different evidence. A claim evaluated as one shape and sold as another is the most common failure mode in the field."
+      },
+      {
+        "front": "What did Google Flu Trends actually achieve, before the failures?",
+        "back": "It estimated current influenza levels from search volume roughly two weeks ahead of the official surveillance reporting lag, and it fitted the historical data well. Both are real. The value question is not whether it worked but whether it stayed working without the measurement it was meant to pre-empt."
+      }
+    ]
+  },
+  "lesson-21": {
+    "cards": [
+      {
+        "front": "TB chest X-ray AI reached scale and dermatology AI did not, despite comparable accuracy. What separated them?",
+        "back": "The pathway, not the model. TB CAD is a triage step: it gives a score, each country sets its own cut-off, and anyone flagged gets a confirmatory molecular test — so a false positive costs a test. The skin apps were built to be the answer itself, at a fixed threshold with no laboratory behind them, so a false negative sends someone with a melanoma home reassured."
+      },
+      {
+        "front": "What were the two applications validated against, and why does the difference matter?",
+        "back": "TB models against a culture or molecular result — an objective reference. Dermatology models largely against dermatologists' opinions, which inherits the comparator's own error and cannot exceed it. Validating against expert opinion caps you at expert performance and hides shared blind spots."
+      },
+      {
+        "front": "What is the surgical-skin-marking finding, and what does it demonstrate?",
+        "back": "Markings in dermoscopic images raised the model's melanoma probability and increased false positives on benign nevi by roughly 40%. Clinicians mark lesions they are already worried about, so the marking is a proxy for clinical suspicion, not for melanoma. It is the cleanest demonstration that high accuracy can rest on a feature that will not be present, or will mean something else, in deployment."
+      },
+      {
+        "front": "Why was the dermatology skin-tone gap so slow to surface?",
+        "back": "Models were trained mostly on light skin, and skin type was often not recorded at all — so the subgroup could not be stratified in evaluation. A subgroup failure you have no field for is a subgroup failure nobody will find, which is a metadata problem before it is a modelling one."
+      },
+      {
+        "front": "What single question does this pair suggest asking of any new diagnostic AI?",
+        "back": "What happens when it is wrong, and what sits downstream to catch it? Accuracy and external validation matter, but they are not what separated these two cases. Design the pathway first: a model behind a confirmatory test is forgiving of error in a way that a model acting as the answer never is."
+      }
+    ]
   }
 }

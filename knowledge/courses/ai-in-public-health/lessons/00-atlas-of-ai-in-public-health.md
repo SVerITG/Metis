@@ -1,21 +1,14 @@
 # The Atlas — every use of AI in public health and medicine
 
-This is the front door of the course and the only page that is never finished.
-Everything else in the course exists to make this page readable.
+This is the front door of the course and the only page that is never finished. Everything else in the course exists to make this page readable.
 
-> ⚠ **On accuracy.** Product names, study findings and approval dates below come from
-> knowledge current to mid-2026 and are written from memory, not from a live search.
-> Treat every specific claim as a lead to verify before you cite it. Entries marked
-> **[?]** are ones I am least sure about. The *taxonomy* is the durable part; the
-> examples are the perishable part.
+> ⚠ **On accuracy.** Product names, study findings and approval dates below come from knowledge current to mid-2026 and are written from memory, not from a live search. Treat every specific claim as a lead to verify before you cite it. Entries marked **[?]** are ones I am least sure about. The *taxonomy* is the durable part; the examples are the perishable part.
 
 ---
 
 ## How to read this atlas
 
-There are not hundreds of kinds of health AI. There are **six**, plus two layers that
-decide whether any of them works. Every row in every table below is one of these six
-wearing different clothes.
+There are not hundreds of kinds of health AI. There are **six**, plus two layers that decide whether any of them works. Every row in every table below is one of these six wearing different clothes.
 
 | | Shape | The question it answers | Classical ancestor |
 |---|---|---|---|
@@ -28,23 +21,18 @@ wearing different clothes.
 
 And the two cross-cutting layers:
 
-- **Evaluation** — the layer that decides whether a model is real. Almost every failure
-  in this atlas is an evaluation failure, not a modelling failure.
+- **Evaluation** — the layer that decides whether a model is real. Almost every failure in this atlas is an evaluation failure, not a modelling failure.
 - **Deployment & governance** — the layer that decides whether a real model helps anyone.
 
-**Maturity key:** 🔬 research only · 🧪 piloted in the field · 🚀 deployed at scale ·
-⚖️ regulator-cleared · ⚰️ withdrawn, failed, or discredited
+**Maturity key:** 🔬 research only · 🧪 piloted in the field · 🚀 deployed at scale · ⚖️ regulator-cleared · ⚰️ withdrawn, failed, or discredited
 
-**⭑** marks entries with a deep-dive page (or one queued) — the full methodology,
-how it was evaluated, and what to steal from it.
+**⭑** marks entries with a deep-dive page (or one queued) — the full methodology, how it was evaluated, and what to steal from it.
 
 ---
 
 ## Shape 1 · Detect the unusual — anomaly detection & early warning
 
-The oldest shape in public health, and the one the NUST course called EEPD. The core
-tension never changes: **you can have early, or you can have specific, and buying more
-of one costs you the other.**
+The oldest shape in public health, and the one the NUST course called EEPD. The core tension never changes: **you can have early, or you can have specific, and buying more of one costs you the other.**
 
 | Application | What it does | Maturity | Notes |
 |---|---|---|---|
@@ -82,8 +70,7 @@ of one costs you the other.**
 
 ## Shape 3 · Assign a label — pattern recognition
 
-This shape splits in two: **labels from tables** and **labels from pixels**. The maths
-is closer than people think; the failure modes are completely different.
+This shape splits in two: **labels from tables** and **labels from pixels**. The maths is closer than people think; the failure modes are completely different.
 
 ### 3a · From databases (tabular)
 
@@ -135,8 +122,7 @@ is closer than people think; the failure modes are completely different.
 
 ## Shape 5 · Turn language into data — NLP & LLMs
 
-This is the shape that changed most between 2023 and 2026, and the one where the
-NUST syllabus is thinnest (half of one week).
+This is the shape that changed most between 2023 and 2026, and the one where the NUST syllabus is thinnest (half of one week).
 
 | Application | What it does | Maturity | Notes |
 |---|---|---|---|
@@ -238,13 +224,11 @@ Kept deliberately visible, because this list is the course's to-do queue:
 
 ## How a new entry enters this atlas
 
-Every AI-in-public-health item that reaches you through news, a paper, or a colleague
-goes through four questions:
+Every AI-in-public-health item that reaches you through news, a paper, or a colleague goes through four questions:
 
 1. **Which of the six shapes is it?** If it doesn't fit, that is a finding — say so.
 2. **What is the classical method it must beat?** No comparator, no claim.
 3. **How was it evaluated?** Internal only? Calibration reported? Subgroups?
 4. **Maturity, honestly** — research, piloted, at scale, or withdrawn.
 
-Answer those four and it becomes a row. Answer them in depth and it becomes a
-deep-dive page.
+Answer those four and it becomes a row. Answer them in depth and it becomes a deep-dive page.

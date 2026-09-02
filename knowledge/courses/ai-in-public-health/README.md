@@ -15,6 +15,44 @@ just written"*.
 
 ---
 
+## Coverage
+
+Every lesson carries both a quiz and spaced-repetition cards. That was not true until
+2026-08-29: `lesson-00`, `lesson-20` and `lesson-21` had empty quiz arrays, and the two
+deep dives had no cards, so a learner reaching any of the three got no self-check and the
+deep dives contributed nothing to the review queue. All 116 cards are seeded into
+`spaced_repetition` — check with:
+
+```sql
+SELECT COUNT(*) FROM spaced_repetition WHERE source_table='ai-in-public-health';
+```
+
+**Still open: exercises.** This course has none. The graduated A–E ladder specified by
+procedural memory #11 is implemented and rendered for `genomic-surveillance` (110
+exercises); the lesson reader supports it for every course, so the slot here is wired and
+empty. Roughly 80 exercises would fill it.
+
+## Sources — graded, not blanket-warned
+
+`sources/source-ledger.md` grades every citation in the course rather than pricing them all at
+the level of the weakest one:
+
+| Grade | Count | Meaning |
+|---|---|---|
+| **CROSSREF-VERIFIED** | 10 | DOI resolves *and* matches the claimed first author and year |
+| **MARKED-VERIFIED** | 16 | Carried an inline `✓ Verified` marker from the authoring session |
+| **FLAGGED** | 3 | The author flagged uncertainty inline — a lead, not a citation |
+| **SEARCH** | 80 | Named reference, unconfirmed at the level of the specific number attributed to it |
+
+Re-check the DOIs at any time with `python3 ../../../tools/check_course_dois.py ai-in-public-health`.
+Checked 2026-08-28: **0 unresolvable, 0 misattributed.**
+
+**What is still not checked** is whether each paper *says* what the lesson says it says. A DOI
+matching its author and year proves the citation points at the right paper, not that the finding
+attributed to it is the finding it reports.
+
+---
+
 ## What this course is for — and how it differs from the statistics course
 
 **The statistics course is drill.** Concepts that must become automatic, learned by heart,
@@ -163,7 +201,7 @@ worth keeping comes through the news surface.
 
 ## Completion state, 2026-08-21
 
-**16 lessons · 97 MCQs · 106 cards · 8 SVG diagrams · 5 deep dives.** Every lesson verified
+**16 lessons · 115 MCQs · 116 cards · 8 SVG diagrams · 5 deep dives.** Every lesson verified
 openable; the course launches from the Learning surface and can be scheduled into the Work
 calendar via the Schedule button on its card.
 

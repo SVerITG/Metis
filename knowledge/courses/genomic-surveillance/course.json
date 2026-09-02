@@ -1,0 +1,155 @@
+{
+  "slug": "genomic-surveillance",
+  "title": "Genomic Surveillance — From DNA to Decisions",
+  "category": "surveillance",
+  "status": "complete",
+  "living": true,
+  "total_modules": 22,
+  "estimated_hours": 24,
+  "audience": "Senior epidemiologist, fluent in classical epi methods and R, no molecular biology or bioinformatics assumed. Peer register — no explaining incidence, bias or a confidence interval. Every molecular concept is built from the ground up in Lessons 1-4.",
+  "bloom_ceiling": "Evaluate",
+  "spine": "A pathogen genome is a clock and a family tree at the same time. Every claim in genomic surveillance answers one of four questions — is this the same outbreak, where did it come from, how fast is it spreading, has the pathogen changed. And what decides whether the answer is trustworthy is almost never the sequencer; it is the sampling and the metadata.",
+  "shape": "A chain, walked once: molecule -> machine -> data -> tree -> time -> dynamics -> decision. Four teaching days plus a fifth of recent applications. Every core lesson names the deep dive it will be needed for; every deep dive points back at the lessons that decode it.",
+  "written": [
+    "lesson-00",
+    "lesson-01",
+    "lesson-02",
+    "lesson-03",
+    "lesson-04",
+    "lesson-05",
+    "lesson-06",
+    "lesson-07",
+    "lesson-08",
+    "lesson-09",
+    "lesson-10",
+    "lesson-11",
+    "lesson-12",
+    "lesson-13",
+    "lesson-14",
+    "lesson-15",
+    "lesson-20",
+    "lesson-21",
+    "lesson-22",
+    "lesson-23",
+    "lesson-24",
+    "lesson-25"
+  ],
+  "planned": [],
+  "deep_dive_queue": [
+    "Cholera in eastern DRC — genomic surveillance in a setting with two overlapping emergencies",
+    "Measles resurgence 2025-2026 — importation versus endemic transmission at scale",
+    "Nosocomial transmission — the hospital outbreak investigation as the highest-yield routine application"
+  ],
+  "flagship": {
+    "source": "https://virological.org/t/phylodynamics-and-evolution-of-the-2026-bundibugyo-virus-circulating-in-the-democratic-republic-of-the-congo-insights-from-a-100-day-window-of-genomic-sequencing/1046",
+    "why": "The requirement was that the course explain everything appearing in this post. Deep Dive 1 walks it phrase by phrase, and every method phrase in it is decoded in a numbered core lesson: amplicon-nf (L5), the ADAR exclusion (L2), MAFFT and the 18,900 bp trim (L7), GTR+F+R3 and ModelFinder (L8), residual-minimising rooting and collapsed branches (L7-L8), root-to-tip regression (L1, L9), BEAST X and MCMC diagnostics (L9), SkyGrid and doubling time (L10), the Mongbwalu origin hedge (L11), the Ct<31 selection rule (L3), Pathoplexus and the restricted licence (L14).",
+    "read_in_full": true
+  },
+  "spaced_repetition": {
+    "retain_long_term": [
+      "The four questions: is this the same outbreak - where did it come from - how fast is it spreading - has the pathogen changed",
+      "Substitutions per transmission = rate x genome length x serial interval. Run it before designing anything",
+      "Genomics rules transmission links OUT far better than it rules them IN",
+      "A consensus genome is a majority summary and discards within-host diversity by construction",
+      "APOBEC3 writes C->T (mpox: use it as the clock); ADAR writes T->C in short spans (filoviruses: remove it)",
+      "The Ct threshold is a sampling frame; the QC thresholds select the same cases again",
+      "The transmission tree is not the phylogenetic tree - sparse sampling, the pre-transmission interval, too few mutations",
+      "tMRCA is a LOWER BOUND on the age of the outbreak, conditional on the sequences you have",
+      "Effective population size is not prevalence - overdispersion, generation time, structure",
+      "A change in sampling looks exactly like a change in dynamics; test it with nested truncations",
+      "Discrete trait phylogeography places origins where sequencing is dense",
+      "A SNP threshold is a case definition with a sensitivity, a specificity and a local background distribution",
+      "Report the negative finding: no lineage dominance is what tells a response its assumptions still hold",
+      "Judge a programme on decisions changed, not on genomes produced",
+      "Some pathogens rule out three of the four questions — a clonal, monophyletic population (Tbg1) supports neither linkage nor phylodynamics at any depth",
+      "Archive before elimination: import-versus-residual becomes the only question at exactly the moment it becomes unanswerable without a baseline"
+    ]
+  },
+  "update_loop": "New entries derive from outbreaks, methods papers and platform changes. Each candidate is put through four questions — which of the four questions does it answer, what is the classical comparator, what does the sampling support, and what decision would change — and becomes either a new atlas row in Lesson 0, a new deep dive, or an update to an existing lesson. The chemistry sections (Lessons 3-4) and the governance section (Lesson 14) are the ones expected to date fastest; the failure modes are not.",
+  "cards_authored": 110,
+  "qbank": "qbank.json — authored spaced-repetition cards, preferred over the auto-seeder's title stub",
+  "quiz_questions": 109,
+  "manifest_shape": "Superset manifest, same as ai-in-public-health. The dashboard reader consumes id/title/description/section/order; the multilevel-course learning layer consumes day/phase/emoji/topics/key_terms/time/optional/quiz/practical. One file, two consumers. `section` is the human-readable dashboard grouping; `phase` (int) + `phase_title` carry the mlm-style structure. Regenerate with `python3 _build_manifest.py` — never hand-edit lessons.json.",
+  "phases": [
+    {
+      "phase": 1,
+      "title": "Orientation",
+      "lessons": [
+        "lesson-00"
+      ]
+    },
+    {
+      "phase": 2,
+      "title": "From DNA to data",
+      "lessons": [
+        "lesson-01",
+        "lesson-02",
+        "lesson-03",
+        "lesson-04",
+        "lesson-05",
+        "lesson-06"
+      ]
+    },
+    {
+      "phase": 3,
+      "title": "From data to trees to time",
+      "lessons": [
+        "lesson-07",
+        "lesson-08",
+        "lesson-09",
+        "lesson-10",
+        "lesson-11",
+        "lesson-12"
+      ]
+    },
+    {
+      "phase": 4,
+      "title": "From inference to decision",
+      "lessons": [
+        "lesson-13",
+        "lesson-14",
+        "lesson-15"
+      ]
+    },
+    {
+      "phase": 5,
+      "title": "Recent applications",
+      "lessons": [
+        "lesson-20",
+        "lesson-21",
+        "lesson-22",
+        "lesson-23",
+        "lesson-24",
+        "lesson-25"
+      ]
+    }
+  ],
+  "quiz_audit": "Clean 2026-08-28 via tools/audit_quiz.py, re-checked after adding lesson-25: positions 29/32/21/27 (max slot 29.4%); longest-is-correct 7.3% vs 25% chance; length ratio median 0.97; no spread outliers; no duplicate stems. Getting there took three passes and the middle one is the instructive part. The first build put the uniquely-longest option on the correct answer 54% of the time. Pass 1 rewrote the thinnest distractor in each flagged question into substantive wrong reasoning — which fixed the flag and left the correct answer as second-longest in 63% of questions. Pass 2 expanded a second thin distractor in forty of those, which moved the concentration to rank 1 at 56%. That is procedural memory #12 happening in real time: any pass that lifts a fixed number of distractors past the correct answer just relocates the tell. So the length chase was stopped there — both passes stand on their own merit, since no option is now a bare dismissal — and position bias, the check the tool calls fatal, was fixed the one way that creates no artefact: a seeded shuffle of option order, which carries no meaning and so cannot leak one. Residual: the correct answer is the second-shortest option more often than chance, decided by one or two words in most questions. Left as-is deliberately.",
+  "pedagogy": "UNDERSTAND and be able to EXPLAIN, following the AI in Public Health course rather than the statistics drill. The researcher should finish able to read a phylodynamic paper end to end, say what every method phrase is doing, name what it would cost to get each one wrong, and explain any of the five applications to a room. Execution is secondary: tool names appear so they are recognisable in a methods section, not so the reader runs them. Every deep dive carries an 'Explain it in 60 seconds' section and a reading list. Diagrams are load-bearing — the coalescent, the amplicon tiling scheme, the transmission-versus-phylogenetic tree, and the sampling cascade are all drawn, because none of them survives being described.",
+  "deep_dive_arc": [
+    "the question someone actually asked",
+    "why it looked tractable",
+    "the data and what it does not represent",
+    "the method, decoded phrase by phrase",
+    "what they found",
+    "how it was evaluated",
+    "what happened next",
+    "what it is actually worth",
+    "transferable lessons",
+    "explain it in 60 seconds",
+    "read more"
+  ],
+  "not_covered": [
+    "Communicating genomics to media and policymakers — COG-Train devotes a full week to this and it is a genuine gap here",
+    "Hands-on command-line practicals — the Wellcome Connecting Science repositories are the right resource and are open",
+    "Eukaryotic pathogen population genomics beyond resistance markers",
+    "Vector genomics (insecticide resistance, species identification) — named in the atlas, not developed",
+    "Structural and functional genomics: what a mutation does at protein level"
+  ],
+  "citations_warning": "Graded, not blanket. See sources/source-ledger.md: FETCHED sources were read in full during authoring (the virological.org flagship, the Applied Genomic Epidemiology Handbook contents, the COG-Train curriculum); SEARCH sources were seen as search results and their specific claims are not individually verified; STANDING material is field knowledge with no source consulted. Verify any SEARCH or STANDING claim before it enters a manuscript.",
+  "companion_artifact": "https://claude.ai/code/artifact/f4a23653-35f1-4f7d-8a84-b3bfb45032f5",
+  "companion_artifact_source": "companion-artifact.html — the published page, kept here so it is version-controlled with the course. Republish by passing that URL to the Artifact tool; publishing without it creates a second artifact.",
+  "exercises": "110 across 22 lessons, five rungs each, per procedural memory #11: A conceptual · B read-the-output · C three-of-six with negative marking · D scaffolded · E connect-to-your-work. Rung D is adapted: the recorded ladder says 'guided R, scaffolded', and this course does not teach execution, so D is a scaffolded reading or arithmetic task on the same material. Rung E reuses each lesson's `practical`, so the open-ended rung is never missing. Validated at build time — `_build_manifest.py` refuses to write a manifest where a C rung does not have exactly three correct statements of six, where guidance concedes its own exercise is broken, or where a literal backslash escape survived into the text. All three of those were real defects in the first build.",
+  "exercises_note": "No other course in the library had ever populated this field — every one read `exercises: 0`, the exact state procedural memory #13 warns about. The lesson reader did not render exercises either, so the field was wired into templates/partials/learning_lesson_reader.html before any were written: written but not surfaced is the same failure as not written.",
+  "phases_note": "Derived from lessons.json by _build_manifest.py, not hand-written. It was hand-written, and drifted the moment lesson-25 was added: the block still listed 21 of 22 lessons."
+}

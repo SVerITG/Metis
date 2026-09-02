@@ -1,0 +1,531 @@
+{
+  "_note": "Authored spaced-repetition cards. One entry per lesson_id; each `cards` item becomes one card. Preferred over the auto-seeder's title/description stub.",
+  "lesson-00": {
+    "cards": [
+      {
+        "front": "What are the four questions every genomic surveillance claim answers?",
+        "back": "1. Is this the same outbreak (linkage, clusters). 2. Where did it come from (origins, hosts, introductions). 3. How fast is it spreading (growth, Re, unobserved transmission). 4. Has the pathogen changed (variants, resistance, diagnostic escape). Each has a classical comparator it must beat and owes a different kind of evidence."
+      },
+      {
+        "front": "What is the second half of this course's spine, and why does it not go out of date?",
+        "back": "What decides whether a genomic answer is trustworthy is almost never the sequencer — it is the sampling and the metadata. Chemistry turns over every few years; unequal sampling, Ct-based selection, receipt dates substituted for collection dates and Ne read as prevalence do not."
+      },
+      {
+        "front": "Name the three things a consensus genome can never tell you.",
+        "back": "1. Who infected whom (a tree of sequences is not a tree of people). 2. Whether a mutation does anything (that bridge is experimental). 3. What is happening where you did not sequence. A fourth, subtler one: it discards within-host diversity by construction."
+      },
+      {
+        "front": "What is the most common single error in the field?",
+        "back": "Answering one of the four questions with evidence belonging to another. The canonical form: a transmissibility claim (Q4) supported only by growth in share of sequenced samples (Q3, and confounded by sampling)."
+      },
+      {
+        "front": "Why is information only ever lost as you move along the molecule-to-decision chain?",
+        "back": "Every step is a lossy compression: consensus discards within-host diversity, alignment discards unsequenced regions, the tree discards all but topology and branch lengths, the phylodynamic summary discards the tree. Good practice is knowing what each step threw away and whether the question needed it."
+      }
+    ]
+  },
+  "lesson-01": {
+    "cards": [
+      {
+        "front": "Give the central calculation of genomic epidemiology and what it predicts.",
+        "back": "Substitutions per transmission = evolutionary rate (per site per year) x genome length x serial interval (in years). Around 0.05 means lineages only; 0.3-0.7 is the productive zone (clusters, growth rates, partial chains); much above 1 and within-host diversity becomes the dominant complication."
+      },
+      {
+        "front": "Work the calculation for the 2026 Bundibugyo outbreak.",
+        "back": "8.5e-4 x 18,900 = 16.1 substitutions per genome per year, i.e. one every ~23 days. Times a ~15-day serial interval gives ~0.66 substitutions per transmission — clusters separate, individual links do not resolve."
+      },
+      {
+        "front": "Why is mpox usable for outbreak epidemiology at all?",
+        "back": "Its baseline orthopoxvirus rate (~1e-6 per site per year, ~0.2 substitutions per genome per year) is far too slow. Host APOBEC3 editing during sustained human transmission drives an apparent rate roughly two orders of magnitude higher. The host supplies the clock the virus lacks."
+      },
+      {
+        "front": "What is a measurably evolving population, and how do you test for one?",
+        "back": "One where later samples are detectably further from the root than earlier samples. Test it with a root-to-tip regression: build the tree, plot each tip's distance from the root against its sampling date, fit a line. Flat or shapeless means you do not get to date anything."
+      },
+      {
+        "front": "Why does influenza break the single-tree assumption?",
+        "back": "Its eight genome segments reassort — swapped wholesale between co-infecting viruses. So influenza has eight phylogenies that can disagree. This is why H5N1 findings are stated as genotypes (B3.13, D1.1), which name combinations of segment lineages, rather than as subtypes."
+      }
+    ]
+  },
+  "lesson-02": {
+    "cards": [
+      {
+        "front": "Distinguish mutation rate from substitution rate.",
+        "back": "The mutation rate is a property of the polymerase — errors per copy. The substitution rate is what survives purifying selection, population bottlenecks and your sampling to be observed in a lineage. Substitution rate is far lower, and papers that quote one meaning the other should be read carefully."
+      },
+      {
+        "front": "What is a consensus genome, and what does it discard?",
+        "back": "The majority base at each position across the reads — a summary statistic of a diverse within-host population. It discards within-host diversity (iSNVs), so it cannot show mixed infection, minority resistance, or transmission bottlenecks. Those need the reads."
+      },
+      {
+        "front": "Give the three host and lab mutational signatures and their base changes.",
+        "back": "APOBEC3: C->T (G->A), host, ssDNA, TC context, genome-wide — mpox's clock. ADAR: A->G, seen as T->C on the strand filoviruses are written on, host, dsRNA, in SHORT CONSECUTIVE SPANS — a filovirus artefact to remove. Oxidative damage: G->T, from library prep, low-frequency and strand-biased."
+      },
+      {
+        "front": "Why were 32 of 626 Bundibugyo genomes excluded, and why iteratively?",
+        "back": "They carried ADAR editing signatures — host-imposed damage, not viral evolution. Left in, they inflate the clock, create spurious long branches distorting the coalescent, and appear homoplastically. Removal of the subsequent 69 phylogenetic outliers was iterative because editing on an internal branch affects multiple tips, so outliers are not independent."
+      },
+      {
+        "front": "What four properties make a sequence exclusion defensible?",
+        "back": "1. The criterion is mechanistic and stated before the result. 2. Counts are reported at every stage (626 -> 594 -> 525). 3. The procedure handles non-independence. 4. The consequence is checked with a sensitivity analysis."
+      }
+    ]
+  },
+  "lesson-03": {
+    "cards": [
+      {
+        "front": "Why is a Ct < 31 sequencing threshold an epidemiological decision?",
+        "back": "It selects cases by viral load, and load tracks time since onset, severity and speed of presentation. The sequenced set is enriched for people who presented early and sick — and because access to care varies geographically, it structures the sample in exactly the dimension phylogeography tries to estimate."
+      },
+      {
+        "front": "Name the four enrichment strategies and the axis they trade along.",
+        "back": "Tiling amplicon PCR, bait capture, metagenomics, and direct WGS from culture. The axis is how much you must know about the target in advance: exactly, approximately, not at all, and (for culture) enough to grow it."
+      },
+      {
+        "front": "What are the two ways a tiling amplicon scheme fails when the target evolves?",
+        "back": "1. Primer/amplicon dropout — a mutation under a primer kills amplification, leaving a coverage hole exactly where the virus changed. 2. Untrimmed primer sequence in the consensus, giving a fake reversion to reference at the variable site."
+      },
+      {
+        "front": "Why must the positive control on a sequencing run be a distinguishable strain?",
+        "back": "If the control is the same strain as the outbreak, contamination of a sample by the control is invisible — the contaminated sample simply looks like a case. A distinguishable control turns a silent failure into a detectable one."
+      },
+      {
+        "front": "What dominates sample-to-answer time in outbreak sequencing?",
+        "back": "Transport and batching, not chemistry. The run is rarely the bottleneck. This is the argument for decentralised, in-country sequencing and small frequent batches — and why a genome arriving after the decision has zero value and non-zero cost."
+      }
+    ]
+  },
+  "lesson-04": {
+    "cards": [
+      {
+        "front": "Why did nanopore produce reliable consensus genomes years before its per-read accuracy became competitive?",
+        "back": "Errors are largely independent between reads, so at adequate depth the chance that a majority agree on the same wrong base is negligible. Depth converts mediocre reads into an excellent consensus. The exception is systematic error, where all reads are wrong identically and depth does not help."
+      },
+      {
+        "front": "What is basecalling, and why does its version belong in your metadata?",
+        "back": "The interpretation of a physical measurement (fluorescence images, or a nanopore ionic-current squiggle) as letters, done by a neural network such as Dorado. It is a model, and models have versions: re-basecalling the same raw signal with a newer model produces different sequence. Differences between genomes basecalled with different versions are software, not biology."
+      },
+      {
+        "front": "Give the Phred score conversions worth knowing.",
+        "back": "Q = -10 x log10(P_error). Q20 = 1 in 100. Q30 = 1 in 1,000 (Illumina standard, nanopore duplex). Current nanopore R10.4.1/Kit 14 simplex with the super-accurate model is around Q23; duplex reaches roughly Q30."
+      },
+      {
+        "front": "What is nanopore adaptive sampling and what two problems does it solve?",
+        "back": "Reading a molecule's first few hundred bases, then electrically ejecting it if uninteresting to free the pore. It gives host depletion without wet-lab work, and targeted enrichment without primers. Now routine across metagenomics, host depletion and AMR workflows."
+      },
+      {
+        "front": "What is the most common failure in national genomic surveillance procurement?",
+        "back": "Buying throughput. A high-throughput instrument is efficient only when saturated; under-filled it forces batching, which adds latency, which destroys the outbreak-response use case that justified the purchase. Match the instrument to the arrival rate of samples, not the annual total."
+      }
+    ]
+  },
+  "lesson-05": {
+    "cards": [
+      {
+        "front": "Which file format still holds within-host diversity, and what follows?",
+        "back": "BAM (and FASTQ). The consensus FASTA has discarded it. A programme archiving only FASTAs can never retrospectively answer a within-host question — mixed infection, minority resistance, bottlenecks. That is a policy decision usually made by default and regretted later."
+      },
+      {
+        "front": "Why is primer trimming not optional?",
+        "back": "Primers were synthesised from the reference. If primer bases reach the consensus, they overwrite the patient's actual base at exactly the variable position, manufacturing a reversion to reference. Its omission has put spurious reversions into public databases."
+      },
+      {
+        "front": "Name the four bioinformatics thresholds and the bias they share.",
+        "back": "Minimum depth to call a base; consensus frequency; maximum N fraction for inclusion; outlier distance. All four preferentially remove low-load samples — the same late presenters, milder cases and remote health zones the Ct gate already removed. Compound selection, rarely quantified."
+      },
+      {
+        "front": "What is the most valuable figure a genomic surveillance paper can contain?",
+        "back": "The cascade from cases to analysed genomes, with the reason for each loss: cases -> tested -> positive -> selected -> genomes produced -> genomes analysed. It costs one panel and converts unstated bias into stated bias."
+      },
+      {
+        "front": "Fastest check that a genomic cluster is a laboratory artefact?",
+        "back": "Colour the tree by sequencing run. Contamination and index hopping produce shared spurious variants and therefore a well-supported clade of samples that share only a flow cell. Also check reads in negative controls, and whether the defining variants sit in a low-coverage region."
+      }
+    ]
+  },
+  "lesson-06": {
+    "cards": [
+      {
+        "front": "What does a Pango lineage assignment assert?",
+        "back": "That the sequence sits inside a defined clade on the phylogeny. Nothing about transmissibility, severity or immune escape. WHO variant labels are a separate system — risk assessments made by a committee — and it is legitimate for a lineage to grow without ever earning one."
+      },
+      {
+        "front": "Why is the H5N1 cattle finding expressible only as a genotype?",
+        "back": "H5N1 names two surface proteins (thousands of viruses); clade 2.3.4.4b names a haemagglutinin clade only. Genotype B3.13 names a specific combination of lineages across all eight reassorting segments — which is what the single-spillover finding is about."
+      },
+      {
+        "front": "Distinguish MLST, cgMLST and SNP-distance typing.",
+        "back": "MLST: 7 housekeeping genes, an allelic profile per isolate — portable across decades, far too coarse for outbreaks. cgMLST: the same idea across hundreds to thousands of core-genome loci; allele-based, so one SNP and a whole recombined block both count as one difference. SNP distance: highest resolution, reference-dependent, requires masking of recombinant and resistance loci."
+      },
+      {
+        "front": "How do you interrogate a SNP-threshold cluster definition?",
+        "back": "Four questions. 1. What is the local background distance among unlinked isolates? 2. Over what time window? 3. What was it validated against — ideally confirmed epidemiological links, with sensitivity and specificity? 4. What happens either side of it — report distances, not just membership."
+      },
+      {
+        "front": "Why does it matter that Bundibugyo virus is a distinct species rather than an Ebola variant?",
+        "back": "ERVEBO and the licensed monoclonals target Zaire ebolavirus. Bundibugyo is far enough away that cross-protection cannot be assumed — hence no licensed vaccine or therapeutic during the 2026 outbreak, and hence a response resting entirely on diagnostics, isolation and contact tracing."
+      }
+    ]
+  },
+  "lesson-07": {
+    "cards": [
+      {
+        "front": "What in a tree carries information, and what does not?",
+        "back": "Branching structure and branch lengths carry it. Vertical position, left-to-right order and visual adjacency do not — a tree can be rotated at any node without changing its meaning. Always find the scale bar and check whether branch lengths are in substitutions per site, in time, or in nothing at all."
+      },
+      {
+        "front": "Name the three mechanisms separating the phylogenetic tree from the transmission tree.",
+        "back": "1. Incomplete sampling — most transmission-tree nodes are unsequenced. 2. Within-host diversity — lineages diverge inside the donor before transmission, creating a pre-transmission interval, so coalescence predates transmission. 3. Too few mutations per transmission to order the links that did occur."
+      },
+      {
+        "front": "What is an internal node in an outbreak phylogeny?",
+        "back": "An inferred ancestral sequence, essentially always from an unsampled infection. Not the index case. Even a genuinely sampled ancestor appears as a tip with a short branch, never as an internal node."
+      },
+      {
+        "front": "Why collapse near-zero-length branches into polytomies?",
+        "back": "At well under one substitution per transmission, many internal branches rest on no evidence. Drawing them as resolved bifurcations claims an ordering the data never recorded. A polytomy is an honest statement that the order is unresolved — which is what the Bundibugyo team did."
+      },
+      {
+        "front": "What trade does alignment trimming make?",
+        "back": "Losing real signal from every sequence in order to remove artefactual signal from a few. Right when artefacts concentrate at the edges — which for amplicon-derived viral genomes they reliably do. The Bundibugyo alignment was trimmed to 18,900 bases after one genome showed end artefacts."
+      }
+    ]
+  },
+  "lesson-08": {
+    "cards": [
+      {
+        "front": "Decode GTR+F+R3.",
+        "back": "GTR: all six reversible base-change types have free rates. +F: base frequencies taken empirically from the alignment rather than estimated. +R3: FreeRate site-rate heterogeneity with three freely-estimated rate classes — no assumed distributional shape, unlike +G gamma. Selected by ModelFinder on an information criterion, i.e. by procedure not preference."
+      },
+      {
+        "front": "Why is a substitution model needed at all?",
+        "back": "Observed differences underestimate true evolutionary distance because of multiple hits — a site that changed A->G->A reads as no change. The model corrects for what you cannot see. The correction is small for closely related outbreak sequences and large in deep phylogenetics."
+      },
+      {
+        "front": "How should ultrafast bootstrap be read?",
+        "back": "On a different scale from classical bootstrap: 95% is the threshold for well supported, not 70%. UFBoot values are less biased and reading them on the classical scale systematically overstates confidence. Often paired with SH-aLRT (e.g. SH-aLRT >= 80 and UFBoot >= 95)."
+      },
+      {
+        "front": "Compare the three rooting strategies.",
+        "back": "Outgroup: gold standard when a good outgroup exists, often unavailable within one outbreak. Midpoint: assumes rate constancy across lineages, quietly wrong when it fails. Clock-based / residual-minimising: choose the root that best fits the root-to-tip regression — the right choice for a densely sampled time-stamped outbreak, and what the Bundibugyo team used."
+      },
+      {
+        "front": "Name the three ways a tree can be confidently wrong.",
+        "back": "Recombination or reassortment (different regions have different histories, so no single tree describes the alignment); homoplasy (the same change arising independently, e.g. at resistance loci); and sequencing batch effects (shared contaminating variants producing a well-supported artefactual clade)."
+      }
+    ]
+  },
+  "lesson-09": {
+    "cards": [
+      {
+        "front": "What is a tMRCA, and what are the three things it is not?",
+        "back": "The date of the node from which all SAMPLED sequences descend. It is not the index case date, not the spillover date (which sits somewhere on the branch leading to it), and not fixed — it moves earlier when you add an early divergent sequence. It is a LOWER BOUND on the age of the outbreak."
+      },
+      {
+        "front": "State the Bundibugyo tMRCA finding correctly.",
+        "back": "The common ancestor of sequenced cases dates to 22 February 2026 (95% HPDI 16 January - 24 March), indicating transmission was established at least six to eight weeks before the outbreak was recognised on 15 May. Note: the interval, 'at least', and 'of sequenced cases'."
+      },
+      {
+        "front": "Which four numbers must you check in a BEAST analysis?",
+        "back": "Chain length (Bundibugyo: 100 million steps); samples and burn-in (10,000 samples, 10% burn-in); ESS above 200 for every reported parameter; and convergence of at least two independent chains. Most papers report the tMRCA and omit ESS and convergence — those are what say whether the interval means anything."
+      },
+      {
+        "front": "How do you test whether the data rather than the prior are driving a result?",
+        "back": "Run the analysis sampling from the prior only, with no data, and compare. If the tMRCA barely moves, the data are not informing it. One extra run, and the single most useful robustness check in phylodynamics."
+      },
+      {
+        "front": "Strict or relaxed clock — how to choose?",
+        "back": "Relax when lineages plausibly evolve at different rates: long timescales, host jumps, mixed acute and chronic infection. Otherwise strict is more powerful and more honest. A single-pathogen, single-host outbreak over 100 days is a defensible strict-clock case."
+      }
+    ]
+  },
+  "lesson-10": {
+    "cards": [
+      {
+        "front": "State the coalescent intuition.",
+        "back": "Running time backwards, two lineages find a common ancestor faster when the infected population is small (few possible parents) and slower when it is large. So coalescence rate is inversely proportional to effective population size, and the distribution of node times in a time tree is data about Ne through time."
+      },
+      {
+        "front": "Why is effective population size not prevalence?",
+        "back": "Three reasons: overdispersed transmission (a minority of cases cause most transmission, pushing effective size far below census size); generation time (the coalescent estimates Ne x tau, and converting needs a generation time from elsewhere); and population structure (which slows coalescence and inflates apparent Ne). Read the trend, not the axis."
+      },
+      {
+        "front": "Decode: SkyGrid with 31 transition points at one-week intervals and a 32-week cutoff.",
+        "back": "Look back 32 weeks from the most recent sample; split that into weekly blocks at 31 boundaries; estimate Ne freely in each block with a smoothing prior linking neighbours. Weekly resolution against a ~2-week serial interval is fine enough to see real change and coarse enough to be estimable."
+      },
+      {
+        "front": "Coalescent or birth-death?",
+        "back": "Coalescent when sampling is a small, poorly-characterised fraction and you want trends — it gives Ne, which needs conversion. Birth-death when you can characterise sampling and want Re on the same scale as the case-based estimate — it models sampling explicitly, at the cost of needing the sampling proportion and removal rate."
+      },
+      {
+        "front": "What sensitivity analysis should be copied from the Bundibugyo study?",
+        "back": "Nested truncation: build datasets ending at progressively later cutoffs (23 June, 3 July, 16 July, 9 August), apply IDENTICAL curation to each, run the same analysis, and compare key parameters. It shows a recent-end conclusion is not an artefact of where you cut the data. It cannot rescue bias running the same way throughout."
+      }
+    ]
+  },
+  "lesson-11": {
+    "cards": [
+      {
+        "front": "What is the failure mode of discrete trait phylogeography?",
+        "back": "It treats location as a trait evolving on a tree whose shape came from a coalescent that knows nothing about location. So it has no concept of how many infections exist in each place — only how many sequences you supplied. It infers origins where sequencing is densest, which maps onto the geography of laboratory funding."
+      },
+      {
+        "front": "What does a structured coalescent method buy, and what does it cost?",
+        "back": "It models subpopulations with their own effective sizes connected by migration, so it separates population size from sampling intensity — a deme can be large and barely sampled. Costs: many more parameters, much heavier computation, and a practical limit on the number of demes."
+      },
+      {
+        "front": "Why report 'at least N introductions'?",
+        "back": "The count depends on local sampling fraction, external sampling, the clustering rule and the time window. Denser local sampling resolves one introduction into several; unsampled sources get merged. It is a property of the epidemic and your surveillance jointly, so it is a floor."
+      },
+      {
+        "front": "How does phylogeography answer a One Health question?",
+        "back": "Replace location with host species and reconstruct ancestral hosts. One monophyletic clade of cattle sequences = one cross-species jump; several scattered among bird sequences = several. This established the single B3.13 spillover into US dairy cattle — bounded by how densely the bird reservoir was sampled."
+      },
+      {
+        "front": "Write a phylogeographic conclusion properly.",
+        "back": "Three parts: the genomic observation; the epidemiological interpretation, hedged in proportion to sampling variation; and the alternative that sampling could produce. The Bundibugyo model sentence: Mongbwalu genomes showed substantial diversity and emerged from deep parts of the tree, SUGGESTING a POSSIBLE starting point."
+      }
+    ]
+  },
+  "lesson-12": {
+    "cards": [
+      {
+        "front": "Name the three strengths of genomic statement.",
+        "back": "Exclusion (large distance is inconsistent with a direct link — the strong one, robust to incomplete sampling). Consistency (identity is consistent with direct transmission and with several other histories). Indeterminacy (coverage or resolution cannot answer the question — say so). 'Confirmed' belongs only to exclusions."
+      },
+      {
+        "front": "Which cell of the genomic-versus-epidemiological table is most productive?",
+        "back": "No known epidemiological link, genomically compatible. It points at a missing part of the network — an unrecognised setting, an asymptomatic chain, a shared exposure. In hospital investigations this is the routine finding, and it is what leads to the shared equipment or the environmental reservoir."
+      },
+      {
+        "front": "What does TransPhylo-class software actually output?",
+        "back": "A posterior distribution over transmission trees, inferring unsampled intermediates. Legitimate uses: estimating the fraction of transmission that is unobserved, and the offspring distribution / overdispersion. Not for naming individuals — a statistical misuse and an ethical problem."
+      },
+      {
+        "front": "What genomic questions are answered by an internal comparison, sidestepping sampling fraction?",
+        "back": "Relapse versus reinfection (two samples from one patient: near-identical = relapse; distant = reinfection — settled this way in gambiense HAT, where relapse was parasite regrowth, and used routinely in TB and malaria efficacy trials). Also importation versus residual transmission, and survivor-associated flare-ups."
+      },
+      {
+        "front": "What five elements does a defensible cluster definition state?",
+        "back": "The distance metric, the threshold, the linkage rule (single vs complete), the time window, and the local background distance distribution among contemporaneous unlinked isolates. Most published definitions state one or two."
+      }
+    ]
+  },
+  "lesson-13": {
+    "cards": [
+      {
+        "front": "Name the four sampling frames and what each answers.",
+        "back": "Representative/random — lineage proportions and phylodynamics; the only frame supporting proportion estimates. Sentinel — trends over time, cheaply. Targeted/risk-based — detection in high-information groups; unusable for proportions. Universal/census — everything positive above a quality gate. Never analyse a mixture of frames as one."
+      },
+      {
+        "front": "How many sequences to detect a variant at prevalence p?",
+        "back": "n = ln(alpha)/ln(1-p), which for 95% confidence is approximately 3/p. So ~300 at 1%, ~600 at 0.5%, ~3,000 at 0.1%. The real requirement is larger once case ascertainment, geographic clustering and the sequencing cascade are accounted for — none of which is simple random sampling."
+      },
+      {
+        "front": "What happens if the receipt date is recorded instead of the collection date?",
+        "back": "Every tip shifts later by the transport and batching delay — and that delay is longer for remote areas. Remote health zones therefore appear systematically later, which feeds phylogeographic inference and manufactures a spurious centre-to-periphery spread pattern. A clerical shortcut becomes a published conclusion."
+      },
+      {
+        "front": "Which metadata field is highest-value and almost never collected?",
+        "back": "The sampling frame — which population this sequence represents. Without it, sentinel, outbreak, traveller and research sequences pool into a national picture whose trends can be produced entirely by shifts in the mix."
+      },
+      {
+        "front": "What should top a genomic surveillance system's evaluation metrics?",
+        "back": "Decisions changed, logged with date and counterfactual. Below it: representativeness (sequences per case by stratum — the ratio, not the count), timeliness (the distribution, not the mean), coverage, metadata completeness, and data quality."
+      }
+    ]
+  },
+  "lesson-14": {
+    "cards": [
+      {
+        "front": "Compare INSDC, GISAID and Pathoplexus.",
+        "back": "INSDC (GenBank/ENA/DDBJ): fully open, best for reuse, produced the helicopter-research grievance. GISAID: registered access, credit contractually required, redistribution prohibited — got data shared that otherwise would not have been, at a reproducibility cost. Pathoplexus (2024, Loculus): open with optional restricted periods and named contacts."
+      },
+      {
+        "front": "Why are the 2026 Bundibugyo genomes restricted?",
+        "back": "So INRB retains control until it publishes its own analysis, while the analysis itself was posted publicly on virological.org during the outbreak. Dataset BDBV_DRC_20260820 (PP_SS_3400.1), contacts named. A design that delivers most of both openness and equity."
+      },
+      {
+        "front": "Where do Nagoya/DSI and PABS stand?",
+        "back": "CBD COP16 (Nov 2024) agreed a multilateral DSI mechanism; the Cali Fund launched February 2025, with details and contribution rates due at COP17 in October 2026 — public research and academia are not expected to contribute monetarily. The WHO Pandemic Agreement's PABS annex was still under negotiation through 2026, with a final outcome due at the World Health Assembly in May 2027."
+      },
+      {
+        "front": "Why is human read depletion a legal requirement?",
+        "back": "Clinical samples contain host nucleic acid and metagenomic data is mostly human. Human genomic data is identifiable and regulated as personal data. The step is technical and the consequence legal, and it falls in the gap between the bioinformatician and the data protection officer."
+      },
+      {
+        "front": "State the equity-as-method argument.",
+        "back": "Discrete trait phylogeography places origins where sequencing is dense, so unsequenced regions do not merely leave gaps — they make the global analysis actively wrong, and those wrong conclusions are cited and used to justify measures against the countries that could not sequence. Sequencing capacity is a precondition for correct inference."
+      }
+    ]
+  },
+  "lesson-15": {
+    "cards": [
+      {
+        "front": "State the four-question 'so what' test.",
+        "back": "1. What decision could this change, and who makes it? 2. What result would change it, and in which direction — stated in advance? 3. By when must the answer arrive? 4. What confidence is needed, and does the sampling support it? Most activities fail the first; almost all fail the second."
+      },
+      {
+        "front": "Give the four sentences of a genomic finding for an incident manager.",
+        "back": "1. What we found. 2. What it means epidemiologically. 3. What it does NOT mean — always including what was not sequenced. 4. What we recommend, and with what confidence (calibrated words used the same way every week). No jargon, no named individuals, finding separated from recommendation."
+      },
+      {
+        "front": "Why is 'nothing has changed' a result?",
+        "back": "A lineage sweeping to dominance would signal possible fitness change — transmissibility, immune escape, diagnostic escape. Its absence tells a response that its diagnostics, case definitions and strategy still hold. It requires as much work as a positive finding, and in an outbreak with no licensed countermeasure it is what the response rests on."
+      },
+      {
+        "front": "When is sequencing the wrong tool?",
+        "back": "When the clock is too slow for the question (Lesson 1's arithmetic rules it out before money is spent); when the question is about magnitude rather than relatedness; when the decision does not depend on the answer; when the sampling cannot support the inference; and when the same money spent on metadata buys more epidemiology."
+      },
+      {
+        "front": "What is the opportunity cost of a sequencer?",
+        "back": "Often a data manager. In a programme where a large share of cases have no recorded onset date, fixing the metadata buys more usable epidemiology per euro than sequencing more samples — the practical form of the course's spine."
+      }
+    ]
+  },
+  "lesson-20": {
+    "cards": [
+      {
+        "front": "What were the headline numbers of the 2026 Bundibugyo phylodynamic analysis?",
+        "back": "Clock 8.5e-4 subs/site/year (95% HPDI 7.3-9.8e-4), against a root-to-tip slope of 7.9e-4. tMRCA 22 February 2026 (16 Jan - 24 Mar) under SkyGrid. Doubling time 21.0 days (15.0-40.7) under exponential growth. 626 genomes generated, 525 analysed, from 3,748 cases reported to 1 August."
+      },
+      {
+        "front": "Trace the Bundibugyo sequence cascade.",
+        "back": "3,748 cases -> PCR-positive with Ct < 31 -> 626 genomes -> minus 32 with ADAR editing signatures -> 594 -> minus 69 iterative root-to-tip outliers -> 525 analysed. About 14% of reported cases, and reported cases are themselves a fraction of infections."
+      },
+      {
+        "front": "What did the iterative cutoff analysis do and show?",
+        "back": "Four datasets ending 23 June, 3 July, 16 July and 9 August, identically curated, each with its own SkyGrid run. Clock rates converged at ~8.5e-4 across later datasets (1.10e-3 for the smallest) and tMRCA was stable from July onward — so the apparent late decline was not purely an artefact of reduced sampling after mid-July."
+      },
+      {
+        "front": "What is the study's most operationally useful sentence, and why?",
+        "back": "That phylogenetic diversity was maintained and increasing with no fitness-altering mutations and no lineage dominating. With no licensed vaccine or therapeutic for Bundibugyo virus, the response rests entirely on diagnostics, isolation and contact tracing — and this is what tells it those still work."
+      },
+      {
+        "front": "What is the main methodological omission to look for in the published version?",
+        "back": "ESS values and chain convergence diagnostics. Without ESS above 200 per reported parameter and agreement between independent chains, the credible intervals are not trustworthy. Understandable in a work-in-progress post; required in a paper. Also absent: a cases-to-genomes cascade and sequences-per-case by health zone."
+      }
+    ]
+  },
+  "lesson-21": {
+    "cards": [
+      {
+        "front": "Why is APOBEC3 a clock in mpox but ADAR an artefact in filoviruses?",
+        "back": "Because of whether the pathogen has an adequate clock of its own. Orthopoxviruses manage ~0.2 substitutions per genome per year — unusable, so the host process is the only signal. Filoviruses manage ~16 — adequate, so the host process is noise to be filtered. Same class of biology, opposite treatment."
+      },
+      {
+        "front": "What two jobs does the APOBEC3 signature do?",
+        "back": "It supplies the clock that lets mpox lineages be dated. And it is a direct sequence-only test of human passage: a genome laden with APOBEC3-type changes has been transmitting person to person, not sitting in an animal reservoir. That second use answered the clade Ib question without contact data."
+      },
+      {
+        "front": "What are the three fragilities of an APOBEC3-driven clock?",
+        "back": "1. Standard substitution models assume independent, uniform substitutions; APOBEC3 changes are context-specific, bursty and strand-dependent. 2. The rate is a property of host exposure, not of the virus, so it is not automatically transferable between networks. 3. The signature reflects cumulative human passage, not how this particular case was infected."
+      },
+      {
+        "front": "What are the genomic hallmarks of mpox clade Ib?",
+        "back": "Low overall genetic diversity (recent common ancestor, rapid expansion from a single introduction into human networks), accumulation of APOBEC3-signature mutations (sustained human-to-human transmission), and a large ~1,142 bp deletion plus terminal deletions as lineage markers."
+      }
+    ]
+  },
+  "lesson-22": {
+    "cards": [
+      {
+        "front": "How was the single H5N1 spillover into dairy cattle established?",
+        "back": "Host-state reconstruction: cattle sequences formed a single monophyletic clade descending from one bird-derived ancestor, dated to late 2023 — months before the March 2024 detection. Repeated spillovers would have scattered cattle sequences among bird sequences, each with its own recent bird ancestor."
+      },
+      {
+        "front": "Why could the finding not be stated as 'H5N1 spilled into cattle'?",
+        "back": "H5N1 names two surface proteins and covers thousands of viruses; clade 2.3.4.4b names a haemagglutinin clade only. The finding concerns genotype B3.13 — a specific combination of lineages across all eight reassorting segments. Only the genotype name can carry it."
+      },
+      {
+        "front": "What did the January 2025 D1.1 introduction show?",
+        "back": "That the single-spillover finding was correct AND was a description of the past, not a bound on the future. A second, independent H5N1 genotype entered dairy cattle fourteen months later. Continued genomic surveillance caught it; a programme that stood down after the first finding would have missed it."
+      },
+      {
+        "front": "What bounds confidence in the single-spillover conclusion?",
+        "back": "The completeness of wild bird sequencing. Under-sampling the source population makes multiple similar introductions collapse into one apparent clade. The honest reading is one dominant introduction that established, plus any that did not establish or were not sampled."
+      }
+    ]
+  },
+  "lesson-23": {
+    "cards": [
+      {
+        "front": "Why is malaria genomic surveillance a marker discipline rather than a tree discipline?",
+        "back": "Plasmodium falciparum recombines sexually in the mosquito every transmission cycle, so different genomic regions have different histories and no single tree describes the genome. Add frequent multi-clone infections and consensus-based tree reasoning is compromised at the root. TB uses trees but is too slow (~0.3-0.5 SNPs/genome/year) for the urgent question."
+      },
+      {
+        "front": "Name the malaria markers and the decisions they feed.",
+        "back": "kelch13 propeller mutations (artemisinin partial resistance; validated vs candidate matters) -> first-line treatment policy. pfhrp2/pfhrp3 deletions (HRP2-based RDTs go blind) -> switch to pLDH-based tests above a threshold. pfcrt, pfmdr1, pfdhfr, pfdhps -> partner drugs and IPTp."
+      },
+      {
+        "front": "What makes the WHO TB mutation catalogue the model artefact?",
+        "back": "It is a genotype-phenotype association study at scale — over 52,000 isolates with matched WGS and phenotypic DST, grading mutations for 13 medicines with stated confidence. It builds the mutation-to-phenotype bridge explicitly, once, for everyone. Most other pathogens have no equivalent, and building one is the rate-limiting step for extending marker surveillance."
+      },
+      {
+        "front": "Where does tNGS sit in the WHO TB algorithm, and what does it buy?",
+        "back": "After initial automated NAATs, delivering catalogue-linked molecular DST across a broad drug panel; WGS is reserved for discordance resolution, confirmation and surveillance. tNGS runs directly from sputum — no culture wait, works on paucibacillary specimens, and is deep enough to detect minority resistant subpopulations a consensus hides."
+      },
+      {
+        "front": "Name the five failure modes of marker surveillance.",
+        "back": "1. The marker-phenotype link is the whole edifice. 2. Absence of a known marker is not absence of resistance — genotypic sensitivity is below 1. 3. Frequency estimates need a representative sampling frame. 4. Action thresholds are policy, not biology. 5. Within-host mixtures matter and consensus hides them."
+      }
+    ]
+  },
+  "lesson-24": {
+    "cards": [
+      {
+        "front": "Why is a consensus genome meaningless for wastewater?",
+        "back": "The sample is a mixture from everyone infected in the catchment, so position-by-position majority calling across several lineages yields a chimera corresponding to no real virus. The analytical object changes to deconvolution: which mixture of known lineages best explains the observed allele frequencies?"
+      },
+      {
+        "front": "What does Freyja do and what is its central limitation?",
+        "back": "freyja demix uses mutations and their frequencies in the reads to infer the relative abundance of individual lineages against a reference set of lineage-defining profiles. Freyja 2 adds growth rates, robustness across platforms and to low coverage, and multi-pathogen support. The limitation: a genuinely novel lineage has no profile, so it is missed or misassigned."
+      },
+      {
+        "front": "What does wastewater surveillance gain and lose?",
+        "back": "Gains: population coverage with no clinical contact, independence from health-seeking behaviour, and very low cost per person monitored — the whole clinical sampling cascade largely disappears. Loses: the individual and all clinical data, the denominator (shedding, dilution, rainfall, transit), and the consensus genome."
+      },
+      {
+        "front": "Why is polio environmental surveillance the template?",
+        "back": "Not for the technology but for the pathway: detection of circulating vaccine-derived poliovirus in populations with no paralytic cases leads to a defined response, by defined people. Most newer multi-pathogen wastewater applications have no agreed action threshold and no named decision-maker — which makes them research."
+      },
+      {
+        "front": "What limits metagenomics as surveillance rather than diagnosis?",
+        "back": "No sampling frame (sequencing whoever was investigated is a case series); cost (roughly $130-600+ consumables per sample, clinical services far higher); sensitivity (most reads are host); interpretation (separating pathogen from commensal, contaminant and index-hopped read); and human read depletion as a legal requirement."
+      }
+    ]
+  },
+  "lesson-25": {
+    "cards": [
+      {
+        "front": "Why does most of this course not apply to gambiense HAT?",
+        "back": "Tbg1 is clonal, monophyletic and genetically homogeneous — all analysed isolates fall in a single group on genome-wide and maxicircle SNPs. There is almost nothing to distinguish one isolate from another, so linkage (Q1) and phylodynamics (Q3) are impossible at any sequencing depth. Q4 (subspecies, resistance, diagnostic targets) is where the value is; Q2 works only against a historical baseline."
+      },
+      {
+        "front": "gHAT: what are the three ways transmission could persist while 'zero reported human cases for five consecutive years' is met?",
+        "back": "1. An animal reservoir — T. b. gambiense identified in pigs, dogs, small ruminants, and duikers and mangabeys in Gabon; experimental animal-Glossina-animal cycles infective for ~3 years. 2. Latent and asymptomatic human infection — seropositive aparasitaemic people never confirmed and never treated. 3. The dermal reservoir — parasites in the basal layer of the dermis, transmissible to tsetse with no detectable parasitaemia."
+      },
+      {
+        "front": "State the dermal reservoir numbers and why they reframe the sampling problem.",
+        "back": "Trypanosome DNA in the BLOOD of 67% of confirmed cases and 9% of unconfirmed seropositives; in the SKIN of up to 71% of confirmed and 41% of unconfirmed seropositives. After treatment, 17% of confirmed remain skin-positive versus up to 25% of untreated seropositives. The standard specimen misses much of the reservoir in exactly the group the system does not treat: the sampling frame and the reservoir are in different tissues."
+      },
+      {
+        "front": "Why does gHAT genomics run on kinetoplast minicircles rather than whole genome sequencing?",
+        "back": "Parasitaemia is very low, the nuclear genome is ~26 Mb in an overwhelmingly human sample, and field isolates are not routinely cultured. So the field went after a high-copy target: deep sequencing of kinetoplast genomes across 38 strains identified 241 minicircle sequence classes as Tbg1-specific, which became a field PCR. Sequencing used once to design a diagnostic — the most deployable form of pathogen genomics."
+      },
+      {
+        "front": "Why is the animal reservoir question a structured-coalescent problem rather than a discrete-trait one?",
+        "back": "Decades of human screening vastly outnumber animal surveys, and discrete trait analysis places ancestry where sampling is dense — so it would infer a human origin regardless of truth, determined by sample sizes before the data are examined. A structured coalescent separates deme size from sampling intensity. Given Tbg1's homogeneity the honest output is a bound, not a point estimate."
+      },
+      {
+        "front": "What is the highest-value genomic act available for gHAT today, and why is it urgent?",
+        "back": "Archiving — banking isolates, dried blood spots, skin snips and extracts from every remaining focus with full metadata, while there are still cases to bank. Once a focus reaches zero, the only question that matters is whether a new case is an importation or residual transmission, and that is answerable only against a baseline collected beforehand. Every year of delay permanently removes a year of baseline. A blood-only archive is an archive of the wrong compartment."
+      },
+      {
+        "front": "Why is acoziborole a resistance-surveillance priority?",
+        "back": "A single-dose oral cure deployed widely in a low-transmission setting is exactly the selective environment where a resistance marker would matter — and with a handful of cases per focus per year, treatment-outcome monitoring has almost no power to detect it. A marker programme built on the Deep Dive 4 model (a curated, graded genotype-phenotype catalogue) is the answer. Whether such a catalogue exists for acoziborole is an open question."
+      }
+    ]
+  }
+}
