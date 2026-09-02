@@ -552,9 +552,26 @@ async def thinking_graphify_analytics(request: Request):
     rc = _rc_root()
     data = _run_analytics(rc)
 
+    # How OLD is this analysis? (2026-09-02) The panel printed a build date and
+    # nothing else, so a snapshot from eleven weeks earlier looked exactly like
+    # one from this morning — and the "Rebuild & view" button re-exports the
+    # source markdown but SKIPS the graph step whenever graph.json already
+    # exists, then reports success. So pressing it changed nothing and said it
+    # had. Naming the age is the smallest honest fix; `stale` drives the warning.
+    age_days = None
+    try:
+        gj = _graphify_out(rc) / "graph.json"
+        if gj.is_file():
+            import time as _t
+            age_days = int((_t.time() - gj.stat().st_mtime) // 86400)
+    except Exception:
+        age_days = None
+
     ctx = {
         "graph_exists": data.get("graph_exists", False),
         "built_at": data.get("built_at", ""),
+        "age_days": age_days,
+        "stale": age_days is not None and age_days > 14,
         "error": data.get("error", ""),
         "stats": data.get("stats", {}),
         "god_nodes": data.get("god_nodes", []),

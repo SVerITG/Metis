@@ -2,8 +2,19 @@
 <div class="panel">
   <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
     <span class="kicker kicker--accent" style="margin:0;">GAP ANALYSIS</span>
+    {#- SAY WHAT THIS MEASURES (2026-09-02). It used to promise which topics the
+        library "covers", over a percentage bar — which reads as a measured
+        proportion. It is not one. Each topic is matched by requiring its content
+        words to appear in a title or abstract, and that both over- and
+        under-counts: a one-word topic like "Coverage" matches 71 papers that are
+        about something else, while "The molecule-to-decision chain" matches
+        nothing however well the library covers the subject. A percentage built
+        from those is a choice disguised as a fact, so the percentage is gone and
+        the count is labelled as what it is. Metis has a semantic index
+        (`vec_pdf_chunks`) and answering this properly means using it. -#}
     <div style="font-family:var(--m-display);font-size:var(--t-small);color:var(--m-muted);margin-top:var(--m-space-1);">
-      For each active course, which topics your library already covers &mdash; and which don't have papers yet.
+      For each active course, which of its topics have at least one paper whose
+      words match &mdash; a keyword check, not a coverage measure.
     </div>
   </div>
 
@@ -26,17 +37,22 @@
         <span class="u-label" style="margin-left:6px;">{{ c.category | upper }}</span>
         {% endif %}
       </div>
-      {% if c.total %}
-      <div class="u-label u-fixed" style="letter-spacing:0.10em;">
-        {{ c.covered_n }}/{{ c.total }} COVERED
+      {% if c.assessed and c.total %}
+      <div class="u-label u-fixed" style="letter-spacing:0.10em;"
+           title="{{ c.covered_n }} of this course's {{ c.total }} recorded topics have a paper whose words match. A keyword match is not proof the subject is covered, in either direction.">
+        {{ c.covered_n }}/{{ c.total }} MATCHED
+      </div>
+      {% else %}
+      <div class="u-label u-fixed" style="letter-spacing:0.10em;color:var(--m-muted);">
+        NOT ASSESSED
       </div>
       {% endif %}
     </div>
 
-    {% if c.total %}
+    {% if c.assessed and c.total %}
     {# coverage bar #}
     <div class="u-mb-3" style="display:flex;height:8px;width:100%;border-radius:var(--m-radius);overflow:hidden;background:var(--m-surface-3);"
-         title="{{ c.covered_pct }}% covered &middot; {{ c.gap_pct }}% gap">
+         title="{{ c.covered_n }} of {{ c.total }} recorded topics matched by keyword">
       {% if c.covered_pct > 0 %}
       <span style="display:block;width:{{ c.covered_pct }}%;background:var(--m-accent);"></span>
       {% endif %}
@@ -44,15 +60,33 @@
       <span style="display:block;width:{{ c.gap_pct }}%;background:var(--m-surface-3);"></span>
       {% endif %}
     </div>
+    {#- The bar stays: it encodes the ratio the counts already state, at a
+        glance. The two PERCENTAGES are gone — "13% IN LIBRARY" invited being
+        read as "your library covers 13% of this course", which is not what was
+        measured. -#}
     <div class="u-label u-mb-3" style="display:flex;justify-content:space-between;">
-      <span style="color:var(--m-accent);">{{ c.covered_pct }}% IN LIBRARY</span>
-      <span>{{ c.gap_pct }}% GAP</span>
+      <span style="color:var(--m-accent);">{{ c.covered_n }} TOPIC{{ 'S' if c.covered_n != 1 else '' }} WITH A MATCH</span>
+      <span>{{ c.gaps_n }} WITHOUT</span>
     </div>
     {% endif %}
 
-    {% if c.top_gaps %}
+    {%- if not c.assessed %}
+    {#- No topics on record, so there is nothing to compare the library against.
+        This branch replaced a title-word fallback that made the panel report
+        0% gap for every course — see the note in teach.py. It states what is
+        actually known and points at the work that would make it knowable. -#}
+    <div class="u-label u-mb-3" style="display:flex;justify-content:space-between;">
+      <span>NO TOPICS ON RECORD</span>
+      {% if c.n_lessons %}<span>{{ c.n_lessons }} LESSONS</span>{% endif %}
+    </div>
+    <div class="u-ed" style="font-size:var(--t-meta);">
+      Not enough topics recorded to judge coverage{% if c.n_lessons %} &mdash;
+      the topics would come from this course's {{ c.n_lessons }} lesson files{% endif %}.
+    </div>
+    {% elif c.top_gaps %}
     <div class="u-row" style="flex-wrap:wrap;">
-      <span class="u-label" style="margin-right:4px;">TOP GAPS</span>
+      <span class="u-label" style="margin-right:4px;"
+            title="No paper in the library has all the words of these topics. For a topic phrased as a course's own scaffolding that says little about the literature.">NO KEYWORD MATCH</span>
       {% for kw in c.top_gaps %}
       <span class="u-label" style="padding:var(--m-space-1) var(--m-space-2);border:1px dashed var(--m-line);border-radius:var(--m-radius-pill);background:var(--m-surface);">
         {{ kw }}
@@ -61,7 +95,7 @@
     </div>
     {% elif c.covered_n %}
     <div class="u-ed" style="font-size:var(--t-meta);">
-      Your library covers every topic we know about for this course.
+      Every recorded topic for this course has at least one keyword match.
     </div>
     {% else %}
     <div class="u-ed" style="font-size:var(--t-meta);">

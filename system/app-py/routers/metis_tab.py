@@ -1143,13 +1143,27 @@ def _claude_desktop_config_paths() -> list[Path]:
 
 
 def _registered_in(config_path: Path) -> bool:
-    """True if any mcpServers key mentions metis in the given JSON config."""
+    """True if any mcpServers key mentions metis in the given JSON config.
+
+    Looks in BOTH places a server can be registered, which is the fix here
+    (2026-09-02). Claude Desktop keeps one global `mcpServers` map; Claude Code
+    registers PER PROJECT, under `projects["<path>"].mcpServers` in
+    ~/.claude.json, and only writes the root map for a user-scoped server.
+    Reading the root alone reported "Claude Code — not registered — run
+    claude mcp add" on a machine where metis-rc was registered and working, and
+    that panel exists precisely so a non-technical reader can trust it.
+    """
     try:
         if not config_path.is_file():
             return False
         data = json.loads(config_path.read_text(encoding="utf-8"))
-        servers = data.get("mcpServers") or {}
-        return any("metis" in str(k).lower() for k in servers)
+        if not isinstance(data, dict):
+            return False
+        maps = [data.get("mcpServers") or {}]
+        for proj in (data.get("projects") or {}).values():
+            if isinstance(proj, dict):
+                maps.append(proj.get("mcpServers") or {})
+        return any("metis" in str(k).lower() for m in maps for k in m)
     except Exception:
         return False
 
