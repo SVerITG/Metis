@@ -1,6 +1,6 @@
 """The cache-busting stamp, and why it must not be a number someone types.
 
-the researcher, 2026-09-02: "every day I open Metis but there are still old Metis'
+Reported 2026-09-02: "every day I open Metis but there are still old Metis'
 version open in my browsers."
 
 `base.html` carried `styles.css?v=14` and `app.js?v=9m`, bumped by hand. A

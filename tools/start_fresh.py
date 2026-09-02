@@ -2,7 +2,7 @@
 """Draw a line under everything currently stored: from tomorrow, only new items.
 
 WHY
-    the researcher, 2026-08-31: "see that all news and library items that we currently
+    Reported 2026-08-31: "see that all news and library items that we currently
     have are set to 'read' or at least that for those i am not asked to tag them
     as read so we can start from today over, tomorrow mentioning the new items."
 

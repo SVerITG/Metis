@@ -21,6 +21,7 @@ Usage:
     python3 tools/check_course_dois.py --all
     python3 tools/check_course_dois.py ai-in-public-health genomic-surveillance
 """
+import os
 import argparse
 import json
 import pathlib
@@ -31,13 +32,31 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 COURSES = ROOT / "knowledge" / "courses"
 DOI_RE = re.compile(r"10\.\d{4,9}/[-._;()/:A-Za-z0-9]+")
-MAILTO = "researcher@example.org"          # Crossref asks for a contact; be polite
+# Crossref asks callers for a contact address so it can reach you about a
+# misbehaving script, and rewards giving one with the faster "polite" pool. It
+# was hard-coded to a real address in a repository that is PUBLIC on GitHub —
+# checked 2026-09-02, both Metis and Metis_PH return 200 unauthenticated. An
+# address in source is a published address. Set METIS_CROSSREF_MAILTO to opt
+# back into the polite pool; without it the script still works, just slower.
+MAILTO = os.environ.get("METIS_CROSSREF_MAILTO", "")
+
+
+def _user_agent() -> str:
+    """The User-Agent header, with a contact address only if one is configured.
+
+    `(mailto:)` with nothing after it is worse than omitting it: Crossref reads
+    a malformed contact as an unidentified caller anyway, and it reads to a
+    human as a bug.
+    """
+    if MAILTO:
+        return f"User-Agent: metis-course-check (mailto:{MAILTO})"
+    return "User-Agent: metis-course-check"
 
 
 def crossref(doi: str):
     r = subprocess.run(
         ["curl", "-sL", "--max-time", "20",
-         "-H", f"User-Agent: metis-course-check (mailto:{MAILTO})",
+         "-H", _user_agent(),
          f"https://api.crossref.org/works/{doi}"],
         capture_output=True, text=True)
     try:

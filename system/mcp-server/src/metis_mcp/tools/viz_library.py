@@ -1,7 +1,7 @@
 """viz_library.py — a visualization library that ACCUMULATES.
 
 WHAT THIS IS FOR
-    the researcher, 2026-08-28: *"I think we should make like a database of beautiful
+    Reported 2026-08-28: *"I think we should make like a database of beautiful
     visualizations... Every time i say i like a visualization the methodology,
     styling, ... will be saved so you can have multiple styles per type of
     visualization like charts, maps, ... how can we save the kind, methodology,
@@ -388,7 +388,7 @@ async def save_viz_exemplar(
 ) -> list[TextContent]:
     """Record a visualization you admired, and why. The provenance layer.
 
-    Call this the moment the researcher says he likes something. It is the cheapest of the
+    Call this the moment the researcher says they like something. It is the cheapest of the
     three writes and the one that makes the other two honest: a recipe whose
     origin is unrecorded cannot be checked against the thing it came from.
 
@@ -832,7 +832,7 @@ async def record_viz_use(
 async def viz_library_overview() -> list[TextContent]:
     """Show the whole visualization library — every style, every recipe.
 
-    Read this when the researcher asks what styles exist, or before offering him a choice
+    Read this when the researcher asks what styles exist, or before offering a choice
     of look. The same text is served as the `metis://viz-styles` resource, so
     Claude Desktop sees it without any client-specific work.
 

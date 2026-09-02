@@ -362,3 +362,19 @@ system/config/.corpus-triggers.json
 # the thing it exists to protect — same reason as agents/release-coordinator/.
 # It still reaches the second machine via OneDrive, which syncs untracked files.
 tools/strip-identity.py
+
+# ── Personal-overlay tooling: this computer only, never committed ──────────
+# The three-layer architecture says the personal overlay is never committed,
+# but nothing enforced it for *tools*. These three hard-code an absolute home
+# path, a real institutional address, and named internal programmes — and they
+# were committed on 2026-09-02 into repositories that are PUBLIC on GitHub
+# (both return 200 unauthenticated; checked the same day). They are untracked
+# again and stay on this machine, where they work exactly as before.
+#
+# The generic course tools next to them — check_course_dois.py,
+# unwrap_course_prose.py — remain tracked, because CLAUDE.md documents them and
+# a documented tool missing from the repo is a broken instruction on the second
+# machine. The address in the first is configuration now, not source.
+tools/harvest_hat_book_figures.py
+tools/harvest_hat_manual_figures.py
+tools/update_hat_library.py

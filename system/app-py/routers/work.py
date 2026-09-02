@@ -867,7 +867,7 @@ async def task_delete(task_id: str):
 async def task_quick_add(request: Request, bare: int = 0):
     """Create a task due today and hand back the refreshed Due-Today strip.
 
-    the researcher, 2026-09-01: "its not clear to me how to add projects or tasks ... nor
+    Reported 2026-09-01: "its not clear to me how to add projects or tasks ... nor
     how to easily add or delete tasks/things to do."
 
     Everything he named already existed — on Work. `+ Project`, `+ add task` per
@@ -1704,7 +1704,7 @@ async def launch_claude_desktop():
 # ---------------------------------------------------------------------------
 # An optional target date
 # ---------------------------------------------------------------------------
-# the researcher, 2026-08-27: give the option to date a task, "but dont make it
+# Reported 2026-08-27: give the option to date a task, "but dont make it
 # obligatory, because often i dont know when i will work on something."
 #
 # `tasks.due_date` has existed all along; 70 of 71 open tasks had nothing in it,

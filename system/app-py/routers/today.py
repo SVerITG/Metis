@@ -4291,7 +4291,7 @@ async def today_focus_with_memory(request: Request, bare: int = 0):
     # the surface refills exactly as fast as you empty it and "done" is a state
     # it cannot express.
     #
-    # the researcher, 2026-08-29: "Expand on the Today surface and that it should be
+    # Reported 2026-08-29: "Expand on the Today surface and that it should be
     # finisheable."
     #
     # So only two pools now reach the cards: things with a DEADLINE (added
@@ -4742,7 +4742,7 @@ async def today_whats_new(request: Request):
     to look at" — it is not a place to read from, and making it longer would
     turn Today back into the thing the reordering was meant to stop it being.
     """
-    # UNSEEN, not merely RECENT. the researcher, 2026-09-01: "there are still a lot of
+    # UNSEEN, not merely RECENT. Reported 2026-09-01: "there are still a lot of
     # 'new' items, we would reset ... and start from zero today."
     #
     # These counts were `discovered_at >= date('now','-1 day')` — a rolling
@@ -5167,7 +5167,7 @@ def _news_card(r: dict) -> dict:
         # and caps at 60, so the floor's only job is to keep obvious noise out
         # while leaving enough for the sort to be worth doing.
         #
-        # 0.68 after the anchor set was broadened on 2026-08-31. the researcher: "It can be
+        # 0.68 after the anchor set was broadened on 2026-08-31. Reported: "It can be
         # sleeping sickness, NTDs, elimination of diseases, epidemiology,
         # digitalisation of health care. There are many topics close to my work."
         # Ten specific prose anchors were added for those, and the floor came
