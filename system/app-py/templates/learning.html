@@ -91,7 +91,12 @@
     </span>
   </h2>
   {#- innerHTML, not outerHTML: this element carries the layout/styling classes and the partial returns bare content, so an outerHTML swap deleted the wrapper and the panel silently lost its border, padding or grid on load. See tools/check_htmx_swaps.py. -#}
-  <div class="grid grid-3"
+  {#- `grid--top` (added 2026-09-02): CSS Grid stretches every card to the
+      tallest in its row, so a course with a short next-step was padded out to
+      match one carrying a three-line description — visibly ~150px of blank
+      space the card owned. The opt-in class for exactly this already existed in
+      styles.css and this grid had never used it. -#}
+  <div class="grid grid-3 grid--top"
        hx-get="/api/partial/learning/courses-archive"
        hx-trigger="load"
        hx-swap="innerHTML">

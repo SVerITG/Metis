@@ -85,10 +85,13 @@
             title="Open {{ c.title|e }}">
       {% if (c.progress_pct or 0) > 0 %}Continue{% else %}Start{% endif %}
     </button>
-    {% if c.next_lesson %}
-    <span class="u-truncate u-mono" style="color:var(--m-muted);align-self:center;max-width:230px;"
-          title="{{ c.next_lesson|e }}">next: {{ c.next_lesson }}</span>
-    {% endif %}
+    {#- The next lesson used to be repeated HERE, inside the button row, as
+        "next: <title>" — and the card already prints it above under a NEXT
+        label. So it was the same fact twice, and being variable-width text
+        among fixed controls it also made the rail wrap differently on every
+        card: three buttons on one line here, two-plus-two there. Deleted; the
+        NEXT block above is the one that stays. The row below is only ever
+        controls, which is what makes its shape predictable. -#}
     {% if c.slug and (c.total_modules or 0) > 0 %}
     <button class="btn btn--ghost btn--caps"
             onclick="scheduleCourse('{{ c.slug }}','{{ c.title|e }}')"
