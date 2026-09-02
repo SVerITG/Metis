@@ -336,7 +336,34 @@ templates.env.globals["focus_shelf"] = _focus_shelf
 # So shared globals get installed on all of them, from one place, after the
 # routers are imported. The alternative — remembering to register on each new
 # router's instance — is the same defect this project keeps paying for.
-_SHARED_GLOBALS = {"focus_shelf": _focus_shelf}
+def _asset_version() -> str:
+    """A cache-busting stamp derived from the assets themselves.
+
+    It was hand-typed: `styles.css?v=14`, `app.js?v=9m`. A number you have to
+    remember to change is a number that does not change — every edit shipped
+    behind a stamp last touched weeks earlier, so a browser holding
+    `styles.css?v=14` kept serving it and the tab showed an old Metis no matter
+    how often the dashboard restarted. That is the literal "old version still
+    open in my browser".
+
+    Content hash rather than mtime, because this repository syncs through
+    OneDrive across two machines and mtimes there are not trustworthy — see the
+    two-computer rules. Cheap: two small files, read once per process start.
+    """
+    import hashlib
+    h = hashlib.sha256()
+    for name in ("styles.css", "app.js"):
+        f = BASE_DIR / "static" / name
+        try:
+            h.update(f.read_bytes())
+        except OSError:
+            h.update(name.encode())          # missing file still yields a stamp
+    return h.hexdigest()[:10]
+
+
+ASSET_V = _asset_version()
+
+_SHARED_GLOBALS = {"focus_shelf": _focus_shelf, "asset_v": ASSET_V}
 def _due_delta(due: str):
     """Days from today to `due`, or None if there is no usable date.
 

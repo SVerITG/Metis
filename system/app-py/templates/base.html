@@ -16,7 +16,7 @@
         href="/static/vendor/bootstrap-icons.min.css">
 
   <!-- Archive design system — loaded after Bootstrap so it overrides -->
-  <link rel="stylesheet" href="/static/styles.css?v=14">
+  <link rel="stylesheet" href="/static/styles.css?v={{ asset_v }}">
   <script>
   /* Density and theme are applied to <html> BEFORE the stylesheet paints.
      Doing it in app.js instead means every page renders once at the default and
@@ -610,7 +610,7 @@ Run my full Metis update. Using the metis-rc tools: scan the latest news and any
 <script src="/static/vendor/bootstrap.bundle.min.js"></script>
 
 <!-- Metis app JS -->
-<script src="/static/app.js?v=9m"></script>
+<script src="/static/app.js?v={{ asset_v }}"></script>
 
 <!-- Archive shell JS -->
 <script>
