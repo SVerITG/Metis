@@ -587,8 +587,17 @@ async def meetings_list(request: Request, filter: str = "month"):
         "FROM meetings WHERE meeting_date >= ? ORDER BY meeting_date DESC LIMIT 100",
         (cutoff,),
     )
+    # `held` distinguishes "you have never recorded a meeting" from "this window
+    # is empty" (2026-09-02). The partial used the first copy for both, so the
+    # page showed "4 TOTAL" in its header and, directly beneath, "No meetings
+    # yet — add your first one". An empty filter result is not an empty
+    # collection, and telling someone they have no meetings while counting four
+    # of them makes the whole surface untrustworthy.
+    held = db_scalar("SELECT COUNT(*) FROM meetings", default=0) or 0
+    window = {"week": "the last seven days", "month": "this month"}.get(filter, "any period")
     return templates.TemplateResponse(
-        request, "partials/meetings_list.html", {"meetings": meetings}
+        request, "partials/meetings_list.html",
+        {"meetings": meetings, "held": held, "window": window},
     )
 
 
@@ -609,8 +618,11 @@ async def meetings_search(request: Request, q: str = ""):
             "ORDER BY meeting_date DESC LIMIT 50",
             (pattern, pattern, pattern),
         )
+    held = db_scalar("SELECT COUNT(*) FROM meetings", default=0) or 0
     return templates.TemplateResponse(
-        request, "partials/meetings_list.html", {"meetings": meetings}
+        request, "partials/meetings_list.html",
+        {"meetings": meetings, "held": held,
+         "window": f'anything matching "{q}"' if q else "any period"},
     )
 
 

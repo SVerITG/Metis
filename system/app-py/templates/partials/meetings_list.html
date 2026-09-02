@@ -1,6 +1,16 @@
+{#- TWO empty states, not one (2026-09-02). This partial is reached by the
+    period filter and by search as well as on a first run, and it used the
+    never-onboarded copy for all of them — so a page whose header read
+    "4 TOTAL" carried "No meetings yet, add your first one" directly beneath it.
+    `held` is the count of meetings that exist at all, independent of the
+    filter, which is what separates the two cases. -#}
 {% if not meetings %}
 <div style="padding:var(--m-space-6) var(--m-space-5);font-family:var(--m-sans);font-size:var(--t-body);color:var(--m-muted);font-style:italic;">
-  No meetings yet. Click <strong>Import meeting</strong> above to add your first one, or paste notes with <code>/meeting-memory</code> in Claude Code.
+  {% if held %}
+    Nothing in {{ window }}. {{ held }} meeting{{ 's' if held != 1 else '' }} recorded in total &mdash; try <strong>All</strong>.
+  {% else %}
+    No meetings yet. Click <strong>Import meeting</strong> above to add your first one, or paste notes with <code>/meeting-memory</code> in Claude Code.
+  {% endif %}
 </div>
 {% else %}
 <div class="panel">

@@ -656,11 +656,39 @@ def _save_build(build: dict):
 # ---------------------------------------------------------------------------
 
 
+# Words that carry no subject meaning, so requiring them would make a topic
+# look uncovered for a reason that has nothing to do with the library.
+_TOPIC_STOP = {
+    "and", "the", "for", "with", "from", "into", "onto", "that", "this", "than",
+    "then", "when", "what", "which", "your", "you", "are", "was", "were", "not",
+    "but", "its", "his", "her", "their", "them", "these", "those", "how", "why",
+    "who", "whom", "does", "did", "can", "could", "should", "would", "may",
+    "might", "must", "have", "has", "had", "been", "being", "over", "under",
+    "vs", "versus", "per", "via", "out", "off", "all", "any", "one", "two",
+    "three", "as", "at", "by", "in", "of", "on", "to", "or", "an", "a", "is",
+    "it", "be", "do", "if", "so", "no", "up",
+}
+
+
+def _topic_words(topic: str) -> list[str]:
+    """The words in a topic worth asking the library about.
+
+    Longer than three characters and not a stopword, so "Class imbalance and
+    calibration" asks for `class`, `imbalance`, `calibration` and not for `and`.
+    """
+    import re as _re
+    out: list[str] = []
+    for w in _re.findall(r"[A-Za-z][A-Za-z0-9-]*", topic.lower()):
+        if len(w) > 3 and w not in _TOPIC_STOP and w not in out:
+            out.append(w)
+    return out
+
+
 @router.get("/api/partial/teach/gap-analysis", response_class=HTMLResponse)
 async def teach_gap_analysis(request: Request):
     """For each active course, compare its topic keywords against the library."""
     courses = db_query(
-        "SELECT id, title, slug, category FROM learning_courses "
+        "SELECT id, title, slug, category, total_modules FROM learning_courses "
         "WHERE status = 'active' ORDER BY title LIMIT 3",
         default=[],
     ) or []
@@ -681,17 +709,49 @@ async def teach_gap_analysis(request: Request):
                 default=[],
             ) or []
             keywords = [k["keyword"] for k in kws if k.get("keyword")]
-        # Fall back to title words when no topics are seeded
+        # NO title-word fallback (removed 2026-09-02). It made this panel a check
+        # that could not fail. `course_topics` is empty for every course, so every
+        # course fell back to "the words in its own title longer than three
+        # characters" and then asked whether any abstract in the library contained
+        # them. A two-word course title yielded exactly ONE topic, and a longer
+        # one yielded four, of which one was the preposition in the subtitle.
+        # All three courses therefore reported 100% covered / 0% gap —
+        # three identical full bars and three identical sentences, under a heading
+        # that says "gap analysis". Saying "not assessed" is worth more than a
+        # reassuring number, and it is the state that can name its own fix.
         if not keywords:
-            keywords = [w for w in (c.get("title") or "").split() if len(w) > 3][:8]
+            course_rows.append({
+                "title": c.get("title") or "Untitled course",
+                "category": c.get("category") or "",
+                "assessed": False,
+                "n_lessons": c.get("total_modules") or 0,
+                "covered": [], "gaps": [], "top_gaps": [],
+                "covered_n": 0, "gaps_n": 0, "total": 0,
+                "covered_pct": 0, "gap_pct": 0,
+            })
+            continue
 
         covered: list[str] = []
         gaps: list[str] = []
         for kw in keywords:
-            like = f"%{kw}%"
+            # MATCH ON THE TOPIC'S CONTENT WORDS, NOT THE LITERAL PHRASE.
+            # A seeded topic is a phrase a lesson author wrote — "Class
+            # imbalance and calibration", "Coalescent intuition". No paper title
+            # contains that string, so `LIKE '%<phrase>%'` returns 0 for almost
+            # every real topic, and this panel would have gone from claiming
+            # 100% coverage to claiming ~0% — equally uninformative, just in the
+            # other direction. A topic counts as covered when every content word
+            # in it appears somewhere in the same record.
+            words = [w for w in _topic_words(kw)][:5]
+            if not words:
+                continue
+            clause = " AND ".join(["(title LIKE ? OR abstract LIKE ?)"] * len(words))
+            params: list[str] = []
+            for w in words:
+                params += [f"%{w}%", f"%{w}%"]
             n = db_scalar(
-                "SELECT COUNT(*) FROM literature_metadata WHERE title LIKE ? OR abstract LIKE ?",
-                (like, like),
+                f"SELECT COUNT(*) FROM literature_metadata WHERE {clause}",
+                tuple(params),
                 default=0,
             ) or 0
             if n > 0:
@@ -706,6 +766,8 @@ async def teach_gap_analysis(request: Request):
         course_rows.append({
             "title": c.get("title") or "Untitled course",
             "category": c.get("category") or "",
+            "assessed": True,
+            "n_lessons": c.get("total_modules") or 0,
             "covered": covered,
             "gaps": gaps,
             "top_gaps": gaps[:3],

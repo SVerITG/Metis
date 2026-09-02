@@ -165,6 +165,11 @@
       renderGraph(allNodes, allEdges);
       document.getElementById('kg-loading').style.display = 'none';
     }).catch(e => {
+      /* Log AND render. A catch that only writes to the DOM makes its own
+         defect invisible: the console stayed clean on all nine surfaces while
+         this panel failed on every single load, which is how the d3 race
+         below survived unnoticed for weeks. */
+      console.error('kg: graph reload failed', e);
       document.getElementById('kg-loading').innerHTML =
         '<div class="u-mono" style="color:var(--m-alert);">Error loading graph</div>';
     });
@@ -484,8 +489,27 @@
     attributes: true, attributeFilter: ['data-theme']
   });
 
-  /* ── Initial load ───────────────────────────────────────── */
-  kgReload();
+  /* ── Initial load ─────────────────────────────────────────
+     HTMX appends this partial's <script src="d3.min.js"> and runs the inline
+     script straight after — but an EXTERNAL script loads asynchronously, so
+     d3 is routinely still undefined when we reach this line. The first
+     kgReload() then threw inside renderGraph, the catch painted "Error
+     loading graph" over the panel, and nothing retried. Measured: baseline
+     load drew 0 nodes; delaying the data response 3s so d3 lands first drew
+     all 512. Wait for the global rather than assuming it. ──────────────── */
+  function whenD3Ready(fn, waited) {
+    if (window.d3 && d3.forceSimulation) { fn(); return; }
+    waited = (waited || 0) + 50;
+    if (waited > 10000) {
+      console.error('kg: d3 never became available after 10s');
+      var el = document.getElementById('kg-loading');
+      if (el) el.innerHTML =
+        '<div class="u-mono" style="color:var(--m-alert);">Graph library did not load</div>';
+      return;
+    }
+    setTimeout(function () { whenD3Ready(fn, waited); }, 50);
+  }
+  whenD3Ready(kgReload);
 })();
 </script>
 {% endraw %}

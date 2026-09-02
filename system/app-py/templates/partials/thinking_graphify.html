@@ -5,8 +5,13 @@
     <span class="tail">HUBS · BRIDGES · COMMUNITIES</span>
     <span class="u-row" style="margin-left:auto;">
       {% if built_at %}
-      <span class="u-ed" style="font-size:var(--t-micro);text-transform:none;letter-spacing:0;">
-        built {{ built_at }}
+      {#- The age, not just the date. A snapshot from eleven weeks ago read
+          identically to one from this morning, and "Rebuild & view" skips the
+          graph step whenever graph.json exists — so it reported success while
+          changing nothing. Say how old it is, and where the real rebuild is. -#}
+      <span class="u-ed" style="font-size:var(--t-micro);text-transform:none;letter-spacing:0;{% if stale %}color:var(--m-warn);{% endif %}"
+            {% if stale %}title="This analysis is a snapshot. The Rebuild button re-exports your notes but does not regenerate the graph — run `graphify update .` in the terminal for that."{% endif %}>
+        built {{ built_at }}{% if age_days is not none %} · {% if age_days == 0 %}today{% elif age_days == 1 %}1 day ago{% else %}{{ age_days }} days ago{% endif %}{% endif %}{% if stale %} · snapshot{% endif %}
       </span>
       {% endif %}
       <button class="btn btn--ghost btn--caps" onclick="graphifyKnowledge(this)"
