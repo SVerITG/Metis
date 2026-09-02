@@ -967,6 +967,19 @@ def _haiku_news_summary(topic: str, titles: list[str], period: str, api_key: str
     return ""
 
 
+@router.get("/api/build")
+async def api_build():
+    """The build this server is serving, so a tab can tell it is out of date.
+
+    An open tab has no way to know the dashboard restarted under it. It asks
+    this on focus and compares with the stamp it loaded, which is what turns
+    "an old Metis is still open" from something you have to notice into
+    something the page says.
+    """
+    from main import ASSET_V
+    return JSONResponse({"ok": True, "build": ASSET_V})
+
+
 @router.get("/api/update/api-available")
 async def api_update_available():
     """Is the paid update path usable at all? Asked BEFORE the chain starts.

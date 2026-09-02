@@ -3006,3 +3006,126 @@ document.addEventListener('keydown', function (e) {
     m.classList.add('is-hidden');
   });
 });
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ONE METIS AT A TIME
+   ─────────────────────────────────────────────────────────────────────────
+   the researcher, 2026-09-02: "every day I open Metis but there are still old Metis'
+   version open in my browsers ... what would be an elegant way to have only
+   one Metis version open at a time."
+
+   A page cannot close a tab it did not open — every browser blocks
+   `window.close()` there, and no flag changes that. So "close the old ones"
+   is not available, and anything promising it would fail silently. What IS
+   available is making the old tab stop pretending to be current: the newest
+   tab claims Metis, and every older one draws a curtain over itself with one
+   button that takes the session back — reloading as it does, because a tab
+   that has been sitting since yesterday is stale whether or not it is
+   dormant.
+
+   Two ways a tab goes stale, and both land on the same curtain:
+     1. Another tab claimed the session   (BroadcastChannel)
+     2. The dashboard restarted with new assets (/api/build != our stamp)
+
+   The second is the one that was actually biting: the cache-busting stamp on
+   styles.css and app.js used to be hand-typed, so an open tab kept serving
+   weeks-old CSS. That stamp is now derived from the files, and this checks it.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function metisSingleInstance() {
+  var CH = 'metis-instance';
+  var LS = 'metis:claim';
+  var myId = String(Date.now()) + '-' + Math.random().toString(36).slice(2, 8);
+  var myBuild = (function () {
+    var el = document.querySelector('script[src*="app.js?v="]');
+    var m = el && el.getAttribute('src').match(/[?&]v=([^&]+)/);
+    return m ? m[1] : '';
+  })();
+  var dormant = false;
+  var bc = null;
+  try { bc = new BroadcastChannel(CH); } catch (_) { /* fall back to storage */ }
+
+  function send(msg) {
+    msg.id = myId;
+    if (bc) { try { bc.postMessage(msg); return; } catch (_) {} }
+    // storage events only fire in OTHER tabs, which is exactly what we want.
+    try { localStorage.setItem(LS, JSON.stringify(msg)); } catch (_) {}
+  }
+
+  function curtain(title, body, buttonLabel) {
+    if (document.getElementById('metis-curtain')) return;
+    var d = document.createElement('div');
+    d.id = 'metis-curtain';
+    d.setAttribute('role', 'dialog');
+    d.setAttribute('aria-modal', 'true');
+    d.innerHTML =
+      '<div class="mc-inner">' +
+        '<p class="mc-eyebrow">Metis</p>' +
+        '<h2 class="mc-title"></h2>' +
+        '<p class="mc-body"></p>' +
+        '<button type="button" class="mc-go"></button>' +
+      '</div>';
+    // textContent, not innerHTML — none of this is markup.
+    d.querySelector('.mc-title').textContent = title;
+    d.querySelector('.mc-body').textContent = body;
+    var go = d.querySelector('.mc-go');
+    go.textContent = buttonLabel;
+    go.addEventListener('click', function () {
+      // Claim first, so the tab we are taking over from goes dormant, THEN
+      // reload — a tab that has been idle since yesterday has stale data as
+      // well as a stale claim.
+      send({ t: 'claim', at: Date.now() });
+      setTimeout(function () { location.reload(); }, 60);
+    });
+    document.body.appendChild(d);
+    go.focus();
+  }
+
+  function goDormant(reason) {
+    if (dormant) return;
+    dormant = true;
+    document.body.classList.add('is-dormant');
+    // Stop this tab doing work it will never show. HTMX polling is the only
+    // repeating traffic; killing the triggers is enough and needs no registry.
+    document.querySelectorAll('[hx-trigger*="every"]').forEach(function (el) {
+      el.removeAttribute('hx-trigger');
+    });
+    if (reason === 'build') {
+      curtain('This tab is running an older Metis.',
+              'The dashboard has been updated since you opened it, so what you '
+              + 'see here is out of date.',
+              'Reload with the new version');
+    } else {
+      curtain('Metis is open in a newer tab.',
+              'Only one tab stays live, so the two cannot disagree about what '
+              + 'is new or what you have already read.',
+              'Use Metis in this tab');
+    }
+  }
+
+  function onClaim(msg) {
+    if (!msg || msg.t !== 'claim' || msg.id === myId) return;
+    // Later claim wins. Ties broken on id so two tabs opened in the same
+    // millisecond cannot both stay live, or both go dormant.
+    if (msg.at > myClaimedAt || (msg.at === myClaimedAt && msg.id > myId)) {
+      goDormant('claim');
+    }
+  }
+
+  var myClaimedAt = Date.now();
+  if (bc) { bc.onmessage = function (e) { onClaim(e.data); }; }
+  window.addEventListener('storage', function (e) {
+    if (e.key !== LS || !e.newValue) return;
+    try { onClaim(JSON.parse(e.newValue)); } catch (_) {}
+  });
+  send({ t: 'claim', at: myClaimedAt });
+
+  // Coming back to a tab is the moment to find out whether it is still current.
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible' || dormant || !myBuild) return;
+    fetch('/api/build', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d && d.build && d.build !== myBuild) goDormant('build'); })
+      .catch(function () { /* server down — say nothing rather than cry wolf */ });
+  });
+})();

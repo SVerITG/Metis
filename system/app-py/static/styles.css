@@ -1359,6 +1359,43 @@ a.board-item-title:hover { color: var(--m-accent); }
   font-style: italic;
 }
 
+/* ── The stale-tab curtain ─────────────────────────────────────────────────
+   Deliberately opaque and full-bleed rather than a dismissible toast. The
+   failure it addresses is a tab that LOOKS current, so anything you can read
+   past does not fix it. See metisSingleInstance() in app.js. */
+#metis-curtain {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--m-bg); padding: var(--m-space-6);
+}
+#metis-curtain .mc-inner { max-width: 30rem; text-align: center; }
+#metis-curtain .mc-eyebrow {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--m-muted); margin: 0 0 var(--m-space-4);
+}
+#metis-curtain .mc-title {
+  font-family: var(--m-display); font-size: 24px; line-height: 1.25;
+  color: var(--m-ink); margin: 0 0 var(--m-space-3); text-wrap: balance;
+}
+#metis-curtain .mc-body {
+  font-size: 14px; line-height: 1.6; color: var(--m-muted);
+  margin: 0 0 var(--m-space-5);
+}
+#metis-curtain .mc-go {
+  font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; cursor: pointer;
+  background: var(--m-accent); color: var(--m-on-accent);
+  border: 1px solid var(--m-accent); border-radius: var(--m-radius-sm);
+  padding: 10px 18px;
+}
+#metis-curtain .mc-go:hover { filter: brightness(1.08); }
+#metis-curtain .mc-go:focus-visible {
+  outline: none; box-shadow: 0 0 0 2px var(--m-bg), 0 0 0 4px var(--m-accent);
+}
+/* The page underneath keeps its scroll position for the reload, it just stops
+   being reachable. */
+body.is-dormant { overflow: hidden; }
+
 /* One quiet line, not a card — see today_focus_memory.html. */
 .focus-none {
   font-size: 13px; color: var(--m-muted); padding: var(--m-space-2) 0;
