@@ -311,7 +311,14 @@
       Object.keys(views).forEach(function(k){
         var pane = document.getElementById(views[k]), b = document.getElementById(btns[k]);
         var active = (k === view);
-        if (pane) pane.style.display = active ? '' : 'none';
+        // TOGGLE THE CLASS, NOT THE INLINE STYLE (fixed 2026-09-03).
+        // The Board and Calendar panes are authored with `class="u-hide"`, and
+        // `u-hide` is `display:none !important`. Setting `pane.style.display=''`
+        // merely REMOVES the inline value and lets the class win again — so an
+        // inline style can never beat `!important`, and both views were
+        // unreachable from the day that class was added. Only List worked, which
+        // is exactly what the researcher reported.
+        if (pane) pane.classList.toggle('u-hide', !active);
         if (b){ b.style.background = active ? on : off; b.style.color = active ? onFg : offFg; }
         // Board and Calendar partials use load/revealed triggers, so process them
         // only when first shown — the List view stays instant.
