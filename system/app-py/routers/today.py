@@ -4897,66 +4897,6 @@ async def today_reading(request: Request):
     )
 
 
-@router.get("/api/partial/today/learning-nudge", response_class=HTMLResponse)
-async def today_learning_nudge(request: Request):
-    """Compact nudge for active courses and spaced-rep cards due."""
-    course = None
-    days_since = None
-    due_cards = 0
-
-    # Active course with lowest progress
-    try:
-        rows = db_query(
-            "SELECT id, slug, title, progress_pct, next_lesson, status "
-            "FROM learning_courses "
-            "WHERE status IN ('active', 'in_progress') "
-            "ORDER BY progress_pct ASC LIMIT 1"
-        ) or []
-        if rows:
-            course = rows[0]
-    except Exception:
-        pass
-
-    # Days since last study (from spaced_repetition.reviewed_at)
-    try:
-        last_review = db_scalar(
-            "SELECT MAX(reviewed_at) FROM spaced_repetition "
-            "WHERE reviewed_at IS NOT NULL"
-        )
-        if last_review:
-            last_dt = datetime.datetime.fromisoformat(str(last_review)[:10])
-            days_since = (datetime.datetime.now() - last_dt).days
-    except Exception:
-        pass
-
-    # Due spaced-rep cards
-    today_str = datetime.date.today().isoformat()
-    try:
-        due_cards = db_scalar(
-            "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ?",
-            (today_str,),
-        ) or 0
-    except Exception:
-        pass
-
-    # Only show if there's an active course AND (stale study OR cards due)
-    if course and not (days_since is not None and days_since >= 3 or due_cards > 0):
-        course = None  # suppress the nudge
-
-    # A suppressed nudge used to render a full-height wrapper containing zero
-    # words — 40 bytes of nothing holding its place in the stack. A panel that
-    # keeps its slot while saying nothing teaches the reader to skip that region
-    # of the page, and the habit then applies on the days it DOES have something.
-    if not course:
-        return HTMLResponse(nothing())
-
-    return templates.TemplateResponse(
-        request,
-        "partials/today_learning_nudge.html",
-        {"course": course, "days_since": days_since, "due_cards": due_cards},
-    )
-
-
 # ── G: Literature Discovery ──────────────────────────────────────────────
 
 async def render_literature_discovery(request: Request) -> str:

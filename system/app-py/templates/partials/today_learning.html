@@ -1,0 +1,104 @@
+{# today_learning.html — every active course, with the one in focus expanded.
+
+   Replaces today_learning_nudge.html, which picked a course for you (lowest
+   progress), fetched `next_lesson` and never rendered it, and hid itself unless
+   study was stale or cards were due. You could not see where you were in
+   anything, and you could not choose. #}
+<div class="u-mb-6" id="today-learning">
+  <div class="panel panel--md">
+
+    <div class="u-row u-row--between u-mb-3">
+      <span class="u-label">Learning</span>
+      {% if due_all %}
+      <a href="/tab/learning" class="u-label" style="text-decoration:none;color:var(--m-ochre);">
+        {{ due_all }} card{{ '' if due_all == 1 else 's' }} due
+      </a>
+      {% endif %}
+    </div>
+
+    {# Every active course. The chip IS the chooser — clicking one pins it. #}
+    <div class="tl-chips u-mb-4">
+      {% for c in courses %}
+      <button class="tl-chip{% if c.slug == focused.slug %} is-on{% endif %}"
+              type="button"
+              hx-post="/api/today/learning/focus/{{ c.slug }}"
+              hx-target="#today-learning"
+              hx-swap="outerHTML"
+              title="{{ c.title }}">
+        <span class="tl-chip-name">{{ c.title|truncate(28) }}</span>
+        <span class="tl-chip-pct">{{ c.pct }}%</span>
+      </button>
+      {% endfor %}
+    </div>
+
+    {# The focused course. #}
+    <div class="tl-focus">
+      <div class="u-title u-title--sm u-mb-2">{{ focused.title }}</div>
+
+      <div class="u-row u-mb-3" style="gap:var(--m-space-3);">
+        <div class="tl-bar u-grow"><i style="width:{{ focused.pct }}%;"></i></div>
+        <span class="u-label u-fixed">{{ focused.n_done }} of {{ focused.n_total }} · {{ focused.pct }}%</span>
+      </div>
+
+      {% if focused.finished %}
+      <div class="tl-next">
+        <div class="tl-next-label">Finished</div>
+        <div class="tl-next-title">Every lesson is marked complete.</div>
+      </div>
+      {% elif focused.next_title %}
+      <div class="tl-next">
+        <div class="tl-next-label">
+          Next{% if focused.next_section %} · {{ focused.next_section }}{% endif %}
+        </div>
+        <div class="tl-next-title">{{ focused.next_title }}</div>
+        {% if focused.next_time %}<div class="tl-next-meta">{{ focused.next_time }} min</div>{% endif %}
+      </div>
+      {% endif %}
+
+      <div class="u-row u-mb-0" style="gap:var(--m-space-2);margin-top:var(--m-space-3);">
+        {% if focused.has_manifest and focused.next_id %}
+        <a class="btn btn--primary btn--caps" style="font-size:var(--t-micro);text-decoration:none;"
+           href="/course/{{ focused.slug }}?lesson={{ focused.next_id }}">Continue →</a>
+        {% else %}
+        <a class="btn btn--primary btn--caps" style="font-size:var(--t-micro);text-decoration:none;"
+           href="{{ focused.launch }}">Open course →</a>
+        {% endif %}
+        {% if due_cards %}
+        <a class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);text-decoration:none;"
+           href="/tab/learning">{{ due_cards }} card{{ '' if due_cards == 1 else 's' }} from this course</a>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.tl-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.tl-chip {
+  display:flex; align-items:baseline; gap:7px;
+  padding:5px 10px; border-radius:var(--m-radius-pill, 999px);
+  border:1px solid var(--m-line); background:var(--m-surface-2);
+  color:var(--m-muted); cursor:pointer; font-size:var(--t-small);
+  transition:border-color .12s ease, color .12s ease, background .12s ease;
+}
+.tl-chip:hover { border-color:var(--m-accent); color:var(--m-ink); }
+.tl-chip.is-on { border-color:var(--m-accent); background:var(--m-accent-wash); color:var(--m-ink); }
+.tl-chip-name { white-space:nowrap; }
+.tl-chip-pct  { font-family:var(--m-mono); font-size:var(--t-micro); color:var(--m-muted); }
+.tl-chip.is-on .tl-chip-pct { color:var(--m-accent); }
+
+.tl-bar { height:5px; border-radius:999px; background:var(--m-surface-3); overflow:hidden; }
+.tl-bar > i { display:block; height:100%; background:var(--m-accent); border-radius:999px; }
+
+.tl-next {
+  padding:10px 12px; border-radius:var(--m-radius-sm);
+  background:var(--m-surface-2); border-left:3px solid var(--m-accent);
+}
+.tl-next-label {
+  font-family:var(--m-mono); font-size:var(--t-micro); letter-spacing:.11em;
+  text-transform:uppercase; color:var(--m-muted); margin-bottom:3px;
+}
+.tl-next-title { color:var(--m-ink); font-size:var(--t-body); line-height:1.4; }
+.tl-next-meta  { font-family:var(--m-mono); font-size:var(--t-micro); color:var(--m-muted); margin-top:3px; }
+</style>

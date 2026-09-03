@@ -111,6 +111,8 @@ async function completeLesson(slug, lessonId, btn) {
 }
 
 var SLUG = {{ slug | tojson }};
+var INITIAL_LESSON = {{ (initial_lesson or '') | tojson }};
+var INITIAL_TAB    = {{ (initial_tab or '') | tojson }};
 
 (function () {
   /* Tabs. One click updates two panes — the sidebar contents and the reading
@@ -133,10 +135,26 @@ var SLUG = {{ slug | tojson }};
       b.classList.add('active');
       openTab(b.dataset.tab);
     });
-    /* Land on the first tab's index, rather than a placeholder that made the
-       reader look empty until you picked something. */
-    var first = tabs.querySelector('.nav-btn');
-    if (first) openTab(first.dataset.tab);
+    /* Normally: land on the first tab's index, rather than a placeholder that
+       made the reader look empty until you picked something.
+
+       But ?lesson=<id> means someone arrived from Today's "Continue" and wants
+       that lesson, not an index. Light its tab, load its sidebar, and open the
+       lesson itself. */
+    if (INITIAL_LESSON && INITIAL_TAB) {
+      var want = tabs.querySelector('.nav-btn[data-tab="' + INITIAL_TAB + '"]');
+      if (want) {
+        tabs.querySelectorAll('.nav-btn').forEach(function (x) { x.classList.remove('active'); });
+        want.classList.add('active');
+      }
+      htmx.ajax('GET', '/api/course/' + SLUG + '/overview?tab=' + INITIAL_TAB,
+                { target: '#course-overview-panel', swap: 'innerHTML' });
+      htmx.ajax('GET', '/api/course/' + SLUG + '/lesson/' + INITIAL_LESSON,
+                { target: '#lesson-reader-panel', swap: 'innerHTML' });
+    } else {
+      var first = tabs.querySelector('.nav-btn');
+      if (first) openTab(first.dataset.tab);
+    }
   }
 })();
 
