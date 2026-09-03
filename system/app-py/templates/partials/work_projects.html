@@ -10,6 +10,18 @@
   <button class="btn btn--primary btn--caps" onclick="openAddProjectModal()">+ Add your first project</button>
 </div>
 {% else %}
+{#- WHEN NOTHING CAN LAUNCH, SAY IT ONCE. Every launcher here starts a Windows
+    application, so when the handler for those is not registered they all fail
+    identically — and the page used to report that as `[Errno 8] Exec format
+    error` on whichever button you happened to press. This states the condition
+    once, at the top, with the one command that fixes it. It is not the
+    researcher's mistake and it is not permanent. -#}
+{% if not interop_ok %}
+<div class="launch-down" role="status">
+  <span class="launch-down-mark" aria-hidden="true">⚠</span>
+  <span class="launch-down-text">{{ interop_why }}</span>
+</div>
+{% endif %}
 {#- ── GROUPED BY CATEGORY, EACH SECTION COLLAPSIBLE (2026-09-03) ────────────
     Sixteen cards arrived in one flat two-column grid ordered by a
     `display_order` nobody had set. Grouping them is what was asked for, and the
@@ -247,6 +259,20 @@
           {% endif %}
         {% endfor %}
 
+        {#- NO FOLDER MEANS NO CONTROL, AND THAT WAS THE WHOLE PROBLEM.
+            `external_path` was never editable after a project was created, so
+            seven active projects had no folder and no way to give them one —
+            while the row cheerfully offered to open it. The ask comes first on
+            the card now, because until it is answered most of the row cannot
+            work. -#}
+        {% if not p.external_path %}
+        <button type="button" class="btn btn--sec btn--caps proj-launch proj-nopath"
+                onclick="projSetPath('{{ p.id }}', {{ (p.title or '') | tojson }})"
+                title="Tell Metis which folder holds this work, and the rest of these can open it">
+          Where does this live?
+        </button>
+        {% endif %}
+
         {% if _have %}
           {% set _first = _have[0] %}
           <button class="btn btn--primary btn--caps proj-launch"
@@ -264,6 +290,14 @@
                       onclick="launchProjectTarget('{{ p.id }}','{{ key }}')"
                       title="{{ hint }}">{{ label }}</button>
               {% endfor %}
+              {#- A path that is set can also be wrong. Reachable but quiet:
+                  it belongs with the other ways to open the project, not
+                  competing with them. -#}
+              {% if p.external_path %}
+              <button type="button" class="proj-more-item proj-more-item--alt"
+                      onclick="projSetPath('{{ p.id }}', {{ (p.title or '') | tojson }})"
+                      title="{{ p.external_path }}">Change folder…</button>
+              {% endif %}
             </div>
           </details>
           {% endif %}

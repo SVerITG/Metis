@@ -915,6 +915,36 @@ function catManage(name, nProjects) {
   _catPost('/api/project-category/rename', { from: name, to: v });
 }
 
+// ── WHERE DOES THIS LIVE? ────────────────────────────────────────────────────
+// The control that did not exist. `external_path` was only ever settable while
+// creating a project, so seven active projects had no folder and nothing on the
+// page could give them one — while the launcher row went on offering to open it.
+//
+// Reuses `_catPost`, so a refusal arrives as the server's own sentence in a
+// toast and the card group re-renders on success. That matters here because
+// setting a path CHANGES WHICH LAUNCHERS ARE OFFERED, and a row that still
+// advertises the old answer is the defect this whole change is about.
+async function projSetPath(projectId, title) {
+  let current = '';
+  try {
+    const res = await fetch('/api/project/' + encodeURIComponent(projectId) + '/launch-state');
+    const data = await res.json();
+    current = (data && data.path) || '';
+  } catch (e) { /* the prompt still works empty */ }
+
+  const target = prompt(
+    'Which folder holds ' + (title ? '“' + title + '”' : 'this project') + '?\n\n' +
+    'Paste the address from the folder window — either form works:\n' +
+    '    C:\\Users\\you\\Documents\\ProjectName\n' +
+    '    /mnt/c/Users/you/Documents/ProjectName\n\n' +
+    'Leave it blank to say this project has no folder.',
+    current
+  );
+  if (target === null) return;   // cancelled; blank is a deliberate answer
+  await _catPost('/api/project/' + encodeURIComponent(projectId) + '/set-path',
+                 { path: target.trim() });
+}
+
 async function projMoveCategory(projectId, current) {
   let names = [];
   try {
