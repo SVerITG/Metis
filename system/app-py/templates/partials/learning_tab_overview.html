@@ -1,0 +1,113 @@
+<!-- learning_tab_overview.html — the landing page for each tab -->
+{% set qnames = {1: "Is this the same outbreak?", 2: "Where did it come from?", 3: "How fast is it spreading?", 4: "Has the pathogen changed?"} %}
+
+<div class="lesson-page">
+
+{% if tab == "course" %}
+  <article class="card lesson-card">
+    <div class="mx-kicker">The course</div>
+    <h1 class="mx-title">{{ meta.title or course_title }}</h1>
+    {% if meta.spine %}
+    <blockquote class="tv-spine">{{ meta.spine }}</blockquote>
+    {% endif %}
+    <div class="tv-stats">
+      <div><b>{{ n_total }}</b><span>lessons</span></div>
+      {% if meta.estimated_hours %}<div><b>{{ meta.estimated_hours }}</b><span>hours</span></div>{% endif %}
+      {% if meta.quiz_questions %}<div><b>{{ meta.quiz_questions }}</b><span>questions</span></div>{% endif %}
+      {% if meta.cards_authored %}<div><b>{{ meta.cards_authored }}</b><span>cards</span></div>{% endif %}
+      <div><b>{{ n_done }}</b><span>completed</span></div>
+    </div>
+  </article>
+
+  {% for section in sections %}
+  <div class="tv-section">
+    <h2 class="tv-section-h">{{ section }}</h2>
+    <div class="tv-grid">
+      {% for l in items if l.section == section %}
+      <button class="card tv-card{% if l.done %} is-done{% endif %}" type="button"
+              hx-get="/api/course/{{ slug }}/lesson/{{ l.id }}"
+              hx-target="#lesson-reader-panel" hx-swap="innerHTML">
+        <div class="tv-card-top">
+          {% if l.emoji %}<span class="tv-emoji">{{ l.emoji }}</span>{% endif %}
+          <span class="tv-meta">{% if l.time %}{{ l.time }} min{% endif %}</span>
+          {% if l.done %}<span class="tv-done">✓</span>{% endif %}
+        </div>
+        <div class="tv-card-title">{{ l.title }}</div>
+        {% if l.subtitle %}<div class="tv-card-sub">{{ l.subtitle }}</div>{% endif %}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+{% elif tab == "deepdives" %}
+  <article class="card lesson-card">
+    <div class="mx-kicker">Deep dives</div>
+    <h1 class="mx-title">Recent applications, read closely</h1>
+    <p class="mx-lede">
+      Each one takes a single published analysis and walks it end to end — the question someone
+      actually asked, the data and what it does not represent, every method decoded, what was
+      found, how it was evaluated, and what it is honestly worth. Each closes with a
+      sixty-second version you could say out loud.
+    </p>
+  </article>
+
+  <div class="tv-section">
+    <div class="tv-grid tv-grid--wide">
+      {% for l in items %}
+      <button class="card tv-card{% if l.done %} is-done{% endif %}" type="button"
+              hx-get="/api/course/{{ slug }}/lesson/{{ l.id }}"
+              hx-target="#lesson-reader-panel" hx-swap="innerHTML">
+        <div class="tv-card-top">
+          {% if l.emoji %}<span class="tv-emoji">{{ l.emoji }}</span>{% endif %}
+          <span class="tv-meta">{% if l.time %}{{ l.time }} min{% endif %}</span>
+          {% if l.done %}<span class="tv-done">✓</span>{% endif %}
+        </div>
+        <div class="tv-card-title">{{ l.title }}</div>
+        {% if l.subtitle %}<div class="tv-card-sub">{{ l.subtitle }}</div>{% endif %}
+        {% if l.description %}<div class="tv-card-desc">{{ l.description }}</div>{% endif %}
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+
+{% else %}
+  <article class="card lesson-card">
+    <div class="mx-kicker">Methodology</div>
+    <h1 class="mx-title">Method recipes</h1>
+    <p class="mx-lede">
+      Methods lifted out of published analyses and generalised away from the pathogen they were
+      used on — so an entry is named for a method, never an organism. Each carries what it
+      <em>needs</em> before what it does, because the gate is nearly always metadata rather than
+      sequencing.
+    </p>
+    <div class="tv-stats">
+      <div><b>{{ methodologies | length }}</b><span>methods</span></div>
+      <div><b>{{ methodologies | map(attribute='seen_in') | map('length') | sum }}</b><span>sources</span></div>
+    </div>
+  </article>
+
+  {% set qs = [] %}
+  {% for m in methodologies %}{% if m.question not in qs %}{% set _ = qs.append(m.question) %}{% endif %}{% endfor %}
+  {% for q in qs | sort %}
+  <div class="tv-section">
+    <h2 class="tv-section-h">Question {{ q }} — {{ qnames.get(q, "") }}</h2>
+    <div class="tv-grid tv-grid--wide">
+      {% for m in methodologies if m.question == q %}
+      <button class="card tv-card" type="button"
+              hx-get="/api/course/{{ slug }}/methodology/{{ m.id }}"
+              hx-target="#lesson-reader-panel" hx-swap="innerHTML">
+        <div class="tv-card-top">
+          <span class="tv-tag tv-tag--{{ m.maturity }}">{{ m.maturity }}</span>
+          <span class="tv-meta">{{ m.chain | length }} steps · {{ m.seen_in | length }} source{% if m.seen_in | length != 1 %}s{% endif %}</span>
+        </div>
+        <div class="tv-card-title">{{ m.name }}</div>
+        <div class="tv-card-sub">{{ m.one_line }}</div>
+      </button>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+{% endif %}
+
+</div>

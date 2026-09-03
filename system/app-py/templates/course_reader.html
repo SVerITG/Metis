@@ -1,113 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ course_title }} — Metis</title>
-  <link rel="icon" type="image/png" href="/static/metis-icon.png">
-  <link rel="stylesheet"
-        href="/static/vendor/bootstrap.min.css">
-  <link rel="stylesheet"
-        href="/static/vendor/bootstrap-icons.min.css">
-  <link rel="stylesheet" href="/static/styles.css?v={{ asset_v }}">
-  <link rel="stylesheet" href="/static/motion.css">
-  <script src="/static/htmx.min.js"></script>
-  <script>
-    (function () {
-      var VALID = ['archive','fieldwork','paper','observatory','midnight','cavern'];
-      try {
-        var t = localStorage.getItem('metis-theme');
-        if (t && VALID.indexOf(t) !== -1) {
-          document.documentElement.dataset.theme = (t === 'archive') ? '' : t;
-        } else {
-          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          var def = prefersDark ? 'observatory' : 'archive';
-          document.documentElement.dataset.theme = (def === 'archive') ? '' : def;
-        }
-      } catch (e) {}
-    })();
-  </script>
-  <style>
-    body { margin: 0; background: var(--m-surface-1); }
-    /* Reading surface: the shell may widen with the screen, but the text column
-       is held at the shared prose measure. A 1120px-wide line of course prose
-       was already past comfortable; letting it grow further would be worse. */
-    .reader-shell {
-      display: grid;
-      grid-template-columns: minmax(240px, 280px) minmax(0, calc(var(--m-prose-max) + 96px));
-      justify-content: center;
-      min-height: 100vh;
-      width: 100%;
-      max-width: var(--m-page-max);
-      margin: 0 auto;
-    }
-    @media (max-width: 900px) {
-      .reader-shell { grid-template-columns: 1fr; }
-    }
-    .reader-sidebar {
-      border-right: 1px solid var(--m-line);
-      overflow-y: auto;
-      background: var(--m-surface-2);
-      position: sticky;
-      top: 0;
-      height: 100vh;
-    }
-    .reader-main {
-      overflow-y: auto;
-      min-height: 100vh;
-    }
-    .reader-topbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 24px;
-      border-bottom: 1px solid var(--m-line);
-      background: var(--m-surface-2);
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-    .reader-topbar a {
-      font-family: var(--m-mono);
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      color: var(--m-muted);
-      text-decoration: none;
-    }
-    .reader-topbar a:hover { color: var(--m-accent); }
-    @media (max-width: 768px) {
-      .reader-shell { grid-template-columns: 1fr; }
-      .reader-sidebar { display: none; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ course_title }} — Metis</title>
+<link rel="icon" type="image/png" href="/static/metis-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!--
+  The statistics course's own stylesheet, copied verbatim by
+  tools/sync-course-reader-css.sh, plus markdown prose rules written in its
+  idiom. the researcher asked for an exact copy of that styling, and this is the literal
+  form of that: the same CSS, not an approximation of it.
+
+  The dashboard's /static/styles.css is deliberately NOT loaded here, and that
+  is also the scroll fix. It sets `html, body { height: 100% }` and
+  `body { overflow: hidden }` because the dashboard is an app shell that scrolls
+  an inner pane. The reader inherited that lock, so the page could never scroll
+  however the lesson was laid out — which is why the original lesson partial was
+  built as an inner scroller in the first place. Dropping the dashboard
+  stylesheet removes the lock and delivers the styling in one move.
+
+  app.js is not loaded either: it is the dashboard controller and expects
+  dashboard DOM. The two functions the reader actually needs are at the bottom
+  of this file.
+-->
+<link rel="stylesheet" href="/static/course-reader.css?v={{ asset_v }}">
 </head>
 <body>
-  <div class="reader-shell">
-    <!-- Sidebar: course overview -->
-    <div class="reader-sidebar">
-      <div id="course-overview-panel"
-           hx-get="/api/course/{{ slug }}/overview"
-           hx-trigger="load"
-           hx-swap="innerHTML">
-        <div style="padding:var(--m-space-7) var(--m-space-5);color:var(--m-muted);font-size:var(--t-small);">Loading course…</div>
-      </div>
-    </div>
 
-    <!-- Main: lesson content -->
-    <div class="reader-main">
-      <div class="reader-topbar">
-        <a href="/tab/learning">← Back to Learning</a>
-        <span class="u-title">{{ course_title }}</span>
-        <span class="u-label">METIS READER</span>
-      </div>
-      <div id="lesson-reader-panel">
-        <div class="u-ed" style="padding:60px 40px;font-size:var(--t-body);max-width:600px;margin:0 auto;text-align:center;line-height:1.6;">
-          Select a lesson from the sidebar to begin reading.
-        </div>
-      </div>
+<div id="toast-root" class="toast-root"></div>
+
+<header class="topbar">
+  <div class="topbar-left">
+    <button id="sidebar-toggle" class="icon-btn" type="button" aria-label="Toggle contents" title="Contents">
+      <span style="display:block;width:16px;height:2px;background:currentColor;border-radius:2px;"></span>
+      <span style="display:block;width:16px;height:2px;background:currentColor;border-radius:2px;"></span>
+      <span style="display:block;width:16px;height:2px;background:currentColor;border-radius:2px;"></span>
+    </button>
+    <div>
+      <div class="brand-title">{{ course_title }}</div>
+      <div class="brand-sub">Metis · course reader</div>
     </div>
   </div>
+  <nav class="topbar-nav" id="reader-tabs">
+    {% for t in tabs %}
+    <button class="nav-btn{% if loop.first %} active{% endif %}"
+            type="button" data-tab="{{ t.id }}">{{ t.label }}</button>
+    {% endfor %}
+  </nav>
+  <div class="topbar-right">
+    <a class="reader-back" href="/tab/learning">← Back to Learning</a>
+  </div>
+</header>
 
-  <script src="/static/app.js"></script>
+<div class="shell-body">
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-content">
+      <div id="course-overview-panel">
+        <div class="muted" style="padding:8px 2px;font-size:0.86rem;">Loading…</div>
+      </div>
+    </div>
+  </aside>
+
+  <main id="main" class="main">
+    <section class="view active">
+      <div class="page-wrap">
+        <div id="lesson-reader-panel">
+          <div class="card" style="padding:60px 34px;text-align:center;">
+            <div class="muted" style="font-size:0.98rem;">Loading…</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="/static/htmx.min.js"></script>
+<script>
+/* The reader needs exactly two things from the dashboard's app.js, so they live
+   here rather than pulling in the whole controller. */
+function showToast(html, duration) {
+  var root = document.getElementById('toast-root');
+  if (!root) return;
+  var t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = html;
+  root.appendChild(t);
+  setTimeout(function () { t.remove(); }, duration || 4500);
+}
+
+async function completeLesson(slug, lessonId, btn) {
+  try {
+    var res = await fetch('/api/course/' + slug + '/lesson/' + lessonId + '/complete', { method: 'POST' });
+    var data = await res.json();
+    if (data.status === 'ok') {
+      if (btn) btn.textContent = 'Marked complete';
+      showToast('Lesson marked complete — ' + data.progress_pct + '% through the course.');
+      if (data.next_lesson_id) {
+        htmx.ajax('GET', '/api/course/' + slug + '/lesson/' + data.next_lesson_id,
+                  { target: '#lesson-reader-panel', swap: 'innerHTML' });
+      }
+      htmx.ajax('GET', '/api/course/' + slug + '/overview',
+                { target: '#course-overview-panel', swap: 'innerHTML' });
+    }
+  } catch (e) {
+    showToast("I couldn't save your lesson progress — try again.");
+  }
+}
+
+var SLUG = {{ slug | tojson }};
+
+(function () {
+  /* Tabs. One click updates two panes — the sidebar contents and the reading
+     panel, which opens on that tab's index rather than an empty placeholder.
+     Two targets means two requests, so this is scripted rather than done with
+     hx-get on the button. */
+  function openTab(tab) {
+    htmx.ajax('GET', '/api/course/' + SLUG + '/overview?tab=' + tab,
+              { target: '#course-overview-panel', swap: 'innerHTML' });
+    htmx.ajax('GET', '/api/course/' + SLUG + '/tab/' + tab,
+              { target: '#lesson-reader-panel', swap: 'innerHTML' });
+    window.scrollTo(0, 0);
+  }
+  var tabs = document.getElementById('reader-tabs');
+  if (tabs) {
+    tabs.addEventListener('click', function (e) {
+      var b = e.target.closest('.nav-btn');
+      if (!b) return;
+      tabs.querySelectorAll('.nav-btn').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      openTab(b.dataset.tab);
+    });
+    /* Land on the first tab's index, rather than a placeholder that made the
+       reader look empty until you picked something. */
+    var first = tabs.querySelector('.nav-btn');
+    if (first) openTab(first.dataset.tab);
+  }
+})();
+
+(function () {
+  var btn  = document.getElementById('sidebar-toggle');
+  var side = document.getElementById('sidebar');
+  var main = document.getElementById('main');
+
+  /* .sidebar.closed / .main.full is the statistics course's own toggle idiom. */
+  if (btn && side && main) {
+    btn.addEventListener('click', function () {
+      side.classList.toggle('closed');
+      main.classList.toggle('full');
+    });
+    /* On a narrow screen the sidebar overlays the text, so picking a lesson
+       should put it away — otherwise you tap a lesson and still cannot see it. */
+    side.addEventListener('click', function (e) {
+      if (window.matchMedia('(max-width: 900px)').matches && e.target.closest('[hx-get]')) {
+        side.classList.add('closed');
+        main.classList.add('full');
+      }
+    });
+  }
+
+  /* A freshly swapped lesson starts at its title, not wherever the last one
+     was scrolled to. */
+  document.body.addEventListener('htmx:afterSwap', function (e) {
+    if (e.target && e.target.id === 'lesson-reader-panel') window.scrollTo(0, 0);
+  });
+})();
+</script>
 </body>
 </html>

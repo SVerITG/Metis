@@ -1,64 +1,89 @@
-<!-- learning_course_overview.html — Course module + lesson list sidebar -->
-<div class="u-col" style="gap:0;">
+<!-- learning_course_overview.html — course contents, in the statistics course's idiom -->
+{% if tab == "methodology" %}
 
-  <!-- Course header -->
-  <div style="padding:var(--m-space-4) var(--m-space-5) var(--m-space-4);border-bottom:1px solid var(--m-line);">
-    <div class="kicker u-mb-2">{{ (course.category or course.title or 'COURSE') | upper }}</div>
-    <div class="u-mb-3 u-title u-title--lg" style="font-weight:500;">
-      {{ course.title or "Untitled Course" }}
-    </div>
-    <div class="u-mb-2" style="height:3px;background:var(--m-surface-3);border-radius:var(--m-radius-sm);">
-      <div style="height:100%;width:{{ (course.progress_pct or 0)|int }}%;background:var(--m-accent);border-radius:2px;"></div>
-    </div>
-    <div class="todo-meta" style="margin:0;">
-      {{ course.completed_modules or 0 }} OF {{ course.total_modules or 0 }} MODULES · {{ (course.progress_pct or 0)|int }}%
-    </div>
+<div class="rc-head">
+  <div class="rc-kicker">Methodology</div>
+  <h2 class="rc-title">Method recipes</h2>
+  <div class="sidebar-copy" style="font-size:0.82rem;">
+    Methods lifted out of published analyses and generalised away from the pathogen they
+    were used on. Grouped by which of the four questions they answer.
   </div>
-
-  <!-- Module + lesson list -->
-  {#- Group lessons by their own `section` field. Derived from the lessons
-      themselves (not from `modules`) so no lesson can be silently orphaned:
-      the previous version matched `lesson.module` against `module.title`, a
-      key the course-builder never emits, so every lesson vanished. -#}
-  {% set sections = lessons | map(attribute='section') | list %}
-  {% set ordered_sections = [] %}
-  {% for s in sections %}{% if s not in ordered_sections %}{% set _ = ordered_sections.append(s) %}{% endif %}{% endfor %}
-  {% for section in ordered_sections %}
-  {% set module_lessons = lessons | selectattr("section", "equalto", section) | list %}
-  <div style="padding:var(--m-space-3) var(--m-space-5) var(--m-space-1);border-bottom:1px solid var(--m-line);">
-    <div class="u-label u-mb-2">
-      {{ (section or 'LESSONS') | upper }}
-    </div>
-    {% for lesson in module_lessons %}
-    <div class="u-row u-mb-2">
-      <!-- Completion dot -->
-      <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;
-                  background:{% if lesson.done %}var(--m-accent){% else %}var(--m-surface-3){% endif %};
-                  border:1px solid {% if lesson.done %}var(--m-accent){% else %}var(--m-line){% endif %};"></div>
-      <!-- Lesson link -->
-      <button
-        class="btn btn--ghost"
-        style="text-align:left;font-size:13px;color:var(--m-ink);padding:2px 6px;flex:1;
-               {% if lesson.done %}opacity:0.6;{% endif %}"
-        hx-get="/api/course/{{ slug }}/lesson/{{ lesson.id }}"
-        hx-target="#lesson-reader-panel"
-        hx-swap="innerHTML"
-        onclick="document.getElementById('lesson-reader-panel').scrollIntoView({behavior:'smooth'})">
-        {{ lesson.title }}
-      </button>
-    </div>
-    {% endfor %}
-  </div>
-  {% endfor %}
-
-  <!-- Seed spaced rep button -->
-  <div style="padding:var(--m-space-4) var(--m-space-5);">
-    <button class="btn btn--ghost btn--caps" style="width:100%;font-size:var(--t-micro);"
-            hx-post="/api/course/{{ slug }}/seed-spaced-rep"
-            hx-swap="none"
-            onclick="showToast('Spaced repetition cards seeded — check the Due Today panel.')">
-      Seed review cards
-    </button>
-  </div>
-
 </div>
+
+{% set qnames = {1: "Is this the same outbreak?", 2: "Where did it come from?", 3: "How fast is it spreading?", 4: "Has the pathogen changed?"} %}
+{% set qs = [] %}
+{% for m in methodologies %}{% if m.question not in qs %}{% set _ = qs.append(m.question) %}{% endif %}{% endfor %}
+
+{% for q in qs | sort %}
+<div class="rc-section">
+  <div class="rc-section-label">Q{{ q }} · {{ qnames.get(q, "") }}</div>
+  {% for m in methodologies if m.question == q %}
+  <button class="rc-item" type="button"
+          hx-get="/api/course/{{ slug }}/methodology/{{ m.id }}"
+          hx-target="#lesson-reader-panel"
+          hx-swap="innerHTML">
+    <span class="rc-dot" style="background:var(--brand);border-color:var(--brand);"></span>
+    <span>{{ m.name }}</span>
+  </button>
+  {% endfor %}
+</div>
+{% endfor %}
+
+<div class="sidebar-card" style="padding:14px;">
+  <div class="sidebar-title">How this grows</div>
+  <div class="sidebar-copy" style="font-size:0.82rem;">
+    Each entry comes from a real paper whose methods section was read, then stripped of its
+    pathogen so it reads as something you could do. Provenance is graded on every entry.
+  </div>
+</div>
+
+{% else %}
+
+<div class="rc-head">
+  <div class="rc-kicker">{{ (course.category or 'COURSE') | upper }}</div>
+  <h2 class="rc-title">{{ course.title or "Untitled Course" }}</h2>
+  <div class="rc-bar"><i style="width:{{ (course.progress_pct or 0)|int }}%;"></i></div>
+  <div class="rc-meta">
+    {{ n_done or 0 }} of {{ n_total or 0 }} lessons · {{ (course.progress_pct or 0)|int }}%
+  </div>
+</div>
+
+{#- Group by each lesson's own `section`, derived from the lessons themselves so
+    no lesson can be orphaned. An earlier version matched lesson.module against
+    module.title, a key the course-builder never emits, and every lesson vanished. -#}
+{% set ordered_sections = [] %}
+{% for s in lessons | map(attribute='section') | list %}
+  {% if s not in ordered_sections %}{% set _ = ordered_sections.append(s) %}{% endif %}
+{% endfor %}
+
+{% for section in ordered_sections %}
+<div class="rc-section">
+  <div class="rc-section-label">{{ (section or 'Lessons') | upper }}</div>
+  {% for lesson in lessons | selectattr("section", "equalto", section) | list %}
+  <button class="rc-item{% if lesson.done %} is-done{% endif %}"
+          type="button"
+          hx-get="/api/course/{{ slug }}/lesson/{{ lesson.id }}"
+          hx-target="#lesson-reader-panel"
+          hx-swap="innerHTML">
+    <span class="rc-dot"></span>
+    <span>{{ lesson.title }}</span>
+  </button>
+  {% endfor %}
+</div>
+{% endfor %}
+
+<div class="sidebar-card" style="padding:14px;">
+  <div class="sidebar-title">Review</div>
+  <div class="sidebar-copy" style="font-size:0.82rem;margin-bottom:10px;">
+    Send this course's flashcards to the spaced-repetition queue.
+  </div>
+  <button class="btn btn-primary btn-block" type="button"
+          style="font-size:0.82rem;padding:9px 14px;"
+          hx-post="/api/course/{{ slug }}/seed-spaced-rep"
+          hx-swap="none"
+          onclick="showToast('Review cards seeded — check Due Today.')">
+    Seed review cards
+  </button>
+</div>
+
+{% endif %}

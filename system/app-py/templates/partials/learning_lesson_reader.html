@@ -1,42 +1,33 @@
-<!-- learning_lesson_reader.html — Lesson content reader pane -->
-<div class="u-col" style="gap:0;height:100%;">
+<!-- learning_lesson_reader.html — one lesson, in the statistics course's idiom -->
+<div class="lesson-page">
 
-  <!-- Lesson nav bar -->
-  <div class="u-row u-row--between u-fixed" style="padding:var(--m-space-3) var(--m-space-5);border-bottom:1px solid var(--m-line);background:var(--m-surface-2);">
-    <div style="display:flex;gap:var(--m-space-2);">
+  <div class="lesson-topnav">
+    <div>
       {% if prev_id %}
-      <button class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);"
+      <button class="btn btn-ghost" type="button"
               hx-get="/api/course/{{ slug }}/lesson/{{ prev_id }}"
-              hx-target="#lesson-reader-panel"
-              hx-swap="innerHTML">← Prev</button>
+              hx-target="#lesson-reader-panel" hx-swap="innerHTML">← Previous</button>
       {% endif %}
     </div>
-    <div class="u-label" style="text-align:center;">
-      {{ lesson.module | upper if lesson.module else "" }}
-    </div>
-    <div style="display:flex;gap:var(--m-space-2);">
+    <div class="lesson-crumb">{{ lesson.section or "" }}</div>
+    <div>
       {% if next_id %}
-      <button class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);"
+      <button class="btn btn-ghost" type="button"
               hx-get="/api/course/{{ slug }}/lesson/{{ next_id }}"
-              hx-target="#lesson-reader-panel"
-              hx-swap="innerHTML">Next →</button>
+              hx-target="#lesson-reader-panel" hx-swap="innerHTML">Next →</button>
       {% endif %}
     </div>
   </div>
 
-  <!-- Lesson content -->
-  <div class="u-grow" style="padding:var(--m-space-5) var(--m-space-6);overflow-y:auto;line-height:1.7;font-size:var(--t-body);color:var(--m-ink);">
-    <div class="lesson-body">
+  <article class="card lesson-card">
+    <div class="lesson-body markdown-body">
       {{ body_html | safe }}
     </div>
 
-    {# ---- Exercises -------------------------------------------------------
-       Procedure #11 specifies a graduated ladder per lesson: A conceptual,
-       B read-the-output, C three-of-six with negative marking, D scaffolded,
-       E connect-to-your-work. Nothing in the library had ever populated it —
-       every course read `exercises: 0`, the exact state procedure #13 warns
-       about. Rendered here so the field is wired in, not merely written. #}
-    {% if lesson.exercises %}
+{#- Rendered only when the course asks for it. These two courses are for reading,
+    not drilling (course.json -> pedagogy_mode), so the ladder is authored and held
+    back rather than deleted. -#}
+{% if show_exercises and lesson.exercises %}
     <div class="lesson-exercises">
       <h2 class="lx-head">Exercises</h2>
       <p class="lx-intro">Five rungs, deliberately graduated. <strong>B</strong> is the one
@@ -90,77 +81,23 @@
     </div>
     {% endif %}
 
-  </div>
+  </article>
 
-  <!-- Footer: mark complete -->
-  <div class="u-row u-row--between u-fixed" style="padding:var(--m-space-3) var(--m-space-5);border-top:1px solid var(--m-line);background:var(--m-surface-2);">
-    <div style="font-size:var(--t-small);color:var(--m-muted);">
-      {% if done %}<span style="color:var(--m-accent);">✓ Completed</span>{% else %}Mark when done{% endif %}
+  <div class="card lesson-foot-card">
+    <div class="lesson-foot-note">
+      {% if done %}<span class="is-done">✓ Completed</span>{% else %}Mark this lesson when you have finished it.{% endif %}
     </div>
-    {% if not done %}
-    <button class="btn btn--primary btn--caps" style="font-size:var(--t-micro);"
-            onclick="completeLesson('{{ slug }}', '{{ lesson_id }}', this)">
-      Mark complete
-    </button>
-    {% else %}
-    {% if next_id %}
-    <button class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);"
-            hx-get="/api/course/{{ slug }}/lesson/{{ next_id }}"
-            hx-target="#lesson-reader-panel"
-            hx-swap="innerHTML">
-      Next lesson →
-    </button>
-    {% endif %}
-    {% endif %}
+    <div style="display:flex;gap:10px;align-items:center;">
+      {% if not done %}
+      <button class="btn btn-primary" type="button"
+              onclick="completeLesson('{{ slug }}', '{{ lesson_id }}', this)">Mark complete</button>
+      {% endif %}
+      {% if next_id %}
+      <button class="btn btn-ghost" type="button"
+              hx-get="/api/course/{{ slug }}/lesson/{{ next_id }}"
+              hx-target="#lesson-reader-panel" hx-swap="innerHTML">Next lesson →</button>
+      {% endif %}
+    </div>
   </div>
 
 </div>
-
-<style>
-.lesson-body h1,.lesson-body h2 { font-family:var(--m-display);font-weight:500;color:var(--m-ink);margin:1.4em 0 0.5em; }
-.lesson-body h2 { font-size:18px;border-bottom:1px solid var(--m-line);padding-bottom:6px; }
-.lesson-body h3 { font-size:15px;font-weight:600;margin:1.2em 0 0.4em; }
-.lesson-body code { font-family:var(--m-mono);font-size:12px;background:var(--m-surface-3);padding:1px 5px;border-radius:3px; }
-.lesson-body pre { background:var(--m-surface-3);padding:14px 16px;border-radius:4px;overflow-x:auto;font-size:12px;line-height:1.6; }
-.lesson-body pre code { background:none;padding:0; }
-.lesson-body ul,
-.lesson-body ol { padding-left:1.4em;margin:0.5em 0; }
-.lesson-body li { margin-bottom:0.3em; }
-.lesson-body blockquote { border-left:3px solid var(--m-accent);padding:6px 14px;margin:1em 0;color:var(--m-muted);font-style:italic; }
-
-/* ---- Exercises ---------------------------------------------------------- */
-.lesson-exercises { margin-top:2.2em;padding-top:1.2em;border-top:2px solid var(--m-line); }
-.lesson-exercises .lx-head { font-family:var(--m-display);font-size:18px;font-weight:500;margin:0 0 .3em; }
-.lesson-exercises .lx-intro { font-size:13px;color:var(--m-muted);margin:0 0 1em;max-width:62ch; }
-.lx { border:1px solid var(--m-line);border-left:3px solid var(--lx-hue,var(--m-accent));
-      border-radius:4px;margin-bottom:.6em;background:var(--m-surface-2); }
-.lx > summary { cursor:pointer;padding:10px 14px;display:flex;gap:10px;align-items:baseline;
-                flex-wrap:wrap;list-style:none; }
-.lx > summary::-webkit-details-marker { display:none; }
-.lx > summary:hover { background:var(--m-surface-3); }
-.lx-badge { font-family:var(--m-mono);font-size:11px;font-weight:700;color:var(--lx-hue,var(--m-accent));
-            border:1px solid var(--lx-hue,var(--m-accent));border-radius:3px;padding:0 5px;flex:none; }
-.lx-label { font-family:var(--m-mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;
-            color:var(--m-muted);flex:none; }
-.lx-title { font-size:13.5px;color:var(--m-ink);flex:1 1 100%; }
-.lx-body { padding:2px 14px 14px;font-size:13.5px; }
-.lx-outlabel { font-family:var(--m-mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;
-               color:var(--m-muted);margin-bottom:4px; }
-.lx-out { background:var(--m-surface-3);padding:12px 14px;border-radius:4px;overflow-x:auto;
-          font-family:var(--m-mono);font-size:11.5px;line-height:1.55;white-space:pre; }
-.lx-q { padding-left:1.3em;margin:.7em 0 0; }
-.lx-q li { margin-bottom:.4em; }
-.lx-note { font-size:12.5px;color:var(--m-muted);margin:.6em 0 0; }
-.lx-ans { margin-top:.9em;font-size:13px; }
-.lx-ans > summary { cursor:pointer;color:var(--m-accent);font-size:12px;
-                    font-family:var(--m-mono);letter-spacing:.05em; }
-.lx-ans > div { margin-top:.5em;padding:10px 12px;background:var(--m-surface-3);
-                border-radius:4px;color:var(--m-muted); }
-.lx--a { --lx-hue:#2f8f66; } .lx--b { --lx-hue:#2b6ea8; }
-.lx--c { --lx-hue:#9a6b0e; } .lx--d { --lx-hue:#7a4fa8; }
-.lx--e { --lx-hue:#b23a2e; }
-
-.lesson-body table { border-collapse:collapse;width:100%;font-size:13px;margin:1em 0; }
-.lesson-body th { background:var(--m-surface-3);padding:6px 10px;text-align:left;font-weight:600; }
-.lesson-body td { padding:6px 10px;border-bottom:1px solid var(--m-line); }
-</style>
