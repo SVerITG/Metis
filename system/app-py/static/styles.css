@@ -1523,6 +1523,24 @@ body.is-dormant { overflow: hidden; }
    but it must not read as available. Warn, not alert: nothing is wrong
    with it, it is waiting. */
 .kan-card--blocked { border-left-color: var(--m-warn); cursor: default; }
+/* ── When nothing can launch ──────────────────────────────────────────────────
+   Stated once at the top of the project list rather than discovered by pressing
+   a button. Warn, not alert: the condition is temporary, has a one-line fix,
+   and is nobody's error. */
+.launch-down { display: flex; align-items: baseline; gap: 8px; margin: 0 0 12px;
+  padding: 8px 10px; border: 1px solid var(--m-warn); border-radius: var(--m-radius-sm);
+  background: var(--m-warn-wash); }
+.launch-down-mark { font-size: 12px; color: var(--m-warn); flex: none; }
+.launch-down-text { font-family: var(--m-ui); font-size: var(--t-small);
+  color: var(--m-ink); line-height: 1.45; }
+
+/* A project with no folder needs this control more than a filed one needs any
+   of the others, so it is marked as wanting an answer rather than styled as
+   just another way to open something. */
+.proj-nopath { border-style: dashed; color: var(--m-warn); border-color: var(--m-warn); }
+.proj-nopath:hover { background: var(--m-warn-wash); }
+.proj-more-item--alt { color: var(--m-muted); }
+
 .kan-held-n { font-family: var(--m-mono); font-size: 9px; color: var(--m-warn); flex: none; font-variant-numeric: tabular-nums; }
 .kan-blocked { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--m-warn); background: var(--m-warn-wash); border-radius: var(--m-radius-sm); padding: 0 4px; flex: none; }
 .kan-title { font-size: 12.5px; line-height: 1.35; color: var(--m-ink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }

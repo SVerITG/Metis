@@ -422,26 +422,123 @@ async def work_all_tasks(request: Request):
 # ---------------------------------------------------------------------------
 
 
+# ── WHAT A LAUNCHER ACTUALLY NEEDS ───────────────────────────────────────────
+# Every button on a project card used to be offered unconditionally, so the row
+# advertised a capability instead of reflecting one. Measured 2026-09-03: the
+# launcher list was unset on 17 of 18 projects, and the fallback offered Claude
+# Code, Chat and Cowork **even with no folder path** — while 7 of 16 active
+# projects have no path at all. Pressing the button then produced a raw
+# `[Errno 8] Exec format error`, which tells the reader nothing.
+#
+# So each target declares its requirements, and nothing is offered that cannot
+# run. Two requirements exist:
+#
+#   "path"  — the target opens a FOLDER, so without one there is nothing to open
+#   "url:<column>" — the target opens a stored address
+#
+# Every target additionally needs Windows interop, because each one ultimately
+# starts a Windows application. That is checked separately, once, because when
+# it is down NOTHING can launch and saying so once beats eight dead buttons.
+_LAUNCH_NEEDS: dict[str, tuple[str, ...]] = {
+    "claude_code":   ("path",),      # writes CLAUDE.md there, opens a terminal in it
+    "rstudio":       ("path",),
+    "vscode":        ("path",),
+    "explorer":      ("path",),
+    "claude_chat":   (),             # a protocol handler; no folder involved
+    "claude_cowork": (),             # copies the path if there is one, works without
+    "dashboard":     ("url:dashboard_url",),
+    "github":        ("url:github_url",),
+}
+
+# Why each target cannot run, written for someone who did not build it.
+_LAUNCH_BLOCKED_BECAUSE = {
+    "path": "this project has no folder yet",
+    "url:dashboard_url": "no dashboard address is saved for this project",
+    "url:github_url": "no repository address is saved for this project",
+}
+
+
+def _interop_state() -> tuple[bool, str]:
+    """Can this process start a Windows application, and if not, what to do.
+
+    Checked rather than assumed. WSL registers a handler for Windows binaries
+    under binfmt_misc; when that registration is missing, every `.exe` fails at
+    exec time with `Exec format error` — which is what the page was showing.
+    The condition is real, it is not the researcher's mistake, and it has a
+    one-line fix, so it is worth saying in words.
+    """
+    if os.name == "nt":
+        return True, ""
+    marker = "/proc/sys/fs/binfmt_misc/WSLInterop"
+    try:
+        if os.path.exists(marker):
+            # The handler can be registered but switched off; the file says which.
+            with open(marker, "r", encoding="utf-8", errors="replace") as fh:
+                if "disabled" in fh.read(64).lower():
+                    return False, ("Windows apps are switched off for this Linux "
+                                   "session. Run `wsl --shutdown` from a Windows "
+                                   "terminal, then start Metis again.")
+            return True, ""
+    except OSError:
+        # Unreadable is not the same as absent; assume it works and let the
+        # launch itself report, rather than blocking every button on a guess.
+        return True, ""
+    return False, ("Windows apps cannot be started from here at the moment, so "
+                   "none of these will open. Run `wsl --shutdown` from a Windows "
+                   "terminal (PowerShell or Command Prompt), then start Metis "
+                   "again — it takes a few seconds and this comes back.")
+
+
+def _launch_capability(p: dict, target: str) -> tuple[bool, str]:
+    """Whether one target can run for one project, and why not."""
+    for need in _LAUNCH_NEEDS.get(target, ()):
+        if need == "path":
+            if not (p.get("external_path") or "").strip():
+                return False, _LAUNCH_BLOCKED_BECAUSE["path"]
+        elif need.startswith("url:"):
+            if not (p.get(need[4:]) or "").strip():
+                return False, _LAUNCH_BLOCKED_BECAUSE[need]
+    return True, ""
+
+
 def _parse_launchers(p: dict) -> list:
     """Return launcher list from the launchers JSON column, falling back to launcher_type."""
     raw = p.get("launchers")
     if raw:
         try:
-            return json.loads(raw)
+            return _capable_only(p, json.loads(raw))
         except Exception:
             pass
-    # Legacy fallback: derive from launcher_type
+    # Legacy fallback: derive from launcher_type. Each branch lists what this
+    # KIND of project would ideally offer; the filter at the end removes
+    # whatever this PARTICULAR project cannot do, so a branch can stay generous
+    # without the card making a promise it cannot keep.
     lt = p.get("launcher_type") or ""
-    has_path = bool(p.get("external_path"))
     if lt == "article":
-        return ["explorer", "claude_chat", "claude_cowork"] if has_path else ["claude_chat", "claude_cowork"]
-    if lt == "rstudio":
-        return ["rstudio", "claude_code", "claude_chat", "claude_cowork", "explorer"]
-    if lt == "vscode":
-        return ["vscode", "claude_code", "claude_chat", "claude_cowork", "explorer"]
-    if has_path:
-        return ["claude_code", "claude_chat", "claude_cowork", "explorer"]
-    return ["claude_code", "claude_chat", "claude_cowork"]
+        wanted = ["explorer", "claude_chat", "claude_cowork"]
+    elif lt == "rstudio":
+        wanted = ["rstudio", "claude_code", "claude_chat", "claude_cowork", "explorer"]
+    elif lt == "vscode":
+        wanted = ["vscode", "claude_code", "claude_chat", "claude_cowork", "explorer"]
+    else:
+        wanted = ["claude_code", "claude_chat", "claude_cowork", "explorer"]
+
+    # A stored address is worth offering wherever it exists, whatever the type.
+    for extra, col in (("dashboard", "dashboard_url"), ("github", "github_url")):
+        if (p.get(col) or "").strip() and extra not in wanted:
+            wanted.insert(0, extra)
+
+    return _capable_only(p, wanted)
+
+
+def _capable_only(p: dict, targets: list) -> list:
+    """Drop every target this project cannot actually run.
+
+    Applied to the EXPLICIT list too, not just the fallback. A launcher list
+    saved when a folder existed must not keep advertising the folder after it
+    is gone — the stored list is a preference, never a claim about the present.
+    """
+    return [t for t in targets if _launch_capability(p, t)[0]]
 
 
 # ── Project categories as a first-class thing ────────────────────────────────
@@ -640,8 +737,12 @@ async def work_projects(request: Request, filter: str = ""):
     return templates.TemplateResponse(
         request,
         "partials/work_projects.html",
+        # The interop state travels with the render so the notice is stated
+        # ONCE for the page rather than discovered eight times by pressing
+        # eight buttons that all fail the same way.
         {"projects": projects, "groups": groups,
-         "all_categories": _category_order(), "uncat_label": UNCAT},
+         "all_categories": _category_order(), "uncat_label": UNCAT,
+         "interop_ok": _interop_state()[0], "interop_why": _interop_state()[1]},
     )
 
 
@@ -749,6 +850,106 @@ async def project_update(project_id: str, request: Request):
     params = list(fields.values()) + [project_id]
     db_execute(f"UPDATE projects SET {set_clause} WHERE project_id=?", tuple(params))
     return JSONResponse({"status": "ok", "updated": list(fields.keys())})
+
+
+def _windows_to_wsl(path: str) -> str:
+    r"""`C:\Users\...` or `C:/Users/...` → `/mnt/c/Users/...`.
+
+    Accepting the Windows form matters because that is what copying a folder
+    address in Explorer gives you, and asking someone to hand-translate it is
+    asking them to get it wrong.
+    """
+    t = (path or "").strip().strip('"').strip("'")
+    if not t:
+        return ""
+    t = t.replace("\\", "/")
+    m = re.match(r"^([A-Za-z]):/(.*)$", t)
+    if m:
+        return f"/mnt/{m.group(1).lower()}/{m.group(2)}"
+    return t
+
+
+@router.post("/api/project/{project_id}/set-path")
+async def project_set_path(project_id: str, request: Request):
+    """Point a project at the folder it lives in.
+
+    THIS IS WHY SEVEN ACTIVE PROJECTS HAD NO FOLDER. `external_path` was never
+    in the editable-fields whitelist, so it could only ever be set at the moment
+    a project was created — and every project made without one stayed that way
+    with no control anywhere to fix it. The launcher row then offered to open a
+    folder that did not exist.
+
+    Validated rather than trusted, for one specific reason: launching Claude
+    Code WRITES a CLAUDE.md into this folder. A stored path that is not a real
+    directory would turn that into a write somewhere unintended, so the path
+    must resolve to a directory that exists before it is saved.
+    """
+    data = await request.json()
+    raw = str(data.get("path") or "")
+    if not raw.strip():
+        # Deliberately allowed: clearing the path is how you say "this has no
+        # folder", and the launcher row then stops offering to open one.
+        db_execute("UPDATE projects SET external_path='' WHERE project_id=?", (project_id,))
+        return JSONResponse({"status": "ok", "path": "", "cleared": True})
+
+    path = _windows_to_wsl(raw)
+    if not os.path.isabs(path):
+        return JSONResponse(
+            {"status": "error",
+             "message": "That needs to be a full path — one starting at the drive "
+                        "or at /, not a folder name on its own."},
+            status_code=400)
+    if not os.path.exists(path):
+        return JSONResponse(
+            {"status": "error",
+             "message": f"Nothing is at {path}. Check the spelling, or paste the "
+                        "address from the folder's title bar."},
+            status_code=400)
+    if not os.path.isdir(path):
+        return JSONResponse(
+            {"status": "error",
+             "message": f"{path} is a file, not a folder. Point this at the folder "
+                        "that holds the work."},
+            status_code=400)
+
+    path = os.path.normpath(path).rstrip("/") or "/"
+    db_execute("UPDATE projects SET external_path=? WHERE project_id=?", (path, project_id))
+    return JSONResponse({"status": "ok", "path": path,
+                         "windows_path": _wsl_to_windows(path)})
+
+
+@router.get("/api/project/{project_id}/launch-state")
+async def project_launch_state(project_id: str):
+    """What this project can actually be opened with, and why not otherwise.
+
+    Exists so the answer has ONE author. The card renders from it, the launch
+    endpoint enforces it, and a test can read it — rather than three places each
+    deciding independently what a project is capable of.
+    """
+    rows = db_query(
+        "SELECT project_id, title, COALESCE(external_path,'') AS external_path, "
+        "       COALESCE(launcher_type,'') AS launcher_type, COALESCE(launchers,'') AS launchers, "
+        "       COALESCE(dashboard_url,'') AS dashboard_url, "
+        "       COALESCE(github_url,'') AS github_url "
+        "FROM projects WHERE project_id=? LIMIT 1", (project_id,))
+    if not rows:
+        return JSONResponse({"status": "error", "message": "Project not found"}, status_code=404)
+    row = rows[0]
+    interop_ok, interop_why = _interop_state()
+    targets = {}
+    for t in _LAUNCH_NEEDS:
+        ok, why = _launch_capability(row, t)
+        targets[t] = {"can": ok and interop_ok,
+                      "why": "" if ok else why} | ({"why": "interop"} if ok and not interop_ok else {})
+    return JSONResponse({
+        "status": "ok",
+        "project": row.get("title"),
+        "path": row.get("external_path") or "",
+        "has_path": bool(row.get("external_path")),
+        "interop": {"ok": interop_ok, "message": interop_why},
+        "offered": _parse_launchers(row),
+        "targets": targets,
+    })
 
 
 def _project_tags(project_id: str) -> list[str]:
@@ -1950,7 +2151,9 @@ async def project_launch(
     else:
         try:
             rows = db_query(
-                "SELECT project_id, title, external_path, launcher_type, launcher_path "
+                "SELECT project_id, title, external_path, launcher_type, launcher_path, "
+                "       COALESCE(dashboard_url,'') AS dashboard_url, "
+                "       COALESCE(github_url,'')    AS github_url "
                 "FROM projects WHERE project_id = ? LIMIT 1",
                 (project_id,),
             )
@@ -1963,17 +2166,34 @@ async def project_launch(
         p = rows[0]
         external_path = p.get("external_path")
         project_title = p.get("title")
-        if not external_path:
+
+        # ASK BEFORE TRYING. The old version rejected every target whenever the
+        # folder was missing — including Chat and Cowork, which do not use one —
+        # and its message told the reader to "seed it in the DB first", which is
+        # not something they can act on. Now the requirement that is actually
+        # unmet is the one reported, in words, with the thing to do next.
+        ok, why = _launch_capability(p, target)
+        if not ok:
             return JSONResponse(
-                {
-                    "status": "error",
-                    "message": f"Project '{project_title or project_id}' has no external_path set. "
-                               "Seed it in the DB first.",
-                },
+                {"status": "error", "reason": why,
+                 "message": f"Can't open “{project_title or project_id}” that way — {why}."
+                            + (" Use “Where does this live?” on the card to point it at a folder."
+                               if why == _LAUNCH_BLOCKED_BECAUSE["path"] else "")},
                 status_code=400,
             )
 
     win_path = _wsl_to_windows(external_path)
+
+    # Every target below ultimately starts a Windows application. When the
+    # handler for Windows binaries is not registered, all of them fail
+    # identically at exec time — so check once and say so plainly, rather than
+    # letting eight buttons each surface the same errno.
+    interop_ok, interop_why = _interop_state()
+    if not interop_ok:
+        return JSONResponse(
+            {"status": "error", "reason": "interop", "message": interop_why},
+            status_code=503,
+        )
 
     try:
         if target == "rstudio":
@@ -2029,6 +2249,13 @@ async def project_launch(
                 "wsl.exe", "--", "bash", "-ic", claude_cmd,
             ]
             _run_windows_cmd(args)
+
+        elif target == "github":
+            # Offerable from the template since it was written, and never
+            # implemented — it fell through to "Unknown target". Reachable only
+            # for a project that saved a repository address, which capability
+            # now enforces, so the address here is always present.
+            _run_windows_cmd(["start", "", (p.get("github_url") or "").strip()])
 
         elif target == "dashboard":
             # Open the project's dashboard URL in the default browser.
@@ -2160,9 +2387,24 @@ async def project_launch(
             "prompt_sent": prompt or None,
         })
 
+    except OSError as e:
+        # errno 8 (ENOEXEC) from starting a Windows binary means the interop
+        # handler went away between the check above and the attempt. The raw
+        # text — "[Errno 8] Exec format error" — describes a kernel condition
+        # and gives the reader nothing to do, so translate it.
+        if e.errno == 8:
+            return JSONResponse(
+                {"status": "error", "reason": "interop", "message": _interop_state()[1]
+                 or "Windows apps cannot be started from here at the moment."},
+                status_code=503,
+            )
+        return JSONResponse(
+            {"status": "error", "message": f"Could not open that: {e.strerror or e}"},
+            status_code=500,
+        )
     except Exception as e:
         return JSONResponse(
-            {"status": "error", "message": f"Launch failed: {e}"},
+            {"status": "error", "message": f"Could not open that: {e}"},
             status_code=500,
         )
 
