@@ -162,6 +162,16 @@ def _run_learning_migrations() -> None:
     except Exception:
         pass
 
+
+    # Which course the Today surface shows. A column rather than a new table: it
+    # is one value per course and the "focused" one is simply the row with a 1.
+    # Added here because CREATE TABLE / ALTER on a render path takes a WAL write
+    # lock and blocks every other writer.
+    try:
+        db_execute("ALTER TABLE learning_courses ADD COLUMN focused_today INTEGER DEFAULT 0")
+    except Exception:
+        pass
+
     # Remove duplicate course ideas (keep lowest id for each title)
     try:
         db_execute(
@@ -240,10 +250,26 @@ async def course_reader_page(slug: str, request: Request):
         (slug,), default=[],
     )
     title = course[0]["title"] if course else slug.replace("-", " ").title()
+
+    # ?lesson=<id> opens that lesson directly. Today's "Continue" links here, and
+    # landing on the course index instead would make you find your place again —
+    # which is the whole thing that link exists to save. Resolved server-side so
+    # the correct tab is lit on first paint rather than after a flash.
+    want = (request.query_params.get("lesson") or "").strip()
+    initial_lesson, initial_tab = "", ""
+    if want:
+        lessons = _load_lessons_json(slug).get("lessons") or []
+        match = next((l for l in lessons if l.get("id") == want), None)
+        if match:
+            initial_lesson = want
+            initial_tab = ("deepdives" if match.get("section") == _DEEP_DIVE_SECTION
+                           else "course")
+
     return templates.TemplateResponse(
         request,
         "course_reader.html",
-        {"tabs": _course_tabs(slug), "slug": slug, "course_title": title},
+        {"tabs": _course_tabs(slug), "slug": slug, "course_title": title,
+         "initial_lesson": initial_lesson, "initial_tab": initial_tab},
     )
 
 
@@ -1017,6 +1043,132 @@ async def learning_velocity(request: Request):
         },
     )
 
+
+
+# ---------------------------------------------------------------------------
+# Today surface — course progress
+# ---------------------------------------------------------------------------
+
+def _course_state(row: dict) -> dict:
+    """Progress and the NEXT LESSON for one course, derived where possible.
+
+    `learning_courses.next_lesson` holds a lesson *title*, which cannot be
+    linked to. Where the course has a manifest, the next lesson is derived
+    instead as the first one not in `lesson_completions` — which yields an id,
+    so "Continue" opens that lesson rather than dropping you at the course and
+    making you find your place again.
+
+    Courses delivered by their own app (statistics, hat-diagnostics) have no
+    manifest; they keep the stored title and their launch URL.
+    """
+    slug = row.get("slug") or ""
+    out = dict(row)
+    lessons = (_load_lessons_json(slug).get("lessons") or []) if slug else []
+
+    done_ids: set[str] = set()
+    if slug:
+        try:
+            rows = db_query("SELECT lesson_id FROM lesson_completions WHERE course_slug=?",
+                            (slug,), default=[]) or []
+            done_ids = {r["lesson_id"] for r in rows}
+        except Exception:
+            pass
+
+    if lessons:
+        total = len(lessons)
+        done = sum(1 for l in lessons if l["id"] in done_ids)
+        nxt = next((l for l in lessons if l["id"] not in done_ids), None)
+        out.update({
+            "n_done": done,
+            "n_total": total,
+            "pct": round(100 * done / total) if total else 0,
+            "next_id": nxt["id"] if nxt else None,
+            "next_title": (nxt.get("title") if nxt else None),
+            "next_time": (nxt.get("time") if nxt else None),
+            "next_section": (nxt.get("section") if nxt else None),
+            "finished": nxt is None and total > 0,
+            "has_manifest": True,
+        })
+    else:
+        total = row.get("total_modules") or 0
+        done = row.get("completed_modules") or 0
+        out.update({
+            "n_done": done,
+            "n_total": total,
+            "pct": round(row.get("progress_pct") or 0),
+            "next_id": None,
+            "next_title": row.get("next_lesson") or None,
+            "next_time": None,
+            "next_section": None,
+            "finished": False,
+            "has_manifest": False,
+        })
+    out["launch"] = _launch_target(slug, row.get("course_url"))
+    return out
+
+
+def _active_courses() -> list[dict]:
+    rows = db_query(
+        "SELECT id, slug, title, category, progress_pct, total_modules, completed_modules, "
+        "next_lesson, course_url, updated_at, "
+        "COALESCE(focused_today, 0) AS focused_today "
+        "FROM learning_courses WHERE status IN ('active','in_progress') "
+        "ORDER BY title", default=[]) or []
+    return [_course_state(r) for r in rows]
+
+
+@router.get("/api/partial/today/learning", response_class=HTMLResponse)
+async def today_learning(request: Request):
+    """Every active course, with the one in focus expanded.
+
+    Replaces the old nudge, which chose a course for you (lowest progress),
+    fetched `next_lesson` and then never rendered it, and hid itself entirely
+    unless study was stale or cards were due — so there was no way to see where
+    you were in anything, let alone pick.
+    """
+    courses = _active_courses()
+    if not courses:
+        return HTMLResponse(
+            '<div id="today-learning"></div>'
+        )
+
+    want = (request.query_params.get("course") or "").strip()
+    focused = None
+    if want:
+        focused = next((c for c in courses if c["slug"] == want), None)
+    if focused is None:
+        focused = next((c for c in courses if c.get("focused_today")), None)
+    if focused is None:
+        # Nothing pinned yet: the one most recently touched, else the first with
+        # any progress, else simply the first.
+        focused = (sorted([c for c in courses if c.get("updated_at")],
+                          key=lambda c: c["updated_at"], reverse=True) or
+                   [c for c in courses if c["n_done"]] or courses)[0]
+
+    today_str = datetime.date.today().isoformat()
+    due_cards = db_scalar(
+        "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ? AND source_table = ?",
+        (today_str, focused["slug"]), default=0) or 0
+    due_all = db_scalar(
+        "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ?",
+        (today_str,), default=0) or 0
+
+    return templates.TemplateResponse(
+        request, "partials/today_learning.html",
+        {"courses": courses, "focused": focused,
+         "due_cards": due_cards, "due_all": due_all},
+    )
+
+
+@router.post("/api/today/learning/focus/{slug}", response_class=HTMLResponse)
+async def today_learning_focus(slug: str, request: Request):
+    """Pin a course to the Today surface, and render the panel around it."""
+    try:
+        db_execute("UPDATE learning_courses SET focused_today = 0")
+        db_execute("UPDATE learning_courses SET focused_today = 1 WHERE slug = ?", (slug,))
+    except Exception:
+        pass
+    return await today_learning(request)
 
 # ---------------------------------------------------------------------------
 # Course reader — Part A
