@@ -333,14 +333,30 @@ CREATE TABLE IF NOT EXISTS project_categories (
 """
 
 
-def _ensure_categories() -> None:
+# Set once the table is known to exist and be seeded. A read path must not take
+# a write lock: `CREATE TABLE IF NOT EXISTS` opens a write transaction even when
+# it changes nothing, and in WAL mode a write transaction is exclusive across
+# EVERY connection — the dashboard, both MCP servers, and any other session on
+# this machine. That is precisely the mechanism that made every write in the
+# system fail for five minutes after each restart in August, and this function
+# sits on the render path of the projects list.
+#
+# Process-level rather than cached with a TTL: the only thing that could
+# invalidate it is the table being dropped, which nothing does.
+_CATEGORIES_READY = False
+
+
+def _ensure_categories(force: bool = False) -> None:
     """Create the table and adopt whatever categories the projects already use.
 
-    Idempotent, and deliberately additive: seeding never removes a category the
-    researcher created, and never renames one. A project whose category is not in the
-    table is still shown — under its own heading — because dropping it would
-    hide work.
+    Idempotent, additive, and — after the first call in this process — free.
+    Seeding never removes a category the researcher created and never renames one. A
+    project whose category is not in the table is still shown, under its own
+    heading, because dropping it would hide work.
     """
+    global _CATEGORIES_READY
+    if _CATEGORIES_READY and not force:
+        return
     try:
         db_execute(_CATEGORY_DDL)
         existing = {r["name"] for r in (db_query("SELECT name FROM project_categories") or [])}
@@ -354,7 +370,10 @@ def _ensure_categories() -> None:
                     "INSERT OR IGNORE INTO project_categories (name, display_order) VALUES (?, ?)",
                     (r, (i + 1) * 10),
                 )
+        _CATEGORIES_READY = True
     except Exception as exc:
+        # Left False on purpose: a transient failure should be retried on the
+        # next render rather than latched for the life of the process.
         _wlog.warning("project_categories unavailable: %s", exc)
 
 
