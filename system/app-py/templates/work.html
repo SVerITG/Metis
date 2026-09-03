@@ -299,6 +299,41 @@
   </div>
 
   <script>
+    // ── Remember which category sections the reader opened ──────────────────
+    // The server opens a section when something in it is alive, which is the
+    // right DEFAULT and the wrong thing to enforce: someone who opens a dormant
+    // category to work in it should not find it shut on the next render. Stored
+    // per category name, and re-applied after every HTMX swap of the projects
+    // zone — the grouped partial is re-rendered by every filter, rename, merge
+    // and re-file, so a one-shot listener would work exactly once.
+    (function () {
+      var KEY = 'metis.work.cats';
+      function load() {
+        try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; }
+      }
+      function save(state) {
+        try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+      }
+      function apply() {
+        var state = load();
+        document.querySelectorAll('details.cat-sec').forEach(function (d) {
+          var name = d.dataset.cat;
+          if (name && Object.prototype.hasOwnProperty.call(state, name)) d.open = !!state[name];
+          if (d._catBound) return;
+          d._catBound = true;
+          d.addEventListener('toggle', function () {
+            var st = load();
+            st[d.dataset.cat] = d.open;
+            save(st);
+          });
+        });
+      }
+      document.addEventListener('DOMContentLoaded', apply);
+      document.body.addEventListener('htmx:afterSwap', function (e) {
+        if (e.target && e.target.id === 'projects-zone') apply();
+      });
+    })();
+
     // Toggle between Work's task-centric List and the planning-horizon Board.
     // Board partials use hx-trigger="revealed", so they load the first time the
     // board is shown and not before — the List view stays instant.

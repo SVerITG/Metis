@@ -813,6 +813,118 @@ function filterProjects(value, btn) {
 }
 
 // ---------------------------------------------------------------------------
+// Project categories — create, rename, merge, remove, reorder, and re-file
+// ---------------------------------------------------------------------------
+// These existed as strings discovered with SELECT DISTINCT, which is enough to
+// filter by and not enough to own. `/api/project/update` has always accepted a
+// category and nothing exposed it, so the only way to re-file a project was to
+// edit the database by hand.
+//
+// Every call reloads the projects zone rather than patching the DOM: a rename
+// changes headings, a merge removes a whole section, and re-filing moves a card
+// between two of them. Re-rendering the group is simpler than three bespoke
+// mutations, and it cannot drift from the server's idea of the order.
+
+function _catReload() {
+  const on = document.querySelector('.work-filter-chip.chip-btn--on');
+  const f = on ? (on.dataset.filter || '') : '';
+  htmx.ajax('GET', '/api/partial/work/projects?filter=' + encodeURIComponent(f), {
+    target: '#projects-zone', swap: 'innerHTML',
+  });
+}
+
+async function _catPost(path, body) {
+  try {
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.status !== 'ok') {
+      // The server's own sentence, in a toast — never a modal browser dialog.
+      // Every one of these refusals is a thing the reader did on purpose, so it
+      // has to say what to do instead, and it should not seize the window to do
+      // it. (The persona linter forbids the blocking kind; note it also matches
+      // the word inside a comment, so do not name it here.)
+      showToast('<i class="bi bi-exclamation-triangle toast-icon"></i>' +
+                (data.message || 'That did not work.'));
+      return null;
+    }
+    _catReload();
+    return data;
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' +
+              'Could not reach Metis — the change was not saved.');
+    return null;
+  }
+}
+
+function catCreate() {
+  const name = prompt('Name the new category:');
+  if (name && name.trim()) _catPost('/api/project-category/create', { name: name.trim() });
+}
+
+function catReorder(name, direction) {
+  _catPost('/api/project-category/reorder', { name: name, direction: direction });
+}
+
+function catManage(name, nProjects) {
+  const held = nProjects === 1 ? '1 project' : nProjects + ' projects';
+  const what = prompt(
+    'Category “' + name + '” — ' + held + '.\n\n' +
+    'Type:\n' +
+    '  a new name      to rename it\n' +
+    '  merge <target>  to move its projects into another category\n' +
+    '  remove          to delete it (its projects become uncategorised)\n',
+    ''
+  );
+  if (!what) return;
+  const v = what.trim();
+  if (!v) return;
+
+  if (v.toLowerCase() === 'remove') {
+    const warn = nProjects
+      ? 'Remove “' + name + '”? Its ' + held + ' will become uncategorised — nothing is deleted.'
+      : 'Remove the empty category “' + name + '”?';
+    if (confirm(warn)) _catPost('/api/project-category/delete', { name: name });
+    return;
+  }
+  if (v.toLowerCase().startsWith('merge ')) {
+    const into = v.slice(6).trim();
+    if (!into) {
+      showToast('<i class="bi bi-exclamation-triangle toast-icon"></i>' +
+                'Name the category to merge into — for example: merge Methodology');
+      return;
+    }
+    if (confirm('Move the ' + held + ' in “' + name + '” into “' + into + '”, then remove “' + name + '”?')) {
+      _catPost('/api/project-category/merge', { from: name, into: into });
+    }
+    return;
+  }
+  _catPost('/api/project-category/rename', { from: name, to: v });
+}
+
+async function projMoveCategory(projectId, current) {
+  let names = [];
+  try {
+    const res = await fetch('/api/project-category/list');
+    const data = await res.json();
+    names = (data.categories || []).map(function (c) { return c.name; });
+  } catch (e) { /* fall through — a typed name still works */ }
+
+  const listed = names.length ? '\n\nExisting: ' + names.join(' · ') : '';
+  const target = prompt(
+    'Move this project to which category?' + listed +
+    '\n\nType a new name to create one, or leave blank to uncategorise.',
+    current || ''
+  );
+  if (target === null) return;   // cancelled — blank is a real choice
+  _catPost('/api/project/' + encodeURIComponent(projectId) + '/move-category',
+           { category: target.trim() });
+}
+
+// ---------------------------------------------------------------------------
 // Project launcher — open external app (VS Code / RStudio / Claude Code)
 // ---------------------------------------------------------------------------
 

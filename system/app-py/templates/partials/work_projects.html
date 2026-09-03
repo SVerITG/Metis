@@ -10,8 +10,55 @@
   <button class="btn btn--primary btn--caps" onclick="openAddProjectModal()">+ Add your first project</button>
 </div>
 {% else %}
-<div class="grid grid-2 grid--top" id="project-grid">
-  {% for p in projects %}
+{#- ── GROUPED BY CATEGORY, EACH SECTION COLLAPSIBLE (2026-09-03) ────────────
+    Sixteen cards arrived in one flat two-column grid ordered by a
+    `display_order` nobody had set. Grouping them is what was asked for, and the
+    heading carries what the group COSTS — projects, open tasks, and how many
+    are alive — so a closed section still tells you whether to open it.
+
+    The cards themselves are untouched. A thinner row would have read better in
+    a mockup and thrown away the next step, the task list and the launchers,
+    which is most of why the card exists.
+
+    Uncategorised comes last and is NAMED. Two projects are in it, and a bucket
+    you cannot see is a bucket you never empty. -#}
+<div id="project-groups">
+{% for g in (groups or []) %}
+{#- OPEN IF SOMETHING IN IT IS ALIVE. This is what "active and not so active"
+    buys: the page opens on the work that is moving, and five months of dormant
+    projects are one click away instead of 1,500px of scrolling. Uncategorised
+    also opens, because it is asking to be dealt with.
+
+    A reader's own choice wins over this default and is remembered — see
+    `metis.work.cats` in work.html. -#}
+<details class="cat-sec{% if g.is_uncategorised %} cat-sec--uncat{% endif %}{% if g.n_projects == 1 %} cat-sec--single{% endif %}"
+         id="cat-{{ g.slug }}" data-cat="{{ g.name }}"
+         {% if g.n_hot or g.is_uncategorised %}open{% endif %}>
+  <summary class="cat-sum">
+    <span class="cat-name">{{ g.name }}</span>
+    {#- Three states, not two. "Active and not so active" was the ask; the data
+        needs a third, because four projects have never been opened at all and
+        that is not the same as one that went quiet in June. -#}
+    {% if g.n_hot %}<span class="cat-live" title="{{ g.n_hot }} touched in the last fortnight">{{ g.n_hot }} live</span>{% endif %}
+    <span class="cat-count">{% if g.n_projects %}{{ g.n_projects }} project{{ 's' if g.n_projects != 1 else '' }}{% if g.n_open %} · {{ g.n_open }} open{% endif %}{% else %}empty{% endif %}</span>
+    <span class="cat-tools">
+      <button type="button" class="cat-tool" title="Move this section up"
+              onclick="event.preventDefault();event.stopPropagation();catReorder('{{ g.name|e }}','up')">↑</button>
+      <button type="button" class="cat-tool" title="Move this section down"
+              onclick="event.preventDefault();event.stopPropagation();catReorder('{{ g.name|e }}','down')">↓</button>
+      {% if not g.is_uncategorised %}
+      <button type="button" class="cat-tool" title="Rename, merge or remove this category"
+              onclick="event.preventDefault();event.stopPropagation();catManage('{{ g.name|e }}',{{ g.n_projects }})">⋯</button>
+      {% endif %}
+    </span>
+  </summary>
+  <div class="grid grid-2 grid--top cat-body">
+  {%- if not g.projects %}
+  {#- An empty category is a place, not an error: it exists so a project can be
+      moved into it. Say what to do with it rather than showing a blank box. -#}
+  <p class="cat-empty">Nothing filed here yet — click a project's category label to move it in.</p>
+  {% endif %}
+  {% for p in g.projects %}
   <div class="panel panel-pad project-card"
        data-project-id="{{ p.id }}"
        draggable="true"
@@ -25,6 +72,15 @@
       <span class="proj-drag-handle u-fixed"
             title="Drag to reorder"
             style="cursor:grab;color:var(--m-muted);font-size:var(--t-body);line-height:1;user-select:none;">⠿</span>
+      {#- HOW ALIVE IS THIS. Three glyphs, not a colour scale, so it survives a
+          greyscale print and a colour-blind reader — and three states because
+          "never opened" is genuinely not "went quiet in June". The card already
+          prints the age in words further down; this is the version you can scan
+          a whole section with. -#}
+      <span class="proj-live u-fixed proj-live--{{ p.activity or 'never' }}"
+            title="{% if p.activity == 'hot' %}Touched in the last fortnight{% elif p.activity == 'cold' %}Quiet for {{ p.quiet_days }} days{% else %}Never opened{% endif %}"
+            aria-label="{% if p.activity == 'hot' %}active{% elif p.activity == 'cold' %}quiet{% else %}never opened{% endif %}"
+            >{% if p.activity == 'hot' %}●{% elif p.activity == 'cold' %}○{% else %}⌾{% endif %}</span>
       <!-- Title (clickable → detail panel) -->
       <div class="u-grow u-title u-title--lg" onclick="openProjectDetail('{{ p.id }}')"
            style="font-weight:500;line-height:1.2;cursor:pointer;"
@@ -51,13 +107,34 @@
       {% if p.project_type and p.project_type not in ('research', 'article') %}
         {% set _ = _chips.append(p.project_type) %}
       {% endif %}
+      {#- THE CATEGORY CHIP IS NOW THE CONTROL THAT CHANGES IT (2026-09-03).
+          `/api/project/update` has always accepted `category` and no surface
+          exposed it, so re-filing a project meant editing the database. The
+          thing that displays a fact is the most discoverable place to change
+          it, and it costs no extra furniture on an already busy card.
+
+          Only the CATEGORY is clickable — domain, tags and project_type render
+          as before. They are different fields, and making all four look
+          actionable would imply four editors that do not exist. -#}
       {% set _seen = [] %}
       {% for c in _chips %}
         {% if c and c.lower() not in _seen %}
           {% set _ = _seen.append(c.lower()) %}
+          {% if c == p.category %}
+          <button type="button" class="tag tag--clip tag--edit u-fixed"
+                  title="In “{{ c }}” — click to move it to another category"
+                  onclick="projMoveCategory({{ p.id | tojson }}, {{ c | tojson }})">{{ c }}</button>
+          {% else %}
           <span class="tag tag--clip u-fixed" title="{{ c }}">{{ c }}</span>
+          {% endif %}
         {% endif %}
       {% endfor %}
+      {%- if not p.category %}
+      {#- An uncategorised project needs the control MORE, not less. -#}
+      <button type="button" class="tag tag--clip tag--edit tag--needs u-fixed"
+              title="This project has no category — click to file it"
+              onclick="projMoveCategory({{ p.id | tojson }}, '')">+ file</button>
+      {% endif %}
       {% if p.launcher_type == 'article' or p.project_type == 'article' %}
       <span class="tag tag--accent u-fixed" title="Opens a manuscript">article</span>
       {% endif %}
@@ -212,6 +289,14 @@
     </div><!-- /.proj-body -->
   </div>
   {% endfor %}
+  </div><!-- /.cat-body -->
+</details>
+{% endfor %}
+
+{#- Creating a category has to be possible BEFORE anything is in it, or there is
+    nowhere to move the first project to. That is the whole reason categories
+    stopped being a SELECT DISTINCT over the projects table. -#}
+<button type="button" class="cat-new" onclick="catCreate()">+ New category</button>
 </div>
 <!-- Hidden projects chip -->
 <div id="hidden-projects-zone"
