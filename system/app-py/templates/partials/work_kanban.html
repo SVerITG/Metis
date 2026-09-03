@@ -1,129 +1,148 @@
-<div class="grid" style="grid-template-columns:repeat(4,1fr);gap:var(--m-space-4);" id="kanban-board">
+{#- work_kanban.html — tasks by status, and the place a task gets a date.
 
-  <!-- Inbox -->
-  <div style="background:var(--m-surface-3);border-radius:var(--m-radius);padding:var(--m-space-3);">
-    <div class="u-label" style="display:flex;justify-content:space-between;padding:var(--m-space-1) var(--m-space-2) var(--m-space-3);letter-spacing:0.22em;text-transform:uppercase;">
-      <span>Inbox</span><span>{{ inbox|length }}</span>
-    </div>
-    <div class="u-col">
-      {% for t in inbox %}
-      <div class="kanban-card" data-task-id="{{ t.id }}">
-        <div class="u-mb-2 u-title" style="line-height:1.3;">{{ t.title }}</div>
-        <div class="u-label u-row u-row--between">
-          <span>{{ (t.tag or 'TASK').upper()[:12] }}</span>
-          <select class="kanban-status-select u-label" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
-                  title="Move to…" style="background:transparent;border:none;cursor:pointer;padding:0;">
-            <option value="open" selected>Inbox</option>
-            <option value="in_progress">In Progress</option>
-            <option value="done">Done</option>
-          </select>
-        </div>
-      </div>
-      {% else %}
-      <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2);">Inbox clear.</div>
-      {% endfor %}
-    </div>
-  </div>
+    Rewritten 2026-09-03. Asked for: "I like the task by status, why can it not
+    be integrated on the top of the page" — and it is now first on the surface
+    rather than folded away near the bottom, which is where I had put it a week
+    earlier as a duplicate. It is not a duplicate; it is the one panel that
+    answers "what is in flight" at a glance.
 
-  <!-- This week -->
-  <div style="background:var(--m-surface-3);border-radius:var(--m-radius);padding:var(--m-space-3);">
-    <div class="u-label" style="display:flex;justify-content:space-between;padding:var(--m-space-1) var(--m-space-2) var(--m-space-3);letter-spacing:0.22em;text-transform:uppercase;">
-      <span>This week</span><span>{{ this_week|length }}</span>
-    </div>
-    <div class="u-col">
-      {% for t in this_week %}
-      {% set is_overdue = t.due_date and t.due_date[:10] < today %}
-      {% set is_high = (t.priority == 'high') %}
-      <div class="kanban-card" data-task-id="{{ t.id }}"
-           style="border-left:{% if is_overdue %}2px solid var(--m-alert){% elif is_high %}2px solid var(--m-accent){% else %}1px solid var(--m-rule){% endif %};">
-        <div class="u-mb-2 u-title" style="line-height:1.3;">{{ t.title }}</div>
-        <div class="u-row u-row--between u-mono" style="letter-spacing:0.12em;">
-          <span style="color:{% if is_overdue %}var(--m-alert){% else %}var(--m-muted){% endif %};">
-            {{ t.due_date[:10] if t.due_date else '—' }}{% if is_overdue %} ⚠{% endif %}
+    THE COLUMNS ARE THE STATES, so DRAGGING A CARD BETWEEN THEM IS THE EDIT.
+    That is the missing gesture: "put this on today" existed only as knowledge —
+    a task dated today, or starred, surfaces on the Today page — and nothing on
+    this surface said so. Of the 58 live tasks, 0 were starred and 2 were dated.
+    (An earlier note here said 92, which counted cancelled work; see
+    `db.live_task_sql`.)
+
+    Four columns from one shape, not four hand-written blocks. The previous
+    version repeated the same markup four times with small divergences, and the
+    only column that showed a due date was the second one.
+-#}
+<div class="kan-board" id="kanban-board" data-filter="{{ filter or '' }}">
+  {% for c in columns %}
+  <section class="kan-col" data-col="{{ c.key }}"
+           title="{{ c.drop }}"
+           ondragover="kanOver(event, this)"
+           ondragleave="kanLeave(this)"
+           ondrop="kanDrop(event, '{{ c.key }}')">
+    <header class="kan-head">
+      <span class="kan-name">{{ c.label }}</span>
+      {#- The count shown is the count HELD, not the count rendered. A column
+          capped at twelve that printed "12" while holding ninety would be
+          lying about the size of the pile. -#}
+      <span class="kan-n">{{ c.total }}</span>
+      {#- Held work is in this column's count but usually not in its twelve
+          visible cards — the pile is deeper than the cap. Saying so is the
+          difference between a number that is correct and a number that is
+          useful. -#}
+      {% if c.held %}
+      <span class="kan-held-n" title="{{ c.held }} of these are blocked, waiting on something else">
+        {{ c.held }} held
+      </span>
+      {% endif %}
+    </header>
+
+    <div class="kan-cards">
+      {% for t in c.tasks %}
+      {% set overdue = c.key == 'today' and t.due_date and t.due_date[:10] < today %}
+      {% set blocked = t.status == 'blocked' %}
+      <article class="kan-card{% if overdue %} kan-card--late{% endif %}{% if blocked %} kan-card--blocked{% endif %}"
+               draggable="true" data-task-id="{{ t.id }}"
+               ondragstart="kanDrag(event, '{{ t.id }}')">
+        <div class="kan-title">{{ t.title }}</div>
+        <div class="kan-meta">
+          {#- Blocked work belongs on the board, but it must not look like work
+              you could just pick up. It is the rarest state here (2 of 58) and
+              the easiest to lose, which is the whole reason it is shown. -#}
+          {% if blocked %}
+          <span class="kan-blocked" title="Blocked — waiting on something else">held</span>
+          {% endif %}
+          {#- Which project, always — the board is cross-project, and a task
+              stripped of its project is a sentence with no subject. -#}
+          {% if t.project_title %}
+          <span class="kan-proj" title="{{ t.project_title }}">{{ t.project_title }}</span>
+          {% elif t.tag %}
+          <span class="kan-proj" title="{{ t.tag }}">{{ t.tag }}</span>
+          {% endif %}
+          {% if t.due_date %}
+          <span class="kan-due{% if overdue %} kan-due--late{% endif %}"
+                title="{% if overdue %}Overdue — was due {{ t.due_date[:10] }}{% else %}Due {{ t.due_date[:10] }}{% endif %}">
+            {{ t.due_date[:10] }}{% if overdue %} ⚠{% endif %}
           </span>
-          <select class="kanban-status-select u-label" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
-                  title="Move to…" style="background:transparent;border:none;cursor:pointer;padding:0;">
-            <option value="open" selected>This week</option>
-            <option value="in_progress">In Progress</option>
-            <option value="done">Done</option>
-          </select>
+          {% endif %}
+          <button type="button" class="kan-done" title="Mark done"
+                  onclick="kanDone('{{ t.id }}')">✓</button>
         </div>
-      </div>
+      </article>
       {% else %}
-      <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2);">Nothing due this week.</div>
+      <p class="kan-empty">{{ c.empty }}</p>
       {% endfor %}
-    </div>
-  </div>
 
-  <!-- In progress -->
-  <div style="background:var(--m-surface-3);border-radius:var(--m-radius);padding:var(--m-space-3);">
-    <div class="u-label" style="display:flex;justify-content:space-between;padding:var(--m-space-1) var(--m-space-2) var(--m-space-3);letter-spacing:0.22em;text-transform:uppercase;">
-      <span>In progress</span><span>{{ in_progress|length }}</span>
+      {% if c.total > (c.tasks | length) %}
+      <p class="kan-more">+{{ c.total - (c.tasks | length) }} more — see the list below</p>
+      {% endif %}
     </div>
-    <div class="u-col">
-      {% for t in in_progress %}
-      <div class="kanban-card" data-task-id="{{ t.id }}" style="border-left:2px solid var(--m-accent);">
-        <div class="u-mb-2 u-title" style="line-height:1.3;">{{ t.title }}</div>
-        <div class="u-label u-row u-row--between">
-          <span>{{ (t.tag or 'TASK').upper()[:12] }}</span>
-          <select class="kanban-status-select u-label" onchange="kanbanSetStatus('{{ t.id }}', this.value)"
-                  title="Move to…" style="background:transparent;border:none;cursor:pointer;padding:0;">
-            <option value="open">Inbox</option>
-            <option value="in_progress" selected>In Progress</option>
-            <option value="done">Done</option>
-          </select>
-        </div>
-      </div>
-      {% else %}
-      <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2);">Nothing in progress.</div>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- Closed this week -->
-  <div style="background:var(--m-surface-3);border-radius:var(--m-radius);padding:var(--m-space-3);opacity:0.85;">
-    <div class="u-label" style="display:flex;justify-content:space-between;padding:var(--m-space-1) var(--m-space-2) var(--m-space-3);letter-spacing:0.22em;text-transform:uppercase;">
-      <span>Closed · this week</span><span>{{ closed|length }}</span>
-    </div>
-    <div class="u-col">
-      {% for t in closed %}
-      <div class="kanban-card" style="opacity:0.7;">
-        <div class="u-mb-1 u-title" style="line-height:1.3;text-decoration:line-through;">{{ t.title }}</div>
-        <div class="u-label">{{ (t.tag or 'TASK').upper()[:12] }}</div>
-      </div>
-      {% else %}
-      <div class="u-ed" style="font-size:var(--t-small);padding:var(--m-space-2);">Nothing closed yet.</div>
-      {% endfor %}
-    </div>
-  </div>
-
+  </section>
+  {% endfor %}
 </div>
 
-<style>
-.kanban-card {
-  background: var(--m-surface);
-  border: 1px solid var(--m-rule);
-  border-radius: 2px;
-  padding: 10px 12px;
-  transition: box-shadow 120ms ease;
-}
-.kanban-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-.kanban-status-select:hover { color: var(--m-accent) !important; }
-.kanban-status-select:focus {  }
-</style>
-
 <script>
-async function kanbanSetStatus(taskId, newStatus) {
-  try {
-    await fetch('/api/task/' + taskId + '/status', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({status: newStatus})
-    });
-    // Reload the kanban board
-    htmx.ajax('GET', '/api/partial/work/kanban', {target: '#kanban-board', swap: 'outerHTML'});
-  } catch(e) {
-    console.error('Status update failed', e);
+// Drag a card to a column and the column's meaning is applied — a date, a
+// status, or the removal of a date. One handler, because the column key is the
+// instruction and the server owns what each key means.
+(function () {
+  if (window._kanBound) return;
+  window._kanBound = true;
+
+  window.kanDrag = function (ev, taskId) {
+    ev.dataTransfer.setData('text/plain', JSON.stringify({ t: 'kantask', id: taskId }));
+    ev.dataTransfer.effectAllowed = 'move';
+  };
+  window.kanOver = function (ev, el) {
+    ev.preventDefault();
+    el.classList.add('kan-col--over');
+  };
+  window.kanLeave = function (el) { el.classList.remove('kan-col--over'); };
+
+  function _post(body) {
+    const board = document.getElementById('kanban-board');
+    body.append('filter', (board && board.dataset.filter) || '');
+    fetch('/api/partial/work/kanban/move', { method: 'POST', body: body })
+      .then(r => r.text())
+      .then(html => {
+        // The board replaces itself, and the CALENDAR is refreshed too when it
+        // is on screen: a date set here is a day in the week, and leaving the
+        // two out of step is how a surface stops being believed.
+        const zone = document.getElementById('kanban-zone');
+        if (zone) { zone.innerHTML = html; if (window.htmx) window.htmx.process(zone); }
+        const cal = document.getElementById('work-calendar');
+        if (cal && window.htmx) {
+          window.htmx.ajax('GET', '/api/partial/work/calendar?view=' +
+            ((cal.dataset.view) || 'month'), { target: '#work-calendar', swap: 'outerHTML' });
+        }
+      });
   }
-}
+
+  window.kanDrop = function (ev, column) {
+    ev.preventDefault();
+    const col = ev.currentTarget; if (col) col.classList.remove('kan-col--over');
+    let d; try { d = JSON.parse(ev.dataTransfer.getData('text/plain')); } catch (e) { return; }
+    if (!d || d.t !== 'kantask') return;
+    const body = new URLSearchParams();
+    body.append('task_id', d.id);
+    body.append('column', column);
+    _post(body);
+  };
+
+  window.kanDone = function (taskId) {
+    fetch('/api/task/' + encodeURIComponent(taskId) + '/done', { method: 'POST' })
+      .then(() => {
+        const board = document.getElementById('kanban-board');
+        const f = (board && board.dataset.filter) || '';
+        if (window.htmx) {
+          window.htmx.ajax('GET', '/api/partial/work/kanban?filter=' + encodeURIComponent(f),
+            { target: '#kanban-zone', swap: 'innerHTML' });
+        }
+      });
+  };
+})();
 </script>

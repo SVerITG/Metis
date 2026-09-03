@@ -1492,6 +1492,40 @@ body.is-dormant { overflow: hidden; }
 }
 .focus-none .u-link { margin-left: auto; font-size: 11px; }
 
+/* ── Work: tasks by status, first on the surface ───────────────────────────
+   Rebuilt 2026-09-03. The columns are the states, so a drop is an edit. The
+   drop target has to be visible BEFORE the drop — a drag with no feedback is a
+   guess — hence `.kan-col--over`. */
+.kan-board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 6px; }
+@media (max-width: 1100px) { .kan-board { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 620px)  { .kan-board { grid-template-columns: 1fr; } }
+.kan-col { background: var(--m-surface-2); border: 1px solid var(--m-rule); border-radius: var(--m-radius); padding: 9px; min-width: 0; display: flex; flex-direction: column; transition: border-color 120ms, background 120ms; }
+.kan-col--over { border-color: var(--m-accent); background: var(--m-accent-wash); }
+.kan-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 1px 2px 8px; }
+.kan-name { font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--m-muted); }
+.kan-n { font-family: var(--m-mono); font-size: 10px; color: var(--m-muted-soft); font-variant-numeric: tabular-nums; }
+.kan-cards { display: flex; flex-direction: column; gap: 6px; min-height: 44px; }
+.kan-card { background: var(--m-surface); border: 1px solid var(--m-rule); border-left: 2px solid var(--m-rule); border-radius: var(--m-radius-sm); padding: 6px 8px; cursor: grab; }
+.kan-card:hover { border-color: var(--m-rule-strong); }
+/* Late is the only card state that gets colour. It is rare and it is the one
+   thing on the board you might act on differently. */
+.kan-card--late { border-left-color: var(--m-alert); }
+/* Held work is on the board because work that appears nowhere gets lost,
+   but it must not read as available. Warn, not alert: nothing is wrong
+   with it, it is waiting. */
+.kan-card--blocked { border-left-color: var(--m-warn); cursor: default; }
+.kan-held-n { font-family: var(--m-mono); font-size: 9px; color: var(--m-warn); flex: none; font-variant-numeric: tabular-nums; }
+.kan-blocked { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--m-warn); background: var(--m-warn-wash); border-radius: var(--m-radius-sm); padding: 0 4px; flex: none; }
+.kan-title { font-size: 12.5px; line-height: 1.35; color: var(--m-ink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.kan-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
+.kan-proj { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--m-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+.kan-due { font-family: var(--m-mono); font-size: 9px; color: var(--m-muted-soft); flex: none; font-variant-numeric: tabular-nums; }
+.kan-due--late { color: var(--m-alert); }
+.kan-done { background: none; border: 1px solid transparent; border-radius: var(--m-radius-sm); color: var(--m-rule-strong); font-family: var(--m-mono); font-size: 10px; line-height: 1; padding: 1px 4px; cursor: pointer; flex: none; transition: color 120ms, border-color 120ms; }
+.kan-done:hover { color: var(--m-ok); border-color: var(--m-ok); }
+.kan-empty { font-family: var(--m-ui); font-size: 11.5px; font-style: italic; color: var(--m-muted-soft); margin: 2px 2px 0; }
+.kan-more { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.06em; color: var(--m-muted-soft); margin: 2px 2px 0; }
+
 /* A `.tag` that is also a control. The vocabulary says a bordered button is a
    control and plain text is a category — this one is both, so it stays plain
    until hovered and then shows the border that means "you can press this".

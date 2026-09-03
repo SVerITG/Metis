@@ -807,9 +807,19 @@ function filterProjects(value, btn) {
     c.setAttribute('aria-pressed', 'false');
   });
   if (btn) { btn.classList.add('chip-btn--on'); btn.setAttribute('aria-pressed', 'true'); }
-  htmx.ajax('GET', '/api/partial/work/projects?filter=' + encodeURIComponent(value || ''), {
+  const f = encodeURIComponent(value || '');
+  htmx.ajax('GET', '/api/partial/work/projects?filter=' + f, {
     target: '#projects-zone', swap: 'innerHTML',
   });
+  // THE FILTER NOW NARROWS THE BOARD TOO (2026-09-03). It only ever filtered
+  // the project list, so filtering to one category left a status board still
+  // showing every task in the system — half the page answering a different
+  // question from the other half. The board reads the same filter server-side.
+  const zone = document.getElementById('kanban-zone');
+  if (zone) {
+    htmx.ajax('GET', '/api/partial/work/kanban?filter=' + f,
+              { target: '#kanban-zone', swap: 'innerHTML' });
+  }
 }
 
 // ---------------------------------------------------------------------------

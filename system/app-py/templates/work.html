@@ -53,6 +53,29 @@
       whole innerHTML of the element it is attached to, so a heading written into
       the loading placeholder is deleted the moment the panel loads — it flashes
       for one frame and is gone. That is why this panel looked untitled. -#}
+  {#- ── TASKS BY STATUS, FIRST ────────────────────────────────────────────
+      Moved here 2026-09-03 at the researcher's request — "I like the task by status,
+      why can it not be integrated on the top of the page". I had folded it away
+      a week earlier as a duplicate of the task lists further down; that was the
+      wrong call. It is the only panel that answers "what is in flight" without
+      reading anything, and its columns are now the controls that set a date.
+
+      `hx-trigger="load"` rather than `intersect once`: it is above the fold now,
+      so it must be there when the page arrives. -#}
+  {{ sec_label("Tasks by status", tail="DRAG A CARD TO CHANGE WHEN") }}
+  <div class="u-mb-5" id="kanban-zone"
+       hx-get="/api/partial/work/kanban"
+       hx-trigger="load"
+       hx-swap="innerHTML">
+    <div class="kan-board">
+      {% for col in ['Today', 'This week', 'In progress', 'No date'] %}
+      <div class="kan-col skeleton" style="min-height:150px;">
+        <div class="kan-head"><span class="kan-name">{{ col }}</span><span class="kan-n">—</span></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
   {{ sec_label("What you want to do", tail="INTENTIONS · THIS QUARTER") }}
   <div class="u-mb-5" hx-get="/api/partial/planner/intentions"
        hx-trigger="load"
@@ -234,29 +257,6 @@
       two eager `hx-trigger="load"` requests off every visit to Work.
 
       Same fold behaviour as Today's Dispatch, via the `.m-fold*` aliases. -#}
-  <details class="m-fold u-mb-5">
-    <summary class="m-fold-sum">
-      <span class="m-fold-lead">Tasks by status</span>
-      <span class="m-fold-hint">the same tasks, arranged as a board</span>
-    </summary>
-    <div class="m-fold-body">
-  <div hx-get="/api/partial/work/kanban"
-       hx-trigger="intersect once"
-       hx-swap="outerHTML">
-    <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:var(--m-space-4);">
-      {% for col in ['Inbox', 'This week', 'In progress', 'Closed · this week'] %}
-      <div class="skeleton" style="border-radius:var(--m-radius);padding:var(--m-space-3);min-height:300px;">
-        <div class="u-label" style="display:flex;justify-content:space-between;padding:var(--m-space-1) var(--m-space-2) var(--m-space-3);letter-spacing:0.22em;text-transform:uppercase;">
-          <span>{{ col }}</span><span>—</span>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-
-    </div>
-  </details>
-
   <!-- All tasks — cross-project view sorted by priority -->
   <details class="m-fold u-mb-5">
     <summary class="m-fold-sum">
@@ -282,11 +282,11 @@
     <div class="u-mb-6" hx-get="/api/partial/planner/week" hx-trigger="revealed" hx-swap="innerHTML">
       <div class="panel panel-pad skeleton" style="min-height:120px;"></div>
     </div>
-    <!-- Intentions -->
-    {{ sec_label("Intentions", tail="THIS QUARTER") }}
-    <div class="u-mb-6" hx-get="/api/partial/planner/intentions" hx-trigger="revealed" hx-swap="innerHTML">
-      <div class="panel panel-pad skeleton" style="min-height:80px;"></div>
-    </div>
+    {#- Intentions are NOT repeated here (removed 2026-09-03). The same panel is
+        rendered at the top of the List view, and a panel written in two places
+        drifts — this codebase has paid for that more than once. The Board view
+        is about horizons: the week ahead and the project pipeline. What you want
+        to do this quarter belongs with the work itself, one tab away. -#}
     <!-- Project pipeline -->
     {#- No sec_label here: partials/planner_kanban.html emits its own <h2>. A
         second one outside the swap target would render both. Checked, not
@@ -369,9 +369,17 @@
     } catch(e){}
 
     // ── Calendar drag & drop ────────────────────────────────────────────────
-    // Two payload kinds share one drop handler: a NEW project (drag from the rail)
-    // and an EXISTING plan (drag a chip to another day). The kind is carried in the
-    // dataTransfer so the drop target does not have to guess.
+    // THREE payload kinds now share one drop handler: a NEW project (drag from
+    // the rail), an EXISTING plan (drag a chip to another day), and — added
+    // 2026-09-03 — a TASK, which is how a piece of work gets a date by being put
+    // on a day. The kind travels in the dataTransfer so the drop target never
+    // has to guess.
+    //
+    // A project dropped on a day stays an INTENTION ("Tuesday is the data
+    // profile"), not a task. That distinction is argued in calendar_plan.py's
+    // docstring and it is right: a due date is a deadline, an intention is not.
+    // What was missing was the other direction — a task that has a deadline
+    // could not be placed on the day it falls due.
     window.calDragProject = function(ev, pid){
       ev.dataTransfer.setData('text/plain', JSON.stringify({t:'project', id:pid}));
       ev.dataTransfer.effectAllowed = 'copy';
@@ -379,6 +387,11 @@
     window.calDragPlan = function(ev, planId){
       ev.stopPropagation();
       ev.dataTransfer.setData('text/plain', JSON.stringify({t:'plan', id:planId}));
+      ev.dataTransfer.effectAllowed = 'move';
+    };
+    window.calDragTask = function(ev, taskId){
+      ev.stopPropagation();
+      ev.dataTransfer.setData('text/plain', JSON.stringify({t:'task', id:taskId}));
       ev.dataTransfer.effectAllowed = 'move';
     };
     function _calCtx(){
@@ -405,6 +418,7 @@
       var d; try { d = JSON.parse(raw); } catch(e){ return; }
       if (d.t === 'project') _calPost('/api/plan/create', {start_date:date, kind:'project', project_id:d.id});
       else if (d.t === 'plan') _calPost('/api/plan/' + d.id + '/move', {start_date:date});
+      else if (d.t === 'task') _calPost('/api/plan/task-date', {task_id:d.id, start_date:date});
     };
     // Click a day to write a focus. A leading "!" makes it a reminder; "→ YYYY-MM-DD"
     // at the end makes it span to that date, so a multi-day focus needs no second UI.
