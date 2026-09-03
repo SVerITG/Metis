@@ -1,0 +1,758 @@
+{
+  "_note": "Methodologies extracted from published analyses and GENERALISED away from the pathogen they were used on. Each entry is a recipe you could apply, not a paper summary — which is why `name` never contains a pathogen. `seen_in` carries the provenance, graded as in sources/source-ledger.md: FETCHED means the methods section was read in full during authoring; SEARCH means the claim came from search results and the paper was not read.",
+  "_schema": {
+    "id": "slug",
+    "name": "generalised name — a method, never a pathogen",
+    "question": "which of the course's four questions (1-4) it answers",
+    "one_line": "what it does, in one sentence",
+    "answers": "the epidemiological question it puts a number on",
+    "needs": "data requirements — the honest gate on whether you can do this at all",
+    "chain": "ordered steps, each with the tools actually used",
+    "outputs": "what you get",
+    "decides": "what it can change",
+    "fails_when": "the failure modes",
+    "lessons": "lesson ids in this course that cover the components",
+    "seen_in": "provenance, with a grade",
+    "maturity": "routine | established | emerging"
+  },
+  "methodologies": [
+    {
+      "id": "spatiotemporal-diffusion",
+      "name": "Genomics for spatiotemporal diffusion patterns",
+      "question": 2,
+      "maturity": "established",
+      "one_line": "Reconstruct where a lineage entered a country and how it then moved across it, with dates and a speed.",
+      "answers": "Where did this come from, when did it actually arrive, which way did it travel inside the country, and how fast was the wavefront?",
+      "needs": [
+        "Genomes with **place of residence at a usable spatial resolution** — municipality or district, not 'country'. This is the binding constraint and it is a metadata problem, not a sequencing one.",
+        "A **sampling frame spread across geography and time**, not just across whatever arrived. Both papers below selected deliberately for this.",
+        "Contextual sequences from the suspected source region. Without them the origin cannot be placed, only guessed.",
+        "Enough temporal signal to date the tree at all — check it before anything else."
+      ],
+      "chain": [
+        {
+          "step": "Select samples for geographic and chronological spread, not only load",
+          "tools": "a Ct ceiling AND an explicit quota by region and epidemiological week",
+          "note": "The Oropouche study took 39 of 147 confirmed cases on Ct ≤ 28.5 **plus** geographical representativeness **plus** chronological distribution by epi week. That third and fourth criterion is what makes the spatial result mean anything."
+        },
+        {
+          "step": "Align and build a maximum likelihood tree",
+          "tools": "MAFFT · IQ-TREE · ModelFinder · SH-aLRT",
+          "note": "Establishes the clade structure and whether your sequences are monophyletic — i.e. one introduction or several."
+        },
+        {
+          "step": "Screen for recombination or reassortment before assuming one tree",
+          "tools": "RDP5 (nine algorithms; accept an event only on ≥3 methods and p < 0.05)",
+          "note": "Skippable only if the pathogen genuinely does not recombine. Segmented and recombining pathogens break the single-tree assumption everything downstream rests on."
+        },
+        {
+          "step": "Confirm temporal signal",
+          "tools": "TempEst root-to-tip regression, with a correlation test",
+          "note": "A gate, not a formality. No temporal signal means no dates, and the software will still hand you some."
+        },
+        {
+          "step": "DISCRETE phylogeography for the introduction — between regions",
+          "tools": "BEAST · asymmetric discrete trait model · CTMC rate reference prior · BSSVS · Bayes factor > 3 · SPREAD",
+          "note": "Answers 'from where, and how many times'. BSSVS sparsifies the migration matrix so you report supported routes rather than all of them."
+        },
+        {
+          "step": "CONTINUOUS phylogeography for the spread within — across the landscape",
+          "tools": "BEAST · relaxed random walk with a Cauchy distribution · lat/long per tip · jitter on identical coordinates",
+          "note": "This is the step that produces an actual diffusion map rather than a set of arrows between administrative units. It needs point coordinates, which is why the metadata requirement above is the real gate."
+        },
+        {
+          "step": "Quantify how fast it moved",
+          "tools": "seraphim, over a subsample of the posterior trees",
+          "note": "Branch dispersal velocity. Turns 'it spread west' into a number with an interval."
+        },
+        {
+          "step": "Check convergence before believing any of it",
+          "tools": "Tracer, ESS > 200 on every reported parameter",
+          "note": "Reported in the Oropouche methods; absent from many papers."
+        }
+      ],
+      "outputs": [
+        "A dated introduction — 'a single introduction from Acre, Brazil, in early February 2024'",
+        "The cryptic period between arrival and detection",
+        "An internal spread map with directions and secondary hubs",
+        "A dispersal velocity with a credible interval"
+      ],
+      "decides": [
+        "Whether control effort belongs at the border or inside the country",
+        "Where to place or reinforce surveillance ahead of the wavefront",
+        "Whether a new focus is a fresh importation or the same wave arriving"
+      ],
+      "fails_when": [
+        "Sampling density varies across the regions being compared — discrete trait analysis will place the origin where sequencing was densest, regardless of truth (Lesson 11).",
+        "Location is recorded as the reporting facility rather than the patient's residence. The map then shows where laboratories are.",
+        "The source region is unsampled. The introduction is then attributed to the nearest sampled place.",
+        "Collection dates are substituted with receipt dates, which are longer for remote areas and manufacture a centre-to-periphery pattern."
+      ],
+      "lessons": [
+        "lesson-09",
+        "lesson-10",
+        "lesson-11",
+        "lesson-13"
+      ],
+      "seen_in": [
+        {
+          "grade": "FETCHED",
+          "cite": "Gravier R, Perez M, Álvarez M, et al. *Spatiotemporal diffusion of the 2024 Oropouche outbreak in Cuba.* Nature Medicine, July 2026.",
+          "url": "https://doi.org/10.1038/s41591-026-04411-9",
+          "what_they_did": "39 OROV genomes from 147 confirmed cases across 14 of 15 provinces. Discrete phylogeography placed a single introduction from Acre, Brazil in early February 2024, followed by cryptic circulation until detection in May; continuous phylogeography then traced spread from the central region to secondary hubs in the west and east. The methods section is unusually complete and is worth reading as a template."
+        }
+      ]
+    },
+    {
+      "id": "origin-dating-detection-lag",
+      "name": "Dating an outbreak's origin, and measuring how long it went unseen",
+      "question": 3,
+      "maturity": "routine",
+      "one_line": "Put a date on the common ancestor of sequenced cases, and compare it with the date surveillance first noticed.",
+      "answers": "When did transmission actually start, and how long was the blind period before the system saw it?",
+      "needs": [
+        "Genomes spanning enough of the outbreak's duration to carry temporal signal — a short window on a slow clock will not do it.",
+        "**Collection dates at real precision.** Not receipt dates, not month-only.",
+        "A pathogen whose substitution rate × genome length × serial interval lands above roughly 0.1 (Lesson 1's arithmetic)."
+      ],
+      "chain": [
+        {
+          "step": "Remove sequences whose changes are not the pathogen's own evolution",
+          "tools": "mutational-signature screening (ADAR, APOBEC3, oxidative), then iterative root-to-tip outlier removal",
+          "note": "Mechanistic filter first, statistical filter second. The clock is the parameter this protects."
+        },
+        {
+          "step": "Confirm temporal signal and get a first rate estimate",
+          "tools": "root-to-tip regression (TempEst)",
+          "note": "Cheap cross-check on the expensive model that follows."
+        },
+        {
+          "step": "Estimate a time-scaled tree",
+          "tools": "BEAST / BEAST X · a clock model · a coalescent tree prior",
+          "note": "Strict clock is defensible for a single-pathogen, single-host outbreak over a short window; relax when lineages plausibly differ."
+        },
+        {
+          "step": "Read the tMRCA with its interval, and name the model",
+          "tools": "Tracer for ESS and convergence",
+          "note": "The tMRCA differs between tree priors, so the model belongs in the sentence."
+        },
+        {
+          "step": "Subtract the date of first detection",
+          "tools": "the outbreak timeline",
+          "note": "This difference is the deliverable, and almost nobody reports it."
+        }
+      ],
+      "outputs": [
+        "A tMRCA with a credible interval",
+        "The detection lag — weeks or months of transmission before the system saw anything",
+        "An evolutionary rate for the outbreak"
+      ],
+      "decides": [
+        "How much unobserved transmission to assume when sizing the response",
+        "Whether surveillance sensitivity in that area needs investment — the lag IS the performance metric",
+        "How far back contact tracing and retrospective case-finding should reach"
+      ],
+      "fails_when": [
+        "It is read as the index case or the spillover date. It is neither: it is a **lower bound** on the outbreak's age, conditional on the sequences you have.",
+        "Temporal signal is weak, in which case the tMRCA is the prior restated with a credible interval that looks like evidence.",
+        "Early divergent lineages were never sampled — the estimate then sits later than the truth, always in the same direction."
+      ],
+      "lessons": [
+        "lesson-01",
+        "lesson-02",
+        "lesson-09"
+      ],
+      "seen_in": [
+        {
+          "grade": "FETCHED",
+          "cite": "Wawina-Bokalanga T, Mbala-Kingebeni P, et al. *Phylodynamics and evolution of the 2026 Bundibugyo virus circulating in the DRC: insights from a 100-day window of genomic sequencing.* virological.org (2026).",
+          "url": "https://virological.org/t/phylodynamics-and-evolution-of-the-2026-bundibugyo-virus-circulating-in-the-democratic-republic-of-the-congo-insights-from-a-100-day-window-of-genomic-sequencing/1046",
+          "what_they_did": "525 analysed genomes gave a tMRCA of 22 February 2026 (95% HPDI 16 Jan – 24 Mar) against an outbreak declared on 15 May — roughly two months of transmission before recognition."
+        },
+        {
+          "grade": "FETCHED",
+          "cite": "Gravier R, et al. *Spatiotemporal diffusion of the 2024 Oropouche outbreak in Cuba.* Nature Medicine (2026).",
+          "url": "https://doi.org/10.1038/s41591-026-04411-9",
+          "what_they_did": "Dated the introduction to early February 2024 against detection in May — a cryptic period of roughly three months, in a country that was not looking for the virus."
+        }
+      ]
+    },
+    {
+      "id": "sampling-robustness-truncation",
+      "name": "Testing whether a phylodynamic trend survives its own sampling",
+      "question": 3,
+      "maturity": "established",
+      "one_line": "Re-run the whole analysis on nested truncations of your own data and show the answer does not move.",
+      "answers": "Is that flattening curve a real slowdown, or is it just that we sequenced less?",
+      "needs": [
+        "A dataset with a meaningful time span, so it can be cut in several places",
+        "The full pipeline scripted, because the point is to apply **identical** curation at each cutoff",
+        "Compute — this multiplies the Bayesian run by the number of cutoffs"
+      ],
+      "chain": [
+        {
+          "step": "Build several datasets ending at progressively later dates",
+          "tools": "the same selection rule at each cutoff",
+          "note": "The Bundibugyo team used four: 23 June, 3 July, 16 July, 9 August."
+        },
+        {
+          "step": "Apply identical curation and filtering to each",
+          "tools": "the same script",
+          "note": "Without this, differences between runs are differences in how you treated them."
+        },
+        {
+          "step": "Run the same phylodynamic analysis on each",
+          "tools": "BEAST with the same priors and chain length",
+          "note": ""
+        },
+        {
+          "step": "Compare the parameters that carry the conclusion",
+          "tools": "clock rate, tMRCA, growth rate",
+          "note": "Convergence across the later datasets is the evidence. Instability in the shortest window is expected and is itself informative."
+        },
+        {
+          "step": "Overlay sequencing effort on the curve",
+          "tools": "sequences per week alongside Ne",
+          "note": "The cheap version of the same check, and it should be in the figure regardless."
+        }
+      ],
+      "outputs": [
+        "A table of the key parameters across cutoffs",
+        "An earned claim that recent inferences reflect epidemiology rather than curation"
+      ],
+      "decides": [
+        "Whether a reported slowdown justifies standing down response capacity",
+        "Whether to trust a growth estimate enough to plan against it"
+      ],
+      "fails_when": [
+        "It is treated as proof of unbiasedness. It shows the result is not an artefact of **where you cut**; it cannot rescue you from bias that ran in the same direction throughout.",
+        "The cutoffs are too close together to be independent tests.",
+        "Curation differs between runs, which turns the comparison into noise."
+      ],
+      "lessons": [
+        "lesson-10",
+        "lesson-13"
+      ],
+      "seen_in": [
+        {
+          "grade": "FETCHED",
+          "cite": "Wawina-Bokalanga T, Mbala-Kingebeni P, et al. virological.org (2026).",
+          "url": "https://virological.org/t/phylodynamics-and-evolution-of-the-2026-bundibugyo-virus-circulating-in-the-democratic-republic-of-the-congo-insights-from-a-100-day-window-of-genomic-sequencing/1046",
+          "what_they_did": "Clock rates converged at ~8.5e-4 across the later cutoffs (1.10e-3 for the shortest) and tMRCA was stable from July onward, which is what licensed the claim that the apparent late slowdown was not purely an artefact of reduced sampling after mid-July."
+        }
+      ]
+    },
+    {
+      "id": "recombination-screen",
+      "name": "Screening for recombination before trusting a single tree",
+      "question": 1,
+      "maturity": "routine",
+      "one_line": "Establish that one phylogeny can legitimately describe the whole alignment, before building one and arguing from it.",
+      "answers": "Does this pathogen's genome have a single evolutionary history, or several that disagree?",
+      "needs": [
+        "A concatenated or per-segment alignment",
+        "Enough diversity for a breakpoint to be detectable — near-identical outbreak sequences will show nothing, which is itself an answer",
+        "Knowledge of whether the organism recombines or reassorts at all"
+      ],
+      "chain": [
+        {
+          "step": "Decide whether the question even arises",
+          "tools": "the organism's biology",
+          "note": "Segmented viruses reassort (influenza, bunyaviruses); coronaviruses and HIV recombine; bacteria recombine constantly; filoviruses essentially do not. Skipping the screen is defensible only when you can say why."
+        },
+        {
+          "step": "Screen the alignment with several independent algorithms",
+          "tools": "RDP5 — RDP, Geneconv, Bootscan, Maxchi, Chimaera, SiSscan, PhylPro, LARD, 3Seq",
+          "note": "One algorithm's hit is noise. The Oropouche study accepted an event only when at least three methods agreed at p < 0.05."
+        },
+        {
+          "step": "If recombination is present, handle it rather than ignore it",
+          "tools": "Gubbins / ClonalFrameML for bacteria; per-segment trees for segmented viruses",
+          "note": "Forcing one tree onto regions with different histories produces a tree that is wrong everywhere and often well supported."
+        },
+        {
+          "step": "Name the resulting unit precisely",
+          "tools": "genotype nomenclature",
+          "note": "For a reassortant, the epidemiological unit is a combination across segments, which a subtype name cannot express."
+        }
+      ],
+      "outputs": [
+        "A yes/no on the single-tree assumption",
+        "Breakpoints and putative parents where events are found",
+        "The correct analytical unit for everything downstream"
+      ],
+      "decides": [
+        "Whether every subsequent phylogenetic and phylodynamic result in the study is admissible",
+        "Whether the finding must be reported at genotype rather than subtype resolution"
+      ],
+      "fails_when": [
+        "It is skipped on a recombining organism, in which case nothing downstream is trustworthy.",
+        "It is run on near-identical outbreak sequences and its silence is read as evidence of absence rather than of insufficient diversity."
+      ],
+      "lessons": [
+        "lesson-01",
+        "lesson-06",
+        "lesson-08"
+      ],
+      "seen_in": [
+        {
+          "grade": "FETCHED",
+          "cite": "Gravier R, et al. *Spatiotemporal diffusion of the 2024 Oropouche outbreak in Cuba.* Nature Medicine (2026).",
+          "url": "https://doi.org/10.1038/s41591-026-04411-9",
+          "what_they_did": "Screened concatenated S, M and L segments with RDP5's nine algorithms before assigning a lineage, accepting events only on ≥3 concordant methods at p < 0.05 — a necessary step for a reassortant orthobunyavirus, and one that establishes the analytical unit used for the rest of the paper."
+        }
+      ]
+    },
+    {
+      "id": "host-editing-filter",
+      "name": "Removing host-edited genomes before estimating a molecular clock",
+      "question": 3,
+      "maturity": "established",
+      "one_line": "Detect and exclude sequences whose changes were written by the host's immune enzymes rather than by the pathogen's own replication.",
+      "answers": "Are the mutations I am about to build a clock from actually the pathogen's evolutionary history?",
+      "needs": [
+        "Per-sequence mutation spectra relative to a reference",
+        "The positions of each change, not just the counts — the clustering pattern is what identifies the process",
+        "Knowledge of which editing enzyme is plausible for this pathogen class"
+      ],
+      "chain": [
+        {
+          "step": "Compute the base-change spectrum per genome",
+          "tools": "counts by substitution type, with sequence context",
+          "note": "APOBEC3 writes C→T in a TC context; ADAR writes A→G, seen as T→C on the strand filovirus genomes are written on; oxidative damage from library prep writes G→T."
+        },
+        {
+          "step": "Look at clustering, not only the base change",
+          "tools": "runs of consecutive affected sites",
+          "note": "This is the decisive clue for ADAR, which is processive and edits short spans. An isolated T→C is ordinary substitution."
+        },
+        {
+          "step": "Exclude on the mechanistic criterion first",
+          "tools": "a stated threshold on excess edited-type changes",
+          "note": "Mechanistic before statistical: it removes sequences for a reason, leaving the blunt outlier filter less to do."
+        },
+        {
+          "step": "Then remove residual phylogenetic outliers, iteratively",
+          "tools": "root-to-tip regression, ±2 SD, re-root, repeat",
+          "note": "Iterate because editing on an internal branch affects multiple tips, so outliers are not independent."
+        },
+        {
+          "step": "Report counts at every stage",
+          "tools": "a cascade",
+          "note": "626 → 594 → 525 lets a reader reconstruct what happened."
+        }
+      ],
+      "outputs": [
+        "A curated alignment",
+        "An unbiased clock rate and therefore an unbiased tMRCA",
+        "A count of how much data the curation cost"
+      ],
+      "decides": [
+        "Whether the dated results of the whole study are believable"
+      ],
+      "fails_when": [
+        "Edited genomes are left in: the clock inflates, tMRCA biases, spurious long branches distort the coalescent growth estimate, and the edits appear homoplastically across unrelated tips.",
+        "The filter is applied so aggressively that a genuinely divergent introduction from an unsampled chain is removed with it.",
+        "It is applied to a pathogen where the editing IS the clock — see the next entry."
+      ],
+      "lessons": [
+        "lesson-02",
+        "lesson-09"
+      ],
+      "seen_in": [
+        {
+          "grade": "FETCHED",
+          "cite": "Wawina-Bokalanga T, Mbala-Kingebeni P, et al. virological.org (2026).",
+          "url": "https://virological.org/t/phylodynamics-and-evolution-of-the-2026-bundibugyo-virus-circulating-in-the-democratic-republic-of-the-congo-insights-from-a-100-day-window-of-genomic-sequencing/1046",
+          "what_they_did": "Excluded 32 of 626 genomes for an excess of T→C changes in short spans (ADAR), then removed 69 root-to-tip outliers iteratively, explicitly because a bout of editing on an internal branch affects multiple tips at once."
+        }
+      ]
+    },
+    {
+      "id": "editing-as-transmission-evidence",
+      "name": "Using a host mutational signature as evidence of sustained human transmission",
+      "question": 1,
+      "maturity": "established",
+      "one_line": "Read the accumulated marks left by human immune enzymes as a record of how much time the lineage has spent in people.",
+      "answers": "Is this sustained human-to-human transmission, or a series of separate spillovers from an animal reservoir?",
+      "needs": [
+        "A pathogen whose host editing is strong and specific enough to count — established for orthopoxviruses and APOBEC3",
+        "A reference point: sequences known to be zoonotic, for comparison",
+        "Nothing else. This is the rare method that needs no contact data and no dense sampling"
+      ],
+      "chain": [
+        {
+          "step": "Classify every substitution by type and sequence context",
+          "tools": "spectrum analysis",
+          "note": "For APOBEC3: C→T (and G→A) enriched in TC dinucleotides."
+        },
+        {
+          "step": "Compare the signature's share against the neutral expectation",
+          "tools": "the proportion of changes that are of the edited type",
+          "note": "A strong excess is the signature."
+        },
+        {
+          "step": "Compare against known-zoonotic sequences of the same clade",
+          "tools": "context sequences",
+          "note": "This is what converts 'high' into 'high relative to what a spillover looks like'."
+        },
+        {
+          "step": "Where the signature is strong enough, use it as the clock as well",
+          "tools": "tip-dated Bayesian phylogenetics",
+          "note": "For mpox this converts a virus far too slow to date into a datable one — but the substitution model is knowingly wrong, since the changes are context-specific, bursty and not independent."
+        }
+      ],
+      "outputs": [
+        "A per-genome measure of cumulative human passage",
+        "For strongly edited lineages, a usable clock where the pathogen has none of its own"
+      ],
+      "decides": [
+        "Whether an outbreak is a zoonotic problem or a human-transmission emergency — a distinction that changed the international response to mpox clade Ib"
+      ],
+      "fails_when": [
+        "It is read as evidence about how THIS case was infected. The signature records the lineage's cumulative history, not the last transmission event.",
+        "The clock rate estimated in one transmission network is transferred to another; it reflects host exposure, not the virus.",
+        "A standard substitution model is fitted without acknowledging that its independence assumption is violated."
+      ],
+      "lessons": [
+        "lesson-02",
+        "lesson-09",
+        "lesson-21"
+      ],
+      "seen_in": [
+        {
+          "grade": "SEARCH",
+          "cite": "*Sustained human outbreak of a new MPXV clade I lineage in eastern Democratic Republic of the Congo.* Nature Medicine (2024).",
+          "url": "https://www.nature.com/articles/s41591-024-03130-3",
+          "what_they_did": "Established clade Ib as sustained human-to-human transmission on the basis of low overall diversity, accumulation of APOBEC3-signature mutations and a large shared deletion — identified from search results during authoring, not read in full."
+        }
+      ]
+    },
+    {
+      "id": "host-state-introductions",
+      "name": "Counting cross-species introductions from host-state reconstruction",
+      "question": 2,
+      "maturity": "established",
+      "one_line": "Treat host species as the trait evolving on the tree, and count the jumps.",
+      "answers": "Did this cross into the new host once and then spread within it, or is it crossing repeatedly?",
+      "needs": [
+        "Sequences from BOTH hosts, sampled at comparable intensity — this is the binding constraint and it is almost never met",
+        "A pathogen with enough clock signal to resolve clades at all",
+        "Honest knowledge of how well the source population is sampled"
+      ],
+      "chain": [
+        {
+          "step": "Assemble sequences from every relevant host",
+          "tools": "reservoir surveillance plus the new host",
+          "note": "The result is bounded by the sparser of the two, not the denser."
+        },
+        {
+          "step": "Build the tree and look at the topology first",
+          "tools": "ML phylogeny",
+          "note": "One monophyletic clade of new-host sequences = one successful jump. Scattered among source-host diversity = repeated jumps. Often visible before any model is fitted."
+        },
+        {
+          "step": "Reconstruct ancestral host states",
+          "tools": "discrete trait analysis, or a structured coalescent where sampling is unequal",
+          "note": "DTA places ancestry where sampling is dense; with an asymmetric design, use a structured model or report a bound."
+        },
+        {
+          "step": "Count transitions and look for spillback",
+          "tools": "Markov jump counts",
+          "note": "Lineages exiting the new host into others change the risk assessment and only genomics sees them."
+        },
+        {
+          "step": "Express the finding at the right naming resolution",
+          "tools": "genotype rather than subtype for reassorting pathogens",
+          "note": ""
+        }
+      ],
+      "outputs": [
+        "A number of independent introductions — usually a minimum, not an estimate",
+        "A date for each",
+        "Evidence of onward transmission within the new host, and of spillback out of it"
+      ],
+      "decides": [
+        "Whether control targets the interface (biosecurity, reservoir contact) or movement within the new host",
+        "Whether surveillance can stand down after the introduction is characterised — it cannot"
+      ],
+      "fails_when": [
+        "The source population is under-sampled, which makes several similar introductions collapse into one apparent clade.",
+        "A past reconstruction is read as a forecast. 'One spillover' describes what happened; it does not bound what will happen next.",
+        "Detection in a host is reported as maintenance by that host — a different claim needing infectivity, duration and vector-contact evidence."
+      ],
+      "lessons": [
+        "lesson-11",
+        "lesson-22"
+      ],
+      "seen_in": [
+        {
+          "grade": "SEARCH",
+          "cite": "*Emergence and interstate spread of highly pathogenic avian influenza A(H5N1) in dairy cattle in the United States.* Science (2024).",
+          "url": "https://doi.org/10.1126/science.adq0900",
+          "what_they_did": "Cattle sequences formed a single clade descending from one bird-derived ancestor, supporting a single spillover of genotype B3.13 in late 2023 — months before detection. A distinct genotype, D1.1, then entered independently in January 2025. Identified from search results, not read in full."
+        }
+      ]
+    },
+    {
+      "id": "lineage-deconvolution",
+      "name": "Deconvolving lineage mixtures from a pooled population sample",
+      "question": 4,
+      "maturity": "established",
+      "one_line": "Estimate which known lineages, and in what proportions, best explain the allele frequencies in a sample that contains many infections at once.",
+      "answers": "What is circulating in this whole catchment, without testing anybody?",
+      "needs": [
+        "A reference set of lineage-defining mutation profiles — this is the hard dependency and it comes from CLINICAL sequencing",
+        "Read-level allele frequencies, not a consensus",
+        "Tolerance for patchy coverage, which is normal in degraded environmental samples"
+      ],
+      "chain": [
+        {
+          "step": "Abandon consensus calling",
+          "tools": "—",
+          "note": "Position-by-position majority across several co-circulating lineages produces a chimera matching no real organism. This is the conceptual move the whole method rests on."
+        },
+        {
+          "step": "Call variants with frequencies from the reads",
+          "tools": "standard mapping and variant calling",
+          "note": ""
+        },
+        {
+          "step": "Solve for the mixture",
+          "tools": "Freyja `demix` against lineage-defining profiles",
+          "note": "Freyja 2 adds growth-rate estimation and robustness across platforms and at low coverage, and extends beyond SARS-CoV-2 to multi-pathogen use."
+        },
+        {
+          "step": "Read the residual, not just the abundances",
+          "tools": "goodness of fit against the site's own baseline",
+          "note": "An elevated residual is what an unmodelled — possibly novel — lineage looks like from the inside. It is the most interesting output and the most ignored."
+        },
+        {
+          "step": "Report as a trend, never as a count",
+          "tools": "—",
+          "note": "Shedding, dilution, rainfall, temperature and transit time stand between signal and prevalence, and none is calibratable in practice."
+        }
+      ],
+      "outputs": [
+        "Relative abundance of known lineages with intervals",
+        "Growth signals for those lineages",
+        "A fit residual that flags the presence of something unmodelled"
+      ],
+      "decides": [
+        "Whether a known variant has arrived in a catchment, ahead of clinical detection",
+        "Where to direct clinical sequencing effort"
+      ],
+      "fails_when": [
+        "It is expected to find NOVEL lineages. Deconvolution matches against a reference set; something with no profile is missed or misassigned to its nearest relative. It detects arrival of the known well and emergence of the unknown poorly — close to the inverse of what is usually assumed.",
+        "The signal is converted into a case count.",
+        "The reference set is treated as independent of clinical surveillance; it is built from it, so it inherits its blind spots."
+      ],
+      "lessons": [
+        "lesson-05",
+        "lesson-24"
+      ],
+      "seen_in": [
+        {
+          "grade": "SEARCH",
+          "cite": "*Real-time, multi-pathogen wastewater genomic surveillance with Freyja 2.* medRxiv 2025.07.26.25332245.",
+          "url": "https://www.medrxiv.org/content/10.1101/2025.07.26.25332245v1",
+          "what_they_did": "Extended lineage deconvolution to a real-time multi-pathogen framework across SARS-CoV-2, mpox and H5N1, demonstrating robustness across platforms and at low coverage. Identified from search results, not read in full."
+        }
+      ]
+    },
+    {
+      "id": "marker-resistance-surveillance",
+      "name": "Marker-based resistance surveillance against a graded catalogue",
+      "question": 4,
+      "maturity": "routine",
+      "one_line": "Read a defined set of positions against a curated genotype–phenotype catalogue, and act on a pre-specified threshold.",
+      "answers": "Is the drug still going to work, and is the diagnostic still going to see it?",
+      "needs": [
+        "A curated catalogue linking mutations to phenotype with GRADED confidence — the rate-limiting artefact, and most pathogens have none",
+        "A representative sampling frame, because the output is a proportion",
+        "An action threshold agreed BEFORE the data are seen, and a named decision-maker"
+      ],
+      "chain": [
+        {
+          "step": "Define the panel from the catalogue, not from the literature",
+          "tools": "WHO mutation catalogue (TB); curated marker lists (malaria)",
+          "note": "The catalogue is what converts a sequence into a susceptibility prediction with a stated evidence level."
+        },
+        {
+          "step": "Sequence the panel directly from specimen where possible",
+          "tools": "targeted NGS from sputum; targeted genotyping from blood spots",
+          "note": "No culture wait, works at low bacillary load, cheap enough to be routine — and deep enough to see minority populations."
+        },
+        {
+          "step": "Call variants with frequencies, not a consensus",
+          "tools": "deep amplicon calling",
+          "note": "Heteroresistance is the clinically relevant signal and a consensus genome hides it."
+        },
+        {
+          "step": "Interpret strictly by catalogue grade",
+          "tools": "validated vs candidate vs uncertain",
+          "note": "An uncertain-significance variant is reported and flagged for phenotypic testing. It is not a resistance call and must not change a regimen alone."
+        },
+        {
+          "step": "Compare the frequency against the pre-specified threshold",
+          "tools": "the decision rule",
+          "note": ""
+        }
+      ],
+      "outputs": [
+        "A per-sample susceptibility prediction with confidence",
+        "A population frequency for each marker",
+        "Minority-population detection where depth allows"
+      ],
+      "decides": [
+        "Whether to change first-line treatment",
+        "Whether to switch a national diagnostic — the pfhrp2/3 case is the cleanest example in the field of a genomic result with a named decision and a pre-set threshold",
+        "Where to concentrate therapeutic efficacy studies"
+      ],
+      "fails_when": [
+        "Absence of a known marker is read as susceptibility. Mechanisms outside the catalogue produce resistant organisms with 'susceptible' genotypes; genotypic sensitivity is below 1.",
+        "The frequency comes from referral isolates enriched for treatment failure and is then used as a national estimate.",
+        "Candidate and validated markers are treated alike."
+      ],
+      "lessons": [
+        "lesson-06",
+        "lesson-23"
+      ],
+      "seen_in": [
+        {
+          "grade": "SEARCH",
+          "cite": "WHO. *Catalogue of mutations in Mycobacterium tuberculosis complex and their association with drug resistance*, 2nd ed (2023).",
+          "url": "https://www.who.int/publications/i/item/9789240082410",
+          "what_they_did": "Built from over 52,000 isolates with matched whole genome sequencing and phenotypic testing, grading mutations for 13 medicines. The model artefact for this entire method. Identified from search results, not read in full."
+        },
+        {
+          "grade": "SEARCH",
+          "cite": "MalariaGEN Pf8 open dataset (June 2025; 33,325 samples).",
+          "url": "https://www.malariagen.net",
+          "what_they_did": "The reference background against which a national kelch13 or pfhrp2/3 survey is interpreted."
+        }
+      ]
+    },
+    {
+      "id": "relapse-vs-reinfection",
+      "name": "Relapse or reinfection, from paired isolates in one patient",
+      "question": 1,
+      "maturity": "routine",
+      "one_line": "Sequence the organism from two episodes in the same person and compare them with each other.",
+      "answers": "Did the original infection persist and regrow, or is this a new infection?",
+      "needs": [
+        "Two isolates from the same patient, separated in time — and an archive discipline that keeps the first one",
+        "Enough within-species diversity that two unrelated infections would look different",
+        "Nothing about population sampling"
+      ],
+      "chain": [
+        {
+          "step": "Recover and sequence the stored first-episode isolate",
+          "tools": "whatever the organism needs",
+          "note": "The whole method depends on the first sample having been kept. That is an archiving decision made years earlier."
+        },
+        {
+          "step": "Sequence the second episode",
+          "tools": "—",
+          "note": ""
+        },
+        {
+          "step": "Compare the pair against the local background distribution",
+          "tools": "SNP distance, with the background from unlinked contemporaneous isolates",
+          "note": "Near-identity = relapse. A distance typical of unlinked isolates = reinfection."
+        },
+        {
+          "step": "Check for a mixed initial infection",
+          "tools": "read-level minority variants in the first isolate",
+          "note": "A minority population that later dominates looks like reinfection on consensus and is not."
+        }
+      ],
+      "outputs": [
+        "A relapse/reinfection determination for that patient",
+        "Aggregated across patients, an estimate of treatment failure versus re-exposure"
+      ],
+      "decides": [
+        "Whether the problem is the regimen or the exposure — which points at completely different interventions",
+        "Follow-up duration and cure definitions in trials"
+      ],
+      "fails_when": [
+        "The first isolate was never archived, which is the usual reason this cannot be done.",
+        "The organism is so clonal that two unrelated infections are indistinguishable.",
+        "The comparison is made on consensus genomes when the first episode was a mixed infection."
+      ],
+      "lessons": [
+        "lesson-02",
+        "lesson-12",
+        "lesson-25"
+      ],
+      "seen_in": [
+        {
+          "grade": "SEARCH",
+          "cite": "*Whole genome sequencing shows sleeping sickness relapse is due to parasite regrowth and not reinfection.*",
+          "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4721075/",
+          "what_they_did": "Settled the question for gambiense HAT — a statement about drug efficacy and follow-up duration rather than about transmission. The same design is standard in TB and is the genotyping endpoint in every antimalarial efficacy trial. Identified from search results, not read in full."
+        }
+      ]
+    },
+    {
+      "id": "import-vs-residual",
+      "name": "Importation or residual transmission, against a baseline archive",
+      "question": 2,
+      "maturity": "routine",
+      "one_line": "Place a new case against sequences banked from that focus before it was cleared.",
+      "answers": "After elimination, is this case an import, or transmission that was never actually interrupted?",
+      "needs": [
+        "**A historical sequence archive from that focus, collected while cases still existed.** There is no substitute and it cannot be created retrospectively.",
+        "Contemporary sequences from plausible source areas",
+        "Enough population structure for a focus to be distinguishable at all"
+      ],
+      "chain": [
+        {
+          "step": "Bank isolates, extracts and — where the reservoir demands it — the right tissue, while cases still exist",
+          "tools": "an archive with the minimum metadata set",
+          "note": "This is the method's real step, and it happens years before the question is asked."
+        },
+        {
+          "step": "Sequence the new case",
+          "tools": "—",
+          "note": ""
+        },
+        {
+          "step": "Place it against both the local historical lineage and external contemporary sequences",
+          "tools": "phylogenetic placement",
+          "note": "Falls within the local historical lineage = residual transmission. Clusters with sequences from elsewhere = importation."
+        },
+        {
+          "step": "State the conclusion at the strength the data support",
+          "tools": "the three strengths — excludes / consistent with / cannot distinguish",
+          "note": "In a low-diversity organism this will often be 'cannot distinguish', and saying so is the correct output."
+        }
+      ],
+      "outputs": [
+        "An import-versus-residual determination, or an honest statement that the data cannot separate them"
+      ],
+      "decides": [
+        "Whether an elimination clock resets",
+        "Whether active screening resumes in a focus that had stood down",
+        "Whether the response is a border question or a domestic one"
+      ],
+      "fails_when": [
+        "No baseline exists — the commonest failure, and a permanent one.",
+        "The archive is of the wrong compartment: for gambiense HAT, a blood-only bank misses the dermal reservoir that carries the parasites most relevant to sustained transmission.",
+        "The organism is too homogeneous for focus-level structure to exist."
+      ],
+      "lessons": [
+        "lesson-12",
+        "lesson-25"
+      ],
+      "seen_in": [
+        {
+          "grade": "SEARCH",
+          "cite": "Franco JR, et al. *The elimination of human African trypanosomiasis: monitoring progress towards the 2021–2030 WHO road map targets.* PLOS NTD (2024).",
+          "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11073784/",
+          "what_they_did": "Sets the verification criterion this method serves — zero reported cases for five consecutive years — which is precisely the window in which a single new case must be classified. Identified from search results, not read in full."
+        }
+      ]
+    }
+  ]
+}

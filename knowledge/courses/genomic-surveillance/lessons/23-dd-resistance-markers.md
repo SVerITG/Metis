@@ -97,7 +97,7 @@ Different from tree surveillance, and worth learning separately.
 - *Targeted Next-Generation Sequencing in Drug-Resistant Tuberculosis: WHO Guidance and Practical Implementation Priorities*, **Biomedicines** 14(1):93 (2026)
 - *Targeted next-generation sequencing to diagnose drug-resistant tuberculosis: a systematic review and meta-analysis*, **Lancet Infectious Diseases** (2024)
 - *Understanding the global rise of artemisinin resistance: insights from over 100,000 Plasmodium falciparum samples*, **eLife** 105544
-- MalariaGEN **Pf8** open dataset (June 2025; 33,325 samples) — malariagen.net
+- MalariaGEN **Pf8** open dataset (June 2025; 33,325 samples) — [malariagen.net](https://www.malariagen.net)
 - *Very low prevalence of validated kelch13 mutations and absence of hrp2/3 double gene deletions in South African malaria-eliminating districts (2022–2024)*
 
 ⚠ Leads, not verified citations. See `sources/source-ledger.md`.

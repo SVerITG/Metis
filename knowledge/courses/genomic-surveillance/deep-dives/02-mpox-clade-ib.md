@@ -86,7 +86,7 @@ Subsequent detections traced its spread internationally: a case in **Canada in N
 
 ## 8 · Read more
 
-- *Sustained human outbreak of a new MPXV clade I lineage in eastern Democratic Republic of the Congo*, **Nature Medicine** (2024) — nature.com/articles/s41591-024-03130-3
+- *Sustained human outbreak of a new MPXV clade I lineage in eastern Democratic Republic of the Congo*, **Nature Medicine** (2024) — [nature.com/articles/s41591-024-03130-3](https://www.nature.com/articles/s41591-024-03130-3)
 - *Nationwide Mpox Genomic Surveillance Reveals Clade Ib Introductions, APOBEC3-Driven Evolution, and Terminal Deletions*, medRxiv 2026.07.15.26357894
 - *Emergence of Clade Ib Monkeypox Virus — Current State of Evidence*, **Emerging Infectious Diseases** 31(8), August 2025
 - *Molecular detection and isolation of clade Ib monkeypox virus, Canada, November 2024*

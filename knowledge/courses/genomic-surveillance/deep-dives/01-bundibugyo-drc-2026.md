@@ -210,13 +210,13 @@ At the time of writing (late August 2026) the outbreak is ongoing. The first Bun
 
 ## 11 · Read more
 
-- The post itself — virological.org/t/…/1046 — with the PearTree links.
+- [The post itself](https://virological.org/t/phylodynamics-and-evolution-of-the-2026-bundibugyo-virus-circulating-in-the-democratic-republic-of-the-congo-insights-from-a-100-day-window-of-genomic-sequencing/1046) on virological.org — with the PearTree links.
 - WHO Disease Outbreak News **2026-DON602**, and the AFRO outbreak page for case counts.
 - *Bundibugyo virus disease outbreak in Ituri, Democratic Republic of the Congo*, The Lancet (2026).
 - *Bundibugyo Virus Disease in 2026 — Clinical and Public Health Responses*, NEJM (NEJMra2607216).
-- ARTIC Network `amplicon-nf` — github.com/artic-network/amplicon-nf
+- ARTIC Network `amplicon-nf` — [github.com/artic-network/amplicon-nf](https://github.com/artic-network/amplicon-nf) and [artic.network/resources/amplicon-nf](https://artic.network/resources/amplicon-nf)
 - BEAST X — Baele, Ji et al., *Nature Methods* (2025).
 - IQ-TREE 3 — *Molecular Biology and Evolution* 43(5):msag117 (2026).
-- Pathoplexus — pathoplexus.org
+- Pathoplexus — [pathoplexus.org](https://pathoplexus.org)
 
 ⚠ Every reference above is a lead. The virological post was read in full during authoring; the others were identified from search results and their specific claims have not each been verified against the source. See `sources/source-ledger.md`.

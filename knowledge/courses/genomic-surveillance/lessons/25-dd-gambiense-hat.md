@@ -134,7 +134,7 @@ And the specimen point from §1 returns here with force: **a blood-only archive 
 - Franco JR et al. *The elimination of human African trypanosomiasis: monitoring progress towards the 2021–2030 WHO road map targets.* PLOS NTD (2024) — PMC11073784
 - *Do cryptic reservoirs threaten gambiense-sleeping sickness elimination?* **Trends in Parasitology** (2018) — the framing paper for §1
 - *The elimination of Trypanosoma brucei gambiense? Challenges of reservoir hosts and transmission cycles: expect the unexpected.* One Health (2019)
-- Capewell P et al. *The skin is a significant but overlooked anatomical reservoir for vector-borne African trypanosomes.* **eLife** (2016) — elifesciences.org/articles/17716
+- Capewell P et al. *The skin is a significant but overlooked anatomical reservoir for vector-borne African trypanosomes.* **eLife** (2016) — [elifesciences.org/articles/17716](https://elifesciences.org/articles/17716)
 - *Extravascular dermal trypanosomes in suspected and confirmed cases of gambiense HAT.* **Clinical Infectious Diseases** (2021)
 - *Dermal trypanosomes in seropositive suspects of gambiense HAT in Côte d'Ivoire.* **PLOS NTD** (2025) — journals.plos.org/plosntds, PMC12404639; and the Guinea prevalence study, PLOS NTD (2024), PMC11361743
 - *Deep kinetoplast genome analyses result in a novel molecular assay for detecting T. b. gambiense-specific minicircles.* **NAR Genomics and Bioinformatics** 2022;4(4):lqac081

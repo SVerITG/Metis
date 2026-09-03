@@ -110,5 +110,8 @@
   "source_ledger": "sources/source-ledger.md — CROSSREF-VERIFIED / MARKED-VERIFIED / FLAGGED / SEARCH / STANDING",
   "maintenance_2026_08_28": "Prose reflow fixed with tools/unwrap_course_prose.py (1,501 forced line breaks and 379 orphan list blocks; learning objectives had been rendering as flat text with literal dashes). 5 duplicated author lists removed, left by an earlier pass that expanded short author forms without deleting them. DOIs verified. Source ledger added.",
   "phases_note": "Completed 2026-08-29. The hand-written block listed 5 of 16 lessons, leaving 11 in no phase at all; it is now derived from the per-lesson `phase` field in lessons.json, which was always complete.",
-  "coverage_note": "Audit 2026-08-29 found lesson-00, lesson-20 and lesson-21 with empty quiz arrays, and lesson-20/21 with no qbank entry — a learner reaching any of the three got no self-check, and the two deep dives contributed nothing to the review queue. Filled: every lesson now carries both. Option order for the new questions was shuffled with a fixed seed; the existing 97 were left untouched because they already audit clean."
+  "coverage_note": "Audit 2026-08-29 found lesson-00, lesson-20 and lesson-21 with empty quiz arrays, and lesson-20/21 with no qbank entry — a learner reaching any of the three got no self-check, and the two deep dives contributed nothing to the review queue. Filled: every lesson now carries both. Option order for the new questions was shuffled with a fixed seed; the existing 97 were left untouched because they already audit clean.",
+  "pedagogy_mode": "reading",
+  "exercises_shown": false,
+  "exercises_note": "Reading course, not drill. Has no exercises and should not get any — see feedback_course_pedagogy_split, whose description line already said 'deep dives, 60-second narratives and visuals, not exercises'."
 }

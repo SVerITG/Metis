@@ -3,7 +3,7 @@
 A four-day short course, plus a fifth day of recent applications, for a senior
 epidemiologist with no molecular biology or bioinformatics background.
 
-**22 lessons · ~24 hours · 109 quiz questions · 110 exercises · 110 spaced-repetition cards · ~49,000 words**
+**22 lessons · ~24 hours · 110 spaced-repetition cards · 11 method recipes · ~49,000 words**
 
 ---
 
@@ -84,25 +84,21 @@ Its conclusion is the one operational recommendation in the whole course: **arch
 elimination.** Once a focus reaches zero, import-versus-residual becomes the only question that
 matters, and it is answerable only against a baseline that had to be collected beforehand.
 
-## Exercises
+## Not a drill course
 
-Five rungs per lesson, following procedural memory #11 rather than inventing a format:
+This is a **reading course** — `course.json → pedagogy_mode: "reading"`. The term for it is *lazy
+learning*: you read it, it sticks, there is no homework. Only the statistics/multilevel course
+is drill.
 
-| Rung | Type | Why it is there |
-|---|---|---|
-| **A** | Conceptual, no tools | Answerable straight after reading, with nothing open |
-| **B** | **Read the output** | Real tool output — a Tracer table, an IQ-TREE log, a Freyja demix, a SNP matrix — with three questions. **The most important rung**: in real work you meet somebody else's output long before you produce any of your own |
-| **C** | Three of six | Six statements, exactly three correct, +1 / &minus;1 / 0 scoring. The negative marking forces careful reading instead of guessing |
-| **D** | Scaffolded | Most of the work given; complete one specific thing and interpret it |
-| **E** | Connect to your work | Open-ended, always last, on data you actually have |
+An A–E exercise ladder was written for it (110 items) before that was settled, following
+procedural memory #11 — which turns out to be scoped to drill courses, and now says so. The
+ladder is kept in `lessons.json` and **is not rendered**; flip `exercises_shown` in
+`course.json` to bring it back, or say the word and it goes.
 
-Rung D is adapted from the recorded ladder's "guided R, scaffolded" — this course does not
-teach execution, so D is a scaffolded *reading or arithmetic* task on the same material.
-
-They are validated at build time. `_build_manifest.py` refuses to write a manifest where a C
-rung has other than exactly three correct statements of six, where guidance concedes its own
-exercise is broken, or where a literal escape survived into the text. All three were real
-defects in the first build, and none was visible by reading the source.
+What remains is what suits reading: the prose, the deep dives, the **110 spaced-repetition
+cards** (which are lazy learning by definition — the queue does the work), and the Methodology
+library. Quiz questions stay in the manifest for the learning layer but are not surfaced in the
+reader.
 
 ## Files
 
