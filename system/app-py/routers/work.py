@@ -23,6 +23,8 @@ from db import db_execute, db_query, db_scalar
 
 log = logging.getLogger("metis.work")
 
+_wlog = logging.getLogger(__name__)
+
 router = APIRouter()
 templates = Jinja2Templates(
     directory=str(Path(__file__).parent.parent / "templates")
@@ -308,6 +310,75 @@ def _parse_launchers(p: dict) -> list:
     return ["claude_code", "claude_chat", "claude_cowork"]
 
 
+# ── Project categories as a first-class thing ────────────────────────────────
+# They used to exist ONLY as whatever strings happened to sit in
+# `projects.category`, discovered with SELECT DISTINCT. That is enough to filter
+# by and not enough to own: you cannot rename one, merge two, reorder them, or
+# create an empty one to move projects into — and a category that disappears the
+# moment its last project leaves cannot be a place you put things.
+#
+# The consequence was visible in the data: 5 of 9 categories held exactly ONE
+# project and 2 projects held none, with no way to fix either from the page.
+#
+# The table carries the NAME as its key rather than an id, so `projects.category`
+# stays readable and every existing row keeps working untouched. Renaming is
+# therefore a two-step write, which is the price of not migrating 18 rows to
+# integer keys for no reader's benefit.
+_CATEGORY_DDL = """
+CREATE TABLE IF NOT EXISTS project_categories (
+    name          TEXT PRIMARY KEY,
+    display_order INTEGER NOT NULL DEFAULT 100,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+)
+"""
+
+
+def _ensure_categories() -> None:
+    """Create the table and adopt whatever categories the projects already use.
+
+    Idempotent, and deliberately additive: seeding never removes a category the
+    researcher created, and never renames one. A project whose category is not in the
+    table is still shown — under its own heading — because dropping it would
+    hide work.
+    """
+    try:
+        db_execute(_CATEGORY_DDL)
+        existing = {r["name"] for r in (db_query("SELECT name FROM project_categories") or [])}
+        rows = db_query(
+            "SELECT DISTINCT TRIM(category) AS c FROM projects "
+            "WHERE category IS NOT NULL AND TRIM(category) != ''"
+        ) or []
+        for i, r in enumerate(sorted({r["c"] for r in rows if r["c"]}, key=str.lower)):
+            if r not in existing:
+                db_execute(
+                    "INSERT OR IGNORE INTO project_categories (name, display_order) VALUES (?, ?)",
+                    (r, (i + 1) * 10),
+                )
+    except Exception as exc:
+        _wlog.warning("project_categories unavailable: %s", exc)
+
+
+def _category_order() -> list[str]:
+    _ensure_categories()
+    rows = db_query(
+        "SELECT name FROM project_categories ORDER BY display_order, name COLLATE NOCASE"
+    ) or []
+    return [r["name"] for r in rows]
+
+
+def _activity_band(quiet_days) -> str:
+    """How alive a project is, in three states rather than two.
+
+    The researcher asked for "active and not so active". The data needs a third: four
+    projects have never been opened at all, which is not the same as one that was
+    busy in June and has gone quiet. A fortnight is the boundary because it is
+    the span in which "I was just working on this" stops being true.
+    """
+    if quiet_days is None:
+        return "never"
+    return "hot" if quiet_days <= 14 else "cold"
+
+
 @router.get("/api/partial/work/projects", response_class=HTMLResponse)
 async def work_projects(request: Request, filter: str = ""):
     """Project list, optionally filtered.
@@ -362,10 +433,62 @@ async def work_projects(request: Request, filter: str = ""):
                 p["quiet_days"] = (today - datetime.date.fromisoformat(stamp)).days
             except ValueError:
                 pass
+    # ── GROUP BY CATEGORY, with each group's own weight ──────────────────────
+    # Sixteen cards in one flat two-column grid, ordered by a display_order
+    # nobody set, is a list you scan rather than a structure you read. Grouped,
+    # each heading carries what the group actually costs — how many projects and
+    # how many open tasks — so a collapsed section still tells you whether to
+    # open it.
+    #
+    # Uncategorised comes LAST and is named, not hidden: two projects are in it,
+    # and a bucket you cannot see is a bucket you never empty.
+    projects = projects or []
+    open_by_project = {
+        r["pid"]: r["n"] for r in (db_query(
+            "SELECT project_id AS pid, COUNT(*) AS n FROM tasks "
+            "WHERE status != 'done' AND project_id IS NOT NULL GROUP BY project_id"
+        ) or [])
+    }
+    for p in projects:
+        p["open_tasks"] = open_by_project.get(p.get("id"), 0)
+        p["activity"] = _activity_band(p.get("quiet_days"))
+
+    UNCAT = "Uncategorised"
+    buckets: dict[str, list] = {}
+    for p in projects:
+        buckets.setdefault((p.get("category") or "").strip() or UNCAT, []).append(p)
+
+    # EMPTY CATEGORIES STILL GET A HEADING — when the view is unfiltered.
+    # Without this, pressing "New category" appeared to do nothing: the category
+    # was created, the zone re-rendered, and it was invisible because it held no
+    # projects. Which also made the whole point of a first-class category
+    # unreachable — you could not create a home and then move things into it.
+    #
+    # Only when unfiltered, though. Under a filter the empty sections are noise:
+    # you asked to see one category, not the nine that do not match.
+    show_empty = f in ("", "active", "all")
+    ordered = [c for c in _category_order() if c in buckets or show_empty]
+    # A category present on a project but not in the table still gets a heading —
+    # seeding is additive and must never hide work.
+    ordered += sorted((c for c in buckets if c not in ordered and c != UNCAT), key=str.lower)
+    if UNCAT in buckets:
+        ordered.append(UNCAT)
+
+    groups = [{
+        "name": c,
+        "slug": re.sub(r"[^a-z0-9]+", "-", c.lower()).strip("-") or "uncategorised",
+        "is_uncategorised": c == UNCAT,
+        "projects": buckets.get(c, []),
+        "n_projects": len(buckets.get(c, [])),
+        "n_open": sum(x["open_tasks"] for x in buckets.get(c, [])),
+        "n_hot": sum(1 for x in buckets.get(c, []) if x["activity"] == "hot"),
+    } for c in ordered]
+
     return templates.TemplateResponse(
         request,
         "partials/work_projects.html",
-        {"projects": projects},
+        {"projects": projects, "groups": groups,
+         "all_categories": _category_order(), "uncat_label": UNCAT},
     )
 
 
@@ -519,6 +642,192 @@ async def project_categories():
         "WHERE category IS NOT NULL AND category != '' ORDER BY category"
     ) or []
     return JSONResponse({"categories": [r["category"] for r in rows]})
+
+
+# ── Category management ──────────────────────────────────────────────────────
+# Every one of these keeps `projects.category` and `project_categories` in step.
+# They are separate writes rather than a foreign key, which means each operation
+# has to do both halves or neither — so each returns what it actually changed,
+# and none of them silently leaves a project pointing at a category that is gone.
+
+
+def _count_in_category(name: str) -> int:
+    """How many projects sit in a category right now.
+
+    Counted BEFORE the write, because `db_execute` returns None — assigning its
+    result to a variable called `moved` produced an endpoint that reported
+    `"moved": null` while claiming to say how many projects it had touched.
+    """
+    return db_scalar(
+        "SELECT COUNT(*) FROM projects WHERE TRIM(COALESCE(category,''))=?",
+        (name,), default=0) or 0
+
+
+@router.get("/api/project-category/list")
+async def project_category_list():
+    """Categories in display order, each with what it holds."""
+    _ensure_categories()
+    rows = db_query(
+        "SELECT c.name, c.display_order, "
+        "  (SELECT COUNT(*) FROM projects p "
+        "     WHERE TRIM(COALESCE(p.category,'')) = c.name AND p.status='active') AS n_projects "
+        "FROM project_categories c ORDER BY c.display_order, c.name COLLATE NOCASE"
+    ) or []
+    uncat = db_scalar(
+        "SELECT COUNT(*) FROM projects WHERE status='active' "
+        "AND TRIM(COALESCE(category,'')) = ''", default=0) or 0
+    return JSONResponse({"status": "ok", "categories": rows, "uncategorised": uncat})
+
+
+@router.post("/api/project-category/create")
+async def project_category_create(request: Request):
+    """Create a category, which may legitimately be empty.
+
+    An empty category has to be creatable, or there is nowhere to move the first
+    project TO — which is the whole reason these stopped being SELECT DISTINCT.
+    """
+    data = await request.json()
+    name = (data.get("name") or "").strip()
+    if not name:
+        return JSONResponse({"status": "error", "message": "A name is required"}, status_code=400)
+    if len(name) > 60:
+        return JSONResponse({"status": "error", "message": "That name is too long"}, status_code=400)
+    _ensure_categories()
+    clash = db_query("SELECT name FROM project_categories WHERE name = ? COLLATE NOCASE", (name,))
+    if clash:
+        return JSONResponse({"status": "error",
+                             "message": f"“{clash[0]['name']}” already exists"}, status_code=409)
+    nxt = (db_scalar("SELECT MAX(display_order) FROM project_categories", default=0) or 0) + 10
+    db_execute("INSERT INTO project_categories (name, display_order) VALUES (?, ?)", (name, nxt))
+    return JSONResponse({"status": "ok", "name": name})
+
+
+@router.post("/api/project-category/rename")
+async def project_category_rename(request: Request):
+    """Rename a category AND every project pointing at it, in that order.
+
+    Both halves or neither: renaming the row without moving the projects would
+    orphan them under a heading that no longer exists, and they would silently
+    reappear as an unmanaged category on the next render.
+    """
+    data = await request.json()
+    old = (data.get("from") or "").strip()
+    new = (data.get("to") or "").strip()
+    if not old or not new:
+        return JSONResponse({"status": "error", "message": "Both names are required"}, status_code=400)
+    if old == new:
+        return JSONResponse({"status": "ok", "moved": 0, "note": "unchanged"})
+    _ensure_categories()
+    if db_query("SELECT name FROM project_categories WHERE name = ? COLLATE NOCASE", (new,)):
+        return JSONResponse({"status": "error",
+                             "message": f"“{new}” already exists — merge into it instead"},
+                            status_code=409)
+    order = db_scalar("SELECT display_order FROM project_categories WHERE name=?", (old,), default=100)
+    db_execute("DELETE FROM project_categories WHERE name=?", (old,))
+    db_execute("INSERT OR REPLACE INTO project_categories (name, display_order) VALUES (?, ?)",
+               (new, order))
+    moved = _count_in_category(old)
+    db_execute("UPDATE projects SET category=? WHERE TRIM(COALESCE(category,''))=?", (new, old))
+    return JSONResponse({"status": "ok", "from": old, "to": new, "moved": moved})
+
+
+@router.post("/api/project-category/merge")
+async def project_category_merge(request: Request):
+    """Move every project from one category into another, then drop the empty one.
+
+    This is the operation the researcher's data most needs: five categories held a single
+    project each, which is a taxonomy that sorts nothing.
+    """
+    data = await request.json()
+    src = (data.get("from") or "").strip()
+    dst = (data.get("into") or "").strip()
+    if not src or not dst:
+        return JSONResponse({"status": "error", "message": "Both names are required"}, status_code=400)
+    if src == dst:
+        return JSONResponse({"status": "error", "message": "Those are the same category"}, status_code=400)
+    _ensure_categories()
+    if not db_query("SELECT name FROM project_categories WHERE name=?", (dst,)):
+        return JSONResponse({"status": "error", "message": f"“{dst}” does not exist"}, status_code=404)
+    moved = _count_in_category(src)
+    db_execute("UPDATE projects SET category=? WHERE TRIM(COALESCE(category,''))=?", (dst, src))
+    db_execute("DELETE FROM project_categories WHERE name=?", (src,))
+    return JSONResponse({"status": "ok", "from": src, "into": dst, "moved": moved})
+
+
+@router.post("/api/project-category/delete")
+async def project_category_delete(request: Request):
+    """Remove a category. Its projects become uncategorised rather than vanishing.
+
+    Refuses silently-destructive behaviour: a project must never disappear
+    because its heading did, so this reports how many it uncategorised and they
+    show up under the Uncategorised group immediately.
+    """
+    data = await request.json()
+    name = (data.get("name") or "").strip()
+    if not name:
+        return JSONResponse({"status": "error", "message": "A name is required"}, status_code=400)
+    _ensure_categories()
+    freed = _count_in_category(name)
+    db_execute("UPDATE projects SET category='' WHERE TRIM(COALESCE(category,''))=?", (name,))
+    db_execute("DELETE FROM project_categories WHERE name=?", (name,))
+    return JSONResponse({"status": "ok", "name": name, "uncategorised": freed})
+
+
+@router.post("/api/project-category/reorder")
+async def project_category_reorder(request: Request):
+    """Set the order of the category sections.
+
+    Accepts either a full `order` list, or a single `name` plus `direction`
+    ("up"/"down") so the page can offer one-click nudges without shipping a
+    drag library.
+    """
+    data = await request.json()
+    _ensure_categories()
+    names = [r["name"] for r in (db_query(
+        "SELECT name FROM project_categories ORDER BY display_order, name COLLATE NOCASE") or [])]
+
+    order = data.get("order")
+    if isinstance(order, list) and order:
+        names = [n for n in order if n in names] + [n for n in names if n not in order]
+    else:
+        name = (data.get("name") or "").strip()
+        direction = (data.get("direction") or "").strip().lower()
+        if name not in names or direction not in ("up", "down"):
+            return JSONResponse({"status": "error",
+                                 "message": "Need an order list, or a name plus up/down"},
+                                status_code=400)
+        i = names.index(name)
+        j = i - 1 if direction == "up" else i + 1
+        if 0 <= j < len(names):
+            names[i], names[j] = names[j], names[i]
+
+    for i, n in enumerate(names):
+        db_execute("UPDATE project_categories SET display_order=? WHERE name=?", ((i + 1) * 10, n))
+    return JSONResponse({"status": "ok", "order": names})
+
+
+@router.post("/api/project/{project_id}/move-category")
+async def project_move_category(project_id: str, request: Request):
+    """Move one project to another category — the control that did not exist.
+
+    `/api/project/update` has always accepted `category`; nothing on any surface
+    exposed it, so the only way to re-file a project was to edit the database.
+    An unknown category is created rather than rejected: re-filing and inventing
+    a home for something are the same gesture in practice.
+    """
+    data = await request.json()
+    target = (data.get("category") or "").strip()
+    if not db_query("SELECT project_id FROM projects WHERE project_id=?", (project_id,)):
+        return JSONResponse({"status": "error", "message": "Project not found"}, status_code=404)
+    _ensure_categories()
+    if target and not db_query(
+            "SELECT name FROM project_categories WHERE name=? COLLATE NOCASE", (target,)):
+        nxt = (db_scalar("SELECT MAX(display_order) FROM project_categories", default=0) or 0) + 10
+        db_execute("INSERT OR IGNORE INTO project_categories (name, display_order) VALUES (?, ?)",
+                   (target, nxt))
+    db_execute("UPDATE projects SET category=? WHERE project_id=?", (target, project_id))
+    return JSONResponse({"status": "ok", "project_id": project_id,
+                         "category": target or None})
 
 
 @router.post("/api/project/scan/{project_id}")

@@ -1492,6 +1492,61 @@ body.is-dormant { overflow: hidden; }
 }
 .focus-none .u-link { margin-left: auto; font-size: 11px; }
 
+/* A `.tag` that is also a control. The vocabulary says a bordered button is a
+   control and plain text is a category — this one is both, so it stays plain
+   until hovered and then shows the border that means "you can press this".
+   `.tag--needs` marks the absence: an uncategorised project needs the control
+   more than a filed one, so it is the version that is visible at rest. */
+.tag--edit { background: none; border: 1px solid transparent; cursor: pointer; font: inherit; padding: 0 3px; transition: border-color 120ms, color 120ms; }
+.tag--edit:hover, .tag--edit:focus-visible { border-color: var(--m-rule-strong); color: var(--m-ink); }
+.tag--needs { border-color: var(--m-rule-strong); border-style: dashed; color: var(--m-ochre-deep); }
+.tag--needs:hover { border-color: var(--m-accent); color: var(--m-accent); }
+
+/* ── Work: project categories as collapsible sections ──────────────────────
+   Added 2026-09-03. The heading is a control AND a summary: it carries the
+   group's weight so a closed section is still informative, and its tools are
+   buttons inside a <summary>, which needs `event.preventDefault()` on each or
+   activating one also toggles the disclosure. (A button in a summary is a
+   keyboard trap for the same reason the Dispatch mark-all-seen sits in the
+   body — but here the tools ARE about the section itself, so they belong in
+   its header and the guard is the price.) */
+.cat-sec { border: 1px solid var(--m-rule); border-radius: var(--m-radius); background: var(--m-surface); margin-bottom: 14px; overflow: hidden; }
+.cat-sec--uncat { border-style: dashed; border-color: var(--m-rule-strong); }
+.cat-sum { list-style: none; cursor: pointer; display: flex; align-items: baseline; gap: 12px; padding: 10px 14px; background: var(--m-surface-2); }
+.cat-sum::-webkit-details-marker { display: none; }
+.cat-sum::before { content: "\25B8"; color: var(--m-muted); font-size: 10px; flex: none; }
+.cat-sec[open] > .cat-sum::before { content: "\25BE"; }
+.cat-sum:hover .cat-name { color: var(--m-ink); }
+.cat-sum:focus-visible { outline: 2px solid var(--m-accent); outline-offset: -2px; }
+.cat-name { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--m-muted); }
+.cat-sec--uncat .cat-name { color: var(--m-ochre-deep); }
+/* "live" is the rare state here — three of sixteen projects — so it is the one
+   that gets colour. The most common state stays quietest. */
+.cat-live { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--m-ok); border: 1px solid var(--m-ok); border-radius: var(--m-radius-sm); padding: 0 5px; flex: none; }
+.cat-count { font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--m-muted-soft); margin-left: auto; font-variant-numeric: tabular-nums; }
+.cat-tools { display: flex; gap: 2px; flex: none; }
+.cat-tool { background: none; border: 1px solid transparent; border-radius: var(--m-radius-sm); color: var(--m-muted-soft); font-family: var(--m-mono); font-size: 11px; line-height: 1; padding: 2px 5px; cursor: pointer; transition: color 120ms, border-color 120ms; }
+.cat-tool:hover { color: var(--m-ink); border-color: var(--m-rule); }
+.cat-body { padding: 14px; }
+/* A single-project category in a two-column grid leaves half a row empty, and
+   five of nine categories hold exactly one project — so that was ~5 dead
+   half-rows down the page. One card, full width. */
+.cat-sec--single > .cat-body { grid-template-columns: 1fr; }
+.cat-empty { grid-column: 1/-1; margin: 0; font-family: var(--m-ui); font-size: 13px; font-style: italic; color: var(--m-muted); }
+/* A closed section should read as a closed drawer, not as a missing panel. */
+.cat-sec:not([open]) > .cat-sum { background: var(--m-surface); }
+.cat-sec:not([open]) .cat-name { color: var(--m-muted-soft); }
+.cat-new { display: block; width: 100%; background: none; border: 1px dashed var(--m-rule-strong); border-radius: var(--m-radius); color: var(--m-muted); font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; padding: 10px; cursor: pointer; transition: color 120ms, border-color 120ms; }
+.cat-new:hover { color: var(--m-accent); border-color: var(--m-accent); }
+
+/* The activity mark on a card: filled = touched this fortnight, hollow = quiet,
+   dotted ring = never opened. Three glyphs rather than a colour scale, so it
+   survives a greyscale print and a colour-blind reader. */
+.proj-live { font-family: var(--m-mono); font-size: 10px; flex: none; }
+.proj-live--hot   { color: var(--m-ok); }
+.proj-live--cold  { color: var(--m-muted-soft); }
+.proj-live--never { color: var(--m-rule-strong); }
+
 /* `.m-fold*` are aliases of the Dispatch fold, so Work and Today share ONE
    fold behaviour instead of two implementations that drift. Added 2026-09-02
    when Work's two redundant task views were folded away. */
