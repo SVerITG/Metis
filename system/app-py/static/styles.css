@@ -1504,7 +1504,16 @@ body.is-dormant { overflow: hidden; }
 .kan-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 1px 2px 8px; }
 .kan-name { font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--m-muted); }
 .kan-n { font-family: var(--m-mono); font-size: 10px; color: var(--m-muted-soft); font-variant-numeric: tabular-nums; }
-.kan-cards { display: flex; flex-direction: column; gap: 6px; min-height: 44px; }
+/* CAPPED AND SCROLLING. The grid stretches every column to the tallest, and
+   the undated column is routinely fifty deep — so three columns holding two
+   cards between them were being stretched to nine hundred pixels of empty
+   board, pushing the list underneath it off the screen. The panel is meant
+   to be glanced at, so it gets a glanceable height and the deep column
+   scrolls inside itself. */
+.kan-cards { display: flex; flex-direction: column; gap: 6px; min-height: 44px;
+  max-height: 300px; overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; }
+
 .kan-card { background: var(--m-surface); border: 1px solid var(--m-rule); border-left: 2px solid var(--m-rule); border-radius: var(--m-radius-sm); padding: 6px 8px; cursor: grab; }
 .kan-card:hover { border-color: var(--m-rule-strong); }
 /* Late is the only card state that gets colour. It is rare and it is the one

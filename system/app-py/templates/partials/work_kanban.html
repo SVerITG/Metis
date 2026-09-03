@@ -76,11 +76,14 @@
       {% else %}
       <p class="kan-empty">{{ c.empty }}</p>
       {% endfor %}
-
-      {% if c.total > (c.tasks | length) %}
-      <p class="kan-more">+{{ c.total - (c.tasks | length) }} more — see the list below</p>
-      {% endif %}
     </div>
+
+    {#- OUTSIDE the scrolling card area on purpose. It is the one line that
+        says the column is deeper than what you can see, so it must not be the
+        thing you have to scroll to find. -#}
+    {% if c.total > (c.tasks | length) %}
+    <p class="kan-more">+{{ c.total - (c.tasks | length) }} more — see the list below</p>
+    {% endif %}
   </section>
   {% endfor %}
 </div>
