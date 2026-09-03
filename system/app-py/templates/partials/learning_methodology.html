@@ -1,0 +1,102 @@
+<!-- learning_methodology.html — one generalised method recipe -->
+{% set qnames = {1: "Is this the same outbreak?", 2: "Where did it come from?", 3: "How fast is it spreading?", 4: "Has the pathogen changed?"} %}
+<div class="lesson-page">
+
+  <div class="lesson-topnav">
+    <div>
+      {% if prev_id %}
+      <button class="btn btn-ghost" type="button"
+              hx-get="/api/course/{{ slug }}/methodology/{{ prev_id }}"
+              hx-target="#lesson-reader-panel" hx-swap="innerHTML">← Previous</button>
+      {% endif %}
+    </div>
+    <div class="lesson-crumb">Methodology · Q{{ m.question }} · {{ m.maturity }}</div>
+    <div>
+      {% if next_id %}
+      <button class="btn btn-ghost" type="button"
+              hx-get="/api/course/{{ slug }}/methodology/{{ next_id }}"
+              hx-target="#lesson-reader-panel" hx-swap="innerHTML">Next →</button>
+      {% endif %}
+    </div>
+  </div>
+
+  <article class="card lesson-card">
+    <div class="mx-kicker">Answers question {{ m.question }} — {{ qnames.get(m.question, "") }}</div>
+    <h1 class="mx-title">{{ m.name }}</h1>
+    <p class="mx-lede">{{ m.one_line }}</p>
+
+    <div class="mx-block">
+      <h2 class="mx-h">The question it puts a number on</h2>
+      <p>{{ m.answers }}</p>
+    </div>
+
+    <div class="mx-block">
+      <h2 class="mx-h">What it needs</h2>
+      <p class="mx-note">The honest gate. If these are not in place, nothing below will work,
+         and no amount of sequencing substitutes for them.</p>
+      <ul class="mx-list">{% for n in m.needs %}<li>{{ n | safe }}</li>{% endfor %}</ul>
+    </div>
+
+    <div class="mx-block">
+      <h2 class="mx-h">The chain</h2>
+      <ol class="mx-chain">
+        {% for c in m.chain %}
+        <li>
+          <div class="mx-step">{{ c.step }}</div>
+          {% if c.tools %}<div class="mx-tools">{{ c.tools }}</div>{% endif %}
+          {% if c.note %}<div class="mx-stepnote">{{ c.note }}</div>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+
+    <div class="mx-cols">
+      <div class="mx-block">
+        <h2 class="mx-h">What you get</h2>
+        <ul class="mx-list">{% for o in m.outputs %}<li>{{ o }}</li>{% endfor %}</ul>
+      </div>
+      <div class="mx-block">
+        <h2 class="mx-h">What it can decide</h2>
+        <ul class="mx-list">{% for d in m.decides %}<li>{{ d }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+
+    <div class="mx-block mx-fail">
+      <h2 class="mx-h">Where it fails</h2>
+      <ul class="mx-list">{% for f in m.fails_when %}<li>{{ f }}</li>{% endfor %}</ul>
+    </div>
+
+    <div class="mx-block">
+      <h2 class="mx-h">Seen in</h2>
+      {% for s in m.seen_in %}
+      <div class="mx-source">
+        <span class="mx-grade mx-grade--{{ s.grade | lower }}">{{ s.grade }}</span>
+        <div>
+          <div class="mx-cite">{{ s.cite }}</div>
+          {% if s.url %}<a class="mx-url" href="{{ s.url }}" target="_blank" rel="noopener noreferrer">{{ s.url }}</a>{% endif %}
+          <div class="mx-what">{{ s.what_they_did }}</div>
+        </div>
+      </div>
+      {% endfor %}
+      <p class="mx-note" style="margin-top:12px;">
+        <strong>FETCHED</strong> means the methods section was read in full while writing this
+        entry. <strong>SEARCH</strong> means it was identified from search results and not read —
+        verify before citing. Same grading as <code>sources/source-ledger.md</code>.
+      </p>
+    </div>
+
+    {% if m.lessons %}
+    <div class="mx-block">
+      <h2 class="mx-h">Where the course covers the parts</h2>
+      <div class="mx-lessons">
+        {% for lid in m.lessons %}
+        <button class="mx-lesson-link" type="button"
+                hx-get="/api/course/{{ slug }}/lesson/{{ lid }}"
+                hx-target="#lesson-reader-panel" hx-swap="innerHTML">{{ lid | replace("lesson-", "Lesson ") }}</button>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </article>
+
+</div>

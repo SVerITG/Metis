@@ -20,6 +20,115 @@ _COURSES_DIR = _RC_ROOT / "knowledge" / "courses"
 
 _md_renderer = _md.Markdown(extensions=["fenced_code", "tables", "nl2br"])
 
+
+# ---------------------------------------------------------------------------
+# Lesson links
+# ---------------------------------------------------------------------------
+
+_LINKIFY_SKIP = re.compile(r"(<a\b[^>]*>.*?</a>|<code\b[^>]*>.*?</code>|<pre\b[^>]*>.*?</pre>|<[^>]+>)", re.S | re.I)
+_LINKIFY_URL = re.compile(r"""(?<![\w@/])(
+      https?://[^\s<>"'()\[\]]+[^\s<>"'()\[\].,;:!?]
+    | www\.[^\s<>"'()\[\]]+[^\s<>"'()\[\].,;:!?]
+    | doi:\s*10\.\d{4,9}/[^\s<>"'()\[\],;]+
+)""", re.X | re.I)
+
+
+def _linkify(html: str) -> str:
+    """Turn plain-text URLs and DOIs in rendered lesson HTML into real links.
+
+    Reading lists were written as prose — "doi:10.1126/science.aax2342",
+    "https://alliblk.github.io/genepi-book/" — and Python-Markdown does not
+    autolink anything that is not already `[text](url)` or `<url>`. So every
+    source in every reading list rendered as dead text. Authors will keep
+    writing them that way, so this is fixed at render time rather than by
+    editing prose.
+
+    Only unambiguous forms are linked: an explicit scheme, a `www.` host, or a
+    `doi:` prefix. Bare hostnames like "pathoplexus.org" are deliberately NOT
+    matched — the false-positive rate on ordinary prose ("Fig. 2", "et al.",
+    abbreviations) is not worth it, and an author who wants that link can write
+    it properly.
+
+    Anything already inside an <a>, <code> or <pre>, and every tag's own
+    attributes, is left alone — those regions are split out first, so a href
+    can never be rewritten into itself.
+    """
+    def link(m: "re.Match[str]") -> str:
+        raw = m.group(1)
+        if raw.lower().startswith("doi:"):
+            doi = raw.split(":", 1)[1].strip()
+            href = f"https://doi.org/{doi}"
+        elif raw.lower().startswith("www."):
+            href = f"https://{raw}"
+        else:
+            href = raw
+        return (f'<a href="{href}" target="_blank" rel="noopener noreferrer">{raw}</a>')
+
+    out = []
+    for i, part in enumerate(_LINKIFY_SKIP.split(html)):
+        # split() with one capturing group alternates text / delimiter,
+        # so odd indices are the protected regions and go through untouched.
+        out.append(part if i % 2 else _LINKIFY_URL.sub(link, part))
+    return "".join(out)
+
+
+
+
+_DEEP_DIVE_SECTION = "Deep dives"
+
+
+def _load_methodologies(slug: str) -> list[dict]:
+    """Generalised method recipes extracted from published analyses.
+
+    Optional per course: a course with no methodologies.json simply does not
+    show the tab. The file is a sibling of lessons.json rather than a section
+    inside it, because a methodology is not a lesson — it has no order, no
+    completion state and no place in a reading sequence.
+    """
+    p = _COURSES_DIR / slug / "methodologies.json"
+    if not p.exists():
+        return []
+    try:
+        return json.loads(p.read_text(encoding="utf-8")).get("methodologies", []) or []
+    except Exception:
+        return []
+
+
+def _course_tabs(slug: str) -> list[dict]:
+    """Which tabs this course actually has. Nothing is shown that is empty."""
+    lessons = _load_lessons_json(slug).get("lessons", []) or []
+    tabs = []
+    if any(l.get("section") != _DEEP_DIVE_SECTION for l in lessons):
+        tabs.append({"id": "course", "label": "Course"})
+    if any(l.get("section") == _DEEP_DIVE_SECTION for l in lessons):
+        tabs.append({"id": "deepdives", "label": "Deep dives"})
+    if _load_methodologies(slug):
+        tabs.append({"id": "methodology", "label": "Methodology"})
+    return tabs
+
+_CALLOUT = re.compile(r"<p>(\s*)(⚠|✱)\s*", re.U)
+
+
+def _enrich_lesson_html(html: str) -> str:
+    """Give the rendered lesson the structure its CSS needs.
+
+    Three things markdown cannot express and the course content relies on:
+
+    1. Links. See _linkify.
+    2. Callouts. The lessons mark warnings with "⚠" and asides with "✱" at the
+       start of a paragraph — 281 of them across the two written courses. CSS
+       cannot select on text content, so the marker is converted into a class
+       here and the glyph kept as the visual bullet.
+    3. Wide tables. There are 462 table rows in these courses and several are
+       far wider than the reading measure. Without a scroll container they
+       either overflow the column or force the whole page to scroll sideways.
+    """
+    html = _linkify(html)
+    html = _CALLOUT.sub(lambda m: f'<p class="cx cx--{"warn" if m.group(2) == "⚠" else "note"}">', html)
+    html = html.replace("<table>", '<div class="lesson-tablewrap"><table>')
+    html = html.replace("</table>", "</table></div>")
+    return html
+
 router = APIRouter()
 templates = Jinja2Templates(
     directory=str(Path(__file__).parent.parent / "templates")
@@ -134,7 +243,7 @@ async def course_reader_page(slug: str, request: Request):
     return templates.TemplateResponse(
         request,
         "course_reader.html",
-        {"slug": slug, "course_title": title},
+        {"tabs": _course_tabs(slug), "slug": slug, "course_title": title},
     )
 
 
@@ -976,11 +1085,25 @@ async def course_overview(slug: str, request: Request):
     for lesson in lessons:
         lesson["done"] = lesson["id"] in completed_ids
 
+    # The sidebar is scoped to the active tab: the Course tab should not list
+    # six deep dives under the day-by-day track, and the Deep dives tab should
+    # not make you scroll past sixteen lessons to reach them.
+    tab = (request.query_params.get("tab") or "course").strip()
+    if tab == "deepdives":
+        shown = [l for l in lessons if l.get("section") == _DEEP_DIVE_SECTION]
+    elif tab == "methodology":
+        shown = []
+    else:
+        tab = "course"
+        shown = [l for l in lessons if l.get("section") != _DEEP_DIVE_SECTION]
+
     return templates.TemplateResponse(
         request,
         "partials/learning_course_overview.html",
         {"course": course_row, "modules": data.get("modules", []),
-         "lessons": lessons, "slug": slug},
+         "lessons": shown, "slug": slug, "tab": tab,
+         "methodologies": _load_methodologies(slug) if tab == "methodology" else [],
+         "n_done": len(completed_ids), "n_total": len(lessons)},
     )
 
 
@@ -993,7 +1116,7 @@ async def serve_lesson(slug: str, lesson_id: str, request: Request):
 
     raw = path.read_text(encoding="utf-8")
     _md_renderer.reset()
-    body_html = _md_renderer.convert(raw)
+    body_html = _enrich_lesson_html(_md_renderer.convert(raw))
 
     data = _load_lessons_json(slug)
     lessons = data.get("lessons", [])
@@ -1022,9 +1145,92 @@ async def serve_lesson(slug: str, lesson_id: str, request: Request):
             "prev_id": prev_id,
             "next_id": next_id,
             "done": done,
+            # A reading course does not present homework. Default False, so a
+            # course must opt IN — the drill format cannot leak into a course
+            # that was never meant to have it.
+            "show_exercises": bool(_load_course_meta(slug).get("exercises_shown", False)),
         },
     )
 
+
+
+
+def _load_course_meta(slug: str) -> dict:
+    """course.json — the spine, the counts, the pedagogy note."""
+    p = _COURSES_DIR / slug / "course.json"
+    if not p.exists():
+        return {}
+    try:
+        return json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+@router.get("/api/course/{slug}/tab/{tab}", response_class=HTMLResponse)
+async def serve_tab_overview(slug: str, tab: str, request: Request):
+    """The landing page for a tab.
+
+    Clicking a tab used to leave the reading panel on a "choose something"
+    placeholder, so the tab appeared to do nothing until you also picked an item
+    from the sidebar. Each tab now opens on an index you can actually choose
+    from — which is also the only place the course's spine, its shape and its
+    counts are visible.
+    """
+    data = _load_lessons_json(slug)
+    lessons = data.get("lessons", []) or []
+    meta = _load_course_meta(slug)
+
+    completed: set[str] = set()
+    try:
+        rows = db_query("SELECT lesson_id FROM lesson_completions WHERE course_slug=?",
+                        (slug,), default=[]) or []
+        completed = {r["lesson_id"] for r in rows}
+    except Exception:
+        pass
+    for l in lessons:
+        l["done"] = l["id"] in completed
+
+    if tab == "methodology":
+        items, sections = [], []
+    elif tab == "deepdives":
+        items = [l for l in lessons if l.get("section") == _DEEP_DIVE_SECTION]
+        sections = []
+    else:
+        tab = "course"
+        items = [l for l in lessons if l.get("section") != _DEEP_DIVE_SECTION]
+        sections = []
+        for l in items:
+            if l.get("section") not in sections:
+                sections.append(l.get("section"))
+
+    return templates.TemplateResponse(
+        request,
+        "partials/learning_tab_overview.html",
+        {"slug": slug, "tab": tab, "meta": meta, "items": items, "sections": sections,
+         "methodologies": _load_methodologies(slug) if tab == "methodology" else [],
+         "n_done": len(completed), "n_total": len(lessons),
+         "course_title": meta.get("title") or slug},
+    )
+
+@router.get("/api/course/{slug}/methodology/{mid}", response_class=HTMLResponse)
+async def serve_methodology(slug: str, mid: str, request: Request):
+    """One generalised methodology."""
+    items = _load_methodologies(slug)
+    item = next((m for m in items if m.get("id") == mid), None)
+    if item is None:
+        return HTMLResponse(
+            "<div class='card' style='padding:28px'>That methodology is not in this course.</div>",
+            status_code=404,
+        )
+    ids = [m.get("id") for m in items]
+    i = ids.index(mid)
+    return templates.TemplateResponse(
+        request,
+        "partials/learning_methodology.html",
+        {"slug": slug, "m": item,
+         "prev_id": ids[i - 1] if i > 0 else None,
+         "next_id": ids[i + 1] if i < len(ids) - 1 else None},
+    )
 
 @router.post("/api/course/{slug}/lesson/{lesson_id}/complete", response_class=JSONResponse)
 async def complete_lesson(slug: str, lesson_id: str, request: Request):
