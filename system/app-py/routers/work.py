@@ -19,7 +19,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 
 import logging
-from db import db_execute, db_query, db_scalar
+from db import db_execute, db_query, db_scalar, live_task_sql
 
 log = logging.getLogger("metis.work")
 
@@ -58,7 +58,7 @@ async def work_tab_partial(request: Request):
 @router.get("/api/partial/work/meta", response_class=HTMLResponse)
 async def work_meta(request: Request):
     projects = db_scalar("SELECT COUNT(*) FROM projects WHERE status='active'", default=0) or 0
-    tasks = db_scalar("SELECT COUNT(*) FROM tasks WHERE status NOT IN ('done','cancelled')", default=0) or 0
+    tasks = db_scalar(f"SELECT COUNT(*) FROM tasks WHERE {live_task_sql()}", default=0) or 0
     paused = db_scalar("SELECT COUNT(*) FROM projects WHERE status='incubating'", default=0) or 0
 
     # ── "What changed" comes from the SHARED mechanism, not a second one ──
@@ -76,7 +76,7 @@ async def work_meta(request: Request):
     try:
         import ui
         wn = ui.whats_new("work", "tasks", "created_at",
-                          where="status NOT IN ('done','cancelled','deleted')")
+                          where=f"{live_task_sql()}")
         # On a first visit `newer` is the whole table, and "+53 since you looked"
         # would be a lie about a number that has always been there.
         delta = 0 if wn.get("first_visit") else int(wn.get("newer") or 0)
@@ -86,7 +86,7 @@ async def work_meta(request: Request):
     # Denominator, direction, and a door — see partials/work_meta.html.
     projects_total = db_scalar("SELECT COUNT(*) FROM projects", default=0) or 0
     overdue = db_scalar(
-        "SELECT COUNT(*) FROM tasks WHERE status NOT IN ('done','completed','cancelled','deleted') "
+        f"SELECT COUNT(*) FROM tasks WHERE {live_task_sql()} "
         "AND COALESCE(due_date,'') != '' AND due_date < date('now')", default=0) or 0
     return templates.TemplateResponse(
         request,
@@ -117,34 +117,168 @@ async def work_filter_chips(request: Request):
 
 
 @router.get("/api/partial/work/kanban", response_class=HTMLResponse)
-async def work_kanban(request: Request):
-    today = datetime.date.today().isoformat()
-    week_end = (datetime.date.today() + datetime.timedelta(days=7)).isoformat()
+async def work_kanban(request: Request, filter: str = ""):
+    """Tasks by status — the panel the researcher asked to have at the top of the page.
 
-    inbox = db_query(
-        "SELECT task_id as id, title, COALESCE(category,'') as tag, priority, due_date "
-        "FROM tasks WHERE status='open' AND (due_date IS NULL OR due_date > ?) ORDER BY created_at DESC LIMIT 5",
-        (week_end,),
-    ) or []
-    this_week = db_query(
-        "SELECT task_id as id, title, COALESCE(category,'') as tag, priority, due_date "
-        "FROM tasks WHERE status='open' AND COALESCE(due_date,'') != '' AND due_date <= ? ORDER BY due_date LIMIT 6",
-        (week_end,),
-    ) or []
-    in_progress = db_query(
-        "SELECT task_id as id, title, COALESCE(category,'') as tag, priority, due_date "
-        "FROM tasks WHERE status='in_progress' ORDER BY updated_at DESC LIMIT 4"
-    ) or []
-    closed = db_query(
-        "SELECT task_id as id, title, COALESCE(category,'') as tag, priority, due_date "
-        "FROM tasks WHERE status='done' AND updated_at >= ? ORDER BY updated_at DESC LIMIT 5",
-        ((datetime.datetime.now() - datetime.timedelta(days=7)).isoformat(),),
-    ) or []
+    THE COLUMNS ARE THE STATES, so moving a card between them IS the edit. That
+    is the point of putting it first: "Today" was a thing you could only achieve
+    by knowing that a task with today's date, or a starred one, surfaces on the
+    Today page. Nothing said so, which is why 0 of 92 tasks were starred and 2
+    were dated. Dropping a card into Today sets today's date; the same task then
+    appears on Today AND in the week on the calendar, because all three read the
+    same column.
+
+    Four columns, not five. "Closed this week" was the fourth and it is a log,
+    not a state you move work into — the done count lives in the header figures.
+    What replaced it is UNDATED, which is where 56 of the 58 live tasks actually
+    are and which had no representation at all.
+
+    Cancelled work is not shown anywhere here. Counting it produced the "92" this
+    comment used to quote; see `live_task_sql`.
+    """
+    today_d = datetime.date.today()
+    today = today_d.isoformat()
+    # End of the working week, not seven days out — the same rule as the date
+    # control in `_duedate.html`, so "this week" means one thing in this app.
+    week_end = (today_d + datetime.timedelta(days=(4 - today_d.weekday()) % 7)).isoformat()
+
+    # The board honours the project filter, so filtering to Software narrows the
+    # board and the project list together rather than only half the page.
+    f = (filter or "").strip().lower()
+    scope, params = "", []
+    if f and f not in ("", "active", "all", "archived"):
+        scope = (" AND t.project_id IN (SELECT project_id FROM projects "
+                 "WHERE LOWER(COALESCE(category,''))=? OR LOWER(COALESCE(tags,'')) LIKE ? "
+                 "OR LOWER(COALESCE(domain,''))=?)")
+        params = [f, f"%{f}%", f]
+
+    cols = (
+        "SELECT t.task_id as id, t.title, COALESCE(t.category,'') as tag, t.priority, "
+        "       t.due_date, t.status, t.project_id, p.title AS project_title "
+        "FROM tasks t LEFT JOIN projects p ON p.project_id = t.project_id "
+    )
+
+    def q(where: str, order: str, limit: int, extra=()):
+        return db_query(cols + "WHERE " + where + scope + f" ORDER BY {order} LIMIT {limit}",
+                        tuple(list(extra) + params)) or []
+
+    # Overdue belongs in TODAY, not in a column of its own: it is the work you
+    # are behind on, and splitting it off is how a separate overdue list becomes
+    # a place things go to be ignored.
+    # THE FOUR COLUMNS MUST PARTITION, and three of them are date buckets while
+    # one is a status. That is the tension to resolve explicitly, because a task
+    # that is both in progress and due today would otherwise be drawn twice and
+    # counted twice.
+    #
+    # In progress WINS: it is the strongest thing the row knows about itself.
+    # So the date columns take live work that is NOT in progress. Derived from
+    # `live_task_sql` rather than a second hand-written status list — this file
+    # already carried three rival definitions of "open" and that is precisely
+    # how they drifted apart.
+    DATED = f"{live_task_sql('t.status')} AND t.status != 'in_progress'"
+
+    today_col = q(f"{DATED} AND COALESCE(t.due_date,'') != '' AND date(t.due_date) <= date(?)",
+                  "t.due_date", 12, (today,))
+    this_week = q(f"{DATED} AND COALESCE(t.due_date,'') != '' "
+                  "AND date(t.due_date) > date(?) AND date(t.due_date) <= date(?)",
+                  "t.due_date", 12, (today, week_end))
+    in_progress = q("t.status='in_progress'", "t.updated_at DESC", 12)
+    undated = q(f"{DATED} AND COALESCE(t.due_date,'') = ''",
+                "COALESCE(t.priority, 99), t.created_at DESC", 12)
+
+    def total(where: str, extra=()):
+        return db_scalar(
+            "SELECT COUNT(*) FROM tasks t WHERE " + where + scope,
+            tuple(list(extra) + params), default=0) or 0
+
+    def held(where: str, extra=()):
+        """How much of this column is waiting on something else.
+
+        A column is capped at twelve cards and the undated pile is fifty-six
+        deep, so including held work in the query made it COUNTED without
+        making it SEEN — the two held rows sort to position 47. Reordering the
+        backlog to float them would be worse: stuck work would then outrank
+        work you could actually start. So the header carries the number, and
+        the filter is how you go and look.
+        """
+        return total(where + " AND t.status='blocked'", extra)
+
     return templates.TemplateResponse(
         request,
         "partials/work_kanban.html",
-        {"inbox": inbox, "this_week": this_week, "in_progress": in_progress, "closed": closed, "today": today},
+        {
+            "today": today,
+            "filter": f,
+            "columns": [
+                {"key": "today", "label": "Today", "tasks": today_col,
+                 "total": total(f"{DATED} AND COALESCE(t.due_date,'') != '' "
+                                "AND date(t.due_date) <= date(?)", (today,)),
+                 "held": held(f"{DATED} AND COALESCE(t.due_date,'') != '' "
+                              "AND date(t.due_date) <= date(?)", (today,)),
+                 "empty": "Nothing due today.",
+                 "drop": "Give this today's date"},
+                {"key": "week", "label": "This week", "tasks": this_week,
+                 "total": total(f"{DATED} AND COALESCE(t.due_date,'') != '' "
+                                "AND date(t.due_date) > date(?) AND date(t.due_date) <= date(?)",
+                                (today, week_end)),
+                 "held": held(f"{DATED} AND COALESCE(t.due_date,'') != '' "
+                              "AND date(t.due_date) > date(?) AND date(t.due_date) <= date(?)",
+                              (today, week_end)),
+                 "empty": "Nothing else due this week.",
+                 "drop": "Due by the end of this week"},
+                {"key": "progress", "label": "In progress", "tasks": in_progress,
+                 "total": total("t.status='in_progress'"),
+                 "empty": "Nothing started.",
+                 "drop": "Mark as started"},
+                {"key": "undated", "label": "No date", "tasks": undated,
+                 "total": total(f"{DATED} AND COALESCE(t.due_date,'') = ''"),
+                 "held": held(f"{DATED} AND COALESCE(t.due_date,'') = ''"),
+                 "empty": "Everything open has a date.",
+                 "drop": "Take the date off — undated is never late"},
+            ],
+        },
     )
+
+
+@router.post("/api/partial/work/kanban/move", response_class=HTMLResponse)
+async def work_kanban_move(request: Request, task_id: str = Form(...),
+                           column: str = Form(...), filter: str = Form("")):
+    """Move a task between board columns, which means editing what the column means.
+
+    The columns are states, so the drop applies the state:
+        today     → due today
+        week      → due by the end of the working week
+        progress  → status in_progress, date untouched
+        undated   → date cleared, which is a real and common choice
+                    ("often i dont know when i will work on something")
+
+    `progress` deliberately does NOT clear the date. Starting something does not
+    change when it is due, and the earlier version of this board offered only a
+    status dropdown, which is why the date and the status could never be set in
+    the same gesture.
+    """
+    today_d = datetime.date.today()
+    col = (column or "").strip().lower()
+    # Setting a DATE must not silently change a STATUS. An earlier version wrote
+    # `status='open'` alongside the date, which would quietly unblock a blocked
+    # task because someone dated it — two edits from one gesture, and the one
+    # nobody asked for is invisible.
+    if col == "today":
+        db_execute("UPDATE tasks SET due_date=?, updated_at=? WHERE task_id=?",
+                   (today_d.isoformat(), datetime.datetime.now().isoformat(), task_id))
+    elif col == "week":
+        end = (today_d + datetime.timedelta(days=(4 - today_d.weekday()) % 7)).isoformat()
+        db_execute("UPDATE tasks SET due_date=?, updated_at=? WHERE task_id=?",
+                   (end, datetime.datetime.now().isoformat(), task_id))
+    elif col == "progress":
+        db_execute("UPDATE tasks SET status='in_progress', updated_at=? WHERE task_id=?",
+                   (datetime.datetime.now().isoformat(), task_id))
+    elif col == "undated":
+        db_execute("UPDATE tasks SET due_date=NULL, updated_at=? WHERE task_id=?",
+                   (datetime.datetime.now().isoformat(), task_id))
+    else:
+        log.warning("[kanban] unknown column %r for %s", column, task_id)
+    return await work_kanban(request, filter=filter)
 
 
 # ---------------------------------------------------------------------------
@@ -160,10 +294,10 @@ async def work_stats(request: Request):
     ).isoformat()
 
     open_tasks = db_scalar(
-        "SELECT COUNT(*) FROM tasks WHERE status NOT IN ('done', 'cancelled')", default=0
+        f"SELECT COUNT(*) FROM tasks WHERE {live_task_sql()}", default=0
     )
     overdue = db_scalar(
-        "SELECT COUNT(*) FROM tasks WHERE status NOT IN ('done', 'cancelled') "
+        f"SELECT COUNT(*) FROM tasks WHERE {live_task_sql()} "
         "AND COALESCE(due_date,'') != '' AND due_date < ?",
         (today,),
         default=0,
@@ -196,7 +330,7 @@ async def work_stats(request: Request):
 @router.get("/api/partial/work/tasks", response_class=HTMLResponse)
 async def work_tasks(request: Request, status: str = "open"):
     if status == "open":
-        where = "status NOT IN ('done', 'cancelled')"
+        where = f"{live_task_sql()}"
         params: tuple = ()
     elif status == "all":
         where = "1=1"
@@ -232,7 +366,7 @@ async def work_due_today(request: Request, bare: int = 0):
         "COALESCE(t.priority,'medium') as priority, "
         "p.title as project "
         "FROM tasks t LEFT JOIN projects p ON p.project_id = t.project_id "
-        "WHERE t.status NOT IN ('done','cancelled') "
+        f"WHERE {live_task_sql('t.status')} "
         "AND COALESCE(t.due_date,'') != '' AND t.due_date <= ? "
         "ORDER BY t.due_date, "
         "CASE COALESCE(t.priority,'medium') WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END "
@@ -263,7 +397,7 @@ async def work_all_tasks(request: Request):
         "COALESCE(t.priority, 'medium') as priority, COALESCE(t.category,'') as category, "
         "p.title as project "
         "FROM tasks t LEFT JOIN projects p ON p.project_id = t.project_id "
-        "WHERE t.status NOT IN ('done','cancelled') "
+        f"WHERE {live_task_sql('t.status')} "
         "ORDER BY "
         "  CASE COALESCE(t.priority,'medium') WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END, "
         "  CASE WHEN t.due_date IS NULL THEN 1 ELSE 0 END, "
@@ -272,7 +406,7 @@ async def work_all_tasks(request: Request):
     )
     overdue_ids = {
         r["id"] for r in (db_query(
-            "SELECT task_id as id FROM tasks WHERE status NOT IN ('done','cancelled') "
+            f"SELECT task_id as id FROM tasks WHERE {live_task_sql()} "
             "AND COALESCE(due_date,'') != '' AND due_date < ?", (today,), default=[]
         ) or [])
     }
@@ -465,7 +599,7 @@ async def work_projects(request: Request, filter: str = ""):
     open_by_project = {
         r["pid"]: r["n"] for r in (db_query(
             "SELECT project_id AS pid, COUNT(*) AS n FROM tasks "
-            "WHERE status != 'done' AND project_id IS NOT NULL GROUP BY project_id"
+            f"WHERE {live_task_sql()} AND project_id IS NOT NULL GROUP BY project_id"
         ) or [])
     }
     for p in projects:
@@ -995,8 +1129,18 @@ async def project_reorder(request: Request):
 @router.get("/api/partial/work/project-tasks/{project_id}", response_class=HTMLResponse)
 async def project_tasks_partial(request: Request, project_id: str):
     all_open = db_query(
-        "SELECT task_id, title, status, category, updated_at, starred FROM tasks "
-        "WHERE project_id=? AND status NOT IN ('done','deleted') "
+        # `due_date` comes along so the row can carry the date control that the
+        # flat task list has had all along. It was the only place a date could be
+        # set, and it is the list nobody opens — hence 2 dated tasks out of 92.
+        # Cancelled is not a kind of open. This list named 'deleted' — a status
+        # the store has never held — while letting 'cancelled' through, so 34
+        # abandoned tasks were drawn as live work across nine project cards,
+        # eleven of them on one. The ORDER BY here has always floated blocked
+        # work to the top, which is the right instinct and the other half of
+        # the same definition; both now come from one place.
+        "SELECT task_id, title, status, category, updated_at, starred, "
+        "       COALESCE(due_date,'') AS due_date FROM tasks "
+        f"WHERE project_id=? AND {live_task_sql()} "
         "ORDER BY starred DESC, COALESCE(display_order,999), "
         "CASE status WHEN 'blocked' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END, created_at DESC",
         params=(project_id,),
@@ -1036,7 +1180,7 @@ async def project_detail_panel(request: Request, project_id: str):
 
     open_tasks = db_query(
         "SELECT task_id, title, status, category, updated_at FROM tasks "
-        "WHERE project_id=? AND status NOT IN ('done','deleted') "
+        f"WHERE project_id=? AND {live_task_sql()} "
         "ORDER BY COALESCE(display_order,999), "
         "CASE status WHEN 'blocked' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END, created_at DESC",
         (project_id,),
@@ -1262,8 +1406,12 @@ async def task_create(request: Request):
         (task_id, project_id, title, category, due_date or None, priority, now, now),
     )
     tasks = db_query(
-        "SELECT task_id, title, status, category FROM tasks "
-        "WHERE project_id=? AND status NOT IN ('done','deleted') "
+        # Same columns as the other render of this partial — a template fed by
+        # two queries needs both to supply what it reads, or the date control
+        # silently shows "no date" on whichever path forgot.
+        "SELECT task_id, title, status, category, starred, "
+        "       COALESCE(due_date,'') AS due_date FROM tasks "
+        f"WHERE project_id=? AND {live_task_sql()} "
         "ORDER BY category, created_at LIMIT 15",
         params=(project_id,),
     )
@@ -1278,7 +1426,7 @@ async def task_create(request: Request):
     # project detail panel) passes it; this one was written without it and nobody
     # noticed, because the task does appear — on the next page load.
     total_open = db_scalar(
-        "SELECT COUNT(*) FROM tasks WHERE project_id=? AND status NOT IN ('done','deleted')",
+        f"SELECT COUNT(*) FROM tasks WHERE project_id=? AND {live_task_sql()}",
         params=(project_id,),
         default=0,
     )
@@ -1629,7 +1777,7 @@ async def task_oldest_open(action: str):
         )
     target_status, due = _TASK_STATUS_MAP[action]
     rows = db_query(
-        "SELECT task_id FROM tasks WHERE status NOT IN ('done','cancelled','paused') "
+        f"SELECT task_id FROM tasks WHERE {live_task_sql()} "
         "ORDER BY created_at LIMIT 1"
     ) or []
     if not rows:
@@ -1736,7 +1884,7 @@ def _ensure_project_claude_md(project_id: str, external_path: str, project_row: 
     try:
         tasks = db_query(
             "SELECT title, status, category FROM tasks "
-            "WHERE project_id=? AND status NOT IN ('done','cancelled','deleted') "
+            f"WHERE project_id=? AND {live_task_sql()} "
             "ORDER BY category, created_at LIMIT 20",
             params=(project_id,),
         ) or []

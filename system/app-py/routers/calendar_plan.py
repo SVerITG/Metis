@@ -2,7 +2,7 @@
 
 WHY A CALENDAR IN WORK
     Work could show what exists (projects, tasks) but not WHEN anything happens.
-    A researcher plans in days: "Tuesday is the Angola profile", "this whole week
+    A researcher plans in days: "Tuesday is the data profile", "this whole week
     is the MLA revision". Neither of those is a task — a task has no date and a
     due-date is a deadline, not an intention. So the planner needs its own object.
 
@@ -25,13 +25,14 @@ from __future__ import annotations
 
 import calendar as _calendar
 import datetime as dt
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from db import db_execute, db_query, db_scalar
+from db import db_execute, db_query, db_scalar, live_task_sql
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "templates"))
@@ -355,7 +356,7 @@ def _chip(p: dict, compact: bool = True) -> str:
 
 
 def _day_cell(d: dt.date, plans: list[dict], anchor: dt.date, view: str,
-              min_h: int, show_dow: bool = False) -> str:
+              min_h: int, show_dow: bool = False, tasks: list[dict] | None = None) -> str:
     today = _today()
     past = d < today
     is_today = d == today
@@ -374,7 +375,10 @@ def _day_cell(d: dt.date, plans: list[dict], anchor: dt.date, view: str,
             f'{"<span style=font-size:9px;color:var(--m-accent);>TODAY</span>" if is_today else ""}'
             f'</div>')
 
-    chips = "".join(_chip(p) for p in plans)
+    # Plans first, then tasks. Intentions are what you MEANT to do that day and
+    # tasks are what falls due on it — the order matches the way the day is
+    # actually read.
+    chips = "".join(_chip(p) for p in plans) + "".join(_task_chip(t) for t in (tasks or []))
     return (
         f'<div class="cal-day" data-date="{d.isoformat()}" '
         f'ondragover="event.preventDefault();this.style.outline=\'1px dashed var(--m-accent)\';" '
@@ -384,6 +388,94 @@ def _day_cell(d: dt.date, plans: list[dict], anchor: dt.date, view: str,
         f'style="border:1px solid var(--m-rule);border-radius:5px;padding:5px 6px;'
         f'min-height:{min_h}px;background:{bg};opacity:{opacity};overflow:hidden;cursor:pointer;">'
         f'{head}{chips}</div>'
+    )
+
+
+# ── Dated tasks on the calendar ───────────────────────────────────────────────
+# PHASE 4, 2026-09-03. Asked directly: "if i add a task does it show up in my
+# calendar?" It did not. `tasks` drove the list, the status board and Today's due
+# strip; `day_plan` drove the calendar and nothing else did. Zero queries here
+# read `tasks`. So a scheduled LESSON appeared in the week (Learning writes
+# day_plan) and the researcher's own dated work never could.
+#
+# NOT MERGED, though — and the module docstring above is the reason. An
+# intention ("Tuesday is the data profile") and a deadline ("this is due
+# Tuesday") are different claims about a day, and collapsing them would destroy
+# a distinction somebody thought about. Tasks are shown ALONGSIDE plans, in
+# their own visual channel.
+#
+# A task is also not editable here the way a plan is: ✕ on a plan removes the
+# plan, which is the whole object. ✕ on a task would delete work. So the task
+# chip offers "done" and "take it off the calendar" (clear the date) — never
+# delete.
+def _dated_tasks_between(a: dt.date, b: dt.date) -> dict[str, list[dict]]:
+    """Map each date in [a,b] to the open tasks due that day.
+
+    Only OPEN tasks: a completed task is not a thing you still have to plan
+    around, and a month showing every task ever finished on it is a log, not a
+    calendar. Done tasks stay visible in the list and the status board.
+    """
+    rows = db_query(
+        f"""SELECT t.task_id, t.title, t.due_date, t.status, t.priority,
+                  t.project_id, p.title AS project_title, p.accent_color
+           FROM tasks t LEFT JOIN projects p ON p.project_id = t.project_id
+           WHERE COALESCE(t.due_date,'') <> ''
+             AND {live_task_sql('t.status')}
+             AND date(t.due_date) BETWEEN date(?) AND date(?)
+           ORDER BY t.due_date, COALESCE(t.priority, 99), t.task_id""",
+        (a.isoformat(), b.isoformat()),
+    ) or []
+    out: dict[str, list[dict]] = {}
+    for r in rows:
+        r = dict(r)
+        key = str(r["due_date"])[:10]
+        out.setdefault(key, []).append(r)
+    return out
+
+
+def _task_chip(t: dict) -> str:
+    """One dated task, as a chip that cannot destroy the task.
+
+    Colour and icon follow the same one-channel rule as `_chip`: the KIND is the
+    border and icon, and the dot before the label is WHICH PROJECT, matching the
+    legend. A task's kind colour is the alert hue only when it is late — being
+    due on a future day is not a problem, and an undated task is never late at
+    all (see `_duedate.html`).
+    """
+    tid = _esc(str(t.get("task_id") or ""))
+    label = t.get("title") or "task"
+    overdue = str(t.get("due_date") or "")[:10] < _today().isoformat()
+    colour = "var(--m-alert)" if overdue else "var(--m-ok)"
+    icon = "!" if overdue else "✓"
+
+    project_dot = ""
+    if t.get("project_id"):
+        _pt = t.get("project_title") or t.get("project_id")
+        _pc = t.get("accent_color") or _project_hue(t.get("project_id") or _pt)
+        project_dot = (
+            f'<span title="{_esc(_pt)}" style="width:6px;height:6px;'
+            f'border-radius:50%;background:{_pc};flex-shrink:0;"></span>')
+
+    return (
+        f'<div class="cal-chip cal-chip--task" data-task="{tid}" draggable="true" '
+        f'ondragstart="calDragTask(event,\'{tid}\')" '
+        f'title="{_esc(label)} — a task due this day. Click to complete it, '
+        f'✕ to take it off the calendar (the task is kept).{" OVERDUE." if overdue else ""}" '
+        f'style="display:flex;align-items:center;gap:4px;font-size:10.5px;line-height:1.25;'
+        f'padding:2px 5px;margin-bottom:2px;border-radius:4px;cursor:grab;'
+        f'border:1px solid {colour};border-left-width:3px;'
+        f'background:var(--m-surface);">'
+        f'<span style="color:{colour};flex-shrink:0;font-family:var(--m-mono);">{icon}</span>'
+        f'{project_dot}'
+        f'<span hx-post="/api/task/{tid}/done" hx-target="#work-calendar" hx-swap="outerHTML"'
+        f' style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;'
+        f'white-space:nowrap;cursor:pointer;">{_esc(label)}</span>'
+        f'<span hx-post="/api/task/{tid}/due" hx-vals=\'{{"when": ""}}\''
+        f' hx-target="#work-calendar" hx-swap="outerHTML"'
+        f' hx-confirm="Take this off the calendar? The task is kept, just undated."'
+        f' title="Clear the date — keeps the task"'
+        f' style="opacity:0.35;cursor:pointer;flex-shrink:0;padding:0 2px;">✕</span>'
+        f'</div>'
     )
 
 
@@ -411,6 +503,65 @@ def _projects_rail() -> str:
     )
 
 
+def _undated_tasks_rail() -> str:
+    """The open tasks with no date, draggable onto a day.
+
+    THE MISSING HALF. 90 of 92 open tasks carried no date, and there was no way
+    to give one from the planner — the rail offered projects only, so you could
+    say "Tuesday is the data profile" but not "this particular thing is due
+    Tuesday". Dropping one of these on a day sets its due date; it then appears
+    in that day's cell, on Today, and in the status board, because all three
+    read the same column.
+
+    Capped, and ordered by priority then age: a rail of ninety chips is not a
+    rail, it is a second task list. The full set stays in the list view, where
+    every row has its own date control.
+    """
+    rows = db_query(
+        f"""SELECT t.task_id, t.title, t.project_id, p.title AS project_title, p.accent_color
+           FROM tasks t LEFT JOIN projects p ON p.project_id = t.project_id
+           WHERE COALESCE(t.due_date,'') = ''
+             AND {live_task_sql('t.status')}
+           ORDER BY COALESCE(t.priority, 99), t.created_at DESC
+           LIMIT 12""",
+    ) or []
+    if not rows:
+        return ""
+    total = db_scalar(
+        # The SAME predicate as the rows above. A rail showing twelve chips and
+        # claiming "+78 more" while only 44 existed is the count-without-its-
+        # denominator failure with the denominator merely mis-measured.
+        f"SELECT COUNT(*) FROM tasks WHERE COALESCE(due_date,'') = '' "
+        f"AND {live_task_sql()}",
+        default=0) or 0
+    chips = "".join(
+        f'<div draggable="true" ondragstart="calDragTask(event,\'{_esc(str(r["task_id"]))}\')" '
+        f'title="{_esc(r["title"] or "")}'
+        f'{(" — " + _esc(r["project_title"])) if r.get("project_title") else ""}'
+        f' · drag onto a day to make it due then" '
+        f'style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 8px;'
+        f'border:1px dashed var(--m-rule-strong);border-radius:14px;cursor:grab;'
+        f'white-space:nowrap;max-width:260px;">'
+        f'<span style="width:6px;height:6px;border-radius:50%;flex-shrink:0;'
+        f'background:{r["accent_color"] or _project_hue(r["project_id"] or r["title"] or "t")};'
+        f'"></span>'
+        f'<span style="overflow:hidden;text-overflow:ellipsis;">{_esc((r["title"] or "")[:44])}</span>'
+        f'</div>'
+        for r in rows
+    )
+    more = (f'<span style="font-family:var(--m-mono);font-size:9.5px;color:var(--m-muted);'
+            f'align-self:center;">+{total - len(rows)} more in the list</span>'
+            if total > len(rows) else "")
+    return (
+        '<div style="margin-bottom:12px;">'
+        '<div style="font-family:var(--m-mono);font-size:9.5px;letter-spacing:0.12em;'
+        'text-transform:uppercase;color:var(--m-muted);margin-bottom:6px;">'
+        f'Undated tasks &nbsp;·&nbsp; drag one onto a day to give it that deadline'
+        f'{f" &nbsp;·&nbsp; {total} without a date" if total else ""}</div>'
+        f'<div style="display:flex;flex-wrap:wrap;gap:6px;">{chips}{more}</div></div>'
+    )
+
+
 # ── the calendar ──────────────────────────────────────────────────────────────
 
 @router.get("/api/partial/work/calendar", response_class=HTMLResponse)
@@ -419,6 +570,7 @@ async def work_calendar(view: str = "month", date: str = "") -> HTMLResponse:
     anchor = _parse(date) if date else _today()
     a, b = _range_for(view, anchor)
     plans = _plans_between(a, b)
+    tasks = _dated_tasks_between(a, b)
 
     if view == "month":
         step_prev = (anchor.replace(day=1) - dt.timedelta(days=1)).replace(day=1)
@@ -458,7 +610,8 @@ async def work_calendar(view: str = "month", date: str = "") -> HTMLResponse:
 
     if view == "day":
         body = ('<div style="display:grid;grid-template-columns:1fr;">'
-                + _day_cell(anchor, plans.get(anchor.isoformat(), []), anchor, view, 220, True)
+                + _day_cell(anchor, plans.get(anchor.isoformat(), []), anchor, view, 220, True,
+                            tasks.get(anchor.isoformat(), []))
                 + '</div>')
     else:
         min_h = 118 if view == "week" else 78
@@ -468,7 +621,8 @@ async def work_calendar(view: str = "month", date: str = "") -> HTMLResponse:
             for n in DAY_NAMES)
         cells, cur = [], a
         while cur <= b:
-            cells.append(_day_cell(cur, plans.get(cur.isoformat(), []), anchor, view, min_h))
+            cells.append(_day_cell(cur, plans.get(cur.isoformat(), []), anchor, view, min_h,
+                                   False, tasks.get(cur.isoformat(), [])))
             cur += dt.timedelta(days=1)
         body = (f'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">{dow}</div>'
                 f'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">'
@@ -480,7 +634,7 @@ async def work_calendar(view: str = "month", date: str = "") -> HTMLResponse:
 
     return HTMLResponse(
         f'<div id="work-calendar" data-view="{view}" data-anchor="{anchor.isoformat()}">'
-        f'{_projects_rail()}{header}{body}{foot}</div>'
+        f'{_projects_rail()}{_undated_tasks_rail()}{header}{body}{foot}</div>'
     )
 
 
@@ -510,6 +664,37 @@ async def plan_create(
          text.strip() or None, remind_at or None),
     )
     return await work_calendar(view=view, date=anchor or start_date)
+
+
+@router.post("/api/plan/task-date", response_class=HTMLResponse)
+async def plan_task_date(
+    task_id: str = Form(...),
+    start_date: str = Form(""),
+    view: str = Form("month"),
+    anchor: str = Form(""),
+) -> HTMLResponse:
+    """Give a task a date by dropping it on a day — or take the date away.
+
+    Lives here rather than in work.py because it returns the CALENDAR, which is
+    what `_calPost` swaps in. `/api/task/{id}/due` already sets a due date and is
+    the right endpoint everywhere else; it returns a due-chip fragment, so
+    reusing it here would replace the calendar with a chip.
+
+    An empty `start_date` clears the date, which is how a task comes off the
+    calendar without being deleted. Deleting work from a planner would be an
+    astonishing thing for a drag gesture to do.
+    """
+    when = (start_date or "").strip()
+    if when and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", when):
+        # Refuse a malformed date rather than writing it: a due_date that does
+        # not parse is invisible to every date comparison in the app, so the
+        # task would silently vanish from Today, the board and the calendar.
+        return await work_calendar(view=view, date=anchor or _today().isoformat())
+    db_execute(
+        "UPDATE tasks SET due_date = ?, updated_at = datetime('now') WHERE task_id = ?",
+        (when or None, task_id),
+    )
+    return await work_calendar(view=view, date=anchor or when or _today().isoformat())
 
 
 @router.post("/api/plan/learning/schedule", response_class=JSONResponse)

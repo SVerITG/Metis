@@ -1,4 +1,10 @@
 <!-- work_project_tasks.html — Top-5 tasks + expand to full detail -->
+{#- The DATE CONTROL is imported, not rewritten. `_duedate.html` already offers
+    today / tomorrow / this week / next week / this month plus a picker, and it
+    has lived in the flat all-tasks list — the list nobody opens — which is why
+    2 of 92 open tasks carried a date. An element authored twice drifts; this is
+    the same macro, on the row where the work actually is. -#}
+{% from "partials/_duedate.html" import due_control %}
 {% if not tasks and not done_count %}
 <div class="u-label" style="padding:var(--m-space-1) 0;">
   NO OPEN TASKS
@@ -13,6 +19,9 @@
   </span>
   <span class="u-grow u-truncate" style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-ink);line-height:1.35;"
         title="{{ t.title }}">{{ t.title }}</span>
+  {#- Date before star. Setting a date is the ordinary act; starring is the
+      exception you use when something matters without being due. -#}
+  {{ due_control(t.task_id, (t.due_date or '')[:10], compact=true) }}
   <!-- star -->
   <button onclick="miniTaskStar('{{ t.task_id }}','{{ project_id }}',this)"
           title="{% if t.starred %}Unstar{% else %}Star (appears in Today){% endif %}"

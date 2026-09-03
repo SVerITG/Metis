@@ -231,6 +231,35 @@ def db_execute(sql: str, params=()) -> None:
         conn.close()
 
 
+# ── WHAT COUNTS AS LIVE WORK ─────────────────────────────────────────────────
+# One definition, because three were in use at once and each surface had quietly
+# invented its own. Measured 2026-09-03 on a real store of 123 task rows:
+#
+#   status != 'done'                → 92   counts abandoned work as backlog
+#   status = 'open'                 → 56   drops work that is merely held
+#   status NOT IN ('done','cancel') → 58   ← what a person means by "open"
+#
+# The middle two differ by two rows, and those two rows are the point: a task
+# nobody can act on yet is still a task, and a board that hides it is how it
+# gets forgotten. The first differs by thirty-four, which is how a heading came
+# to advertise more work than existed.
+#
+# Cancelled is not a kind of open. It is a decision already taken.
+LIVE_STATUSES: tuple[str, ...] = ("open", "blocked", "in_progress")
+DEAD_STATUSES: tuple[str, ...] = ("done", "cancelled")
+
+
+def live_task_sql(col: str = "status") -> str:
+    """A SQL predicate for "this task is still live work".
+
+    Phrased as an exclusion rather than an inclusion on purpose. A status this
+    code has never heard of should surface as work to look at, not vanish — an
+    inclusion list silently swallows every value added after it was written,
+    and a task you cannot see is worse than one filed oddly.
+    """
+    return f"COALESCE({col},'') NOT IN ('done','cancelled')"
+
+
 def record_token_usage(agent_slug: str, model: str, input_tokens, output_tokens,
                        task_summary: str = "", session_id: str = "") -> None:
     """Record a REAL API call's token usage into agent_runs (Keystone B6.3) so the
