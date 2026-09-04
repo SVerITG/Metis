@@ -59,9 +59,37 @@ domain courses. But the strip only runs on that one path — **a pushed feature 
 around it.** Measured 2026-09-04: `origin/feat/briefing-rotation-news-surface-interests`
 carried 10 health-economics and 3 outbreak-investigation files that `origin/main` has zero
 of, and a four-month-old `origin/eval-fixes-2026-05-05` still named the maintainer in one
-file. Both remote branches deleted and the shell regenerated. Note for accuracy: the shell
-was never free of domain terms (65 files on `origin/main` carry them) — that is a
-separate, older decision, not part of this leak.
+file. Both remote branches were deleted. Note for accuracy: the shell was never free of
+domain terms (65 files on `origin/main` carry them) — a separate, older decision, not part
+of this leak.
+
+**But the regeneration itself then failed, and published anyway.** Correcting the sentence
+that stood here earlier: the shell was NOT successfully regenerated. Another process held
+`.git/index.lock` for a moment; `git commit` died with a fatal; and
+`|| echo "  (nothing changed)"` swallowed the error *and* disabled `set -e` for that
+command — printing exactly the line it prints when the strip legitimately had nothing to
+do. The script then force-pushed a `base` branch still sitting at main's tip. **No identity
+leaked; 13 course files did.** Fixed by gating the OUTCOME rather than the steps: a failing
+commit is now fatal, and before any push the built tree is asserted to lack the paths the
+shell exists to remove. The gate was checked against a tree built to *fail* before being
+trusted on one built to pass.
+
+### ⚠ Two things the next session must know
+
+**`origin/main` still holds the unstripped tree, and `origin` is no longer configured.**
+A concurrent session ran `git-filter-repo` across all 573 commits to remove the
+institutional address (author *and* committer on 169 of them, across two PUBLIC repos),
+then `git gc --prune=now`. `filter-repo` removes remotes by design, so `origin` is gone
+from `.git/config` and the shell could not be re-pushed. **First action next session:
+re-add `origin` and run `bash tools/build-base-shell.sh --push`** — the gate now refuses to
+publish a dirty shell, so this is safe to run.
+
+**Multiple agents share this working tree.** During this session refs moved between two
+consecutive reads, every commit hash was rewritten mid-flight, and two commits made here
+were dropped and had to be re-applied by hand — the objects were already pruned, so
+`git format-patch` could not recover them. Surviving work had to be identified by *content*
+rather than by hash. Assume concurrency: prefer `git commit -- <paths>`, never a bare
+commit, and re-read refs rather than trusting a value read a moment ago.
 
 **Still genuinely open, engineering:** P1.1 bundled `.exe` (needs a Windows box) · P2.1
 single Settings pane · the three inventory packs (`epi-methods`, `ntd`, `ph-background`)

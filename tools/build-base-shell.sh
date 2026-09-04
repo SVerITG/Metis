@@ -89,8 +89,57 @@ for f in $MATCHED; do
 done
 git add -A
 
-git commit -q -m "build: domain-agnostic base shell (generated from main by build-base-shell.sh)" \
-  || echo "  (nothing changed)"
+# WHY THIS IS NOT `|| echo "(nothing changed)"` ANY MORE
+#   It was, until 2026-09-04, and on that day it published the unstripped full
+#   edition to the PUBLIC base repo. Another process held .git/index.lock for a
+#   moment; `git commit` died with a fatal; `||` swallowed it AND disabled
+#   `set -e` for that command; the script printed "(nothing changed)" — which is
+#   also what it prints when the strip legitimately had nothing to do — and then
+#   force-pushed a `base` branch still sitting at main's tip.
+#
+#   A failure indistinguishable from a trivial success is not a log line, it is a
+#   silent publish. So a failing commit is fatal, and "nothing to commit" is
+#   decided by asking the index rather than by ignoring an exit code.
+if ! git diff --cached --quiet; then
+  git commit -q -m "build: domain-agnostic base shell (generated from main by build-base-shell.sh)" \
+    || { echo "ERROR: the base-shell commit failed. NOTHING was pushed." >&2; exit 1; }
+else
+  echo "  (nothing to commit — main was already free of everything the shell strips)"
+fi
+
+# ── Gate: assert the OUTCOME, never the steps ────────────────────────────────
+# Every step above has, at least once, reported success while doing nothing. So
+# the publish is gated on what the built tree actually CONTAINS — the only thing
+# the public repo's readers will ever see.
+echo "▸ Verifying the shell before publishing…"
+FAIL=0
+while read -r must_go; do
+  [ -z "$must_go" ] && continue
+  n="$(git ls-tree -r --name-only HEAD | grep -c "$must_go" || true)"
+  if [ "$n" != "0" ]; then
+    echo "  ✗ $must_go — $n file(s) still present" >&2; FAIL=1
+  else
+    echo "  ✓ $must_go absent"
+  fi
+done <<'MUSTGO'
+knowledge/courses/health-economics
+knowledge/courses/outbreak-investigation
+knowledge/courses/epidemiology-foundations
+MUSTGO
+IDENT="$(git grep -lE "\b${HOME_USER}\b" -- '*.py' '*.sh' '*.md' '*.json' '*.html' 2>/dev/null \
+        | grep -vE '^(tools/build-base-shell\.sh|tools/base-shell/)' | wc -l)"
+if [ "$IDENT" != "0" ]; then
+  echo "  ✗ maintainer identity still in $IDENT file(s)" >&2; FAIL=1
+else
+  echo "  ✓ no maintainer identity"
+fi
+if [ "$FAIL" != "0" ]; then
+  echo "" >&2
+  echo "ERROR: the shell is NOT clean. Nothing pushed; origin/main is untouched." >&2
+  echo "       Fix the strip, then re-run. You are on branch 'base';" >&2
+  echo "       'git checkout $SRC_BRANCH' to leave." >&2
+  exit 1
+fi
 
 echo "▸ Base shell built on branch 'base'."
 if [ "$PUSH" = "1" ]; then
