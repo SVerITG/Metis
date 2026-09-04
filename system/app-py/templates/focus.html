@@ -12,6 +12,14 @@
   is a row from `focus_areas`; everything on the page is that row's lens applied
   to tables that already own their content.
 
+  EVERY FOCUS CHOOSES ITS OWN SECTIONS (2026-09-03). `sections` is a JSON list
+  of keys on the focus row, and each block below is guarded by it. Before this,
+  all nine sections rendered for every focus — the shape of the first focus (a
+  subject to stay current on) was imposed on every later one, including a
+  reference focus that wants its lookup tools and what is new, and has no use for
+  a safe or a brief. An EMPTY list means the historical default, so nothing that
+  predates the change moves.
+
   ORDER IS AN ARGUMENT, and it changed on 2026-08-26 when the surface stopped
   being a reading list and became a place you build something:
 
@@ -61,13 +69,28 @@
   <div id="focus-counts">{% include "partials/focus_counts.html" %}</div>
 
   {# ── 2 · Pulse ─────────────────────────────────────────────────────────── #}
+  {# ── Tools — what this focus is FOR, when the answer is a lookup ────────
+       First on the page for a reference focus. The researcher built an accuracy
+       catalogue and then could not find it, because a focus had nowhere to put
+       a thing you open. A section that only appears when the focus declares
+       links costs the other focuses nothing. -#}
+  {% if "tools" in sections and links %}
+  {% call zone("Reference tools", key="focus-" ~ area.slug ~ "-tools",
+               tail=(links|length) ~ (" TOOL" if links|length == 1 else " TOOLS"),
+               open=True) %}
+    <div id="focus-tools">{% include "partials/focus_tools.html" %}</div>
+  {% endcall %}
+  {% endif %}
+
+  {% if "pulse" in sections %}
   {% call zone("What changed", key="focus-" ~ area.slug ~ "-pulse",
                tail="SINCE YOUR LAST VISIT") %}
     <div id="focus-pulse">{% include "partials/focus_pulse.html" %}</div>
   {% endcall %}
+  {% endif %}
 
   {# ── 3 · Overview — the standing narrative ─────────────────────────────── #}
-  {% if area.overview %}
+  {% if area.overview and "overview" in sections %}
   {% call zone("Overview", key="focus-" ~ area.slug ~ "-overview",
                tail="WHAT MATTERS HERE", open=True) %}
     <div class="panel panel--md">
@@ -76,19 +99,38 @@
   {% endcall %}
   {% endif %}
 
+  {# ── What's new — one section, both streams ─────────────────────────────
+       Asked for directly: a section that scans specifically for this focus's
+       own papers, articles and news. The lens already scans; what was
+       missing was ONE place that answers "has anything arrived?" instead of
+       three (pulse, feed, reading) that each answer part of it. -#}
+  {% if "whatsnew" in sections %}
+  {% call zone("What's new", key="focus-" ~ area.slug ~ "-whatsnew",
+               tail=(area.n_new ~ " SINCE YOUR LAST VISIT") if area.n_new
+                    else "NOTHING NEW", open=True) %}
+    <div id="focus-whatsnew">{% include "partials/focus_whatsnew.html" %}</div>
+  {% endcall %}
+  {% endif %}
+
+
   {# ── 4 · The safe — what you kept, and what it taught this focus ───────── #}
+  {% if "safe" in sections %}
   {% call zone("The safe", key="focus-" ~ area.slug ~ "-safe",
                tail=counts.saved ~ " KEPT FOR REFLECTION", open=True) %}
     <div id="focus-safe">{% include "partials/focus_safe.html" %}</div>
   {% endcall %}
+  {% endif %}
 
   {# ── 5 · Brief ─────────────────────────────────────────────────────────── #}
+  {% if "brief" in sections %}
   {% call zone("Brief", key="focus-" ~ area.slug ~ "-brief",
                tail=("LAST " ~ counts.last_brief[:10]) if counts.last_brief else "NOT YET GENERATED") %}
     <div id="focus-brief">{% include "partials/focus_brief.html" %}</div>
   {% endcall %}
+  {% endif %}
 
   {# ── 6 · Thinking — notes, ideas, questions, and Explore ───────────────── #}
+  {% if "thinking" in sections %}
   {% call zone("Your thinking", key="focus-" ~ area.slug ~ "-thinking",
                tail="NOTES · IDEAS · QUESTIONS", open=True) %}
     <div id="focus-thinking">{% include "partials/focus_thinking.html" %}</div>
@@ -96,21 +138,26 @@
           style="display:block;margin-top:var(--m-space-2);">searching your own material…</span>
     <div id="focus-explore" style="margin-top:var(--m-space-3);"></div>
   {% endcall %}
+  {% endif %}
 
   {# ── 7 · Feed ──────────────────────────────────────────────────────────── #}
+  {% if "feed" in sections %}
   {% call zone("Latest", key="focus-" ~ area.slug ~ "-feed",
                tail=news.n_live ~ " UNJUDGED"
                     + (" · " ~ news.n_muted ~ " QUIETER" if news.n_muted else ""),
                open=True) %}
     <div id="focus-feed">{% include "partials/focus_feed.html" %}</div>
   {% endcall %}
+  {% endif %}
 
   {# ── 8 · Reading ───────────────────────────────────────────────────────── #}
+  {% if "reading" in sections %}
   {% call zone("Reading", key="focus-" ~ area.slug ~ "-reading",
                tail=reading.n_live ~ " UNJUDGED"
                     + (" · " ~ reading.n_muted ~ " QUIETER" if reading.n_muted else "")) %}
     <div id="focus-reading">{% include "partials/focus_reading.html" %}</div>
   {% endcall %}
+  {% endif %}
 
   {# ── 9 · Shelf management ──────────────────────────────────────────────── #}
   {% call zone("Shelf", key="focus-" ~ area.slug ~ "-shelf",

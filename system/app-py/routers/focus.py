@@ -26,6 +26,8 @@ THE FIVE COMPONENTS
 """
 from __future__ import annotations
 
+import json
+
 import datetime
 import logging
 import uuid
@@ -50,6 +52,51 @@ def _now() -> str:
 # ---------------------------------------------------------------------------
 # The page
 # ---------------------------------------------------------------------------
+# ── WHICH SECTIONS A FOCUS SHOWS ─────────────────────────────────────────────
+# Until 2026-09-03 every focus rendered the same nine sections, because the first
+# focus was about AI and the template grew around it. The researcher put it
+# plainly: "Every shelf is different. There is no safe, brief, what changed, your
+# thinking" — a reference focus wants its tools and what is new, not a place to
+# accumulate verdicts.
+#
+# So the shape is data now. `focus_areas.sections` is a JSON list of keys in the
+# order they should appear; EMPTY MEANS THE HISTORICAL DEFAULT, so a focus that
+# predates this change renders exactly as it did.
+DEFAULT_SECTIONS = ["pulse", "overview", "safe", "brief", "thinking", "feed", "reading"]
+
+# Every key the template knows how to render. A key here that the template has no
+# branch for renders nothing, silently — so the test asserts the two agree.
+KNOWN_SECTIONS = ["pulse", "overview", "tools", "whatsnew", "safe", "brief",
+                  "thinking", "feed", "reading"]
+
+
+def _sections_for(area: dict) -> list:
+    """The section keys this focus shows, in order."""
+    raw = (area or {}).get("sections") or ""
+    if not str(raw).strip():
+        return list(DEFAULT_SECTIONS)
+    try:
+        want = json.loads(raw)
+        keys = [k for k in want if k in KNOWN_SECTIONS]
+        # An unrecognised list is a configuration mistake, and a focus with no
+        # sections is a blank page. Fall back rather than render nothing.
+        return keys or list(DEFAULT_SECTIONS)
+    except Exception:
+        return list(DEFAULT_SECTIONS)
+
+
+def _links_for(area: dict) -> list:
+    """Focus-specific tools: [{title, href, note, kind}]. Never fails the page."""
+    raw = (area or {}).get("links") or ""
+    if not str(raw).strip():
+        return []
+    try:
+        out = json.loads(raw)
+        return [l for l in out if isinstance(l, dict) and l.get("title") and l.get("href")]
+    except Exception:
+        return []
+
+
 @router.get("/focus/{slug}", response_class=HTMLResponse)
 async def focus_page(request: Request, slug: str):
     """One template, rendered against one focus row."""
@@ -62,7 +109,27 @@ async def focus_page(request: Request, slug: str):
     # Read the pulse BEFORE stamping the visit, or "new since last visit" is
     # always zero — the surface would mark everything read by being opened.
     pulse = F.focus_pulse(slug)
+
+    # The items behind the pulse's counts, captured with the PREVIOUS visit
+    # timestamp — after `touch_visit` runs, "since your last visit" is "since a
+    # moment ago" and would always be empty. The counts had this right already;
+    # the items are new here because "What's new" shows them rather than
+    # counting them.
+    _prev = (area.get("last_visited_at") or "")
+    _new_news = F.focus_news(slug, limit=40, since=_prev[:10]) if _prev else []
+    _new_reading = F.focus_reading(slug, limit=40, since=_prev) if _prev else []
+
     F.touch_visit(slug)
+
+    # Keep the navbar marker honest: it reads a stored column (a live lens query
+    # costs ~20 ms per focus, and the navbar renders on EVERY page — measured
+    # 2026-09-03), so opening the focus is what clears it.
+    try:
+        from db import db_execute
+        db_execute("UPDATE focus_areas SET n_new=?, n_new_at=? WHERE slug=?",
+                   (0, datetime.datetime.now().isoformat(), slug))
+    except Exception:
+        pass
 
     # A wider window than the 14 the surface shows: the sift needs the whole
     # catch to report honest counts, and "38 unjudged" is only true if 38 were
@@ -76,6 +143,10 @@ async def focus_page(request: Request, slug: str):
         "shelf": F.list_focus("active"),
         "all_areas": F.list_focus(),
         "max_shelf": F.MAX_SHELF,
+        "sections": _sections_for(area),
+        "links": _links_for(area),
+        "new_news": _new_news,
+        "new_reading": _new_reading,
     })
     return templates.TemplateResponse(request, "focus.html", ctx)
 
@@ -168,6 +239,71 @@ async def reading_partial(request: Request, slug: str):
     from main import templates
     return templates.TemplateResponse(request, "partials/focus_reading.html",
                                       _ctx(request, slug))
+
+
+def _recount_new(slug: str) -> int:
+    """Store how many items are new since the last visit, for the navbar marker.
+
+    STORED, NOT COMPUTED ON DEMAND. The navbar renders on every page in the app,
+    and this lens is `LIKE %term%` across a dozen terms over ~4,000 briefs —
+    measured at 19–29 ms per focus on 2026-09-03. Two focuses would have added
+    ~48 ms to every page in the dashboard. So the count is written when the lens
+    is scanned and cleared when the focus is opened, and the navbar reads a
+    plain integer column for free.
+
+    That makes the marker mean "new since the last scan", which is the honest
+    claim — not "new right now", which nothing could know without paying for it.
+    """
+    F = _f()
+    area = F.get_focus(slug)
+    if not area:
+        return 0
+    prev = (area.get("last_visited_at") or "")
+    if not prev:
+        return 0
+    try:
+        n = len(F.focus_news(slug, limit=200, since=prev[:10])) \
+            + len(F.focus_reading(slug, limit=200, since=prev))
+    except Exception:
+        return 0
+    try:
+        from db import db_execute
+        db_execute("UPDATE focus_areas SET n_new=?, n_new_at=? WHERE slug=?",
+                   (n, _now(), slug))
+    except Exception:
+        pass
+    return n
+
+
+@router.post("/api/focus/{slug}/scan", response_class=HTMLResponse)
+async def scan_whatsnew(request: Request, slug: str):
+    """Scan the shared sources, then re-render THIS focus's "What's new".
+
+    Separate from `/refresh` because that one answers with the pulse partial;
+    pointing a "What's new" button at it swapped the wrong content in. Same scan
+    underneath — a focus is a lens over the shared collection, never its own
+    fetch path.
+    """
+    from main import templates
+    F = _f()
+    try:
+        from metis_mcp.tools.content_scan import scan_news_feeds
+        scan_news_feeds(max_per_feed=8)
+    except Exception as exc:
+        log.warning("[focus] scan %s: %s", slug, type(exc).__name__)
+    try:
+        from db import db_execute
+        db_execute("UPDATE focus_areas SET last_refreshed_at=? WHERE slug=?", (_now(), slug))
+    except Exception:
+        pass
+
+    area = F.get_focus(slug)
+    prev = (area.get("last_visited_at") or "") if area else ""
+    return templates.TemplateResponse(request, "partials/focus_whatsnew.html", {
+        "area": area,
+        "new_news": F.focus_news(slug, limit=40, since=prev[:10]) if prev else [],
+        "new_reading": F.focus_reading(slug, limit=40, since=prev) if prev else [],
+    })
 
 
 @router.post("/api/focus/{slug}/refresh", response_class=HTMLResponse)
@@ -385,6 +521,13 @@ def _ctx(request, slug):
     reading = F.sift(slug, F.focus_reading(slug, 120), "reading", "title", "id")
     return {
         "area": area,
+        # Set HERE, not only in the page route: `focus_counts.html` is also
+        # rendered out-of-band after a verdict, and a partial that reads a
+        # variable one of its two render sites does not pass silently falls back
+        # to showing everything — which would put the safe and thinking counts
+        # back on a focus that has neither.
+        "sections": _sections_for(area),
+        "links": _links_for(area),
         "news": news,
         "reading": reading,
         "counts": F.focus_counts(slug),

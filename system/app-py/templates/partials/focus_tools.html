@@ -1,0 +1,16 @@
+{#- focus_tools.html — the things this focus exists to open.
+
+    A focus owns a query, not content — but a REFERENCE focus is judged by
+    whether the thing you need is one click away. The catalogue existed and was
+    unfindable from here, which is the same as not existing. -#}
+<div class="ft-grid">
+  {% for l in links %}
+  <a class="ft-card{% if l.kind == 'primary' %} ft-card--primary{% endif %}"
+     href="{{ l.href }}"{% if l.href.startswith('http') or l.href.startswith('/coursesite') %} target="_blank" rel="noopener"{% endif %}>
+    <span class="ft-card-kind">{{ l.label or ('TOOL' if l.kind == 'primary' else 'REFERENCE') }}</span>
+    <span class="ft-card-title">{{ l.title }}</span>
+    {% if l.note %}<span class="ft-card-note">{{ l.note }}</span>{% endif %}
+    <span class="ft-card-go">{{ l.cta or 'Open' }} →</span>
+  </a>
+  {% endfor %}
+</div>
