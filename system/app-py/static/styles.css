@@ -1210,10 +1210,10 @@ a.board-item-title:hover { color: var(--m-accent); }
    ================================================================ */
 .nb-row { padding: 18px 22px; border-bottom: 1px solid var(--m-rule-soft); }
 .nb-row:last-child { border-bottom: none; }
-.nb-when { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.2em; color: var(--m-muted); margin-bottom: 8px; text-transform: uppercase; }
-.nb-body { font-size: 15px; color: var(--m-ink); font-style: italic; line-height: 1.55; margin-bottom: 10px; font-family: var(--m-display); }
+.nb-when { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.2em; color: var(--m-muted); margin-bottom: 8px; text-transform: uppercase; }
+.nb-body { font-size: var(--t-body); color: var(--m-ink); font-style: italic; line-height: 1.55; margin-bottom: 10px; font-family: var(--m-display); }
 .nb-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.nb-card { font-family: var(--m-mono); font-size: 11px; letter-spacing: 0.14em; color: var(--m-muted); text-transform: uppercase; }
+.nb-card { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.14em; color: var(--m-muted); text-transform: uppercase; }
 .nb-actions { display: flex; gap: 4px; }
 .nb-actions .btn { padding: 3px 8px; }
 
@@ -1390,18 +1390,18 @@ a.board-item-title:hover { color: var(--m-accent); }
   padding-bottom: 10px; border-bottom: 1px solid var(--m-rule-soft); }
 .wn-count { display: inline-flex; align-items: baseline; gap: 6px;
   margin-left: auto; text-decoration: none; }
-.wn-unit { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.14em;
+.wn-unit { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--m-muted); }
 .wn-list { list-style: none; margin: 10px 0 0; padding: 0;
   display: flex; flex-direction: column; gap: 8px; }
 .wn-list li { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.wn-item { font-family: var(--m-display); font-size: 13.5px; color: var(--m-ink);
+.wn-item { font-family: var(--m-display); font-size: var(--t-small); color: var(--m-ink);
   line-height: 1.35; text-decoration: none; overflow: hidden;
   text-overflow: ellipsis; white-space: nowrap; }
-.wn-meta { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.08em;
+.wn-meta { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.08em;
   color: var(--m-muted); }
 .wn-empty { margin: 12px 0 0; font-family: var(--m-display); font-style: italic;
-  font-size: 13px; color: var(--m-muted); }
+  font-size: var(--t-small); color: var(--m-muted); }
 
 /* ── "Where you left off", folded into what needs you today ────────────
    Closed by default: the summary line carries the fact, the body carries the
@@ -1536,7 +1536,7 @@ body.is-dormant { overflow: hidden; }
 .launch-down { display: flex; align-items: baseline; gap: 8px; margin: 0 0 12px;
   padding: 8px 10px; border: 1px solid var(--m-warn); border-radius: var(--m-radius-sm);
   background: var(--m-warn-wash); }
-.launch-down-mark { font-size: 12px; color: var(--m-warn); flex: none; }
+.launch-down-mark { font-size: var(--t-meta); color: var(--m-warn); flex: none; }
 .launch-down-text { font-family: var(--m-ui); font-size: var(--t-small);
   color: var(--m-ink); line-height: 1.45; }
 
@@ -1547,8 +1547,8 @@ body.is-dormant { overflow: hidden; }
 .proj-nopath:hover { background: var(--m-warn-wash); }
 .proj-more-item--alt { color: var(--m-muted); }
 
-.kan-held-n { font-family: var(--m-mono); font-size: 9px; color: var(--m-warn); flex: none; font-variant-numeric: tabular-nums; }
-.kan-blocked { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--m-warn); background: var(--m-warn-wash); border-radius: var(--m-radius-sm); padding: 0 4px; flex: none; }
+.kan-held-n { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-warn); flex: none; font-variant-numeric: tabular-nums; }
+.kan-blocked { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.08em; text-transform: uppercase; color: var(--m-warn); background: var(--m-warn-wash); border-radius: var(--m-radius-sm); padding: 0 4px; flex: none; }
 .kan-title { font-size: 12.5px; line-height: 1.35; color: var(--m-ink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .kan-meta { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
 .kan-proj { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--m-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
@@ -5828,22 +5828,22 @@ a.mrow-title { text-decoration: none; }
    unmissable. Before this the surface had nowhere to put a thing you open, so a
    catalogue built for it was unreachable from it. */
 .ft-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-.ft-card { display: flex; flex-direction: column; gap: 5px; padding: 13px 15px;
+.ft-card { display: flex; flex-direction: column; gap: 5px; padding: var(--d-panel);
   background: var(--m-surface); border: 1px solid var(--m-rule);
   border-radius: var(--m-radius); text-decoration: none; color: var(--m-ink);
   transition: border-color 120ms, background 120ms; }
 .ft-card:hover { border-color: var(--m-accent); background: var(--m-surface-2); }
 .ft-card--primary { border-left: 3px solid var(--m-accent); }
-.ft-card-kind { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.1em;
+.ft-card-kind { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--m-muted-soft); }
 .ft-card-title { font-family: var(--m-display); font-size: var(--t-body); line-height: 1.3; }
 .ft-card-note { font-size: var(--t-meta); color: var(--m-muted); line-height: 1.45; }
-.ft-card-go { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.07em;
+.ft-card-go { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.07em;
   text-transform: uppercase; color: var(--m-accent); margin-top: 3px; }
 /* Grouped reference cards: the group name is a quiet divider, not a heading that
    competes with the section title above it. */
 .ft-group + .ft-group { margin-top: 16px; }
-.ft-group-label { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.11em;
+.ft-group-label { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.11em;
   text-transform: uppercase; color: var(--m-muted); margin-bottom: 7px;
   padding-bottom: 5px; border-bottom: 1px solid var(--m-rule); }
 
@@ -5853,7 +5853,7 @@ a.mrow-title { text-decoration: none; }
 .wn-list { display: flex; flex-direction: column; gap: 1px; background: var(--m-rule);
   border: 1px solid var(--m-rule); border-radius: var(--m-radius); overflow: hidden; }
 .wn-item { display: flex; gap: 11px; padding: 11px 14px; background: var(--m-surface); }
-.wn-kind { font-family: var(--m-mono); font-size: 8.5px; letter-spacing: 0.09em;
+.wn-kind { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.09em;
   padding: 2px 6px; border-radius: var(--m-radius-sm); height: fit-content; flex: none; }
 .wn-kind--news { background: var(--m-info-wash); color: var(--m-info); }
 .wn-kind--paper { background: var(--m-ok-wash); color: var(--m-ok); }
@@ -5862,7 +5862,7 @@ a.mrow-title { text-decoration: none; }
   color: var(--m-ink); text-decoration: none; display: block; }
 .wn-title:hover { text-decoration: underline; }
 .wn-sum { margin: 4px 0 0; font-size: var(--t-meta); color: var(--m-muted); line-height: 1.45; }
-.wn-meta { margin: 4px 0 0; font-family: var(--m-mono); font-size: 9.5px;
+.wn-meta { margin: 4px 0 0; font-family: var(--m-mono); font-size: var(--t-micro);
   letter-spacing: 0.05em; color: var(--m-muted-soft); }
 
 /* the navbar's new-item marker */
@@ -5875,39 +5875,41 @@ a.mrow-title { text-decoration: none; }
 .fw { background: var(--m-surface); border: 1px solid var(--m-rule);
   border-radius: var(--m-radius); overflow: hidden; }
 .fw-head { display: flex; align-items: flex-end; justify-content: space-between;
-  gap: 16px; flex-wrap: wrap; padding: 13px 16px 11px; border-bottom: 1px solid var(--m-rule); }
-.fw-eyebrow { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.12em;
+  gap: 16px; flex-wrap: wrap; padding: var(--d-panel) var(--d-panel) var(--m-space-3);
+  border-bottom: 1px solid var(--m-rule); }
+.fw-eyebrow { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--m-muted-soft); display: block; }
 .fw-title { font-family: var(--m-display); font-size: var(--t-h3); font-weight: 500;
   margin: 2px 0 0; color: var(--m-ink); letter-spacing: -0.01em; }
 .fw-tally { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  font-family: var(--m-mono); font-size: 10.5px; color: var(--m-muted); }
+  font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted); }
 .fw-tally-cell b { color: var(--m-ink); font-variant-numeric: tabular-nums; font-weight: 600; }
 .fw-tally-sep { width: 1px; height: 11px; background: var(--m-rule); }
-.fw-all { font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.05em;
+.fw-all { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.05em;
   color: var(--m-accent); text-decoration: none; }
 .fw-all:hover { text-decoration: underline; }
 
 .fw-group-head { display: flex; justify-content: space-between; align-items: baseline;
   padding: 9px 16px 6px; background: var(--m-surface-2); }
-.fw-group-name { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.1em;
+.fw-group-name { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--m-ink); font-weight: 600; }
 /* Always the count AND what it is out of — a digest that hides its denominator
    is the failure this project keeps re-learning. */
-.fw-group-n { font-family: var(--m-mono); font-size: 9.5px; color: var(--m-muted-soft);
+.fw-group-n { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft);
   font-variant-numeric: tabular-nums; }
 
 /* A DIGEST ROW IS TWO LINES. At 10px padding with a wrapping summary each row
    came to 91px and fourteen of them filled a screen — which is the complaint
    the merge was meant to answer, reproduced in a new box. Title and context
    each clamp to one line; the full text is one click away on its own surface. */
-.fw-row { display: flex; gap: 11px; align-items: flex-start; padding: 7px 16px;
+.fw-row { display: flex; gap: var(--d-row-gap); align-items: flex-start;
+  padding: var(--d-row-y) var(--d-panel);
   border-top: 1px solid var(--m-rule-soft); }
 .fw-row-title, .fw-sum { display: -webkit-box; -webkit-box-orient: vertical;
   -webkit-line-clamp: 1; overflow: hidden; }
 .fw-row-title { -webkit-line-clamp: 2; }
 .fw-row:hover { background: var(--m-surface-2); }
-.fw-sig { width: 3px; border-radius: 2px; flex: none; align-self: stretch;
+.fw-sig { width: 3px; border-radius: var(--m-radius-sm); flex: none; align-self: stretch;
   min-height: 30px; background: var(--m-rule-strong); }
 .fw-sig--high { background: var(--m-alert); }
 .fw-sig--medium { background: var(--m-warn); }
@@ -5919,13 +5921,13 @@ a.mrow-title { text-decoration: none; }
 .fw-row-title:hover { text-decoration: underline; }
 .fw-sum { margin: 2px 0 0; font-size: var(--t-meta); color: var(--m-muted); line-height: 1.4; }
 .fw-sum--why { color: var(--m-accent); }
-.fw-meta { margin: 2px 0 0; font-family: var(--m-mono); font-size: 9.5px;
+.fw-meta { margin: 2px 0 0; font-family: var(--m-mono); font-size: var(--t-micro);
   letter-spacing: 0.04em; color: var(--m-muted-soft); }
 
 .fw-acts { display: flex; gap: 4px; flex: none; align-items: center; }
 .fw-act { appearance: none; cursor: pointer; background: transparent;
   border: 1px solid var(--m-rule); border-radius: var(--m-radius-sm);
-  font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.05em;
+  font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.05em;
   color: var(--m-muted); padding: 4px 8px; white-space: nowrap;
   transition: border-color 120ms, color 120ms, background 120ms; }
 .fw-act:hover { border-color: var(--m-accent); color: var(--m-accent); }
@@ -5943,64 +5945,64 @@ a.mrow-title { text-decoration: none; }
    the whole strip is a link to the surface that answers it properly. */
 .knows { display: block; text-decoration: none; background: var(--m-surface);
   border: 1px solid var(--m-rule); border-radius: var(--m-radius);
-  padding: 12px 15px; transition: border-color 120ms; }
+  padding: var(--d-panel); transition: border-color 120ms; }
 .knows:hover { border-color: var(--m-accent); }
 .knows-head { display: flex; align-items: baseline; justify-content: space-between;
   gap: 12px; flex-wrap: wrap; margin-bottom: 9px; }
-.knows-eyebrow { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.12em;
+.knows-eyebrow { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--m-muted-soft); }
-.knows-total { font-family: var(--m-mono); font-size: 10px; color: var(--m-muted); }
+.knows-total { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted); }
 .knows-total b { color: var(--m-ink); font-variant-numeric: tabular-nums; font-weight: 600; }
 .knows-rows { display: grid; gap: 3px; }
 .knows-row { display: grid; grid-template-columns: 92px 1fr 52px; align-items: center; gap: 9px; }
 .knows-name { font-family: var(--m-ui); font-size: var(--t-meta); color: var(--m-ink);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.knows-track { height: 7px; background: var(--m-surface-2); border-radius: 2px; overflow: hidden; }
-.knows-bar { display: block; height: 100%; background: var(--m-accent); border-radius: 2px; }
+.knows-track { height: 7px; background: var(--m-surface-2); border-radius: var(--m-radius-sm); overflow: hidden; }
+.knows-bar { display: block; height: 100%; background: var(--m-accent); border-radius: var(--m-radius-sm); }
 /* An empty kind still gets a row and a printed zero — a layer that vanishes
    when empty is a layer you never notice is empty. */
 .knows-bar--empty { background: var(--m-rule); }
-.knows-n { font-family: var(--m-mono); font-size: 10px; color: var(--m-muted);
+.knows-n { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted);
   text-align: right; font-variant-numeric: tabular-nums; }
-.knows-go { display: block; margin-top: 9px; font-family: var(--m-mono); font-size: 9.5px;
+.knows-go { display: block; margin-top: 9px; font-family: var(--m-mono); font-size: var(--t-micro);
   letter-spacing: 0.06em; color: var(--m-accent); }
 .knows-foot { display: flex; align-items: baseline; justify-content: space-between;
   gap: 12px; flex-wrap: wrap; margin-top: 9px; }
-.knows-lib { font-family: var(--m-mono); font-size: 9.5px; color: var(--m-muted-soft); }
+.knows-lib { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft); }
 .knows-lib b { color: var(--m-muted); font-variant-numeric: tabular-nums; }
 
 /* ── TODAY · recall, one card at a time ───────────────────────────────────────
    Gated on lessons actually completed, so the box is empty until something has
    been read. One card visible; the next is a request, never a queue. */
 .rev { background: var(--m-surface); border: 1px solid var(--m-rule);
-  border-radius: var(--m-radius); padding: 12px 15px; }
+  border-radius: var(--m-radius); padding: var(--d-panel); }
 .rev-head { display: flex; align-items: baseline; justify-content: space-between;
   gap: 12px; flex-wrap: wrap; margin-bottom: 9px; }
-.rev-eyebrow { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.12em;
+.rev-eyebrow { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--m-muted-soft); }
-.rev-count { font-family: var(--m-mono); font-size: 10px; color: var(--m-muted); }
+.rev-count { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted); }
 .rev-count b { color: var(--m-ink); font-variant-numeric: tabular-nums; font-weight: 600; }
 .rev-card { border-left: 2px solid var(--m-accent); padding-left: 11px; }
 .rev-front { list-style: none; cursor: pointer; display: flex; flex-direction: column; gap: 5px; }
 .rev-front::-webkit-details-marker { display: none; }
 .rev-q { font-family: var(--m-display); font-size: var(--t-body); color: var(--m-ink); line-height: 1.4; }
-.rev-reveal { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.07em;
+.rev-reveal { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.07em;
   text-transform: uppercase; color: var(--m-accent); }
 .rev-card[open] .rev-reveal { display: none; }
 .rev-back { margin: 8px 0 0; font-size: var(--t-small); color: var(--m-muted); line-height: 1.55; }
 .rev-foot { display: flex; align-items: center; justify-content: space-between;
   gap: 12px; flex-wrap: wrap; margin-top: 11px; }
-.rev-src { font-family: var(--m-mono); font-size: 9.5px; color: var(--m-muted-soft); }
+.rev-src { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft); }
 .rev-acts { display: flex; gap: 4px; }
 .rev-act { appearance: none; cursor: pointer; background: transparent;
   border: 1px solid var(--m-rule); border-radius: var(--m-radius-sm);
-  font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.05em;
+  font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.05em;
   color: var(--m-muted); padding: 4px 9px; transition: border-color 120ms, color 120ms; }
 .rev-act:hover { border-color: var(--m-accent); color: var(--m-accent); }
 .rev-act--skip { border-style: dashed; }
 .rev-empty { margin: 0; font-size: var(--t-small); color: var(--m-muted); line-height: 1.5; }
 .rev-start { display: inline-block; margin-top: 9px; font-family: var(--m-mono);
-  font-size: 9.5px; letter-spacing: 0.06em; color: var(--m-accent); text-decoration: none; }
+  font-size: var(--t-micro); letter-spacing: 0.06em; color: var(--m-accent); text-decoration: none; }
 .rev-start:hover { text-decoration: underline; }
 
 /* ── BOARDS · a pin follows its subject ───────────────────────────────────────
@@ -6013,19 +6015,19 @@ a.mrow-title { text-decoration: none; }
   border-left: 2px solid var(--m-accent); }
 .board-latest:hover { background: var(--m-accent-wash); }
 .board-latest--none { border-left-color: var(--m-rule-strong); }
-.board-latest-lead { font-family: var(--m-mono); font-size: 8.5px; letter-spacing: 0.1em;
+.board-latest-lead { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--m-accent); flex: none; }
 .board-latest--none .board-latest-lead { color: var(--m-muted-soft); }
 .board-latest-title { font-size: var(--t-meta); color: var(--m-ink); line-height: 1.35;
   min-width: 0; flex: 1; }
-.board-latest-meta { font-family: var(--m-mono); font-size: 8.5px;
+.board-latest-meta { font-family: var(--m-mono); font-size: var(--t-micro);
   color: var(--m-muted-soft); flex: none; }
 /* The rank is the answer to "which one did I put on top", so it is printed
    rather than implied by position alone. */
-.board-rank { font-family: var(--m-mono); font-size: 9px; color: var(--m-accent);
+.board-rank { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-accent);
   font-variant-numeric: tabular-nums; min-width: 10px; text-align: center; }
 .board-move { appearance: none; cursor: pointer; background: transparent; border: 0;
-  color: var(--m-muted-soft); font-size: 10px; line-height: 1; padding: 2px 3px; }
+  color: var(--m-muted-soft); font-size: var(--t-micro); line-height: 1; padding: 2px 3px; }
 .board-move:hover:not(:disabled) { color: var(--m-accent); }
 .board-move:disabled { opacity: 0.25; cursor: default; }
 
@@ -6035,14 +6037,14 @@ a.mrow-title { text-decoration: none; }
    tokens rather than importing a second design system. */
 .nb { display: grid; gap: 10px; }
 .nb-ed { background: var(--m-surface); border: 1px solid var(--m-rule);
-  border-radius: var(--m-radius); padding: 12px 16px; }
+  border-radius: var(--m-radius); padding: var(--d-panel); }
 .nb-ed-head { list-style: none; cursor: pointer; display: grid; gap: 3px; }
 .nb-ed-head::-webkit-details-marker { display: none; }
-.nb-kind { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.14em;
+.nb-kind { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--m-accent); }
 .nb-ed-title { font-family: var(--m-display); font-size: var(--t-h3); font-weight: 500;
   color: var(--m-ink); line-height: 1.3; letter-spacing: -0.01em; }
-.nb-ed-meta { font-family: var(--m-mono); font-size: 9.5px; color: var(--m-muted-soft); }
+.nb-ed-meta { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft); }
 .nb-items { margin-top: 12px; border-top: 1px solid var(--m-rule); }
 .nb-item { padding: 12px 0; border-bottom: 1px solid var(--m-rule-soft); }
 .nb-item:last-child { border-bottom: 0; }
@@ -6054,16 +6056,16 @@ a.mrow-title { text-decoration: none; }
 .nb-blurb { margin: 5px 0 0; font-size: var(--t-small); color: var(--m-muted);
   line-height: 1.6; max-width: 72ch; }
 .nb-src { display: inline-block; margin-top: 6px; font-family: var(--m-mono);
-  font-size: 8.5px; letter-spacing: 0.11em; text-transform: uppercase;
+  font-size: var(--t-micro); letter-spacing: 0.11em; text-transform: uppercase;
   color: var(--m-muted-soft); }
 .nb-orig { display: inline-block; margin-top: 11px; font-family: var(--m-mono);
-  font-size: 9.5px; letter-spacing: 0.06em; color: var(--m-accent); text-decoration: none; }
+  font-size: var(--t-micro); letter-spacing: 0.06em; color: var(--m-accent); text-decoration: none; }
 .nb-orig:hover { text-decoration: underline; }
 .nb-none { margin: 0; padding: 14px 0; font-size: var(--t-small); font-style: italic;
   color: var(--m-muted-soft); }
 /* The blurb is stored at a hard cap and ends mid-word; saying so is better than
    letting a cut sentence read as a finished one. */
-.nb-cut { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.05em;
+.nb-cut { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.05em;
   color: var(--m-accent); white-space: nowrap; margin-left: 4px; }
 
 
@@ -6094,12 +6096,12 @@ a.mrow-title { text-decoration: none; }
 .ovf-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* A card with no picture keeps its footprint, or the grid tears into ragged rows. */
 .ovf-thumb--none { background: linear-gradient(160deg, var(--m-surface-2), var(--m-rule-soft)); }
-.ovf-tag { font-family: var(--m-mono); font-size: 8.5px; letter-spacing: 0.12em;
+.ovf-tag { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--m-accent); padding: 0 11px; }
 .ovf-lead-body .ovf-tag { padding: 0; }
 .ovf-h { font-family: var(--m-display); font-size: var(--t-body); font-weight: 500;
   line-height: 1.3; color: var(--m-ink); padding: 0 11px; }
-.ovf-when { font-family: var(--m-mono); font-size: 9px; color: var(--m-muted-soft); padding: 0 11px; }
+.ovf-when { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft); padding: 0 11px; }
 .ovf-lead-body .ovf-when { padding: 0; }
 .ovf-stories > summary::-webkit-details-marker { display: none; }
 @media (max-width: 720px) { .ovf-lead { grid-template-columns: 1fr; }
