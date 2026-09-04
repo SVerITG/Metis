@@ -6002,3 +6002,29 @@ a.mrow-title { text-decoration: none; }
 .rev-start { display: inline-block; margin-top: 9px; font-family: var(--m-mono);
   font-size: 9.5px; letter-spacing: 0.06em; color: var(--m-accent); text-decoration: none; }
 .rev-start:hover { text-decoration: underline; }
+
+/* ── BOARDS · a pin follows its subject ───────────────────────────────────────
+   Pinning was starring: it sorted to the top and did nothing else. A pin now
+   watches the news stream and reports its newest instalment, and carries the
+   rank the reader gave it. */
+.board-latest { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;
+  margin-top: 5px; padding: 5px 8px; background: var(--m-surface-2);
+  border-radius: var(--m-radius-sm); text-decoration: none;
+  border-left: 2px solid var(--m-accent); }
+.board-latest:hover { background: var(--m-accent-wash); }
+.board-latest--none { border-left-color: var(--m-rule-strong); }
+.board-latest-lead { font-family: var(--m-mono); font-size: 8.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--m-accent); flex: none; }
+.board-latest--none .board-latest-lead { color: var(--m-muted-soft); }
+.board-latest-title { font-size: var(--t-meta); color: var(--m-ink); line-height: 1.35;
+  min-width: 0; flex: 1; }
+.board-latest-meta { font-family: var(--m-mono); font-size: 8.5px;
+  color: var(--m-muted-soft); flex: none; }
+/* The rank is the answer to "which one did I put on top", so it is printed
+   rather than implied by position alone. */
+.board-rank { font-family: var(--m-mono); font-size: 9px; color: var(--m-accent);
+  font-variant-numeric: tabular-nums; min-width: 10px; text-align: center; }
+.board-move { appearance: none; cursor: pointer; background: transparent; border: 0;
+  color: var(--m-muted-soft); font-size: 10px; line-height: 1; padding: 2px 3px; }
+.board-move:hover:not(:disabled) { color: var(--m-accent); }
+.board-move:disabled { opacity: 0.25; cursor: default; }

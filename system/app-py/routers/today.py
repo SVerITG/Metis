@@ -12,7 +12,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
@@ -3712,6 +3712,96 @@ def _ensure_board_table():
         _log.warning("today_board_items: seen_at migration skipped: %s", exc)
 
 
+# ── A PIN IS A SUBJECT YOU FOLLOW, NOT A ROW YOU KEPT ────────────────────────
+# Asked for 2026-09-04: "i want to follow a certain outbreak like Ebola, I pin
+# it and so every day it can show the newest report of it, but so there will be
+# multiple pinned outbreaks that I have pinned from the new ones that you have
+# shown me. I can also chose their order and see which one I put on top."
+#
+# Starring already existed and already sorted to the top, so two things were
+# missing: an order the reader sets, and the newest report. `freshness.collapse`
+# folds a running story when several instalments are ON THE BOARD, but a pinned
+# subject has to watch the news stream — the board holds two rows and the stream
+# holds four thousand.
+_FOLLOW_STOP = {
+    "the", "and", "for", "with", "from", "that", "this", "報", "disease", "virus",
+    "outbreak", "cases", "case", "report", "situation", "update", "republic",
+    "democratic", "national", "annual", "meeting", "call", "calls", "proposals",
+    "award", "development", "programme", "program", "research", "health",
+    "global", "international", "conference", "congress", "grant", "grants",
+}
+
+
+def _follow_terms(item: dict) -> list[str]:
+    """What to watch for. Explicit terms win; otherwise the title's own nouns.
+
+    Deriving from the title is the common case: a pin is made on an item already
+    on screen, and the expectation is that it follows itself. Generic words are
+    dropped because "outbreak" or "annual meeting" would match the whole stream
+    and the pin would report noise as news.
+    """
+    raw = str(item.get("follow_terms") or "").strip()
+    if raw:
+        return [w.strip().lower() for w in raw.split(",") if w.strip()]
+    title = str(item.get("title") or "")
+    words = re.findall(r"[A-Za-z][A-Za-z'-]{3,}", title)
+    keep = [w for w in words if w.lower() not in _FOLLOW_STOP]
+    # Proper nouns first — a place or a pathogen identifies a story; a common
+    # word does not. Two terms, ANDed, is tight enough to stay on subject.
+    proper = [w for w in keep if w[:1].isupper()]
+    return [w.lower() for w in (proper or keep)[:2]]
+
+
+def _latest_report(item: dict) -> dict | None:
+    """The newest brief matching this pinned subject, or None."""
+    terms = _follow_terms(item)
+    if not terms:
+        return None
+    where = " AND ".join(["LOWER(title || ' ' || COALESCE(summary,'')) LIKE ?"] * len(terms))
+    rows = db_query(
+        "SELECT brief_id, title, brief_date, source_url, domain "
+        f"FROM news_briefs WHERE {where} "
+        "ORDER BY brief_date DESC, created_at DESC LIMIT 1",
+        tuple(f"%{t}%" for t in terms), default=[]) or []
+    if not rows:
+        return None
+    r = dict(rows[0])
+    r["_terms"] = terms
+    # How many reports the subject has produced, so "newest" carries its own
+    # denominator rather than implying it is the only one.
+    r["_n"] = db_scalar(
+        f"SELECT COUNT(*) FROM news_briefs WHERE {where}",
+        tuple(f"%{t}%" for t in terms), default=0) or 0
+    return r
+
+
+@router.post("/api/today/board/{board}/item/{item_id}/pin-move")
+async def board_pin_move(board: str, item_id: int, request: Request,
+                         direction: str = Form("up")):
+    """Move a pin up or down. Order is the reader's, so it is stored, not derived."""
+    _ensure_board_table()
+    pins = db_query(
+        "SELECT id, COALESCE(pin_order, 0) AS po FROM today_board_items "
+        "WHERE board=? AND dismissed=0 AND starred=1 "
+        "ORDER BY CASE WHEN COALESCE(pin_order,0)=0 THEN 1 ELSE 0 END, "
+        "         COALESCE(pin_order,0), created_at DESC",
+        (board,), default=[]) or []
+    ids = [r["id"] for r in pins]
+    if item_id not in ids:
+        return await today_board_box(request, board)
+    i = ids.index(item_id)
+    j = i - 1 if direction == "up" else i + 1
+    if 0 <= j < len(ids):
+        ids[i], ids[j] = ids[j], ids[i]
+    # Rewrite the whole sequence from 1: a swap of two stored values leaves
+    # every unset pin at 0 and the order half-derived, which is how "which one
+    # I put on top" stops being answerable.
+    for pos, pid in enumerate(ids, start=1):
+        db_execute("UPDATE today_board_items SET pin_order=?, updated_at=datetime('now') "
+                   "WHERE id=?", (pos, pid))
+    return await today_board_box(request, board)
+
+
 def _board_context(board: str, show_all: bool = False) -> dict:
     """Build template context for a single board box."""
     _ensure_board_table()
@@ -3723,7 +3813,9 @@ def _board_context(board: str, show_all: bool = False) -> dict:
     # slots were instalments of one running story.
     raw = db_query(
         "SELECT id, title, url, source, starred, auto_added, created_at, "
-        "       seen_at, start_date, end_date, description "
+        "       seen_at, start_date, end_date, description, "
+        "       COALESCE(pin_order, 0) AS pin_order, "
+        "       COALESCE(follow_terms, '') AS follow_terms "
         "FROM today_board_items "
         "WHERE board=? AND dismissed=0 "
         "ORDER BY starred DESC, created_at DESC LIMIT 120",
@@ -3735,8 +3827,23 @@ def _board_context(board: str, show_all: bool = False) -> dict:
     except Exception as _exc:
         _log.warning("board %s: freshness unavailable: %s", board, _exc)
         folded = [dict(r) for r in raw]
-    # Starred stays on top of everything — an explicit pin outranks recency.
-    folded.sort(key=lambda r: 0 if r.get("starred") else 1)
+    # Starred stays on top of everything — an explicit pin outranks recency —
+    # and among the pins the reader's own order wins. An unordered pin (0) sits
+    # behind the ordered ones rather than jumping to the front.
+    folded.sort(key=lambda r: (
+        0 if r.get("starred") else 1,
+        (r.get("pin_order") or 10_000) if r.get("starred") else 0,
+        ))
+    # A pin follows its subject: attach the newest matching report from the
+    # news stream. Only for pins — doing it for every row would run a LIKE
+    # query per row on a board that shows fifty.
+    for it in folded:
+        it["_latest"] = _latest_report(it) if it.get("starred") else None
+    pinned_ids = [r["id"] for r in folded if r.get("starred")]
+    for idx, r in enumerate(folded):
+        if r.get("starred"):
+            r["_pin_pos"] = pinned_ids.index(r["id"]) + 1
+            r["_pin_of"] = len(pinned_ids)
     # UNSEEN, not RECENT, is what earns the highlight (2026-09-02).
     # freshness.band() sets _fresh from created_at age, which meant the tint
     # cleared after seven days whether it had been read or not — and because the
