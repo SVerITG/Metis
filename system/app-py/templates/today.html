@@ -189,9 +189,18 @@
       so an outerHTML swap would replace this div with the heading and drop the
       rest of the structure. Caught by tools/check_htmx_swaps.py within a minute
       of writing it — twice, in the same batch. -#}
-  <div hx-get="/api/partial/today/whats-new"
-       hx-trigger="load delay:220ms"
-       hx-swap="innerHTML"></div>
+  <div class="u-mb-6">
+    {#- ONE BOX, replacing three. "What changed in your field yesterday" and
+        "New in your field" were news and papers with labels that did not say
+        so; "Publication scan" was the same table as the second, at fourteen
+        times the markup. Asked for 2026-09-04. -#}
+    <div hx-get="/api/partial/today/field-week"
+         hx-trigger="load delay:220ms"
+         hx-swap="outerHTML">
+      <div class="panel panel--md"><div class="skeleton skeleton-bar w-30 u-mb-4"></div>
+        <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:14px;"></div></div>
+    </div>
+  </div>
 
   {#- NOT PAIRED (changed 2026-09-02). These two were side by side in a
       `.today-pair`, which pairs panels of SIMILAR height — and these are a
@@ -213,17 +222,7 @@
       with it the moment the partial arrives — caught by
       tools/check_htmx_swaps.py within a minute of my writing it, which is the
       third time that tool has paid for itself. -#}
-  <div class="u-mb-6">
-    <div hx-get="/api/partial/today/literature-discovery"
-         hx-trigger="load delay:250ms"
-         hx-swap="outerHTML"></div>
-  </div>
-  <div class="u-mb-6">
-    <div hx-get="/api/partial/today/learning"
-         hx-trigger="load delay:300ms"
-         hx-swap="outerHTML"></div>
-  </div>
-
+  
   <!-- ===== 5. Board strip — Outbreaks · Events · Funding ===== -->
   <div class="board-strip u-mb-6">
     <div hx-get="/api/partial/today/board/outbreaks"
@@ -247,6 +246,13 @@
         <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
       </div>
     </div>
+
+  <div class="u-mb-6">
+    <div hx-get="/api/partial/today/learning"
+         hx-trigger="load delay:300ms"
+         hx-swap="outerHTML"></div>
+  </div>
+
   </div>
 
   {#- CROSS-POLLINATION MOVED TO REFLECTION. Reported 2026-08-31: "'Connects to'

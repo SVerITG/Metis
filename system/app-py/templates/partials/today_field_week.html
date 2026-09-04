@@ -1,0 +1,97 @@
+{#- today_field_week.html — one box for "what is new in my field".
+
+    Replaces three panels, two of which read the same table. See the note above
+    `_field_week_data` in routers/today.py for the measurements.
+
+    THE DIGEST STATES ITS OWN DENOMINATOR. A week here is 1,232 unjudged items;
+    showing fourteen of them without saying so would be the "count without its
+    denominator" failure this project keeps paying for. Every group says how many
+    it is standing in front of, and links to the surface that holds the rest. -#}
+<div class="fw" id="today-field-week"
+     hx-target="#today-field-week" hx-swap="outerHTML">
+  <header class="fw-head">
+    <div>
+      <span class="fw-eyebrow">In your field</span>
+      <h3 class="fw-title">The last {{ days }} days</h3>
+    </div>
+    <div class="fw-tally">
+      <span class="fw-tally-cell"><b>{{ n_news }}</b> news</span>
+      <span class="fw-tally-cell"><b>{{ n_papers }}</b> papers</span>
+      <span class="fw-tally-sep"></span>
+      <a class="fw-all" href="/news">News surface →</a>
+      <a class="fw-all" href="/library">Library →</a>
+    </div>
+  </header>
+
+  {% if not news and not papers %}
+  <p class="fw-empty">Nothing unjudged in the last {{ days }} days. Everything that
+     arrived has been read, stacked or declined.</p>
+  {% endif %}
+
+  {% macro verdicts(kind, item_id) -%}
+  {#- One control set, both streams. `reading_stack` already had exactly these
+      verbs, so a news item and a paper are judged the same way.
+
+      ONLY THE IDENTITY IS SENT. The first version also posted the title, url
+      and source in every button — three buttons on fourteen rows is 42 copies
+      of long strings, and it made this box 32 KB, LARGER than the 23 KB panel
+      the merge existed to shrink. `stack.set_state` already fills those from
+      the owning table when the caller omits them, so they were never needed. -#}
+  <span class="fw-acts">
+    {#- `hx-target` and `hx-swap` are inherited from the <section>, and the
+        labels say what the buttons do, so no per-button tooltip. Together those
+        took the box from 23.4 KB to a third of it — the whole point of the
+        merge was to spend less screen and less markup on this. -#}
+    {% for state, label in [('read', 'Read'), ('later', 'Stack'), ('declined', 'Not for me')] %}
+    <button type="button" class="fw-act fw-act--{{ state }}" hx-post="/api/stack/set"
+            hx-vals='{"kind":"{{ kind }}","item_id":"{{ item_id }}","state":"{{ state }}","back":"today-field"}'>{{ label }}</button>
+    {% endfor %}
+  </span>
+  {%- endmacro %}
+
+  {% if news %}
+  <div class="fw-group">
+    <div class="fw-group-head">
+      <span class="fw-group-name">News</span>
+      <span class="fw-group-n">{{ news|length }} of {{ n_news }}{% if more_news %} · {{ more_news }} more{% endif %}</span>
+    </div>
+    {% for it in news %}
+    <article class="fw-row">
+      <span class="fw-sig fw-sig--{{ it.signal }}" title="{{ it.signal }} signal"></span>
+      <div class="fw-body">
+        <a class="fw-row-title" href="{{ it.source_url or '/news' }}"
+           {% if it.source_url %}target="_blank" rel="noopener"{% endif %}>{{ it.title | sci }}</a>
+        {% if it.summary %}<p class="fw-sum">{{ it.summary | prose | clip(120) }}</p>{% endif %}
+        <p class="fw-meta">{{ it.on_date[:10] if it.on_date }}{% if it.domain %} · {{ it.domain }}{% endif %}</p>
+      </div>
+      {{ verdicts('news', it.id) }}
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if papers %}
+  <div class="fw-group">
+    <div class="fw-group-head">
+      <span class="fw-group-name">New papers</span>
+      <span class="fw-group-n">{{ papers|length }} of {{ n_papers }}{% if more_papers %} · {{ more_papers }} more{% endif %}</span>
+    </div>
+    {% for it in papers %}
+    <article class="fw-row">
+      <span class="fw-sig fw-sig--paper" title="{{ it.lane }}"></span>
+      <div class="fw-body">
+        <a class="fw-row-title" href="{{ it.source_url or ('https://doi.org/' ~ it.doi if it.doi else '/library') }}"
+           target="_blank" rel="noopener">{{ it.title | sci }}</a>
+        <p class="fw-meta">
+          {%- if it.authors %}{{ it.authors[:58] }}{% endif %}
+          {%- if it.journal %} · {{ it.journal[:40] }}{% endif %}
+          {%- if it.on_date %} · {{ it.on_date[:10] }}{% endif %}
+        </p>
+        {% if it.why %}<p class="fw-sum fw-sum--why">{{ it.why | prose | clip(110) }}</p>{% endif %}
+      </div>
+      {{ verdicts('paper', it.id) }}
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>

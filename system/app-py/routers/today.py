@@ -4816,6 +4816,107 @@ async def today_pick_focus(request: Request):
     )
 
 
+# ── ONE BOX FOR "WHAT IS NEW IN MY FIELD" ────────────────────────────────────
+# There were three, and two of them were the same data.
+#
+#   "What changed in your field yesterday"  news_threads     (0 new)
+#   "New in your field"                     new_publications (306 new)
+#   "Publication scan"                      new_publications (368) ← same table
+#
+# Asked on 2026-09-04: "what is the difference between 'New in the field' and
+# 'what changed in your field yesterday', it should only be one of these and
+# only on a weekly basis... Also integrate Publication scan in this. Its one
+# advanced box where i see everything, well organized because Publication Scan
+# takes up too much white space for what it does." Measured: the scan panel was
+# 23,505 bytes of HTML against the other's 1,619.
+#
+# A WEEK OF THIS FIELD IS 1,232 UNJUDGED ITEMS (940 news · 292 papers, measured
+# 2026-09-04). So this is a ranked digest, not a list — everything is reachable,
+# but the box shows what a person can actually act on and says how much it is
+# standing in front of.
+#
+# Both streams share ONE verdict mechanism, `reading_stack`, which already has
+# exactly the verbs asked for: read · later (stack) · declined (not interested),
+# for kinds 'news' and 'paper'. Nothing new was needed to record a decision.
+FIELD_WEEK_DAYS = 7
+# Five and four, not eight and six. Fourteen rows came to 1,039px — a full
+# screen, which is the complaint this merge existed to answer. A digest earns
+# its place by being scannable in one look and honest about what it is standing
+# in front of; the counts in each group header do the second part.
+FIELD_NEWS_SHOWN = 5
+FIELD_PAPERS_SHOWN = 4
+
+
+def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
+    """The week's unjudged news and papers, ranked, plus the totals behind them."""
+    since = (datetime.date.today() - datetime.timedelta(days=days)).isoformat()
+
+    # `reading_stack` is the shared verdict table; a judged item leaves the box
+    # whichever verb was used, so a decision never has to be made twice.
+    NOT_JUDGED = ("NOT EXISTS (SELECT 1 FROM reading_stack s WHERE s.kind=? "
+                  "AND s.item_id = CAST({id} AS TEXT) AND s.state IN ('read','declined'))")
+
+    news = db_query(
+        "SELECT b.brief_id AS id, b.title, b.summary, b.source_url, b.domain, "
+        "       b.brief_date AS on_date, COALESCE(b.signal_strength,'medium') AS signal, "
+        "       COALESCE(b.relevance, 0) AS rel, COALESCE(b.image_url,'') AS image_url "
+        "FROM news_briefs b "
+        "WHERE COALESCE(b.brief_date,'') >= ? AND COALESCE(b.seen_at,'') = '' "
+        "  AND " + NOT_JUDGED.format(id="b.brief_id") + " "
+        # Signal first, relevance second: a 'high' signal is a judgement about
+        # the item, relevance only about its distance from a keyword.
+        "ORDER BY CASE COALESCE(b.signal_strength,'medium') "
+        "           WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, "
+        "         rel DESC, b.brief_date DESC LIMIT ?",
+        (since, "news", FIELD_NEWS_SHOWN), default=[]) or []
+
+    papers = db_query(
+        "SELECT p.id, p.title, p.journal, p.doi, p.source_url, p.authors, "
+        "       COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) AS on_date, "
+        "       COALESCE(p.relevance, 0) AS rel, COALESCE(p.lane,'field') AS lane, "
+        "       COALESCE(p.relevance_note,'') AS why "
+        "FROM new_publications p "
+        "WHERE COALESCE(p.read_at,'') = '' AND COALESCE(p.dismissed_at,'') = '' "
+        "  AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
+        "  AND " + NOT_JUDGED.format(id="p.id") + " "
+        "ORDER BY CASE COALESCE(p.lane,'field') WHEN 'field' THEN 0 ELSE 1 END, "
+        "         rel DESC, on_date DESC LIMIT ?",
+        (since, "paper", FIELD_PAPERS_SHOWN), default=[]) or []
+
+    n_news = db_scalar(
+        "SELECT COUNT(*) FROM news_briefs b WHERE COALESCE(b.brief_date,'') >= ? "
+        "AND COALESCE(b.seen_at,'') = '' AND " + NOT_JUDGED.format(id="b.brief_id"),
+        (since, "news"), default=0) or 0
+    n_papers = db_scalar(
+        "SELECT COUNT(*) FROM new_publications p WHERE COALESCE(p.read_at,'') = '' "
+        "AND COALESCE(p.dismissed_at,'') = '' "
+        "AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
+        "AND " + NOT_JUDGED.format(id="p.id"),
+        (since, "paper"), default=0) or 0
+
+    return {
+        "news": news, "papers": papers,
+        "n_news": n_news, "n_papers": n_papers,
+        "days": days, "since": since,
+        # What the digest is standing in front of. Never a count without the
+        # denominator it came from.
+        "more_news": max(0, n_news - len(news)),
+        "more_papers": max(0, n_papers - len(papers)),
+    }
+
+
+async def render_field_week(request: Request) -> str:
+    from main import templates
+    return templates.get_template("partials/today_field_week.html").render(
+        request=request, **_field_week_data())
+
+
+@router.get("/api/partial/today/field-week", response_class=HTMLResponse)
+async def today_field_week(request: Request):
+    """News and new papers for the week, in one ranked box."""
+    return HTMLResponse(await render_field_week(request))
+
+
 @router.get("/api/partial/today/whats-new", response_class=HTMLResponse)
 async def today_whats_new(request: Request):
     """News and Library arrivals, side by side.

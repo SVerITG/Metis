@@ -58,6 +58,8 @@ async def _rerender(request: Request, back: str, ctx_extra: dict | None = None) 
         return await T.render_news_rail(request)
     if back == "today-lit":
         return await T.render_literature_discovery(request)
+    if back == "today-field":
+        return await T.render_field_week(request)
     if back.startswith("lit-row:"):
         from routers import new_literature as L
         return await L.render_row(request, back.split(":", 1)[1])

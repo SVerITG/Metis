@@ -280,16 +280,34 @@ def test_toggling_the_brief_rewrites_its_own_label():
     for needle, why in [
         ("aria-expanded", "screen readers are told the old state"),
         ("show less", "the button keeps its opening label while open"),
-        ("is-clamped", "the lede stays full height, so closing changes little"),
+        ("is-folded", "the lede stays on screen, so closing leaves prose behind"),
     ]:
         assert needle in fn, f"toggleBrief() does not touch {needle!r} — {why}"
 
 
-def test_the_clamp_actually_clamps():
-    """`-webkit-line-clamp` needs its two companions or it does nothing at all."""
+def test_a_folded_brief_leaves_no_prose_behind():
+    """A collapsed brief must collapse — the whole way.
+
+    This test used to assert the opposite, and it was right to at the time: the
+    lede was clamped to three lines so that folding visibly changed something
+    while still saying enough to decide whether to open the rest. The researcher
+    asked for the other trade on 2026-09-04 — "see that the morning briefing
+    collapses completely when asked so, not the three lines that are left like
+    now" — so the class hides the lede outright.
+
+    Nothing is actually lost: the header keeps the date and the control keeps the
+    word count, so a closed brief still says what it is and how long it is.
+    Measured after the change: the panel goes from 1170px to 118px.
+    """
     css = (ROOT / "system" / "app-py" / "static" / "styles.css").read_text(encoding="utf-8")
-    m = re.search(r"\.brief-lede\.is-clamped\s*\{([^}]*)\}", css)
-    assert m, ".brief-lede.is-clamped is not defined"
+    m = re.search(r"\.brief-lede\.is-folded\s*\{([^}]*)\}", css)
+    assert m, ".brief-lede.is-folded is not defined, so folding leaves the lede on screen"
     body = m.group(1)
-    for prop in ("-webkit-box", "-webkit-box-orient", "-webkit-line-clamp", "overflow"):
-        assert prop in body, f"clamp is inert without {prop}"
+    assert "display" in body and "none" in body, (
+        "the folded lede is no longer hidden. If this went back to "
+        "`-webkit-line-clamp`, three lines of the brief stay on screen after "
+        "collapsing, which is what was reported as not collapsing at all"
+    )
+    assert "line-clamp" not in body, (
+        "the clamp is back — a clamped lede is a partly-open brief"
+    )
