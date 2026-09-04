@@ -1,0 +1,61 @@
+{#- today_review.html — one card, from material already read.
+
+    Asked for 2026-09-04: "a small box with a spaced repetition of courses that
+    you are already following and so for the content up until the point that you
+    reached... Show 1 card, only show a next card when asked."
+
+    ONE CARD, AND THE NEXT ONE IS A REQUEST. Grading reveals the next; nothing
+    is queued on screen. The count beside the header is the eligible pool, and
+    it names its denominator — an "N due" that ignores whether the lesson was
+    ever opened is the figure this box exists to correct. -#}
+<div class="rev" id="today-review">
+  <div class="rev-head">
+    <span class="rev-eyebrow">Recall</span>
+    {% if eligible %}
+    <span class="rev-count"><b>{{ eligible }}</b> ready · from {{ lessons_done }} lesson{{ '' if lessons_done == 1 else 's' }} you finished</span>
+    {% else %}
+    <span class="rev-count">{{ total_cards }} cards written · none unlocked yet</span>
+    {% endif %}
+  </div>
+
+  {% if card %}
+  <details class="rev-card">
+    <summary class="rev-front">
+      <span class="rev-q">{{ card.front_text }}</span>
+      <span class="rev-reveal">show the answer</span>
+    </summary>
+    <p class="rev-back">{{ card.back_text }}</p>
+  </details>
+  <div class="rev-foot">
+    <span class="rev-src">{{ card.course_title or card.slug }} · {{ card.lesson }}</span>
+    <span class="rev-acts" hx-target="#today-review" hx-swap="outerHTML">
+      {#- The three gradings the schedule already understands: below 3 resets the
+          interval, 4 is "got it", 5 stretches it. -#}
+      {% for q, label in [(2, 'Hard'), (4, 'Good'), (5, 'Easy')] %}
+      <button type="button" class="rev-act"
+              hx-post="/api/today/review/{{ card.sr_id }}"
+              hx-vals='{"quality":{{ q }}}'>{{ label }}</button>
+      {% endfor %}
+      <button type="button" class="rev-act rev-act--skip"
+              hx-get="/api/partial/today/review/next?after={{ card.sr_id }}"
+              title="Another card, without grading this one">Next →</button>
+    </span>
+  </div>
+
+  {% else %}
+  {#- The honest empty state. Cards exist; none is eligible because no lesson is
+      marked complete. Saying that, and offering the lesson, is more use than
+      quizzing on material never opened. -#}
+  <p class="rev-empty">
+    {% if total_cards %}
+      Recall unlocks as you finish lessons — these {{ total_cards }} cards are written
+      and waiting, but none belongs to a lesson you have completed yet.
+    {% else %}
+      No cards yet. They are written as courses are built.
+    {% endif %}
+  </p>
+  {% if start %}
+  <a class="rev-start" href="/learning">Start {{ start.next_lesson or start.title }} →</a>
+  {% endif %}
+  {% endif %}
+</div>

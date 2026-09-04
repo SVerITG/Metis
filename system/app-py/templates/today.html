@@ -253,6 +253,16 @@
          hx-swap="outerHTML"></div>
   </div>
 
+  {#- RECALL — one card, drawn only from lessons already completed. Asked for
+      2026-09-04. Sits under the learning box because it is the same subject
+      seen from the other end: that one is what to read next, this one is what
+      was read. -#}
+  <div class="u-mb-6">
+    <div hx-get="/api/partial/today/review"
+         hx-trigger="load delay:360ms"
+         hx-swap="outerHTML"></div>
+  </div>
+
   </div>
 
   {#- CROSS-POLLINATION MOVED TO REFLECTION. Reported 2026-08-31: "'Connects to'
@@ -295,13 +305,16 @@
          hx-trigger="intersect once"
          hx-swap="outerHTML"></div>
 
-    <div hx-get="/api/partial/today/brief-bridges"
-         hx-trigger="intersect once"
-         hx-swap="outerHTML"></div>
+    
 
-    <div hx-get="/api/partial/today/memory-landscape"
-         hx-trigger="intersect once"
-         hx-swap="outerHTML"></div>
+    {#- WHAT METIS KNOWS — one row per KIND of memory, and the strip is the link.
+      Replaced the memory landscape (twenty topics as sized bubbles, 30 KB) on
+      2026-09-04: "must be much smaller: a visualization of how many memories
+      there are in each kind of memory, when clicked you will go to the more
+      exhaustive memory page in the system". -#}
+  <div hx-get="/api/partial/today/knows"
+       hx-trigger="load delay:340ms"
+       hx-swap="innerHTML"></div>
   {% endcall %}
 
   {#- DISPATCH, LAST AND FOLDED. Reported 2026-08-31: "put the dispatch at the

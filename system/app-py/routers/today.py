@@ -4545,6 +4545,42 @@ async def today_brief_bridges(request: Request):
 
 # ── E: Memory Landscape ─────────────────────────────────────────────────
 
+# ── WHAT METIS KNOWS, SMALL ──────────────────────────────────────────────────
+# The memory landscape drew twenty TOPICS as sized bubbles in 30 KB of markup
+# and most of a screen. Asked for a much smaller thing on 2026-09-04: how many
+# memories exist in each KIND, and a click through to the full surface.
+#
+# The counts come from `memory_health.memory_layer_counts()` so the strip and
+# the full cards on the system surface cannot disagree about what is in there.
+@router.get("/api/partial/today/knows", response_class=HTMLResponse)
+async def today_knows(request: Request):
+    """One row per kind of memory, linking to the memory surface."""
+    from main import templates
+    try:
+        from routers.memory_health import memory_layer_counts
+        layers = memory_layer_counts()
+    except Exception:
+        layers = []
+    # THE LIBRARY IS NOT A KIND OF MEMORY, and putting it in the same bar chart
+    # said otherwise. It holds ~47,000 indexed passages of other people's
+    # writing; the seven memory kinds hold tens to a thousand each of what this
+    # system worked out. Charted together — even scaled to the largest — the
+    # library was the only visible bar and every real memory kind was a
+    # hairline. That is a chart that hides its own subject.
+    #
+    # So it is reported beside the strip as context, and the bars compare the
+    # seven kinds against each other, which is the comparison worth drawing.
+    library = next((l for l in layers if l["table"] == "pdf_chunks"), None)
+    kinds = [l for l in layers if l["table"] != "pdf_chunks"]
+    total = sum(l["count"] for l in kinds)
+    top = max([l["count"] for l in kinds] or [0]) or 1
+    for l in kinds:
+        l["pct"] = round(l["count"] / top * 100, 1)
+    return templates.TemplateResponse(
+        request, "partials/today_knows.html",
+        {"layers": kinds, "total": total, "library": library})
+
+
 @router.get("/api/partial/today/memory-landscape", response_class=HTMLResponse)
 async def today_memory_landscape(request: Request):
     """Topic map — circles sized by memory density, colored by recency, with relation edges."""

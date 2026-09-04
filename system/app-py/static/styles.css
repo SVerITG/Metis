@@ -1407,7 +1407,13 @@ a.board-item-title:hover { color: var(--m-accent); }
    Closed by default: the summary line carries the fact, the body carries the
    detail, and opening it is a choice rather than a scroll you have to make. */
 .needs-you { display: flex; flex-direction: column; gap: var(--m-space-3); }
-.pick { border-top: 1px solid var(--m-rule-soft); padding-top: var(--m-space-2); }
+/* A BOX, NOT A RULE. This was a top border and a fold, so on a page of framed
+   panels it read as a stray line rather than a thing — "you can put it in a box
+   so it is somewhat clearer" (2026-09-04). Closed it is one row high, which is
+   the whole point of it being folded; framed, that row is legible as a control. */
+.pick { background: var(--m-surface); border: 1px solid var(--m-rule);
+  border-radius: var(--m-radius); padding: 10px 14px; }
+.pick[open] { padding-bottom: 12px; }
 .pick-sum {
   list-style: none; cursor: pointer; display: flex; align-items: baseline;
   gap: 10px; padding: 4px 0;
@@ -5834,6 +5840,12 @@ a.mrow-title { text-decoration: none; }
 .ft-card-note { font-size: var(--t-meta); color: var(--m-muted); line-height: 1.45; }
 .ft-card-go { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.07em;
   text-transform: uppercase; color: var(--m-accent); margin-top: 3px; }
+/* Grouped reference cards: the group name is a quiet divider, not a heading that
+   competes with the section title above it. */
+.ft-group + .ft-group { margin-top: 16px; }
+.ft-group-label { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.11em;
+  text-transform: uppercase; color: var(--m-muted); margin-bottom: 7px;
+  padding-bottom: 5px; border-bottom: 1px solid var(--m-rule); }
 
 /* ── Focus: what's new ───────────────────────────────────────────────────────
    One section answering "has anything arrived?", instead of three that each
@@ -5924,3 +5936,69 @@ a.mrow-title { text-decoration: none; }
   .fw-row { flex-wrap: wrap; }
   .fw-acts { width: 100%; padding-left: 14px; }
 }
+
+/* ── TODAY · what Metis knows ─────────────────────────────────────────────────
+   One row per KIND of memory. Replaced a twenty-bubble topic landscape that
+   cost 30 KB and most of a screen; this is the same question asked smaller, and
+   the whole strip is a link to the surface that answers it properly. */
+.knows { display: block; text-decoration: none; background: var(--m-surface);
+  border: 1px solid var(--m-rule); border-radius: var(--m-radius);
+  padding: 12px 15px; transition: border-color 120ms; }
+.knows:hover { border-color: var(--m-accent); }
+.knows-head { display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 9px; }
+.knows-eyebrow { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--m-muted-soft); }
+.knows-total { font-family: var(--m-mono); font-size: 10px; color: var(--m-muted); }
+.knows-total b { color: var(--m-ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+.knows-rows { display: grid; gap: 3px; }
+.knows-row { display: grid; grid-template-columns: 92px 1fr 52px; align-items: center; gap: 9px; }
+.knows-name { font-family: var(--m-ui); font-size: var(--t-meta); color: var(--m-ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.knows-track { height: 7px; background: var(--m-surface-2); border-radius: 2px; overflow: hidden; }
+.knows-bar { display: block; height: 100%; background: var(--m-accent); border-radius: 2px; }
+/* An empty kind still gets a row and a printed zero — a layer that vanishes
+   when empty is a layer you never notice is empty. */
+.knows-bar--empty { background: var(--m-rule); }
+.knows-n { font-family: var(--m-mono); font-size: 10px; color: var(--m-muted);
+  text-align: right; font-variant-numeric: tabular-nums; }
+.knows-go { display: block; margin-top: 9px; font-family: var(--m-mono); font-size: 9.5px;
+  letter-spacing: 0.06em; color: var(--m-accent); }
+.knows-foot { display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-top: 9px; }
+.knows-lib { font-family: var(--m-mono); font-size: 9.5px; color: var(--m-muted-soft); }
+.knows-lib b { color: var(--m-muted); font-variant-numeric: tabular-nums; }
+
+/* ── TODAY · recall, one card at a time ───────────────────────────────────────
+   Gated on lessons actually completed, so the box is empty until something has
+   been read. One card visible; the next is a request, never a queue. */
+.rev { background: var(--m-surface); border: 1px solid var(--m-rule);
+  border-radius: var(--m-radius); padding: 12px 15px; }
+.rev-head { display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 9px; }
+.rev-eyebrow { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--m-muted-soft); }
+.rev-count { font-family: var(--m-mono); font-size: 10px; color: var(--m-muted); }
+.rev-count b { color: var(--m-ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+.rev-card { border-left: 2px solid var(--m-accent); padding-left: 11px; }
+.rev-front { list-style: none; cursor: pointer; display: flex; flex-direction: column; gap: 5px; }
+.rev-front::-webkit-details-marker { display: none; }
+.rev-q { font-family: var(--m-display); font-size: var(--t-body); color: var(--m-ink); line-height: 1.4; }
+.rev-reveal { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--m-accent); }
+.rev-card[open] .rev-reveal { display: none; }
+.rev-back { margin: 8px 0 0; font-size: var(--t-small); color: var(--m-muted); line-height: 1.55; }
+.rev-foot { display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-top: 11px; }
+.rev-src { font-family: var(--m-mono); font-size: 9.5px; color: var(--m-muted-soft); }
+.rev-acts { display: flex; gap: 4px; }
+.rev-act { appearance: none; cursor: pointer; background: transparent;
+  border: 1px solid var(--m-rule); border-radius: var(--m-radius-sm);
+  font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.05em;
+  color: var(--m-muted); padding: 4px 9px; transition: border-color 120ms, color 120ms; }
+.rev-act:hover { border-color: var(--m-accent); color: var(--m-accent); }
+.rev-act--skip { border-style: dashed; }
+.rev-empty { margin: 0; font-size: var(--t-small); color: var(--m-muted); line-height: 1.5; }
+.rev-start { display: inline-block; margin-top: 9px; font-family: var(--m-mono);
+  font-size: 9.5px; letter-spacing: 0.06em; color: var(--m-accent); text-decoration: none; }
+.rev-start:hover { text-decoration: underline; }

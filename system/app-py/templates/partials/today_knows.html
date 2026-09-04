@@ -1,0 +1,39 @@
+{#- today_knows.html — what Metis knows, in one strip.
+
+    Replaces the memory landscape, which drew twenty topics as sized bubbles in
+    30 KB of markup. Asked for 2026-09-04: "What Metis knows must be much
+    smaller: a visualization of how many memories there are in each kind of
+    memory, when clicked you will go to the more exhaustive memory page."
+
+    So: one row per KIND, not per topic, and the whole strip is the link. The
+    bars are proportional to the largest kind rather than to the total, because
+    one kind holds 47,000 passages and seven hold hundreds. The indexed library
+    is therefore reported beside the bars rather than in them: it is other
+    people's writing, not something this system worked out, and charting the two
+    together left every real memory kind as a hairline. The number is always
+    printed, so a bar never has to carry the fact on its own. -#}
+<a class="knows" href="/metis" title="Open the full memory surface">
+  <div class="knows-head">
+    <span class="knows-eyebrow">What Metis knows</span>
+    <span class="knows-total"><b>{{ '{:,}'.format(total) }}</b> remembered · {{ layers|length }} kinds</span>
+  </div>
+  <div class="knows-rows">
+    {% for l in layers %}
+    <div class="knows-row">
+      <span class="knows-name">{{ l.name }}</span>
+      <span class="knows-track">
+        <span class="knows-bar{% if not l.count %} knows-bar--empty{% endif %}"
+              style="width:{{ l.pct }}%"></span>
+      </span>
+      <span class="knows-n">{{ '{:,}'.format(l.count) }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {#- The library sits outside the bars on purpose — see the note in the route.
+      Reported, because it is a real thing this system holds; not charted,
+      because it is not the same quantity. -#}
+  <div class="knows-foot">
+    {% if library %}<span class="knows-lib">+ <b>{{ '{:,}'.format(library.count) }}</b> indexed passages from your reading</span>{% endif %}
+    <span class="knows-go">the whole memory surface →</span>
+  </div>
+</a>

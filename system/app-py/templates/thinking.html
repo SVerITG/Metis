@@ -145,6 +145,24 @@
     </div>
   </div>
 
+  {#- CONNECTIONS TO YOUR RESEARCH — moved here from Today on 2026-09-04:
+      "you can move completely to Reflection surface". It is cross-pollination
+      over `daily_insights`: what one piece of work implies for another. That is
+      a question you ask while reflecting, not while deciding what to do today.
+
+      Distinct from "Connects to" higher up this page, which is scoped to the
+      project you touched last; this one ranges over everything. -#}
+  <div style="margin-top:var(--m-space-7);">
+    <div hx-get="/api/partial/today/brief-bridges"
+         hx-trigger="load delay:180ms"
+         hx-swap="innerHTML">
+      <div>
+        {{ sec_label("Connections to your research", tail="CROSS-POLLINATION") }}
+        <div class="panel skeleton skeleton-box" style="height:120px;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── Personal Knowledge Graph ── -->
   <div style="margin-top:var(--m-space-7);">
     <div hx-get="/api/partial/knowledge/graph"
