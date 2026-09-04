@@ -82,7 +82,19 @@ CREATE TABLE IF NOT EXISTS briefing_item (
     headline    TEXT NOT NULL,
     blurb       TEXT DEFAULT '',
     url         TEXT DEFAULT '',
-    source      TEXT DEFAULT ''
+    source      TEXT DEFAULT '',
+    -- FETCHED FROM THE ARTICLE PAGE, not from the briefing e-mail. The e-mail
+    -- carries neither: `blurb` is its own summary cut at 420 characters, and
+    -- there is no image at all. Asked for both on 2026-09-04, so
+    -- tools/enrich_briefing_items.py reads each article's own og:image and
+    -- og:description. `enriched_at` records the attempt so a failure is not
+    -- retried on every render, and `enrich_note` says WHY when it failed —
+    -- several publishers refuse a scripted request, and a silent blank is
+    -- indistinguishable from an article with no picture.
+    image_url    TEXT DEFAULT '',
+    description  TEXT DEFAULT '',
+    enriched_at  TEXT DEFAULT '',
+    enrich_note  TEXT DEFAULT ''
 )
 """
 

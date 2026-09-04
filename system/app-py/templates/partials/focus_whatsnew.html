@@ -20,23 +20,23 @@
   </div>
 </div>
 {% else %}
-<div class="wn-list">
+<div class="fwn-list">
   {% for it in new_news %}
-  <article class="wn-item">
-    <span class="wn-kind wn-kind--news">NEWS</span>
-    <div class="wn-body">
-      <a class="wn-title" href="{{ it.source_url or '#' }}"{% if it.source_url %} target="_blank" rel="noopener"{% endif %}>{{ it.title }}</a>
-      {% if it.summary %}<p class="wn-sum">{{ it.summary[:230] }}{% if it.summary|length > 230 %}…{% endif %}</p>{% endif %}
-      <p class="wn-meta">{{ it.brief_date[:10] if it.brief_date else '' }}{% if it.domain %} · {{ it.domain }}{% endif %}</p>
+  <article class="fwn-item">
+    <span class="fwn-kind fwn-kind--news">NEWS</span>
+    <div class="fwn-body">
+      <a class="fwn-title" href="{{ it.source_url or '#' }}"{% if it.source_url %} target="_blank" rel="noopener"{% endif %}>{{ it.title }}</a>
+      {% if it.summary %}<p class="fwn-sum">{{ it.summary[:230] }}{% if it.summary|length > 230 %}…{% endif %}</p>{% endif %}
+      <p class="fwn-meta">{{ it.brief_date[:10] if it.brief_date else '' }}{% if it.domain %} · {{ it.domain }}{% endif %}</p>
     </div>
   </article>
   {% endfor %}
   {% for it in new_reading %}
-  <article class="wn-item">
-    <span class="wn-kind wn-kind--paper">PAPER</span>
-    <div class="wn-body">
-      <a class="wn-title" href="{{ ('/api/library/pdf/' ~ it.id) if it.id else '#' }}" target="_blank" rel="noopener">{{ it.title }}</a>
-      <p class="wn-meta">
+  <article class="fwn-item">
+    <span class="fwn-kind fwn-kind--paper">PAPER</span>
+    <div class="fwn-body">
+      <a class="fwn-title" href="{{ ('/api/library/pdf/' ~ it.id) if it.id else '#' }}" target="_blank" rel="noopener">{{ it.title }}</a>
+      <p class="fwn-meta">
         {%- if it.authors %}{{ it.authors[:70] }}{% endif %}
         {%- if it.year %} · {{ it.year }}{% endif %}
         {%- if it.journal %} · {{ it.journal[:44] }}{% endif %}

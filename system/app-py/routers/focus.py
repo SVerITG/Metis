@@ -105,6 +105,24 @@ def _briefing_editions(limit_kinds: int = 3, per_kind: int = 3) -> list:
                 items = B.items_of(ed["edition_id"])
             except Exception:
                 items = []
+            # `items_of` predates the enrichment columns, so read them here
+            # rather than changing a shared MCP helper the News surface also
+            # uses. One query per edition, not per item.
+            try:
+                from db import db_query as _q
+                extra = {r["item_id"]: r for r in (_q(
+                    "SELECT item_id, COALESCE(image_url,'') AS image_url, "
+                    "       COALESCE(description,'') AS description, "
+                    "       COALESCE(enrich_note,'') AS enrich_note "
+                    "FROM briefing_item WHERE edition_id=?",
+                    (ed["edition_id"],), default=[]) or [])}
+                for it in items:
+                    e = extra.get(it.get("item_id")) or {}
+                    it["image_url"] = e.get("image_url", "")
+                    it["description"] = e.get("description", "")
+                    it["enrich_note"] = e.get("enrich_note", "")
+            except Exception as exc:
+                log.warning("[focus] briefing enrichment unreadable: %s", exc)
             out.append({**ed, "kind_name": names.get(kind, kind), "items": items})
     out.sort(key=lambda e: str(e.get("published_at") or ""), reverse=True)
     return out
