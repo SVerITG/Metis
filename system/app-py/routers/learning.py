@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 
 import markdown as _md
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
@@ -474,6 +474,101 @@ def _compute_streak() -> int:
         streak += 1
         check -= datetime.timedelta(days=1)
     return streak
+
+
+# ── SPACED REPETITION, GATED ON WHAT YOU HAVE ACTUALLY READ ──────────────────
+# Asked for 2026-09-04: a small box on Today drawing cards from the courses in
+# progress, "for the content up until the point that you reached... Show 1 card,
+# only show a next card when asked."
+#
+# The gate is the part that did not exist. A card's `source_id` IS its lesson
+# ('lesson-01'), so eligibility is a join against `lesson_completions` — and
+# measured on 2026-09-04 that yields ZERO of 226 course cards, because no lesson
+# is marked complete yet. The Learning surface's "234 cards due" is the ungated
+# count, which is why it disagrees. An empty box here is the honest answer and
+# it says how to fill it, rather than quizzing on material never opened.
+def _sm2(interval: int, ef: float, reps: int, quality: int) -> tuple[int, float, int, str]:
+    """One implementation of the schedule. Two copies would drift apart."""
+    if quality < 3:
+        reps, interval = 0, 1
+    else:
+        interval = 1 if reps == 0 else (6 if reps == 1 else round(interval * ef))
+        reps += 1
+    ef = max(1.3, ef + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
+    return interval, ef, reps, str(datetime.date.today() + datetime.timedelta(days=interval))
+
+
+def _eligible_cards(limit: int = 1, exclude: str = "") -> list[dict]:
+    """Cards from lessons the researcher has actually completed, due first."""
+    today = str(datetime.date.today())
+    rows = db_query(
+        "SELECT s.sr_id, s.front_text, s.back_text, s.source_table AS slug, "
+        "       s.source_id AS lesson, s.next_review, s.repetitions, "
+        "       c.title AS course_title "
+        "FROM spaced_repetition s "
+        "JOIN lesson_completions lc "
+        "  ON lc.course_slug = s.source_table AND lc.lesson_id = s.source_id "
+        "LEFT JOIN learning_courses c ON c.slug = s.source_table "
+        "WHERE s.next_review <= ? AND s.sr_id != ? "
+        "ORDER BY s.next_review, s.repetitions LIMIT ?",
+        (today, exclude or "\x00", limit), default=[]) or []
+    return [dict(r) for r in rows]
+
+
+def _eligible_count() -> tuple[int, int, int]:
+    """(eligible now, total course cards, lessons completed) — always with its denominator."""
+    today = str(datetime.date.today())
+    elig = db_scalar(
+        "SELECT COUNT(*) FROM spaced_repetition s JOIN lesson_completions lc "
+        "ON lc.course_slug = s.source_table AND lc.lesson_id = s.source_id "
+        "WHERE s.next_review <= ?", (today,), default=0) or 0
+    total = db_scalar(
+        "SELECT COUNT(*) FROM spaced_repetition WHERE source_table IN "
+        "(SELECT slug FROM learning_courses WHERE slug IS NOT NULL)", default=0) or 0
+    done = db_scalar("SELECT COUNT(*) FROM lesson_completions", default=0) or 0
+    return elig, total, done
+
+
+def _review_ctx(exclude: str = "") -> dict:
+    cards = _eligible_cards(1, exclude)
+    elig, total, done = _eligible_count()
+    nxt = db_query(
+        "SELECT slug, title, next_lesson FROM learning_courses "
+        "WHERE status IN ('active','in_progress') AND COALESCE(next_lesson,'') != '' "
+        "ORDER BY progress_pct DESC LIMIT 1", default=[]) or []
+    return {"card": cards[0] if cards else None, "eligible": elig,
+            "total_cards": total, "lessons_done": done,
+            "start": dict(nxt[0]) if nxt else None}
+
+
+@router.get("/api/partial/today/review", response_class=HTMLResponse)
+async def today_review(request: Request):
+    """One card, from a lesson already completed."""
+    return templates.TemplateResponse(
+        request, "partials/today_review.html", _review_ctx())
+
+
+@router.post("/api/today/review/{sr_id}", response_class=HTMLResponse)
+async def today_review_grade(sr_id: str, request: Request, quality: int = Form(4)):
+    """Grade this card, then hand back the NEXT one — never before it is asked for."""
+    row = db_query("SELECT interval_days, ease_factor, repetitions FROM spaced_repetition "
+                   "WHERE sr_id=?", (sr_id,), default=[])
+    if row:
+        r = row[0]
+        iv, ef, reps, nxt = _sm2(r["interval_days"] or 1, r["ease_factor"] or 2.5,
+                                 r["repetitions"] or 0, max(0, min(5, quality)))
+        db_execute("UPDATE spaced_repetition SET interval_days=?, ease_factor=?, "
+                   "repetitions=?, next_review=?, reviewed_at=datetime('now') WHERE sr_id=?",
+                   (iv, ef, reps, nxt, sr_id))
+    return templates.TemplateResponse(
+        request, "partials/today_review.html", _review_ctx(exclude=sr_id))
+
+
+@router.get("/api/partial/today/review/next", response_class=HTMLResponse)
+async def today_review_next(request: Request, after: str = ""):
+    """Skip to the next card without grading this one."""
+    return templates.TemplateResponse(
+        request, "partials/today_review.html", _review_ctx(exclude=after))
 
 
 @router.post("/api/learning/review/{sr_id}", response_class=HTMLResponse)

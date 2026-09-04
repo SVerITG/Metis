@@ -40,66 +40,43 @@ async def memory_tab_partial(request: Request):
 # ── Partials ──────────────────────────────────────────────────────────────
 
 
+# ── WHAT METIS KNOWS, COUNTED ONCE ───────────────────────────────────────────
+# Two panels ask this question — the full cards on the system surface and the
+# compact strip on Today — and a second copy of the layer list would drift the
+# moment a layer was added. One author, both readers.
+#
+# `episodic_memory` and `semantic_memory` are the two that can be absent on an
+# older database, so every count falls back to 0 rather than raising: a missing
+# layer should read as empty, never take the panel down.
+MEMORY_LAYERS = [
+    ("Memory Palace", "CURATED",       "memory_entries",     "Entries you and Metis chose to keep"),
+    ("Episodic",      "EVENTS",        "episodic_memory",    "What happened, and what was found"),
+    ("Semantic",      "CONCEPTS",      "semantic_memory",    "Settled facts and understanding"),
+    ("Procedural",    "PRACTICE",      "procedural_memory",  "How things are done here"),
+    ("Sessions",      "CONVERSATIONS", "session_summaries",  "The record of each working session"),
+    ("Ideas",         "THREADS",       "ideas",              "Thoughts captured for later"),
+    ("Reflexions",    "SELF-REVIEW",   "reflexion_log",      "Where the work could improve"),
+    ("Library",       "INDEXED",       "pdf_chunks",         "Passages from your reading, searchable"),
+]
+
+
+def memory_layer_counts() -> list[dict]:
+    """One row per kind of memory, with its count. Never raises."""
+    out = []
+    for name, kicker, table, desc in MEMORY_LAYERS:
+        try:
+            n = db_scalar(f'SELECT COUNT(*) FROM "{table}"', default=0) or 0
+        except Exception:
+            n = 0
+        out.append({"name": name, "kicker": kicker, "count": n,
+                    "desc": desc, "table": table})
+    return out
+
+
 @router.get("/api/partial/memory/overview", response_class=HTMLResponse)
 async def memory_overview(request: Request):
     """Summary cards for each memory layer."""
-    layers = []
-
-    # Memory palace
-    palace = db_scalar(
-        "SELECT COUNT(*) FROM memory_entries", default=0
-    ) or 0
-    layers.append({"name": "Memory Palace", "kicker": "CURATED", "count": palace,
-                    "desc": "Entries you and Metis chose to keep"})
-
-    # Episodic
-    episodic = db_scalar(
-        "SELECT COUNT(*) FROM episodic_memory", default=0
-    ) or 0
-    layers.append({"name": "Episodic", "kicker": "EVENTS", "count": episodic,
-                    "desc": "What happened, and what was found"})
-
-    # Semantic
-    semantic = db_scalar(
-        "SELECT COUNT(*) FROM semantic_memory", default=0
-    ) or 0
-    layers.append({"name": "Semantic", "kicker": "CONCEPTS", "count": semantic,
-                    "desc": "Settled facts and understanding"})
-
-    # Procedural
-    procedural = db_scalar(
-        "SELECT COUNT(*) FROM procedural_memory", default=0
-    ) or 0
-    layers.append({"name": "Procedural", "kicker": "PRACTICE", "count": procedural,
-                    "desc": "How things are done here"})
-
-    # Session summaries
-    sessions = db_scalar(
-        "SELECT COUNT(*) FROM session_summaries", default=0
-    ) or 0
-    layers.append({"name": "Sessions", "kicker": "CONVERSATIONS", "count": sessions,
-                    "desc": "The record of each working session"})
-
-    # Ideas
-    ideas = db_scalar(
-        "SELECT COUNT(*) FROM ideas", default=0
-    ) or 0
-    layers.append({"name": "Ideas", "kicker": "THREADS", "count": ideas,
-                    "desc": "Thoughts captured for later"})
-
-    # Reflexions
-    reflexions = db_scalar(
-        "SELECT COUNT(*) FROM reflexion_log", default=0
-    ) or 0
-    layers.append({"name": "Reflexions", "kicker": "SELF-REVIEW", "count": reflexions,
-                    "desc": "Where the work could improve"})
-
-    # Knowledge (indexed library)
-    chunks = db_scalar(
-        "SELECT COUNT(*) FROM pdf_chunks", default=0
-    ) or 0
-    layers.append({"name": "Library", "kicker": "INDEXED", "count": chunks,
-                    "desc": "Passages from your reading, searchable"})
+    layers = memory_layer_counts()
 
     total = sum(l["count"] for l in layers)
 
