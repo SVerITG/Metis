@@ -1,0 +1,51 @@
+{#- focus_briefings.html — the Nature Briefing editions, read in place.
+
+    STYLED IN THE SOURCE'S OWN IDIOM, which is what was asked for. Nature's
+    briefing is a serif headline over a short summary paragraph, one story after
+    another separated by a hairline, with the outlet named in small caps. That is
+    what this reproduces — using this app's own tokens, so it belongs to the
+    page it sits on rather than importing a second design system.
+
+    NO THUMBNAILS, and the reason is in the data: `briefing_item` has no image
+    column, and the briefing rows are the only ones in the news table with no
+    image_url at all. See the note above `_briefing_editions`. -#}
+<div class="nb">
+  {% for ed in briefings %}
+  <details class="nb-ed"{% if loop.first %} open{% endif %}>
+    <summary class="nb-ed-head">
+      <span class="nb-kind">{{ ed.kind_name }}</span>
+      <span class="nb-ed-title">{{ ed.title }}</span>
+      <span class="nb-ed-meta">{{ ed.published_at[:10] if ed.published_at }} · {{ ed.n_items }} stories</span>
+    </summary>
+
+    <div class="nb-items">
+      {% for it in ed["items"] %}
+      <article class="nb-item">
+        {#- The blurb IS Nature's summary of the article — the paragraph the
+            e-mail carries. The full text belongs to the publisher, so the
+            headline links out and the summary reads here. -#}
+        <a class="nb-h" href="{{ it.url or ed.url }}" target="_blank" rel="noopener">{{ it.headline | sci }}</a>
+        {#- THE CUT IS IN THE DATA, not here. The scanner stores blurbs at a hard
+            420 characters — all 89 of them are exactly that long — so every one
+            ends mid-word. Nothing here can recover the rest, but a blurb that
+            stops at the cap must READ as truncated rather than as a sentence
+            that simply ends, so it gets an ellipsis and the headline links out. -#}
+        {% if it.blurb %}
+        <p class="nb-blurb">{{ it.blurb | prose }}{% if it.blurb | length >= 420 %}<span class="nb-cut">… continues at the source</span>{% endif %}</p>
+        {% endif %}
+        {% if it.source %}<span class="nb-src">{{ it.source }}</span>{% endif %}
+      </article>
+      {% endfor %}
+      {% if not ed["items"] %}
+      <p class="nb-none">This edition's stories were not captured — only its headline was.</p>
+      {% endif %}
+    </div>
+
+    <a class="nb-orig" href="{{ ed.url }}" target="_blank" rel="noopener">the edition as Nature sent it →</a>
+  </details>
+  {% endfor %}
+
+  {% if not briefings %}
+  <p class="nb-none">No briefing editions stored yet. They arrive with the news scan.</p>
+  {% endif %}
+</div>

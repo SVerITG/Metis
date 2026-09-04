@@ -20,14 +20,80 @@
 {% include "partials/_news_tabstrip.html" %}
 {{ tag_datalist(all_tags or []) }}
 
+{#- ── THE NEWS PAGE ────────────────────────────────────────────────────────
+    Added 2026-09-04. This tab opened on running stories: each thread showed
+    three items and a "+64 more", which is the three-per-category shape the
+    researcher asked to be rid of — "a mix of all categories... It needs to feel
+    like a news website... max 20 news items that refresh every day regardless
+    if i logged on or read them."
+
+    So twenty items, dealt round-robin across beats, with pictures. The lead
+    runs wide because a page of identical tiles has no entry point; a card with
+    no picture keeps its footprint so the grid does not tear into ragged rows.
+    The running stories move below, folded — the grouping answers a real
+    question and its reasoning is in this file's header, so it is kept rather
+    than replaced.
+
+    Classes are `ovf-` prefixed: `nf-` already belongs to the card grid on the
+    other news tabs, and reusing it put seven duplicated selectors into the
+    stylesheet the first time this was written. -#}
+{% if feed %}
+<div class="ovf">
+  <div class="ovf-head">
+    <h2 class="sec-label" style="margin:0;">Today
+      <span class="sec-label-tail">{{ feed|length }} OF {{ '{:,}'.format(feed_total) }} · {{ feed_beats }} BEATS · {{ feed_images }} WITH A PICTURE</span>
+    </h2>
+  </div>
+
+  {% if lead %}
+  <a class="ovf-lead{% if not lead.has_image %} ovf-lead--flat{% endif %}"
+     href="{{ lead.url or '#' }}"{% if lead.url %} target="_blank" rel="noopener"{% endif %}>
+    {% if lead.has_image %}
+    {#- A STORED URL IS NOT A GUARANTEE. Every sampled URL resolves from this
+        machine, yet tiles still render as a broken-image icon: these are other
+        publishers' servers, and some refuse a hotlink or simply go away. Hiding
+        the element on error leaves the placeholder gradient, which is a tile
+        with no picture rather than a tile that is visibly broken. -#}
+    <span class="ovf-lead-img"><img src="{{ lead.image }}" alt="" loading="eager"
+         decoding="async" onerror="this.closest('.ovf-lead-img').remove()"></span>
+    {% endif %}
+    <span class="ovf-lead-body">
+      <span class="ovf-tag">{{ lead.domain or 'news' }}</span>
+      <span class="ovf-lead-h">{{ lead.title | sci }}</span>
+      {% if lead.summary %}<span class="ovf-lead-sum">{{ lead.summary | prose(220) }}</span>{% endif %}
+      <span class="ovf-when">{{ lead.when }}{% if lead.source %} · {{ lead.source }}{% endif %}</span>
+    </span>
+  </a>
+  {% endif %}
+
+  <div class="ovf-grid">
+    {% for c in rest %}
+    <a class="ovf-card" href="{{ c.url or '#' }}"{% if c.url %} target="_blank" rel="noopener"{% endif %}>
+      <span class="ovf-thumb{% if not c.has_image %} ovf-thumb--none{% endif %}">
+        {% if c.has_image %}<img src="{{ c.image }}" alt="" loading="lazy" decoding="async"
+             onerror="this.parentNode.classList.add('ovf-thumb--none');this.remove()">{% endif %}
+      </span>
+      <span class="ovf-tag">{{ c.domain or 'news' }}</span>
+      <span class="ovf-h">{{ c.title | sci }}</span>
+      <span class="ovf-when">{{ c.when }}{% if c.source %} · {{ c.source }}{% endif %}</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 {% if not threads %}
   {{ empty_panel("Nothing in this window", "That can mean a quiet period — or that the feeds have stopped answering. Ask Metis to check the feeds if it looks too quiet.") }}
 {% else %}
-  <div class="u-mb-2" style="display:flex;align-items:baseline;gap:var(--m-space-3);">
+  {#- FOLDED, not removed. The grouping is what this tab used to be, and the
+      header of this file argues for it; it is now the second question the page
+      answers rather than the first. -#}
+  <details class="ovf-stories"{% if not feed %} open{% endif %}>
+  <summary class="u-mb-2" style="display:flex;align-items:baseline;gap:var(--m-space-3);cursor:pointer;list-style:none;">
     <h2 class="sec-label" style="margin:0;">Running stories
       <span class="sec-label-tail">{{ threads|length }} STOR{{ 'Y' if threads|length == 1 else 'IES' }} · {{ total_items }} REPORTS · {{ period_label|upper }}</span>
     </h2>
-  </div>
+  </summary>
 
   <div class="u-mb-6">
     {% for t in threads %}
@@ -137,4 +203,5 @@
       {% endif %}
     </div>
   {% endif %}
+  </details>
 {% endif %}

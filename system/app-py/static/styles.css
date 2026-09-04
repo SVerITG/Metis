@@ -6028,3 +6028,79 @@ a.mrow-title { text-decoration: none; }
   color: var(--m-muted-soft); font-size: 10px; line-height: 1; padding: 2px 3px; }
 .board-move:hover:not(:disabled) { color: var(--m-accent); }
 .board-move:disabled { opacity: 0.25; cursor: default; }
+
+/* ── FOCUS · briefing editions, in the source's idiom ─────────────────────────
+   Nature's briefing is a serif headline over a short summary, stories separated
+   by a hairline, the outlet in small caps. Reproduced with this app's own
+   tokens rather than importing a second design system. */
+.nb { display: grid; gap: 10px; }
+.nb-ed { background: var(--m-surface); border: 1px solid var(--m-rule);
+  border-radius: var(--m-radius); padding: 12px 16px; }
+.nb-ed-head { list-style: none; cursor: pointer; display: grid; gap: 3px; }
+.nb-ed-head::-webkit-details-marker { display: none; }
+.nb-kind { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--m-accent); }
+.nb-ed-title { font-family: var(--m-display); font-size: var(--t-h3); font-weight: 500;
+  color: var(--m-ink); line-height: 1.3; letter-spacing: -0.01em; }
+.nb-ed-meta { font-family: var(--m-mono); font-size: 9.5px; color: var(--m-muted-soft); }
+.nb-items { margin-top: 12px; border-top: 1px solid var(--m-rule); }
+.nb-item { padding: 12px 0; border-bottom: 1px solid var(--m-rule-soft); }
+.nb-item:last-child { border-bottom: 0; }
+.nb-h { display: block; font-family: var(--m-display); font-size: var(--t-body);
+  font-weight: 500; color: var(--m-ink); text-decoration: none; line-height: 1.35; }
+.nb-h:hover { text-decoration: underline; }
+/* The measure matters: Nature's briefing reads at roughly 70 characters, and a
+   summary paragraph run to a 1500px surface is unreadable however good the type. */
+.nb-blurb { margin: 5px 0 0; font-size: var(--t-small); color: var(--m-muted);
+  line-height: 1.6; max-width: 72ch; }
+.nb-src { display: inline-block; margin-top: 6px; font-family: var(--m-mono);
+  font-size: 8.5px; letter-spacing: 0.11em; text-transform: uppercase;
+  color: var(--m-muted-soft); }
+.nb-orig { display: inline-block; margin-top: 11px; font-family: var(--m-mono);
+  font-size: 9.5px; letter-spacing: 0.06em; color: var(--m-accent); text-decoration: none; }
+.nb-orig:hover { text-decoration: underline; }
+.nb-none { margin: 0; padding: 14px 0; font-size: var(--t-small); font-style: italic;
+  color: var(--m-muted-soft); }
+/* The blurb is stored at a hard cap and ends mid-word; saying so is better than
+   letting a cut sentence read as a finished one. */
+.nb-cut { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.05em;
+  color: var(--m-accent); white-space: nowrap; margin-left: 4px; }
+
+
+/* ── NEWS · the overview as a news page ──────────────────────────────────────
+   `ovf-` prefixed on purpose: `nf-` already belongs to the card grid on the
+   other news tabs, and reusing it put seven duplicated selectors into this
+   stylesheet the first time this was written. */
+.ovf { display: grid; gap: 14px; margin-bottom: var(--m-space-6); }
+.ovf-head { display: flex; align-items: baseline; gap: var(--m-space-3); }
+.ovf-lead { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 18px; align-items: center; text-decoration: none; background: var(--m-surface);
+  border: 1px solid var(--m-rule); border-radius: var(--m-radius); overflow: hidden; }
+.ovf-lead--flat { grid-template-columns: 1fr; }
+.ovf-lead:hover { border-color: var(--m-accent); }
+.ovf-lead-img { display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--m-surface-2); }
+.ovf-lead-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ovf-lead-body { display: grid; gap: 7px; padding: 16px 18px 16px 0; }
+.ovf-lead--flat .ovf-lead-body { padding: 16px 18px; }
+.ovf-lead-h { font-family: var(--m-display); font-size: clamp(18px, 1.9vw, 24px);
+  font-weight: 500; line-height: 1.25; color: var(--m-ink); letter-spacing: -0.015em; }
+.ovf-lead-sum { font-size: var(--t-small); color: var(--m-muted); line-height: 1.55; max-width: 58ch; }
+.ovf-grid { display: grid; gap: 13px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.ovf-card { display: grid; gap: 5px; align-content: start; text-decoration: none;
+  background: var(--m-surface); border: 1px solid var(--m-rule);
+  border-radius: var(--m-radius); overflow: hidden; padding-bottom: 10px; }
+.ovf-card:hover { border-color: var(--m-accent); }
+.ovf-thumb { display: block; aspect-ratio: 16 / 9; background: var(--m-surface-2); overflow: hidden; }
+.ovf-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* A card with no picture keeps its footprint, or the grid tears into ragged rows. */
+.ovf-thumb--none { background: linear-gradient(160deg, var(--m-surface-2), var(--m-rule-soft)); }
+.ovf-tag { font-family: var(--m-mono); font-size: 8.5px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--m-accent); padding: 0 11px; }
+.ovf-lead-body .ovf-tag { padding: 0; }
+.ovf-h { font-family: var(--m-display); font-size: var(--t-body); font-weight: 500;
+  line-height: 1.3; color: var(--m-ink); padding: 0 11px; }
+.ovf-when { font-family: var(--m-mono); font-size: 9px; color: var(--m-muted-soft); padding: 0 11px; }
+.ovf-lead-body .ovf-when { padding: 0; }
+.ovf-stories > summary::-webkit-details-marker { display: none; }
+@media (max-width: 720px) { .ovf-lead { grid-template-columns: 1fr; }
+  .ovf-lead-body { padding: 0 16px 16px; } }

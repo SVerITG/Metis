@@ -104,6 +104,15 @@
        own papers, articles and news. The lens already scans; what was
        missing was ONE place that answers "has anything arrived?" instead of
        three (pulse, feed, reading) that each answer part of it. -#}
+  {#- THE BRIEFING EDITIONS. Only a focus that declares this section pays for
+      the walk over editions and their items. -#}
+  {% if "briefings" in sections %}
+  {% call zone("The editions", key="focus-" ~ area.slug ~ "-briefings",
+               tail=(briefings|length) ~ " STORED", open=True) %}
+    <div id="focus-briefings">{% include "partials/focus_briefings.html" %}</div>
+  {% endcall %}
+  {% endif %}
+
   {% if "whatsnew" in sections %}
   {% call zone("What's new", key="focus-" ~ area.slug ~ "-whatsnew",
                tail=(area.n_new ~ " SINCE YOUR LAST VISIT") if area.n_new
