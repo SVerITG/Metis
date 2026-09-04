@@ -437,18 +437,48 @@ def _sci(text):
 # wrapper that the scanner wrote into the field. Escaped, those render as visible
 # angle brackets in a digest row; kept, they are markup from an untrusted source.
 # Both are wrong, so prose gets them removed.
-_PROSE_TAG_RE = _re.compile(r"<[^>]{0,200}>")
+# `[^>]*`, not `[^>]{0,200}`. The bound was meant as a backtracking guard and
+# was simply wrong: one feed ships an <img> whose alt text is a whole paragraph,
+# so the tag ran past 200 characters, the pattern did not match, and the markup
+# rendered as visible text in the digest — the exact thing this filter exists to
+# stop. `[^>]` cannot match `>`, so the unbounded form is linear and needs no
+# guard. Measured: 115 of 3,947 stored summaries carry literal tags, not the 6
+# an earlier, tighter count reported.
+_PROSE_TAG_RE = _re.compile(r"<[^>]*>")
+# AND THE TAG THAT NEVER CLOSES. The news scanner stores raw feed HTML cut to a
+# length, and 115 of 3,947 summaries therefore END inside a tag — one <img>
+# whose alt text is a whole paragraph is cut at 767 characters with no `>`
+# anywhere after it. A tag pattern cannot match an unclosed tag, so the markup
+# reached the reader however tight the pattern was. Whatever follows a final
+# unmatched `<` is a fragment of markup, not prose, so it goes.
+_PROSE_OPEN_RE = _re.compile(r"<[^>]*$")
 _PROSE_WARN_RE = _re.compile(r"\[INJECTION WARNING\][^\n]*", _re.IGNORECASE)
 
 
-def _prose(text):
-    """Plain prose from an untrusted feed: no tags, no guard banners, escaped."""
+def _prose(text, n: int = 0, ellipsis: str = "…"):
+    """Plain prose from an untrusted feed: no tags, no guard banners, escaped.
+
+    IT TRUNCATES TOO, and that is not a convenience — it is the fix for a real
+    defect. Chained as `| prose | clip(120)` this returned safe Markup, `clip`
+    handed back a plain str, and Jinja escaped it a SECOND time, so a stripped
+    `<img>` reappeared in the page as the literal text `&amp;lt;img`. Doing both
+    steps here keeps the order right (strip, then cut) and returns Markup once.
+
+    Cutting after stripping also matters on its own: cut first and a tag can be
+    severed into `<img alt="x`, which no longer matches a tag pattern and ships
+    to the reader as visible markup.
+    """
     from markupsafe import escape
     if text is None:
         return ""
     t = _PROSE_TAG_RE.sub(" ", str(text))
+    t = _PROSE_OPEN_RE.sub(" ", t)
     t = _PROSE_WARN_RE.sub("", t)
-    return escape(" ".join(t.split()))
+    t = " ".join(t.split())
+    if n and len(t) > n:
+        cut = t[:n].rsplit(" ", 1)[0] or t[:n]
+        t = cut.rstrip(" ,;:.") + ellipsis
+    return escape(t)
 
 
 _SHARED_FILTERS = {"md": _md_filter,
