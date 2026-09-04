@@ -5850,19 +5850,19 @@ a.mrow-title { text-decoration: none; }
 /* ── Focus: what's new ───────────────────────────────────────────────────────
    One section answering "has anything arrived?", instead of three that each
    answered part of it. */
-.wn-list { display: flex; flex-direction: column; gap: 1px; background: var(--m-rule);
+.fwn-list { display: flex; flex-direction: column; gap: 1px; background: var(--m-rule);
   border: 1px solid var(--m-rule); border-radius: var(--m-radius); overflow: hidden; }
-.wn-item { display: flex; gap: 11px; padding: 11px 14px; background: var(--m-surface); }
-.wn-kind { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.09em;
+.fwn-item { display: flex; gap: 11px; padding: 11px 14px; background: var(--m-surface); }
+.fwn-kind { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.09em;
   padding: 2px 6px; border-radius: var(--m-radius-sm); height: fit-content; flex: none; }
-.wn-kind--news { background: var(--m-info-wash); color: var(--m-info); }
-.wn-kind--paper { background: var(--m-ok-wash); color: var(--m-ok); }
-.wn-body { min-width: 0; }
-.wn-title { font-family: var(--m-display); font-size: var(--t-body); line-height: 1.35;
+.fwn-kind--news { background: var(--m-info-wash); color: var(--m-info); }
+.fwn-kind--paper { background: var(--m-ok-wash); color: var(--m-ok); }
+.fwn-body { min-width: 0; }
+.fwn-title { font-family: var(--m-display); font-size: var(--t-body); line-height: 1.35;
   color: var(--m-ink); text-decoration: none; display: block; }
-.wn-title:hover { text-decoration: underline; }
-.wn-sum { margin: 4px 0 0; font-size: var(--t-meta); color: var(--m-muted); line-height: 1.45; }
-.wn-meta { margin: 4px 0 0; font-family: var(--m-mono); font-size: var(--t-micro);
+.fwn-title:hover { text-decoration: underline; }
+.fwn-sum { margin: 4px 0 0; font-size: var(--t-meta); color: var(--m-muted); line-height: 1.45; }
+.fwn-meta { margin: 4px 0 0; font-family: var(--m-mono); font-size: var(--t-micro);
   letter-spacing: 0.05em; color: var(--m-muted-soft); }
 
 /* the navbar's new-item marker */
@@ -5905,9 +5905,6 @@ a.mrow-title { text-decoration: none; }
 .fw-row { display: flex; gap: var(--d-row-gap); align-items: flex-start;
   padding: var(--d-row-y) var(--d-panel);
   border-top: 1px solid var(--m-rule-soft); }
-.fw-row-title, .fw-sum { display: -webkit-box; -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1; overflow: hidden; }
-.fw-row-title { -webkit-line-clamp: 2; }
 .fw-row:hover { background: var(--m-surface-2); }
 .fw-sig { width: 3px; border-radius: var(--m-radius-sm); flex: none; align-self: stretch;
   min-height: 30px; background: var(--m-rule-strong); }
@@ -5916,10 +5913,15 @@ a.mrow-title { text-decoration: none; }
 .fw-sig--low { background: var(--m-rule-strong); }
 .fw-sig--paper { background: var(--m-info); }
 .fw-body { min-width: 0; flex: 1; }
+/* ONE DECLARATION PER SELECTOR. The clamp lived in its own rule, which meant
+   `.fw-row-title` was declared twice — the same collision shape the prefix
+   test now fails on, just inside one component instead of across two. */
 .fw-row-title { font-family: var(--m-display); font-size: var(--t-body); line-height: 1.35;
-  color: var(--m-ink); text-decoration: none; display: block; }
+  color: var(--m-ink); text-decoration: none; display: -webkit-box;
+  -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .fw-row-title:hover { text-decoration: underline; }
-.fw-sum { margin: 2px 0 0; font-size: var(--t-meta); color: var(--m-muted); line-height: 1.4; }
+.fw-sum { margin: 2px 0 0; font-size: var(--t-meta); color: var(--m-muted); line-height: 1.4;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
 .fw-sum--why { color: var(--m-accent); }
 .fw-meta { margin: 2px 0 0; font-family: var(--m-mono); font-size: var(--t-micro);
   letter-spacing: 0.04em; color: var(--m-muted-soft); }
@@ -6035,37 +6037,62 @@ a.mrow-title { text-decoration: none; }
    Nature's briefing is a serif headline over a short summary, stories separated
    by a hairline, the outlet in small caps. Reproduced with this app's own
    tokens rather than importing a second design system. */
-.nb { display: grid; gap: 10px; }
-.nb-ed { background: var(--m-surface); border: 1px solid var(--m-rule);
+.brf { display: grid; gap: 10px; }
+.brf-ed { background: var(--m-surface); border: 1px solid var(--m-rule);
   border-radius: var(--m-radius); padding: var(--d-panel); }
-.nb-ed-head { list-style: none; cursor: pointer; display: grid; gap: 3px; }
-.nb-ed-head::-webkit-details-marker { display: none; }
-.nb-kind { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.14em;
+.brf-ed-head { list-style: none; cursor: pointer; display: grid; gap: 3px; }
+.brf-ed-head::-webkit-details-marker { display: none; }
+.brf-kind { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--m-accent); }
-.nb-ed-title { font-family: var(--m-display); font-size: var(--t-h3); font-weight: 500;
+.brf-ed-title { font-family: var(--m-display); font-size: var(--t-h3); font-weight: 500;
   color: var(--m-ink); line-height: 1.3; letter-spacing: -0.01em; }
-.nb-ed-meta { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft); }
-.nb-items { margin-top: 12px; border-top: 1px solid var(--m-rule); }
-.nb-item { padding: 12px 0; border-bottom: 1px solid var(--m-rule-soft); }
-.nb-item:last-child { border-bottom: 0; }
-.nb-h { display: block; font-family: var(--m-display); font-size: var(--t-body);
+.brf-ed-meta { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft); }
+.brf-items { margin-top: 12px; border-top: 1px solid var(--m-rule); }
+/* A THUMBNAIL CHANGES THE ROW, not just decorates it. The picture and headline
+   share a baseline so the eye lands on the story, and an item without a picture
+   keeps the same text column rather than reflowing wider — a mixed list where
+   the measure changes per row does not scan. */
+.brf-item { padding: var(--m-space-3) 0; border-bottom: 1px solid var(--m-rule-soft);
+  display: grid; grid-template-columns: 1fr; gap: var(--m-space-3); }
+.brf-item--pic { grid-template-columns: 128px 1fr; }
+.brf-thumb { display: block; aspect-ratio: 4 / 3; overflow: hidden;
+  border-radius: var(--m-radius-sm); background: var(--m-surface-2); }
+.brf-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.brf-body { min-width: 0; font-family: var(--m-ui); font-style: normal; }
+/* THE FAMILY AND STYLE ARE SET, not inherited. These classes were `nb-` first,
+   which already belonged to the notebook — ten duplicated selectors, and the
+   notebook's italic serif body leaked into every description. Renamed to
+   `brf-`, and the type is now stated so nothing else can lean on it. */
+.brf-desc { margin: var(--m-space-1) 0 0; font-family: var(--m-ui); font-style: normal;
+  font-size: var(--t-small); color: var(--m-muted); line-height: 1.55; max-width: 68ch; }
+.brf-desc--cut { color: var(--m-muted-soft); }
+.brf-foot { display: flex; align-items: baseline; gap: var(--m-space-2); flex-wrap: wrap;
+  margin: var(--m-space-2) 0 0; }
+.brf-read { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.05em;
+  color: var(--m-accent); text-decoration: none; }
+.brf-read:hover { text-decoration: underline; }
+/* A publisher that refuses a scripted request says so, quietly. A blank frame
+   is indistinguishable from an article that genuinely has no picture. */
+.brf-note { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft);
+  border: 1px dashed var(--m-rule); border-radius: var(--m-radius-sm); padding: 1px 5px; }
+@media (max-width: 620px) { .brf-item--pic { grid-template-columns: 92px 1fr; } }
+.brf-item:last-child { border-bottom: 0; }
+.brf-h { display: block; font-family: var(--m-display); font-size: var(--t-body);
   font-weight: 500; color: var(--m-ink); text-decoration: none; line-height: 1.35; }
-.nb-h:hover { text-decoration: underline; }
+.brf-h:hover { text-decoration: underline; }
 /* The measure matters: Nature's briefing reads at roughly 70 characters, and a
    summary paragraph run to a 1500px surface is unreadable however good the type. */
-.nb-blurb { margin: 5px 0 0; font-size: var(--t-small); color: var(--m-muted);
-  line-height: 1.6; max-width: 72ch; }
-.nb-src { display: inline-block; margin-top: 6px; font-family: var(--m-mono);
+.brf-src { display: inline-block; margin-top: 6px; font-family: var(--m-mono);
   font-size: var(--t-micro); letter-spacing: 0.11em; text-transform: uppercase;
   color: var(--m-muted-soft); }
-.nb-orig { display: inline-block; margin-top: 11px; font-family: var(--m-mono);
+.brf-orig { display: inline-block; margin-top: 11px; font-family: var(--m-mono);
   font-size: var(--t-micro); letter-spacing: 0.06em; color: var(--m-accent); text-decoration: none; }
-.nb-orig:hover { text-decoration: underline; }
-.nb-none { margin: 0; padding: 14px 0; font-size: var(--t-small); font-style: italic;
+.brf-orig:hover { text-decoration: underline; }
+.brf-none { margin: 0; padding: 14px 0; font-size: var(--t-small); font-style: italic;
   color: var(--m-muted-soft); }
 /* The blurb is stored at a hard cap and ends mid-word; saying so is better than
    letting a cut sentence read as a finished one. */
-.nb-cut { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.05em;
+.brf-cut { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.05em;
   color: var(--m-accent); white-space: nowrap; margin-left: 4px; }
 
 
