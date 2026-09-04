@@ -76,13 +76,27 @@ trusted on one built to pass.
 
 ### ⚠ Two things the next session must know
 
-**`origin/main` still holds the unstripped tree, and `origin` is no longer configured.**
+**RESOLVED before this session ended — recorded because the sequence matters.**
+`origin/main` briefly held the unstripped tree, and `origin` was no longer configured.
 A concurrent session ran `git-filter-repo` across all 573 commits to remove the
 institutional address (author *and* committer on 169 of them, across two PUBLIC repos),
 then `git gc --prune=now`. `filter-repo` removes remotes by design, so `origin` is gone
-from `.git/config` and the shell could not be re-pushed. **First action next session:
-re-add `origin` and run `bash tools/build-base-shell.sh --push`** — the gate now refuses to
-publish a dirty shell, so this is safe to run.
+from `.git/config` and the shell could not immediately be re-pushed. `origin` was re-added,
+the gate passed, and the verified shell was published: `origin/main` = the stripped tree,
+0 course files and 0 identity lines.
+
+**Then a third route appeared, and it defeated the rewrite itself.** Both public repos still
+carried `v0.2.0` and `v1.0` pointing into the OLD history — `v1.0` reached 169 commits
+carrying the institutional address and a tree with 10 course files. A tag is a root of
+reachability: rewriting `main` changes one root while git keeps everything any other root
+reaches, so "the history is rewritten" is only true once every ref is enumerated, branches
+AND tags. The two repos needed opposite treatment — the full-edition repo got the rewritten
+tags, the stripped shell had its tags **deleted** (updating them would have swapped one
+course leak for another, since the rewritten tags point into the full-edition lineage).
+
+**Final state, verified by enumerating every remote ref:** the base repo exposes exactly one
+ref, stripped and identity-free; the full-edition repo exposes `main` plus two tags, and
+**no ref on either repo reaches a commit carrying the institutional address.**
 
 **Multiple agents share this working tree.** During this session refs moved between two
 consecutive reads, every commit hash was rewritten mid-flight, and two commits made here
