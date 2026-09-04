@@ -61,7 +61,7 @@
       <div class="fw-body">
         <a class="fw-row-title" href="{{ it.source_url or '/news' }}"
            {% if it.source_url %}target="_blank" rel="noopener"{% endif %}>{{ it.title | sci }}</a>
-        {% if it.summary %}<p class="fw-sum">{{ it.summary | prose | clip(120) }}</p>{% endif %}
+        {% if it.summary %}<p class="fw-sum">{{ it.summary | prose(120) }}</p>{% endif %}
         <p class="fw-meta">{{ it.on_date[:10] if it.on_date }}{% if it.domain %} · {{ it.domain }}{% endif %}</p>
       </div>
       {{ verdicts('news', it.id) }}
@@ -87,7 +87,7 @@
           {%- if it.journal %} · {{ it.journal[:40] }}{% endif %}
           {%- if it.on_date %} · {{ it.on_date[:10] }}{% endif %}
         </p>
-        {% if it.why %}<p class="fw-sum fw-sum--why">{{ it.why | prose | clip(110) }}</p>{% endif %}
+        {% if it.why %}<p class="fw-sum fw-sum--why">{{ it.why | prose(110) }}</p>{% endif %}
       </div>
       {{ verdicts('paper', it.id) }}
     </article>
