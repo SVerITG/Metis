@@ -1,0 +1,52 @@
+{#- focus_whatsnew.html — has anything arrived, in one place.
+
+    Replaces having to read three sections (pulse, feed, reading) to answer one
+    question. Both streams, newest first, with the source named — because "new"
+    is only useful if you can see what it is without opening it. -#}
+{% set _n = (new_news | length) + (new_reading | length) %}
+{% if _n == 0 %}
+<div class="panel panel--md">
+  <p class="u-ed" style="margin:0;font-size:var(--t-small);color:var(--m-muted);">
+    Nothing new since your last visit.
+    {% if area.last_refreshed_at %}
+    The lens last scanned {{ area.last_refreshed_at[:10] }}.
+    {% else %}
+    This lens has not been scanned yet — press <strong>Refresh</strong> below.
+    {% endif %}
+  </p>
+  <div style="margin-top:var(--m-space-3);">
+    <button class="ft-btn" hx-post="/api/focus/{{ area.slug }}/scan"
+            hx-target="#focus-whatsnew" hx-swap="innerHTML">Scan now</button>
+  </div>
+</div>
+{% else %}
+<div class="wn-list">
+  {% for it in new_news %}
+  <article class="wn-item">
+    <span class="wn-kind wn-kind--news">NEWS</span>
+    <div class="wn-body">
+      <a class="wn-title" href="{{ it.source_url or '#' }}"{% if it.source_url %} target="_blank" rel="noopener"{% endif %}>{{ it.title }}</a>
+      {% if it.summary %}<p class="wn-sum">{{ it.summary[:230] }}{% if it.summary|length > 230 %}…{% endif %}</p>{% endif %}
+      <p class="wn-meta">{{ it.brief_date[:10] if it.brief_date else '' }}{% if it.domain %} · {{ it.domain }}{% endif %}</p>
+    </div>
+  </article>
+  {% endfor %}
+  {% for it in new_reading %}
+  <article class="wn-item">
+    <span class="wn-kind wn-kind--paper">PAPER</span>
+    <div class="wn-body">
+      <a class="wn-title" href="{{ ('/api/library/pdf/' ~ it.id) if it.id else '#' }}" target="_blank" rel="noopener">{{ it.title }}</a>
+      <p class="wn-meta">
+        {%- if it.authors %}{{ it.authors[:70] }}{% endif %}
+        {%- if it.year %} · {{ it.year }}{% endif %}
+        {%- if it.journal %} · {{ it.journal[:44] }}{% endif %}
+      </p>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+<div style="margin-top:var(--m-space-3);">
+  <button class="ft-btn" hx-post="/api/focus/{{ area.slug }}/scan"
+          hx-target="#focus-whatsnew" hx-swap="innerHTML">Scan again</button>
+</div>
+{% endif %}

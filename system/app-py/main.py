@@ -326,8 +326,14 @@ templates.env.filters["md"] = _md_filter
 def _focus_shelf() -> list:
     try:
         from db import db_query
+        # `n_new` is a STORED count, written when a focus's lens is scanned and
+        # cleared when the focus is opened. It is read here rather than computed
+        # because this runs on every page render and the lens itself is a
+        # dozen LIKE terms over ~4,000 rows — 19-29 ms per focus, measured.
         return [dict(r) for r in (db_query(
-            "SELECT slug, title, subtitle, shelf_slot FROM focus_areas "
+            "SELECT slug, title, subtitle, shelf_slot, "
+            "       COALESCE(n_new, 0) AS n_new "
+            "FROM focus_areas "
             "WHERE state = 'active' ORDER BY COALESCE(shelf_slot, 99)") or [])]
     except Exception:
         return []
@@ -424,10 +430,32 @@ def _sci(text):
     return Markup(_SCI_RE.sub(r"<\1\2>", str(escape(str(text)))))
 
 
+# Feed SUMMARIES are a different problem from titles. A title's `<i>` is meaning
+# (a genus and species), which is what `_sci` preserves. A summary's markup is
+# junk the source shipped: of 3,947 stored summaries six carry tags, and they are
+# `<img …>` and — worse — a stored `<untrusted_external_content>` injection-guard
+# wrapper that the scanner wrote into the field. Escaped, those render as visible
+# angle brackets in a digest row; kept, they are markup from an untrusted source.
+# Both are wrong, so prose gets them removed.
+_PROSE_TAG_RE = _re.compile(r"<[^>]{0,200}>")
+_PROSE_WARN_RE = _re.compile(r"\[INJECTION WARNING\][^\n]*", _re.IGNORECASE)
+
+
+def _prose(text):
+    """Plain prose from an untrusted feed: no tags, no guard banners, escaped."""
+    from markupsafe import escape
+    if text is None:
+        return ""
+    t = _PROSE_TAG_RE.sub(" ", str(text))
+    t = _PROSE_WARN_RE.sub("", t)
+    return escape(" ".join(t.split()))
+
+
 _SHARED_FILTERS = {"md": _md_filter,
                    "due_delta": _due_delta,
                    "clip": _clip,
-                   "sci": _sci}
+                   "sci": _sci,
+                   "prose": _prose}
 
 
 

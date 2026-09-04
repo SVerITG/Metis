@@ -5,28 +5,46 @@
     you can act on. The totals that only ever grow — 388 briefs, 212 papers — come
     last and quiet. A counter that can only rise stops being information past the
     point a person can act on it, which is the same rule the Today audit landed on.
+
+    EACH CELL BELONGS TO A SECTION (2026-09-03). The safe, questions, ideas and
+    notes only mean something on a focus that HAS those sections; on a reference
+    focus they were four zeros advertising features that were not on the page.
+    `sections` is defined for the page, so the strip reads it — and defaults to
+    showing everything when it is absent, so nothing that predates this moves.
 -#}
+{% set _sec = sections if sections is defined else
+   ["pulse","overview","safe","brief","thinking","feed","reading"] %}
 <div class="fc-strip">
+  {% if "safe" in _sec %}
   <div class="fc-cell fc-cell--lead">
     <span class="fc-n">{{ counts.saved }}</span>
     <span class="fc-l">in the safe</span>
   </div>
+  {% endif %}
+  {% if "feed" in _sec or "reading" in _sec %}
   <div class="fc-cell fc-cell--lead">
     <span class="fc-n">{{ news.n_live + reading.n_live }}</span>
     <span class="fc-l">waiting on you</span>
   </div>
+  {% endif %}
+  {% if "thinking" in _sec %}
   <div class="fc-cell">
     <span class="fc-n">{{ counts.questions }}</span>
     <span class="fc-l">question{{ '' if counts.questions == 1 else 's' }}</span>
   </div>
+  {% endif %}
+  {% if "thinking" in _sec %}
   <div class="fc-cell">
     <span class="fc-n">{{ counts.ideas }}</span>
     <span class="fc-l">idea{{ '' if counts.ideas == 1 else 's' }}</span>
   </div>
+  {% endif %}
+  {% if "thinking" in _sec %}
   <div class="fc-cell">
     <span class="fc-n">{{ counts.notes }}</span>
     <span class="fc-l">note{{ '' if counts.notes == 1 else 's' }}</span>
   </div>
+  {% endif %}
   <div class="fc-sep"></div>
   <div class="fc-cell fc-cell--quiet">
     <span class="fc-n">{{ '{:,}'.format(counts.briefs) }}</span>

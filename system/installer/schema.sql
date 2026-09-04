@@ -1069,7 +1069,11 @@ CREATE TABLE IF NOT EXISTS focus_areas (
     activated_at      TEXT DEFAULT '',
     archived_at       TEXT DEFAULT '',
     last_visited_at   TEXT DEFAULT '',
-    last_refreshed_at TEXT DEFAULT ''
+    last_refreshed_at TEXT DEFAULT '',
+    sections          TEXT DEFAULT '',
+    links             TEXT DEFAULT '',
+    n_new             INTEGER DEFAULT 0,
+    n_new_at          TEXT DEFAULT ''
 );
 
 -- ---------------------------------------------------------------------------

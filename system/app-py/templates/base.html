@@ -360,7 +360,15 @@
           <circle cx="8" cy="8" r="1.8"/>
         </svg>
         <span class="n-label">{{ f.title }}</span>
+        {#- The slot number is what this said until 2026-09-03, and a slot number
+            is not news. When the focus's lens has found something since the last
+            visit the count replaces it and is marked; opening the focus clears
+            it. Reads a stored column — see `_focus_shelf`. -#}
+        {% if f.n_new %}
+        <span class="n-meta n-meta--new" title="{{ f.n_new }} new since your last visit">{{ f.n_new }}</span>
+        {% else %}
         <span class="n-meta">{{ f.shelf_slot }}</span>
+        {% endif %}
         <span class="n-tip">{{ f.title }}{% if f.subtitle %} — {{ f.subtitle }}{% endif %}</span>
       </div>
       {% endfor %}
