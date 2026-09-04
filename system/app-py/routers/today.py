@@ -5480,7 +5480,7 @@ def _news_card(r: dict) -> dict:
 # and a case-sensitive tab would silently show half a category.
 _NEWS_TABS: list[dict] = [
     {"key": "overview", "label": "Overview", "kind": "overview",
-     "blurb": "What is actually happening — running stories, not a list of links."},
+     "blurb": "Today's mix across every beat, then the stories still running."},
     {"key": "work", "label": "Related to my work", "kind": "work",
      "blurb": "Ranked by closeness to your library, with your own subjects first."},
     {"key": "outbreaks", "label": "Outbreaks", "kind": "filter",
@@ -5608,6 +5608,67 @@ async def news_tab(request: Request, tab: str = "overview", period: str = "week"
     return _news_tab_response(request, tab, period, view)
 
 
+# ── THE OVERVIEW IS A NEWS PAGE ──────────────────────────────────────────────
+# Asked for 2026-09-04: "Overview tab needs to show thumbnails and only a mix of
+# all categories not three per category like it is currently. It needs to feel
+# like a news website. So overview has max 20 news items that refresh every day
+# regardless if i logged on or read them."
+#
+# It was running stories: each thread showed three items and a "+64 more", which
+# is the three-per-category shape. Those threads answer a real question and the
+# reasoning for them is worth keeping, so they move BELOW this, folded — the tab
+# opens as a news page and the grouping is still one click away.
+#
+# THE DAY IS THE UNIT and read state is ignored, which rules out both easy
+# implementations: a feed reshuffled per request never settles, and one that
+# hides what you have read empties itself as you use it. The domain rotation is
+# seeded by TODAY'S DATE — identical all day, different tomorrow, indifferent to
+# what was opened.
+def _overview_feed(days: int, limit: int = 20) -> dict:
+    """One mixed feed of `limit` items, dealt round-robin across beats."""
+    cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
+    rows = db_query(
+        "SELECT title, summary, domain, signal_strength, source_url, created_at, "
+        "       relevance, COALESCE(image_url,'') AS image_url "
+        "FROM news_briefs WHERE created_at > ? "
+        # Papers belong in the Library, not the front page.
+        "  AND COALESCE(source_type,'news') != 'article' "
+        "ORDER BY relevance DESC, created_at DESC", (cutoff,), default=[]) or []
+    cards = [_news_card(r) for r in rows]
+
+    # De-duplicate before dealing, or one story on three wires takes three slots.
+    seen, unique = set(), []
+    for c in cards:
+        k = (c.get("url") or c.get("title") or "").strip().lower()
+        if k and k not in seen:
+            seen.add(k)
+            unique.append(c)
+
+    buckets: dict[str, list] = {}
+    for c in unique:
+        buckets.setdefault((c.get("domain") or "other").strip() or "other", []).append(c)
+    order = sorted(buckets)
+    if order:
+        order = order[int(datetime.date.today().strftime("%Y%m%d")) % len(order):] + \
+                order[:int(datetime.date.today().strftime("%Y%m%d")) % len(order)]
+
+    feed = []
+    while len(feed) < limit:
+        added = False
+        for dom in order:
+            if buckets[dom]:
+                feed.append(buckets[dom].pop(0))
+                added = True
+                if len(feed) == limit:
+                    break
+        if not added:
+            break
+    return {"feed": feed, "lead": feed[0] if feed else None, "rest": feed[1:],
+            "feed_total": len(unique),
+            "feed_beats": len({(c.get("domain") or "other") for c in feed}),
+            "feed_images": sum(1 for c in feed if c.get("has_image"))}
+
+
 def _news_tab_response(request: Request, tab: str, period: str, view: str):
     if tab not in _NEWS_TABS_BY_KEY:
         tab = "overview"
@@ -5707,7 +5768,8 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
          "whatsnew_news": whatsnew_news,
              "states": _ov_states, "all_tags": _ov_tags,
              "singles": singles[:30], "singles_total": len(singles),
-             "total_items": sum(len(t["items"]) for t in threads)},
+             "total_items": sum(len(t["items"]) for t in threads),
+             **_overview_feed(days)},
         )
 
     # ---- Category / work tabs: card grids --------------------------------

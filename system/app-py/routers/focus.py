@@ -66,8 +66,48 @@ DEFAULT_SECTIONS = ["pulse", "overview", "safe", "brief", "thinking", "feed", "r
 
 # Every key the template knows how to render. A key here that the template has no
 # branch for renders nothing, silently — so the test asserts the two agree.
-KNOWN_SECTIONS = ["pulse", "overview", "tools", "whatsnew", "safe", "brief",
-                  "thinking", "feed", "reading"]
+KNOWN_SECTIONS = ["pulse", "overview", "tools", "whatsnew", "briefings", "safe",
+                  "brief", "thinking", "feed", "reading"]
+
+
+# ── THE BRIEFING EDITIONS, READ IN PLACE ─────────────────────────────────────
+# Asked for 2026-09-04: "Add the Nature Briefings from the News surface to the
+# third focus on our shelf. Thumbnails, same styling as Nature, full articles
+# readable."
+#
+# Three of those four are here. THUMBNAILS ARE NOT, and the reason is data, not
+# effort: `briefing_item` carries headline, blurb, url and source and no image
+# column, and the 88 briefing rows in `news_briefs` are the only ones of 4,170
+# with no image_url. Getting a thumbnail means fetching each article page for
+# its og:image, which is general internet access and needs asking first.
+#
+# "Full articles readable" is served by the blurb, which is Nature's own
+# summary paragraph and is what the e-mail shows, plus the link out. The
+# briefing is a digest of other people's articles; the full text lives on the
+# publisher's page and is not ours to hold.
+def _briefing_editions(limit_kinds: int = 3, per_kind: int = 3) -> list:
+    """Editions with their items, newest first, for the briefings section."""
+    try:
+        import sys
+        from pathlib import Path as _P
+        root = _P(__file__).resolve().parents[3] / "mcp-server" / "src"
+        if str(root) not in sys.path:
+            sys.path.insert(0, str(root))
+        from metis_mcp.tools import briefings as B
+    except Exception as exc:
+        log.warning("[focus] briefings unavailable: %s", exc)
+        return []
+    names = {slug: name for _needle, slug, name in B.KINDS}
+    out = []
+    for kind in list(B.SURFACED)[:limit_kinds]:
+        for ed in B.editions(kind, per_kind):
+            try:
+                items = B.items_of(ed["edition_id"])
+            except Exception:
+                items = []
+            out.append({**ed, "kind_name": names.get(kind, kind), "items": items})
+    out.sort(key=lambda e: str(e.get("published_at") or ""), reverse=True)
+    return out
 
 
 def _sections_for(area: dict) -> list:
@@ -528,6 +568,10 @@ def _ctx(request, slug):
         # back on a focus that has neither.
         "sections": _sections_for(area),
         "links": _links_for(area),
+        # Only paid for when the focus asks for it — the briefing fetch walks
+        # editions and their items, and no other focus needs it.
+        "briefings": (_briefing_editions()
+                      if "briefings" in _sections_for(area) else []),
         "news": news,
         "reading": reading,
         "counts": F.focus_counts(slug),
