@@ -103,12 +103,48 @@
         {% if item._unseen and item._fresh == 'today' %}
         <span class="badge badge--accent">new today</span>
         {% endif %}
+
+        {#- A PIN FOLLOWS ITS SUBJECT. Asked for 2026-09-04: pin an outbreak and
+            "every day it can show the newest report of it". The board holds a
+            handful of rows; the news stream holds thousands, so the newest
+            report is looked up there, on the terms the pin implies. The count
+            is shown with it — "newest" means little without knowing whether it
+            is one report or the twelfth. -#}
+        {% if item._latest %}
+        <a class="board-latest" href="{{ item._latest.source_url or '/news' }}"
+           {% if item._latest.source_url %}target="_blank" rel="noopener"{% endif %}
+           title="Newest report matching {{ item._latest._terms | join(' + ') }}">
+          <span class="board-latest-lead">latest</span>
+          <span class="board-latest-title">{{ item._latest.title | clip(66) }}</span>
+          <span class="board-latest-meta">{{ item._latest.brief_date[:10] if item._latest.brief_date }}{% if item._latest._n > 1 %} · {{ item._latest._n }} reports{% endif %}</span>
+        </a>
+        {% elif item.starred %}
+        <span class="board-latest board-latest--none">
+          <span class="board-latest-lead">following</span>
+          <span class="board-latest-meta">no report yet in the news stream</span>
+        </span>
+        {% endif %}
       </div>
       <span class="board-item-actions">
+        {#- WHICH ONE I PUT ON TOP — the rank, and the two controls that change
+            it. Only on pins: an unpinned row has no position to move. -#}
+        {% if item.starred and item._pin_of and item._pin_of > 1 %}
+        <span class="board-rank" title="Pin {{ item._pin_pos }} of {{ item._pin_of }}">{{ item._pin_pos }}</span>
+        <button type="button" class="board-move" {% if item._pin_pos == 1 %}disabled{% endif %}
+                hx-post="/api/today/board/{{ board }}/item/{{ item.id }}/pin-move"
+                hx-vals='{"direction":"up"}'
+                hx-target="#board-{{ board }}" hx-swap="outerHTML"
+                title="Move up">↑</button>
+        <button type="button" class="board-move" {% if item._pin_pos == item._pin_of %}disabled{% endif %}
+                hx-post="/api/today/board/{{ board }}/item/{{ item.id }}/pin-move"
+                hx-vals='{"direction":"down"}'
+                hx-target="#board-{{ board }}" hx-swap="outerHTML"
+                title="Move down">↓</button>
+        {% endif %}
         <button type="button" class="board-star{% if item.starred %} board-star--on{% endif %}"
                 hx-post="/api/today/board/{{ board }}/item/{{ item.id }}/star{% if show_all %}?all=1{% endif %}"
                 hx-target="#board-{{ board }}" hx-swap="outerHTML"
-                title="{% if item.starred %}Unstar{% else %}Star{% endif %}">{% if item.starred %}★{% else %}☆{% endif %}</button>
+                title="{% if item.starred %}Stop following{% else %}Pin and follow — its newest report appears here{% endif %}">{% if item.starred %}★{% else %}☆{% endif %}</button>
         <button type="button" class="board-dismiss"
                 hx-delete="/api/today/board/{{ board }}/item/{{ item.id }}{% if show_all %}?all=1{% endif %}"
                 hx-target="#board-{{ board }}" hx-swap="outerHTML"

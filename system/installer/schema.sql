@@ -960,6 +960,18 @@ CREATE TABLE IF NOT EXISTS today_board_items (
     auto_added  INTEGER DEFAULT 1,      -- 1 = from scan, 0 = manually added
     start_date  TEXT DEFAULT '',        -- event start date / outbreak onset
     end_date    TEXT DEFAULT '',        -- event end date
+    -- PINNING IS FOLLOWING, and it needs two things starring never had.
+    -- Asked for 2026-09-04: "i want to follow a certain outbreak like Ebola,
+    -- I pin it and so every day it can show the newest report of it... I can
+    -- also chose their order and see which one I put on top."
+    -- pin_order  = the order the reader chose, lowest first. 0 means unset,
+    --              so an unordered pin still sorts by recency behind ordered ones.
+    -- follow_terms = what to watch for in the news stream. Empty means derive
+    --              it from the title, because the common case is pinning an
+    --              item you are already looking at and expecting it to follow
+    --              itself.
+    pin_order   INTEGER DEFAULT 0,
+    follow_terms TEXT DEFAULT '',
     created_at  TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
