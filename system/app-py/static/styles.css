@@ -5409,10 +5409,13 @@ tr:hover .due-chip--none, li:hover .due-chip--none, .item:hover .due-chip--none,
    so opening and closing the fold barely changed what the panel looked like.
    Three lines is enough to decide with; the full paragraph comes back the
    moment the body opens. See today_morning_brief.html. */
-.brief-lede.is-clamped {
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
-  overflow: hidden;
-}
+/* FOLDED MEANS GONE (2026-09-04). This clamped the lede to three lines instead,
+   on the reasoning that a brief collapsed to its header alone tells the reader
+   only that a brief exists. The researcher asked for the opposite — "see that
+   the morning briefing collapses completely when asked so, not the three lines
+   that are left like now" — and the header still carries the date and a
+   "read the rest · N words" control, so nothing is actually lost. */
+.brief-lede.is-folded { display: none; }
 
 /* ── NEWS DENSITY ──────────────────────────────────────────────────────────
    Reported 2026-09-01: "reduce spacing in the News surface between lines."
@@ -5812,4 +5815,112 @@ a.mrow-title { text-decoration: none; }
     box-shadow: inset 5px 0 0 var(--m-accent);
   }
   .skeleton::after, .sk::after { animation: none; opacity: .7; }
+}
+
+/* ── Focus: reference tools ───────────────────────────────────────────────────
+   A focus that exists to be looked things up in needs its tools first and
+   unmissable. Before this the surface had nowhere to put a thing you open, so a
+   catalogue built for it was unreachable from it. */
+.ft-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.ft-card { display: flex; flex-direction: column; gap: 5px; padding: 13px 15px;
+  background: var(--m-surface); border: 1px solid var(--m-rule);
+  border-radius: var(--m-radius); text-decoration: none; color: var(--m-ink);
+  transition: border-color 120ms, background 120ms; }
+.ft-card:hover { border-color: var(--m-accent); background: var(--m-surface-2); }
+.ft-card--primary { border-left: 3px solid var(--m-accent); }
+.ft-card-kind { font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--m-muted-soft); }
+.ft-card-title { font-family: var(--m-display); font-size: var(--t-body); line-height: 1.3; }
+.ft-card-note { font-size: var(--t-meta); color: var(--m-muted); line-height: 1.45; }
+.ft-card-go { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--m-accent); margin-top: 3px; }
+
+/* ── Focus: what's new ───────────────────────────────────────────────────────
+   One section answering "has anything arrived?", instead of three that each
+   answered part of it. */
+.wn-list { display: flex; flex-direction: column; gap: 1px; background: var(--m-rule);
+  border: 1px solid var(--m-rule); border-radius: var(--m-radius); overflow: hidden; }
+.wn-item { display: flex; gap: 11px; padding: 11px 14px; background: var(--m-surface); }
+.wn-kind { font-family: var(--m-mono); font-size: 8.5px; letter-spacing: 0.09em;
+  padding: 2px 6px; border-radius: var(--m-radius-sm); height: fit-content; flex: none; }
+.wn-kind--news { background: var(--m-info-wash); color: var(--m-info); }
+.wn-kind--paper { background: var(--m-ok-wash); color: var(--m-ok); }
+.wn-body { min-width: 0; }
+.wn-title { font-family: var(--m-display); font-size: var(--t-body); line-height: 1.35;
+  color: var(--m-ink); text-decoration: none; display: block; }
+.wn-title:hover { text-decoration: underline; }
+.wn-sum { margin: 4px 0 0; font-size: var(--t-meta); color: var(--m-muted); line-height: 1.45; }
+.wn-meta { margin: 4px 0 0; font-family: var(--m-mono); font-size: 9.5px;
+  letter-spacing: 0.05em; color: var(--m-muted-soft); }
+
+/* the navbar's new-item marker */
+.n-meta--new { color: var(--m-accent); font-weight: 600; }
+
+/* ── TODAY · one box for what is new in the field ─────────────────────────────
+   Replaced three panels, two of which read the same table. Dense on purpose:
+   the point of the merge was that Publication Scan spent 23,505 bytes of markup
+   and most of a screen on what this does in a third of the height. */
+.fw { background: var(--m-surface); border: 1px solid var(--m-rule);
+  border-radius: var(--m-radius); overflow: hidden; }
+.fw-head { display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; padding: 13px 16px 11px; border-bottom: 1px solid var(--m-rule); }
+.fw-eyebrow { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--m-muted-soft); display: block; }
+.fw-title { font-family: var(--m-display); font-size: var(--t-h3); font-weight: 500;
+  margin: 2px 0 0; color: var(--m-ink); letter-spacing: -0.01em; }
+.fw-tally { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  font-family: var(--m-mono); font-size: 10.5px; color: var(--m-muted); }
+.fw-tally-cell b { color: var(--m-ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+.fw-tally-sep { width: 1px; height: 11px; background: var(--m-rule); }
+.fw-all { font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.05em;
+  color: var(--m-accent); text-decoration: none; }
+.fw-all:hover { text-decoration: underline; }
+
+.fw-group-head { display: flex; justify-content: space-between; align-items: baseline;
+  padding: 9px 16px 6px; background: var(--m-surface-2); }
+.fw-group-name { font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--m-ink); font-weight: 600; }
+/* Always the count AND what it is out of — a digest that hides its denominator
+   is the failure this project keeps re-learning. */
+.fw-group-n { font-family: var(--m-mono); font-size: 9.5px; color: var(--m-muted-soft);
+  font-variant-numeric: tabular-nums; }
+
+/* A DIGEST ROW IS TWO LINES. At 10px padding with a wrapping summary each row
+   came to 91px and fourteen of them filled a screen — which is the complaint
+   the merge was meant to answer, reproduced in a new box. Title and context
+   each clamp to one line; the full text is one click away on its own surface. */
+.fw-row { display: flex; gap: 11px; align-items: flex-start; padding: 7px 16px;
+  border-top: 1px solid var(--m-rule-soft); }
+.fw-row-title, .fw-sum { display: -webkit-box; -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1; overflow: hidden; }
+.fw-row-title { -webkit-line-clamp: 2; }
+.fw-row:hover { background: var(--m-surface-2); }
+.fw-sig { width: 3px; border-radius: 2px; flex: none; align-self: stretch;
+  min-height: 30px; background: var(--m-rule-strong); }
+.fw-sig--high { background: var(--m-alert); }
+.fw-sig--medium { background: var(--m-warn); }
+.fw-sig--low { background: var(--m-rule-strong); }
+.fw-sig--paper { background: var(--m-info); }
+.fw-body { min-width: 0; flex: 1; }
+.fw-row-title { font-family: var(--m-display); font-size: var(--t-body); line-height: 1.35;
+  color: var(--m-ink); text-decoration: none; display: block; }
+.fw-row-title:hover { text-decoration: underline; }
+.fw-sum { margin: 2px 0 0; font-size: var(--t-meta); color: var(--m-muted); line-height: 1.4; }
+.fw-sum--why { color: var(--m-accent); }
+.fw-meta { margin: 2px 0 0; font-family: var(--m-mono); font-size: 9.5px;
+  letter-spacing: 0.04em; color: var(--m-muted-soft); }
+
+.fw-acts { display: flex; gap: 4px; flex: none; align-items: center; }
+.fw-act { appearance: none; cursor: pointer; background: transparent;
+  border: 1px solid var(--m-rule); border-radius: var(--m-radius-sm);
+  font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.05em;
+  color: var(--m-muted); padding: 4px 8px; white-space: nowrap;
+  transition: border-color 120ms, color 120ms, background 120ms; }
+.fw-act:hover { border-color: var(--m-accent); color: var(--m-accent); }
+.fw-act--declined:hover { border-color: var(--m-alert); color: var(--m-alert); }
+.fw-empty { padding: 26px 16px; margin: 0; text-align: center; font-style: italic;
+  font-size: var(--t-small); color: var(--m-muted-soft); }
+@media (max-width: 860px) {
+  .fw-row { flex-wrap: wrap; }
+  .fw-acts { width: 100%; padding-left: 14px; }
 }

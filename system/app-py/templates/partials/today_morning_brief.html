@@ -81,11 +81,15 @@
 
       Two: the lede is the brief's first paragraph, and here that was 135 of its
       311 words — 272px of a 399px collapsed panel. Collapsing removed 741px and
-      left a screen still two-thirds full of prose that looks like the brief. So
-      the lede is clamped to three lines while closed, and only then does the
-      fold visibly change anything. -#}
+      left a screen still two-thirds full of prose that looks like the brief.
+
+      That was first solved by clamping the lede to three lines. Asked on
+      2026-09-04 to go further — "collapses completely... not the three lines
+      that are left" — the lede now folds away with the body. The header keeps
+      the date and the control keeps the word count, so a closed brief still
+      says what it is and how long it is. -#}
   {% if brief %}
-  <p class="brief-lede ed{% if collapsed %} is-clamped{% endif %}" id="brief-lede">{{ brief.split("\n\n")[0] }}</p>
+  <p class="brief-lede ed{% if collapsed %} is-folded{% endif %}" id="brief-lede">{{ brief.split("\n\n")[0] }}</p>
   <button type="button" class="brief-more" id="brief-more" onclick="toggleBrief()"
           aria-controls="morning-brief-body" aria-expanded="{{ 'false' if collapsed else 'true' }}"
           data-words="{{ brief.split() | length }}">
@@ -255,7 +259,7 @@ function toggleBrief(){
   // the control kept its opening label while open, so collapsing looked like a
   // no-op — the change happened below the fold and nothing on screen agreed.
   var lede = document.getElementById('brief-lede');
-  if(lede) lede.classList.toggle('is-clamped', open);
+  if(lede) lede.classList.toggle('is-folded', open);
   var more = document.getElementById('brief-more');
   if(more){
     more.setAttribute('aria-expanded', open ? 'false' : 'true');
