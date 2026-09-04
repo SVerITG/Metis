@@ -2,9 +2,19 @@
 
     A focus owns a query, not content — but a REFERENCE focus is judged by
     whether the thing you need is one click away. The catalogue existed and was
-    unfindable from here, which is the same as not existing. -#}
-<div class="ft-grid">
-  {% for l in links %}
+    unfindable from here, which is the same as not existing.
+
+    GROUPED, WHEN THERE IS SOMETHING TO GROUP (2026-09-04). A link may carry a
+    `group` label, and cards are then laid out under it in the order the author
+    listed them — not alphabetically, because the order is an argument: the
+    source first, then who to follow, then the papers underneath. Fourteen cards
+    in one undifferentiated grid is a blob you have to read all of, and the
+    standing preference here is more, narrower categories over merged ones.
+
+    A link with no `group` behaves exactly as before, so a focus that never
+    groups its links is untouched. -#}
+
+{%- macro card(l) -%}
   <a class="ft-card{% if l.kind == 'primary' %} ft-card--primary{% endif %}"
      href="{{ l.href }}"{% if l.href.startswith('http') or l.href.startswith('/coursesite') %} target="_blank" rel="noopener"{% endif %}>
     <span class="ft-card-kind">{{ l.label or ('TOOL' if l.kind == 'primary' else 'REFERENCE') }}</span>
@@ -12,5 +22,35 @@
     {% if l.note %}<span class="ft-card-note">{{ l.note }}</span>{% endif %}
     <span class="ft-card-go">{{ l.cta or 'Open' }} →</span>
   </a>
+{%- endmacro -%}
+
+{#- Group names in first-seen order. Jinja has no ordered set, and `groupby`
+    sorts alphabetically, which would reorder the argument. -#}
+{%- set names = [] -%}
+{%- for l in links if l.group and l.group not in names -%}
+  {%- set _ = names.append(l.group) -%}
+{%- endfor -%}
+
+{% if names %}
+  {% for g in names %}
+    <div class="ft-group">
+      <div class="ft-group-label">{{ g }}</div>
+      <div class="ft-grid">
+        {% for l in links if l.group == g %}{{ card(l) }}{% endfor %}
+      </div>
+    </div>
   {% endfor %}
-</div>
+  {#- Anything the author left ungrouped still renders, rather than vanishing. -#}
+  {% set loose = links | rejectattr('group') | list %}
+  {% if loose %}
+    <div class="ft-group">
+      <div class="ft-grid">
+        {% for l in loose %}{{ card(l) }}{% endfor %}
+      </div>
+    </div>
+  {% endif %}
+{% else %}
+  <div class="ft-grid">
+    {% for l in links %}{{ card(l) }}{% endfor %}
+  </div>
+{% endif %}

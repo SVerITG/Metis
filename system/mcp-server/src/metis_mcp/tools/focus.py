@@ -78,7 +78,11 @@ CREATE TABLE IF NOT EXISTS focus_areas (
     activated_at      TEXT DEFAULT '',
     archived_at       TEXT DEFAULT '',
     last_visited_at   TEXT DEFAULT '',
-    last_refreshed_at TEXT DEFAULT ''
+    last_refreshed_at TEXT DEFAULT '',
+    sections          TEXT DEFAULT '',
+    links             TEXT DEFAULT '',
+    n_new             INTEGER DEFAULT 0,
+    n_new_at          TEXT DEFAULT ''
 )
 """
 
@@ -193,14 +197,50 @@ def lens_sql(groups: list[list[str]], expr: str) -> tuple[str, list]:
 # HOW, given SQLite has no word-boundary operator: LIKE stays as a cheap,
 # index-friendly first pass, and a boundary regex confirms in Python. The SQL can
 # only over-return, never under-return, so the confirmation is sound.
+# ── SHORT KEYWORDS ARE ACRONYMS, NOT STEMS ───────────────────────────────────
+# Added 2026-09-04, on measured evidence.
+#
+# THE PROBLEM. The word-start rule above is deliberately generous: a keyword may
+# run on into a longer word, which is what makes 'epidemi' catch epidemiology
+# and epidemic. That generosity makes a two-letter keyword unusable — as a stem,
+# 'ai' matches aid, AIDS, air and aim, every one of them common in global
+# health. So 'ai' was never added to the AI-in-health lens at all, and the
+# focus matched only the spelled-out "artificial intelligence".
+#
+# WHAT THAT COST, MEASURED. On 2026-09-04 the lens returned 23 of 4,103 briefs.
+# Another 21 said a standalone "AI" beside a health term and were silently
+# dropped — among them "World's first patient to undergo live AI-assisted brain
+# surgery" and "Context-aware AI assistance reduces diagnostic error in chest
+# X-ray interpretation". Both are squarely the subject of that focus, and both
+# were invisible on it. A focus that misses the most common spelling of its own
+# subject is not a filter, it is a leak — and the failure is silent, because a
+# lens reports what it caught and never what it passed over.
+#
+# THE RULE. A keyword of three characters or fewer is matched as a WHOLE WORD,
+# with an optional plural 's'. Longer keywords keep the word-start stem
+# behaviour, unchanged. The mode is chosen by the shape of the keyword, so no
+# stored lens needs re-authoring.
+#
+#     'ai'  -> \bai(?:s)?\b   matches "AI", "AIs", "AI-assisted" (a hyphen is a
+#                             word boundary); rejects aid, AIDS, air, aim.
+#     'llm' -> \bllm(?:s)?\b  matches "LLM", "LLMs", "LLM-based" — the only
+#                             short keyword that existed when this landed, and
+#                             the optional plural is what keeps it working.
+_SHORT_KW = 3
+
 _WORD_START = {}
 
 
 def _boundary_re(kw: str):
-    """A cached compiled regex for one keyword, anchored at a word start."""
+    """A cached compiled regex for one keyword.
+
+    Short keywords match as whole words (see above); longer ones are anchored at
+    a word start and may run into a longer word.
+    """
     r = _WORD_START.get(kw)
     if r is None:
-        r = re.compile(r"\b" + re.escape(kw.lower()))
+        k = re.escape(kw.lower())
+        r = re.compile(rf"\b{k}(?:s)?\b" if len(kw) <= _SHORT_KW else rf"\b{k}")
         _WORD_START[kw] = r
     return r
 
