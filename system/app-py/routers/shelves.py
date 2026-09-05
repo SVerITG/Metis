@@ -49,15 +49,32 @@ def _now() -> str:
     return datetime.datetime.now().isoformat(timespec="seconds")
 
 
-def shelves(kind: str = "") -> list[dict]:
-    """Live shelves, with how many items each holds."""
+def shelves(kind: str = "", stream: str = "") -> list[dict]:
+    """Live categories, with how many items each holds.
+
+    `stream` is 'news' or 'paper' and filters to the categories that serve it.
+    Reported 2026-09-05: the interests differ by stream, and offering all 29 for
+    every item makes the reader do the filtering the category system exists to
+    have already done.
+
+    Matched on the comma-separated list rather than with LIKE: a bare
+    `applies_to LIKE '%news%'` would also match a category serving a stream
+    called "newsletters", and the bug would not appear until such a stream
+    existed.
+    """
     where = "WHERE s.archived = 0" + (" AND s.kind = ?" if kind else "")
+    params: list = [kind] if kind else []
+    if stream:
+        where += (" AND (',' || REPLACE(COALESCE(s.applies_to,'news,paper'), ' ', '') || ',') "
+                  "LIKE ('%,' || ? || ',%')")
+        params.append(stream)
     rows = db_query(
         "SELECT s.slug, s.name, s.kind, s.blurb, s.ref, s.sort_order, "
+        "       COALESCE(s.applies_to,'news,paper') AS applies_to, "
         "       (SELECT COUNT(*) FROM library_shelf_items i WHERE i.shelf = s.slug) AS n "
         "FROM library_shelves s " + where + " "
         "ORDER BY s.kind, s.sort_order, s.name",
-        (kind,) if kind else (), default=[]) or []
+        tuple(params), default=[]) or []
     return [dict(r) for r in rows]
 
 
@@ -106,7 +123,10 @@ async def shelf_picker(request: Request, kind: str, item_id: str, back: str = ""
         request, "partials/library_shelf_picker.html",
         {"kind": kind, "item_id": str(item_id), "back": back,
          "target": target, "swap": swap,
-         "groups": [(k, KIND_LEAD[k], [s for s in shelves() if s["kind"] == k])
+         # SCOPED TO THIS ITEM'S STREAM. A news item is not filed under
+         # "Methodology"; a paper can be filed under anything.
+         "groups": [(k, KIND_LEAD[k],
+                     [s for s in shelves(stream=kind) if s["kind"] == k])
                     for k in KINDS],
          "already": shelves_for(kind, item_id)},
     )
@@ -158,9 +178,10 @@ async def shelf_remove(request: Request, kind: str = Form(...), item_id: str = F
 async def shelves_panel(request: Request):
     """Every shelf, grouped by what kind of shelf it is."""
     from main import templates
+    all_shelves = shelves()
     return templates.TemplateResponse(
         request, "partials/library_shelves.html",
-        {"groups": [(k, KIND_LEAD[k], [s for s in shelves() if s["kind"] == k])
+        {"groups": [(k, KIND_LEAD[k], [s for s in all_shelves if s["kind"] == k])
                     for k in KINDS]},
     )
 

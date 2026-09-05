@@ -1397,6 +1397,15 @@ CREATE TABLE IF NOT EXISTS library_shelves (
     sort_order  INTEGER DEFAULT 0,
     archived    INTEGER DEFAULT 0,
     created_at  TEXT,
+    -- WHICH STREAMS THIS CATEGORY SERVES, comma-separated: 'news', 'paper', or
+    -- both. Reported 2026-09-05: "I have different interests and categories
+    -- when it comes to news / new papers / projects."
+    --
+    -- Offering all 29 categories for every item is the same failure as one flat
+    -- list — it makes the reader do the filtering that the category system
+    -- exists to have already done. "Methodology" is not a thing you file a news
+    -- item under; a subject you track is a thing you file both under.
+    applies_to  TEXT DEFAULT 'news,paper',
     -- Stamped when a TRACKING category is opened, so "new since you last
     -- looked" means since you last read it — not since a scan ran, which is a
     -- fact about the machine and not about the reader. Null on the other kinds,

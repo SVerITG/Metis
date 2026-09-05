@@ -6450,3 +6450,7 @@ a.shf-row-title:hover { color: var(--m-accent); }
 .proj-kept:hover { color: var(--m-accent); }
 .tls-due--kept { color: var(--m-muted); }
 .tls-due--kept:hover { color: var(--m-accent); }
+/* Which stream a category is offered for. Quiet: it is a property of the
+   category, not the thing you came to read. */
+.shv-for { grid-column: 1 / -1; font-family: var(--m-mono); font-size: var(--t-micro);
+  letter-spacing: .06em; color: var(--m-muted-soft); }

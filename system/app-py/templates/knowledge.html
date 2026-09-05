@@ -379,11 +379,35 @@ function libTab(key) {
 (function () {
   var np = document.getElementById('libpanel-new');
   if (np) np.dataset.loaded = '1';
-  var saved = null;
-  try { saved = localStorage.getItem('metis.libtab'); } catch (e) {}
-  if (saved && saved !== 'new' && document.getElementById('libpanel-' + saved)) {
-    libTab(saved);
+  // AN EXPLICIT LINK BEATS THE REMEMBERED TAB. A link from another surface
+  // arrives with #libpanel-<key> or ?libtab=<key>, and neither did anything
+  // before: the panels are `hidden`, so a bare fragment scrolls the browser to
+  // an invisible element and the page looks unchanged. The reader then reports,
+  // correctly, that the section does not exist. Accept both forms — the hash so
+  // a link can be pasted, the query so it survives a redirect.
+  var want = null;
+  var m = (location.hash || '').match(/^#(?:libpanel-)?([a-z]+)$/);
+  if (m && document.getElementById('libpanel-' + m[1])) want = m[1];
+  if (!want) {
+    var q = new URLSearchParams(location.search).get('libtab');
+    if (q && document.getElementById('libpanel-' + q)) want = q;
   }
+  if (!want) {
+    try {
+      var saved = localStorage.getItem('metis.libtab');
+      if (saved && saved !== 'new' && document.getElementById('libpanel-' + saved)) {
+        want = saved;
+      }
+    } catch (e) {}
+  }
+  if (want) libTab(want);
 })();
+
+// A hash change while already on the page must switch too, or a second click
+// on the same link from a surface that is already open does nothing.
+window.addEventListener('hashchange', function () {
+  var m = (location.hash || '').match(/^#(?:libpanel-)?([a-z]+)$/);
+  if (m && document.getElementById('libpanel-' + m[1])) libTab(m[1]);
+});
 </script>
 {% endblock %}

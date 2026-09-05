@@ -18,6 +18,11 @@
       <a class="shv-card" href="/library/shelf/{{ s.slug }}" title="{{ s.blurb }}">
         <span class="shv-name">{{ s.name }}</span>
         <span class="shv-count">{{ s.n }}</span>
+        {#- WHICH STREAM this category is offered for. Printed because the
+            interests differ by stream and the assignment here is a default I
+            chose, not one that was stated — it needs to be visible to be
+            corrected. -#}
+        <span class="shv-for">{{ 'news + papers' if ',' in (s.applies_to or '') else (s.applies_to or 'news + papers') }}</span>
         {% if s.blurb %}<span class="shv-blurb">{{ s.blurb }}</span>{% endif %}
       </a>
       {% endfor %}
