@@ -1,11 +1,11 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.SVerITG/metis-ph",
-  "description": "Public-health research memory for Claude: cited answers from your library + 30+ specialist agents",
+  "name": "io.github.SVerITG/metis",
+  "description": "Persistent research memory for Claude: cited answers from your library + 30+ specialist agents",
   "version": "1.0.0",
-  "websiteUrl": "https://github.com/SVerITG/Metis_PH#install-in-3-steps",
+  "websiteUrl": "https://github.com/SVerITG/Metis#install-in-3-steps",
   "repository": {
-    "url": "https://github.com/SVerITG/Metis_PH",
+    "url": "https://github.com/SVerITG/Metis",
     "source": "github"
   }
 }
