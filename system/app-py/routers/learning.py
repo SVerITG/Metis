@@ -305,6 +305,7 @@ _EXTERNAL_APPS: dict[str, str] = {
 # Courses whose rendered static site is mounted by main.py at /coursesite/<key>.
 _MOUNTED_SITES: dict[str, str] = {
     "hat-diagnostics": "/coursesite/hat-diagnostics/",
+    "hat-history": "/coursesite/hat-history/",
 }
 
 

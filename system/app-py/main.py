@@ -272,6 +272,8 @@ _EDU_ROOT = Path(
 COURSE_SITES: dict[str, Path] = {
     "hat-diagnostics": _EDU_ROOT / "3. HAT Diagnostics" / "Course"
                                  / "hat-diagnostics-course" / "_site",
+    "hat-history":     _EDU_ROOT / "4. HAT History" / "Course"
+                                 / "hat-history-course" / "_site",
 }
 for _slug, _dir in COURSE_SITES.items():
     if _dir.is_dir():
