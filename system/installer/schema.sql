@@ -759,7 +759,20 @@ CREATE TABLE IF NOT EXISTS user_topics (
     topic       TEXT NOT NULL UNIQUE,
     description TEXT DEFAULT '',
     active      INTEGER DEFAULT 1,
-    created_at  TEXT NOT NULL
+    created_at  TEXT NOT NULL,
+    -- HOW MUCH THIS TOPIC IS WORTH when ranking what to show. Empty means the
+    -- ordinary weight; 'field' means a standing subject that should count
+    -- almost as much as the reader's own projects; 'method' means a topic worth
+    -- surfacing only occasionally, so a strong paper in it can win a slot but
+    -- has to beat the reader's own work by a margin.
+    --
+    -- THIS COLUMN EXISTS SO THE SOURCE DOES NOT HAVE TO KNOW ANYONE'S FIELD.
+    -- The weighting was first written as two lists of phrases in
+    -- metis_mcp/tools/relevance.py — which meant one researcher's specialty was
+    -- compiled into a general-purpose tool, and anyone else installing it
+    -- inherited an interest profile tilted towards a subject they may not work
+    -- on. The mechanism belongs in the code; the subjects belong here.
+    band        TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS zotero_sync_state (

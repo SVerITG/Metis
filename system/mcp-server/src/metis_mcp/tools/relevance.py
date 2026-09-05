@@ -23,47 +23,34 @@ _CACHE = paths.db.parent / "interest_centroid.json"
 _TTL = 86400  # rebuild the profile at most once per day
 
 
-# ── STANDING BANDS ───────────────────────────────────────────────────────────
-# Two subjects belong in the profile whether or not a project happens to mention
-# them this month. Asked for 2026-09-05: "my actual projects and courses + NTD
-# and occasionally epidemiology."
-#
-# "Occasionally" is a WEIGHT, not a filter, and that is the whole reason bands
-# exist now. Before this every anchor counted the same, so the only way to make
-# general epidemiology matter less was to remove it — and then a genuinely good
-# methods paper scored like an unrelated one. A weighted anchor can say "this
-# counts, but not as much as your own work", which is the actual instruction.
-NTD_BAND = (
-    "neglected tropical diseases: control, elimination and morbidity management",
-    "sleeping sickness and human African trypanosomiasis: surveillance, screening and elimination",
-    "trypanosomes, tsetse vectors and animal reservoirs of trypanosomiasis",
-    "schistosomiasis, leishmaniasis, filariasis, helminths, Chagas disease, Buruli ulcer, leprosy",
-    "neglected tropical disease diagnostics and case detection in endemic settings",
-)
-
-EPI_BAND = (
-    "epidemiological study design, bias, confounding and case definitions",
-    "disease surveillance systems and their evaluation",
-    "disease burden estimation from incomplete routine data",
-    "spatial epidemiology, risk mapping and cluster detection",
-    "multilevel and mixed-effects models applied to health data",
-)
-
-# What each band's best match is worth. A hit on the researcher's OWN work is the
+# ── BANDS ────────────────────────────────────────────────────────────────────
+# What each anchor's best match is worth. A hit on the reader's OWN work is the
 # only thing worth its full similarity; everything else is discounted, and the
 # discount is the statement of how close "close to my work" should mean.
+#
+# NO SUBJECT NAMES LIVE HERE, deliberately. The first version of this carried
+# two lists of phrases naming one researcher's specialty — which compiled a
+# single person's field into a general-purpose tool that ships publicly, and
+# handed anyone else who installed it an interest profile tilted towards a
+# subject they may not work on. The weighting is a mechanism and belongs in the
+# code; which subjects get which weight is data and lives in `user_topics.band`.
+#
+# 'field'  — a standing subject, counting almost as much as an active project.
+# 'method' — worth surfacing occasionally: a strong paper can win a slot, but it
+#            has to beat the reader's own work by a margin rather than tie.
 BAND_WEIGHTS = {
     "project": 1.00,   # what is actually being worked on
     "course":  1.00,   # what is actually being studied
-    "ntd":     0.95,   # the standing field
-    "topic":   0.88,   # stated interests — his, but broad by nature
+    "field":   0.95,   # a standing subject, declared by the reader
+    "topic":   0.88,   # stated interests — theirs, but broad by nature
     "idea":    0.80,   # ideas and notes: live thinking, noisier
-    "epi":     0.72,   # "occasionally epidemiology"
+    "method":  0.72,   # declared as occasional
     "task":    0.62,   # tasks and meetings: the most tooling-polluted band
 }
 
-
-_log = logging.getLogger(__name__)
+# Which values of `user_topics.band` map to a weighted band of their own.
+# Anything else — including the empty default — is an ordinary stated topic.
+_TOPIC_BANDS = ("field", "method")
 
 
 def _corpus_texts(con: sqlite3.Connection) -> tuple[list[str], list[str], list[str]]:
@@ -147,14 +134,13 @@ def _corpus_texts(con: sqlite3.Connection) -> tuple[list[str], list[str], list[s
     # sentence about a project that exists anywhere.
     work_texts: list[str] = []
     for sql in (
-        # TOOLING PROJECTS ARE EXCLUDED. "Metis Dashboard" is domain=software,
-        # and its next_step currently reads "FIRST: the Library relevance
-        # scorer…" — build notes about Metis itself. Feeding that into a
-        # RESEARCH interest profile pulls unrelated AI and software-engineering
-        # papers up the ranking, which is the same pollution semantic_memory was
-        # excluded for. "HAT Dashboard" is category=Software but
-        # domain=sleeping-sickness, and stays: the domain is what says whether a
-        # project is about his field.
+        # TOOLING PROJECTS ARE EXCLUDED, on `domain` rather than on `category`.
+        # A project for building this application has a next_step full of build
+        # notes, and feeding those into a RESEARCH interest profile pulls
+        # unrelated software-engineering papers up the ranking — the same
+        # pollution semantic_memory was excluded for. A project whose CATEGORY
+        # is software but whose DOMAIN is a research subject stays: the domain
+        # is what says whether a project is about the reader's field.
         "SELECT title || ' ' || COALESCE(domain,'') || ' ' || COALESCE(description,'') "
         "|| ' ' || COALESCE(next_step,'') FROM projects "
         "WHERE status IN ('active','incubating') "
@@ -314,7 +300,21 @@ def _corpus_bands(con: sqlite3.Connection) -> list[tuple[str, str]]:
           "       COALESCE(next_lesson,'') FROM learning_courses "
           "WHERE status IN ('active','in_progress','building','paused')")
 
-    _pull("topic", "SELECT topic, COALESCE(description,'') FROM user_topics WHERE active = 1")
+    # STATED TOPICS, each in the band the reader gave it. A topic with no band
+    # is an ordinary interest; one marked 'field' or 'method' is weighted
+    # accordingly. This is what replaced the hardcoded subject lists.
+    try:
+        for row in con.execute(
+                "SELECT topic, COALESCE(description,'') AS d, "
+                "       COALESCE(band,'') AS band FROM user_topics WHERE active = 1"):
+            text = " ".join(x for x in (str(row["topic"]), str(row["d"])) if x).strip()
+            if not text:
+                continue
+            band = str(row["band"] or "").strip().lower()
+            out.append((band if band in _TOPIC_BANDS else "topic", text))
+    except Exception as exc:
+        _log.warning("relevance: stated topics could not be read (%s) — "
+                     "the profile is ranking without them", exc)
     _pull("idea",
           "SELECT text FROM ideas WHERE COALESCE(tags,'') NOT LIKE '%archived%' "
           "ORDER BY created_at DESC LIMIT 120")
@@ -323,11 +323,6 @@ def _corpus_bands(con: sqlite3.Connection) -> list[tuple[str, str]]:
           "SELECT title FROM tasks WHERE status NOT IN ('done','completed','cancelled','deleted') "
           "ORDER BY created_at DESC LIMIT 120")
     _pull("task", "SELECT title FROM meetings ORDER BY meeting_date DESC LIMIT 50")
-
-    for t in NTD_BAND:
-        out.append(("ntd", t))
-    for t in EPI_BAND:
-        out.append(("epi", t))
 
     # Deduplicate on the text, keeping the HIGHEST-weighted band that produced
     # it. The same sentence can arrive as a project's next step and as a task;
@@ -346,16 +341,17 @@ def build_profile(con: sqlite3.Connection, force: bool = False) -> dict | None:
 
     WHY BOTH. A centroid answers "is this close to the average of everything he
     does". Averaging 5 stated topics, ~100 work items and ~390 library titles
-    produces a vector that means "public health in general" — and on that
-    measure a well-written paper about foodborne bacteria scored 0.723 while
-    "Passive screening coverage for gambiense HAT" scored 0.709. The centroid
-    could separate his field from obvious noise (phenomenology, LED lighting)
-    but not from the enormous middle ground of competent public-health writing.
+    produces a vector that means "the reader's discipline in general" — and on
+    that measure a well-written paper on an unrelated topic in the same
+    discipline scored 0.723 while a paper squarely on the reader's own subject
+    scored 0.709. A centroid can separate a discipline from obvious noise
+    (phenomenology, LED lighting) but not from the enormous middle ground of
+    competent writing inside that discipline.
 
     The question that actually matters is different: **is this close to ANY ONE
-    of his projects, ideas or notes?** A paper on tsetse control should be
-    ranked by its similarity to the Angola risk-mapping project, not diluted by
-    its distance from a multilevel-models course and 390 library titles.
+    of their projects, ideas or notes?** A paper should be ranked by its
+    similarity to the one project it speaks to, not diluted by its distance
+    from an unrelated course and 390 library titles.
 
     So the profile keeps the per-item vectors for the STATED TOPICS and the WORK
     band and scores on the maximum. The centroid survives as a minority term,

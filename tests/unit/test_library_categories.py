@@ -116,3 +116,66 @@ def test_membership_is_a_join_not_a_column(router):
         "membership is not keyed on the triple, so one item cannot sit on two "
         "categories"
     )
+
+
+# ── the interest profile must not name anyone's field ────────────────────────
+
+RELEVANCE = ROOT / "system/mcp-server/src/metis_mcp/tools/relevance.py"
+
+
+def test_the_scorer_names_no_ones_speciality():
+    """Subject names belong in the reader's data, not in a shared module.
+
+    `relevance.py` ships in BOTH repositories, including the domain-agnostic
+    base shell. Two lists of phrases naming one researcher's speciality used to
+    live here, which compiled that person's field into a general-purpose tool
+    and handed anyone else who installed it an interest profile tilted towards a
+    subject they may not work on. The mechanism is code; which subjects get
+    which weight is `user_topics.band`.
+    """
+    src = RELEVANCE.read_text(encoding="utf-8")
+    # A sample across several specialities, so this test is not itself a list of
+    # one person's interests.
+    leaks = [w for w in (
+        "sleeping sickness", "trypanosom", "tsetse", "schistosom", "leishman",
+        "gambiense", "malaria", "tuberculosis", "oncology", "cardiology",
+    ) if w in src.lower()]
+    assert not leaks, (
+        f"the shared scorer names a speciality: {leaks} — put it in "
+        f"user_topics.band instead"
+    )
+
+
+def test_topic_bands_come_from_the_database():
+    src = RELEVANCE.read_text(encoding="utf-8")
+    assert "user_topics" in src and "band" in src, "bands are not read from data"
+    assert '_TOPIC_BANDS = ("field", "method")' in src, (
+        "the band names are not declared in one place"
+    )
+    # The weights must still separate: a standing subject above a broad topic,
+    # a broad topic above an occasional method.
+    m = re.search(r"BAND_WEIGHTS = \{(.*?)\}", src, re.S)
+    assert m, "no weight map"
+    w = {k: float(v) for k, v in re.findall(r'"(\w+)":\s*([0-9.]+)', m.group(1))}
+    assert w["project"] == w["course"] == 1.00, "own work is not full weight"
+    assert w["field"] > w["topic"] > w["method"] > w["task"], (
+        f"the bands do not order as intended: {w}"
+    )
+
+
+def test_a_category_can_be_scoped_to_a_stream():
+    """The interests differ by stream, so the picker must not offer all of them.
+
+    Matched on the delimited list rather than a bare LIKE: `LIKE '%news%'` would
+    also match a stream called "newsletters", and that bug would not surface
+    until such a stream existed.
+    """
+    src = ROUTER.read_text(encoding="utf-8")
+    assert "applies_to" in src, "categories cannot be scoped to a stream"
+    assert "stream" in src
+    assert "','" in src or "', '" in src or "|| ','" in src, (
+        "the stream match does not appear to be delimited"
+    )
+    assert "applies_to" in SCHEMA.read_text(encoding="utf-8"), (
+        "applies_to is used but not declared in schema.sql"
+    )
