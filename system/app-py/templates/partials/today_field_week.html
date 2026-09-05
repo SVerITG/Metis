@@ -42,10 +42,38 @@
         labels say what the buttons do, so no per-button tooltip. Together those
         took the box from 23.4 KB to a third of it — the whole point of the
         merge was to spend less screen and less markup on this. -#}
-    {% for state, label in [('read', 'Read'), ('later', 'Stack'), ('declined', 'Not for me')] %}
-    <button type="button" class="fw-act fw-act--{{ state }}" hx-post="/api/stack/set"
+    {#- FOUR VERBS. `Dismiss` was added 2026-09-05: "still my interest but I do
+        not want to read it now nor put in my stack or library."
+
+        It is deliberately NOT a synonym for either neighbour. `Not for me` says
+        the SUBJECT does not interest you and is the only verdict read as
+        evidence against showing more like it. `Dismiss` says only: not this
+        one, not today. Without it, clearing a busy morning's queue would have
+        to be spent as either a promise to read or a vote against the topic, and
+        both of those are lies the system would then act on. -#}
+    {% for state, label, tip in [
+         ('read',      'Read',       'Done with it'),
+         ('later',     'Stack',      'Read it, but not now — it joins your stack'),
+         ('dismissed', 'Dismiss',    'Clear it. Still your field, just not this one today — nothing is filed'),
+         ('declined',  'Not for me', 'The subject does not interest you — this is the only verb that changes what you are shown')] %}
+    <button type="button" class="fw-act fw-act--{{ state }}" title="{{ tip }}"
+            hx-post="/api/stack/set"
             hx-vals='{"kind":"{{ kind }}","item_id":"{{ item_id }}","state":"{{ state }}","back":"today-field"}'>{{ label }}</button>
     {% endfor %}
+    {#- KEEP is not a fifth verdict, it is the one action that asks a question.
+        The four above are judgements you make in a second; this one wants to
+        know WHY you are keeping it, because "why" is the only thing that makes
+        the item findable again. It loads its shelves on demand — nine rows
+        against 29 shelves would be 261 inlined options otherwise. -#}
+    <details class="fw-keep">
+      <summary class="fw-act fw-act--keep" title="Keep it in your library — and say which shelf">Keep</summary>
+      <div class="fw-keep-body"
+           hx-get="/api/partial/library/shelf-picker?kind={{ kind }}&item_id={{ item_id }}&back=today-field"
+           hx-trigger="toggle once from:closest details"
+           hx-swap="innerHTML">
+        <span class="fw-keep-wait">shelves…</span>
+      </div>
+    </details>
   </span>
   {%- endmacro %}
 
@@ -62,7 +90,16 @@
         <a class="fw-row-title" href="{{ it.source_url or '/news' }}"
            {% if it.source_url %}target="_blank" rel="noopener"{% endif %}>{{ it.title | sci }}</a>
         {% if it.summary %}<p class="fw-sum">{{ it.summary | prose(120) }}</p>{% endif %}
-        <p class="fw-meta">{{ it.on_date[:10] if it.on_date }}{% if it.domain %} · {{ it.domain }}{% endif %}</p>
+        {#- THE SOURCE, which this line did not carry. It printed `domain`, and
+            on this table `domain` is a TOPIC — 'science', 'policy', 'africa',
+            'world-news' — so the line under a headline named a beat where a
+            masthead was expected. `source` is derived from the item's own URL
+            by the same helper the News surface cards use. -#}
+        <p class="fw-meta">
+          {%- if it.source %}<span class="fw-src">{{ it.source }}</span>{% endif %}
+          {%- if it.on_date %} · {{ it.on_date[:10] }}{% endif %}
+          {%- if it.domain %} · {{ it.domain }}{% endif %}
+        </p>
       </div>
       {{ verdicts('news', it.id) }}
     </article>
@@ -82,9 +119,12 @@
       <div class="fw-body">
         <a class="fw-row-title" href="{{ it.source_url or ('https://doi.org/' ~ it.doi if it.doi else '/library') }}"
            target="_blank" rel="noopener">{{ it.title | sci }}</a>
+        {#- A paper's source is its journal, and it leads for the same reason the
+            masthead leads on a news row: it is the fastest signal of what kind
+            of thing this is. -#}
         <p class="fw-meta">
-          {%- if it.authors %}{{ it.authors[:58] }}{% endif %}
-          {%- if it.journal %} · {{ it.journal[:40] }}{% endif %}
+          {%- if it.journal %}<span class="fw-src">{{ it.journal[:40] }}</span>{% endif %}
+          {%- if it.authors %} · {{ it.authors[:52] }}{% endif %}
           {%- if it.on_date %} · {{ it.on_date[:10] }}{% endif %}
         </p>
         {% if it.why %}<p class="fw-sum fw-sum--why">{{ it.why | prose(110) }}</p>{% endif %}

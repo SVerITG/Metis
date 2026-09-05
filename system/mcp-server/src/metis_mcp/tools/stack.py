@@ -26,10 +26,25 @@ WRITE-THROUGH, NOT DUPLICATION
     written HERE and mirrored back to the columns that own it. One store to read
     from, no surface left stale.
 
-THE FOUR VERBS
+THE FIVE VERBS
     saved     keep it — for papers, that means add it to the library
     later     the stack: read it, but not now. The state the researcher actually asked for
               and the one nothing implemented.
+    dismissed seen, and cleared, without filing it anywhere. Asked for 2026-09-05:
+              "still my interest but I do not want to read it now nor put in my
+              stack or library."
+
+              THIS IS NOT `declined`, AND THE DIFFERENCE IS NOT COSMETIC.
+              `declined` is a statement about the SUBJECT — it does not interest
+              me — and it is the only verdict that should ever be read as
+              negative evidence about what to show next. `dismissed` is a
+              statement about THIS ITEM ON THIS DAY. The subject still counts.
+              Collapsing the two would teach the ranker that a topic is unwanted
+              every time a busy morning cleared the queue, which is the fastest
+              way to make a relevance model wrong about someone.
+
+              It is also not `later`: the stack is a promise to read, and a
+              promise nobody meant is what makes a stack stop being believed.
     declined  not interested. Demoted and folded, never deleted — same rule the
               focus safe follows, for the same reason: an absence you were never
               told about cannot be audited.
@@ -46,7 +61,19 @@ from metis_mcp.app_instance import app
 from metis_mcp.config import paths
 from metis_mcp.db import connect
 
-STATES = ("saved", "later", "declined", "read")
+# Order is the reading order of the verdict strip, and `dismissed` sits between
+# the two it must not be confused with: it clears the row like `declined` but
+# says nothing against the subject, and it is not the promise `later` makes.
+STATES = ("saved", "later", "dismissed", "declined", "read")
+
+# The verdicts that mean "this is behind me" — the set that clears an item from
+# every unjudged queue. Named once, because the queue that forgot to include a
+# verb is exactly the bug this constant exists to prevent: the field digest
+# excluded only ('read','declined'), so pressing Stack left the row in place.
+JUDGED = ("read", "declined", "dismissed", "later", "saved")
+
+# The verdicts that carry NEGATIVE evidence about a subject. Only one does.
+NEGATIVE = ("declined",)
 KINDS = ("news", "paper")
 
 # Kept in step with `system/installer/schema.sql`, the only mechanism that
@@ -56,7 +83,7 @@ CREATE TABLE IF NOT EXISTS reading_stack (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     kind       TEXT NOT NULL,          -- 'news' | 'paper'
     item_id    TEXT NOT NULL,
-    state      TEXT NOT NULL,          -- saved | later | declined | read
+    state      TEXT NOT NULL,          -- saved | later | dismissed | declined | read
     title      TEXT DEFAULT '',
     url        TEXT DEFAULT '',
     source     TEXT DEFAULT '',
@@ -263,7 +290,14 @@ def _write_through(con, kind: str, item_id: str, state: str, now: str) -> None:
     if kind != "paper":
         return
     try:
-        if state == "declined":
+        if state in ("declined", "dismissed"):
+            # BOTH clear the row from the Library's new-literature queue, and
+            # that is all `new_publications.dismissed_at` has ever meant here:
+            # "not in the queue any more". The distinction between "the subject
+            # does not interest me" and "not this one, not today" is finer than
+            # that column can carry, so it lives in `reading_stack.state` —
+            # which is the store the ranker reads. Writing the finer fact into
+            # a coarser column is how the two would drift.
             con.execute("UPDATE new_publications SET dismissed_at=? WHERE id=?",
                         (now, item_id))
         elif state == "read":

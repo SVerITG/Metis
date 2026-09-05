@@ -35,6 +35,7 @@ from routers import (
     transcription,
     verification,
     work,
+    shelves,
     stack,
 )
 
@@ -628,6 +629,9 @@ app.include_router(verification.router)
 app.include_router(focus.router)
 # READING STACK — the triage store Today feeds and the /stack surface drains.
 app.include_router(stack.router)
+# LIBRARY SHELVES — the reason something was kept, which the stack's `saved`
+# verdict recorded without ever being able to say.
+app.include_router(shelves.router)
 
 # Must run AFTER all routers are imported, so every environment exists.
 _n_envs = install_shared_globals()

@@ -16,7 +16,7 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from db import db_execute, db_query, db_scalar
+from db import RELEVANCE_CLOSE, db_execute, db_query, db_scalar
 from ui import (clip, count_since, delta_count, last_seen, mark_seen,  # noqa: E402
                 nothing, peek, zone)
 from models import model_for  # Resolves Claude model IDs from system/config/models.yaml
@@ -694,7 +694,7 @@ async def today_news_rail(
             top_rows = db_query(
                 "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at, "
                 "COALESCE(relevance,0) as relevance FROM news_briefs "
-                "WHERE created_at >= ? AND COALESCE(relevance,0) >= 0.60 "
+                "WHERE created_at >= ? AND COALESCE(relevance,0) >= " + str(RELEVANCE_CLOSE) + " "
                 "ORDER BY COALESCE(relevance,0) DESC LIMIT 8",
                 (cutoff,),
             ) or []
@@ -5101,8 +5101,23 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
 
     # `reading_stack` is the shared verdict table; a judged item leaves the box
     # whichever verb was used, so a decision never has to be made twice.
+    #
+    # THE COMMENT ABOVE WAS TRUE OF THE INTENT AND FALSE OF THE CODE. This listed
+    # only ('read','declined'), so pressing Stack — the one verb that exists
+    # because the researcher asked for it — filed the item and left it sitting in
+    # the box, to be judged again tomorrow. A verdict that does not clear the row
+    # reads as a button that did nothing.
+    #
+    # The set is now imported from the store that owns it rather than retyped
+    # here, because this is the second queue to disagree with it and a literal
+    # copied into a query is a copy that stops being updated.
+    try:
+        from metis_mcp.tools.stack import JUDGED as _JUDGED
+    except Exception:
+        _JUDGED = ("read", "declined", "dismissed", "later", "saved")
+    _judged_sql = ",".join("'" + j.replace("'", "") + "'" for j in _JUDGED)
     NOT_JUDGED = ("NOT EXISTS (SELECT 1 FROM reading_stack s WHERE s.kind=? "
-                  "AND s.item_id = CAST({id} AS TEXT) AND s.state IN ('read','declined'))")
+                  "AND s.item_id = CAST({id} AS TEXT) AND s.state IN (" + _judged_sql + "))")
 
     news = db_query(
         "SELECT b.brief_id AS id, b.title, b.summary, b.source_url, b.domain, "
@@ -5141,6 +5156,13 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         "AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
         "AND " + NOT_JUDGED.format(id="p.id"),
         (since, "paper"), default=0) or 0
+
+    # Name the source on every news row. `_source_of` maps a host to its
+    # masthead and is what the News surface cards already use; the digest was
+    # printing the topic beat instead, so the two surfaces named the same item
+    # differently.
+    for it in news:
+        it["source"] = _source_of(it.get("source_url") or "")
 
     return {
         "news": news, "papers": papers,
@@ -5559,7 +5581,7 @@ def _news_card(r: dict) -> dict:
         # is the setting — US, COVID — and an embedding treats geography and
         # pathogen as minor next to the dominant topic. No threshold separates
         # those two, which is why the sort matters more than the cut.
-        "close": rel >= 0.68,
+        "close": rel >= RELEVANCE_CLOSE,
         "signal": (r.get("signal_strength") or "").strip(),
         "when": _age_label(r["created_at"]) if r.get("created_at") else "",
         # Raw timestamp for correct chronological sorting (the "when" label is not
@@ -5888,7 +5910,7 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
     if spec["kind"] == "work":
         # "Related to my work" must NOT depend on embeddings alone.
         #
-        # `close` is relevance >= 0.64, computed from the embedding model — and
+        # `close` is relevance >= db.RELEVANCE_CLOSE, from the embedding model — and
         # that model is optional (the MCP smoke test currently reports
         # "embedding model unavailable: ConnectError"). With relevance stuck at 0
         # this tab rendered completely empty, which is the worst possible failure

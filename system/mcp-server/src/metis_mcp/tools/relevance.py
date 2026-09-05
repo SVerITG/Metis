@@ -12,6 +12,7 @@ Fails safe: if embeddings are unavailable the caller keeps its keyword score.
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 import time
 from pathlib import Path
@@ -20,6 +21,49 @@ from metis_mcp.config import paths
 
 _CACHE = paths.db.parent / "interest_centroid.json"
 _TTL = 86400  # rebuild the profile at most once per day
+
+
+# ── STANDING BANDS ───────────────────────────────────────────────────────────
+# Two subjects belong in the profile whether or not a project happens to mention
+# them this month. Asked for 2026-09-05: "my actual projects and courses + NTD
+# and occasionally epidemiology."
+#
+# "Occasionally" is a WEIGHT, not a filter, and that is the whole reason bands
+# exist now. Before this every anchor counted the same, so the only way to make
+# general epidemiology matter less was to remove it — and then a genuinely good
+# methods paper scored like an unrelated one. A weighted anchor can say "this
+# counts, but not as much as your own work", which is the actual instruction.
+NTD_BAND = (
+    "neglected tropical diseases: control, elimination and morbidity management",
+    "sleeping sickness and human African trypanosomiasis: surveillance, screening and elimination",
+    "trypanosomes, tsetse vectors and animal reservoirs of trypanosomiasis",
+    "schistosomiasis, leishmaniasis, filariasis, helminths, Chagas disease, Buruli ulcer, leprosy",
+    "neglected tropical disease diagnostics and case detection in endemic settings",
+)
+
+EPI_BAND = (
+    "epidemiological study design, bias, confounding and case definitions",
+    "disease surveillance systems and their evaluation",
+    "disease burden estimation from incomplete routine data",
+    "spatial epidemiology, risk mapping and cluster detection",
+    "multilevel and mixed-effects models applied to health data",
+)
+
+# What each band's best match is worth. A hit on the researcher's OWN work is the
+# only thing worth its full similarity; everything else is discounted, and the
+# discount is the statement of how close "close to my work" should mean.
+BAND_WEIGHTS = {
+    "project": 1.00,   # what is actually being worked on
+    "course":  1.00,   # what is actually being studied
+    "ntd":     0.95,   # the standing field
+    "topic":   0.88,   # stated interests — his, but broad by nature
+    "idea":    0.80,   # ideas and notes: live thinking, noisier
+    "epi":     0.72,   # "occasionally epidemiology"
+    "task":    0.62,   # tasks and meetings: the most tooling-polluted band
+}
+
+
+_log = logging.getLogger(__name__)
 
 
 def _corpus_texts(con: sqlite3.Connection) -> tuple[list[str], list[str], list[str]]:
@@ -210,6 +254,93 @@ def build_centroid(con: sqlite3.Connection, force: bool = False) -> list[float] 
 _PROFILE_CACHE = paths.db.parent / "interest_profile.json"
 
 
+def _corpus_bands(con: sqlite3.Connection) -> list[tuple[str, str]]:
+    """Every anchor as (band, text). The band decides what a match is worth.
+
+    WHAT CHANGED AND WHY. `_corpus_texts` returned one flat list of anchors, all
+    counting the same, so the profile could not distinguish a paper that matches
+    an active project from one that matches a five-year-old task title. Two
+    consequences the researcher could see: general public-health writing scored
+    like his own subject, and COURSES — the five he is actually studying — were
+    never consulted at all, by any band, in any version of this file.
+
+    A course is an unusually good anchor: it is a subject he chose, described in
+    his own framing, and it stays stable for months. That it was missing is the
+    single biggest omission this rewrite fixes.
+    """
+    out: list[tuple[str, str]] = []
+
+    def _pull(band: str, sql: str) -> None:
+        """Read one band. A FAILURE IS LOGGED, never swallowed in silence.
+
+        The bare `except: pass` that used to stand here is how the stated-focus
+        band spent months empty — it read a path that did not exist, raised, and
+        the profile simply ranked without it. The same thing happened again the
+        first time the course band was written: it selected a `description`
+        column `learning_courses` does not have, so the band that was the point
+        of the change contributed nothing and said nothing.
+
+        A band is still allowed to fail — an older install has a different
+        column set and the profile must survive that. What it is not allowed to
+        do is fail quietly.
+        """
+        try:
+            n0 = len(out)
+            for row in con.execute(sql):
+                t = " ".join(str(x) for x in row if x).strip()
+                if t:
+                    out.append((band, t))
+            if len(out) == n0:
+                _log.info("relevance: band %r returned no rows", band)
+        except Exception as exc:
+            _log.warning("relevance: band %r could not be read (%s) — "
+                         "the profile is ranking without it", band, exc)
+
+    # HIS OWN WORK — the two bands that count for their full similarity.
+    _pull("project",
+          "SELECT title, COALESCE(domain,''), COALESCE(description,''), "
+          "       COALESCE(next_step,'') FROM projects "
+          "WHERE status IN ('active','incubating') "
+          "AND LOWER(COALESCE(domain,'')) NOT IN ('software','tooling','personal')")
+    # Courses: only the ones that exist. An 'idea' course is a title with no
+    # content behind it, and anchoring on a subject he has not started would
+    # rank papers for a course that may never be built.
+    # Columns verified against the live schema: `learning_courses` has no
+    # `description`. What it does carry is the course's own framing (title,
+    # category) and where the reader is in it, and the current/next lesson
+    # titles are the most specific sentences about the subject in the row.
+    _pull("course",
+          "SELECT title, COALESCE(category,''), COALESCE(current_lesson,''), "
+          "       COALESCE(next_lesson,'') FROM learning_courses "
+          "WHERE status IN ('active','in_progress','building','paused')")
+
+    _pull("topic", "SELECT topic, COALESCE(description,'') FROM user_topics WHERE active = 1")
+    _pull("idea",
+          "SELECT text FROM ideas WHERE COALESCE(tags,'') NOT LIKE '%archived%' "
+          "ORDER BY created_at DESC LIMIT 120")
+    _pull("idea", "SELECT content FROM personal_notes ORDER BY created_at DESC LIMIT 120")
+    _pull("task",
+          "SELECT title FROM tasks WHERE status NOT IN ('done','completed','cancelled','deleted') "
+          "ORDER BY created_at DESC LIMIT 120")
+    _pull("task", "SELECT title FROM meetings ORDER BY meeting_date DESC LIMIT 50")
+
+    for t in NTD_BAND:
+        out.append(("ntd", t))
+    for t in EPI_BAND:
+        out.append(("epi", t))
+
+    # Deduplicate on the text, keeping the HIGHEST-weighted band that produced
+    # it. The same sentence can arrive as a project's next step and as a task;
+    # keeping the cheaper copy would silently discount his own work.
+    best: dict[str, str] = {}
+    for band, t in out:
+        t = t[:300]
+        prev = best.get(t)
+        if prev is None or BAND_WEIGHTS.get(band, 0) > BAND_WEIGHTS.get(prev, 0):
+            best[t] = band
+    return [(b, t) for t, b in best.items()]
+
+
 def build_profile(con: sqlite3.Connection, force: bool = False) -> dict | None:
     """The interest profile as a CENTROID **and** the individual vectors behind it.
 
@@ -243,16 +374,25 @@ def build_profile(con: sqlite3.Connection, force: bool = False) -> dict | None:
             pass
 
     centroid = build_centroid(con, force=force)
-    topic_texts, work_texts, _library = _corpus_texts(con)
-    anchors = topic_texts + work_texts
+    banded = _corpus_bands(con)
+    anchors = [t for _b, t in banded]
+    weights = [BAND_WEIGHTS.get(b, 0.80) for b, _t in banded]
     if not anchors:
-        return {"centroid": centroid, "anchors": []} if centroid else None
+        return {"centroid": centroid, "anchors": [], "weights": []} if centroid else None
     try:
         from metis_mcp.embeddings import embed
         vectors = embed(anchors, prefix="search_document: ", normalize=True)
+        tally: dict = {}
+        for b, _t in banded:
+            tally[b] = tally.get(b, 0) + 1
         profile = {"centroid": centroid,
                    "anchors": [list(map(float, v)) for v in vectors],
-                   "n_topic": len(topic_texts), "n_work": len(work_texts),
+                   # Parallel to `anchors` by index. Stored rather than
+                   # recomputed so a cached profile keeps the weights it was
+                   # built with — otherwise editing BAND_WEIGHTS would silently
+                   # re-rank everything scored before the next rebuild.
+                   "weights": weights,
+                   "bands": tally,
                    "built": time.time()}
         try:
             _PROFILE_CACHE.parent.mkdir(parents=True, exist_ok=True)
@@ -261,7 +401,7 @@ def build_profile(con: sqlite3.Connection, force: bool = False) -> dict | None:
             pass
         return profile
     except Exception:
-        return {"centroid": centroid, "anchors": []} if centroid else None
+        return {"centroid": centroid, "anchors": [], "weights": []} if centroid else None
 
 
 def score_batch_profile(texts: list[str], profile: dict | None) -> list[float]:
@@ -283,7 +423,18 @@ def score_batch_profile(texts: list[str], profile: dict | None) -> list[float]:
         import numpy as np
         v = np.array(embed([t[:500] for t in texts], prefix="search_query: ", normalize=True))
         A = np.array(anchors)
-        best = (v @ A.T).max(axis=1)                     # closest single anchor
+        # WEIGHTED max, not bare max. Scaling each anchor's similarity by its
+        # band before taking the maximum is what makes "occasionally
+        # epidemiology" expressible: a general methods paper can still win a
+        # slot, but it has to beat the researcher's own work by a margin rather
+        # than tie with it.
+        w = profile.get("weights") or []
+        if len(w) == len(anchors):
+            best = (v @ A.T * np.array(w)).max(axis=1)
+        else:
+            # A profile cached before weights existed. Score it the old way
+            # rather than guessing weights for anchors whose bands are unknown.
+            best = (v @ A.T).max(axis=1)
         if centroid:
             gen = v @ np.array(centroid)
             return [float(0.75 * b + 0.25 * g) for b, g in zip(best, gen)]

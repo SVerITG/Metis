@@ -1,0 +1,34 @@
+{#- library_shelf_picker.html — which shelf, and therefore why you kept it.
+
+    Asked for 2026-09-05: saving to the library must ask which category, because
+    the category carries intent. The groups are labelled with what the KIND
+    means rather than just named, since "Methodology" and "AI" look like the
+    same sort of thing until you are told that one is a reference you raid and
+    the other is a timeline you follow. -#}
+<div class="shp">
+  <p class="shp-lead">Keep it — and say why</p>
+  {% for shelf_kind, lead, items in groups %}
+  {% if items %}
+  <div class="shp-group">
+    <p class="shp-kind">{{ lead }}</p>
+    <div class="shp-row">
+      {% for s in items %}
+      <form hx-post="/api/library/shelf/add" hx-target="closest .fw-row" hx-swap="outerHTML">
+        <input type="hidden" name="kind" value="{{ kind }}">
+        <input type="hidden" name="item_id" value="{{ item_id }}">
+        <input type="hidden" name="shelf" value="{{ s.slug }}">
+        <input type="hidden" name="back" value="{{ back }}">
+        <button type="submit" class="shp-chip{% if s.slug in already %} is-on{% endif %}"
+                title="{{ s.blurb }}{% if s.n %} · {{ s.n }} already here{% endif %}">
+          {{ s.name }}{% if s.n %} <span class="shp-n">{{ s.n }}</span>{% endif %}
+        </button>
+      </form>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% if not groups %}
+  <p class="shp-empty">No shelves yet — run tools/seed_library_shelves.py.</p>
+  {% endif %}
+</div>

@@ -174,11 +174,38 @@ def test_states_for_tolerates_an_empty_or_ragged_list(db):
 
 
 def test_counts_covers_every_state(db):
+    """`counts()` must report a key for EVERY state the store recognises.
+
+    Derived from `S.STATES` rather than written out. The literal list that used
+    to stand here is the same mistake that produced the defect this suite exists
+    to catch: the field digest had the four verbs typed into a query, the store
+    gained a fifth, and the queue silently stopped clearing for one of them. A
+    check that repeats a constant stops testing the constant and starts testing
+    the copy.
+    """
     S.set_state("news", "a", "later", "A")
     S.set_state("news", "b", "saved", "B")
     c = S.counts()
     assert c["later"] == 1 and c["saved"] == 1 and c["total"] == 2
-    assert set(c) == {"saved", "later", "declined", "read", "total"}
+    assert set(c) == set(S.STATES) | {"total"}
+    assert "dismissed" in c, (
+        "the verdict that clears a row without judging its subject is missing"
+    )
+
+
+def test_dismissed_is_not_read_as_a_rejection(db):
+    """Only `declined` may count as evidence against a subject.
+
+    If `dismissed` ever joins NEGATIVE, clearing a busy morning's queue teaches
+    the ranker that those topics are unwanted — which is the fastest way to make
+    a relevance model wrong about someone, and it would happen silently.
+    """
+    assert S.NEGATIVE == ("declined",), (
+        f"NEGATIVE is {S.NEGATIVE}; a verdict that only clears a row must not "
+        f"be read as disinterest"
+    )
+    assert "dismissed" in S.JUDGED, "Dismiss must clear the row"
+    assert "dismissed" not in S.NEGATIVE
 
 
 # ── 5. the surface contract ──────────────────────────────────────────────────

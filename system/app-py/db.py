@@ -394,3 +394,32 @@ def run_migrations() -> list[str]:
         pass
 
     return changes
+
+
+# ---------------------------------------------------------------------------
+# How close is "close to my work"
+# ---------------------------------------------------------------------------
+# ONE AUTHOR. This lived as three different numbers — 0.68 in the news card,
+# 0.60 in the hero query, and a comment asserting 0.64 — for one idea, so the
+# same paper was "close to my work" on one surface and not on another.
+#
+# CALIBRATED 2026-09-05 against 300 sampled papers scored by the weighted
+# profile, with control probes that had to separate before the distribution was
+# read at all:
+#
+#     his own subject   0.713 – 0.767
+#     a course subject  0.708
+#     an epi method     0.671      <- "occasionally epidemiology" lands here
+#     generic public health 0.576
+#     unrelated         0.529 – 0.583
+#
+# 0.66 sits below everything of his own and above generic public-health
+# writing, admitting a strong methods paper and rejecting a weak one. It cuts
+# the feed to roughly the top sixth; the previous 0.64, on the older unweighted
+# profile, admitted 62% of everything — a filter that passes two thirds of what
+# it sees is not filtering.
+#
+# THIS NUMBER IS ONLY MEANINGFUL AGAINST WEIGHTED SCORES. Rows scored by the
+# old profile are on a different scale and must be re-scored before it applies
+# (tools/rescore_relevance.py).
+RELEVANCE_CLOSE: float = 0.66

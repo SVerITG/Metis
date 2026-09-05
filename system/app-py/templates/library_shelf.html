@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ shelf.name }}{% endblock %}
+
+{#- library_shelf.html — one shelf.
+
+    NO UNREAD COUNT, and that is deliberate on a purpose shelf: it is a
+    reference you raid when you need it, not a queue that can fall behind. A
+    tracking shelf is the opposite — it is a timeline, so it reads newest first
+    and the date leads each row. Same template, because the difference is in
+    what is emphasised rather than in the structure. -#}
+{% block content %}
+<div class="wrap">
+  <header class="shf-head">
+    <p class="shf-kind">{{ lead }}</p>
+    <h1 class="shf-title">{{ shelf.name }}</h1>
+    {% if shelf.blurb %}<p class="shf-blurb">{{ shelf.blurb }}</p>{% endif %}
+    <p class="shf-meta">
+      <b>{{ items|length }}</b> kept ·
+      <a class="u-link" href="/library">Library</a> ·
+      <a class="u-link" href="/stack?state=saved">everything kept</a>
+    </p>
+  </header>
+
+  {% if items %}
+  <div class="shf-list">
+    {% for it in items %}
+    <article class="shf-row">
+      <span class="shf-when">{{ it.added_at[:10] }}</span>
+      <div class="shf-body">
+        {% if it.url %}
+        <a class="shf-row-title" href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title | sci }}</a>
+        {% else %}
+        <span class="shf-row-title">{{ it.title | sci }}</span>
+        {% endif %}
+        <p class="shf-row-meta">
+          {%- if it.journal %}<span class="fw-src">{{ it.journal[:44] }}</span>{% endif %}
+          {%- if it.authors %} · {{ it.authors[:56] }}{% endif %}
+          {%- if not it.title %} <em>the source row for this item is gone; the shelf entry remains</em>{% endif %}
+        </p>
+      </div>
+      <form hx-post="/api/library/shelf/remove" hx-target="closest .shf-row" hx-swap="outerHTML">
+        <input type="hidden" name="kind" value="{{ it.kind }}">
+        <input type="hidden" name="item_id" value="{{ it.item_id }}">
+        <input type="hidden" name="shelf" value="{{ shelf.slug }}">
+        <button type="submit" class="shf-off" title="Take it off this shelf — the item itself is kept">off this shelf</button>
+      </form>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="shf-empty">Nothing on this shelf yet. Keep something from Today or the
+     News surface and choose <b>{{ shelf.name }}</b>.</p>
+  {% endif %}
+</div>
+{% endblock %}

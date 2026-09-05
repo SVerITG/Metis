@@ -1370,3 +1370,47 @@ CREATE TABLE IF NOT EXISTS viz_uses (
 );
 CREATE INDEX IF NOT EXISTS idx_viz_uses_recipe ON viz_uses(recipe, verdict);
 CREATE INDEX IF NOT EXISTS idx_viz_uses_style  ON viz_uses(style, verdict);
+
+-- ── LIBRARY SHELVES ─────────────────────────────────────────────────────────
+-- A shelf is a REASON FOR KEEPING, not a topic label. Asked for 2026-09-05:
+-- "if I put an article in Methodology, I like the article for its methodology
+-- that interests me, maybe not straight away. If I put something in AI it's
+-- because I am making an AI library to follow up its development."
+--
+-- Those two sentences describe two different OBJECTS, and that is why one flat
+-- `collection` column has been NULL on all 1,144 library rows since it was
+-- added: a single list cannot behave two ways. `kind` is what makes a shelf
+-- usable rather than merely labelled:
+--
+--   purpose     why the work is good. Timeless, raided on demand, never a
+--               queue. Sorted by fit to what you are doing now, not by date.
+--   tracking    following a field as it develops. Chronological, and the only
+--               kind for which "what is new since I last looked" is a question.
+--   attachment  evidence bound to one project or course. It surfaces on that
+--               thing's own card, because that is where it will be wanted.
+CREATE TABLE IF NOT EXISTS library_shelves (
+    slug        TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    kind        TEXT NOT NULL DEFAULT 'purpose',  -- purpose | tracking | attachment
+    blurb       TEXT DEFAULT '',
+    ref         TEXT DEFAULT '',   -- attachment only: project_id or course slug
+    sort_order  INTEGER DEFAULT 0,
+    archived    INTEGER DEFAULT 0,
+    created_at  TEXT
+);
+
+-- A JOIN TABLE, not a column on the item. One paper legitimately belongs on
+-- several shelves — a spatial analysis kept for its methods, filed against a
+-- project, and part of a subject you track — and the standing preference is
+-- that overlap between narrow categories costs nothing while a category broad
+-- enough to need filtering costs time on every visit.
+CREATE TABLE IF NOT EXISTS library_shelf_items (
+    shelf     TEXT NOT NULL,
+    kind      TEXT NOT NULL,       -- 'paper' | 'news'
+    item_id   TEXT NOT NULL,
+    note      TEXT DEFAULT '',
+    added_at  TEXT NOT NULL,
+    PRIMARY KEY (shelf, kind, item_id)
+);
+CREATE INDEX IF NOT EXISTS idx_shelf_items_shelf ON library_shelf_items(shelf, added_at DESC);
+CREATE INDEX IF NOT EXISTS idx_shelf_items_item  ON library_shelf_items(kind, item_id);

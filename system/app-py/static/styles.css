@@ -5942,7 +5942,14 @@ a.mrow-title { text-decoration: none; }
   color: var(--m-muted); padding: 4px 8px; white-space: nowrap;
   transition: border-color 120ms, color 120ms, background 120ms; }
 .fw-act:hover { border-color: var(--m-accent); color: var(--m-accent); }
+/* Only ONE of the four verbs is a statement against the subject, and only that
+   one takes the alert colour. `Dismiss` clears the row and says nothing, so it
+   stays neutral — colouring it like a rejection would teach the wrong reflex on
+   the button meant to be pressed most often. */
+.fw-act--dismissed:hover { border-color: var(--m-muted); color: var(--m-ink); }
 .fw-act--declined:hover { border-color: var(--m-alert); color: var(--m-alert); }
+/* The masthead leads the meta line, so it is the one part of it set in ink. */
+.fw-src { color: var(--m-ink); letter-spacing: 0.06em; text-transform: uppercase; }
 .fw-empty { padding: 26px 16px; margin: 0; text-align: center; font-style: italic;
   font-size: var(--t-small); color: var(--m-muted-soft); }
 @media (max-width: 860px) {
@@ -6342,3 +6349,75 @@ a.mrow-title { text-decoration: none; }
   font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: .11em;
   text-transform: uppercase; color: var(--m-muted-soft);
 }
+
+/* ── LIBRARY SHELVES · the reason something was kept ──────────────────────────
+   `shp-` picker · `shv-` the overview · `shf-` one shelf. Three prefixes rather
+   than one because they are three components; the last four times a component
+   here reused a neighbour's prefix, the later declaration silently won and a
+   panel inherited styling nobody had asked for. */
+.fw-keep { position: relative; }
+.fw-keep > summary { list-style: none; cursor: pointer; }
+.fw-keep > summary::-webkit-details-marker { display: none; }
+.fw-act--keep { display: inline-block; }
+.fw-keep[open] > .fw-act--keep { border-color: var(--m-accent); color: var(--m-accent); }
+.fw-keep-body {
+  position: absolute; right: 0; top: 26px; z-index: 40; width: 320px;
+  padding: 12px; background: var(--m-surface);
+  border: 1px solid var(--m-rule-strong); border-radius: var(--m-radius);
+  box-shadow: var(--m-shadow-2, 0 8px 22px rgba(0,0,0,.16));
+}
+.fw-keep-wait { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft); }
+
+.shp-lead { margin: 0 0 8px; font-family: var(--m-mono); font-size: var(--t-micro);
+  letter-spacing: .11em; text-transform: uppercase; color: var(--m-muted-soft); }
+.shp-group { margin-bottom: 10px; }
+.shp-kind { margin: 0 0 4px; font-size: var(--t-micro); color: var(--m-muted); font-style: italic; }
+.shp-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.shp-chip {
+  appearance: none; cursor: pointer; white-space: nowrap;
+  background: var(--m-surface-2); border: 1px solid var(--m-rule);
+  border-radius: 999px; padding: 3px 9px;
+  font-family: var(--m-ui); font-size: var(--t-micro); color: var(--m-ink);
+}
+.shp-chip:hover { border-color: var(--m-accent); color: var(--m-accent); }
+/* Already on this shelf — shown, not hidden, so a second click is an informed
+   one rather than a duplicate the reader could not have known about. */
+.shp-chip.is-on { border-color: var(--m-accent); background: var(--m-accent-wash); }
+.shp-n { font-family: var(--m-mono); color: var(--m-muted-soft); }
+.shp-empty { margin: 0; font-size: var(--t-micro); color: var(--m-muted); }
+
+.shv-group { margin-bottom: var(--m-space-5); }
+.shv-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  margin-bottom: 8px; }
+.shv-kind { margin: 0; font-family: var(--m-ui); font-size: var(--t-meta); color: var(--m-ink); }
+.shv-n { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft); }
+.shv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.shv-card { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px;
+  padding: 10px 12px; text-decoration: none;
+  background: var(--m-surface); border: 1px solid var(--m-rule); border-radius: var(--m-radius); }
+.shv-card:hover { border-color: var(--m-accent); }
+.shv-name { font-size: var(--t-meta); color: var(--m-ink); font-weight: 500; }
+.shv-count { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted);
+  font-variant-numeric: tabular-nums; }
+.shv-blurb { grid-column: 1 / -1; font-size: var(--t-micro); color: var(--m-muted-soft); line-height: 1.35; }
+
+.shf-head { margin-bottom: var(--m-space-5); }
+.shf-kind { margin: 0; font-family: var(--m-mono); font-size: var(--t-micro);
+  letter-spacing: .11em; text-transform: uppercase; color: var(--m-muted-soft); }
+.shf-title { margin: 2px 0 4px; }
+.shf-blurb { margin: 0 0 6px; color: var(--m-muted); font-size: var(--t-body); max-width: 62ch; }
+.shf-meta { margin: 0; font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft); }
+.shf-list { display: flex; flex-direction: column; }
+.shf-row { display: flex; align-items: baseline; gap: 12px; padding: 9px 0;
+  border-bottom: 1px solid var(--m-rule-soft); }
+.shf-when { flex: none; font-family: var(--m-mono); font-size: var(--t-micro);
+  color: var(--m-muted-soft); }
+.shf-body { flex: 1; min-width: 0; }
+.shf-row-title { color: var(--m-ink); text-decoration: none; font-size: var(--t-body); line-height: 1.4; }
+a.shf-row-title:hover { color: var(--m-accent); }
+.shf-row-meta { margin: 2px 0 0; font-family: var(--m-mono); font-size: var(--t-micro);
+  color: var(--m-muted-soft); }
+.shf-off { flex: none; appearance: none; cursor: pointer; background: transparent; border: 0;
+  font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft); }
+.shf-off:hover { color: var(--m-alert); }
+.shf-empty { padding: 30px 0; font-style: italic; color: var(--m-muted); }

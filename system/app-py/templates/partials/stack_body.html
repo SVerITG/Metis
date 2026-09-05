@@ -28,7 +28,7 @@
 <p class="stk-lead">
   <b class="tnum">{{ counts['later'] }}</b> in front of you
   {%- if counts['saved'] %} · <b class="tnum">{{ counts['saved'] }}</b> kept{% endif %}
-  {%- set done = counts['read'] + counts['declined'] %}
+  {%- set done = counts['read'] + counts['declined'] + counts.get('dismissed', 0) %}
   {%- if done %} · <span class="stk-lead-done"><b class="tnum">{{ done }}</b> behind you</span>{% endif %}
 </p>
 
@@ -44,9 +44,14 @@
     {% endfor %}
   </div>
 
-  {#- Set apart, because what is behind you is not another queue to work. -#}
+  {#- Set apart, because what is behind you is not another queue to work.
+
+      `Dismissed` belongs HERE and not beside "To read": it is cleared, not
+      queued. It is listed at all because a verdict with no list behind it is a
+      deletion wearing a softer word — the researcher asked for all four to be
+      browsable, and this is the one that would otherwise have been a hole. -#}
   <div class="seg seg--past" role="group" aria-label="Already dealt with">
-    {% for key, label in [('read', 'Read'), ('declined', 'Not for me')] %}
+    {% for key, label in [('read', 'Read'), ('dismissed', 'Dismissed'), ('declined', 'Not for me')] %}
     <a href="/stack?state={{ key }}{% if tag %}&tag={{ tag }}{% endif %}"
        aria-current="{{ 'true' if state == key else 'false' }}"
        hx-get="/api/partial/stack/body?state={{ key }}{% if tag %}&tag={{ tag }}{% endif %}"

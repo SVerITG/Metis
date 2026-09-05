@@ -1,0 +1,28 @@
+{#- library_shelves.html — every shelf, grouped by what kind of shelf it is.
+
+    The grouping is the argument. A flat list of 29 names would read as one
+    taxonomy with an odd mix of entries in it — "Methodology" beside "HAT
+    Dashboard" beside "AI" — and the reader would have to work out for
+    themselves that those three are kept for three different reasons and read
+    three different ways. The kind is stated once, above its group. -#}
+<div class="shv">
+  {% for kind, lead, items in groups %}
+  {% if items %}
+  <section class="shv-group shv-group--{{ kind }}">
+    <header class="shv-head">
+      <h3 class="shv-kind">{{ lead }}</h3>
+      <span class="shv-n">{{ items|length }} shelf{{ '' if items|length == 1 else 'ves' }}</span>
+    </header>
+    <div class="shv-grid">
+      {% for s in items %}
+      <a class="shv-card" href="/library/shelf/{{ s.slug }}" title="{{ s.blurb }}">
+        <span class="shv-name">{{ s.name }}</span>
+        <span class="shv-count">{{ s.n }}</span>
+        {% if s.blurb %}<span class="shv-blurb">{{ s.blurb }}</span>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {% endfor %}
+</div>
