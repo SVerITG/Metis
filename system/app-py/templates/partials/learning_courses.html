@@ -80,11 +80,23 @@
     {# ONE launch button. `launch_url` is validated server-side by
        learning.py::_launch_target, so this can never open a repository, a
        filesystem path, or anything that is not the course itself. #}
+    {#- A STOPPED COURSE OFFERS RESUME. Stopping one from the Today surface
+        pauses it rather than deleting it, so everything — lessons, cards,
+        completions — is still here; this is the control that says so. -#}
+    {% if c.status == 'paused' %}
+    <button class="btn btn--primary btn--caps"
+            hx-post="/api/today/learning/resume/{{ c.slug }}"
+            hx-target="#courses-archive" hx-swap="innerHTML"
+            title="Put {{ c.title|e }} back among your active courses">
+      Resume
+    </button>
+    {% else %}
     <button class="btn btn--primary btn--caps"
             onclick="openCourseSite('{{ c.launch_url|e }}','{{ c.title|e }}')"
             title="Open {{ c.title|e }}">
       {% if (c.progress_pct or 0) > 0 %}Continue{% else %}Start{% endif %}
     </button>
+    {% endif %}
     {#- The next lesson used to be repeated HERE, inside the button row, as
         "next: <title>" — and the card already prints it above under a NEXT
         label. So it was the same fact twice, and being variable-width text

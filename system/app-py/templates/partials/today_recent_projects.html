@@ -1,0 +1,36 @@
+{#- today_recent_projects.html — the last three projects worked on, in one strip.
+
+    Asked for 2026-09-05: the top box in "What Metis knows" should follow "the
+    latest three projects I have worked on" and "take a lot less space". What
+    stood here grouped session summaries into topic threads — five threads, each
+    with its own summary paragraph and decision list, roughly 40 lines of panel.
+
+    One line per project, and the strip itself is the link, matching the memory
+    strip below it. `rp-` because `pr-`, `proj-` and `p-` are all already taken
+    elsewhere in this stylesheet. -#}
+{% if items %}
+<a class="rp" href="/work" title="Open the Work surface">
+  <div class="rp-head">
+    <span class="rp-eyebrow">Lately you worked on</span>
+    <span class="rp-go">Work &rarr;</span>
+  </div>
+  <div class="rp-rows">
+    {% for p in items %}
+    <div class="rp-row">
+      <span class="rp-name" title="{{ p.title }}">{{ p.title }}</span>
+      {#- The next step, when there is one — CLIPPED, and clipped in the template
+          rather than left to CSS. `next_step` is written by whatever session
+          last touched the project, and these run to several hundred words: one
+          of them is a four-sentence handover with file paths in it. Ellipsis in
+          CSS hides the overflow but still ships every byte and still puts the
+          whole paragraph in the tooltip, where it renders as an unreadable slab.
+          The first clause is the part that says what to do next. -#}
+      {% if p.next_step %}
+      <span class="rp-next" title="{{ p.next_step | clip(180) }}">{{ p.next_step | clip(72) }}</span>
+      {% endif %}
+      <span class="rp-when">{{ p._when }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</a>
+{% endif %}

@@ -172,6 +172,38 @@
          hx-trigger="load delay:140ms"
          hx-swap="innerHTML"></div>
   </div>
+  {#- OUTBREAKS · EVENTS · FUNDING, directly under "Where you left off".
+      Moved 2026-09-05, and CLOSED while moving: the strip opened a
+      three-column grid and never emitted its `</div>`, so the Learning box
+      and the recall card were its fourth and fifth grid children. They had
+      been rendering at a third of the page width, in a second grid row,
+      with an empty column beside them. The imbalance did not show up in a
+      div count because a later `</div>` closed it by accident. -#}
+  <!-- ===== 5. Board strip — Outbreaks · Events · Funding ===== -->
+  <div class="board-strip u-mb-6">
+    <div hx-get="/api/partial/today/board/outbreaks"
+         hx-trigger="load delay:200ms"
+         hx-swap="outerHTML">
+      <div class="board-box" style="min-height:180px;">
+        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
+      </div>
+    </div>
+    <div hx-get="/api/partial/today/board/events"
+         hx-trigger="load delay:200ms"
+         hx-swap="outerHTML">
+      <div class="board-box" style="min-height:180px;">
+        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
+      </div>
+    </div>
+    <div hx-get="/api/partial/today/board/funding"
+         hx-trigger="load delay:200ms"
+         hx-swap="outerHTML">
+      <div class="board-box" style="min-height:180px;">
+        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
+      </div>
+    </div>
+  </div>
+
 
   {#- WHAT SHOULD I READ. Renders nothing at all unless something in the reading
       stack has been flagged crucial — the stack is not a list to work through
@@ -223,29 +255,6 @@
       tools/check_htmx_swaps.py within a minute of my writing it, which is the
       third time that tool has paid for itself. -#}
   
-  <!-- ===== 5. Board strip — Outbreaks · Events · Funding ===== -->
-  <div class="board-strip u-mb-6">
-    <div hx-get="/api/partial/today/board/outbreaks"
-         hx-trigger="load delay:200ms"
-         hx-swap="outerHTML">
-      <div class="board-box" style="min-height:180px;">
-        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
-      </div>
-    </div>
-    <div hx-get="/api/partial/today/board/events"
-         hx-trigger="load delay:200ms"
-         hx-swap="outerHTML">
-      <div class="board-box" style="min-height:180px;">
-        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
-      </div>
-    </div>
-    <div hx-get="/api/partial/today/board/funding"
-         hx-trigger="load delay:200ms"
-         hx-swap="outerHTML">
-      <div class="board-box" style="min-height:180px;">
-        <div class="board-box-head"><div class="skeleton skeleton-bar w-30"></div></div>
-      </div>
-    </div>
 
   <div class="u-mb-6">
     <div hx-get="/api/partial/today/learning"
@@ -263,7 +272,6 @@
          hx-swap="outerHTML"></div>
   </div>
 
-  </div>
 
   {#- CROSS-POLLINATION MOVED TO REFLECTION. Reported 2026-08-31: "'Connects to'
       can be put in reflection or another surface but not on the today surface
@@ -296,14 +304,19 @@
        should not be fetched at all. Four requests on every page load, for
        content behind a closed fold, is work done for no reader. ================ -->
   {% call zone("What Metis knows", key="today-memory",
-               tail="threads · pulse · connections · landscape") %}
-    <div hx-get="/api/partial/today/session-thread"
-         hx-trigger="intersect once"
-         hx-swap="outerHTML"></div>
+               tail="recent projects · what is remembered") %}
+    {#- THE UPPER BOX now follows projects rather than topic threads, and the
+        MIDDLE one is gone. Asked for 2026-09-05: "keep the bottom box for sure
+        and delete the middle one and the upper one should be following the
+        latest three projects I have worked on but take a lot less space".
 
-    <div hx-get="/api/partial/today/memory-pulse"
+        The memory pulse that stood in the middle counted memory writes per day
+        as a sparkline — a measure of how busy the bookkeeping was, which is not
+        a thing to decide anything by. The two boxes that remain both answer
+        "what does this system hold for me": one by project, one by kind. -#}
+    <div hx-get="/api/partial/today/recent-projects"
          hx-trigger="intersect once"
-         hx-swap="outerHTML"></div>
+         hx-swap="innerHTML"></div>
 
     
 

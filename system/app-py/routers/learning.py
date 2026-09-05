@@ -4,6 +4,7 @@ routers/learning.py — Learning tab routes.
 
 import datetime
 import json
+import logging
 import os
 import re
 from pathlib import Path
@@ -130,6 +131,7 @@ def _enrich_lesson_html(html: str) -> str:
     return html
 
 router = APIRouter()
+_log = logging.getLogger(__name__)
 templates = Jinja2Templates(
     directory=str(Path(__file__).parent.parent / "templates")
 )
@@ -375,8 +377,13 @@ async def learning_courses_archive(request: Request):
     courses = db_query(
         "SELECT id, title, category, progress_pct, total_modules, completed_modules, status, slug, "
         "project_id, current_lesson, next_lesson, course_url, lesson_notes "
-        "FROM learning_courses WHERE status IN ('active','in_progress','building') "
-        "ORDER BY CASE status WHEN 'building' THEN 0 ELSE 1 END, progress_pct DESC, id DESC LIMIT 24"
+        "FROM learning_courses WHERE status IN ('active','in_progress','building','paused') "
+        # Paused courses sort LAST. They are here so that stopping one on Today
+        # is reversible — a status no query selected would have made the course
+        # vanish with its progress and no way back — but they are not what this
+        # surface is for, so they sit under the courses you are still taking.
+        "ORDER BY CASE status WHEN 'building' THEN 0 WHEN 'paused' THEN 2 ELSE 1 END, "
+        "         progress_pct DESC, id DESC LIMIT 24"
     ) or []
     # Was LIMIT 6. With 7 active courses one vanished with no indicator, and
     # because every course sat at 0% which one vanished was arbitrary. If the
@@ -1213,58 +1220,136 @@ def _active_courses() -> list[dict]:
     return [_course_state(r) for r in rows]
 
 
+LEARNING_SLOTS = 3
+
+
 @router.get("/api/partial/today/learning", response_class=HTMLResponse)
 async def today_learning(request: Request):
-    """Every active course, with the one in focus expanded.
+    """Three slots. Each holds a course you chose, and shows the next lesson.
 
-    Replaces the old nudge, which chose a course for you (lowest progress),
-    fetched `next_lesson` and then never rendered it, and hid itself entirely
-    unless study was stale or cards were due — so there was no way to see where
-    you were in anything, let alone pick.
+    Asked for 2026-09-05: "three small boxes next to each other that are
+    placeholders for courses, each one you can select one of your courses and it
+    will display the next lesson to do and just a button that says continue
+    learning".
+
+    What stood here was one wide panel with a chip per course and exactly ONE of
+    them expanded — so the four courses you were not looking at showed a title
+    and a percentage, and the next lesson was visible for one course at a time.
+    Three slots show three next-lessons at once, which is the thing you actually
+    choose between at the start of a session.
+
+    `focused_today` carried the old single pin as 0/1. It is an INTEGER column,
+    so it now carries the SLOT NUMBER (1..3) and 0 still means "not on Today".
+    No new table, and the old value 1 keeps meaning slot 1.
     """
     courses = _active_courses()
     if not courses:
-        return HTMLResponse(
-            '<div id="today-learning"></div>'
-        )
+        return HTMLResponse('<div id="today-learning"></div>')
 
-    want = (request.query_params.get("course") or "").strip()
-    focused = None
-    if want:
-        focused = next((c for c in courses if c["slug"] == want), None)
-    if focused is None:
-        focused = next((c for c in courses if c.get("focused_today")), None)
-    if focused is None:
-        # Nothing pinned yet: the one most recently touched, else the first with
-        # any progress, else simply the first.
-        focused = (sorted([c for c in courses if c.get("updated_at")],
-                          key=lambda c: c["updated_at"], reverse=True) or
-                   [c for c in courses if c["n_done"]] or courses)[0]
+    by_slot: dict[int, dict] = {}
+    for c in courses:
+        try:
+            n = int(c.get("focused_today") or 0)
+        except (TypeError, ValueError):
+            n = 0
+        # First writer wins if two courses somehow claim one slot: a duplicate
+        # would otherwise silently drop the other course out of the picker.
+        if 1 <= n <= LEARNING_SLOTS and n not in by_slot:
+            by_slot[n] = c
+
+    # Fill empty slots with the courses you have actually been moving through,
+    # rather than leaving three empty boxes on a first visit. Anything auto-filled
+    # is NOT written back — a slot is only remembered once you choose it, so an
+    # automatic guess never becomes a decision you did not make.
+    unplaced = [c for c in courses if c not in by_slot.values()]
+    unplaced.sort(key=lambda c: (-(c.get("n_done") or 0), c.get("title") or ""))
+    slots = []
+    for n in range(1, LEARNING_SLOTS + 1):
+        c = by_slot.get(n)
+        auto = False
+        if c is None and unplaced:
+            c, auto = unplaced.pop(0), True
+        slots.append({"n": n, "course": c, "auto": auto})
 
     today_str = datetime.date.today().isoformat()
-    due_cards = db_scalar(
-        "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ? AND source_table = ?",
-        (today_str, focused["slug"]), default=0) or 0
     due_all = db_scalar(
         "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ?",
         (today_str,), default=0) or 0
+    for sl in slots:
+        c = sl["course"]
+        sl["due"] = (db_scalar(
+            "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ? AND source_table = ?",
+            (today_str, c["slug"]), default=0) or 0) if c else 0
 
     return templates.TemplateResponse(
         request, "partials/today_learning.html",
-        {"courses": courses, "focused": focused,
-         "due_cards": due_cards, "due_all": due_all},
+        {"slots": slots, "courses": courses, "due_all": due_all},
     )
+
+
+@router.post("/api/today/learning/slot/{n}", response_class=HTMLResponse)
+async def today_learning_slot_set(n: int, request: Request):
+    """Put a course in slot n, or empty the slot when no course is named."""
+    if not 1 <= n <= LEARNING_SLOTS:
+        return await today_learning(request)
+    form = await request.form()
+    slug = (form.get("slug") or "").strip()
+    try:
+        # Free the slot, and free this course from whatever slot it was in — a
+        # course in two boxes would show the same next lesson twice and quietly
+        # cost a third of the panel.
+        db_execute("UPDATE learning_courses SET focused_today = 0 WHERE focused_today = ?", (n,))
+        if slug:
+            db_execute("UPDATE learning_courses SET focused_today = 0 WHERE slug = ?", (slug,))
+            db_execute("UPDATE learning_courses SET focused_today = ? WHERE slug = ?", (n, slug))
+    except Exception:
+        _log.warning("could not set learning slot %s", n, exc_info=True)
+    return await today_learning(request)
+
+
+@router.post("/api/today/learning/stop/{slug}", response_class=HTMLResponse)
+async def today_learning_stop(slug: str, request: Request):
+    """Stop a course you no longer want to follow.
+
+    "You can also decide to stop a course if it doesn't interest you anymore."
+
+    PAUSED, NOT DELETED, and deliberately still listed on the Learning surface
+    with a Resume control. Stopping is a statement about your attention, not
+    about the course — the lessons, the progress and the completions are all
+    still there, and a status nothing queries would have made the course
+    disappear with no way back.
+    """
+    try:
+        db_execute(
+            "UPDATE learning_courses SET status='paused', focused_today=0, updated_at=? "
+            "WHERE slug=?", (datetime.datetime.now().isoformat(), slug))
+    except Exception:
+        _log.warning("could not stop course %s", slug, exc_info=True)
+    return await today_learning(request)
+
+
+@router.post("/api/today/learning/resume/{slug}", response_class=HTMLResponse)
+async def today_learning_resume(slug: str, request: Request):
+    """Put a stopped course back among the active ones."""
+    try:
+        db_execute(
+            "UPDATE learning_courses SET status='active', updated_at=? WHERE slug=? AND status='paused'",
+            (datetime.datetime.now().isoformat(), slug))
+    except Exception:
+        _log.warning("could not resume course %s", slug, exc_info=True)
+    return await learning_courses_archive(request)
 
 
 @router.post("/api/today/learning/focus/{slug}", response_class=HTMLResponse)
 async def today_learning_focus(slug: str, request: Request):
-    """Pin a course to the Today surface, and render the panel around it."""
+    """Kept so an older cached page cannot 404: it now fills slot 1."""
     try:
-        db_execute("UPDATE learning_courses SET focused_today = 0")
+        db_execute("UPDATE learning_courses SET focused_today = 0 WHERE focused_today = 1")
         db_execute("UPDATE learning_courses SET focused_today = 1 WHERE slug = ?", (slug,))
     except Exception:
         pass
     return await today_learning(request)
+
 
 # ---------------------------------------------------------------------------
 # Course reader — Part A

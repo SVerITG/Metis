@@ -207,12 +207,34 @@ def test_highlight_tracks_attention_not_the_clock(today_src):
     )
 
 
-def test_row_offers_seen_before_dismiss(box_src):
-    """The state slot is the seen control; × stays available but is not the only verb."""
+def test_row_offers_seen_before_ignore(box_src):
+    """The state slot is the seen control; ignore stays available but is not first.
+
+    `board-dismiss` became `board-act--ignore` on 2026-09-05, when the row was
+    compressed to one line and the actions were split into three named verbs.
+    The invariant is unchanged and is the reason this test exists: the control
+    that removes something must not be the first one a reader reaches.
+    """
     assert "board-seen" in box_src, "no seen control in the board row"
-    assert box_src.index("board-seen") < box_src.index("board-dismiss"), (
-        "dismiss appears before the seen control — the destructive action should "
+    assert "board-act--ignore" in box_src, "no ignore control in the board row"
+    assert box_src.index("board-seen") < box_src.index("board-act--ignore"), (
+        "ignore appears before the seen control — the destructive action should "
         "not be the first thing reachable"
+    )
+
+
+def test_row_carries_three_named_verbs(box_src):
+    """Follow, pin and ignore are separate controls, not one star doing three jobs.
+
+    Pin is POSITION and follow is CONTENT: pinning holds a row at the top in an
+    order you chose, following asks the news stream for its newest report. They
+    were the same `starred` column, so you could not keep a congress date in
+    view without also asking for a lookup that will never match it.
+    """
+    for verb in ("board-act--follow", "board-act--pin", "board-act--ignore"):
+        assert verb in box_src, f"the board row has no {verb} control"
+    assert "/pin" in box_src and "/star" in box_src, (
+        "pin and follow must post to different endpoints, or they are still one verb"
     )
 
 

@@ -1,104 +1,118 @@
-{# today_learning.html — every active course, with the one in focus expanded.
+{#- today_learning.html — three slots, three next lessons.
 
-   Replaces today_learning_nudge.html, which picked a course for you (lowest
-   progress), fetched `next_lesson` and never rendered it, and hid itself unless
-   study was stale or cards were due. You could not see where you were in
-   anything, and you could not choose. #}
+    Asked for 2026-09-05: "three small boxes next to each other that are
+    placeholders for courses, each one you can select one of your courses and it
+    will display the next lesson to do and just a button that says 'continue
+    learning'. You can also decide to stop a course if it doesn't interest you
+    anymore."
+
+    What this replaces: one wide panel, a chip per course, and exactly ONE course
+    expanded. The next lesson — the only line that tells you what you would
+    actually be doing — was visible for one course at a time, so choosing between
+    courses meant clicking each one to find out what was in it.
+
+    The recall card sits under this block on the Today surface, not inside it: it
+    is drawn from every course you are following, not from any one slot. -#}
 <div class="u-mb-6" id="today-learning">
-  <div class="panel panel--md">
+  <div class="u-row u-row--between u-mb-3">
+    <span class="u-label">Learning</span>
+    {% if due_all %}
+    <a href="/tab/learning" class="u-label" style="text-decoration:none;color:var(--m-ochre);">
+      {{ due_all }} card{{ '' if due_all == 1 else 's' }} due
+    </a>
+    {% endif %}
+  </div>
 
-    <div class="u-row u-row--between u-mb-3">
-      <span class="u-label">Learning</span>
-      {% if due_all %}
-      <a href="/tab/learning" class="u-label" style="text-decoration:none;color:var(--m-ochre);">
-        {{ due_all }} card{{ '' if due_all == 1 else 's' }} due
-      </a>
+  <div class="tls-strip">
+    {% for sl in slots %}
+    {% set c = sl.course %}
+    <div class="tls-slot{% if not c %} tls-slot--empty{% endif %}">
+
+      {% if c %}
+      {#- HEAD: which course, how far in. The percentage is printed as well as
+          drawn — a 4% bar and a 0% bar are the same picture. -#}
+      <div class="tls-head">
+        <span class="tls-name" title="{{ c.title }}">{{ c.title }}</span>
+        <details class="tls-menu">
+          <summary class="tls-menu-btn" title="Change or stop this course" aria-label="Course options">⋯</summary>
+          <div class="tls-menu-body">
+            <form hx-post="/api/today/learning/slot/{{ sl.n }}"
+                  hx-target="#today-learning" hx-swap="outerHTML">
+              <label class="tls-menu-label" for="tls-pick-{{ sl.n }}">Show in this box</label>
+              <select class="tls-select" id="tls-pick-{{ sl.n }}" name="slug"
+                      onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+                {% for o in courses %}
+                <option value="{{ o.slug }}"{% if o.slug == c.slug %} selected{% endif %}>{{ o.title }}</option>
+                {% endfor %}
+                <option value="">— leave empty —</option>
+              </select>
+            </form>
+            {#- STOP is a different verb from "leave empty", so it is a different
+                control. Emptying the box changes what you see today; stopping
+                says you are done with the course. It pauses rather than deletes,
+                and the Learning surface keeps it with a Resume button. -#}
+            <button type="button" class="tls-stop"
+                    hx-post="/api/today/learning/stop/{{ c.slug }}"
+                    hx-target="#today-learning" hx-swap="outerHTML"
+                    hx-confirm="Stop following “{{ c.title }}”? Your progress is kept — it moves to the Learning surface, where you can resume it.">
+              Stop this course
+            </button>
+          </div>
+        </details>
+      </div>
+
+      <div class="tls-prog">
+        <span class="tls-bar"><i style="width:{{ c.pct }}%;"></i></span>
+        <span class="tls-pct">{{ c.n_done }}/{{ c.n_total }}</span>
+      </div>
+
+      {#- THE NEXT LESSON — the reason the box exists. -#}
+      {% if c.finished %}
+      <div class="tls-next tls-next--done">
+        <span class="tls-next-label">Finished</span>
+        <span class="tls-next-title">Every lesson is complete.</span>
+      </div>
+      {% elif c.next_title %}
+      <div class="tls-next">
+        <span class="tls-next-label">Next{% if c.next_section %} · {{ c.next_section }}{% endif %}</span>
+        <span class="tls-next-title" title="{{ c.next_title }}">{{ c.next_title }}</span>
+        {% if c.next_time %}<span class="tls-next-meta">{{ c.next_time }} min</span>{% endif %}
+      </div>
+      {% else %}
+      <div class="tls-next">
+        <span class="tls-next-label">Next</span>
+        <span class="tls-next-title">Open the course to pick up where you were.</span>
+      </div>
       {% endif %}
-    </div>
 
-    {# Every active course. The chip IS the chooser — clicking one pins it. #}
-    <div class="tl-chips u-mb-4">
-      {% for c in courses %}
-      <button class="tl-chip{% if c.slug == focused.slug %} is-on{% endif %}"
-              type="button"
-              hx-post="/api/today/learning/focus/{{ c.slug }}"
-              hx-target="#today-learning"
-              hx-swap="outerHTML"
-              title="{{ c.title }}">
-        <span class="tl-chip-name">{{ c.title|truncate(28) }}</span>
-        <span class="tl-chip-pct">{{ c.pct }}%</span>
-      </button>
-      {% endfor %}
-    </div>
-
-    {# The focused course. #}
-    <div class="tl-focus">
-      <div class="u-title u-title--sm u-mb-2">{{ focused.title }}</div>
-
-      <div class="u-row u-mb-3" style="gap:var(--m-space-3);">
-        <div class="tl-bar u-grow"><i style="width:{{ focused.pct }}%;"></i></div>
-        <span class="u-label u-fixed">{{ focused.n_done }} of {{ focused.n_total }} · {{ focused.pct }}%</span>
-      </div>
-
-      {% if focused.finished %}
-      <div class="tl-next">
-        <div class="tl-next-label">Finished</div>
-        <div class="tl-next-title">Every lesson is marked complete.</div>
-      </div>
-      {% elif focused.next_title %}
-      <div class="tl-next">
-        <div class="tl-next-label">
-          Next{% if focused.next_section %} · {{ focused.next_section }}{% endif %}
-        </div>
-        <div class="tl-next-title">{{ focused.next_title }}</div>
-        {% if focused.next_time %}<div class="tl-next-meta">{{ focused.next_time }} min</div>{% endif %}
-      </div>
-      {% endif %}
-
-      <div class="u-row u-mb-0" style="gap:var(--m-space-2);margin-top:var(--m-space-3);">
-        {% if focused.has_manifest and focused.next_id %}
-        <a class="btn btn--primary btn--caps" style="font-size:var(--t-micro);text-decoration:none;"
-           href="/course/{{ focused.slug }}?lesson={{ focused.next_id }}">Continue →</a>
+      <div class="tls-foot">
+        {% if c.has_manifest and c.next_id %}
+        <a class="tls-go" href="/course/{{ c.slug }}?lesson={{ c.next_id }}">Continue learning</a>
         {% else %}
-        <a class="btn btn--primary btn--caps" style="font-size:var(--t-micro);text-decoration:none;"
-           href="{{ focused.launch }}">Open course →</a>
+        <a class="tls-go" href="{{ c.launch }}">Continue learning</a>
         {% endif %}
-        {% if due_cards %}
-        <a class="btn btn--ghost btn--caps" style="font-size:var(--t-micro);text-decoration:none;"
-           href="/tab/learning">{{ due_cards }} card{{ '' if due_cards == 1 else 's' }} from this course</a>
+        {% if sl.due %}
+        <a class="tls-due" href="/tab/learning" title="{{ sl.due }} card{{ '' if sl.due == 1 else 's' }} due from this course">{{ sl.due }} due</a>
         {% endif %}
       </div>
-    </div>
 
+      {% else %}
+      {#- EMPTY SLOT. A placeholder that says what it is for and can be filled
+          without leaving the page. -#}
+      <form class="tls-empty" hx-post="/api/today/learning/slot/{{ sl.n }}"
+            hx-target="#today-learning" hx-swap="outerHTML">
+        <span class="tls-empty-lead">Empty slot</span>
+        <select class="tls-select" name="slug" aria-label="Choose a course for this box"
+                onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
+          <option value="">Choose a course…</option>
+          {% for o in courses %}
+          <option value="{{ o.slug }}">{{ o.title }}</option>
+          {% endfor %}
+        </select>
+      </form>
+      {% endif %}
+
+    </div>
+    {% endfor %}
   </div>
 </div>
-
-<style>
-.tl-chips { display:flex; flex-wrap:wrap; gap:6px; }
-.tl-chip {
-  display:flex; align-items:baseline; gap:7px;
-  padding:5px 10px; border-radius:var(--m-radius-pill, 999px);
-  border:1px solid var(--m-line); background:var(--m-surface-2);
-  color:var(--m-muted); cursor:pointer; font-size:var(--t-small);
-  transition:border-color .12s ease, color .12s ease, background .12s ease;
-}
-.tl-chip:hover { border-color:var(--m-accent); color:var(--m-ink); }
-.tl-chip.is-on { border-color:var(--m-accent); background:var(--m-accent-wash); color:var(--m-ink); }
-.tl-chip-name { white-space:nowrap; }
-.tl-chip-pct  { font-family:var(--m-mono); font-size:var(--t-micro); color:var(--m-muted); }
-.tl-chip.is-on .tl-chip-pct { color:var(--m-accent); }
-
-.tl-bar { height:5px; border-radius:999px; background:var(--m-surface-3); overflow:hidden; }
-.tl-bar > i { display:block; height:100%; background:var(--m-accent); border-radius:999px; }
-
-.tl-next {
-  padding:10px 12px; border-radius:var(--m-radius-sm);
-  background:var(--m-surface-2); border-left:3px solid var(--m-accent);
-}
-.tl-next-label {
-  font-family:var(--m-mono); font-size:var(--t-micro); letter-spacing:.11em;
-  text-transform:uppercase; color:var(--m-muted); margin-bottom:3px;
-}
-.tl-next-title { color:var(--m-ink); font-size:var(--t-body); line-height:1.4; }
-.tl-next-meta  { font-family:var(--m-mono); font-size:var(--t-micro); color:var(--m-muted); margin-top:3px; }
-</style>

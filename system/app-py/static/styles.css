@@ -844,10 +844,15 @@ summary:focus-visible, [role="button"]:focus-visible {
   padding: 0 18px;
 }
 .board-item {
+  /* ONE LINE, so twice the board fits in the same box (2026-09-05). `nowrap`
+     is the load-bearing declaration: without it the actions wrap under the
+     title the moment a name is long, which is the two-line row coming back in
+     a form that is harder to notice. */
   display: flex;
-  align-items: flex-start;
-  gap: 7px;
-  padding: 7px 0;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 5px 0;
   border-bottom: 1px solid var(--m-rule-soft);
 }
 .board-item:last-child { border-bottom: none; }
@@ -865,14 +870,19 @@ summary:focus-visible, [role="button"]:focus-visible {
   min-width: 0;
 }
 .board-item-title {
+  /* The title is the only elastic thing on the row, so it takes the slack and
+     gives it back: `min-width: 0` is what lets a flex child shrink below its
+     content, and without it the ellipsis never appears — the row just grows
+     and pushes the icons off the edge of the box. */
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 12.5px;
   line-height: 1.35;
   color: var(--m-ink);
   text-decoration: none;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 a.board-item-title:hover { color: var(--m-accent); }
 
@@ -949,8 +959,8 @@ a.board-item-title:hover { color: var(--m-accent); }
 
 .board-item-actions {
   display: flex;
-  align-items: flex-start;
-  gap: 4px;
+  align-items: center;   /* centred, since the row is one line now */
+  gap: 2px;
   flex-shrink: 0;
 }
 
@@ -965,9 +975,8 @@ a.board-item-title:hover { color: var(--m-accent); }
   border: 1px solid var(--m-rule-strong);
   border-radius: var(--m-radius);
   padding: 0 5px;
-  margin-top: 3px;
-  margin-right: 5px;
   white-space: nowrap;
+  flex: none;
 }
 
 .board-box-count-new { color: var(--m-ink); font-weight: 500; }
@@ -5945,6 +5954,36 @@ a.mrow-title { text-decoration: none; }
    One row per KIND of memory. Replaced a twenty-bubble topic landscape that
    cost 30 KB and most of a screen; this is the same question asked smaller, and
    the whole strip is a link to the surface that answers it properly. */
+/* ── LATELY YOU WORKED ON · three projects, three lines ───────────────────────
+   Deliberately the same object as the memory strip below it: same card, same
+   eyebrow, same "the whole surface →" tail. They sit in one fold and answer two
+   halves of one question, so they should read as a pair rather than as two
+   panels that happen to be adjacent. */
+.rp { display: block; text-decoration: none; background: var(--m-surface);
+  border: 1px solid var(--m-rule); border-radius: var(--m-radius);
+  padding: var(--d-panel); transition: border-color 120ms; margin-bottom: var(--m-space-4); }
+.rp:hover { border-color: var(--m-accent); }
+.rp-head { display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: 9px; }
+.rp-eyebrow { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--m-muted-soft); }
+.rp-go { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted); }
+.rp:hover .rp-go { color: var(--m-accent); }
+.rp-rows { display: grid; gap: 4px; }
+/* `auto` for the name, `1fr` for the next step, `auto` for the age: the middle
+   column is the one that should give way when the fold is narrow, because the
+   project's name and how long ago you touched it are the two things that make
+   the row worth reading at all. */
+.rp-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: baseline; gap: 10px; }
+.rp-name { font-family: var(--m-ui); font-size: var(--t-meta); color: var(--m-ink);
+  font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 15rem; }
+.rp-next { font-size: var(--t-micro); color: var(--m-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.rp-when { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft);
+  white-space: nowrap; }
+
 .knows { display: block; text-decoration: none; background: var(--m-surface);
   border: 1px solid var(--m-rule); border-radius: var(--m-radius);
   padding: var(--d-panel); transition: border-color 120ms; }
@@ -6007,29 +6046,81 @@ a.mrow-title { text-decoration: none; }
   font-size: var(--t-micro); letter-spacing: 0.06em; color: var(--m-accent); text-decoration: none; }
 .rev-start:hover { text-decoration: underline; }
 
-/* ── BOARDS · a pin follows its subject ───────────────────────────────────────
-   Pinning was starring: it sorted to the top and did nothing else. A pin now
-   watches the news stream and reports its newest instalment, and carries the
-   rank the reader gave it. */
-.board-latest { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;
-  margin-top: 5px; padding: 5px 8px; background: var(--m-surface-2);
-  border-radius: var(--m-radius-sm); text-decoration: none;
-  border-left: 2px solid var(--m-accent); }
-.board-latest:hover { background: var(--m-accent-wash); }
-.board-latest--none { border-left-color: var(--m-rule-strong); }
-.board-latest-lead { font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--m-accent); flex: none; }
-.board-latest--none .board-latest-lead { color: var(--m-muted-soft); }
-.board-latest-title { font-size: var(--t-meta); color: var(--m-ink); line-height: 1.35;
-  min-width: 0; flex: 1; }
-.board-latest-meta { font-family: var(--m-mono); font-size: var(--t-micro);
-  color: var(--m-muted-soft); flex: none; }
-/* The rank is the answer to "which one did I put on top", so it is printed
-   rather than implied by position alone. */
-.board-rank { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-accent);
-  font-variant-numeric: tabular-nums; min-width: 10px; text-align: center; }
-.board-move { appearance: none; cursor: pointer; background: transparent; border: 0;
-  color: var(--m-muted-soft); font-size: var(--t-micro); line-height: 1; padding: 2px 3px; }
+/* ── BOARDS · one line, three verbs ───────────────────────────────────────────
+   Pin and follow used to be the same star, and the row that carried them was
+   three lines tall: title, source, and a boxed "latest report" panel. The board
+   showed five items in the height it now gives ten.
+
+   What survived the compression is what a reader decides on: the name, the
+   date, and whether anything new has arrived. The report's own title moved into
+   the link's tooltip — it was the widest thing on the row and the least often
+   read. */
+.board-latest {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-family: var(--m-mono);
+  font-size: var(--t-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--m-accent);
+  background: var(--m-accent-wash);
+  white-space: nowrap;
+}
+.board-latest:hover { color: var(--m-ink); }
+/* Following, but the stream has produced nothing yet. Said quietly: it is a
+   state, not a result. */
+.board-latest--none {
+  color: var(--m-muted-soft);
+  background: transparent;
+  border: 1px solid var(--m-rule);
+}
+
+/* The three verbs. Muted at rest so ten rows of icons do not read as ten rows
+   of alerts; the one that is ON takes the board's own accent. */
+.board-act {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: var(--m-radius-sm);
+  color: var(--m-muted-soft);
+  opacity: 0.55;
+  transition: opacity 120ms ease, color 120ms ease;
+}
+.board-act:hover, .board-act:focus-visible { opacity: 1; color: var(--m-ink); }
+.board-act.is-on { opacity: 1; }
+.board-act--ignore:hover { color: var(--m-alert); }
+.board-box--alert  .board-act.is-on { color: var(--m-alert); }
+.board-box--accent .board-act.is-on { color: var(--m-accent); }
+.board-box--ok     .board-act.is-on { color: var(--m-ok); }
+
+/* A pinned row is marked on its edge rather than by a printed rank number: the
+   order IS the answer to "which one did I put on top", and a digit per row cost
+   width the title needed. */
+.board-item--pinned { border-left: 2px solid var(--m-accent); padding-left: 6px; margin-left: -8px; }
+.board-box--alert  .board-item--pinned { border-left-color: var(--m-alert); }
+.board-box--ok     .board-item--pinned { border-left-color: var(--m-ok); }
+
+/* Reordering is revealed by hover or by keyboard focus anywhere in the row —
+   `:focus-within` is what keeps it reachable without a mouse. Reserving space
+   for two arrows on every row would have cost the title a fifth of the box. */
+.board-move {
+  appearance: none; cursor: pointer; background: transparent; border: 0;
+  color: var(--m-muted-soft); font-size: var(--t-micro); line-height: 1;
+  padding: 2px 2px; width: 0; overflow: hidden; opacity: 0;
+  transition: width 120ms ease, opacity 120ms ease;
+}
+.board-item:hover .board-move,
+.board-item:focus-within .board-move { width: 14px; opacity: 1; }
 .board-move:hover:not(:disabled) { color: var(--m-accent); }
 .board-move:disabled { opacity: 0.25; cursor: default; }
 
@@ -6133,3 +6224,121 @@ a.mrow-title { text-decoration: none; }
 .ovf-stories > summary::-webkit-details-marker { display: none; }
 @media (max-width: 720px) { .ovf-lead { grid-template-columns: 1fr; }
   .ovf-lead-body { padding: 0 16px 16px; } }
+
+/* ── LEARNING · three slots on Today ──────────────────────────────────────────
+   Three boxes, each holding a course you chose and the next lesson in it. The
+   panel this replaces showed one course expanded and the rest as chips, so the
+   next lesson — the only line that says what you would actually be doing — was
+   readable for one course at a time.
+
+   Same three-column grid as the board strip above, and the same single
+   breakpoint, so the two strips stay in step down the page. */
+.tls-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.tls-strip > * { min-width: 0; }
+@media (max-width: 900px) { .tls-strip { grid-template-columns: 1fr; } }
+
+.tls-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: var(--d-panel);
+  background: var(--m-surface);
+  border: 1px solid var(--m-rule);
+  border-radius: var(--m-radius);
+}
+/* An empty slot is a placeholder, not a card with nothing in it: dashed, so it
+   reads as a space waiting to be filled rather than as a course that failed to
+   load. */
+.tls-slot--empty {
+  border-style: dashed;
+  align-items: center;
+  justify-content: center;
+  min-height: 148px;
+}
+
+.tls-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.tls-name {
+  font-family: var(--m-ui); font-size: var(--t-meta); font-weight: 600; color: var(--m-ink);
+  line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; min-width: 0;
+}
+
+/* The options menu is a <details>, so it opens and closes with no JavaScript at
+   all and closes on Escape for free. */
+.tls-menu { position: relative; flex: none; }
+.tls-menu > summary { list-style: none; cursor: pointer; }
+.tls-menu > summary::-webkit-details-marker { display: none; }
+.tls-menu-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 18px; border-radius: var(--m-radius-sm);
+  color: var(--m-muted-soft); font-size: 13px; line-height: 1;
+}
+.tls-menu-btn:hover { color: var(--m-ink); background: var(--m-surface-2); }
+.tls-menu-body {
+  position: absolute; right: 0; top: 22px; z-index: 30; width: 210px;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px; background: var(--m-surface); border: 1px solid var(--m-rule-strong);
+  border-radius: var(--m-radius); box-shadow: var(--m-shadow-2, 0 6px 18px rgba(0,0,0,.14));
+}
+.tls-menu-label {
+  font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: .1em;
+  text-transform: uppercase; color: var(--m-muted-soft); display: block; margin-bottom: 4px;
+}
+.tls-select {
+  width: 100%; font-family: var(--m-ui); font-size: var(--t-micro); color: var(--m-ink);
+  background: var(--m-surface-2); border: 1px solid var(--m-rule); border-radius: var(--m-radius-sm);
+  padding: 4px 6px;
+}
+.tls-stop {
+  appearance: none; cursor: pointer; text-align: left;
+  background: transparent; border: 0; padding: 2px 0;
+  font-family: var(--m-ui); font-size: var(--t-micro); color: var(--m-alert);
+}
+.tls-stop:hover { text-decoration: underline; }
+
+.tls-prog { display: flex; align-items: center; gap: 8px; }
+.tls-bar { flex: 1; height: 5px; border-radius: 999px; background: var(--m-surface-3); overflow: hidden; }
+.tls-bar > i { display: block; height: 100%; background: var(--m-accent); border-radius: 999px; }
+.tls-pct {
+  flex: none; font-family: var(--m-mono); font-size: var(--t-micro);
+  color: var(--m-muted); font-variant-numeric: tabular-nums;
+}
+
+/* The next lesson takes the slack, so three slots holding titles of different
+   lengths still line their buttons up along the bottom. */
+.tls-next {
+  flex: 1; display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 10px; border-radius: var(--m-radius-sm);
+  background: var(--m-surface-2); border-left: 3px solid var(--m-accent);
+}
+.tls-next--done { border-left-color: var(--m-ok); }
+.tls-next-label {
+  font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: .11em;
+  text-transform: uppercase; color: var(--m-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tls-next-title {
+  color: var(--m-ink); font-size: var(--t-meta); line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.tls-next-meta { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft); }
+
+.tls-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tls-go {
+  flex: 1; text-align: center; text-decoration: none;
+  padding: 6px 10px; border-radius: var(--m-radius-sm);
+  background: var(--m-accent); color: var(--m-on-accent);
+  font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: .08em;
+  text-transform: uppercase; white-space: nowrap;
+}
+.tls-go:hover { filter: brightness(1.06); }
+.tls-due {
+  flex: none; text-decoration: none; white-space: nowrap;
+  font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-ochre);
+}
+
+.tls-empty { display: flex; flex-direction: column; gap: 8px; align-items: center; width: 100%; }
+.tls-empty-lead {
+  font-family: var(--m-mono); font-size: var(--t-micro); letter-spacing: .11em;
+  text-transform: uppercase; color: var(--m-muted-soft);
+}

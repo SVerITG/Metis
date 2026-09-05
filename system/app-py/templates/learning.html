@@ -96,7 +96,10 @@
       match one carrying a three-line description — visibly ~150px of blank
       space the card owned. The opt-in class for exactly this already existed in
       styles.css and this grid had never used it. -#}
-  <div class="grid grid-3 grid--top"
+  {#- The id is what Resume swaps into. Without it the button's hx-target
+      matches nothing and the click is silently inert — the worst failure an
+      HTMX control has, because it looks exactly like a working one. -#}
+  <div class="grid grid-3 grid--top" id="courses-archive"
        hx-get="/api/partial/learning/courses-archive"
        hx-trigger="load"
        hx-swap="innerHTML">

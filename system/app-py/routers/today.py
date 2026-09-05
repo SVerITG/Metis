@@ -3782,7 +3782,7 @@ async def board_pin_move(board: str, item_id: int, request: Request,
     _ensure_board_table()
     pins = db_query(
         "SELECT id, COALESCE(pin_order, 0) AS po FROM today_board_items "
-        "WHERE board=? AND dismissed=0 AND starred=1 "
+        "WHERE board=? AND dismissed=0 AND COALESCE(pin_order,0)>0 "
         "ORDER BY CASE WHEN COALESCE(pin_order,0)=0 THEN 1 ELSE 0 END, "
         "         COALESCE(pin_order,0), created_at DESC",
         (board,), default=[]) or []
@@ -3805,7 +3805,10 @@ async def board_pin_move(board: str, item_id: int, request: Request,
 def _board_context(board: str, show_all: bool = False) -> dict:
     """Build template context for a single board box."""
     _ensure_board_table()
-    limit = 50 if show_all else 5
+    # Ten, not five. Every row is one line now, so the box holds twice the
+    # board in the same height — "always just 1 line so there is space for
+    # more" was the whole point of the change. Asked for 2026-09-05.
+    limit = 50 if show_all else 10
 
     # Fetch WIDE, then fold. Collapsing after a LIMIT 5 would show five rows
     # that turn out to be two stories — which is precisely what the researcher was seeing
@@ -3827,21 +3830,24 @@ def _board_context(board: str, show_all: bool = False) -> dict:
     except Exception as _exc:
         _log.warning("board %s: freshness unavailable: %s", board, _exc)
         folded = [dict(r) for r in raw]
-    # Starred stays on top of everything — an explicit pin outranks recency —
-    # and among the pins the reader's own order wins. An unordered pin (0) sits
-    # behind the ordered ones rather than jumping to the front.
+    # THREE TIERS, because pin and follow are now separate verbs. A pin is a
+    # position the reader chose, so it outranks everything and keeps its own
+    # order. Following is about content, not placement, so a followed row sits
+    # above the unread pile but does not jump the pins. Everything else keeps
+    # the recency order the query returned.
     folded.sort(key=lambda r: (
-        0 if r.get("starred") else 1,
-        (r.get("pin_order") or 10_000) if r.get("starred") else 0,
+        0 if (r.get("pin_order") or 0) else (1 if r.get("starred") else 2),
+        r.get("pin_order") or 0,
         ))
     # A pin follows its subject: attach the newest matching report from the
     # news stream. Only for pins — doing it for every row would run a LIKE
     # query per row on a board that shows fifty.
     for it in folded:
         it["_latest"] = _latest_report(it) if it.get("starred") else None
-    pinned_ids = [r["id"] for r in folded if r.get("starred")]
-    for idx, r in enumerate(folded):
-        if r.get("starred"):
+    pinned_ids = [r["id"] for r in folded if (r.get("pin_order") or 0)]
+    for r in folded:
+        r["_pinned"] = bool(r.get("pin_order") or 0)
+        if r["_pinned"]:
             r["_pin_pos"] = pinned_ids.index(r["id"]) + 1
             r["_pin_of"] = len(pinned_ids)
     # UNSEEN, not RECENT, is what earns the highlight (2026-09-02).
@@ -3925,6 +3931,48 @@ async def board_dismiss_item(request: Request, board: str, item_id: int):
     return templates.TemplateResponse(
         request, "partials/today_board_box.html", ctx,
     )
+
+
+@router.post("/api/today/board/{board}/item/{item_id}/pin", response_class=HTMLResponse)
+async def board_pin_item(request: Request, board: str, item_id: int):
+    """Pin an item to the top of its board, or unpin it.
+
+    PIN AND FOLLOW ARE DIFFERENT VERBS and used to be one control. Pin is about
+    POSITION — this one stays at the top, in the order I chose. Follow is about
+    CONTENT — bring me its newest report. Welding them meant you could not keep
+    a congress date in view without also asking for a news lookup it will never
+    match, and could not follow a subject without it jumping the queue.
+
+    A new pin goes to the END of the sequence rather than the front: the reader
+    put the existing order there on purpose.
+    """
+    if board not in _VALID_BOARDS:
+        return HTMLResponse("")
+    _ensure_board_table()
+    cur = db_scalar(
+        "SELECT COALESCE(pin_order,0) FROM today_board_items WHERE id=? AND board=?",
+        (item_id, board), default=0) or 0
+    if cur:
+        db_execute(
+            "UPDATE today_board_items SET pin_order=0, updated_at=? WHERE id=? AND board=?",
+            (datetime.datetime.now().isoformat(), item_id, board))
+        # Close the gap, so positions stay 1..n and "which one is on top" keeps
+        # meaning what it says.
+        rest = db_query(
+            "SELECT id FROM today_board_items WHERE board=? AND dismissed=0 "
+            "AND COALESCE(pin_order,0)>0 ORDER BY pin_order",
+            (board,), default=[]) or []
+        for pos, r in enumerate(rest, start=1):
+            db_execute("UPDATE today_board_items SET pin_order=? WHERE id=?", (pos, r["id"]))
+    else:
+        nxt = (db_scalar(
+            "SELECT MAX(COALESCE(pin_order,0)) FROM today_board_items "
+            "WHERE board=? AND dismissed=0", (board,), default=0) or 0) + 1
+        db_execute(
+            "UPDATE today_board_items SET pin_order=?, updated_at=? WHERE id=? AND board=?",
+            (nxt, datetime.datetime.now().isoformat(), item_id, board))
+    ctx = _board_context(board, request.query_params.get("all") == "1")
+    return templates.TemplateResponse(request, "partials/today_board_box.html", ctx)
 
 
 @router.post("/api/today/board/{board}/item/{item_id}/star", response_class=HTMLResponse)
@@ -4659,6 +4707,63 @@ async def today_brief_bridges(request: Request):
 #
 # The counts come from `memory_health.memory_layer_counts()` so the strip and
 # the full cards on the system surface cannot disagree about what is in there.
+@router.get("/api/partial/today/recent-projects", response_class=HTMLResponse)
+async def today_recent_projects(request: Request):
+    """The last three projects that were actually worked on.
+
+    Replaces the thread view that stood here, which grouped `session_summaries`
+    by their first key topic. That answered "what subjects have come up lately",
+    which is a different question from "what have I been working on" — and it
+    could not name a project, because a session summary carries topics and no
+    project. Reported 2026-09-05: a fortnight of work in Claude Desktop on one
+    project was invisible here while the panel filled with topic threads.
+
+    `projects.last_session_at` is the column that already knew. It is written
+    whenever a session touches a project, from Claude Desktop as readily as from
+    the CLI, and it had the missing project sitting second in the list the whole
+    time. No new bookkeeping — just asking the table that was already keeping
+    the answer.
+    """
+    from main import templates
+    rows = db_query(
+        "SELECT project_id, title, next_step, last_session_at, accent_color, status "
+        "FROM projects "
+        "WHERE COALESCE(status,'') NOT IN ('archived','done') "
+        "  AND COALESCE(last_session_at,'') <> '' "
+        "ORDER BY last_session_at DESC LIMIT 3",
+        default=[]) or []
+
+    today = datetime.date.today()
+    items = []
+    for r in rows:
+        d = dict(r)
+        stamp = str(d.get("last_session_at") or "")[:10]
+        try:
+            days = (today - datetime.date.fromisoformat(stamp)).days
+        except Exception:
+            days = None
+        # Say it the way a person would. An ISO date makes the reader do the
+        # subtraction, and the whole point of this strip is to be read at a
+        # glance.
+        if days is None:
+            d["_when"] = ""
+        elif days <= 0:
+            d["_when"] = "today"
+        elif days == 1:
+            d["_when"] = "yesterday"
+        elif days < 7:
+            d["_when"] = f"{days} days ago"
+        elif days < 14:
+            d["_when"] = "last week"
+        else:
+            d["_when"] = f"{days // 7} weeks ago"
+        items.append(d)
+
+    return templates.TemplateResponse(
+        request, "partials/today_recent_projects.html", {"items": items},
+    )
+
+
 @router.get("/api/partial/today/knows", response_class=HTMLResponse)
 async def today_knows(request: Request):
     """One row per kind of memory, linking to the memory surface."""
