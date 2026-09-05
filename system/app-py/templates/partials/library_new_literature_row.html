@@ -144,6 +144,21 @@
               style="padding:var(--m-space-1) var(--m-space-3);letter-spacing:0.1em;text-transform:uppercase;color:var(--m-muted);">
         Not interested
       </button>
+      {#- KEEP, which is a different act from "Add to library". That one fetches
+          a PDF and catalogues an acquisition; this one files the paper under a
+          REASON, which is the thing that makes it findable again. Both can
+          apply to the same paper and neither implies the other — a paper can
+          be kept for its method without the PDF ever being obtainable. -#}
+      <details class="nlk">
+        <summary class="btn btn--sec u-mono nlk-btn"
+                 title="File it under a category — why you are keeping it">Keep &hellip;</summary>
+        <div class="nlk-body"
+             hx-get="/api/partial/library/shelf-picker?kind=paper&item_id={{ item.id }}&back=lit-row:{{ item.id }}&target=%23nl-row-{{ item.id }}"
+             hx-trigger="toggle once from:closest details"
+             hx-swap="innerHTML">
+          <span class="fw-keep-wait">categories&hellip;</span>
+        </div>
+      </details>
     {% endif %}
 
     {% if item.doi %}

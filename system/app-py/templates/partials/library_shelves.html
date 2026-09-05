@@ -11,7 +11,7 @@
   <section class="shv-group shv-group--{{ kind }}">
     <header class="shv-head">
       <h3 class="shv-kind">{{ lead }}</h3>
-      <span class="shv-n">{{ items|length }} shelf{{ '' if items|length == 1 else 'ves' }}</span>
+      <span class="shv-n">{{ items|length }} categor{{ 'y' if items|length == 1 else 'ies' }}</span>
     </header>
     <div class="shv-grid">
       {% for s in items %}

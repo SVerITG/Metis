@@ -734,6 +734,17 @@ async def work_projects(request: Request, filter: str = ""):
         "n_hot": sum(1 for x in buckets.get(c, []) if x["activity"] == "hot"),
     } for c in ordered]
 
+    # What has been filed against each project, so the evidence appears on the
+    # work it belongs to. Omitted refs simply have nothing filed.
+    try:
+        from routers.shelves import kept_by_ref
+        kept = kept_by_ref()
+    except Exception:
+        log.warning("could not read filed evidence per project", exc_info=True)
+        kept = {}
+    for _p in projects:
+        _p["kept"] = kept.get(_p.get("id") or _p.get("project_id") or "")
+
     return templates.TemplateResponse(
         request,
         "partials/work_projects.html",

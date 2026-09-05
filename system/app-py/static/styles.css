@@ -6421,3 +6421,32 @@ a.shf-row-title:hover { color: var(--m-accent); }
   font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft); }
 .shf-off:hover { color: var(--m-alert); }
 .shf-empty { padding: 30px 0; font-style: italic; color: var(--m-muted); }
+/* A category says what kind it is, once, under its title. */
+.shf-how { margin: 6px 0 0; font-size: var(--t-meta); color: var(--m-muted);
+  font-style: italic; max-width: 62ch; }
+.shf-new { color: var(--m-accent); }
+/* Arrived since you last read this category. Only ever set on a tracking
+   category, because it is the only kind for which "since" means anything. */
+.shf-when--new { color: var(--m-accent); font-weight: 500; }
+
+/* Keep-with-a-category, on a library row. Same object as the digest's control,
+   different host, so it borrows the picker's styles and only positions itself. */
+.nlk { position: relative; display: inline-block; }
+.nlk > summary { list-style: none; cursor: pointer;
+  padding: var(--m-space-1) var(--m-space-3); letter-spacing: .1em;
+  text-transform: uppercase; color: var(--m-muted); }
+.nlk > summary::-webkit-details-marker { display: none; }
+.nlk[open] > .nlk-btn { color: var(--m-accent); }
+.nlk-body { position: absolute; left: 0; top: 28px; z-index: 40; width: 320px;
+  padding: 12px; background: var(--m-surface);
+  border: 1px solid var(--m-rule-strong); border-radius: var(--m-radius);
+  box-shadow: var(--m-shadow-2, 0 8px 22px rgba(0,0,0,.16)); }
+
+/* Evidence filed against a project, on the project's own card. */
+.proj-kept { display: inline-flex; align-items: baseline; gap: 5px;
+  text-decoration: none; font-family: var(--m-mono); font-size: var(--t-micro);
+  letter-spacing: .06em; color: var(--m-muted); }
+.proj-kept b { color: var(--m-ink); font-variant-numeric: tabular-nums; }
+.proj-kept:hover { color: var(--m-accent); }
+.tls-due--kept { color: var(--m-muted); }
+.tls-due--kept:hover { color: var(--m-accent); }

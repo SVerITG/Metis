@@ -77,6 +77,15 @@
               aria-selected="false"
               title="Books and reports held locally, as objects"
               onclick="libTab('shelf')">Shelf</button>
+      {#- CATEGORIES, not "shelves" — the tab above already means a shelf of
+          physical objects, and two things called shelf on one surface is worse
+          than a slightly longer word. The internal name is `library_shelves`;
+          the word the reader sees is "category", which is the word that was
+          asked for. -#}
+      <button class="news-tab" role="tab" type="button" data-libtab="categories"
+              aria-selected="false"
+              title="Why you kept something: kept for its method, a subject you follow, or evidence for a project"
+              onclick="libTab('categories')">Categories</button>
       <button class="news-tab" role="tab" type="button" data-libtab="corpus"
               aria-selected="false"
               title="Indexed full text and specialist background layers"
@@ -96,6 +105,15 @@
          hx-trigger="load"
          hx-swap="innerHTML">
       <div class="panel skeleton skeleton-box" style="height:300px;"></div>
+    </div>
+  </div>
+
+  <!-- ── panel: categories ───────────────────────────────────────────── -->
+  <div class="lib-panel" id="libpanel-categories" role="tabpanel" hidden>
+    <div hx-get="/api/partial/library/shelves"
+         hx-trigger="loadtab"
+         hx-swap="innerHTML">
+      <div class="panel skeleton skeleton-box" style="height:240px;"></div>
     </div>
   </div>
 

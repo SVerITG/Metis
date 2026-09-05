@@ -1271,12 +1271,22 @@ async def today_learning(request: Request):
             c, auto = unplaced.pop(0), True
         slots.append({"n": n, "course": c, "auto": auto})
 
+    # Reading filed against each course, so an attachment category appears on
+    # the thing it belongs to rather than only on the Library surface.
+    try:
+        from routers.shelves import kept_by_ref
+        kept = kept_by_ref()
+    except Exception:
+        _log.warning("could not read filed reading per course", exc_info=True)
+        kept = {}
+
     today_str = datetime.date.today().isoformat()
     due_all = db_scalar(
         "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ?",
         (today_str,), default=0) or 0
     for sl in slots:
         c = sl["course"]
+        sl["kept"] = kept.get(c["slug"]) if c else None
         sl["due"] = (db_scalar(
             "SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= ? AND source_table = ?",
             (today_str, c["slug"]), default=0) or 0) if c else 0

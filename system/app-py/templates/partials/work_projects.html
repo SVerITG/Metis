@@ -217,6 +217,16 @@
       </div>
       {% endif %}
 
+      {#- WHAT YOU HAVE FILED AGAINST THIS PROJECT. Shown only when something
+          is filed: a "0 kept" line on every card would be a row of noise on
+          nineteen cards, and the absence is not information. -#}
+      {% if p.kept %}
+      <a class="proj-kept" href="/library/shelf/{{ p.kept.slug }}"
+         title="Reading and evidence filed against this project">
+        <b>{{ p.kept.n }}</b> kept for this project &rarr;
+      </a>
+      {% endif %}
+
       <!-- Task list (lazy-loaded, auto-refreshes every 90 s) -->
       <div id="proj-tasks-{{ p.id }}"
            hx-get="/api/partial/work/project-tasks/{{ p.id }}"

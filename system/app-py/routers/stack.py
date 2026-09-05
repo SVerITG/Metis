@@ -66,6 +66,11 @@ async def _rerender(request: Request, back: str, ctx_extra: dict | None = None) 
     if back == "library":
         from routers import new_literature as L
         return (await L.new_literature_panel(request)).body.decode("utf-8")
+    # AN UNKNOWN `back` IS A BUG, NOT A NO-OP. Returning an empty body swaps
+    # emptiness into the target, so the row the reader just acted on vanishes
+    # and the verdict looks like it deleted something. Say so in the log and
+    # leave the page alone.
+    log.warning("stack: unknown back target %r — nothing re-rendered", back)
     return ""
 
 

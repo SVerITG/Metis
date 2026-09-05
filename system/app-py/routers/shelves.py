@@ -69,8 +69,32 @@ def shelves_for(kind: str, item_id: str) -> set[str]:
     return {r["shelf"] for r in rows}
 
 
+def kept_by_ref() -> dict[str, dict]:
+    """{ref: {slug, name, n}} for every ATTACHMENT category holding something.
+
+    Used by the project card and the course page, so the count appears where the
+    work is rather than only on the Library surface. This is the half of the
+    model that makes an attachment category worth having: evidence filed against
+    a project that never shows up on the project is evidence you will not find
+    when you need it.
+
+    Refs with nothing filed are OMITTED, so a card shows the line only when
+    there is something behind it — a "0 kept" on nineteen cards is nineteen rows
+    of noise.
+    """
+    rows = db_query(
+        "SELECT s.ref, s.slug, s.name, COUNT(i.item_id) AS n "
+        "FROM library_shelves s "
+        "JOIN library_shelf_items i ON i.shelf = s.slug "
+        "WHERE s.kind = 'attachment' AND s.archived = 0 AND COALESCE(s.ref,'') <> '' "
+        "GROUP BY s.ref, s.slug, s.name",
+        default=[]) or []
+    return {r["ref"]: dict(r) for r in rows}
+
+
 @router.get("/api/partial/library/shelf-picker", response_class=HTMLResponse)
-async def shelf_picker(request: Request, kind: str, item_id: str, back: str = ""):
+async def shelf_picker(request: Request, kind: str, item_id: str, back: str = "",
+                       target: str = "closest .fw-row", swap: str = "outerHTML"):
     """The shelf chooser for one item.
 
     Rendered on demand rather than inlined into every row: the digest shows nine
@@ -81,6 +105,7 @@ async def shelf_picker(request: Request, kind: str, item_id: str, back: str = ""
     return templates.TemplateResponse(
         request, "partials/library_shelf_picker.html",
         {"kind": kind, "item_id": str(item_id), "back": back,
+         "target": target, "swap": swap,
          "groups": [(k, KIND_LEAD[k], [s for s in shelves() if s["kind"] == k])
                     for k in KINDS],
          "already": shelves_for(kind, item_id)},
@@ -140,35 +165,77 @@ async def shelves_panel(request: Request):
     )
 
 
+# What each kind is ordered BY, and what it is ordered by is the whole point of
+# having kinds at all. While every kind sorted by `added_at` the kind was a
+# label, which was the original complaint about the column this replaces.
+#
+#   tracking    the item's OWN date — a timeline of the field, not of your
+#               filing. Sorting a timeline by when you happened to save each
+#               piece produces an order that means nothing about the subject.
+#   purpose     when you kept it, because a reference has no intrinsic order
+#               and the most recent thing you thought worth keeping is the best
+#               available guess at what is on your mind. Never a queue.
+#   attachment  the item's own date too: evidence for a project reads as a
+#               record of what the evidence said, in the order it appeared.
+_ORDER = {
+    "tracking":   "COALESCE(NULLIF(pub_on,''), NULLIF(news_on,''), i.added_at) DESC",
+    "attachment": "COALESCE(NULLIF(pub_on,''), NULLIF(news_on,''), i.added_at) DESC",
+    "purpose":    "i.added_at DESC",
+}
+
+
 @router.get("/library/shelf/{slug}", response_class=HTMLResponse)
 async def shelf_page(request: Request, slug: str):
-    """One shelf, ordered the way its KIND wants to be read.
+    """One category, ordered the way its KIND wants to be read.
 
-    A tracking shelf is a timeline and reads newest-first. A purpose shelf is a
-    reference and reads by what you kept most recently only because nothing
-    better is known — it is explicitly not a queue, so it carries no unread
-    count and nothing on it is ever "overdue".
+    A tracking category is a timeline: it reads by the items' own dates, and it
+    is the only kind that can say "new since you last looked" — so it carries a
+    since-marker and the others do not. A purpose category is a reference you
+    raid: it has no unread count, nothing on it is overdue, and it is ordered
+    by what you last thought worth keeping only because nothing better exists.
     """
     from main import templates
     sh = db_query("SELECT * FROM library_shelves WHERE slug=?", (slug,), default=[]) or []
     if not sh:
-        return HTMLResponse("<p>No such shelf.</p>", status_code=404)
+        return HTMLResponse("<p>No such category.</p>", status_code=404)
     sh = dict(sh[0])
+    kind = sh.get("kind") or "purpose"
 
     items = db_query(
         "SELECT i.kind, i.item_id, i.note, i.added_at, "
         "       COALESCE(p.title, b.title, '') AS title, "
         "       COALESCE(p.journal, '') AS journal, "
         "       COALESCE(p.source_url, b.source_url, '') AS url, "
-        "       COALESCE(p.authors, '') AS authors "
+        "       COALESCE(p.authors, '') AS authors, "
+        "       COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,'')) AS pub_on, "
+        "       COALESCE(b.brief_date,'') AS news_on "
         "FROM library_shelf_items i "
         "LEFT JOIN new_publications p ON i.kind='paper' AND CAST(p.id AS TEXT)=i.item_id "
         "LEFT JOIN news_briefs      b ON i.kind='news'  AND b.brief_id=i.item_id "
-        "WHERE i.shelf=? ORDER BY i.added_at DESC",
+        "WHERE i.shelf=? ORDER BY " + _ORDER.get(kind, _ORDER["purpose"]),
         (slug,), default=[]) or []
+    items = [dict(r) for r in items]
+
+    # THE SINCE-MARKER, on tracking categories only. `last_seen_at` is stamped
+    # when the page is opened, so "new since you last looked" means since the
+    # last time this category was actually read — not since a scan ran, which
+    # is a fact about the machine rather than about the reader.
+    n_new, seen_before = 0, ""
+    if kind == "tracking":
+        seen_before = str(sh.get("last_seen_at") or "")
+        if seen_before:
+            n_new = sum(1 for it in items if str(it.get("added_at") or "") > seen_before)
+        db_execute("UPDATE library_shelves SET last_seen_at=? WHERE slug=?",
+                   (_now(), slug))
+
+    for it in items:
+        it["_on"] = (str(it.get("pub_on") or it.get("news_on") or it.get("added_at") or ""))[:10]
+        it["_is_new"] = bool(seen_before and str(it.get("added_at") or "") > seen_before)
 
     return templates.TemplateResponse(
         request, "library_shelf.html",
-        {"shelf": sh, "items": [dict(r) for r in items],
-         "lead": KIND_LEAD.get(sh["kind"], "")},
+        {"shelf": sh, "items": items, "kind": kind,
+         "is_timeline": kind in ("tracking", "attachment"),
+         "n_new": n_new, "seen_before": seen_before[:10],
+         "lead": KIND_LEAD.get(kind, "")},
     )

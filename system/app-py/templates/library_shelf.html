@@ -15,9 +15,28 @@
     <h1 class="shf-title">{{ shelf.name }}</h1>
     {% if shelf.blurb %}<p class="shf-blurb">{{ shelf.blurb }}</p>{% endif %}
     <p class="shf-meta">
-      <b>{{ items|length }}</b> kept ·
-      <a class="u-link" href="/library">Library</a> ·
+      <b>{{ items|length }}</b> kept
+      {#- A SINCE-MARKER ONLY ON A TIMELINE. "New since you last looked" is a
+          sensible question about a subject you follow and a meaningless one
+          about a reference shelf — a methods paper does not become stale, and
+          printing an unread count against one would invent an obligation the
+          category is explicitly not for. -#}
+      {%- if kind == 'tracking' %}
+        {%- if n_new %} · <b class="shf-new">{{ n_new }} new</b> since {{ seen_before }}
+        {%- elif seen_before %} · nothing new since {{ seen_before }}
+        {%- else %} · first visit{% endif %}
+      {%- endif %} ·
+      <a class="u-link" href="/knowledge#libpanel-categories">All categories</a> ·
       <a class="u-link" href="/stack?state=saved">everything kept</a>
+    </p>
+    {#- What this kind of category IS FOR, said once, at the top. The three
+        kinds are read in three different ways and nothing else on the page
+        would tell you which one you are looking at. -#}
+    <p class="shf-how">
+      {%- if kind == 'tracking' %}A subject you follow. Newest first, by the item&rsquo;s own date.
+      {%- elif kind == 'attachment' %}Evidence for one piece of work, in the order it appeared.
+      {%- else %}Kept for how the work was done. A reference to raid, not a queue &mdash; nothing here is overdue.
+      {%- endif %}
     </p>
   </header>
 
@@ -25,7 +44,12 @@
   <div class="shf-list">
     {% for it in items %}
     <article class="shf-row">
-      <span class="shf-when">{{ it.added_at[:10] }}</span>
+      {#- On a timeline the date shown is the ITEM's; on a reference it is when
+          you kept it, because that is the only date that means anything there. -#}
+      <span class="shf-when{% if it._is_new %} shf-when--new{% endif %}"
+            title="{% if is_timeline %}Published {{ it._on }} · kept {{ it.added_at[:10] }}{% else %}Kept {{ it.added_at[:10] }}{% endif %}">
+        {{ it._on if is_timeline else it.added_at[:10] }}
+      </span>
       <div class="shf-body">
         {% if it.url %}
         <a class="shf-row-title" href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title | sci }}</a>
@@ -42,13 +66,13 @@
         <input type="hidden" name="kind" value="{{ it.kind }}">
         <input type="hidden" name="item_id" value="{{ it.item_id }}">
         <input type="hidden" name="shelf" value="{{ shelf.slug }}">
-        <button type="submit" class="shf-off" title="Take it off this shelf — the item itself is kept">off this shelf</button>
+        <button type="submit" class="shf-off" title="Remove it from this category — the item itself is kept">remove</button>
       </form>
     </article>
     {% endfor %}
   </div>
   {% else %}
-  <p class="shf-empty">Nothing on this shelf yet. Keep something from Today or the
+  <p class="shf-empty">Nothing in this category yet. Keep something from Today or the
      News surface and choose <b>{{ shelf.name }}</b>.</p>
   {% endif %}
 </div>

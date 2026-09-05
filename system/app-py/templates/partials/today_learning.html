@@ -94,6 +94,14 @@
         {% if sl.due %}
         <a class="tls-due" href="/tab/learning" title="{{ sl.due }} card{{ '' if sl.due == 1 else 's' }} due from this course">{{ sl.due }} due</a>
         {% endif %}
+        {#- BOTH, when both exist. This was an `elif` on the due count, and with
+            244 cards due that branch could never be reached — the link was
+            written and unreachable, which is indistinguishable from not having
+            built it. -#}
+        {% if sl.kept %}
+        <a class="tls-due tls-due--kept" href="/library/shelf/{{ sl.kept.slug }}"
+           title="Reading filed against this course">{{ sl.kept.n }} kept</a>
+        {% endif %}
       </div>
 
       {% else %}

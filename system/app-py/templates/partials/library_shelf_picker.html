@@ -5,21 +5,26 @@
     means rather than just named, since "Methodology" and "AI" look like the
     same sort of thing until you are told that one is a reference you raid and
     the other is a timeline you follow. -#}
-<div class="shp">
-  <p class="shp-lead">Keep it — and say why</p>
+{#- The swap target is INHERITED from this wrapper, not written on each form.
+    hx-target and hx-swap descend to children, and this picker is opened from
+    two different hosts whose rows have different classes — a hardcoded
+    `closest .fw-row` matched nothing on the library row and the click was
+    silently inert. -#}
+<div class="shp" hx-target="{{ target }}" hx-swap="{{ swap }}">
+  <p class="shp-lead">Keep it &mdash; and say why</p>
   {% for shelf_kind, lead, items in groups %}
   {% if items %}
   <div class="shp-group">
     <p class="shp-kind">{{ lead }}</p>
     <div class="shp-row">
       {% for s in items %}
-      <form hx-post="/api/library/shelf/add" hx-target="closest .fw-row" hx-swap="outerHTML">
+      <form hx-post="/api/library/shelf/add">
         <input type="hidden" name="kind" value="{{ kind }}">
         <input type="hidden" name="item_id" value="{{ item_id }}">
         <input type="hidden" name="shelf" value="{{ s.slug }}">
         <input type="hidden" name="back" value="{{ back }}">
         <button type="submit" class="shp-chip{% if s.slug in already %} is-on{% endif %}"
-                title="{{ s.blurb }}{% if s.n %} · {{ s.n }} already here{% endif %}">
+                title="{{ s.blurb }}{% if s.n %} · {{ s.n }} already in this category{% endif %}">
           {{ s.name }}{% if s.n %} <span class="shp-n">{{ s.n }}</span>{% endif %}
         </button>
       </form>
@@ -29,6 +34,6 @@
   {% endif %}
   {% endfor %}
   {% if not groups %}
-  <p class="shp-empty">No shelves yet — run tools/seed_library_shelves.py.</p>
+  <p class="shp-empty">No categories yet &mdash; run tools/seed_library_shelves.py.</p>
   {% endif %}
 </div>

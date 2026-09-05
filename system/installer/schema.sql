@@ -1396,7 +1396,12 @@ CREATE TABLE IF NOT EXISTS library_shelves (
     ref         TEXT DEFAULT '',   -- attachment only: project_id or course slug
     sort_order  INTEGER DEFAULT 0,
     archived    INTEGER DEFAULT 0,
-    created_at  TEXT
+    created_at  TEXT,
+    -- Stamped when a TRACKING category is opened, so "new since you last
+    -- looked" means since you last read it — not since a scan ran, which is a
+    -- fact about the machine and not about the reader. Null on the other kinds,
+    -- which have no such question.
+    last_seen_at TEXT
 );
 
 -- A JOIN TABLE, not a column on the item. One paper legitimately belongs on
