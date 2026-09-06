@@ -91,6 +91,29 @@
         {% endif %}
       </div>
     </div>
+    {#- Themes are computed on demand, NOT on render. Naming Claude Haiku and the
+        cost in the control is the honest thing: the panel used to make nine paid
+        API calls and take 18 seconds every time it was opened, and nothing on
+        screen said so. -#}
+    <div style="text-align:right;flex:none;">
+      <button type="button" class="btn btn--ghost u-mono"
+              style="font-size:var(--t-meta);"
+              hx-post="/api/metis/improvement/refresh-themes?days={{ days }}"
+              hx-target="#metis-improvement-body"
+              hx-swap="innerHTML"
+              hx-indicator="#themes-working"
+              title="Reads your reflexions and asks Claude Haiku to name the recurring themes. Takes about 15 seconds and makes a few small API calls, so it only runs when you ask.">
+        {{ 'Recompute themes' if themes_cached_at else 'Compute themes' }}
+      </button>
+      <div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">
+        <span id="themes-working" class="htmx-indicator">working&hellip;</span>
+        {%- if themes_cached_at %}
+        <span>last computed {{ themes_cached_at }}</span>
+        {%- else %}
+        <span>not computed yet &mdash; showing word counts</span>
+        {%- endif %}
+      </div>
+    </div>
   </div>
 </div>
 

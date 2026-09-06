@@ -4,6 +4,7 @@ routers/metis_tab.py — Metis tab routes.
 
 import datetime
 import json
+import logging
 import os
 from pathlib import Path
 
@@ -13,6 +14,8 @@ from fastapi.templating import Jinja2Templates
 
 from ui import clip
 from db import db_query, db_scalar, db_execute
+
+log = logging.getLogger("metis.metis_tab")
 
 router = APIRouter()
 templates = Jinja2Templates(
@@ -782,11 +785,28 @@ async def metis_improvement(request: Request, days: int = 14):
     themes: dict = {"window_days": days, "agents": [], "totals": {"reflexions": 0, "agents": 0}}
     proposals: list[dict] = []
     learned: list[dict] = []
-    try:
-        from metis_mcp.tools.improvement import aggregate_reflexions
-        themes = aggregate_reflexions(days=days)
-    except Exception:
-        pass
+    # NO PAID API CALLS ON A RENDER PATH.
+    #
+    # `aggregate_reflexions` themes reflexions with Claude Haiku whenever
+    # ANTHROPIC_API_KEY is set — one call per agent per category. Measured
+    # 2026-09-06: opening this surface fired NINE POSTs to api.anthropic.com and
+    # took 18.5s, every single view, with an idle control of zero. It looked fine
+    # in every test because a test process has no key, so it silently took the
+    # word-frequency fallback and returned in 0.01s.
+    #
+    # A GET that renders a panel must not spend money or block on a network
+    # round-trip. Themes are now read from a machine-local cache written by the
+    # explicit refresh below; the panel renders instantly and says when it last
+    # computed. Same rule as never putting DDL on a render path.
+    themes_cached_at = ""
+    cache_fp = _themes_cache_path(days)
+    if cache_fp.is_file():
+        try:
+            _c = json.loads(cache_fp.read_text(encoding="utf-8"))
+            themes = _c.get("themes") or themes
+            themes_cached_at = str(_c.get("computed_at") or "")[:19].replace("T", " ")
+        except Exception:
+            log.warning("reflexion theme cache unreadable: %s", cache_fp, exc_info=True)
     try:
         rows = db_query(
             "SELECT id, agent_slug, proposed_at, rationale, status, "
@@ -836,8 +856,41 @@ async def metis_improvement(request: Request, days: int = 14):
             "learned": learned,
             "recent_reflexions": recent_reflexions,
             "days": days,
+            "themes_cached_at": themes_cached_at,
         },
     )
+
+
+def _themes_cache_path(days: int):
+    """Machine-local cache for the LLM-themed reflexions.
+
+    Local, not in the repo: it is derived data, it differs per machine, and the
+    repo tree is OneDrive-synced — the same reason the logs moved out.
+    """
+    base = Path(os.environ.get("METIS_STATE_DIR", "")
+                or (Path.home() / ".local" / "state" / "metis" / "cache"))
+    base.mkdir(parents=True, exist_ok=True)
+    return base / f"reflexion-themes-{int(days)}d.json"
+
+
+@router.post("/api/metis/improvement/refresh-themes", response_class=HTMLResponse)
+async def metis_improvement_refresh_themes(request: Request, days: int = 14):
+    """Compute the reflexion themes with Claude and cache them, then re-render.
+
+    Explicit and user-initiated, because it costs money and takes ~17s. That is
+    exactly why it must not sit on the render path.
+    """
+    try:
+        from metis_mcp.tools.improvement import aggregate_reflexions
+        themes = aggregate_reflexions(days=days)
+        _themes_cache_path(days).write_text(json.dumps({
+            "computed_at": datetime.datetime.now().isoformat(timespec="seconds"),
+            "window_days": days,
+            "themes": themes,
+        }, indent=2), encoding="utf-8")
+    except Exception:
+        log.warning("theme refresh failed", exc_info=True)
+    return await metis_improvement(request, days=days)
 
 
 @router.get("/api/partial/metis/startup-eval", response_class=HTMLResponse)
