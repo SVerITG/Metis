@@ -62,14 +62,75 @@ try {
 }
 catch {
     Write-Host ""
-    Write-Host "FAILED to register '$taskName': $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host ""
-    Write-Host "This machine's policy may block at-logon tasks. Fallback that DOES work" -ForegroundColor Yellow
-    Write-Host "without elevation (verified on 5XLQDJ4) — a 5-minute heartbeat only:" -ForegroundColor Yellow
-    Write-Host "  schtasks /create /tn `"Metis Heartbeat`" /tr `"wscript.exe '$vbsPath'`" /sc minute /mo 5 /f"
-    Write-Host ""
-    Write-Host "Logon start is then covered by the Startup-folder shortcut." -ForegroundColor Yellow
-    exit 1
+    Write-Host "Register-ScheduledTask failed: $($_.Exception.Message)" -ForegroundColor Yellow
+    Write-Host "Retrying via schtasks /xml — managed policy usually blocks the cmdlet, not this." -ForegroundColor Yellow
+
+    # NEVER fall back to a bare `schtasks /create /sc minute /mo 5`. That is how a
+    # machine ends up looking supervised while it is not: schtasks.exe defaults
+    # DisallowStartIfOnBatteries to TRUE, and there is NO command-line switch to
+    # turn it off — only /xml can set it. On a laptop that means the heartbeat stops
+    # the moment the lid is unplugged, which is most of the time. Found 2026-09-06
+    # after a dashboard outage: the task registered on 2026-07-14 by exactly that
+    # fallback had not run once in the 8 hours since the machine went to battery.
+    #
+    # The XML is generated here rather than shipped as a file because it embeds the
+    # current user's SID and home path — that must never land in the repository.
+    $sid = ([Security.Principal.WindowsIdentity]::GetCurrent()).User.Value
+    $xmlPath = Join-Path $env:TEMP "metis-heartbeat.xml"
+    $xml = @"
+<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <URI>\$taskName</URI>
+  </RegistrationInfo>
+  <Principals>
+    <Principal id="Author">
+      <UserId>$sid</UserId>
+      <LogonType>InteractiveToken</LogonType>
+    </Principal>
+  </Principals>
+  <Settings>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <ExecutionTimeLimit>PT10M</ExecutionTimeLimit>
+    <Enabled>true</Enabled>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+  </Settings>
+  <Triggers>
+    <TimeTrigger>
+      <StartBoundary>2026-01-01T00:00:00</StartBoundary>
+      <Repetition><Interval>PT5M</Interval></Repetition>
+      <Enabled>true</Enabled>
+    </TimeTrigger>
+    <LogonTrigger><Enabled>true</Enabled><UserId>$sid</UserId></LogonTrigger>
+    <SessionStateChangeTrigger>
+      <Enabled>true</Enabled><UserId>$sid</UserId><StateChange>SessionUnlock</StateChange>
+    </SessionStateChangeTrigger>
+  </Triggers>
+  <Actions Context="Author">
+    <Exec>
+      <Command>wscript.exe</Command>
+      <Arguments>"$vbsPath"</Arguments>
+    </Exec>
+  </Actions>
+</Task>
+"@
+    [IO.File]::WriteAllText($xmlPath, $xml, [Text.Encoding]::Unicode)
+    & schtasks.exe /create /tn $taskName /xml $xmlPath /f | Out-Null
+    Remove-Item $xmlPath -Force -ErrorAction SilentlyContinue
+
+    if (-not (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)) {
+        Write-Host ""
+        Write-Host "Both registration paths failed — NOTHING is supervising Metis." -ForegroundColor Red
+        Write-Host "Open taskschd.msc and add the task by hand, or ask for help." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "Registered via XML fallback: battery-safe, logon + unlock + 5-minute." -ForegroundColor Green
 }
 
 # Prove it exists rather than assuming the call worked.
