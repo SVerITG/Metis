@@ -35,7 +35,14 @@
     Uncategorised comes last and is NAMED. Two projects are in it, and a bucket
     you cannot see is a bucket you never empty. -#}
 <div id="project-groups">
-{% for g in (groups or []) %}
+{#- FLAT (the ALL tab) vs GROUPED (a category tab).
+    One synthetic section stands in for the groups when flat, so the card markup
+    below is written once and never forks between the two views. -#}
+{% set _sections = [{'name': '', 'slug': 'all', 'is_uncategorised': False,
+                     'projects': projects, 'n_projects': projects|length,
+                     'n_open': 0, 'n_hot': 0}] if flat else (groups or []) %}
+{% for g in _sections %}
+{% if not flat %}
 {#- OPEN IF SOMETHING IN IT IS ALIVE. This is what "active and not so active"
     buys: the page opens on the work that is moving, and five months of dormant
     projects are one click away instead of 1,500px of scrolling. Uncategorised
@@ -64,8 +71,9 @@
       {% endif %}
     </span>
   </summary>
-  <div class="grid grid-2 grid--top cat-body">
-  {%- if not g.projects %}
+{% endif %}
+  <div class="grid grid-2 grid--top{% if not flat %} cat-body{% endif %}">
+  {%- if not g.projects and not flat %}
   {#- An empty category is a place, not an error: it exists so a project can be
       moved into it. Say what to do with it rather than showing a blank box. -#}
   <p class="cat-empty">Nothing filed here yet — click a project's category label to move it in.</p>
@@ -73,7 +81,10 @@
   {% for p in g.projects %}
   <div class="panel panel-pad project-card"
        data-project-id="{{ p.id }}"
-       draggable="true"
+       {#- Not draggable in ALL: that view is ordered by recent work, so a drag
+           would write a display_order the reader never sees take effect. The
+           manual arrangement lives on the category tabs, where it shows. -#}
+       draggable="{{ 'false' if flat else 'true' }}"
        style="padding:0;display:flex;flex-direction:column;cursor:default;transition:opacity .15s,outline .1s;
               border-left:3px solid {{ p.accent_color or 'transparent' }};">
 
@@ -81,7 +92,7 @@
     <div class="proj-header u-row u-rule"
          style="padding:var(--m-space-4) var(--m-space-4) var(--m-space-3);">
       <!-- Drag handle -->
-      <span class="proj-drag-handle u-fixed"
+      <span class="proj-drag-handle u-fixed{% if flat %} u-hide{% endif %}"
             title="Drag to reorder"
             style="cursor:grab;color:var(--m-muted);font-size:var(--t-body);line-height:1;user-select:none;">⠿</span>
       {#- HOW ALIVE IS THIS. Three glyphs, not a colour scale, so it survives a
@@ -135,7 +146,7 @@
           {% if c == p.category %}
           <button type="button" class="tag tag--clip tag--edit u-fixed"
                   title="In “{{ c }}” — click to move it to another category"
-                  onclick="projMoveCategory({{ p.id | tojson }}, {{ c | tojson }})">{{ c }}</button>
+                  onclick='projMoveCategory({{ p.id | tojson }}, {{ c | tojson }})'>{{ c }}</button>
           {% else %}
           <span class="tag tag--clip u-fixed" title="{{ c }}">{{ c }}</span>
           {% endif %}
@@ -145,7 +156,7 @@
       {#- An uncategorised project needs the control MORE, not less. -#}
       <button type="button" class="tag tag--clip tag--edit tag--needs u-fixed"
               title="This project has no category — click to file it"
-              onclick="projMoveCategory({{ p.id | tojson }}, '')">+ file</button>
+              onclick='projMoveCategory({{ p.id | tojson }}, "")'>+ file</button>
       {% endif %}
       {% if p.launcher_type == 'article' or p.project_type == 'article' %}
       <span class="tag tag--accent u-fixed" title="Opens a manuscript">article</span>
@@ -155,7 +166,7 @@
               title="Project notes"
               style="padding:var(--m-space-1) var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-small);color:var(--m-muted);line-height:1;">📝</button>
       <!-- Untrack button -->
-      <button class="u-fixed btn btn--ghost" onclick="untrackProject({{ p.id | tojson }}, {{ p.title | tojson }})"
+      <button class="u-fixed btn btn--ghost" onclick='untrackProject({{ p.id | tojson }}, {{ p.title | tojson }})'
               title="Hide this project (doesn't delete it)"
               style="padding:var(--m-space-1) var(--m-space-1);font-size:var(--t-small);color:var(--m-muted);line-height:1;opacity:.6;"
               onmouseenter="this.style.opacity='1';this.style.color='var(--m-danger)'"
@@ -277,7 +288,7 @@
             work. -#}
         {% if not p.external_path %}
         <button type="button" class="btn btn--sec btn--caps proj-launch proj-nopath"
-                onclick="projSetPath('{{ p.id }}', {{ (p.title or '') | tojson }})"
+                onclick='projSetPath({{ p.id | tojson }}, {{ (p.title or '') | tojson }})'
                 title="Tell Metis which folder holds this work, and the rest of these can open it">
           Where does this live?
         </button>
@@ -305,7 +316,7 @@
                   competing with them. -#}
               {% if p.external_path %}
               <button type="button" class="proj-more-item proj-more-item--alt"
-                      onclick="projSetPath('{{ p.id }}', {{ (p.title or '') | tojson }})"
+                      onclick='projSetPath({{ p.id | tojson }}, {{ (p.title or '') | tojson }})'
                       title="{{ p.external_path }}">Change folder…</button>
               {% endif %}
             </div>
@@ -334,7 +345,7 @@
   </div>
   {% endfor %}
   </div><!-- /.cat-body -->
-</details>
+{% if not flat %}</details>{% endif %}
 {% endfor %}
 
 {#- Creating a category has to be possible BEFORE anything is in it, or there is

@@ -647,9 +647,24 @@ async def work_projects(request: Request, filter: str = ""):
     if f == "archived":
         projects = db_query(cols + "WHERE status = 'archived' ORDER BY COALESCE(display_order, 999) ASC LIMIT 50")
     elif f in ("", "active", "all"):
+        # ALL IS ORDERED BY RECENT WORK, NOT BY display_order.
+        #
+        # Two orderings were fighting for this view. `display_order` is the
+        # manual arrangement a drag writes — but nobody had ever set it, so
+        # every project tied on 999 and the "order" was really the table's
+        # insertion order wearing a sort clause. Meanwhile the one question
+        # this view answers is "what have I actually been touching?".
+        #
+        # So the two are split by view rather than blended: ALL answers that
+        # question automatically (most recently worked first, never-opened
+        # last), and the per-category tabs keep the manual drag order. A view
+        # cannot be both automatic and hand-arranged, and pretending otherwise
+        # is what made dragging feel like it did nothing.
         projects = db_query(
             cols + "WHERE status = 'active' AND COALESCE(tracked, 1) = 1 "
-            "ORDER BY COALESCE(display_order, 999) ASC LIMIT 50"
+            "ORDER BY NULLIF(last_session_at, '') IS NULL, "
+            "         NULLIF(last_session_at, '') DESC, "
+            "         COALESCE(display_order, 999) ASC LIMIT 50"
         )
     else:
         like = f"%{f}%"
@@ -716,7 +731,11 @@ async def work_projects(request: Request, filter: str = ""):
     #
     # Only when unfiltered, though. Under a filter the empty sections are noise:
     # you asked to see one category, not the nine that do not match.
-    show_empty = f in ("", "active", "all")
+    # FLAT WHEN UNFILTERED. Grouping by category and ordering by recency are
+    # different questions; showing both at once answers neither, because a
+    # recency order that restarts inside each heading is not a recency order.
+    flat = f in ("", "active", "all")
+    show_empty = flat
     ordered = [c for c in _category_order() if c in buckets or show_empty]
     # A category present on a project but not in the table still gets a heading —
     # seeding is additive and must never hide work.
@@ -751,7 +770,7 @@ async def work_projects(request: Request, filter: str = ""):
         # The interop state travels with the render so the notice is stated
         # ONCE for the page rather than discovered eight times by pressing
         # eight buttons that all fail the same way.
-        {"projects": projects, "groups": groups,
+        {"projects": projects, "groups": groups, "flat": flat,
          "all_categories": _category_order(), "uncat_label": UNCAT,
          "interop_ok": _interop_state()[0], "interop_why": _interop_state()[1]},
     )
