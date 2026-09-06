@@ -62,11 +62,11 @@
     </span>
     <span class="mrow-acts sr-grade">
       <button class="sr-g sr-g--hard" title="Hard — remembered with effort"
-              onclick="srReview({{ item.id | tojson }}, 3, this)">Hard</button>
+              onclick='srReview({{ item.id | tojson }}, 3, this)'>Hard</button>
       <button class="sr-g sr-g--good" title="Good — got it"
-              onclick="srReview({{ item.id | tojson }}, 4, this)">Good</button>
+              onclick='srReview({{ item.id | tojson }}, 4, this)'>Good</button>
       <button class="sr-g sr-g--easy" title="Easy — no effort needed"
-              onclick="srReview({{ item.id | tojson }}, 5, this)">Easy</button>
+              onclick='srReview({{ item.id | tojson }}, 5, this)'>Easy</button>
     </span>
   </div>
   {% endfor %}

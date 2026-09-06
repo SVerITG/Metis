@@ -41,7 +41,7 @@
           {{ brief.summary }}{% if brief.summary|length >= 160 %}…{% endif %}
         </div>
         {% endif %}
-        <button class="u-label btn btn--ghost hov-ink" onclick="searchLibraryFor({{ brief.title | tojson }})" style="padding:0;letter-spacing:0.08em;transition:color 120ms;" title="Search your library for related papers">
+        <button class="u-label btn btn--ghost hov-ink" onclick='searchLibraryFor({{ brief.title | tojson }})' style="padding:0;letter-spacing:0.08em;transition:color 120ms;" title="Search your library for related papers">
           Search library →
         </button>
       </div>
