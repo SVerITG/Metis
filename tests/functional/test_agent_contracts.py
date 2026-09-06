@@ -30,7 +30,36 @@ RC_ROOT = Path(os.environ.get("METIS_RC_ROOT", Path(__file__).parents[2]))
 REGISTRY = RC_ROOT / "system" / "config" / "agent-registry.json"
 AGENTS_DIR = RC_ROOT / "agents"
 SKILLS_DIR = RC_ROOT / ".claude" / "skills"
-DB_PATH = RC_ROOT / "system" / "app" / "data" / "metis.sqlite"
+
+
+def _resolve_db() -> Path:
+    """The live DB, resolved by the SAME author the app uses.
+
+    This was hardcoded to `system/app/data/metis.sqlite` — a path RETIRED in June
+    2026 (OneDrive corrupts SQLite's WAL sidecars, so the live DB moved to local
+    disk). The file has not existed since. `load_run_map()` degrades to `{}` when
+    the path is missing, so every agent scored `run_count == 0` and the harness
+    reported "0/33 agents have ever run — routing is broken" on a system where 34
+    of 35 agents had in fact run, against 872 rows in `agent_runs`.
+    
+    A check that reports catastrophe on a healthy system is worse than no check:
+    it trains the reader to ignore the harness. So resolve through `db.get_db_path`
+    — one author for the path, honouring METIS_DB and METIS_DATA_DIR — and fall
+    back to the same precedence only if that import is unavailable.
+    """
+    try:
+        sys.path.insert(0, str(RC_ROOT / "system" / "app-py"))
+        from db import get_db_path            # noqa: E402  — the canonical author
+        return Path(get_db_path())
+    except Exception:
+        local = Path(os.environ.get("METIS_DATA_DIR",
+                                    Path.home() / ".local" / "share" / "metis")) / "metis.sqlite"
+        if local.exists():
+            return local
+        return RC_ROOT / "system" / "app" / "data" / "metis.sqlite"
+
+
+DB_PATH = _resolve_db()
 
 # ---------------------------------------------------------------------------
 # Checks

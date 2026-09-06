@@ -158,7 +158,11 @@ check_endpoint "Meetings tab"  "/meetings"
 check_endpoint "Learning tab"  "/learning"
 check_endpoint "Work tab"      "/work"
 check_endpoint "Thinking tab"  "/thinking"
-check_endpoint "Planner tab"   "/planner"
+# Planner was MERGED into Work; /planner is kept as a redirect so old links and
+# bookmarks still land somewhere. 302 is the contract, so assert 302 — asserting
+# 200 reported a failure every run for a surface that is behaving correctly, and a
+# check that cries wolf teaches the reader to ignore the harness.
+check_endpoint "Planner tab (merged → Work)" "/planner" 302
 check_endpoint "Teach tab"     "/teach"
 check_endpoint "Metis tab"     "/metis"
 
