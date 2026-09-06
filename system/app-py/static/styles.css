@@ -6454,3 +6454,158 @@ a.shf-row-title:hover { color: var(--m-accent); }
    category, not the thing you came to read. */
 .shv-for { grid-column: 1 / -1; font-family: var(--m-mono); font-size: var(--t-micro);
   letter-spacing: .06em; color: var(--m-muted-soft); }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Today's plan — one compact line per intended item (2026-09-06)
+
+   Rides the EXISTING density scale (--d-row-y / --d-stack) rather than adding a
+   fourth one. Every colour is a token, so the panel follows the theme without a
+   second definition anywhere.
+   ───────────────────────────────────────────────────────────────────────────── */
+.plan-list { display: flex; flex-direction: column; }
+
+.plan-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--m-space-2, 8px);
+  padding: var(--d-row-y) 0;
+  border-bottom: 1px solid var(--m-rule-soft);
+}
+.plan-row:last-child { border-bottom: 0; }
+
+.plan-check {
+  width: 14px; height: 14px; padding: 0; flex: none;
+  border: 1.5px solid var(--m-rule-strong);
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: border-color .12s, background .12s;
+}
+.plan-check:hover { border-color: var(--m-accent); }
+.plan-check[aria-checked="true"] { background: var(--m-accent); border-color: var(--m-accent); }
+.plan-check[aria-checked="true"]::after {
+  content: "";
+  width: 7px; height: 3.5px;
+  border-left: 1.6px solid var(--m-on-accent);
+  border-bottom: 1.6px solid var(--m-on-accent);
+  transform: rotate(-45deg) translateY(-1px);
+}
+.plan-check:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 2px; }
+
+.plan-txt {
+  min-width: 0;
+  display: flex; align-items: baseline; gap: var(--m-space-2, 8px);
+  flex-wrap: wrap;
+}
+.plan-title { color: var(--m-ink); font-size: var(--t-body, 14px); }
+.plan-row--done .plan-title { color: var(--m-muted); text-decoration: line-through; }
+
+.plan-chip {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: var(--m-accent-wash);
+  color: var(--m-accent);
+  white-space: nowrap;
+  flex: none;
+}
+.plan-chip--pin { background: var(--m-ochre-wash); color: var(--m-ochre-deep); }
+
+.plan-acts { display: flex; gap: 2px; flex: none; }
+.plan-act {
+  font-family: var(--m-mono);
+  font-size: 11px;
+  color: var(--m-muted);
+  background: none; border: 0; cursor: pointer;
+  padding: 2px 5px; border-radius: 2px;
+  line-height: 1;
+}
+.plan-act:hover { color: var(--m-accent); background: var(--m-accent-wash); }
+.plan-act:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 1px; }
+
+.plan-empty {
+  color: var(--m-muted);
+  font-size: var(--t-small);
+  margin: var(--d-stack) 0 0;
+}
+
+.plan-add {
+  display: flex; align-items: center; gap: var(--m-space-2, 8px);
+  margin-top: var(--d-stack);
+  padding-top: var(--d-stack);
+  border-top: 1px dashed var(--m-rule);
+  flex-wrap: wrap;
+}
+.plan-add-btn { font-size: var(--t-small); }
+.plan-add-hint { font-size: var(--t-small); color: var(--m-muted); }
+
+.plan-picker {
+  margin-top: var(--d-stack);
+  border: 1px solid var(--m-rule);
+  border-radius: 3px;
+  background: var(--m-surface-2);
+  padding: var(--m-space-3, 12px);
+}
+.plan-picker-h {
+  display: flex; align-items: baseline; gap: var(--m-space-2, 8px);
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  margin-bottom: var(--d-stack);
+}
+.plan-pick-list { display: flex; flex-direction: column; gap: 2px; }
+.plan-pick-row { display: flex; align-items: stretch; gap: 4px; }
+
+.plan-pick {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--m-space-2, 8px);
+  padding: 5px 7px;
+  border: 0; border-radius: 2px;
+  background: transparent;
+  color: var(--m-text);
+  font-family: inherit;
+  font-size: var(--t-small);
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.plan-pick:hover { background: var(--m-surface); }
+.plan-pick:focus-visible { outline: 2px solid var(--m-accent); outline-offset: -2px; }
+.plan-pick-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plan-pick-n {
+  font-family: var(--m-mono);
+  font-size: 10.5px;
+  color: var(--m-muted);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.plan-pick-whole {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--m-ochre-deep);
+  background: var(--m-ochre-wash);
+  border: 0; border-radius: 2px;
+  padding: 3px 7px;
+  cursor: pointer;
+  flex: none;
+}
+.plan-pick-whole:hover { color: var(--m-on-accent); background: var(--m-ochre); }
+.plan-pick-foot { margin-top: var(--d-stack); }
+.plan-back {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--m-accent);
+  background: none; border: 0; cursor: pointer; padding: 0;
+}
+.plan-back:hover { text-decoration: underline; }

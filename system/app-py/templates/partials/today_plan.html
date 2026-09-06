@@ -1,0 +1,116 @@
+{#- today_plan.html — the work you intend to do today: one line per item.
+
+    Variant A of the 2026-09-06 proposal (chosen): a flat list in plan order,
+    the project carried as a chip rather than a heading. On a five-item day a
+    grouped version costs a line per project to say something the chips already
+    say, so the flat list is strictly shorter for the same content.
+
+    Density comes from --d-row-y at its compact setting. This panel does NOT
+    define a scale of its own — there are already three, and a fourth was the
+    mistake made on 2026-09-04. -#}
+<div class="panel panel-pad" id="today-plan"
+     hx-target="#today-plan" hx-swap="outerHTML">
+
+  <div class="u-row u-rule" style="align-items:baseline;justify-content:space-between;
+       gap:var(--m-space-3);padding-bottom:var(--d-stack);">
+    <span class="u-label">
+      Today{% if n_items %} · {{ n_items }} item{{ 's' if n_items != 1 else '' }}{% if n_done %} · {{ n_done }} done{% endif %}{% endif %}
+    </span>
+    <a class="u-link" href="/work" hx-get="/api/tab/work" hx-target="#tab-root"
+       hx-push-url="/work">Work &rarr;</a>
+  </div>
+
+  {%- if items %}
+  <div class="plan-list">
+    {% for it in items %}
+    <div class="plan-row{% if it._done %} plan-row--done{% endif %}">
+      <button type="button" class="plan-check" role="checkbox"
+              aria-checked="{{ 'true' if it._done else 'false' }}"
+              title="{{ 'Mark not done' if it._done else 'Mark done' }}"
+              aria-label="{{ 'Mark not done' if it._done else 'Mark done' }}"
+              hx-post="/api/today/plan/{{ it.plan_id }}/toggle"></button>
+
+      <span class="plan-txt">
+        <span class="plan-title">{{ it._title }}</span>
+        {%- if it._chip %}
+        <span class="plan-chip{% if it._kind == 'project' %} plan-chip--pin{% endif %}">{{ it._chip }}</span>
+        {%- endif %}
+      </span>
+
+      <span class="plan-acts">
+        <button type="button" class="plan-act" title="Move to tomorrow"
+                aria-label="Move to tomorrow"
+                hx-post="/api/today/plan/{{ it.plan_id }}/tomorrow">&rarr;</button>
+        <button type="button" class="plan-act" title="Take off today (the task itself is kept)"
+                aria-label="Take off today"
+                hx-post="/api/today/plan/{{ it.plan_id }}/remove">&times;</button>
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  {%- else %}
+  {#- An empty plan is the normal state of a morning, not an error. Say what to
+      do with it — this panel's whole reason for existing is that there was
+      previously nowhere to press. -#}
+  <p class="plan-empty">Nothing planned yet. Pick a project, then one of its open tasks.</p>
+  {%- endif %}
+
+  <div class="plan-add">
+    {%- if not pick %}
+    <button type="button" class="btn btn--ghost plan-add-btn"
+            hx-get="/api/partial/today/plan?pick=1">+ Plan something</button>
+    <span class="plan-add-hint">a project, or one of its open tasks</span>
+    {%- else %}
+    <button type="button" class="btn btn--ghost plan-add-btn"
+            hx-get="/api/partial/today/plan">Close</button>
+    {%- endif %}
+  </div>
+
+  {%- if pick %}
+  <div class="plan-picker">
+    {%- if not pick_project %}
+    <div class="plan-picker-h">Pick a project</div>
+    <div class="plan-pick-list">
+      {% for p in pick_projects %}
+      <div class="plan-pick-row">
+        <button type="button" class="plan-pick"
+                hx-get="/api/partial/today/plan?pick=1&project={{ p.project_id | urlencode }}">
+          <span class="plan-pick-t">{{ p.title }}</span>
+          <span class="plan-pick-n">{{ p.n_open }} open</span>
+        </button>
+        <button type="button" class="plan-pick-whole"
+                title="Plan the project itself, without naming a task"
+                hx-post="/api/today/plan/add"
+                hx-vals='{"kind": "project", "project_id": {{ p.project_id | tojson }}}'>pin</button>
+      </div>
+      {% endfor %}
+    </div>
+    {%- else %}
+    <div class="plan-picker-h">
+      <button type="button" class="plan-back"
+              hx-get="/api/partial/today/plan?pick=1">&larr; all projects</button>
+      <span>{{ pick_project_title }}</span>
+    </div>
+    {%- if pick_tasks %}
+    <div class="plan-pick-list">
+      {% for t in pick_tasks %}
+      <button type="button" class="plan-pick plan-pick--task"
+              hx-post="/api/today/plan/add"
+              hx-vals='{"kind": "task", "task_id": {{ t.task_id | tojson }}}'>
+        <span class="plan-pick-t">{{ t.title }}</span>
+        {%- if t.status == 'in_progress' %}<span class="plan-pick-n">in progress</span>{% endif %}
+      </button>
+      {% endfor %}
+    </div>
+    {%- else %}
+    <p class="plan-empty">Every open task here is already on today's list.</p>
+    {%- endif %}
+    <div class="plan-pick-foot">
+      <button type="button" class="plan-pick-whole"
+              hx-post="/api/today/plan/add"
+              hx-vals='{"kind": "project", "project_id": {{ pick_project | tojson }}}'>Pin the whole project instead</button>
+    </div>
+    {%- endif %}
+  </div>
+  {%- endif %}
+</div>

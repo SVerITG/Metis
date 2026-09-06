@@ -1001,6 +1001,7 @@ CREATE TABLE IF NOT EXISTS day_plan (
     end_date    TEXT,
     kind        TEXT NOT NULL DEFAULT 'focus',
     project_id  TEXT,
+    task_id     TEXT,                             -- kind='task': the task planned
     text        TEXT,
     remind_at   TEXT,
     done        INTEGER NOT NULL DEFAULT 0,

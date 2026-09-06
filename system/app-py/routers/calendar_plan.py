@@ -149,11 +149,21 @@ def _plans_between(a: dt.date, b: dt.date) -> dict[str, list[dict]]:
         "SELECT 1 FROM pragma_table_info('day_plan') WHERE name='recurrence'", default=[]))
     rec_col = "d.recurrence" if has_rec else "'' AS recurrence"
     rec_filter = "AND COALESCE(d.recurrence,'') = ''" if has_rec else ""
+    # kind='task' (2026-09-06) carries no `text`, so without the task's own title
+    # it falls through _chip's else-branch and draws a chip labelled "focus".
+    # Detected the same way as `recurrence`: an install that predates the column
+    # simply renders what it always did.
+    has_task = bool(db_query(
+        "SELECT 1 FROM pragma_table_info('day_plan') WHERE name='task_id'", default=[]))
+    task_col = "d.task_id, t.title AS task_title" if has_task else "NULL AS task_id, NULL AS task_title"
+    task_join = "LEFT JOIN tasks t ON t.task_id = d.task_id" if has_task else ""
 
     rows = db_query(
         f"""SELECT d.plan_id, d.start_date, d.end_date, d.kind, d.project_id, d.text,
-                  d.remind_at, d.done, {rec_col}, p.title AS project_title, p.accent_color
+                  d.remind_at, d.done, {rec_col}, {task_col},
+                  p.title AS project_title, p.accent_color
            FROM day_plan d LEFT JOIN projects p ON p.project_id = d.project_id
+           {task_join}
            WHERE date(d.start_date) <= date(?)
              AND date(COALESCE(NULLIF(d.end_date,''), d.start_date)) >= date(?)
              {rec_filter}
@@ -184,9 +194,10 @@ def _plans_between(a: dt.date, b: dt.date) -> dict[str, list[dict]]:
     dur_col = "d.duration_days" if has_dur else "1 AS duration_days"
     reps = db_query(
         f"""SELECT d.plan_id, d.start_date, d.end_date, d.kind, d.project_id, d.text,
-                  d.remind_at, d.done, d.recurrence, {dur_col},
+                  d.remind_at, d.done, d.recurrence, {dur_col}, {task_col},
                   p.title AS project_title, p.accent_color
            FROM day_plan d LEFT JOIN projects p ON p.project_id = d.project_id
+           {task_join}
            WHERE COALESCE(d.recurrence,'') <> '' AND date(d.start_date) <= date(?)
            ORDER BY d.kind, d.remind_at, d.plan_id""",
         (b.isoformat(),),
@@ -289,6 +300,13 @@ def _chip(p: dict, compact: bool = True) -> str:
         icon = "◔"
         if p.get("remind_at"):
             label = f"{p['remind_at']} {label}"
+    elif kind == "task":
+        # A task planned onto a day from the Today strip. It is deliberately NOT
+        # a due date: the task's own due_date stays untouched, so unplanning it
+        # never edits the work. Falls back to the id only if the task is gone.
+        label = p.get("task_title") or p.get("task_id") or "task"
+        colour = "var(--m-ok, #5a7a5e)"
+        icon = "✓"
     elif kind == "learning":
         # A scheduled lesson or study block. Text carries "Course — lesson".
         label = p.get("text") or "study"

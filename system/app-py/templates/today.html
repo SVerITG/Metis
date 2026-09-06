@@ -314,8 +314,18 @@
         as a sparkline — a measure of how busy the bookkeeping was, which is not
         a thing to decide anything by. The two boxes that remain both answer
         "what does this system hold for me": one by project, one by kind. -#}
-    <div hx-get="/api/partial/today/recent-projects"
-         hx-trigger="intersect once"
+    {#- TODAY'S PLAN replaced "Lately you worked on" here on 2026-09-06.
+        That panel reported the past — three projects touched, a paragraph of
+        next_step each, nothing to press. This one holds the work intended for
+        today and, crucially, carries the way to PUT work there: the planning
+        store held a single row while 61 tasks sat open, not because planning was
+        unwanted but because no surface offered it. Recency now lives on the Work
+        tab, whose ALL view is ordered by most recently worked.
+
+        `load`, not `intersect once`: this sits high on the page and is the first
+        thing to read in the morning, so it must be filled in the first frame. -#}
+    <div hx-get="/api/partial/today/plan"
+         hx-trigger="load"
          hx-swap="innerHTML"></div>
 
     

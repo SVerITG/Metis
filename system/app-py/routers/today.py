@@ -16,7 +16,8 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from db import RELEVANCE_CLOSE, db_execute, db_query, db_scalar
+from db import (NEWS_DISPLAY_FLOOR, RELEVANCE_CLOSE, db_execute, db_query,
+                db_scalar, live_task_sql)
 from ui import (clip, count_since, delta_count, last_seen, mark_seen,  # noqa: E402
                 nothing, peek, zone)
 from models import model_for  # Resolves Claude model IDs from system/config/models.yaml
@@ -635,9 +636,13 @@ async def today_news_rail(
         topic_rows = db_query(
             # Same reason as the news rail: a topic chip counting journal articles
             # sends the reader to a "news" topic made of papers.
+            # The count must match what the slipcase will actually show, or a
+            # chip advertises 40 items and opens on 3. Same floor as the item
+            # query below.
             "SELECT domain, COUNT(*) as n, MAX(created_at) as last_ts "
             "FROM news_briefs WHERE created_at >= ? AND domain IS NOT NULL AND domain != '' "
             "AND COALESCE(source_type,'news') != 'article' "
+            "AND COALESCE(relevance,0) >= " + str(NEWS_DISPLAY_FLOOR) + " "
             "GROUP BY domain ORDER BY last_ts DESC",
             (cutoff,),
         ) or []
@@ -671,6 +676,7 @@ async def today_news_rail(
                 "COALESCE(relevance,0) as relevance, seen_at "
                 "FROM news_briefs WHERE domain = ? AND created_at >= ? "
                 "AND COALESCE(source_type,'news') != 'article' "
+                "AND COALESCE(relevance,0) >= " + str(NEWS_DISPLAY_FLOOR) + " "
                 "ORDER BY COALESCE(relevance,0) DESC, created_at DESC LIMIT 5",
                 (topic, cutoff),
             ) or []
@@ -4707,6 +4713,206 @@ async def today_brief_bridges(request: Request):
 #
 # The counts come from `memory_health.memory_layer_counts()` so the strip and
 # the full cards on the system surface cannot disagree about what is in there.
+# ---------------------------------------------------------------------------
+# Today's plan — the work you intend to do today
+# ---------------------------------------------------------------------------
+#
+# WHY THIS EXISTS. Today could already hold a pinned project, and the calendar
+# could already date a task. Neither was reachable from the surface a day starts
+# on, so the planning store held ONE row while 61 tasks sat open and undated.
+# The panel that stood here ("Lately you worked on") reported the past: three
+# projects touched, a paragraph of next_step each, and no verb — it answered
+# "what did I touch?", which is not a question anyone needs answered at 9am.
+#
+# A PLAN IS AN INTENTION, NOT A DEADLINE. Planning a task writes a day_plan row
+# with kind='task', never a due_date on the task itself. "I intend to do this
+# today" and "this is due today" are different claims, and conflating them means
+# unplanning something silently edits the work. Chosen 2026-09-06.
+
+
+def _plan_when(kind: str) -> str:
+    return "task" if kind == "task" else "project"
+
+
+def _todays_plan(day: str) -> list[dict]:
+    """Every planned item for one day, projects and tasks together, in plan order.
+
+    One query, one shape: the panel does not care which kind a row is beyond
+    which label it wears, so the difference is resolved here rather than in the
+    template.
+    """
+    rows = db_query(
+        """SELECT d.plan_id, d.kind, d.done, d.project_id, d.task_id, d.text,
+                  p.title  AS project_title,
+                  pt.title AS task_project_title,
+                  t.title  AS task_title,
+                  t.status AS task_status
+             FROM day_plan d
+             LEFT JOIN projects p  ON p.project_id = d.project_id
+             LEFT JOIN tasks    t  ON t.task_id    = d.task_id
+             LEFT JOIN projects pt ON pt.project_id = t.project_id
+            WHERE date(d.start_date) <= date(?)
+              AND date(COALESCE(NULLIF(d.end_date,''), d.start_date)) >= date(?)
+            ORDER BY d.done ASC, d.plan_id ASC""",
+        (day, day), default=[]) or []
+
+    out = []
+    for r in rows:
+        d = dict(r)
+        kind = (d.get("kind") or "focus").strip()
+        if kind == "task":
+            # A planned task that has since been deleted leaves a dangling row.
+            # Skip it rather than drawing a blank line — and say nothing, because
+            # the reader did not do anything wrong.
+            if not d.get("task_title"):
+                continue
+            d["_title"] = d["task_title"]
+            d["_chip"] = d.get("task_project_title") or ""
+            # ONE AUTHOR FOR "DONE": the task's own status decides, not the copy
+            # in day_plan. Otherwise a task completed on the Work board would
+            # still show unticked here, and the two would argue.
+            d["_done"] = str(d.get("task_status") or "").strip() in ("done", "cancelled")
+        elif kind == "project":
+            if not d.get("project_title"):
+                continue
+            d["_title"] = d["project_title"]
+            d["_chip"] = "pinned"
+            d["_done"] = bool(d.get("done"))
+        else:
+            d["_title"] = (d.get("text") or "").strip()
+            if not d["_title"]:
+                continue
+            d["_chip"] = kind if kind != "focus" else ""
+            d["_done"] = bool(d.get("done"))
+        d["_kind"] = kind
+        out.append(d)
+    # Done sinks, but only within the day — a finished item stays visible so the
+    # panel reads as a record of the day rather than a shrinking list.
+    out.sort(key=lambda x: (x["_done"],))
+    return out
+
+
+def _plan_pick_projects() -> list[dict]:
+    """Projects worth planning from: active, with their live task count."""
+    return db_query(
+        f"""SELECT p.project_id, p.title,
+                   (SELECT COUNT(*) FROM tasks t
+                     WHERE t.project_id = p.project_id
+                       AND {live_task_sql('t.status')}) AS n_open
+              FROM projects p
+             WHERE COALESCE(p.status,'') = 'active'
+               AND COALESCE(p.tracked, 1) = 1
+             ORDER BY n_open DESC, COALESCE(p.last_session_at,'') DESC
+             LIMIT 12""",
+        default=[]) or []
+
+
+@router.get("/api/partial/today/plan", response_class=HTMLResponse)
+async def today_plan(request: Request, pick: str = "", project: str = ""):
+    """The Today plan strip: one compact line per intended item, plus a way in.
+
+    `pick` opens the picker; `project` narrows it to that project's open tasks.
+    Both are query params rather than state, so every path through the panel is
+    a plain GET that can be linked, retried and swapped by HTMX.
+    """
+    from main import templates
+    day = datetime.date.today().isoformat()
+    items = _todays_plan(day)
+
+    planned_task_ids = {i.get("task_id") for i in items if i.get("task_id")}
+    pick_projects, pick_tasks, pick_project_title = [], [], ""
+    if pick:
+        if project:
+            pick_project_title = db_scalar(
+                "SELECT title FROM projects WHERE project_id = ?", (project,), default="") or project
+            rows = db_query(
+                f"""SELECT task_id, title, status FROM tasks
+                     WHERE project_id = ? AND {live_task_sql()}
+                     ORDER BY CASE COALESCE(status,'') WHEN 'in_progress' THEN 0 ELSE 1 END,
+                              COALESCE(updated_at, created_at) DESC
+                     LIMIT 25""",
+                (project,), default=[]) or []
+            # Something already on today's list is not offered again — the panel
+            # should never invite a duplicate it will then have to de-duplicate.
+            pick_tasks = [dict(r) for r in rows if r["task_id"] not in planned_task_ids]
+        else:
+            pick_projects = [dict(r) for r in _plan_pick_projects()]
+
+    n_done = sum(1 for i in items if i["_done"])
+    return templates.TemplateResponse(
+        request, "partials/today_plan.html",
+        {"items": items, "n_items": len(items), "n_done": n_done,
+         "day_label": datetime.date.today().strftime("%A %-d %B")
+                      if os.name != "nt" else datetime.date.today().strftime("%A %d %B"),
+         "pick": pick, "pick_projects": pick_projects, "pick_tasks": pick_tasks,
+         "pick_project": project, "pick_project_title": pick_project_title},
+    )
+
+
+@router.post("/api/today/plan/add", response_class=HTMLResponse)
+async def today_plan_add(request: Request, kind: str = Form("task"),
+                         task_id: str = Form(""), project_id: str = Form("")):
+    """Put one project or one task on today. Idempotent per thing per day."""
+    day = datetime.date.today().isoformat()
+    kind = kind if kind in ("task", "project") else "task"
+    if kind == "task" and task_id:
+        already = db_scalar(
+            "SELECT COUNT(*) FROM day_plan WHERE date(start_date)=date(?) "
+            "AND kind='task' AND task_id=?", (day, task_id), default=0) or 0
+        if not already:
+            db_execute(
+                "INSERT INTO day_plan (start_date, kind, task_id, updated_at) "
+                "VALUES (?, 'task', ?, datetime('now'))", (day, task_id))
+    elif kind == "project" and project_id:
+        already = db_scalar(
+            "SELECT COUNT(*) FROM day_plan WHERE date(start_date)=date(?) "
+            "AND kind='project' AND project_id=?", (day, project_id), default=0) or 0
+        if not already:
+            db_execute(
+                "INSERT INTO day_plan (start_date, kind, project_id, updated_at) "
+                "VALUES (?, 'project', ?, datetime('now'))", (day, project_id))
+    return await today_plan(request)
+
+
+@router.post("/api/today/plan/{plan_id}/toggle", response_class=HTMLResponse)
+async def today_plan_toggle(request: Request, plan_id: int):
+    """Complete or un-complete a planned item from Today.
+
+    For a task this writes the TASK's status, not day_plan.done — the Work board
+    and this panel must not be able to disagree about whether something is done.
+    """
+    row = db_query("SELECT kind, task_id, done FROM day_plan WHERE plan_id = ?",
+                   (plan_id,), default=[]) or []
+    if row:
+        r = dict(row[0])
+        if (r.get("kind") or "") == "task" and r.get("task_id"):
+            cur = db_scalar("SELECT status FROM tasks WHERE task_id = ?",
+                            (r["task_id"],), default="") or ""
+            new = "open" if str(cur).strip() in ("done", "cancelled") else "done"
+            db_execute("UPDATE tasks SET status = ?, updated_at = datetime('now') "
+                       "WHERE task_id = ?", (new, r["task_id"]))
+        else:
+            db_execute("UPDATE day_plan SET done = ?, updated_at = datetime('now') "
+                       "WHERE plan_id = ?", (0 if r.get("done") else 1, plan_id))
+    return await today_plan(request)
+
+
+@router.post("/api/today/plan/{plan_id}/tomorrow", response_class=HTMLResponse)
+async def today_plan_tomorrow(request: Request, plan_id: int):
+    """Move a planned item to tomorrow. Moving is not deleting."""
+    tomorrow = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
+    db_execute("UPDATE day_plan SET start_date = ?, end_date = NULL, "
+               "updated_at = datetime('now') WHERE plan_id = ?", (tomorrow, plan_id))
+    return await today_plan(request)
+
+
+@router.post("/api/today/plan/{plan_id}/remove", response_class=HTMLResponse)
+async def today_plan_remove(request: Request, plan_id: int):
+    """Take an item off today's plan. The task itself is untouched."""
+    db_execute("DELETE FROM day_plan WHERE plan_id = ?", (plan_id,))
+    return await today_plan(request)
+
+
 @router.get("/api/partial/today/recent-projects", response_class=HTMLResponse)
 async def today_recent_projects(request: Request):
     """The last three projects that were actually worked on.

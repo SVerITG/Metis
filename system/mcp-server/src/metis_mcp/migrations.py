@@ -81,6 +81,18 @@ MIGRATIONS: list[tuple[str, str, str]] = [
         "ALTER TABLE news_briefs ADD COLUMN published_at TEXT DEFAULT ''",
         "news_briefs",
     ),
+    # ── 2026-09-06: a TASK can be planned onto a day ──
+    # Today could already hold a pinned PROJECT (kind='project') but had no way to
+    # hold one task, so planning a day's work meant either pinning a whole project
+    # or giving the task a due_date. Those are different claims: "I intend to do
+    # this today" is not "this is due today", and 61 open tasks carried no date at
+    # all. kind='task' + task_id keeps intent out of the task's own data, so
+    # unplanning something never edits the task.
+    (
+        "20260906_day_plan_add_task_id",
+        "ALTER TABLE day_plan ADD COLUMN task_id TEXT",
+        "day_plan",
+    ),
     # Future migrations append here. Never modify or delete an existing entry —
     # only add new ones. To revert, write a forward-only "down" migration.
 ]
