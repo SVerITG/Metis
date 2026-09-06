@@ -229,3 +229,24 @@ For `fastLink`, the labelled validation CSV from the small-scale approach serves
 Reference: ASTHO Record Linkage Using R (Parrish, 2024)
 - Deterministic exact match: ~68% linkage rate
 - Probabilistic with manual review: ~96% linkage rate
+
+---
+
+## Closing the loop — mandatory
+
+This skill had no closing protocol, so every Methods Coach run was invisible: the
+agent worked, answered, and left no trace on the Agents tab or in run coverage.
+A specialist whose runs are never recorded cannot accumulate standing preferences,
+which is the whole difference between a specialist and a persona.
+
+At the end of every run:
+
+1. **Log the run** — call `mcp__metis-rc__log_agent_run` with your agent slug
+   (`methods-coach`), a one-line task summary, and the output path if you wrote one.
+   **This is mandatory and must not be skipped.**
+2. **Record a standing preference** — if the researcher stated how they want a method
+   handled ("always report the ICC with its confidence interval"), call
+   `record_decision(decision=..., category=..., agent_slug="methods-coach", context=...)`.
+   This is the highest-value write available to you: it changes what you do next time.
+3. **Write a reflexion** — call `write_reflexion` with what went well, what could
+   improve, and what context was missing.
