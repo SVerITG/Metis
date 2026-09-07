@@ -119,10 +119,7 @@
   <div class="panel u-mb-6 panel--lg focus-done">
     <p class="focus-done-line">That's your day.</p>
     <p class="focus-done-sub">{{ done_today }} finished · nothing else you committed to is left.</p>
-    <div class="u-mt-3">
-      <a class="u-label u-label--accent hov-ink" href="/work"
-         style="letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;">Plan in Work →</a>
-    </div>
+
   </div>
   {% else %}
   {#- The directions are gone. This line used to say "Star a task in Work, or
@@ -130,10 +127,14 @@
       when Today had no way to add anything. There is a box directly above this
       one now, so pointing at another surface is worse than saying nothing —
       it sends the reader away from the control they were looking for. -#}
-  <p class="focus-none u-mb-4">
-    Nothing pinned yet.
-    <a class="u-link hov-ink" href="/work">See everything in Work →</a>
-  </p>
+  {#- NO SECOND LINK TO WORK, AND NO SECOND "nothing here". The Today plan strip
+      sits directly above this panel with its own "Work →" and its own
+      "+ Plan something", so this line was the same offer twice — reported
+      2026-09-07 as "two time the same thing". Worse, the two disagreed: the
+      strip could show a five-day training while this line said nothing was
+      pinned, because they read different stores. This panel speaks only about
+      what IT holds — starred tasks and tasks with a date. -#}
+  <p class="focus-none u-mb-4">Nothing starred, and nothing due.</p>
   {% endif %}
   {#- Everything that is NOT a commitment, counted rather than listed. This is
       what makes finishing possible: the 53 open tasks and 224 due reviews are

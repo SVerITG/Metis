@@ -62,7 +62,13 @@
 
       `hx-trigger="load"` rather than `intersect once`: it is above the fold now,
       so it must be there when the page arrives. -#}
-  {{ sec_label("Tasks by status", tail="DRAG A CARD TO CHANGE WHEN") }}
+  {#- NOT "by status". Three of the four columns are DATE buckets — due today, due
+    this week, no date — and only "in progress" is a status. Calling the board
+    "Tasks by status" made the one control that plans a task by horizon look like
+    a workflow board that belonged on another surface. Reported 2026-09-07:
+    "the board (maybe this one has to go elsewhere)". It should stay; it just has
+    to say what it does. -#}
+{{ sec_label("When you'll do each task", tail="TODAY · THIS WEEK · IN PROGRESS · NO DATE") }}
   <div class="u-mb-5" id="kanban-zone"
        hx-get="/api/partial/work/kanban"
        hx-trigger="load"

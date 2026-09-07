@@ -4947,10 +4947,30 @@ async def today_plan_toggle(request: Request, plan_id: int):
 
 @router.post("/api/today/plan/{plan_id}/tomorrow", response_class=HTMLResponse)
 async def today_plan_tomorrow(request: Request, plan_id: int):
-    """Move a planned item to tomorrow. Moving is not deleting."""
-    tomorrow = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
-    db_execute("UPDATE day_plan SET start_date = ?, end_date = NULL, "
-               "updated_at = datetime('now') WHERE plan_id = ?", (tomorrow, plan_id))
+    """Push a planned item out by a day. Moving is not deleting.
+
+    A RUN MOVES AS A RUN. This used to set end_date = NULL, which silently
+    collapsed a five-day training into a single day the moment its arrow was
+    pressed — the reader would lose four days of a commitment by nudging it. The
+    span's LENGTH is preserved and the whole thing shifts.
+    """
+    row = db_query("SELECT start_date, end_date FROM day_plan WHERE plan_id = ?",
+                   (plan_id,), default=[]) or []
+    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    new_end = None
+    if row:
+        r = dict(row[0])
+        st, en = str(r.get("start_date") or "")[:10], str(r.get("end_date") or "")[:10]
+        if st and en and en > st:
+            try:
+                length = (datetime.date.fromisoformat(en)
+                          - datetime.date.fromisoformat(st)).days
+                new_end = (tomorrow + datetime.timedelta(days=length)).isoformat()
+            except ValueError:
+                new_end = None
+    db_execute("UPDATE day_plan SET start_date = ?, end_date = ?, "
+               "updated_at = datetime('now') WHERE plan_id = ?",
+               (tomorrow.isoformat(), new_end, plan_id))
     return await today_plan(request)
 
 
