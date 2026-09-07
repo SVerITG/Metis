@@ -35,6 +35,12 @@
         {%- if it._chip %}
         <span class="plan-chip{% if it._kind == 'project' %} plan-chip--pin{% endif %}">{{ it._chip }}</span>
         {%- endif %}
+        {#- A run of days is ONE row; only this label changes, so Monday and
+            Thursday of the same training are told apart. -#}
+        {%- if it._day_n > 1 %}
+        <span class="plan-chip plan-chip--run"
+              title="Planned as one run of {{ it._day_n }} days">day {{ it._day_i }} of {{ it._day_n }}</span>
+        {%- endif %}
       </span>
 
       <span class="plan-acts">
@@ -78,10 +84,20 @@
           <span class="plan-pick-t">{{ p.title }}</span>
           <span class="plan-pick-n">{{ p.n_open }} open</span>
         </button>
-        <button type="button" class="plan-pick-whole"
-                title="Plan the project itself, without naming a task"
-                hx-post="/api/today/plan/add"
-                hx-vals='{"kind": "project", "project_id": {{ p.project_id | tojson }}}'>pin</button>
+        {#- "for N days" is the whole reason this control exists: a five-day
+            training is one commitment, not five. Defaults to 1, so the common
+            case needs no thought. -#}
+        <span class="plan-pick-days">
+          <label class="u-hide" for="days-{{ p.project_id }}">Days</label>
+          <input id="days-{{ p.project_id }}" name="days" type="number" min="1" max="60" value="1"
+                 class="plan-days-input" title="How many days does this run for?"
+                 aria-label="Number of days">
+          <button type="button" class="plan-pick-whole"
+                  title="Pin the project to today — set the days box first if it runs longer"
+                  hx-post="/api/today/plan/add"
+                  hx-include="#days-{{ p.project_id }}"
+                  hx-vals='{"kind": "project", "project_id": {{ p.project_id | tojson }}}'>pin</button>
+        </span>
       </div>
       {% endfor %}
     </div>
@@ -106,9 +122,16 @@
     <p class="plan-empty">Every open task here is already on today's list.</p>
     {%- endif %}
     <div class="plan-pick-foot">
-      <button type="button" class="plan-pick-whole"
-              hx-post="/api/today/plan/add"
-              hx-vals='{"kind": "project", "project_id": {{ pick_project | tojson }}}'>Pin the whole project instead</button>
+      <span class="plan-pick-days">
+        <label class="u-hide" for="days-whole">Days</label>
+        <input id="days-whole" name="days" type="number" min="1" max="60" value="1"
+               class="plan-days-input" title="How many days does this run for?"
+               aria-label="Number of days">
+        <button type="button" class="plan-pick-whole"
+                hx-post="/api/today/plan/add"
+                hx-include="#days-whole"
+                hx-vals='{"kind": "project", "project_id": {{ pick_project | tojson }}}'>Pin the whole project for that many days</button>
+      </span>
     </div>
     {%- endif %}
   </div>

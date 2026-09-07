@@ -4743,6 +4743,7 @@ def _todays_plan(day: str) -> list[dict]:
     """
     rows = db_query(
         """SELECT d.plan_id, d.kind, d.done, d.project_id, d.task_id, d.text,
+                  d.start_date, d.end_date,
                   p.title  AS project_title,
                   pt.title AS task_project_title,
                   t.title  AS task_title,
@@ -4785,6 +4786,21 @@ def _todays_plan(day: str) -> list[dict]:
             d["_chip"] = kind if kind != "focus" else ""
             d["_done"] = bool(d.get("done"))
         d["_kind"] = kind
+        # WHICH DAY OF THE RUN THIS IS. A five-day training pinned as one span
+        # would otherwise draw an identical row on all five days, and the reader
+        # cannot tell Monday from Thursday. The span is one row; only the label
+        # changes per day.
+        d["_day_i"] = d["_day_n"] = 0
+        _st, _en = str(d.get("start_date") or "")[:10], str(d.get("end_date") or "")[:10]
+        if _st and _en and _en > _st:
+            try:
+                a = datetime.date.fromisoformat(_st)
+                b = datetime.date.fromisoformat(_en)
+                today_d = datetime.date.fromisoformat(day)
+                d["_day_n"] = (b - a).days + 1
+                d["_day_i"] = (today_d - a).days + 1
+            except ValueError:
+                pass
         out.append(d)
     # Done sinks, but only within the day — a finished item stays visible so the
     # panel reads as a record of the day rather than a shrinking list.
@@ -4851,26 +4867,58 @@ async def today_plan(request: Request, pick: str = "", project: str = ""):
 
 @router.post("/api/today/plan/add", response_class=HTMLResponse)
 async def today_plan_add(request: Request, kind: str = Form("task"),
-                         task_id: str = Form(""), project_id: str = Form("")):
-    """Put one project or one task on today. Idempotent per thing per day."""
+                         task_id: str = Form(""), project_id: str = Form(""),
+                         days: int = Form(1)):
+    """Put one project or one task on today, optionally for a RUN of days.
+
+    `days > 1` writes an end_date, which is what makes a five-day training one row
+    instead of five. The column and /api/plan/create always supported this; the
+    project path simply never sent it, so a project pin was always exactly one day
+    and a multi-day commitment had to be retyped as free text that lost the link
+    back to the project. Fixed 2026-09-07.
+    """
     day = datetime.date.today().isoformat()
     kind = kind if kind in ("task", "project") else "task"
+    try:
+        days = max(1, min(int(days), 60))   # a plan, not a calendar import
+    except (TypeError, ValueError):
+        days = 1
+    end = ((datetime.date.fromisoformat(day) + datetime.timedelta(days=days - 1)).isoformat()
+           if days > 1 else None)
     if kind == "task" and task_id:
-        already = db_scalar(
-            "SELECT COUNT(*) FROM day_plan WHERE date(start_date)=date(?) "
-            "AND kind='task' AND task_id=?", (day, task_id), default=0) or 0
-        if not already:
+        # ALREADY THERE? EXTEND IT, do not skip.
+        #
+        # The guard used to just return, so asking for a five-day run when a
+        # one-day pin already existed did nothing at all — no change, no message.
+        # A control that silently ignores the request is worse than one that
+        # errors. Re-pinning is how you say "actually, this runs longer".
+        prior = db_query(
+            "SELECT plan_id FROM day_plan WHERE date(start_date)=date(?) "
+            "AND kind='task' AND task_id=? LIMIT 1", (day, task_id), default=[]) or []
+        if prior:
+            db_execute("UPDATE day_plan SET end_date=?, updated_at=datetime('now') "
+                       "WHERE plan_id=?", (end, dict(prior[0])["plan_id"]))
+        else:
             db_execute(
-                "INSERT INTO day_plan (start_date, kind, task_id, updated_at) "
-                "VALUES (?, 'task', ?, datetime('now'))", (day, task_id))
+                "INSERT INTO day_plan (start_date, end_date, kind, task_id, updated_at) "
+                "VALUES (?, ?, 'task', ?, datetime('now'))", (day, end, task_id))
     elif kind == "project" and project_id:
-        already = db_scalar(
-            "SELECT COUNT(*) FROM day_plan WHERE date(start_date)=date(?) "
-            "AND kind='project' AND project_id=?", (day, project_id), default=0) or 0
-        if not already:
+        # ALREADY THERE? EXTEND IT, do not skip.
+        #
+        # The guard used to just return, so asking for a five-day run when a
+        # one-day pin already existed did nothing at all — no change, no message.
+        # A control that silently ignores the request is worse than one that
+        # errors. Re-pinning is how you say "actually, this runs longer".
+        prior = db_query(
+            "SELECT plan_id FROM day_plan WHERE date(start_date)=date(?) "
+            "AND kind='project' AND project_id=? LIMIT 1", (day, project_id), default=[]) or []
+        if prior:
+            db_execute("UPDATE day_plan SET end_date=?, updated_at=datetime('now') "
+                       "WHERE plan_id=?", (end, dict(prior[0])["plan_id"]))
+        else:
             db_execute(
-                "INSERT INTO day_plan (start_date, kind, project_id, updated_at) "
-                "VALUES (?, 'project', ?, datetime('now'))", (day, project_id))
+                "INSERT INTO day_plan (start_date, end_date, kind, project_id, updated_at) "
+                "VALUES (?, ?, 'project', ?, datetime('now'))", (day, end, project_id))
     return await today_plan(request)
 
 

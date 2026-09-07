@@ -6609,3 +6609,19 @@ a.shf-row-title:hover { color: var(--m-accent); }
   background: none; border: 0; cursor: pointer; padding: 0;
 }
 .plan-back:hover { text-decoration: underline; }
+
+/* The "also waiting" row is a LIST, not a sentence — the separator is its own
+   element so a conditional item cannot leave a dangling dot, and it is
+   aria-hidden so a screen reader reads the links, not the punctuation. */
+.focus-also-sep { color: var(--m-rule-strong); font-size: 12px; user-select: none; }
+
+/* "for N days" sits with the pin button it belongs to. */
+.plan-pick-days { display: inline-flex; align-items: center; gap: 4px; flex: none; }
+.plan-days-input {
+  width: 3.1em; padding: 2px 4px; text-align: center;
+  font-family: var(--m-mono); font-size: 11px;
+  color: var(--m-text); background: var(--m-surface);
+  border: 1px solid var(--m-rule); border-radius: 2px;
+}
+.plan-days-input:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 1px; }
+.plan-chip--run { background: var(--m-info-wash); color: var(--m-info); }
