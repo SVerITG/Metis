@@ -5370,8 +5370,25 @@ FIELD_PAPERS_SHOWN = 4
 
 
 def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
-    """The week's unjudged news and papers, ranked, plus the totals behind them."""
+    """The week's unjudged news and papers ABOVE THE RELEVANCE FLOOR, plus totals.
+
+    THE WINDOW WAS NEVER THE PROBLEM. Reported 2026-09-08: too many unread items
+    to get through, "only keep the ones from the last week". The box was already
+    windowed to seven days and already excluded anything seen or judged — and it
+    still stood in front of **1,502 news items and 438 papers**, because the
+    scanners bring in 200-350 news rows a day. Only 101 unseen news items were
+    older than a week, so clearing everything before last week would have removed
+    7% of the pile and changed nothing about the experience.
+
+    What makes a week readable is a BAR, not a shorter window. At the calibrated
+    `NEWS_DISPLAY_FLOOR` the same seven days holds 32 news and 22 papers.
+
+    Nothing is deleted and no disinterest is recorded: an item below the floor is
+    still in News and still in the Library, with its relevance intact. It simply
+    stops being counted as work waiting for the reader.
+    """
     since = (datetime.date.today() - datetime.timedelta(days=days)).isoformat()
+    floor = float(NEWS_DISPLAY_FLOOR)
 
     # `reading_stack` is the shared verdict table; a judged item leaves the box
     # whichever verb was used, so a decision never has to be made twice.
@@ -5399,6 +5416,7 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         "       COALESCE(b.relevance, 0) AS rel, COALESCE(b.image_url,'') AS image_url "
         "FROM news_briefs b "
         "WHERE COALESCE(b.brief_date,'') >= ? AND COALESCE(b.seen_at,'') = '' "
+        "  AND COALESCE(b.relevance,0) >= " + str(floor) + " "
         "  AND " + NOT_JUDGED.format(id="b.brief_id") + " "
         # Signal first, relevance second: a 'high' signal is a judgement about
         # the item, relevance only about its distance from a keyword.
@@ -5413,7 +5431,13 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         "       COALESCE(p.relevance, 0) AS rel, COALESCE(p.lane,'field') AS lane, "
         "       COALESCE(p.relevance_note,'') AS why "
         "FROM new_publications p "
+        # PAPERS ARE NO LONGER EXEMPT. The exemption in db.py was explicitly
+        # conditional on volume — "49 unseen against 1,253 news items" — and a
+        # paper is exempt from a firehose filter only while it is not a firehose.
+        # Measured 2026-09-08: 438 unread papers inside one week, nine times the
+        # figure the exemption was written for. The same floor applies.
         "WHERE COALESCE(p.read_at,'') = '' AND COALESCE(p.dismissed_at,'') = '' "
+        "  AND COALESCE(p.relevance,0) >= " + str(floor) + " "
         "  AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
         "  AND " + NOT_JUDGED.format(id="p.id") + " "
         "ORDER BY CASE COALESCE(p.lane,'field') WHEN 'field' THEN 0 ELSE 1 END, "
@@ -5422,11 +5446,14 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
 
     n_news = db_scalar(
         "SELECT COUNT(*) FROM news_briefs b WHERE COALESCE(b.brief_date,'') >= ? "
-        "AND COALESCE(b.seen_at,'') = '' AND " + NOT_JUDGED.format(id="b.brief_id"),
+        "AND COALESCE(b.seen_at,'') = '' "
+        "AND COALESCE(b.relevance,0) >= " + str(floor) + " "
+        "AND " + NOT_JUDGED.format(id="b.brief_id"),
         (since, "news"), default=0) or 0
     n_papers = db_scalar(
         "SELECT COUNT(*) FROM new_publications p WHERE COALESCE(p.read_at,'') = '' "
         "AND COALESCE(p.dismissed_at,'') = '' "
+        "AND COALESCE(p.relevance,0) >= " + str(floor) + " "
         "AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
         "AND " + NOT_JUDGED.format(id="p.id"),
         (since, "paper"), default=0) or 0
@@ -5441,7 +5468,22 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
     return {
         "news": news, "papers": papers,
         "n_news": n_news, "n_papers": n_papers,
-        "days": days, "since": since,
+        "days": days, "since": since, "floor": floor,
+        # THE DENOMINATOR THE FLOOR HID. A filtered count with no sight of what
+        # it filtered is a number that cannot be argued with.
+        # THE DENOMINATOR MUST DIFFER FROM THE NUMERATOR BY EXACTLY ONE FILTER —
+        # the floor. Counting merely "unseen" here would fold the judged items in
+        # too, so "1 of 1502" would compare two different populations and the
+        # ratio would mean nothing.
+        "n_news_all": db_scalar(
+            "SELECT COUNT(*) FROM news_briefs b WHERE COALESCE(b.brief_date,'') >= ? "
+            "AND COALESCE(b.seen_at,'') = '' "
+            "AND " + NOT_JUDGED.format(id="b.brief_id"), (since, "news"), default=0) or 0,
+        "n_papers_all": db_scalar(
+            "SELECT COUNT(*) FROM new_publications p WHERE COALESCE(p.read_at,'') = '' "
+            "AND COALESCE(p.dismissed_at,'') = '' "
+            "AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
+            "AND " + NOT_JUDGED.format(id="p.id"), (since, "paper"), default=0) or 0,
         # What the digest is standing in front of. Never a count without the
         # denominator it came from.
         "more_news": max(0, n_news - len(news)),

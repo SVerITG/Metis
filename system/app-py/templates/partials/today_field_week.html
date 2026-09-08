@@ -14,9 +14,16 @@
       <span class="fw-eyebrow">In your field</span>
       <h3 class="fw-title">The last {{ days }} days</h3>
     </div>
+    {#- SAY WHAT WAS FILTERED. These counts are above the relevance floor, and a
+        filtered number with no sight of the pile it came from is a number the
+        reader cannot argue with. The week held 1,502 news and 438 papers when
+        the floor went in; showing both figures is what makes the small one
+        trustworthy. -#}
     <div class="fw-tally">
-      <span class="fw-tally-cell"><b>{{ n_news }}</b> news</span>
-      <span class="fw-tally-cell"><b>{{ n_papers }}</b> papers</span>
+      <span class="fw-tally-cell"
+            title="Above your relevance floor of {{ '%.2f'|format(floor) }} — {{ n_news_all }} unseen in total this week. Nothing is deleted; the rest is still on the News surface."><b>{{ n_news }}</b> news{% if n_news_all > n_news %} <span class="fw-of">of {{ n_news_all }}</span>{% endif %}</span>
+      <span class="fw-tally-cell"
+            title="Above your relevance floor of {{ '%.2f'|format(floor) }} — {{ n_papers_all }} unread in total this week. Nothing is deleted; the rest is still in your Library."><b>{{ n_papers }}</b> papers{% if n_papers_all > n_papers %} <span class="fw-of">of {{ n_papers_all }}</span>{% endif %}</span>
       <span class="fw-tally-sep"></span>
       <a class="fw-all" href="/news">News surface →</a>
       <a class="fw-all" href="/knowledge">Library &rarr;</a>
@@ -25,7 +32,7 @@
   </header>
 
   {% if not news and not papers %}
-  <p class="fw-empty">Nothing unjudged in the last {{ days }} days. Everything that
+  <p class="fw-empty">Nothing above your relevance floor in the last {{ days }} days.{% if n_news_all or n_papers_all %} ({{ n_news_all }} news and {{ n_papers_all }} papers came in below it — they are on the News surface and in your Library, not discarded.){% endif %} Everything that
      arrived has been read, stacked or declined.</p>
   {% endif %}
 
