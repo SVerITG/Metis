@@ -22,7 +22,7 @@
 </p>
 
 <p align="center">
-  🟢 <strong>Actively developed.</strong> &nbsp;Latest: fact-checking that actually checks · focus surfaces you add yourself · specialists that remember your standing decisions. &nbsp;<a href="#changelog"><strong>See what's new ↓</strong></a>
+  🟢 <strong>Actively developed.</strong> &nbsp;Latest: plan a run of days on one row · a Work view ordered by what you actually touched · and a month of controls that rendered perfectly and did nothing, found and fixed. &nbsp;<a href="#changelog"><strong>See what's new ↓</strong></a>
 </p>
 
 <br>
@@ -160,7 +160,7 @@ Metis is **not a separate app you log into.** It's a small service that runs qui
 2. **You talk to Metis through Claude**, two ways:
    - **Claude Desktop** (easiest): open it and pick a **Metis prompt** (e.g. *Metis*, *Metis Doctor*) from the prompt menu — or just ask.
    - **Claude Code** (terminal): type **`/metis`** followed by your request.
-3. **You ask in plain language.** Metis works out which of its 30+ specialists should handle it, does the work using *your* library and memory, and answers — citing sources.
+3. **You ask in plain language.** Metis works out which of its 33 specialists should handle it, does the work using *your* library and memory, and answers — citing sources.
 
 That's it. There's nothing to learn before you start; the dashboard is optional visibility *on top* of all this.
 
@@ -188,7 +188,7 @@ This is genuinely new ground. The individual components — local language model
 | **📊 With the dashboard** | Full visibility across your research life — papers, ideas, meetings, tasks, projects, all connected. Built for *cross-pollination* (ideas linking to literature) and *brain off-loading* (tracking leaving your head, entering the system). | Researchers who want a complete research operating environment |
 | **🌐 Metis OS** | Connects to email, calendar, data systems, and institutional infrastructure — a unified intelligence layer for your entire working environment. | The longer vision. Still in development. |
 
-> **Where things stand today:** The MCP server, 30+ agents, and the 9-tab dashboard are fully operational and used daily. The one-click installer and the pre-loaded domain knowledge layer are still being refined. This is a working system — not vaporware — but it is also not finished. If something breaks, please open an issue. That feedback shapes what gets built next.
+> **Where things stand today:** The MCP server, 33 agents, and the 9-tab dashboard are fully operational and used daily. The one-click installer and the pre-loaded domain knowledge layer are still being refined. This is a working system — not vaporware — but it is also not finished. If something breaks, please open an issue. That feedback shapes what gets built next.
 
 ---
 
@@ -344,7 +344,7 @@ claude mcp add metis-rc ~/.local/share/metis-mcp/run.sh
 | **Data protection** | Six security layers + the `/safe-analysis` workflow. Sensitive data is detected and held back before it reaches the AI, and the recommended pattern keeps raw data on your machine entirely — you share only derived metadata. |
 | **Cross-pollination** | Every idea, paper, meeting, and task is automatically connected to everything else in your research universe. Metis surfaces links across time — a paper from last year, a meeting note from March, a question you logged at a conference — without you searching for any of it. |
 | **Token tracking** | Every agent run shows exactly what it cost — which specialist was used, how many tokens, what model. The dashboard Today tab has a live token pulse so you always know your daily usage. Most daily tasks stay under a few cents. |
-| **Tool subset loading** | Metis registers 210+ MCP tools, but exposing all of them to Claude on every session wastes context. By default, ~80 everyday tools load immediately; the rest are retrieved on demand via `find_tools()` / `load_tool_group()` (progressive disclosure). Each tool definition costs tokens; loading fewer means more room for actual work and lower per-session cost. Disable with `METIS_TOOL_SEARCH=0` to load all tools. |
+| **Tool subset loading** | Metis registers **277** MCP tools, but exposing all of them to Claude on every session wastes context. By default, ~80 everyday tools load immediately; the rest are retrieved on demand via `find_tools()` / `load_tool_group()` (progressive disclosure). Each tool definition costs tokens; loading fewer means more room for actual work and lower per-session cost. Disable with `METIS_TOOL_SEARCH=0` to load all tools. |
 | **Metis evolves — you don't have to** | Every week, Metis reviews its own session logs, identifies where it underperformed, and drafts behaviour improvements. You approve or reject them — nothing changes without your sign-off. New capabilities are folded in the same way. You focus on your research; Metis keeps itself sharp. |
 | **Grows with you** | Every agent run adds to your profile. A question asked after six months of use gets a meaningfully better answer than the same question on day one — not because the AI changed, but because Metis knows you better. |
 
@@ -423,7 +423,7 @@ Course topic defined
 
 ### The Dashboard
 
-The **9-tab dashboard** runs locally at `http://127.0.0.1:8080`. No account, no cloud, no subscription.
+The **9-tab dashboard** runs on your own machine at `http://127.0.0.1:8080` — no hosted service, no third-party account, and your papers, notes and database stay on your disk. The *thinking* happens through Claude, so you bring your own Claude subscription or an API key (see [How Metis is powered](#how-metis-is-powered--you-choose-you-wont-burn-api-tokens-just-by-using-it)).
 
 ![Metis dashboard — Today tab](docs/screenshots/dashboard-today.png)
 
@@ -538,11 +538,11 @@ flowchart LR
     U([Researcher])
     subgraph Harness["AI Harness (Claude Code / Desktop)"]
         METIS[Metis\nrouter agent]
-        AGENTS[Specialist agents\n30+ agents]
+        AGENTS[Specialist agents\n33 agents]
         WATCHERS{{Watchers\nData Guardian · Cybersecurity}}
     end
     subgraph Platform
-        MCP[MCP Server\n210+ tools\nFastMCP]
+        MCP[MCP Server\n277 tools\nFastMCP]
         DASH[Dashboard\nFastAPI + HTMX]
         DB[(SQLite\nWAL mode)]
     end
@@ -791,7 +791,7 @@ Metis ships in distinct editions — a domain-agnostic base shell, and domain pa
 | Repository | Status | What it is |
 |---|---|---|
 | **[Metis](https://github.com/SVerITG/Metis)** | ✅ Live (v1.0) | Domain-agnostic base shell. Full architecture, no domain content. Clone this to build your own edition. |
-| **[Metis_PH](https://github.com/SVerITG/Metis_PH)** | ✅ Live (v1.0, this repo) | Public Health & Epidemiology — MCP server, 30+ agents, dashboard, knowledge layer |
+| **[Metis_PH](https://github.com/SVerITG/Metis_PH)** | ✅ Live (v1.0, this repo) | Public Health & Epidemiology — MCP server, 33 agents, dashboard, knowledge layer |
 | **[Metis_BM](https://github.com/SVerITG/Metis_BM)** | 🧬 Planned | Biomedical Sciences |
 | **[Metis_CL](https://github.com/SVerITG/Metis_CL)** | 🏥 Planned | Clinical Sciences |
 | **Metis [Community]** | 🌍 Open | Domain packs for other research fields — contributions welcome |
@@ -801,7 +801,7 @@ Metis ships in distinct editions — a domain-agnostic base shell, and domain pa
 
 > **Want to build a domain pack?** Fork `Metis`, add your field's knowledge library, agents, and RSS feeds, and open a PR.
 
-### Course Packages (Coming Soon)
+### Course Packages
 
 Standalone course packages you can drop into any Metis installation:
 
@@ -809,7 +809,7 @@ Standalone course packages you can drop into any Metis installation:
 |---|---|
 | **Sampling Strategies** | Probability and non-probability sampling, sample size, complex survey designs, weighted estimation |
 | **Spatial Epidemiology** | Spatial autocorrelation, kernel density, SaTScan, LISA, disease mapping in R and GeoDa |
-| **Genomic Surveillance** | Pathogen sequencing in public health, phylogenetics, WGS pipelines, Nextstrain |
+| **Genomic Surveillance** ✅ *shipped* | Pathogen sequencing in public health, phylogenetics, WGS pipelines, Nextstrain — 22 lessons, built backwards from a flagship paper so the lessons decode something real |
 
 Open an issue with label `course-package` to pilot or contribute.
 
@@ -817,14 +817,14 @@ Open an issue with label `course-package` to pilot or contribute.
 
 | Area | Status |
 |---|---|
-| MCP server (210+ tools) | ✅ Operational, used daily |
-| 30+ specialist agents | ✅ Operational, used daily |
+| MCP server (277 tools) | ✅ Operational, used daily — ~80 load per session, the rest on demand |
+| 33 specialist agents | ✅ Operational — each a dispatchable subagent with its own bound model |
 | 9-tab dashboard | ✅ Operational, some features in active development |
 | Windows .exe installer | 🔧 In refinement |
 | Docker images | ✅ Test matrix working |
 | Domain knowledge layer (Metis_PH) | 🔧 Actively being expanded |
-| Automated daily tasks (APScheduler) | 📋 Next |
-| Test suite | 📋 Next |
+| Automated daily tasks (APScheduler) | ✅ Operational — 22 scheduled jobs |
+| Test suite | ✅ In place — 54 files; a deterministic floor of promise, clickthrough, orchestration and security harnesses |
 | Telegram capture bot | 📋 Planned |
 | Metis OS (calendar, email integration) | 🌐 Future vision |
 
@@ -865,7 +865,27 @@ key journals + RSS feeds · specialist agents · a domain ontology · a curated 
 
 ## Changelog
 
-> **Metis is under active development** — see the latest below. (Recent: verification with a hard gate on artifacts and a denominator on every report, focus surfaces you compose yourself, and specialists that carry your standing decisions.)
+> **Metis is under active development** — see the latest below. (Recent: a month spent on the gap between *rendered* and *working* — 172 controls that drew correctly and did nothing, a search that had never worked, a panel that spent money every time it was opened, and a test harness that reported the opposite of the truth.)
+
+### September 2026
+
+*A month spent almost entirely on the gap between **rendered** and **working**. Every item
+below looked fine on screen.*
+
+| What changed |
+|---|
+| **172 controls drew perfectly and did nothing** — `{{ x \| tojson }}` placed inside a **double-quoted** HTML attribute is broken markup: the filter escapes `<`, `>`, `&` and `'` — deliberately *not* `"`, because it is built for single-quoted attributes — so the first argument closed the attribute and everything after it became junk. The button rendered, looked right, and could not fire. It only bites *string* values (an integer id renders bare and is harmless), which is why the same line worked on one panel and failed on another depending on the column type. Changing a project's category was impossible; mark-done and delete were dead on **every** task row. **The July entry below reported this fixed — it came back in a different disguise.** It is now detected on the *rendered page*, which is the only place it is visible: `grep -cE 'onclick="[a-zA-Z]+\([^")]*"'`. |
+| **Semantic search had never worked from the dashboard** — queries were embedded with the *document* prefix and never normalised, so the ranking was noise wearing the costume of relevance. Duplicate literature records were collapsed in the same pass (3,084 rows down to 1,099 — 64% were duplicates), and 2,282 papers that had never been triaged turned out to be unreachable from any screen. |
+| **Every write in the system failed for five minutes after each restart** — the news scan at boot held a single write transaction open across every feed fetch, so no write anywhere in Metis could succeed until it finished. Diagnosed from kernel lock records rather than from the symptom, which had been misread for weeks. |
+| **Two of the three Work views could never be shown** — the class hiding them was `!important`, so the buttons that switched view did nothing at all. Only the default view had ever been reachable. |
+| **Four rival counts of one backlog, reduced to one author** — the same number was computed in four places and they disagreed; 34 cancelled tasks were being drawn as live work. A quantity computed in several places drifts, so the fix asserts one *author*, not one answer. |
+| **A panel that spent money every time you opened it** — one surface made **nine paid API calls and took 18.5 seconds on every view**, because a themed summary was computed on the render path. It measured as instant in every test, because a test process has no API key and silently fell back to word-counting. Now cached, with the model pass moved behind a control that names its cost. A page that draws a panel must not spend money or block on a network round-trip. |
+| **The test harness reported the opposite of the truth** — it announced *"0 of 33 agents have ever run — routing is broken"* while its own report, four sections earlier, counted 733 runs. It was reading a database path retired three months before, and its loader degraded to an empty result instead of failing. 34 of 35 agents had in fact run. A check that cries wolf is worse than no check, so a harness now fails when its own inputs are missing. |
+| **Unattended recovery never ran on battery** — the task that restarts the dashboard had been installed by a fallback path that defaults to *do not start on batteries*, with no command-line switch to change it. On a laptop that meant no supervision for most of its life, while every status field read healthy. The tell was the gap between last-run and the repetition interval, not any error. |
+| **Plan a run of days on one row** — a project or a single task can be planned onto a day, and a multi-day commitment (a five-day training, a field week) is **one** entry that says which day of the run today is. A plan is an *intention*, so it never writes a deadline onto the work itself — and re-planning extends the run instead of silently ignoring you. |
+| **The Work list answers what you have actually touched** — the default view is ordered by most recent work, never-opened last, instead of by a manual order nobody had ever set. Manual arrangement moved to the per-category views, where it is visible; project categories became things you can create, rename, merge and reorder; and a project's launcher row now reflects what that project can actually open. |
+| **A shelf is a reason for keeping, not a topic label** — library categories gained a *kind* (purpose, tracking, attachment) that changes what the shelf does, rather than being decoration. |
+| **Release hygiene, twice** — the base-shell builder published the **unstripped** edition after its own identity scrub had failed, because a shell idiom hid a fatal error; and a branch pushed directly bypassed the scrub entirely. Both are closed. Identity was also removed from the working tree and from what two public repositories had already published. |
 
 ### August 2026
 
@@ -880,7 +900,7 @@ key journals + RSS feeds · specialist agents · a domain ontology · a curated 
 | **Ten silent faults from working across two computers** — the code syncs over OneDrive; the virtual environment, the database and the model cache do not. That gap produced ten failures with one cause: an embedding cache pinned to a path the model had never been copied to (fixed by treating a cache location as a *search path*, not a constant), a stale-install check that compared timestamps instead of contents, two owners of the same table definition, a `);` inside a SQL comment that silently truncated a table and dropped its columns, and a restart script that waited on health instead of on the process actually restarting — which alone caused three false diagnoses. |
 | **A briefing that doesn't repeat itself** — the daily brief rotates instead of restating yesterday, News was rebuilt around what *happened* (papers belong in the library, never the news feed), and research interests split into separate axes so a feed can be specific without being narrow. |
 | **The persona grows from what it knows** — presence now comes from recalled context rather than announced framing, plus a learned-lesson ledger and `/metis-review` for checking whether Metis is still pointed at the right things. |
-| **Backgrounds became portable packs** — see, switch, rebuild and finally *remove* a knowledge layer; point a layer at an external library (206 papers were unsearchable); pull institutional PDFs in through Zotero; and a new `ph-foundations` textbook layer, where the curriculum decides the pack rather than the reverse. Packs carry every folder their layer covers, and PH / methods / NTD ship separately. |
+| **Backgrounds became portable packs** — see, switch, rebuild and finally *remove* a knowledge layer; point a layer at an external library (206 papers were unsearchable); pull institutional PDFs in through Zotero; and a new textbook-derived foundations layer, where the curriculum decides the pack rather than the reverse. Packs carry every folder their layer covers, and domain, methods and topic packs ship separately. |
 | **Office and a plain JSON API** — a PowerPoint/Excel taskpane over an HTTPS bridge, decks that flow back into Metis on their own and honour your own template, and a JSON API over the brain for clients that are not Claude. |
 | **Memory you can read and close** — procedural memory was a number on a card; it is now readable. Decisions can be *closed* instead of restated forever. Notes search reaches both note stores. A document that lands now indexes itself. Metis volunteers a recorded procedure and remembers your answer. |
 | **A calendar you can plan in** — day, week and month views, with a course's remaining lessons layable into the plan. |
