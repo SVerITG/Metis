@@ -431,7 +431,10 @@ def _topic_literature_search(days: int = 7, per_topic: int = 15) -> int:
             return 0.0
         try:
             text = (title + " " + (abstract or ""))[:500]
-            return round(float(_score_one([text], _centroid)[0]), 4)
+            # "paper": everything scored here is written into new_publications,
+            # so it is judged against what the reader has kept and declined among
+            # PAPERS, never among news. The two tastes are learned separately.
+            return round(float(_score_one([text], _centroid, "paper")[0]), 4)
         except Exception:
             return 0.0
 

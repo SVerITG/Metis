@@ -916,7 +916,12 @@ def _scan_feeds(feeds, max_per_feed: int = 10) -> dict:
                 if not pending:
                     continue
                 # One batched embedding call per feed (efficient).
-                sims = (_score_batch([f"{t}. {s}" for t, s, _, _, _ in pending], centroid)
+                # The feed already declares whether it carries papers or news;
+                # pass it through so each item is judged against the reader's
+                # verdicts on ITS kind. A feed kind Metis has not learned yet
+                # simply gets no adjustment.
+                sims = (_score_batch([f"{t}. {s}" for t, s, _, _, _ in pending],
+                                     centroid, "paper" if kind == "paper" else "news")
                         if _score_batch else [0.0] * len(pending))
                 for (title, summary_raw, link, feed_img, published_at), sim in zip(pending, sims):
                     # Classify/score on the RAW text (an injection banner must not

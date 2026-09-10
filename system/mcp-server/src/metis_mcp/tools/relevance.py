@@ -19,6 +19,13 @@ from pathlib import Path
 
 from metis_mcp.config import paths
 
+# `_log` was USED in three places and DEFINED in none — and all three uses sit
+# inside exception handlers, so every recoverable condition here raised a
+# NameError out of its own recovery path instead of logging and carrying on.
+# A broken handler turns a soft failure into a hard one, which is the worse
+# of the two failures it was written to prevent. Found 2026-09-10.
+_log = logging.getLogger("metis.relevance")
+
 _CACHE = paths.db.parent / "interest_centroid.json"
 _TTL = 86400  # rebuild the profile at most once per day
 
@@ -336,6 +343,127 @@ def _corpus_bands(con: sqlite3.Connection) -> list[tuple[str, str]]:
     return [(b, t) for t, b in best.items()]
 
 
+# ── LEARNED FEEDBACK, KEPT SEPARATE PER KIND ─────────────────────────────────
+# Until 2026-09-08 the reader's own judgements changed nothing. Relevance was
+# scored purely against declared anchors (projects, courses, fields, topics), and
+# `reading_stack` — where every decline, keep and "later" lands — was read by
+# exactly one module, the stack tool itself. So triaging a thousand headlines
+# filed them and left next week's ranking identical. db.py had promised "the
+# decline-feedback band in relevance.py"; this is that band.
+#
+# NEWS AND PAPERS ARE LEARNED SEPARATELY, because they are judged by different
+# standards and the reader said so: a headline about a funding row may be worth
+# declining while a methods paper on the same subject is worth keeping. Mixing
+# them would average two different tastes into one blunt one.
+#
+# WHY MODEST WEIGHTS. Feedback REFINES the declared profile, it does not replace
+# it. A decline is one judgement made in one second, often about timing or
+# tone rather than subject; the anchors are what the reader has actually chosen
+# to work on. So the adjustment is capped, and a side with too few examples is
+# ignored rather than trusted — a centroid built from two titles is noise with a
+# confident shape.
+FEEDBACK_PENALTY = 0.18   # how much resembling what you declined costs
+FEEDBACK_BONUS   = 0.12   # how much resembling what you kept is worth
+FEEDBACK_MIN_N   = 5      # fewer examples than this on a side: ignore that side
+# Most recent N verdicts per side. Recency matters more than completeness: taste
+# moves, and an opinion from March should not outvote one from last week.
+FEEDBACK_MAX_VECTORS = 60
+FEEDBACK_KINDS   = ("news", "paper")
+
+# Which verbs mean what. 'later' is deliberately NOT positive: postponing is not
+# endorsing, and treating it as a keep would teach the profile that anything
+# vaguely interesting deserves promotion.
+_NEG_STATES = ("declined", "dismissed")
+_POS_STATES = ("read", "saved")
+
+
+def _feedback_texts(con: sqlite3.Connection) -> dict:
+    """{kind: {"pos": [titles], "neg": [titles]}} from the reader's own verdicts.
+
+    Two stores, because the two surfaces record decisions in different places:
+    `reading_stack` holds the verdicts pressed on Today and the News surface,
+    and `new_publications` carries `added_at` / `dismissed_at` from the library
+    queue. Both are the same signal and both count.
+    """
+    out = {k: {"pos": [], "neg": []} for k in FEEDBACK_KINDS}
+
+    def _rows(sql, params=()):
+        try:
+            return con.execute(sql, params).fetchall()
+        except Exception:
+            return []
+
+    ph_neg = ",".join("?" * len(_NEG_STATES))
+    ph_pos = ",".join("?" * len(_POS_STATES))
+    for kind in FEEDBACK_KINDS:
+        for state_ph, states, bucket in ((ph_neg, _NEG_STATES, "neg"),
+                                         (ph_pos, _POS_STATES, "pos")):
+            for r in _rows(
+                    f"SELECT title FROM reading_stack WHERE kind = ? "
+                    f"AND state IN ({state_ph}) AND COALESCE(title,'') <> '' "
+                    f"ORDER BY state_at DESC LIMIT 300",
+                    (kind, *states)):
+                out[kind][bucket].append(str(r[0]))
+
+    # The library queue's own decisions are about papers.
+    for r in _rows("SELECT title FROM new_publications WHERE COALESCE(dismissed_at,'') <> '' "
+                   "AND COALESCE(title,'') <> '' ORDER BY dismissed_at DESC LIMIT 300"):
+        out["paper"]["neg"].append(str(r[0]))
+    for r in _rows("SELECT title FROM new_publications WHERE COALESCE(added_at,'') <> '' "
+                   "AND COALESCE(title,'') <> '' ORDER BY added_at DESC LIMIT 300"):
+        out["paper"]["pos"].append(str(r[0]))
+    return out
+
+
+def build_feedback(con: sqlite3.Connection) -> dict:
+    """Per-kind vectors of what the reader kept and declined — INDIVIDUALLY.
+
+    Returns {kind: {"pos": [vec], "neg": [vec], "n_pos": int, "n_neg": int}}.
+    A side below FEEDBACK_MIN_N keeps its count (so the profile is auditable and
+    the reader can be told it is still learning) but carries no vectors, so it
+    cannot influence a score.
+
+    NOT A CENTROID, and this file already explains why. `build_profile` scores
+    anchors on max-similarity because "a centroid can separate a discipline from
+    obvious noise but not from the enormous middle ground of competent writing
+    inside that discipline". A centroid of declines has exactly that flaw: it
+    describes the reader's whole field, so it penalises everything in it evenly.
+    Measured before the change — declines and keeps both fell ~0.04 and the gap
+    between them barely moved.
+
+    The question worth asking is the same one the anchors ask: **is this like ANY
+    ONE thing you declined?** A story that closely resembles one specific
+    declined item should lose ground; a story that merely shares its discipline
+    should not.
+    """
+    fb = _feedback_texts(con)
+    result: dict = {}
+    try:
+        from metis_mcp.embeddings import embed
+        import numpy as np
+    except Exception:
+        return {k: {"pos": None, "neg": None,
+                    "n_pos": len(v["pos"]), "n_neg": len(v["neg"])}
+                for k, v in fb.items()}
+
+    for kind, sides in fb.items():
+        entry = {"pos": None, "neg": None,
+                 "n_pos": len(sides["pos"]), "n_neg": len(sides["neg"])}
+        for side in ("pos", "neg"):
+            texts = sides[side][:FEEDBACK_MAX_VECTORS]
+            if len(texts) < FEEDBACK_MIN_N:
+                continue
+            try:
+                V = embed([t[:300] for t in texts],
+                          prefix="search_document: ", normalize=True)
+                entry[side] = [[float(x) for x in v] for v in V]
+            except Exception:
+                _log.warning("relevance: could not embed %s/%s feedback",
+                             kind, side, exc_info=True)
+        result[kind] = entry
+    return result
+
+
 def build_profile(con: sqlite3.Connection, force: bool = False) -> dict | None:
     """The interest profile as a CENTROID **and** the individual vectors behind it.
 
@@ -382,6 +510,12 @@ def build_profile(con: sqlite3.Connection, force: bool = False) -> dict | None:
         for b, _t in banded:
             tally[b] = tally.get(b, 0) + 1
         profile = {"centroid": centroid,
+                   # What the reader's own verdicts have taught, per kind. Cached
+                   # with the profile so scoring never pays for it, and rebuilt on
+                   # the same daily TTL — a decline made this morning counts from
+                   # the next rebuild, not instantly, which is the right latency
+                   # for a taste rather than a switch.
+                   "feedback": build_feedback(con),
                    "anchors": [list(map(float, v)) for v in vectors],
                    # Parallel to `anchors` by index. Stored rather than
                    # recomputed so a cached profile keeps the weights it was
@@ -400,13 +534,19 @@ def build_profile(con: sqlite3.Connection, force: bool = False) -> dict | None:
         return {"centroid": centroid, "anchors": [], "weights": []} if centroid else None
 
 
-def score_batch_profile(texts: list[str], profile: dict | None) -> list[float]:
-    """0.75 · closest single anchor + 0.25 · centroid fit.
+def score_batch_profile(texts: list[str], profile: dict | None,
+                       kind: str = "") -> list[float]:
+    """0.75 · closest single anchor + 0.25 · centroid fit, then the reader's own verdicts.
 
     The weights say what the evidence is worth: a strong match to one real
     project or note is the signal; a general resemblance to the whole corpus is
     a weak prior. With anchors missing this degrades to the centroid alone,
     which is the previous behaviour rather than a failure.
+
+    `kind` is "news" or "paper" and selects which learned feedback applies. It
+    defaults to empty, which applies NONE — so every existing caller keeps its
+    old behaviour until it says what it is scoring. Passing a kind Metis has not
+    learned yet is also harmless: an unlearned side carries no vector.
     """
     if not profile or not texts:
         return [0.0] * len(texts)
@@ -433,10 +573,47 @@ def score_batch_profile(texts: list[str], profile: dict | None) -> list[float]:
             best = (v @ A.T).max(axis=1)
         if centroid:
             gen = v @ np.array(centroid)
-            return [float(0.75 * b + 0.25 * g) for b, g in zip(best, gen)]
-        return [float(b) for b in best]
+            base = [0.75 * b + 0.25 * g for b, g in zip(best, gen)]
+        else:
+            base = [float(b) for b in best]
+        return _apply_feedback(base, v, profile, kind)
     except Exception:
         return [0.0] * len(texts)
+
+
+def _apply_feedback(base: list, v, profile: dict, kind: str) -> list[float]:
+    """Nudge each score by how much it resembles what this reader kept or declined.
+
+    Deliberately a NUDGE. The declared anchors are what the reader chose to work
+    on; a decline is one judgement made in a second, often about timing or tone
+    rather than subject. So feedback can move a score by at most
+    FEEDBACK_PENALTY + FEEDBACK_BONUS, never invert it, and the result is clamped
+    to [0, 1] because a negative relevance would sort below "no idea" and every
+    caller treats 0.0 as unknown.
+
+    Similarity to a centroid of normalised vectors is already in [-1, 1]; the
+    max(0, ...) keeps a merely-unrelated item from earning a *bonus* for being
+    unlike what you declined, which would reward noise.
+    """
+    fb = ((profile or {}).get("feedback") or {}).get(kind or "", None)
+    if not fb:
+        return [float(min(1.0, max(0.0, b))) for b in base]
+    try:
+        import numpy as np
+        out = list(base)
+        neg, pos = fb.get("neg"), fb.get("pos")
+        # MAX, not mean — the closest single verdict decides, exactly as the
+        # anchors do. Similarity to unit vectors is in [-1, 1]; max(0, ...) stops
+        # an unrelated item earning a bonus merely for being unlike your declines.
+        if neg:
+            d = (v @ np.array(neg).T).max(axis=1)
+            out = [o - FEEDBACK_PENALTY * float(max(0.0, x)) for o, x in zip(out, d)]
+        if pos:
+            k = (v @ np.array(pos).T).max(axis=1)
+            out = [o + FEEDBACK_BONUS * float(max(0.0, x)) for o, x in zip(out, k)]
+        return [float(min(1.0, max(0.0, o))) for o in out]
+    except Exception:
+        return [float(min(1.0, max(0.0, b))) for b in base]
 
 
 def score_batch(texts: list[str], centroid: list[float] | None) -> list[float]:

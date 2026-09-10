@@ -420,3 +420,56 @@ async def reading_stack_add(title: str, kind: str = "news", item_id: str = "",
         f"**{state}** — {r.get('title', title)[:120]}"
         + (f"\ntags: {r['tags']}" if r.get("tags") else "")
         + f"\n\n{c['later']} to read · {c['saved']} saved."))]
+
+
+@app.tool()
+async def show_learned_preferences() -> list[TextContent]:
+    """What your keeps and declines have taught Metis — separately for news and papers.
+
+    Added 2026-09-10, when the feedback loop was finally wired. Until then every
+    verdict was filed and none of it changed a ranking, so this tool exists as
+    much to make the learning *auditable* as to report it: a preference model you
+    cannot inspect is one you cannot correct.
+    """
+    con = connect()
+    con.row_factory = None
+    lines = ["**What your verdicts have taught me**", ""]
+    try:
+        from metis_mcp.tools.relevance import (
+            FEEDBACK_MIN_N, FEEDBACK_PENALTY, FEEDBACK_BONUS, _feedback_texts,
+        )
+    except Exception as exc:
+        return [TextContent(type="text", text=f"Could not read the preference model: {exc}")]
+
+    fb = _feedback_texts(con)
+    label = {"news": "News", "paper": "Papers"}
+    for kind in ("news", "paper"):
+        sides = fb.get(kind) or {"pos": [], "neg": []}
+        npos, nneg = len(sides["pos"]), len(sides["neg"])
+        lines.append(f"### {label[kind]}")
+        # Say plainly whether a side is actually in use. "Still learning" is the
+        # honest description of a side below the minimum, and it tells the reader
+        # exactly what would change it.
+        for side, n, verb in (("neg", nneg, "declined"), ("pos", npos, "kept")):
+            if n >= FEEDBACK_MIN_N:
+                lines.append(f"- **{n} {verb}** — in use, ranking items like these "
+                             f"{'down' if side == 'neg' else 'up'}.")
+            else:
+                lines.append(f"- **{n} {verb}** — still learning; "
+                             f"{FEEDBACK_MIN_N - n} more and I start using it.")
+        for side, verb in (("neg", "declined"), ("pos", "kept")):
+            ex = sides[side][:3]
+            if ex:
+                lines.append(f"  - most recently {verb}: "
+                             + "; ".join(t[:70] for t in ex))
+        lines.append("")
+
+    lines += [
+        f"A verdict moves a score by at most {FEEDBACK_PENALTY:.2f} down or "
+        f"{FEEDBACK_BONUS:.2f} up, and only when something closely resembles one "
+        "specific thing you judged — not merely because it is in your field.",
+        "",
+        "News and papers are learned **separately**: declining a headline never "
+        "lowers a paper on the same subject.",
+    ]
+    return [TextContent(type="text", text="\n".join(lines))]
