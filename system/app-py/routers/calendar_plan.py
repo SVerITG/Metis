@@ -504,7 +504,8 @@ def _projects_rail() -> str:
     ) or []
     chips = "".join(
         f'<div draggable="true" ondragstart="calDragProject(event,\'{_esc(r["project_id"])}\')" '
-        f'title="Drag onto a day to make it that day\'s focus" '
+        f'title="Drag onto a day to make it that day&#39;s focus &mdash; '
+        f'hold SHIFT while dropping for a run of several days" '
         f'style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 8px;'
         f'border:1px solid var(--m-rule);border-radius:14px;cursor:grab;white-space:nowrap;">'
         f'<span style="width:6px;height:6px;border-radius:50%;flex-shrink:0;'

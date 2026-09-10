@@ -417,12 +417,42 @@
           if (window.htmx) window.htmx.process(document.getElementById('work-calendar'));
         });
     }
+    // A RUN OF DAYS, dropped in one gesture. Until now only a free-text focus
+    // could span days (the "→ YYYY-MM-DD" suffix); a dropped PROJECT was always
+    // exactly one day, so a five-day training had to be dropped five times.
+    // Reported 2026-09-10 as "planning multi day events" not working.
+    //
+    // Hold SHIFT while dropping and it asks how many days. Plain drop stays one
+    // day, so the common case costs no extra thought — and the chip's own title
+    // says so, because a modifier nobody is told about is a feature nobody has.
+    window.calDropDays = function(){
+      var n = window.prompt('How many days does it run for?\n\n(1 = just that day)', '1');
+      if (n === null) return null;                 // cancelled
+      n = parseInt(n, 10);
+      if (!n || n < 1) n = 1;
+      return Math.min(n, 60);
+    };
+    window.calEndDate = function(startISO, days){
+      if (!days || days < 2) return '';
+      var d = new Date(startISO + 'T00:00:00');
+      d.setDate(d.getDate() + (days - 1));
+      // toISOString would shift by the timezone offset and land a day early for
+      // anyone east of UTC. Build it from the local parts instead.
+      var p = function(x){ return (x < 10 ? '0' : '') + x; };
+      return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    };
     window.calDrop = function(ev, date){
       ev.preventDefault(); ev.stopPropagation();
       var cell = ev.currentTarget; if (cell) cell.style.outline = 'none';
       var raw = ev.dataTransfer.getData('text/plain'); if (!raw) return;
       var d; try { d = JSON.parse(raw); } catch(e){ return; }
-      if (d.t === 'project') _calPost('/api/plan/create', {start_date:date, kind:'project', project_id:d.id});
+      if (d.t === 'project') {
+        var days = 1;
+        if (ev.shiftKey) { days = window.calDropDays(); if (days === null) return; }
+        _calPost('/api/plan/create', {start_date:date, kind:'project',
+                                      project_id:d.id,
+                                      end_date: window.calEndDate(date, days)});
+      }
       else if (d.t === 'plan') _calPost('/api/plan/' + d.id + '/move', {start_date:date});
       else if (d.t === 'task') _calPost('/api/plan/task-date', {task_id:d.id, start_date:date});
     };
