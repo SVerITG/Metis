@@ -21,9 +21,11 @@ Default schedule (all overridable via user-config.yaml → jobs: section):
 
 import asyncio
 import datetime
+import glob
 import inspect
 import logging
 import os
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -701,6 +703,66 @@ def job_nightly_backup() -> None:
         log.error("[scheduler] nightly_backup failed: %s", exc)
 
 
+# Building a hidden-launcher VBS means writing double quotes into VBScript,
+# which escapes them by doubling. Assembling that inline turns into a thicket
+# of backslashes, so the pieces are named here instead.
+DQ = chr(34)
+SET_SHELL = "Set s = CreateObject(" + DQ + "WScript.Shell" + DQ + ")\r\n"
+RUN_PREFIX = "s.Run " + DQ * 3
+RUN_MIDDLE = DQ * 2 + " -NoProfile -NonInteractive -WindowStyle Hidden -Command " + DQ * 2
+# THREE quotes, not one: two close the escaped quote around -Command, and the
+# third ends the VBScript string literal itself. Printing the generated
+# script is what caught this — one quote parsed as an unterminated string
+# and wscript would have failed silently, which for a notification is
+# indistinguishable from having nothing to say.
+RUN_SUFFIX = DQ * 3 + ", 0, False\r\n"
+# Each notification writes a throwaway script; without this every toast would
+# leave one behind forever (two appeared during one afternoon of testing).
+# Safe immediately after .Run because False means do-not-wait — the child is
+# already launched and holds no handle on this file.
+SELF_DELETE = ("CreateObject(" + DQ + "Scripting.FileSystemObject" + DQ + ")"
+               ".DeleteFile WScript.ScriptFullName\r\n")
+
+
+def _to_windows_path(p: str) -> str:
+    """/mnt/c/x/y  →  C:\\x\\y. Anything else is returned unchanged."""
+    m = re.match(r"^/mnt/([a-z])/(.*)$", p or "")
+    if not m:
+        return p
+    return m.group(1).upper() + ":" + chr(92) + m.group(2).replace("/", chr(92))
+
+
+def _win_temp() -> tuple:
+    """(wsl_path, windows_path) of a temp directory BOTH sides can use.
+
+    C:\\Windows\\Temp looks obvious and is wrong: from WSL it is mode d-wx-wx-wx —
+    writable but not listable or readable — so a script written there could not be
+    read back by wscript, and the whole notification failed silently. Found by
+    running the chain and watching nothing happen.
+
+    The user's own temp directory is fully accessible, and its path is derived
+    from the repo root rather than spawning `cmd /c echo %TEMP%` — which would
+    open the very console window this whole change exists to remove.
+    """
+    root = os.environ.get("METIS_RC_ROOT", "") or str(Path(__file__).resolve().parents[2])
+    m = re.match(r"^/mnt/([a-z])/Users/([^/]+)/", root + "/")
+    if m:
+        drive, user = m.group(1), m.group(2)
+        wsl = f"/mnt/{drive}/Users/{user}/AppData/Local/Temp"
+        if os.path.isdir(wsl) and os.access(wsl, os.W_OK | os.R_OK):
+            return wsl, f"{drive.upper()}:" + chr(92) + chr(92).join(
+                ["Users", user, "AppData", "Local", "Temp"]) + chr(92)
+    # Any writable-and-readable user temp will do; a notification is not worth
+    # guessing a path that cannot be read back.
+    for cand in sorted(glob.glob("/mnt/c/Users/*/AppData/Local/Temp")):
+        if os.access(cand, os.W_OK | os.R_OK):
+            user = cand.split("/")[4]
+            return cand, "C:" + chr(92) + chr(92).join(
+                ["Users", user, "AppData", "Local", "Temp"]) + chr(92)
+    return "", ""
+
+
+
 def _notify_windows(title: str, message: str) -> None:
     """Send a Windows toast notification via PowerShell BurntToast (if available).
 
@@ -732,9 +794,54 @@ def _notify_windows(title: str, message: str) -> None:
             f"  $notify.Dispose()"
             f"}}"
         )
+        # CREATE_NO_WINDOW WAS DEAD CODE, and its own guard is why: Metis runs
+        # inside WSL, so `os.name` is "posix" and the flag evaluated to 0 every
+        # time. It could only ever apply on the one platform this process is not
+        # running on. `-WindowStyle Hidden` hides PowerShell's host window but
+        # not the console Windows allocates for a console-subsystem binary
+        # launched through interop — which is exactly the black flash reported
+        # on 2026-09-10 for the autostart script.
+        #
+        # So the toast goes out through the launcher this codebase has already
+        # proven invisible: wscript running WshShell.Run(cmd, 0, False), where
+        # the 0 means hidden. Same mechanism as autostart-dashboard.vbs.
+        if os.name == "nt":
+            subprocess.Popen(
+                [ps, "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden",
+                 "-Command", script],
+                creationflags=0x08000000,  # CREATE_NO_WINDOW
+            )
+            return
+
+        wscript = shutil.which("wscript.exe")
+        if not wscript:
+            # No hidden launcher: a notification is never worth a window that
+            # steals focus mid-sentence, so skip it rather than flash.
+            return
+        import tempfile
+        # VBScript escapes a double quote by doubling it — the same way the
+        # PowerShell string above escapes a single one.
+        # shutil.which returns the LINUX path — /mnt/c/windows/.../powershell.exe —
+        # and Windows cannot open that. wscript reported only "The system cannot
+        # find the file specified", with no hint that the path was the problem.
+        ps_win = _to_windows_path(ps).replace(DQ, DQ * 2)
+        script_win = script.replace(DQ, DQ * 2)
+        vbs = (
+            SET_SHELL
+            + RUN_PREFIX + ps_win
+            + RUN_MIDDLE + script_win
+            + RUN_SUFFIX
+            + SELF_DELETE
+        )
+        tmp_wsl, tmp_win = _win_temp()
+        if not tmp_wsl:
+            return
+        fd, vbs_path = tempfile.mkstemp(suffix=".vbs", dir=tmp_wsl)
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(vbs)
         subprocess.Popen(
-            [ps, "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", script],
-            creationflags=0x08000000 if os.name == "nt" else 0,  # CREATE_NO_WINDOW on Windows
+            [wscript, tmp_win + os.path.basename(vbs_path)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
     except Exception:
         pass
