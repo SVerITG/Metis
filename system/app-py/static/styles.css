@@ -6628,3 +6628,74 @@ a.shf-row-title:hover { color: var(--m-accent); }
 
 /* "32 of 1,502" — the denominator behind a floor-filtered count. */
 .fw-of { color: var(--m-muted); font-weight: 400; font-size: 0.92em; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   The reading stack, drawn as a stack (2026-09-10)
+
+   Sheets offset behind a face, so the pile reads as an object you can pick up
+   rather than a number in a box. Depth is capped at four in the template — past
+   a few sheets the eye reads "a lot" and the count does the rest.
+   ───────────────────────────────────────────────────────────────────────────── */
+.rstack-panel { display: flex; flex-direction: column; gap: var(--d-stack); }
+
+.rstack {
+  position: relative;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  margin: 2px 0 6px 3px;
+}
+.rstack-sheets { position: absolute; inset: 0; pointer-events: none; }
+.rstack-sheet {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--m-rule);
+  border-radius: 3px;
+  background: var(--m-surface-2);
+  transition: transform .16s ease;
+}
+/* Each sheet sits a little further back and to the right. */
+.rstack-sheet--1 { transform: translate(3px, 3px); }
+.rstack-sheet--2 { transform: translate(6px, 6px); }
+.rstack-sheet--3 { transform: translate(9px, 9px); }
+
+.rstack-face {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid var(--m-rule-strong);
+  border-radius: 3px;
+  background: var(--m-surface);
+  box-shadow: 0 1px 2px rgba(31, 42, 36, 0.06);
+}
+.rstack-n {
+  font-family: var(--m-mono);
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--m-ink);
+  line-height: 1;
+}
+.rstack-label {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+}
+/* Picking it up: the sheets fan a touch further on hover, so the object
+   answers the pointer before the click does. */
+.rstack:hover .rstack-sheet--1 { transform: translate(4px, 4px); }
+.rstack:hover .rstack-sheet--2 { transform: translate(8px, 8px); }
+.rstack:hover .rstack-sheet--3 { transform: translate(12px, 12px); }
+.rstack:hover .rstack-face { border-color: var(--m-accent); }
+.rstack:hover .rstack-n { color: var(--m-accent); }
+.rstack:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 3px; }
+
+.rstack-top { display: flex; flex-direction: column; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rstack-sheet { transition: none; }
+}

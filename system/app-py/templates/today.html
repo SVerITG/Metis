@@ -217,9 +217,13 @@
   </div>
 
 
-  {#- WHAT SHOULD I READ. Renders nothing at all unless something in the reading
-      stack has been flagged crucial — the stack is not a list to work through
-      here, it is a single suggestion for the start of the day. -#}
+  {#- YOUR READING STACK, drawn as a stack. The rule used to be "nothing unless
+      something is flagged crucial", which was right while the stack was empty and
+      wrong once it held eleven unflagged items — Today showed no trace of it and
+      the reader had to ask where it was. Crucial still floats to the top; it is
+      no longer the price of appearing at all. Clicking the pile opens the full
+      queue in Library rather than rebuilding it here. Renders nothing when
+      genuinely nothing is waiting. -#}
   <div hx-get="/api/partial/today/reading"
        hx-trigger="load delay:160ms"
        hx-swap="outerHTML"></div>

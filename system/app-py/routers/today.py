@@ -5562,25 +5562,57 @@ async def today_whats_new(request: Request):
     )
 
 
+async def render_reading(request: Request) -> str:
+    """The reading panel as a string, so /api/stack/* can re-render it in place.
+
+    Without this, `back="today-reading"` fell through to the unknown-target
+    branch, which returns an empty body — and that branch's own comment says what
+    that looks like: the row the reader just acted on vanishes and the verdict
+    appears to have deleted something. The old crucial button had shipped with
+    the same broken target.
+    """
+    resp = await today_reading(request)
+    return resp.body.decode("utf-8")
+
+
 @router.get("/api/partial/today/reading", response_class=HTMLResponse)
 async def today_reading(request: Request):
-    """The single reading suggestion for the start of the day.
+    """The reading stack, drawn as a stack, at the start of the day.
 
-    Returns an EMPTY body when nothing is flagged crucial, and that is
-    deliberate — HTMX swaps the mount away and the surface shows no trace of a
-    section that has nothing to say. An empty panel here would be worse than
-    none: it would recreate, on Today, the empty Stack surface we just removed
-    from the navbar.
+    IT SHOWED NOTHING UNLESS SOMETHING WAS FLAGGED CRUCIAL. That rule was written
+    when the stack held zero items, and it made sense then: an empty panel would
+    have recreated, on Today, the empty Stack surface just removed from the
+    navbar. But the stack now holds real work — 11 items on 2026-09-10 — and
+    none of it was flagged, so Today showed no trace of it and the question
+    became "where IS my reading stack?".
+
+    A pile you have to remember to look for is a pile you stop reading. So the
+    panel now draws whatever is waiting, as a literal stack you can click.
+    Crucial still wins — it is simply the top of the pile rather than the only
+    thing that can appear.
+
+    Still empty-bodied when there is genuinely nothing to read: HTMX swaps the
+    mount away and the surface says nothing rather than saying "nothing".
     """
     rows = db_query(
-        "SELECT kind, item_id, title, url, source FROM reading_stack "
-        "WHERE COALESCE(crucial, 0) = 1 AND state != 'read' "
-        "ORDER BY state_at DESC LIMIT 3"
-    ) or []
+        "SELECT kind, item_id, title, url, source, COALESCE(crucial,0) AS crucial "
+        "FROM reading_stack WHERE state IN ('later','saved') "
+        # Crucial first, then most recently put down. The pile is drawn in the
+        # order you would pick it up.
+        "ORDER BY COALESCE(crucial,0) DESC, COALESCE(state_at, added_at) DESC "
+        "LIMIT 40", default=[]) or []
+    if not rows:
+        return HTMLResponse("")
+    items = [dict(r) for r in rows]
     return templates.TemplateResponse(
         request,
         "partials/today_reading.html",
-        {"items": rows[:2], "more": max(0, len(rows) - 2)},
+        {"items": items[:3], "total": len(items),
+         "n_crucial": sum(1 for r in items if r.get("crucial")),
+         # How deep the drawn pile looks. Capped so a 40-item stack does not
+         # become a 40-layer staircase — past a few sheets the eye reads "a lot"
+         # and the number does the rest.
+         "layers": min(len(items), 4)},
     )
 
 

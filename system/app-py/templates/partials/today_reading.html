@@ -1,41 +1,71 @@
 {% from "partials/_section.html" import sec_label %}
-{#- today_reading.html — the one reading suggestion for the start of the day.
+{#- today_reading.html — the reading stack, drawn as a stack.
 
-    Renders NOTHING when nothing is flagged. That is the design, not an empty
-    state: the reading stack is a queue you work through in Library, and the
-    only thing it is allowed to say on Today is "this one is worth your
-    morning". A list here would recreate the surface the researcher asked to remove.
+    It used to render ONLY items flagged crucial, and nothing otherwise. That
+    rule was written when the stack held zero items and it was right then. By
+    2026-09-10 it held eleven, none of them flagged, so Today showed no trace of
+    it and the question became "where is my reading stack?" — which is the answer
+    a pile gives when you have to remember to go and look for it.
 
-    At most two, and if there are more the line says so rather than growing. -#}
+    So it is drawn here, as an object rather than a list: a few sheets, offset,
+    with the top one readable and the rest implied. Clicking the pile opens it in
+    Library, where the full queue and its verbs already live. This panel does not
+    reimplement that queue — it is the reminder that the queue exists, and the
+    shortest route into it.
+
+    Still renders nothing at all when nothing is waiting. -#}
 {% if items %}
-  {{ sec_label("What to read first", tail="FLAGGED CRUCIAL") }}
-  <div class="panel u-mb-6">
-    {% for it in items %}
-    {#- Converted to the shared .mrow anatomy. This row had its own class an
-        hour before the anatomy existed — which is exactly how a product ends up
-        with four row shapes. -#}
-    <div class="mrow row-hit">
-      <span class="mrow-state"><span class="stat is-warn">crucial</span></span>
-      <span class="mrow-body">
-        {% if it.url %}
-        <a class="mrow-title hov-ink" href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a>
-        {% else %}
-        <span class="mrow-title">{{ it.title }}</span>
-        {% endif %}
-        {% if it.source %}<span class="mrow-meta">{{ it.source }}</span>{% endif %}
+  {{ sec_label("Your reading stack", tail=(("%d TO READ" % total) + (" · %d CRUCIAL" % n_crucial if n_crucial else ""))) }}
+  <div class="panel u-mb-6 rstack-panel">
+
+    {#- THE PILE. The sheets behind are decoration and are hidden from screen
+        readers; the count in the heading is what carries the same information
+        to anyone not looking at it. -#}
+    <a class="rstack" href="/knowledge#reading"
+       aria-label="Open your reading stack — {{ total }} item{{ 's' if total != 1 else '' }} to read">
+      <span class="rstack-sheets" aria-hidden="true">
+        {% for i in range(layers) %}<span class="rstack-sheet rstack-sheet--{{ i }}"></span>{% endfor %}
       </span>
-      <span class="mrow-acts">
-        <button type="button" class="btn btn--ghost btn--sm"
-                title="Unflag — keep it in the stack, stop suggesting it"
-                hx-post="/api/stack/crucial"
-                hx-vals='{"kind": "{{ it.kind }}", "item_id": "{{ it.item_id }}", "back": "today-reading"}'
-                hx-target="closest .panel" hx-swap="outerHTML">done</button>
+      <span class="rstack-face">
+        <span class="rstack-n">{{ total }}</span>
+        <span class="rstack-label">to read</span>
       </span>
+    </a>
+
+    {#- The top few, so the pile has a face and not only a number: a count tells
+        you how much is waiting, a title tells you whether to start. -#}
+    <div class="rstack-top">
+      {% for it in items %}
+      <div class="mrow row-hit">
+        <span class="mrow-state">
+          {% if it.crucial %}<span class="stat is-warn">crucial</span>
+          {% else %}<span class="stat">{{ 'paper' if it.kind == 'paper' else 'news' }}</span>{% endif %}
+        </span>
+        <span class="mrow-body">
+          {% if it.url %}
+          <a class="mrow-title hov-ink" href="{{ it.url }}" target="_blank" rel="noopener">{{ it.title }}</a>
+          {% else %}
+          <span class="mrow-title">{{ it.title }}</span>
+          {% endif %}
+          {% if it.source %}<span class="mrow-meta">{{ it.source }}</span>{% endif %}
+        </span>
+        <span class="mrow-acts">
+          {#- "Read" is the verb that empties a stack. It writes through the same
+              endpoint the Library tab uses, so the two can never disagree about
+              what is still waiting. -#}
+          <button type="button" class="btn btn--ghost btn--sm"
+                  title="Mark read — take it off the stack"
+                  hx-post="/api/stack/set"
+                  hx-vals='{"kind": {{ it.kind | tojson }}, "item_id": {{ it.item_id | tojson }}, "state": "read", "back": "today-reading"}'
+                  hx-target="closest .rstack-panel" hx-swap="outerHTML">read</button>
+        </span>
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
-    {% if more %}
+
+    {% if total > items | length %}
     <div class="mrow-more">
-      <a class="u-link" href="/knowledge#reading">{{ more }} more flagged · open the stack →</a>
+      <a class="u-link" href="/knowledge#reading">{{ total - (items | length) }} more underneath · open the stack &rarr;</a>
     </div>
     {% endif %}
   </div>
