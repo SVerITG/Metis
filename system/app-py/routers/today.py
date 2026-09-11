@@ -5380,15 +5380,27 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
     older than a week, so clearing everything before last week would have removed
     7% of the pile and changed nothing about the experience.
 
-    What makes a week readable is a BAR, not a shorter window. At the calibrated
-    `NEWS_DISPLAY_FLOOR` the same seven days holds 32 news and 22 papers.
+    What makes a week readable is a SHORTLIST, not a shorter window.
 
-    Nothing is deleted and no disinterest is recorded: an item below the floor is
-    still in News and still in the Library, with its relevance intact. It simply
-    stops being counted as work waiting for the reader.
+    AND NOT AN ABSOLUTE FLOOR EITHER — that was the first attempt and it failed
+    two days later. Filtering at `NEWS_DISPLAY_FLOOR` (0.70) gave a sensible 32
+    items on 2026-09-08 and **zero** on 2026-09-11, because only 3-12 of ~250
+    daily items ever clear 0.70 and some days none do. A fixed cutoff sitting in
+    the extreme tail of a distribution does not select the best few; it selects
+    whatever happens to exceed a constant, which is empty by luck. The week's top
+    stories that day scored 0.690-0.698 — an Ebola outbreak in the DRC among them —
+    and were hidden by four thousandths.
+
+    Worse, the scale MOVES. Shipping the decline-feedback band on 2026-09-10 shifted
+    every score down ~0.037, and the constant had no way to know. A threshold on a
+    number whose scale can drift is a threshold that will silently empty itself.
+
+    So the panel now takes the TOP N of the window by relevance. It cannot be empty
+    while anything is unjudged, it needs no recalibration when the scoring changes,
+    and it says how many it chose from. Nothing is deleted and no disinterest is
+    recorded — everything else is still on News and in the Library.
     """
     since = (datetime.date.today() - datetime.timedelta(days=days)).isoformat()
-    floor = float(NEWS_DISPLAY_FLOOR)
 
     # `reading_stack` is the shared verdict table; a judged item leaves the box
     # whichever verb was used, so a decision never has to be made twice.
@@ -5416,13 +5428,23 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         "       COALESCE(b.relevance, 0) AS rel, COALESCE(b.image_url,'') AS image_url "
         "FROM news_briefs b "
         "WHERE COALESCE(b.brief_date,'') >= ? AND COALESCE(b.seen_at,'') = '' "
-        "  AND COALESCE(b.relevance,0) >= " + str(floor) + " "
         "  AND " + NOT_JUDGED.format(id="b.brief_id") + " "
-        # Signal first, relevance second: a 'high' signal is a judgement about
-        # the item, relevance only about its distance from a keyword.
-        "ORDER BY CASE COALESCE(b.signal_strength,'medium') "
+        # ONE ROW PER STORY. The same piece arrives from several feeds and was
+        # taking two of five slots in a five-slot panel.
+        "  AND b.brief_id = (SELECT b2.brief_id FROM news_briefs b2 "
+        "                     WHERE LOWER(TRIM(b2.title)) = LOWER(TRIM(b.title)) "
+        "                     ORDER BY COALESCE(b2.relevance,0) DESC, b2.brief_id LIMIT 1) "
+        # RELEVANCE LEADS NOW, signal breaks the tie — the reverse of before, and
+        # the floor is why. While a floor guaranteed every candidate was relevant,
+        # sorting by signal first was free: it re-ranked items already known to be
+        # close to the reader's work. With the floor gone this is a shortlist of
+        # the whole week, so signal-first would promote a loud item about nothing
+        # in particular over a quiet one about their own subject. 699 of 1,502
+        # items carried 'high' on 2026-09-08, so it is not a scarce mark.
+        "ORDER BY rel DESC, "
+        "         CASE COALESCE(b.signal_strength,'medium') "
         "           WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, "
-        "         rel DESC, b.brief_date DESC LIMIT ?",
+        "         b.brief_date DESC LIMIT ?",
         (since, "news", FIELD_NEWS_SHOWN), default=[]) or []
 
     papers = db_query(
@@ -5437,7 +5459,6 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         # Measured 2026-09-08: 438 unread papers inside one week, nine times the
         # figure the exemption was written for. The same floor applies.
         "WHERE COALESCE(p.read_at,'') = '' AND COALESCE(p.dismissed_at,'') = '' "
-        "  AND COALESCE(p.relevance,0) >= " + str(floor) + " "
         "  AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
         "  AND " + NOT_JUDGED.format(id="p.id") + " "
         "ORDER BY CASE COALESCE(p.lane,'field') WHEN 'field' THEN 0 ELSE 1 END, "
@@ -5447,13 +5468,11 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
     n_news = db_scalar(
         "SELECT COUNT(*) FROM news_briefs b WHERE COALESCE(b.brief_date,'') >= ? "
         "AND COALESCE(b.seen_at,'') = '' "
-        "AND COALESCE(b.relevance,0) >= " + str(floor) + " "
         "AND " + NOT_JUDGED.format(id="b.brief_id"),
         (since, "news"), default=0) or 0
     n_papers = db_scalar(
         "SELECT COUNT(*) FROM new_publications p WHERE COALESCE(p.read_at,'') = '' "
         "AND COALESCE(p.dismissed_at,'') = '' "
-        "AND COALESCE(p.relevance,0) >= " + str(floor) + " "
         "AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
         "AND " + NOT_JUDGED.format(id="p.id"),
         (since, "paper"), default=0) or 0
@@ -5468,7 +5487,8 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
     return {
         "news": news, "papers": papers,
         "n_news": n_news, "n_papers": n_papers,
-        "days": days, "since": since, "floor": floor,
+        "days": days, "since": since, "floor": 0.0,
+        "shown_news": len(news), "shown_papers": len(papers),
         # THE DENOMINATOR THE FLOOR HID. A filtered count with no sight of what
         # it filtered is a number that cannot be argued with.
         # THE DENOMINATOR MUST DIFFER FROM THE NUMERATOR BY EXACTLY ONE FILTER —
