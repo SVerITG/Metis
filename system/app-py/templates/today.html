@@ -217,17 +217,6 @@
   </div>
 
 
-  {#- YOUR READING STACK, drawn as a stack. The rule used to be "nothing unless
-      something is flagged crucial", which was right while the stack was empty and
-      wrong once it held eleven unflagged items — Today showed no trace of it and
-      the reader had to ask where it was. Crucial still floats to the top; it is
-      no longer the price of appearing at all. Clicking the pile opens the full
-      queue in Library rather than rebuilding it here. Renders nothing when
-      genuinely nothing is waiting. -#}
-  <div hx-get="/api/partial/today/reading"
-       hx-trigger="load delay:160ms"
-       hx-swap="outerHTML"></div>
-
   {#- WHAT CHANGED, in one glance, both sources side by side. This replaces a
       pair that showed "new literature" beside a learning nudge — two unrelated
       things next to each other because they happened to be short. News and
@@ -249,6 +238,20 @@
         <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:14px;"></div></div>
     </div>
   </div>
+
+  {#- YOUR READING STACK sits BELOW "In your field", asked for 2026-09-11. The
+      order is now the order of the question: what arrived (in your field), then
+      what you set aside to read. A pile you chose is downstream of the stream it
+      came from — putting it above meant the stack appeared before the source that
+      fills it.
+
+      Drawn as a stack rather than a list, and it renders nothing at all when
+      nothing is waiting. Crucial floats to the top; it is no longer the price of
+      appearing. Clicking the pile opens the full queue in Library rather than
+      rebuilding it here. -#}
+  <div hx-get="/api/partial/today/reading"
+       hx-trigger="load delay:240ms"
+       hx-swap="outerHTML"></div>
 
   {#- NOT PAIRED (changed 2026-09-02). These two were side by side in a
       `.today-pair`, which pairs panels of SIMILAR height — and these are a
