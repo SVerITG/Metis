@@ -2073,8 +2073,33 @@ async function submitInlineCapture() {
 let _dragSrc      = null;
 let _dragLastOver = null;   // tracks last card entered, prevents repeated DOM moves
 
+// WHERE THE PROJECT CARDS ACTUALLY LIVE.
+//
+// Four functions looked them up under `#project-grid`, an id that appears in no
+// template and in no rendered page. Everything downstream failed silently and
+// differently: initProjectCards returned at its first line so NOTHING was wired,
+// toggleProjectCollapse found no card and returned, so the minimise button was
+// present and inert; _restoreProjectStates matched nothing, so a collapse was
+// written to localStorage and never read back; and _saveProjectOrder posted an
+// empty order. Reported 2026-09-11 as "you cannot minimize projects".
+//
+// The real containers are `#project-groups` when grouped by category and a bare
+// grid when the ALL view is flat, so the lookup is by CARD CLASS and the
+// container is derived from a card. One author for the question, and it survives
+// the next layout too.
+function _projectCards() {
+  return document.querySelectorAll('.project-card[data-project-id]');
+}
+function _projectCard(projectId) {
+  return document.querySelector(`.project-card[data-project-id="${projectId}"]`);
+}
+function _projectGrid() {
+  const first = document.querySelector('.project-card[data-project-id]');
+  return first ? first.parentElement : null;
+}
+
 function _saveProjectOrder() {
-  const cards = document.querySelectorAll('#project-grid .project-card[data-project-id]');
+  const cards = _projectCards();
   const order = Array.from(cards).map(c => c.dataset.projectId);
   fetch('/api/project/reorder', {
     method: 'POST',
@@ -2084,7 +2109,13 @@ function _saveProjectOrder() {
 }
 
 function _restoreProjectStates() {
-  document.querySelectorAll('#project-grid .project-card[data-project-id]').forEach(card => {
+  // THE SELECTOR NAMED A CONTAINER THAT DOES NOT EXIST. `#project-grid` is in no
+  // template and in no rendered page — the cards live under `#project-groups`
+  // when grouped and in a bare grid when flat. So this matched nothing, every
+  // collapse was written to localStorage and never read back, and a minimised
+  // project sprang open on the next load. Scoping to the card class instead
+  // survives both layouts and any future one. Found 2026-09-11.
+  _projectCards().forEach(card => {
     const pid  = card.dataset.projectId;
     const body = card.querySelector('.proj-body');
     const btn  = card.querySelector('.proj-collapse-btn');
@@ -2097,7 +2128,7 @@ function _restoreProjectStates() {
 }
 
 function initProjectCards() {
-  const grid = document.getElementById('project-grid');
+  const grid = _projectGrid();
   if (!grid) return;
 
   _restoreProjectStates();
@@ -2148,7 +2179,7 @@ function initProjectCards() {
 }
 
 function toggleProjectCollapse(projectId) {
-  const card = document.querySelector(`#project-grid .project-card[data-project-id="${projectId}"]`);
+  const card = _projectCard(projectId);
   if (!card) return;
   const body = card.querySelector('.proj-body');
   const btn  = card.querySelector('.proj-collapse-btn');
@@ -2165,7 +2196,7 @@ function toggleProjectCollapse(projectId) {
 
 async function untrackProject(projectId, title) {
   if (!confirm(`Hide "${title}" from your dashboard?\n\nIt won't be deleted — you can show it again at the bottom of the Work tab.`)) return;
-  const card = document.querySelector(`#project-grid .project-card[data-project-id="${projectId}"]`);
+  const card = _projectCard(projectId);
   if (card) { card.style.opacity = '0.3'; card.style.pointerEvents = 'none'; }
   await fetch(`/api/project/untrack/${projectId}`, { method: 'POST' });
   htmx.ajax('GET', '/api/partial/work/projects', { target: '#projects-zone', swap: 'innerHTML' });
@@ -2178,7 +2209,11 @@ async function retrackProject(projectId) {
 
 // Re-init after HTMX settles (outerHTML swaps replace the element)
 document.addEventListener('htmx:afterSettle', () => {
-  if (document.getElementById('project-grid')) initProjectCards();
+  // THE OUTERMOST GUARD, and the reason none of the rest ran: this asked for
+  // `#project-grid` before calling initProjectCards at all, so on a page where
+  // that id does not exist — which is every page — the whole project-card
+  // layer was never initialised. Ask whether there is a CARD.
+  if (document.querySelector('.project-card[data-project-id]')) initProjectCards();
 });
 
 document.addEventListener('DOMContentLoaded', initProjectCards);

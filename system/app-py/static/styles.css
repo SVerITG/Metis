@@ -6699,3 +6699,16 @@ a.shf-row-title:hover { color: var(--m-accent); }
 @media (prefers-reduced-motion: reduce) {
   .rstack-sheet { transition: none; }
 }
+
+/* Open work, in the project header — so a minimised card still says whether it
+   needs anything. Quiet: it is a fact about the card, not a warning. */
+.proj-open {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: var(--m-surface-2);
+  color: var(--m-muted);
+  white-space: nowrap;
+}

@@ -108,6 +108,16 @@
       <div class="u-grow u-title u-title--lg" onclick="openProjectDetail('{{ p.id }}')"
            style="font-weight:500;line-height:1.2;cursor:pointer;"
            title="Open project details" role="button" tabindex="0">{{ p.title }}</div>
+      {#- OPEN WORK, IN THE HEADER. The router has computed `open_tasks` for a
+          while and the card never printed it, so a collapsed project said what it
+          was called and nothing about whether it needed anything. Asked for
+          2026-09-11: a minimised card should carry the title, the category and
+          how many tasks are open. Title and category were already here; this is
+          the third. Silent at zero — a card with nothing open should look
+          finished, not annotated. -#}
+      {% if p.open_tasks %}
+      <span class="proj-open u-fixed" title="{{ p.open_tasks }} open task{{ 's' if p.open_tasks != 1 else '' }} in this project">{{ p.open_tasks }} open</span>
+      {% endif %}
       {#- Four independent fields — category, domain, tags and project_type —
           each rendered its own chip, and they overlap: a project filed as
           category "software" with project_type "software" showed
