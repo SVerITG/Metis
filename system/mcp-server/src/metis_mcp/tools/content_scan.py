@@ -987,6 +987,28 @@ def _scan_feeds(feeds, max_per_feed: int = 10) -> dict:
 
                     # A news page without pictures is a list of links. Never let a
                     # slow image lookup break a scan — resolve_image never raises.
+                    #
+                    # COMMIT BEFORE THE NETWORK, ALWAYS. resolve_image fetches the
+                    # article page to read its og:image, and this line sits inside
+                    # an open write transaction (commits at ~868 and ~1024). In WAL
+                    # mode a write transaction is exclusive, so for the whole of
+                    # that fetch NOTHING anywhere in Metis can commit — not the
+                    # dashboard, not the MCP servers.
+                    #
+                    # Measured 2026-09-13: the dashboard stopped answering for six
+                    # minutes while this loop pulled 400+ Nature article pages,
+                    # each one redirecting through idp.nature.com before returning.
+                    # Health checks returned 000 the whole time and the process
+                    # looked alive, because it WAS alive — just holding the lock.
+                    #
+                    # This is the same defect as the 2026-09-01 boot-scan outage,
+                    # which was fixed by committing per FEED. The per-ITEM fetch
+                    # was left inside the transaction, so the class survived one
+                    # level down. Releasing the lock first costs a commit per item
+                    # with an image to look up and gives the rest of the system its
+                    # database back.
+                    if not feed_img:
+                        conn.commit()
                     image_url = feed_img or (resolve_image(None, link, conn) or "")
 
                     # published_at = when it HAPPENED (from the feed, '' if absent).
