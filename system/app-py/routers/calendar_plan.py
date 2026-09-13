@@ -497,20 +497,81 @@ def _task_chip(t: dict) -> str:
     )
 
 
+def _short_label(title: str, cap: int = 22) -> str:
+    """A chip label you can fit a rail of, without losing which project it is.
+
+    Full titles ran to 34 characters here and several of them are qualified twice
+    over — "HAT Formation Clinique — RDC (Kinshasa–Kongo Central)" — so a dozen
+    chips filled the rail and pushed the calendar itself below the fold. Reported
+    2026-09-13: "organize the project names to drag better, now they take too
+    much space".
+
+    The parenthetical goes first because it is the qualifier, not the name; the
+    dash clause goes next for the same reason. Only then does it truncate. The
+    full title stays in the chip's title attribute, so nothing is actually lost.
+    """
+    t = (title or "").strip()
+    for sep in (" (", " — ", " - "):
+        if sep in t and len(t) > cap:
+            t = t.split(sep)[0].strip()
+    return t if len(t) <= cap else t[: cap - 1].rstrip() + "…"
+
+
+def _short_labels(titles: list, cap: int = 22) -> list:
+    """Shorten a SET of titles, and never let two of them become the same word.
+
+    Shortening each title independently is wrong here and the rail proves it:
+    "HAT Formation Clinique — RDC (Kinshasa–Kongo Central)" and
+    "HAT Formation Clinique — RCA (Bangui)" both reduce to "HAT Formation
+    Clinique", so two different projects become one indistinguishable chip. The
+    qualifier I stripped is precisely what tells them apart.
+
+    So a label is only allowed to drop a qualifier while it stays UNIQUE. On a
+    collision the qualifier's first word is put back — "HAT Formation · RDC" —
+    which is shorter than the original and still says which one it is. Shortening
+    that loses identity is not shortening, it is deletion.
+    """
+    short = [_short_label(t, cap) for t in titles]
+    seen: dict = {}
+    for i, sh in enumerate(short):
+        seen.setdefault(sh, []).append(i)
+    for sh, idxs in seen.items():
+        if len(idxs) < 2:
+            continue
+        for i in idxs:
+            full = (titles[i] or "").strip()
+            qual = ""
+            for sep in (" — ", " - ", " ("):
+                if sep in full:
+                    qual = full.split(sep, 1)[1].strip(" ()")
+                    break
+            if not qual:
+                continue
+            mark = qual.split()[0].strip("(),")
+            room = cap - len(mark) - 3
+            stem = sh[:room].rstrip("… ") if len(sh) > room else sh
+            short[i] = f"{stem} · {mark}"
+    return short
+
+
 def _projects_rail() -> str:
     rows = db_query(
         "SELECT project_id, title, accent_color FROM projects "
         "WHERE status IN ('active','incubating') ORDER BY status DESC, display_order, title"
     ) or []
+    labels = _short_labels([r["title"] for r in rows])
+    for r, lab in zip(rows, labels):
+        r["_label"] = lab
     chips = "".join(
         f'<div draggable="true" ondragstart="calDragProject(event,\'{_esc(r["project_id"])}\')" '
-        f'title="Drag onto a day to make it that day&#39;s focus &mdash; '
-        f'hold SHIFT while dropping for a run of several days" '
+        f'onclick="calProjectTasks(\'{_esc(r["project_id"])}\')" '
+        f'title="{_esc(r["title"])} &mdash; drag onto a day (hold SHIFT for a run of '
+        f'days), or click to pick one of its tasks" '
         f'style="display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 8px;'
         f'border:1px solid var(--m-rule);border-radius:14px;cursor:grab;white-space:nowrap;">'
         f'<span style="width:6px;height:6px;border-radius:50%;flex-shrink:0;'
         f'background:{r["accent_color"] or _project_hue(r["project_id"] or r["title"])};'
-        f'"></span>{_esc(r["title"])[:34]}</div>'
+        f'"></span>{_esc(r["_label"])}</div>'
         for r in rows
     )
     return (
@@ -583,6 +644,49 @@ def _undated_tasks_rail() -> str:
 
 # ── the calendar ──────────────────────────────────────────────────────────────
 
+@router.get("/api/partial/work/calendar/project-tasks/{project_id}",
+            response_class=HTMLResponse)
+async def calendar_project_tasks(project_id: str) -> HTMLResponse:
+    """One project's open, undated tasks — draggable onto a day.
+
+    This is what the flat task rail became. That rail listed EVERY undated task
+    beside the projects, which on 92 open tasks is not a rail but a second task
+    list, and it pushed the calendar below the fold. The capability it existed for
+    is real and kept: you can still say "this particular thing is Tuesday" rather
+    than only "Tuesday is that project". You now say it about one project at a
+    time, which is how the thought actually arrives.
+
+    Undated first because they are the ones a planner is for; already-dated tasks
+    are shown after, dimmed, so dragging one to a new day is still possible.
+    """
+    rows = db_query(
+        f"SELECT task_id, title, COALESCE(due_date,'') AS due FROM tasks "
+        f"WHERE project_id = ? AND {live_task_sql()} "
+        f"ORDER BY COALESCE(NULLIF(due_date,''), '9999') , COALESCE(priority, 99), "
+        f"         COALESCE(updated_at, created_at) DESC LIMIT 20",
+        (project_id,), default=[]) or []
+    title = db_scalar("SELECT title FROM projects WHERE project_id = ?",
+                      (project_id,), default="") or project_id
+    if not rows:
+        return HTMLResponse(
+            '<div class="cal-tray"><span class="cal-tray-h">'
+            f'{_esc(title)}</span><span class="cal-tray-empty">'
+            'nothing open to date</span></div>')
+    chips = "".join(
+        f'<div draggable="true" ondragstart="calDragTask(event,\'{_esc(r["task_id"])}\')" '
+        f'class="cal-tray-chip{"" if not r["due"] else " cal-tray-chip--dated"}" '
+        f'title="{_esc(r["title"])}{" · due " + r["due"] if r["due"] else ""} — '
+        f'drag onto a day to set when it is due">'
+        f'{_esc(_short_label(r["title"], 38))}</div>'
+        for r in rows)
+    return HTMLResponse(
+        '<div class="cal-tray">'
+        f'<span class="cal-tray-h">{_esc(_short_label(title, 26))}</span>'
+        f'{chips}'
+        '<button type="button" class="cal-tray-x" onclick="calProjectTasks(\'\')" '
+        'title="Close">&times;</button></div>')
+
+
 @router.get("/api/partial/work/calendar", response_class=HTMLResponse)
 async def work_calendar(view: str = "month", date: str = "") -> HTMLResponse:
     view = view if view in ("day", "week", "month") else "month"
@@ -653,7 +757,12 @@ async def work_calendar(view: str = "month", date: str = "") -> HTMLResponse:
 
     return HTMLResponse(
         f'<div id="work-calendar" data-view="{view}" data-anchor="{anchor.isoformat()}">'
-        f'{_projects_rail()}{_undated_tasks_rail()}{header}{body}{foot}</div>'
+        # THE FLAT TASK RAIL IS GONE, its capability kept. It listed every undated
+        # task as a chip beside the projects — a second flat list, which is what
+        # made the rail take more room than the calendar. You still date one
+        # specific task from here: click a project and its open tasks appear,
+        # draggable, in a tray that holds only that project's.
+        f'{_projects_rail()}<div id="cal-task-tray"></div>{header}{body}{foot}</div>'
     )
 
 

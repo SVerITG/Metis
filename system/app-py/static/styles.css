@@ -6949,3 +6949,27 @@ a.shf-row-title:hover { color: var(--m-accent); }
 .ws-drag { cursor: grab; }
 .ws-drag:active { cursor: grabbing; }
 .ws-drag--held { opacity: .4; }
+
+/* The calendar's per-project task tray — opened by clicking a project chip. */
+.cal-tray {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  padding: 7px 9px; margin-bottom: 10px;
+  border: 1px solid var(--m-rule); border-left: 3px solid var(--m-accent);
+  border-radius: 3px; background: var(--m-surface-2);
+}
+.cal-tray-h {
+  font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--m-muted); margin-right: 4px;
+}
+.cal-tray-empty { font-size: 11.5px; color: var(--m-muted); }
+.cal-tray-chip {
+  font-size: 11px; padding: 3px 8px; border-radius: 14px; cursor: grab;
+  white-space: nowrap; background: var(--m-surface);
+  border: 1px solid var(--m-rule);
+}
+/* Already has a date — still draggable, to move it. */
+.cal-tray-chip--dated { opacity: .55; border-style: dashed; }
+.cal-tray-x {
+  margin-left: auto; border: 0; background: none; cursor: pointer;
+  color: var(--m-muted); font-size: 14px; line-height: 1; padding: 0 4px;
+}

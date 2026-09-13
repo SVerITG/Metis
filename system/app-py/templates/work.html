@@ -425,6 +425,22 @@
     // Hold SHIFT while dropping and it asks how many days. Plain drop stays one
     // day, so the common case costs no extra thought — and the chip's own title
     // says so, because a modifier nobody is told about is a feature nobody has.
+    // Click a project chip to see its own tasks, draggable onto a day. Passing an
+    // empty id closes the tray. This replaced a rail that listed every undated
+    // task in the system beside the projects — 92 chips, which pushed the
+    // calendar itself below the fold.
+    window.calProjectTasks = function(pid){
+      var tray = document.getElementById('cal-task-tray');
+      if (!tray) return;
+      if (!pid || tray.dataset.open === pid) {   // same chip again = close
+        tray.innerHTML = ''; tray.dataset.open = ''; return;
+      }
+      tray.dataset.open = pid;
+      fetch('/api/partial/work/calendar/project-tasks/' + encodeURIComponent(pid))
+        .then(function(r){ return r.ok ? r.text() : ''; })
+        .then(function(html){ tray.innerHTML = html; })
+        .catch(function(){ tray.innerHTML = ''; });
+    };
     window.calDropDays = function(){
       var n = window.prompt('How many days does it run for?\n\n(1 = just that day)', '1');
       if (n === null) return null;                 // cancelled
