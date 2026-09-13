@@ -3137,6 +3137,26 @@ body.capture-open .t-capture {
 
 /* Fieldwork — crisp cool-white, cobalt accent */
 [data-theme="fieldwork"] {
+  /* Semantic palette — completed 2026-09-13. These four were defined ONLY in
+     observatory, so every other theme inherited a set tuned for the light cream
+     ground: wrong on two dark themes and merely off on the others. Colour cannot
+     carry meaning until it resolves correctly in every theme, which is why this
+     lands before anything that uses it. Hues are chosen against THIS theme's
+     ground and kept distinct from its accent, so 'waiting on you' never reads as
+     'this is your work'. */
+  --m-ochre: #8a6a22;
+  --m-ochre-deep: #6d5217;
+  --m-ochre-soft: #a98a45;
+  --m-info: #2b6f7a;
+  --m-ok: #3f7a52;
+  --m-alert: #a8383c;
+  --m-warn: #8a6a22;
+  --m-ochre-wash: rgba(138, 106, 34, .14);
+  --m-info-wash: rgba(43, 111, 122, .14);
+  --m-ok-wash: rgba(63, 122, 82, .14);
+  --m-alert-wash: rgba(168, 56, 60, .14);
+  --m-warn-wash: rgba(138, 106, 34, .14);
+  --m-ok-bg: rgba(63, 122, 82, .09);
   --m-bg:            #f0eff8;
   --m-surface:       #f7f6fb;
   --m-surface-2:     #e7e5f2;
@@ -3159,6 +3179,26 @@ body.capture-open .t-capture {
 
 /* Paper — aged parchment, sienna accent */
 [data-theme="paper"] {
+  /* Semantic palette — completed 2026-09-13. These four were defined ONLY in
+     observatory, so every other theme inherited a set tuned for the light cream
+     ground: wrong on two dark themes and merely off on the others. Colour cannot
+     carry meaning until it resolves correctly in every theme, which is why this
+     lands before anything that uses it. Hues are chosen against THIS theme's
+     ground and kept distinct from its accent, so 'waiting on you' never reads as
+     'this is your work'. */
+  --m-ochre: #7d6417;
+  --m-ochre-deep: #5f4b10;
+  --m-ochre-soft: #9c8440;
+  --m-info: #2f5f86;
+  --m-ok: #4a7040;
+  --m-alert: #a33222;
+  --m-warn: #7d6417;
+  --m-ochre-wash: rgba(125, 100, 23, .14);
+  --m-info-wash: rgba(47, 95, 134, .14);
+  --m-ok-wash: rgba(74, 112, 64, .14);
+  --m-alert-wash: rgba(163, 50, 34, .14);
+  --m-warn-wash: rgba(125, 100, 23, .14);
+  --m-ok-bg: rgba(74, 112, 64, .09);
   --m-bg:            #f9f4e8;
   --m-surface:       #fdf9f0;
   --m-surface-2:     #eee9d8;
@@ -3181,6 +3221,26 @@ body.capture-open .t-capture {
 
 /* Midnight — deep navy, bright cobalt accent */
 [data-theme="midnight"] {
+  /* Semantic palette — completed 2026-09-13. These four were defined ONLY in
+     observatory, so every other theme inherited a set tuned for the light cream
+     ground: wrong on two dark themes and merely off on the others. Colour cannot
+     carry meaning until it resolves correctly in every theme, which is why this
+     lands before anything that uses it. Hues are chosen against THIS theme's
+     ground and kept distinct from its accent, so 'waiting on you' never reads as
+     'this is your work'. */
+  --m-ochre: #d2a65a;
+  --m-ochre-deep: #e6c183;
+  --m-ochre-soft: #b98f46;
+  --m-info: #5fb3c4;
+  --m-ok: #6db87f;
+  --m-alert: #e0776b;
+  --m-warn: #d2a65a;
+  --m-ochre-wash: rgba(210, 166, 90, .16);
+  --m-info-wash: rgba(95, 179, 196, .16);
+  --m-ok-wash: rgba(109, 184, 127, .16);
+  --m-alert-wash: rgba(224, 119, 107, .16);
+  --m-warn-wash: rgba(210, 166, 90, .16);
+  --m-ok-bg: rgba(109, 184, 127, .10);
   --m-bg:            #0d1117;
   --m-surface:       #161c24;
   --m-surface-2:     #1c2430;
@@ -3207,6 +3267,26 @@ body.capture-open .t-capture {
 
 /* Cavern — dark forest, teal accent */
 [data-theme="cavern"] {
+  /* Semantic palette — completed 2026-09-13. These four were defined ONLY in
+     observatory, so every other theme inherited a set tuned for the light cream
+     ground: wrong on two dark themes and merely off on the others. Colour cannot
+     carry meaning until it resolves correctly in every theme, which is why this
+     lands before anything that uses it. Hues are chosen against THIS theme's
+     ground and kept distinct from its accent, so 'waiting on you' never reads as
+     'this is your work'. */
+  --m-ochre: #d4a75f;
+  --m-ochre-deep: #e8c489;
+  --m-ochre-soft: #bb9049;
+  --m-info: #6a9fd8;
+  --m-ok: #6fbe84;
+  --m-alert: #e0796b;
+  --m-warn: #d4a75f;
+  --m-ochre-wash: rgba(212, 167, 95, .16);
+  --m-info-wash: rgba(106, 159, 216, .16);
+  --m-ok-wash: rgba(111, 190, 132, .16);
+  --m-alert-wash: rgba(224, 121, 107, .16);
+  --m-warn-wash: rgba(212, 167, 95, .16);
+  --m-ok-bg: rgba(111, 190, 132, .10);
   --m-bg:            #0f1614;
   --m-surface:       #161e1c;
   --m-surface-2:     #1c2624;
