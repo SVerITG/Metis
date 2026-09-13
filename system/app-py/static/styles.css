@@ -6891,3 +6891,51 @@ a.shf-row-title:hover { color: var(--m-accent); }
    and the UA default is a plain `display:none` that any `display:flex` on the
    pane would beat. Checked, not assumed. */
 .ui-tabpane[hidden] { display: none !important; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Workstation — three columns of your own work (2026-09-13)
+
+   Vertical boxes, because the three questions a morning asks are asked side by
+   side, not in sequence: what did I commit to, what was I in the middle of, what
+   did I set aside to read. Collapses to one column on a narrow screen, where
+   side-by-side stops being readable and the order becomes the priority.
+   ───────────────────────────────────────────────────────────────────────────── */
+.ws-cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--m-space-3, 12px);
+  align-items: start;
+}
+@media (max-width: 1000px) { .ws-cols { grid-template-columns: 1fr; } }
+
+.ws-col {
+  border: 1px solid var(--m-rule-soft);
+  border-radius: 3px;
+  background: var(--m-surface);
+  min-width: 0;                 /* so a long title wraps instead of widening the column */
+  display: flex;
+  flex-direction: column;
+}
+.ws-col-h {
+  font-family: var(--m-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  padding: 7px 10px;
+  background: var(--m-surface-2);
+  border-bottom: 1px solid var(--m-rule-soft);
+}
+.ws-col-b {
+  padding: var(--d-stack) 10px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--d-stack);
+  min-height: 78px;
+}
+/* Panels inside a column are already boxed by the column; a second border
+   around each would draw a box in a box on every row. */
+.ws-col-b .panel { border: 0; box-shadow: none; padding: 0; background: transparent; }
+
+/* Drop target while dragging between columns. */
+.ws-col.ws-col--over { outline: 2px dashed var(--m-accent); outline-offset: -3px; }

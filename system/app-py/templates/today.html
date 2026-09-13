@@ -125,22 +125,33 @@
         · anything you STARRED   → the cards (below, it is the choice)
       One heading over both, and both render `bare` so neither brings its own.
       ═══════════════════════════════════════════════════════════════════════ -#}
-  {{ sec_label("What needs you today", tail="DUE · STARRED") }}
-  {#- ADDING SOMETHING, FROM THE SURFACE YOU START ON. Reported 2026-09-01: "its
-      not clear to me how to add projects or tasks ... nor how to easily add or
-      delete tasks/things to do."
+    {#- ═══════════════════════════════════════════════════════════════════════
+        WORKSTATION — everything that is your work, in one box.
 
-      Every one of those controls existed — on Work. `+ Project` in the Active
-      Projects header, `+ add task` on each project card, a delete on each row.
-      What Today offered instead was the sentence "Star a task in Work, or give
-      one a date", which is directions, not a control. This is the control: one
-      line, always here whether or not anything is due, dated today so what you
-      type appears in the list directly beneath it.
+        Asked for 2026-09-13: "group everything which is work to a box called
+        Workstation ... split vertically in boxes and make content coherent".
 
-      It sits ABOVE the strip rather than below it because it is also the empty
-      state — when nothing is due, this line is what remains, and an empty
-      surface that still offers the one useful verb beats an empty surface that
-      explains where the verb lives. -#}
+        The three columns are the three questions a working morning asks, in the
+        order it asks them: what did I commit to, what was I in the middle of,
+        and what did I set aside to read. They were previously scattered down the
+        page with the boards and the news feed between them, so the answer to the
+        second question sat two screens below the first.
+
+        This supersedes the 2026-09-11 placement of the reading stack below "In
+        your field". It was right that a pile belongs downstream of the stream
+        that fills it; it is more right that everything you work FROM sits
+        together. The stack keeps its own ochre meaning inside the box.
+
+        `collapsible=False`: this is the surface, not a fold. `kind="work"` paints
+        the olive bar that says so.
+        ═══════════════════════════════════════════════════════════════════════ -#}
+    {% call zone("Workstation", key="today-workstation", kind="work",
+                 tail="YOUR WORK · DRAG BETWEEN COLUMNS", collapsible=False) %}
+    <div class="ws-cols">
+
+      <div class="ws-col" data-ws-col="today">
+        <div class="ws-col-h">What needs you today</div>
+        <div class="ws-col-b">
   <form class="quick-add u-mb-3"
         hx-post="/api/task/quick?bare=1"
         hx-target="#work-due-today" hx-swap="outerHTML"
@@ -151,7 +162,6 @@
     <button class="quick-add-go" type="submit">add</button>
     <a class="quick-add-alt u-link hov-ink" href="/work">or plan it in Work &rarr;</a>
   </form>
-  <div class="needs-you u-mb-6">
     {#- TODAY'S PLAN — the work you chose for today, and the control that puts it
         there. It belongs in THIS section: "what needs you today" is the question
         it answers, and a plan is a commitment rather than a thing Metis knows.
@@ -176,6 +186,12 @@
       </div>
     </div>
 
+        </div>
+      </div>
+
+      <div class="ws-col" data-ws-col="left-off">
+        <div class="ws-col-h">Where you left off</div>
+        <div class="ws-col-b">
     {#- WHERE YOU LEFT OFF, folded, INSIDE this section — because it is not a
         record of yesterday, it is the shortest route to deciding today. Every
         row carries a button that pins that project's next task straight into
@@ -183,7 +199,30 @@
     <div hx-get="/api/partial/today/pick-focus"
          hx-trigger="load delay:140ms"
          hx-swap="innerHTML"></div>
-  </div>
+        </div>
+      </div>
+
+      <div class="ws-col" data-ws-col="reading">
+        <div class="ws-col-h">Reading stack</div>
+        <div class="ws-col-b">
+  {#- YOUR READING STACK sits BELOW "In your field", asked for 2026-09-11. The
+      order is now the order of the question: what arrived (in your field), then
+      what you set aside to read. A pile you chose is downstream of the stream it
+      came from — putting it above meant the stack appeared before the source that
+      fills it.
+
+      Drawn as a stack rather than a list, and it renders nothing at all when
+      nothing is waiting. Crucial floats to the top; it is no longer the price of
+      appearing. Clicking the pile opens the full queue in Library rather than
+      rebuilding it here. -#}
+  <div hx-get="/api/partial/today/reading"
+       hx-trigger="load delay:240ms"
+       hx-swap="outerHTML"></div>
+        </div>
+      </div>
+
+    </div><!-- /.ws-cols -->
+    {% endcall %}
   {#- OUTBREAKS · EVENTS · FUNDING, directly under "Where you left off".
       Moved 2026-09-05, and CLOSED while moving: the strip opened a
       three-column grid and never emitted its `</div>`, so the Learning box
@@ -239,19 +278,6 @@
     </div>
   </div>
 
-  {#- YOUR READING STACK sits BELOW "In your field", asked for 2026-09-11. The
-      order is now the order of the question: what arrived (in your field), then
-      what you set aside to read. A pile you chose is downstream of the stream it
-      came from — putting it above meant the stack appeared before the source that
-      fills it.
-
-      Drawn as a stack rather than a list, and it renders nothing at all when
-      nothing is waiting. Crucial floats to the top; it is no longer the price of
-      appearing. Clicking the pile opens the full queue in Library rather than
-      rebuilding it here. -#}
-  <div hx-get="/api/partial/today/reading"
-       hx-trigger="load delay:240ms"
-       hx-swap="outerHTML"></div>
 
   {#- NOT PAIRED (changed 2026-09-02). These two were side by side in a
       `.today-pair`, which pairs panels of SIMILAR height — and these are a
