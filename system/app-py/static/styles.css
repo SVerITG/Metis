@@ -88,6 +88,8 @@
   --m-warn-wash:     rgba(154, 123, 60, 0.14);
   --m-alert:         #a84632;
   --m-alert-wash:    rgba(168, 70, 50, 0.12);
+  --m-plum:          #6b4a6e;
+  --m-plum-wash:          rgba(107, 74, 110, .14);
   --m-info:          #3e6178;
   --m-info-wash:     rgba(62, 97, 120, 0.12);
 
@@ -245,6 +247,8 @@
   --m-warn-wash:     rgba(224, 176, 122, 0.14);
   --m-alert:         #e28570;
   --m-alert-wash:    rgba(226, 133, 112, 0.14);
+  --m-plum:          #b08fb4;
+  --m-plum-wash:          rgba(176, 143, 180, .18);
   --m-info:          #92b3c5;
   --m-info-wash:     rgba(146, 179, 197, 0.14);
 
@@ -3147,6 +3151,8 @@ body.capture-open .t-capture {
   --m-ochre: #8a6a22;
   --m-ochre-deep: #6d5217;
   --m-ochre-soft: #a98a45;
+  --m-plum: #6a4a86;
+  --m-plum-wash: rgba(106, 74, 134, .14);
   --m-info: #2b6f7a;
   --m-ok: #3f7a52;
   --m-alert: #a8383c;
@@ -3189,6 +3195,8 @@ body.capture-open .t-capture {
   --m-ochre: #7d6417;
   --m-ochre-deep: #5f4b10;
   --m-ochre-soft: #9c8440;
+  --m-plum: #7a4a6a;
+  --m-plum-wash: rgba(122, 74, 106, .14);
   --m-info: #2f5f86;
   --m-ok: #4a7040;
   --m-alert: #a33222;
@@ -3231,6 +3239,8 @@ body.capture-open .t-capture {
   --m-ochre: #d2a65a;
   --m-ochre-deep: #e6c183;
   --m-ochre-soft: #b98f46;
+  --m-plum: #a98ed0;
+  --m-plum-wash: rgba(169, 142, 208, .18);
   --m-info: #5fb3c4;
   --m-ok: #6db87f;
   --m-alert: #e0776b;
@@ -3277,6 +3287,8 @@ body.capture-open .t-capture {
   --m-ochre: #d4a75f;
   --m-ochre-deep: #e8c489;
   --m-ochre-soft: #bb9049;
+  --m-plum: #b393b7;
+  --m-plum-wash: rgba(179, 147, 183, .18);
   --m-info: #6a9fd8;
   --m-ok: #6fbe84;
   --m-alert: #e0796b;
@@ -6822,3 +6834,60 @@ a.shf-row-title:hover { color: var(--m-accent); }
 /* The controls sit at the end of the symbol row, not amongst the labels. */
 .proj-metaline .btn { margin-left: 0; }
 .proj-metaline > .proj-collapse-btn { margin-left: auto; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Zone bar + tabs — the shared pattern (2026-09-13)
+
+   The bar names what KIND of work a zone holds; the tabs are for choosing
+   between views rather than stacking them. Both read from the semantic palette,
+   which is why that had to be completed across all five themes first.
+   ───────────────────────────────────────────────────────────────────────────── */
+.ui-zone { position: relative; }
+.ui-zone-bar {
+  display: block;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--m-rule-strong);
+}
+.ui-zone--work     .ui-zone-bar { background: var(--m-accent); }
+.ui-zone--arrived  .ui-zone-bar { background: var(--m-info); }
+.ui-zone--waiting  .ui-zone-bar { background: var(--m-ochre); }
+.ui-zone--thinking .ui-zone-bar { background: var(--m-plum); }
+.ui-zone--system   .ui-zone-bar { background: var(--m-muted); }
+
+/* A zone that never folds still gets the heading, without the affordance. */
+.ui-zone-head--static {
+  display: flex; align-items: baseline; gap: var(--m-space-3, 12px);
+  width: 100%; cursor: default;
+}
+
+.ui-tabs {
+  display: flex; flex-wrap: wrap; gap: 0;
+  border-bottom: 1px solid var(--m-rule);
+  background: var(--m-surface-2);
+}
+.ui-tab {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  padding: 7px 13px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--m-muted);
+  cursor: pointer;
+}
+.ui-tab:hover { color: var(--m-ink); }
+.ui-tab[aria-selected="true"] {
+  color: var(--m-ink);
+  background: var(--m-surface);
+  border-bottom-color: var(--m-accent);
+}
+.ui-tab:focus-visible { outline: 2px solid var(--m-accent); outline-offset: -2px; }
+
+/* A pane must declare its own hiding. There is no global [hidden] rule in this
+   stylesheet — the convention is one per component (see .ui-zone-body[hidden]) —
+   and the UA default is a plain `display:none` that any `display:flex` on the
+   pane would beat. Checked, not assumed. */
+.ui-tabpane[hidden] { display: none !important; }

@@ -90,8 +90,28 @@
       ...panels...
     {% endcall %}
 -#}
-{% macro zone(title, key, tail=None, open=False) %}
-<section class="ui-zone" data-zone-key="{{ key }}" style="margin-bottom:var(--m-gap);">
+{#- `kind` paints the bar along the top, and it names what sort of work the zone
+    holds rather than decorating it. Five values, one meaning each:
+
+      work     — things you committed to        (olive)
+      arrived  — what came in, not yours yet    (blue)
+      waiting  — something is waiting on you    (ochre)
+      thinking — your own ideas and notes       (plum)
+      system   — what Metis knows about itself  (grey)
+
+    Omit it and no bar is drawn, which is what every existing caller gets.
+    The colours resolve per theme — see the semantic palette in styles.css, which
+    had to be completed across all five themes before this could mean anything.
+
+    `collapsible=False` gives a titled box that is always open: the same grouping
+    and the same bar, without the fold. That is what a Workstation needs.
+-#}
+{% macro zone(title, key, tail=None, open=False, kind=None, collapsible=True) %}
+<section class="ui-zone{% if kind %} ui-zone--{{ kind }}{% endif %}"
+         data-zone-key="{{ key }}"{% if kind %} data-kind="{{ kind }}"{% endif %}
+         style="margin-bottom:var(--m-gap);">
+  {%- if kind %}<span class="ui-zone-bar" aria-hidden="true"></span>{% endif %}
+  {%- if collapsible %}
   <button type="button" class="ui-zone-head"
           aria-expanded="{{ 'true' if open else 'false' }}"
           aria-controls="zone-{{ key }}">
@@ -99,8 +119,46 @@
     <span class="ui-zone-title">{{ title }}</span>
     {%- if tail %}<span class="ui-zone-tail">{{ tail }}</span>{% endif %}
   </button>
-  <div class="ui-zone-body" id="zone-{{ key }}"{% if not open %} hidden{% endif %}>
+  {%- else %}
+  {#- No button: nothing here toggles, and a control that does nothing is worse
+      than no control. -#}
+  <div class="ui-zone-head ui-zone-head--static">
+    <span class="ui-zone-title">{{ title }}</span>
+    {%- if tail %}<span class="ui-zone-tail">{{ tail }}</span>{% endif %}
+  </div>
+  {%- endif %}
+  <div class="ui-zone-body" id="zone-{{ key }}"{% if collapsible and not open %} hidden{% endif %}>
     {{ caller() }}
   </div>
 </section>
+{% endmacro %}
+
+
+{#-
+  tabset — choosing between views, as opposed to stacking them.
+
+  The complaint that produced this, 2026-09-13: "many different sections, but I
+  cannot click through them". Eleven of the thirteen `zone` calls in the app sit
+  on ONE surface, stacked, each folded shut — so browsing meant opening and
+  closing eleven folds in order. Stacking is right for things read together and
+  wrong for things chosen between.
+
+  Pure markup and one line of delegated JS: the panels are already in the page,
+  so switching a tab hides and shows rather than fetching. A tab whose panel is
+  expensive should instead carry hx-get and load once.
+
+  Usage:
+    {{ tabset([("changed", "What changed"), ("methods", "Methods")], key="ai") }}
+    <div class="ui-tabpane" data-tabset="ai" data-tab="changed"> ... </div>
+    <div class="ui-tabpane" data-tabset="ai" data-tab="methods" hidden> ... </div>
+-#}
+{% macro tabset(tabs, key, active=None) %}
+<div class="ui-tabs" role="tablist" data-tabset="{{ key }}">
+  {%- for tid, label in tabs %}
+  {%- set is_on = (active == tid) or (active is none and loop.first) %}
+  <button type="button" class="ui-tab" role="tab"
+          data-tabset="{{ key }}" data-tab="{{ tid }}"
+          aria-selected="{{ 'true' if is_on else 'false' }}">{{ label }}</button>
+  {%- endfor %}
+</div>
 {% endmacro %}

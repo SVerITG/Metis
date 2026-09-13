@@ -3381,3 +3381,45 @@ document.addEventListener('keydown', function (e) {
       .catch(function () { /* server down — say nothing rather than cry wolf */ });
   });
 })();
+
+// ─── Tab sets ────────────────────────────────────────────────────────────────
+// Choosing between views, rather than stacking them. Delegated on document, so
+// it keeps working after an HTMX swap replaces the panels — binding per button
+// would silently stop working the first time a partial re-rendered, which is the
+// failure mode that made a whole layer of project-card controls inert.
+//
+// Panels declare which set and tab they belong to; the tab does no fetching, so
+// switching is instant. A pane whose content is expensive should carry its own
+// hx-get with hx-trigger="revealed once" and pay only when first shown.
+document.addEventListener('click', function (ev) {
+  const tab = ev.target.closest('.ui-tab[data-tabset][data-tab]');
+  if (!tab) return;
+  const set = tab.dataset.tabset;
+  const want = tab.dataset.tab;
+
+  document.querySelectorAll(`.ui-tab[data-tabset="${set}"]`).forEach(t => {
+    t.setAttribute('aria-selected', String(t.dataset.tab === want));
+  });
+  document.querySelectorAll(`.ui-tabpane[data-tabset="${set}"]`).forEach(p => {
+    // .hidden, not style.display. There is NO global [hidden] rule in this
+    // stylesheet — the convention is one per component — so `.ui-tabpane[hidden]`
+    // is declared alongside these panes. Without it the attribute would lose to
+    // any display: flex on the pane and a "hidden" tab would stay on screen.
+    p.hidden = (p.dataset.tab !== want);
+  });
+  try { localStorage.setItem(`metis.tab.${set}`, want); } catch (_) {}
+});
+
+// Restore the tab the reader last chose, per set.
+function restoreTabs(root) {
+  (root || document).querySelectorAll('.ui-tabs[data-tabset]').forEach(bar => {
+    const set = bar.dataset.tabset;
+    let want = null;
+    try { want = localStorage.getItem(`metis.tab.${set}`); } catch (_) {}
+    if (!want) return;
+    const tab = document.querySelector(`.ui-tab[data-tabset="${set}"][data-tab="${want}"]`);
+    if (tab) tab.click();
+  });
+}
+document.addEventListener('DOMContentLoaded', () => restoreTabs());
+document.body && document.body.addEventListener('htmx:afterSwap', e => restoreTabs(e.target));
