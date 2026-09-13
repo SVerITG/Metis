@@ -2120,7 +2120,20 @@ function _restoreProjectStates() {
     const body = card.querySelector('.proj-body');
     const btn  = card.querySelector('.proj-collapse-btn');
     if (!body || !btn) return;
-    if (localStorage.getItem(`proj-collapsed-${pid}`) === '1') {
+    // COLLAPSED IS THE DEFAULT NOW. Asked for 2026-09-13: Work should open with
+    // the projects collapsed. Seventeen expanded cards is a page you scroll past
+    // rather than read; collapsed, the whole portfolio fits on one screen, and the
+    // title line plus the symbol row already answer "does this need me".
+    //
+    // The stored key therefore records the EXCEPTION — a project you chose to
+    // leave open — instead of the rule. The old key meant the opposite, so it is
+    // read once and migrated rather than stranding choices already made.
+    const _legacy = localStorage.getItem(`proj-collapsed-${pid}`);
+    if (_legacy !== null) {
+      if (_legacy !== '1') localStorage.setItem(`proj-open-${pid}`, '1');
+      localStorage.removeItem(`proj-collapsed-${pid}`);
+    }
+    if (localStorage.getItem(`proj-open-${pid}`) !== '1') {
       body.style.display = 'none';
       btn.textContent = '+';
     }
@@ -2188,9 +2201,9 @@ function toggleProjectCollapse(projectId) {
   body.style.display = collapsed ? '' : 'none';
   if (btn) btn.textContent = collapsed ? '−' : '+';
   if (collapsed) {
-    localStorage.removeItem(`proj-collapsed-${projectId}`);
+    localStorage.setItem(`proj-open-${projectId}`, '1');   // records the exception
   } else {
-    localStorage.setItem(`proj-collapsed-${projectId}`, '1');
+    localStorage.removeItem(`proj-open-${projectId}`);
   }
 }
 

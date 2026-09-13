@@ -6712,3 +6712,33 @@ a.shf-row-title:hover { color: var(--m-accent); }
   color: var(--m-muted);
   white-space: nowrap;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Project card header — title above, symbols below (2026-09-13)
+
+   One row previously held the drag handle, the activity glyph, the title, every
+   chip, the open count and four buttons; a long title was squeezed to nothing
+   between them. Two lines give the name the width it needs and turn the marks
+   into a row you can scan.
+   ───────────────────────────────────────────────────────────────────────────── */
+.proj-header--stacked { display: flex; flex-direction: column; gap: var(--m-space-2, 8px); }
+
+.proj-titleline { display: flex; align-items: flex-start; gap: var(--m-space-2, 8px); min-width: 0; }
+.proj-titleline .u-title {
+  /* Wrap instead of clipping: a project's name is the one thing on the card
+     that must never be guessed at. Two lines maximum, then ellipsis. */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.25;
+}
+.proj-metaline {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  min-height: 22px;
+}
+/* The controls sit at the end of the symbol row, not amongst the labels. */
+.proj-metaline .btn { margin-left: 0; }
+.proj-metaline > .proj-collapse-btn { margin-left: auto; }

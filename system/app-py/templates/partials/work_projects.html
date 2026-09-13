@@ -88,10 +88,21 @@
        style="padding:0;display:flex;flex-direction:column;cursor:default;transition:opacity .15s,outline .1s;
               border-left:3px solid {{ p.accent_color or 'transparent' }};">
 
-    <!-- ── Header row (always visible) ── -->
-    <div class="proj-header u-row u-rule"
+    <!-- ── Header: TITLE on its own line, symbols under it ── -->
+    {#- One row held the drag handle, the activity glyph, the title, every chip,
+        the open count and four buttons. A title like "HAT Formation Clinique —
+        RDC (Kinshasa–Kongo Central)" then competed with all of it for width and
+        came out clipped mid-word, which is what read as "mistakes in how they
+        are displayed". Nothing was wrong with the titles themselves.
+
+        Asked for 2026-09-13: "the title of the project should be the upper line,
+        with symbols below it". So the title gets a line of its own and wraps
+        properly, and the marks that describe it sit underneath where they can be
+        scanned as a row. -#}
+    <div class="proj-header proj-header--stacked u-rule"
          style="padding:var(--m-space-4) var(--m-space-4) var(--m-space-3);">
-      <!-- Drag handle -->
+      <div class="proj-titleline">
+      <!-- Drag handle stays with the title: it is the grip for the whole card -->
       <span class="proj-drag-handle u-fixed{% if flat %} u-hide{% endif %}"
             title="Drag to reorder"
             style="cursor:grab;color:var(--m-muted);font-size:var(--t-body);line-height:1;user-select:none;">⠿</span>
@@ -108,6 +119,13 @@
       <div class="u-grow u-title u-title--lg" onclick="openProjectDetail('{{ p.id }}')"
            style="font-weight:500;line-height:1.2;cursor:pointer;"
            title="Open project details" role="button" tabindex="0">{{ p.title }}</div>
+      </div><!-- /.proj-titleline -->
+
+      {#- THE SYMBOL ROW. Everything that describes the project rather than names
+          it: how alive it is, what it is filed under, how much is open, and the
+          controls. Scannable as a row precisely because the title is no longer in
+          it. -#}
+      <div class="proj-metaline">
       {#- OPEN WORK, IN THE HEADER. The router has computed `open_tasks` for a
           while and the card never printed it, so a collapsed project said what it
           was called and nothing about whether it needed anything. Asked for
@@ -186,6 +204,7 @@
               onclick="toggleProjectCollapse('{{ p.id }}')"
               title="Collapse / expand"
               style="padding:var(--m-space-1) var(--m-space-1);font-family:var(--m-mono);font-size:var(--t-h4);color:var(--m-muted);line-height:1;">−</button>
+      </div><!-- /.proj-metaline -->
     </div>
 
     <!-- ── Collapsible body ── -->
