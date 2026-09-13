@@ -26,7 +26,15 @@
     {% if projects %}
     <ul class="pick-list">
       {% for p in projects %}
-      <li class="mrow row-hit">
+      {#- DRAGGABLE, and carrying the id that makes it so. These rows named a
+          project and linked to /work generically, so nothing on them identified
+          WHICH project — you could read the row but not act on it. Inside the
+          Workstation the row is the handle: drag it into "what needs you today"
+          and that project is planned for today. -#}
+      <li class="mrow row-hit ws-drag" draggable="true"
+          data-ws-kind="project" data-ws-id="{{ p.id }}"
+          data-ws-label="{{ p.title }}"
+          title="Drag into “What needs you today” to work on this today">
         <span class="mrow-state">
           {%- if p.quiet_days is not none and p.quiet_days <= 2 -%}
           <span class="stat is-good">active</span>
@@ -34,7 +42,10 @@
         </span>
         <span class="mrow-body">
           <a class="mrow-title hov-ink" href="/work">{{ p.title }}</a>
-          {% if p.next_step %}<span class="mrow-meta">NEXT → {{ p.next_step }}</span>
+          {#- CLAMPED. next_step is a free-text note and some run to a paragraph;
+              at full length one row filled the whole column. Two lines, then an
+              ellipsis — the detail lives on the project card. -#}
+          {% if p.next_step %}<span class="mrow-meta mrow-meta--clamp" title="{{ p.next_step }}">NEXT → {{ p.next_step }}</span>
           {% elif p.quiet_days is not none %}<span class="mrow-meta">quiet for {{ p.quiet_days }} days</span>{% endif %}
         </span>
         <span class="mrow-acts">

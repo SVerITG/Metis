@@ -6939,3 +6939,13 @@ a.shf-row-title:hover { color: var(--m-accent); }
 
 /* Drop target while dragging between columns. */
 .ws-col.ws-col--over { outline: 2px dashed var(--m-accent); outline-offset: -3px; }
+
+/* A next-step note can run to a paragraph; two lines in a column is plenty. */
+.mrow-meta--clamp {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; overflow-wrap: anywhere;
+}
+/* What can be picked up, and what it looks like while held. */
+.ws-drag { cursor: grab; }
+.ws-drag:active { cursor: grabbing; }
+.ws-drag--held { opacity: .4; }

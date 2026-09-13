@@ -36,7 +36,13 @@
         you how much is waiting, a title tells you whether to start. -#}
     <div class="rstack-top">
       {% for it in items %}
-      <div class="mrow row-hit">
+      {#- Draggable into "what needs you today", where it becomes the thing to
+          read first. That is the CRUCIAL flag the stack already has — no new
+          kind, no new store, and the pile already sorts by it. -#}
+      <div class="mrow row-hit ws-drag" draggable="true"
+           data-ws-kind="reading" data-ws-id="{{ it.item_id }}"
+           data-ws-sub="{{ it.kind }}" data-ws-label="{{ it.title }}"
+           title="Drag into “What needs you today” to read this first">
         <span class="mrow-state">
           {% if it.crucial %}<span class="stat is-warn">crucial</span>
           {% else %}<span class="stat">{{ 'paper' if it.kind == 'paper' else 'news' }}</span>{% endif %}

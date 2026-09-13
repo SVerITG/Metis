@@ -3423,3 +3423,88 @@ function restoreTabs(root) {
 }
 document.addEventListener('DOMContentLoaded', () => restoreTabs());
 document.body && document.body.addEventListener('htmx:afterSwap', e => restoreTabs(e.target));
+
+// ─── Workstation: drag between the columns ───────────────────────────────────
+// The three columns are the three questions a morning asks, and dragging is the
+// answer moving between them. Two sources, one target, and each writes through
+// the endpoint that already owns that meaning — no new store, no fourth kind:
+//
+//   where you left off  →  today   plans that project for today (day_plan)
+//   reading stack       →  today   flags it crucial, which is what the stack
+//                                  already means by "read this first"
+//
+// Delegated on document so it survives the HTMX swaps these panels do constantly.
+(function () {
+  let held = null;
+
+  document.addEventListener('dragstart', function (ev) {
+    const row = ev.target.closest('.ws-drag[data-ws-kind][data-ws-id]');
+    if (!row) return;
+    held = { kind: row.dataset.wsKind, id: row.dataset.wsId,
+             sub: row.dataset.wsSub || '', label: row.dataset.wsLabel || '' };
+    ev.dataTransfer.effectAllowed = 'copy';
+    // Some browsers refuse to start a drag with no payload set.
+    try { ev.dataTransfer.setData('text/plain', held.id); } catch (_) {}
+    row.classList.add('ws-drag--held');
+  });
+
+  document.addEventListener('dragend', function (ev) {
+    const row = ev.target.closest('.ws-drag');
+    if (row) row.classList.remove('ws-drag--held');
+    held = null;
+  });
+
+  function target(ev) {
+    const col = ev.target.closest('.ws-col[data-ws-col="today"]');
+    // Dropping something back where it came from is not an edit.
+    return (col && held && held.kind !== 'today') ? col : null;
+  }
+
+  document.addEventListener('dragover', function (ev) {
+    const col = target(ev);
+    if (!col) return;
+    ev.preventDefault();                       // without this, drop never fires
+    ev.dataTransfer.dropEffect = 'copy';
+    col.classList.add('ws-col--over');
+  });
+
+  document.addEventListener('dragleave', function (ev) {
+    const col = ev.target.closest('.ws-col');
+    if (col) col.classList.remove('ws-col--over');
+  });
+
+  document.addEventListener('drop', function (ev) {
+    const col = target(ev);
+    if (!col) return;
+    ev.preventDefault();
+    col.classList.remove('ws-col--over');
+    const it = held; held = null;
+    if (!it) return;
+
+    let url, body;
+    if (it.kind === 'project') {
+      url = '/api/today/plan/add';
+      body = new URLSearchParams({ kind: 'project', project_id: it.id, days: '1' });
+    } else if (it.kind === 'reading') {
+      url = '/api/stack/crucial';
+      body = new URLSearchParams({ kind: it.sub || 'news', item_id: it.id,
+                                   back: 'today-reading' });
+    } else { return; }
+
+    fetch(url, { method: 'POST', body: body })
+      .then(r => {
+        if (!r.ok) throw new Error(r.status);
+        // Redraw both ends: the plan gained a row, the stack re-sorted.
+        if (window.htmx) {
+          htmx.ajax('GET', '/api/partial/today/plan',    { target: '#today-plan', swap: 'outerHTML' });
+          htmx.ajax('GET', '/api/partial/today/reading', { target: '.rstack-panel', swap: 'outerHTML' });
+        }
+        if (typeof showToast === 'function') {
+          showToast(`<i class="bi bi-check2 toast-icon"></i>${it.label || 'Added'} → today`);
+        }
+      })
+      .catch(() => {
+        if (typeof showToast === 'function') showToast('Could not add that to today.');
+      });
+  });
+})();
