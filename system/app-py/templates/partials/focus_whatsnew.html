@@ -1,9 +1,21 @@
-{#- focus_whatsnew.html — has anything arrived, in one place.
+{#- focus_whatsnew.html — has anything arrived, and WHAT KIND of thing.
 
     Replaces having to read three sections (pulse, feed, reading) to answer one
     question. Both streams, newest first, with the source named — because "new"
-    is only useful if you can see what it is without opening it. -#}
-{% set _n = (new_news | length) + (new_reading | length) %}
+    is only useful if you can see what it is without opening it.
+
+    Since 2026-09-14 it also answers "how many of what". A flat list of 40 items
+    tells you the week was busy; it does not tell you whether the week was busy
+    with methods papers or with policy. So the arrivals are grouped into four
+    families plus a remainder, each with its count, each expandable.
+
+    WHAT IS NOT HERE, AND WHY. "Most cited" was asked for and is not shown:
+    nothing in this database stores a citation count. It is named as missing
+    rather than filled with a plausible number, because a fabricated count is the
+    one that ends up quoted.
+
+    Context: area · new_news · new_reading · changed (from `_facet_breakdown`). -#}
+{% set _n = changed.n_total if changed else ((new_news | length) + (new_reading | length)) %}
 {% if _n == 0 %}
 <div class="panel panel--md">
   <p class="u-ed" style="margin:0;font-size:var(--t-small);color:var(--m-muted);">
@@ -20,31 +32,77 @@
   </div>
 </div>
 {% else %}
-<div class="fwn-list">
-  {% for it in new_news %}
-  <article class="fwn-item">
-    <span class="fwn-kind fwn-kind--news">NEWS</span>
-    <div class="fwn-body">
-      <a class="fwn-title" href="{{ it.source_url or '#' }}"{% if it.source_url %} target="_blank" rel="noopener"{% endif %}>{{ it.title }}</a>
-      {% if it.summary %}<p class="fwn-sum">{{ it.summary[:230] }}{% if it.summary|length > 230 %}…{% endif %}</p>{% endif %}
-      <p class="fwn-meta">{{ it.brief_date[:10] if it.brief_date else '' }}{% if it.domain %} · {{ it.domain }}{% endif %}</p>
-    </div>
-  </article>
-  {% endfor %}
-  {% for it in new_reading %}
-  <article class="fwn-item">
-    <span class="fwn-kind fwn-kind--paper">PAPER</span>
-    <div class="fwn-body">
-      <a class="fwn-title" href="{{ ('/api/library/pdf/' ~ it.id) if it.id else '#' }}" target="_blank" rel="noopener">{{ it.title }}</a>
-      <p class="fwn-meta">
-        {%- if it.authors %}{{ it.authors[:70] }}{% endif %}
-        {%- if it.year %} · {{ it.year }}{% endif %}
-        {%- if it.journal %} · {{ it.journal[:44] }}{% endif %}
-      </p>
-    </div>
-  </article>
-  {% endfor %}
+
+{#- ── The tally ──────────────────────────────────────────────────────────────
+    Every number here is a count of rows on this page. Nothing is estimated. -#}
+<div class="fwn-tally">
+  <div class="fwn-tally-top">
+    <span class="fwn-big">{{ changed.n_total }}</span>
+    <span class="fwn-big-l">new since your last visit</span>
+    <span class="fwn-split">{{ changed.n_papers }} article{{ '' if changed.n_papers == 1 else 's' }}
+      · {{ changed.n_news }} news item{{ '' if changed.n_news == 1 else 's' }}</span>
+  </div>
+
+  <div class="fwn-bars">
+    {% for key in changed.order %}
+    {% set g = changed.groups[key] %}
+    <a class="fwn-bar fwn-bar--{{ key }}" href="#fwn-{{ key }}">
+      <span class="fwn-bar-n">{{ g['items'] | length }}</span>
+      <span class="fwn-bar-l">{{ g['label'] }}</span>
+      <span class="fwn-bar-track" aria-hidden="true">
+        <span class="fwn-bar-fill"
+              style="width:{{ ((g['items'] | length) / changed.n_total * 100) | round | int }}%;"></span>
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+
+  <p class="fwn-caveat">
+    Families are read off the words each item uses, so an item sits where its
+    vocabulary puts it — useful for scanning, not a classification to cite.
+    <strong>Most cited is not shown:</strong> no citation count is stored for
+    either stream, and a made-up one would be the number you ended up repeating.
+  </p>
 </div>
+
+{#- ── The items, by family. Open the first; the rest are one click. ─────────
+    `<details>` rather than a tab strip: the tabs on this surface already choose
+    between the five views, and a second row of them inside one view is where a
+    reader stops knowing which control they are using. -#}
+{% for key in changed.order %}
+{% set g = changed.groups[key] %}
+<details class="fwn-fold" id="fwn-{{ key }}"{% if loop.first %} open{% endif %}>
+  <summary>
+    <span class="fwn-chev">▸</span>
+    {{ g['label'] }} <span class="fwn-fold-n">{{ g['items'] | length }}</span>
+  </summary>
+  <div class="fwn-list">
+    {% for it in g['items'] %}
+    <article class="fwn-item">
+      {% if it._kind == 'news' %}
+      <span class="fwn-kind fwn-kind--news">NEWS</span>
+      <div class="fwn-body">
+        <a class="fwn-title" href="{{ it.source_url or '#' }}"{% if it.source_url %} target="_blank" rel="noopener"{% endif %}>{{ it.title }}</a>
+        {% if it.summary %}<p class="fwn-sum">{{ it.summary[:230] }}{% if it.summary|length > 230 %}…{% endif %}</p>{% endif %}
+        <p class="fwn-meta">{{ it.brief_date[:10] if it.brief_date else '' }}{% if it.domain %} · {{ it.domain }}{% endif %}</p>
+      </div>
+      {% else %}
+      <span class="fwn-kind fwn-kind--paper">PAPER</span>
+      <div class="fwn-body">
+        <a class="fwn-title" href="{{ ('/api/library/pdf/' ~ it.id) if it.id else '#' }}" target="_blank" rel="noopener">{{ it.title }}</a>
+        <p class="fwn-meta">
+          {%- if it.authors %}{{ it.authors[:70] }}{% endif %}
+          {%- if it.pub %} · {{ it.pub[:10] }}{% endif %}
+          {%- if it.journal %} · {{ it.journal[:44] }}{% endif %}
+        </p>
+      </div>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</details>
+{% endfor %}
+
 <div style="margin-top:var(--m-space-3);">
   <button class="ft-btn" hx-post="/api/focus/{{ area.slug }}/scan"
           hx-target="#focus-whatsnew" hx-swap="innerHTML">Scan again</button>

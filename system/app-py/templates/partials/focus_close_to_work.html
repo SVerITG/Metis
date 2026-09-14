@@ -1,0 +1,73 @@
+{#- focus_close_to_work.html — the lens, re-ranked by distance from your own work.
+
+    THIS IS NOT A SECOND KEYWORD FILTER. The feed answers "is this about the
+    subject"; this answers "is this near what I am actually doing" — a different
+    question with a different source. Relevance is scored against a profile built
+    from the reader's projects, courses, fields and stated topics, so an item can
+    sit high in the feed and low here, which is exactly the separation worth
+    drawing on a busy week.
+
+    RANKED, NEVER GATED. There is no minimum score. A fixed cutoff on a score
+    whose scale drifts selects nothing by luck — that is what emptied the
+    field-week panel three days after a floor was added to it. So: sort, take the
+    top few, and always print the denominator underneath so the number means
+    something.
+
+    Context: area · items · total (shown) · scored (the pool they came from). -#}
+{% from "partials/_focus_item.html" import verdict_buttons %}
+{% set T = "#focus-close" %}
+
+{% if not items %}
+  <div class="panel panel--md">
+    <p style="margin:0;font-size:var(--t-small);color:var(--m-muted);">
+      {% if not scored %}
+      Nothing through this lens has been scored against your work yet. Relevance is
+      written when items are scanned, so this fills in on its own — and if it stays
+      empty while the feed is busy, that is a finding about the <strong>lens</strong>,
+      not about the week.
+      {% else %}
+      Everything close to your work here has already been judged. Undo a verdict in
+      the feed to bring an item back.
+      {% endif %}
+    </p>
+  </div>
+{% else %}
+
+  {#- The denominator, stated before the list rather than after it: "14 items"
+      means nothing until you know it is 14 out of 300. -#}
+  <p class="ctw-denom">
+    The <strong>{{ total }}</strong> closest to your work,
+    out of <strong>{{ scored }}</strong> undecided through this lens.
+    Closeness is measured against your projects, courses and fields — not against
+    the subject of the shelf.
+  </p>
+
+  <div class="panel" style="padding:var(--m-space-1) 0;">
+    {% for it in items %}
+    {% set pct = ((it.rel | float) * 100) | round | int %}
+    <div class="ctw-row">
+
+      {#- The artefact: a closeness meter. A number alone is a claim; a bar you
+          can compare down a column is a ranking you can see. -#}
+      <div class="ctw-gauge" title="{{ pct }}% close to your own work">
+        <span class="ctw-gauge-fill" style="height:{{ [pct, 4] | max }}%;"></span>
+        <span class="ctw-gauge-n">{{ pct }}</span>
+      </div>
+
+      <div class="ctw-body">
+        <div class="ctw-head">
+          <span class="ctw-kind ctw-kind--{{ it.kind }}">{{ 'paper' if it.kind == 'paper' else 'news' }}</span>
+          {% if it.dated %}<span class="ctw-date">{{ it.dated[:10] }}</span>{% endif %}
+        </div>
+        <div class="ctw-title">
+          {% if it.source_url %}
+          <a href="{{ it.source_url }}" target="_blank" rel="noopener">{{ it.title }}</a>
+          {% else %}{{ it.title }}{% endif %}
+        </div>
+        {% if it.blurb %}<div class="ctw-sum">{{ it.blurb }}</div>{% endif %}
+        {{ verdict_buttons(area.slug, it.kind, it, T) }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% endif %}

@@ -3389,8 +3389,16 @@ document.addEventListener('keydown', function (e) {
 // failure mode that made a whole layer of project-card controls inert.
 //
 // Panels declare which set and tab they belong to; the tab does no fetching, so
-// switching is instant. A pane whose content is expensive should carry its own
-// hx-get with hx-trigger="revealed once" and pay only when first shown.
+// switching is instant. A pane whose content is expensive carries its own hx-get
+// with hx-trigger="revealed once" and pays only when first shown.
+//
+// That trigger does NOT fire on its own here, and the reason is easy to miss:
+// htmx evaluates `revealed` against the element's box, and a pane hidden with the
+// `hidden` attribute has no box — so un-hiding it is not a reveal, and no scroll
+// follows to make it one. Left alone, the expensive pane stays empty forever and
+// looks like a server error. So showing a pane fires `revealed` at anything
+// inside it that is waiting for one. The `once` modifier is htmx's, so a pane
+// still loads exactly one time however often you switch back to it.
 document.addEventListener('click', function (ev) {
   const tab = ev.target.closest('.ui-tab[data-tabset][data-tab]');
   if (!tab) return;
@@ -3406,6 +3414,11 @@ document.addEventListener('click', function (ev) {
     // is declared alongside these panes. Without it the attribute would lose to
     // any display: flex on the pane and a "hidden" tab would stay on screen.
     p.hidden = (p.dataset.tab !== want);
+    if (!p.hidden && window.htmx) {
+      p.querySelectorAll('[hx-trigger~="revealed"]').forEach(el => {
+        try { window.htmx.trigger(el, 'revealed'); } catch (_) {}
+      });
+    }
   });
   try { localStorage.setItem(`metis.tab.${set}`, want); } catch (_) {}
 });

@@ -205,8 +205,124 @@ async def focus_page(request: Request, slug: str):
         "links": _links_for(area),
         "new_news": _new_news,
         "new_reading": _new_reading,
+        "changed": _facet_breakdown(_new_news, _new_reading),
     })
     return templates.TemplateResponse(request, "focus.html", ctx)
+
+
+# ---------------------------------------------------------------------------
+# What changed, broken down
+# ---------------------------------------------------------------------------
+# "make it more detailled so i know exactly how many articles, new methodologies,
+# novel applications, most cited ... and the rest" (2026-09-13).
+#
+# Four of those five are answerable from text the surface already holds. The
+# fifth is NOT: nothing in this database stores a citation count, for news or for
+# papers, so "most cited" would have to be invented. It is named in the panel as
+# the thing that is missing rather than filled with a plausible-looking number —
+# a fabricated count is worse than an absent one, because it gets quoted.
+#
+# The four that ARE answerable are decided by vocabulary, and the panel says so.
+# This is a reading aid, not a taxonomy: an item lands in the family whose words
+# it uses most, ties going to the earlier family. A one-word difference can move
+# an item, which is exactly why the rule is stated on screen instead of being
+# presented as a classification.
+FACETS = [
+    ("method", "New methods", (
+        "we propose", "we introduce", "we present", "novel architecture",
+        "new model", "algorithm", "transformer", "fine-tun", "pre-train",
+        "pretrain", "neural network", "deep learning", "foundation model",
+        "large language model", "autoencoder", "attention", "embedding",
+        "classifier", "prediction model", "predictive model", "training data",
+        "self-supervised", "methodology", "framework for", "an approach to",
+        "solver", "architecture", "model to predict", "machine learning model")),
+    ("application", "Novel applications", (
+        "diagnos", "screening", "triage", "surveillance", "in the clinic",
+        "clinical use", "clinical usability", "hospital", "primary care",
+        "emergency", "icu", "intensive care", "field test", "deployed",
+        "deployment", "pilot", "implementation", "outbreak", "case finding",
+        "point of care", "point-of-care", "low-resource", "real-world",
+        "detect", "monitoring", "in patients", "patients with", "prescrib",
+        "treatment", "rural", "risk communication", "decision support",
+        "helping doctors", "workflow")),
+    ("evidence", "Evaluation & evidence", (
+        "external validation", "validation", "we evaluate", "evaluating",
+        "evaluation of", "accuracy", "sensitivity and specificity",
+        "performance of", "outperform", "calibration", "reproducib",
+        "generalis", "generaliz", "bias", "fairness", "error rate",
+        "failure mode", "systematic review", "meta-analysis", "randomis",
+        "randomiz", "benchmark", "compared with", "compared to",
+        "head-to-head", "matching manual", "insufficient")),
+    ("policy", "Policy & governance", (
+        "regulat", "guideline", "policy", "governance", "ethic",
+        "legislation", "new laws", "law", "watchdog", "oversight",
+        "approval", "authorised", "authorized", "fda", "ema ",
+        "world health organization", "data protection", "consent",
+        "liability", "accountab", "standards for", "recommendations for",
+        "act ", "reimbursement", "procurement")),
+]
+
+
+def _facet_of(text: str) -> str:
+    """Which family's vocabulary does this item use most? '' when none."""
+    t = (text or "").lower()
+    best, best_n = "", 0
+    for key, _label, words in FACETS:
+        n = sum(1 for w in words if w in t)
+        if n > best_n:          # STRICTLY greater — a tie keeps the earlier family
+            best, best_n = key, n
+    return best
+
+
+def _facet_breakdown(news: list, reading: list) -> dict:
+    """Group what arrived into named families, each with its items and its count.
+
+    Returns a dict shaped for the template: `order` (the families that have
+    anything, in fixed order, "rest" last), `groups` (key -> {label, items}),
+    and the two stream totals so the panel can print the denominator.
+    """
+    buckets: dict[str, list] = {k: [] for k, _l, _w in FACETS}
+    buckets["rest"] = []
+    labels = {k: l for k, l, _w in FACETS}
+    labels["rest"] = "Everything else"
+
+    def place(it, kind, text):
+        buckets[_facet_of(text) or "rest"].append({**it, "_kind": kind})
+
+    # `focus_reading` does not select `abstract` — reading it off those rows
+    # silently classified every paper on its TITLE alone, which put two thirds of
+    # them in the remainder. One extra query for the ids already on screen; the
+    # alternative is a breakdown that is mostly "everything else".
+    abstracts: dict[str, str] = {}
+    ids = [str(it.get("id")) for it in reading if it.get("id")]
+    if ids:
+        try:
+            from db import db_query
+            marks = ",".join("?" * len(ids))
+            for r in db_query(
+                    f"SELECT id, COALESCE(abstract,'') AS abstract "
+                    f"FROM new_publications WHERE id IN ({marks})",
+                    tuple(ids), default=[]) or []:
+                abstracts[str(r["id"])] = r["abstract"]
+        except Exception:
+            pass
+
+    for it in news:
+        place(it, "news", f"{it.get('title','')} {it.get('summary','') or ''}")
+    for it in reading:
+        body = abstracts.get(str(it.get("id")), "") or (it.get("abstract") or "")
+        place(it, "paper", f"{it.get('title','')} {body}")
+
+    order = [k for k, _l, _w in FACETS if buckets[k]]
+    if buckets["rest"]:
+        order.append("rest")
+    return {
+        "order": order,
+        "groups": {k: {"label": labels[k], "items": buckets[k]} for k in order},
+        "n_news": len(news),
+        "n_papers": len(reading),
+        "n_total": len(news) + len(reading),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -285,6 +401,95 @@ async def add_idea(request: Request, slug: str, text: str = Form(...)):
 # partial drifts out of step with the page it belongs to: the template gained
 # `counts` and the sift, and a hand-rolled dict would have rendered a blank
 # header on refresh while the full page looked fine.
+def _close_ctx(slug: str) -> dict | None:
+    """What in this focus is closest to what the reader actually works on.
+
+    "Close to my work" was asked for on 2026-09-13 and appeared in NO router and
+    NO template — it had to be built, not fixed.
+
+    The distinction it draws is the useful one. A focus lens is a keyword query:
+    it answers "is this about AI in health", which on a busy week is 150 items and
+    a blur. This asks a different question — "is this near MY projects, courses
+    and library" — and it already has an answer, because relevance.py scores every
+    item against a profile built from exactly those anchors, weighted by band
+    (project 1.00, course 1.00, field 0.95, stated topic 0.88).
+
+    So this is not a second keyword filter. It is the lens INTERSECTED with the
+    profile: items the focus caught, ranked by their distance from the reader's
+    own work, top N. No absolute cutoff — that is the mistake that emptied the
+    field-week panel three days after it fixed it, because a fixed threshold on a
+    score whose scale drifts will silently select nothing.
+    """
+    from db import db_query
+
+    F = _f()
+    area = F.get_focus(slug)
+    if not area:
+        return None
+
+    groups = F._groups(area)
+    if not groups:
+        return {"area": area, "items": [], "total": 0, "scored": 0}
+
+    # The lens is built by the focus module, not restated here. Two SQL
+    # fragments claiming to be the same lens is the "one author per count"
+    # failure in query form: they agree until one is edited.
+    news_where, news_params = F.lens_sql(groups, 'title || " " || COALESCE(summary,"")')
+    pub_where, pub_params = F.lens_sql(groups, 'title || " " || COALESCE(abstract,"")')
+
+    # Over-fetch, then word-boundary confirm, THEN rank — `confirm` can only
+    # remove rows, so a LIMIT applied before it returns short.
+    news = db_query(
+        "SELECT brief_id AS item_id, title, summary AS blurb, source_url, "
+        "       COALESCE(brief_date,'') AS dated, COALESCE(relevance,0) AS rel, "
+        "       'news' AS kind "
+        "FROM news_briefs WHERE " + news_where +
+        " AND COALESCE(brief_date,'') >= date('now','-45 day') "
+        "ORDER BY relevance DESC, brief_date DESC LIMIT 220",
+        tuple(news_params), default=[]) or []
+    pubs = db_query(
+        "SELECT CAST(id AS TEXT) AS item_id, title, abstract AS blurb, source_url, "
+        "       COALESCE(NULLIF(pub_iso,''), NULLIF(pub_date,''), discovered_at) AS dated, "
+        "       COALESCE(relevance,0) AS rel, 'paper' AS kind "
+        "FROM new_publications WHERE " + pub_where +
+        " AND COALESCE(dismissed_at,'') = '' "
+        "ORDER BY relevance DESC, discovered_at DESC LIMIT 220",
+        tuple(pub_params), default=[]) or []
+
+    items = (F.confirm(groups, news, ["title", "blurb"])
+             + F.confirm(groups, pubs, ["title", "blurb"]))
+
+    # Already decided here? Then it is not news to him. A verdict is per-focus,
+    # so an item dismissed on another shelf still shows up on this one.
+    judged = {(v["kind"], str(v["item_id"])) for v in F.focus_verdicts(slug)}
+    items = [i for i in items if (i["kind"], str(i["item_id"])) not in judged]
+
+    scored = len(items)
+    # TOP-N, never a floor. A fixed cutoff on a score whose scale drifts selects
+    # nothing by luck — that is exactly what emptied the field-week panel.
+    items.sort(key=lambda i: (-float(i.get("rel") or 0), i.get("dated") or ""))
+    top = items[:14]
+    for i in top:
+        b = (i.get("blurb") or "").strip().replace("\n", " ")
+        i["blurb"] = (b[:190] + "\u2026") if len(b) > 190 else b
+        # `_id` is what the shared verdict macro reads. Set here rather than
+        # writing a second pair of Keep/Not-for-me buttons for this panel — two
+        # implementations of one judgement is how they come to disagree.
+        i["_id"] = str(i["item_id"])
+
+    return {"area": area, "items": top, "total": len(top), "scored": scored}
+
+
+@router.get("/api/partial/focus/{slug}/close-to-work", response_class=HTMLResponse)
+async def focus_close_to_work(request: Request, slug: str):
+    from main import templates
+    ctx = _close_ctx(slug)
+    if ctx is None:
+        return HTMLResponse("")
+    return templates.TemplateResponse(
+        request, "partials/focus_close_to_work.html", ctx)
+
+
 @router.get("/api/partial/focus/{slug}/feed", response_class=HTMLResponse)
 async def feed_partial(request: Request, slug: str):
     from main import templates
@@ -357,10 +562,17 @@ async def scan_whatsnew(request: Request, slug: str):
 
     area = F.get_focus(slug)
     prev = (area.get("last_visited_at") or "") if area else ""
+    nn = F.focus_news(slug, limit=40, since=prev[:10]) if prev else []
+    nr = F.focus_reading(slug, limit=40, since=prev) if prev else []
+    # The breakdown is built HERE as well as on the page, and from the same
+    # helper. `focus_counts.html` was the lesson: a variable set at only one of a
+    # partial's two render sites does not fail loudly, it renders a quietly wrong
+    # panel after the first refresh.
     return templates.TemplateResponse(request, "partials/focus_whatsnew.html", {
         "area": area,
-        "new_news": F.focus_news(slug, limit=40, since=prev[:10]) if prev else [],
-        "new_reading": F.focus_reading(slug, limit=40, since=prev) if prev else [],
+        "new_news": nn,
+        "new_reading": nr,
+        "changed": _facet_breakdown(nn, nr),
     })
 
 
@@ -627,7 +839,18 @@ async def judge_item(request: Request, slug: str, kind: str = Form(...),
         F.judge(slug, kind, item_id, verdict, title, url)
     except ValueError:
         pass
+    # WHICH list re-renders is decided by the element HTMX is about to swap, not
+    # by `kind`. Judging from the "close to my work" panel used to swap the FEED
+    # into it — the same class of defect as a `back=` value with no branch: it
+    # does not error, it silently replaces the panel with a different one.
     ctx = _ctx(request, slug)
+    target = request.headers.get("HX-Target", "")
+    if target == "focus-close":
+        close = _close_ctx(slug)
+        if close is not None:
+            body = templates.get_template(
+                "partials/focus_close_to_work.html").render(**close)
+            return HTMLResponse(body + _counts_oob(request, slug, ctx))
     tpl = "partials/focus_feed.html" if kind == "news" else "partials/focus_reading.html"
     body = templates.get_template(tpl).render(**ctx)
     return HTMLResponse(body + _counts_oob(request, slug, ctx))
@@ -648,6 +871,12 @@ async def unjudge_item(request: Request, slug: str, kind: str = Form(...),
     F.unjudge(slug, kind, item_id)
     ctx = _ctx(request, slug)
     target = request.headers.get("HX-Target", "")
+    if target == "focus-close":
+        close = _close_ctx(slug)
+        if close is not None:
+            body = templates.get_template(
+                "partials/focus_close_to_work.html").render(**close)
+            return HTMLResponse(body + _counts_oob(request, slug, ctx))
     tpl = ("partials/focus_safe.html" if target == "focus-safe"
            else "partials/focus_feed.html" if kind == "news"
            else "partials/focus_reading.html")

@@ -6978,3 +6978,122 @@ a.shf-row-title:hover { color: var(--m-accent); }
    the pile. Green because it is progress, not a warning. */
 .fw-tally-done { color: var(--m-ok); }
 .fw-tally-done b { color: var(--m-ok); }
+
+/* ── Close to my work ────────────────────────────────────────────────────────
+   The one panel on a focus that ranks by distance from the reader's OWN work
+   rather than by the subject of the shelf. It gets a gauge because the whole
+   point is comparison: a column of bars is read at a glance, a column of
+   percentages has to be read one number at a time.
+
+   The gauge is decoration WITH a title attribute, not information carried by
+   colour alone — the same percentage is printed inside it. */
+.ctw-denom {
+  margin: 0 0 var(--m-space-2); font-size: var(--t-small);
+  color: var(--m-muted); line-height: 1.55;
+}
+.ctw-row { display: flex; gap: 12px; padding: 11px 18px; align-items: flex-start; }
+.ctw-row + .ctw-row { border-top: 1px solid var(--m-line); }
+
+.ctw-gauge {
+  position: relative; flex: 0 0 26px; width: 26px; height: 44px;
+  border: 1px solid var(--m-line); border-radius: 3px;
+  background: var(--m-surface-2, var(--m-bg));
+  display: flex; align-items: flex-end; justify-content: center;
+  overflow: hidden;
+}
+.ctw-gauge-fill {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: var(--m-plum-wash); border-top: 1px solid var(--m-plum);
+}
+.ctw-gauge-n {
+  position: relative; z-index: 1; width: 100%; text-align: center;
+  font-size: 9.5px; font-weight: 600; letter-spacing: .02em;
+  color: var(--m-muted); padding-bottom: 2px;
+}
+
+.ctw-body { flex: 1 1 auto; min-width: 0; }
+.ctw-head { display: flex; gap: 8px; align-items: center; margin-bottom: 3px; }
+.ctw-kind {
+  font-size: 9px; letter-spacing: .09em; text-transform: uppercase;
+  font-weight: 600; padding: 1px 6px; border-radius: 2px;
+  border: 1px solid var(--m-line); color: var(--m-muted);
+}
+.ctw-kind--paper { border-color: var(--m-info); color: var(--m-info); }
+.ctw-kind--news  { border-color: var(--m-ochre); color: var(--m-ochre); }
+.ctw-date { font-size: 10.5px; color: var(--m-muted); font-variant-numeric: tabular-nums; }
+.ctw-title { font-size: 13.5px; line-height: 1.45; }
+.ctw-title a { color: inherit; text-decoration: none;
+               border-bottom: 1px solid transparent; }
+.ctw-title a:hover { border-bottom-color: var(--m-accent); }
+.ctw-sum { font-size: 12px; color: var(--m-muted); margin-top: 3px; line-height: 1.5; }
+
+@media (max-width: 620px) {
+  .ctw-gauge { height: 34px; flex-basis: 22px; width: 22px; }
+}
+
+/* ── What changed: the tally ─────────────────────────────────────────────────
+   A count with a bar beside it, because the question is comparative — "was this
+   a methods week or a policy week" is answered by the shape of the column, not
+   by reading four numbers in sequence. Each bar is a link to its own fold, so
+   the summary and the detail are one click apart rather than two screens.
+
+   The bars share ONE fill colour on purpose. Four different hues would be four
+   claims about what the families mean; the length already carries the only
+   comparison being made. */
+.fwn-tally {
+  border: 1px solid var(--m-line); border-radius: var(--m-radius, 4px);
+  padding: var(--m-space-3); margin-bottom: var(--m-space-3);
+  background: var(--m-surface-2, transparent);
+}
+.fwn-tally-top { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+.fwn-big { font-size: 26px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.fwn-big-l { font-size: var(--t-small); color: var(--m-muted); }
+.fwn-split {
+  margin-left: auto; font-size: 11px; color: var(--m-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.fwn-bars { display: flex; flex-direction: column; gap: 5px; margin-top: var(--m-space-3); }
+.fwn-bar {
+  display: grid; grid-template-columns: 30px minmax(0, 1fr) 40%;
+  align-items: center; gap: 9px;
+  padding: 3px 4px; border-radius: 3px;
+  color: inherit; text-decoration: none;
+}
+.fwn-bar:hover { background: var(--m-plum-wash); }
+.fwn-bar-n {
+  font-size: 14px; font-weight: 600; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.fwn-bar-l { font-size: 12px; color: var(--m-muted); }
+.fwn-bar-track {
+  height: 7px; border-radius: 4px; background: var(--m-line); overflow: hidden;
+}
+.fwn-bar-fill { display: block; height: 100%; background: var(--m-plum); }
+
+.fwn-caveat {
+  margin: var(--m-space-3) 0 0; font-size: 11px; line-height: 1.6;
+  color: var(--m-muted); border-top: 1px solid var(--m-line);
+  padding-top: var(--m-space-2);
+}
+
+/* ── What changed: the folds ─────────────────────────────────────────────── */
+.fwn-fold { border-top: 1px solid var(--m-line); }
+.fwn-fold > summary {
+  cursor: pointer; list-style: none; padding: 9px 2px;
+  font-size: 12px; letter-spacing: .02em;
+  display: flex; align-items: center; gap: 7px;
+}
+.fwn-fold > summary::-webkit-details-marker { display: none; }
+.fwn-chev { display: inline-block; transition: transform .12s ease; color: var(--m-muted); }
+.fwn-fold[open] > summary .fwn-chev { transform: rotate(90deg); }
+.fwn-fold-n {
+  font-size: 10.5px; color: var(--m-muted); font-variant-numeric: tabular-nums;
+  border: 1px solid var(--m-line); border-radius: 9px; padding: 0 6px;
+}
+
+@media (max-width: 620px) {
+  .fwn-bar { grid-template-columns: 26px minmax(0, 1fr); }
+  .fwn-bar-track { grid-column: 1 / -1; }
+  .fwn-split { margin-left: 0; }
+}
