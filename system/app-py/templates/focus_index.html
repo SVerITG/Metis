@@ -80,7 +80,44 @@
   {# ── Create ────────────────────────────────────────────────────────────── #}
   <div style="margin-top:var(--m-space-6);">
     {{ sec_label("New focus area", tail="TWO AXES, JOINED WITH AND") }}
-    <form method="post" action="/api/focus/create" class="panel panel--md" style="display:grid;gap:var(--m-space-4);">
+
+    {#- TWO WAYS TO START, one form. Asked for 2026-09-14: a focus can now be
+        seeded from a project or a course you already have, instead of only from
+        a blank pair of boxes.
+
+        It SEEDS the form rather than creating the focus, for the same reason the
+        "let Metis suggest one" link below does: this form previews the lens
+        against the real corpus before you commit, and it writes the structured
+        keyword groups the shelf and the news filter consume. A path that skipped
+        it would produce focus areas nobody had seen the catch for — and an empty
+        shelf slot is worse than an empty shelf. -#}
+    <div class="fseed">
+      <div class="fseed-ways">
+        <button type="button" class="fseed-way is-on" data-seed-way="blank"
+                onclick="focusSeedWay('blank', this)">
+          <span class="fseed-t">Start from scratch</span>
+          <span class="fseed-d">name it and choose the two axes yourself</span>
+        </button>
+        <button type="button" class="fseed-way" data-seed-way="from"
+                onclick="focusSeedWay('from', this)">
+          <span class="fseed-t">From a project or course</span>
+          <span class="fseed-d">take the subject from work you already have</span>
+        </button>
+      </div>
+      <div id="fseed-picker" hidden>
+        <p class="fseed-hint">
+          Pick one. Metis reads how it is named — and, for a course, the titles of
+          its own lessons — to propose the two axes. Everything lands in the boxes
+          below for you to edit, and the preview updates as you do.
+        </p>
+        <div class="fseed-group"><span class="fseed-l">Courses</span>
+          <div class="fseed-row" id="fseed-courses"></div></div>
+        <div class="fseed-group"><span class="fseed-l">Projects</span>
+          <div class="fseed-row" id="fseed-projects"></div></div>
+      </div>
+    </div>
+
+    <form method="post" action="/api/focus/create" id="focus-create-form" class="panel panel--md" style="display:grid;gap:var(--m-space-4);">
 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--m-space-3);">
         <label style="display:grid;gap:var(--m-space-1);">
@@ -125,7 +162,12 @@
 
       <div style="display:grid;gap:var(--m-space-3);"
            hx-post="/api/focus/preview" hx-target="#lens-preview" hx-swap="innerHTML"
-           hx-trigger="keyup changed delay:600ms from:find input, change from:find input"
+           {#- The preview now CONFIRMS each match with a word-boundary pass instead
+               of counting raw substring hits, which is the difference between
+               "663 news" and the true 53 — but it costs a couple of seconds. So it
+               fires when you finish a box rather than on every pause in typing:
+               one correct answer beats five approximate ones racing each other. -#}
+           hx-trigger="change from:find input, keyup changed delay:1800ms from:find input"
            hx-include="closest form">
         {% for n, hint in [(1,'artificial intelligence, machine learning, llm, algorithm'),
                            (2,'health, clinical, patient, epidemi, diagnos'),

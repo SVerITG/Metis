@@ -3669,3 +3669,79 @@ async function startBrainstorm(form) {
   }
   return false;
 }
+
+// ─── Seeding a focus from a project or a course ──────────────────────────────
+// It fills the form and stops. The form owns the preview and the structured
+// keyword groups, so a path that wrote a focus directly would create lenses
+// nobody had seen the catch for.
+
+let _fseedLoaded = false;
+
+async function focusSeedWay(way, btn) {
+  document.querySelectorAll('[data-seed-way]').forEach(b =>
+    b.classList.toggle('is-on', b === btn));
+  const picker = document.getElementById('fseed-picker');
+  if (!picker) return;
+  picker.hidden = (way !== 'from');
+  if (way !== 'from' || _fseedLoaded) return;
+
+  try {
+    const res = await fetch('/api/focus/seed-options');
+    const d = await res.json();
+    const fill = (id, rows, kind) => {
+      const host = document.getElementById(id);
+      if (!host) return;
+      host.innerHTML = '';
+      if (!rows || !rows.length) {
+        host.innerHTML = '<span class="fseed-none">none</span>';
+        return;
+      }
+      rows.forEach(r => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'fseed-chip';
+        b.textContent = r.title;
+        b.onclick = () => focusSeedFrom(kind, r.ref, b);
+        host.appendChild(b);
+      });
+    };
+    fill('fseed-courses', d.courses, 'course');
+    fill('fseed-projects', d.projects, 'project');
+    _fseedLoaded = true;
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not read your projects and courses.');
+  }
+}
+
+async function focusSeedFrom(kind, ref, btn) {
+  try {
+    const res = await fetch(`/api/focus/seed?kind=${encodeURIComponent(kind)}&ref=${encodeURIComponent(ref)}`);
+    const d = await res.json();
+    if (d.status !== 'ok') throw new Error(d.message || 'seed failed');
+
+    const form = document.getElementById('focus-create-form');
+    if (!form) return;
+    const set = (name, value) => {
+      const el = form.querySelector(`[name="${name}"]`);
+      if (!el) return;
+      el.value = value || '';
+      // The preview listens for `change`, not for a value assigned by script —
+      // an input set programmatically fires nothing at all, so the lens would
+      // have sat empty beside a filled form and read as a lens that catches
+      // nothing.
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    set('title', d.title);
+    set('subtitle', d.subtitle);
+    set('group1', d.group1);
+    set('group2', d.group2);
+
+    document.querySelectorAll('.fseed-chip').forEach(c =>
+      c.classList.toggle('is-on', c === btn));
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    showToast('<i class="bi bi-magic toast-icon"></i>Seeded from your ' + kind
+      + ' — edit the boxes and watch the preview');
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not seed from that.');
+  }
+}

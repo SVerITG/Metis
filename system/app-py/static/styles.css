@@ -7709,3 +7709,31 @@ a.shf-row-title:hover { color: var(--m-accent); }
   .bs-ways { grid-template-columns: 1fr; }
   .bs-count { margin-left: 0; }
 }
+
+/* ── Seeding a focus from existing work ────────────────────────────────────*/
+.fseed { margin-bottom: var(--m-space-4); }
+.fseed-ways { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: var(--m-space-3); }
+.fseed-way {
+  text-align: left; font: inherit; color: inherit; cursor: pointer; background: none;
+  border: 1px solid var(--m-line); border-top: 3px solid var(--m-line);
+  border-radius: var(--m-radius, 4px); padding: var(--m-space-3) var(--m-space-4);
+  display: flex; flex-direction: column; gap: 3px;
+}
+.fseed-way:hover { background: var(--m-accent-wash, var(--m-plum-wash)); }
+.fseed-way.is-on { border-top-color: var(--m-accent); background: var(--m-accent-wash, var(--m-plum-wash)); }
+.fseed-t { font-size: 13px; font-weight: 600; }
+.fseed-d { font-size: 11px; color: var(--m-muted); }
+
+.fseed-hint { margin: var(--m-space-3) 0 var(--m-space-2); font-size: 11.5px; color: var(--m-muted); line-height: 1.6; }
+.fseed-group { margin-bottom: var(--m-space-3); }
+.fseed-l { font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--m-muted); }
+.fseed-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.fseed-chip {
+  font: inherit; color: inherit; cursor: pointer; background: none;
+  border: 1px solid var(--m-line); border-radius: 3px; padding: 3px 9px; font-size: 12px;
+}
+.fseed-chip:hover { border-color: var(--m-accent); background: var(--m-accent-wash, var(--m-plum-wash)); }
+.fseed-chip.is-on { border-color: var(--m-accent); color: var(--m-accent); }
+.fseed-none { font-size: 11px; color: var(--m-muted); }
+
+@media (max-width: 620px) { .fseed-ways { grid-template-columns: 1fr; } }

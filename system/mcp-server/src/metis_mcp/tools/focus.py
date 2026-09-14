@@ -1099,35 +1099,67 @@ def preview_lens(groups: list[list[str]], sample: int = 4) -> dict:
     pub_expr = 'title || " " || COALESCE(abstract,"")'
 
     with connect(paths.db) as con:
-        def count(table, expr, gs):
+        def count(table, expr, gs, fields):
+            """How many rows the lens KEEPS — not how many SQL matched.
+
+            `lens_sql` is LIKE '%term%', which matches inside words: a lens whose
+            axis is "ai" matched "humanitaire" and "Ukraine". `confirm` exists to
+            tighten that to whole words, and every list on a focus surface runs
+            it — but this preview counted the raw SQL and never did. Measured
+            2026-09-14 on a real seeded lens: 400 rows matched, 23 survived
+            confirmation. Six percent.
+
+            That made the preview overstate by roughly sixteen times, and the
+            verdict sentence it prints ("workable — a usable feed") is derived
+            from these numbers. Someone reading it would commit a lens that
+            catches almost nothing, which is exactly the failure this preview was
+            built to prevent.
+
+            Counted exactly rather than sampled: the confirm pass is a regex over
+            rows already in memory, and the tables are thousands of rows, not
+            millions.
+            """
             where, params = lens_sql(gs, expr)
+            cols = ", ".join(f'COALESCE({f},"") AS {f}' for f in fields)
             try:
-                return con.execute(
-                    f"SELECT COUNT(*) FROM {table} WHERE {where}", tuple(params)
-                ).fetchone()[0]
+                rows = [dict(r) for r in con.execute(
+                    f"SELECT {cols} FROM {table} WHERE {where}", tuple(params))]
             except Exception:
                 return 0
+            # NOT CAPPED, deliberately. A cap was tried and removed the same day:
+            # confirming only the first N rows turns every large count into a
+            # floor while still printing it as a plain number, and the same axis
+            # read 230 then 167 across two runs. A preview exists to be trusted
+            # about size; a quietly approximate number is worse than a slow exact
+            # one. The cost is paid by debouncing the form instead.
+            return len(confirm(gs, rows, fields))
 
         for i, grp in enumerate(groups):
             out["per_group"].append({
                 "index": i + 1,
                 "terms": grp,
-                "news": count("news_briefs", news_expr, [grp]),
-                "reading": count("new_publications", pub_expr, [grp]),
+                "news": count("news_briefs", news_expr, [grp], ["title", "summary"]),
+                "reading": count("new_publications", pub_expr, [grp], ["title", "abstract"]),
             })
 
         out["combined"] = {
-            "news": count("news_briefs", news_expr, groups),
-            "reading": count("new_publications", pub_expr, groups),
+            "news": count("news_briefs", news_expr, groups, ["title", "summary"]),
+            "reading": count("new_publications", pub_expr, groups, ["title", "abstract"]),
         }
 
         where, params = lens_sql(groups, news_expr)
         try:
+            # Confirmed before slicing. Showing an unconfirmed sample was the
+            # visible half of the same defect: the examples under the counts were
+            # rows the lens would actually drop, so the preview illustrated itself
+            # with items the focus would never contain.
+            cand = [dict(r) for r in con.execute(
+                f'SELECT brief_date, title, COALESCE(summary,"") AS summary '
+                f"FROM news_briefs WHERE {where} ORDER BY brief_date DESC LIMIT 400",
+                tuple(params))]
             out["samples"] = [
                 {"date": r["brief_date"], "title": r["title"]}
-                for r in con.execute(
-                    f"SELECT brief_date, title FROM news_briefs WHERE {where} "
-                    "ORDER BY brief_date DESC LIMIT ?", tuple(params + [sample]))]
+                for r in confirm(groups, cand, ["title", "summary"])[:sample]]
         except Exception:
             out["samples"] = []
 

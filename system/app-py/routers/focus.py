@@ -27,6 +27,7 @@ THE FIVE COMPONENTS
 from __future__ import annotations
 
 import json
+import re
 
 import datetime
 import logging
@@ -1051,3 +1052,178 @@ def _lens_noise(slug: str) -> dict:
             uniq.append(e)
     return {"total": len(items), "false_positives": bad,
             "pct": round(100 * bad / len(items)), "examples": uniq}
+
+
+# ---------------------------------------------------------------------------
+# Seeding a focus from work you already have
+# ---------------------------------------------------------------------------
+# Asked for 2026-09-14: "add new focus like it is now and another possibility
+# add project or course ... I want to try to add one of the courses to my focus".
+#
+# IT SEEDS THE FORM, IT DOES NOT CREATE THE FOCUS. The same reasoning as the
+# "let Metis suggest one" link beside it: the form does two things nothing else
+# does — it previews the lens against the real corpus before you commit, and it
+# writes the structured keyword groups the shelf and the news filter consume. A
+# path that skipped it would produce focus areas nobody had ever seen the catch
+# for, and an empty shelf slot is worse than no shelf slot.
+#
+# THE TWO AXES COME FROM THE TITLE. A course or project named "X in Y" is already
+# a crossing — that is how people name work — so the connector is the split. When
+# a title has no connector there is one axis, which `lens_sql` handles fine; the
+# researcher can add the second by hand, having seen what one catches.
+
+_AXIS_SPLIT = re.compile(
+    r"\s+(?:in|for|of|on|and|with|to|from|across|&|-|–|—|:|\|)\s+", re.I)
+_SEED_STOP = {
+    "the", "a", "an", "and", "or", "for", "with", "from", "into", "about",
+    "course", "project", "introduction", "intro", "part", "module", "advanced",
+    "basic", "basics", "foundations", "essentials", "overview", "new", "my",
+    "what", "why", "how", "when", "who", "where", "is", "are", "was", "does",
+    "this", "that", "these", "those", "it", "its", "you", "your", "we", "our",
+    "one", "two", "three", "four", "five", "six", "every", "each", "all",
+    "use", "using", "used", "make", "makes", "get", "gets", "can", "will",
+    "lesson", "chapter", "section", "unit", "week", "day", "case", "cases",
+    # Short function words. These MUST be complete, because the minimum token
+    # length is two rather than three so that "AI" survives — the trade is a
+    # precise stoplist here instead of a blunt length rule that silently drops
+    # the subject.
+    "of", "to", "in", "on", "at", "by", "as", "be", "do", "go", "if", "no",
+    "so", "up", "us", "me", "he", "am", "an", "vs", "via", "per", "not",
+    "but", "out", "off", "own", "too", "any", "few", "may", "now", "then",
+    "than", "them", "they", "their", "there", "here", "over", "under",
+    "between", "within", "after", "before", "during", "through", "toward",
+}
+
+
+def _seed_terms(text: str, cap: int = 8) -> list[str]:
+    """Distinctive words from a phrase, order preserved, duplicates dropped.
+
+    TWO-LETTER WORDS ARE KEPT. An earlier version required three, which silently
+    dropped "AI" — and a lens for a subject that cannot name the subject is the
+    exact defect this codebase already carries a scar for: the AI focus once
+    matched only the spelled-out form and caught 23 briefs out of 4,103. Real
+    two-letter stopwords are excluded by name above, which is cheap and exact.
+    """
+    seen, out = set(), []
+    for w in re.findall(r"[A-Za-z][A-Za-z\-']+", text or ""):
+        lw = w.lower()
+        if lw in _SEED_STOP or lw in seen or len(lw) < 2:
+            continue
+        seen.add(lw)
+        out.append(lw)
+        if len(out) >= cap:
+            break
+    return out
+
+
+def _recurring_terms(text: str, min_count: int = 2, cap: int = 6) -> list[str]:
+    """Words a body of text uses REPEATEDLY — its vocabulary, not its prose.
+
+    Thickening an axis from lesson titles with every word in them imported the
+    prose around the subject: "atlas", "questions", "medicine" from one title
+    each. A term earns its place by recurring, which needs no growing stoplist
+    and keeps working on a course about something nobody anticipated.
+    """
+    counts: dict[str, int] = {}
+    for w in re.findall(r"[A-Za-z][A-Za-z\-']+", text or ""):
+        lw = w.lower()
+        if lw in _SEED_STOP or len(lw) < 2:
+            continue
+        counts[lw] = counts.get(lw, 0) + 1
+    ranked = sorted((w for w, n in counts.items() if n >= min_count),
+                    key=lambda w: (-counts[w], w))
+    return ranked[:cap]
+
+
+def _seed_axes(title: str, extra: str = "", detail: str = "") -> tuple[str, str]:
+    """Two comma-separated axes, derived from how the thing is named.
+
+    `extra` is the body text a course or project carries — lesson titles, a
+    description. It is used to THICKEN an axis the title already established,
+    never to invent a third: a lens is only useful if the researcher can see why
+    each word is in it.
+    """
+    parts = [p.strip() for p in _AXIS_SPLIT.split(title or "") if p.strip()]
+    if len(parts) >= 2:
+        a, b = parts[0], " ".join(parts[1:])
+    else:
+        a, b = (title or "").strip(), ""
+
+    g1 = _seed_terms(a, cap=4)
+    g2 = _seed_terms(b, cap=4) if b else []
+
+    # Thicken from the body's RECURRING words only, and never with a term
+    # already on the other axis — a word on both sides makes the AND meaningless.
+    pool = [w for w in _recurring_terms(extra + " " + detail)
+            if w not in g1 and w not in g2]
+    target = g2 if g2 else g1
+    for w in pool:
+        if len(target) >= 7:
+            break
+        target.append(w)
+    return ", ".join(g1), ", ".join(g2)
+
+
+@router.get("/api/focus/seed-options", response_class=JSONResponse)
+async def focus_seed_options():
+    """What a focus can be seeded from: live projects and live courses."""
+    from db import db_query
+    projects = db_query(
+        "SELECT project_id AS ref, title FROM projects "
+        "WHERE COALESCE(status,'') IN ('active','in_progress') "
+        "ORDER BY COALESCE(last_session_at,'') DESC", default=[]) or []
+    courses = db_query(
+        "SELECT slug AS ref, title FROM learning_courses "
+        "WHERE status IN ('active','in_progress','idea') ORDER BY title",
+        default=[]) or []
+    return JSONResponse({
+        "projects": [dict(r) for r in projects],
+        "courses": [dict(r) for r in courses],
+    })
+
+
+@router.get("/api/focus/seed", response_class=JSONResponse)
+async def focus_seed(kind: str, ref: str):
+    """The form values a project or course implies. Nothing is written."""
+    from db import db_query
+    if kind == "course":
+        row = (db_query(
+            "SELECT title, COALESCE(category,'') AS cat, "
+            "       COALESCE(next_lesson,'') AS nxt FROM learning_courses "
+            "WHERE slug = ?", (ref,), default=[]) or [None])[0]
+        if not row:
+            return JSONResponse({"status": "error",
+                                 "message": "No such course."}, status_code=404)
+        # Lesson titles are the course's own vocabulary — a far better source of
+        # keywords than anything guessed from the title alone.
+        body = ""
+        try:
+            from routers.learning import _load_lessons_json
+            data = _load_lessons_json(ref) or {}
+            body = " ".join((l.get("title") or "")
+                            for l in (data.get("lessons") or [])[:24])
+        except Exception:
+            log.warning("[focus] could not read lessons for %s", ref, exc_info=True)
+        g1, g2 = _seed_axes(row["title"], body, row["cat"])
+        subtitle = f"Staying current on what this course covers"
+    elif kind == "project":
+        row = (db_query(
+            "SELECT title, COALESCE(description,'') AS d, COALESCE(domain,'') AS dom "
+            "FROM projects WHERE project_id = ?", (ref,), default=[]) or [None])[0]
+        if not row:
+            return JSONResponse({"status": "error",
+                                 "message": "No such project."}, status_code=404)
+        tasks = " ".join((r["title"] or "") for r in db_query(
+            "SELECT title FROM tasks WHERE project_id = ? "
+            "AND COALESCE(status,'') NOT IN ('done','cancelled') LIMIT 20",
+            (ref,), default=[]) or [])
+        g1, g2 = _seed_axes(row["title"], row["d"] + " " + tasks, row["dom"])
+        subtitle = "Staying current on what this project touches"
+    else:
+        return JSONResponse({"status": "error",
+                             "message": "Unknown kind."}, status_code=400)
+
+    return JSONResponse({"status": "ok", "title": row["title"],
+                         "subtitle": subtitle, "group1": g1, "group2": g2,
+                         "note": "Seeded from your own work — edit the boxes and "
+                                 "watch the preview before you commit."})
