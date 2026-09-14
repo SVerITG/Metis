@@ -3785,3 +3785,21 @@ async function focusShortcut(kind, ref) {
     showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not reach Metis.');
   }
 }
+
+async function openDeck(deckId, what) {
+  // Opens the file, or shows it in its folder. The server owns the path
+  // translation and the interop check — a second copy here would drift the
+  // first time WSL interop broke.
+  try {
+    const res = await fetch('/api/presentation/open', {
+      method: 'POST',
+      body: new URLSearchParams({ deck_id: deckId, what: what || 'deck' }),
+    });
+    const d = await res.json();
+    showToast((d.status === 'ok' ? '<i class="bi bi-box-arrow-up-right toast-icon"></i>'
+                                 : '<i class="bi bi-exclamation-circle toast-icon"></i>')
+              + (d.message || ''));
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not reach Metis.');
+  }
+}

@@ -494,6 +494,38 @@ def run_dashboard():
             ok(f"D-{tab}-partial", f"HTMX partial GET {route} — one swap target", "Dashboard",
                f"HTTP 200, {len(body)} chars. No duplicate sidebar HTML detected.")
 
+    # D-asyncform — `onsubmit="return asyncHandler()"` never cancels the submit
+    #
+    # An async function returns a Promise, and a Promise is always truthy — so
+    # `return handler(this)` lets the browser submit the form and navigate away
+    # before the fetch resolves. The form looks right, the endpoint answers
+    # correctly when called directly, and the button does nothing usable. Shipped
+    # twice on 2026-09-14 (the presentation builder and the brainstorm launcher)
+    # and found by the researcher, not by any check here — there is no browser in
+    # this environment, so the pattern has to be caught in the source.
+    try:
+        _js = read(APP_JS)
+        _async = set(re.findall(r"async\s+function\s+(\w+)", _js))
+        _bad = []
+        for _tpl in (ROOT / "system" / "app-py" / "templates").rglob("*.html"):
+            for _m in re.finditer(r'onsubmit="return\s+(\w+)\(', 
+                                  _tpl.read_text(encoding="utf-8", errors="ignore")):
+                if _m.group(1) in _async:
+                    _bad.append(f"{_tpl.name}:{_m.group(1)}")
+        if _bad:
+            fail("D-asyncform", "No form returns a Promise from onsubmit", "Dashboard",
+                 f"{len(_bad)} form(s) call an async handler as "
+                 f'onsubmit="return f()": {"; ".join(_bad)}. A Promise is truthy, '
+                 f"so the submit is never cancelled and the page navigates away.",
+                 'Use onsubmit="event.preventDefault(); f(this); return false;"',
+                 "Critical")
+        else:
+            ok("D-asyncform", "No form returns a Promise from onsubmit", "Dashboard",
+               f"Checked every onsubmit against {len(_async)} async handlers.")
+    except Exception as _exc:
+        warn("D-asyncform", "No form returns a Promise from onsubmit", "Dashboard",
+             f"Could not run the check: {type(_exc).__name__}: {_exc}", "")
+
     # D-instructed — every tool the instructions NAME must be reachable
     #
     # THE DEFECT THIS EXISTS FOR, found 2026-09-14. Two layers decide what the

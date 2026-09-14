@@ -27,6 +27,7 @@ fields are the whole value of the index — they are the ones no file can tell y
 from __future__ import annotations
 
 import datetime
+import logging
 from pathlib import Path
 
 from fastapi import APIRouter, Form, Request
@@ -36,6 +37,7 @@ from fastapi.templating import Jinja2Templates
 from db import db_execute, db_query, db_scalar
 
 router = APIRouter()
+log = logging.getLogger("metis.presentation")
 templates = Jinja2Templates(
     directory=str(Path(__file__).parent.parent / "templates"))
 
@@ -147,10 +149,40 @@ async def lesson(request: Request, key: str):
         f"ORDER BY modified_at ASC", (key,), default=[]) or []
     if not rows:
         return HTMLResponse("")
+
+    # THE DIFFERENCES THAT NEED NO TYPING. The four descriptive fields are blank
+    # until someone fills them, so the comparison showed nothing at all and read
+    # as broken. Slide count, style and the gap since the previous delivery are
+    # already known — they are computed here so the panel says something the
+    # moment it opens, and the written note adds what a file cannot know.
+    prev = None
+    for r in rows:
+        d: list[str] = []
+        if prev:
+            a, b = prev.get("slide_count") or 0, r.get("slide_count") or 0
+            if a and b and a != b:
+                d.append(f"{b - a:+d} slides ({a} → {b})")
+            if (prev.get("style") or "") != (r.get("style") or ""):
+                d.append(f"style {prev.get('style') or 'none'} → {r.get('style') or 'none'}")
+            if (prev.get("collection") or "") != (r.get("collection") or ""):
+                d.append(f"re-delivered in {r.get('collection') or 'elsewhere'}")
+            try:
+                import datetime as _dt
+                pa = _dt.date.fromisoformat((prev.get("modified_at") or "")[:10])
+                pb = _dt.date.fromisoformat((r.get("modified_at") or "")[:10])
+                gap = (pb - pa).days
+                if gap >= 30:
+                    d.append(f"{gap // 30} month{'s' if gap // 30 != 1 else ''} later")
+            except ValueError:
+                pass
+        r["auto_diff"] = d
+        prev = r
+
+    n_described = sum(1 for r in rows if (r.get("changed_note") or "").strip())
     return templates.TemplateResponse(
         request, "partials/presentation_lesson.html",
         {"key": key, "title": rows[-1]["title"], "deliveries": rows,
-         "registers": REGISTERS})
+         "registers": REGISTERS, "n_described": n_described})
 
 
 @router.post("/api/presentation/deck", response_class=HTMLResponse)
@@ -350,3 +382,68 @@ async def rescan(request: Request):
     except subprocess.TimeoutExpired:
         return JSONResponse({"status": "error",
                              "message": "The scan did not finish within 15 minutes."})
+
+
+@router.post("/api/presentation/open")
+async def open_deck(deck_id: str = Form(...), what: str = Form("deck")):
+    """Open a deck, or the folder holding it.
+
+    THE SURFACE COULD LIST DECKS AND NOT OPEN ONE. Reported 2026-09-14 as "not
+    able to show presentations", and that is exactly right: an index of eight
+    hundred files whose only verb is "history" shows you names, not the work. A
+    repository you cannot open is a catalogue of things you must then go and find
+    by hand, which is the job the folders already did.
+
+    Reuses the Work surface's launcher rather than starting its own: path
+    translation and the interop check have one author there, and a second copy
+    would drift the first time WSL interop broke.
+    """
+    row = (db_query("SELECT rel_path, title FROM decks WHERE deck_id = ?",
+                    (deck_id,), default=[]) or [None])[0]
+    if not row:
+        return JSONResponse({"status": "error", "message": "No such deck."},
+                            status_code=404)
+
+    # The index stores paths relative to the documents root, so the absolute path
+    # is rebuilt here rather than stored — the root is configuration and may move.
+    root = _documents_root()
+    if not root:
+        return JSONResponse({"status": "error", "message": (
+            "Metis does not know where your documents live, so it cannot open "
+            "this. Set `root:` in system/config/local/decks.yml.")}, status_code=400)
+    target = Path(root) / row["rel_path"]
+    if not target.exists():
+        return JSONResponse({"status": "error", "message": (
+            f"That file is no longer at {row['rel_path']} — re-index to refresh.")},
+            status_code=404)
+
+    try:
+        from routers.work import (_wsl_to_windows, _windows_to_cmd,
+                                  _run_windows_cmd, _interop_state)
+        ok, why = _interop_state()
+        if not ok:
+            return JSONResponse({"status": "error", "message": (
+                f"Cannot reach Windows from here to open it ({why}). The file is "
+                f"at {row['rel_path']}.")}, status_code=503)
+        win = _wsl_to_windows(str(target if what == "deck" else target.parent))
+        _run_windows_cmd(["explorer", _windows_to_cmd(win)])
+    except Exception as exc:
+        log.warning("[presentation] could not open %s", row["rel_path"],
+                    exc_info=True)
+        return JSONResponse({"status": "error",
+                             "message": f"Could not open it: {type(exc).__name__}."},
+                            status_code=500)
+    return JSONResponse({"status": "ok",
+                         "message": f"Opening {row['title']}"
+                                    + ("" if what == "deck" else " — its folder")})
+
+
+def _documents_root() -> str:
+    """Where the deck index was built from. Read once from the scanner's config."""
+    rc = Path(__file__).resolve().parent.parent.parent.parent
+    p = rc / "system" / "config" / "local" / "decks.yml"
+    try:
+        import yaml
+        return str((yaml.safe_load(p.read_text(encoding="utf-8")) or {}).get("root") or "")
+    except Exception:
+        return ""

@@ -7748,3 +7748,35 @@ a.shf-row-title:hover { color: var(--m-accent); }
   padding: 3px 7px; white-space: nowrap;
 }
 .fseed-direct:hover { border-color: var(--m-accent); color: var(--m-accent); background: var(--m-accent-wash, var(--m-plum-wash)); }
+
+/* An idea card shows three lines and opens on click. Twenty-five ideas rendered
+   in full filled the pane and pushed the capture box — the thing you came to use
+   — below the fold. Clamped rather than truncated server-side, so the full text
+   is already there and expanding costs no request. */
+.ridea-text {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden; cursor: pointer; position: relative;
+}
+.ridea-text.is-open { -webkit-line-clamp: unset; display: block; }
+.ridea-text:focus-visible { outline: 2px solid var(--m-accent); outline-offset: 2px; }
+/* The affordance has to be visible or nobody clicks: a clamped card gets a
+   quiet marker, an open one loses it. */
+.ridea-text::after {
+  content: "more"; display: none; font-size: 9.5px; color: var(--m-muted);
+  letter-spacing: .06em; text-transform: uppercase;
+}
+.ridea-text.is-open::after { content: "less"; }
+.ridea:hover .ridea-text::after { display: block; margin-top: 4px; }
+
+/* What changed from the previous delivery, computed rather than typed. */
+.pl-diff {
+  list-style: none; margin: 0; padding: 7px 10px;
+  border-bottom: 1px solid var(--m-line);
+  background: var(--m-ochre-wash, transparent);
+}
+.pl-diff li { font-size: 11.5px; color: var(--m-ochre-deep, var(--m-ink)); line-height: 1.5; }
+.pl-same {
+  margin: 0; padding: 7px 10px; border-bottom: 1px solid var(--m-line);
+  font-size: 11px; color: var(--m-muted); font-style: italic;
+}
+.pl-hint { font-size: 10.5px; color: var(--m-muted); }

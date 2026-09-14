@@ -7,7 +7,12 @@
     style being a hope.
 
     Context: styles · collections · recent -#}
-<form class="pb" onsubmit="return buildPresentationBrief(this);">
+{#- `event.preventDefault()` INLINE, and not `return handler(this)`.
+    The handler is async, so it returns a Promise — which is always truthy,
+    so `return` never cancelled the submit and the browser navigated away
+    before the fetch resolved. The form looked correct, the endpoint
+    answered correctly in isolation, and the button did nothing usable. -#}
+<form class="pb" onsubmit="event.preventDefault(); buildPresentationBrief(this); return false;">
   <div class="pb-grid">
     <label class="pb-f pb-f--wide"><span>What is it about</span>
       <input type="text" name="topic" placeholder="the talk, or the lesson"></label>

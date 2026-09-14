@@ -21,8 +21,15 @@
 {% else %}
 <div class="ridea-grid">
   {% for i in ideas %}
+  {#- ABBREVIATED, not full. An idea is often several paragraphs — twenty-five of
+      them rendered whole filled the pane and buried the capture box you came for.
+      Three lines each, expanding in place on click: the pile stays scannable and
+      nothing is lost. -#}
   <article class="ridea">
-    <p class="ridea-text">{{ i.text }}</p>
+    <p class="ridea-text" tabindex="0" role="button"
+       title="Click to read it in full"
+       onclick="this.classList.toggle('is-open');"
+       onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('is-open');}">{{ i.text }}</p>
     <div class="ridea-foot">
       <span class="ridea-date">{{ i.created_at[:10] if i.created_at else '' }}</span>
       {% if i.kind and i.kind != 'idea' %}<span class="ridea-kind">{{ i.kind }}</span>{% endif %}

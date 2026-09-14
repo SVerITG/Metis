@@ -90,8 +90,15 @@
         </span>
       </span>
       <span class="pr-row-d">{{ d.modified_at[:10] if d.modified_at else '' }}</span>
+      {#- OPEN IT. The row used to offer only "history", so the repository listed
+          eight hundred decks and could open none of them — names, not work. -#}
+      <button type="button" class="btn btn--ghost btn--sm"
+              title="Open this deck" onclick="openDeck('{{ d.deck_id }}','deck')">open</button>
+      <button type="button" class="btn btn--ghost btn--sm"
+              title="Show it in its folder" onclick="openDeck('{{ d.deck_id }}','folder')">folder</button>
       {% if d.lesson_key %}
       <button type="button" class="btn btn--ghost btn--sm"
+              title="Every time this lesson was delivered, side by side"
               hx-get="/api/partial/presentation/lesson?key={{ d.lesson_key | urlencode }}"
               hx-target="#pres-lesson" hx-swap="innerHTML">history</button>
       {% endif %}

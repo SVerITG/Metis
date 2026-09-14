@@ -14,6 +14,11 @@
   <div class="pl-head">
     <h3 class="pl-t">{{ title }}</h3>
     <span class="pl-n">{{ deliveries | length }} deliver{{ 'y' if (deliveries|length) == 1 else 'ies' }}</span>
+    {%- if n_described == 0 %}
+    <span class="pl-hint">none described yet — the boxes below are what a file cannot tell you</span>
+    {%- elif n_described < deliveries | length %}
+    <span class="pl-hint">{{ n_described }} of {{ deliveries | length }} described</span>
+    {%- endif %}
     <button type="button" class="pl-x" title="Close"
             onclick="this.closest('#pres-lesson').innerHTML='';">×</button>
   </div>
@@ -32,6 +37,16 @@
         <span class="pl-where">{{ d.collection or '—' }}</span>
         <span class="pl-date">{{ d.modified_at[:10] if d.modified_at else '' }}</span>
       </header>
+
+      {#- What changed from the delivery before it, computed. The written note
+          below adds what a file cannot know; this says what it can. -#}
+      {% if d.auto_diff %}
+      <ul class="pl-diff">
+        {% for x in d.auto_diff %}<li>{{ x }}</li>{% endfor %}
+      </ul>
+      {% elif not loop.first %}
+      <p class="pl-same">nothing measurable changed from the one before</p>
+      {% endif %}
 
       <dl class="pl-facts">
         <div><dt>Slides</dt><dd>{{ d.slide_count if d.slide_count else 'unknown' }}</dd></div>

@@ -66,7 +66,12 @@
   </p>
   {% else %}
 
-  <form id="bs-form" onsubmit="return startBrainstorm(this);">
+  {#- `event.preventDefault()` INLINE, and not `return handler(this)`.
+    The handler is async, so it returns a Promise — which is always truthy,
+    so `return` never cancelled the submit and the browser navigated away
+    before the fetch resolved. The form looked correct, the endpoint
+    answered correctly in isolation, and the button did nothing usable. -#}
+  <form id="bs-form" onsubmit="event.preventDefault(); startBrainstorm(this); return false;">
     <input type="hidden" name="mode" value="{{ mode }}">
     <input type="hidden" name="ref" value="{{ ref }}">
 
