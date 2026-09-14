@@ -880,6 +880,7 @@ def _audit_routing_targets(con) -> None:
     """
     try:
         registry: set[str] = set()
+        entries: list = []
         reg_fp = paths.root / "system" / "config" / "agent-registry.json"
         if reg_fp.exists():
             data = json.loads(reg_fp.read_text(encoding="utf-8"))
@@ -892,6 +893,20 @@ def _audit_routing_targets(con) -> None:
         # but not in .claude/agents is Desktop-only rather than broken.
         desktop = {d.name for d in paths.agents.iterdir() if d.is_dir()} \
             if paths.agents.is_dir() else set()
+
+        # The registry carries the same retirement fact for DISPLAY (the dashboard's
+        # agent directory reads it). Two independently-maintained lists WILL drift,
+        # so they are compared here rather than trusted — a check that cannot
+        # disagree with anything is decoration.
+        if registry:
+            marked = {str(a.get("slug", "")) for a in entries
+                      if isinstance(a, dict) and a.get("routing") == "retired"}
+            in_registry = _RETIRED_ROUTING_SLUGS & registry
+            if marked != in_registry:
+                log.warning("[routing] registry/code disagree on which agents are "
+                            "retired: only in code %s; only in registry %s",
+                            sorted(in_registry - marked) or "-",
+                            sorted(marked - in_registry) or "-")
 
         rows = con.execute(
             "SELECT DISTINCT agent_slug, source FROM agent_routing_rules"

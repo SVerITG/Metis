@@ -20,12 +20,25 @@
     {% for a in agents %}
     {% set initial = (a.name or a.slug or '?')[0] | upper %}
     {% set is_warm = a.run_count > 0 %}
-    <div class="agent-card">
+    {# A retired agent is still listed, because it is still there and still callable
+       by name — but the card must not imply a request will ever reach it on its own.
+       Before this, the directory showed every agent as if routing could pick it,
+       including two that the Agent tool could not dispatch at all. #}
+    {% set is_retired = a.routing == 'retired' %}
+    <div class="agent-card"{% if is_retired %} style="opacity:0.72;"{% endif %}>
       <div class="agent-card-head">
-        <div class="agent-card-avatar" style="{% if is_warm %}border:2px solid var(--m-accent);{% endif %}">{{ initial }}</div>
+        <div class="agent-card-avatar" style="{% if is_warm and not is_retired %}border:2px solid var(--m-accent);{% endif %}">{{ initial }}</div>
         <div class="u-grow">
           <div class="agent-card-name">{{ a.name or a.slug }}</div>
           <div class="agent-card-cmd">{{ a.invocation or ('/' ~ (a.slug or '')) }}{% if a.trust_tier %} · {{ a.trust_tier }}{% endif %}</div>
+          {% if is_retired %}
+          <div class="u-label" style="margin-top:4px;letter-spacing:0.06em;opacity:0.85;">
+            NOT AUTO-ROUTED{% if a.retired_to %} · WORK GOES TO {{ a.retired_to | upper }}{% endif %}
+          </div>
+          {% if a.retired_reason %}
+          <div class="u-label" style="margin-top:2px;opacity:0.6;text-transform:none;letter-spacing:0;">{{ a.retired_reason }}</div>
+          {% endif %}
+          {% endif %}
         </div>
         <div class="u-fixed" style="text-align:right;margin-left:8px;">
           {% if is_warm %}

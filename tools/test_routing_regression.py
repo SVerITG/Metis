@@ -93,7 +93,46 @@ CASES: list[tuple[str, str]] = [
      "course-builder"),
     ("Profile this CSV export and tell me about missing values and duplicates",
      "data-analyst"),
+
+    # — the two statistics agents must stay apart —
+    #
+    # The audit recommended MERGING biostatistician into methods-coach: their
+    # capability lists both claimed multilevel models and power, and which one a
+    # request reached was decided by the priority numbers rather than by the
+    # question. The merge was made conditional on re-pricing failing to separate
+    # them, and re-pricing separated them cleanly — moving "sample size" and
+    # "power calculation" to methods-coach removed the only genuine overlap, and
+    # what biostatistician keeps is computational-statistics vocabulary that
+    # means nothing else.
+    #
+    # So the merge was NOT done, and these twelve cases are the evidence for that
+    # decision. If a future re-pricing re-breaks the separation, this is where it
+    # shows up — otherwise the argument for merging would quietly become true
+    # again with nobody watching.
+    ("Write a simulation study to check the estimator's coverage", "biostatistician"),
+    ("Run a Monte Carlo to see how the bootstrap behaves at n=40", "biostatistician"),
+    ("Package these functions as an R package for CRAN", "biostatistician"),
+    ("Compute a parametric bootstrap confidence interval", "biostatistician"),
+    ("What tolerance interval should I report for the assay?", "biostatistician"),
+    ("Fit a dose-response curve and report the ED50", "biostatistician"),
+    ("Which regression should I use for count data with overdispersion?", "methods-coach"),
+    ("Help me interpret the ICC and random effects in my multilevel model", "methods-coach"),
+    ("Is a Bayesian or frequentist approach better for this spatial model?", "methods-coach"),
+    ("What sample size do I need to detect a 20% difference?", "methods-coach"),
+    ("Should I use propensity score matching or adjustment here?", "methods-coach"),
+    ("How do I choose between logistic regression and survival analysis?", "methods-coach"),
 ]
+
+# Agents that must NEVER appear in a routing result: they are retired, and two of
+# them cannot be dispatched by the Agent tool at all. A rule pointing at one of
+# these fails at the point of use, far from its cause.
+MUST_NOT_ROUTE = {
+    "ux-engineer", "dashboard-engineer", "edu-expert", "learning-architect",
+    "news-aggregator", "learning-coach", "metis-self-reflexion", "metis-update",
+    "metis-audit-features", "metis-audit-install", "metis-audit-memory",
+    "metis-audit-security", "metis-audit-ui", "metis-audit-vision",
+    "metis-audit-workflow",
+}
 
 
 def main() -> int:
@@ -115,14 +154,25 @@ def main() -> int:
         if args.verbose:
             print(f"  {'ok ' if ok else 'FAIL'}  want={expected:26} got={','.join(agents)}")
 
+    # A retired agent appearing in ANY result is a failure regardless of which
+    # case produced it, so this is checked across the whole set rather than
+    # per-case.
+    leaked: set[str] = set()
+    for request, _expected in CASES:
+        leaked |= set(_parse_intent_stage(request, "")["agents"]) & MUST_NOT_ROUTE
+
     total = len(CASES)
     print(f"\nrouting regression: {passed}/{total} passed")
+    if leaked:
+        print(f"RETIRED AGENTS LEAKED INTO ROUTING: {sorted(leaked)}")
+    else:
+        print(f"retired agents: none reachable ({len(MUST_NOT_ROUTE)} checked)")
     if failed:
         print("\nfailures:")
         for request, expected, agents, tt in failed:
             print(f"  want {expected:26} got {','.join(agents):34} [{tt}]")
             print(f"       {request[:88]}")
-    return 0 if not failed else 1
+    return 0 if (not failed and not leaked) else 1
 
 
 if __name__ == "__main__":
