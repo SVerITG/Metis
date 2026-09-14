@@ -494,6 +494,82 @@ def run_dashboard():
             ok(f"D-{tab}-partial", f"HTMX partial GET {route} — one swap target", "Dashboard",
                f"HTTP 200, {len(body)} chars. No duplicate sidebar HTML detected.")
 
+    # D-instructed — every tool the instructions NAME must be reachable
+    #
+    # THE DEFECT THIS EXISTS FOR, found 2026-09-14. Two layers decide what the
+    # Desktop client can do, and they disagreed silently:
+    #
+    #   app_instance.py / prompts.py  told the model to call `run_metis`,
+    #                                 `search_pdf_knowledge` and six others
+    #   tool-subsets.json "core"      parked those tools, so they were absent
+    #                                 from tools/list
+    #
+    # Nothing errored. The model was told to route, found no router, and carried
+    # on answering directly — so in 25 Desktop sessions the routing pipeline ran
+    # ZERO times and a specialist's context was loaded once. The pipeline was not
+    # broken; it was unreachable, which looks identical from the outside and is
+    # why it went a month unnoticed.
+    #
+    # The rule, stated once: a tool named as a step in an instruction must be in
+    # the core set, or the instruction must fetch it first. This check compares
+    # the two files rather than trusting either.
+    try:
+        import json as _json
+        _src = ROOT / "system" / "mcp-server" / "src" / "metis_mcp"
+        _texts = []
+        for _f in ("app_instance.py", "tools/prompts.py"):
+            try:
+                _texts.append((_src / _f).read_text(encoding="utf-8"))
+            except OSError:
+                pass
+        _instructed = set()
+        for _t in _texts:
+            _instructed |= set(re.findall(r"`([a-z_][a-z0-9_]{3,})\(", _t))
+
+        # Real tools only — the prompts also mention helper functions.
+        _real, _mod_of = set(), {}
+        for _f in (_src / "tools").glob("*.py"):
+            _txt = _f.read_text(encoding="utf-8", errors="ignore")
+            for _m in re.finditer(r"@app\.tool\([^)]*\)\s*(?:async\s+)?def\s+(\w+)", _txt):
+                _real.add(_m.group(1))
+                _mod_of[_m.group(1)] = _f.stem
+        _instructed &= _real
+
+        _cfg = _json.loads((ROOT / "system" / "config" / "tool-subsets.json")
+                           .read_text(encoding="utf-8"))
+        _core = set(_cfg.get("core") or []) | {"tool_search"}
+
+        # A tool is reachable if its module is core, or the instruction that
+        # names it also says to load its group first.
+        _joined = "\n".join(_texts)
+        _unreachable = []
+        for _t in sorted(_instructed):
+            if _mod_of.get(_t) in _core:
+                continue
+            _near = re.search(re.escape(_t) + r"[\s\S]{0,400}", _joined)
+            _ctx = _joined[max(0, _joined.find(_t) - 400): _joined.find(_t) + 200]
+            if "load_tool_group" in _ctx or "find_tools" in _ctx:
+                continue
+            _unreachable.append(f"{_t} (module {_mod_of.get(_t)})")
+
+        if _unreachable:
+            fail("D-instructed", "Every instructed tool is reachable", "Dashboard",
+                 f"{len(_unreachable)} tool(s) the instructions tell the model to "
+                 f"call are parked out of the loaded toolset: "
+                 f"{'; '.join(_unreachable)}. The model is told to call them, "
+                 f"finds nothing, and silently does without.",
+                 "Add the module to the \"core\" key in system/config/"
+                 "tool-subsets.json, or make the instruction load its group first.",
+                 "Critical")
+        else:
+            ok("D-instructed", "Every instructed tool is reachable", "Dashboard",
+               f"All {len(_instructed)} instructed tools are in core or fetched "
+               f"explicitly.")
+    except Exception as _exc:
+        warn("D-instructed", "Every instructed tool is reachable", "Dashboard",
+             f"Could not run the check: {type(_exc).__name__}: {_exc}",
+             "Check that the MCP source and tool-subsets.json are present.")
+
     # D20 — a course actually opens
     #
     # THIS CHECKED FOR THE WRONG THING and failed for it on every run. It looked

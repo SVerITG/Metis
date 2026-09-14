@@ -2,51 +2,246 @@
   "version": "1.2",
   "description": "Tool exposure config. TWO independent mechanisms: (1) per-agent SUBSETS — METIS_TOOL_SUBSETS=1 + METIS_AGENT_SUBSET=<slug> loads only that agent's groups (token-optimized launchers). (2) TOOL SEARCH — METIS_TOOL_SEARCH=1 keeps only the 'core' modules loaded and parks the rest, retrievable on demand via find_tools()/load_tool_group(). Tool search is the recommended setting for the general Desktop/Code session: it cuts the loaded toolset ~60% WITHOUT making anything unreachable (the fix for the '_default must be all' problem below). Set both flags off for developer mode (all tools loaded).",
   "core": [
-    "tool_search", "agents", "handoff", "user_profile",
-    "projects", "tasks", "ideas", "notes",
-    "memory", "session_memory", "memory_gateway",
-    "library", "literature", "research", "content_scan", "intelligence",
-    "files", "meetings", "self_improvement", "safety", "discovery",
-    "script_analyzer"
+    "tool_search",
+    "agents",
+    "handoff",
+    "user_profile",
+    "projects",
+    "tasks",
+    "ideas",
+    "notes",
+    "memory",
+    "session_memory",
+    "memory_gateway",
+    "library",
+    "literature",
+    "research",
+    "content_scan",
+    "intelligence",
+    "files",
+    "meetings",
+    "self_improvement",
+    "safety",
+    "discovery",
+    "script_analyzer",
+    "pipeline",
+    "knowledge_db",
+    "vector_memory",
+    "fulltext_index",
+    "memory_curator"
   ],
   "_comment_core": "Modules always exposed when METIS_TOOL_SEARCH=1 — the everyday set covering routing, capture, memory, projects/tasks, literature search, news/briefs, files, reflexion and contextual-discovery. Everything else (dhis2, data_tools, anonymization, backup, course_builder, knowledge_db/graph, vector_memory, thinking_profile, zotero, paperqa, transcription, voice, images, code_repository, research_timeline, project_tracker, memory_curator, brainstorm, doctor, pipeline, observability, improvement, config_tools, reviews, observation, ref_miner, fulltext_index, literature_monitor, guardrails) is parked and loaded on demand. Tune freely — membership is module-granular.",
   "groups": {
-    "literature":   ["library", "literature", "literature_monitor", "knowledge_graph", "ref_miner", "fulltext_index", "zotero", "research", "paperqa_search"],
-    "writing":      ["notes", "ideas", "brainstorm", "thinking_profile", "files", "observation"],
-    "methods":      ["ideas", "notes", "files", "research", "literature", "paperqa_search"],
-    "data":         ["data_tools", "script_analyzer", "anonymization", "files", "safety", "guardrails"],
-    "admin":        ["projects", "tasks", "config_tools", "user_profile", "handoff", "project_tracker"],
-    "intelligence": ["intelligence", "content_scan", "memory", "vector_memory", "improvement", "self_improvement"],
-    "sessions":     ["session_memory", "memory_curator"],
-    "meetings":     ["meetings"],
-    "security":     ["safety", "guardrails", "anonymization", "doctor"],
-    "media":        ["transcription", "images", "files", "voice_capture"],
-    "pipeline":     ["agents", "pipeline", "observability", "handoff", "improvement", "self_improvement", "user_profile"],
-    "courses":      ["course_builder", "knowledge_db"],
-    "specialist":   ["dhis2", "research_timeline", "knowledge_graph", "knowledge_db"]
+    "literature": [
+      "library",
+      "literature",
+      "literature_monitor",
+      "knowledge_graph",
+      "ref_miner",
+      "fulltext_index",
+      "zotero",
+      "research",
+      "paperqa_search"
+    ],
+    "writing": [
+      "notes",
+      "ideas",
+      "brainstorm",
+      "thinking_profile",
+      "files",
+      "observation"
+    ],
+    "methods": [
+      "ideas",
+      "notes",
+      "files",
+      "research",
+      "literature",
+      "paperqa_search"
+    ],
+    "data": [
+      "data_tools",
+      "script_analyzer",
+      "anonymization",
+      "files",
+      "safety",
+      "guardrails"
+    ],
+    "admin": [
+      "projects",
+      "tasks",
+      "config_tools",
+      "user_profile",
+      "handoff",
+      "project_tracker"
+    ],
+    "intelligence": [
+      "intelligence",
+      "content_scan",
+      "memory",
+      "vector_memory",
+      "improvement",
+      "self_improvement"
+    ],
+    "sessions": [
+      "session_memory",
+      "memory_curator"
+    ],
+    "meetings": [
+      "meetings"
+    ],
+    "security": [
+      "safety",
+      "guardrails",
+      "anonymization",
+      "doctor"
+    ],
+    "media": [
+      "transcription",
+      "images",
+      "files",
+      "voice_capture"
+    ],
+    "pipeline": [
+      "agents",
+      "pipeline",
+      "observability",
+      "handoff",
+      "improvement",
+      "self_improvement",
+      "user_profile"
+    ],
+    "courses": [
+      "course_builder",
+      "knowledge_db"
+    ],
+    "specialist": [
+      "dhis2",
+      "research_timeline",
+      "knowledge_graph",
+      "knowledge_db"
+    ]
   },
   "agents": {
-    "librarian":           ["literature", "admin", "writing", "sessions"],
-    "meeting-memory":      ["media", "meetings", "admin", "writing", "sessions"],
-    "software-engineer":   ["admin", "security", "writing", "data", "sessions"],
-    "methods-coach":       ["methods", "writing", "sessions"],
-    "epidemiologist":      ["methods", "literature", "writing", "sessions"],
-    "news-radar":          ["intelligence", "writing", "sessions"],
-    "news-aggregator":     ["intelligence", "writing", "sessions"],
-    "course-builder":      ["literature", "admin", "writing", "courses", "sessions"],
-    "data-analyst":        ["data", "admin", "sessions"],
-    "data-guardian":       ["security", "data", "sessions"],
-    "phd-architect":       ["admin", "literature", "writing", "sessions"],
-    "writing-partner":     ["writing", "admin", "sessions"],
-    "content-harvester":   ["literature", "media", "writing", "sessions"],
-    "learning-architect":  ["admin", "writing", "courses", "sessions"],
-    "learning-coach":      ["admin", "writing", "literature", "sessions"],
-    "visualization-maker": ["writing", "data", "sessions"],
-    "dhis2-expert":        ["specialist", "admin", "writing", "sessions"],
-    "biostatistician":     ["methods", "literature", "data", "writing", "sessions"],
-    "background-maker":    ["literature", "media", "specialist", "sessions"],
-    "metis":               ["pipeline", "intelligence", "admin", "sessions", "meetings"],
-    "_default":            "all"
+    "librarian": [
+      "literature",
+      "admin",
+      "writing",
+      "sessions"
+    ],
+    "meeting-memory": [
+      "media",
+      "meetings",
+      "admin",
+      "writing",
+      "sessions"
+    ],
+    "software-engineer": [
+      "admin",
+      "security",
+      "writing",
+      "data",
+      "sessions"
+    ],
+    "methods-coach": [
+      "methods",
+      "writing",
+      "sessions"
+    ],
+    "epidemiologist": [
+      "methods",
+      "literature",
+      "writing",
+      "sessions"
+    ],
+    "news-radar": [
+      "intelligence",
+      "writing",
+      "sessions"
+    ],
+    "news-aggregator": [
+      "intelligence",
+      "writing",
+      "sessions"
+    ],
+    "course-builder": [
+      "literature",
+      "admin",
+      "writing",
+      "courses",
+      "sessions"
+    ],
+    "data-analyst": [
+      "data",
+      "admin",
+      "sessions"
+    ],
+    "data-guardian": [
+      "security",
+      "data",
+      "sessions"
+    ],
+    "phd-architect": [
+      "admin",
+      "literature",
+      "writing",
+      "sessions"
+    ],
+    "writing-partner": [
+      "writing",
+      "admin",
+      "sessions"
+    ],
+    "content-harvester": [
+      "literature",
+      "media",
+      "writing",
+      "sessions"
+    ],
+    "learning-architect": [
+      "admin",
+      "writing",
+      "courses",
+      "sessions"
+    ],
+    "learning-coach": [
+      "admin",
+      "writing",
+      "literature",
+      "sessions"
+    ],
+    "visualization-maker": [
+      "writing",
+      "data",
+      "sessions"
+    ],
+    "dhis2-expert": [
+      "specialist",
+      "admin",
+      "writing",
+      "sessions"
+    ],
+    "biostatistician": [
+      "methods",
+      "literature",
+      "data",
+      "writing",
+      "sessions"
+    ],
+    "background-maker": [
+      "literature",
+      "media",
+      "specialist",
+      "sessions"
+    ],
+    "metis": [
+      "pipeline",
+      "intelligence",
+      "admin",
+      "sessions",
+      "meetings"
+    ],
+    "_default": "all"
   },
   "_comment_default": "_default is the subset loaded when no METIS_AGENT_SUBSET is set — i.e. the general interactive session used by Claude Desktop AND the Claude Code main 'metis-rc' connection. Both have ONE connection and ONE subset for the whole session (no per-agent relaunch), so the default MUST expose every tool — otherwise capabilities like the routed knowledge layer (search_pdf_knowledge), DHIS2, data tools, transcription and voice are unreachable. Hence 'all'. The per-agent subsets above still apply ONLY when METIS_AGENT_SUBSET=<slug> is set explicitly (e.g. token-optimized automation launchers). Set METIS_TOOL_SUBSETS=0 to disable the mechanism entirely."
 }
