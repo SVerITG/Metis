@@ -1123,3 +1123,220 @@ async def reflection_archive(request: Request):
     return templates.TemplateResponse(
         request, "partials/reflection_archive.html",
         {"items": rows, "n_thread": sum(1 for r in rows if r["kind"] == THREAD_KIND)})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FOCUS — is your attention where you said it matters?
+# ═══════════════════════════════════════════════════════════════════════════════
+# A knowledge graph of everything is a picture of nothing; that lesson is already
+# recorded in the thread view above. This answers a different question, and it is
+# the one worth drawing: not "what is connected to what" but "what have I
+# actually been touching, and is it the work I committed to".
+#
+# HOW IT READS. You are the centre. Every ring outward is more time since the
+# thing was last touched. A commitment drifting to the outer rings is the finding
+# — and so is the inverse, which is easier to miss: when the things nearest you
+# are TOPICS (subjects you follow) rather than COMMITMENTS (projects, courses,
+# the subjects you chose to track), your attention has slid from doing to reading.
+#
+# EVERY POSITION IS EVIDENCE, NOT A GUESS. Each kind has one signal, named on
+# screen, and a thing with no signal is drawn as unplaced rather than parked at
+# the rim — "never touched" and "touched long ago" are different facts and only
+# one of them is a drift.
+#
+#   project   the last working session on it, or the last time one of its tasks moved
+#   course    the last time its progress changed
+#   subject   the last time you opened it        (a focus area IS attention)
+#   topic     the last paper or brief you read that names it
+#
+# Layout is computed here rather than simulated in the browser: rings and arcs
+# are deterministic, so a force layout would spend frames arriving somewhere
+# already known. It also means the picture prints and pins no library.
+
+FOCUS_BANDS = [
+    (2,   "today"),
+    (7,   "this week"),
+    (30,  "this month"),
+    (90,  "this quarter"),
+    (10**6, "longer ago"),
+]
+FOCUS_W, FOCUS_H = 640, 460
+FOCUS_R0, FOCUS_R1 = 46, 196          # innermost and outermost ring radius
+
+# A commitment untouched for longer than this is drifting. Thirty days is one
+# reporting cycle — long enough that a quiet fortnight is not an alarm, short
+# enough that a quarter has not passed unnoticed.
+DRIFT_DAYS = 30
+
+
+def _days_since(stamp: str) -> int | None:
+    if not stamp:
+        return None
+    try:
+        d = datetime.date.fromisoformat(str(stamp)[:10])
+    except ValueError:
+        return None
+    return max(0, (datetime.date.today() - d).days)
+
+
+def _band_of(days: int | None) -> int:
+    if days is None:
+        return len(FOCUS_BANDS)          # unplaced
+    for i, (cap, _label) in enumerate(FOCUS_BANDS):
+        if days <= cap:
+            return i
+    return len(FOCUS_BANDS) - 1
+
+
+def _focus_entities() -> list[dict]:
+    """Everything that competes for attention, with the date it last had some."""
+    out: list[dict] = []
+
+    # ── Projects ────────────────────────────────────────────────────────────
+    # Two signals, and the LATER wins: a session is the stronger evidence, but a
+    # task moving is evidence too, and a project worked on only through its task
+    # list would otherwise look abandoned.
+    #
+    # BUT A BULK WRITE IS NOT ATTENTION, and this panel is worthless if it cannot
+    # tell them apart. One value in this column — a bare date, no time — covers 51
+    # tasks across 10 projects: a backfill. Taken at face value it dated ten
+    # abandoned projects to that day and reported them as touched a month ago when
+    # the last real session on several was three months back. The feature would
+    # have UNDER-reported drift, which is precisely the opposite of its purpose.
+    #
+    # The rule is stated generally rather than against that date, because the next
+    # migration will carry a different one: a timestamp shared across three or
+    # more projects is a write event, not nine people sitting down to work at the
+    # same instant.
+    _shared = {r["u"] for r in db_query(
+        "SELECT updated_at AS u, COUNT(DISTINCT COALESCE(project_id,'')) AS p "
+        "FROM tasks WHERE COALESCE(updated_at,'') != '' "
+        "GROUP BY updated_at HAVING p >= 3", default=[]) or []}
+    task_touch: dict[str, str] = {}
+    for r in db_query(
+            "SELECT COALESCE(project_id,'') AS project_id, updated_at AS u "
+            "FROM tasks WHERE COALESCE(updated_at,'') != ''", default=[]) or []:
+        if r["u"] in _shared:
+            continue
+        pid = r["project_id"]
+        if r["u"] > task_touch.get(pid, ""):
+            task_touch[pid] = r["u"]
+    for r in db_query(
+            "SELECT project_id, title, COALESCE(status,'') AS status, "
+            "       COALESCE(last_session_at,'') AS sess "
+            "FROM projects WHERE COALESCE(status,'') IN ('active','in_progress')",
+            default=[]) or []:
+        stamp = max(r["sess"][:10], (task_touch.get(r["project_id"]) or "")[:10])
+        out.append({"kind": "project", "label": r["title"],
+                    "href": f"/work#{r['project_id']}",
+                    "stamp": stamp, "commitment": True,
+                    "why": "last working session, or a task moving"})
+
+    # ── Courses ─────────────────────────────────────────────────────────────
+    for r in db_query(
+            "SELECT slug, title, COALESCE(updated_at,'') AS u FROM learning_courses "
+            "WHERE status IN ('active','in_progress')", default=[]) or []:
+        out.append({"kind": "course", "label": r["title"],
+                    "href": "/tab/learning#" + r["slug"],
+                    "stamp": r["u"][:10], "commitment": True,
+                    "why": "the last time its progress changed"})
+
+    # ── Subjects you chose to track ─────────────────────────────────────────
+    for r in db_query(
+            "SELECT slug, title, COALESCE(last_visited_at,'') AS v FROM focus_areas "
+            "WHERE COALESCE(state,'') = 'active'", default=[]) or []:
+        out.append({"kind": "subject", "label": r["title"],
+                    "href": "/focus/" + r["slug"],
+                    "stamp": r["v"][:10], "commitment": True,
+                    "why": "the last time you opened it"})
+
+    # ── Declared interests ──────────────────────────────────────────────────
+    # A topic has no clock of its own — nothing writes to it. Its attention is
+    # whatever you last READ that names it, which is the honest signal and the
+    # one that makes the contrast meaningful: a topic near the centre while the
+    # projects sit at the rim is reading instead of doing.
+    for r in db_query("SELECT topic FROM user_topics", default=[]) or []:
+        term = (r["topic"] or "").strip()
+        if not term:
+            continue
+        like = f"%{term.lower()}%"
+        stamps = [
+            db_scalar("SELECT MAX(read_at) FROM new_publications "
+                      "WHERE COALESCE(read_at,'') != '' AND LOWER(title) LIKE ?",
+                      (like,), default="") or "",
+            db_scalar("SELECT MAX(seen_at) FROM news_briefs "
+                      "WHERE COALESCE(seen_at,'') != '' AND LOWER(title) LIKE ?",
+                      (like,), default="") or "",
+        ]
+        out.append({"kind": "topic", "label": term, "href": "/news",
+                    "stamp": max(s[:10] for s in stamps), "commitment": False,
+                    "why": "the last paper or brief you read that names it"})
+
+    for e in out:
+        e["days"] = _days_since(e["stamp"])
+        e["band"] = _band_of(e["days"])
+    return out
+
+
+def _focus_layout(entities: list[dict]) -> dict:
+    """Rings and arcs. Grouped by kind so the picture can be read, not decoded."""
+    import math
+    cx, cy = FOCUS_W / 2, FOCUS_H / 2
+    n_bands = len(FOCUS_BANDS)
+    rings = [{"r": round(FOCUS_R0 + (FOCUS_R1 - FOCUS_R0) * i / (n_bands - 1), 1),
+              "label": FOCUS_BANDS[i][1]} for i in range(n_bands)]
+
+    # Each kind gets its own arc of the circle, so like sits beside like.
+    order = ["project", "course", "subject", "topic"]
+    placed = [e for e in entities if e["band"] < n_bands]
+    unplaced = [e for e in entities if e["band"] >= n_bands]
+    by_kind = {k: [e for e in placed if e["kind"] == k] for k in order}
+    live = [k for k in order if by_kind[k]]
+
+    nodes = []
+    span = (2 * math.pi) / max(1, len(live))
+    for ki, k in enumerate(live):
+        group = sorted(by_kind[k], key=lambda e: (e["band"], e["label"]))
+        arc0 = -math.pi / 2 + ki * span
+        for i, e in enumerate(group):
+            # Spread within the arc, insetting from its edges so neighbouring
+            # kinds do not touch.
+            frac = (i + 1) / (len(group) + 1)
+            a = arc0 + span * (0.12 + 0.76 * frac)
+            r = rings[e["band"]]["r"]
+            nodes.append({**e,
+                          "x": round(cx + r * 1.28 * math.cos(a), 1),
+                          "y": round(cy + r * 0.92 * math.sin(a), 1)})
+    return {"w": FOCUS_W, "h": FOCUS_H, "cx": cx, "cy": cy,
+            "rings": rings, "nodes": nodes, "unplaced": unplaced}
+
+
+def _focus_verdict(entities: list[dict]) -> dict:
+    """The sentence the picture is for. Counts only; nothing is inferred."""
+    commitments = [e for e in entities if e["commitment"]]
+    topics = [e for e in entities if not e["commitment"]]
+    drifting = [e for e in commitments
+                if e["days"] is not None and e["days"] > DRIFT_DAYS]
+    never = [e for e in commitments if e["days"] is None]
+
+    # The inverse finding, and the one that is easy to miss: among everything
+    # touched in the last week, are the topics outnumbering the commitments?
+    recent_c = [e for e in commitments if e["days"] is not None and e["days"] <= 7]
+    recent_t = [e for e in topics if e["days"] is not None and e["days"] <= 7]
+    return {
+        "n_commit": len(commitments), "n_topic": len(topics),
+        "drifting": sorted(drifting, key=lambda e: -(e["days"] or 0)),
+        "never": never,
+        "recent_c": len(recent_c), "recent_t": len(recent_t),
+        "reading_over_doing": len(recent_t) > len(recent_c) and bool(recent_t),
+        "drift_days": DRIFT_DAYS,
+    }
+
+
+@router.get("/api/partial/reflection/focus", response_class=HTMLResponse)
+async def reflection_focus(request: Request):
+    ents = _focus_entities()
+    return templates.TemplateResponse(
+        request, "partials/reflection_focus.html",
+        {"graph": _focus_layout(ents), "v": _focus_verdict(ents),
+         "bands": FOCUS_BANDS})

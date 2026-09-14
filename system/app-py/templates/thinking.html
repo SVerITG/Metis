@@ -117,6 +117,21 @@
     </div>
   </div>
 
+  {#- ── Focus ─────────────────────────────────────────────────────────────
+      The one picture on this surface that is not about connections. It asks
+      whether attention went where it was committed — the question a knowledge
+      graph cannot answer and keeps being asked to. -#}
+  <div class="ui-tabpane" data-tabset="reflection" data-tab="focus" hidden>
+    {% call zone("Where your attention went", key="refl-focus", kind="thinking",
+                 tail="COMMITMENTS AND INTERESTS, BY HOW LONG SINCE EACH WAS TOUCHED",
+                 collapsible=False) %}
+      <div id="refl-focus" hx-get="/api/partial/reflection/focus"
+           hx-trigger="revealed once" hx-swap="innerHTML">
+        <div class="panel skeleton skeleton-box" style="height:420px;"></div>
+      </div>
+    {% endcall %}
+  </div>
+
   {#- ── Archive ───────────────────────────────────────────────────────────── -#}
   <div class="ui-tabpane" data-tabset="reflection" data-tab="archive" hidden>
     {% call zone("Archive", key="refl-archive", kind="system",

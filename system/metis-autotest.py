@@ -625,6 +625,9 @@ def run_dashboard():
         # The Learning station's third column. The other two are long-standing
         # panels already covered above.
         "/api/partial/today/learning-shelf",
+        # Reflection's alignment view — the one panel that reports a
+        # judgement rather than a list, so a 500 here is silent.
+        "/api/partial/reflection/focus",
     ]
     partial_fails = []
     for route in partials:

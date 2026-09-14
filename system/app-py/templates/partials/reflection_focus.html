@@ -1,0 +1,132 @@
+{#- reflection_focus.html — is your attention where you said it matters?
+
+    NOT a knowledge graph. That draws what is connected to what, which on a real
+    library is a hairball that tells you nothing — the thread view above already
+    carries that lesson. This draws something else: WHEN each thing that competes
+    for your attention last had any.
+
+    You are the centre. Each ring outward is more time since the thing was
+    touched. Two findings live in the picture:
+
+      a commitment drifting outward — the obvious one
+      topics sitting closer than commitments — the one that is easy to miss,
+        because it looks like a busy week. It is reading instead of doing.
+
+    Every position is evidence. A thing with no signal at all is listed apart
+    rather than parked at the rim: "never touched" and "touched long ago" are
+    different facts, and only one of them is a drift.
+
+    Context: graph (rings · nodes · unplaced) · v (the verdict counts) · bands -#}
+
+{#- ── The sentence the picture is for ─────────────────────────────────────── -#}
+<div class="fx-verdict">
+  {% if v.drifting %}
+  <p class="fx-lead fx-lead--warn">
+    <strong>{{ v.drifting | length }}</strong> of your {{ v.n_commit }} commitments
+    have not been touched in over {{ v.drift_days }} days.
+  </p>
+  {% else %}
+  <p class="fx-lead fx-lead--ok">
+    Every one of your {{ v.n_commit }} commitments has been touched in the last
+    {{ v.drift_days }} days.
+  </p>
+  {% endif %}
+
+  {% if v.reading_over_doing %}
+  <p class="fx-note fx-note--warn">
+    In the last week you touched <strong>{{ v.recent_t }}</strong> subjects you
+    follow and <strong>{{ v.recent_c }}</strong> things you committed to. The
+    nearest things to you are reading, not work.
+  </p>
+  {% endif %}
+
+  {% if v.drifting %}
+  <ul class="fx-drift">
+    {% for e in v.drifting[:6] %}
+    <li>
+      <a href="{{ e.href }}">{{ e.label }}</a>
+      <span class="fx-kind">{{ e.kind }}</span>
+      <span class="fx-days">{{ e.days }} days</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</div>
+
+{#- ── The picture ─────────────────────────────────────────────────────────── -#}
+<div class="fx-wrap">
+  <svg viewBox="0 0 {{ graph.w }} {{ graph.h }}" width="100%" height="{{ graph.h }}"
+       role="img"
+       aria-label="Your commitments and interests, placed by how long since each was last touched">
+
+    {#- Rings, labelled. A ring without its span is a decoration. -#}
+    {% for r in graph.rings %}
+    <ellipse cx="{{ graph.cx }}" cy="{{ graph.cy }}"
+             rx="{{ (r.r * 1.28) | round(1) }}" ry="{{ (r.r * 0.92) | round(1) }}"
+             class="fx-ring"/>
+    <text x="{{ graph.cx }}" y="{{ (graph.cy - r.r * 0.92 + 11) | round(1) }}"
+          class="fx-ring-l" text-anchor="middle">{{ r.label }}</text>
+    {% endfor %}
+
+    {#- You. -#}
+    <circle cx="{{ graph.cx }}" cy="{{ graph.cy }}" r="15" class="fx-you"/>
+    <text x="{{ graph.cx }}" y="{{ graph.cy + 4 }}" class="fx-you-l"
+          text-anchor="middle">now</text>
+
+    {#- Shape carries the KIND, so the picture survives being printed in grey. -#}
+    {% for n in graph.nodes %}
+    <g class="fx-node fx-node--{{ n.kind }}{% if n.commitment and n.days is not none and n.days > v.drift_days %} fx-node--drift{% endif %}">
+      <title>{{ n.label }} — {{ n.kind }} · {{ n.days }} days ago · placed by {{ n.why }}</title>
+      {% if n.kind == 'project' %}
+      <circle cx="{{ n.x }}" cy="{{ n.y }}" r="6.5"/>
+      {% elif n.kind == 'course' %}
+      <rect x="{{ n.x - 5.5 }}" y="{{ n.y - 5.5 }}" width="11" height="11" rx="1.5"/>
+      {% elif n.kind == 'subject' %}
+      <polygon points="{{ n.x }},{{ n.y - 7 }} {{ n.x + 6.5 }},{{ n.y + 4.5 }} {{ n.x - 6.5 }},{{ n.y + 4.5 }}"/>
+      {% else %}
+      <polygon points="{{ n.x }},{{ n.y - 5 }} {{ n.x + 5 }},{{ n.y }} {{ n.x }},{{ n.y + 5 }} {{ n.x - 5 }},{{ n.y }}"/>
+      {% endif %}
+    </g>
+    {% endfor %}
+  </svg>
+
+  <div class="fx-key">
+    <span class="fx-key-i"><svg width="13" height="13" viewBox="0 0 13 13"><circle cx="6.5" cy="6.5" r="5" class="fx-k fx-k--project"/></svg>project</span>
+    <span class="fx-key-i"><svg width="13" height="13" viewBox="0 0 13 13"><rect x="1.5" y="1.5" width="10" height="10" rx="1.5" class="fx-k fx-k--course"/></svg>course</span>
+    <span class="fx-key-i"><svg width="13" height="13" viewBox="0 0 13 13"><polygon points="6.5,1 12,11 1,11" class="fx-k fx-k--subject"/></svg>subject you track</span>
+    <span class="fx-key-i"><svg width="13" height="13" viewBox="0 0 13 13"><polygon points="6.5,1.5 11.5,6.5 6.5,11.5 1.5,6.5" class="fx-k fx-k--topic"/></svg>interest you follow</span>
+  </div>
+</div>
+
+{#- ── Never touched ───────────────────────────────────────────────────────
+    Split by kind, because the same absence means two different things. A
+    COMMITMENT with no record is a finding: you took it on and nothing has
+    happened since. An INTEREST with no record mostly means the matching is
+    literal — it looks for the topic's own words in what you read — so listing
+    eleven of them beside two real findings would bury the two. -#}
+{% set un_c = graph.unplaced | selectattr('commitment') | list %}
+{% set un_t = graph.unplaced | rejectattr('commitment') | list %}
+{% if un_c %}
+<p class="fx-note fx-note--warn">
+  {{ un_c | length }} commitment{{ '' if (un_c|length) == 1 else 's' }} with no
+  record of attention at all:
+  {% for e in un_c %}<span class="fx-un">{{ e.label }}</span>{% if not loop.last %} {% endif %}{% endfor %}.
+  Either nothing has happened, or nothing has been written down — and the second
+  is worth fixing first.
+</p>
+{% endif %}
+{% if un_t %}
+<p class="fx-note">
+  {{ un_t | length }} of your stated interests are not placed. An interest is
+  matched by its own words appearing in what you read, which is literal — so this
+  is more likely a limit of the matching than a subject you have dropped.
+</p>
+{% endif %}
+
+<p class="fx-how">
+  Placed by evidence, one signal each: a <strong>project</strong> by its last
+  working session or a task moving · a <strong>course</strong> by the last change
+  in its progress · a <strong>subject you track</strong> by the last time you
+  opened it · an <strong>interest</strong> by the last paper or brief you read
+  that names it.
+</p>

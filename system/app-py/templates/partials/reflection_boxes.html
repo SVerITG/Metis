@@ -22,6 +22,16 @@
   </button>
   {% endfor %}
 
+  {#- Focus is not a value box either, and for the opposite reason to Archive:
+      its number is not a count of things you have, it is a judgement about where
+      your attention went. Putting it beside the three piles would invite reading
+      it as a fourth pile. -#}
+  <button type="button" class="ui-tab rbox rbox--quiet" role="tab"
+          data-tabset="reflection" data-tab="focus" aria-selected="false">
+    <span class="rbox-l">Focus</span>
+    <span class="rbox-note">where your attention actually went</span>
+  </button>
+
   {#- Archive is deliberately not a value box. It is where things go to stop
       asking for attention, and giving it the same weight as the three live
       piles would undo that. -#}
