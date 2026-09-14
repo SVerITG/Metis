@@ -15,7 +15,7 @@
 
     Still renders nothing at all when nothing is waiting. -#}
 {% if items %}
-  {{ sec_label("Your reading stack", tail=(("%d TO READ" % total) + (" · %d CRUCIAL" % n_crucial if n_crucial else ""))) }}
+  {% if not bare %}{{ sec_label("Your reading stack", tail=(("%d TO READ" % total) + (" · %d CRUCIAL" % n_crucial if n_crucial else ""))) }}{% endif %}
   <div class="panel u-mb-6 rstack-panel">
 
     {#- THE PILE. The sheets behind are decoration and are hidden from screen

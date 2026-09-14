@@ -7803,3 +7803,91 @@ a.shf-row-title:hover { color: var(--m-accent); }
   font-size: 11px; color: var(--m-muted); font-style: italic;
 }
 .pl-hint { font-size: 10.5px; color: var(--m-muted); }
+
+/* ─── Workstation columns: one anatomy, and no column repeating its own title ──
+   Screenshotted 2026-09-14, which is the only way this was going to be settled.
+   Three faults, all of them structural rather than decorative:
+
+     · Two of the three columns rendered a partial that drew its OWN heading —
+       "Where you left off" inside a box headed WHERE YOU LEFT OFF, "Your reading
+       stack" inside READING STACK. Fixed at the source with `bare`.
+     · "also waiting" was four underlined links in a 13px serif sentence, and in
+       a third-width column it wrapped to three ragged lines. They are counts, so
+       they are drawn as counts.
+     · The columns did not stretch, so three boxes of very different content
+       height read as three unrelated slabs rather than one row.
+   ──────────────────────────────────────────────────────────────────────────── */
+.ws-cols { align-items: stretch; }
+.ws-col-b { min-height: 0; }
+
+/* Chips, not a wrapped sentence. Scoped to the column so the standalone focus
+   panel elsewhere keeps the reading it was designed with. */
+.ws-col-b .focus-also {
+  gap: 6px;
+  margin: 0;
+  padding-top: var(--d-stack);
+  font-size: inherit;
+}
+.ws-col-b .focus-also-lead { flex: 1 0 100%; letter-spacing: 0.12em; }
+.ws-col-b .focus-also-sep { display: none; }
+.ws-col-b .focus-also .u-link {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  border: 1px solid var(--m-rule);
+  border-radius: 2px;
+  padding: 3px 7px;
+  color: var(--m-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ws-col-b .focus-also .u-link:hover {
+  color: var(--m-ink);
+  border-color: var(--m-rule-strong);
+  background: var(--m-surface-2);
+}
+
+/* The add row is one control, not a section: no dashed rule, no hint line under
+   it. The placeholder already says what it does. */
+.ws-col-b .plan-add { border-top: 0; padding-top: 0; margin-top: var(--d-stack); }
+.ws-col-b .plan-add-hint { display: none; }
+.ws-col-b .plan-empty { margin-top: 0; }
+.ws-col-b .quick-add-input { font-size: 13px; }
+.ws-col-b .quick-add { padding-bottom: 4px; }
+
+/* Where-you-left-off, unfolded inside its column: the summary line and the fold
+   are what the column header now is — and so is the border. `.pick` paints its
+   own box, which inside a column that already has one is a box in a box on every
+   render. Same defect the plan panel had; same fix. */
+.pick--bare {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.pick--bare .pick-body { padding-top: 0; }
+
+/* The session note is context, not the content. Two lines of it orient you; six
+   lines of it push the rows — the part you can act on — below the fold. */
+.ws-col-b .pick-note {
+  font-size: var(--t-small);
+  color: var(--m-muted);
+  margin: 0 0 var(--d-stack);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* A third-width column cannot hold a one-line title plus an action on the same
+   row, so the title wraps instead of ellipsing at six characters. A truncated
+   project name is not a project name. */
+.ws-col-b .mrow-title {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ws-col-b .mrow-acts { flex: 0 0 auto; }
+.ws-col-b .mrow-meta--clamp { -webkit-line-clamp: 1; }

@@ -11,6 +11,15 @@
 
     That is what makes it worth the space: it is not a record of yesterday, it
     is the shortest route to deciding today. -#}
+{#- `bare` — rendered INSIDE the Workstation column of the same name (2026-09-14).
+    The fold and the summary line were right when this sat loose on the surface.
+    In a column already headed "Where you left off" they draw a second box
+    repeating the column's own title, and leave the column nine-tenths empty
+    because everything real is hidden behind a summary nobody needs to click. -#}
+{%- if bare %}
+<div class="pick pick--bare">
+  <div class="pick-body">
+{%- else %}
 <details class="pick" data-pick-fold>
   <summary class="pick-sum">
     <span class="pick-lead">Where you left off</span>
@@ -19,6 +28,7 @@
   </summary>
 
   <div class="pick-body">
+{%- endif %}
     {% if last_summary %}
     <p class="pick-note">{{ last_summary }}</p>
     {% endif %}
@@ -68,4 +78,4 @@
     <p class="pick-note">Nothing recorded yet — a session gets written here when work is logged against a project.</p>
     {% endif %}
   </div>
-</details>
+{% if bare %}</div>{% else %}</details>{% endif %}

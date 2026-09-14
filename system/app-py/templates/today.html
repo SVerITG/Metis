@@ -222,7 +222,7 @@
         record of yesterday, it is the shortest route to deciding today. Every
         row carries a button that pins that project's next task straight into
         the focus cards above. -#}
-    <div hx-get="/api/partial/today/pick-focus"
+    <div hx-get="/api/partial/today/pick-focus?bare=1"
          hx-trigger="load delay:140ms"
          hx-swap="innerHTML"></div>
         </div>
@@ -244,7 +244,7 @@
       nothing is waiting. Crucial floats to the top; it is no longer the price of
       appearing. Clicking the pile opens the full queue in Library rather than
       rebuilding it here. -#}
-  <div hx-get="/api/partial/today/reading"
+  <div hx-get="/api/partial/today/reading?bare=1"
        hx-trigger="load delay:240ms"
        hx-swap="outerHTML"></div>
         </div>

@@ -5332,7 +5332,7 @@ async def today_resume_card(request: Request):
 # ── F: Learning Nudge ────────────────────────────────────────────────────
 
 @router.get("/api/partial/today/pick-focus", response_class=HTMLResponse)
-async def today_pick_focus(request: Request):
+async def today_pick_focus(request: Request, bare: int = 0):
     """Where you left off — folded, and every row can become today's focus.
 
     The resume card described yesterday in a paragraph you could not act on.
@@ -5375,7 +5375,8 @@ async def today_pick_focus(request: Request):
 
     return templates.TemplateResponse(
         request, "partials/today_pick_focus.html",
-        {"projects": rows, "last_summary": last_summary, "last_when": last_when},
+        {"projects": rows, "last_summary": last_summary, "last_when": last_when,
+         "bare": bare},
     )
 
 
@@ -5653,7 +5654,7 @@ async def render_reading(request: Request) -> str:
 
 
 @router.get("/api/partial/today/reading", response_class=HTMLResponse)
-async def today_reading(request: Request):
+async def today_reading(request: Request, bare: int = 0):
     """The reading stack, drawn as a stack, at the start of the day.
 
     IT SHOWED NOTHING UNLESS SOMETHING WAS FLAGGED CRUCIAL. That rule was written
@@ -5684,7 +5685,7 @@ async def today_reading(request: Request):
     return templates.TemplateResponse(
         request,
         "partials/today_reading.html",
-        {"items": items[:3], "total": len(items),
+        {"items": items[:3], "total": len(items), "bare": bare,
          "n_crucial": sum(1 for r in items if r.get("crucial")),
          # How deep the drawn pile looks. Capped so a 40-item stack does not
          # become a 40-layer staircase — past a few sheets the eye reads "a lot"
