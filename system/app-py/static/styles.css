@@ -7619,3 +7619,93 @@ a.shf-row-title:hover { color: var(--m-accent); }
   border-top: 1px solid var(--m-line);
   font-size: 11px; color: var(--m-muted); line-height: 1.65;
 }
+
+/* ── Brainstorm launcher ───────────────────────────────────────────────────
+   Three ways in, then the material. The chart and the list are two views of one
+   selection — the checkboxes hold it, so they are what a screen reader and a
+   trackpad both get to use. */
+.bs-ways { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: var(--m-space-3); }
+.bs-way {
+  text-align: left; font: inherit; color: inherit; cursor: pointer;
+  background: none; border: 1px solid var(--m-line);
+  border-radius: var(--m-radius, 4px); padding: var(--m-space-3) var(--m-space-4);
+  display: flex; flex-direction: column; gap: 3px;
+  border-top: 3px solid var(--m-line);
+}
+.bs-way:hover { background: var(--m-plum-wash); }
+.bs-way.is-on { border-top-color: var(--m-plum); background: var(--m-plum-wash); }
+.bs-way-t { font-size: 13.5px; font-weight: 600; }
+.bs-way-d { font-size: 11px; color: var(--m-muted); }
+
+.bs-pick { margin-top: var(--m-space-4); }
+.bs-pick-l {
+  font-size: 10px; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--m-muted);
+}
+.bs-pick-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: var(--m-space-2); }
+.bs-chip, .bs-idea {
+  font: inherit; color: inherit; cursor: pointer; background: none;
+  border: 1px solid var(--m-line); border-radius: 3px;
+  padding: 3px 9px; font-size: 12px; text-align: left;
+}
+.bs-chip:hover, .bs-idea:hover { border-color: var(--m-plum); background: var(--m-plum-wash); }
+.bs-pick-list { display: flex; flex-direction: column; gap: 2px; margin-top: var(--m-space-2); }
+.bs-idea { border: none; border-left: 2px solid var(--m-line); border-radius: 0 3px 3px 0; }
+
+.bs-empty { font-size: 12px; color: var(--m-muted); line-height: 1.6; margin: var(--m-space-4) 0 0; }
+
+.bs-chartwrap { margin: var(--m-space-4) 0 var(--m-space-3); }
+.bs-chartwrap svg { display: block; max-width: 100%; overflow: visible; }
+.bs-edge { stroke: var(--m-line); stroke-width: 1; }
+.bs-edge.is-on { stroke: var(--m-plum); stroke-width: 1.6; }
+.bs-hub { fill: var(--m-plum-wash); stroke: var(--m-plum); stroke-width: 1.5; }
+.bs-hub-l { font-size: 9px; letter-spacing: .06em; fill: var(--m-muted); }
+.bs-node { cursor: pointer; }
+.bs-node circle { fill: var(--m-surface-2, var(--m-bg)); stroke: var(--m-muted); stroke-width: 1.4; }
+.bs-node.is-on circle { fill: var(--m-plum); stroke: var(--m-plum); }
+.bs-node:focus { outline: none; }
+.bs-node:focus circle { stroke: var(--m-accent); stroke-width: 2.4; }
+.bs-chart-note { margin: 4px 0 0; font-size: 10.5px; color: var(--m-muted); line-height: 1.55; }
+
+.bs-list {
+  display: flex; flex-direction: column; gap: 1px;
+  max-height: 320px; overflow-y: auto;
+  border: 1px solid var(--m-line); border-radius: 3px; padding: 4px;
+}
+.bs-item {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 4px 6px; border-radius: 2px; cursor: pointer; font-size: 12.5px;
+}
+.bs-item:hover { background: var(--m-plum-wash); }
+.bs-item.is-on { background: var(--m-plum-wash); }
+.bs-item input { margin: 0; flex: 0 0 auto; }
+.bs-k {
+  flex: 0 0 auto; font-size: 9px; text-transform: uppercase; letter-spacing: .07em;
+  border: 1px solid var(--m-line); border-radius: 2px; padding: 0 5px;
+  color: var(--m-muted);
+}
+.bs-lab { flex: 1 1 auto; min-width: 0; }
+.bs-det { font-size: 10.5px; color: var(--m-muted); }
+.bs-when { font-size: 10px; color: var(--m-muted); font-variant-numeric: tabular-nums; }
+
+.bs-go {
+  display: flex; align-items: center; gap: var(--m-space-3);
+  margin-top: var(--m-space-3); flex-wrap: wrap;
+}
+.bs-level { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--m-muted); }
+.bs-level select {
+  font: inherit; font-size: 11px; color: var(--m-ink); background: transparent;
+  border: 1px solid var(--m-line); border-radius: 3px; padding: 2px 5px;
+}
+.bs-all {
+  background: none; border: none; cursor: pointer; color: var(--m-muted);
+  font: inherit; font-size: 11px; text-decoration: underline;
+  text-underline-offset: 2px; padding: 0;
+}
+.bs-count { margin-left: auto; font-size: 11px; color: var(--m-muted); }
+.bs-note { margin: var(--m-space-2) 0 0; font-size: 11px; color: var(--m-muted); line-height: 1.6; }
+
+@media (max-width: 760px) {
+  .bs-ways { grid-template-columns: 1fr; }
+  .bs-count { margin-left: 0; }
+}

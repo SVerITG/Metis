@@ -3589,3 +3589,83 @@ async function buildPresentationBrief(form) {
   }
   return false;
 }
+
+// ─── Brainstorm: choose the material, then go ────────────────────────────────
+// Selection lives in the checkboxes — one source of truth. The chart reflects
+// them and can drive them, but never holds state of its own: two stores for one
+// answer is how a picker comes to disagree with the prompt it produces.
+
+function _bsSync() {
+  const form = document.getElementById('bs-form');
+  if (!form) return [];
+  const on = [];
+  form.querySelectorAll('input[name="pick"]').forEach(cb => {
+    if (cb.checked) on.push(cb.value);
+    const row = cb.closest('.bs-item');
+    if (row) row.classList.toggle('is-on', cb.checked);
+    document.querySelectorAll(`[data-pick="${CSS.escape(cb.value)}"]`).forEach(n => {
+      n.classList.toggle('is-on', cb.checked);
+      n.setAttribute('aria-checked', String(cb.checked));
+    });
+    document.querySelectorAll(`[data-for="${CSS.escape(cb.value)}"]`).forEach(e => {
+      e.classList.toggle('is-on', cb.checked);
+    });
+  });
+  const c = document.getElementById('bs-count');
+  if (c) c.textContent = on.length ? `${on.length} chosen` : 'nothing chosen';
+  return on;
+}
+
+document.addEventListener('change', ev => {
+  if (ev.target && ev.target.name === 'pick') _bsSync();
+});
+
+// Clicking a dot toggles its checkbox, which then drives everything.
+document.addEventListener('click', ev => {
+  const node = ev.target.closest('.bs-node[data-pick]');
+  if (!node) return;
+  const cb = document.querySelector(
+    `#bs-form input[name="pick"][value="${CSS.escape(node.dataset.pick)}"]`);
+  if (cb) { cb.checked = !cb.checked; _bsSync(); }
+});
+document.addEventListener('keydown', ev => {
+  if (ev.key !== 'Enter' && ev.key !== ' ') return;
+  const node = ev.target.closest && ev.target.closest('.bs-node[data-pick]');
+  if (!node) return;
+  ev.preventDefault();
+  node.click();
+});
+
+function bsToggleAll(btn) {
+  const form = document.getElementById('bs-form');
+  if (!form) return;
+  const boxes = [...form.querySelectorAll('input[name="pick"]')];
+  const turnOn = boxes.some(b => !b.checked);
+  boxes.forEach(b => { b.checked = turnOn; });
+  btn.textContent = turnOn ? 'select none' : 'select all';
+  _bsSync();
+}
+
+async function startBrainstorm(form) {
+  const picked = _bsSync();
+  const body = new URLSearchParams({
+    mode: form.mode.value, ref: form.ref.value,
+    level: form.level.value, picked: picked.join('|'),
+  });
+  try {
+    const res = await fetch('/api/reflection/brainstorm/prompt',
+                            { method: 'POST', body });
+    const d = await res.json();
+    if (!d.prompt) throw new Error('empty');
+    // Same two-step the other launchers use: the clipboard is the reliable
+    // path, the deep link is the convenient one. If the handler is not
+    // registered the clipboard still has it, so the click is never wasted.
+    _openInClaude(d.prompt);
+    showToast(`<i class="bi bi-lightbulb toast-icon"></i>Brainstorm opening — `
+      + (d.n ? `${d.n} item${d.n === 1 ? '' : 's'} carried in` : 'no material chosen')
+      + `; prompt copied`);
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not assemble the brainstorm.');
+  }
+  return false;
+}

@@ -47,6 +47,18 @@
 
   {#- ── Ideas ─────────────────────────────────────────────────────────────── -#}
   <div class="ui-tabpane" data-tabset="reflection" data-tab="ideas">
+
+    {#- BRAINSTORM FIRST. It was at the bottom of this pane, below the mindmap,
+        which put the one thing you come here to START at the end of the page.
+        Choosing the material is half the feature, so it needs the room. -#}
+    {% call zone("Brainstorm", key="refl-bs", kind="thinking",
+                 tail="CHOOSE WHAT TO THINK ABOUT, THEN GO", collapsible=False) %}
+      <div hx-get="/api/partial/reflection/brainstorm"
+           hx-trigger="revealed once" hx-swap="outerHTML">
+        <div class="panel skeleton skeleton-box" style="height:120px;"></div>
+      </div>
+    {% endcall %}
+
     {% call zone("Ideas", key="refl-ideas", kind="thinking",
                  tail="EXPLORATION OF THOUGHTS", collapsible=False) %}
       <div id="refl-ideas" hx-get="/api/partial/reflection/ideas"
@@ -74,12 +86,13 @@
       </div>
     </div>
 
+    {#- Past sessions only. The LAUNCHER moved to the top of this pane; leaving
+        a second one here would be two controls for one act, which is how a
+        reader stops knowing which is the real one. -#}
     <div style="margin-top:var(--m-space-5);"
-         hx-get="/api/partial/thinking/brainstorm"
+         hx-get="/api/partial/thinking/brainstorm-sessions"
          hx-trigger="revealed once" hx-swap="innerHTML">
-      <div class="panel panel-pad skeleton panel--md">
-        <p class="u-ed" style="font-size:var(--t-small);margin:0;">Pulling your active brainstorm threads…</p>
-      </div>
+      <div class="panel panel-pad skeleton panel--md"></div>
     </div>
   </div>
 

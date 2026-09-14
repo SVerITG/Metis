@@ -1340,3 +1340,327 @@ async def reflection_focus(request: Request):
         request, "partials/reflection_focus.html",
         {"graph": _focus_layout(ents), "v": _focus_verdict(ents),
          "bands": FOCUS_BANDS})
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BRAINSTORM — choose the material, then go and think about it
+# ═══════════════════════════════════════════════════════════════════════════════
+# Asked for 2026-09-14. Three ways in, and the second half is the point:
+#
+#   wild      reflect on everything from the last month
+#   project   one project, and what surrounds it
+#   idea      one idea, and what it touches
+#
+# Then the material is SHOWN AND CHOSEN before the conversation starts, instead
+# of a prompt telling Claude to "pull my context" and hoping. That difference is
+# the whole feature: a brainstorm is only as good as what it has in front of it,
+# and the researcher knows which five things matter better than a LIKE query does.
+#
+# WHY THE SELECTION IS EXPLICIT IN THE PROMPT. The old launcher said "first pull
+# its context with your Metis tools". That is an instruction to go and look,
+# which succeeds or fails silently depending on which tools happen to be loaded —
+# the failure this codebase spent today diagnosing. Naming the chosen items in
+# the prompt text means the conversation starts with them whether or not a single
+# tool call works.
+
+BRAINSTORM_WINDOW = 30          # days, for the "wild" mode
+BRAINSTORM_CAP = 40             # candidates offered; more is a list nobody reads
+
+
+def _bs_row(kind: str, rid: str, label: str, detail: str = "", when: str = "") -> dict:
+    return {"kind": kind, "id": f"{kind}:{rid}", "label": clip(label or "", 90),
+            "detail": clip(detail or "", 110), "when": (when or "")[:10]}
+
+
+def _brainstorm_candidates(mode: str, ref: str = "") -> list[dict]:
+    """The material this brainstorm could be built from."""
+    out: list[dict] = []
+
+    if mode == "wild":
+        # Everything the last month actually contains. Not a summary of it — the
+        # pieces, so a month can be re-read rather than remembered.
+        since = (datetime.date.today()
+                 - datetime.timedelta(days=BRAINSTORM_WINDOW)).isoformat()
+        for r in db_query(
+                "SELECT project_id, title, COALESCE(next_step,'') AS next_step, "
+                "       COALESCE(last_session_at,'') AS w FROM projects "
+                "WHERE COALESCE(status,'') IN ('active','in_progress') "
+                "AND COALESCE(last_session_at,'') >= ? ORDER BY w DESC",
+                (since,), default=[]) or []:
+            out.append(_bs_row("project", r["project_id"], r["title"],
+                               r["next_step"], r["w"]))
+        for r in db_query(
+                "SELECT idea_id, text, COALESCE(created_at,'') AS w FROM ideas "
+                "WHERE COALESCE(created_at,'') >= ? ORDER BY w DESC LIMIT 14",
+                (since,), default=[]) or []:
+            out.append(_bs_row("idea", r["idea_id"], r["text"], "", r["w"]))
+        for r in db_query(
+                "SELECT note_id, COALESCE(title,'') AS t, content, "
+                "       COALESCE(updated_at, created_at) AS w FROM personal_notes "
+                "WHERE COALESCE(updated_at, created_at) >= ? ORDER BY w DESC LIMIT 8",
+                (since,), default=[]) or []:
+            out.append(_bs_row("note", r["note_id"], r["t"] or r["content"],
+                               r["content"] if r["t"] else "", r["w"]))
+        for r in db_query(
+                "SELECT entry_id, content, created_at AS w FROM journal_entries "
+                "WHERE created_at >= ? ORDER BY w DESC LIMIT 8",
+                (since,), default=[]) or []:
+            out.append(_bs_row("journal", r["entry_id"], r["content"], "", r["w"]))
+        for r in db_query(
+                "SELECT id, title, COALESCE(journal,'') AS j, read_at AS w "
+                "FROM new_publications WHERE COALESCE(read_at,'') >= ? "
+                "ORDER BY w DESC LIMIT 10", (since,), default=[]) or []:
+            out.append(_bs_row("paper", str(r["id"]), r["title"], r["j"], r["w"]))
+        for r in db_query(
+                "SELECT meeting_id, title, COALESCE(meeting_date,'') AS w FROM meetings "
+                "WHERE COALESCE(meeting_date,'') >= ? ORDER BY w DESC LIMIT 6",
+                (since,), default=[]) or []:
+            out.append(_bs_row("meeting", r["meeting_id"], r["title"], "", r["w"]))
+        for r in db_query(
+                "SELECT decision_id, decision, COALESCE(category,'') AS c, "
+                "       COALESCE(created_at,'') AS w FROM user_decisions "
+                "WHERE COALESCE(created_at,'') >= ? ORDER BY w DESC LIMIT 8",
+                (since,), default=[]) or []:
+            out.append(_bs_row("decision", str(r["decision_id"]), r["decision"],
+                               r["c"], r["w"]))
+
+    elif mode == "project" and ref:
+        p = (db_query("SELECT project_id, title, COALESCE(next_step,'') AS n, "
+                      "COALESCE(description,'') AS d FROM projects WHERE project_id = ?",
+                      (ref,), default=[]) or [None])[0]
+        if p:
+            if p["n"]:
+                out.append(_bs_row("next", p["project_id"], "Next step: " + p["n"]))
+            for r in db_query(
+                    "SELECT task_id, title, COALESCE(status,'') AS s, "
+                    "       COALESCE(updated_at,'') AS w FROM tasks "
+                    "WHERE project_id = ? AND COALESCE(status,'') NOT IN "
+                    "('done','cancelled') ORDER BY w DESC LIMIT 12",
+                    (ref,), default=[]) or []:
+                out.append(_bs_row("task", r["task_id"], r["title"], r["s"], r["w"]))
+            for r in db_query(
+                    "SELECT idea_id, text, COALESCE(created_at,'') AS w FROM ideas "
+                    "WHERE COALESCE(project_id,'') = ? ORDER BY w DESC LIMIT 10",
+                    (ref,), default=[]) or []:
+                out.append(_bs_row("idea", r["idea_id"], r["text"], "", r["w"]))
+            for r in db_query(
+                    "SELECT note_id, COALESCE(title,'') AS t, content, "
+                    "       COALESCE(updated_at, created_at) AS w FROM personal_notes "
+                    "WHERE COALESCE(project_id,'') = ? ORDER BY w DESC LIMIT 8",
+                    (ref,), default=[]) or []:
+                out.append(_bs_row("note", r["note_id"], r["t"] or r["content"],
+                                   "", r["w"]))
+            for r in db_query(
+                    "SELECT run_id, agent_slug, COALESCE(task_summary,'') AS s, "
+                    "       created_at AS w FROM agent_runs "
+                    "WHERE COALESCE(task_summary,'') LIKE ? ORDER BY w DESC LIMIT 5",
+                    (f"%{(p['title'] or '')[:24]}%",), default=[]) or []:
+                out.append(_bs_row("run", str(r["run_id"]), r["s"], r["agent_slug"],
+                                   r["w"]))
+            out += _bs_matches(f"{p['title']} {p['d']}", exclude_idea="")
+
+    elif mode == "idea" and ref:
+        i = (db_query("SELECT idea_id, text, COALESCE(project_id,'') AS p "
+                      "FROM ideas WHERE idea_id = ?", (ref,), default=[]) or [None])[0]
+        if i:
+            for r in db_query(
+                    "SELECT idea_id, text, COALESCE(created_at,'') AS w FROM ideas "
+                    "WHERE idea_id != ? ORDER BY w DESC LIMIT 60",
+                    (ref,), default=[]) or []:
+                if _bs_overlap(i["text"], r["text"]) >= 2:
+                    out.append(_bs_row("idea", r["idea_id"], r["text"], "", r["w"]))
+            if i["p"]:
+                pr = (db_query("SELECT project_id, title, COALESCE(next_step,'') AS n "
+                               "FROM projects WHERE project_id = ?", (i["p"],),
+                               default=[]) or [None])[0]
+                if pr:
+                    out.append(_bs_row("project", pr["project_id"], pr["title"],
+                                       pr["n"]))
+            out += _bs_matches(i["text"], exclude_idea=ref)
+
+    return out[:BRAINSTORM_CAP]
+
+
+def _bs_overlap(a: str, b: str) -> int:
+    """How many significant words two texts share. Cheap, and good enough to rank."""
+    return len(set(_terms(a, cap=14)) & set(_terms(b, cap=14)))
+
+
+def _bs_matches(text: str, exclude_idea: str = "") -> list[dict]:
+    """Library and news that use this text's words.
+
+    Suggestions, never links — the same rule the thread view follows. Nothing
+    here enters a brainstorm unless it is ticked.
+    """
+    terms = _terms(text, cap=5)
+    if not terms:
+        return []
+    out: list[dict] = []
+    score = " + ".join(["(CASE WHEN LOWER(title) LIKE ? THEN 1 ELSE 0 END)"
+                        for _ in terms])
+    params = tuple(f"%{t}%" for t in terms)
+    for r in db_query(
+            f"SELECT id, title, COALESCE(journal,'') AS j, ({score}) AS hits "
+            f"FROM literature_metadata WHERE ({score}) > 0 "
+            f"ORDER BY hits DESC LIMIT 6", params + params, default=[]) or []:
+        out.append(_bs_row("paper", str(r["id"]), r["title"], r["j"]))
+    for r in db_query(
+            f"SELECT brief_id, title, COALESCE(brief_date,'') AS w, ({score}) AS hits "
+            f"FROM news_briefs WHERE ({score}) > 0 "
+            f"ORDER BY hits DESC, brief_date DESC LIMIT 5", params + params,
+            default=[]) or []:
+        out.append(_bs_row("news", str(r["brief_id"]), r["title"], "", r["w"]))
+    return out
+
+
+# The instruction that makes it a brainstorm rather than an answer.
+#
+# "a kind of plan mode where she keeps asking you questions" (2026-09-14). The
+# failure mode this exists to prevent is the ordinary one: a model handed rich
+# context produces a confident synthesis in its first reply, the researcher reads
+# it, agrees, and the thinking never happens. So the contract is explicit about
+# the ORDER — understand, then diverge, then converge — and about the one rule
+# that enforces it: no conclusions in the opening reply.
+BRAINSTORM_MODE = """You are Metis, and this is a BRAINSTORM, not a request for an answer.
+
+Work in three movements and say which one you are in:
+
+1. UNDERSTAND — before proposing anything, ask me questions about the material
+   below. One question at a time, and wait. Ask what I was actually trying to do,
+   what I abandoned and why, what surprised me. Do not summarise the material
+   back to me; I wrote it. Keep this up until you could argue my position better
+   than I can.
+2. DIVERGE — only then, put forward connections I have not made. Say plainly when
+   something is a stretch. Surprising and wrong is more useful here than safe and
+   obvious, provided you label which is which.
+3. CONVERGE — at the end, and only when I ask: what would you do next, and what
+   would change your mind.
+
+Rules for this conversation:
+- No conclusions in your first reply. A first reply that answers is a failed
+  brainstorm.
+- Ground everything in the material below and in my own library. Never invent a
+  citation; if you reach for something I do not have, say so.
+- If I go quiet or give a thin answer, ask a sharper question rather than filling
+  the silence yourself.
+- When we finish, offer to save the session and write anything worth keeping back
+  into my ideas."""
+
+
+@router.get("/api/partial/reflection/brainstorm", response_class=HTMLResponse)
+async def reflection_brainstorm(request: Request, mode: str = "", ref: str = ""):
+    """The launcher: three ways in, then the material to choose from."""
+    mode = mode if mode in ("wild", "project", "idea") else ""
+    # The pickers only when the mode needs one — a project brainstorm has to know
+    # which project before it can propose anything.
+    projects = idea_list = []
+    if mode == "project":
+        projects = db_query(
+            "SELECT project_id, title FROM projects "
+            "WHERE COALESCE(status,'') IN ('active','in_progress') ORDER BY "
+            "COALESCE(last_session_at,'') DESC", default=[]) or []
+    if mode == "idea":
+        idea_list = db_query(
+            f"SELECT idea_id, text FROM ideas "
+            f"WHERE COALESCE(tags,'') NOT LIKE '%{ARCHIVE_TAG}%' "
+            f"AND COALESCE(idea_type,'') != '{THREAD_KIND}' "
+            f"ORDER BY created_at DESC LIMIT 40", default=[]) or []
+
+    cands = _brainstorm_candidates(mode, ref) if mode else []
+    return templates.TemplateResponse(
+        request, "partials/reflection_brainstorm.html",
+        {"mode": mode, "ref": ref, "projects": projects, "ideas": idea_list,
+         "cands": cands, "chart": _bs_chart(cands),
+         "window": BRAINSTORM_WINDOW})
+
+
+# The chart is the same visual language as the Focus view — rings and shapes —
+# but here the rings group by KIND rather than by time, because what you are
+# choosing is a mixture, and seeing the mixture is the point: five papers and no
+# notes is a different conversation from five notes and no papers.
+BS_W, BS_H, BS_R = 520, 300, 108
+
+
+def _bs_chart(cands: list[dict]) -> dict:
+    import math
+    cx, cy = BS_W / 2, BS_H / 2
+    order = ["project", "next", "task", "idea", "note", "journal",
+             "paper", "news", "meeting", "decision", "run"]
+    present = [k for k in order if any(c["kind"] == k for c in cands)]
+    nodes = []
+    span = (2 * math.pi) / max(1, len(present))
+    for ki, k in enumerate(present):
+        group = [c for c in cands if c["kind"] == k]
+        a0 = -math.pi / 2 + ki * span
+        for i, c in enumerate(group):
+            frac = (i + 1) / (len(group) + 1)
+            a = a0 + span * (0.15 + 0.7 * frac)
+            # Rings outward within a kind, so a long list stays readable instead
+            # of piling every node onto one arc.
+            r = BS_R * (0.62 + 0.38 * ((i % 3) / 2))
+            nodes.append({**c,
+                          "x": round(cx + r * 1.55 * math.cos(a), 1),
+                          "y": round(cy + r * 0.95 * math.sin(a), 1)})
+    return {"w": BS_W, "h": BS_H, "cx": cx, "cy": cy,
+            "nodes": nodes, "kinds": present}
+
+
+@router.post("/api/reflection/brainstorm/prompt", response_class=JSONResponse)
+async def brainstorm_prompt(request: Request):
+    """Assemble the prompt from what was actually ticked."""
+    form = await request.form()
+    mode = (form.get("mode") or "").strip()
+    ref = (form.get("ref") or "").strip()
+    picked = [p for p in (form.get("picked") or "").split("|") if p.strip()]
+    level = (form.get("level") or "balanced").strip()
+
+    lookup = {c["id"]: c for c in _brainstorm_candidates(mode, ref)}
+    chosen = [lookup[p] for p in picked if p in lookup]
+
+    if mode == "wild":
+        head = (f"Let's think about everything I have done in the last "
+                f"{BRAINSTORM_WINDOW} days. Not a summary — I want to find what I "
+                f"missed while I was in it.")
+    elif mode == "project":
+        pr = (db_query("SELECT title FROM projects WHERE project_id = ?", (ref,),
+                       default=[]) or [{}])
+        head = (f"Let's brainstorm about my project "
+                f"\"{(pr[0].get('title') if pr else ref)}\".")
+    else:
+        idea = (db_query("SELECT text FROM ideas WHERE idea_id = ?", (ref,),
+                         default=[]) or [{}])
+        head = (f"Let's brainstorm this idea of mine: "
+                f"\"{(idea[0].get('text') if idea else ref)}\"")
+
+    creativity = {
+        "grounded": "Stay close to the evidence — feasible, well-supported connections.",
+        "bold": "Push for surprising, cross-disciplinary connections; I will prune.",
+    }.get(level, "Mix grounded connections with a few non-obvious ones.")
+
+    lines = ["Metis — brainstorm mode.", "", head, "", creativity, "",
+             BRAINSTORM_MODE, ""]
+    if chosen:
+        lines.append(f"## The material I have chosen ({len(chosen)} items)")
+        lines.append("These are the pieces I want in front of us. Start here.")
+        by_kind: dict[str, list] = {}
+        for c in chosen:
+            by_kind.setdefault(c["kind"], []).append(c)
+        for k, items in by_kind.items():
+            lines.append("")
+            lines.append(f"### {k}")
+            for c in items:
+                bits = [c["label"]]
+                if c["detail"]:
+                    bits.append(c["detail"])
+                if c["when"]:
+                    bits.append(c["when"])
+                lines.append("- " + " · ".join(bits))
+        lines.append("")
+        lines.append("You can pull more around these with your Metis tools, but "
+                     "do not replace them — these are what I chose.")
+    else:
+        lines.append("I have not picked specific material. Use your Metis tools to "
+                     "pull my recent projects, ideas, notes and reading first.")
+
+    return JSONResponse({"status": "ok", "prompt": "\n".join(lines),
+                         "n": len(chosen)})

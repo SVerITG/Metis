@@ -912,9 +912,13 @@ async def assemble_brainstorm_context(
 
     source_queries = {
         "library": ("library_seeded", "SELECT title, relevance_note FROM library_seeded ORDER BY rowid DESC LIMIT 30", ["title", "relevance_note"]),
-        "meetings": ("meetings", "SELECT title, date FROM meetings ORDER BY date DESC LIMIT 20", ["title", "date"]),
+        "meetings": ("meetings", "SELECT title, meeting_date AS date FROM meetings ORDER BY meeting_date DESC LIMIT 20", ["title", "date"]),
         "news": ("news_briefs", "SELECT title, summary FROM news_briefs ORDER BY rowid DESC LIMIT 20", ["title", "summary"]),
-        "ideas": ("ideas", "SELECT content, tags, created_at FROM ideas ORDER BY created_at DESC LIMIT 30", ["content", "tags", "created_at"]),
+        # The column is `text`, not `content` — this raised "no such column" for
+        # every brainstorm that asked for ideas, which is the source a
+        # brainstorm most obviously wants. Aliased rather than renamed so the
+        # label the caller sees is unchanged.
+        "ideas": ("ideas", "SELECT text AS content, tags, created_at FROM ideas ORDER BY created_at DESC LIMIT 30", ["content", "tags", "created_at"]),
         "journal": ("journal_entries", "SELECT content, mood, created_at FROM journal_entries ORDER BY created_at DESC LIMIT 15", ["content", "mood", "created_at"]),
         # Registered projects + personal notes — so a brainstorm cross-pollinates
         # against your actual work, not just library/news.

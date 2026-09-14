@@ -1,0 +1,134 @@
+{#- reflection_brainstorm.html — choose the material, then go and think.
+
+    Three ways in, and the second half is the point: the material is SHOWN AND
+    CHOSEN before the conversation starts, rather than the prompt telling Claude
+    to "pull my context" and hoping. A brainstorm is only as good as what it has
+    in front of it, and you know which five things matter better than a keyword
+    query does.
+
+    Context: mode · ref · projects · ideas · cands · chart · window -#}
+<div class="bs" id="refl-brainstorm">
+
+  <div class="bs-ways">
+    <button type="button" class="bs-way{% if mode == 'wild' %} is-on{% endif %}"
+            hx-get="/api/partial/reflection/brainstorm?mode=wild"
+            hx-target="#refl-brainstorm" hx-swap="outerHTML">
+      <span class="bs-way-t">Wild brainstorm</span>
+      <span class="bs-way-d">everything from the last {{ window }} days</span>
+    </button>
+    <button type="button" class="bs-way{% if mode == 'project' %} is-on{% endif %}"
+            hx-get="/api/partial/reflection/brainstorm?mode=project"
+            hx-target="#refl-brainstorm" hx-swap="outerHTML">
+      <span class="bs-way-t">Brainstorm a project</span>
+      <span class="bs-way-d">one project, and what surrounds it</span>
+    </button>
+    <button type="button" class="bs-way{% if mode == 'idea' %} is-on{% endif %}"
+            hx-get="/api/partial/reflection/brainstorm?mode=idea"
+            hx-target="#refl-brainstorm" hx-swap="outerHTML">
+      <span class="bs-way-t">Brainstorm an idea</span>
+      <span class="bs-way-d">one idea, and what it touches</span>
+    </button>
+  </div>
+
+  {#- A project or an idea brainstorm has to know WHICH before it can propose
+      anything, so the subject picker comes before the material. -#}
+  {% if mode == 'project' and not ref %}
+  <div class="bs-pick">
+    <span class="bs-pick-l">Which project?</span>
+    <div class="bs-pick-row">
+      {% for p in projects %}
+      <button type="button" class="bs-chip"
+              hx-get="/api/partial/reflection/brainstorm?mode=project&ref={{ p.project_id | urlencode }}"
+              hx-target="#refl-brainstorm" hx-swap="outerHTML">{{ p.title }}</button>
+      {% endfor %}
+    </div>
+  </div>
+  {% elif mode == 'idea' and not ref %}
+  <div class="bs-pick">
+    <span class="bs-pick-l">Which idea?</span>
+    <div class="bs-pick-list">
+      {% for i in ideas %}
+      <button type="button" class="bs-idea"
+              hx-get="/api/partial/reflection/brainstorm?mode=idea&ref={{ i.idea_id | urlencode }}"
+              hx-target="#refl-brainstorm" hx-swap="outerHTML">{{ i.text }}</button>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {#- ── The material ─────────────────────────────────────────────────────── -#}
+  {% if mode and (ref or mode == 'wild') %}
+  {% if not cands %}
+  <p class="bs-empty">
+    Nothing to bring. {% if mode == 'wild' %}The last {{ window }} days have not
+    recorded work, ideas, notes or reading — which is itself worth a moment's
+    thought.{% else %}This has nothing filed against it yet.{% endif %}
+  </p>
+  {% else %}
+
+  <form id="bs-form" onsubmit="return startBrainstorm(this);">
+    <input type="hidden" name="mode" value="{{ mode }}">
+    <input type="hidden" name="ref" value="{{ ref }}">
+
+    <div class="bs-chartwrap">
+      <svg viewBox="0 0 {{ chart.w }} {{ chart.h }}" width="100%" height="{{ chart.h }}"
+           role="img" aria-label="The material available for this brainstorm, grouped by what it is">
+        {% for n in chart.nodes %}
+        <line x1="{{ chart.cx }}" y1="{{ chart.cy }}" x2="{{ n.x }}" y2="{{ n.y }}"
+              class="bs-edge" data-for="{{ n.id }}"/>
+        {% endfor %}
+        {% for n in chart.nodes %}
+        <g class="bs-node bs-node--{{ n.kind }}" data-pick="{{ n.id }}"
+           tabindex="0" role="checkbox" aria-checked="false">
+          <title>{{ n.kind }} — {{ n.label }}</title>
+          <circle cx="{{ n.x }}" cy="{{ n.y }}" r="7"/>
+        </g>
+        {% endfor %}
+        <circle cx="{{ chart.cx }}" cy="{{ chart.cy }}" r="16" class="bs-hub"/>
+        <text x="{{ chart.cx }}" y="{{ chart.cy + 4 }}" class="bs-hub-l"
+              text-anchor="middle">you</text>
+      </svg>
+      <p class="bs-chart-note">
+        Everything this brainstorm could start from, grouped by what it is. Click
+        a dot or tick a line below — the shape tells you what kind of conversation
+        you are assembling.
+      </p>
+    </div>
+
+    {#- The list is the reliable control; the chart is the view. Clicking either
+        moves both, because a small SVG dot is a poor checkbox on a laptop
+        trackpad and an impossible one on a phone. -#}
+    <div class="bs-list">
+      {% for c in cands %}
+      <label class="bs-item" data-item="{{ c.id }}">
+        <input type="checkbox" name="pick" value="{{ c.id }}">
+        <span class="bs-k bs-k--{{ c.kind }}">{{ c.kind }}</span>
+        <span class="bs-lab">{{ c.label }}</span>
+        {% if c.detail %}<span class="bs-det">{{ c.detail }}</span>{% endif %}
+        {% if c.when %}<span class="bs-when">{{ c.when }}</span>{% endif %}
+      </label>
+      {% endfor %}
+    </div>
+
+    <div class="bs-go">
+      <label class="bs-level">
+        <span>how far out</span>
+        <select name="level">
+          <option value="grounded">grounded</option>
+          <option value="balanced" selected>balanced</option>
+          <option value="bold">bold</option>
+        </select>
+      </label>
+      <button type="button" class="bs-all" onclick="bsToggleAll(this)">select all</button>
+      <span class="bs-count" id="bs-count">nothing chosen</span>
+      <button class="btn btn--sec" type="submit">Open the brainstorm</button>
+    </div>
+    <p class="bs-note">
+      Opens Claude Desktop with the chosen material already in the prompt, and puts
+      it on your clipboard too. Metis starts in brainstorm mode — she asks before
+      she answers.
+    </p>
+  </form>
+  {% endif %}
+  {% endif %}
+</div>
