@@ -7891,3 +7891,51 @@ a.shf-row-title:hover { color: var(--m-accent); }
 }
 .ws-col-b .mrow-acts { flex: 0 0 auto; }
 .ws-col-b .mrow-meta--clamp { -webkit-line-clamp: 1; }
+
+/* Focus items inside the Workstation column: a list, one line each, more on
+   click. The full-width surface keeps its card grid. */
+.fx-list { display: flex; flex-direction: column; gap: var(--d-stack); }
+.ws-col-b .fx-item { padding: 8px 10px; border: 1px solid var(--m-rule-soft);
+  border-radius: 3px; background: var(--m-surface-2); }
+.ws-col-b .fx-item .u-row { margin-bottom: 4px; }
+
+.fx-more { }
+.fx-title {
+  list-style: none;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--m-ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.fx-title::-webkit-details-marker { display: none; }
+.fx-title::after {
+  content: "›";
+  color: var(--m-muted);
+  margin-left: 6px;
+  display: inline-block;
+  transition: transform .14s ease;
+}
+/* Opening UNCLAMPS the title in place. It does not restyle it into a second,
+   smaller copy of itself — that produced the title in mono above the title in
+   serif, which is the repetition this change removes. */
+.fx-more[open] .fx-title {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+.fx-more[open] .fx-title::after { transform: rotate(90deg); }
+.fx-detail { padding-top: 6px; }
+.fx-full { margin: 0 0 4px; font-size: 13px; line-height: 1.4; color: var(--m-ink); }
+.fx-sub { margin: 0; font-size: var(--t-small); color: var(--m-muted); }
+
+/* The picker is the way this researcher actually plans (4 of 4 plans ever made
+   came from it, none typed), so it stays — but as a line, not a button with a
+   hint under it. */
+.ws-col-b .plan-add-btn {
+  border: 0; background: transparent; padding: 0;
+  color: var(--m-accent); font-family: var(--m-mono);
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+}

@@ -8,9 +8,13 @@
      the Work surface inside one column — the add form had one, the plan panel
      had one, and this had one. The column header now carries the single link
      for all three partials. -#}
-  <div class="grid grid-3 u-mb-6">
+  {#- A THREE-COLUMN GRID INSIDE A THIRD-WIDTH COLUMN (fixed 2026-09-14).
+      `grid grid-3` is right on the full-width surface and absurd inside the
+      Workstation, where it gave each card about 110px and turned every task
+      title into a column of single words. In the column the items are a list. -#}
+  <div class="{{ 'fx-list' if bare else 'grid grid-3 u-mb-6' }}">
     {% for item in items %}
-    <div class="panel panel--md" style="position:relative;">
+    <div class="panel panel--md{{ ' fx-item' if bare else '' }}" style="position:relative;">
       {# Dismiss button #}
       <button class="btn btn--ghost hov-dim" type="button" hx-post="/api/today/focus/dismiss" hx-vals='{"item_type": "{{ item.item_type }}", "item_id": "{{ item.item_id }}"}' hx-target="#today-focus" hx-swap="outerHTML" hx-headers='{"Content-Type": "application/json"}' style="position:absolute;top:8px;right:10px;font-size:var(--t-body);color:var(--m-muted);line-height:1;padding:var(--m-space-1) var(--m-space-1);opacity:0.5;" title="Dismiss for today">&times;</button>
       {# Badge row — type badge + memory depth #}
@@ -42,8 +46,30 @@
         </span>
         {% endif %}
       </div>
-      {# Title #}
+      {#- SHORT, THEN MORE ON CLICK (2026-09-14): "all tasks need to be described
+          very shortly and when you click on them you see more". A task title is
+          often a whole sentence — "Bundle the Windows .exe installer (Keystone
+          P1.1)" — and four of those stacked is a wall. So the row shows one
+          line, and opening it shows the rest. `<details>` because the platform
+          already does this correctly: keyboard, screen readers and find-in-page
+          all work, and it costs no JavaScript. -#}
+      {% if bare %}
+      <details class="fx-more">
+        <summary class="fx-title" title="{{ item.title }}">{{ item.title }}</summary>
+        {#- The body carries only what the closed row did NOT already show. The
+            first version repeated the title in the summary, again in the body,
+            and the project a second time under it — three renderings of one
+            task, which is the fault this whole pass exists to remove. Opening
+            simply unclamps the title; the body is for what is genuinely new. -#}
+        {% if item.memory and (item.memory.total or 0) > 0 %}
+        <div class="fx-detail">
+          <p class="fx-sub">{{ item.memory.total }} related memor{{ 'y' if item.memory.total == 1 else 'ies' }} — Metis has context on this</p>
+        </div>
+        {% endif %}
+      </details>
+      {% else %}
       <div class="u-title" style="padding-right:16px;">{{ item.title }}</div>
+      {% endif %}
       {# Memory context hint (for deep items) #}
       {% if item.memory and item.memory.level == 'deep' %}
       <div class="u-label" style="margin-top:var(--m-space-2);letter-spacing:0.04em;">
@@ -133,7 +159,17 @@
       strip could show a five-day training while this line said nothing was
       pinned, because they read different stores. This panel speaks only about
       what IT holds — starred tasks and tasks with a date. -#}
+  {#- Inside the column this is the ONLY empty line, and it appears only when
+      nothing at all is on today — nothing planned, nothing starred, nothing due.
+      The moment any one of those exists the sentence goes, rather than sitting
+      above real content contradicting it. -#}
+  {%- if bare %}
+    {%- if not plan_n %}
+  <p class="focus-none">Nothing on today yet.</p>
+    {%- endif %}
+  {%- else %}
   <p class="focus-none u-mb-4">Nothing starred, and nothing due.</p>
+  {%- endif %}
   {% endif %}
   {#- Everything that is NOT a commitment, counted rather than listed. This is
       what makes finishing possible: the 53 open tasks and 224 due reviews are

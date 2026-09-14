@@ -65,7 +65,7 @@
   {#- An empty plan is the normal state of a morning, not an error. Say what to
       do with it — this panel's whole reason for existing is that there was
       previously nowhere to press. -#}
-  <p class="plan-empty">Nothing planned yet. Pick a project, then one of its open tasks.</p>
+  {% if not bare %}<p class="plan-empty">Nothing planned yet. Pick a project, then one of its open tasks.</p>{% endif %}
   {%- endif %}
 
   <div class="plan-add">

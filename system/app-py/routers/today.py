@@ -4622,7 +4622,15 @@ async def today_focus_with_memory(request: Request, bare: int = 0):
         request,
         "partials/today_focus_memory.html",
         {"items": items, "suggested": suggested, "done_today": done_today,
-         "bare": bool(bare)},
+         "bare": bool(bare),
+         # ONE EMPTY LINE PER COLUMN (2026-09-14). Inside the Workstation this
+         # panel sits under the plan strip, and each owned its own empty state,
+         # so an empty column said "nothing" twice — reported 2026-09-07 and
+         # again today. The earlier fix made each panel speak only about what IT
+         # holds, which is exactly what produces two sentences when both are
+         # empty. The line needs ONE owner, and it has to be the panel that
+         # renders last, because only that one can know the column is empty.
+         "plan_n": len(_todays_plan(datetime.date.today().isoformat()))},
     )
 
 
