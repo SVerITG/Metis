@@ -15,7 +15,7 @@
 set -uo pipefail
 
 BASE="${METIS_BASE:-http://127.0.0.1:8080}"
-RC_ROOT="${METIS_RC_ROOT:?METIS_RC_ROOT must be set — e.g. export METIS_RC_ROOT=/path/to/research-cortex}"
+RC_ROOT="${METIS_RC_ROOT:?Metis does not know where your Research Cortex lives.\nRun this from the repository root, or set it first:\n    export METIS_RC_ROOT=\"\$PWD\"\nthen run this script again.}"
 DATE="$(date +%Y-%m-%d)"
 OUT_DIR="$RC_ROOT/outputs/reviews/metis-evaluation"
 OUT_FILE="$OUT_DIR/${DATE}_promise-check.md"

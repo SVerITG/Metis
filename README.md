@@ -106,7 +106,7 @@
 - **🔗 It connects everything you know.** Every paper, meeting transcript, idea, note, journal entry and task is linked to the rest of your work. The grant you write today surfaces a method paper from last year and a meeting note from March — you never go looking; Metis brings it to you.
 - **🧠 It routes to the right expert.** Ask in plain language, and Metis hands the work to the right one of 30+ specialist skills — Librarian, Methods Coach, Writing Partner, Meeting Memory, Epidemiologist, Course Builder, and more.
 - **🔁 It improves itself.** After every task it logs what worked and what fell short; each week it drafts improvements to its own behaviour and waits for your approval. Most MCP servers are static — Metis gets sharper the longer you use it.
-- **🚫 It refuses to invent.** Ask about something that isn't in your library and Metis tells you so, instead of fabricating a plausible-sounding answer. (This grounding behaviour is covered by an automated test.)
+- **🚫 It refuses to invent.** Ask about something that isn't in your library and Metis tells you so, instead of fabricating a plausible-sounding answer. (An automated test covers the retrieval half of this: that an in-corpus question returns the right document with its page, and that an out-of-corpus one scores markedly weaker. Whether the model then says so in words is not yet asserted by a test.)
 - **🔒 It stays on your machine.** Local embeddings, local database, local files. Your papers, patient-adjacent data, and unpublished work never leave your computer.
 
 > 🎥 **See it in action** above — the dashboard, a tour of the tabs, the silent layer into Claude Desktop, and Metis improving its own work.
@@ -188,7 +188,7 @@ This is genuinely new ground. The individual components — local language model
 | **📊 With the dashboard** | Full visibility across your research life — papers, ideas, meetings, tasks, projects, all connected. Built for *cross-pollination* (ideas linking to literature) and *brain off-loading* (tracking leaving your head, entering the system). | Researchers who want a complete research operating environment |
 | **🌐 Metis OS** | Connects to email, calendar, data systems, and institutional infrastructure — a unified intelligence layer for your entire working environment. | The longer vision. Still in development. |
 
-> **Where things stand today:** The MCP server, 33 agents, and the 9-tab dashboard are fully operational and used daily. The one-click installer and the pre-loaded domain knowledge layer are still being refined. This is a working system — not vaporware — but it is also not finished. If something breaks, please open an issue. That feedback shapes what gets built next.
+> **Where things stand today:** The MCP server, 34 agents, and the 9-tab dashboard are fully operational and used daily. The one-click installer and the pre-loaded domain knowledge layer are still being refined. This is a working system — not vaporware — but it is also not finished. If something breaks, please open an issue. That feedback shapes what gets built next.
 
 ---
 
@@ -538,11 +538,11 @@ flowchart LR
     U([Researcher])
     subgraph Harness["AI Harness (Claude Code / Desktop)"]
         METIS[Metis\nrouter agent]
-        AGENTS[Specialist agents\n33 agents]
+        AGENTS[Specialist agents\n34 agents]
         WATCHERS{{Watchers\nData Guardian · Cybersecurity}}
     end
     subgraph Platform
-        MCP[MCP Server\n277 tools\nFastMCP]
+        MCP[MCP Server\n278 tools\nFastMCP]
         DASH[Dashboard\nFastAPI + HTMX]
         DB[(SQLite\nWAL mode)]
     end
@@ -791,7 +791,7 @@ Metis ships in distinct editions — a domain-agnostic base shell, and domain pa
 | Repository | Status | What it is |
 |---|---|---|
 | **[Metis](https://github.com/SVerITG/Metis)** | ✅ Live (v1.0) | Domain-agnostic base shell. Full architecture, no domain content. Clone this to build your own edition. |
-| **[Metis_PH](https://github.com/SVerITG/Metis_PH)** | ✅ Live (v1.0, this repo) | Public Health & Epidemiology — MCP server, 33 agents, dashboard, knowledge layer |
+| **[Metis_PH](https://github.com/SVerITG/Metis_PH)** | ✅ Live (v1.0, this repo) | Public Health & Epidemiology — MCP server, 34 agents, dashboard, knowledge layer |
 | **[Metis_BM](https://github.com/SVerITG/Metis_BM)** | 🧬 Planned | Biomedical Sciences |
 | **[Metis_CL](https://github.com/SVerITG/Metis_CL)** | 🏥 Planned | Clinical Sciences |
 | **Metis [Community]** | 🌍 Open | Domain packs for other research fields — contributions welcome |
@@ -817,8 +817,8 @@ Open an issue with label `course-package` to pilot or contribute.
 
 | Area | Status |
 |---|---|
-| MCP server (277 tools) | ✅ Operational, used daily — ~80 load per session, the rest on demand |
-| 33 specialist agents | ✅ Operational — each a dispatchable subagent with its own bound model |
+| MCP server (278 tools) | ✅ Operational, used daily — ~80 load per session, the rest on demand |
+| 34 specialist agents | ✅ Operational — each a dispatchable subagent with its own bound model |
 | 9-tab dashboard | ✅ Operational, some features in active development |
 | Windows .exe installer | 🔧 In refinement |
 | Docker images | ✅ Test matrix working |
@@ -880,7 +880,7 @@ below looked fine on screen.*
 | **Two of the three Work views could never be shown** — the class hiding them was `!important`, so the buttons that switched view did nothing at all. Only the default view had ever been reachable. |
 | **Four rival counts of one backlog, reduced to one author** — the same number was computed in four places and they disagreed; 34 cancelled tasks were being drawn as live work. A quantity computed in several places drifts, so the fix asserts one *author*, not one answer. |
 | **A panel that spent money every time you opened it** — one surface made **nine paid API calls and took 18.5 seconds on every view**, because a themed summary was computed on the render path. It measured as instant in every test, because a test process has no API key and silently fell back to word-counting. Now cached, with the model pass moved behind a control that names its cost. A page that draws a panel must not spend money or block on a network round-trip. |
-| **The test harness reported the opposite of the truth** — it announced *"0 of 33 agents have ever run — routing is broken"* while its own report, four sections earlier, counted 733 runs. It was reading a database path retired three months before, and its loader degraded to an empty result instead of failing. 34 of 35 agents had in fact run. A check that cries wolf is worse than no check, so a harness now fails when its own inputs are missing. |
+| **The test harness reported the opposite of the truth** — it announced *"0 of 34 agents have ever run — routing is broken"* while its own report, four sections earlier, counted 733 runs. It was reading a database path retired three months before, and its loader degraded to an empty result instead of failing. 34 of 35 agents had in fact run. A check that cries wolf is worse than no check, so a harness now fails when its own inputs are missing. |
 | **Unattended recovery never ran on battery** — the task that restarts the dashboard had been installed by a fallback path that defaults to *do not start on batteries*, with no command-line switch to change it. On a laptop that meant no supervision for most of its life, while every status field read healthy. The tell was the gap between last-run and the repetition interval, not any error. |
 | **Plan a run of days on one row** — a project or a single task can be planned onto a day, and a multi-day commitment (a five-day training, a field week) is **one** entry that says which day of the run today is. A plan is an *intention*, so it never writes a deadline onto the work itself — and re-planning extends the run instead of silently ignoring you. |
 | **The Work list answers what you have actually touched** — the default view is ordered by most recent work, never-opened last, instead of by a manual order nobody had ever set. Manual arrangement moved to the per-category views, where it is visible; project categories became things you can create, rename, merge and reorder; and a project's launcher row now reflects what that project can actually open. |

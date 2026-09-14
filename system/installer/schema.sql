@@ -484,6 +484,12 @@ CREATE TABLE IF NOT EXISTS news_briefs (
     published_at   TEXT DEFAULT ''
 );
 
+-- RETIRED 2026-09-14. Written by nothing, read by nothing. Kept as a
+-- creation statement only so an existing database is not disturbed; do not
+-- build on it. Its emptiness was read in the June audit as "the
+-- intelligence loop is cold" while the live loop was writing 3,101 rows to
+-- `news_briefs` in fourteen days. A dead table that looks like a live one
+-- costs an audit cycle, which is what it cost.
 CREATE TABLE IF NOT EXISTS news_items (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,
     headline     TEXT NOT NULL,
