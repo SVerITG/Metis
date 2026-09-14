@@ -142,17 +142,40 @@
         that fills it; it is more right that everything you work FROM sits
         together. The stack keeps its own ochre meaning inside the box.
 
-        `collapsible=False`: this is the surface, not a fold. `kind="work"` paints
-        the olive bar that says so.
+        IT NOW OPENS SHUT (2026-09-14): "when the today surface opens the
+        workstation needs to be collapsed, when you want to work you open it and
+        all three boxes open as well". It was `collapsible=False` — a deliberate
+        choice that this is the surface rather than a fold — and the cost of that
+        was three full columns of work standing between the morning brief and
+        everything downstream of it, every day, before you had decided to work.
+
+        Folding is only honest if it hides the DETAIL and not the FACT, so the
+        summary line carries the three counts (see today_workstation_tail.html)
+        and the fold state is remembered per machine by the zone macro. Opening
+        the zone opens all three columns together — one decision, not four.
+
+        `kind="work"` still paints the olive bar that says whose work this is.
         ═══════════════════════════════════════════════════════════════════════ -#}
     {% call zone("Workstation", key="today-workstation", kind="work",
-                 tail="YOUR WORK · DRAG BETWEEN COLUMNS", collapsible=False) %}
+                 collapsible=True, open=False,
+                 tail_html='<span hx-get="/api/partial/today/workstation-tail"'
+                           ' hx-trigger="load" hx-swap="innerHTML"></span>') %}
     <div class="ws-cols">
 
+      {#- ONE LINK TO WORK PER COLUMN, AND IT LIVES IN THE HEADER (2026-09-14).
+          This column carried THREE routes to the same surface — one under the add
+          form, one inside the plan panel's own header, one in the counts row —
+          because three partials each brought their own. A repeated link is not
+          three affordances, it is one affordance you stop trusting. It is now a
+          header slot every column fills the same way. -#}
       <div class="ws-col" data-ws-col="today">
-        <div class="ws-col-h">What needs you today</div>
+        <div class="ws-col-h">
+          <span>What needs you today</span>
+          <a class="ws-col-link" href="/work" hx-get="/api/tab/work"
+             hx-target="#tab-root" hx-push-url="/work">Work &rarr;</a>
+        </div>
         <div class="ws-col-b">
-  <form class="quick-add u-mb-3"
+  <form class="quick-add"
         hx-post="/api/task/quick?bare=1"
         hx-target="#work-due-today" hx-swap="outerHTML"
         hx-on::after-request="this.reset()">
@@ -160,7 +183,6 @@
     <input class="quick-add-input" type="text" name="title" required
            placeholder="Something to do today…" aria-label="Add a task due today">
     <button class="quick-add-go" type="submit">add</button>
-    <a class="quick-add-alt u-link hov-ink" href="/work">or plan it in Work &rarr;</a>
   </form>
     {#- TODAY'S PLAN — the work you chose for today, and the control that puts it
         there. It belongs in THIS section: "what needs you today" is the question
@@ -170,7 +192,7 @@
         planned (here), then what is due or starred (below). Loaded with `load`
         and no delay because it sits high on the page and is the first thing read
         in the morning, so it must be filled in the first frame. -#}
-    <div hx-get="/api/partial/today/plan"
+    <div hx-get="/api/partial/today/plan?bare=1"
          hx-trigger="load"
          hx-swap="innerHTML"></div>
 
@@ -190,7 +212,11 @@
       </div>
 
       <div class="ws-col" data-ws-col="left-off">
-        <div class="ws-col-h">Where you left off</div>
+        {#- NO header link here. Two columns pointing at /work is the complaint
+            this change exists to fix, and this one would be the weaker of the
+            two: every row in this column is already a link to its own project,
+            so a header link goes to the same surface with less precision. -#}
+        <div class="ws-col-h"><span>Where you left off</span></div>
         <div class="ws-col-b">
     {#- WHERE YOU LEFT OFF, folded, INSIDE this section — because it is not a
         record of yesterday, it is the shortest route to deciding today. Every
@@ -203,7 +229,10 @@
       </div>
 
       <div class="ws-col" data-ws-col="reading">
-        <div class="ws-col-h">Reading stack</div>
+        <div class="ws-col-h">
+          <span>Reading stack</span>
+          <a class="ws-col-link" href="/knowledge#reading">Library &rarr;</a>
+        </div>
         <div class="ws-col-b">
   {#- YOUR READING STACK sits BELOW "In your field", asked for 2026-09-11. The
       order is now the order of the question: what arrived (in your field), then

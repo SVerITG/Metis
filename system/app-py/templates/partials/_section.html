@@ -106,7 +106,12 @@
     `collapsible=False` gives a titled box that is always open: the same grouping
     and the same bar, without the fold. That is what a Workstation needs.
 -#}
-{% macro zone(title, key, tail=None, open=False, kind=None, collapsible=True) %}
+{#- `tail_html` is `tail` for callers that need markup there — an hx-get span that
+    fills the summary line, say. It is rendered |safe, so a caller must pass
+    trusted template markup, never user text. When a zone can be FOLDED, the tail
+    is the only thing still on screen, so it has to be able to carry the state
+    rather than a fixed description. -#}
+{% macro zone(title, key, tail=None, open=False, kind=None, collapsible=True, tail_html=None) %}
 <section class="ui-zone{% if kind %} ui-zone--{{ kind }}{% endif %}"
          data-zone-key="{{ key }}"{% if kind %} data-kind="{{ kind }}"{% endif %}
          style="margin-bottom:var(--m-gap);">
@@ -117,7 +122,8 @@
           aria-controls="zone-{{ key }}">
     <span class="ui-chev" aria-hidden="true">{{ '▾' if open else '▸' }}</span>
     <span class="ui-zone-title">{{ title }}</span>
-    {%- if tail %}<span class="ui-zone-tail">{{ tail }}</span>{% endif %}
+    {%- if tail_html %}<span class="ui-zone-tail">{{ tail_html|safe }}</span>
+    {%- elif tail %}<span class="ui-zone-tail">{{ tail }}</span>{% endif %}
   </button>
   {%- else %}
   {#- No button: nothing here toggles, and a control that does nothing is worse

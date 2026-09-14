@@ -4,11 +4,10 @@
 <div id="today-focus">
 {% if items %}
   {% if not bare %}{{ sec_label("Today's focus", tail=(done_today|string) + " DONE TODAY" if done_today else "STAR A TASK TO PIN IT HERE") }}{% endif %}
-  {# Link to Work — Today's focus and the Work planning horizon are two ends of
-     the same thread: what you intend (Work) → what you're doing today (here). #}
-  <div class="u-mb-4">
-    <a class="u-label u-label--accent" href="/work" style="letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;">Plan in Work →</a>
-  </div>
+  {#- The "Plan in Work" link was REMOVED 2026-09-14. It was the third route to
+     the Work surface inside one column — the add form had one, the plan panel
+     had one, and this had one. The column header now carries the single link
+     for all three partials. -#}
   <div class="grid grid-3 u-mb-6">
     {% for item in items %}
     <div class="panel panel--md" style="position:relative;">

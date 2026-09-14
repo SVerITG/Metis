@@ -40,6 +40,46 @@ async def today_tab(request: Request):
     )
 
 
+@router.get("/api/partial/today/workstation-tail", response_class=HTMLResponse)
+async def today_workstation_tail(request: Request):
+    """The one line that stays on screen when the Workstation is folded shut.
+
+    The Workstation now opens SHUT (asked for 2026-09-14: "when the today surface
+    opens the workstation needs to be collapsed"). Folding is only acceptable if
+    it hides the detail and not the fact — otherwise closing the box means losing
+    track of the work, and the fold becomes a thing you never use. So the summary
+    line carries the three numbers the three columns exist to answer.
+
+    Counted, never guessed, and each from the same author the column itself uses:
+    `day_plan` for what is planned, `live_task_sql` for what is still live work,
+    `reading_stack` for the pile.
+    """
+    today = str(datetime.date.today())
+
+    # What is on today: things planned for today, plus anything due today that is
+    # still live. Counted as a set of task ids so a task that is BOTH planned and
+    # due is one item, not two — the column shows it once.
+    planned = db_query(
+        "SELECT COALESCE(task_id, project_id, CAST(plan_id AS TEXT)) AS ref "
+        "FROM day_plan WHERE ? BETWEEN start_date AND COALESCE(end_date, start_date)",
+        (today,), default=[]) or []
+    due = db_query(
+        f"SELECT id AS ref FROM tasks WHERE COALESCE(due_date,'') = ? "
+        f"AND {live_task_sql()}", (today,), default=[]) or []
+    on_today = len({str(r["ref"]) for r in planned} | {str(r["ref"]) for r in due})
+
+    projects = db_scalar(
+        "SELECT COUNT(*) FROM projects WHERE COALESCE(status,'') = 'active'",
+        default=0) or 0
+    to_read = db_scalar(
+        "SELECT COUNT(*) FROM reading_stack WHERE state IN ('later','saved')",
+        default=0) or 0
+
+    return templates.TemplateResponse(
+        request, "partials/today_workstation_tail.html",
+        {"on_today": on_today, "projects": projects, "to_read": to_read})
+
+
 @router.get("/api/tab/today", response_class=HTMLResponse)
 async def today_tab_partial(request: Request):
     return templates.TemplateResponse(
@@ -4824,7 +4864,8 @@ def _plan_pick_projects() -> list[dict]:
 
 
 @router.get("/api/partial/today/plan", response_class=HTMLResponse)
-async def today_plan(request: Request, pick: str = "", project: str = ""):
+async def today_plan(request: Request, pick: str = "", project: str = "",
+                     bare: int = 0):
     """The Today plan strip: one compact line per intended item, plus a way in.
 
     `pick` opens the picker; `project` narrows it to that project's open tasks.
@@ -4857,7 +4898,7 @@ async def today_plan(request: Request, pick: str = "", project: str = ""):
     n_done = sum(1 for i in items if i["_done"])
     return templates.TemplateResponse(
         request, "partials/today_plan.html",
-        {"items": items, "n_items": len(items), "n_done": n_done,
+        {"items": items, "n_items": len(items), "n_done": n_done, "bare": bare,
          "day_label": datetime.date.today().strftime("%A %-d %B")
                       if os.name != "nt" else datetime.date.today().strftime("%A %d %B"),
          "pick": pick, "pick_projects": pick_projects, "pick_tasks": pick_tasks,
@@ -4868,7 +4909,7 @@ async def today_plan(request: Request, pick: str = "", project: str = ""):
 @router.post("/api/today/plan/add", response_class=HTMLResponse)
 async def today_plan_add(request: Request, kind: str = Form("task"),
                          task_id: str = Form(""), project_id: str = Form(""),
-                         days: int = Form(1)):
+                         days: int = Form(1), bare: int = 0):
     """Put one project or one task on today, optionally for a RUN of days.
 
     `days > 1` writes an end_date, which is what makes a five-day training one row
@@ -4919,11 +4960,11 @@ async def today_plan_add(request: Request, kind: str = Form("task"),
             db_execute(
                 "INSERT INTO day_plan (start_date, end_date, kind, project_id, updated_at) "
                 "VALUES (?, ?, 'project', ?, datetime('now'))", (day, end, project_id))
-    return await today_plan(request)
+    return await today_plan(request, bare=bare)
 
 
 @router.post("/api/today/plan/{plan_id}/toggle", response_class=HTMLResponse)
-async def today_plan_toggle(request: Request, plan_id: int):
+async def today_plan_toggle(request: Request, plan_id: int, bare: int = 0):
     """Complete or un-complete a planned item from Today.
 
     For a task this writes the TASK's status, not day_plan.done — the Work board
@@ -4942,11 +4983,11 @@ async def today_plan_toggle(request: Request, plan_id: int):
         else:
             db_execute("UPDATE day_plan SET done = ?, updated_at = datetime('now') "
                        "WHERE plan_id = ?", (0 if r.get("done") else 1, plan_id))
-    return await today_plan(request)
+    return await today_plan(request, bare=bare)
 
 
 @router.post("/api/today/plan/{plan_id}/tomorrow", response_class=HTMLResponse)
-async def today_plan_tomorrow(request: Request, plan_id: int):
+async def today_plan_tomorrow(request: Request, plan_id: int, bare: int = 0):
     """Push a planned item out by a day. Moving is not deleting.
 
     A RUN MOVES AS A RUN. This used to set end_date = NULL, which silently
@@ -4971,14 +5012,14 @@ async def today_plan_tomorrow(request: Request, plan_id: int):
     db_execute("UPDATE day_plan SET start_date = ?, end_date = ?, "
                "updated_at = datetime('now') WHERE plan_id = ?",
                (tomorrow.isoformat(), new_end, plan_id))
-    return await today_plan(request)
+    return await today_plan(request, bare=bare)
 
 
 @router.post("/api/today/plan/{plan_id}/remove", response_class=HTMLResponse)
-async def today_plan_remove(request: Request, plan_id: int):
+async def today_plan_remove(request: Request, plan_id: int, bare: int = 0):
     """Take an item off today's plan. The task itself is untouched."""
     db_execute("DELETE FROM day_plan WHERE plan_id = ?", (plan_id,))
-    return await today_plan(request)
+    return await today_plan(request, bare=bare)
 
 
 @router.get("/api/partial/today/recent-projects", response_class=HTMLResponse)

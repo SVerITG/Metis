@@ -6932,7 +6932,27 @@ a.shf-row-title:hover { color: var(--m-accent); }
   padding: 7px 10px;
   background: var(--m-surface-2);
   border-bottom: 1px solid var(--m-rule-soft);
+  /* One link per column, and it lives here (2026-09-14). "What needs you today"
+     carried THREE routes to the Work surface, one from each partial stacked in
+     it. A repeated link is not three affordances, it is one you stop trusting. */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
+.ws-col-link {
+  color: var(--m-accent);
+  text-decoration: none;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.ws-col-link:hover { text-decoration: underline; }
+
+/* The folded Workstation's summary line. The fold has to cost the detail and
+   never the fact, so these three numbers stand in for the three columns. */
+.ws-tail { font-variant-numeric: tabular-nums; }
+.ws-tail-n { color: var(--m-ink); }
+.ws-tail-sep { margin: 0 6px; opacity: 0.5; }
 .ws-col-b {
   padding: var(--d-stack) 10px;
   display: flex;
@@ -6943,6 +6963,9 @@ a.shf-row-title:hover { color: var(--m-accent); }
 /* Panels inside a column are already boxed by the column; a second border
    around each would draw a box in a box on every row. */
 .ws-col-b .panel { border: 0; box-shadow: none; padding: 0; background: transparent; }
+/* Inside a column the plan panel renders `bare` — no heading, no rule — so the
+   padding that separated its header from its body is dead space. */
+.ws-col-b .panel-pad { padding: 0; }
 
 /* Drop target while dragging between columns. */
 .ws-col.ws-col--over { outline: 2px dashed var(--m-accent); outline-offset: -3px; }

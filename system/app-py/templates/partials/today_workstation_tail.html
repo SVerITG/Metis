@@ -1,0 +1,17 @@
+{#- today_workstation_tail.html — the summary line on the folded Workstation.
+
+    The Workstation opens shut, so this line is all that is on screen until you
+    decide to work. It therefore has to carry the STATE, not a description:
+    folding must cost you the detail and never the fact.
+
+    Written as three counts in the order the columns ask them — what is on today,
+    what you are in the middle of, what you set aside to read — so the folded line
+    and the open box read the same way round.
+
+    A zero is printed, not hidden. "0 on today" is information; an absent number
+    reads as a panel that failed to load. -#}
+<span class="ws-tail">
+  <span class="ws-tail-n">{{ on_today }}</span> on today<span class="ws-tail-sep" aria-hidden="true">·</span>
+  <span class="ws-tail-n">{{ projects }}</span> project{{ '' if projects == 1 else 's' }}<span class="ws-tail-sep" aria-hidden="true">·</span>
+  <span class="ws-tail-n">{{ to_read }}</span> to read
+</span>
