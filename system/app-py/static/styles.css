@@ -7737,3 +7737,14 @@ a.shf-row-title:hover { color: var(--m-accent); }
 .fseed-none { font-size: 11px; color: var(--m-muted); }
 
 @media (max-width: 620px) { .fseed-ways { grid-template-columns: 1fr; } }
+
+/* A chip offers both things a shelf slot can be: a lens about it, or it. */
+.fseed-pair { display: inline-flex; align-items: stretch; }
+.fseed-pair .fseed-chip { border-radius: 3px 0 0 3px; }
+.fseed-direct {
+  font: inherit; font-size: 10.5px; cursor: pointer;
+  background: none; color: var(--m-muted);
+  border: 1px solid var(--m-line); border-left: none; border-radius: 0 3px 3px 0;
+  padding: 3px 7px; white-space: nowrap;
+}
+.fseed-direct:hover { border-color: var(--m-accent); color: var(--m-accent); background: var(--m-accent-wash, var(--m-plum-wash)); }

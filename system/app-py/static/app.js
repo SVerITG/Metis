@@ -3697,12 +3697,30 @@ async function focusSeedWay(way, btn) {
         return;
       }
       rows.forEach(r => {
+        // TWO THINGS A SHELF SLOT CAN BE, offered side by side rather than
+        // hidden behind a mode: make a lens ABOUT it, or put the thing ITSELF
+        // there. They are different intentions and neither is the obvious
+        // default, so the interface asks rather than guesses.
+        const wrap = document.createElement('span');
+        wrap.className = 'fseed-pair';
+
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'fseed-chip';
         b.textContent = r.title;
+        b.title = 'Seed a lens about this — stay current on the subject';
         b.onclick = () => focusSeedFrom(kind, r.ref, b);
-        host.appendChild(b);
+        wrap.appendChild(b);
+
+        const d = document.createElement('button');
+        d.type = 'button';
+        d.className = 'fseed-direct';
+        d.textContent = 'open it';
+        d.title = `Put the ${kind} itself on the shelf — clicking it opens the ${kind}`;
+        d.onclick = () => focusShortcut(kind, r.ref);
+        wrap.appendChild(d);
+
+        host.appendChild(wrap);
       });
     };
     fill('fseed-courses', d.courses, 'course');
@@ -3743,5 +3761,27 @@ async function focusSeedFrom(kind, ref, btn) {
       + ' — edit the boxes and watch the preview');
   } catch (e) {
     showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not seed from that.');
+  }
+}
+
+async function focusShortcut(kind, ref) {
+  // Puts the thing itself on the shelf. No lens, no keywords — clicking the
+  // slot opens the course or the project.
+  try {
+    const res = await fetch('/api/focus/shortcut', {
+      method: 'POST',
+      body: new URLSearchParams({ kind: kind, ref: ref }),
+    });
+    const d = await res.json();
+    if (d.status === 'ok') {
+      showToast('<i class="bi bi-bookmark-check toast-icon"></i>' + d.message);
+      setTimeout(() => window.location.reload(), 900);
+      return;
+    }
+    // A full shelf is a decision for the reader, not an error to shrug at — the
+    // server says which three are on it so the choice can be made from the message.
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (d.message || 'Could not add that.'));
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not reach Metis.');
   }
 }

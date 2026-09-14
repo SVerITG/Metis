@@ -334,11 +334,41 @@ def _focus_shelf() -> list:
         # cleared when the focus is opened. It is read here rather than computed
         # because this runs on every page render and the lens itself is a
         # dozen LIKE terms over ~4,000 rows — 19-29 ms per focus, measured.
-        return [dict(r) for r in (db_query(
+        rows = [dict(r) for r in (db_query(
             "SELECT slug, title, subtitle, shelf_slot, "
-            "       COALESCE(n_new, 0) AS n_new "
+            "       COALESCE(n_new, 0) AS n_new, "
+            "       COALESCE(entry_kind, 'lens') AS entry_kind, "
+            "       COALESCE(target_ref, '') AS target_ref "
             "FROM focus_areas "
             "WHERE state = 'active' ORDER BY COALESCE(shelf_slot, 99)") or [])]
+
+        # WHERE EACH SLOT GOES, resolved here so the navbar template stays a
+        # template. A lens opens its own surface; a shortcut opens the thing it
+        # points at.
+        #
+        # A COURSE'S ADDRESS IS NOT STORED, it is asked for. `_launch_target` is
+        # the single authority on which URL opens a course — it exists because
+        # stored course URLs drifted into pointing at a code repository and at a
+        # path that 404'd. Caching one here would reintroduce exactly that drift,
+        # one table further away.
+        for r in rows:
+            kind, ref = r["entry_kind"], r["target_ref"]
+            if kind == "course" and ref:
+                try:
+                    from routers.learning import _launch_target
+                    url = db_query("SELECT course_url FROM learning_courses "
+                                   "WHERE slug = ?", (ref,)) or []
+                    r["href"] = _launch_target(
+                        ref, (url[0]["course_url"] if url else "") or "")
+                except Exception:
+                    log.warning("focus shelf: could not resolve course %s", ref,
+                                exc_info=True)
+                    r["href"] = "/tab/learning"
+            elif kind == "project" and ref:
+                r["href"] = f"/work#{ref}"
+            else:
+                r["href"] = f"/focus/{r['slug']}"
+        return rows
     except Exception:
         return []
 

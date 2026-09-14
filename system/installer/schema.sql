@@ -1100,7 +1100,24 @@ CREATE TABLE IF NOT EXISTS focus_areas (
     links             TEXT DEFAULT '',
     n_new             INTEGER DEFAULT 0,
     n_new_at          TEXT DEFAULT ''
-);
+,
+    -- WHAT A SHELF SLOT HOLDS. A focus is normally a LENS: a saved query over
+    -- news, literature and your own writing, owning no content. Since
+    -- 2026-09-14 a slot can instead be a SHORTCUT to something you already
+    -- have — clicking it opens that thing rather than a lens surface.
+    --
+    -- The shelf is three things you are currently attending to, and a course you
+    -- are working through is one of those. Keeping it in this table rather than
+    -- inventing a second shelf means the slot limit, the ordering and the
+    -- activate/archive controls all keep working unchanged.
+    --
+    -- 'lens' (default) · 'course' · 'project'
+    entry_kind  TEXT DEFAULT 'lens',
+    -- The course slug or project id a shortcut points at. Empty for a lens.
+    -- The URL is NOT stored: a course's opening address is decided by
+    -- `_launch_target`, which exists because stored URLs drifted into pointing
+    -- at code repositories and 404s. A stored href here would drift the same way.
+    target_ref  TEXT DEFAULT '');
 
 -- ---------------------------------------------------------------------------
 -- Standing decisions, attributable to an agent.

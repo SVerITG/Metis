@@ -354,7 +354,7 @@
       {% for f in _shelf %}
       <div class="nav-item {% if active_tab == 'focus:' ~ f.slug %}active{% endif %}"
            data-tab="focus:{{ f.slug }}"
-           onclick="window.location='/focus/{{ f.slug }}'"
+           onclick="window.location='{{ f.href }}'"{% if f.entry_kind != 'lens' %} target-kind="{{ f.entry_kind }}"{% endif %}
            role="button" tabindex="0"
            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor"
@@ -368,7 +368,12 @@
             is not news. When the focus's lens has found something since the last
             visit the count replaces it and is marked; opening the focus clears
             it. Reads a stored column — see `_focus_shelf`. -#}
-        {% if f.n_new %}
+        {% if f.entry_kind != 'lens' %}
+        {#- A shortcut has no lens, so it can never have "new since your last
+            visit". It says what it opens instead, which is the one thing a
+            reader needs to know before clicking it. -#}
+        <span class="n-meta" title="Opens the {{ f.entry_kind }} itself">{{ f.entry_kind }}</span>
+        {% elif f.n_new %}
         <span class="n-meta n-meta--new" title="{{ f.n_new }} new since your last visit">{{ f.n_new }}</span>
         {% else %}
         <span class="n-meta">{{ f.shelf_slot }}</span>

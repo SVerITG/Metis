@@ -1227,3 +1227,75 @@ async def focus_seed(kind: str, ref: str):
                          "subtitle": subtitle, "group1": g1, "group2": g2,
                          "note": "Seeded from your own work — edit the boxes and "
                                  "watch the preview before you commit."})
+
+
+@router.post("/api/focus/shortcut", response_class=JSONResponse)
+async def focus_shortcut(kind: str = Form(...), ref: str = Form(...)):
+    """Put a course or a project on the shelf as itself.
+
+    Asked for 2026-09-14: "I also want the option that a Focus is just the course
+    itself, if I click it it opens the course."
+
+    A focus is normally a LENS — a saved query owning no content. This is the
+    other thing a shelf slot can be: a shortcut to something you already have.
+    The shelf is three things you are currently attending to, and a course you
+    are working through is one of those.
+
+    It lives in `focus_areas` rather than in a second shelf, so the slot limit,
+    the ordering and the activate/archive controls keep working untouched. It
+    stores no URL: where a course opens is decided by `_launch_target` at render
+    time, because stored course URLs are exactly what drifted into pointing at a
+    repository and at a 404.
+    """
+    from db import db_query, db_execute
+    F = _f()
+
+    if kind == "course":
+        row = (db_query("SELECT slug, title FROM learning_courses WHERE slug = ?",
+                        (ref,), default=[]) or [None])[0]
+    elif kind == "project":
+        row = (db_query("SELECT project_id AS slug, title FROM projects "
+                        "WHERE project_id = ?", (ref,), default=[]) or [None])[0]
+    else:
+        return JSONResponse({"status": "error",
+                             "message": "That is not something a shelf slot can hold."},
+                            status_code=400)
+    if not row:
+        return JSONResponse({"status": "error", "message": "No such item."},
+                            status_code=404)
+
+    # The shelf refuses a fourth rather than quietly evicting one: which subject
+    # loses your attention is your call. Same rule the lens path already follows.
+    active = db_query("SELECT slug, title, COALESCE(shelf_slot,99) AS s "
+                      "FROM focus_areas WHERE state = 'active' ORDER BY s",
+                      default=[]) or []
+    slug = f"{kind}-{ref}"[:120]
+    existing = db_query("SELECT slug, state FROM focus_areas WHERE slug = ?",
+                        (slug,), default=[]) or []
+    if not existing and len(active) >= F.MAX_SHELF:
+        names = ", ".join(a["title"] for a in active)
+        return JSONResponse({
+            "status": "full",
+            "message": (f"The shelf is full ({F.MAX_SHELF} of {F.MAX_SHELF}): "
+                        f"{names}. Take one off first — which one loses your "
+                        f"attention is your call, not Metis's."),
+        }, status_code=409)
+
+    taken = {a["s"] for a in active}
+    slot = next((n for n in range(1, F.MAX_SHELF + 1) if n not in taken), F.MAX_SHELF)
+    now = _now()
+    if existing:
+        db_execute(
+            "UPDATE focus_areas SET state='active', shelf_slot=?, entry_kind=?, "
+            "target_ref=?, title=?, activated_at=? WHERE slug=?",
+            (slot, kind, ref, row["title"], now, slug))
+    else:
+        db_execute(
+            "INSERT INTO focus_areas (slug, title, subtitle, state, shelf_slot, "
+            "keyword_groups, entry_kind, target_ref, created_at, activated_at) "
+            "VALUES (?,?,?,'active',?,'[]',?,?,?,?)",
+            (slug, row["title"], f"Opens the {kind} itself", slot, kind, ref,
+             now, now))
+    return JSONResponse({"status": "ok", "slug": slug, "slot": slot,
+                         "message": f"{row['title']} is on your shelf — "
+                                    f"clicking it opens the {kind}."})
