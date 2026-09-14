@@ -7097,3 +7097,220 @@ a.shf-row-title:hover { color: var(--m-accent); }
   .fwn-bar-track { grid-column: 1 / -1; }
   .fwn-split { margin-left: 0; }
 }
+
+/* ═══ REFLECTION ══════════════════════════════════════════════════════════════
+   The value boxes are tabs, so they inherit `.ui-tab` behaviour and override
+   only the shape. That is deliberate: two controls that look different and
+   behave the same is how a reader stops trusting either. */
+.rbox-row {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: var(--m-space-3); align-items: stretch;
+  border-bottom: none; margin-bottom: var(--m-space-5);
+}
+.rbox {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  text-align: left; padding: var(--m-space-3) var(--m-space-4);
+  border: 1px solid var(--m-line); border-radius: var(--m-radius, 4px);
+  background: var(--m-surface-2, transparent); cursor: pointer;
+  position: relative; overflow: hidden;
+}
+/* The state marker is a bar, matching the zone pattern everywhere else. */
+.rbox::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
+  background: transparent;
+}
+.rbox[aria-selected="true"] { border-color: var(--m-plum); }
+.rbox[aria-selected="true"]::before { background: var(--m-plum); }
+.rbox:hover { background: var(--m-plum-wash); }
+.rbox-n {
+  font-size: 28px; font-weight: 600; line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.rbox-l { font-size: 13px; font-weight: 600; }
+.rbox-note { font-size: 11px; color: var(--m-muted); }
+.rbox-last {
+  font-size: 10px; color: var(--m-muted); margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.rbox--quiet { justify-content: center; min-width: 120px; }
+.rbox--quiet .rbox-l { font-weight: 500; }
+
+/* ── Ideas ─────────────────────────────────────────────────────────────────── */
+.ridea-capture {
+  border: 1px solid var(--m-line); border-radius: var(--m-radius, 4px);
+  padding: var(--m-space-3); margin-bottom: var(--m-space-4);
+}
+.ridea-input, .rj-input, .rthr-input {
+  width: 100%; box-sizing: border-box; resize: vertical;
+  border: none; background: transparent; color: var(--m-ink);
+  font: inherit; font-size: 13.5px; line-height: 1.6; padding: 4px 2px;
+}
+.ridea-input:focus, .rj-input:focus, .rthr-input:focus { outline: none; }
+.ridea-capture-foot, .rj-write-foot {
+  display: flex; align-items: center; gap: var(--m-space-3);
+  margin-top: var(--m-space-2); padding-top: var(--m-space-2);
+  border-top: 1px solid var(--m-line);
+}
+.ridea-hint, .rj-hint { font-size: 11px; color: var(--m-muted); margin-right: auto; }
+
+.ridea-grid {
+  display: grid; gap: var(--m-space-3);
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+.ridea {
+  border: 1px solid var(--m-line); border-radius: var(--m-radius, 4px);
+  padding: var(--m-space-3) var(--m-space-4);
+  display: flex; flex-direction: column; gap: var(--m-space-2);
+}
+.ridea-text { margin: 0; font-size: 13px; line-height: 1.55; }
+.ridea-foot {
+  display: flex; align-items: center; gap: 8px; margin-top: auto;
+  font-size: 10.5px; color: var(--m-muted);
+}
+.ridea-date { font-variant-numeric: tabular-nums; }
+.ridea-kind {
+  border: 1px solid var(--m-line); border-radius: 2px; padding: 0 5px;
+  text-transform: uppercase; letter-spacing: .07em; font-size: 9px;
+}
+.ridea-arch {
+  margin-left: auto; background: none; border: none; cursor: pointer;
+  color: var(--m-muted); font: inherit; font-size: 10.5px;
+  text-decoration: underline; text-underline-offset: 2px; padding: 0;
+}
+.ridea-arch:hover { color: var(--m-ink); }
+
+/* ── The journal ───────────────────────────────────────────────────────────── */
+.rj-write {
+  border: 1px solid var(--m-line); border-radius: var(--m-radius, 4px);
+  padding: var(--m-space-3); margin-bottom: var(--m-space-5);
+}
+.rj-mood { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--m-muted); }
+.rj-select {
+  font: inherit; font-size: 11px; color: var(--m-ink);
+  background: transparent; border: 1px solid var(--m-line);
+  border-radius: 3px; padding: 2px 4px;
+}
+.rj-day { margin-bottom: var(--m-space-5); }
+.rj-date {
+  margin: 0 0 var(--m-space-2); font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--m-muted);
+  border-bottom: 1px solid var(--m-line); padding-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.rj-entry {
+  border-left: 2px solid var(--m-line); padding: var(--m-space-2) 0 var(--m-space-3) var(--m-space-4);
+  margin-bottom: var(--m-space-3);
+}
+.rj-entry--journal { border-left-color: var(--m-plum); }
+.rj-title { margin: 0 0 4px; font-size: 13.5px; font-weight: 600; }
+.rj-body { font-size: 13.5px; line-height: 1.65; white-space: pre-wrap; }
+.rj-meta {
+  display: flex; align-items: center; gap: 8px; margin-top: 6px;
+  font-size: 10.5px; color: var(--m-muted);
+}
+.rj-store { text-transform: uppercase; letter-spacing: .08em; font-size: 9px; }
+.rj-chip { border: 1px solid var(--m-line); border-radius: 9px; padding: 0 6px; }
+.rj-time { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+/* ── Threads ───────────────────────────────────────────────────────────────── */
+.rthr-new { display: flex; gap: var(--m-space-3); align-items: center; margin-bottom: var(--m-space-4); }
+.rthr-new .rthr-input {
+  flex: 1 1 auto; border: 1px solid var(--m-line);
+  border-radius: var(--m-radius, 4px); padding: 7px 10px;
+}
+.rthr-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: var(--m-space-5); }
+.rthr-rail { display: flex; flex-direction: column; gap: 2px; }
+.rthr-item {
+  text-align: left; background: none; cursor: pointer; font: inherit;
+  border: 1px solid transparent; border-left: 2px solid var(--m-line);
+  border-radius: 0 3px 3px 0; padding: 7px 9px;
+  display: flex; flex-direction: column; gap: 2px; color: inherit;
+}
+.rthr-item:hover { background: var(--m-plum-wash); }
+.rthr-item.is-on { border-left-color: var(--m-plum); background: var(--m-plum-wash); }
+.rthr-item-t { font-size: 12.5px; line-height: 1.4; }
+.rthr-item-d { font-size: 10px; color: var(--m-muted); font-variant-numeric: tabular-nums; }
+
+.rthread-head { border-bottom: 1px solid var(--m-line); padding-bottom: var(--m-space-3); }
+.rthread-text {
+  margin: 0; font-family: var(--m-display); font-size: 19px;
+  line-height: 1.45; letter-spacing: -.012em;
+}
+.rthread-meta {
+  display: flex; align-items: center; gap: 7px; margin-top: var(--m-space-2);
+  font-size: 11px; color: var(--m-muted);
+}
+.rthread-terms { margin: 6px 0 0; font-size: 10.5px; color: var(--m-muted); }
+.rthread-terms code {
+  border: 1px solid var(--m-line); border-radius: 2px; padding: 0 4px;
+  font-size: 10px; margin-right: 3px;
+}
+
+.rthread-graph { margin: var(--m-space-4) 0; }
+.rthread-graph svg { display: block; max-width: 100%; }
+.rg-edge { stroke: var(--m-line); stroke-width: 1; }
+.rg-hub { fill: var(--m-plum); }
+.rg-node circle { fill: var(--m-surface-2, var(--m-bg)); stroke: var(--m-plum); stroke-width: 1.6; }
+.rg-node--news circle    { stroke: var(--m-ochre); }
+.rg-node--paper circle,
+.rg-node--pub circle     { stroke: var(--m-info); }
+.rg-node--meeting circle { stroke: var(--m-ok); }
+.rg-node--project circle { stroke: var(--m-accent); }
+.rthread-graph-note { margin: 4px 0 0; font-size: 10.5px; color: var(--m-muted); line-height: 1.55; }
+
+.rthread-group { margin-top: var(--m-space-4); }
+.rthread-group-h {
+  margin: 0 0 var(--m-space-2); font-size: 11px; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--m-muted);
+  display: flex; align-items: center; gap: 7px;
+}
+.rthread-n {
+  border: 1px solid var(--m-line); border-radius: 9px; padding: 0 6px;
+  font-size: 10px; font-variant-numeric: tabular-nums;
+}
+.rthread-link {
+  display: flex; align-items: baseline; gap: 8px; padding: 5px 0;
+  border-bottom: 1px solid var(--m-line); font-size: 12.5px;
+}
+.rthread-link a { color: inherit; text-decoration: none; border-bottom: 1px solid transparent; }
+.rthread-link a:hover { border-bottom-color: var(--m-accent); }
+.rthread-link--gone { opacity: .55; font-style: italic; }
+.rthread-src {
+  font-size: 9px; text-transform: uppercase; letter-spacing: .08em;
+  border: 1px solid var(--m-line); border-radius: 2px; padding: 0 5px;
+  color: var(--m-muted); flex: 0 0 auto;
+}
+.rthread-date { margin-left: auto; font-size: 10.5px; color: var(--m-muted); font-variant-numeric: tabular-nums; }
+.rthread-x {
+  background: none; border: none; cursor: pointer; color: var(--m-muted);
+  font-size: 14px; line-height: 1; padding: 0 2px;
+}
+.rthread-x:hover { color: var(--m-alert, var(--m-ink)); }
+.rthread-empty, .rthread-sugg-note {
+  font-size: 11.5px; color: var(--m-muted); line-height: 1.6; margin: var(--m-space-3) 0 0;
+}
+.rthread-sugg { border-top: 1px solid var(--m-line); padding-top: var(--m-space-3); }
+
+/* ── Archive ───────────────────────────────────────────────────────────────── */
+.rarch-head { margin: 0 0 var(--m-space-3); font-size: var(--t-small); color: var(--m-muted); }
+.rarch-row {
+  display: flex; align-items: baseline; gap: 10px; padding: 8px 18px; font-size: 12.5px;
+}
+.rarch-row + .rarch-row { border-top: 1px solid var(--m-line); }
+.rarch-kind {
+  font-size: 9px; text-transform: uppercase; letter-spacing: .08em;
+  border: 1px solid var(--m-line); border-radius: 2px; padding: 0 5px;
+  color: var(--m-muted); flex: 0 0 auto;
+}
+.rarch-text { flex: 1 1 auto; min-width: 0; }
+.rarch-date { font-size: 10.5px; color: var(--m-muted); font-variant-numeric: tabular-nums; }
+.rarch-whole { margin-top: var(--m-space-5); border-top: 1px solid var(--m-line); padding-top: var(--m-space-3); }
+.rarch-whole > summary { cursor: pointer; font-size: 12px; color: var(--m-muted); }
+.rarch-whole-note { font-size: 11px; color: var(--m-muted); margin: var(--m-space-2) 0 var(--m-space-3); }
+
+@media (max-width: 900px) {
+  .rbox-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rthr-layout { grid-template-columns: minmax(0, 1fr); }
+  .rthr-rail { flex-direction: row; overflow-x: auto; }
+  .rthr-item { flex: 0 0 190px; }
+}

@@ -1,0 +1,38 @@
+{#- reflection_ideas.html — "a specific site for recording ideas (exploration of
+    thoughts)". Capture at the top, because the cost of writing an idea down is
+    the only thing that decides whether it gets written down. -#}
+<form class="ridea-capture" hx-post="/api/reflection/idea"
+      hx-target="#refl-ideas" hx-swap="innerHTML"
+      hx-on::after-request="this.reset()">
+  <textarea name="text" rows="2" class="ridea-input"
+            placeholder="A thought, a hunch, a question you cannot put down yet…"></textarea>
+  <div class="ridea-capture-foot">
+    <span class="ridea-hint">Nothing is scored or filed. Write it badly.</span>
+    <button class="btn btn--sec btn--sm" type="submit">Record</button>
+  </div>
+</form>
+
+{% if not ideas %}
+<div class="panel panel--md">
+  <p style="margin:0;font-size:var(--t-small);color:var(--m-muted);">
+    No ideas recorded yet. The box above is the whole feature.
+  </p>
+</div>
+{% else %}
+<div class="ridea-grid">
+  {% for i in ideas %}
+  <article class="ridea">
+    <p class="ridea-text">{{ i.text }}</p>
+    <div class="ridea-foot">
+      <span class="ridea-date">{{ i.created_at[:10] if i.created_at else '' }}</span>
+      {% if i.kind and i.kind != 'idea' %}<span class="ridea-kind">{{ i.kind }}</span>{% endif %}
+      <button type="button" class="ridea-arch"
+              title="Archive — it stays searchable, it stops asking"
+              hx-post="/api/reflection/archive"
+              hx-vals='{"idea_id": {{ i.id | tojson }}, "back": "ideas"}'
+              hx-target="#refl-ideas" hx-swap="innerHTML">archive</button>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% endif %}

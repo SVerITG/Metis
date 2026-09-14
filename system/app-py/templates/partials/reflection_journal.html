@@ -1,0 +1,54 @@
+{#- reflection_journal.html — "a specific journalling app that appears on that
+    screen".
+
+    A journal is read by day, so the day is the heading and an entry carries only
+    its own time. Two stores feed it (`journal_entries` and `personal_notes`) and
+    each row says which one it came from — they are kept apart in the database
+    for good reasons, but on screen they are the same act on different days. -#}
+<form class="rj-write" hx-post="/api/reflection/journal"
+      hx-target="#refl-journal" hx-swap="innerHTML"
+      hx-on::after-request="this.reset()">
+  <textarea name="content" rows="4" class="rj-input"
+            placeholder="Today…"></textarea>
+  <div class="rj-write-foot">
+    <label class="rj-mood">
+      <span>mood</span>
+      <select name="mood" class="rj-select">
+        <option value="">—</option>
+        <option value="good">good</option>
+        <option value="steady">steady</option>
+        <option value="tired">tired</option>
+        <option value="stuck">stuck</option>
+        <option value="charged">charged</option>
+      </select>
+    </label>
+    <span class="rj-hint">{{ n }} entr{{ 'y' if n == 1 else 'ies' }} in the journal</span>
+    <button class="btn btn--sec btn--sm" type="submit">Write it down</button>
+  </div>
+</form>
+
+{% if not days %}
+<div class="panel panel--md">
+  <p style="margin:0;font-size:var(--t-small);color:var(--m-muted);">
+    The journal is empty. The first entry is the hardest and the shortest.
+  </p>
+</div>
+{% else %}
+{% for d in days %}
+<section class="rj-day">
+  <h3 class="rj-date">{{ d.date }}</h3>
+  {% for it in d['items'] %}
+  <article class="rj-entry rj-entry--{{ it.store }}">
+    {% if it.title %}<h4 class="rj-title">{{ it.title }}</h4>{% endif %}
+    <div class="rj-body">{{ it.content }}</div>
+    <div class="rj-meta">
+      <span class="rj-store">{{ 'journal' if it.store == 'journal' else 'note' }}</span>
+      {% if it.mood %}<span class="rj-chip">{{ it.mood }}</span>{% endif %}
+      {% if it.energy %}<span class="rj-chip">energy {{ it.energy }}</span>{% endif %}
+      <span class="rj-time">{{ it.created_at[11:16] if it.created_at and it.created_at|length > 15 else '' }}</span>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endfor %}
+{% endif %}

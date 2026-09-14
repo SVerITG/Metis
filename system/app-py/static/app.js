@@ -1384,9 +1384,15 @@ async function exportIdeaAsNote() {
     const data = await res.json();
     if (data.status === 'ok') {
       showToast(`<i class="bi bi-journal-arrow-down toast-icon"></i>Idea exported as note · "${(data.preview || '').slice(0, 60)}…"`);
-      // Refresh marginalia & threads
-      document.querySelectorAll('[hx-get="/api/partial/thinking/marginalia"], [hx-get="/api/partial/thinking/threads"]').forEach(el => {
-        if (window.htmx && htmx.trigger) htmx.trigger(el, 'load');
+      // Refresh the panels the note actually landed in. These selectors used to
+      // name two panels that the Reflection rebuild removed, so the refresh was
+      // a silent no-op and the new note only appeared on the next page load —
+      // the same dead-selector failure that left a layer of project-card
+      // controls inert. Refreshing by ID makes that visible: a missing element
+      // is a missing element, not a querySelectorAll returning nothing.
+      ['refl-journal', 'refl-ideas'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && window.htmx && htmx.trigger) htmx.trigger(el, 'load');
       });
     } else {
       showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (data.message || 'Nothing to export.'));

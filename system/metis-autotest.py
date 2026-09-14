@@ -479,13 +479,24 @@ def run_dashboard():
              "buildCourse() clipboard behaviour detected but no inline view route confirmed.",
              "Verify that opening a course in the Learning tab shows content inline, not copies a CLI prompt.")
 
-    # D21 — spot-check 5 partial routes
+    # D21 — spot-check the partial routes each surface depends on
     partials = [
         "/api/partial/today/hero",
         "/api/partial/work/tasks",
         "/api/partial/thinking/ideas",
         "/api/partial/meetings/list",
         "/api/partial/metis/agent-runs",
+        # Reflection's four panes. The value boxes ARE the tab strip, so a 500
+        # here is not one broken panel — it is a surface with no way to choose
+        # a view at all.
+        "/api/partial/reflection/boxes",
+        "/api/partial/reflection/ideas",
+        "/api/partial/reflection/journal",
+        "/api/partial/reflection/threads",
+        "/api/partial/reflection/archive",
+        # The one panel on a focus that ranks by closeness to the reader's own
+        # work rather than by the subject of the shelf.
+        "/api/partial/focus/ai-in-health-epidemiology/close-to-work",
     ]
     partial_fails = []
     for route in partials:

@@ -1,0 +1,33 @@
+{#- reflection_boxes.html — the three value boxes, which are also the tabs.
+
+    "On top there are value boxes for Ideas, notes and threads and they show the
+    amount and last worked on them" (2026-09-13), and clicking one changes what
+    the surface shows. So they ARE the tab strip rather than a summary above one:
+    a second row of controls doing the same job is how a reader stops knowing
+    which one is live.
+
+    They carry `role="tab"` and the `data-tabset`/`data-tab` pair the shared tab
+    switcher already listens for, so no new JavaScript exists for this. -#}
+<div class="ui-tabs rbox-row" role="tablist" data-tabset="reflection">
+  {% for b in boxes %}
+  <button type="button" class="ui-tab rbox" role="tab"
+          data-tabset="reflection" data-tab="{{ b.key }}"
+          aria-selected="{{ 'true' if loop.first else 'false' }}">
+    <span class="rbox-n">{{ b.n }}</span>
+    <span class="rbox-l">{{ b.label }}</span>
+    <span class="rbox-note">{{ b.note }}</span>
+    <span class="rbox-last">
+      {%- if b.last %}last worked {{ b.last }}{% else %}nothing yet{% endif -%}
+    </span>
+  </button>
+  {% endfor %}
+
+  {#- Archive is deliberately not a value box. It is where things go to stop
+      asking for attention, and giving it the same weight as the three live
+      piles would undo that. -#}
+  <button type="button" class="ui-tab rbox rbox--quiet" role="tab"
+          data-tabset="reflection" data-tab="archive" aria-selected="false">
+    <span class="rbox-l">Archive</span>
+    <span class="rbox-note">nothing is ever deleted</span>
+  </button>
+</div>

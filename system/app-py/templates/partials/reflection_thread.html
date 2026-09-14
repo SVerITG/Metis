@@ -1,0 +1,109 @@
+{#- reflection_thread.html — one thread, what it touches, and the picture of it.
+
+    Three parts, in the order the question is actually asked: what am I thinking
+    about, what does it connect to, and what does that look like.
+
+    The graph is ONE HOP and nothing else. Obsidian's local graph and NotebookLM's
+    source list are the same idea in different clothes — the thread is the query,
+    and a picture of everything is a picture of nothing. Positions come from the
+    server, so this prints and needs no library.
+
+    Context: thread · links · by_kind · suggestions · terms · graph. -#}
+<div class="rthread">
+
+  <div class="rthread-head">
+    <p class="rthread-text">{{ thread.text }}</p>
+    <div class="rthread-meta">
+      <span>started {{ thread.dated }}</span>
+      <span>·</span>
+      <span>{{ links | length }} source{{ '' if (links | length) == 1 else 's' }} kept</span>
+      <button type="button" class="btn btn--ghost btn--sm" style="margin-left:auto;"
+              hx-post="/api/reflection/archive"
+              hx-vals='{"idea_id": {{ thread.id | tojson }}, "back": "threads"}'
+              hx-target="#refl-threads" hx-swap="innerHTML">archive thread</button>
+    </div>
+    {% if terms %}
+    <p class="rthread-terms">
+      searching on
+      {% for t in terms %}<code>{{ t }}</code>{% if not loop.last %} {% endif %}{% endfor %}
+    </p>
+    {% endif %}
+  </div>
+
+  {#- ── The picture ────────────────────────────────────────────────────────── -#}
+  {% if graph.n %}
+  <div class="rthread-graph">
+    <svg viewBox="0 0 {{ graph.w }} {{ graph.h }}" width="100%" height="{{ graph.h }}"
+         role="img" aria-label="This thread and the {{ graph.n }} source(s) linked to it">
+      {% for n in graph.nodes %}
+      <line x1="{{ graph.cx }}" y1="{{ graph.cy }}" x2="{{ n.x }}" y2="{{ n.y }}"
+            class="rg-edge"/>
+      {% endfor %}
+      {% for n in graph.nodes %}
+      <g class="rg-node rg-node--{{ n.kind }}">
+        <title>{{ n.label_kind }} — {{ n.title }}</title>
+        <circle cx="{{ n.x }}" cy="{{ n.y }}" r="7"/>
+      </g>
+      {% endfor %}
+      <circle cx="{{ graph.cx }}" cy="{{ graph.cy }}" r="13" class="rg-hub"/>
+    </svg>
+    <p class="rthread-graph-note">
+      This thread and what it touches, one hop out. Hover a dot for its title.
+      The picture stays small on purpose — a graph of everything is a picture of
+      nothing.
+    </p>
+  </div>
+  {% endif %}
+
+  {#- ── What it touches ────────────────────────────────────────────────────── -#}
+  {% if by_kind %}
+  {% for label, items in by_kind.items() %}
+  <section class="rthread-group">
+    <h4 class="rthread-group-h">{{ label }} <span class="rthread-n">{{ items | length }}</span></h4>
+    {% for l in items %}
+    <div class="rthread-link{% if l.missing %} rthread-link--gone{% endif %}">
+      {% if l.url %}
+      <a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.title }}</a>
+      {% else %}<span>{{ l.title }}</span>{% endif %}
+      {% if l.dated %}<span class="rthread-date">{{ l.dated }}</span>{% endif %}
+      <button type="button" class="rthread-x" title="Unlink"
+              hx-post="/api/reflection/thread/{{ thread.id }}/link"
+              hx-vals='{"kind": {{ l.kind | tojson }}, "target_id": {{ l.target_id | tojson }}, "drop": "1"}'
+              hx-target="#refl-thread" hx-swap="innerHTML">×</button>
+    </div>
+    {% endfor %}
+  </section>
+  {% endfor %}
+  {% else %}
+  <p class="rthread-empty">
+    Nothing linked yet. What this thread's words also appear in is below — keep
+    what belongs, ignore the rest. A suggestion is not a link.
+  </p>
+  {% endif %}
+
+  {#- ── What it might touch ────────────────────────────────────────────────── -#}
+  {% if suggestions %}
+  <section class="rthread-group rthread-sugg">
+    <h4 class="rthread-group-h">
+      Also mentions these <span class="rthread-n">{{ suggestions | length }}</span>
+    </h4>
+    <p class="rthread-sugg-note">
+      Found by the words above, across news, literature, notes, meetings and
+      projects. Nothing is linked until you say so.
+    </p>
+    {% for s in suggestions %}
+    <div class="rthread-link rthread-link--sugg">
+      <span class="rthread-src">{{ s.label_kind }}</span>
+      {% if s.url %}
+      <a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.title }}</a>
+      {% else %}<span>{{ s.title }}</span>{% endif %}
+      {% if s.dated %}<span class="rthread-date">{{ s.dated }}</span>{% endif %}
+      <button type="button" class="btn btn--ghost btn--sm"
+              hx-post="/api/reflection/thread/{{ thread.id }}/link"
+              hx-vals='{"kind": {{ s.kind | tojson }}, "target_id": {{ s.target_id | tojson }}}'
+              hx-target="#refl-thread" hx-swap="innerHTML">keep</button>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+</div>

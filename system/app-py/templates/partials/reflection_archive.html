@@ -1,0 +1,32 @@
+{#- reflection_archive.html — where things go to stop asking.
+
+    Archiving on this surface appends a tag; it never deletes. So this list is
+    complete by construction, and everything on it can come back. -#}
+{% if not items %}
+<div class="panel panel--md">
+  <p style="margin:0;font-size:var(--t-small);color:var(--m-muted);">
+    The archive is empty. Archiving an idea or a thread sends it here — it stays
+    searchable, it stops appearing beside the live work, and it comes back with
+    one click.
+  </p>
+</div>
+{% else %}
+<p class="rarch-head">
+  <strong>{{ items | length }}</strong> archived
+  {%- if n_thread %} · {{ n_thread }} of them thread{{ '' if n_thread == 1 else 's' }}{% endif %}.
+  Nothing here was deleted.
+</p>
+<div class="panel" style="padding:var(--m-space-1) 0;">
+  {% for i in items %}
+  <div class="rarch-row">
+    <span class="rarch-kind">{{ 'thread' if i.kind == 'thread' else 'idea' }}</span>
+    <span class="rarch-text">{{ i.text }}</span>
+    <span class="rarch-date">{{ i.created_at[:10] if i.created_at else '' }}</span>
+    <button type="button" class="btn btn--ghost btn--sm"
+            hx-post="/api/reflection/archive"
+            hx-vals='{"idea_id": {{ i.id | tojson }}, "restore": "1", "back": "archive"}'
+            hx-target="#refl-archive" hx-swap="innerHTML">restore</button>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}

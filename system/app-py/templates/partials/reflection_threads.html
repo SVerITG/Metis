@@ -1,0 +1,47 @@
+{#- reflection_threads.html — the thread rail beside the open thread.
+
+    A thread is an `ideas` row with `idea_type='thread'`. Before this, the rail
+    and the centre panel both read plain ideas, which is why "thread" and "idea"
+    could not mean different things however they were labelled. -#}
+<form class="rthr-new" hx-post="/api/reflection/thread"
+      hx-target="#refl-threads" hx-swap="innerHTML"
+      hx-on::after-request="this.reset()">
+  <input type="text" name="text" class="rthr-input"
+         placeholder="A question you keep coming back to…">
+  <button class="btn btn--sec btn--sm" type="submit">Start a thread</button>
+</form>
+
+{% if not threads %}
+<div class="panel panel--md">
+  <p style="margin:0;font-size:var(--t-small);color:var(--m-muted);">
+    No threads yet. A thread is a question you keep returning to — start one
+    above, and Metis will show you what across your news, library, notes and
+    meetings already speaks to it.
+  </p>
+</div>
+{% else %}
+<div class="rthr-layout">
+  <aside class="rthr-rail">
+    {% for t in threads %}
+    <button type="button"
+            class="rthr-item{% if t.id == active %} is-on{% endif %}"
+            hx-get="/api/partial/reflection/thread/{{ t.id }}"
+            hx-target="#refl-thread" hx-swap="innerHTML"
+            onclick="this.closest('.rthr-rail').querySelectorAll('.rthr-item').forEach(function(e){e.classList.remove('is-on');});this.classList.add('is-on');">
+      <span class="rthr-item-t">{{ t.title }}</span>
+      <span class="rthr-item-d">{{ t.dated }}</span>
+    </button>
+    {% endfor %}
+  </aside>
+
+  {#- The open thread is FETCHED rather than included. An include would inherit
+      this template's context, where the detail sits nested under one name — and
+      the thread partial reads `thread`, `links` and `graph` at the top level,
+      so it would render blank without erroring. One route, one shape. -#}
+  <div id="refl-thread" class="rthr-main"
+       {% if active %}hx-get="/api/partial/reflection/thread/{{ active }}"
+       hx-trigger="load" hx-swap="innerHTML"{% endif %}>
+    <div class="panel panel-pad skeleton panel--md"></div>
+  </div>
+</div>
+{% endif %}
