@@ -546,6 +546,9 @@ def run_dashboard():
         # The one panel on a focus that ranks by closeness to the reader's own
         # work rather than by the subject of the shelf.
         "/api/partial/focus/ai-in-health-epidemiology/close-to-work",
+        # The Learning station's third column. The other two are long-standing
+        # panels already covered above.
+        "/api/partial/today/learning-shelf",
     ]
     partial_fails = []
     for route in partials:

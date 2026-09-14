@@ -1,0 +1,40 @@
+{#- today_learning_shelf.html — what you said you would learn and have not begun.
+
+    The third column of the Learning station. Not a progress list: every row here
+    is at zero by definition, so a bar would be three identical pictures saying
+    nothing. What varies, and what is worth seeing, is HOW LONG each has been
+    sitting — an intention six months old is a different fact from one recorded
+    last week, and only one of them is worth acting on this morning.
+
+    Nothing is scolded and nothing is auto-archived. A course you never start is
+    allowed; being unable to see it is not.
+
+    Context: courses (slug · title · category · next_lesson · age_days) · n -#}
+{% if not courses %}
+<p class="lsh-empty">
+  Nothing waiting. Every course you have recorded is under way.
+</p>
+{% else %}
+<p class="lsh-head">
+  <strong>{{ n }}</strong> recorded, never opened.
+</p>
+<div class="lsh-list">
+  {% for c in courses %}
+  <a class="lsh-row" href="/tab/learning#{{ c.slug }}">
+    <span class="lsh-t">{{ c.title }}</span>
+    <span class="lsh-m">
+      {% if c.category %}<span class="lsh-cat">{{ c.category }}</span>{% endif %}
+      {% if c.age_days is not none %}
+      <span class="lsh-age{% if c.age_days >= 180 %} lsh-age--old{% endif %}"
+            title="Recorded {{ c.age_days }} day{{ '' if c.age_days == 1 else 's' }} ago">
+        {%- if c.age_days < 31 %}{{ c.age_days }}d
+        {%- elif c.age_days < 365 %}{{ (c.age_days // 30) }}mo
+        {%- else %}{{ (c.age_days // 365) }}y{% endif -%}
+      </span>
+      {% endif %}
+    </span>
+    {% if c.next_lesson %}<span class="lsh-first">starts: {{ c.next_lesson }}</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% endif %}

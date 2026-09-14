@@ -3451,6 +3451,12 @@ document.body && document.body.addEventListener('htmx:afterSwap', e => restoreTa
 //   where you left off  →  today   plans that project for today (day_plan)
 //   reading stack       →  today   flags it crucial, which is what the stack
 //                                  already means by "read this first"
+//   course (Learning)   →  today   plans its next lesson (day_plan kind=learning)
+//
+// The learning drop has its OWN endpoint rather than a third branch of
+// /api/today/plan/add — that route coerces any unknown kind to 'task', so a
+// course would have been written as a task with no id: nothing inserted, success
+// returned. A fallback that is wrong for the new case is worse than no fallback.
 //
 // Delegated on document so it survives the HTMX swaps these panels do constantly.
 (function () {
@@ -3508,6 +3514,10 @@ document.body && document.body.addEventListener('htmx:afterSwap', e => restoreTa
       url = '/api/stack/crucial';
       body = new URLSearchParams({ kind: it.sub || 'news', item_id: it.id,
                                    back: 'today-reading' });
+    } else if (it.kind === 'learning') {
+      url = '/api/today/plan/lesson';
+      body = new URLSearchParams({ slug: it.id, title: it.label || '',
+                                   lesson: it.sub || '' });
     } else { return; }
 
     fetch(url, { method: 'POST', body: body })
@@ -3515,8 +3525,12 @@ document.body && document.body.addEventListener('htmx:afterSwap', e => restoreTa
         if (!r.ok) throw new Error(r.status);
         // Redraw both ends: the plan gained a row, the stack re-sorted.
         if (window.htmx) {
-          htmx.ajax('GET', '/api/partial/today/plan',    { target: '#today-plan', swap: 'outerHTML' });
-          htmx.ajax('GET', '/api/partial/today/reading', { target: '.rstack-panel', swap: 'outerHTML' });
+          htmx.ajax('GET', '/api/partial/today/plan', { target: '#today-plan', swap: 'outerHTML' });
+          // Only the panel that actually changed. Redrawing the stack after a
+          // course drop is a request against something that did not move.
+          if (it.kind === 'reading') {
+            htmx.ajax('GET', '/api/partial/today/reading', { target: '.rstack-panel', swap: 'outerHTML' });
+          }
         }
         if (typeof showToast === 'function') {
           showToast(`<i class="bi bi-check2 toast-icon"></i>${it.label || 'Added'} → today`);

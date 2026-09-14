@@ -26,7 +26,16 @@
   <div class="tls-strip">
     {% for sl in slots %}
     {% set c = sl.course %}
-    <div class="tls-slot{% if not c %} tls-slot--empty{% endif %}">
+    {#- DRAGGABLE, into "What needs you today" in the Workstation above. A course
+        you mean to study is work you have chosen for the day, and saying so is
+        the same gesture as pinning a project — the box next to it already works
+        that way, so it would be strange if this one did not. Filled slots only:
+        dragging an empty placeholder has nothing to say. -#}
+    <div class="tls-slot{% if not c %} tls-slot--empty{% endif %}{% if c %} ws-drag{% endif %}"
+         {%- if c %} draggable="true"
+         data-ws-kind="learning" data-ws-id="{{ c.slug }}"
+         data-ws-label="{{ c.title }}" data-ws-sub="{{ c.next_title or '' }}"
+         title="Drag into “What needs you today” to plan this for today"{% endif %}>
 
       {% if c %}
       {#- HEAD: which course, how far in. The percentage is printed as well as

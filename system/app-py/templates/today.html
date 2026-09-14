@@ -301,21 +301,68 @@
       third time that tool has paid for itself. -#}
   
 
-  <div class="u-mb-6">
-    <div hx-get="/api/partial/today/learning"
-         hx-trigger="load delay:300ms"
-         hx-swap="outerHTML"></div>
-  </div>
+  {#- ═══════════════════════════════════════════════════════════════════════
+      LEARNING STATION — everything that is study, in one box.
 
-  {#- RECALL — one card, drawn only from lessons already completed. Asked for
-      2026-09-04. Sits under the learning box because it is the same subject
-      seen from the other end: that one is what to read next, this one is what
-      was read. -#}
-  <div class="u-mb-6">
-    <div hx-get="/api/partial/today/review"
-         hx-trigger="load delay:360ms"
-         hx-swap="outerHTML"></div>
+      Asked for 2026-09-14: "Like there is a working station there should be a
+      consolidated learning box on the today surface." What stood here was two
+      unrelated full-width panels stacked — the course slots, then recall —
+      with nothing saying they were the same subject, and a third fact missing
+      entirely.
+
+      The three columns are NOT a copy of the Workstation's three. That box
+      answers the three questions a morning asks about work; this one answers
+      the three it asks about study, and they are different questions:
+
+        Continue        what am I in the middle of
+        Recall          what should I see again
+        Not yet begun   what did I say I would learn
+
+      The third is the honest addition. Nine courses had been recorded and never
+      opened, reachable only by scrolling past the ones in progress on another
+      surface. A promise you cannot see is a promise you will not keep.
+
+      `kind="learning"` paints the green bar, reusing a token the palette already
+      defines in all six themes rather than inventing a sixth colour to learn.
+      A course drags from here into "What needs you today" above.
+      ═══════════════════════════════════════════════════════════════════════ -#}
+  {% call zone("Learning station", key="today-learning-station", kind="learning",
+               tail="YOUR STUDY · DRAG A COURSE INTO TODAY", collapsible=False) %}
+  <div class="ws-cols ws-cols--learning">
+
+    <div class="ws-col" data-ws-col="continue">
+      <div class="ws-col-h">Continue</div>
+      <div class="ws-col-b">
+        <div hx-get="/api/partial/today/learning"
+             hx-trigger="load delay:300ms"
+             hx-swap="outerHTML"></div>
+      </div>
+    </div>
+
+    {#- RECALL — one card, drawn only from lessons already completed. Asked for
+        2026-09-04. Beside the slots rather than under them: it is the same
+        subject seen from the other end — that column is what to read next,
+        this one is what was read. -#}
+    <div class="ws-col" data-ws-col="recall">
+      <div class="ws-col-h">Recall</div>
+      <div class="ws-col-b">
+        <div hx-get="/api/partial/today/review"
+             hx-trigger="load delay:360ms"
+             hx-swap="outerHTML"></div>
+      </div>
+    </div>
+
+    <div class="ws-col" data-ws-col="shelf">
+      <div class="ws-col-h">Not yet begun</div>
+      <div class="ws-col-b">
+        <div hx-get="/api/partial/today/learning-shelf"
+             hx-trigger="load delay:400ms"
+             hx-swap="innerHTML"></div>
+      </div>
+    </div>
+
   </div>
+  {% endcall %}
 
 
   {#- CROSS-POLLINATION MOVED TO REFLECTION. Reported 2026-08-31: "'Connects to'

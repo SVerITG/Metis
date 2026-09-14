@@ -1827,3 +1827,85 @@ def _seed_spaced_rep_card(slug: str, lesson: dict) -> int:
         except Exception:
             continue
     return inserted
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# THE LEARNING STATION — the third column, and putting a lesson on today
+# ═══════════════════════════════════════════════════════════════════════════════
+# Asked for 2026-09-14: "Like there is a working station there should be a
+# consolidated learning box on the today surface."
+#
+# The Workstation answers three questions a morning asks about work. The Learning
+# station answers the three a morning asks about study, and they are NOT the same
+# three — so the columns are not a copy of the other box:
+#
+#   Continue      what am I in the middle of        (the three course slots)
+#   Recall        what should I see again           (spaced repetition)
+#   Not yet begun what did I say I would learn      (courses declared, never opened)
+#
+# The third one is the honest addition. Fourteen courses exist and nine of them
+# have never been opened; before this they were reachable only by going to the
+# Learning surface and scrolling past the ones in progress. A promise you cannot
+# see is a promise you will not keep, and the surface that says "here is your day"
+# is where it belongs.
+
+
+@router.get("/api/partial/today/learning-shelf", response_class=HTMLResponse)
+async def today_learning_shelf(request: Request):
+    """Courses declared and never begun.
+
+    `status='idea'` is the state a course is created in. It is not a failure —
+    it is a list of intentions, and the useful thing about it is its length and
+    how long each has been sitting there, not a progress bar that would read 0%
+    for every row and say nothing.
+    """
+    rows = db_query(
+        "SELECT slug, title, COALESCE(category,'') AS category, "
+        "       COALESCE(created_at,'') AS created_at, "
+        "       COALESCE(next_lesson,'') AS next_lesson "
+        "FROM learning_courses WHERE status = 'idea' "
+        "ORDER BY COALESCE(created_at,'') DESC", default=[]) or []
+    today = datetime.date.today()
+    for r in rows:
+        d = (r["created_at"] or "")[:10]
+        try:
+            r["age_days"] = (today - datetime.date.fromisoformat(d)).days
+        except Exception:
+            r["age_days"] = None
+    return templates.TemplateResponse(
+        request, "partials/today_learning_shelf.html",
+        {"courses": rows, "n": len(rows)})
+
+
+@router.post("/api/today/plan/lesson", response_class=JSONResponse)
+async def plan_lesson_today(slug: str = Form(...), title: str = Form(""),
+                            lesson: str = Form("")):
+    """Put one course's next lesson on today's plan.
+
+    Deliberately NOT `/api/today/plan/add`. That endpoint accepts 'task' and
+    'project' and coerces anything else to 'task' — so a learning drop would have
+    been written as a task with no task id, which inserts nothing and returns
+    success. A silent no-op is the failure this codebase keeps producing, so the
+    new kind gets its own route rather than a fourth branch in a function whose
+    fallback is wrong for it.
+
+    The row is `kind='learning'` with the course slug in brackets, matching what
+    /api/plan/learning/schedule writes — one text convention, so the calendar and
+    this cannot disagree about which rows belong to a course.
+    """
+    day = datetime.date.today().isoformat()
+    label = (title or slug.replace("-", " ").title()).strip()
+    text = (f"{label} — {lesson.strip()[:60]} [{slug}]" if lesson.strip()
+            else f"{label} [{slug}]")
+
+    prior = db_query(
+        "SELECT plan_id FROM day_plan WHERE date(start_date) = date(?) "
+        "AND kind = 'learning' AND text = ? LIMIT 1", (day, text), default=[]) or []
+    if prior:
+        return JSONResponse({"status": "ok", "already": True,
+                             "message": f"{label} is already on today."})
+    db_execute(
+        "INSERT INTO day_plan (start_date, end_date, kind, project_id, text, updated_at) "
+        "VALUES (?, NULL, 'learning', NULL, ?, datetime('now'))", (day, text))
+    return JSONResponse({"status": "ok", "already": False,
+                         "message": f"{label} planned for today."})

@@ -6854,6 +6854,13 @@ a.shf-row-title:hover { color: var(--m-accent); }
 .ui-zone--waiting  .ui-zone-bar { background: var(--m-ochre); }
 .ui-zone--thinking .ui-zone-bar { background: var(--m-plum); }
 .ui-zone--system   .ui-zone-bar { background: var(--m-muted); }
+/* A SIXTH KIND, but no sixth colour to learn: `--m-ok` is already defined
+   in all six palettes and used nowhere else as a zone bar. Green reads as
+   growth, which is what a learning box holds. Checked by brace-matching
+   every palette block, not by grepping for the token — a comment mentioning
+   a variable is not a definition of it, and that exact mistake once
+   reported two themes as having no tokens at all. */
+.ui-zone--learning .ui-zone-bar { background: var(--m-ok); }
 
 /* A zone that never folds still gets the heading, without the affordance. */
 .ui-zone-head--static {
@@ -7499,4 +7506,44 @@ a.shf-row-title:hover { color: var(--m-accent); }
 @media (max-width: 700px) {
   .pb-foot { flex-direction: column; }
   .pr-row { flex-wrap: wrap; }
+}
+
+/* ── Learning station ──────────────────────────────────────────────────────
+   Same three-column grid as the Workstation, because it is the same gesture on
+   a different subject — one layout, learned once.
+
+   The course slots are a horizontal strip of three on their own; inside a
+   third-width column they stack, which is what the column shape is for. This is
+   an override of `.tls-strip`, scoped to a column, rather than a change to the
+   strip itself: the same partial is still drawn full width on the Learning
+   surface, where three across is right. */
+.ws-col[data-ws-col="continue"] .tls-strip { grid-template-columns: 1fr; gap: 10px; }
+.ws-col[data-ws-col="continue"] #today-learning { margin-bottom: 0; }
+.ws-col[data-ws-col="continue"] .tls-slot--empty { min-height: 92px; }
+
+/* ── Not yet begun ─────────────────────────────────────────────────────────
+   Age, not progress. Every row here is at zero by definition, so a bar would be
+   the same picture repeated; how long it has been waiting is the part that
+   varies and the part worth acting on. */
+.lsh-head { margin: 0 0 var(--m-space-2); font-size: var(--t-small); color: var(--m-muted); }
+.lsh-empty { margin: 0; font-size: var(--t-small); color: var(--m-muted); line-height: 1.6; }
+.lsh-list { display: flex; flex-direction: column; gap: 1px; }
+.lsh-row {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 6px 8px; border-left: 2px solid var(--m-line);
+  color: inherit; text-decoration: none; border-radius: 0 3px 3px 0;
+}
+.lsh-row:hover { background: var(--m-ok-wash, var(--m-plum-wash)); border-left-color: var(--m-ok); }
+.lsh-t { font-size: 12.5px; line-height: 1.35; }
+.lsh-m { display: flex; align-items: center; gap: 7px; font-size: 10px; color: var(--m-muted); }
+.lsh-cat { text-transform: uppercase; letter-spacing: .07em; }
+.lsh-age {
+  margin-left: auto; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--m-line); border-radius: 9px; padding: 0 5px;
+}
+/* Six months is long enough that it is a fact about the intention, not a delay. */
+.lsh-age--old { border-color: var(--m-ochre); color: var(--m-ochre); }
+.lsh-first {
+  font-size: 10.5px; color: var(--m-muted); font-style: italic;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
