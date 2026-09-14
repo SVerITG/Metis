@@ -181,6 +181,15 @@ def _maybe_run_learning_loop() -> None:
             consolidate_reflexions,
             draft_self_improvement_proposal,
         )
+        # Same first step as the dashboard's evening job: turn what the session
+        # summaries recorded into standing decisions the specialists actually
+        # receive. A Claude-Desktop-only user never opens the dashboard, so
+        # without this the learning loop ran and the learning never landed.
+        try:
+            from metis_mcp.tools.decisions_ledger import promote_standing_decisions
+            promote_standing_decisions()
+        except Exception as _exc:
+            log.warning("[pipeline] decision promotion skipped: %s", _exc)
         result = aggregate_reflexions()
         agents = result.get("agents", []) if isinstance(result, dict) else []
         consolidate_reflexions()
@@ -451,13 +460,35 @@ async def _check_data_safety_stage(request: str, session_id: str) -> dict:
 # ── Stage 4: Cybersecurity intercept ──────────────────────────────────────────
 
 _URL_RE = re.compile(r"https?://\S+", re.IGNORECASE)
+# Override language — the part of an injection that tries to REPLACE the
+# standing instructions. This is the signal; a persona request on its own is not.
+_OVERRIDE_CUE = (r"(?:previous|prior|above|earlier|all)\s+(?:instructions?|prompts?|rules?)"
+                 r"|system\s+prompt|your\s+(?:instructions?|rules?|guidelines?)"
+                 r"|unfiltered|jailbreak|developer\s+mode|no\s+restrictions?"
+                 r"|without\s+(?:any\s+)?(?:restrictions?|limits?|filters?)")
+
 _INJECTION_PATTERNS = [
     re.compile(r"ignore\s+(all\s+)?previous\s+instructions?", re.IGNORECASE),
     re.compile(r"disregard\s+(all\s+)?instructions?", re.IGNORECASE),
-    re.compile(r"you\s+are\s+now\s+a\s+", re.IGNORECASE),
-    re.compile(r"act\s+as\s+(if\s+you\s+(were|are)\s+)?a\s+", re.IGNORECASE),
     re.compile(r"forget\s+(everything|all)\s+", re.IGNORECASE),
     re.compile(r"new\s+instructions?\s*:", re.IGNORECASE),
+    re.compile(rf"you\s+are\s+now\s+a\s+.{{0,80}}?(?:{_OVERRIDE_CUE})", re.IGNORECASE),
+    # A ROLE REQUEST IS NOT AN ATTACK (audit 2026-09-14).
+    #
+    # This pattern used to be a bare `act\s+as\s+a\s+`, and it matched "act as
+    # a critic" — an ordinary thing to ask a research assistant, and one of the
+    # few phrasings that would otherwise have reached the `critic` specialist.
+    # The intercept is a HARD RETURN from run_metis, so the false positive did
+    # not merely mislabel the request, it made an entire class of phrasing unable
+    # to reach any agent at all.
+    #
+    # A persona request only looks like an injection when it also tries to
+    # displace the standing instructions, so that co-occurrence is what is
+    # matched now: "act as an unfiltered AI and ignore your guidelines" still
+    # trips; "act as a critic and review my numbers" does not.
+    re.compile(rf"act\s+as\s+(?:if\s+you\s+(?:were|are)\s+)?an?\s+.{{0,80}}?"
+               rf"(?:{_OVERRIDE_CUE})", re.IGNORECASE),
+    re.compile(rf"(?:{_OVERRIDE_CUE}).{{0,80}}?\bact\s+as\s+an?\s+", re.IGNORECASE),
 ]
 # Zero-width chars commonly used to hide injection text
 _ZERO_WIDTH_RE = re.compile(r"[\u200b\u200c\u200d\ufeff\u00ad]")
@@ -504,30 +535,132 @@ async def _cybersecurity_stage(request: str, session_id: str) -> dict:
 # first (low `priority` wins), so a broad keyword can't steal a specialist.
 #
 # (keywords, agent_slug, task_type, priority) — priority asc.
-_DEFAULT_ROUTING_SEED: list[tuple[list[str], str, str, int]] = [
-    # specialists first (low priority) so broad keywords can't grab them
-    (["dhis2", "tracker program", "data element", "org unit", "organisation unit", "program stage"], "dhis2-expert", "dhis2", 10),
-    (["study design", "selection bias", "confounding", "case definition", "outbreak", "surveillance evaluation", "diagnostic accuracy"], "epidemiologist", "epi", 10),
-    (["power calculation", "monte carlo", "simulation study", "r package", "tolerance interval", "dose-response"], "biostatistician", "biostat", 12),
-    (["clean", "duplicates", "missing values", "csv", "excel", "spss", "stata", "dataset", "outlier"], "data-analyst", "data", 12),
-    (["build a course", "curriculum", "lesson plan", "learning objectives", "course outline", "module design"], "course-builder", "course", 12),
-    (["diagram", "ggplot", "plotly", "chart", "figure for", "visualise", "visualize", "system map"], "visualization-maker", "viz", 15),
-    (["harvest", "scrape", "extract from", "youtube", "github readme", "pdf content"], "content-harvester", "harvest", 15),
-    (["knowledge layer", "background corpus", "rag", "build corpus", "index domain"], "background-maker", "background", 15),
-    (["slide", "presentation", "powerpoint", "deck", "speaker notes"], "presentation-maker", "slides", 15),
-    (["cover letter", "job application", "fellowship", "interview prep", "career"], "career-coach", "career", 18),
-    (["learning path", "spaced repetition", "competency", "study plan", "what to study"], "learning-coach", "learning", 18),
-    # the original specialists, now with priorities (broad ones last)
-    (["thesis", "chapter", "article 1", "article 2", "article 3", "dissertation", "phd"], "phd-architect", "phd", 20),
-    (["meeting", "transcript", "attendee", "agenda"], "meeting-memory", "meeting", 25),
-    (["bug", "debug", "shiny", "r script", "python script", "stack trace", "refactor", "fastapi"], "software-engineer", "code", 25),
-    (["sample size", "regression", "prevalence", "statistic", "sampling", "icc", "multilevel"], "methods-coach", "methods", 30),
-    (["revise", "grammar", "paragraph", "abstract", "introduction", "manuscript", "prose"], "writing-partner", "writing", 30),
-    (["paper", "literature", "pubmed", "citation", "reference", "bibliography"], "librarian", "literature", 35),
-    (["news", "briefing", "world events", "what happened"], "news-radar", "news", 35),
-    (["patient data", "pii", "gdpr", "de-identif", "anonymis"], "data-guardian", "safety", 35),
-    (["css", "layout", "ux", "ui design", "design system", "responsive"], "ux-engineer", "ui", 40),
-    (["brainstorm", "connect ideas", "cross-pollinate", "explore connections"], "metis", "idea", 50),
+# ── Routing seeds ─────────────────────────────────────────────────────────────
+#
+# PRIORITY BELONGS TO THE KEYWORD, NOT THE AGENT  (audit 2026-09-14)
+#
+# Until now a priority was set per agent and every keyword in that agent's list
+# inherited it. That put generic English words at specialist precedence, and it
+# is the mechanism behind every mis-route the audit reproduced:
+#
+#   "clean"      sat at 12 — ahead of software-engineer (25), writing-partner (30)
+#                and librarian (35). Any request about cleaning ANYTHING went to
+#                the tabular-data agent: a paper to fetch, a slide background.
+#   "curriculum" sat at 12 for course-builder, 33 points ahead of the
+#                learning-architect whose own vocabulary it is.
+#   "layout"     sat at 40 for ux-engineer, ahead of the frontend-designer-builder
+#                that replaced it.
+#
+# So a keyword may now carry its own priority: write it as ("word", priority).
+# A bare string keeps the group's default. Two bands do the work:
+#
+#   5-20   DISTINCTIVE — the word means this specialist and essentially nothing
+#          else ("dhis2", "powerpoint", "satscan"). Safe to place first.
+#   45-70  GENERIC — a common English word that merely CO-OCCURS with the domain
+#          ("clean", "chart", "feed", "bug"). It must lose to any distinctive
+#          word elsewhere in the request, and it exists only so that a request
+#          containing nothing better still lands somewhere sensible.
+#
+# When editing: ask "would this word appear in a request that is NOT for this
+# agent?". If yes, it belongs in the generic band however central it feels.
+#
+# (keywords, agent_slug, task_type, default_priority)
+_DEFAULT_ROUTING_SEED: list[tuple[list, str, str, int]] = [
+    # ── domain specialists ───────────────────────────────────────────────────
+    (["dhis2", "tracker program", "data element", "org unit", "organisation unit",
+      "program stage"], "dhis2-expert", "dhis2", 10),
+
+    (["study design", "selection bias", "confounding", "case definition",
+      "surveillance evaluation", "diagnostic accuracy", "satscan", "spatial scan",
+      "case-control", "denominator", "loss to follow-up", "ltfu",
+      ("outbreak", 25), ("surveillance", 35), ("screening", 45)],
+     "epidemiologist", "epi", 10),
+
+    (["monte carlo", "simulation study", "r package", "tolerance interval",
+      "dose-response", "parametric bootstrap", "cran"],
+     "biostatistician", "biostat", 12),
+
+    # "clean"/"dataset"/"csv" are generic: a request mentioning them is usually
+    # ABOUT something else. The distinctive ones are the file formats.
+    (["spss", "stata", ("excel", 20), ("csv", 30), "data profiling", "record linkage",
+      ("duplicates", 45), ("missing values", 30), ("outlier", 45),
+      ("dataset", 55), ("clean", 65)],
+     "data-analyst", "data", 20),
+
+    (["build a course", "course outline", "module design", "lesson plan",
+      "learning objectives", "curriculum", "competency map", "backward design",
+      "instructional design", "bloom", "spaced repetition", "learning path",
+      "study plan", "what to study", "learning progression", "lesson",
+      ("competency", 45), ("course", 55)],
+     "course-builder", "course", 14),
+
+    (["ggplot", "plotly", "system map", "figure for", "visualise", "visualize",
+      ("diagram", 25), ("chart", 45), ("map ", 55)],
+     "visualization-maker", "viz", 12),
+
+    (["scrape", "youtube", "github readme", "pdf content", "harvest",
+      "extract the text", "pull the content", "full text", "full-text",
+      ("fetch", 40)],
+     "content-harvester", "harvest", 15),
+
+    (["knowledge layer", "background corpus", "build corpus", "index domain",
+      "background pack", "specialist knowledge", ("rag", 25)],
+     "background-maker", "background", 15),
+
+    (["powerpoint", "speaker notes", "slide deck", "master slide", "pptx",
+      ("presentation", 20), ("slide", 25), ("deck", 30)],
+     "presentation-maker", "slides", 10),
+
+    (["cover letter", "job application", "fellowship", "interview prep",
+      "job description", "vacancy", "postdoc", ("career", 25), ("my cv", 12)],
+     "career-coach", "career", 18),
+
+    # ── research / writing ───────────────────────────────────────────────────
+    (["thesis", "dissertation", "article 1", "article 2", "article 3",
+      ("chapter", 35), ("phd", 30), ("article", 55)],
+     "phd-architect", "phd", 20),
+
+    (["research programme", "research program", "article state",
+      "journal-readiness", "target journal", "draft status", "article tracker",
+      "planning.md", "tracked yet", ("tracked", 30)],
+     "research-architect", "research", 18),
+
+    (["meeting", "transcript", "attendee", "agenda", "minutes of",
+      "we agree", "did we agree", "agreed with"],
+     "meeting-memory", "meeting", 25),
+
+    (["fastapi", "stack trace", "shiny", "r script", "python script", "refactor",
+      "traceback", "unit test", "pytest", "gitignore", "untrack",
+      ("debug", 35), ("bug", 45), ("git", 55)],
+     "software-engineer", "code", 20),
+
+    (["multilevel", "icc", "random effects", "poisson", "bayesian",
+      "logistic regression", "survival analysis", "propensity score",
+      "overdispersion", "sample size", "power calculation",
+      ("regression", 35), ("sampling", 50), ("prevalence", 50), ("statistic", 55)],
+     "methods-coach", "methods", 22),
+
+    (["manuscript", "strobe", "consort", "prisma", "methods section",
+      "argument flow", "grant writing", ("prose", 35), ("paragraph", 40),
+      ("grammar", 35), ("abstract", 45), ("introduction", 50), ("revise", 50)],
+     "writing-partner", "writing", 25),
+
+    (["pubmed", "zotero", "systematic review", "annotated bibliography",
+      "bibliography", "citation", "cite", "citing", "cited", "references for",
+      ("literature", 30), ("paper", 45), ("reference", 50)],
+     "librarian", "literature", 28),
+
+    (["news alert", "outbreak news", "who announcement", "world events",
+      "what happened", "policy shift", "rss", "news pipeline", "breaking",
+      ("announcement", 40), ("briefing", 45), ("news", 45), ("feed", 65)],
+     "news-radar", "news", 30),
+
+    (["patient data", "pii", "gdpr", "de-identif", "anonymis", "identifiable",
+      "personal data"],
+     "data-guardian", "safety", 30),
+
+    (["brainstorm", "connect ideas", "cross-pollinate", "explore connections"],
+     "metis", "idea", 50),
 ]
 
 # How many specialists one request may put to work. Three is the point past
@@ -535,68 +668,253 @@ _DEFAULT_ROUTING_SEED: list[tuple[list[str], str, str, int]] = [
 # who does not know the agent roster.
 _MAX_ROUTED_AGENTS = 3
 
+# Keywords in the GENERIC band. When one of these is the ONLY thing that routed a
+# request, the embedding router is allowed to overrule it (stage 5). A word that
+# merely co-occurs with a domain is a weak signal and should lose to a strong one.
+_GENERIC_PRIORITY_FLOOR = 45
+
 _DEEP_KEYWORDS = ["review", "critique", "analyse", "analyze", "evaluate", "challenge", "assess"]
 _QUICK_KEYWORDS = ["find", "get", "what is", "list", "show", "check", "status", "how many"]
 _CHAIN_KEYWORDS = ["and also", "then review", "both", "multiple agents", "all three"]
 
 # Back-compat alias for older imports expecting (keywords, agent, task_type) triples.
-_ROUTING_TABLE = [(kws, agent, t) for kws, agent, t, _p in _DEFAULT_ROUTING_SEED]
+_ROUTING_TABLE = [([k if isinstance(k, str) else k[0] for k in kws], agent, t)
+                  for kws, agent, t, _p in _DEFAULT_ROUTING_SEED]
 
 
-# Agents the original seed could not reach by keyword at all. Found by
-# tools/audit_routing.py on 2026-08-25: the table named 21 agents, the registry
-# held 33, and the missing 23 were reachable only by the semantic backstop or by
-# being called by name. A non-technical user cannot call an agent by name, so for
-# them those specialists did not exist.
+# Agents the original seed could not reach by keyword at all.
 #
-# Priorities sit BELOW the domain specialists (which run 10-40) so a research
-# question still reaches the epidemiologist rather than a system agent.
-_COVERAGE_ROUTING_SEED: list[tuple[list[str], str, str, int]] = [
-    # very specific system audits — safe to place early, they cannot false-fire
-    (["audit features", "feature audit"], "metis-audit-features", "audit", 20),
-    (["audit install", "installation audit"], "metis-audit-install", "audit", 20),
-    (["audit memory", "memory audit"], "metis-audit-memory", "audit", 20),
-    (["audit security", "security audit"], "metis-audit-security", "audit", 20),
-    (["audit ui", "audit the interface"], "metis-audit-ui", "audit", 20),
-    (["audit vision", "vision audit"], "metis-audit-vision", "audit", 20),
-    (["audit workflow", "workflow audit"], "metis-audit-workflow", "audit", 20),
-    (["self-audit", "drift check", "quarterly review"], "metis-self-reflexion", "audit", 22),
+# PHRASES ARE WRITTEN THE WAY THE RESEARCHER TYPES, NOT THE WAY THE SYSTEM
+# THINKS (audit 2026-09-14). The previous seeds for these agents were mostly
+# DEMONSTRATIVES — "verify this", "challenge this", "do we need an agent" —
+# phrases that presuppose an attached object. Nobody types "verify this" as a
+# sentence; they type "verify whether the numbers in Article 4 hold up", which
+# the keyword cannot match. That, not a missing rule, is why `critic` had four
+# rules and zero lifetime matches.
+_COVERAGE_ROUTING_SEED: list[tuple[list, str, str, int]] = [
     # build / extend
-    (["extend metis", "modify metis", "new mcp tool", "dashboard phase", "new agent"], "rc-builder", "rc", 42),
-    (["build an app", "new tool", "mcp server", "scaffold"], "builder", "build", 45),
-    (["dashboard tab", "htmx", "kpi panel", "blank panel", "dashboard bug"], "dashboard-engineer", "dashboard", 42),
-    (["component design", "frontend", "front end"], "frontend-designer-builder", "ui", 45),
-    (["design audit", "ui critique", "design review"], "design-auditor", "ui", 42),
-    # quality / safety
-    (["double-check", "second opinion", "challenge this", "verify this"], "critic", "verify", 45),
-    (["prompt injection", "malicious", "is this link safe", "phishing"], "cybersecurity", "security", 40),
+    (["extend metis", "modify metis", "new mcp tool", "dashboard phase", "new agent",
+      "add a skill", "routing rule"], "rc-builder", "rc", 30),
+    (["build an app", "mcp server", "scaffold", "new tool", "greenfield"],
+     "builder", "build", 40),
+    # ONE front-end agent. frontend-designer-builder/system-prompt.md states it
+    # replaces the former dashboard-engineer and ux-engineer; those two kept
+    # their rules anyway and outranked it (ux-engineer 40 vs 45), so the
+    # successor lost requests to the agents it superseded. Their keywords move
+    # here and the two are retired from routing by _RETIRED_ROUTING_SLUGS.
+    (["frontend", "front end", "component design", "design system", "css",
+      "responsive", "ui design", "htmx", "kpi panel", "blank panel",
+      "dashboard tab", "dashboard bug", "jinja", "partial", ("layout", 50),
+      ("ux", 45)],
+     "frontend-designer-builder", "ui", 32),
+    (["design audit", "ui critique", "design review", "audit the interface",
+      "accessibility", "contrast ratio", "wcag"],
+     "design-auditor", "ui", 30),
+    # quality / safety — phrased as a researcher asks for a second pair of eyes
+    (["double-check", "second opinion", "sanity check", "poke holes",
+      "does this hold up", "is this supported", "internally consistent",
+      "unsupported claim", "fact-check", "critique", "critic",
+      ("challenge", 50), ("verify", 50)],
+     "critic", "verify", 30),
+    (["prompt injection", "malicious", "is this link safe", "phishing",
+      "exfiltrat", "suspicious url", "security audit"],
+     "cybersecurity", "security", 25),
     # knowledge / memory
-    (["what did we decide", "consolidate session", "past context", "previous session"], "memory-curator", "memory", 45),
-    (["rss", "feed", "news pipeline"], "news-aggregator", "news", 45),
-    # learning
-    (["competency map", "backward design", "curriculum design"], "learning-architect", "learning", 45),
-    (["lesson plan", "instructional design", "learning objectives"], "edu-expert", "education", 45),
+    (["what did we decide", "consolidate session", "past context",
+      "previous session", "what do we know about", "have we worked on",
+      "memory health", "close the session", "session notes",
+      ("consolidate", 40)],
+     "memory-curator", "memory", 30),
+    # people / capability
+    (["capability gap", "missing specialist", "do we need an agent",
+      "job description for", "hire", "recruit", "team assessment"],
+     "hr-talent", "hr", 35),
     # research + release
-    (["research programme", "research program", "article state", "journal-readiness"], "research-architect", "research", 42),
-    (["release", "publish", "version bump", "changelog"], "release-coordinator", "release", 45),
-    (["capability gap", "missing specialist", "do we need an agent"], "hr-talent", "hr", 45),
-    (["refresh metis", "run scans", "update knowledge base"], "metis-update", "update", 48),
+    (["release", "publish", "version bump", "changelog", "push to", "sync repo",
+      "pre-publish", "commit scan", "rollback", ("commit", 45)],
+     "release-coordinator", "release", 35),
 ]
 
 # Claude Code's own built-in agents. The researcher asked for these to be
 # routable alongside the Metis specialists (2026-08-25). They are marked
 # source='claude' so the audit can tell them apart from Metis's own roster, and
 # they sit last: a built-in generalist should never outrank a domain specialist.
-_CLAUDE_AGENT_SEED: list[tuple[list[str], str, str, int]] = [
+_CLAUDE_AGENT_SEED: list[tuple[list, str, str, int]] = [
     (["find where", "search the codebase", "where is", "locate the"], "Explore", "explore", 55),
-    (["implementation plan", "plan the implementation", "how should i build", "architecture for"], "Plan", "plan", 55),
+    (["implementation plan", "plan the implementation", "how should i build",
+      "architecture for"], "Plan", "plan", 55),
 ]
+
+# Slugs routing must never return again, and why. Rules for these are DELETED on
+# migration (see _migrate_routing_table) rather than left to lose quietly.
+#
+#   metis-audit-*          — 7 slugs, 14 rules, pointing at nothing. No agent
+#                            folder, no .claude/agents file, no skill, no file of
+#                            any kind anywhere in the repo.
+#   metis-self-reflexion   — a SKILL, not an agent. Routing returned it as an
+#   metis-update             agent, so dispatching the routing decision could
+#                            only fail. Still reachable as /metis-self-reflexion.
+#   ux-engineer            — superseded by frontend-designer-builder, and has no
+#   dashboard-engineer       .claude/agents file at all in ux-engineer's case, so
+#                            the Agent tool could not run what routing chose.
+#   edu-expert             — merged into course-builder; also has no
+#   learning-architect       .claude/agents file (edu-expert).
+#   news-aggregator        — merged into news-radar; a pipeline, not a viewpoint.
+#   learning-coach         — merged into course-builder for ROUTING only; still
+#                            invoked directly by the learning surface.
+#
+# The agents/ folders and .claude/skills entries are deliberately LEFT IN PLACE:
+# this retires them from automatic routing, which is reversible, rather than
+# deleting work, which is not.
+_RETIRED_ROUTING_SLUGS = frozenset({
+    "metis-audit-features", "metis-audit-install", "metis-audit-memory",
+    "metis-audit-security", "metis-audit-ui", "metis-audit-vision",
+    "metis-audit-workflow", "metis-self-reflexion", "metis-update",
+    "ux-engineer", "dashboard-engineer", "edu-expert", "learning-architect",
+    "news-aggregator", "learning-coach",
+})
+
+# Bumped whenever the seeds above change in a way existing installs must adopt.
+# The table is seeded ONCE (on an empty table), so without this a priority fix
+# shipped in code would never reach a machine whose DB was already seeded — and
+# the DB does not sync between the researcher's two computers.
+_ROUTING_SEED_VERSION = 4
+
+
+def _iter_seed(seed) -> list[tuple[str, str, str, int]]:
+    """Flatten a seed table to (keyword, agent, task_type, priority).
+
+    A keyword is either a bare string (inherits the group's default priority) or
+    a ("word", priority) pair. Priority belongs to the WORD — see the seed header.
+    """
+    out: list[tuple[str, str, str, int]] = []
+    for kws, agent, t, default_prio in seed:
+        for kw in kws:
+            if isinstance(kw, (tuple, list)):
+                out.append((str(kw[0]).lower(), agent, t, int(kw[1])))
+            else:
+                out.append((str(kw).lower(), agent, t, int(default_prio)))
+    return out
+
+
+def _migrate_routing_table(con) -> None:
+    """Bring an already-seeded install up to the current seed version.
+
+    The table is seeded only when EMPTY, so before this existed a priority fix
+    shipped in code reached a fresh install and no one else. That mattered more
+    than it sounds: the routing DB is machine-local and does not sync, so the
+    researcher's two computers would have diverged permanently.
+
+    Three things happen, in this order, and each is idempotent:
+      1. Rules for retired slugs are DELETED (they point at agents that no longer
+         exist, or at skills that were never dispatchable as agents).
+      2. Seed-sourced rules are re-priced and re-pointed to match the code.
+      3. New seed keywords are inserted.
+
+    `source='user'` rules are never touched. A preference the researcher taught
+    Metis outranks anything shipped, which is the whole point of the table being
+    data rather than code.
+    """
+    row = con.execute(
+        "SELECT value FROM metis_meta WHERE key = 'routing_seed_version'"
+    ).fetchone()
+    current = int(row[0]) if row and str(row[0]).isdigit() else 0
+    if current >= _ROUTING_SEED_VERSION:
+        return
+
+    if _RETIRED_ROUTING_SLUGS:
+        placeholders = ",".join("?" * len(_RETIRED_ROUTING_SLUGS))
+        con.execute(
+            f"DELETE FROM agent_routing_rules WHERE agent_slug IN ({placeholders}) "
+            "AND source <> 'user'",
+            tuple(_RETIRED_ROUTING_SLUGS),
+        )
+
+    for seed, src in ((_DEFAULT_ROUTING_SEED, "seed"),
+                      (_COVERAGE_ROUTING_SEED, "seed"),
+                      (_CLAUDE_AGENT_SEED, "claude")):
+        for kw, agent, t, prio in _iter_seed(seed):
+            # A keyword may have moved to a different agent (ux-engineer's
+            # "layout" now belongs to frontend-designer-builder), so re-point as
+            # well as re-price. UNIQUE is (keyword, agent_slug), so the old row
+            # is removed rather than updated in place.
+            con.execute(
+                "DELETE FROM agent_routing_rules WHERE keyword = ? "
+                "AND agent_slug <> ? AND source <> 'user'", (kw, agent))
+            con.execute(
+                "INSERT INTO agent_routing_rules "
+                "(keyword, agent_slug, task_type, priority, match_mode, source) "
+                "VALUES (?, ?, ?, ?, 'word', ?) "
+                "ON CONFLICT(keyword, agent_slug) DO UPDATE SET "
+                "priority = excluded.priority, task_type = excluded.task_type "
+                "WHERE agent_routing_rules.source <> 'user'",
+                (kw, agent, t, prio, src),
+            )
+
+    con.execute(
+        "INSERT INTO metis_meta (key, value) VALUES ('routing_seed_version', ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (str(_ROUTING_SEED_VERSION),),
+    )
+    log.info("[pipeline] routing table migrated to seed version %s",
+             _ROUTING_SEED_VERSION)
+    _audit_routing_targets(con)
+
+
+def _audit_routing_targets(con) -> None:
+    """Warn about routing rules that name something the Agent tool cannot run.
+
+    This check is worth more than the cleanup that prompted it. Three rosters
+    had drifted apart and nothing compared them:
+
+        system/config/agent-registry.json   35   what the embedding router sees
+        .claude/agents/*.md                 33   what the Agent tool can dispatch
+        agent_routing_rules                 46   what routing could return
+
+    So routing could name `ux-engineer` (no subagent file), or one of seven
+    `metis-audit-*` slugs that existed in no file anywhere. A routing decision
+    that cannot be dispatched fails at the point of use, far from its cause.
+
+    Warnings only, never fatal: an install may legitimately lack a folder, and a
+    routing table that refuses to load is worse than one with a stale row.
+    """
+    try:
+        registry: set[str] = set()
+        reg_fp = paths.root / "system" / "config" / "agent-registry.json"
+        if reg_fp.exists():
+            data = json.loads(reg_fp.read_text(encoding="utf-8"))
+            entries = data.get("agents", data) if isinstance(data, dict) else data
+            registry = {str(a.get("slug", "")) for a in entries if isinstance(a, dict)}
+
+        dispatchable = {fp.stem for fp in (paths.root / ".claude" / "agents").glob("*.md")}
+        # An agent folder is the Claude Desktop path (prompts.py builds one MCP
+        # prompt per agents/<slug>/system-prompt.md), so an agent reachable there
+        # but not in .claude/agents is Desktop-only rather than broken.
+        desktop = {d.name for d in paths.agents.iterdir() if d.is_dir()} \
+            if paths.agents.is_dir() else set()
+
+        rows = con.execute(
+            "SELECT DISTINCT agent_slug, source FROM agent_routing_rules"
+        ).fetchall()
+        for slug, source in rows:
+            if source == "claude":
+                continue  # Claude Code built-ins have no Metis-side file by design
+            if slug not in registry and slug not in desktop:
+                log.warning("[routing] rule points at '%s', which exists in no "
+                            "registry, agent folder or subagent file", slug)
+            elif slug not in dispatchable and slug not in desktop:
+                log.warning("[routing] '%s' is routable but has no .claude/agents "
+                            "file — the Agent tool cannot dispatch it", slug)
+    except Exception as exc:  # noqa: BLE001 — a check must never break routing
+        log.debug("[routing] target audit skipped: %s", exc)
 
 
 def _ensure_routing_table() -> None:
-    """Create + seed the routing table on first run. Ships empty of user data;
-    seeds are default config. User-learned rules accumulate and persist across
-    CODE updates (they live in the data layer, never the shipped code)."""
+    """Create + seed the routing table on first run, then migrate it on upgrade.
+
+    Ships empty of user data; seeds are default config. User-learned rules
+    accumulate and persist across CODE updates (they live in the data layer,
+    never the shipped code)."""
     with connect(paths.db) as con:
         con.execute(
             "CREATE TABLE IF NOT EXISTS agent_routing_rules ("
@@ -612,6 +930,10 @@ def _ensure_routing_table() -> None:
             " created_at TEXT DEFAULT (datetime('now')),"
             " UNIQUE(keyword, agent_slug))"
         )
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS metis_meta ("
+            " key TEXT PRIMARY KEY, value TEXT)"
+        )
         # `matches` counts every time a rule's keyword was PRESENT, whether or
         # not it changed the routing. `hits` counts only when it put an agent on
         # the job. The pair is what separates a shadowed rule (matches > 0,
@@ -622,30 +944,30 @@ def _ensure_routing_table() -> None:
             con.execute("ALTER TABLE agent_routing_rules ADD COLUMN matches INTEGER DEFAULT 0")
 
         if con.execute("SELECT COUNT(*) FROM agent_routing_rules").fetchone()[0] == 0:
-            for kws, agent, t, prio in _DEFAULT_ROUTING_SEED:
-                for kw in kws:
-                    con.execute(
-                        "INSERT OR IGNORE INTO agent_routing_rules "
-                        "(keyword, agent_slug, task_type, priority, match_mode, source) "
-                        "VALUES (?, ?, ?, ?, 'word', 'seed')",
-                        (kw.lower(), agent, t, prio),
-                    )
+            for kw, agent, t, prio in _iter_seed(_DEFAULT_ROUTING_SEED):
+                con.execute(
+                    "INSERT OR IGNORE INTO agent_routing_rules "
+                    "(keyword, agent_slug, task_type, priority, match_mode, source) "
+                    "VALUES (?, ?, ?, ?, 'word', 'seed')",
+                    (kw, agent, t, prio),
+                )
 
         # Coverage top-up, for installs seeded before these agents were routable.
         # Only agents with NO rule at all are topped up, so a rule the user
         # deliberately deleted is never resurrected.
         covered = {r[0] for r in con.execute("SELECT DISTINCT agent_slug FROM agent_routing_rules")}
         for seed, src in ((_COVERAGE_ROUTING_SEED, "seed"), (_CLAUDE_AGENT_SEED, "claude")):
-            for kws, agent, t, prio in seed:
-                if agent in covered:
+            for kw, agent, t, prio in _iter_seed(seed):
+                if agent in covered or agent in _RETIRED_ROUTING_SLUGS:
                     continue
-                for kw in kws:
-                    con.execute(
-                        "INSERT OR IGNORE INTO agent_routing_rules "
-                        "(keyword, agent_slug, task_type, priority, match_mode, source) "
-                        "VALUES (?, ?, ?, ?, 'word', ?)",
-                        (kw.lower(), agent, t, prio, src),
-                    )
+                con.execute(
+                    "INSERT OR IGNORE INTO agent_routing_rules "
+                    "(keyword, agent_slug, task_type, priority, match_mode, source) "
+                    "VALUES (?, ?, ?, ?, 'word', ?)",
+                    (kw, agent, t, prio, src),
+                )
+
+        _migrate_routing_table(con)
         con.commit()
 
 
@@ -655,15 +977,23 @@ def _load_routing_rules() -> list[tuple]:
     try:
         _ensure_routing_table()
         with connect(paths.db) as con:
-            return con.execute(
-                "SELECT keyword, agent_slug, task_type, match_mode, rule_id, source "
+            rows = con.execute(
+                "SELECT keyword, agent_slug, task_type, match_mode, rule_id, source, priority "
                 "FROM agent_routing_rules WHERE scope = 'always' "
                 "ORDER BY priority ASC, (source='user') DESC, length(keyword) DESC"
             ).fetchall()
+            # Belt and braces: a retired slug must never route even if this
+            # machine has not run the migration yet (Claude Desktop can start
+            # the server before the dashboard ever opens).
+            return [r for r in rows if r[1] not in _RETIRED_ROUTING_SLUGS]
     except Exception:
         # DB unavailable → fall back to the in-code seed so routing never dies.
-        return [(kw.lower(), agent, t, "word", -1, "seed")
-                for kws, agent, t, _p in _DEFAULT_ROUTING_SEED for kw in kws]
+        # Sorted by priority so the fallback ranks the same way the table does;
+        # an unsorted fallback silently routed by declaration order instead.
+        rows = [(kw, agent, t, "word", -1, "seed", prio)
+                for kw, agent, t, prio in _iter_seed(_DEFAULT_ROUTING_SEED)]
+        rows.sort(key=lambda r: (r[6], -len(r[0])))
+        return rows
 
 
 def _kw_match(keyword: str, text: str, mode: str) -> bool:
@@ -704,22 +1034,44 @@ def _load_agent_route_vecs():
     return vecs
 
 
-def _semantic_route(request: str, min_top: float = 0.56, margin: float = 0.05):
-    """Embedding backstop for uncovered turns: the specialist whose description best
-    matches the request. Returns (slug|None, score). Best-effort — never raises.
+def _semantic_route(request: str, min_top: float = 0.62, rel_margin: float = 0.25):
+    """Embedding route: the specialist whose description best matches the request.
 
-    These embeddings are anisotropic (random text sits ~0.5 cosine), so an absolute
-    threshold is meaningless — gibberish passes. Require BOTH a minimum top score AND
-    a clear MARGIN over the 2nd-best, so an ambiguous or nonsense request falls to the
-    generalist instead of a confident WRONG specialist. Verified: real requests
-    (data-analyst 0.71/m0.20, dhis2 0.72/m0.11) route; a mis-ranked case-control
-    (m0.01) and gibberish (m0.03) correctly fall through to metis."""
+    Returns (slug|None, score, ranking). Best-effort — never raises.
+
+    WHY THE GATE IS RELATIVE TO THE SPREAD (audit 2026-09-14)
+        These embeddings are anisotropic — random text sits ~0.5 cosine — so an
+        absolute score threshold is meaningless on its own and the original code
+        rightly added a margin test. But it made the margin an absolute constant
+        (0.05), and agent DESCRIPTIONS are short, same-register text that clusters
+        tightly: real inter-agent margins run 0.005-0.04. Measured over seven real
+        requests, the constant blocked the CORRECT rank-1 agent three times
+        (background-maker 0.005, rc-builder 0.030, learning-architect 0.025) and
+        admitted exactly one request — which it then routed wrongly.
+
+        A fixed cutoff in the tail of a distribution selects by luck. Same lesson
+        as the field-week relevance floor. So the margin is now judged against the
+        spread this particular request actually produced: rank-1 must stand clear
+        of the pack by a fraction of (top - mean), not by a constant nobody can
+        calibrate from outside.
+
+    HOW THESE TWO NUMBERS WERE CHOSEN
+        By sweeping both against the 29 labelled cases in
+        tools/test_routing_regression.py, not by judgement. The sweep also
+        settled a more important question: over this agent set the embedding
+        router puts the right specialist at rank 1 only 13 times in 29, so it is
+        NOT a good standalone router and must not be tuned as though it were.
+        (0.62, 0.25) is the high-precision corner — 5 right, 1 wrong, 23
+        abstentions. Abstaining is cheap: it falls to the generalist, who answers
+        competently. A confidently wrong specialist is not cheap. Re-run the
+        sweep before changing either number.
+    """
     try:
         import math
         from metis_mcp.embeddings import embed_query
         cands = _load_agent_route_vecs()
-        if len(cands) < 2:
-            return None, 0.0
+        if len(cands) < 3:
+            return None, 0.0, []
         q = embed_query(request)
 
         def _cos(a, b):
@@ -729,13 +1081,18 @@ def _semantic_route(request: str, min_top: float = 0.56, margin: float = 0.05):
             return dot / (na * nb) if na and nb else 0.0
 
         scored = sorted(((_cos(q, v), slug) for slug, v in cands), reverse=True)
+        scored = [(sc, sl) for sc, sl in scored if sl not in _RETIRED_ROUTING_SLUGS]
+        if len(scored) < 3:
+            return None, 0.0, scored
         top_score, top_slug = scored[0]
         second_score = scored[1][0]
-        if top_score >= min_top and (top_score - second_score) >= margin:
-            return top_slug, top_score
-        return None, top_score
+        mean_score = sum(sc for sc, _ in scored) / len(scored)
+        spread = top_score - mean_score
+        if top_score >= min_top and (top_score - second_score) >= rel_margin * spread:
+            return top_slug, top_score, scored
+        return None, top_score, scored
     except Exception:
-        return None, 0.0
+        return None, 0.0, []
 
 
 # Slugs whose plain de-hyphenation reads badly in a sentence. Everything else
@@ -795,10 +1152,22 @@ def _who_is_on_it(routed_because: list) -> str:
 
 
 def _parse_intent_stage(request: str, session_id: str) -> dict:
-    """Stage 5: select agent(s) + complexity from the DB routing rules (seeded +
-    user-learned), word-boundary matched, most-specific first. No match → the
-    generalist 'metis', flagged as an explicit `uncovered` decision so the
-    un-routed rate is measurable rather than a silent default."""
+    """Stage 5: select agent(s) + complexity.
+
+    TWO ROUTERS, ONE DECISION (audit 2026-09-14)
+        Keyword rules and the embedding router were two disjoint lanes: the
+        embedding router ran ONLY when no keyword matched, so it could never
+        break a tie it would have won. Every mis-route the audit reproduced was
+        decided by a keyword before the better judge was consulted.
+
+        Now the embedding route always runs, and it is allowed to overrule the
+        keyword winner in exactly one situation: when the ONLY rules that fired
+        are in the GENERIC band (priority >= _GENERIC_PRIORITY_FLOOR) — words
+        like "clean", "chart" or "feed" that merely co-occur with a domain. A
+        distinctive keyword ("dhis2", "powerpoint") still wins outright, because
+        it is a stronger signal than any similarity score and because the
+        researcher can read, edit and trust it.
+    """
     lower = request.lower()
     agents: list[str] = []
     task_type = "general"
@@ -806,13 +1175,16 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
     contributing_rule_ids: list[int] = []
     routed_because: list[tuple[str, str]] = []
     all_matching_rule_ids: list[int] = []
+    best_priority = 999  # the strongest (lowest) priority that actually routed
 
     # Collect up to MAX_AGENTS specialists rather than breaking on the first.
     # A real request often needs two perspectives ("review my methods AND the
     # grammar"), and the single-agent break made that impossible to express —
     # the second specialist was silently dropped. Order is preserved, so the
     # most-specific rule still leads.
-    for kw, agent, t_type, mode, rule_id, _src in _load_routing_rules():
+    for row in _load_routing_rules():
+        kw, agent, t_type, mode, rule_id, _src = row[0], row[1], row[2], row[3], row[4], row[5]
+        prio = row[6] if len(row) > 6 and row[6] is not None else 100
         if not _kw_match(kw, lower, mode or "word"):
             continue
 
@@ -829,6 +1201,7 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
             continue
         agents.append(agent)
         routed_because.append((agent, f"you said \u201c{kw}\u201d"))
+        best_priority = min(best_priority, int(prio))
         if not contributing_rule_ids:
             task_type = t_type          # the leading rule names the task type
             matched_rule_id = rule_id   # back-compat: the primary rule
@@ -836,21 +1209,31 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
             contributing_rule_ids.append(rule_id)
 
     uncovered = not agents
+
+    # The embedding route ALWAYS runs now — it is the tie-breaker as well as the
+    # backstop. Cheap after the first call: the agent vectors are cached for the
+    # life of the process and only the request is embedded.
+    sem_slug, sem_score, _sem_rank = _semantic_route(request)
+
     if uncovered:
-        # Semantic fallback (Keystone P3.7): keyword rules reach only ~21/35 agents.
-        # For an un-routed request, pick the specialist whose description best matches
-        # by embedding similarity before defaulting to the generalist. Keyword-first
-        # stays the fast, deterministic, user-owned path; this is only the backstop.
-        sem_slug, _sem_score = _semantic_route(request)
         if sem_slug:
             agents = [sem_slug]
             routed_because = [(sem_slug, "the closest match to what you asked")]
-            task_type = "semantic"  # not a keyword match → still measurable as fallback-routed
+            task_type = "semantic"  # not a keyword match → measurable as fallback-routed
             uncovered = False       # a specialist WAS found (via the semantic backstop)
         else:
             agents = ["metis"]
             routed_because = [("metis", "")]
             task_type = "uncovered"  # explicit: nothing matched → generalist
+    elif (sem_slug and sem_slug not in agents
+          and best_priority >= _GENERIC_PRIORITY_FLOOR):
+        # Only a generic word routed this. Let the meaning of the sentence lead
+        # and keep the keyword match as a second opinion rather than dropping it.
+        agents.insert(0, sem_slug)
+        routed_because.insert(0, (sem_slug, "what you're actually asking about"))
+        agents = agents[:_MAX_ROUTED_AGENTS]
+        routed_because = routed_because[:_MAX_ROUTED_AGENTS]
+        task_type = "semantic+keyword"
 
     if all_matching_rule_ids:
         try:
@@ -869,6 +1252,18 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
                 con.commit()
         except Exception:
             pass
+
+    # Both stages' outputs are recorded so the calibration above can be
+    # re-MEASURED later rather than re-argued. Never fatal.
+    try:
+        _write_event_sync(
+            session_id, "routing",
+            json.dumps({"agents": agents, "task_type": task_type,
+                        "keyword_priority": best_priority if best_priority < 999 else None,
+                        "semantic": sem_slug, "semantic_score": round(sem_score, 3)}),
+        )
+    except Exception:
+        pass
 
     word_count = len(lower.split())
     if any(kw in lower for kw in _CHAIN_KEYWORDS):

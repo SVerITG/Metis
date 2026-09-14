@@ -68,6 +68,32 @@ follow, and they are the reason routing is now worth its cost:
    wants things done. Before this they returned a persona and nothing else, which
    is exactly why routing kept not happening.
 
+### Retired from automatic routing (2026-09-14)
+
+Six slugs no longer appear in routing results, after the source-grounded audit
+found they were either undispatchable or competing with the agent that replaced
+them. **Their folders and skills are untouched** — this retires them from
+automatic routing, which is reversible, rather than deleting work.
+
+| Slug | Why | Reach it by |
+|---|---|---|
+| `dashboard-engineer`, `ux-engineer` | `frontend-designer-builder/system-prompt.md` states it replaces both; they outranked it (priority 40 vs 45) and won its requests. `ux-engineer` has no `.claude/agents` file at all | keywords now route to `frontend-designer-builder` |
+| `edu-expert` | no `system-prompt.md` and no `.claude/agents` file — nothing to dispatch | `/edu-expert` skill |
+| `learning-architect` | one vocabulary shared with `course-builder`, which does the work (14 runs vs 2) | `/learning-architect` skill |
+| `news-aggregator` | a pipeline, not a viewpoint; no request distinguishes it from `news-radar` | `/news-aggregator` skill |
+| `learning-coach` | still invoked directly by the Learning surface; it was never reached by routing | `/learning-coach` |
+| `metis-self-reflexion`, `metis-update` | **skills, not agents** — routing returned them as agents, so dispatch could only fail | `/metis-self-reflexion`, `/metis-update` |
+| `metis-audit-*` (7 slugs) | existed in **no file anywhere** — 14 rules pointing at nothing | deleted |
+
+Routing changes live in `agent_routing_rules`, which is machine-local and does
+NOT sync between computers. A seed-version migration applies them on first
+server start, so the second computer picks them up on its own — see
+`_migrate_routing_table` in `pipeline.py`.
+
+**Before changing routing, run `python3 tools/test_routing_regression.py`.** It
+holds 29 labelled requests from the audit; the table was previously tuned by
+argument, and this is what makes a change measurable instead of arguable.
+
 ### When to route
 
 Route when a task falls squarely in one specialist's remit AND involves reading or
@@ -244,7 +270,7 @@ When a request arrives, route as follows:
 
 | Input type | Primary agent | Secondary |
 |---|---|---|
-| Build or plan a learning course | Course Builder | Learning Architect |
+| Build or plan a learning course | Course Builder | — |
 | Paper, article, source | Librarian | PhD Architect |
 | Meeting note, audio, transcript | Meeting Memory | Metis |
 | R script, code, bug, FastAPI | Software Engineer | Frontend Designer Builder |
@@ -255,13 +281,14 @@ When a request arrives, route as follows:
 | Modify/extend Metis system | RC Builder | Software Engineer |
 | Slide deck, figure | Presentation Maker | Frontend Designer Builder |
 | Idea, brainstorm | Metis (capture → route) | — |
-| RSS/feed automation, news curation | News Aggregator | News Radar |
+| RSS/feed automation, news curation | News Radar | — |
 | UI/UX build, design system, CSS | Frontend Designer Builder | Software Engineer |
+| Dashboard route, HTMX partial, KPI panel | Frontend Designer Builder | Software Engineer |
 | Existing UI audit, design critique | Design Auditor | Frontend Designer Builder |
 | Diagrams, charts, visualizations | Visualization Maker | Frontend Designer Builder |
 | Content extraction, web scraping | Content Harvester | Librarian |
 | Knowledge layer / RAG corpus | Background Maker | Content Harvester + Librarian |
-| Learning paths, curriculum | Learning Architect | Methods Coach |
+| Learning paths, curriculum | Course Builder | Methods Coach |
 | Study design, epi methods | Epidemiologist | Methods Coach |
 | R package, simulation, power | Biostatistician | Methods Coach / Software Engineer |
 | CSV, Excel, dataset, cleaning | Data Analyst | Data Guardian |

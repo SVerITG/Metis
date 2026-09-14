@@ -51,17 +51,181 @@ _STATES = ("open", "agreed", "rejected", "deferred", "dropped")
 # makes the ledger exactly the thing the review is meant to replace: a wall you
 # cannot act on. So the filter runs at promotion, not as a one-off cleanup.
 _NEXT_STEP = re.compile(r"_next:|^\s*\d+\.\d+\s", re.I)
+
+# A decision NARRATED: someone reports the act of having chosen.
 _DECISION_SHAPED = re.compile(
     r"\b(decided|decision|chose|chosen|instead of|rather than|agreed|will use|"
     r"opted|settled on|going with|switch(?:ed)? to|keep|drop(?:ped)?|stays?|"
-    r"not to|no longer|deliberately|on purpose)\b", re.I)
+    r"not to|no longer|deliberately|on purpose|replaces?|superseded?)\b", re.I)
+
+# A decision STATED AS A RULE — and this is the form that was invisible.
+#
+# WHY THIS BRANCH EXISTS (audit 2026-09-14)
+#     `_DECISION_SHAPED` requires a past-tense verb of deciding. But a standing
+#     preference — the kind that is actually useful to inject into a specialist —
+#     is almost always written as a rule in the imperative or present:
+#
+#         "Always put the takeaway in the slide title, never a topic label"
+#         "Master slides use the teal band B variant for all RCA training decks"
+#
+#     Both were rejected. The filter was not selecting decisions, it was
+#     selecting a WRITING STYLE, and it happened to select the style used for
+#     engineering narration — which is why `user_decisions` filled with
+#     architecture notes and held nothing about how the researcher wants his
+#     work done. This is the single mechanism behind "Metis never learns my
+#     preferences".
+_NORMATIVE = re.compile(
+    r"\b(always|never|by default|default(?:s)? to|prefer(?:s|red)?|"
+    r"stick to|house style|convention|rule:|must (?:be|use|stay|go)|"
+    r"should (?:always|never)|only ever|not the|, not\b)\b", re.I)
+
+# A convention stated as a plain declarative, with no rule word and no verb of
+# deciding: "Master slides use the teal band B variant FOR ALL RCA training
+# decks". What makes it a standing rule rather than a report is the scope
+# phrase, so that is what this matches — a state verb followed, close by, by a
+# universal. Kept tight on purpose: the task gate runs first, so this only ever
+# sees statements, but a loose version here would re-flood the ledger with
+# narration and the standing-decisions block is injected into every agent.
+_CONVENTION = re.compile(
+    r"\b(?:uses?|stays?|remains?|goes?|lives?|sits?)\b[^.]{0,60}?"
+    r"\b(?:for all|across all|throughout|everywhere|as standard|in every)\b", re.I)
+
+# An imperative TASK — work to do, not a choice already made.
+#
+# The `decisions` column has been used as a dumping ground for project
+# next-steps: "HAT Dashboard — _next: Review reactive architecture" had been
+# restated 551 times. Loosening the filter above would let every one of those
+# back in, so the task shape is now rejected explicitly rather than relied on
+# to fail the decision test by accident. French included — the RCA/FOCAL
+# sessions are written in it.
+_TASK_SHAPED = re.compile(
+    r"^\s*(?:to\s+)?(?:complete|finish|fill|obtain|validate|review|rewrite|"
+    r"update|add|fix|write|send|check|provide|draft|prepare|create|build|"
+    r"implement|investigate|follow up|revoir|valider|compl[ée]ter|obtenir|"
+    r"fournir|r[ée]diger|v[ée]rifier|mettre)\b", re.I)
 
 
 def _is_decision(s: str) -> bool:
-    """A decision states a CHOICE. A task states work. Only the first belongs here."""
+    """A decision states a CHOICE — made, or standing. A task states work.
+
+    Three gates, in this order: an imperative task is out however it is phrased,
+    a next-step marker is out, and what remains qualifies if it either narrates
+    a choice or states a rule.
+    """
+    if _TASK_SHAPED.search(s or ""):
+        return False
     if _NEXT_STEP.search(s):
         return False
-    return bool(_DECISION_SHAPED.search(s))
+    return bool(_DECISION_SHAPED.search(s) or _NORMATIVE.search(s)
+                or _CONVENTION.search(s))
+
+
+# ── Attribution: which specialist should CARRY a promoted decision ───────────
+#
+# Moved here from tools/mine_decisions.py (2026-09-14) so there is ONE author.
+# The miner was a manual CLI, so the promotion step ran only when someone
+# remembered to type the command — which, in practice, was almost never. The
+# logic now lives in the package, the CLI calls it, and so do the dashboard's
+# evening job and the MCP server's opportunistic learning loop. A researcher who
+# only ever opens Claude Desktop gets the same learning as one who opens the
+# dashboard every day.
+#
+# Attribution is keyword-based and deliberately CONSERVATIVE. A decision is only
+# useful if it reaches the specialist that acts on it, and a wrong attribution is
+# worse than none: it hides the rule from the agent that needed it AND clutters
+# one that does not. Anything that cannot be placed confidently becomes
+# project-wide, where every agent sees it.
+_ATTRIBUTION_ROUTE = [
+    (r"slide|deck\b|powerpoint|pptx|speaker note|master slide|title slide|"
+     r"presentation|bandeau|template de", "presentation-maker", "design"),
+    (r"figure|chart|ggplot|plotly|diagram|axis|legend|colour scale|color scale|"
+     r"visualis|visualiz", "visualization-maker", "design"),
+    (r"palette|css|colour|color|layout|macro|navbar|surface|tab\b|ui\b|"
+     r"dashboard look|typograph|token|contrast|accessib|wcag",
+     "frontend-designer-builder", "design"),
+    (r"\bDB\b|database|sqlite|wal\b|onedrive|flock|lock|port |supervisor|"
+     r"install|venv|schema|migration|hook|crash|restart", "software-engineer", "architecture"),
+    (r"raster|cost-distance|vector|kriging|spatial|multilevel|model\b|"
+     r"estimat|sample size|power|statistic", "methods-coach", "method"),
+    (r"corpus|library|zotero|literature|paper|citation|doi|index", "librarian", "library"),
+    (r"study design|case definition|surveillance|bias|epidemi|screening|"
+     r"case-finding|denominator", "epidemiologist", "method"),
+    (r"village|dataset|clean|column|one-row|record linkage|merge", "data-analyst", "method"),
+    (r"repo|push|remote|base shell|release|changelog|version", "release-coordinator", "process"),
+    (r"meeting|minutes|attendee|agenda|action item", "meeting-memory", "process"),
+    (r"thesis|dissertation|article \d|chapter|backbone", "phd-architect", "process"),
+    (r"news|feed|rss|brief|signal|outbreak alert", "news-radar", "process"),
+    (r"prompt|persona|voice|tone|marker|reply|writing|prose", "writing-partner", "writing"),
+    (r"\bMCP\b|tool|agent|routing|subset|token", "rc-builder", "architecture"),
+    (r"course|lesson|quiz|curriculum|teach|flashcard|spaced repetition",
+     "course-builder", "process"),
+]
+
+
+def attribute(text: str) -> tuple[str, str]:
+    """(agent_slug, category) for a decision. Empty slug = project-wide."""
+    low = (text or "").lower()
+    for pat, slug, cat in _ATTRIBUTION_ROUTE:
+        if re.search(pat, low, re.I):
+            return slug, cat
+    return "", "process"
+
+
+def promote_standing_decisions(dry_run: bool = False) -> dict:
+    """Promote decision-shaped statements out of session summaries into
+    `user_decisions`, attributed to the specialist that should apply them.
+
+    Idempotent: a statement already stored (by normalised fingerprint, and by its
+    first eight meaningful tokens, which catches re-statements that differ only
+    in trailing words) is skipped, so re-running is a no-op rather than a
+    duplicator.
+
+    Returns counts for the caller to log.
+    """
+    from metis_mcp.tools.agent_memory import _ensure as _ensure_user_decisions
+    with connect(paths.db) as con:
+        _ensure_user_decisions(con)   # one author for the table shape
+        raw: list[str] = []
+        for (d,) in con.execute(
+                "SELECT decisions FROM session_summaries "
+                "WHERE COALESCE(decisions,'') NOT IN ('','[]')"):
+            raw += _iter_decisions(d)
+        raw = [str(x).strip() for x in raw if str(x).strip()]
+
+        existing = {_fingerprint(r[0]) for r in
+                    con.execute("SELECT decision FROM user_decisions")}
+
+        picked: dict[str, str] = {}
+        for stmt in dict.fromkeys(raw):
+            if len(stmt) < 8 or not _is_decision(stmt):
+                continue
+            fp = _fingerprint(stmt)
+            if fp in existing or fp in picked:
+                continue
+            short = " ".join(fp.split()[:8])
+            if any(" ".join(_fingerprint(v).split()[:8]) == short for v in picked.values()):
+                continue
+            picked[fp] = stmt
+
+        by_agent: dict[str, int] = {}
+        for stmt in picked.values():
+            slug, cat = attribute(stmt)
+            by_agent[slug or "(project-wide)"] = by_agent.get(slug or "(project-wide)", 0) + 1
+            if not dry_run:
+                con.execute(
+                    "INSERT INTO user_decisions (category, decision, context, scope, "
+                    "source, hits, created_at, agent_slug) "
+                    "VALUES (?,?,?,'always','mined',0,datetime('now'),?)",
+                    (cat, stmt[:900],
+                     "Promoted from a session summary by promote_standing_decisions()",
+                     slug))
+        if not dry_run:
+            con.commit()
+        total = con.execute("SELECT COUNT(*) FROM user_decisions").fetchone()[0]
+
+    return {"raw": len(raw), "unique": len(dict.fromkeys(raw)),
+            "promoted": len(picked), "written": 0 if dry_run else len(picked),
+            "by_agent": by_agent, "total_rows": total, "dry_run": dry_run}
 
 
 def _fingerprint(s: str) -> str:

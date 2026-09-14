@@ -17,8 +17,17 @@ _PHONE_RE = re.compile(r"\+?\d{1,3}[\s.-]?\(?\d{1,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3
 # International numbers written in small (e.g. 2-digit) groups — Belgian/French style
 # "+32 478 12 34 56", "+243 81 234 5678". A privacy guard errs toward flagging.
 _INTL_PHONE_RE = re.compile(r"\+\d{1,3}(?:[\s.\-/]?\d){7,}")
+# Patient / case identifier.
+#
+# The value was required to be `\d+`, so the identifier format actually used in
+# the field — an alphanumeric like "HAT-2024-00871" — could not match, and a line
+# naming a real patient record classified PUBLIC (audit 2026-09-14). The value is
+# now any identifier-shaped token, and a bare programme-style code is caught even
+# without its label, because that is how it is usually pasted.
 _PATIENT_ID_RE = re.compile(
-    r"\b(?:patient_?id|case_?id|patient\s*#)\s*[:=]?\s*\d+", re.IGNORECASE
+    r"\b(?:patient|case|dossier|record)[\s_]?(?:id|no|n°|#|number|num)?\s*[:=#]?\s*"
+    r"[A-Z]{0,6}[-/]?\d{2,}(?:[-/][A-Z0-9]{2,})*"
+    r"|\b[A-Z]{2,6}-\d{4}-\d{3,}\b", re.IGNORECASE
 )
 # ── GPS coordinates ──────────────────────────────────────────────────────────
 # In HAT/NTD surveillance a coordinate pair IS an identifier: it locates a
@@ -59,8 +68,12 @@ _GPS_RE = re.compile(
 )
 _BELGIAN_NID_RE = re.compile(r"\b\d{2}\.\d{2}\.\d{2}-\d{3}\.\d{2}\b")
 # Date of birth (explicit label + date value)
+# Date of birth. The cue had to sit IMMEDIATELY before the date, so the ordinary
+# French phrasing — "né LE 12/03/1987", one intervening word — sailed through
+# (audit 2026-09-14). Up to three short words may now intervene.
 _DOB_RE = re.compile(
-    r"\b(?:dob|date[\s_]?of[\s_]?birth|born|n[eé][e]?|naissance)\s*[:=]?\s*\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}",
+    r"\b(?:dob|date[\s_]?of[\s_]?birth|born|n[eé][e]?|naissance|naît)\b"
+    r"(?:\s+\w{1,4}){0,3}\s*[:=]?\s*\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}",
     re.IGNORECASE,
 )
 # Passport number (letter prefix + digits)
@@ -75,6 +88,37 @@ _MRN_RE = re.compile(
 )
 # 16-digit national ID number (several national ID cards use a 16-digit format)
 _NID16_RE = re.compile(r"\b\d{16}\b")
+# ── Credentials / secrets ────────────────────────────────────────────────────
+# `scan_content` had NO credential patterns, so an AWS secret key pasted into a
+# request classified PUBLIC (audit 2026-09-14). The hook layer hard-denies
+# READING a credential store; this catches a secret that arrives as TEXT, which
+# is a different path and was unguarded.
+_CREDENTIAL_RE = re.compile(
+    r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b"                       # AWS access key id
+    r"|\baws_secret_access_key\s*[:=]\s*\S{20,}"
+    r"|\bgh[pousr]_[A-Za-z0-9]{20,}\b"                      # GitHub token
+    r"|\bsk-(?:ant-|proj-)?[A-Za-z0-9_\-]{20,}\b"          # OpenAI / Anthropic
+    r"|\b(?:api[_\-]?key|secret|passwd|password|token)\s*[:=]\s*[^\s\"']{8,}"
+    r"|-----BEGIN (?:RSA |OPENSSH |EC |DSA )?PRIVATE KEY-----",
+    re.IGNORECASE,
+)
+
+# A person NAMED alongside a clinical or demographic fact, with no field label.
+#
+# Every identity rule except GPS was label-anchored — it needed "nom:" or "DOB="
+# with a separator — which makes this a CSV detector and not a prose detector.
+# A realistic line list written as a sentence ("Kabongo Mwamba, 34 ans, CATT+")
+# classified PUBLIC. This matches the shape that actually carries the risk: a
+# capitalised personal name sitting next to an age, a test result or a stage.
+_NAME_CONTEXT_RE = re.compile(
+    r"\b[A-Z][a-zà-ÿ]{2,}(?:[\s\-][A-Z][a-zà-ÿ]{2,})+\b"
+    r"[^.\n]{0,40}?"
+    r"(?:\b\d{1,3}\s*(?:ans|years?|yrs?|y/o)\b"
+    r"|\bCATT\b|\bmAECT\b|\bs[ée]ropositi|\bstage\s*[12]\b"
+    r"|\b(?:positi|n[ée]gati)(?:f|ve|ef)\b"
+    r"|\bponction\s+lombaire\b|\blumbar\s+puncture\b)",
+)
+
 # Name fields with associated identifier-type values
 _NAME_ID_RE = re.compile(
     r"\b(?:nom|prenom|prénom|surname|firstname|first[\s_]name|last[\s_]name)\s*[:=]\s*[A-Za-zÀ-ÿ]{2,}",
@@ -153,6 +197,12 @@ def _classify(warnings: list[str], file_path: str) -> str:
     # diagnostic results, plus any field-specific identifiers from local overrides.
     if any(kw in warning_text for kw in [
         "patient", "case_id", "gps coordinate", "diagnostic", "test_result",
+        # A person named next to a clinical fact is individually identifying —
+        # it is the same data as a line-list row, written as a sentence.
+        "named individual",
+        # A secret in the request text is not "personal data", but it is the one
+        # other thing that must never be forwarded anywhere.
+        "credential",
     ]) or any(lbl in warning_text for lbl in _EXTRA_SENSITIVE_LABELS):
         return "SENSITIVE"
 
@@ -197,6 +247,8 @@ _PII_CHECKS: list[tuple[re.Pattern, str]] = [
     (_MRN_RE, "Medical record number"),
     (_NID16_RE, "16-digit national ID number"),
     (_NAME_ID_RE, "Name field"),
+    (_NAME_CONTEXT_RE, "Named individual with clinical/demographic detail"),
+    (_CREDENTIAL_RE, "Credential or secret"),
 ]
 # Append any field-specific patterns kept in the local (gitignored) override file.
 _PII_CHECKS.extend(_EXTRA_CHECKS)

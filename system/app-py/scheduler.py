@@ -1092,6 +1092,18 @@ def job_evening_reflexion() -> None:
         # aggregate_reflexions() is SYNCHRONOUS and returns a dict — it must NOT be
         # wrapped in asyncio.run() (that raises "a coroutine was expected").
         from metis_mcp.tools.improvement import aggregate_reflexions, consolidate_reflexions
+        # Promote standing decisions FIRST, so anything learned today is in
+        # `user_decisions` before the reflexion loop reads the day's state.
+        # This step used to exist only as a CLI nobody ran — which is why
+        # 24 of 35 agents had never accumulated a single standing decision.
+        try:
+            from metis_mcp.tools.decisions_ledger import promote_standing_decisions
+            _prom = promote_standing_decisions()
+            if _prom.get("written"):
+                log.info("[scheduler] promoted %s standing decision(s): %s",
+                         _prom["written"], _prom["by_agent"])
+        except Exception as _exc:
+            log.warning("[scheduler] decision promotion skipped: %s", _exc)
         result = aggregate_reflexions()
         agents = result.get("agents", []) if isinstance(result, dict) else []
         total = (result.get("totals", {}) or {}).get("reflexions", 0) if isinstance(result, dict) else 0
