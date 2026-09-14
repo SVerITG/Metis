@@ -1,0 +1,50 @@
+{#- presentation_templates.html — master slides as named styles.
+
+    The masters that exist are already good and already invisible, buried folders
+    deep inside one project each. Naming them is what makes them reusable: a
+    style you can point at is an instruction, a style you have to remember the
+    path to is a hope.
+
+    A style with no file behind it says PROPOSED and is not offered as available
+    — describing a template that was never made is how someone ends up looking
+    for it. The count beside each says how many decks already follow it, which is
+    what separates a convention from an aspiration.
+
+    Context: styles (style_id · name · description · master_path · state · n_decks) -#}
+<div class="ps-grid">
+  {% for s in styles %}
+  <article class="ps{% if s.state != 'on-disk' %} ps--proposed{% endif %}">
+    <div class="ps-prev" aria-hidden="true">
+      <span class="ps-bar"></span>
+      <span class="ps-ttl"></span>
+      <span class="ps-sub"></span>
+      <span class="ps-ft"></span>
+    </div>
+    <div class="ps-b">
+      <h4 class="ps-n">{{ s.name }}</h4>
+      <form class="ps-desc" hx-post="/api/presentation/style"
+            hx-target="#pres-tpl" hx-swap="innerHTML">
+        <input type="hidden" name="style_id" value="{{ s.style_id }}">
+        <textarea name="description" rows="2"
+                  placeholder="What this style is for, and who it is for.">{{ s.description }}</textarea>
+        <button class="ps-save" type="submit" title="Save the description">save</button>
+      </form>
+      <div class="ps-f">
+        {% if s.state == 'on-disk' %}
+        <span class="ps-state ps-state--on">master on disk</span>
+        {% else %}
+        <span class="ps-state">proposed — no master yet</span>
+        {% endif %}
+        {% if s.n_decks %}<span class="ps-count">{{ s.n_decks }} decks follow it</span>{% endif %}
+      </div>
+      {% if s.master_path %}
+      <code class="ps-path" title="{{ s.master_path }}">{{ s.master_path[-44:] }}</code>
+      {% endif %}
+    </div>
+  </article>
+  {% endfor %}
+</div>
+<p class="pr-note">
+  A style is a reference to a master file, not a copy of it. Editing the master
+  changes what every future deck inherits; nothing already delivered is touched.
+</p>

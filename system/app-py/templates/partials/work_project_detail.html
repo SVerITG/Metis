@@ -400,16 +400,31 @@
   };
   window.pdStartTaskRename = function(span, taskId, pid) {
     var inp = document.createElement('input');
-    inp.value = span.textContent.trim();
+    var was = span.textContent.trim();
+    inp.value = was;
     inp.style.cssText = 'flex:1;font-family:var(--m-display);font-size:13px;border:none;border-bottom:1px solid var(--m-accent);background:transparent;color:var(--m-ink);';
     span.replaceWith(inp); inp.focus(); inp.select();
     function save() {
       var title = inp.value.trim();
-      if (title) fetch('/api/task/'+taskId+'/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title})});
+      // The response is CHECKED. This used to fire and forget, so a rename the
+      // server rejected still showed the new title on screen — the interface
+      // reporting a success it had no evidence for, which is the one kind of
+      // wrong a user cannot see.
+      var shown = title || was;
+      if (title && title !== was) {
+        fetch('/api/task/'+taskId+'/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:title})})
+          .then(function(r){ if (!r.ok) throw new Error('rejected'); })
+          .catch(function(){
+            var el = document.getElementById('pd-task-title-'+taskId);
+            if (el) el.textContent = was;
+            if (typeof showToast === 'function') showToast('That rename was not saved.');
+          });
+      }
       var ns = document.createElement('span');
       ns.className = 'pd-task-title';
+      ns.id = 'pd-task-title-' + taskId;
       ns.style.cssText = 'flex:1;font-family:var(--m-display);font-size:13px;color:var(--m-ink);line-height:1.35;cursor:pointer;';
-      ns.title = 'Click to rename'; ns.textContent = title || inp.value;
+      ns.title = 'Click to rename'; ns.textContent = shown;
       ns.onclick = function(){ pdStartTaskRename(ns, taskId, pid); };
       inp.replaceWith(ns);
     }

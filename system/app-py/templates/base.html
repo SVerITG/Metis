@@ -281,16 +281,20 @@
         <span class="n-tip">Learning</span>
       </div>
 
-      <!-- 08 Teach -->
-      <div class="nav-item {% if active_tab == 'teach' %}active{% endif %}"
-           data-tab="teach"
-           hx-get="/api/tab/teach"
+      <!-- 08 Presentation -->
+      {#- Was "Teach", which built courses from scratch — a job that already has
+          a home on Learning, and one that knew nothing about the presentations
+          already on disk. The old routes are still served; only the way in
+          changed. -#}
+      <div class="nav-item {% if active_tab == 'presentation' %}active{% endif %}"
+           data-tab="presentation"
+           hx-get="/api/tab/presentation"
            hx-target="#tab-content"
            hx-swap="outerHTML"
            hx-select="#tab-content"
            hx-disinherit="*"
-           hx-push-url="/teach"
-           onclick="setNavActive(this,'teach')"
+           hx-push-url="/presentation"
+           onclick="setNavActive(this,'presentation')"
            role="button" tabindex="0"
            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
         <svg class="n-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
@@ -298,8 +302,8 @@
           <line x1="5" y1="10" x2="6" y2="11"/>
           <line x1="11" y1="4" x2="12" y2="5"/>
         </svg>
-        <span class="n-label">Teach</span>
-        <span class="n-tip">Teach</span>
+        <span class="n-label">Present</span>
+        <span class="n-tip">Presentation</span>
       </div>
 
       <!-- 09 Library -->
@@ -643,7 +647,7 @@ Run my full Metis update. Using the metis-rc tools: scan the latest news and any
   const NAV_LABELS = {
     today: 'Today', knowledge: 'Library', news: 'News', thinking: 'Reflection',
     planner: 'Planner', work: 'Work', meetings: 'Meetings',
-    learning: 'Learning', teach: 'Teach', metis: 'Metis'
+    learning: 'Learning', presentation: 'Presentation', teach: 'Teach', metis: 'Metis'
   };
 
   function setNavActive(el, tabId) {

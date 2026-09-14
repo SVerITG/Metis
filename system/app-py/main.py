@@ -28,6 +28,7 @@ from routers import (
     calendar_plan,
     setup,
     speakers,
+    presentation,
     teach,
     thinking,
     focus,
@@ -608,6 +609,7 @@ app.include_router(thinking.router)
 app.include_router(planner.router)
 app.include_router(calendar_plan.router)
 app.include_router(teach.router)
+app.include_router(presentation.router)
 app.include_router(metis_tab.router)
 app.include_router(memory_health.router)
 app.include_router(capture.router, prefix="/api")
@@ -673,6 +675,7 @@ _TAB_TEMPLATES = {
     "thinking": "thinking.html",
     "planner": "planner.html",
     "teach": "teach.html",
+    "presentation": "presentation.html",
     "metis": "metis_tab.html",
 }
 

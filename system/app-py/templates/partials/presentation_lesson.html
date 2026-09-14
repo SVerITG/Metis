@@ -1,0 +1,65 @@
+{#- presentation_lesson.html — one lesson, every delivery, side by side.
+
+    The comparison IS the feature. Next time you teach somewhere new the question
+    is never "where is the deck", it is "which of these is closest to this room,
+    and what did I change last time I moved between those two".
+
+    Four fields on each delivery are editable, and they are exactly the four no
+    file can tell you: who wrote it, how the language was pitched, who was in the
+    room, and what was different about this one. The scanner names the columns it
+    owns, so re-indexing cannot erase them.
+
+    Context: key · title · deliveries · registers -#}
+<section class="pl">
+  <div class="pl-head">
+    <h3 class="pl-t">{{ title }}</h3>
+    <span class="pl-n">{{ deliveries | length }} deliver{{ 'y' if (deliveries|length) == 1 else 'ies' }}</span>
+    <button type="button" class="pl-x" title="Close"
+            onclick="this.closest('#pres-lesson').innerHTML='';">×</button>
+  </div>
+
+  <div class="pl-grid">
+    {% for d in deliveries %}
+    <form class="pl-col" hx-post="/api/presentation/deck"
+          hx-target="#pres-lesson" hx-swap="innerHTML">
+      <input type="hidden" name="deck_id" value="{{ d.deck_id }}">
+      <input type="hidden" name="key" value="{{ key }}">
+
+      <header class="pl-col-h">
+        <span class="pl-when">
+          {% if loop.first %}earliest{% elif loop.last %}newest{% else %}then{% endif %}
+        </span>
+        <span class="pl-where">{{ d.collection or '—' }}</span>
+        <span class="pl-date">{{ d.modified_at[:10] if d.modified_at else '' }}</span>
+      </header>
+
+      <dl class="pl-facts">
+        <div><dt>Slides</dt><dd>{{ d.slide_count if d.slide_count else 'unknown' }}</dd></div>
+        <div><dt>Style</dt><dd>{{ d.style or '—' }}</dd></div>
+        {% if d.event %}<div><dt>Event</dt><dd>{{ d.event }}</dd></div>{% endif %}
+      </dl>
+
+      <label class="pl-f"><span>Author</span>
+        <input type="text" name="author" value="{{ d.author }}" placeholder="you"></label>
+      <label class="pl-f"><span>Register</span>
+        <select name="register">
+          <option value=""{% if not d.register %} selected{% endif %}>—</option>
+          {% for r in registers %}
+          <option value="{{ r }}"{% if d.register == r %} selected{% endif %}>{{ r }}</option>
+          {% endfor %}
+        </select></label>
+      <label class="pl-f"><span>Audience</span>
+        <input type="text" name="audience" value="{{ d.audience }}"
+               placeholder="who was in the room"></label>
+      <label class="pl-f pl-f--wide"><span>What changed</span>
+        <textarea name="changed_note" rows="2"
+                  placeholder="what was different about this one">{{ d.changed_note }}</textarea></label>
+
+      <div class="pl-col-f">
+        <code class="pl-path" title="{{ d.rel_path }}">{{ d.rel_path[-46:] }}</code>
+        <button class="btn btn--sec btn--sm" type="submit">Save</button>
+      </div>
+    </form>
+    {% endfor %}
+  </div>
+</section>

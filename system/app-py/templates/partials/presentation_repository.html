@@ -1,0 +1,103 @@
+{#- presentation_repository.html — everything delivered.
+
+    THE LINEAGE LIST COMES FIRST, above the collections and above the file list,
+    because it is the only thing here the folders cannot show you. A lesson that
+    appears in two collections was re-pitched for a different room, and the
+    difference between the two is the asset. A file listing is available in the
+    file manager; this is not.
+
+    Context: collections · decks · lineage · q · collection · ov -#}
+
+{% if lineage %}
+<section class="pr-lin">
+  <h3 class="pr-h">
+    Delivered more than once
+    <span class="pr-n">{{ lineage | length }}</span>
+  </h3>
+  <p class="pr-note">
+    Each of these has been given in more than one collection. Open one to see the
+    deliveries side by side — and to record what you changed, which is the part
+    no file remembers.
+  </p>
+  <div class="pr-lin-grid">
+    {% for l in lineage %}
+    <button type="button" class="pr-lesson"
+            hx-get="/api/partial/presentation/lesson?key={{ l.lesson_key | urlencode }}"
+            hx-target="#pres-lesson" hx-swap="innerHTML">
+      <span class="pr-lesson-t">{{ l.title }}</span>
+      <span class="pr-lesson-m">
+        <span class="pr-badge">{{ l.n_col }} collections</span>
+        <span>{{ l.n }} deck{{ '' if l.n == 1 else 's' }}</span>
+        <span class="pr-lesson-d">{{ l.latest[:10] if l.latest else '' }}</span>
+      </span>
+      <span class="pr-lesson-c">{{ (l.cols or '').replace(',', ' · ') }}</span>
+    </button>
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<p class="pr-note">
+  No lesson yet appears in more than one collection. That is either true of the
+  library or a sign the names differ too much to match — the lineage join works
+  on the deck name with its numbering and its date removed.
+</p>
+{% endif %}
+
+{#- The opened lesson lands here, below the list it was chosen from. -#}
+<div id="pres-lesson"></div>
+
+{#- ── Collections ───────────────────────────────────────────────────────── -#}
+<section class="pr-cols">
+  <h3 class="pr-h">Collections <span class="pr-n">{{ collections | length }}</span></h3>
+  <div class="pr-chips">
+    <a class="pr-chip{% if not collection %} is-on{% endif %}"
+       hx-get="/api/partial/presentation/repository{% if q %}?q={{ q | urlencode }}{% endif %}"
+       hx-target="#pres-repo" hx-swap="innerHTML" href="#">
+      all <span>{{ ov.live }}</span></a>
+    {% for c in collections %}
+    <a class="pr-chip{% if collection == c.name %} is-on{% endif %}"
+       hx-get="/api/partial/presentation/repository?collection={{ c.name | urlencode }}{% if q %}&q={{ q | urlencode }}{% endif %}"
+       hx-target="#pres-repo" hx-swap="innerHTML" href="#">
+      {{ c.name }} <span>{{ c.n }}</span></a>
+    {% endfor %}
+  </div>
+</section>
+
+{#- ── The decks themselves ───────────────────────────────────────────────── -#}
+<section class="pr-list">
+  <form class="pr-search" hx-get="/api/partial/presentation/repository"
+        hx-target="#pres-repo" hx-swap="innerHTML" hx-trigger="submit, keyup changed delay:400ms from:input">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search titles and paths…">
+    {% if collection %}<input type="hidden" name="collection" value="{{ collection }}">{% endif %}
+  </form>
+
+  {% if not decks %}
+  <p class="pr-note">Nothing matches.</p>
+  {% else %}
+  <div class="panel" style="padding:var(--m-space-1) 0;">
+    {% for d in decks %}
+    <div class="pr-row">
+      <span class="pr-slides" title="{{ d.slide_count }} slides">
+        {{ d.slide_count if d.slide_count else '—' }}
+      </span>
+      <span class="pr-row-b">
+        <span class="pr-row-t">{{ d.title }}</span>
+        <span class="pr-row-m">
+          {% if d.collection %}<span>{{ d.collection }}</span>{% endif %}
+          {% if d.event %}<span class="pr-ev">{{ d.event }}</span>{% endif %}
+          {% if d.style %}<span class="pr-style">{{ d.style }}</span>{% endif %}
+          {% if d.register %}<span class="pr-reg">{{ d.register }}</span>{% endif %}
+        </span>
+      </span>
+      <span class="pr-row-d">{{ d.modified_at[:10] if d.modified_at else '' }}</span>
+      {% if d.lesson_key %}
+      <button type="button" class="btn btn--ghost btn--sm"
+              hx-get="/api/partial/presentation/lesson?key={{ d.lesson_key | urlencode }}"
+              hx-target="#pres-lesson" hx-swap="innerHTML">history</button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <p class="pr-note">Showing the {{ decks | length }} most recently changed.</p>
+  {% endif %}
+</section>

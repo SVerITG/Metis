@@ -59,14 +59,23 @@ def find_root() -> Path:
 ROOT = find_root()
 
 # ── constants ────────────────────────────────────────────────────────────────
-_db_candidate1 = ROOT / "system" / "app" / "data" / "metis.sqlite"
-_db_candidate2 = ROOT / "system" / "app-py" / "data" / "metis.sqlite"
-_db_candidate3 = ROOT / "metis.sqlite"
-DB_PATH      = (
-    _db_candidate1 if _db_candidate1.exists() else
-    _db_candidate2 if _db_candidate2.exists() else
-    _db_candidate3
-)
+# THE LIVE DATABASE IS NOT IN THE REPOSITORY, and this list used to look only
+# inside it — so the first two candidates were the path retired in June 2026
+# (kept in a synced folder, where the WAL sidecars get eaten) and the suite
+# reported a perfectly healthy database as missing on every run since. A health
+# check that cannot find the thing it is checking reports the same failure
+# whether or not anything is wrong, which makes it worse than absent.
+#
+# Resolved the way the application resolves it, most authoritative first.
+_db_candidates = [
+    Path(os.environ["METIS_DB"]) if os.environ.get("METIS_DB") else None,
+    Path.home() / ".local" / "share" / "metis" / "metis.sqlite",
+    ROOT / "system" / "app" / "data" / "metis.sqlite",      # legacy, retired
+    ROOT / "system" / "app-py" / "data" / "metis.sqlite",   # legacy
+    ROOT / "metis.sqlite",
+]
+DB_PATH = next((p for p in _db_candidates if p and p.exists()),
+               Path.home() / ".local" / "share" / "metis" / "metis.sqlite")
 AGENTS_DIR   = ROOT / "agents"
 SKILLS_DIR   = ROOT / ".claude" / "skills"
 HOOKS_DIR    = ROOT / ".claude" / "hooks"
@@ -95,7 +104,8 @@ REQUIRED_TABLES = [
     "agent_spans", "learning_courses",
 ]
 
-TABS = ["today", "work", "thinking", "meetings", "learning", "planner", "teach", "knowledge", "metis"]
+TABS = ["today", "work", "thinking", "meetings", "learning", "planner",
+        "presentation", "teach", "knowledge", "metis"]
 
 REQUIRED_SKILLS = [
     "metis", "metis-capture", "meeting-memory", "librarian",
@@ -423,8 +433,41 @@ def run_dashboard():
                  f"HTTP {code}.",
                  f"Check router for tab '{tab}' in system/app-py/routers/.", "High")
 
-    # D11-D19 — partial tab routes + double-navbar detection (BUG B01)
-    sidebar_indicators = ["nav-item", "id=\"sidebar\"", "class=\"sidebar\"", "<nav"]
+    # D11-D19 — partial tab routes, and the guard that stops a double navbar
+    #
+    # THIS CHECK USED TO ASSERT THE WRONG ARCHITECTURE, and failed on every tab
+    # for it — nine critical failures on every run, none of them real, which is
+    # how a suite stops being read. It required /api/tab/<x> to return a
+    # navbar-free fragment. The dashboard does not work that way: the route
+    # returns the whole page and each nav item carries hx-select="#tab-content",
+    # so htmx keeps that element and discards everything around it. A full page
+    # in the RESPONSE is expected; it never reaches the DOM.
+    #
+    # So the check now asserts what actually prevents the bug — that the page has
+    # exactly one #tab-content to select, and that every nav item fetching a tab
+    # carries the hx-select. Removing an hx-select is the regression that would
+    # genuinely double the navbar, and that is what fails here now.
+    base_html = ""
+    try:
+        base_html = (ROOT / "system" / "app-py" / "templates" / "base.html").read_text(
+            encoding="utf-8")
+    except Exception:
+        pass
+    import re as _re
+    _navs = _re.findall(r'<div class="nav-item[^>]*(?:\n[^>]*)*?>', base_html)
+    _unguarded = [n for n in _navs
+                  if 'hx-get="/api/tab/' in n and 'hx-select="#tab-content"' not in n]
+    if base_html and _unguarded:
+        fail("D-navselect", "Every tab link selects only the content fragment",
+             "Dashboard",
+             f"{len(_unguarded)} nav item(s) fetch a tab without "
+             f'hx-select="#tab-content" — those WILL render a second navbar.',
+             "Add hx-select=\"#tab-content\" to each nav item that loads a tab.",
+             "Critical")
+    elif base_html:
+        ok("D-navselect", "Every tab link selects only the content fragment",
+           "Dashboard",
+           f"All {len(_navs)} nav items carry hx-select — the outer page is discarded.")
     for tab in TABS:
         route = f"/api/tab/{tab}"
         code, body = http_get(route)
@@ -437,47 +480,53 @@ def run_dashboard():
                  f"Ensure /api/tab/{tab} route exists and returns 200.", "High")
             continue
 
-        # Check for double-navbar: partial should NOT contain sidebar HTML
-        sidebar_count = sum(body.count(ind) for ind in sidebar_indicators)
-        if sidebar_count > 2:
-            fail(f"D-{tab}-partial", f"HTMX partial GET {route} — no double navbar",
+        # Exactly one #tab-content, because hx-select takes the FIRST match: two
+        # would make which half of the page you get depend on document order.
+        n_target = body.count('id="tab-content"')
+        if n_target != 1:
+            fail(f"D-{tab}-partial", f"HTMX partial GET {route} — one swap target",
                  "Dashboard",
-                 f"⚠ BUG B01: Response contains sidebar/nav HTML ({sidebar_count} matches). "
-                 f"This route returns a full page, not a partial — causes double navbar when loaded via HTMX.",
-                 f"Fix: Make /api/tab/{tab} return a partial template (without base.html wrapper). "
-                 f"Create {tab}_partial.html containing only the content block. "
-                 f"The full template should only be returned from /tab/{tab}.", "Critical")
+                 f"Found {n_target} elements with id=\"tab-content\"; hx-select "
+                 f"needs exactly one.",
+                 f"Ensure {tab}'s template yields a single #tab-content wrapper.",
+                 "Critical")
         else:
-            ok(f"D-{tab}-partial", f"HTMX partial GET {route} — no double navbar", "Dashboard",
+            ok(f"D-{tab}-partial", f"HTMX partial GET {route} — one swap target", "Dashboard",
                f"HTTP 200, {len(body)} chars. No duplicate sidebar HTML detected.")
 
-    # D20 — course view API route (BUG B02)
-    # Check both the route and app.js behaviour
-    course_view_route = False
-    for router_file in ROUTERS.glob("*.py"):
-        content = read(router_file)
-        if "course" in router_file.name.lower() or "learning" in router_file.name.lower():
-            if re.search(r'/api/course/\{?course_id\}?/view', content):
-                course_view_route = True
-                break
-
-    app_js_content = read(APP_JS)
-    uses_clipboard_for_course = "navigator.clipboard" in app_js_content and "buildCourse" in app_js_content
-
-    if not course_view_route and uses_clipboard_for_course:
-        fail("D20", "Course content served inline (Bug B02)", "Dashboard",
-             "⚠ BUG B02 CONFIRMED: buildCourse() in app.js copies a CLI prompt to clipboard "
-             "instead of opening the course inline. No /api/course/{id}/view route found.",
-             "Add route GET /api/course/{course_id}/view in routers/learning.py that reads "
-             "knowledge/courses/{slug}/course.json and modules/*.md and returns rendered HTML. "
-             "Wire the Learning tab 'Continue' button to hx-get this route.", "Critical")
-    elif course_view_route:
-        ok("D20", "Course content served inline (Bug B02)", "Dashboard",
-           "/api/course/{id}/view route found — course can be served inline.")
+    # D20 — a course actually opens
+    #
+    # THIS CHECKED FOR THE WRONG THING and failed for it on every run. It looked
+    # for a specific route, /api/course/{id}/view, on the assumption that a
+    # course must be rendered inline by the dashboard. Courses are rendered
+    # Quarto sites now, mounted directly, and which URL a course opens at is
+    # decided by `_launch_target` in the learning router — a function that exists
+    # precisely because launch URLs used to come raw from a database column and
+    # one course opened a code repository while another opened a path that 404'd.
+    #
+    # Whether each launch URL really resolves is the job of a dedicated tool,
+    # tools/check_course_launch.py, which fetches them. Restating that here would
+    # be a second author for one answer, so this asserts only that the guard is
+    # in place and names the tool that exercises it.
+    learning_src = read(ROUTERS / "learning.py")
+    has_guard = "def _launch_target(" in learning_src
+    checker = ROOT / "tools" / "check_course_launch.py"
+    if has_guard and checker.exists():
+        ok("D20", "Course launch targets are validated server-side", "Dashboard",
+           "_launch_target() decides every launch URL; tools/check_course_launch.py "
+           "fetches them and asserts each resolves to the course it claims.")
+    elif has_guard:
+        warn("D20", "Course launch targets are validated server-side", "Dashboard",
+             "_launch_target() is present but tools/check_course_launch.py is not, "
+             "so nothing confirms the URLs it produces actually resolve.",
+             "Restore tools/check_course_launch.py and run it.")
     else:
-        warn("D20", "Course content served inline (Bug B02)", "Dashboard",
-             "buildCourse() clipboard behaviour detected but no inline view route confirmed.",
-             "Verify that opening a course in the Learning tab shows content inline, not copies a CLI prompt.")
+        fail("D20", "Course launch targets are validated server-side", "Dashboard",
+             "No _launch_target() in routers/learning.py — launch URLs would come "
+             "raw from the database, which is how a course came to open a code "
+             "repository and another a path that 404'd.",
+             "Restore _launch_target() and route every launch URL through it.",
+             "Critical")
 
     # D21 — spot-check the partial routes each surface depends on
     partials = [
@@ -600,31 +649,30 @@ def run_agents():
         ok("A05", "Dedicated GitHub / Git agent exists", "Agents",
            "GitHub/git agent found.")
 
-    # A06 — adaptive course builder
-    adaptive_found = False
-    for folder in [AGENTS_DIR, SKILLS_DIR]:
-        if not folder.exists():
-            continue
-        for f in folder.rglob("skill.md"):
-            content = read(f).lower()
-            if "adaptive" in content and "research question" in content:
-                adaptive_found = True
-                break
-
-    if not adaptive_found:
-        fail("A06", "Adaptive Statistics Course Builder feature exists", "Agents",
-             "No skill or agent implements the 'describe your research question → get a "
-             "personalised course' workflow explicitly.",
-             "Implement an adaptive mode in course-builder: "
-             "(1) User describes research question, "
-             "(2) Metis identifies required statistical methods, "
-             "(3) Maps against existing courses for overlap, "
-             "(4) Produces a personalised module sequence. "
-             "This is the highest-value learning feature for researchers.", "Critical")
+    # A06 — the adaptive course builder
+    #
+    # USED TO GREP AGENT PROSE for the words "adaptive" and "research question"
+    # together, and failed once the agent was reworded — an assertion about
+    # phrasing, not about whether the feature works. The feature is a route: the
+    # build endpoint accepts a research question and folds it into the brief.
+    learning_src2 = read(ROUTERS / "learning.py")
+    app_js2 = read(APP_JS)
+    server_ok = "researchQuestion" in learning_src2 or "research_question" in learning_src2
+    client_ok = "researchQuestion" in app_js2
+    if server_ok and client_ok:
+        ok("A06", "Adaptive course builder accepts a research question", "Agents",
+           "The build endpoint reads a research question and the client sends one.")
+    elif server_ok or client_ok:
+        fail("A06", "Adaptive course builder accepts a research question", "Agents",
+             f"Only one half is wired — server: {server_ok}, client: {client_ok}. "
+             f"A field the client sends and the server ignores looks like it works.",
+             "Wire both ends, or remove the field from the form.", "High")
     else:
-        ok("A06", "Adaptive Statistics Course Builder feature exists", "Agents",
-           "Adaptive course builder behaviour found in a skill file.")
-
+        fail("A06", "Adaptive course builder accepts a research question", "Agents",
+             "Neither the build endpoint nor the client mentions a research "
+             "question, so a course cannot be shaped around one.",
+             "Accept researchQuestion in the course-build endpoint and send it "
+             "from the builder form.", "High")
     # A07 — README agent count vs actual (exclude retired agents)
     readme = read(README_FILE)
     readme_agent_claim = re.search(r'(\d+)\s+specialist agents', readme)

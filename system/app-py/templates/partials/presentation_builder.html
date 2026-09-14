@@ -1,0 +1,59 @@
+{#- presentation_builder.html — the next deck.
+
+    Metis has no model and does not make slides. What it can do, and what a chat
+    window cannot, is say WHICH master, WHICH deck to start from, and what was
+    changed the last two times this lesson was given. That brief is the whole
+    feature — it is the difference between a style being an instruction and a
+    style being a hope.
+
+    Context: styles · collections · recent -#}
+<form class="pb" onsubmit="return buildPresentationBrief(this);">
+  <div class="pb-grid">
+    <label class="pb-f pb-f--wide"><span>What is it about</span>
+      <input type="text" name="topic" placeholder="the talk, or the lesson"></label>
+
+    <label class="pb-f"><span>Style</span>
+      <select name="style_id">
+        <option value="">—</option>
+        {% for s in styles %}
+        <option value="{{ s.style_id }}">{{ s.name }}{% if s.state != 'on-disk' %} (proposed){% endif %}</option>
+        {% endfor %}
+      </select></label>
+
+    <label class="pb-f"><span>File it in</span>
+      <select name="collection">
+        <option value="">—</option>
+        {% for c in collections %}<option value="{{ c.name }}">{{ c.name }}</option>{% endfor %}
+      </select></label>
+
+    <label class="pb-f"><span>Audience</span>
+      <input type="text" name="audience" placeholder="who will be in the room"></label>
+
+    <label class="pb-f"><span>Register</span>
+      <select name="register">
+        <option value="">—</option>
+        <option value="technical">technical</option>
+        <option value="simplified">simplified</option>
+        <option value="lay">lay</option>
+      </select></label>
+
+    <label class="pb-f pb-f--wide"><span>Start from</span>
+      <select name="source_deck">
+        <option value="">nothing — a blank deck</option>
+        {% for d in recent %}
+        <option value="{{ d.deck_id }}">{{ d.title }}{% if d.collection %} · {{ d.collection }}{% endif %}{% if d.slide_count %} · {{ d.slide_count }} slides{% endif %}</option>
+        {% endfor %}
+      </select></label>
+  </div>
+
+  <div class="pb-foot">
+    <p class="pb-note">
+      This writes no slides. It assembles the brief — the master to follow, the
+      deck to start from, and what changed each previous time this lesson was
+      given — and puts it on your clipboard for Claude.
+    </p>
+    <button class="btn btn--sec" type="submit">Assemble the brief</button>
+  </div>
+</form>
+
+<pre id="pb-out" class="pb-out" hidden></pre>

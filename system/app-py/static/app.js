@@ -3527,3 +3527,51 @@ document.body && document.body.addEventListener('htmx:afterSwap', e => restoreTa
       });
   });
 })();
+
+// ─── Presentation ────────────────────────────────────────────────────────────
+// Two handlers, both deliberately thin. The surface's work happens server-side;
+// these exist because a scan takes minutes and a brief goes on the clipboard.
+
+async function rescanDecks(btn) {
+  // A scan walks a large synced folder. Saying "a few minutes" and then leaving
+  // a button looking clickable is how someone presses it four times, so the
+  // button states what is happening and refuses to start a second one.
+  if (btn) { btn.disabled = true; btn.dataset.was = btn.textContent; btn.textContent = 'Indexing… this takes a few minutes'; }
+  try {
+    const res = await fetch('/api/presentation/rescan', { method: 'POST' });
+    const d = await res.json();
+    if (d.status === 'ok') {
+      showToast('<i class="bi bi-check2 toast-icon"></i>Presentations indexed — reloading');
+      setTimeout(() => window.location.reload(), 900);
+      return;
+    }
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>' + (d.message || 'The scan did not finish.'));
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not reach Metis — the scan did not run.');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = btn.dataset.was || 'Index my presentations'; }
+}
+
+async function buildPresentationBrief(form) {
+  // Returns false unconditionally: this is a submit handler on a form with no
+  // action, and letting it through would navigate away from the surface.
+  try {
+    const res = await fetch('/api/presentation/brief', {
+      method: 'POST', body: new FormData(form),
+    });
+    const d = await res.json();
+    const out = document.getElementById('pb-out');
+    if (out) {
+      out.textContent = d.brief || '';
+      out.hidden = !d.brief;
+    }
+    if (d.brief && navigator.clipboard) {
+      await navigator.clipboard.writeText(d.brief);
+      showToast('<i class="bi bi-clipboard-check toast-icon"></i>Brief on your clipboard'
+        + (d.n_prior > 1 ? ` — including what changed across ${d.n_prior} previous deliveries` : ''));
+    }
+  } catch (e) {
+    showToast('<i class="bi bi-exclamation-circle toast-icon"></i>Could not assemble the brief.');
+  }
+  return false;
+}

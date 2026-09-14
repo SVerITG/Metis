@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% from "partials/_section.html" import sec_label, zone, tabset %}
+{% block title %}Presentation{% endblock %}
+
+{#
+  ══════════════════════════════════════════════════════════════════════════════
+  PRESENTATION — what we have already said, to whom, and how we said it.
+
+  The folders can answer "where is the file". They cannot answer the question
+  that actually comes up, which is what this surface is built around: what have
+  we said about this before, who was in the room, and what did we change.
+
+  Three tabs on one question. Repository is everything delivered; Templates is
+  how it looks; Builder is the next one.
+
+  Replaced the Teach tab, which built courses from scratch — a real job, but not
+  the one that comes up most weeks, and one that already has a home on Learning.
+  ══════════════════════════════════════════════════════════════════════════════
+#}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-head">
+    <div>
+      <div class="u-label u-mb-1" style="letter-spacing:0.2em;text-transform:uppercase;">SURFACE 08</div>
+      <h1 style="font-family:var(--m-display);font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--m-ink);margin:0;">Presentation</h1>
+    </div>
+    <div class="page-meta">
+      {% if ov.scanned_at %}INDEXED {{ ov.scanned_at }}{% else %}NOT YET INDEXED{% endif %}
+    </div>
+  </div>
+
+  {% if not ov.total %}
+  {#- The empty state is not decoration: without the index every panel below is
+      blank, and a blank panel reads as a broken one. Say which step is missing
+      and how long it takes. -#}
+  <div class="panel panel--md">
+    <h2 style="margin:0 0 var(--m-space-2);font-family:var(--m-display);font-weight:500;">No decks indexed yet</h2>
+    <p style="margin:0 0 var(--m-space-3);font-size:var(--t-small);color:var(--m-muted);line-height:1.6;">
+      This surface reads an index of the presentations already on disk. Nothing is
+      moved, renamed or copied — the scan only records where things are, what they
+      are called and how many slides they have. It walks a large synced folder, so
+      it takes a few minutes the first time.
+    </p>
+    <button class="btn btn--sec" onclick="rescanDecks(this)">Index my presentations</button>
+  </div>
+  {% else %}
+
+  {#- ── The counts ─────────────────────────────────────────────────────────── -#}
+  <div class="pv-row">
+    <div class="pv"><span class="pv-n">{{ ov.live }}</span><span class="pv-l">decks delivered</span></div>
+    <div class="pv"><span class="pv-n">{{ ov.lessons }}</span><span class="pv-l">distinct lessons</span></div>
+    <div class="pv"><span class="pv-n pv-n--hot">{{ ov.redelivered }}</span><span class="pv-l">given in more than one collection</span></div>
+    <div class="pv"><span class="pv-n">{{ ov.masters }}</span><span class="pv-l">master slides on disk</span></div>
+    <div class="pv"><span class="pv-n">{{ ov.described }}</span><span class="pv-l">deliveries described</span></div>
+  </div>
+
+  {{ tabset([("repository","Repository"),("templates","Templates"),("builder","Builder")],
+            key="presentation") }}
+
+  <div class="ui-tabpane" data-tabset="presentation" data-tab="repository">
+    {% call zone("Everything delivered", key="pres-repo", kind="work",
+                 tail=(ov.total ~ " INDEXED · " ~ (ov.total - ov.live) ~ " SNAPSHOTS AND COPIES"),
+                 collapsible=False) %}
+      <div id="pres-repo" hx-get="/api/partial/presentation/repository"
+           hx-trigger="load" hx-swap="innerHTML">
+        <div class="panel skeleton skeleton-box" style="height:260px;"></div>
+      </div>
+    {% endcall %}
+  </div>
+
+  <div class="ui-tabpane" data-tabset="presentation" data-tab="templates" hidden>
+    {% call zone("Master slides, as named styles", key="pres-tpl", kind="thinking",
+                 tail="HOW IT LOOKS", collapsible=False) %}
+      <div id="pres-tpl" hx-get="/api/partial/presentation/templates"
+           hx-trigger="revealed once" hx-swap="innerHTML">
+        <div class="panel skeleton skeleton-box" style="height:200px;"></div>
+      </div>
+    {% endcall %}
+  </div>
+
+  <div class="ui-tabpane" data-tabset="presentation" data-tab="builder" hidden>
+    {% call zone("The next one", key="pres-build", kind="arrived",
+                 tail="A STYLE, A STARTING POINT, A HAND-OFF", collapsible=False) %}
+      <div id="pres-build" hx-get="/api/partial/presentation/builder"
+           hx-trigger="revealed once" hx-swap="innerHTML">
+        <div class="panel skeleton skeleton-box" style="height:200px;"></div>
+      </div>
+    {% endcall %}
+  </div>
+
+  <p class="pres-foot">
+    The index is read-only over your folders — nothing here moves, renames or
+    deletes a file.
+    <button class="btn btn--ghost btn--sm" onclick="rescanDecks(this)">Re-index</button>
+  </p>
+  {% endif %}
+
+</div>
+{% endblock %}

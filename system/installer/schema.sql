@@ -1442,3 +1442,67 @@ CREATE TABLE IF NOT EXISTS library_shelf_items (
 );
 CREATE INDEX IF NOT EXISTS idx_shelf_items_shelf ON library_shelf_items(shelf, added_at DESC);
 CREATE INDEX IF NOT EXISTS idx_shelf_items_item  ON library_shelf_items(kind, item_id);
+
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- PRESENTATION — the decks that already exist
+-- ═══════════════════════════════════════════════════════════════════════════
+-- Built 2026-09-14 for the Presentation surface. The problem it solves is not
+-- "where is the file" — the folders answer that. It is the question the folders
+-- cannot answer: what have we already said about this, to whom, and how did we
+-- say it differently last time.
+--
+-- READ-ONLY OVER THE FILESYSTEM. Every row points at a file that stays exactly
+-- where it is. The scanner records; it never moves, renames or writes a deck.
+-- That is deliberate: a tool that reorganises someone's Documents folder to suit
+-- its own index is a tool they stop running.
+--
+-- `lesson_key` IS THE POINT. Two decks with the same normalised name in
+-- different collections are one lesson delivered twice, and the difference
+-- between them is the asset. Without this column the table is a file listing.
+CREATE TABLE IF NOT EXISTS decks (
+    deck_id      TEXT PRIMARY KEY,      -- stable digest of rel_path
+    rel_path     TEXT NOT NULL UNIQUE,  -- relative to the documents root
+    filename     TEXT NOT NULL,
+    title        TEXT DEFAULT '',       -- filename, cleaned for reading
+    lesson_key   TEXT DEFAULT '',       -- normalised title; the lineage join
+    collection   TEXT DEFAULT '',       -- the kit this was delivered as part of
+    event        TEXT DEFAULT '',       -- an occasion, where the path names one
+    -- Defaults to the owner and is editable. Nothing currently distinguishes a
+    -- deck written here from one a colleague presented, and a slide cannot be
+    -- reused without knowing whose it was.
+    author       TEXT DEFAULT '',
+    slide_count  INTEGER DEFAULT 0,
+    style        TEXT DEFAULT '',       -- which master it follows, if any
+    -- 'technical' | 'simplified' | 'lay'. How the language was pitched for the
+    -- room. Not derivable from a file, and the field the lineage view compares.
+    register     TEXT DEFAULT '',
+    audience     TEXT DEFAULT '',
+    changed_note TEXT DEFAULT '',       -- what was different about THIS delivery
+    is_master    INTEGER DEFAULT 0,
+    -- '' live · 'archive' a dated snapshot kept beside the deck it supersedes ·
+    -- 'copy' a duplicate on portable media. Recorded rather than skipped: these
+    -- folders are real work and the reader may want them, but counting a
+    -- snapshot as a separate DELIVERY would put the same lesson in the lineage
+    -- four times and make the one number this surface exists to produce wrong.
+    variant      TEXT DEFAULT '',
+    size_bytes   INTEGER DEFAULT 0,
+    modified_at  TEXT DEFAULT '',
+    scanned_at   TEXT DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_decks_lesson     ON decks(lesson_key);
+CREATE INDEX IF NOT EXISTS idx_decks_collection ON decks(collection);
+CREATE INDEX IF NOT EXISTS idx_decks_modified   ON decks(modified_at DESC);
+
+-- A master slide deck as a NAMED STYLE. Two exist on disk and are invisible,
+-- buried two folders deep inside one project each; naming them is what makes
+-- them reusable. Rows with state='proposed' have no file yet — they describe a
+-- talk the two existing masters do not fit, and say so rather than pretending.
+CREATE TABLE IF NOT EXISTS deck_styles (
+    style_id    TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    master_path TEXT DEFAULT '',        -- '' when the style is still proposed
+    state       TEXT DEFAULT 'proposed',-- 'on-disk' | 'proposed'
+    sort_order  INTEGER DEFAULT 50
+);
