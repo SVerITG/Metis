@@ -23,6 +23,13 @@
             title="The {{ shown_news }} closest to your work out of {{ n_news }} unjudged this week. Nothing is filtered away — the rest is on the News surface, in the same order."><b>{{ shown_news }}</b> news{% if n_news > shown_news %} <span class="fw-of">of {{ n_news }}</span>{% endif %}</span>
       <span class="fw-tally-cell"
             title="The {{ shown_papers }} closest to your work out of {{ n_papers }} unread this week. Nothing is filtered away — the rest is in your Library."><b>{{ shown_papers }}</b> papers{% if n_papers > shown_papers %} <span class="fw-of">of {{ n_papers }}</span>{% endif %}</span>
+      {#- The number that MOVES when you act. Everything else on this line is a
+          property of the pile; this one is a property of your morning. Silent at
+          zero, because "0 judged" is a reproach rather than information. -#}
+      {%- if judged_today %}
+      <span class="fw-tally-cell fw-tally-done"
+            title="Articles and papers you judged today — kept, declined or filed. This is the count that moves when you mark something."><b>{{ judged_today }}</b> judged today</span>
+      {%- endif %}
       <span class="fw-tally-sep"></span>
       <a class="fw-all" href="/news">News surface →</a>
       <a class="fw-all" href="/knowledge">Library &rarr;</a>

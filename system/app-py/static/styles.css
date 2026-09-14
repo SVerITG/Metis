@@ -6973,3 +6973,8 @@ a.shf-row-title:hover { color: var(--m-accent); }
   margin-left: auto; border: 0; background: none; cursor: pointer;
   color: var(--m-muted); font-size: 14px; line-height: 1; padding: 0 4px;
 }
+
+/* The one figure on the field-week tally that reflects the reader rather than
+   the pile. Green because it is progress, not a warning. */
+.fw-tally-done { color: var(--m-ok); }
+.fw-tally-done b { color: var(--m-ok); }

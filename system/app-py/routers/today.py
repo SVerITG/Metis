@@ -5489,6 +5489,22 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         "n_news": n_news, "n_papers": n_papers,
         "days": days, "since": since, "floor": 0.0,
         "shown_news": len(news), "shown_papers": len(papers),
+        # WHAT YOU DID TODAY. Reported as "News doesn't count correctly when I
+        # mark an article", and the count was in fact correct — it just could not
+        # show the reader's own work. A top-N shortlist always refills, so the
+        # numerator stays at five however much you judge; the denominator moves by
+        # one in four digits. Marking something therefore looked like it did
+        # nothing at all.
+        #
+        # This is the number that moves when you act. It counts verdicts recorded
+        # today, from both stores, because an item judged on this panel writes to
+        # reading_stack and one judged on a focus surface writes focus_verdict.
+        "judged_today": (db_scalar(
+            "SELECT COUNT(*) FROM reading_stack "
+            "WHERE date(COALESCE(state_at, added_at)) = date('now')", default=0) or 0)
+            + (db_scalar(
+            "SELECT COUNT(*) FROM focus_verdict "
+            "WHERE date(created_at) = date('now')", default=0) or 0),
         # THE DENOMINATOR THE FLOOR HID. A filtered count with no sight of what
         # it filtered is a number that cannot be argued with.
         # THE DENOMINATOR MUST DIFFER FROM THE NUMERATOR BY EXACTLY ONE FILTER —
