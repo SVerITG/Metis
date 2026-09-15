@@ -1,0 +1,68 @@
+{#- today_needs_you.html — the first Workstation column, whole.
+
+    ONE ROW SHAPE FOR THREE SOURCES (2026-09-15). Asked for: "the formatting of
+    starred and pinned should be the same, same as the item that you have added
+    manually ... every item should start with its name and behind it are icons".
+
+    A thing you mean to do today can arrive three ways — you pinned it, you
+    starred it, or you typed it — and before this each arrived with its own
+    markup: a checkbox and a chip, a bordered card with a badge, a third thing
+    again. They are the same sentence. So they share one row and differ only by a
+    left edge colour and one quiet word, which is also why the word is there: a
+    difference carried by colour alone is not a difference everyone can see.
+
+    THE NAME COMES FIRST. No leading control, no "Today" label above the list —
+    the column is already called "What needs you today", and repeating it inside
+    is the duplication this surface keeps being corrected for.
+
+    THE ADD BOX IS LAST, and what you type appears in the list above it. -#}
+<div id="needs-you">
+
+  {% if items %}
+  <ul class="ny-list">
+    {% for it in items %}
+    <li class="ny-row ny-row--{{ it.kind }}{% if it.done %} is-done{% endif %}">
+      <span class="ny-body">
+        <span class="ny-title" title="{{ it.title }}">{{ it.title }}</span>
+        <span class="ny-meta">
+          <span class="ny-kind">{{ 'project' if it.kind == 'project' else ('starred' if it.kind == 'starred' else 'task') }}</span>
+          {%- if it.chip %}<span class="ny-chip">{{ it.chip }}</span>{% endif %}
+        </span>
+      </span>
+      <span class="ny-acts">
+        <button type="button" class="ny-act" title="{{ 'Mark not done' if it.done else 'Mark done' }}"
+                aria-label="{{ 'Mark not done' if it.done else 'Mark done' }}"
+                hx-post="/api/today/needs/{{ it.src }}/{{ it.ident }}/done"
+                hx-target="#needs-you" hx-swap="outerHTML">&#10003;</button>
+        <button type="button" class="ny-act" title="Move to tomorrow" aria-label="Move to tomorrow"
+                hx-post="/api/today/needs/{{ it.src }}/{{ it.ident }}/tomorrow"
+                hx-target="#needs-you" hx-swap="outerHTML">&rarr;</button>
+        <button type="button" class="ny-act" title="Not now — take it off today, keep the task"
+                aria-label="Not now"
+                hx-post="/api/today/needs/{{ it.src }}/{{ it.ident }}/drop"
+                hx-target="#needs-you" hx-swap="outerHTML">&times;</button>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="ny-empty">Nothing on today yet.</p>
+  {% endif %}
+
+  {#- The picker is how this researcher actually plans — every plan ever made was
+      made with it, none typed — so it keeps its place above the typing box. -#}
+  <div class="ny-foot">
+    <button type="button" class="ny-plan"
+            hx-get="/api/partial/today/plan?pick=1&bare=1"
+            hx-target="#needs-you" hx-swap="outerHTML">+ plan something</button>
+    <form class="quick-add ny-add"
+          hx-post="/api/today/needs/add"
+          hx-target="#needs-you" hx-swap="outerHTML"
+          hx-on::after-request="this.reset(); htmx.trigger(document.body, 'metis:today-changed')">
+      <span class="quick-add-mark" aria-hidden="true">+</span>
+      <input class="quick-add-input" type="text" name="title" required
+             placeholder="Something to do today…" aria-label="Add something to today">
+      <button class="quick-add-go" type="submit">add</button>
+    </form>
+  </div>
+</div>

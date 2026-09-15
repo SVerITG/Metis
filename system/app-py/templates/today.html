@@ -176,51 +176,20 @@
              hx-target="#tab-root" hx-push-url="/work">Work &rarr;</a>
         </div>
         <div class="ws-col-b">
-  {#- THE TARGET HAS TO EXIST BEFORE THE FIRST TASK DOES (fixed 2026-09-14).
-      This form targeted `#work-due-today`, which is rendered by the due-today
-      strip — and that strip renders NOTHING when nothing is due. So on a day
-      with an empty list the target was absent, HTMX raised targetError and
-      never issued the request: typing a task and pressing add did nothing at
-      all, and not even a row in the database to show for it. A control whose
-      first use is the one that cannot work is worse than no control.
+  {#- ONE MOUNT, ONE OWNER (2026-09-15). This column used to stack four things —
+      an add form, the plan strip, the due-today strip and the focus panel — each
+      fetching itself, each drawing its own row shape, and none of them aware of
+      the others. That is why it said "nothing" twice, why a starred item and a
+      pinned item looked nothing alike, and why the add button had no target to
+      swap into on a day when nothing was due.
 
-      It now targets the MOUNT, which is part of the page and always present,
-      and tells the rest of the column to refresh so the count in the folded
-      header and the "nothing on today" line agree with what you just typed. -#}
-  <form class="quick-add"
-        hx-post="/api/task/quick?bare=1"
-        hx-target="#ws-due-mount" hx-swap="innerHTML"
-        hx-on::after-request="this.reset(); htmx.trigger(document.body, 'metis:today-changed')">
-    <span class="quick-add-mark" aria-hidden="true">+</span>
-    <input class="quick-add-input" type="text" name="title" required
-           placeholder="Something to do today…" aria-label="Add a task due today">
-    <button class="quick-add-go" type="submit">add</button>
-  </form>
-    {#- TODAY'S PLAN — the work you chose for today, and the control that puts it
-        there. It belongs in THIS section: "what needs you today" is the question
-        it answers, and a plan is a commitment rather than a thing Metis knows.
-
-        Order within the section is deliberate: type a task (above), see what you
-        planned (here), then what is due or starred (below). Loaded with `load`
-        and no delay because it sits high on the page and is the first thing read
-        in the morning, so it must be filled in the first frame. -#}
-    <div hx-get="/api/partial/today/plan?bare=1"
-         hx-trigger="load"
-         hx-swap="innerHTML"></div>
-
-    <div id="ws-due-mount"
-         hx-get="/api/partial/work/due-today?bare=1"
-         hx-trigger="load delay:80ms"
-         hx-swap="innerHTML"></div>
-
-    <div hx-get="/api/partial/today/focus-memory?bare=1"
-         hx-trigger="load delay:100ms, metis:today-changed from:body"
-         hx-swap="outerHTML">
-      <div class="grid grid-3">
-        {{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}
-      </div>
-    </div>
-
+      It is now a single partial that merges the three sources, dedupes them, and
+      draws one row for each. Everything that acts on a row returns this same
+      fragment, so the column can never again disagree with itself. -#}
+  <div id="ws-needs-mount"
+       hx-get="/api/partial/today/needs-you"
+       hx-trigger="load, metis:today-changed from:body"
+       hx-swap="innerHTML"></div>
         </div>
       </div>
 

@@ -10,6 +10,7 @@ import os
 import re
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Form, Request
@@ -75,6 +76,164 @@ def _also_waiting_items() -> list[tuple[str, str, str]]:
     if n:
         out.append(("/learning", f"{n} reviews due", "Flashcards due for review today"))
     return out
+
+
+# ── "What needs you today" — ONE list, one row shape ─────────────────────────
+#
+# Asked for 2026-09-15: "the formatting of starred and pinned should be the same,
+# same as the item that you have added manually ... every item should start with
+# its name and behind it are icons".
+#
+# Before this the column stacked three partials, each with its own row markup and
+# its own idea of what a row looks like: a planned item drew a checkbox and a
+# chip, a starred item drew a card with a badge, a task due today drew a third
+# thing. They are all the same sentence — something you mean to do today — and
+# they differ only in where they came from, so they now share one row and differ
+# only by a colour and a word.
+#
+# The sources are merged HERE rather than in the template, because the dedupe is
+# the point: a task that is planned AND due AND starred is one thing you have to
+# do, not three rows. The plan row wins when they collide — it is the one with
+# the richest actions behind it.
+
+def _needs_you_items() -> list[dict]:
+    """Everything on today, from all three places it can come from.
+
+    Returns rows of {src, ident, title, kind, chip, done} where `src` says which
+    store the row lives in ("plan" or "task") and therefore which actions apply.
+    """
+    today = datetime.date.today().isoformat()
+    items: list[dict] = []
+    seen_tasks: set[str] = set()
+
+    # 1. PINNED — what you put on today deliberately. Richest actions, so it
+    #    wins any collision with the two below.
+    for it in _todays_plan(today):
+        is_project = (it.get("kind") == "project")
+        tid = it.get("task_id") or ""
+        if tid:
+            seen_tasks.add(tid)
+        title = it.get("_title") or it.get("text") or ""
+        # A pinned PROJECT's chip is its own project, so it would print the row's
+        # name twice. The chip only earns its place when it says something the
+        # title does not — which for a task is the project it belongs to.
+        chip = (it.get("task_project_title") or "") if not is_project else ""
+        if chip.strip().lower() == title.strip().lower():
+            chip = ""
+        items.append({
+            "src": "plan",
+            "ident": str(it.get("plan_id")),
+            "title": title,
+            "kind": "project" if is_project else "task",
+            "chip": chip,
+            "done": bool(it.get("_done")),
+        })
+
+    # 2. STARRED — what you marked as mattering. Still a task; the colour and the
+    #    word are the only difference.
+    for r in db_query(
+            f"SELECT t.task_id, t.title, t.status, p.title AS ptitle FROM tasks t "
+            f"LEFT JOIN projects p ON p.project_id = t.project_id "
+            f"WHERE COALESCE(t.starred,0) = 1 AND {live_task_sql('t.status')} "
+            f"ORDER BY COALESCE(t.updated_at, t.created_at) DESC", default=[]) or []:
+        if r["task_id"] in seen_tasks:
+            continue
+        seen_tasks.add(r["task_id"])
+        chip = r["ptitle"] or ""
+        items.append({"src": "task", "ident": r["task_id"], "title": r["title"],
+                      "kind": "starred",
+                      "chip": "" if chip.strip().lower() == (r["title"] or "").strip().lower() else chip,
+                      "done": False})
+
+    # 3. DUE TODAY — including anything typed into the box at the foot of the
+    #    column, which is created with today's date.
+    for r in db_query(
+            f"SELECT t.task_id, t.title, t.status, p.title AS ptitle FROM tasks t "
+            f"LEFT JOIN projects p ON p.project_id = t.project_id "
+            f"WHERE COALESCE(t.due_date,'') = ? AND {live_task_sql('t.status')} "
+            f"ORDER BY COALESCE(t.created_at, t.updated_at)", (today,), default=[]) or []:
+        if r["task_id"] in seen_tasks:
+            continue
+        seen_tasks.add(r["task_id"])
+        chip = r["ptitle"] or ""
+        items.append({"src": "task", "ident": r["task_id"], "title": r["title"],
+                      "kind": "task",
+                      "chip": "" if chip.strip().lower() == (r["title"] or "").strip().lower() else chip,
+                      "done": False})
+
+    return items
+
+
+def _needs_you_response(request: Request):
+    from main import templates
+    return templates.TemplateResponse(
+        request, "partials/today_needs_you.html",
+        {"items": _needs_you_items()})
+
+
+@router.get("/api/partial/today/needs-you", response_class=HTMLResponse)
+async def today_needs_you(request: Request):
+    """The whole of the first Workstation column: the list, then the add box."""
+    return _needs_you_response(request)
+
+
+@router.post("/api/today/needs/add", response_class=HTMLResponse)
+async def today_needs_add(request: Request):
+    """Type a thing, and see it in the list above the box you typed it into.
+
+    The add box used to post to the due-today strip and swap ITS markup, which
+    meant the new task appeared in a different component from the one the column
+    was showing — and on an empty day the target did not exist at all, so the
+    request was never even sent. It now returns this column, which is the thing
+    the reader is looking at.
+    """
+    form = await request.form()
+    title = (form.get("title") or "").strip()
+    if title:
+        db_execute(
+            "INSERT INTO tasks (task_id, project_id, title, status, category, "
+            "due_date, priority, created_at, updated_at) "
+            "VALUES (?, '', ?, 'open', 'general', ?, 'medium', ?, ?)",
+            (uuid.uuid4().hex[:12], title, str(datetime.date.today()),
+             datetime.datetime.now().isoformat(),
+             datetime.datetime.now().isoformat()))
+    return _needs_you_response(request)
+
+
+@router.post("/api/today/needs/{src}/{ident}/{action}", response_class=HTMLResponse)
+async def today_needs_act(request: Request, src: str, ident: str, action: str):
+    """One verb, applied to whichever store the row lives in.
+
+    The three verbs are the same question asked of a plan row and a task row:
+    finished it, not today, not now. Keeping them behind one route is what lets
+    every row in the column carry the same three controls regardless of where it
+    came from — which was the whole point of merging the sources.
+    """
+    now = datetime.datetime.now().isoformat()
+    tomorrow = (datetime.date.today() + datetime.timedelta(days=1)).isoformat()
+
+    if src == "plan":
+        if action == "done":
+            db_execute("UPDATE day_plan SET done = CASE COALESCE(done,0) WHEN 1 THEN 0 "
+                       "ELSE 1 END, updated_at = ? WHERE plan_id = ?", (now, ident))
+        elif action == "tomorrow":
+            db_execute("UPDATE day_plan SET start_date = ?, end_date = ?, updated_at = ? "
+                       "WHERE plan_id = ?", (tomorrow, tomorrow, now, ident))
+        elif action == "drop":
+            db_execute("DELETE FROM day_plan WHERE plan_id = ?", (ident,))
+    elif src == "task":
+        if action == "done":
+            db_execute("UPDATE tasks SET status = 'done', updated_at = ? "
+                       "WHERE task_id = ?", (now, ident))
+        elif action == "tomorrow":
+            db_execute("UPDATE tasks SET due_date = ?, updated_at = ? "
+                       "WHERE task_id = ?", (tomorrow, now, ident))
+        elif action == "drop":
+            # "Not now" must not destroy anything: it takes the task off today by
+            # clearing the date and the star, and leaves the task itself alone.
+            db_execute("UPDATE tasks SET due_date = NULL, starred = 0, updated_at = ? "
+                       "WHERE task_id = ?", (now, ident))
+    return _needs_you_response(request)
 
 
 @router.get("/api/partial/today/also-waiting", response_class=HTMLResponse)
