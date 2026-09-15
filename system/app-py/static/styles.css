@@ -8280,3 +8280,66 @@ a.brief-src-l:hover .brief-src-d { color: var(--m-accent); }
 }
 .ws-col-b .mrow:hover .mrow-acts .btn,
 .ws-col-b .mrow-acts .btn:focus-visible { opacity: 1; }
+
+/* ─── Brainstorm: what to gather from outside ────────────────────────────────
+   Opt-in chips. Off by default, because the map should be instant and because
+   nothing leaves this machine unasked. A chip that is ON is the accent; the
+   note beside them says the results are live and attributed, which is the
+   thing that makes a fetched node usable on a research map at all.
+   ────────────────────────────────────────────────────────────────────────── */
+.bs-gather {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px;
+  margin: 0 0 var(--m-space-3, 12px);
+  padding-top: 10px; border-top: 1px solid var(--m-rule-soft);
+}
+.bs-gather-l {
+  font-family: var(--m-mono); font-size: 9.5px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--m-muted); flex: 0 0 auto;
+}
+.bs-g {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.04em;
+  border: 1px solid var(--m-rule); border-radius: 2px; padding: 3px 9px;
+  background: var(--m-surface); color: var(--m-muted); cursor: pointer;
+}
+.bs-g:hover { color: var(--m-ink); border-color: var(--m-rule-strong); }
+.bs-g.is-on {
+  border-color: var(--m-accent); color: var(--m-accent);
+  background: var(--m-accent-wash, transparent);
+}
+.bs-gather-n {
+  font-size: var(--t-micro, 11px); color: var(--m-muted); font-style: italic;
+}
+
+/* Provenance on a fetched row. An unattributed node on a research map is worse
+   than a missing one, so the link is part of the row rather than a tooltip. */
+.bs-src {
+  font-family: var(--m-mono); font-size: 9px; letter-spacing: 0.04em;
+  color: var(--m-accent); text-decoration: none; white-space: nowrap;
+  margin-left: auto; flex: 0 0 auto;
+}
+.bs-src:hover { text-decoration: underline; }
+
+/* The two fetched kinds, on the chart and in the list. Ochre = came from
+   outside, matching the map legend. */
+.bs-node--newpaper circle, .bs-node--book circle { fill: var(--m-ochre, #9a7b3c); }
+.bs-k--newpaper, .bs-k--book { color: var(--m-ochre, #9a7b3c); }
+
+/* The hub when the map is ABOUT something: the selected idea or project, set in
+   the centre and allowed to wrap, rather than the word "you". */
+.bs-hub-t {
+  font-family: var(--m-mono);
+  font-size: 7.5px;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  color: var(--m-ink);
+  text-align: center;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 100%;
+  padding: 0 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

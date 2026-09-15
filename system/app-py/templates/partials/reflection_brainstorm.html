@@ -71,9 +71,36 @@
     so `return` never cancelled the submit and the browser navigated away
     before the fetch resolved. The form looked correct, the endpoint
     answered correctly in isolation, and the button did nothing usable. -#}
+  {#- WHAT TO GATHER (2026-09-15). Until now the map could only be built from
+      material already inside Metis. These chips let the reader reach outward —
+      and they are OPT-IN, because the default map should be instant and because
+      nothing should leave this machine without being asked for.
+
+      Each chip re-fetches this partial with `gather=`, so the state is in the
+      URL and a map is reproducible rather than being a thing that happened. -#}
+  {% if mode in ('idea', 'project') and ref %}
+  <div class="bs-gather">
+    <span class="bs-gather-l">also gather</span>
+    {% for key, label, note in [
+         ('papers', 'new papers', 'Europe PMC'),
+         ('books',  'books',      'Open Library')] %}
+    {%- set on = key in gather_on %}
+    {#- `{key}` is a DICT literal in Jinja, not a set — set difference silently
+        produced a 500 here. Built as lists instead. -#}
+    {%- set nextg = (gather_on | reject('equalto', key) | list) if on else ((gather_on | list) + [key]) %}
+    <button type="button" class="bs-g{% if on %} is-on{% endif %}"
+            title="{{ 'Stop gathering' if on else 'Gather' }} {{ label }} — {{ note }}"
+            hx-get="/api/partial/reflection/brainstorm?mode={{ mode }}&ref={{ ref | urlencode }}&gather={{ nextg | join(',') }}"
+            hx-target="#refl-brainstorm" hx-swap="outerHTML">{{ label }}</button>
+    {% endfor %}
+    <span class="bs-gather-n">searched live · every result keeps its source</span>
+  </div>
+  {% endif %}
+
   <form id="bs-form" onsubmit="event.preventDefault(); startBrainstorm(this); return false;">
     <input type="hidden" name="mode" value="{{ mode }}">
     <input type="hidden" name="ref" value="{{ ref }}">
+    <input type="hidden" name="gather" value="{{ gather }}">
 
     <div class="bs-chartwrap">
       <svg viewBox="0 0 {{ chart.w }} {{ chart.h }}" width="100%" height="{{ chart.h }}"
@@ -89,9 +116,18 @@
           <circle cx="{{ n.x }}" cy="{{ n.y }}" r="7"/>
         </g>
         {% endfor %}
-        <circle cx="{{ chart.cx }}" cy="{{ chart.cy }}" r="16" class="bs-hub"/>
+        {#- The hub is the thing the map is ABOUT. It said "you" in every mode,
+            which is right for a wild brainstorm and wrong once you have
+            selected something — a map of an idea has that idea at its centre. -#}
+        <circle cx="{{ chart.cx }}" cy="{{ chart.cy }}" r="{{ 42 if hub != 'you' else 16 }}" class="bs-hub"/>
+        {% if hub == 'you' %}
         <text x="{{ chart.cx }}" y="{{ chart.cy + 4 }}" class="bs-hub-l"
               text-anchor="middle">you</text>
+        {% else %}
+        <foreignObject x="{{ chart.cx - 34 }}" y="{{ chart.cy - 30 }}" width="68" height="60">
+          <div xmlns="http://www.w3.org/1999/xhtml" class="bs-hub-t">{{ hub }}</div>
+        </foreignObject>
+        {% endif %}
       </svg>
       <p class="bs-chart-note">
         Everything this brainstorm could start from, grouped by what it is. Click
@@ -110,6 +146,9 @@
         <span class="bs-k bs-k--{{ c.kind }}">{{ c.kind }}</span>
         <span class="bs-lab">{{ c.label }}</span>
         {% if c.detail %}<span class="bs-det">{{ c.detail }}</span>{% endif %}
+        {%- if c.url %}<a class="bs-src" href="{{ c.url }}" target="_blank" rel="noopener"
+           title="Open at {{ c.via or 'the source' }}"
+           onclick="event.stopPropagation();">{{ c.via or 'source' }} &nearr;</a>{% endif %}
         {% if c.when %}<span class="bs-when">{{ c.when }}</span>{% endif %}
       </label>
       {% endfor %}

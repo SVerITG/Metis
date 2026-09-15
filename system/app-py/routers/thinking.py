@@ -4,6 +4,7 @@ routers/thinking.py — Thinking tab routes.
 
 import datetime
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -715,6 +716,9 @@ ARCHIVE_TAG = "archived"
 # Words too common to link on. A link store built on "research" and "analysis"
 # connects everything to everything, which is the failure the whole thread-scoped
 # graph exists to avoid.
+log = logging.getLogger("metis.thinking")
+
+
 _STOP = {
     "about", "after", "again", "against", "because", "been", "before", "being",
     "between", "both", "could", "does", "doing", "down", "during", "each",
@@ -725,6 +729,25 @@ _STOP = {
     "which", "while", "with", "would", "your", "make", "made", "much", "also",
     "like", "well", "need", "want", "work", "thing", "things", "something",
     "research", "analysis", "study", "data", "paper", "note", "idea",
+    # AUXILIARY AND CARRIER VERBS (added 2026-09-15). These survived the list
+    # because they are longer than four letters, and `_terms` sorts by LENGTH —
+    # so a verb doing no work in the sentence can outrank the subject.
+    #
+    # Measured: the idea "STARD-AI could be the checklist we hold NTD
+    # diagnostic-AI papers to" reduced to
+    #     ['diagnostic-ai', 'checklist', 'stard-ai', 'papers', 'hold']
+    # and "hold" then selected three of its five news nodes — "Africa's rocks
+    # HOLD ancient stories", "blood vessels may HOLD a key to Alzheimer's",
+    # "Gaza HOLDS funeral". A word nobody would search on should never be a
+    # match term.
+    "hold", "holds", "held", "keep", "keeps", "kept", "take", "takes", "taken",
+    "give", "gives", "given", "come", "comes", "came", "went", "goes", "going",
+    "know", "knows", "known", "look", "looks", "looking", "find", "finds",
+    "found", "used", "using", "based", "must", "shall", "will", "were", "was",
+    "does", "done", "said", "says", "seen", "sees", "show", "shows", "shown",
+    "help", "helps", "call", "calls", "called", "put", "puts", "get", "gets",
+    "got", "let", "lets", "may", "might", "can", "cannot", "really", "actually",
+    "maybe", "perhaps", "still", "already", "always", "never", "about",
 }
 
 
@@ -1372,8 +1395,12 @@ def _bs_row(kind: str, rid: str, label: str, detail: str = "", when: str = "") -
             "detail": clip(detail or "", 110), "when": (when or "")[:10]}
 
 
-def _brainstorm_candidates(mode: str, ref: str = "") -> list[dict]:
-    """The material this brainstorm could be built from."""
+def _brainstorm_candidates(mode: str, ref: str = "", gather: str = "") -> list[dict]:
+    """The material this brainstorm could be built from.
+
+    `gather` names what the reader asked to pull in from OUTSIDE this machine —
+    opt-in, so the default map is built from local material alone and stays fast.
+    """
     out: list[dict] = []
 
     if mode == "wild":
@@ -1477,6 +1504,7 @@ def _brainstorm_candidates(mode: str, ref: str = "") -> list[dict]:
                     out.append(_bs_row("project", pr["project_id"], pr["title"],
                                        pr["n"]))
             out += _bs_matches(i["text"], exclude_idea=ref)
+            out += _bs_outward(i["text"], gather)
 
     return out[:BRAINSTORM_CAP]
 
@@ -1487,11 +1515,209 @@ def _bs_overlap(a: str, b: str) -> int:
 
 
 def _bs_matches(text: str, exclude_idea: str = "") -> list[dict]:
-    """Library and news that use this text's words.
+    """What actually relates to this text — library, news and past work.
 
-    Suggestions, never links — the same rule the thread view follows. Nothing
-    here enters a brainstorm unless it is ticked.
+    TWO MATCHERS EXISTED AND THIS SURFACE USED THE WEAKER ONE (fixed 2026-09-15).
+
+    The version below scored TITLES ONLY, with `LIKE`, against the text's five
+    longest words. That has two failure modes and both were live: a paper whose
+    title omits your wording is invisible however close its subject, and a word
+    that means nothing — see the verbs added to `_STOP` above — selects nodes on
+    its own.
+
+    `metis_mcp.tools.ideas._cross_pollinate_core` is a hybrid vector + keyword
+    search with reciprocal-rank fusion over the same material, written for
+    exactly this question. It is used first now. The lexical scorer stays as the
+    fallback for an install where the embedding model is unavailable, because a
+    weak map beats a blank one — but it is no longer the default.
     """
+    hybrid = _bs_matches_hybrid(text, exclude_idea)
+    if hybrid:
+        return hybrid
+    return _bs_matches_lexical(text, exclude_idea)
+
+
+# Which cross-pollination sources map onto which node kind on the chart. A
+# source with no mapping is skipped rather than drawn as an unlabelled dot.
+_XP_KIND = {
+    "library": "paper", "literature": "paper", "paper": "paper",
+    "news": "news", "news_brief": "news", "brief": "news",
+    "idea": "idea", "meeting": "meeting", "note": "note",
+    "session": "session", "agent_run": "session", "decision": "decision",
+}
+
+
+def _bs_matches_hybrid(text: str, exclude_idea: str = "") -> list[dict]:
+    """Ask the shared cross-pollinator. Returns [] if it cannot answer."""
+    try:
+        from metis_mcp.tools.ideas import _cross_pollinate_core
+        rows = _cross_pollinate_core(text, max_results=12) or []
+    except Exception as exc:  # noqa: BLE001 — never break the surface
+        log.debug("[brainstorm] hybrid matcher unavailable: %s", exc)
+        return []
+    out: list[dict] = []
+    for r in rows:
+        kind = _XP_KIND.get(str(r.get("source") or "").lower())
+        if not kind:
+            continue
+        ident = str(r.get("id") or r.get("title") or "")[:80]
+        if exclude_idea and ident == exclude_idea:
+            continue
+        out.append(_bs_row(kind, ident, r.get("title") or "",
+                           (r.get("snippet") or "")[:90]))
+    return out
+
+
+# ── Reaching outside Metis ───────────────────────────────────────────────────
+#
+# Asked for 2026-09-15: when building a map around an idea, be able to pull in
+# news, new papers and BOOKS found on the internet, not only what is already
+# indexed here.
+#
+# Two services, both free and neither needing a key:
+#   Europe PMC   — life-science literature, the same family of records the
+#                  library scanners already use.
+#   Open Library — books. Metis had no book source of any kind before this.
+#
+# Three rules govern all of it:
+#   · OPT-IN. Nothing goes outside unless the reader ticks it. The default map
+#     is built from this machine alone, which is also the only way the surface
+#     stays fast.
+#   · PROVENANCE. Every fetched node carries its source and its URL. An
+#     unattributed node on a research map is worse than a missing one.
+#   · NEVER FATAL. A slow or unreachable service returns nothing and the map is
+#     drawn without it. A brainstorm must not wait on the internet.
+_OUTWARD_TIMEOUT = 6.0
+
+
+def _bs_query_terms(text: str, cap: int = 6) -> str:
+    """The search string sent outside — the same terms the local matcher uses,
+    so what comes back is about the same subject the map is about."""
+    return " ".join(_terms(text, cap=cap))
+
+
+def _bs_fetch_papers(text: str, limit: int = 6) -> list[dict]:
+    """Recent literature from Europe PMC. Best-effort, never raises."""
+    q = _bs_query_terms(text)
+    if not q:
+        return []
+    try:
+        import urllib.parse, urllib.request
+        url = ("https://www.ebi.ac.uk/europepmc/webservices/rest/search?"
+               + urllib.parse.urlencode({
+                   "query": q, "format": "json", "pageSize": str(limit),
+                   "sort": "P_PDATE_D desc"}))
+        with urllib.request.urlopen(url, timeout=_OUTWARD_TIMEOUT) as r:
+            data = json.loads(r.read().decode("utf-8", "replace"))
+    except Exception as exc:  # noqa: BLE001
+        log.info("[brainstorm] Europe PMC unavailable: %s", exc)
+        return []
+    out: list[dict] = []
+    for it in (data.get("resultList", {}) or {}).get("result", [])[:limit]:
+        title = (it.get("title") or "").strip().rstrip(".")
+        if not title:
+            continue
+        doi = it.get("doi") or ""
+        row = _bs_row("newpaper", doi or it.get("id", title)[:60], title,
+                      " · ".join(x for x in [it.get("journalTitle") or "",
+                                             str(it.get("pubYear") or "")] if x),
+                      str(it.get("pubYear") or ""))
+        row["url"] = f"https://doi.org/{doi}" if doi else (
+            f"https://europepmc.org/article/{it.get('source','MED')}/{it.get('id','')}")
+        row["via"] = "Europe PMC"
+        out.append(row)
+    return out
+
+
+def _bs_book_terms(text: str, cap: int = 3) -> str:
+    """A query a BOOK could plausibly answer.
+
+    Papers and books need different questions. Europe PMC is happy with the
+    coinages a research note is full of — "diagnostic-ai", "stard-ai" — because
+    the literature contains them. Open Library returns a flat zero for the same
+    string, because no book is about STARD-AI; books are about the SUBJECT
+    underneath it. Measured: `diagnostic-ai checklist stard-ai papers` → 0 hits.
+
+    So hyphenated coinages are split into their parts and the shortest, most
+    general terms are kept. A zero that remains after that is an honest zero and
+    is shown as one.
+    """
+    import re as _re
+    words: list[str] = []
+    for t in _terms(text, cap=8):
+        words += [w for w in _re.split(r"[-_/]", t) if len(w) > 3 and w not in _STOP]
+    seen, out = set(), []
+    for w in words:
+        if w in seen:
+            continue
+        seen.add(w)
+        out.append(w)
+    return " ".join(out[:cap])
+
+
+def _bs_fetch_books(text: str, limit: int = 5) -> list[dict]:
+    """Books from Open Library. The one source Metis has never had."""
+    q = _bs_book_terms(text)
+    if not q:
+        return []
+    try:
+        import urllib.parse, urllib.request
+        url = ("https://openlibrary.org/search.json?"
+               + urllib.parse.urlencode({
+                   "q": q, "limit": str(limit),
+                   "fields": "title,author_name,first_publish_year,key"}))
+        with urllib.request.urlopen(url, timeout=_OUTWARD_TIMEOUT) as r:
+            data = json.loads(r.read().decode("utf-8", "replace"))
+    except Exception as exc:  # noqa: BLE001
+        log.info("[brainstorm] Open Library unavailable: %s", exc)
+        return []
+    # A RETURNED RESULT IS NOT A RELEVANT ONE (guard added 2026-09-15).
+    #
+    # Open Library answers almost any bag of words with something. Asked for
+    # "cross checked hierarchy" — the three longest words in an idea about
+    # screening coverage — it returned "The Committee of 300", "Bible" and
+    # "Medieval Slavdom and the rise of Russia", confidently and in order.
+    #
+    # On a research map that is worse than an empty branch: a node carries the
+    # claim that it relates to the thing at the centre. So a book is kept only
+    # if its own title shares a real term with the idea, and a branch with
+    # nothing left is shown as empty rather than filled.
+    want = {w for w in _terms(text, cap=10)}
+    for t in list(want):
+        want |= {w for w in __import__("re").split(r"[-_/]", t) if len(w) > 3}
+    out: list[dict] = []
+    for it in (data.get("docs") or [])[:limit * 3]:
+        title = (it.get("title") or "").strip()
+        if not title:
+            continue
+        low = title.lower()
+        if not any(w in low for w in want):
+            continue
+        if len(out) >= limit:
+            break
+        who = ", ".join((it.get("author_name") or [])[:2])
+        year = it.get("first_publish_year") or ""
+        row = _bs_row("book", it.get("key", title)[:60], title,
+                      " · ".join(x for x in [who, str(year)] if x), str(year))
+        row["url"] = f"https://openlibrary.org{it.get('key','')}"
+        row["via"] = "Open Library"
+        out.append(row)
+    return out
+
+
+def _bs_outward(text: str, gather: str) -> list[dict]:
+    """Everything the reader ticked that lives outside this machine."""
+    want = {w.strip() for w in (gather or "").split(",") if w.strip()}
+    out: list[dict] = []
+    if "papers" in want:
+        out += _bs_fetch_papers(text)
+    if "books" in want:
+        out += _bs_fetch_books(text)
+    return out
+
+
+def _bs_matches_lexical(text: str, exclude_idea: str = "") -> list[dict]:
+    """The original title-only keyword scorer. Fallback only — see above."""
     terms = _terms(text, cap=5)
     if not terms:
         return []
@@ -1548,7 +1774,8 @@ Rules for this conversation:
 
 
 @router.get("/api/partial/reflection/brainstorm", response_class=HTMLResponse)
-async def reflection_brainstorm(request: Request, mode: str = "", ref: str = ""):
+async def reflection_brainstorm(request: Request, mode: str = "", ref: str = "",
+                                gather: str = ""):
     """The launcher: three ways in, then the material to choose from."""
     mode = mode if mode in ("wild", "project", "idea") else ""
     # The pickers only when the mode needs one — a project brainstorm has to know
@@ -1566,11 +1793,14 @@ async def reflection_brainstorm(request: Request, mode: str = "", ref: str = "")
             f"AND COALESCE(idea_type,'') != '{THREAD_KIND}' "
             f"ORDER BY created_at DESC LIMIT 40", default=[]) or []
 
-    cands = _brainstorm_candidates(mode, ref) if mode else []
+    cands = _brainstorm_candidates(mode, ref, gather) if mode else []
     return templates.TemplateResponse(
         request, "partials/reflection_brainstorm.html",
-        {"mode": mode, "ref": ref, "projects": projects, "ideas": idea_list,
+        {"mode": mode, "ref": ref, "gather": gather,
+         "gather_on": {g.strip() for g in gather.split(",") if g.strip()},
+         "projects": projects, "ideas": idea_list,
          "cands": cands, "chart": _bs_chart(cands),
+         "hub": _bs_hub_label(mode, ref),
          "window": BRAINSTORM_WINDOW})
 
 
@@ -1584,8 +1814,11 @@ BS_W, BS_H, BS_R = 520, 300, 108
 def _bs_chart(cands: list[dict]) -> dict:
     import math
     cx, cy = BS_W / 2, BS_H / 2
+    # Fetched kinds sit at the END so the map reads outward: what is yours
+    # first, what came from outside after it.
     order = ["project", "next", "task", "idea", "note", "journal",
-             "paper", "news", "meeting", "decision", "run"]
+             "paper", "news", "meeting", "decision", "run", "session",
+             "newpaper", "book"]
     present = [k for k in order if any(c["kind"] == k for c in cands)]
     nodes = []
     span = (2 * math.pi) / max(1, len(present))
@@ -1603,6 +1836,27 @@ def _bs_chart(cands: list[dict]) -> dict:
                           "y": round(cy + r * 0.95 * math.sin(a), 1)})
     return {"w": BS_W, "h": BS_H, "cx": cx, "cy": cy,
             "nodes": nodes, "kinds": present}
+
+
+def _bs_hub_label(mode: str, ref: str) -> str:
+    """What sits at the centre of the map.
+
+    The hub used to read "you" in every mode, which is right for a wild
+    brainstorm — the material of your month, arranged around you — and wrong the
+    moment you select something. A map of an idea has that idea at its centre;
+    that is what makes it a map OF something rather than a picture of a pile.
+    """
+    if mode == "idea" and ref:
+        r = (db_query("SELECT text FROM ideas WHERE idea_id = ?", (ref,),
+                      default=[]) or [None])[0]
+        if r:
+            return clip(" ".join((r["text"] or "").split()), 46)
+    if mode == "project" and ref:
+        r = (db_query("SELECT title FROM projects WHERE project_id = ?", (ref,),
+                      default=[]) or [None])[0]
+        if r:
+            return clip(r["title"] or "", 46)
+    return "you"
 
 
 @router.post("/api/reflection/brainstorm/prompt", response_class=JSONResponse)
