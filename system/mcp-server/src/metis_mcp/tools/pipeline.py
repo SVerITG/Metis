@@ -591,6 +591,7 @@ _DEFAULT_ROUTING_SEED: list[tuple[list, str, str, int]] = [
       "learning objectives", "curriculum", "competency map", "backward design",
       "instructional design", "bloom", "spaced repetition", "learning path",
       "study plan", "what to study", "learning progression", "lesson",
+      "flashcard", "spaced repetition",
       ("competency", 45), ("course", 55)],
      "course-builder", "course", 14),
 
@@ -652,6 +653,7 @@ _DEFAULT_ROUTING_SEED: list[tuple[list, str, str, int]] = [
 
     (["news alert", "outbreak news", "who announcement", "world events",
       "what happened", "policy shift", "rss", "news pipeline", "breaking",
+      "what's new", "whats new",
       ("announcement", 40), ("briefing", 45), ("news", 45), ("feed", 65)],
      "news-radar", "news", 30),
 
@@ -704,8 +706,10 @@ _COVERAGE_ROUTING_SEED: list[tuple[list, str, str, int]] = [
     # here and the two are retired from routing by _RETIRED_ROUTING_SLUGS.
     (["frontend", "front end", "component design", "design system", "css",
       "responsive", "ui design", "htmx", "kpi panel", "blank panel",
-      "dashboard tab", "dashboard bug", "jinja", "partial", ("layout", 50),
-      ("ux", 45)],
+      "dashboard tab", "dashboard bug", "jinja", "partial",
+      "ui component", "navigation", "intuitive", "look and feel", "spacing",
+      "not inspiring", "ugly", "formatting",
+      ("layout", 50), ("ux", 45), ("component", 55), ("panel", 58)],
      "frontend-designer-builder", "ui", 32),
     (["design audit", "ui critique", "design review", "audit the interface",
       "accessibility", "contrast ratio", "wcag"],
@@ -731,7 +735,8 @@ _COVERAGE_ROUTING_SEED: list[tuple[list, str, str, int]] = [
      "hr-talent", "hr", 35),
     # research + release
     (["release", "publish", "version bump", "changelog", "push to", "sync repo",
-      "pre-publish", "commit scan", "rollback", ("commit", 45)],
+      "pre-publish", "commit scan", "rollback", "before merging",
+      ("commit", 45), ("merging", 55)],
      "release-coordinator", "release", 35),
 ]
 
@@ -778,7 +783,7 @@ _RETIRED_ROUTING_SLUGS = frozenset({
 # The table is seeded ONCE (on an empty table), so without this a priority fix
 # shipped in code would never reach a machine whose DB was already seeded — and
 # the DB does not sync between the researcher's two computers.
-_ROUTING_SEED_VERSION = 4
+_ROUTING_SEED_VERSION = 5
 
 
 def _iter_seed(seed) -> list[tuple[str, str, str, int]]:
@@ -1166,6 +1171,72 @@ def _who_is_on_it(routed_because: list) -> str:
     return f"I've asked {count} specialists to look at this:\n{bullets}"
 
 
+# How long a session's subject stays "what we are working on". Long enough to
+# cover a working stretch on one surface, short enough that tomorrow's first
+# request is judged on its own words.
+_STICKY_WINDOW_MIN = 90
+
+
+def _sticky_agent(session_id: str) -> tuple[str, str]:
+    """The specialist this session was already working with, if any.
+
+    WHY THIS EXISTS (measured 2026-09-15)
+        The routing table was re-priced and the semantic gate recalibrated, and
+        the labelled suite went 19/29 to 41/41. Then the researcher's OWN nine UI
+        requests from that day were replayed through it and the design specialist
+        was reached ZERO times. Lowering the confidence gate would not have helped
+        either: on that wording the right agent ranked 2nd, 7th, 10th, 11th and
+        21st, behind meeting-memory and background-maker.
+
+        The reason is not a weak table. It is that a follow-up request names no
+        domain at all:
+
+            "yes its collapsed but still ugly"
+            "less loss of space"
+            "put the sources to the right side of the text"
+
+        Those are judgements about something already on screen. The subject lives
+        in the CONVERSATION, not in the sentence, so no amount of keyword or
+        embedding work on a single request can recover it — the information is
+        not in the string being matched.
+
+        So when a request carries no signal of its own, the session's recent
+        subject is a better answer than the generalist. It is used ONLY then: any
+        keyword match, and any confident semantic match, still wins outright.
+    """
+    if not session_id:
+        return "", ""
+    try:
+        with connect(paths.db) as con:
+            rows = con.execute(
+                "SELECT content, created_at FROM session_events "
+                "WHERE session_id = ? AND event_type = 'routing' "
+                "ORDER BY event_id DESC LIMIT 8", (session_id,)).fetchall()
+        cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
+            minutes=_STICKY_WINDOW_MIN)
+        for content, created_at in rows:
+            try:
+                when = datetime.datetime.fromisoformat(str(created_at))
+                if when.tzinfo is None:
+                    when = when.replace(tzinfo=datetime.timezone.utc)
+                if when < cutoff:
+                    break          # rows are newest-first, so everything older is too old
+                data = json.loads(content)
+            except Exception:
+                continue
+            # Only a KEYWORD-routed turn sets the subject. A turn that was itself
+            # sticky or semantic must not seed the next one, or one lucky guess
+            # becomes the whole session's subject.
+            if data.get("task_type") in ("uncovered", "semantic", "sticky"):
+                continue
+            for slug in (data.get("agents") or []):
+                if slug and slug != "metis" and slug not in _RETIRED_ROUTING_SLUGS:
+                    return slug, str(created_at)
+    except Exception:
+        pass
+    return "", ""
+
+
 def _parse_intent_stage(request: str, session_id: str) -> dict:
     """Stage 5: select agent(s) + complexity.
 
@@ -1231,7 +1302,25 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
     sem_slug, sem_score, _sem_rank = _semantic_route(request)
 
     if uncovered:
-        if sem_slug:
+        # ORDER: keyword, then the session's subject, then the embedding.
+        #
+        # Sticky sits ABOVE semantic deliberately. Measured on this researcher's
+        # own follow-ups, the embedding router put the right specialist 2nd, 7th,
+        # 10th, 11th and 21st — and where it did clear its gate it chose
+        # background-maker for "put the sources to the right side of the text".
+        # A similarity of 0.62 against a short agent description is weaker
+        # evidence than a subject he established himself one turn earlier.
+        #
+        # The cost is a subject change phrased with no keyword at all inside the
+        # window, which lands on the previous specialist. That is visible and one
+        # sentence to correct; silently answering as the generalist was not.
+        stick, _when = _sticky_agent(session_id)
+        if stick:
+            agents = [stick]
+            routed_because = [(stick, "we were already working on this")]
+            task_type = "sticky"
+            uncovered = False
+        elif sem_slug:
             agents = [sem_slug]
             routed_because = [(sem_slug, "the closest match to what you asked")]
             task_type = "semantic"  # not a keyword match → measurable as fallback-routed
@@ -1239,7 +1328,7 @@ def _parse_intent_stage(request: str, session_id: str) -> dict:
         else:
             agents = ["metis"]
             routed_because = [("metis", "")]
-            task_type = "uncovered"  # explicit: nothing matched → generalist
+            task_type = "uncovered"  # nothing matched, no subject → generalist
     elif (sem_slug and sem_slug not in agents
           and best_priority >= _GENERIC_PRIORITY_FLOOR):
         # Only a generic word routed this. Let the meaning of the sentence lead

@@ -135,6 +135,49 @@ MUST_NOT_ROUTE = {
 }
 
 
+
+# ── The original 35-agent evaluation, one request per agent ──────────────────
+#
+# These are the requests that started the whole audit: one per specialist, each
+# phrased as the researcher would actually type it. The first run of this set
+# found 14 agents that were never reached at all. Kept here so that number can
+# never quietly grow again — a specialist that becomes unreachable fails a test
+# instead of just going quiet.
+CASES += [
+    ("What's new in NTD policy this week?", "news-radar"),
+    ("Generate STROBE flashcards for Article 4", "course-builder"),
+    ("What's needed before merging the cache format change to the server?", "release-coordinator"),
+    ("Is dashboard navigation intuitive, any friction before the demo?", "frontend-designer-builder"),
+    ("Is this link safe, it looks like a phishing attempt", "cybersecurity"),
+    ("Does this Excel file contain patient data I should not share?", "data-guardian"),
+    ("Fix a launcher bug so a partial re-render can't roll back a learner's progress", "software-engineer"),
+]
+
+# ── Follow-ups that name no domain at all ────────────────────────────────────
+#
+# Measured 2026-09-15: the researcher's real UI requests reached the design
+# specialist ZERO times out of nine, because a follow-up carries its subject in
+# the CONVERSATION, not in the sentence — "still ugly", "less loss of space".
+# These run against a session that has already been routed once, and check that
+# the subject holds. They are the reason `_sticky_agent` exists.
+STICKY_CASES: list[tuple[str, str]] = [
+    ('Redo "What needs you today" its not well organized and not inspiring', "frontend-designer-builder"),
+    ("yes its collapsed but still ugly", "frontend-designer-builder"),
+    ("the formatting between the three boxes needs to be the same, less loss of space", "frontend-designer-builder"),
+    ("put the sources to the right side of the text as there is a lot of space", "frontend-designer-builder"),
+    ("every item should start with its name and behind it are icons", "frontend-designer-builder"),
+    ("apply same formatting also to where you left off as there is a lot of empty space", "frontend-designer-builder"),
+]
+STICKY_SEED = "Build a new filter-panel UI component for the dashboard frontend"
+
+# A subject the researcher genuinely changed to must BREAK the stickiness rather
+# than inherit it — otherwise one routed turn captures the rest of the session.
+STICKY_BREAKS: list[tuple[str, str]] = [
+    ("Find the agency situation reports I should cite in the Discussion", "librarian"),
+    ("Run a Monte Carlo to check the estimator's coverage", "biostatistician"),
+    ("What did we agree with the programme about the rollout timeline?", "meeting-memory"),
+]
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("-v", "--verbose", action="store_true")
@@ -154,6 +197,17 @@ def main() -> int:
         if args.verbose:
             print(f"  {'ok ' if ok else 'FAIL'}  want={expected:26} got={','.join(agents)}")
 
+    # Sticky routing: seed a session with one request that names the domain, then
+    # send follow-ups that name nothing, and check the subject holds.
+    import uuid as _uuid
+    sid = "regression-" + _uuid.uuid4().hex[:8]
+    _parse_intent_stage(STICKY_SEED, sid)
+    sticky_fail = []
+    for request, expected in STICKY_CASES + STICKY_BREAKS:
+        got = _parse_intent_stage(request, sid)["agents"]
+        if expected not in got:
+            sticky_fail.append((request, expected, got))
+
     # A retired agent appearing in ANY result is a failure regardless of which
     # case produced it, so this is checked across the whole set rather than
     # per-case.
@@ -167,12 +221,17 @@ def main() -> int:
         print(f"RETIRED AGENTS LEAKED INTO ROUTING: {sorted(leaked)}")
     else:
         print(f"retired agents: none reachable ({len(MUST_NOT_ROUTE)} checked)")
+    n_sticky = len(STICKY_CASES) + len(STICKY_BREAKS)
+    print(f"session-sticky follow-ups: {n_sticky - len(sticky_fail)}/{n_sticky} passed")
+    for request, expected, got in sticky_fail:
+        print(f"  want {expected:26} got {','.join(got):30}")
+        print(f"       {request[:74]}")
     if failed:
         print("\nfailures:")
         for request, expected, agents, tt in failed:
             print(f"  want {expected:26} got {','.join(agents):34} [{tt}]")
             print(f"       {request[:88]}")
-    return 0 if (not failed and not leaked) else 1
+    return 0 if (not failed and not leaked and not sticky_fail) else 1
 
 
 if __name__ == "__main__":
