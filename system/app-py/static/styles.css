@@ -7939,3 +7939,102 @@ a.shf-row-title:hover { color: var(--m-accent); }
   color: var(--m-accent); font-family: var(--m-mono);
   font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
 }
+
+/* "Also waiting" — the backlog under the WHOLE Workstation.
+   It used to be the last thing inside the first column, which read as though
+   the whole backlog belonged to "What needs you today". Full width, under all
+   three, separated by a rule so it reads as a footer rather than a fourth box. */
+.ws-also {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 10px;
+  margin-top: var(--m-space-3, 12px);
+  padding-top: 10px;
+  border-top: 1px solid var(--m-rule-soft);
+}
+.ws-also-lead {
+  font-family: var(--m-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  flex: 0 0 auto;
+}
+.ws-also-items { display: flex; flex-wrap: wrap; gap: 6px; }
+.ws-also-chip {
+  font-family: var(--m-mono);
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  border: 1px solid var(--m-rule);
+  border-radius: 2px;
+  padding: 3px 8px;
+  color: var(--m-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ws-also-chip:hover {
+  color: var(--m-ink);
+  border-color: var(--m-rule-strong);
+  background: var(--m-surface-2);
+}
+
+/* ─── Morning brief: text and its provenance, side by side ──────────────────
+   The brief is set to a reading measure, so the space to its right was empty on
+   every normal window while the sources ran as a full-width band of pills
+   underneath. The rail uses that column and stops the sources pushing the rest
+   of the surface down.
+   ────────────────────────────────────────────────────────────────────────── */
+.brief-cols { display: block; }
+.brief-cols.has-rail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 272px;
+  gap: var(--m-space-6, 28px);
+  align-items: start;
+}
+/* Below this the rail would squeeze the measure instead of using spare room. */
+@media (max-width: 1100px) {
+  .brief-cols.has-rail { grid-template-columns: 1fr; gap: var(--m-space-4, 18px); }
+  .brief-rail { border-left: 0; padding-left: 0; border-top: 1px solid var(--m-rule-soft); padding-top: 14px; }
+}
+
+.brief-rail {
+  border-left: 1px solid var(--m-rule-soft);
+  padding-left: var(--m-space-4, 18px);
+  min-width: 0;
+}
+.brief-rail-h {
+  font-family: var(--m-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--m-muted);
+  margin-bottom: 10px;
+}
+.brief-src { list-style: none; margin: 0; padding: 0; }
+.brief-src-i + .brief-src-i { border-top: 1px solid var(--m-rule-soft); }
+.brief-src-l {
+  display: block;
+  padding: 8px 0;
+  text-decoration: none;
+  color: inherit;
+}
+a.brief-src-l:hover .brief-src-t { color: var(--m-ink); }
+a.brief-src-l:hover .brief-src-d { color: var(--m-accent); }
+.brief-src-d {
+  display: block;
+  font-family: var(--m-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--m-muted);
+  margin-bottom: 2px;
+}
+.brief-src-t {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--t-small, 12.5px);
+  line-height: 1.4;
+  color: var(--m-muted);
+}

@@ -159,7 +159,8 @@
     {% call zone("Workstation", key="today-workstation", kind="work",
                  collapsible=True, open=False,
                  tail_html='<span hx-get="/api/partial/today/workstation-tail"'
-                           ' hx-trigger="load" hx-swap="innerHTML"></span>') %}
+                           ' hx-trigger="load, metis:today-changed from:body"'
+                           ' hx-swap="innerHTML"></span>') %}
     <div class="ws-cols">
 
       {#- ONE LINK TO WORK PER COLUMN, AND IT LIVES IN THE HEADER (2026-09-14).
@@ -175,10 +176,21 @@
              hx-target="#tab-root" hx-push-url="/work">Work &rarr;</a>
         </div>
         <div class="ws-col-b">
+  {#- THE TARGET HAS TO EXIST BEFORE THE FIRST TASK DOES (fixed 2026-09-14).
+      This form targeted `#work-due-today`, which is rendered by the due-today
+      strip — and that strip renders NOTHING when nothing is due. So on a day
+      with an empty list the target was absent, HTMX raised targetError and
+      never issued the request: typing a task and pressing add did nothing at
+      all, and not even a row in the database to show for it. A control whose
+      first use is the one that cannot work is worse than no control.
+
+      It now targets the MOUNT, which is part of the page and always present,
+      and tells the rest of the column to refresh so the count in the folded
+      header and the "nothing on today" line agree with what you just typed. -#}
   <form class="quick-add"
         hx-post="/api/task/quick?bare=1"
-        hx-target="#work-due-today" hx-swap="outerHTML"
-        hx-on::after-request="this.reset()">
+        hx-target="#ws-due-mount" hx-swap="innerHTML"
+        hx-on::after-request="this.reset(); htmx.trigger(document.body, 'metis:today-changed')">
     <span class="quick-add-mark" aria-hidden="true">+</span>
     <input class="quick-add-input" type="text" name="title" required
            placeholder="Something to do today…" aria-label="Add a task due today">
@@ -196,12 +208,13 @@
          hx-trigger="load"
          hx-swap="innerHTML"></div>
 
-    <div hx-get="/api/partial/work/due-today?bare=1"
+    <div id="ws-due-mount"
+         hx-get="/api/partial/work/due-today?bare=1"
          hx-trigger="load delay:80ms"
          hx-swap="innerHTML"></div>
 
     <div hx-get="/api/partial/today/focus-memory?bare=1"
-         hx-trigger="load delay:100ms"
+         hx-trigger="load delay:100ms, metis:today-changed from:body"
          hx-swap="outerHTML">
       <div class="grid grid-3">
         {{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}{{ skeleton_box(size="sm") }}
@@ -251,6 +264,15 @@
       </div>
 
     </div><!-- /.ws-cols -->
+
+    {#- THE BACKLOG SITS UNDER ALL THREE COLUMNS (2026-09-14). These counts were
+        rendered by the focus panel, so they appeared at the foot of "What needs
+        you today" — as if 68 open tasks, the blocked ones, the ideas and the
+        flashcards all belonged to that one box. They are what is waiting behind
+        the whole Workstation, so they run its full width, underneath. -#}
+    <div hx-get="/api/partial/today/also-waiting"
+         hx-trigger="load delay:260ms, metis:today-changed from:body"
+         hx-swap="innerHTML"></div>
     {% endcall %}
   {#- OUTBREAKS · EVENTS · FUNDING, directly under "Where you left off".
       Moved 2026-09-05, and CLOSED while moving: the strip opened a

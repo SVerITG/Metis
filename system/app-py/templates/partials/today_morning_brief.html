@@ -150,24 +150,45 @@
         added inside it on 2026-08-31 without noticing, and the two together
         rendered nothing at all: the outer one hid the inner one, lede and all.
         One mechanism, and it now hides the right half. -#}
-    <div class="ed prose-measure brief-body">{{ brief.split("\n\n", 1)[1] if "\n\n" in brief else "" }}</div>
-    {% if sources %}
-    <div class="u-rule-t" style="margin-top:var(--m-space-5);padding-top:16px;">
-      <div class="u-label u-mb-3">SOURCES FROM THIS BRIEF</div>
-      <div style="display:flex;flex-wrap:wrap;gap:var(--m-space-2);">
-        {% for s in sources %}
-          {% if s.url %}
-            <a class="u-mono" href="{{ s.url }}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:var(--m-space-1);padding:var(--m-space-1) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);color:var(--m-text);text-decoration:none;">
-              {% if s.domain %}<span style="color:var(--m-accent);letter-spacing:0.08em;">{{ s.domain|upper }}</span>{% endif %}
-              <span style="color:var(--m-muted);">{{ s.title | clip(55) }}</span>
+    {#- SOURCES BESIDE THE TEXT, NOT UNDER IT (2026-09-14).
+        The brief is set to a reading measure, so on any normal window there is a
+        wide empty column to its right — the period tabs sit alone up there. The
+        sources were a full-width band of pill chips UNDER the prose, which both
+        wasted that column and pushed the rest of the surface down by the height
+        of two wrapped rows.
+
+        They are now a right-hand rail: a stacked list, each source one line of
+        domain over title, separated by hairlines. A list reads better than
+        wrapped pills in a narrow column, and it turns the brief into one object
+        — text and its provenance side by side — instead of two stacked bands.
+
+        The rail drops under the prose below 1100px, where a 260px column would
+        squeeze the measure rather than use spare room. -#}
+    <div class="brief-cols{{ ' has-rail' if sources else '' }}">
+      <div class="ed prose-measure brief-body">{{ brief.split("\n\n", 1)[1] if "\n\n" in brief else "" }}</div>
+      {% if sources %}
+      <aside class="brief-rail" aria-label="Sources from this brief">
+        <div class="brief-rail-h">Sources from this brief</div>
+        <ul class="brief-src">
+          {% for s in sources %}
+          <li class="brief-src-i">
+            {% if s.url %}
+            <a class="brief-src-l" href="{{ s.url }}" target="_blank" rel="noopener">
+              {% if s.domain %}<span class="brief-src-d">{{ s.domain|upper }}</span>{% endif %}
+              <span class="brief-src-t">{{ s.title | clip(90) }}</span>
             </a>
-          {% else %}
-            <span class="u-label" style="display:inline-flex;align-items:center;gap:var(--m-space-1);padding:var(--m-space-1) var(--m-space-3);background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);">{{ s.title | clip(55) }}</span>
-          {% endif %}
-        {% endfor %}
-      </div>
+            {% else %}
+            <span class="brief-src-l brief-src-l--plain">
+              {% if s.domain %}<span class="brief-src-d">{{ s.domain|upper }}</span>{% endif %}
+              <span class="brief-src-t">{{ s.title | clip(90) }}</span>
+            </span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </aside>
+      {% endif %}
     </div>
-    {% endif %}
   {% elif fallback_headlines %}
     <div class="ed u-mb-4 u-ed" style="font-size:var(--t-body);max-width:720px;">The morning scan hasn't run yet. Here are the latest signals while the brief is written.</div>
     <div class="u-col" style="gap:var(--m-space-1);">

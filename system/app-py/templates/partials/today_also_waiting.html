@@ -1,0 +1,23 @@
+{#- today_also_waiting.html — everything that is NOT today's work, counted.
+
+    MOVED OUT OF THE FIRST COLUMN (2026-09-14). These counts were rendered by the
+    focus panel, so they sat at the foot of "What needs you today" — as if the 68
+    open tasks, the blocked ones, the ideas and the flashcards all belonged to
+    that one box. They do not: they are the backlog behind the WHOLE Workstation,
+    which is why they now sit under all three columns and run the full width.
+
+    Counted rather than listed, and that is the point: a count invites, a card
+    demands. The backlog stays one click away without presenting itself as
+    today's work. Counts are disjoint by construction — `blocked` is its own
+    status and `open` excludes starred tasks, which are drawn as rows above — so
+    listing them side by side does not double-count. -#}
+{% if items %}
+<div class="ws-also">
+  <span class="ws-also-lead">also waiting</span>
+  <span class="ws-also-items">
+    {%- for href, label, why in items %}
+    <a class="ws-also-chip" href="{{ href }}" title="{{ why }}">{{ label }}</a>
+    {%- endfor %}
+  </span>
+</div>
+{% endif %}

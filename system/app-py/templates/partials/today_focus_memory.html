@@ -89,7 +89,10 @@
       what makes finishing possible: the 53 open tasks and 224 due reviews are
       still one click away, they simply stop presenting themselves as today's
       work. A count invites; a card demands. -#}
-  {% if suggested %}
+  {#- Inside a column these chips are rendered by today_also_waiting.html
+      at the foot of the whole Workstation instead — they are the backlog
+      behind all three boxes, not part of this one. -#}
+  {% if suggested and not bare %}
   {#- READ THIS ROW OUT LOUD BEFORE CHANGING IT. It used to render as
       "you might also 2 blocked 61 open 23 ideas 244 reviews due" — four separate
       links with no separator and no nouns, so it scanned as one run-on phrase and
@@ -175,7 +178,10 @@
       what makes finishing possible: the 53 open tasks and 224 due reviews are
       still one click away, they simply stop presenting themselves as today's
       work. A count invites; a card demands. -#}
-  {% if suggested %}
+  {#- Inside a column these chips are rendered by today_also_waiting.html
+      at the foot of the whole Workstation instead — they are the backlog
+      behind all three boxes, not part of this one. -#}
+  {% if suggested and not bare %}
   {#- READ THIS ROW OUT LOUD BEFORE CHANGING IT. It used to render as
       "you might also 2 blocked 61 open 23 ideas 244 reviews due" — four separate
       links with no separator and no nouns, so it scanned as one run-on phrase and

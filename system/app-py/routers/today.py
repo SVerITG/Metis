@@ -40,6 +40,51 @@ async def today_tab(request: Request):
     )
 
 
+def _also_waiting_items() -> list[tuple[str, str, str]]:
+    """The backlog behind the Workstation: (href, label, why) per count.
+
+    One author. These counts were computed inside the focus panel and rendered at
+    the foot of its column, which put the whole backlog inside the box called
+    "What needs you today" — they are not today's work, they are what is waiting
+    behind all three columns.
+
+    Disjoint by construction: `blocked` is its own status and `open` excludes
+    starred tasks, which are drawn as rows above, so nothing is counted twice.
+    """
+    def _n(sql: str) -> int:
+        try:
+            return int(db_scalar(sql, default=0) or 0)
+        except Exception:
+            return 0
+
+    out: list[tuple[str, str, str]] = []
+    n = _n(f"SELECT COUNT(*) FROM tasks WHERE {live_task_sql()} "
+           "AND COALESCE(starred,0) = 0 AND COALESCE(status,'') != 'blocked'")
+    if n:
+        out.append(("/work", f"{n} open task" + ("" if n == 1 else "s"),
+                    "Tasks you have not finished, not counting the ones above"))
+    n = _n("SELECT COUNT(*) FROM tasks WHERE status = 'blocked'")
+    if n:
+        out.append(("/work", f"{n} waiting on something else",
+                    "Tasks marked blocked — they cannot move until something else does"))
+    n = _n("SELECT COUNT(*) FROM ideas WHERE COALESCE(tags,'') NOT LIKE '%archived%'")
+    if n:
+        out.append(("/thinking", f"{n} idea" + ("" if n == 1 else "s"),
+                    "Ideas you have captured and not yet done anything with"))
+    n = _n("SELECT COUNT(*) FROM spaced_repetition WHERE next_review <= date('now')")
+    if n:
+        out.append(("/learning", f"{n} reviews due", "Flashcards due for review today"))
+    return out
+
+
+@router.get("/api/partial/today/also-waiting", response_class=HTMLResponse)
+async def today_also_waiting(request: Request):
+    """The backlog row under the whole Workstation."""
+    return templates.TemplateResponse(
+        request, "partials/today_also_waiting.html",
+        {"items": _also_waiting_items()})
+
+
 @router.get("/api/partial/today/workstation-tail", response_class=HTMLResponse)
 async def today_workstation_tail(request: Request):
     """The one line that stays on screen when the Workstation is folded shut.
@@ -1751,10 +1796,35 @@ def _load_brief_sources(db_path_str: str) -> list[dict]:
         if row and row[0]:
             items = _json.loads(row[0])
             if isinstance(items, list):
-                return items
+                return _dedupe_sources(items)
     except Exception:
         pass
     return []
+
+
+def _dedupe_sources(items: list) -> list:
+    """One row per story, whichever feed carried it.
+
+    The same item routinely arrives on two feeds, so the brief cited "Zamfara
+    Extends School Resumption" twice — once tagged SURVEILLANCE and once AFRICA.
+    Invisible while the sources were a wrapped band of pills; unmissable once
+    they became a stacked rail, which is the usual way a layout change surfaces a
+    data fault. Keyed on the URL where there is one and the normalised title
+    otherwise, and the FIRST occurrence wins so the ordering the brief chose is
+    preserved.
+    """
+    seen: set = set()
+    out: list = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        url = (it.get("url") or "").strip().rstrip("/").lower()
+        key = url or " ".join((it.get("title") or "").lower().split())
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(it)
+    return out
 
 
 def _load_brief_coverage(db_path_str: str, insight_key: str, period: str) -> dict:
