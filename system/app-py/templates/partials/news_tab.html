@@ -40,6 +40,24 @@
         {{ subj.replace('-', ' ') }} <span style="color:var(--m-muted);">{{ n }}</span>
       </button>
     {% endfor %}
+    {#- THE TAIL FOLDS (2026-09-15). The row is capped at six because a wrapped
+        row stops being scannable — but the subjects it is built from are meant
+        to grow, so the ones past six live behind a trigger that says how many
+        there are rather than being dropped. The six with the most behind them
+        stay in the open, because their counts are the information. -#}
+    {% if subfilters_more %}
+    <details class="nsub-more">
+      <summary class="nsub-more-b">+{{ subfilters_more | length }} more</summary>
+      <div class="nsub-more-body">
+        {% for subj, n in subfilters_more %}
+        <button type="button" class="btn btn--ghost btn--caps news-sub btn--sm" data-subj="{{ subj }}"
+                style="font-size:var(--t-micro);" aria-pressed="false">
+          {{ subj.replace('-', ' ') }} <span style="color:var(--m-muted);">{{ n }}</span>
+        </button>
+        {% endfor %}
+      </div>
+    </details>
+    {% endif %}
   </div>
   <script>
   (function () {

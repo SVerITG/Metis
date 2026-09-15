@@ -6640,11 +6640,26 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
         for c in picked:
             if c.get("subject"):
                 groups[c["subject"]] = groups.get(c["subject"], 0) + 1
-        subfilters = sorted(groups.items(), key=lambda kv: -kv[1])[:12]
+        # A VISIBLE ROW MAY NEVER BE UNBOUNDED (design ruling 2026-09-15).
+        #
+        # This was [:12]. Twelve chips wrap to two lines and the row stops being
+        # scannable — and the cap was the only thing holding it, on a set the
+        # surrounding code says is MEANT to grow as subjects are declared. It has
+        # not bitten yet only because there are still six.
+        #
+        # The row itself stays open rather than folding behind "All": each chip
+        # carries its count, and that distribution — "ebola 7 · diphtheria 3" —
+        # is most of the value. A collapsed trigger reading "All" hides exactly
+        # the thing worth seeing. So: the six that matter stay out, the tail
+        # folds, and the row can no longer outgrow its space.
+        _ranked = sorted(groups.items(), key=lambda kv: -kv[1])
+        subfilters = _ranked[:6]
+        subfilters_more = _ranked[6:]
     else:
         picked = [c for c, r in zip(cards, rows)
                   if _tab_matches(spec, c, subjects.get(r["ref"], ""))]
         subfilters = []
+        subfilters_more = []
 
     counts = _news_tab_counts(period)
 
@@ -6672,7 +6687,8 @@ def _news_tab_response(request: Request, tab: str, period: str, view: str):
         request, "partials/news_tab.html",
         {"cards": shown, "tabs": _NEWS_TABS, "active": tab, "spec": spec,
          "period": period, "periods": _NEWS_PERIODS, "counts": counts,
-         "subfilters": subfilters, "total": len(picked),
+         "subfilters": subfilters, "subfilters_more": subfilters_more,
+         "total": len(picked),
          "view": view, "views": NEWS_VIEWS, "stack_counts": stack_counts,
          "whatsnew_news": whatsnew_news,
          "states": states, "all_tags": tag_list},

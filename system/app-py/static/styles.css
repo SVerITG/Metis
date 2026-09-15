@@ -8360,3 +8360,22 @@ a.brief-src-l:hover .brief-src-d { color: var(--m-accent); }
   padding: 0 0 6px;
 }
 .ws-recall .ws-col-b { padding: 0; min-height: 0; }
+
+/* Overflow on a capped filter row. The trigger says HOW MANY are hidden, not a
+   bare chevron: the point of the cap is that the row stays scannable, and the
+   point of the trigger is that nothing silently disappears behind it. */
+.nsub-more { position: relative; }
+.nsub-more-b {
+  list-style: none; cursor: pointer;
+  font-family: var(--m-mono); font-size: var(--t-micro, 11px);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--m-muted); padding: 3px 8px;
+  border: 1px dashed var(--m-rule); border-radius: 2px;
+}
+.nsub-more-b::-webkit-details-marker { display: none; }
+.nsub-more-b:hover { color: var(--m-ink); border-color: var(--m-rule-strong); }
+.nsub-more[open] .nsub-more-b { border-style: solid; color: var(--m-ink); }
+.nsub-more-body {
+  display: flex; flex-wrap: wrap; gap: var(--m-space-2, 8px);
+  margin-top: 8px; width: 100%;
+}
