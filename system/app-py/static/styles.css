@@ -8379,3 +8379,51 @@ a.brief-src-l:hover .brief-src-d { color: var(--m-accent); }
   display: flex; flex-wrap: wrap; gap: var(--m-space-2, 8px);
   margin-top: 8px; width: 100%;
 }
+
+/* ─── The reading stack, at the head of the Library ──────────────────────────
+   Above the tabs because it is what you are in the MIDDLE of; the tabs beneath
+   are what you own. Given an ochre edge — the colour this system already uses
+   for "waiting on you" — so it reads as a state rather than another category.
+   Renders nothing when the pile is empty; an empty band here would recreate
+   exactly the empty surface this was removed from in August.
+   ────────────────────────────────────────────────────────────────────────── */
+.lib-reading {
+  border: 1px solid var(--m-rule);
+  border-left: 3px solid var(--m-ochre, #9a7b3c);
+  border-radius: 3px;
+  background: var(--m-surface);
+  padding: var(--d-panel, 14px);
+  margin-bottom: var(--m-gap);
+}
+.lib-reading:has(.rstack-panel:empty),
+.lib-reading:not(:has(.rstack)) { display: none; }
+
+.lib-reading-h {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 12px; margin-bottom: var(--d-stack);
+}
+.lib-reading-t {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--m-muted);
+}
+.lib-reading-all {
+  border: 0; background: transparent; padding: 0; cursor: pointer;
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--m-accent);
+}
+.lib-reading-all:hover { text-decoration: underline; }
+
+/* The stack panel inside the band brings its own box on Today; here the band is
+   the box, so it drops the second border rather than drawing one inside one. */
+.lib-reading .rstack-panel {
+  border: 0; box-shadow: none; padding: 0; background: transparent; margin: 0;
+}
+/* The top items read as a row, not a stacked list, now that they have the width. */
+.lib-reading .rstack-top {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px 18px;
+}
+.rstack-rest {
+  font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.06em;
+  color: var(--m-muted);
+}

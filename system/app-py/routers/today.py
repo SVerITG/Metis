@@ -5891,7 +5891,7 @@ async def render_reading(request: Request) -> str:
 
 
 @router.get("/api/partial/today/reading", response_class=HTMLResponse)
-async def today_reading(request: Request, bare: int = 0):
+async def today_reading(request: Request, bare: int = 0, on_library: int = 0):
     """The reading stack, drawn as a stack, at the start of the day.
 
     IT SHOWED NOTHING UNLESS SOMETHING WAS FLAGGED CRUCIAL. That rule was written
@@ -5923,6 +5923,7 @@ async def today_reading(request: Request, bare: int = 0):
         request,
         "partials/today_reading.html",
         {"items": items[:3], "total": len(items), "bare": bare,
+         "on_library": bool(on_library),
          "n_crucial": sum(1 for r in items if r.get("crucial")),
          # How deep the drawn pile looks. Capped so a 40-item stack does not
          # become a 40-layer staircase — past a few sheets the eye reads "a lot"

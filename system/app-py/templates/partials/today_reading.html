@@ -71,7 +71,16 @@
 
     {% if total > items | length %}
     <div class="mrow-more">
+      {#- On the Library surface this panel sits in a band whose header already
+          carries "open the stack", and the link there switches the tab rather
+          than following an anchor that cannot. Two routes to one place is the
+          duplication being corrected across this dashboard, so here the line
+          keeps the COUNT — which is information — and drops the second link. -#}
+      {%- if on_library %}
+      <span class="rstack-rest">{{ total - (items | length) }} more underneath</span>
+      {%- else %}
       <a class="u-link" href="/knowledge#reading">{{ total - (items | length) }} more underneath · open the stack &rarr;</a>
+      {%- endif %}
     </div>
     {% endif %}
   </div>

@@ -51,6 +51,36 @@
     </div>
   </div>
 
+  {#- ═══ THE READING STACK, ABOVE THE TABS ═══════════════════════════════════
+      Asked for 2026-09-15: "give the Reading Stack its own prominent place on
+      top in the Library Surface."
+
+      This is not a reversal of the 2026-08-29 decision that removed it as a
+      top-level surface — it is the same rule applied to changed facts. The
+      complaint then was that the Stack ranked alongside a 3,000-item library
+      while holding ZERO; reading is a STATE of a paper, not a place, and an
+      empty place does not deserve a surface. The pile is real now, so the state
+      deserves to be visible without hunting for a tab.
+
+      It stays a band rather than becoming a surface again: it sits above the
+      tabs because it is what you are in the middle of, and the tabs below it are
+      what you own. It renders nothing at all when the pile is empty, which is
+      what stops this becoming the empty panel it was removed for being.
+
+      `bare=1` because the band supplies its own heading — the same partial
+      printing its own title inside a titled container is the defect corrected
+      twice on Today this week. ═══════════════════════════════════════════════ -#}
+  <div class="lib-reading" id="lib-reading-band">
+    <div class="lib-reading-h">
+      <span class="lib-reading-t">Your reading stack</span>
+      <button type="button" class="lib-reading-all" onclick="libTab('reading')">
+        open the stack &rarr;</button>
+    </div>
+    <div hx-get="/api/partial/today/reading?bare=1&on_library=1"
+         hx-trigger="load"
+         hx-swap="innerHTML"></div>
+  </div>
+
   <!-- ===== Tab strip ===== -->
   <div class="news-tabs u-mb-5" role="tablist" aria-label="Library sections">
       <button class="news-tab" role="tab" type="button" data-libtab="new"
