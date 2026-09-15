@@ -127,7 +127,7 @@ CASES: list[tuple[str, str]] = [
 # them cannot be dispatched by the Agent tool at all. A rule pointing at one of
 # these fails at the point of use, far from its cause.
 MUST_NOT_ROUTE = {
-    "ux-engineer", "dashboard-engineer", "edu-expert", "learning-architect",
+    "ux-engineer", "edu-expert", "learning-architect",
     "news-aggregator", "learning-coach", "metis-self-reflexion", "metis-update",
     "metis-audit-features", "metis-audit-install", "metis-audit-memory",
     "metis-audit-security", "metis-audit-ui", "metis-audit-vision",
@@ -151,6 +151,28 @@ CASES += [
     ("Is this link safe, it looks like a phishing attempt", "cybersecurity"),
     ("Does this Excel file contain patient data I should not share?", "data-guardian"),
     ("Fix a launcher bug so a partial re-render can't roll back a learner's progress", "software-engineer"),
+]
+
+
+# ── The two dashboard agents must stay apart ─────────────────────────────────
+#
+# `dashboard-engineer` was retired on 2026-09-14 and RESTORED on 2026-09-15 at the
+# researcher's instruction. The retirement had rested on the other agent's prompt
+# claiming to replace it; its own prompt opens "You are not a generic frontend
+# builder", and it carries a HAT-dashboard context file nothing else has.
+#
+# They share a stack, so the stack cannot separate them. The question does: "does
+# this look right" is design, "is this the right indicator over the right
+# denominator" is epidemiology. These cases hold that line — if a future tidy-up
+# merges the vocabularies again, this is where it shows.
+CASES += [
+    ("Is the positivity rate panel using the right denominator?", "dashboard-engineer"),
+    ("Add a coverage gap indicator to the surveillance dashboard", "dashboard-engineer"),
+    ("Build a data quality panel for the passive screening data", "dashboard-engineer"),
+    ("This dashboard tab renders a blank panel, the spinner never resolves", "dashboard-engineer"),
+    ("The spacing and typography on this panel feel wrong", "frontend-designer-builder"),
+    ("Pick a palette for the new design system", "frontend-designer-builder"),
+    ("This looks ugly, the formatting is inconsistent", "frontend-designer-builder"),
 ]
 
 # ── Follow-ups that name no domain at all ────────────────────────────────────

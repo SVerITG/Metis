@@ -77,7 +77,7 @@ automatic routing, which is reversible, rather than deleting work.
 
 | Slug | Why | Reach it by |
 |---|---|---|
-| `dashboard-engineer`, `ux-engineer` | `frontend-designer-builder/system-prompt.md` states it replaces both; they outranked it (priority 40 vs 45) and won its requests. `ux-engineer` has no `.claude/agents` file at all | keywords now route to `frontend-designer-builder` |
+| `ux-engineer` | superseded by `frontend-designer-builder`, and it has no `.claude/agents` file at all — routing could name it, the Agent tool could not run it | keywords now route to `frontend-designer-builder` |
 | `edu-expert` | no `system-prompt.md` and no `.claude/agents` file — nothing to dispatch | `/edu-expert` skill |
 | `learning-architect` | one vocabulary shared with `course-builder`, which does the work (14 runs vs 2) | `/learning-architect` skill |
 | `news-aggregator` | a pipeline, not a viewpoint; no request distinguishes it from `news-radar` | `/news-aggregator` skill |
@@ -93,6 +93,28 @@ server start, so the second computer picks them up on its own — see
 **Before changing routing, run `python3 tools/test_routing_regression.py`.** It
 holds 29 labelled requests from the audit; the table was previously tuned by
 argument, and this is what makes a change measurable instead of arguable.
+
+### `dashboard-engineer` is NOT the frontend agent (restored 2026-09-15)
+
+It was retired on 2026-09-14 and that was wrong. The retirement rested on
+`frontend-designer-builder`'s prompt claiming to replace it — but this agent's
+own prompt opens *"You are not a generic frontend builder"*, and it carries a
+`hat-dashboard-context.md` no other agent has.
+
+**It is the epidemiological dashboard builder**: which indicator matters, what
+the denominator is, how surveillance data should be read, and the FastAPI/HTMX
+partial that shows it. That is data analysis and visualisation together, which
+is a different job from design.
+
+They share a stack, so the stack cannot tell them apart. **The question does:**
+
+| The question | Agent |
+|---|---|
+| "is this the right indicator, over the right denominator?" · coverage · positivity · burden · a blank panel on a surveillance tab | `dashboard-engineer` |
+| "does this look right?" · spacing · typography · palette · components · navigation | `frontend-designer-builder` |
+
+`tools/test_routing_regression.py` holds seven cases that keep that line. If a
+future tidy-up merges the vocabularies again, they fail.
 
 ### When to route
 
@@ -283,7 +305,8 @@ When a request arrives, route as follows:
 | Idea, brainstorm | Metis (capture → route) | — |
 | RSS/feed automation, news curation | News Radar | — |
 | UI/UX build, design system, CSS | Frontend Designer Builder | Software Engineer |
-| Dashboard route, HTMX partial, KPI panel | Frontend Designer Builder | Software Engineer |
+| Dashboard route, HTMX partial, KPI panel | Dashboard Engineer | Software Engineer |
+| Epidemiological indicator, coverage, denominator | Dashboard Engineer | Epidemiologist |
 | Existing UI audit, design critique | Design Auditor | Frontend Designer Builder |
 | Diagrams, charts, visualizations | Visualization Maker | Frontend Designer Builder |
 | Content extraction, web scraping | Content Harvester | Librarian |

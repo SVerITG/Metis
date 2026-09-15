@@ -522,10 +522,7 @@
         "data-guardian",
         "visualization-maker"
       ],
-      "routing": "retired",
-      "retired_on": "2026-09-14",
-      "retired_to": "frontend-designer-builder",
-      "retired_reason": "Superseded — frontend-designer-builder's own system prompt states it replaces this agent, and outranked it in the routing table (priority 40 vs 45)."
+      "routing": "active"
     },
     {
       "slug": "ux-engineer",

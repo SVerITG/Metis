@@ -704,13 +704,25 @@ _COVERAGE_ROUTING_SEED: list[tuple[list, str, str, int]] = [
     # their rules anyway and outranked it (ux-engineer 40 vs 45), so the
     # successor lost requests to the agents it superseded. Their keywords move
     # here and the two are retired from routing by _RETIRED_ROUTING_SLUGS.
+    # SPLIT BY WHAT THE QUESTION IS ABOUT, NOT BY THE STACK (2026-09-15).
+    # Both of these build FastAPI + HTMX partials, so the stack cannot tell them
+    # apart. What tells them apart is the question: "does this look right" is a
+    # design question; "is this the right indicator, over the right denominator"
+    # is an epidemiological one. The words are divided on that line.
     (["frontend", "front end", "component design", "design system", "css",
-      "responsive", "ui design", "htmx", "kpi panel", "blank panel",
-      "dashboard tab", "dashboard bug", "jinja", "partial",
+      "responsive", "ui design", "jinja",
       "ui component", "navigation", "intuitive", "look and feel", "spacing",
-      "not inspiring", "ugly", "formatting",
+      "not inspiring", "ugly", "formatting", "typography", "palette",
       ("layout", 50), ("ux", 45), ("component", 55), ("panel", 58)],
      "frontend-designer-builder", "ui", 32),
+
+    # The epidemiological dashboard: what to show and why, not how it looks.
+    (["indicator", "kpi", "denominator", "coverage gap", "positivity rate",
+      "screening completeness", "surveillance dashboard", "burden",
+      "data quality panel", "dashboard tab", "dashboard bug", "blank panel",
+      "htmx partial", "fastapi route", "hat dashboard", "spinner",
+      ("htmx", 45), ("partial", 55)],
+     "dashboard-engineer", "dashboard", 26),
     (["design audit", "ui critique", "design review", "audit the interface",
       "accessibility", "contrast ratio", "wcag"],
      "design-auditor", "ui", 30),
@@ -775,15 +787,23 @@ _RETIRED_ROUTING_SLUGS = frozenset({
     "metis-audit-features", "metis-audit-install", "metis-audit-memory",
     "metis-audit-security", "metis-audit-ui", "metis-audit-vision",
     "metis-audit-workflow", "metis-self-reflexion", "metis-update",
-    "ux-engineer", "dashboard-engineer", "edu-expert", "learning-architect",
+    "ux-engineer", "edu-expert", "learning-architect",
     "news-aggregator", "learning-coach",
 })
+# `dashboard-engineer` was retired here on 2026-09-14 and RESTORED on 2026-09-15.
+# The retirement rested on frontend-designer-builder's prompt claiming to replace
+# it. Its own prompt says the opposite, in its first paragraph: "You are not a
+# generic frontend builder" — its subject is which indicator matters, what the
+# denominator is, and how surveillance data should be read, and it carries a
+# HAT-dashboard context file no other agent has. Two agents can share a stack and
+# still be different jobs; what they must not share is the same VOCABULARY, which
+# is what the split below fixes.
 
 # Bumped whenever the seeds above change in a way existing installs must adopt.
 # The table is seeded ONCE (on an empty table), so without this a priority fix
 # shipped in code would never reach a machine whose DB was already seeded — and
 # the DB does not sync between the researcher's two computers.
-_ROUTING_SEED_VERSION = 5
+_ROUTING_SEED_VERSION = 6
 
 
 def _iter_seed(seed) -> list[tuple[str, str, str, int]]:
