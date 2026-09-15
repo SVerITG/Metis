@@ -96,7 +96,11 @@
       line down. -#}
   {% set has_cov = coverage and (coverage.led or coverage.held or coverage.escalated) %}
   {% set show_rail = brief and (sources or has_cov) %}
-  <div class="brief-cols{{ ' has-rail' if show_rail else '' }}">
+  {#- `has-rail` must track whether the rail is SHOWN, not whether it exists.
+      `display:none` removes the rail as a grid item but not the 272px TRACK, so
+      a read, collapsed brief rendered with an empty column and a gap beside it.
+      Caught in review 2026-09-15. -#}
+  <div class="brief-cols{{ ' has-rail' if (show_rail and not collapsed) else '' }}">
     <div class="brief-main">
   {% if brief %}
   <p class="brief-lede ed{% if collapsed %} is-folded{% endif %}" id="brief-lede">{{ brief.split("\n\n")[0] }}</p>
@@ -300,6 +304,10 @@ function toggleBrief(){
   // the lede), so it does not inherit the fold and has to be told.
   var rail = document.getElementById('brief-rail');
   if(rail) rail.classList.toggle('is-folded', open);
+  // The grid TRACK has to go with it, or the folded brief keeps a 272px column
+  // of nothing on its right.
+  var cols = rail && rail.closest('.brief-cols');
+  if(cols) cols.classList.toggle('has-rail', !open);
   var more = document.getElementById('brief-more');
   if(more){
     more.setAttribute('aria-expanded', open ? 'false' : 'true');

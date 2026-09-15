@@ -7879,17 +7879,11 @@ a.shf-row-title:hover { color: var(--m-accent); }
   overflow: hidden;
 }
 
-/* A third-width column cannot hold a one-line title plus an action on the same
-   row, so the title wraps instead of ellipsing at six characters. A truncated
-   project name is not a project name. */
-.ws-col-b .mrow-title {
-  white-space: normal;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.ws-col-b .mrow-acts { flex: 0 0 auto; }
+/* (`.ws-col-b .mrow-title` and `.mrow-acts` were declared twice, 358 lines
+   apart, both added the same day — and the earlier `.mrow-acts { flex }` was
+   inert once the later rule made it a grid child. Merged into the single block
+   below; two authors for one selector is the defect this codebase has already
+   been corrected for once, on the task counts.) */
 .ws-col-b .mrow-meta--clamp { -webkit-line-clamp: 1; }
 
 /* Focus items inside the Workstation column: a list, one line each, more on
@@ -8101,17 +8095,25 @@ a.brief-src-l:hover .brief-src-d { color: var(--m-accent); }
   display: flex;
   align-items: flex-start;
   gap: 7px;
-  padding: 7px 8px 7px 9px;
-  border-left: 2px solid var(--m-rule);
+  padding: 7px 8px;
   border-bottom: 1px solid var(--m-rule-soft);
   background: var(--m-surface);
 }
 .ny-body { flex: 1 1 auto; min-width: 0; }
 .ny-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px; }
 .ny-row:last-child { border-bottom: 0; }
-.ny-row--project  { border-left-color: var(--m-accent); }
-.ny-row--starred  { border-left-color: var(--m-ochre, #b8892b); }
-.ny-row--task     { border-left-color: var(--m-rule-strong, var(--m-rule)); }
+/* KIND IS CARRIED BY THE WORD, NOT THE EDGE (corrected in review 2026-09-15).
+   Three reasons, and any one of them is enough:
+     · the left edge already means STATE elsewhere — `.item--later` is an accent
+       edge, `.item--saved` an ochre one — so one channel would carry two
+       vocabularies on the same surface;
+     · on `.mrow` the left edge is the HOVER affordance, so colouring it here
+       cancelled the feedback on the row beneath the cursor;
+     · in the observatory theme `--m-accent` and `--m-ochre` are the SAME hex
+       (#d99a4c), so "project" and "starred" were one colour there, and the
+       measured contrast of the task edge was 1.76:1 against a 3:1 floor.
+   The mono kind word is already how this system says what a row is — eight
+   other components do it — and it works in every theme. */
 
 /* The name, first and doing the work. One line: the row is a reminder, not the
    task itself, and the full text is on the title attribute. */
@@ -8228,19 +8230,32 @@ a.brief-src-l:hover .brief-src-d { color: var(--m-accent); }
     "state acts";
   align-items: start;
   gap: 2px 8px;
-  padding: 7px 8px 7px 9px;
-  border-left: 2px solid var(--m-rule-strong, var(--m-rule));
+  /* No left border: `.mrow:hover` uses that edge for its hover affordance, and a
+     static colour there cancels the feedback (review 2026-09-15). The 9px/8px
+     asymmetric padding existed only to compensate for the border's 2px. */
+  padding: 7px 8px;
   border-bottom: 1px solid var(--m-rule-soft);
 }
 .ws-col-b .mrow:last-child { border-bottom: 0; }
-.ws-col[data-ws-col="left-off"] .ws-col-b .mrow { border-left-color: var(--m-accent); }
-.ws-col[data-ws-col="reading"]  .ws-col-b .mrow { border-left-color: var(--m-ochre, #b8892b); }
+/* Same correction: the left edge on `.mrow` is the hover affordance. Colouring
+   it per column cancelled the feedback it exists to give. */
 
 .ws-col-b .mrow-body  { grid-area: body;  min-width: 0; }
 .ws-col-b .mrow-state { grid-area: state; }
 .ws-col-b .mrow-acts  { grid-area: acts;  align-self: center; }
 
-.ws-col-b .mrow-title { font-size: 13px; line-height: 1.35; }
+/* A third-width column cannot hold a one-line title beside an action, so the
+   title wraps to two lines rather than ellipsing at six characters — a
+   truncated project name is not a project name. */
+.ws-col-b .mrow-title {
+  font-size: var(--t-small);
+  line-height: 1.35;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .ws-col-b .mrow-meta {
   display: block;
   margin-top: 2px;
