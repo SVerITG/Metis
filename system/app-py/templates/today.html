@@ -346,41 +346,36 @@
       defines in all six themes rather than inventing a sixth colour to learn.
       A course drags from here into "What needs you today" above.
       ═══════════════════════════════════════════════════════════════════════ -#}
+  {#- THE COURSES ACROSS THE TOP, RECALL UNDERNEATH (2026-09-15).
+      It was three columns side by side — Continue | Recall | Not yet begun — so
+      the three course slots were squeezed into a third of the width and stacked
+      vertically inside it, which is the opposite of what three slots are for.
+
+      Asked for: the three courses on top, the ones I choose, with recall below
+      them. "Not yet begun" is gone with the same instruction: nine courses that
+      were never opened are not today's study, and the slot picker is where a new
+      course gets chosen. They are still on the Learning surface.
+
+      The picker already existed — each slot has a course dropdown — but it was
+      behind a "⋯" menu, which is why it read as though there were no choice. -#}
   {% call zone("Learning station", key="today-learning-station", kind="learning",
-               tail="YOUR STUDY · DRAG A COURSE INTO TODAY", collapsible=False) %}
-  <div class="ws-cols ws-cols--learning">
+               tail="YOUR STUDY · PICK A COURSE PER BOX", collapsible=False) %}
 
-    <div class="ws-col" data-ws-col="continue">
-      <div class="ws-col-h">Continue</div>
-      <div class="ws-col-b">
-        <div hx-get="/api/partial/today/learning"
-             hx-trigger="load delay:300ms"
-             hx-swap="outerHTML"></div>
-      </div>
+  <div hx-get="/api/partial/today/learning"
+       hx-trigger="load delay:300ms"
+       hx-swap="outerHTML"></div>
+
+  {#- RECALL, under the courses rather than beside them: it is the same subject
+      from the other end — above is what to read next, this is what was read. -#}
+  {#- No heading here: the review partial renders its own "Recall". Adding one
+      outside it printed the word twice — the same defect corrected in the
+      Workstation columns on 2026-09-14. -#}
+  <div class="ws-recall">
+    <div class="ws-col-b">
+      <div hx-get="/api/partial/today/review"
+           hx-trigger="load delay:360ms"
+           hx-swap="outerHTML"></div>
     </div>
-
-    {#- RECALL — one card, drawn only from lessons already completed. Asked for
-        2026-09-04. Beside the slots rather than under them: it is the same
-        subject seen from the other end — that column is what to read next,
-        this one is what was read. -#}
-    <div class="ws-col" data-ws-col="recall">
-      <div class="ws-col-h">Recall</div>
-      <div class="ws-col-b">
-        <div hx-get="/api/partial/today/review"
-             hx-trigger="load delay:360ms"
-             hx-swap="outerHTML"></div>
-      </div>
-    </div>
-
-    <div class="ws-col" data-ws-col="shelf">
-      <div class="ws-col-h">Not yet begun</div>
-      <div class="ws-col-b">
-        <div hx-get="/api/partial/today/learning-shelf"
-             hx-trigger="load delay:400ms"
-             hx-swap="innerHTML"></div>
-      </div>
-    </div>
-
   </div>
   {% endcall %}
 

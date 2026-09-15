@@ -7540,9 +7540,9 @@ a.shf-row-title:hover { color: var(--m-accent); }
    an override of `.tls-strip`, scoped to a column, rather than a change to the
    strip itself: the same partial is still drawn full width on the Learning
    surface, where three across is right. */
-.ws-col[data-ws-col="continue"] .tls-strip { grid-template-columns: 1fr; gap: 10px; }
-.ws-col[data-ws-col="continue"] #today-learning { margin-bottom: 0; }
-.ws-col[data-ws-col="continue"] .tls-slot--empty { min-height: 92px; }
+/* (The `continue` column is gone — the slots run the full width of the zone
+   now, so the rules that squeezed them into one column were deleted rather than
+   left as dead selectors. 2026-09-15.) */
 
 /* ── Not yet begun ─────────────────────────────────────────────────────────
    Age, not progress. Every row here is at zero by definition, so a bar would be
@@ -8343,3 +8343,20 @@ a.brief-src-l:hover .brief-src-d { color: var(--m-accent); }
   align-items: center;
   justify-content: center;
 }
+
+/* ─── Learning station: courses across the top, recall beneath ───────────────
+   The three slots used to sit inside a third-width column, which forced the
+   strip to a single column and stacked them — the opposite of what three slots
+   are for. They now run the full width of the zone and recall sits under them.
+   ────────────────────────────────────────────────────────────────────────── */
+.ws-recall {
+  margin-top: var(--m-space-3, 12px);
+  padding-top: var(--d-stack);
+  border-top: 1px solid var(--m-rule-soft);
+}
+.ws-recall .ws-col-h {
+  background: transparent;
+  border-bottom: 0;
+  padding: 0 0 6px;
+}
+.ws-recall .ws-col-b { padding: 0; min-height: 0; }
