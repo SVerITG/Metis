@@ -8038,3 +8038,54 @@ a.brief-src-l:hover .brief-src-d { color: var(--m-accent); }
   line-height: 1.4;
   color: var(--m-muted);
 }
+
+/* Running stories, in the rail beside the brief rather than a band beneath it.
+   Chips wrap down a 272px column, so they are sized for it: one line each, the
+   label doing the work and the age trailing it. */
+.brief-rail-h--2 {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--m-rule-soft);
+}
+.brief-cov-lead {
+  margin: 0 0 6px;
+  font-size: var(--t-micro, 11px);
+  line-height: 1.45;
+  color: var(--m-muted);
+}
+.brief-cov-lead--alert { color: var(--m-ochre-deep, var(--m-accent)); }
+.brief-cov-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.brief-cov-row:last-child { margin-bottom: 0; }
+.brief-cov {
+  font-family: var(--m-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+  padding: 2px 7px;
+  border-radius: var(--m-radius-pill, 999px);
+  background: var(--m-surface-2);
+  border: 1px solid var(--m-rule-soft);
+  color: var(--m-muted);
+  white-space: nowrap;
+}
+.brief-cov--led {
+  background: var(--m-accent-wash, var(--m-surface-2));
+  border-color: transparent;
+  color: var(--m-accent);
+}
+.brief-cov--esc {
+  background: var(--m-ochre-wash, var(--m-surface-2));
+  border-color: transparent;
+  color: var(--m-ochre-deep, var(--m-ink));
+}
+
+/* The brief's left column. `min-width:0` so a long unbroken token in the prose
+   cannot widen the grid track and squeeze the rail. */
+.brief-main { min-width: 0; }
+/* The rail is outside the collapsible body so it can start level with the lede,
+   which means the fold has to reach it explicitly (see toggleBrief). */
+.brief-rail.is-folded { display: none; }

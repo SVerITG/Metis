@@ -88,6 +88,16 @@
       that are left" — the lede now folds away with the body. The header keeps
       the date and the control keeps the word count, so a closed brief still
       says what it is and how long it is. -#}
+  {#- THE GRID STARTS AT THE TOP OF THE PANEL (2026-09-14).
+      The rail was opened inside the collapsible body, so it began BELOW the
+      lede — leaving the widest gap on the panel, the one directly under the
+      period tabs, still empty. The two columns now begin together: prose and
+      lede on the left, what the brief is made of on the right, from the first
+      line down. -#}
+  {% set has_cov = coverage and (coverage.led or coverage.held or coverage.escalated) %}
+  {% set show_rail = brief and (sources or has_cov) %}
+  <div class="brief-cols{{ ' has-rail' if show_rail else '' }}">
+    <div class="brief-main">
   {% if brief %}
   <p class="brief-lede ed{% if collapsed %} is-folded{% endif %}" id="brief-lede">{{ brief.split("\n\n")[0] }}</p>
   <button type="button" class="brief-more" id="brief-more" onclick="toggleBrief()"
@@ -164,31 +174,7 @@
 
         The rail drops under the prose below 1100px, where a 260px column would
         squeeze the measure rather than use spare room. -#}
-    <div class="brief-cols{{ ' has-rail' if sources else '' }}">
-      <div class="ed prose-measure brief-body">{{ brief.split("\n\n", 1)[1] if "\n\n" in brief else "" }}</div>
-      {% if sources %}
-      <aside class="brief-rail" aria-label="Sources from this brief">
-        <div class="brief-rail-h">Sources from this brief</div>
-        <ul class="brief-src">
-          {% for s in sources %}
-          <li class="brief-src-i">
-            {% if s.url %}
-            <a class="brief-src-l" href="{{ s.url }}" target="_blank" rel="noopener">
-              {% if s.domain %}<span class="brief-src-d">{{ s.domain|upper }}</span>{% endif %}
-              <span class="brief-src-t">{{ s.title | clip(90) }}</span>
-            </a>
-            {% else %}
-            <span class="brief-src-l brief-src-l--plain">
-              {% if s.domain %}<span class="brief-src-d">{{ s.domain|upper }}</span>{% endif %}
-              <span class="brief-src-t">{{ s.title | clip(90) }}</span>
-            </span>
-            {% endif %}
-          </li>
-          {% endfor %}
-        </ul>
-      </aside>
-      {% endif %}
-    </div>
+    <div class="ed prose-measure brief-body">{{ brief.split("\n\n", 1)[1] if "\n\n" in brief else "" }}</div>
   {% elif fallback_headlines %}
     <div class="ed u-mb-4 u-ed" style="font-size:var(--t-body);max-width:720px;">The morning scan hasn't run yet. Here are the latest signals while the brief is written.</div>
     <div class="u-col" style="gap:var(--m-space-1);">
@@ -205,35 +191,10 @@
     </div>
   {% endif %}
 
-  {# Story-thread coverage. Marking a brief read is what puts its stories on
-     cooldown, so the consequence of the button has to be visible — otherwise
-     "why has Ebola vanished from my brief?" has no answer on the page, and
-     "why is it still here?" (brief never marked read) has no answer either. #}
-  {% if coverage and (coverage.led or coverage.held) %}
-  <div class="u-rule-t" style="margin-top:var(--m-space-4);padding-top:14px;">
-    <div class="u-label u-mb-2">
-      RUNNING STORIES
-    </div>
-    {% if coverage.led %}
-    <div class="u-mb-2" style="font-size:var(--t-meta);color:var(--m-text);line-height:1.65;">
-      {% if brief_read %}Quieted by this brief{% else %}Marking this read will quiet{% endif %}:
-      {% for c in coverage.led %}<span class="u-label u-label--accent" style="padding:var(--m-space-1) var(--m-space-2);margin-right:4px;background:var(--m-accent-wash);border-radius:var(--m-radius-pill);">{{ c.label }}</span>{% endfor %}
-    </div>
-    {% endif %}
-    {% if coverage.held %}
-    <div style="font-size:var(--t-meta);color:var(--m-muted);line-height:1.65;">
-      Held back today (already delivered):
-      {% for c in coverage.held %}<span class="u-mono" style="padding:var(--m-space-1) var(--m-space-2);margin-right:4px;background:var(--m-surface-2);border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);">{{ c.label }}{% if c.days is not none %} · {{ c.days }}d{% endif %}</span>{% endfor %}
-    </div>
-    {% endif %}
-    {% if coverage.escalated %}
-    <div style="font-size:var(--t-meta);color:var(--m-ochre-deep);line-height:1.65;margin-top:var(--m-space-2);">
-      &#9650; Broke silence — something changed:
-      {% for c in coverage.escalated %}<span class="u-mono" style="padding:var(--m-space-1) var(--m-space-2);margin-right:4px;background:var(--m-ochre-wash);border-radius:var(--m-radius-pill);">{{ c.label }}</span>{% endfor %}
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
+  {#- Story-thread coverage now renders INSIDE the brief's right rail (see
+      above). Marking a brief read is what puts its stories on cooldown, so the
+      consequence of the button still has to be visible — it simply sits beside
+      the brief instead of under it. -#}
 
     {# Action row #}
     <div class="u-row u-row--wrap u-rule-t" style="margin-top:var(--m-space-5);padding-top:16px;">
@@ -266,7 +227,61 @@ Produce my Metis {% if period == 'weekly' %}weekly{% elif period == 'catchup' %}
 
     {# Previous briefings (lazy-loaded) #}
     <div class="u-hide" id="brief-history" style="margin-top:var(--m-space-4);"></div>
-  </div>
+  </div>{# /#morning-brief-body #}
+    </div>{# /.brief-main #}
+    {% if show_rail %}
+    <aside class="brief-rail{% if collapsed %} is-folded{% endif %}" id="brief-rail" aria-label="Sources and running stories">
+      {% if sources %}
+        <div class="brief-rail-h">Sources from this brief</div>
+        <ul class="brief-src">
+          {% for s in sources %}
+          <li class="brief-src-i">
+            {% if s.url %}
+            <a class="brief-src-l" href="{{ s.url }}" target="_blank" rel="noopener">
+              {% if s.domain %}<span class="brief-src-d">{{ s.domain|upper }}</span>{% endif %}
+              <span class="brief-src-t">{{ s.title | clip(90) }}</span>
+            </a>
+            {% else %}
+            <span class="brief-src-l brief-src-l--plain">
+              {% if s.domain %}<span class="brief-src-d">{{ s.domain|upper }}</span>{% endif %}
+              <span class="brief-src-t">{{ s.title | clip(90) }}</span>
+            </span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+        {#- RUNNING STORIES MOVED INTO THE RAIL (2026-09-14). It was a full-width
+            band under the brief, and the rail beside the text still had room —
+            so the panel was taller than it needed to be while the column next to
+            it sat empty. Same reasoning as the sources above it: what the brief
+            is MADE of, and what it is holding back, both belong beside the brief
+            rather than stacked under it. -#}
+      {% if has_cov %}
+        <div class="brief-rail-h{{ ' brief-rail-h--2' if sources else '' }}">Running stories</div>
+        {% if coverage.led %}
+        <p class="brief-cov-lead">{% if brief_read %}Quieted by this brief{% else %}Marking this read will quiet{% endif %}</p>
+        <div class="brief-cov-row">
+          {% for c in coverage.led %}<span class="brief-cov brief-cov--led">{{ c.label }}</span>{% endfor %}
+        </div>
+        {% endif %}
+        {% if coverage.held %}
+        <p class="brief-cov-lead">Held back today · already delivered</p>
+        <div class="brief-cov-row">
+          {% for c in coverage.held %}<span class="brief-cov">{{ c.label }}{% if c.days is not none %} · {{ c.days }}d{% endif %}</span>{% endfor %}
+        </div>
+        {% endif %}
+        {% if coverage.escalated %}
+        <p class="brief-cov-lead brief-cov-lead--alert">&#9650; Broke silence — something changed</p>
+        <div class="brief-cov-row">
+          {% for c in coverage.escalated %}<span class="brief-cov brief-cov--esc">{{ c.label }}</span>{% endfor %}
+        </div>
+        {% endif %}
+      {% endif %}
+      </aside>
+      {% endif %}
+  </div>{# /.brief-cols #}
 </div>
 <script>
 function toggleBrief(){
@@ -281,6 +296,10 @@ function toggleBrief(){
   // no-op — the change happened below the fold and nothing on screen agreed.
   var lede = document.getElementById('brief-lede');
   if(lede) lede.classList.toggle('is-folded', open);
+  // The rail sits OUTSIDE the collapsible body (it has to, to start level with
+  // the lede), so it does not inherit the fold and has to be told.
+  var rail = document.getElementById('brief-rail');
+  if(rail) rail.classList.toggle('is-folded', open);
   var more = document.getElementById('brief-more');
   if(more){
     more.setAttribute('aria-expanded', open ? 'false' : 'true');
