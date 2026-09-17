@@ -97,9 +97,24 @@
         against 29 shelves would be 261 inlined options otherwise. -#}
     <details class="fw-keep">
       <summary class="fw-act fw-act--keep" title="Keep it in your library — and say which shelf">Keep</summary>
+      {#- `hx-target="this"` — WITHOUT IT THE KEEP BUTTON WIPED THE BOX.
+          Reported 2026-09-17: "the Keep button broke the page, I cannot see the
+          News and New papers anymore."
+
+          This div set `hx-swap="innerHTML"` but no target, so it inherited
+          `hx-target="#today-field-week"` from the box at the top of this file.
+          Opening Keep therefore loaded the shelf list into the innerHTML of the
+          WHOLE BOX, replacing every news row and every paper with a shelf
+          picker. Nothing was lost and a reload restored it, which is why it
+          reads as the page breaking rather than as a bug in a button.
+
+          A swap without a target is a swap into whatever an ancestor last
+          declared. The box declares one for the four verdict buttons, and every
+          other request inside it has to say where it goes. -#}
       <div class="fw-keep-body"
            hx-get="/api/partial/library/shelf-picker?kind={{ kind }}&item_id={{ item_id }}&back=today-field"
            hx-trigger="toggle once from:closest details"
+           hx-target="this"
            hx-swap="innerHTML">
         <span class="fw-keep-wait">shelves…</span>
       </div>
