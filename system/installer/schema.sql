@@ -1529,3 +1529,16 @@ CREATE TABLE IF NOT EXISTS deck_styles (
     state       TEXT DEFAULT 'proposed',-- 'on-disk' | 'proposed'
     sort_order  INTEGER DEFAULT 50
 );
+
+-- ── The single most expensive query on the Today surface ─────────────────────
+-- "In your field" shows one row per STORY, and the same piece arrives from
+-- several feeds, so it de-duplicates with a correlated subquery matching
+-- LOWER(TRIM(title)). A function on both sides cannot use an ordinary index, so
+-- SQLite scanned every brief for every candidate row.
+--
+-- Measured 2026-09-17 on 6,692 briefs: the query took 3.19s, and 3.19s of that
+-- was the dedupe — the same query without it ran in 0.003s. Every rating
+-- re-rendered the box, so this was the whole of the "clicking is slow" problem.
+-- With this expression index: 0.003s. A thousandfold, and it builds in 0.01s.
+CREATE INDEX IF NOT EXISTS idx_news_briefs_title_norm
+  ON news_briefs(LOWER(TRIM(title)), relevance DESC);

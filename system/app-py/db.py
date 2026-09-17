@@ -351,6 +351,10 @@ def run_migrations() -> list[str]:
     try:
         db_path = get_db_path()
         conn = sqlite3.connect(str(db_path))
+        # Which indexes already exist, so the change list names only NEW ones —
+        # `IF NOT EXISTS` is silent about whether it did anything.
+        existing_indexes = {r[0] for r in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='index'")}
 
         for block in re.finditer(
             r"CREATE TABLE IF NOT EXISTS (\w+)\s*\((.+?)\);",
@@ -383,6 +387,32 @@ def run_migrations() -> list[str]:
                         changes.append(f"{table}.{first}")
                     except sqlite3.OperationalError:
                         pass
+
+        # ── INDEXES (added 2026-09-17) ──────────────────────────────────────
+        # This migrator applied CREATE TABLE and ADD COLUMN and silently ignored
+        # every CREATE INDEX in schema.sql. Declaring an index therefore did
+        # nothing to an existing database — only to a fresh install — and three
+        # were missing here for that reason.
+        #
+        # It is not a cosmetic gap. The index on the news dedupe was measured the
+        # same day at 3.19s → 0.003s on the Today surface; an index that reaches
+        # only new installs would have left that cost in place on this machine
+        # and on the second computer, whose database never syncs.
+        #
+        # `IF NOT EXISTS` makes each one idempotent, and a single failure must
+        # not abandon the rest — an index that cannot build (a column dropped, a
+        # bad expression) is worth one log line, not a dead migration.
+        for stmt in re.findall(r"CREATE\s+(?:UNIQUE\s+)?INDEX\s+IF\s+NOT\s+EXISTS\s+.+?;",
+                               schema_sql, re.I | re.S):
+            name = re.search(r"EXISTS\s+(\w+)", stmt, re.I)
+            try:
+                conn.execute(stmt.rstrip(";"))
+                if name and name.group(1) not in existing_indexes:
+                    changes.append(f"index:{name.group(1)}")
+            except sqlite3.OperationalError as exc:
+                logging.getLogger("metis.db").warning(
+                    "schema: index %s not created (%s)",
+                    name.group(1) if name else "?", exc)
 
         conn.commit()
         conn.close()
@@ -423,3 +453,24 @@ def run_migrations() -> list[str]:
 # old profile are on a different scale and must be re-scored before it applies
 # (tools/rescore_relevance.py).
 RELEVANCE_CLOSE: float = 0.66
+
+# ── NEWS DISPLAY FLOOR ───────────────────────────────────────────────────────
+# What the news surface will SHOW, which is a different question from what is
+# "close to your work" and therefore deliberately a different number. Do not
+# collapse the two: RELEVANCE_CLOSE above is calibrated against measured anchor
+# scores and drives the `close` flag and the "Closest to your work" rail.
+#
+# Set 2026-09-05 at the owner's request. The problem was intake, not age: 1,302 of
+# 4,423 briefs were unseen and 3,507 of them were from the LAST MONTH — about 43
+# a day, which no one triages. Deleting by date was considered and rejected
+# because everything older than a month accounted for only 46 unseen items.
+#
+# At 0.70 the unseen queue falls from ~1,302 to ~98. The mass of the feed sits in
+# a narrow 0.60–0.65 band, which is what a centroid looks like when it cannot
+# discriminate; raising the floor is the blunt fix, and the decline-feedback band
+# in relevance.py is the one that should eventually make it unnecessary.
+#
+# JOURNAL ARTICLES ARE EXEMPT. They are scored on the same scale but arrive at a
+# fraction of the volume (49 unseen against 1,253 news items), and a missed paper
+# costs more than a missed headline. Filtering is for the firehose.
+NEWS_DISPLAY_FLOOR: float = 0.70

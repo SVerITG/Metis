@@ -42,6 +42,16 @@
       {#- The number that MOVES when you act. Everything else on this line is a
           property of the pile; this one is a property of your morning. Silent at
           zero, because "0 judged" is a reproach rather than information. -#}
+      {#- WHAT ARRIVED TODAY (2026-09-17). Every other number on this line is a
+          property of the WEEK — how many are unjudged, how many are shown. None
+          of them answered "is there anything new this morning", which is the
+          question the line is read for. Two cheap COUNTs, and silent at zero so
+          a quiet day says nothing rather than "0 news today". -#}
+      {%- if news_today or papers_today %}
+      <span class="fw-tally-cell fw-tally-new"
+            title="Arrived today and not yet judged. The counts to the left are the whole week."
+            ><b>{{ news_today }}</b> news{% if papers_today %} · <b>{{ papers_today }}</b> papers{% endif %} today</span>
+      {%- endif %}
       {%- if judged_today %}
       <span class="fw-tally-cell fw-tally-done"
             title="Articles and papers you judged today — kept, declined or filed. This is the count that moves when you mark something."><b>{{ judged_today }}</b> judged today</span>

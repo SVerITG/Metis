@@ -5824,6 +5824,11 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         # This is the number that moves when you act. It counts verdicts recorded
         # today, from both stores, because an item judged on this panel writes to
         # reading_stack and one judged on a focus surface writes focus_verdict.
+        # What arrived TODAY. Every other count here is a property of the week;
+        # this is the one that answers "is there anything new this morning".
+        # Kept in its own helper because it is two COUNTs and must stay cheap —
+        # it is also what the out-of-band refresh uses.
+        **_field_week_today_counts(),
         "judged_today": (db_scalar(
             "SELECT COUNT(*) FROM reading_stack "
             "WHERE date(COALESCE(state_at, added_at)) = date('now')", default=0) or 0)

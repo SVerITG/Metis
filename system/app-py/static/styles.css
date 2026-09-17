@@ -8427,3 +8427,7 @@ a.brief-src-l:hover .brief-src-d { color: var(--m-accent); }
   font-family: var(--m-mono); font-size: 10px; letter-spacing: 0.06em;
   color: var(--m-muted);
 }
+/* What arrived today, beside the week's totals. Accent, because it is the only
+   number on the line that is about this morning rather than the pile. */
+.fw-tally-new { color: var(--m-accent); }
+.fw-tally-new b { color: var(--m-accent); }
