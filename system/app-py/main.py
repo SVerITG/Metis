@@ -781,13 +781,25 @@ async def restart_dashboard(request: Request):
 
 # Surfaces that were merged into another surface — old URLs redirect so bookmarks
 # and refreshes don't 404. Planner became the "Board" view of Work (2026-07-14).
-_TAB_ALIASES = {"planner": "/work"}
+# `reflection` is the name in the navbar; `thinking` is the name of the route
+# and the template. Without the alias `/reflection` fell through to the
+# not-a-surface branch below and redirected to Today, so the one URL a reader
+# would type or bookmark for that surface silently landed somewhere else — and
+# it looked like the surface simply was Today. Found 2026-09-17 by checking
+# every navbar destination as a URL rather than as an in-app click.
+_TAB_ALIASES = {"planner": "/work", "reflection": "/thinking"}
 
 # Surfaces whose full page needs server-side context, not just the HTMX shell.
 # Keyed the same as _TAB_TEMPLATES; the value is called with no arguments and
 # must return a dict. Add an entry when a template renders anything inline.
 _TAB_CONTEXT = {
     "learning": lambda: learning._learning_context("learning"),
+    # `presentation.html` reads `ov.scanned_at` inline. Without this the full
+    # page raised UndefinedError and /presentation answered 500 — while the same
+    # template served over HTMX was fine, because the router's own route passes
+    # `ov`. A surface reachable by click and broken by URL is the failure mode
+    # this registry exists to prevent; presentation had simply never opted in.
+    "presentation": lambda: {"ov": presentation._overview()},
 }
 
 

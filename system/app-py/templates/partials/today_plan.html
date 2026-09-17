@@ -22,7 +22,7 @@
     <span class="u-label">
       Today{% if n_items %} · {{ n_items }} item{{ 's' if n_items != 1 else '' }}{% if n_done %} · {{ n_done }} done{% endif %}{% endif %}
     </span>
-    <a class="u-link" href="/work" hx-get="/api/tab/work" hx-target="#tab-root"
+    <a class="u-link" href="/work" hx-get="/api/tab/work" hx-target="#tab-content"
        hx-push-url="/work">Work &rarr;</a>
   </div>
   {%- endif %}

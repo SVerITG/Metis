@@ -5648,6 +5648,52 @@ FIELD_NEWS_SHOWN = 5
 FIELD_PAPERS_SHOWN = 4
 
 
+def _field_week_today_counts() -> dict:
+    """How much arrived TODAY. Two COUNTs, no scoring.
+
+    Asked for 2026-09-17: the box says how many are unjudged this WEEK but never
+    how many are new today, which is the number that answers "is there anything
+    to do this morning". It is kept separate from `_field_week_data` on purpose:
+    that function costs ~3s because it scores the whole pile for relevance, and
+    a number this cheap must not be hostage to it — it is also what the
+    out-of-band tally refresh uses after a single rating.
+    """
+    today = datetime.date.today().isoformat()
+    n_news = db_scalar(
+        "SELECT COUNT(*) FROM news_briefs b "
+        "WHERE date(COALESCE(b.brief_date, b.created_at)) = ? "
+        "AND NOT EXISTS (SELECT 1 FROM reading_stack r "
+        "                WHERE r.kind='news' AND r.item_id = b.brief_id)",
+        (today,), default=0) or 0
+    n_papers = db_scalar(
+        "SELECT COUNT(*) FROM literature_metadata l "
+        "WHERE date(l.created_at) = ? "
+        "AND NOT EXISTS (SELECT 1 FROM reading_stack r "
+        "                WHERE r.kind='paper' AND r.item_id = CAST(l.id AS TEXT))",
+        (today,), default=0) or 0
+    return {"news_today": n_news, "papers_today": n_papers}
+
+
+def field_week_tally_oob() -> str:
+    """The tally line, marked for an out-of-band swap.
+
+    After a single rating the row is removed in place rather than the whole box
+    re-rendered — see `back="fw-row"` in routers/stack.py. That keeps the click
+    instant, but it would leave the counts stale, so they are sent back beside
+    the removal. Cheap by construction: counts only, never the shortlist.
+    """
+    t = _field_week_today_counts()
+    judged = db_scalar(
+        "SELECT COUNT(*) FROM reading_stack WHERE date(state_at) = date('now')",
+        default=0) or 0
+    bits = [f'<span class="fw-tally-cell fw-tally-new"><b>{t["news_today"]}</b> news today</span>',
+            f'<span class="fw-tally-cell fw-tally-new"><b>{t["papers_today"]}</b> papers today</span>']
+    if judged:
+        bits.append(f'<span class="fw-tally-cell fw-tally-did"><b>{judged}</b> judged</span>')
+    return ('<span id="fw-tally-live" hx-swap-oob="outerHTML">'
+            + "".join(bits) + "</span>")
+
+
 def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
     """The week's unjudged news and papers ABOVE THE RELEVANCE FLOOR, plus totals.
 

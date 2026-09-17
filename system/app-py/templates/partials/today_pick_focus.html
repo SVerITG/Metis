@@ -62,9 +62,18 @@
           {% if p.task_id %}
           <button type="button" class="btn btn--ghost btn--sm"
                   title="Pin “{{ p.task_title }}” to today's focus"
+                  {#- IT REFRESHED A BOX THAT IS NO LONGER HERE (fixed 2026-09-17).
+                      This starred the task and then re-fetched the focus panel
+                      into `#today-focus`. That id stopped existing on Today on
+                      2026-09-15, when the first Workstation column became one
+                      merged list — so the star was saved and nothing on screen
+                      moved, which reads as a dead button.
+
+                      It now announces the change and the column listens, which
+                      is the same signal the add box already uses. -#}
                   hx-post="/api/task/{{ p.task_id }}/star"
-                  hx-target="#today-focus" hx-swap="none"
-                  hx-on::after-request="htmx.ajax('GET','/api/partial/today/focus-memory?bare=1',{target:'#today-focus',swap:'outerHTML'})">
+                  hx-swap="none"
+                  hx-on::after-request="htmx.trigger(document.body, 'metis:today-changed')">
             pin to today
           </button>
           {% else %}
