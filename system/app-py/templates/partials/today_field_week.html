@@ -7,8 +7,24 @@
     showing fourteen of them without saying so would be the "count without its
     denominator" failure this project keeps paying for. Every group says how many
     it is standing in front of, and links to the surface that holds the rest. -#}
+{#- THE PAGE JUMPED TO THE BOTTOM ON EVERY RATING (fixed 2026-09-17).
+    Reported: "when I rate a New paper on the Today surface, the page jumps at
+    the bottom."
+
+    Rating swaps this whole box — which is correct, because the counts, the
+    denominators and the remaining rows all change together and a per-row swap
+    would leave them disagreeing. What was wrong is what HTMX does afterwards:
+    the button that was clicked no longer exists, so focus restoration and the
+    default show behaviour take over and scroll the new content into view. On a
+    box this tall that lands you at its foot, several screens from the row you
+    just judged.
+
+    `show:none` stops the swap scrolling anything into view; `focus-scroll:false`
+    stops focus restoration doing it too. Both are needed — either alone still
+    jumps. -#}
 <div class="fw" id="today-field-week"
-     hx-target="#today-field-week" hx-swap="outerHTML">
+     hx-target="#today-field-week"
+     hx-swap="outerHTML show:none focus-scroll:false">
   <header class="fw-head">
     <div>
       <span class="fw-eyebrow">In your field</span>
