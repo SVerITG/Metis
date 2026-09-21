@@ -148,6 +148,12 @@ wallpaper, and wallpaper is worse than nothing because it trains the eye to skip
 
 ---
 
+> ⚠ **This file is mirrored.** §4's reply shape and §3b's close-out fence are now also
+> stated inline in the global `~/.claude/CLAUDE.md`, which loads in every session.
+> Reason (2026-09-05): this document was being read only as far as §3 and the shape was
+> then improvised, so the items still needing a decision were never surfaced. A contract that
+> depends on being read to the end is not enforcement. **Edit both, or neither.**
+
 ## 4. Shape of a substantive reply
 
 Aim for this order. Skip anything that is empty — a missing section is better than
