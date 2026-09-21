@@ -95,7 +95,7 @@ You have two options: fork an existing pack, or build from base Metis.
 1. Fork the Metis_PH repository to your own GitHub account.
 2. Run the installer: `bash system/install/setup-mcp.sh`
 3. Run `/metis_config` to personalise names, interests, and monitoring topics.
-4. Use `/background-maker` to add knowledge PDFs for your specific area.
+4. Ask for a background layer to be built from knowledge PDFs for your specific area.
 5. Commit your domain layer (knowledge index, tuned prompts) to your fork.
 
 ### Option B: Build from base Metis
@@ -117,7 +117,7 @@ You have two options: fork an existing pack, or build from base Metis.
 cp ~/Downloads/who-guideline-2024.pdf knowledge/library/{your-domain}/
 
 # 2. Index them (run from within Claude Code or call directly)
-/background-maker add knowledge/library/{your-domain}/
+Build a background layer from knowledge/library/{your-domain}/
 
 # 3. Verify indexing
 # The MCP tool index_missing_pdfs() will log how many chunks were added.

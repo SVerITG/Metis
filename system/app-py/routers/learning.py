@@ -800,7 +800,7 @@ async def course_build_request(request: Request):
     )
     title = course[0]["title"] if course else course_id
     slug = course[0]["slug"] if course else course_id
-    prompt = f"/course-builder\ncourse-slug: {slug}\nPlease walk me through the questionnaire at system/config/course-builder-questionnaire.md and build this course: {title}"
+    prompt = f"Build a course, end to end.\ncourse-slug: {slug}\nPlease walk me through the questionnaire at system/config/course-builder-questionnaire.md and build this course: {title}"
     return {"status": "ok", "prompt": prompt, "title": title}
 
 
@@ -823,7 +823,7 @@ async def course_build_idea(request: Request):
         project_name = f"{topic} Course"
         rq_section = f"\nResearch question context:\n{research_question}\n" if research_question else ""
         prompt = (
-            f"/course-builder\n"
+            f"Build a course, end to end.\n"
             f"Project: {project_name}\n\n"
             f"Build an adaptive statistics course on: {topic}\n"
             f"{rq_section}"
@@ -837,7 +837,7 @@ async def course_build_idea(request: Request):
         project_name = f"{title} Course"
         rq_section = f"\nResearch question context:\n{research_question}\n" if research_question else ""
         prompt = (
-            f"/course-builder\n"
+            f"Build a course, end to end.\n"
             f"Project: {project_name}\n\n"
             f"Build a new course: {title}\n"
             f"{rq_section}"
@@ -868,7 +868,7 @@ def _generate_intake_prompt(slug: str, title: str, intake: dict) -> str:
     questionnaire = "system/config/course-builder-questionnaire.md"
 
     sections = [
-        f"/course-builder",
+        "Build a course, end to end.",
         f"Project: {title} Course",
         "",
         "## Intake (completed via dashboard wizard)",

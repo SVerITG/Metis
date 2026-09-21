@@ -104,4 +104,4 @@ new ones automatically (duplicates are skipped)."
 Always end with:
 - `get_library_stats()` — show the final paper count
 - Remind them: "Run `/metis-update literature` anytime to check for new papers,
-  or `/librarian` to search and explore your library"
+  or just ask to search and explore your library"

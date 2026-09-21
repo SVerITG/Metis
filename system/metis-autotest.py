@@ -1337,7 +1337,7 @@ def run_database():
         if count == 0:
             warn("DB02", "agent_runs has activity records", "Database",
                  "agent_runs table is empty — no agent runs have been logged.",
-                 "Run any agent (/metis_status, /news-radar, etc.) to create the first record.")
+                 "Run any agent (/metis-status, or ask for a news scan) to create the first record.")
         else:
             ok("DB02", "agent_runs has activity records", "Database",
                f"{count} agent run records found.")

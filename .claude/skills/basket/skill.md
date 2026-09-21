@@ -39,9 +39,9 @@ Keep it to 1–3 questions. Default to the inferred destination on "y".
 **Step 4 — Promote.** For each confirmed item: `promote_basket_item(source_path="<abs path in basket>", target_path="<destination>/<filename>")`. Create the destination subfolder implicitly via the target path. Report what moved where.
 
 **Step 5 — Offer the obvious next step.** After promoting:
-- PDFs → "Index these into your library/knowledge layer? (`/librarian` or `build_pdf_knowledge_db`)"
-- Dataset (non-sensitive) → "Profile it? (`/data-analyst`)"; sensitive → "Use `/safe-analysis` — it never sends the data."
-- Meeting note → "Structure it? (`/meeting-memory`)"
+- PDFs → "Index these into your library/knowledge layer? (ask for a literature search, or `build_pdf_knowledge_db`)"
+- Dataset (non-sensitive) → "Profile it?"; sensitive → "Use `/safe-analysis` — it never sends the data."
+- Meeting note → "Structure it into decisions and actions?"
 
 ## Output format
 ```
@@ -52,7 +52,7 @@ Moved 5 of 6 items:
   → basket/private/                        screening_2024.csv  (CONFIDENTIAL — kept off the AI)
 Left in basket: notes.txt  (unclear — tell me what it is)
 
-Next: index the 3 papers with /librarian?
+Next: index the 3 papers into your library?
 ```
 
 ## Principles

@@ -129,7 +129,7 @@ Run each workflow as a real user would. Each workflow is a sequence of dashboard
 4. Is the course logged to `learning_courses` table?
 
 ### C.7 Self-improvement workflow
-1. Run any agent (`/epidemiologist`, `/methods-coach`).
+1. Run any specialist — ask a study-design or a statistical-method question.
 2. Was a reflexion written?
 3. Run `aggregate_reflexions()`.
 4. Was a proposal drafted? Is it visible in the Metis tab → Self-improvement section?

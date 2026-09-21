@@ -13,107 +13,57 @@ Display the full agent directory with rich descriptions, use cases, and last-run
 ## What to do when invoked
 
 **Usage:** `/metis_agents` or `/metis-agents`
-**Optional:** `/metis_agents [agent-name]` — detailed profile for one agent
+**Optional:** `/metis_agents [agent-name]` — detailed profile for one specialist
+
+Nothing in this directory is a command to type. Every specialist is registered as
+a subagent and is picked up from what the request is about; `@agent-name` insists
+on a particular one, and `/metis` routes explicitly. The directory exists so the
+researcher knows who is in the building, not so they can summon anyone by name.
 
 **Step 1 — Pull last-run data**
 - `get_agent_runs(limit=50)` — get last run date per agent_slug
 
 **Step 2 — Compose the directory**
 
-For each agent, show: command, specialty, when to use it, what it produces, last run date.
+Read `.claude/agents/` for the live roster — that folder is the source of truth,
+and its `description:` line is exactly what decides who picks a request up. Do NOT
+hand-type a roster into this file; it went stale last time and listed specialists
+that had been retired.
+
+For each: name, what it is for, the kind of request that reaches it, last run date.
 Group by domain for readability.
 
 **Step 3 — Single agent mode**
-If an agent name is given, read its system prompt from `agents/{agent-slug}/system-prompt.md` and produce a detailed profile: full capability description, example invocations, what it reads, what it writes, its strengths and blind spots.
+If a name is given, read `agents/{agent-slug}/system-prompt.md` and produce a
+detailed profile: full capability description, the kinds of request that reach it,
+what it reads, what it writes, its strengths and blind spots.
 
 ## Output format
 
 ```
-─── Metis Agent Directory — [YYYY-MM-DD] ────────────────────
+─── Metis Specialist Directory — [YYYY-MM-DD] ───────────────
 
 RESEARCH & PHD
 ──────────────
-/librarian          Find papers, Zotero sync, literature metadata updates,
-                    source verification. Reads: Zotero API + library/.
-                    Writes: knowledge/library/. Last run: [date or never]
+Librarian           Find papers, reference metadata, source verification.
+                    Reached by: "find papers on…", "is there a review of…"
+                    Last run: [date or never]
 
-/phd-architect      Thesis structure, article-to-chapter alignment, gap
-                    analysis, backbone planning. Reads: project docs + notes.
+PhD Architect       Thesis structure, article-to-chapter alignment, gap
+                    analysis. Reached by: "help me structure my thesis"
                     Last run: [date]
 
-/epidemiologist     Study design review, methodology challenge, Socratic
-                    questioning. Use when you want your methods stress-tested.
-                    Last run: [date]
-
-/methods-coach      Stats methods, sampling, R code methodology. Use for
-                    "is this the right test?" or "how do I fit this model?"
-                    Last run: [date]
-
-WRITING & COMMUNICATION
-────────────────────────
-/writing-partner    Draft, edit, structure arguments. Use after you have
-                    content — this agent shapes it, not creates from nothing.
-                    Last run: [date]
-
-/meeting-memory     Transcribe + structure meeting notes into decisions,
-                    actions, and context. Paste raw notes or audio transcript.
-                    Last run: [date]
-
-/presentation-maker PowerPoint-ready slide decks from your content.
-                    Produces structured slide outlines or PPTX via python-pptx.
-                    Last run: [date]
-
-TECHNICAL
-──────────
-/software-engineer  Code review, debugging, Python/R/FastAPI. Use for
-                    anything that touches running code.
-                    Last run: [date]
-
-/dashboard-engineer Build/fix the Metis Python dashboard (FastAPI + HTMX).
-                    Knows the stack deeply — use for UI bugs and new tabs.
-                    Last run: [date]
-
-/ux-engineer        UI/UX decisions, design system, CSS. Use when you care
-                    about how something looks and feels, not just works.
-                    Last run: [date]
-
-/builder            Build new apps, tools, or MCP servers from scratch.
-                    Produces scaffolded, runnable code.
-                    Last run: [date]
-
-INTELLIGENCE & LEARNING
-────────────────────────
-/news-radar         Curated news brief — your domain, AI, public health, methods.
-                    Curates signals, does not dump headlines.
-                    Last run: [date]
-
-/learning-coach     Learning paths, skill progression, spaced repetition.
-                    Use when building a new skill or reviewing competencies.
-                    Last run: [date]
-
-/edu-expert         Curriculum design, teaching strategy, course development.
-                    Use for the MLM course and any teaching prep.
-                    Last run: [date]
-
-/career-coach       EU job applications, CV, career strategy.
-                    Last run: [date]
-
-SAFETY & DATA
-──────────────
-/cybersecurity      URL validation, prompt injection defense, agent audit.
-                    Route external content through this before trusting it.
-                    Last run: [date]
-
-/data-guardian      PII protection, patient data blocking.
-                    Automatically invoked when patient or sensitive data is detected.
-                    Last run: [date]
+[…one block per specialist found in .claude/agents/, grouped by domain…]
 
 ──────────────────────────────────────────────────────────────
-Total agents: 18  · To use any agent: /[agent-name] [your request]
-Not sure which?   → /metis [your request]  (Metis will route for you)
+Total specialists: [count from .claude/agents/]
+To reach one: just describe the work — it picks itself up.
+To insist:    @agent-name [your request]
+Not sure?     /metis [your request]
 ```
 
 ## Edge cases
-- Agent has never been run: show "never" for last run, not an error
-- Single agent mode: read `agents/{slug}/system-prompt.md` and produce a 15-line deep profile
-- User asks "which agent for X": infer from the request and suggest the right one with a one-line rationale
+- Specialist has never been run: show "never" for last run, not an error
+- Single agent mode: read `agents/{slug}/system-prompt.md` for a 15-line deep profile
+- "which agent for X": infer from the request, name the specialist and say in one
+  line why — then note that simply asking for X would have reached it anyway

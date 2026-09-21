@@ -52,7 +52,7 @@ research:
                                            # e.g. "Burden estimation for a neglected disease in [region]"
 
 # ── News and literature monitoring ───────────────────────────────────────────
-# Used by News Radar (/news-radar) and the morning briefing (/metis-morning).
+# Used by News Radar and the morning briefing (`/metis-morning`).
 # The wizard also writes matching fields to user-preferences.json for the
 # get_user_profile() MCP tool. Keep the two files in sync.
 news_monitoring:
@@ -82,7 +82,7 @@ teaching:
   monitor_literature: false               # true = include teaching topics in literature alerts
 
 # ── Data sensitivity ─────────────────────────────────────────────────────────
-# Controls the Data Guardian (/data-guardian) and PII protection layer.
+# Controls the Data Guardian and the personal-data protection layer.
 # Set patient_data: true if you work with clinical records or identifiable data.
 # Metis will block those files from being sent to any AI model.
 data_sensitivity:

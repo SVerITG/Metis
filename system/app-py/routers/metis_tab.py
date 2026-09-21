@@ -2081,19 +2081,22 @@ The Metis MCP server (`metis-rc`) is registered globally. Always attempt tool ca
 
 ## Agent routing
 
-| Request type | Agent |
+There is nothing to type. Each specialist is registered as a subagent and is
+picked up automatically from what the request is about; `@agent-name` forces a
+particular one, and `/metis` still routes explicitly when that is wanted.
+
+| Request type | Specialist that picks it up |
 |---|---|
-| Paper, article, source | `/librarian` |
-| Meeting note, transcript | `/meeting-memory` |
-| Code, bug, R/Python | `/software-engineer` |
-| DHIS2 | `/dhis2-expert` |
-| PhD structure | `/phd-architect` |
-| Statistical method | `/methods-coach` |
-| News, briefing | `/news-radar` |
-| New app or tool | `/builder` |
-| Extend Metis | `/rc-builder` |
-| Study design, epi | `/epidemiologist` |
-| Dataset, cleaning | `/data-analyst` |
+| Paper, article, source | Librarian |
+| Meeting note, transcript | Meeting Memory |
+| Code, bug, R/Python | Software Engineer |
+| PhD structure | PhD Architect |
+| Statistical method | Methods Coach |
+| News, briefing | News Radar |
+| New app or tool | Builder |
+| Extend Metis | RC Builder |
+| Study design, epi | Epidemiologist |
+| Dataset, cleaning | Data Analyst |
 | Morning briefing | `/metis-morning` |
 | Status overview | `/metis-status` |
 | Unclear | Ask one clarifying question |
@@ -2180,12 +2183,14 @@ The Metis MCP server (`metis-rc`) is registered globally. Always attempt MCP too
 
 ## Routing
 
-Use `/metis` for any research or knowledge task. Use project-specific skills directly when you know the right agent:
-- `/librarian` — papers, literature, references
-- `/epidemiologist` — study design, methods review
-- `/methods-coach` — statistics, R code
-- `/writing-partner` — manuscript, prose
-- `/software-engineer` — code, debugging
+Just say what you need — the right specialist picks it up from the request itself.
+Use `/metis` when you want the routing made explicit, and `@agent-name` when you
+want to insist on one:
+- Librarian — papers, literature, references
+- Epidemiologist — study design, methods review
+- Methods Coach — statistics, R code
+- Writing Partner — manuscript, prose
+- Software Engineer — code, debugging
 - `/metis-morning` — daily briefing
 - `/metis-status` — quick status overview
 """

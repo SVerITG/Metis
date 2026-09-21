@@ -25,8 +25,8 @@ Scans the `inbox/` folder for any unprocessed files or drops, and the `tasks` ta
 **Step 3 — Route each item**
 
 For each inbox file, propose a routing:
-- `.md` meeting notes → Meeting Memory (`/meeting-memory`)
-- PDF / `.bib` / citation text → Librarian (`/librarian`)
+- `.md` meeting notes → Meeting Memory
+- PDF / `.bib` / citation text → Librarian
 - Idea file or `.txt` brainstorm → Ideas table or Metis Brainstorm
 - Code snippet or script → Software Engineer
 - Unclear → ask one clarifying question
@@ -47,8 +47,8 @@ If any items were routed: `log_agent_run([], "metis", "Inbox scan and routing", 
 ─── Inbox — [YYYY-MM-DD] ───────────────────────────────────
 
 FILES IN inbox/  (n items)
-  📄 meeting-notes-2026-04-24.md  → Route to /meeting-memory?  [y/skip]
-  📄 passive-screening-notes.txt  → Route to /librarian?  [y/skip]
+  📄 meeting-notes-2026-04-24.md  → Write up as a meeting?      [y/skip]
+  📄 passive-screening-notes.txt  → Add to your library?        [y/skip]
   ❓ misc-thoughts.md              → Unclear — what is this for?
 
 INBOX TASKS  (n open)

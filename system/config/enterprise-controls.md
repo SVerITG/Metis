@@ -154,5 +154,5 @@ with data subject to these regulations must:
 2. Ensure that only de-identified or synthetic data enters the Research Cortex.
 3. Document the legal basis for processing in their research protocol.
 
-The Data Guardian agent (`/data-guardian`) is available to assess specific data handling
+The Data Guardian specialist is available to assess specific data handling
 questions. Its findings are advisory — final decisions rest with the researcher and their DPO.

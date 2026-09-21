@@ -65,12 +65,12 @@ TIPS: dict[str, dict] = {
     },
     "librarian-index": {
         "tags": ["paper", "pdf", "new-paper", "reference"],
-        "text": "Tip: `/librarian` can index this paper into your knowledge layer, so you get cited answers from it later (\"what do my papers say about X?\").",
+        "text": "Tip: ask Metis to index this paper into your knowledge layer, so you get cited answers from it later (\"what do my papers say about X?\").",
         "adopted_if": ("literature_metadata", "1=1"),
     },
     "meeting-memory": {
         "tags": ["meeting", "transcript", "notes"],
-        "text": "Tip: paste a meeting transcript and `/meeting-memory` extracts decisions, action items, and links to your projects automatically.",
+        "text": "Tip: paste a meeting transcript and ask for it to be written up — decisions, action items and links to your projects come out automatically.",
         "adopted_if": ("meetings", "1=1"),
     },
     "verify-work": {

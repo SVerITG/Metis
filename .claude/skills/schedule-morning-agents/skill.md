@@ -49,12 +49,12 @@ the agents directly (these run in the cloud, independent of the local dashboard)
 News Radar trigger:
 - name: "Metis Morning — News Radar"
 - schedule: 07:00 local daily
-- prompt: `/news-radar Run the daily morning briefing for Metis RC. Fetch today's news for: [your research topics], AI tools and developments, global health policy, epidemiology updates. Save each item to the news_briefs table and a markdown summary to outputs/reviews/news-radar/YYYY-MM-DD_morning.md. Log the run as 'news-radar'.`
+- prompt: `Run the daily morning briefing for Metis RC. Fetch today's news for: [your research topics], AI tools and developments, global health policy, epidemiology updates. Save each item to the news_briefs table and a markdown summary to outputs/reviews/news-radar/YYYY-MM-DD_morning.md. Log the run as 'news-radar'.`
 
 Librarian trigger:
 - name: "Metis Morning — Librarian"
 - schedule: 07:30 local daily
-- prompt: `/librarian Scan inbox/ for new PDF, DOCX, or MD files since yesterday. Auto-tag each (entity_type, disease, geography, method), add to the library, and move processed papers to knowledge/library/. Log the run as 'librarian'.`
+- prompt: `Search and file new literature: scan inbox/ for new PDF, DOCX, or MD files since yesterday. Auto-tag each (entity_type, disease, geography, method), add to the library, and move processed papers to knowledge/library/. Log the run as 'librarian'.`
 
 **Step 5 — Confirm to the user:**
 - Which mechanism is active: built-in scheduler (and whether the dashboard auto-starts at login) and/or RemoteTrigger

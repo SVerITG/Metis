@@ -139,7 +139,7 @@ Metis is **workflow-defined**: the features exist to serve specific ways of work
 
 ## Workflow 11 — Build / extend Metis
 
-**Trigger:** Claude Code → `/rc-builder` or any Metis build request  
+**Trigger:** Claude Code → any request to build or change Metis itself  
 **Steps:**
 1. RC Builder agent loads architecture context (config.py, system/app-py/, token-guardrails.md, red-lines.md)
 2. Plans change, confirms scope with user

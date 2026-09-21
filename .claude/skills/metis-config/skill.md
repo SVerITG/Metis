@@ -215,7 +215,7 @@ As soon as the background is captured, hand it **straight to the Background Make
 
 > "Now the part that makes Metis actually yours: I'm going to have the **Background Maker** read your field. It harvests papers and reports from the sources you named, scrubs them for safety, and indexes them locally — so every agent can cite from them. It runs in the background; in a few minutes you'll have a searchable knowledge layer for **[field]**."
 
-- **Claude Code:** invoke **`/background-maker`** and pass the assembled brief (field, subfields, topics, key authors/works, journals, organisations, depth). It scopes → harvests (Content Harvester) → scrubs (Data Guardian) → indexes into the RAG store (`create_knowledge_database` / `build_pdf_knowledge_db`).
+- **Claude Code:** ask for a background layer to be built and pass the assembled brief (field, subfields, topics, key authors/works, journals, organisations, depth). It scopes → harvests (Content Harvester) → scrubs (Data Guardian) → indexes into the RAG store (`create_knowledge_database` / `build_pdf_knowledge_db`).
 - **Claude Desktop:** the same — pick the **Background Maker** prompt and paste the brief into your first message. (This whole wizard runs in Desktop too; it's the more accessible path for non-developers.)
 
 Then confirm and **show it working**:
@@ -330,36 +330,43 @@ Ask: "Make sense? Anything you want renamed?" If they want a customisation, writ
 
 Explain:
 
-> "Metis is a team. Metis itself is the coordinator: she takes your request, picks the right specialist (or specialists), executes, and records. You can also call any specialist directly with their slash command."
+> "Metis is a team. Metis itself is the coordinator: she takes your request, picks the right specialist (or specialists), executes, and records. There is nothing to memorise — describe the work and the right specialist picks it up. If you want to insist on one, put @ in front of its name."
 
 Walk through the active roster:
 
-- **Metis** (`/metis`) — the coordinator. Default entry point for any request.
-- **Librarian** (`/librarian`) — papers, citations, library search.
-- **Writing Partner** (`/writing-partner`) — prose, argument flow, manuscript editing.
-- **Methods Coach** (`/methods-coach`) — statistics, sampling, R/Python methodology.
-- **Epidemiologist** (`/epidemiologist`) — study design review, methodological challenge.
-- **Software Engineer** (`/software-engineer`) — code, debugging, scripts.
-- **PhD Architect** (`/phd-architect`) — multi-year thesis structure (strategic).
-- **Research Architect** (`/research-architect`) — single-article tracking (tactical).
-- **Meeting Memory** (`/meeting-memory`) — meeting transcription and structured notes.
-- **News Radar** (`/news-radar`) — editorial morning brief.
-- **News Aggregator** (`/news-aggregator`) — RSS curation upstream of News Radar.
-- **Data Guardian** (`/data-guardian`) — PII protection, data classification.
-- **Cybersecurity** (`/cybersecurity`) — URL validation, prompt injection defence.
-- **Data Analyst** (`/data-analyst`) — local CSV/Excel/SPSS profiling and cleaning.
-- **Learning Coach** (`/learning-coach`) — course progress, skill gaps.
-- **Career Coach** (`/career-coach`) — CV, interviews, career strategy.
-- **Presentation Maker** (`/presentation-maker`) — slide decks, visual summaries.
-- **Visualization Maker** (`/visualization-maker`) — charts, diagrams, figures.
-- **Builder** (`/builder`) — building new external apps and tools.
-- **RC Builder** (`/rc-builder`) — extending Metis itself.
-- **Course Builder** (`/course-builder`) — orchestrator for end-to-end course building (in active development).
-- **Content Harvester** (`/content-harvester`) — extract content from web/PDF/YouTube.
-- **Learning Architect** (`/learning-architect`) — curriculum design.
-- **Design Auditor** (`/design-auditor`) — UI critique.
-- **Frontend Designer** (`/frontend-designer`) — UI implementation.
-- **HR Talent Spotter** (`/hr-talent`) — decides when a new agent is needed.
+- **Metis** — the coordinator, and still `/metis` when you want routing made explicit.
+- **Librarian** — papers, citations, library search.
+- **Writing Partner** — prose, argument flow, manuscript editing.
+- **Methods Coach** — which statistical method fits the question.
+- **Biostatistician** — implementing it: simulation, power, R packages.
+- **Epidemiologist** — study design review, methodological challenge.
+- **Software Engineer** — code, debugging, scripts.
+- **PhD Architect** — multi-year thesis structure (strategic).
+- **Research Architect** — the shape of a research programme beyond one degree.
+- **Meeting Memory** — meeting transcription and structured notes.
+- **News Radar** — editorial morning brief.
+- **News Aggregator** — the feed plumbing upstream of News Radar.
+- **Data Guardian** — protecting personal data, classifying what is safe to send.
+- **Cybersecurity** — URL validation, prompt injection defence.
+- **Data Analyst** — local spreadsheet and statistics-file profiling and cleaning.
+- **Learning Coach** — course progress, skill gaps.
+- **Career Coach** — CV, interviews, career strategy.
+- **Presentation Maker** — slide decks, visual summaries.
+- **Visualization Maker** — charts, diagrams, figures.
+- **Builder** — building new external apps and tools.
+- **RC Builder** — extending Metis itself.
+- **Course Builder** — end-to-end course building.
+- **Content Harvester** — pulling content out of web pages, PDFs and video.
+- **Background Maker** — building a permanent searchable knowledge layer.
+- **Dashboard Engineer** — what a surveillance panel measures, and whether it is right.
+- **Frontend Designer Builder** — how the interface looks and feels.
+- **Design Auditor** — critique of an interface that already exists.
+- **Memory Curator** — consolidating and retrieving past work.
+- **Critic** — challenging another specialist's output before it is acted on.
+- **HR Talent Spotter** — decides when a new specialist is needed.
+
+The live roster is `.claude/agents/`. If this list and that folder disagree, the
+folder is right — read it rather than reciting this.
 
 Mention the **self-improvement loop**:
 > "After every substantive run, agents write a brief reflexion. Themes are aggregated weekly into proposals you can review on the Metis tab. Approving a proposal stages a diff against the agent's skill file — you see the exact change before it lands. No agent rewrites itself silently."

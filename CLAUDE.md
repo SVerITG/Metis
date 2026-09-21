@@ -72,16 +72,20 @@ follow, and they are the reason routing is now worth its cost:
 
 Six slugs no longer appear in routing results, after the source-grounded audit
 found they were either undispatchable or competing with the agent that replaced
-them. **Their folders and skills are untouched** — this retires them from
-automatic routing, which is reversible, rather than deleting work.
+them. **Their `agents/<slug>/` folders are untouched** — this retires them from
+`run_metis` routing, which is reversible, rather than deleting work. Note that
+retirement from the routing TABLE is a different thing from the description-based
+dispatch added on 2026-09-21: a retired slug that still has a `.claude/agents` file
+can still be reached by `@agent-name`, and its description is written to keep it
+from competing with the specialist that replaced it.
 
 | Slug | Why | Reach it by |
 |---|---|---|
 | `ux-engineer` | superseded by `frontend-designer-builder`, and it has no `.claude/agents` file at all — routing could name it, the Agent tool could not run it | keywords now route to `frontend-designer-builder` |
-| `edu-expert` | no `system-prompt.md` and no `.claude/agents` file — nothing to dispatch | `/edu-expert` skill |
-| `learning-architect` | one vocabulary shared with `course-builder`, which does the work (14 runs vs 2) | `/learning-architect` skill |
-| `news-aggregator` | a pipeline, not a viewpoint; no request distinguishes it from `news-radar` | `/news-aggregator` skill |
-| `learning-coach` | still invoked directly by the Learning surface; it was never reached by routing | `/learning-coach` |
+| `edu-expert` | no `system-prompt.md` and no `.claude/agents` file — nothing to dispatch | `/edu-expert` skill (kept — it has no agent twin) |
+| `learning-architect` | one vocabulary shared with `course-builder`, which does the work (14 runs vs 2) | `@learning-architect`; its description now says abstract curriculum design ONLY |
+| `news-aggregator` | a pipeline, not a viewpoint; no request distinguishes it from `news-radar` | `@news-aggregator`; its description now says feed plumbing ONLY |
+| `learning-coach` | still invoked directly by the Learning surface; it was never reached by routing | the Learning surface, or `@learning-coach` |
 | `metis-self-reflexion`, `metis-update` | **skills, not agents** — routing returned them as agents, so dispatch could only fail | `/metis-self-reflexion`, `/metis-update` |
 | `metis-audit-*` (7 slugs) | existed in **no file anywhere** — 14 rules pointing at nothing | deleted |
 
@@ -176,50 +180,66 @@ Regenerate the definitions after editing any agent:
 
 ---
 
-## How to invoke agents
+## How to reach a specialist
 
-**Default: just call `/metis`** with any request. Metis will analyze it, pick the right agent(s), choose the complexity level, execute the work, and record everything to the RC. You don't need to know which agent to use.
+**There is nothing to type.** The 33 specialists are registered as subagents in
+`.claude/agents/`, and each is selected from its `description:` line against what
+the request is actually about. Describe the work and the right one picks it up.
 
-```
-/metis Review my Article 1 draft for methodology and grammar
-→ Metis routes to: Epidemiologist (methodology) + Writing Partner (grammar)
-→ Complexity: chain (opus + subagents)
-→ Output: outputs/reviews/epidemiologist/... + outputs/reviews/writing-partner/...
-```
+Three ways in, in the order they should be reached for:
 
-**Direct call:** If you already know which agent you want, call them directly:
-
-| Invocation | Agent | When to use |
+| Way | What it is | When |
 |---|---|---|
-| `/metis` | Metis | **Default entry point.** Any request — she routes, executes, and records |
-| `/librarian` | Librarian | Find papers, update literature metadata, search sources |
-| `/phd-architect` | PhD Architect | Thesis structure, article alignment, chapter planning |
-| `/writing-partner` | Writing Partner | Draft text, improve writing, structure arguments |
-| `/methods-coach` | Methods Coach | Epidemiological methods, statistics, sampling, R methodology |
-| `/dhis2-expert` | DHIS2 Expert | DHIS2 server, metadata, tracker programs, dashboards, NTD implementations |
-| `/software-engineer` | Software Engineer | Code review, debugging, Python/R scripts, FastAPI |
-| `/frontend-designer-builder` | Frontend Designer Builder | UI/UX decisions, design system, visualization design |
-| `/meeting-memory` | Meeting Memory | Transcribe, structure, and brief meeting notes |
-| `/news-radar` | News Radar | What happened in the world, brief generation |
-| `/builder` | Builder | Build new apps, tools, MCP servers |
-| `/rc-builder` | RC Builder | Modify/extend Metis itself — new agents, dashboard phases, MCP tools |
-| `/presentation-maker` | Presentation Maker | PowerPoint slides, visual summaries |
-| `/learning-coach` | Learning Coach | Skill progression, learning paths, statistics competencies |
-| `/course-builder` | Course Builder | Build a course end-to-end: intake → harvest → curriculum → draft → review → publish |
-| `/career-coach` | Career Coach | EU job prep, CV support, career strategy |
-| `/news-aggregator` | News Aggregator | Automated RSS collection, feed curation, signal tagging |
-| `/design-auditor` | Design Auditor | Audit existing UIs, reverse-engineer design decisions |
-| `/visualization-maker` | Visualization Maker | Diagrams, charts, system maps, ggplot2, Plotly |
-| `/content-harvester` | Content Harvester | Extract and structure content from web, PDFs, DOCX, YouTube, GitHub |
-| `/background-maker` | Background Maker | Build permanent specialist knowledge layers (RAG corpus) |
-| `/learning-architect` | Learning Architect | Curriculum design, learning paths, spaced repetition, competency maps |
-| `/epidemiologist` | Epidemiologist | Study design review, methodology challenge, Socratic questioning |
-| `/cybersecurity` | Cybersecurity | URL validation, prompt injection defense, threat intel, agent audit |
-| `/data-guardian` | Data Guardian | PII protection, patient data blocking, file transmission approval |
-| `/data-analyst` | Data Analyst | Profile, clean, and compare tabular datasets (CSV/Excel/SPSS/Stata) — local only |
-| `/critic` | Critic | Verify, challenge, and quality-check outputs from other agents |
-| `/memory-curator` | Memory Curator | Consolidate session history into permanent memory, retrieve past context |
-| `/biostatistician` | Biostatistician | R package development, simulation studies, sample size/power, Monte Carlo |
+| Just say it | The specialist selects itself from the request | Almost always |
+| `@agent-name` | Forces one particular specialist | You want a second, specific viewpoint on work another one already touched |
+| `/metis` | Explicit routing — returns several specialists when a request needs several, and writes a live run row per specialist so progress is visible on the dashboard | A request spanning two or three remits, or when you want the routing recorded |
+
+> **Why the twin `/slug` commands are gone (2026-09-21).** Every specialist used to
+> exist twice: a dispatchable subagent AND a same-named skill. Over the whole
+> durable command history — 794 entries, 137 slash commands — exactly one of those
+> 67 skills had ever been typed. The other door had never been opened, and the
+> duplicates cost 43% of the always-loaded skill budget on every single request.
+> Removing them means the `description:` line is now the ONLY thing that reaches a
+> specialist: **if a request is landing on the wrong one, fix that line, in
+> `agents/<slug>/skill.md`, then re-run `python3 tools/generate-subagents.py`.**
+
+### The roster — who is in the building and what each is for
+
+| Specialist | What it is for |
+|---|---|
+| Metis | The coordinator. Routes, executes, records |
+| Librarian | Find papers, update literature metadata, search sources |
+| PhD Architect | Thesis structure, article alignment, chapter planning |
+| Research Architect | The shape of a research programme beyond a single degree |
+| Writing Partner | Draft text, improve writing, structure arguments |
+| Methods Coach | Which analytical method fits the question and the data |
+| Biostatistician | Implementing it — simulation, sample size and power, R packages |
+| Epidemiologist | Study design review, methodology challenge, Socratic questioning |
+| Software Engineer | Code review, debugging, Python/R scripts, FastAPI |
+| Dashboard Engineer | What a surveillance panel measures, and whether the number is right |
+| Frontend Designer Builder | How the interface looks and feels — design system, CSS |
+| Design Auditor | Critique of an interface that already exists |
+| Visualization Maker | A single diagram, chart, system map or figure |
+| Presentation Maker | Slide decks and visual summaries |
+| Meeting Memory | Transcribe, structure, and brief meeting notes |
+| News Radar | What happened in the world, brief generation |
+| News Aggregator | The feed plumbing upstream of News Radar |
+| Builder | Build new standalone apps and tools |
+| RC Builder | Modify or extend Metis itself |
+| Course Builder | A course end-to-end: intake → harvest → curriculum → draft → review → publish |
+| Learning Coach | Day-to-day study guidance, spaced repetition, skill practice |
+| Learning Architect | Abstract curriculum design only — competency maps, backward design |
+| Career Coach | Job preparation, CV support, career strategy |
+| Content Harvester | Pull content out of web pages, PDFs, documents and video |
+| Background Maker | Build a permanent searchable knowledge layer on a subject |
+| Cybersecurity | URL validation, prompt injection defence, threat intel, agent audit |
+| Data Guardian | Whether data is safe to send, upload or share |
+| Data Analyst | Profile, clean and compare tabular datasets — local only |
+| Critic | Verify, challenge, and quality-check another specialist's output |
+| Memory Curator | Consolidate session history, retrieve past context |
+| HR/Talent Spotter | When no existing specialist fits, or one is performing badly |
+| DHIS2 Expert | Health information platform work — call it by name, not on a keyword |
+| Release Coordinator | Release, publish, changelog, pre-publish personal-data scan |
 
 **Phase 5 skills (automation & scaffolding):**
 
@@ -248,23 +268,30 @@ Regenerate the definitions after editing any agent:
 | `/metis-research` | Metis Research | Research session: load article context, check tracked files |
 | `/metis-status` | Metis Status | Quick project + task status overview |
 
-### How invocation works
+### How it works in practice
 
-**Option A — Let Metis route (recommended):**
+**Usually — say what you want, and stop thinking about it:**
 ```
-/metis Review my Article 1 draft
+Find recent papers on passive surveillance sensitivity, 2022 onwards.
+```
+The Librarian's description matches that request, so it is dispatched, works in its
+own context, and returns a summary. Nothing was typed and nothing was chosen.
+
+**When the request spans remits — make the routing explicit:**
+```
+/metis Review my Article 1 draft for methodology and grammar
 ```
 Metis will:
-1. Analyze the request
-2. Announce: "Routing to Epidemiologist (methodology) + Writing Partner (grammar). Complexity: chain."
-3. Load each agent's system prompt, execute sequentially
+1. Analyse the request
+2. Say in plain language which viewpoints it is bringing in — never slugs or models
+3. Dispatch each specialist with the Agent tool, in its own isolated context
 4. Write output files to `outputs/reviews/{agent-slug}/`
-5. Log each run to the `agent_runs` database table
-6. Return a summary of what was done and where outputs are
+5. Log each run to the `agent_runs` table, so the dashboard shows the work live
+6. Return a summary of what was done and where the outputs are
 
-**Option B — Call an agent directly:**
+**When you want one particular specialist and no other:**
 ```
-/librarian search sleeping sickness surveillance methods 2024
+@epidemiologist is the denominator right in this coverage estimate?
 ```
 
 ### Complexity levels Metis uses
@@ -283,9 +310,9 @@ Metis will:
 > **DHIS2 is deliberately not in this table (2026-08-28).** The researcher has done one
 > mockup of a DHIS2 app and may return to it, but it was appearing in his
 > profile interests, his news monitoring, his RAG results and this routing
-> table — a footprint far larger than the work justifies. `/dhis2-expert` is
-> still there and still good; call it **by name** when a request is genuinely
-> about DHIS2. Do not route to it on a keyword.
+> table — a footprint far larger than the work justifies. The specialist is
+> still there and still good; reach it with `@dhis2-expert` when a request is
+> genuinely about that platform. Do not route to it on a keyword.
 
 
 When a request arrives, route as follows:

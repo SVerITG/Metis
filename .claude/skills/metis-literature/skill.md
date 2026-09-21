@@ -50,7 +50,7 @@ For no-query mode: show stats + 5 recent additions + a prompt to search.
 
 2. ...
 ─────────────────────────────────────────────────────────
-Tip: use /librarian to run a full systematic search
+Tip: ask for a full systematic search of the literature
 ```
 
 **No-query mode:**
@@ -67,7 +67,7 @@ RECENT ADDITIONS
   ...
 
 Search: /metis_literature [your query]
-Full search: /librarian [query]
+Full search: ask "find papers on [query]"
 ─────────────────────────────────────────────────────────
 ```
 

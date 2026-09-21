@@ -572,7 +572,7 @@ async def today_focus_thread(request: Request):
                 "articles, literature, inbox folder."
             )
         else:
-            scan_text = "No scans yet. Run /news-radar or /librarian to begin."
+            scan_text = "No scans yet. Ask Metis for a news scan or a literature search to begin."
     except Exception:
         pass
 

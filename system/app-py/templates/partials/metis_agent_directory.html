@@ -1,11 +1,11 @@
-{# Agent directory — full cards with description, when-to-use, slash command, run history.
+{# Agent directory — full cards with description, when-to-use, how to name it, run history.
    Inputs: agents[] from agent-registry.json (enriched with run_count, last_run), agent_count #}
 <div class="u-rule" style="padding:var(--m-space-4) var(--m-space-5);">
   <div style="display:flex;align-items:baseline;justify-content:space-between;">
     <div>
       <div class="u-title u-title--lg">Agent registry</div>
       <div style="font-size:var(--t-meta);color:var(--m-muted);margin-top:var(--m-space-1);">
-        {{ agent_count }} specialist{{ '' if agent_count == 1 else 's' }} available · invoke any one with the slash command shown · run count shows how often each agent has been used.
+        {{ agent_count }} specialist{{ '' if agent_count == 1 else 's' }} available · each one picks up the work it fits, or name it directly as shown · run count shows how often each has been used.
       </div>
     </div>
     <span class="u-label">AGENT-REGISTRY.JSON</span>

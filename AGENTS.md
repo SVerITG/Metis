@@ -53,39 +53,42 @@ Trigger moments → tags to pass:
 → Output: outputs/reviews/epidemiologist/... + outputs/reviews/writing-partner/...
 ```
 
-**Direct call:** If you already know which agent you want, call them directly:
+**There is nothing to type.** Each specialist is registered as a subagent and is
+selected from its `description:` line against what the request is about. Say what
+you need and the right one picks it up; `@agent-name` forces a particular one;
+`/metis` makes the routing explicit and records it.
 
-| Invocation | Agent | When to use |
-|---|---|---|
-| `/metis` | Metis | **Default entry point.** Any request — she routes, executes, and records |
-| `/librarian` | Librarian | Find papers, update literature metadata, search sources |
-| `/phd-architect` | PhD Architect | Thesis structure, article alignment, chapter planning |
-| `/writing-partner` | Writing Partner | Draft text, improve writing, structure arguments |
-| `/methods-coach` | Methods Coach | Epidemiological methods, statistics, sampling, R methodology |
-| `/dhis2-expert` | DHIS2 Expert | DHIS2 server, metadata, tracker programs, dashboards, NTD implementations |
-| `/software-engineer` | Software Engineer | Code review, debugging, Python/R scripts, FastAPI |
-| `/frontend-designer-builder` | Frontend Designer Builder | UI/UX decisions, design system, visualization design |
-| `/meeting-memory` | Meeting Memory | Transcribe, structure, and brief meeting notes |
-| `/news-radar` | News Radar | What happened in the world, brief generation |
-| `/builder` | Builder | Build new apps, tools, MCP servers |
-| `/rc-builder` | RC Builder | Modify/extend Metis itself — new agents, dashboard phases, MCP tools |
-| `/presentation-maker` | Presentation Maker | PowerPoint slides, visual summaries |
-| `/learning-coach` | Learning Coach | Skill progression, learning paths, statistics competencies |
-| `/course-builder` | Course Builder | Build a course end-to-end: intake → harvest → curriculum → draft → review → publish |
-| `/career-coach` | Career Coach | EU job prep, CV support, career strategy |
-| `/news-aggregator` | News Aggregator | Automated RSS collection, feed curation, signal tagging |
-| `/design-auditor` | Design Auditor | Audit existing UIs, reverse-engineer design decisions |
-| `/visualization-maker` | Visualization Maker | Diagrams, charts, system maps, ggplot2, Plotly |
-| `/content-harvester` | Content Harvester | Extract and structure content from web, PDFs, DOCX, YouTube, GitHub |
-| `/background-maker` | Background Maker | Build permanent specialist knowledge layers (RAG corpus) |
-| `/learning-architect` | Learning Architect | Curriculum design, learning paths, spaced repetition, competency maps |
-| `/epidemiologist` | Epidemiologist | Study design review, methodology challenge, Socratic questioning |
-| `/cybersecurity` | Cybersecurity | URL validation, prompt injection defense, threat intel, agent audit |
-| `/data-guardian` | Data Guardian | PII protection, patient data blocking, file transmission approval |
-| `/data-analyst` | Data Analyst | Profile, clean, and compare tabular datasets (CSV/Excel/SPSS/Stata) — local only |
-| `/critic` | Critic | Verify, challenge, and quality-check outputs from other agents |
-| `/memory-curator` | Memory Curator | Consolidate session history into permanent memory, retrieve past context |
-| `/biostatistician` | Biostatistician | R package development, simulation studies, sample size/power, Monte Carlo |
+| Specialist | What it is for |
+|---|---|
+| Metis (`/metis`) | The coordinator. Routes, executes, and records |
+| Librarian | Find papers, update literature metadata, search sources |
+| PhD Architect | Thesis structure, article alignment, chapter planning |
+| Writing Partner | Draft text, improve writing, structure arguments |
+| Methods Coach | Epidemiological methods, statistics, sampling, R methodology |
+| DHIS2 Expert | DHIS2 server, metadata, tracker programs, dashboards, NTD implementations |
+| Software Engineer | Code review, debugging, Python/R scripts, FastAPI |
+| Frontend Designer Builder | UI/UX decisions, design system, visualization design |
+| Meeting Memory | Transcribe, structure, and brief meeting notes |
+| News Radar | What happened in the world, brief generation |
+| Builder | Build new apps, tools, MCP servers |
+| RC Builder | Modify/extend Metis itself — new agents, dashboard phases, MCP tools |
+| Presentation Maker | PowerPoint slides, visual summaries |
+| Learning Coach | Skill progression, learning paths, statistics competencies |
+| Course Builder | Build a course end-to-end: intake → harvest → curriculum → draft → review → publish |
+| Career Coach | EU job prep, CV support, career strategy |
+| News Aggregator | Automated RSS collection, feed curation, signal tagging |
+| Design Auditor | Audit existing UIs, reverse-engineer design decisions |
+| Visualization Maker | Diagrams, charts, system maps, ggplot2, Plotly |
+| Content Harvester | Extract and structure content from web, PDFs, DOCX, YouTube, GitHub |
+| Background Maker | Build permanent specialist knowledge layers (RAG corpus) |
+| Learning Architect | Curriculum design, learning paths, spaced repetition, competency maps |
+| Epidemiologist | Study design review, methodology challenge, Socratic questioning |
+| Cybersecurity | URL validation, prompt injection defense, threat intel, agent audit |
+| Data Guardian | PII protection, patient data blocking, file transmission approval |
+| Data Analyst | Profile, clean, and compare tabular datasets (CSV/Excel/SPSS/Stata) — local only |
+| Critic | Verify, challenge, and quality-check outputs from other agents |
+| Memory Curator | Consolidate session history into permanent memory, retrieve past context |
+| Biostatistician | R package development, simulation studies, sample size/power, Monte Carlo |
 
 **Phase 5 skills (automation & scaffolding):**
 
@@ -128,9 +131,14 @@ Metis will:
 5. Log each run to the `agent_runs` database table
 6. Return a summary of what was done and where outputs are
 
-**Option B — Call an agent directly:**
+**Option B — just ask, and let the specialist select itself:**
 ```
-/librarian search sleeping sickness surveillance methods 2024
+Find recent papers on passive surveillance sensitivity, 2022 onwards.
+```
+
+**Option C — insist on one specialist:**
+```
+@epidemiologist is the denominator right in this coverage estimate?
 ```
 
 ### Complexity levels Metis uses

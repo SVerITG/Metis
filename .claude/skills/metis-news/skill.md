@@ -41,7 +41,7 @@ Group by domain. For each brief:
 - Signal strength tag if available: `[HIGH]` / `[MEDIUM]` / `[LOW]`
 
 **Step 4 — Suggest action**
-If no briefs exist or last scan > 24h ago: suggest running `/news-radar` or clicking "Scan for content" on the dashboard.
+If no briefs exist or last scan > 24h ago: offer to run a news scan, or point at "Scan for content" on the dashboard.
 
 **Step 5 — Do not log** (read-only, lightweight).
 
@@ -64,7 +64,7 @@ Last scan: [time ago] via [content-scan / news-radar]
 [METHODS]
   · [Title]  (wwwnc.cdc.gov · 1w)
 ─────────────────────────────────────────────────────────
-Run /news-radar to fetch new signals · Dashboard: Today tab
+Ask for a news scan to fetch new signals · Dashboard: Today tab
 ```
 
-If the news_briefs table is empty or no results match the filter, say: _"No news signals yet. Run /news-radar or click 'Scan for content' on the dashboard."_
+If the news_briefs table is empty or no results match the filter, say: _"No news signals yet. Ask me for a news scan, or click 'Scan for content' on the dashboard."_

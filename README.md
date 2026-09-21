@@ -551,7 +551,7 @@ flowchart LR
         SEM[Semantic\nvector search]
         REFLEX[Reflexion log]
     end
-    Skills[/CLI Skills\n/metis · /librarian · …/]
+    Skills[/CLI Skills\n/metis · /metis-morning · …/]
 
     U -->|asks| METIS
     U -->|clicks| DASH

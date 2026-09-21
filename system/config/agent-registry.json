@@ -1,7 +1,7 @@
 {
   "_meta": {
     "version": "1.0",
-    "last_updated": "2026-05-26",
+    "last_updated": "2026-09-21",
     "purpose": "Machine-readable registry of all Research Cortex agents. Single source of truth for trust tiers, permission constraints, allowed paths, and output conventions. Derived from Claude Code architecture principles (metadata-first design, permission tiers, type constraints).",
     "trust_tiers": {
       "gate-keeper": "Blocking or veto authority over other agents. No internet. Operates locally only. Cannot be overridden by user for SENSITIVE data blocks.",
@@ -10,7 +10,8 @@
       "write-local": "No internet access. Can read and write files within allowed_paths only.",
       "read-advise": "Advisory or propose-only role. Does not create files without explicit approval. May read broadly."
     },
-    "routing_note": "An agent with routing='retired' is no longer returned by automatic routing; its folder and skill are intentionally kept so it can still be called by name. The authoritative list for ROUTING is _RETIRED_ROUTING_SLUGS in system/mcp-server/src/metis_mcp/tools/pipeline.py — this field mirrors it for display, and _audit_routing_targets() warns on start if the two disagree."
+    "routing_note": "An agent with routing='retired' is no longer returned by automatic routing; its folder and skill are intentionally kept so it can still be called by name. The authoritative list for ROUTING is _RETIRED_ROUTING_SLUGS in system/mcp-server/src/metis_mcp/tools/pipeline.py — this field mirrors it for display, and _audit_routing_targets() warns on start if the two disagree.",
+    "invocation_note": "invocation is how a specialist is REACHED, not how it must be called. The duplicate slash-command skills were removed on 2026-09-21 because none had ever been typed; a specialist is now selected automatically from its description in .claude/agents/<slug>.md. '@slug' forces one; '/metis' routes."
   },
   "agents": [
     {
@@ -59,7 +60,7 @@
     {
       "slug": "cybersecurity",
       "name": "Cybersecurity Agent",
-      "invocation": "/cybersecurity",
+      "invocation": "@cybersecurity",
       "trust_tier": "gate-keeper",
       "description": "Security guardian. Reviews internet requests from other agents, detects prompt injection, validates URLs against domain allowlist, audits agent scope compliance. Has veto authority over internet requests.",
       "internet": false,
@@ -97,7 +98,7 @@
     {
       "slug": "data-guardian",
       "name": "Data Guardian",
-      "invocation": "/data-guardian",
+      "invocation": "@data-guardian",
       "trust_tier": "gate-keeper",
       "description": "Data privacy enforcer. Detects PII and medical data, classifies data sensitivity, blocks transmission of SENSITIVE data. Has blocking authority — SENSITIVE data blocks are never overridden.",
       "internet": false,
@@ -137,7 +138,7 @@
     {
       "slug": "librarian",
       "name": "Librarian",
-      "invocation": "/librarian",
+      "invocation": "@librarian",
       "trust_tier": "write-external",
       "description": "Literature and knowledge-source specialist. Finds new relevant sources, organizes metadata, links sources to projects and PhD articles. Exempt from internet permission requirement within bibliographic scope.",
       "internet": true,
@@ -182,7 +183,7 @@
     {
       "slug": "news-radar",
       "name": "News Radar",
-      "invocation": "/news-radar",
+      "invocation": "@news-radar",
       "trust_tier": "write-external",
       "description": "World and research news monitor. Generates news briefs from approved sources. Exempt from internet permission requirement within news monitoring scope.",
       "internet": true,
@@ -219,7 +220,7 @@
     {
       "slug": "news-aggregator",
       "name": "News Aggregator",
-      "invocation": "/news-aggregator",
+      "invocation": "@news-aggregator",
       "trust_tier": "write-external",
       "description": "Automated RSS collection and feed curation. Fetches from the 23 configured RSS feeds across 3 tiers. Exempt from internet permission within configured feed list.",
       "internet": true,
@@ -259,7 +260,7 @@
     {
       "slug": "epidemiologist",
       "name": "Epidemiologist",
-      "invocation": "/epidemiologist",
+      "invocation": "@epidemiologist",
       "trust_tier": "read-advise",
       "description": "Methodology challenger. Reviews study design, challenges analytical choices through Socratic questioning. Advisory only — does not produce final statistical outputs or modify analysis files.",
       "internet": false,
@@ -297,7 +298,7 @@
     {
       "slug": "methods-coach",
       "name": "Methods Coach",
-      "invocation": "/methods-coach",
+      "invocation": "@methods-coach",
       "trust_tier": "read-advise",
       "description": "Statistical and epidemiological methods advisor. Advises on analysis approaches, R methodology, sampling. Advisory only — does not write or execute analysis code.",
       "internet": false,
@@ -334,7 +335,7 @@
     {
       "slug": "phd-architect",
       "name": "PhD Architect",
-      "invocation": "/phd-architect",
+      "invocation": "@phd-architect",
       "trust_tier": "write-local",
       "description": "PhD structure and research program coherence specialist. Maintains central thesis logic, links papers into a coherent program, identifies gaps.",
       "internet": false,
@@ -377,7 +378,7 @@
     {
       "slug": "writing-partner",
       "name": "Writing Partner",
-      "invocation": "/writing-partner",
+      "invocation": "@writing-partner",
       "trust_tier": "write-local",
       "description": "Academic writing specialist. Drafts text, improves writing, structures arguments. Operates on output files and drafts — does not commit to git or modify source data.",
       "internet": false,
@@ -414,7 +415,7 @@
     {
       "slug": "meeting-memory",
       "name": "Meeting Memory",
-      "invocation": "/meeting-memory",
+      "invocation": "@meeting-memory",
       "trust_tier": "write-local",
       "description": "Meeting transcription and structuring specialist. Reads raw meeting notes or audio transcripts, produces structured briefings with action items, decisions, and follow-ups.",
       "internet": false,
@@ -447,7 +448,7 @@
     {
       "slug": "software-engineer",
       "name": "Software Engineer",
-      "invocation": "/software-engineer",
+      "invocation": "@software-engineer",
       "trust_tier": "write-local",
       "description": "Code review, debugging, and feature implementation for all RC software (R Shiny, Python, scripts). Maintains patterns.md. For tasks involving 10+ files, recommend escalating to rc-builder.",
       "internet": false,
@@ -489,7 +490,7 @@
     {
       "slug": "dashboard-engineer",
       "name": "Dashboard Engineer",
-      "invocation": "/dashboard-engineer",
+      "invocation": "@dashboard-engineer",
       "trust_tier": "write-local",
       "description": "Epidemiological indicator and health data dashboard specialist. Designs and implements surveillance indicators (coverage, positivity rate, burden, completeness), builds FastAPI + HTMX partials, and translates public health data into actionable dashboard views. Distinct from Frontend Designer Builder: this agent owns indicator logic and epi interpretation, not visual design system.",
       "internet": false,
@@ -564,7 +565,7 @@
     {
       "slug": "builder",
       "name": "Builder",
-      "invocation": "/builder",
+      "invocation": "@builder",
       "trust_tier": "write-local",
       "description": "New app and tool construction specialist. Builds new Shiny apps, R scripts, MCP servers. For changes to Metis itself, use rc-builder instead.",
       "internet": false,
@@ -601,7 +602,7 @@
     {
       "slug": "rc-builder",
       "name": "RC Builder",
-      "invocation": "/rc-builder",
+      "invocation": "@rc-builder",
       "trust_tier": "write-local",
       "description": "Specialist for modifying and extending the Research Cortex (RC) itself. Handles requests to add agents, new dashboard tabs, implement phases. Must load red-lines and token-guardrails before every action.",
       "internet": false,
@@ -643,7 +644,7 @@
     {
       "slug": "presentation-maker",
       "name": "Presentation Maker",
-      "invocation": "/presentation-maker",
+      "invocation": "@presentation-maker",
       "trust_tier": "write-local",
       "description": "Slide deck and visual summary specialist. Creates PowerPoint presentations and visual outputs from research content.",
       "internet": false,
@@ -675,7 +676,7 @@
     {
       "slug": "learning-coach",
       "name": "Learning Coach",
-      "invocation": "/learning-coach",
+      "invocation": "@learning-coach",
       "trust_tier": "write-local",
       "description": "Skill progression and learning path specialist. Manages competency tracking, course content, spaced repetition. Works within knowledge/library/courses/ and the learning DB tables.",
       "internet": false,
@@ -711,7 +712,7 @@
     {
       "slug": "career-coach",
       "name": "Career Coach",
-      "invocation": "/career-coach",
+      "invocation": "@career-coach",
       "trust_tier": "write-local",
       "description": "EU job preparation, CV support, and career strategy specialist. Does not access source data or the research database.",
       "internet": false,
@@ -781,7 +782,7 @@
     {
       "slug": "hr-talent",
       "name": "HR / Talent Spotter",
-      "invocation": "/hr-talent",
+      "invocation": "@hr-talent",
       "trust_tier": "read-advise",
       "description": "Capability gap detector. Activated when no agent matches a task, or when agent output quality is flagged. Proposes new skill stubs or agent updates — never creates files directly.",
       "internet": false,
@@ -813,7 +814,7 @@
     {
       "slug": "research-architect",
       "name": "Research Architect",
-      "invocation": "/research-architect",
+      "invocation": "@research-architect",
       "trust_tier": "write-local",
       "description": "Research program design specialist. Focuses on the intellectual architecture of the PhD program: thesis coherence, methodological emphases, paper sequencing, and identifying conceptual gaps.",
       "internet": false,
@@ -853,7 +854,7 @@
     {
       "slug": "course-builder",
       "name": "Course Builder",
-      "invocation": "/course-builder",
+      "invocation": "@course-builder",
       "trust_tier": "write-local",
       "description": "End-to-end course creation orchestrator. Runs a 7-step workflow: intake questionnaire → scope plan → harvest sources → curriculum design → draft modules → review loop → publish. Delegates to Content Harvester, Learning Architect, Methods Coach, Epidemiologist, Writing Partner, Visualization Maker. Output goes to knowledge/courses/{slug}/.",
       "internet": false,
@@ -895,7 +896,7 @@
     {
       "slug": "data-analyst",
       "name": "Data Analyst",
-      "invocation": "/data-analyst",
+      "invocation": "@data-analyst",
       "trust_tier": "write-local",
       "description": "Tabular data profiling and cleaning specialist. Profiles datasets (shape, dtypes, nulls, distributions), suggests and applies cleaning operations locally, generates before/after comparison reports and audit logs. Supports CSV, TSV, Excel, SPSS (.sav), and Stata (.dta). Never modifies the original file. Detects PII column names before any processing.",
       "internet": false,
@@ -935,7 +936,7 @@
     {
       "slug": "background-maker",
       "name": "Background Maker",
-      "invocation": "/background-maker",
+      "invocation": "@background-maker",
       "trust_tier": "write-external",
       "description": "Builds permanent specialist knowledge layers (RAG corpus) from papers, reports, and web sources — scrubbed, chunked, and indexed for semantic search.",
       "internet": true,
@@ -959,7 +960,7 @@
     {
       "slug": "content-harvester",
       "name": "Content Harvester",
-      "invocation": "/content-harvester",
+      "invocation": "@content-harvester",
       "trust_tier": "write-external",
       "description": "Extracts and structures content from web pages, PDFs, DOCX files, YouTube, and GitHub repositories into Metis-ready source material.",
       "internet": true,
@@ -983,7 +984,7 @@
     {
       "slug": "critic",
       "name": "Critic",
-      "invocation": "/critic",
+      "invocation": "@critic",
       "trust_tier": "read-advise",
       "description": "Verifies, challenges, and quality-checks outputs from other agents before the user acts on them. Advisory only — does not create files without approval.",
       "internet": false,
@@ -1007,7 +1008,7 @@
     {
       "slug": "design-auditor",
       "name": "Design Auditor",
-      "invocation": "/design-auditor",
+      "invocation": "@design-auditor",
       "trust_tier": "read-advise",
       "description": "Audits existing UIs, reverse-engineers design decisions, and produces prioritised improvement lists. Read-only — proposes changes, does not implement.",
       "internet": false,
@@ -1029,7 +1030,7 @@
     {
       "slug": "dhis2-expert",
       "name": "DHIS2 Expert",
-      "invocation": "/dhis2-expert",
+      "invocation": "@dhis2-expert",
       "trust_tier": "write-local",
       "description": "Handles all DHIS2 platform questions — configuration, data model design, tracker programs, server administration, API integration, analytics, and NTD implementations.",
       "internet": false,
@@ -1052,7 +1053,7 @@
     {
       "slug": "frontend-designer-builder",
       "name": "Frontend Designer Builder",
-      "invocation": "/frontend-designer-builder",
+      "invocation": "@frontend-designer-builder",
       "trust_tier": "write-local",
       "description": "Handles UI/UX decisions, design system, CSS, visualisation design, and web interfaces for the Metis dashboard and other tools.",
       "internet": false,
@@ -1075,7 +1076,7 @@
     {
       "slug": "learning-architect",
       "name": "Learning Architect",
-      "invocation": "/learning-architect",
+      "invocation": "@learning-architect",
       "trust_tier": "write-local",
       "description": "Designs curriculum, learning paths, spaced repetition schedules, and competency maps. Structures courses before content is drafted.",
       "internet": false,
@@ -1099,7 +1100,7 @@
     {
       "slug": "memory-curator",
       "name": "Memory Curator",
-      "invocation": "/memory-curator",
+      "invocation": "@memory-curator",
       "trust_tier": "write-local",
       "description": "Consolidates session history into permanent memory, retrieves past context on request, and runs memory health checks.",
       "internet": false,
@@ -1121,7 +1122,7 @@
     {
       "slug": "release-coordinator",
       "name": "Release Coordinator",
-      "invocation": "/release-coordinator",
+      "invocation": "@release-coordinator",
       "trust_tier": "gate-keeper",
       "description": "Proactive git guardian. Monitors repo state, groups changes into coherent commits, scans for personal data before any push, keeps installers in sync, and gates all remote pushes.",
       "internet": false,
@@ -1143,7 +1144,7 @@
     {
       "slug": "visualization-maker",
       "name": "Visualization Maker",
-      "invocation": "/visualization-maker",
+      "invocation": "@visualization-maker",
       "trust_tier": "write-local",
       "description": "Creates diagrams, charts, system maps, ggplot2 figures, and Plotly visualisations for research outputs and the dashboard.",
       "internet": false,
@@ -1164,7 +1165,7 @@
     {
       "slug": "biostatistician",
       "name": "Biostatistician",
-      "invocation": "/biostatistician",
+      "invocation": "@biostatistician",
       "trust_tier": "write-local",
       "description": "R package development, simulation studies, and sample size / power calculations. Implements custom estimators, runs Monte Carlo studies, and builds CRAN-ready packages. Always seeds stochastic code, always presents power as a curve, always reports Monte Carlo standard errors.",
       "internet": false,

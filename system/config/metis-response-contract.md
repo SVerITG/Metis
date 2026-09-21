@@ -214,7 +214,7 @@ Default is the silent layer above. These are opt-in and change the contract:
 
 - **Briefing** (`/metis-morning`, `/metis-weekly`) — owns its own format; the
   freshness and rotation rules in those skills take precedence.
-- **Deep work** (`/epidemiologist`, `/methods-coach`, …) — the specialist's voice
+- **Deep work** (a specialist has picked the request up, or was named with `@`) — its voice
   leads, and challenge level rises to match what was invoked.
 - **Status** (`/metis-status`, `/metis-projects`) — tables and counts, minimal prose.
 - **Plain Claude** (`/direct`, `direct:`, `plain Claude`) — contract suspended for

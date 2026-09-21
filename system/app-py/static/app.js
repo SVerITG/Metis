@@ -142,9 +142,9 @@ function handleOverlayClick(event) {
 // the launch is scoped to the focus project or to the RC root.
 const _LAUNCHER_CONFIG = {
   brainstorm: { target: 'claude_code', prompt: '/metis_brainstorm',          scope: 'focus' },
-  write:      { target: 'claude_code', prompt: '/writing-partner work on my active article', scope: 'focus' },
+  write:      { target: 'claude_code', prompt: 'Help me write — work on my active article', scope: 'focus' },
   review:     { target: 'vscode',      prompt: '',                           scope: 'focus' },
-  meeting:    { target: 'claude_code', prompt: '/meeting-memory prep for next meeting', scope: 'rc' },
+  meeting:    { target: 'claude_code', prompt: 'Prepare me for my next meeting from the notes on file', scope: 'rc' },
   inbox:      { target: 'claude_code', prompt: '/metis_inbox',               scope: 'rc' },
 };
 
@@ -1648,8 +1648,8 @@ function metisStub(prompt, label) {
 }
 
 // Meeting actions
-function openBriefing(meetingId)  { metisStub(`/meeting-memory open briefing for meeting ${meetingId || 'next'}`); }
-function openTranscript(meetingId){ metisStub(`/meeting-memory transcript for meeting ${meetingId || 'last'}`); }
+function openBriefing(meetingId)  { metisStub(`Open the briefing notes for meeting ${meetingId || 'next'}`); }
+function openTranscript(meetingId){ metisStub(`Show me the transcript for meeting ${meetingId || 'last'}`); }
 function rescheduleMeeting(id)    { showToast('<i class="bi bi-calendar2-event toast-icon"></i>Rescheduling lives in your calendar (Outlook/Google) — link coming.'); }
 
 // ---------------------------------------------------------------------------
@@ -1857,10 +1857,10 @@ async function rejectProposal(pid) {
 }
 
 // Teach actions (already partly defined below)
-function openHistory(id, title)   { metisStub(`/course-builder history for course "${title}"`); }
-function continueDraft(id, title) { metisStub(`/course-builder continue draft for "${title}"`); }
-function publishCourse(id, title) { metisStub(`/course-builder publish "${title}"`); }
-function startBuildingSuggested() { metisStub('/course-builder start a new course from the catalog'); }
+function openHistory(id, title)   { metisStub(`Show me the build history for my course "${title}"`); }
+function continueDraft(id, title) { metisStub(`Continue building my course draft "${title}"`); }
+function publishCourse(id, title) { metisStub(`Publish my course "${title}"`); }
+function startBuildingSuggested() { metisStub('Build me a new course from the catalog'); }
 function viewCatalog()            { document.querySelector('.sec-label .tail')?.scrollIntoView({behavior:'smooth', block:'center'}); }
 
 // ---------------------------------------------------------------------------
@@ -1942,7 +1942,7 @@ function _copyAndToast(prompt) {
 
 function openCourseSlides(id, title) {
   _copyAndToast(
-    `/presentation-maker\nCreate a lecture slide deck for my course: "${title}"\n\n` +
+    `Create a lecture slide deck for my course: "${title}"\n\n` +
     `Please ask me which module or lecture topic to create slides for, then produce a ` +
     `complete deck with: title slide, learning objectives, content slides with speaker notes, ` +
     `activity/discussion prompts, and a summary slide.`
@@ -1951,7 +1951,7 @@ function openCourseSlides(id, title) {
 
 function openTeachingBrief(id, title) {
   _copyAndToast(
-    `/presentation-maker\nTeaching brief for a lecture in "${title}".\n\n` +
+    `Make me a teaching brief deck for a lecture in "${title}".\n\n` +
     `Produce a one-page lecture guide for me as the instructor:\n` +
     `- Learning objectives (3-5, Bloom taxonomy level)\n` +
     `- Key concepts with 2-sentence explanation each\n` +
@@ -1963,7 +1963,7 @@ function openTeachingBrief(id, title) {
 
 function openAssessmentBuilder(id, title) {
   _copyAndToast(
-    `/course-builder\nBuild an exam or assessment for my course "${title}".\n\n` +
+    `Build an exam or assessment for my course "${title}".\n\n` +
     `Ask me: difficulty level, question types (MCQ/short answer/essay), ` +
     `Bloom taxonomy target, number of questions, and which topic to focus on. ` +
     `Then generate the full assessment with a marking guide.`
@@ -1972,7 +1972,7 @@ function openAssessmentBuilder(id, title) {
 
 function openQuestionBank(id, title) {
   _copyAndToast(
-    `/course-builder\nBuild a student question bank for "${title}".\n\n` +
+    `Build a student question bank for my course "${title}".\n\n` +
     `Generate 20 practice questions organised by:\n` +
     `- Difficulty: easy (recall) / medium (application) / hard (analysis)\n` +
     `- Include model answers and common errors to watch for.\n` +
@@ -1982,7 +1982,7 @@ function openQuestionBank(id, title) {
 
 function openGapAnalysis(id, title) {
   _copyAndToast(
-    `/librarian\nRun a curriculum gap analysis for my course "${title}".\n\n` +
+    `Search the literature and run a curriculum gap analysis for my course "${title}".\n\n` +
     `Review the current learning objectives and identify:\n` +
     `1. Missing foundational concepts students likely need\n` +
     `2. Recent high-impact literature (last 3 years) not yet covered\n` +

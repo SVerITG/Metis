@@ -1,7 +1,7 @@
 <div class="panel panel-pad panel--md">
   {% if course %}
   <div class="ed" style="font-size:var(--t-body);">
-    <em>{{ course.title }}</em> is queued in your catalog ({{ course.category or 'uncategorised' }}). Start building it with <em>/course-builder</em>, or explore the full catalog below.
+    <em>{{ course.title }}</em> is queued in your catalog ({{ course.category or 'uncategorised' }}). Ask Metis to start building it, or explore the full catalog below.
   </div>
   <div style="display:flex;gap:var(--m-space-2);margin-top:var(--m-space-3);">
     <button class="btn btn--sec btn--caps" onclick="buildCourse('{{ course.slug or course.id }}')">Start building</button>
@@ -9,7 +9,7 @@
   </div>
   {% else %}
   <div class="ed" style="font-size:var(--t-body);color:var(--m-muted);">
-    <em>All placeholder courses have been started. Use /course-builder to add new ones.</em>
+    <em>All placeholder courses have been started. Ask Metis to add new ones.</em>
   </div>
   {% endif %}
 </div>

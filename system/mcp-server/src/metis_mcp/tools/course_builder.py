@@ -1,7 +1,7 @@
 """Course Builder orchestration tools.
 
 These tools wire up the 7-step Course Builder pipeline to the MCP layer.
-The /course-builder slash command skill delegates here for state management
+The course-building specialist delegates here for state management
 and persistence — the skill itself handles Claude orchestration of the steps.
 
 Steps:

@@ -38,7 +38,7 @@ Defines what is included/excluded per edition for packaging and the installer co
 Installer asks: `"Include the Biostatistics for Epidemiologists course? (~50 MB, 12 lessons)"`
 
 - If **yes** → copy `knowledge/courses/biostatistics/` to install path, seed `learning_courses` row
-- If **no** → skip. User can run `/course-builder` anytime to generate a course later.
+- If **no** → skip. The user can ask for a course to be built at any time.
 
 Placeholder courses (14 rows in `learning_courses`) are always included — they are DB records only, no file content.
 

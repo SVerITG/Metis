@@ -40,7 +40,7 @@
       <i class="bi bi-exclamation-triangle-fill"></i>
       <span>
         {% if news_stale_hours >= 999 %}
-          No news scan has run yet — run <code>/news-radar</code> to start.
+          No news scan has run yet — ask Metis for one to start.
         {% else %}
           Last news scan was {{ news_stale_hours }}h ago — no new content in the last 24h.
           <a href="javascript:void(0)" onclick="document.querySelector('[data-tab=today]')?.click()" style="color:inherit;text-decoration:underline;">Trigger a scan</a>
