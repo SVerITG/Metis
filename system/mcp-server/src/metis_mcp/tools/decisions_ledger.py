@@ -135,7 +135,54 @@ def _is_decision(s: str) -> bool:
 # worse than none: it hides the rule from the agent that needed it AND clutters
 # one that does not. Anything that cannot be placed confidently becomes
 # project-wide, where every agent sees it.
+# ORDER IS THE WHOLE DESIGN HERE: first match wins, so a narrow rule must sit
+# above the broad one that would otherwise swallow it. Several pairs below share
+# vocabulary on purpose and are separated by what the decision is ABOUT, not by
+# which words it uses:
+#
+#   sensitive data vs a dataset      · protection rule vs cleaning rule
+#   implementing a method vs choosing one
+#   building a knowledge layer vs curating the literature
+#   what a panel measures vs how it looks
+#
+# Anything this table cannot name is filed project-wide, which sounds harmless
+# and is not: a decision nobody owns is inherited by nobody. That was the state
+# for eighteen specialists — unreachable by construction rather than for want of
+# history — and it is why a third of the table had no owner.
+#
+# Deliberately absent: the router itself (a decision "for" it is project-wide by
+# definition), specialists retired from automatic routing, and one domain that is
+# reached by name only, by standing instruction, rather than on a keyword.
 _ATTRIBUTION_ROUTE = [
+    # ── narrow rules first ───────────────────────────────────────────────────
+    (r"\bPII\b|patient data|sensitive data|de-identif|anonymis|anonymiz|gdpr|"
+     r"confidential|personal data|identifiable", "data-guardian", "process"),
+    (r"prompt injection|malicious|threat intel|allowlist|blocklist|credential|"
+     r"\bsecret\b|exfiltrat|sandbox|vulnerab", "cybersecurity", "process"),
+    (r"\bR package\b|CRAN|simulation study|monte carlo|bootstrap|tolerance "
+     r"interval|dose-response|custom estimator", "biostatistician", "method"),
+    (r"knowledge layer|\bRAG\b|embedding|corpus build|background pack|"
+     r"specialist context|vector index", "background-maker", "architecture"),
+    (r"scrape|harvest|extract from|youtube|web page|docx|crawl",
+     "content-harvester", "process"),
+    (r"\bKPI\b|indicator|coverage gap|positivity|case-finding rate|"
+     r"surveillance panel|blank panel|data quality panel",
+     "dashboard-engineer", "method"),
+    (r"design audit|design critique|reverse-engineer the design|ui audit",
+     "design-auditor", "design"),
+    (r"\bCV\b|cover letter|fellowship|job application|EPSO|career|"
+     r"interview prep", "career-coach", "process"),
+    (r"capability gap|new agent needed|missing specialist|agent roster",
+     "hr-talent", "process"),
+    (r"verify the output|second opinion|challenge the|quality check|"
+     r"fact-check|adversarial review", "critic", "process"),
+    (r"consolidat|memory palace|episodic|semantic memory|memory health|"
+     r"session summary", "memory-curator", "architecture"),
+    (r"study plan|what to study|skill progression|competenc|learning path",
+     "learning-coach", "process"),
+    (r"new app|greenfield|scaffold a|multi-agent workflow|new project "
+     r"architecture", "builder", "architecture"),
+    # ── broader rules below ──────────────────────────────────────────────────
     (r"slide|deck\b|powerpoint|pptx|speaker note|master slide|title slide|"
      r"presentation|bandeau|template de", "presentation-maker", "design"),
     (r"figure|chart|ggplot|plotly|diagram|axis|legend|colour scale|color scale|"
