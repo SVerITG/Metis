@@ -459,18 +459,26 @@ an Express *application* rather than a static site.
 
 ## graphify
 
-> ⚠️ **NOT INSTALLED on this machine, and the graph is stale (last built 2026-07-10).**
-> Checked 2026-08-12: `graphify` is not at `~/.local/bin/graphify` nor anywhere on PATH.
-> Two PreToolUse hooks called it on every Bash/Read/Glob and errored every time; they are
-> now guarded with `command -v … || true`, so they stay silent and resume working if it is
-> reinstalled.
+> ✅ **Installed and current on this machine (rechecked 2026-09-21).** `graphify 0.9.11`
+> at `~/.local/bin/graphify`; graph rebuilt the same day — 11,169 nodes, 16,527 edges,
+> 1,355 communities. The previous note here said NOT INSTALLED and warned the graph was
+> stale from 2026-07-10; both were true when written and both are now false. The
+> PreToolUse hooks that call it on every Bash/Read/Glob stay guarded with
+> `command -v … || true`, so they degrade quietly on a machine without it.
 >
-> **Do not trust `graphify-out/` for codebase questions.** It predates everything built
-> since mid-July — the ambient memory layer, the structural audit, the background packs,
-> the Office integration. A stale graph answers confidently and wrongly, which is worse
-> than no graph. Use ripgrep and the source until it is rebuilt with `graphify update .`
+> **The graph is machine-local and does NOT sync.** `graphify-out/` is gitignored, so
+> each computer builds its own and each can go stale independently. A stale graph
+> answers confidently and wrongly — worse than no graph. Rebuild with
+> `graphify update .` (AST-only, no API cost) after any substantial code change, and
+> whenever you sit down at a machine you have not used in weeks.
 >
-> The instructions below apply only once graphify is installed again.
+> **Two traps found on 2026-09-21, both worth knowing before a rebuild:**
+> 1. `graphify update .` **skips `graph.html`** above 5,000 nodes, and this graph is
+>    over 11,000. The dashboard serves that file at `/api/graphify/view`, so a plain
+>    rebuild silently turns a working route into a 404. Regenerate the viz with
+>    `GRAPHIFY_VIZ_NODE_LIMIT=15000 graphify cluster-only . --no-label`.
+> 2. `--no-label` is deliberate: community naming otherwise calls an LLM. Communities
+>    fall back to hub names, which is enough for navigation and costs nothing.
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
 
