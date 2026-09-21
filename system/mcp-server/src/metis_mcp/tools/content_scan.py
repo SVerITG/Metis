@@ -611,10 +611,27 @@ CREATE TABLE IF NOT EXISTS today_board_items (
     auto_added  INTEGER DEFAULT 1,
     start_date  TEXT DEFAULT '',
     end_date    TEXT DEFAULT '',
+    fit_reason  TEXT DEFAULT '',
     created_at  TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 )
 """
+
+
+def _ensure_board_columns(conn):
+    """Add board columns this build writes but an older database lacks.
+
+    PRAGMA-guarded rather than try/except around the ALTER: a swallowed
+    exception here would surface much later as an INSERT that fails for a
+    reason nothing in the log explains.
+    """
+    have = {r[1] for r in conn.execute("PRAGMA table_info(today_board_items)")}
+    for col, ddl in (("seen_at", "TEXT DEFAULT ''"),
+                     ("pin_order", "INTEGER DEFAULT 0"),
+                     ("follow_terms", "TEXT DEFAULT ''"),
+                     ("fit_reason", "TEXT DEFAULT ''")):
+        if col not in have:
+            conn.execute(f"ALTER TABLE today_board_items ADD COLUMN {col} {ddl}")
 
 
 def _maybe_add_to_board(conn, title: str, url: str, summary: str, source_name: str):
@@ -655,6 +672,14 @@ def update_today_board(board: str, items: list[dict]) -> dict:
     Replaces the previously tool-filled rows on that board; items the user curated or
     added by hand are preserved.
 
+    EVERY ITEM IS CHECKED AGAINST THE BOARD IT CLAIMS. A congress or a committee
+    session sent to Outbreaks is filed under Events instead; a call for proposals
+    goes to Funding; a newsletter, bulletin, quarterly report or declaration
+    belongs on no board and is recorded as turned away, with the reason, rather
+    than silently dropped. So the saved count may be lower than the number of
+    items passed, and some may appear on a different board — the return value
+    says how many of each.
+
     Args:
         board: "outbreaks", "events" or "funding".
         items: list of objects, each {"title": str, "url": str, "date": str (optional,
@@ -662,7 +687,8 @@ def update_today_board(board: str, items: list[dict]) -> dict:
             sentence)}. Only include real items with a working http(s) URL.
 
     Returns:
-        dict: {ok, board, saved} on success, or {ok: False, error} on failure.
+        dict: {ok, board, saved, re_routed, not_a_board_item} on success, or
+        {ok: False, error} on failure.
     """
     import sqlite3 as _sqlite3
     import datetime as _dt
@@ -697,6 +723,7 @@ def update_today_board(board: str, items: list[dict]) -> dict:
     try:
         conn = _sqlite3.connect(str(paths.db))
         conn.execute(_DDL_BOARD)
+        _ensure_board_columns(conn)
         now = _dt.datetime.now().isoformat()
         # Refresh = replace every AUTO-added row; keep curated & manual.
         #
@@ -705,26 +732,49 @@ def update_today_board(board: str, items: list[dict]) -> dict:
         # permanently and each refresh made the ratio worse. `auto_added` is the
         # honest predicate: 0 is set only by a human (the manual add form) or by
         # curation, and it marks exactly the rows that must survive.
+        #
+        # `dismissed=0` is new and load-bearing: a rejected row IS the record of
+        # a judgement. Clearing it on the next refresh would leave the board's
+        # own filtering unauditable, and an unauditable filter is one nobody can
+        # correct — which is how a board silently loses items it should have had.
         conn.execute(
-            "DELETE FROM today_board_items WHERE board=? AND auto_added=1",
+            "DELETE FROM today_board_items WHERE board=? AND auto_added=1 AND dismissed=0",
             (board,),
         )
+        # Not every harvested item belongs on the board it was harvested for,
+        # and some belong on none. A congress moves to Events, a call for
+        # proposals to Funding, and a newsletter is written turned away rather
+        # than silently dropped. See board_fit for the rules and the reasons.
+        try:
+            from metis_mcp.tools.board_fit import route as _route
+        except Exception:                                        # pragma: no cover
+            def _route(b, t, d=""):
+                return b, True, "unclassified: rules unavailable"
         added = 0
+        moved = 0
+        refused = 0
         for title, url, desc, date in clean:
+            target, keep, reason = _route(board, title, desc)
             if conn.execute(
-                "SELECT 1 FROM today_board_items WHERE board=? AND url=? LIMIT 1", (board, url)
+                "SELECT 1 FROM today_board_items WHERE board=? AND url=? LIMIT 1", (target, url)
             ).fetchone():
                 continue  # don't shadow a curated/manual item with the same URL
             conn.execute(
                 "INSERT INTO today_board_items (board, title, url, description, "
-                "start_date, source, auto_added, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, ?, 'claude', 1, ?, ?)",
-                (board, title, url, desc, date, now, now),
+                "start_date, source, auto_added, dismissed, fit_reason, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, ?, 'claude', 1, ?, ?, ?, ?)",
+                (target, title, url, desc, date, 0 if keep else 1, reason, now, now),
             )
-            added += 1
+            if not keep:
+                refused += 1
+            else:
+                added += 1
+                if target != board:
+                    moved += 1
         conn.commit()
         conn.close()
-        return {"ok": True, "board": board, "saved": added}
+        return {"ok": True, "board": board, "saved": added,
+                "re_routed": moved, "not_a_board_item": refused}
     except Exception as e:
         return {"ok": False, "error": str(e)}
 

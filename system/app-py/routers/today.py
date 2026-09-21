@@ -3900,16 +3900,26 @@ def _ensure_board_table():
         )
     except Exception:
         pass
-    # Migration for databases created before seen_at existed. Guarded by a
+    # Migrations for databases created before a column existed. Guarded by a
     # PRAGMA rather than a try/except on the ALTER, because this runs on every
     # board render and a swallowed exception per request hides real failures.
-    try:
-        cols = {r["name"] for r in (db_query("PRAGMA table_info(today_board_items)") or [])}
-        if "seen_at" not in cols:
-            db_execute("ALTER TABLE today_board_items ADD COLUMN seen_at TEXT DEFAULT ''")
-            _log.info("today_board_items: added seen_at column")
-    except Exception as exc:
-        _log.warning("today_board_items: seen_at migration skipped: %s", exc)
+    for _col, _ddl in (
+        ("seen_at", "TEXT DEFAULT ''"),
+        ("pin_order", "INTEGER DEFAULT 0"),
+        ("follow_terms", "TEXT DEFAULT ''"),
+        # Why an item is on this board — or why it was turned away. Stored, not
+        # derived, so a rejection can be read back months later without having
+        # to re-run the rules that produced it, and so a misfile is arguable
+        # with evidence rather than from memory.
+        ("fit_reason", "TEXT DEFAULT ''"),
+    ):
+        try:
+            cols = {r["name"] for r in (db_query("PRAGMA table_info(today_board_items)") or [])}
+            if _col not in cols:
+                db_execute(f"ALTER TABLE today_board_items ADD COLUMN {_col} {_ddl}")
+                _log.info("today_board_items: added %s column", _col)
+        except Exception as exc:
+            _log.warning("today_board_items: %s migration skipped: %s", _col, exc)
 
 
 # ── A PIN IS A SUBJECT YOU FOLLOW, NOT A ROW YOU KEPT ────────────────────────
@@ -4427,18 +4437,30 @@ def _refresh_board_via_search(board: str) -> tuple[int, str]:
     _ensure_board_table()
     now = datetime.datetime.now().isoformat()
     # Refresh = replace the previous search results, keep curated/manual items.
-    db_execute("DELETE FROM today_board_items WHERE board=? AND source='web-search'", (board,))
+    # `dismissed=0` is the important half: a rejected row is the record of a
+    # judgement, and wiping it on the next refresh would make the board's own
+    # filtering unauditable — the failure mode this whole change exists to end.
+    db_execute("DELETE FROM today_board_items WHERE board=? AND source='web-search' "
+               "AND dismissed=0", (board,))
+    # Gate BOTH write paths, never one. A classifier applied only where it was
+    # first needed is a filter with a hole in it, and the hole refills the board.
+    from metis_mcp.tools.board_fit import route as _route
     added = 0
     for title, url, desc in clean:
-        # Don't duplicate a curated/manual item that already points at this URL.
-        if db_query("SELECT 1 FROM today_board_items WHERE board=? AND url=? LIMIT 1", (board, url)):
+        target, keep, reason = _route(board, title, desc)
+        # Don't duplicate anything already at this URL on the board it is
+        # actually going to — which is not necessarily the board it came from.
+        if db_query("SELECT 1 FROM today_board_items WHERE board=? AND url=? LIMIT 1",
+                    (target, url)):
             continue
         db_execute(
-            "INSERT INTO today_board_items (board, title, url, description, source, auto_added, created_at, updated_at) "
-            "VALUES (?, ?, ?, ?, 'web-search', 1, ?, ?)",
-            (board, title, url, desc, now, now),
+            "INSERT INTO today_board_items (board, title, url, description, source, "
+            "auto_added, dismissed, fit_reason, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, 'web-search', 1, ?, ?, ?, ?)",
+            (target, title, url, desc, 0 if keep else 1, reason, now, now),
         )
-        added += 1
+        if keep:
+            added += 1
     return added, ""
 
 
