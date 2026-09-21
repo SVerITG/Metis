@@ -17,11 +17,11 @@
       {% endif %}
       {# Period toggle #}
       <span style="display:inline-flex;gap:0;border:1px solid var(--m-rule-soft);border-radius:var(--m-radius-pill);overflow:hidden;">
-        <button hx-get="/api/partial/today/literature-discovery?period=week" hx-target="#today-lit-discovery" hx-swap="outerHTML"
+        <button hx-get="/api/partial/today/literature-discovery?period=week" hx-target="#today-lit-discovery" hx-swap="outerHTML show:none focus-scroll:false"
                 style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;padding:2px 8px;border:0;cursor:pointer;
                   background:{% if period == 'week' %}var(--m-accent){% else %}transparent{% endif %};
                   color:{% if period == 'week' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};">WEEK</button>
-        <button hx-get="/api/partial/today/literature-discovery?period=month" hx-target="#today-lit-discovery" hx-swap="outerHTML"
+        <button hx-get="/api/partial/today/literature-discovery?period=month" hx-target="#today-lit-discovery" hx-swap="outerHTML show:none focus-scroll:false"
                 style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;padding:2px 8px;border:0;border-left:1px solid var(--m-rule-soft);cursor:pointer;
                   background:{% if period == 'month' %}var(--m-accent){% else %}transparent{% endif %};
                   color:{% if period == 'month' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};">MONTH</button>

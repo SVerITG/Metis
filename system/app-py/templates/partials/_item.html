@@ -47,7 +47,7 @@
     <button type="button" class="act" title="Undo — back to undecided"
             aria-label="Undo"
             hx-post="/api/stack/clear" hx-include="closest .acts"
-            hx-target="{{ target }}" hx-swap="{{ swap }}">{{ icon('undo') }}</button>
+            hx-target="{{ target }}" hx-swap="{{ swap }} show:none focus-scroll:false">{{ icon('undo') }}</button>
   {% else %}
     {{ act(kind, 'later', 'Read later', target, swap) }}
     {{ act(kind, 'saved', 'Keep' if kind == 'paper' else 'Save', target, swap) }}
@@ -65,7 +65,7 @@
            value="{{ st.tags if st else '' }}" autocomplete="off"
            aria-label="Tags"
            hx-post="/api/stack/tags" hx-include="closest .acts"
-           hx-target="{{ target }}" hx-swap="{{ swap }}"
+           hx-target="{{ target }}" hx-swap="{{ swap }} show:none focus-scroll:false"
            hx-trigger="keyup[key=='Enter'], tagsave">
   </span>
 </div>
@@ -77,7 +77,7 @@
         title="{{ label }}" aria-label="{{ label }}"
         hx-post="/api/stack/set" hx-vals='{"state": "{{ state }}"}'
         hx-include="closest .acts"
-        hx-target="{{ target }}" hx-swap="{{ swap }}">{{ icon(state) }}</button>
+        hx-target="{{ target }}" hx-swap="{{ swap }} show:none focus-scroll:false">{{ icon(state) }}</button>
 {% endmacro %}
 
 
