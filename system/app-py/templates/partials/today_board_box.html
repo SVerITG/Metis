@@ -67,8 +67,16 @@
 
         FOLLOW and PIN are separate controls now, because they answer different
         questions: pin is where it sits, follow is whether its newest report
-        gets fetched. -#}
-    <div class="board-item{% if item.auto_added %} board-item--scan{% endif %}{% if item._fresh %} is-new is-new--{{ item._fresh }}{% endif %}{% if item._pinned %} board-item--pinned{% endif %}">
+        gets fetched.
+
+        A PIN WITH A THREAD IS AN ANCHOR. Everything later about the same
+        subject sits under it, indented, one line each — so a running story
+        costs one heading plus its instalments instead of N equal rows
+        competing for the top of the board. The children are still one line
+        apiece: the 2026-09-05 rule is about ROW HEIGHT, and nesting does not
+        get to spend it back. -#}
+    {% if item._pinned and item._children %}<div class="board-thread">{% endif %}
+    <div class="board-item{% if item.auto_added %} board-item--scan{% endif %}{% if item._fresh %} is-new is-new--{{ item._fresh }}{% endif %}{% if item._pinned %} board-item--pinned{% endif %}{% if item._children %} board-item--anchor{% endif %}">
       {#- State slot: a filled ring means "not looked at yet". -#}
       <button type="button" class="board-seen{% if item._unseen %} board-seen--unseen{% endif %}"
               hx-post="/api/today/board/{{ board }}/item/{{ item.id }}/seen{% if show_all %}?all=1{% endif %}"
@@ -94,6 +102,13 @@
           report. The report's title is in its tooltip, not on the row. -#}
       {% if item._when %}
       <span class="board-item-date" title="Event date / deadline">{{ item._when }}</span>
+      {% endif %}
+      {#- The thread count on the anchor. It replaces the "latest" link for a
+          pin, because one newest report is what you show when there is nothing
+          to nest under; a count says how much story there is. -#}
+      {% if item._n_children %}
+      <span class="board-thread-n"
+            title="{{ item._n_children }} report{{ '' if item._n_children == 1 else 's' }} on this subject{% if item._terms %} — matching {{ item._terms | join(' + ') }}{% endif %}{% if item._n_children > item._children | length %}; the newest {{ item._children | length }} are listed below{% endif %}">{{ item._n_children }} related</span>
       {% endif %}
       {% if item._latest %}
       <a class="board-latest" href="{{ item._latest.source_url or '/news' }}"
@@ -160,6 +175,34 @@
         </button>
       </span>
     </div>
+
+    {#- The thread itself. No controls on a child row: it is not a board item
+        in its own right, it is part of the one above it, and giving it its own
+        follow/pin/ignore would invite exactly the flat treatment this
+        removes. -#}
+    {% if item._pinned and item._children %}
+    {% for kid in item._children %}
+    <div class="board-item board-item--child">
+      <span class="board-thread-tick" aria-hidden="true">└</span>
+      {% if kid.url %}
+      <a href="{{ kid.url }}" target="_blank" rel="noopener"
+         class="board-item-title" title="{{ kid.title }}{% if kid.kind == 'news' %} · from the news stream{% endif %}">{{ kid.title }}</a>
+      {% else %}
+      <span class="board-item-title" title="{{ kid.title }}">{{ kid.title }}</span>
+      {% endif %}
+      {% if kid.when %}
+      <span class="board-item-date board-item-date--quiet">{{ kid.when }}</span>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% if item._n_children > item._children | length %}
+    <div class="board-item board-item--child board-item--more">
+      <span class="board-thread-tick" aria-hidden="true">└</span>
+      <span class="board-item-title">+{{ item._n_children - (item._children | length) }} earlier on this subject</span>
+    </div>
+    {% endif %}
+    {% endif %}
+    {% if item._pinned and item._children %}</div>{% endif %}
     {% endfor %}
   </div>
   {% else %}

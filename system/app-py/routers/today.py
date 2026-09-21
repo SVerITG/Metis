@@ -3962,12 +3962,93 @@ def _follow_terms(item: dict) -> list[str]:
     return [w.lower() for w in (proper or keep)[:2]]
 
 
+def _subject_where(terms: list[str]) -> str:
+    """The SQL predicate that says 'this brief is about that subject'."""
+    return " AND ".join(["LOWER(title || ' ' || COALESCE(summary,'')) LIKE ?"] * len(terms))
+
+
+def _subject_thread(item: dict, limit: int = 4) -> dict:
+    """The running story behind one pin: its newest reports, and how many exist.
+
+    A pin used to get a single 'latest' link, which is the wrong unit: a
+    running story arrives as a series, and one link shows the newest instalment
+    while hiding that there is a series at all. The whole thread belongs under
+    the item, with the item itself reading as the anchor. One report is an
+    update; a thread is a story you can follow.
+
+    Two queries, and only ever for a pin. Both are LIKE scans over the brief
+    stream, so running them per row on a board that shows fifty would be the
+    kind of quiet cost that only shows up as a slow page.
+    """
+    terms = _follow_terms(item)
+    if not terms:
+        return {"terms": [], "reports": [], "n": 0}
+    where = _subject_where(terms)
+    args = tuple(f"%{t}%" for t in terms)
+    rows = db_query(
+        "SELECT brief_id, title, brief_date, source_url, domain "
+        f"FROM news_briefs WHERE {where} "
+        "ORDER BY brief_date DESC, created_at DESC LIMIT ?",
+        args + (limit,), default=[]) or []
+    n = db_scalar(f"SELECT COUNT(*) FROM news_briefs WHERE {where}", args, default=0) or 0
+    return {"terms": terms, "reports": [dict(r) for r in rows], "n": n}
+
+
+def _attach_threads(board: str, rows: list[dict]) -> list[dict]:
+    """Nest related items under the pin that owns them; return the flat rest.
+
+    Two sources feed one thread, because the researcher does not distinguish them
+    and should not have to: other rows ALREADY ON THIS BOARD that are about the
+    same subject, and reports from the news stream that never reached a board.
+
+    A nested row is REMOVED from the flat list. Showing it in both places would
+    leave the flood exactly as it was and merely add an indent to it.
+    """
+    pins = [r for r in rows if (r.get("pin_order") or 0)]
+    if not pins:
+        return rows
+    claimed: set[int] = set()
+    for pin in pins:
+        terms = _follow_terms(pin)
+        kids: list[dict] = []
+        for r in rows:
+            if r is pin or (r.get("pin_order") or 0) or r.get("id") in claimed:
+                continue
+            hay = (str(r.get("title") or "") + " " +
+                   str(r.get("description") or "")).lower()
+            if terms and all(t in hay for t in terms):
+                claimed.add(r.get("id"))
+                kids.append({
+                    "kind": "board",
+                    "title": r.get("title") or "",
+                    "url": r.get("url") or "",
+                    "when": (str(r.get("start_date") or "").strip()
+                             or str(r.get("created_at") or "")[:10]),
+                })
+        thread = _subject_thread(pin)
+        for rep in thread["reports"]:
+            kids.append({
+                "kind": "news",
+                "title": rep.get("title") or "",
+                "url": rep.get("source_url") or "",
+                "when": str(rep.get("brief_date") or "")[:10],
+            })
+        kids.sort(key=lambda k: k.get("when") or "", reverse=True)
+        pin["_terms"] = terms
+        pin["_children"] = kids[:6]
+        # The count is the honest total, not the number drawn: a thread that
+        # says "4" while holding forty is the same lie as a board that shows
+        # ten of a hundred without saying so.
+        pin["_n_children"] = len(kids) + max(0, thread["n"] - len(thread["reports"]))
+    return [r for r in rows if r.get("id") not in claimed]
+
+
 def _latest_report(item: dict) -> dict | None:
-    """The newest brief matching this pinned subject, or None."""
+    """The newest brief matching this followed subject, or None."""
     terms = _follow_terms(item)
     if not terms:
         return None
-    where = " AND ".join(["LOWER(title || ' ' || COALESCE(summary,'')) LIKE ?"] * len(terms))
+    where = _subject_where(terms)
     rows = db_query(
         "SELECT brief_id, title, brief_date, source_url, domain "
         f"FROM news_briefs WHERE {where} "
@@ -4049,11 +4130,16 @@ def _board_context(board: str, show_all: bool = False) -> dict:
         0 if (r.get("pin_order") or 0) else (1 if r.get("starred") else 2),
         r.get("pin_order") or 0,
         ))
-    # A pin follows its subject: attach the newest matching report from the
-    # news stream. Only for pins — doing it for every row would run a LIKE
-    # query per row on a board that shows fifty.
+    # A PIN IS THE ANCHOR OF A THREAD. Related rows and related news collect
+    # underneath it, and the ones that do are taken out of the flat list —
+    # which is what turns a repeating story from N lines into one.
+    folded = _attach_threads(board, folded)
+    # A followed-but-unpinned row still gets its single newest report: it has
+    # no thread to anchor, so one link is the whole of what it can say.
     for it in folded:
-        it["_latest"] = _latest_report(it) if it.get("starred") else None
+        it["_latest"] = (_latest_report(it)
+                         if it.get("starred") and not (it.get("pin_order") or 0)
+                         else None)
     pinned_ids = [r["id"] for r in folded if (r.get("pin_order") or 0)]
     for r in folded:
         r["_pinned"] = bool(r.get("pin_order") or 0)

@@ -6209,6 +6209,77 @@ a.mrow-title { text-decoration: none; }
 .board-box--alert  .board-item--pinned { border-left-color: var(--m-alert); }
 .board-box--ok     .board-item--pinned { border-left-color: var(--m-ok); }
 
+/* ── A PIN THAT OWNS A THREAD ────────────────────────────────────────────────
+   A new item about something already pinned is filed UNDER it, with the pin
+   reading as the thing it belongs to. So the
+   anchor is the only row in the group that looks like a heading, and the group
+   is drawn as one block — rows that merely sit near each other read as rivals,
+   which is the flood the nesting exists to end.
+
+   Every child is still ONE LINE. The 2026-09-05 rule is about row height, and
+   an indent is not a licence to spend it back. */
+.board-thread {
+  border-bottom: 1px solid var(--m-rule-soft);
+  padding-bottom: 2px;
+}
+.board-thread:last-child { border-bottom: none; }
+/* The anchor owns what follows it, so the hairline that separates equals is
+   removed — the group's own bottom rule is the boundary now. */
+.board-item--anchor {
+  border-bottom: none;
+}
+.board-item--anchor .board-item-title {
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.board-item--child {
+  padding: 2px 0 2px 16px;
+  border-bottom: none;
+}
+.board-item--child .board-item-title {
+  font-size: 11.5px;
+  color: var(--m-muted);
+}
+.board-item--child a.board-item-title:hover { color: var(--m-accent); }
+.board-thread-tick {
+  flex: none;
+  width: 10px;
+  font-family: var(--m-mono);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--m-rule-strong);
+}
+.board-item--more .board-item-title {
+  font-family: var(--m-mono);
+  font-size: var(--t-micro);
+  letter-spacing: 0.06em;
+  color: var(--m-muted-soft);
+}
+/* How much story sits underneath, on the anchor's own line. A count, not a
+   link: the thread is already on screen, so a second way to open the newest
+   item would be the same information twice. */
+.board-thread-n {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-family: var(--m-mono);
+  font-size: var(--t-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--m-muted);
+  border: 1px solid var(--m-rule);
+}
+.board-box--alert  .board-thread-n { color: var(--m-alert); }
+.board-box--accent .board-thread-n { color: var(--m-accent); }
+.board-box--ok     .board-thread-n { color: var(--m-ok); }
+/* A child's date is context, not a decision — the anchor's date is the one
+   that matters, so this one gives up its border and steps back. */
+.board-item-date--quiet {
+  border-color: transparent;
+  color: var(--m-muted-soft);
+}
+
 /* Reordering is revealed by hover or by keyboard focus anywhere in the row —
    `:focus-within` is what keeps it reachable without a mouse. Reserving space
    for two arrows on every row would have cost the title a fifth of the box. */
