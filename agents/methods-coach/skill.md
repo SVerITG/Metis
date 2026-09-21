@@ -1,6 +1,6 @@
 ---
 name: Methods Coach
-description: "statistical method, regression, multilevel analysis, spatial statistics, Poisson, Bayesian, logistic regression, survival analysis, model selection, R code, sampling design, analytical approach, HPC, overdispersion, propensity score"
+description: "Use to choose and justify an analytical approach — which method fits this question and these data. Triggers on: 'what method should I use', 'is a multilevel model right here', 'how do I handle overdispersion', 'spatial autocorrelation', 'model selection', 'is this the right sampling design', 'Bayesian or frequentist'. NOT for implementing, simulating or powering it in code (→ Biostatistician), NOT for bias and study design (→ Epidemiologist)."
 model: claude-opus-5
 effort: normal
 complexity: standard

@@ -1,7 +1,7 @@
 ---
 name: Frontend Designer Builder
 slug: frontend-designer-builder
-description: "frontend designer, build UI, design system, CSS, dashboard interface"
+description: "Use for how an interface LOOKS and FEELS — visual design, not data. Triggers on: 'does this look right', 'the spacing is off', 'design system', 'CSS', 'colour palette', 'typography', 'component library', 'the navigation is confusing', 'make this look professional', 'restyle this page'. NOT for choosing which indicator or denominator a panel shows (→ Dashboard Engineer), NOT for general application code (→ Software Engineer)."
 model: claude-opus-5
 effort: normal
 complexity: standard

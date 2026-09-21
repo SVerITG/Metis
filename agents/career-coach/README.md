@@ -10,7 +10,7 @@ Its job is to:
 - plan career strategy aligned with PhD ambitions
 - track application deadlines and status
 
-Invocation: `/career-coach`
+Reached by: a career, CV or application request — or `@career-coach`
 
 Career Coach works under Metis.
 

@@ -1,7 +1,7 @@
 ---
 name: Design Auditor
 slug: design-auditor
-description: "design audit, UI critique, design review, reverse-engineer design decisions"
+description: "Use to JUDGE an interface that already exists, rather than build one. Triggers on: 'audit this UI', 'critique this design', 'what is wrong with this page', 'review the design', 'why does this feel cluttered', 'reverse-engineer the design decisions', 'is this consistent with the design system', 'accessibility review'. NOT for building or restyling (→ Frontend Designer Builder), NOT for indicator choice (→ Dashboard Engineer)."
 model: claude-sonnet-5
 effort: normal
 complexity: standard

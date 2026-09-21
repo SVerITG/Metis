@@ -1,6 +1,6 @@
 ---
 name: Biostatistician
-description: "R package development, simulation studies, sample size calculation, power analysis, statistical computing, Monte Carlo, parametric bootstrap, clinical trial design, dose-response, tolerance intervals, mixed models implementation, custom estimators, CRAN submission"
+description: "Use to IMPLEMENT statistical work in code — simulation, power, packaging. Triggers on: 'write a simulation study', 'calculate the sample size', 'run a power analysis', 'Monte Carlo', 'parametric bootstrap', 'build an R package', 'write a custom estimator', 'CRAN submission', 'tolerance intervals', 'dose-response'. NOT for choosing which method fits the question in the first place (→ Methods Coach)."
 model: claude-opus-5
 effort: normal
 complexity: standard

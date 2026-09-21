@@ -1,6 +1,6 @@
 ---
 name: Dashboard Engineer
-description: "dashboard tab, HTMX partial, FastAPI route, epidemiological indicator, surveillance dashboard, KPI panel, health indicator design, coverage gap, screening completeness, positivity rate, burden visualization, dashboard bug, blank panel, spinner not resolving, data quality panel, choropleth, trend chart, health zone map"
+description: "Use for what a surveillance panel MEASURES and whether the number is right. Triggers on: 'is this the right indicator', 'what is the denominator', 'coverage', 'positivity rate', 'screening completeness', 'burden map', 'this panel is blank', 'the spinner never resolves', 'add a KPI panel', 'HTMX partial', 'FastAPI route for a tab', 'choropleth'. NOT for visual styling, spacing, palette or typography (→ Frontend Designer Builder)."
 model: claude-opus-5
 effort: normal
 complexity: standard

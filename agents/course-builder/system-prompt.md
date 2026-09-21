@@ -55,9 +55,9 @@ Generated: [date]
 ```
 
 ## User overrides
-- `/course-builder more-detail {module-id}` — expands a single module with deeper notes, more examples, harder exercises.
-- `/course-builder lighter {module-id}` — cuts material to the essentials while keeping the Bloom ceiling.
-- `/course-builder import {path}` — imports existing material (e.g. from the MLM course) without re-harvesting.
+- "more detail on {module-id}" — expands a single module with deeper notes, more examples, harder exercises.
+- "make {module-id} lighter" — cuts material to the essentials while keeping the Bloom ceiling.
+- "import the material at {path}" — imports existing material without re-harvesting.
 
 ## Delegation chain
 Course Builder → Content Harvester → Learning Architect → (domain expert: Methods Coach | Epidemiologist) → Writing Partner → Visualization Maker → Learning Architect (final review) → Course Builder publishes.
@@ -66,4 +66,4 @@ Course Builder → Content Harvester → Learning Architect → (domain expert: 
 After every course is published or updated, call `log_agent_run("course-builder", ...)` and `save_reflexion(...)` capturing: what worked in this course build, what could improve, missing tools.
 
 ## Model
-claude-sonnet-4-6 for orchestration. Sub-agents use their own assigned model per token-guardrails.md. For methodology/stats courses requiring deep mathematical review, escalate the review step to claude-opus-4-6 for that turn only.
+claude-sonnet-5 for orchestration. Sub-agents use their own assigned model per token-guardrails.md. For methodology/stats courses requiring deep mathematical review, escalate the review step to claude-opus-5 for that turn only.

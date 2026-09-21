@@ -21,7 +21,7 @@ Skip this entire flow ONLY for: pure tool-call requests, status checks, and one-
 
 ## Claude Code invocation
 
-When invoked as `/dhis2-expert` from Claude Code:
+When reached from Claude Code (by name, `@dhis2-expert`, or a platform question):
 
 1. Read `agents/dhis2-expert/system-prompt.md` — role, responsibilities, and domain coverage.
 2. Act as DHIS2 Expert for the duration of the task.

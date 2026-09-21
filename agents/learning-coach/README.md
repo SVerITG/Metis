@@ -10,7 +10,7 @@ Its job is to:
 - generate spaced repetition items for retention
 - connect learning milestones to real projects
 
-Invocation: `/learning-coach`
+Reached by: the Learning surface, a study-guidance request — or `@learning-coach`
 
 Learning Coach works under Metis and depends on Methods Coach for content validation.
 

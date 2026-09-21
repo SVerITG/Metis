@@ -1,6 +1,6 @@
 ---
 name: News Aggregator
-description: "RSS feed, feed ingestion, news pipeline, aggregate news, feed parsing, news digest, automated news collection, feed monitoring, news deduplication, signal tagging"
+description: "Use only for the mechanics of the feed PIPELINE — adding, fixing or deduplicating sources. Triggers on: 'add this RSS feed', 'which feeds are dead', 'the feed parser is failing', 'deduplicate the news items', 'why did nothing come in from this source', 'signal tagging'. NOT for what the news MEANS and NOT for any briefing, which is the usual request (→ News Radar)."
 model: claude-haiku-4-5
 effort: normal
 complexity: quick

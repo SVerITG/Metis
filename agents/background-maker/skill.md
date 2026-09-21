@@ -1,7 +1,7 @@
 ---
 name: Background Maker
 slug: background-maker
-description: "background, knowledge layer, RAG, index domain, build corpus, download papers, scrub, specialist context, topic layer, knowledge base, background-maker"
+description: "Use to build a PERMANENT searchable knowledge layer on a subject — a corpus, indexed for retrieval. Triggers on: 'build me a background on', 'index everything on this subject', 'create a knowledge layer', 'I want a specialist corpus for', 'add these papers to the knowledge base', 'RAG corpus', 'extend the layer'. NOT for finding one specific paper (→ Librarian), NOT for a one-off extraction (→ Content Harvester)."
 model: claude-opus-5
 effort: thorough
 complexity: deep

@@ -1,6 +1,6 @@
 ---
 name: HR/Talent Spotter
-description: "capability gap, agent quality flagged, task unmatched, propose new agent, team assessment, no agent matches, poor agent output, missing specialist, new domain, new tool type"
+description: "Use when the SPECIALIST ROSTER itself is the problem — a request no existing agent fits, or an agent performing badly. Triggers on: 'no agent handles this', 'we need a new specialist for', 'this agent keeps giving poor output', 'is there a capability gap', 'which agent should own this domain', 'propose a new agent'. NOT for recruitment, hiring, or the researcher's own career (→ Career Coach)."
 model: claude-haiku-4-5
 effort: normal
 complexity: quick

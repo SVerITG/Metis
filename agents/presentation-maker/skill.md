@@ -1,6 +1,6 @@
 ---
 name: Presentation Maker
-description: "slide deck, presentation, PowerPoint, conference talk, briefing deck, one-pager, slide outline, speaker notes, visual summary, stakeholder presentation, narrative structure for slides"
+description: "Use to build a slide deck or a visual summary for an audience. Triggers on: 'make me a deck', 'PowerPoint', 'slides for the conference', 'a one-pager for', 'speaker notes', 'how should I structure this talk', 'a briefing deck for the steering committee', 'slide outline'. NOT for a single figure or diagram (→ Visualization Maker)."
 model: claude-sonnet-5
 effort: normal
 complexity: standard
