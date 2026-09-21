@@ -1,6 +1,10 @@
 {% from "partials/_item.html" import actions, tags, tag_datalist %}
-{# News Dispatch — topic slipcases with AI summaries, redesigned 2026-07-10.
-   Context: slipcases, all_topics, active_topic, period, last_updated, total_topics, show_all_topics. #}
+{# News Dispatch — Today's shortlist, redesigned 2026-09-18.
+   Context: items (list), period, folded (bool). No topics, no per-topic
+   summaries: that browse lives on the full /news tab. This is "close to your
+   work" only, and a verdict here retires the item from THIS list for good —
+   see today_news_rail() in routers/today.py for why there is no relevance
+   floor. #}
 {% from "partials/_update_menu.html" import update_menu %}
 
 {# ── Signal strength colors ── #}
@@ -22,48 +26,25 @@
 {{ tag_datalist(all_tags or []) }}
 <div class="today-news-rail u-mb-6" id="news-surface">
 
-  {#- THE HEADING, OR THE FOLD'S SUMMARY — never both. On Today this rail lives
-      inside <details class="dispatch-fold">, whose <summary> already says
-      "Dispatch"; rendering the h2 as well printed the word twice, one line
-      apart. So when folded, the counts are sent out-of-band into the summary
-      (`#dispatch-counts`) — the closed fold then states how much is inside it,
-      which is the difference between folded and hidden — and the seen-controls
-      move inside the body. They stay OUT of the <summary> deliberately: a
-      button inside a summary is a keyboard trap, because activating it also
-      toggles the disclosure. -#}
+  {#- THE HEADING, OR THE FOLD'S SUMMARY — never both. See the fold note in
+      today.html: on Today this rail lives inside <details class="dispatch-fold">,
+      whose <summary> already carries a label, so an inner h2 would print it
+      twice. Folded, the count goes out-of-band into `#dispatch-counts`
+      instead. -#}
   {% if not folded %}
-  <!-- ── Section header ── -->
   <h2 class="sec-label u-mb-3">
-    <span>Dispatch</span>
+    <span>Close to your work</span>
     <span class="tail u-row">
-      {# What arrived since you last looked, stated first — an editor leads with
-         what is new, not with the total. #}
-      {% if unseen_count %}
-      <span class="u-mono" style="letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:10px;background:color-mix(in srgb, var(--m-accent) 15%, transparent);color:var(--m-accent);">{{ unseen_count }} NEW</span>
-      <button class="btn btn--sec u-mono" hx-post="/api/news/mark-seen?period={{ period }}"
-              hx-target="#news-surface" hx-swap="outerHTML"
-              style="letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);border-radius:10px;color:var(--m-muted);">MARK ALL SEEN</button>
+      {% if items %}
+      <span class="u-mono" style="letter-spacing:0.1em;">{{ items|length }} WAITING</span>
       {% endif %}
-      <span>
-        {% if slipcases %}{{ slipcases | sum(attribute='count') }} SIGNALS{% endif %}
-        {% if last_updated %} · UPDATED {{ last_updated | upper }}{% endif %}
-      </span>
+      <a class="u-label" href="/news" style="text-decoration:none;">ALL NEWS →</a>
     </span>
   </h2>
   {% else %}
   <span id="dispatch-counts" hx-swap-oob="innerHTML">
-    {% if unseen_count %}{{ unseen_count }} new · {% endif %}
-    {% if slipcases %}{{ slipcases | sum(attribute='count') }} signals{% endif %}
-    {%- if last_updated %} · updated {{ last_updated }}{% endif %}
+    {% if items %}{{ items|length }} close to your work{% else %}no news close to your work today{% endif %}
   </span>
-  {% if unseen_count %}
-  <div class="u-row u-mb-2" style="justify-content:flex-end;">
-    <button class="btn btn--sec u-mono"
-            hx-post="/api/news/mark-seen?period={{ period }}&folded=1"
-            hx-target="#news-surface" hx-swap="outerHTML"
-            style="letter-spacing:0.1em;padding:var(--m-space-1) var(--m-space-2);">MARK ALL SEEN</button>
-  </div>
-  {% endif %}
   {% endif %}
 
   <div class="panel panel--clip">
@@ -85,12 +66,12 @@
                          background:{% if period == 'week' %}var(--m-accent){% else %}transparent{% endif %};
                          color:{% if period == 'week' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
                   hx-get="/api/partial/today/news-rail?period=week"
-                  hx-target="#news-surface" hx-swap="outerHTML">WEEK</button>
+                  hx-target="#news-surface" hx-swap="outerHTML show:none focus-scroll:false">WEEK</button>
           <button style="padding:4px 10px;font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;border:none;border-left:1px solid var(--m-rule);cursor:pointer;
                          background:{% if period == 'month' %}var(--m-accent){% else %}transparent{% endif %};
                          color:{% if period == 'month' %}var(--m-on-accent){% else %}var(--m-muted){% endif %};"
                   hx-get="/api/partial/today/news-rail?period=month"
-                  hx-target="#news-surface" hx-swap="outerHTML">MONTH</button>
+                  hx-target="#news-surface" hx-swap="outerHTML show:none focus-scroll:false">MONTH</button>
         </div>
         <!-- Update dispatch -->
         {%- set claude_news_prompt -%}
@@ -99,230 +80,77 @@ Update my Metis news dispatch. Using the metis-rc tools, scan the latest global-
         {% set news_update_opts = [
           {'icon': '✦', 'label': 'With Claude Desktop', 'sub': 'free · runs on your subscription, no API tokens',
            'href': 'claude://claude.ai/new?q=' ~ (claude_news_prompt | trim | urlencode), 'primary': true,
-           'title': 'Open Claude Desktop to scan the news and write summaries — no API key needed.'},
-          {'icon': '↻', 'label': 'With the API', 'sub': 'pick topics & generate summaries now · uses API credit',
-           'onclick': "updateNewsSummaries('" ~ period ~ "')",
-           'title': 'Choose topics and generate fresh summaries via the API.'}
+           'title': 'Open Claude Desktop to scan the news and write summaries — no API key needed.'}
         ] %}
         {{ update_menu('news', news_update_opts, label='Update', align='right') }}
       </div>
     </div>
 
-    <!-- Topic selector for targeted update (hidden by default) -->
-    <div class="u-rule u-hide" id="news-topic-selector" style="padding:var(--m-space-3) var(--m-space-4);background:var(--m-surface-2);">
-      <div class="u-label u-mb-2">SELECT TOPICS FOR SUMMARY UPDATE:</div>
-      <div class="u-mb-3" style="display:flex;flex-wrap:wrap;gap:var(--m-space-1);">
-        {% for topic in all_topics %}
-        <label class="u-row u-mono hov-edge" style="gap:var(--m-space-1);cursor:pointer;padding:var(--m-space-1) var(--m-space-3);border:1px solid var(--m-rule);border-radius:var(--m-radius-pill);background:var(--m-surface);transition:all 120ms;">
-          <input type="checkbox" class="news-topic-cb" value="{{ topic }}" checked style="margin:0;accent-color:var(--m-accent);"> {{ topic }}
-        </label>
-        {% endfor %}
-      </div>
-      <div class="u-row">
-        <button class="btn btn--primary u-mono" style="padding:var(--m-space-1) var(--m-space-4);letter-spacing:0.1em;border:none;" onclick="runSummaryUpdate('{{ period }}')">GENERATE</button>
-        <button class="u-label btn btn--sec" style="padding:var(--m-space-1) var(--m-space-4);" onclick="document.getElementById('news-topic-selector').style.display='none'">Cancel</button>
-        <span class="u-label" id="news-summary-status" style="margin-left:8px;"></span>
-      </div>
-    </div>
-
-    <!-- ── Topic slipcases ── -->
-    {% if slipcases %}
-    <div style="padding:0;">
-      {% for sc in slipcases %}
-      {% set is_highlight = sc.topic.startswith('✦') %}
-      <div class="news-sc u-rule">
-
-        <!-- Slipcase header -->
-        <div class="u-row row-hit" onclick="toggleSlipcase(this)" style="gap:var(--m-space-3);padding:var(--m-space-3) var(--m-space-4);cursor:pointer;user-select:none;transition:background 100ms;" role="button" tabindex="0">
-          <svg class="slipcase-chevron" viewBox="0 0 10 10" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-               style="flex-shrink:0;color:var(--m-muted);transition:transform .2s;{% if sc.open %}transform:rotate(90deg);{% endif %}">
-            <polyline points="3 2 7 5 3 8"/>
-          </svg>
-          {# Topic icon #}
-          {% if is_highlight %}
-          <svg class="u-fixed" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-          </svg>
-          {% else %}
-          <svg class="u-fixed" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--m-muted)" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2Z"/>
-          </svg>
+    {# ── The shortlist ── #}
+    {% if items %}
+    <div class="u-col" style="gap:var(--m-space-1);padding:var(--m-space-2);">
+      {% for item in items %}
+      {#- The row was an <a> wrapping everything, which is exactly why this
+          rail had no actions: a button inside an anchor navigates away
+          instead of firing. Row is a div; the TITLE is the link. -#}
+      {% set st = (states or {}).get(item.id) %}
+      <div class="tnr-row{% if st and st.state %} tnr-row--{{ st.state }}{% endif %} row-hit" style="display:block;padding:var(--m-space-2) var(--m-space-3);border-radius:var(--m-radius);transition:background 100ms;">
+        {# Meta row: time + signal badges #}
+        <div class="u-row u-mb-1" style="flex-wrap:wrap;">
+          <span class="u-label">{{ item.time }}</span>
+          {% if item.domain %}
+          <span class="u-label">{{ item.domain }}</span>
           {% endif %}
-          <span style="font-family:var(--m-display);font-size:14px;font-weight:{% if is_highlight %}600{% else %}500{% endif %};
-                       color:{% if is_highlight %}var(--m-accent){% else %}var(--m-ink){% endif %};flex:1;">
-            {{ sc.topic }}
+          {% if item.match == 'top' %}
+          <span class="u-mono" style="letter-spacing:0.08em;padding:1px 7px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
+            <svg viewBox="0 0 16 16" width="8" height="8" fill="var(--m-chart-2)" stroke="none" style="vertical-align:-1px;margin-right:2px;">
+              <polygon points="8 1 10 6 16 6.5 11.5 10.5 13 16 8 13 3 16 4.5 10.5 0 6.5 6 6"/>
+            </svg>
+            YOUR WORK
           </span>
-          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.1em;
-                       padding:2px 8px;border-radius:100px;
-                       background:{% if sc.count >= 10 %}color-mix(in srgb, var(--m-chart-2) 10%, transparent){% elif sc.count >= 5 %}color-mix(in srgb, var(--m-chart-1) 8%, transparent){% else %}var(--m-surface-3){% endif %};
-                       color:{% if sc.count >= 10 %}var(--m-chart-2){% elif sc.count >= 5 %}var(--m-chart-1){% else %}var(--m-muted){% endif %};">
-            {{ sc.count }}
-          </span>
-          {% if sc.age_label %}
-          <span class="u-mono" style="color:var(--m-muted);">{{ sc.age_label }}</span>
+          {% elif item.match == 'yes' %}
+          <span class="u-mono" style="letter-spacing:0.08em;padding:1px 7px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">RELEVANT</span>
+          {% endif %}
+          {% if item.signal %}
+          <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
+                       background:{{ signal_bg.get(item.signal_class, 'var(--m-surface-3)') }};
+                       color:{{ signal_colors.get(item.signal_class, 'var(--m-muted)') }};">{{ item.signal }}</span>
           {% endif %}
         </div>
-
-        <!-- Slipcase body (collapsible) -->
-        <div class="news-slipcase-body" style="{% if not sc.open %}display:none;{% endif %}padding:0 18px 14px;">
-
-          {# AI summary #}
-          {% if sc.summary %}
-          <div class="u-mb-3" style="padding:var(--m-space-3) var(--m-space-4);background:var(--m-surface-2);border-left:3px solid var(--m-accent);border-radius:0 var(--m-radius) var(--m-radius) 0;">
-            <div class="u-row u-mb-2">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="var(--m-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
-              <span class="u-label u-label--accent" style="letter-spacing:0.12em;">AI DIGEST</span>
-              {% if sc.summary_age %}<span class="u-label" style="margin-left:4px;">{{ sc.summary_age }}</span>{% endif %}
-            </div>
-            <p class="u-title u-title--sm" style="line-height:1.55;margin:0;">{{ sc.summary }}</p>
-          </div>
-          {% elif not is_highlight %}
-          <div class="u-label u-mb-3" style="padding:var(--m-space-2) var(--m-space-4);background:var(--m-surface-2);border-radius:var(--m-radius);letter-spacing:0.04em;">
-            No summary yet — click ✦ UPDATE to generate.
-          </div>
-          {% endif %}
-
-          {# Articles #}
-          {% if sc['items'] %}
-          <div class="u-col" style="gap:var(--m-space-1);">
-            {% for item in sc['items'] %}
-            {#- The row was an <a> wrapping everything, which is exactly why this
-                rail had no actions: a button inside an anchor navigates away
-                instead of firing. Row is a div; the TITLE is the link. -#}
-            {% set st = (states or {}).get(item.id) %}
-            <div class="tnr-row{% if st and st.state %} tnr-row--{{ st.state }}{% endif %} row-hit" style="display:block;padding:var(--m-space-2) var(--m-space-3);border-radius:var(--m-radius);transition:background 100ms;">
-              {# Meta row: time + signal badges #}
-              <div class="u-row u-mb-1" style="flex-wrap:wrap;">
-                <span class="u-label">{{ item.time }}</span>
-                {% if item.match == 'top' %}
-                <span class="u-mono" style="letter-spacing:0.08em;padding:1px 7px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, var(--m-chart-2) 10%, transparent);color:var(--m-chart-2);">
-                  <svg viewBox="0 0 16 16" width="8" height="8" fill="var(--m-chart-2)" stroke="none" style="vertical-align:-1px;margin-right:2px;">
-                    <polygon points="8 1 10 6 16 6.5 11.5 10.5 13 16 8 13 3 16 4.5 10.5 0 6.5 6 6"/>
-                  </svg>
-                  YOUR WORK
-                </span>
-                {% elif item.match == 'yes' %}
-                <span class="u-mono" style="letter-spacing:0.08em;padding:1px 7px;border-radius:var(--m-radius-pill);background:color-mix(in srgb, var(--m-chart-1) 8%, transparent);color:var(--m-chart-1);">RELEVANT</span>
-                {% endif %}
-                {% if item.signal %}
-                <span style="font-family:var(--m-mono);font-size:11px;letter-spacing:0.08em;padding:1px 7px;border-radius:100px;
-                             background:{{ signal_bg.get(item.signal_class, 'var(--m-surface-3)') }};
-                             color:{{ signal_colors.get(item.signal_class, 'var(--m-muted)') }};">{{ item.signal }}</span>
-                {% endif %}
-              </div>
-              {# Title — the link, and the only link #}
-              <div style="font-family:var(--m-display);font-size:var(--t-small);line-height:1.4;font-weight:500;">
-                {% if item.source_url or item.url %}
-                <a href="{{ item.source_url or item.url }}" target="_blank" rel="noopener"
-                   style="color:var(--m-ink);text-decoration:none;border-bottom:1px solid transparent;"
-                   onmouseover="this.style.borderBottomColor='var(--m-accent)'"
-                   onmouseout="this.style.borderBottomColor='transparent'">{{ item.title }}</a>
-                {% else %}<span style="color:var(--m-ink);">{{ item.title }}</span>{% endif %}
-              </div>
-              {# Summary #}
-              {% if item.summary %}
-              <div style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);line-height:1.45;margin-top:var(--m-space-1);">{{ item.summary }}</div>
-              {% endif %}
-              <div class="item-foot u-row u-row--wrap" style="gap:var(--m-space-2);">
-                {{ tags(st) }}
-                {{ actions('news', item.id, item.title,
-                           item.source_url or item.url or '', item.domain, st,
-                           '#news-surface', 'today-news', 'outerHTML') }}
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-          {% else %}
-          <div class="u-ed" style="font-size:var(--t-meta);padding:var(--m-space-2) 0;">
-            No articles in selected period.
-          </div>
-          {% endif %}
-
+        {# Title — the link, and the only link #}
+        <div style="font-family:var(--m-display);font-size:var(--t-small);line-height:1.4;font-weight:500;">
+          {% if item.source_url or item.url %}
+          <a href="{{ item.source_url or item.url }}" target="_blank" rel="noopener"
+             style="color:var(--m-ink);text-decoration:none;border-bottom:1px solid transparent;"
+             onmouseover="this.style.borderBottomColor='var(--m-accent)'"
+             onmouseout="this.style.borderBottomColor='transparent'">{{ item.title }}</a>
+          {% else %}<span style="color:var(--m-ink);">{{ item.title }}</span>{% endif %}
+        </div>
+        {# Summary #}
+        {% if item.summary %}
+        <div style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);line-height:1.45;margin-top:var(--m-space-1);">{{ item.summary }}</div>
+        {% endif %}
+        <div class="item-foot u-row u-row--wrap" style="gap:var(--m-space-2);">
+          {{ tags(st) }}
+          {{ actions('news', item.id, item.title,
+                     item.source_url or item.url or '', item.domain, st,
+                     '#news-surface', 'today-news', 'outerHTML') }}
         </div>
       </div>
       {% endfor %}
     </div>
-
-    {# Show more topics button #}
-    {% if not show_all_topics|default(false) and total_topics|default(0) > slipcases|length %}
-    <div class="u-rule-t" style="text-align:center;padding:var(--m-space-4) var(--m-space-4);">
-      <button class="u-label btn btn--sec hov-edge" style="padding:var(--m-space-2) var(--m-space-5);border-radius:var(--m-radius-pill);transition:all 120ms;" hx-get="/api/partial/today/news-rail?period={{ period }}&all_topics=1" hx-target="#news-surface" hx-swap="outerHTML">
-        SHOW ALL {{ total_topics }} TOPICS
-      </button>
-    </div>
-    {% endif %}
-
     {% else %}
     <!-- Empty state -->
     <div style="padding:var(--m-space-6) var(--m-space-5);text-align:center;">
       <svg class="u-mb-3" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="var(--m-muted)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.45;">
         <path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v1m2 13a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2Z"/>
       </svg>
-      <div class="u-mb-1 u-title">No news yet.</div>
+      <div class="u-mb-1 u-title">No more news close to your work today.</div>
       <div style="font-family:var(--m-display);font-size:var(--t-meta);color:var(--m-muted);line-height:1.5;">
-        Run a content scan to populate the dispatch — ask me to <em>scan for news</em>, or set up the news aggregator feeds.
+        {% if period == 'week' %}Try MONTH above for a wider window, or {% endif %}<a href="/news" style="color:var(--m-accent);">browse everything on the News tab</a>.
       </div>
     </div>
     {% endif %}
 
   </div>
 </div>
-
-<script>
-function toggleSlipcase(hd) {
-  const body = hd.nextElementSibling;
-  const chevron = hd.querySelector('.slipcase-chevron');
-  const open = body.style.display !== 'none';
-  body.style.display = open ? 'none' : '';
-  if (chevron) chevron.style.transform = open ? '' : 'rotate(90deg)';
-}
-
-function updateNewsSummaries(period) {
-  const sel = document.getElementById('news-topic-selector');
-  if (sel.style.display === 'none' || !sel.style.display) {
-    sel.style.display = '';
-  } else {
-    sel.style.display = 'none';
-  }
-}
-
-async function runSummaryUpdate(period) {
-  const checks = [...document.querySelectorAll('.news-topic-cb:checked')].map(c => c.value);
-  const status = document.getElementById('news-summary-status');
-  const btn = document.querySelector('[onclick*="runSummaryUpdate"]');
-  if (!checks.length) { status.textContent = 'Select at least one topic.'; return; }
-  status.style.color = 'var(--m-muted)';
-  status.textContent = 'Generating summaries for ' + checks.length + ' topic(s)…';
-  if (btn) btn.disabled = true;
-  try {
-    const res = await fetch('/api/news/summarize', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topics: checks, period }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      status.style.color = 'var(--m-ok)';
-      status.textContent = '✓ ' + data.generated + ' summaries generated';
-      setTimeout(function() {
-        var rail = document.getElementById('news-surface');
-        if (rail && window.htmx) {
-          htmx.ajax('GET', '/api/partial/today/news-rail?period=' + period, {
-            target: '#news-surface', swap: 'outerHTML'
-          });
-        }
-      }, 1200);
-    } else {
-      status.style.color = 'var(--m-alert)';
-      status.textContent = "Couldn't generate — " + (data.error || 'try again');
-    }
-  } catch(e) {
-    status.style.color = 'var(--m-alert)';
-    status.textContent = 'Network error';
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-</script>

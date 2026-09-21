@@ -450,15 +450,15 @@
       page rather than an unbounded one. -#}
   <details class="dispatch-fold u-mb-6">
     <summary class="dispatch-sum">
-      <span class="dispatch-lead">Dispatch</span>
-      <span id="dispatch-counts" class="dispatch-hint">the full news file</span>
+      <span class="dispatch-lead">News</span>
+      <span id="dispatch-counts" class="dispatch-hint">close to your work</span>
     </summary>
     <div class="dispatch-body">
 
   <div hx-get="/api/partial/today/news-rail?folded=1"
        hx-trigger="load delay:600ms"
        hx-swap="outerHTML">
-    {{ sec_label("Dispatch", tail="LOADING NEWS") }}
+    {{ sec_label("Close to your work", tail="LOADING NEWS") }}
     <div class="panel" style="padding:var(--m-space-5) var(--m-space-5);min-height:120px;">
       <div class="skeleton skeleton-bar w-40 u-mb-4"></div>
       <div class="skeleton skeleton-bar w-100 u-mb-2" style="height:12px;"></div>

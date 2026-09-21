@@ -823,8 +823,7 @@ def _build_news_items(qrows) -> list[dict]:
     return items
 
 
-async def render_news_rail(request: Request, category: str = "",
-                           period: str = "week") -> str:
+async def render_news_rail(request: Request, period: str = "week") -> str:
     """The Today news rail, as a string, so a triage click can give it back.
 
     Extracted 2026-08-26 alongside the reading stack: pressing "read later" on a
@@ -835,143 +834,76 @@ async def render_news_rail(request: Request, category: str = "",
     `run_until_complete` on the running loop, which raises — a route already runs
     inside that loop, so there is nothing to run it from.
     """
-    resp = await today_news_rail(request, category, period)
+    resp = await today_news_rail(request, period)
     return resp.body.decode("utf-8")
 
 
 @router.get("/api/partial/today/news-rail", response_class=HTMLResponse)
-async def today_news_rail(
-    request: Request, category: str = "", period: str = "week", folded: int = 0
-):
-    """News surface — topic slipcases with per-topic Haiku summaries.
+async def today_news_rail(request: Request, period: str = "week", folded: int = 0):
+    """Today's news — the shortlist, not the file.
 
-    `folded=1` is Today asking for the rail without its own heading, because
-    there the <summary> of the fold IS the heading and two would read as a
-    stutter. The counts it would have shown are sent back out-of-band into
-    that summary instead, so the closed fold still states what is inside it.
-    The News surface passes nothing and keeps its heading.
+    Redesigned 2026-09-18: this used to show the same
+    multi-topic firehose the dedicated /news tab exists for (topic slipcases,
+    a per-topic AI-summary picker, "mark all seen" across the whole
+    `news_briefs` table). Triaging that felt like clearing an inbox of 1,500
+    items, and clicking "not for me" only tagged the row — it never left the
+    list, so the pile never actually got smaller.
+
+    NO ABSOLUTE RELEVANCE FLOOR. The first draft of this filtered at
+    RELEVANCE_CLOSE, which is exactly the mistake `_field_week_data` already
+    made and documented below in this file: a fixed cutoff in the tail of a
+    distribution that moves is empty by luck on some days and fine on others —
+    32 items one day, zero the next, real stories hidden by four thousandths.
+    This takes the TOP N of the window by relevance instead, same as Field
+    Week, so it cannot be empty while anything in the window is unjudged.
+
+    A verdict (save, read later, already read, not for me) retires that item
+    from THIS shortlist for good — the row now exists in `reading_stack`. It
+    still appears, badge and all, on the full /news tab, which reads the same
+    table but never applies this exclusion: a verdict set here is scoped to
+    the shortlist, not to the underlying article. Once the window is truly
+    exhausted, the panel says so instead of vanishing — an empty state is
+    information, a missing section looks broken.
     """
-    import sqlite3 as _sq3
-
     if period not in ("week", "month"):
         period = "week"
     days = 7 if period == "week" else 30
     cutoff = (datetime.datetime.now() - datetime.timedelta(days=days)).isoformat()
 
-    # Ensure the semantic-relevance column exists (the scanner adds it; guard older DBs).
     try:
-        from db import db_execute
-        db_execute("ALTER TABLE news_briefs ADD COLUMN relevance REAL DEFAULT 0")
+        from metis_mcp.tools.stack import JUDGED as _JUDGED
     except Exception:
-        pass
+        _JUDGED = ("read", "declined", "dismissed", "later", "saved")
+    _judged_sql = ",".join("'" + j.replace("'", "") + "'" for j in _JUDGED)
 
-    last_updated = None
+    _SHOWN = 20
+    top_rows: list[dict] = []
     try:
-        ts_row = db_query("SELECT MAX(created_at) as last_ts FROM news_briefs") or []
-        if ts_row and ts_row[0].get("last_ts"):
-            last_updated = _age_label(ts_row[0]["last_ts"]) + " ago"
-    except Exception:
-        pass
-
-    # Build per-topic slipcases
-    slipcases: list[dict] = []
-    all_topics: list[str] = []
-    try:
-        topic_rows = db_query(
-            # Same reason as the news rail: a topic chip counting journal articles
-            # sends the reader to a "news" topic made of papers.
-            # The count must match what the slipcase will actually show, or a
-            # chip advertises 40 items and opens on 3. Same floor as the item
-            # query below.
-            "SELECT domain, COUNT(*) as n, MAX(created_at) as last_ts "
-            "FROM news_briefs WHERE created_at >= ? AND domain IS NOT NULL AND domain != '' "
-            "AND COALESCE(source_type,'news') != 'article' "
-            "AND COALESCE(relevance,0) >= " + str(NEWS_DISPLAY_FLOOR) + " "
-            "GROUP BY domain ORDER BY last_ts DESC",
-            (cutoff,),
+        top_rows = db_query(
+            "SELECT nb.brief_id, nb.title, nb.domain, nb.summary, nb.signal_strength, "
+            "nb.source_url, nb.created_at, COALESCE(nb.relevance,0) as relevance "
+            "FROM news_briefs nb "
+            "WHERE nb.created_at >= ? AND COALESCE(nb.source_type,'news') != 'article' "
+            "AND NOT EXISTS (SELECT 1 FROM reading_stack rs WHERE rs.kind = 'news' "
+            "AND rs.item_id = CAST(nb.brief_id AS TEXT) AND rs.state IN (" + _judged_sql + ")) "
+            # ONE ROW PER STORY — the same piece arrives from several feeds.
+            # Reuses idx_news_briefs_title_norm (system/installer/schema.sql).
+            "AND nb.brief_id = (SELECT b2.brief_id FROM news_briefs b2 "
+            "WHERE LOWER(TRIM(b2.title)) = LOWER(TRIM(nb.title)) "
+            "ORDER BY COALESCE(b2.relevance,0) DESC, b2.brief_id LIMIT 1) "
+            "ORDER BY COALESCE(nb.relevance,0) DESC, "
+            "         CASE COALESCE(nb.signal_strength,'medium') "
+            "           WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, "
+            "         nb.created_at DESC LIMIT ?",
+            (cutoff, _SHOWN),
         ) or []
-        all_topics = [r["domain"] for r in topic_rows if r.get("domain")]
+    except Exception as _exc:
+        _log.warning("news rail: close-to-work query failed: %s", _exc)
 
-        # Load stored summaries
-        summaries: dict[str, dict] = {}
-        try:
-            _ensure_news_summaries_table()
-            sum_rows = db_query(
-                "SELECT topic, summary, article_count, generated_at "
-                "FROM news_topic_summaries WHERE period = ?",
-                (period,),
-            ) or []
-            for sr in sum_rows:
-                summaries[sr["topic"]] = {
-                    "summary": sr.get("summary") or "",
-                    "generated_at": sr.get("generated_at") or "",
-                }
-        except Exception:
-            pass
+    items = _build_news_items(top_rows)
 
-        for tr in topic_rows:
-            topic = tr["domain"]
-            cnt = tr.get("n") or 0
-            age = (_age_label(tr["last_ts"]) + " ago") if tr.get("last_ts") else ""
-
-            # Articles for this topic — most relevant to the user's work first.
-            art_rows = db_query(
-                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at, "
-                "COALESCE(relevance,0) as relevance, seen_at "
-                "FROM news_briefs WHERE domain = ? AND created_at >= ? "
-                "AND COALESCE(source_type,'news') != 'article' "
-                "AND COALESCE(relevance,0) >= " + str(NEWS_DISPLAY_FLOOR) + " "
-                "ORDER BY COALESCE(relevance,0) DESC, created_at DESC LIMIT 5",
-                (topic, cutoff),
-            ) or []
-            items = _build_news_items(art_rows)
-
-            topic_summary = summaries.get(topic, {})
-            slipcases.append({
-                "topic": topic,
-                "count": cnt,
-                "age_label": age,
-                "items": items,
-                "summary": topic_summary.get("summary", ""),
-                "summary_age": (_age_label(topic_summary["generated_at"]) + " ago")
-                               if topic_summary.get("generated_at") else "",
-                "open": topic == category,  # only open if user clicked into it
-            })
-
-        # "Closest to your work" — top items by semantic relevance across all topics,
-        # prepended as a personalised section (the pattern pro feeds use).
-        try:
-            top_rows = db_query(
-                "SELECT brief_id, title, domain, summary, signal_strength, source_url, created_at, "
-                "COALESCE(relevance,0) as relevance FROM news_briefs "
-                "WHERE created_at >= ? AND COALESCE(relevance,0) >= " + str(RELEVANCE_CLOSE) + " "
-                "ORDER BY COALESCE(relevance,0) DESC LIMIT 8",
-                (cutoff,),
-            ) or []
-            if top_rows:
-                slipcases.insert(0, {
-                    "topic": "✦ Closest to your work",
-                    "count": len(top_rows),
-                    "age_label": "",
-                    "items": _build_news_items(top_rows),
-                    "summary": "Ranked by how close each item is to your library, projects and interests.",
-                    "summary_age": "",
-                    "open": True,
-                })
-        except Exception:
-            pass
-    except Exception:
-        pass
-
-    # Cap visible slipcases: "Closest to your work" (always first) + top 7 topics.
-    # The rest are hidden behind "Show all N topics".
-    show_all_topics = request.query_params.get("all_topics") == "1"
-    total_topics = len(slipcases)
-    if not show_all_topics and total_topics > 8:
-        slipcases = slipcases[:8]
-
-    # One lookup for every headline across every slipcase.
-    _ids = [i["id"] for sc in slipcases for i in sc.get("items") or []]
+    # One lookup for every headline in the shortlist.
+    _ids = [i["id"] for i in items]
     try:
         from metis_mcp.tools import stack as _stack
         _states = _stack.states_for("news", _ids)
@@ -986,29 +918,22 @@ async def today_news_rail(
         {
             "states": _states,
             "all_tags": _tags,
-            "slipcases": slipcases,
-            "all_topics": all_topics,
-            "active_topic": category,
+            "items": items,
             "period": period,
             "folded": bool(folded),
-            "last_updated": last_updated,
-            "total_topics": total_topics,
-            "show_all_topics": show_all_topics,
-            # "What is new since I last looked" — the one thing that turns a feed
-            # into something readable rather than an undifferentiated wall. 859
-            # briefs with no seen-state showed the same items every visit.
-            "unseen_count": db_scalar(
-                "SELECT COUNT(*) FROM news_briefs WHERE seen_at IS NULL "
-                "AND COALESCE(source_type,'news') != 'article' AND created_at >= ?",
-                (cutoff,), default=0,
-            ) or 0,
         },
     )
 
 
 @router.post("/api/news/mark-seen", response_class=HTMLResponse)
 async def news_mark_seen(request: Request, period: str = "week", folded: int = 0):
-    """Mark everything currently in view as seen, then redraw the rail."""
+    """Mark everything currently unseen as seen.
+
+    No longer wired to a button on Today's rail (2026-09-18 redesign removed
+    the "mark all seen" concept there in favour of a shortlist that empties
+    itself as items get a verdict) — kept because `_field_week_data` still
+    reads `news_briefs.seen_at`, and this is its only writer. Removing the
+    route would silently change that panel's behaviour."""
     import datetime as _dt
 
     db_execute(
@@ -1016,7 +941,7 @@ async def news_mark_seen(request: Request, period: str = "week", folded: int = 0
         "AND COALESCE(source_type,'news') != 'article'",
         (_dt.datetime.now().isoformat(timespec="seconds"),),
     )
-    return await today_news_rail(request, category="", period=period, folded=folded)
+    return await today_news_rail(request, period=period, folded=folded)
 
 
 # ---------------------------------------------------------------------------
