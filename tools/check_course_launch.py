@@ -55,7 +55,7 @@ def main() -> int:
 
     # Mirror routers/learning.py::_launch_target. Kept deliberately separate:
     # an independent restatement catches drift that reusing the function hides.
-    external = {"statistics": "http://127.0.0.1:3000/"}
+    external = {"statistics": "http://127.0.0.1:3000/?from=metis"}
     mounted = {"hat-diagnostics": "/coursesite/hat-diagnostics/",
                "hat-history": "/coursesite/hat-history/"}
 

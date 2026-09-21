@@ -242,11 +242,13 @@ async def learning_tab_partial(request: Request):
 async def course_reader_page(slug: str, request: Request):
     """Standalone course reader — opens in its own browser tab.
 
-    The 'statistics' course is a full Quarto site mounted as static files
-    at /course/statistics/. Redirect there so the mount handles it.
+    Courses delivered by their own app are redirected to it. The target comes
+    from _launch_target rather than a literal: this route and the Open button
+    used to hardcode the same URL separately, so a change to one silently left
+    the other pointing somewhere else.
     """
-    if slug == "statistics":
-        return RedirectResponse("http://127.0.0.1:3000/", status_code=302)
+    if slug in _EXTERNAL_APPS:
+        return RedirectResponse(_launch_target(slug, None), status_code=302)
     course = db_query(
         "SELECT title FROM learning_courses WHERE slug=? LIMIT 1",
         (slug,), default=[],
@@ -300,8 +302,14 @@ async def learning_meta(request: Request):
 
 # Courses delivered by their own app rather than by this dashboard.
 # (mlm-app is an Express application, so it cannot be served as static files.)
+# ?from=metis tells the course app this launch came from the dashboard, which
+# makes it take a fresh machine-local owner token instead of trusting whatever
+# is in localStorage. Opening your own course on your own computer must never
+# ask for a password; an expired stored token used to make it do exactly that.
+# The app still refuses machine-local sign-in to anything but loopback, so this
+# grants nothing to a browser on the network.
 _EXTERNAL_APPS: dict[str, str] = {
-    "statistics": "http://127.0.0.1:3000/",
+    "statistics": "http://127.0.0.1:3000/?from=metis",
 }
 
 # Courses whose rendered static site is mounted by main.py at /coursesite/<key>.
