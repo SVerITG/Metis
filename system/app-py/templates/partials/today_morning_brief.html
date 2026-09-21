@@ -210,7 +210,11 @@
       {% endif %}
       <button type="button" class="btn btn--ghost btn--caps u-mono"
               hx-get="/api/partial/today/morning-brief/history" hx-target="#brief-history" hx-swap="innerHTML"
-              onclick="var h=document.getElementById('brief-history');h.style.display=h.style.display==='none'?'block':'none';"
+              {# Toggle the CLASS, not the inline style. #brief-history is hidden by
+                 .u-hide, which is `display:none !important` — an inline display:block
+                 loses to it, so the old inline toggle could never reveal the panel.
+                 HTMX swapped all 16 briefings in correctly; they were invisible. #}
+              onclick="document.getElementById('brief-history').classList.toggle('u-hide');"
               style="padding:var(--m-space-1) var(--m-space-3);letter-spacing:0.1em;">Previous briefings</button>
       {%- set claude_brief_prompt -%}
 Produce my Metis {% if period == 'weekly' %}weekly{% elif period == 'catchup' %}catch-up{% else %}daily{% endif %} brief now. Using the metis-rc tools: scan today's news and any new literature, rank by closeness to my work, write a short brief of the 5-7 most relevant items, save it with the Metis tool, then show me the brief.

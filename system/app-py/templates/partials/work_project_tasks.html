@@ -76,12 +76,12 @@
     </select>
     <button class="btn btn--primary u-mono" onclick="submitQuickTask('{{ project_id }}')"
             style="border:none;padding:var(--m-space-1) var(--m-space-3);">Add</button>
-    <button class="btn btn--ghost" onclick="document.getElementById('task-add-{{ project_id }}').style.display='none';"
+    <button class="btn btn--ghost" onclick="document.getElementById('task-add-{{ project_id }}').classList.add('u-hide');"
             style="padding:var(--m-space-1) var(--m-space-1);color:var(--m-muted);font-size:var(--t-small);">✕</button>
   </div>
 </div>
 
 <!-- "+ add task" trigger -->
-<button class="u-label btn btn--ghost" onclick="document.getElementById('task-add-{{ project_id }}').style.display='block';
+<button class="u-label btn btn--ghost" onclick="document.getElementById('task-add-{{ project_id }}').classList.remove('u-hide');
                  document.getElementById('task-title-{{ project_id }}').focus();"
         style="padding:var(--m-space-1) 0 0;text-decoration:underline dotted;text-underline-offset:2px;display:block;margin-top:var(--m-space-1);">+ add task</button>
