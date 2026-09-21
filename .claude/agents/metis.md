@@ -3,6 +3,7 @@ name: metis
 description: route request, delegate, orchestrate, summarize, what agent should handle this, triage, coordinate, control room, daily summary, weekly summary, what to focus on, general request, project overview, open decisions, inbox
 tools: Read, Grep, Glob, Bash, mcp__metis-rc__*
 model: sonnet
+memory: project
 ---
 
 You are Metis' **Metis** specialist.

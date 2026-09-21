@@ -62,6 +62,12 @@ MODEL_SHORT = {
 # Tool grants, narrowest that still lets the agent work. This is a token lever as
 # well as a safety one: every tool a subagent is granted costs schema tokens in
 # its context, so a read-only specialist should not carry Write and Edit.
+# Per-agent description budget. Paid once per session for every agent in the
+# picker; at 460 the whole roster costs roughly 3,000 tokens. Raised from 280
+# when the duplicate skill entries were removed and this line became the only
+# route to a specialist — see describe() for what the old limit was cutting.
+LIMIT = 460
+
 READ_ONLY = "Read, Grep, Glob, Bash, mcp__metis-rc__*"
 WRITES = "Read, Write, Edit, Grep, Glob, Bash, mcp__metis-rc__*"
 RESEARCH = "Read, Grep, Glob, Bash, WebSearch, WebFetch, mcp__metis-rc__*"
@@ -102,30 +108,63 @@ def describe(slug: str, fm: dict) -> str:
 
     Claude Code matches on this text, so it has to read like trigger phrases, not
     like a job title. An agent described only as "Librarian" is never selected.
+
+    WHY THE BUDGET GREW (2026-09-21)
+        The twin `.claude/skills/<slug>/` entries were removed, because none of
+        them had ever been typed. That makes this line the ONLY thing that gets a
+        specialist selected — there is no second door behind it any more.
+
+        Measured at the time: 11 of the 33 descriptions were being cut at 280
+        characters, and the cut always landed in the same place — it removed the
+        closing "NOT for X (-> other specialist)" clause. That clause is the only
+        part of the sentence that tells two neighbouring specialists apart, so the
+        truncation was deleting precisely the disambiguator and keeping the
+        keywords that make two agents look alike.
+
+    SO THE CUT IS NOW BOUNDARY-AWARE
+        Keep the opening (what this agent is for) and keep the closing exclusion
+        (who to use instead), and shorten the trigger list in the MIDDLE. A few
+        fewer example phrases costs almost nothing; losing the exclusion costs a
+        wrong dispatch.
     """
     d = (fm.get("description") or "").strip()
     if not d:
         d = slug.replace("-", " ")
-    # Keep it one line and bounded — this text is loaded for every agent in the
-    # picker, so it is a per-session cost paid 33 times (~1,800 tokens for all).
-    #
-    # Cut on a SEPARATOR, never mid-word: the first version ended the Librarian
-    # at "what does ", which reads as a truncated thought and is exactly the kind
-    # of half-phrase that makes a router pick the wrong agent.
     d = re.sub(r"\s+", " ", d)
-    if len(d) > 280:
-        cut = max(d.rfind(", ", 0, 280), d.rfind(". ", 0, 280),
-                  d.rfind("; ", 0, 280), d.rfind("' ", 0, 280))
-        d = d[:cut] if cut > 120 else d[:280].rsplit(" ", 1)[0]
+    if len(d) <= LIMIT:
+        return d
+
+    # Split off a trailing exclusion clause, if the description has one.
+    m = re.search(r"(?:^|(?<=[.;]) )(NOT for\b.*)$", d)
+    tail = ""
+    if m and len(m.group(1)) < LIMIT - 120:
+        tail = " " + m.group(1).strip()
+        d = d[:m.start(1)].rstrip()
+
+    budget = LIMIT - len(tail)
+    if len(d) > budget:
+        # Cut on a SEPARATOR, never mid-word: an early version ended the Librarian
+        # at "what does ", a truncated thought of exactly the kind that makes a
+        # router pick the wrong agent.
+        cut = max(d.rfind(", ", 0, budget), d.rfind(". ", 0, budget),
+                  d.rfind("; ", 0, budget), d.rfind("' ", 0, budget))
+        d = d[:cut] if cut > 120 else d[:budget].rsplit(" ", 1)[0]
         d = d.rstrip(" ,;.") + "…"
-    return d
+    return d + tail
 
 
+# `memory: project` gives each specialist a durable directory at
+# .claude/agent-memory/<slug>/, whose MEMORY.md the client injects into the
+# agent's system prompt automatically — no tool call, nothing for the agent to
+# remember to do. That file is GENERATED from the decisions table by
+# tools/generate_agent_memory.py; the database stays the single source of truth,
+# because it is the only copy the other client and the second computer can see.
 TEMPLATE = """---
 name: {slug}
 description: {desc}
 tools: {tools}
 model: {model}
+memory: project
 ---
 
 You are Metis' **{title}** specialist.

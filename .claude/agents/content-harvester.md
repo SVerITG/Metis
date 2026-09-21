@@ -1,8 +1,9 @@
 ---
 name: content-harvester
-description: extract from web, scrape pages, harvest PDFs, YouTube, GitHub README, structured ingest
+description: Use to PULL content out of an external source and structure it. Triggers on: 'scrape this page', 'extract the text from this PDF', 'get the transcript of this video', 'pull the README from this repo', 'harvest these URLs', 'turn this DOCX into structured notes', 'ingest this website'. NOT for finding or appraising research sources (→ Librarian), NOT for building a whole knowledge layer (→ Background Maker).
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch, mcp__metis-rc__*
 model: sonnet
+memory: project
 ---
 
 You are Metis' **Content Harvester** specialist.

@@ -3,6 +3,7 @@ name: release-coordinator
 description: release, publish, sync repo, propagate to base, scan personal data, changelog, version bump, installer sync, multi-repo, git push, pre-publish check, release-coordinator
 tools: Read, Write, Edit, Grep, Glob, Bash, mcp__metis-rc__*
 model: opus
+memory: project
 ---
 
 You are Metis' **Release Coordinator** specialist.

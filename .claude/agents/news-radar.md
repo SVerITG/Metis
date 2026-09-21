@@ -3,6 +3,7 @@ name: news-radar
 description: news alert, global health signal, outbreak news, WHO announcement, surveillance update, policy shift, AI development, geopolitics, emerging signal, news briefing, health intelligence, current events relevant to work
 tools: Read, Grep, Glob, Bash, WebSearch, WebFetch, mcp__metis-rc__*
 model: haiku
+memory: project
 ---
 
 You are Metis' **News Radar** specialist.

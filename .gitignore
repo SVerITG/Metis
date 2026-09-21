@@ -381,3 +381,18 @@ tools/strip-identity.py
 tools/harvest_hat_book_figures.py
 tools/harvest_hat_manual_figures.py
 tools/update_hat_library.py
+
+# Generated specialist memory — projected from the standing-decisions table by
+# tools/generate_agent_memory.py. Never committed, for two reasons:
+#   1. It is the researcher's accumulated preferences in plain text. Every file
+#      names them and some name the domain they work in; this repository is
+#      published, and .gitignore guards personal FILES — which is exactly the
+#      job here.
+#   2. It is derived. Any machine rebuilds it from the database in one command,
+#      and the database travels by its own path, so a committed copy could only
+#      ever go stale or conflict between computers.
+.claude/agent-memory/
+
+# Local baseline for the cross-client test — a machine-local snapshot of row
+# counts, meaningless anywhere else.
+system/config/local/.desktop-test-baseline.json

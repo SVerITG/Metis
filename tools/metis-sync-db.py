@@ -132,6 +132,20 @@ def _columns(con: sqlite3.Connection, table: str) -> list[str]:
     return [r["name"] for r in con.execute(f"PRAGMA table_info({table})")]
 
 
+# ── Columns that are LOCAL STATE, not identity ───────────────────────────────
+# A usage counter says what this machine did with a row; it does not say which
+# row it is. Including one in the content hash means the same decision, seen on
+# two computers with different counts, hashes differently — so the merge reads it
+# as new and inserts a duplicate on every single run, for ever.
+#
+# The counters were harmless while every value was 0. A delivery count that
+# actually increments makes them divergent, which is exactly when this breaks.
+# Identity is the content; usage is local and starts fresh on each machine.
+LOCAL_STATE = {
+    "user_decisions": {"hits", "last_applied_at", "delivered", "last_delivered_at"},
+}
+
+
 def _fingerprint(row: sqlite3.Row, cols: list[str]) -> str:
     """Machine-independent identity: hash the CONTENT, never the local id.
 
@@ -233,7 +247,8 @@ def merge_snapshot(live: sqlite3.Connection, snapshot: Path, dry_run: bool) -> d
             # Only columns BOTH schemas have — the two machines may sit on
             # different migrations, and a merge must never fail on a schema drift.
             shared = [c for c in live_cols if c in their_cols]
-            content = [c for c in shared if c not in pk]
+            content = [c for c in shared
+                       if c not in pk and c not in LOCAL_STATE.get(table, ())]
             if not content:
                 continue
 

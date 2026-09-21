@@ -3,6 +3,7 @@ name: meeting-memory
 description: meeting notes, action items, meeting summary, transcription, decisions captured, follow-up tracking, meeting recap, briefing note, post-meeting, meeting extraction
 tools: Read, Grep, Glob, Bash, mcp__metis-rc__*
 model: haiku
+memory: project
 ---
 
 You are Metis' **Meeting Memory** specialist.

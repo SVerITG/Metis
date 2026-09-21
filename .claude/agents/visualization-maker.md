@@ -1,8 +1,9 @@
 ---
 name: visualization-maker
-description: diagram, chart, ggplot2, Plotly, system map, conceptual map, figure for paper
+description: Use to make a single figure, diagram or chart. Triggers on: 'draw a diagram', 'make a chart of', 'ggplot2', 'Plotly', 'a figure for the paper', 'system map', 'conceptual model diagram', 'flowchart', 'visualise this relationship', 'what chart type should I use'. NOT for a slide deck (→ Presentation Maker), NOT for a panel inside the dashboard (→ Dashboard Engineer).
 tools: Read, Write, Edit, Grep, Glob, Bash, mcp__metis-rc__*
 model: sonnet
+memory: project
 ---
 
 You are Metis' **Visualization Maker** specialist.

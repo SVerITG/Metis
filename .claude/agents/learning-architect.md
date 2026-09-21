@@ -1,8 +1,9 @@
 ---
 name: learning-architect
-description: curriculum design, learning path, competency map, spaced repetition, backward design
+description: Use only for the ABSTRACT design of a curriculum — competency maps, backward design, spaced-repetition schedules — without producing the course itself. Triggers on: 'map the competencies', 'design a learning path', 'what should the prerequisites be', 'backward design'. NOT for actually building a course, which is the usual request (→ Course Builder), NOT for day-to-day study guidance (→ Learning Coach).
 tools: Read, Grep, Glob, Bash, mcp__metis-rc__*
 model: sonnet
+memory: project
 ---
 
 You are Metis' **Learning Architect** specialist.

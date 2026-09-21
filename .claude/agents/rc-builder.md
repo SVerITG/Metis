@@ -1,8 +1,9 @@
 ---
 name: rc-builder
-description: Use when modifying Metis itself — the dashboard, MCP server, agents, or config. Triggers on: 'add a new agent', 'build a new dashboard tab', 'add an MCP tool', 'implement phase', 'extend the MCP server', 'add a skill to Metis', 'modify the routing', 'update CLAUDE.md'…
+description: Use when modifying Metis itself — the dashboard, MCP server, agents, or config. Triggers on: 'add a new agent', 'build a new dashboard tab', 'add an MCP tool', 'implement phase', 'extend the MCP server', 'add a skill to Metis', 'modify the routing', 'update CLAUDE.md', 'add a new partial', 'Metis architecture change', 'register a new tool', 'update the pipeline'. NOT for general code tasks (→ Software Engineer) or building standalone apps (→ Builder).
 tools: Read, Write, Edit, Grep, Glob, Bash, mcp__metis-rc__*
 model: opus
+memory: project
 ---
 
 You are Metis' **Rc Builder** specialist.

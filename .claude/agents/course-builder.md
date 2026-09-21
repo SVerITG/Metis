@@ -3,6 +3,7 @@ name: course-builder
 description: build a course, create course, learning course, course end-to-end, course from scratch, course builder, course design, learning content, module design, build curriculum, e-learning, knowledge course, statistics course, methodology course, epidemiology course
 tools: Read, Write, Edit, Grep, Glob, Bash, mcp__metis-rc__*
 model: sonnet
+memory: project
 ---
 
 You are Metis' **Course Builder** specialist.

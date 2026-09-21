@@ -75,6 +75,16 @@ def _ensure(con) -> None:
         "ALTER TABLE user_decisions ADD COLUMN agent_slug TEXT DEFAULT ''",
         "ALTER TABLE user_decisions ADD COLUMN supersedes INTEGER",
         "ALTER TABLE user_decisions ADD COLUMN last_applied_at TEXT DEFAULT ''",
+        # DELIVERED is not APPLIED, and the difference is the whole point.
+        # `hits`/`last_applied_at` need someone to report back, and for 564 rows
+        # nobody ever did — the counter sat at zero from the day it was added,
+        # so a preference doing real work was indistinguishable from one that was
+        # recorded and forgotten. Delivery needs no cooperation: it is recorded
+        # at the moment the text is put in front of a specialist. It answers the
+        # cheaper question first — is this reaching any agent at all? — which is
+        # what makes pruning possible.
+        "ALTER TABLE user_decisions ADD COLUMN delivered INTEGER DEFAULT 0",
+        "ALTER TABLE user_decisions ADD COLUMN last_delivered_at TEXT DEFAULT ''",
     ):
         try:
             con.execute(sql)
@@ -115,6 +125,7 @@ def render_for_prompt(agent_slug: str, limit: int = 20) -> str:
     rows = decisions_for(agent_slug, limit)
     if not rows:
         return ""
+    deliver([r["decision_id"] for r in rows])
     mine = [r for r in rows if (r["agent_slug"] or "") == agent_slug]
     shared = [r for r in rows if not (r["agent_slug"] or "")]
     out = ["# Standing decisions — apply these without being asked", ""]
@@ -133,6 +144,29 @@ def render_for_prompt(agent_slug: str, limit: int = 20) -> str:
     out.append("These are settled. Do not re-litigate one without a new reason, "
                "and say so explicitly if you do.")
     return "\n".join(out)
+
+
+def deliver(decision_ids: list[int]) -> None:
+    """Record that a decision was put in front of an agent.
+
+    Called from the render path itself rather than by the agent, deliberately.
+    Anything that depends on the agent remembering to report back is the same
+    design that left `hits` at zero across every row for months.
+
+    Failure here must never break the injection: an agent that cannot be given
+    its standing preferences is a real problem, an uncounted delivery is not.
+    """
+    if not decision_ids:
+        return
+    try:
+        with connect(paths.db) as con:
+            _ensure(con)
+            con.executemany(
+                "UPDATE user_decisions SET delivered = COALESCE(delivered,0) + 1, "
+                "last_delivered_at = ? WHERE decision_id = ?",
+                [(_now(), i) for i in decision_ids])
+    except Exception:
+        pass
 
 
 def touch(decision_ids: list[int]) -> None:
