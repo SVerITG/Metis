@@ -116,11 +116,15 @@ except Exception as e:
     bad(f"DB check failed: {e}"); fails+=1
 
 # 4. embedding model loads (the RAG/knowledge layer depends on this)
+# Go through metis_mcp.embeddings, NOT fastembed directly. Calling fastembed
+# raw uses ITS default cache, which is not where the durable model lives, so the
+# lookup falls through to the network — behind the proxy that is a ConnectError,
+# and the check reported semantic search as broken while it was working fine.
+# A health check has to exercise the path the running process actually takes.
 try:
-    from fastembed import TextEmbedding
-    m=TextEmbedding("nomic-ai/nomic-embed-text-v1.5-Q")
-    v=list(m.embed(["search_document: smoke test"]))
-    ok(f"embedding model loads (dim {len(v[0])})")
+    from metis_mcp.embeddings import embed_query
+    v=embed_query("smoke test")
+    ok(f"embedding model loads (dim {len(v)})")
 except Exception as e:
     warn(f"embedding model unavailable (semantic search disabled): {type(e).__name__}")
 
