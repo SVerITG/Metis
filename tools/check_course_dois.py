@@ -84,8 +84,21 @@ def control_ok() -> bool:
     return False
 
 
+# Text on a citation line that is NOT part of the citation and must not be mined
+# for an author or a year. Two false-positive sources, both seen in practice:
+#   "✓ Verified 2026-08-21" — an authoring-session marker whose date was being
+#     read as the publication year (every such line reported a mismatch).
+#   "— READ." / "— SKIM." — reading-tier verdicts in the ai-in-public-health
+#     canon lessons, whose bold form matched the bolded-surname pattern.
+_NOISE = re.compile(
+    r"✓?\s*\*{0,2}Verified\*{0,2}\s*\d{4}-\d{2}-\d{2}"      # verification stamps
+    r"|\*{0,2}\b(?:READ|SKIM|KNOW|REFERENCE)\b\.?\*{0,2}"    # reading-tier verdicts
+)
+
+
 def claimed(line: str):
     """What the lesson line asserts, as (first author, year). '?' when not stated."""
+    line = _NOISE.sub(" ", line)
     # bolded surname, skipping bolded journal names that follow the title
     cands = re.findall(r"\*\*([A-Z][A-Za-z\-']+)[ ,.]", line)
     cands += re.findall(r"\b([A-Z][a-z]{3,})\s+(?:et al\.|[A-Z]{1,3}[,.])", line)
