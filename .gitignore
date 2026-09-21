@@ -141,6 +141,9 @@ metis/system/tests/
 
 # Session/build artifacts — never publish
 outputs/
+# Ad-hoc export folder for generated decks/exports. `outputs/` above does not
+# cover it — the name differs — and the .pptx it holds run to tens of MB.
+/Claude outputs/
 metis/system/app-py/DESIGN_BRIEF.md
 metis/system/config/install-state.json
 metis/system/design-docs/
