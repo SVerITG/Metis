@@ -360,15 +360,41 @@ def check_history_content(repo: Path, rules: dict) -> list[Finding]:
         rf"(^|[^0-9A-Za-z]){re.escape(w)}([^0-9A-Za-z]|$)".encode(), re.I) for w in words}
     found: dict[str, set[str]] = {}
     binary = 0
-    for b in blobs:
-        data = subprocess.run(["git", "-C", str(repo), "cat-file", "blob", b],
-                              capture_output=True).stdout
-        if b"\0" in data[:8000]:
-            binary += 1
-            continue
-        for w, rx in patterns.items():
-            if rx.search(data):
-                found.setdefault(w, set()).add(names.get(b, "?"))
+
+    # CHUNKED batches. One process per blob was far too slow; feeding all 5,000
+    # SHAs into a single `cat-file --batch` was WORSE — it deadlocked. Writing
+    # ~200 KB to git's stdin blocks once the 64 KB pipe buffer fills, and git
+    # cannot drain it because its own stdout is full and nobody is reading:
+    # both sides wait forever. Measured: 109 minutes wall clock, 3.2 seconds of
+    # CPU. A process burning no CPU is not slow, it is stuck.
+    #
+    # Chunks keep each stdin write well under the buffer, so neither side can
+    # block on the other, and one process still serves hundreds of blobs.
+    CHUNK = 400
+    for start in range(0, len(blobs), CHUNK):
+        batch = blobs[start:start + CHUNK]
+        proc = subprocess.Popen(
+            ["git", "-C", str(repo), "cat-file", "--batch"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        data_out, _ = proc.communicate(("\n".join(batch) + "\n").encode())
+        pos = 0
+        for b in batch:
+            nl = data_out.find(b"\n", pos)
+            if nl < 0:
+                break
+            parts = data_out[pos:nl].split()
+            pos = nl + 1
+            if len(parts) < 3:
+                continue
+            size = int(parts[2])
+            blob = data_out[pos:pos + size]
+            pos += size + 1
+            if b"\0" in blob[:8000]:
+                binary += 1
+                continue
+            for w, rx in patterns.items():
+                if rx.search(blob):
+                    found.setdefault(w, set()).add(names.get(b, "?"))
 
     if found:
         return [Finding(BLOCK, f"history-content:{w}",
