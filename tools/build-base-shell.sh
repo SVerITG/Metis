@@ -1,4 +1,25 @@
 #!/bin/bash
+# RETIRED 2026-09-22 — this script must not run.
+#
+# It generated a stripped "base shell" from main and FORCE-PUSHED it to origin,
+# because the project used to publish two editions from one tree. It now
+# publishes ONE repository, and origin is that repository. Running this would
+# replace the published edition with a generated shell — the exact opposite of
+# what it was written to protect.
+#
+# Kept rather than deleted because its README-marker handling and identity
+# scrub encode real knowledge. Read it; do not run it.
+#
+# To publish: verify with tools/check_publish_clean.py, then push. The checker
+# exits non-zero unless the repository is clean, and 4 when it cannot tell.
+echo "build-base-shell.sh is RETIRED — the project publishes one repository now." >&2
+echo "Publishing a generated shell over it would destroy the published edition." >&2
+echo "Use: python3 tools/check_publish_clean.py --repo <mirror>  then push." >&2
+exit 1
+
+# ---------------------------------------------------------------------------
+# Original script preserved below, unreachable.
+# ---------------------------------------------------------------------------
 # build-base-shell.sh — generate the domain-agnostic "Metis (base)" shell from
 # the current main branch and push it to the `origin` remote (SVerITG/Metis).
 #

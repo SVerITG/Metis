@@ -315,6 +315,64 @@ def check_tip_content(repo: Path, rules: dict) -> list[Finding]:
     return findings
 
 
+def check_history_content(repo: Path, rules: dict) -> list[Finding]:
+    """Scan the content of EVERY blob on every ref, not just the tip.
+
+    The tip-content check answers "is the current source clean?", which is a
+    different question from "is anything still published?" — the whole reason
+    this job exists. A file scrubbed at HEAD keeps its old text in every commit
+    that touched it.
+
+    Binary blobs are skipped and counted separately. Compressed data contains
+    arbitrary byte sequences, so a short acronym turns up inside an image by
+    chance — one here matched sixteen times. Reporting those as disclosures
+    trains the reader to ignore the check, which is worse than not running it.
+    """
+    words = (rules["forbidden_content_words"]
+             + rules.get("forbidden_identity_words", [])
+             + rules["forbidden_message_words"])
+    if not words:
+        return [Finding("OK", "history-content", "no content words configured", 1)]
+
+    out = git(repo, "rev-list", "--objects", "--all")
+    names: dict[str, str] = {}
+    for line in out.splitlines():
+        parts = line.split(" ", 1)
+        if parts[0]:
+            names[parts[0]] = parts[1] if len(parts) == 2 else "(no path)"
+    if not names:
+        return [Finding(REFUSE, "history-content", "no objects found", 0)]
+
+    listing = subprocess.run(
+        ["git", "-C", str(repo), "cat-file", "--batch-check=%(objectname) %(objecttype)"],
+        input="\n".join(names).encode(), capture_output=True)
+    blobs = [l.split()[0].decode() for l in listing.stdout.splitlines() if b" blob" in l]
+    if not blobs:
+        return [Finding(REFUSE, "history-content", "no blobs found", 0)]
+
+    patterns = {w: re.compile(
+        rf"(^|[^0-9A-Za-z]){re.escape(w)}([^0-9A-Za-z]|$)".encode(), re.I) for w in words}
+    found: dict[str, set[str]] = {}
+    binary = 0
+    for b in blobs:
+        data = subprocess.run(["git", "-C", str(repo), "cat-file", "blob", b],
+                              capture_output=True).stdout
+        if b"\0" in data[:8000]:
+            binary += 1
+            continue
+        for w, rx in patterns.items():
+            if rx.search(data):
+                found.setdefault(w, set()).add(names.get(b, "?"))
+
+    if found:
+        return [Finding(BLOCK, f"history-content:{w}",
+                        f"{len(ps)} blob(s) contain '{w}' somewhere in history",
+                        len(blobs), sorted(ps)[:5]) for w, ps in found.items()]
+    return [Finding("OK", "history-content",
+                    f"no forbidden strings in any text blob "
+                    f"({binary} binary blob(s) skipped)", len(blobs))]
+
+
 def check_negative_controls(rules: dict) -> list[Finding]:
     """The rules must not fire on words that merely contain a forbidden one.
 
@@ -348,6 +406,7 @@ CHECKS = [
     ("identity", check_identity),
     ("tags", lambda r, ru: check_tags(r)),
     ("tip-content", check_tip_content),
+    ("history-content", check_history_content),
 ]
 
 
@@ -373,16 +432,17 @@ def report(findings: list[Finding], notes: list[str]) -> int:
         print(f"  {mark} {f.check:<26} {f.message}{den}")
         for s in f.samples:
             print(f"          · {s}")
-        if f.level == BLOCK:
-            worst = max(worst, 2)
-        elif f.level == WARN:
-            worst = max(worst, 3) if worst != 2 else worst
-        elif f.level == REFUSE:
-            worst = 4
+        # Rank, not exit code. Exit codes are not ordered by severity (2=BLOCK
+        # is more severe than 3=WARN), so max() over them silently DOWNGRADED a
+        # BLOCK that followed a WARN — the checker reported "WARNINGS" while
+        # naming five blocking findings directly above.
+        rank = {"OK": 0, WARN: 1, BLOCK: 2, REFUSE: 3}[f.level]
+        worst = max(worst, rank)
     print()
-    verdict = {0: "CLEAN", 2: "BLOCKED", 3: "WARNINGS", 4: "REFUSED TO JUDGE"}[worst]
+    verdict = {0: "CLEAN", 1: "WARNINGS", 2: "BLOCKED", 3: "REFUSED TO JUDGE"}[worst]
+    exit_code = {0: 0, 1: 3, 2: 2, 3: 4}[worst]
     print(f"  verdict: {verdict}")
-    return worst
+    return exit_code
 
 
 # ------------------------------------------------------------- self test ---
@@ -440,6 +500,7 @@ def self_test() -> int:
             "message-trailer": False,
             "tags": False,
             f"tip-content:{content_word}": False,
+            f"history-content:{content_word}": False,
         }
         for f in findings:
             if f.check in must_catch and f.level in (BLOCK, WARN):
