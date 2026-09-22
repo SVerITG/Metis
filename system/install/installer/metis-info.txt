@@ -16,12 +16,13 @@ WELCOME TO METIS — READ THIS BEFORE YOU BEGIN
 
 
   WHAT THIS INSTALLER DOES
-  Step 1 — Sets up Python (required to run Metis)
-  Step 2 — Installs Metis packages — may take 5-15 minutes
-  Step 3 — Loads demo content (if you chose the demo option)
-  Step 4 — Builds your knowledge index from included documents
-  Step 5 — Personalises Metis to your research profile
-  Step 6 — Registers Metis with Claude Desktop and Claude Code
+  It sets up Python, installs Metis, connects it to your AI assistant,
+  and — if you ask for them — loads a demo workspace, indexes the
+  included documents, and personalises Metis to your research profile.
+
+  The installer names each step on screen as it runs it, with the slow
+  ones marked. Budget 5 to 15 minutes; building the knowledge index is
+  the long one and you can skip it.
 
 
   WHAT IS AN MCP SERVER?

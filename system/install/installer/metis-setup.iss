@@ -137,7 +137,10 @@ Source: "..\tray_launcher.py";           DestDir: "{app}\system\install";       
 Source: "..\dist\MetisTray.exe";         DestDir: "{app}\system\install\windows"; Flags: ignoreversion skipifsourcedoesntexist; Components: dashboard
 Source: "..\vendor_download.py";         DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\config_merger.py";           DestDir: "{app}\system\install";         Flags: ignoreversion
-Source: "..\seed_ph_database.py";        DestDir: "{app}\system\install";         Flags: ignoreversion
+; Demo/seed content. Gitignored, so it is absent from a clean clone and the
+; compile must not depend on it — without skipifsourcedoesntexist, ISCC
+; fails outright and no installer can be built at all.
+Source: "..\seed_ph_database.py";        DestDir: "{app}\system\install";         Flags: ignoreversion skipifsourcedoesntexist
 Source: "..\build_knowledge_db.py";      DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\process_wizard_answers.py";  DestDir: "{app}\system\install";         Flags: ignoreversion
 Source: "..\terminal_wizard.py";         DestDir: "{app}\system\install";         Flags: ignoreversion
@@ -254,7 +257,13 @@ var
 { ── Pascal helpers ──────────────────────────────────────────────────────── }
 function ShouldSeedDemo: Boolean;
 begin
-  Result := (DemoPage.SelectedValueIndex = 0);
+  { Two conditions, not one. The user has to have asked for the demo AND the
+    seed script has to actually be there: it is gitignored, so a clone does not
+    carry it and [Files] installs it only if present. Without the second test
+    the step launched python against a missing file, python exited, and the
+    installer moved on reporting success — the demo silently absent. }
+  Result := (DemoPage.SelectedValueIndex = 0)
+            and FileExists(ExpandConstant('{app}\system\install\seed_ph_database.py'));
 end;
 
 function GetApiKey(Param: String): String;
