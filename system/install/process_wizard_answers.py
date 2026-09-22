@@ -389,9 +389,13 @@ def write_user_topics(metis_root: Path, answers: dict) -> dict:
                     (term.lower(),)).fetchone()
                 if dup:
                     continue
+                # created_at is NOT NULL in this schema — omitting it raises
+                # IntegrityError and, in the old swallow-everything shape, would
+                # have looked like a profile that simply had no topics.
                 conn.execute(
-                    "INSERT INTO user_topics (topic, description, active, band) "
-                    "VALUES (?, '', 1, ?)", (term, band))
+                    "INSERT INTO user_topics (topic, description, active, band, created_at) "
+                    "VALUES (?, '', 1, ?, ?)",
+                    (term, band, datetime.now().strftime("%Y-%m-%d")))
                 written[band] += 1
         conn.commit()
         conn.close()
