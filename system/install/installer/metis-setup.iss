@@ -1,9 +1,31 @@
-; Metis Research Cortex — Inno Setup 6 Script
-; Compile:       ISCC.exe metis-setup.iss  →  MetisSetup-1.0.exe
-; GitHub Actions compiles automatically on every v* tag push.
+; Metis — Inno Setup 6 script
+; Compile:  ISCC.exe metis-setup.iss                 -> dist\MetisSetup-<version>.exe
+;           ISCC.exe /DMyAppVersion=1.2 metis-setup.iss
+;
+; ONE installer, not three. What gets installed is chosen in the wizard's
+; [Types] page below (full / minimal / custom). CI used to compile this file
+; three times with /DDefaultType=full|standard|minimal — a symbol this script
+; never defined, so all three runs produced the SAME file under the SAME name,
+; each overwriting the last, while the workflow then looked for three names
+; that were never created. "standard" was not even one of the wizard's types.
+;
+; NOTE the #ifndef guards. A bare #define REPLACES a value passed with /D, so
+; the version could not be set from the command line: every build was 1.0.
 
-#define MyAppName      "Metis — Public Health Research Cortex"
-#define MyAppVersion   "1.0"
+#ifndef MyAppName
+  #define MyAppName    "Metis"
+#endif
+#ifndef MyAppVersion
+  #define MyAppVersion "1.0"
+#endif
+
+; The minimum Windows build, declared ONCE. It used to be stated three times
+; with three different answers: this file's MinVersion said build 17134 (1803),
+; a hand-rolled check below tested only "Windows 10 or later" and ignored the
+; build entirely, and install.ps1 rejected anything under 17763 (1809). So a
+; machine on 1803 was welcomed by the installer and then refused by the script
+; it had just launched. 17763 is the real requirement; fail at the door.
+#define MinWinBuild    "17763"   ; = Windows 10 version 1809
 #define MyAppPublisher "Metis Project"
 #define MyAppURL       "https://github.com/SVerITG/Metis"
 
@@ -43,7 +65,7 @@ WizardSizePercent=120
 SetupIconFile=..\windows\metis-brain.ico
 WizardImageFile=..\windows\wizard-banner.bmp
 WizardSmallImageFile=..\windows\wizard-small.bmp
-MinVersion=10.0.17134
+MinVersion=10.0.{#MinWinBuild}
 InfoBeforeFile=metis-info.txt
 InfoAfterFile=metis-after.txt
 
@@ -620,9 +642,7 @@ end;
 function InitializeSetup: Boolean;
 begin
   Result := True;
-  if not (GetWindowsVersion >= $0A000000) then
-  begin
-    MsgBox('Metis requires Windows 10 (version 1803) or later.', mbError, MB_OK);
-    Result := False;
-  end;
+  { The Windows version gate is MinVersion in [Setup] — Inno enforces it before
+    this runs and reports it properly. A second hand-rolled check here tested
+    only the major version, so it passed builds MinVersion rejects. Removed. }
 end;

@@ -1,10 +1,7 @@
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  WELCOME TO METIS — READ THIS BEFORE YOU BEGIN
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WELCOME TO METIS — READ THIS BEFORE YOU BEGIN
 
 
   WHAT IS METIS?
-  ──────────────
   Metis is an AI research companion that runs alongside Claude. It
   gives every AI conversation a persistent memory of your domain,
   your papers, your projects, and your working history.
@@ -19,17 +16,15 @@
 
 
   WHAT THIS INSTALLER DOES
-  ─────────────────────────
-  Step 1  Sets up Python (required to run Metis)
-  Step 2  Installs Metis packages — may take 5-15 minutes
-  Step 3  Loads demo content (if you chose the demo option)
-  Step 4  Builds your knowledge index from included documents
-  Step 5  Personalises Metis to your research profile
-  Step 6  Registers Metis with Claude Desktop and Claude Code
+  Step 1 — Sets up Python (required to run Metis)
+  Step 2 — Installs Metis packages — may take 5-15 minutes
+  Step 3 — Loads demo content (if you chose the demo option)
+  Step 4 — Builds your knowledge index from included documents
+  Step 5 — Personalises Metis to your research profile
+  Step 6 — Registers Metis with Claude Desktop and Claude Code
 
 
   WHAT IS AN MCP SERVER?
-  ────────────────────────
   MCP (Model Context Protocol) is an open standard from Anthropic.
   Metis uses it to give Claude a persistent connection to your
   research world — your papers, your projects, your notes, your
@@ -38,7 +33,6 @@
 
 
   HOW YOU WILL KNOW METIS IS WORKING
-  ────────────────────────────────────
   Once installed, open Claude Desktop or Claude Code. Metis will:
 
     • Remember what you were working on in your last session
@@ -51,7 +45,6 @@
 
 
   YOUR DATA IS PROTECTED
-  ────────────────────────
   Everything stays on your machine:
     ✓  Your PDF library and indexed documents
     ✓  Your meeting notes and transcripts
@@ -73,7 +66,6 @@
 
 
   TOKEN USAGE AND COSTS
-  ──────────────────────
   Metis uses the Anthropic API (your API key). Each agent run shows
   exactly what it cost — which specialist was used, how many tokens,
   at what rate. The dashboard has a live token pulse showing your
@@ -81,6 +73,4 @@
   You stay in full control of what runs and when.
 
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Click Next to continue with the installation.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

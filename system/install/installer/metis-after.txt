@@ -1,41 +1,35 @@
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  METIS IS INSTALLED — YOUR NEXT STEPS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+METIS IS INSTALLED — YOUR NEXT STEPS
 
 
   ① INSTALL CLAUDE DESKTOP  (free — required)
-  ─────────────────────────────────────────────
   Metis connects to Claude Desktop automatically on first open.
 
-  Download from:   https://claude.ai/download
+  Download from:  https://claude.ai/download
 
   Once installed, open Claude Desktop — Metis will register itself
   and your setup wizard will start on the first conversation.
 
 
   ② START THE METIS DASHBOARD  (if you chose Full install)
-  ──────────────────────────────────────────────────────────
   Double-click "Metis" on your desktop, or start it manually:
 
     Documents\Metis\system\install\windows\run-dashboard.bat
 
-  Then open in your browser:   http://localhost:8080
+  Then open in your browser:  http://localhost:8080
 
-  Your setup wizard is also available at:   http://localhost:8080/setup
+  Your setup wizard is also available at:  http://localhost:8080/setup
 
 
   ③ COMPLETE YOUR SETUP WIZARD
-  ─────────────────────────────
   The wizard personalises Metis to your research domain, your
   working style, and your projects. It takes about 3 minutes.
 
   • In Claude Desktop:  it starts automatically on first open
-  • In the dashboard:   go to http://localhost:8080/setup
-  • Any time later:     type  /metis_config  in Claude
+  • In the dashboard:  go to http://localhost:8080/setup
+  • Any time later:  type  /metis_config  in Claude
 
 
   ④ LEARN CLAUDE DESKTOP AND CLAUDE CODE
-  ────────────────────────────────────────
   Claude Desktop — conversational AI for research (no coding):
     https://claude.ai/download
 
@@ -45,9 +39,7 @@
   Metis works with both. Claude Desktop is the natural starting point.
 
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   YOUR ANTHROPIC API KEY — FULL GUIDE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Metis uses the Anthropic API to power its 34 specialist agents
   (Epidemiologist, Writing Partner, Librarian, Methods Coach, and more).
@@ -60,7 +52,7 @@
     4. Copy the key (it looks like  sk-ant-api03-…)
 
   WHERE METIS STORES IT
-    Locally only, in:   Documents\Metis\system\.env
+    Locally only, in:  Documents\Metis\system\.env
     It is never uploaded or shared — it is sent only to Anthropic's own
     API when you run an agent. Paste or update it during the installer
     wizard, in the dashboard setup, or by editing that .env file.
@@ -71,12 +63,8 @@
     monthly spending limit in the Anthropic console.
 
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   USEFUL LINKS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Documentation:      https://github.com/SVerITG/Metis
-  Get API key:        https://console.anthropic.com
-  Questions / bugs:   https://github.com/SVerITG/Metis/issues
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Documentation:  https://github.com/SVerITG/Metis
+  Get API key:  https://console.anthropic.com
+  Questions / bugs:  https://github.com/SVerITG/Metis/issues
