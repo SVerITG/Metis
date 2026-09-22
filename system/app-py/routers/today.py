@@ -5692,6 +5692,18 @@ FIELD_WEEK_DAYS = 7
 FIELD_NEWS_PER_DAY = 20
 FIELD_PAPERS_PER_DAY = 10
 
+# TWO numbers, and they do different jobs. The pair above is the SUPPLY: how
+# much each day is allowed to contribute, accumulating untouched while nobody
+# visits. The pair below is the WINDOW: how much is on screen at once.
+#
+# The panel rolls. Five and five are visible; judging one removes it from the
+# unjudged set and the next in the queue takes its place, until the supply for
+# the period is exhausted and each stream says so. Showing the whole supply —
+# 152 rows on the current window — would be a feed to work through rather than
+# a digest to glance at, which is the complaint the shortlist existed to answer.
+FIELD_NEWS_SHOWN = 5
+FIELD_PAPERS_SHOWN = 5
+
 # "But it can always be less if there is nothing relevant to my work."
 # So the quota is a CEILING, not a target. Only items at or above the closeness
 # mark are eligible, and a thin day yields fewer. Measured over ten days: 12-55
@@ -5829,8 +5841,9 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         # in particular over a quiet one about their own subject. 699 of 1,502
         # items carried 'high' on 2026-09-08, so it is not a scarce mark.
         "  AND COALESCE(b.relevance, 0) >= ? "
-        ") SELECT * FROM ranked WHERE rn <= ? ORDER BY on_date DESC, rel DESC",
-        (since, "news", RELEVANCE_CLOSE, FIELD_NEWS_PER_DAY), default=[]) or []
+        ") SELECT * FROM ranked WHERE rn <= ? ORDER BY on_date DESC, rel DESC LIMIT ?",
+        (since, "news", RELEVANCE_CLOSE, FIELD_NEWS_PER_DAY,
+         FIELD_NEWS_SHOWN), default=[]) or []
 
     papers = db_query(
         "WITH ranked AS ( "
@@ -5860,20 +5873,36 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         "  AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
         "  AND " + NOT_JUDGED.format(id="p.id") + " "
         "  AND COALESCE(p.relevance, 0) >= ? "
-        ") SELECT * FROM ranked WHERE rn <= ? ORDER BY on_date DESC, rel DESC",
-        (since, "paper", RELEVANCE_CLOSE, FIELD_PAPERS_PER_DAY), default=[]) or []
+        ") SELECT * FROM ranked WHERE rn <= ? ORDER BY on_date DESC, rel DESC LIMIT ?",
+        (since, "paper", RELEVANCE_CLOSE, FIELD_PAPERS_PER_DAY,
+         FIELD_PAPERS_SHOWN), default=[]) or []
 
+    # THE SUPPLY THAT REMAINS, not everything unjudged this week. The panel
+    # draws from the daily allowance, so counting the whole week told the reader
+    # "5 of 301" while the queue behind the five was 89. A denominator has to be
+    # the population the numerator came from or it is just a big number.
     n_news = db_scalar(
-        "SELECT COUNT(*) FROM news_briefs b WHERE COALESCE(b.brief_date,'') >= ? "
-        "AND COALESCE(b.seen_at,'') = '' "
-        "AND " + NOT_JUDGED.format(id="b.brief_id"),
-        (since, "news"), default=0) or 0
+        "WITH ranked AS ("
+        " SELECT ROW_NUMBER() OVER (PARTITION BY b.brief_date "
+        "          ORDER BY COALESCE(b.relevance,0) DESC) AS rn "
+        " FROM news_briefs b "
+        " WHERE COALESCE(b.brief_date,'') >= ? AND COALESCE(b.seen_at,'') = '' "
+        "   AND " + NOT_JUDGED.format(id="b.brief_id") + " "
+        "   AND COALESCE(b.relevance,0) >= ? "
+        ") SELECT COUNT(*) FROM ranked WHERE rn <= ?",
+        (since, "news", RELEVANCE_CLOSE, FIELD_NEWS_PER_DAY), default=0) or 0
     n_papers = db_scalar(
-        "SELECT COUNT(*) FROM new_publications p WHERE COALESCE(p.read_at,'') = '' "
-        "AND COALESCE(p.dismissed_at,'') = '' "
-        "AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
-        "AND " + NOT_JUDGED.format(id="p.id"),
-        (since, "paper"), default=0) or 0
+        "WITH ranked AS ("
+        " SELECT ROW_NUMBER() OVER (PARTITION BY substr(min(COALESCE(NULLIF(p.pub_iso,''), "
+        "            NULLIF(p.pub_date,''), p.discovered_at), date('now')), 1, 10) "
+        "          ORDER BY COALESCE(p.relevance,0) DESC) AS rn "
+        " FROM new_publications p "
+        " WHERE COALESCE(p.read_at,'') = '' AND COALESCE(p.dismissed_at,'') = '' "
+        "   AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
+        "   AND " + NOT_JUDGED.format(id="p.id") + " "
+        "   AND COALESCE(p.relevance,0) >= ? "
+        ") SELECT COUNT(*) FROM ranked WHERE rn <= ?",
+        (since, "paper", RELEVANCE_CLOSE, FIELD_PAPERS_PER_DAY), default=0) or 0
 
     # Name the source on every news row. `_source_of` maps a host to its
     # masthead and is what the News surface cards already use; the digest was

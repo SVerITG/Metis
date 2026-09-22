@@ -5999,6 +5999,13 @@ a.mrow-title { text-decoration: none; }
 .fw-group-n { font-family: var(--m-mono); font-size: var(--t-micro); color: var(--m-muted-soft);
   font-variant-numeric: tabular-nums; }
 
+/* A spent stream. It keeps the group header so the panel's shape does not jump
+   when one side empties, and drops the rule and the body — there is no list to
+   separate from. Muted, because "nothing left" is a good outcome, not a
+   warning. */
+.fw-group--done { opacity: 0.55; }
+.fw-group--done .fw-group-head { border-bottom: none; padding-bottom: 0; }
+
 /* A DIGEST ROW IS TWO LINES. At 10px padding with a wrapping summary each row
    came to 91px and fourteen of them filled a screen — which is the complaint
    the merge was meant to answer, reproduced in a new box. Title and context

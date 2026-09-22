@@ -63,10 +63,6 @@
     </div>
   </header>
 
-  {% if not news and not papers %}
-  <p class="fw-empty">Nothing left to judge in the last {{ days }} days. Everything that
-     arrived has been read, stacked or declined.</p>
-  {% endif %}
 
   {% macro verdicts(kind, item_id) -%}
   {#- One control set, both streams. `reading_stack` already had exactly these
@@ -132,6 +128,19 @@
   </span>
   {%- endmacro %}
 
+  {%- if not news %}
+  {#- The panel rolls: judging a row brings the next one in. When the day's
+      allowance is spent the stream has to SAY so, otherwise it just vanishes
+      and reads as a bug. Shown per stream, because news and papers empty at
+      different rates. -#}
+  <div class="fw-group fw-group--done">
+    <div class="fw-group-head">
+      <span class="fw-group-name">News</span>
+      <span class="fw-group-n">no more news for today</span>
+    </div>
+  </div>
+  {%- endif %}
+
   {% if news %}
   <div class="fw-group">
     <div class="fw-group-head">
@@ -161,6 +170,15 @@
     {% endfor %}
   </div>
   {% endif %}
+
+  {%- if not papers %}
+  <div class="fw-group fw-group--done">
+    <div class="fw-group-head">
+      <span class="fw-group-name">New papers</span>
+      <span class="fw-group-n">no new articles for today</span>
+    </div>
+  </div>
+  {%- endif %}
 
   {% if papers %}
   <div class="fw-group">
