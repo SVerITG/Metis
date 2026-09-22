@@ -614,10 +614,33 @@ def _apply_feedback(base: list, v, profile: dict, kind: str) -> list[float]:
         # MAX, not mean — the closest single verdict decides, exactly as the
         # anchors do. Similarity to unit vectors is in [-1, 1]; max(0, ...) stops
         # an unrelated item earning a bonus merely for being unlike your declines.
-        if neg:
+        if neg and pos:
+            # CONTESTED ITEMS. Applying the penalty and the bonus independently
+            # meant an item resembling a decline AND a keep equally was pushed
+            # down by the difference between the two constants — ambiguity was
+            # silently resolved as a decline. Measured on 600 recent papers:
+            # 495 of them resembled both sides, 50 a decline alone, 10 a keep
+            # alone. So the independent rule was not adjusting the occasional
+            # borderline case, it was quietly suppressing 82% of the feed.
+            #
+            # What the reader actually described: "it still gets intertwined
+            # from time to time with things that I sometimes find negative and
+            # sometimes positive." Those items should keep their score and stay
+            # in the mix, not disappear.
+            #
+            # So only the MARGIN counts. Similar to both -> no adjustment, and
+            # the anchors decide alone. Clearly more like your declines than
+            # your keeps -> the full penalty, as before.
+            d = (v @ np.array(neg).T).max(axis=1)
+            k = (v @ np.array(pos).T).max(axis=1)
+            out = [o - FEEDBACK_PENALTY * float(max(0.0, dx - kx))
+                     + FEEDBACK_BONUS  * float(max(0.0, kx - dx))
+                   for o, dx, kx in zip(out, d, k)]
+        elif neg:
+            # One-sided: nothing to weigh against, so the raw similarity stands.
             d = (v @ np.array(neg).T).max(axis=1)
             out = [o - FEEDBACK_PENALTY * float(max(0.0, x)) for o, x in zip(out, d)]
-        if pos:
+        elif pos:
             k = (v @ np.array(pos).T).max(axis=1)
             out = [o + FEEDBACK_BONUS * float(max(0.0, x)) for o, x in zip(out, k)]
         return [float(min(1.0, max(0.0, o))) for o in out]
