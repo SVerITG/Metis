@@ -25,12 +25,19 @@ from pathlib import Path
 DB = Path.home() / ".local/share/metis/metis.sqlite"
 BATCH = 250
 
-# (table, id column, the text that describes the item)
+# (table, id column, the text that describes the item, feedback kind)
+#
+# The KIND is load-bearing and was missing. score_batch_profile applies the
+# reader's own keep/decline verdicts only when told what it is scoring; its
+# `kind` defaults to empty, which applies NONE. Rescoring without it silently
+# discards every judgement made on the Today and News surfaces and overwrites
+# weeks of dial-in with a feedback-blind number — the opposite of what a
+# rescore is for.
 TARGETS = [
     ("new_publications", "id",
-     "COALESCE(title,'') || ' ' || COALESCE(journal,'')"),
+     "COALESCE(title,'') || ' ' || COALESCE(journal,'')", "paper"),
     ("news_briefs", "brief_id",
-     "COALESCE(title,'') || ' ' || COALESCE(summary,'')"),
+     "COALESCE(title,'') || ' ' || COALESCE(summary,'')", "news"),
 ]
 
 
@@ -66,19 +73,23 @@ def main() -> int:
         return 1
 
     total_changed = 0
-    for table, idcol, textexpr in TARGETS:
+    for table, idcol, textexpr, kind in TARGETS:
         rows = con.execute(
             f"SELECT {idcol} AS id, {textexpr} AS txt, COALESCE(relevance,0) AS old "
             f"FROM {table} WHERE COALESCE({textexpr},'') != ''"
         ).fetchall()
         if args.limit:
             rows = rows[:args.limit]
-        print(f"\n{table}: {len(rows)} rows")
+        fb = (profile.get("feedback") or {}).get(kind) or {}
+        print(f"\n{table}: {len(rows)} rows  "
+              f"(feedback as '{kind}': {fb.get('n_pos', 0)} kept, "
+              f"{fb.get('n_neg', 0)} declined)")
 
         moved, done = [], 0
         for i in range(0, len(rows), BATCH):
             chunk = rows[i:i + BATCH]
-            scores = score_batch_profile([r["txt"][:500] for r in chunk], profile)
+            scores = score_batch_profile([r["txt"][:500] for r in chunk],
+                                         profile, kind=kind)
             if args.apply:
                 con.executemany(
                     f"UPDATE {table} SET relevance=? WHERE {idcol}=?",
