@@ -1647,7 +1647,7 @@ def run_dashboard_v2():
         skip("DV16", "content_scan.py has _classify_domain() function", "Dashboard v9e",
              "content_scan.py not found.")
 
-    # DV17 — _classify_domain checks domain-specific keywords (HAT/NTD when Metis_PH is active)
+    # DV17 — _classify_domain checks domain-specific keywords (HAT/NTD when Metis is active)
     if content_py.exists() and "_classify_domain" in cscan:
         hat_keywords = ["trypanosomiasis", "sleeping sickness", "tsetse", "gambiense"]
         missing_kw = [kw for kw in hat_keywords if kw not in cscan.lower()]

@@ -75,8 +75,8 @@
   USEFUL LINKS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Documentation:      https://github.com/SVerITG/Metis_PH
+  Documentation:      https://github.com/SVerITG/Metis
   Get API key:        https://console.anthropic.com
-  Questions / bugs:   https://github.com/SVerITG/Metis_PH/issues
+  Questions / bugs:   https://github.com/SVerITG/Metis/issues
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

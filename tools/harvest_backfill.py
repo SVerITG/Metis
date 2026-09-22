@@ -4,12 +4,11 @@
 WHY THIS EXISTS
     Fixing the feeds fixes the FUTURE. It recovers nothing.
 
-    the researcher noticed that new VSG-differentiation evidence had never reached his
-    library. The cause was that LIBRARY_FEEDS carried no molecular parasitology
-    journal at all, so trypanosome biology had no route in. Adding those feeds
-    (2026-08-21) means tomorrow's papers arrive — but the most recent VSG work in
-    his library was from 2022, and a forward-only watcher will never close a
-    four-year hole.
+    A whole subject area can be missing from a library because no feed covers
+    it. Adding the feed means tomorrow's papers arrive, but the existing hole
+    stays exactly as deep: a forward-only watcher never backfills. This sweep
+    is what closes the gap between when a subject should have been covered and
+    when a feed for it was finally added.
 
     So: a bounded, explicit, retrospective sweep. Queries PubMed and OpenAlex over
     a date range and writes hits into `new_publications` for review. It does NOT

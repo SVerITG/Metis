@@ -22,7 +22,7 @@ WHY THIS EXISTS
 WHAT IT CHECKS, in order
     1. Are the values real, or still placeholders?
     2. Is the user ID numeric? (a username here 403s exactly like a bad key)
-    3. Does TLS work? (the institution's inspecting proxy breaks httpx but not urllib)
+    3. Does TLS work? (an inspecting proxy breaks httpx but not urllib)
     4. Does the key READ?  — needed for sync
     5. Does the key WRITE? — needed for add-to-library → Zotero
     6. Is a local zotero.sqlite available as a no-credentials fallback?

@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# Refuse a commit that would publish what must never ship.
+#
+# Three rules, each aimed at a failure that has actually happened here:
+#
+#  1. A forbidden PATH is staged. Untracking a file cleans the tip and leaves
+#     the history; the cheapest fix is never letting it in again.
+#  2. An identity string appears in the ADDED LINES. Scanning whole files
+#     reports a clean verdict for a file that was already dirty, so the thing
+#     scanned is the diff, not the file.
+#  3. A tracked file is matched by an ignore rule. .gitignore never applies to
+#     a tracked path, so such a rule is inert and reads exactly like a working
+#     one. Nineteen files reached two public repositories this way.
+#
+# Bypass with --no-verify only when you know why. Nothing here is advisory.
+
+set -uo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+RULES="$ROOT/tools/base-shell/publish-rules.toml"
+fail=0
+
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+if [ -z "$staged" ]; then exit 0; fi
+n_staged=$(printf '%s\n' "$staged" | grep -c . || true)
+
+# ── 1. forbidden paths ──────────────────────────────────────────────────────
+# The pattern is BUILT from tools/check_publish_clean.py's rules rather than
+# restated here. Two reasons, and the second is the sharper one: a second copy
+# drifts, and this hook is itself published — spelling out the directory names
+# it removes would republish them.
+path_re="$(python3 "$ROOT/.githooks/_rules.py" paths || true)"
+if [ -z "$path_re" ]; then
+  echo "REFUSING TO JUDGE — could not build the path rules from the checker."
+  exit 1
+fi
+bad_paths="$(printf '%s\n' "$staged" | grep -E "$path_re" || true)"
+if [ -n "$bad_paths" ]; then
+  echo "BLOCKED — these paths must never be committed:"
+  printf '  %s\n' $bad_paths
+  fail=1
+fi
+
+# ── 2. identity in ADDED lines ──────────────────────────────────────────────
+# Words come from the private rules file. Without it this check cannot run, and
+# it says so rather than passing silently — "no rules" is not "no problems".
+words="$(python3 "$ROOT/.githooks/_rules.py" words || true)"
+if [ -n "$words" ]; then
+  added="$(git diff --cached --diff-filter=ACMR -U0 | grep -E '^\+' | grep -v '^+++' || true)"
+  n_added=$(printf '%s\n' "$added" | grep -c . || true)
+  for w in $words; do
+    hit="$(printf '%s\n' "$added" | grep -iEn "(^|[^0-9A-Za-z])${w}([^0-9A-Za-z]|$)" | head -3 || true)"
+    if [ -n "$hit" ]; then
+      echo "BLOCKED — '$w' appears in added lines (searched $n_added added line(s)):"
+      printf '  %s\n' "$hit"
+      fail=1
+    fi
+  done
+else
+  echo "REFUSING TO JUDGE — no identity rules could be loaded, so nothing was"
+  echo "  checked. Restore $RULES, or commit with --no-verify and check by hand."
+  fail=1
+fi
+
+# ── 3. ignore rules that are silently inert ─────────────────────────────────
+# ONE call, not one per file. Spawning git per tracked path took minutes on a
+# network filesystem, and a guard slow enough to be disabled is not a guard.
+# Output is "<source>:<line>:<pattern>\t<path>". A NEGATION pattern begins with
+# '!' inside the first field, not after the tab — filtering on the tab matched
+# nothing and reported every ignored path as a shadow.
+shadow_list="$(git ls-files | git check-ignore --no-index -v --stdin 2>/dev/null \
+               | awk -F'\t' '$1 !~ /:!/ {print $2}' || true)"
+shadowed=$(printf '%s\n' "$shadow_list" | grep -c . || true)
+if [ "$shadowed" -gt 0 ]; then printf '  inert rule: %s\n' $shadow_list; fi
+if [ "$shadowed" -gt 0 ]; then
+  echo "BLOCKED — $shadowed tracked file(s) are matched by an ignore rule that"
+  echo "  therefore does nothing. Either 'git rm --cached' them or drop the rule."
+  fail=1
+fi
+
+if [ "$fail" -eq 0 ]; then
+  echo "publish guard: clean (checked $n_staged staged path(s))"
+fi
+exit "$fail"

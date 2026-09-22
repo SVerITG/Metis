@@ -321,7 +321,6 @@ ORGS: dict[str, tuple[str, ...]] = {
     "unicef": ("unicef",),
     "gavi": ("gavi",),
     "global-fund": ("global fund",),
-    "itm": ("a research institute", "a research institute", "a research institute"),
 }
 
 _PLACE_LABELS = {
@@ -334,7 +333,7 @@ _PLACE_LABELS = {
 
 _ORG_LABELS = {
     "who": "WHO", "msf": "MSF", "africa-cdc": "Africa CDC", "unicef": "UNICEF",
-    "gavi": "Gavi", "global-fund": "Global Fund", "itm": "a research institute",
+    "gavi": "Gavi", "global-fund": "Global Fund",
 }
 
 _SUBJECT_LABELS = {

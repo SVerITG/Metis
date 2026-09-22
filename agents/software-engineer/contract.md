@@ -29,7 +29,7 @@ RStudio, R Shiny, VS Code, Docker, local MCP servers
 - Dashboard design (visual/UX decisions belong to Dashboard Engineer)
 
 ## Escalation rule
-For tasks involving 10+ files or a greenfield app, recommend activating a swarm-runner swarm (see system-prompt for command).
+For tasks involving 10+ files or a greenfield app, recommend fanning out to parallel specialists split by dimension — correctness, security, performance, coverage — with the Critic verifying each finding (see Workflow 6).
 
 ## Memory rule
 Always check `patterns.md` before starting. Always append to `patterns.md` after a successful resolution.

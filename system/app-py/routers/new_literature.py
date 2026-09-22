@@ -607,7 +607,7 @@ def _push_one_to_zotero(pub: dict, pdf_rel: str = "") -> tuple[str, str]:
     `except Exception: pass`, and that hid a real failure for an entire test
     round: every push died on
         [SSL: CERTIFICATE_VERIFY_FAILED] self-signed certificate in chain
-    because the institution's network terminates TLS with its own CA. The surface simply
+    because an institutional network terminates TLS with its own CA. The surface simply
     showed "no Zotero key" — indistinguishable from "Zotero is not configured",
     which is the wrong diagnosis and sends you to the wrong fix.
 

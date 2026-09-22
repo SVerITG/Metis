@@ -8,8 +8,8 @@ Built-in databases (base Metis):
   ph-background   Layer 1: General MPH, global health, health systems
   epi-methods     Layer 2: Epidemiology methods, biostatistics, spatial, multilevel
 
-Domain-specific layers (added by variant installs, e.g. Metis_PH):
-  hat-specialist  Metis_PH specialist literature — seeded by seed_ph_database.py
+Domain-specific layers (added by variant installs, e.g. the public-health pack):
+  hat-specialist  Public-health specialist literature — seeded by seed_ph_database.py
 
 Usage:
     python3 build_knowledge_db.py                              # index all layers
@@ -50,9 +50,9 @@ from typing import Generator, List, Optional, Tuple
 DATABASES = [
     {
         "slug": "hat-specialist",
-        "name": "Specialist Literature (Metis_PH)",
+        "name": "Specialist Literature",
         "description": (
-            "Metis_PH specialist layer: domain research corpus — diagnostics, screening & surveillance, "
+            "Public-health specialist layer: domain research corpus — diagnostics, screening & surveillance, "
             "statistics & modelling, methodology, epidemiology, elimination, WHO Atlas, clinical."
         ),
         "layer": 3,

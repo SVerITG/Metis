@@ -1,7 +1,6 @@
 # Metis System — Security and Data Protection Policy
 
 **Scope:** All agents operating within the Metis second-brain system
-**Derived from:** swarm-runner v3.5 security module + local-first RC principles
 **Applies to:** Metis, Software Engineer, Dashboard Engineer, Librarian, Meeting Memory, News Radar, and all specialist agents
 
 ---
@@ -113,11 +112,20 @@ Escalate to the user before proceeding if:
 
 ---
 
-## 7. Derived from swarm-runner v3.5
+## 7. The controls this policy rests on
 
-The following swarm-runner security module components informed this policy:
-- `@claude-flow/security` — Input validation (Zod), path traversal prevention (PathValidator), command injection protection (SafeExecutor)
-- `SECURITY.md` — vulnerability reporting policy, parameterized SQL, secrets management
-- `CLAUDE.md` — no secrets in source, no hardcoded paths, multi-layer input validation
+These are the standard controls every agent here is held to. They are listed so
+a reviewer can check them one by one, not as a summary of some other document:
 
-**swarm-runner swarm** should be invoked for security audits of externally-deployed apps (see Software Engineer system prompt for commands).
+- **Input validation at the boundary** — every externally supplied value is
+  validated against a schema before it reaches logic.
+- **Path traversal prevention** — a path derived from input is resolved and
+  confirmed to sit inside its intended root before it is opened.
+- **Command injection protection** — no shell string interpolation; arguments
+  are passed as a list to an executor that never invokes a shell.
+- **Parameterised SQL only** — no query is built by string concatenation.
+- **No secrets in source, no hardcoded absolute paths.**
+- **A stated vulnerability-reporting route.**
+
+For a security audit spanning many files, escalate to parallel specialists
+(Software Engineer, Workflow 6) and have the Critic verify each finding.

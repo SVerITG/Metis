@@ -247,7 +247,7 @@ async def course_reader_page(slug: str, request: Request):
     used to hardcode the same URL separately, so a change to one silently left
     the other pointing somewhere else.
     """
-    if slug in _EXTERNAL_APPS:
+    if slug in _external_apps():
         return RedirectResponse(_launch_target(slug, None), status_code=302)
     course = db_query(
         "SELECT title FROM learning_courses WHERE slug=? LIMIT 1",
@@ -308,15 +308,30 @@ async def learning_meta(request: Request):
 # ask for a password; an expired stored token used to make it do exactly that.
 # The app still refuses machine-local sign-in to anything but loopback, so this
 # grants nothing to a browser on the network.
-_EXTERNAL_APPS: dict[str, str] = {
-    "statistics": "http://127.0.0.1:3000/?from=metis",
-}
+# WHICH courses these are is configuration, not source — see main.py. Listing
+# them here as literals put a reader's own course names into a published
+# repository, and made this a SECOND author for a set main.py already owns.
+# When the two drifted, a launch button opened the wrong thing.
+def _external_apps() -> dict[str, str]:
+    """Courses served by their own app, from system/config/local/course-sites.json."""
+    try:
+        from main import _SITES_CONFIG  # late import: main imports this module
+        if not _SITES_CONFIG.exists():
+            return {}
+        import json
+        raw = json.loads(_SITES_CONFIG.read_text(encoding="utf-8"))
+        return {str(k): str(v) for k, v in ((raw or {}).get("apps") or {}).items()}
+    except Exception:
+        return {}
 
-# Courses whose rendered static site is mounted by main.py at /coursesite/<key>.
-_MOUNTED_SITES: dict[str, str] = {
-    "hat-diagnostics": "/coursesite/hat-diagnostics/",
-    "hat-history": "/coursesite/hat-history/",
-}
+
+def _mounted_sites() -> dict[str, str]:
+    """Derived from main.COURSE_SITES — never restated, so it cannot drift."""
+    try:
+        from main import COURSE_SITES  # late import: main imports this module
+        return {slug: f"/coursesite/{slug}/" for slug in COURSE_SITES}
+    except Exception:
+        return {}
 
 
 def _launch_target(slug: str, course_url: str | None) -> str:
@@ -335,10 +350,12 @@ def _launch_target(slug: str, course_url: str | None) -> str:
       3. a stored course_url that is genuinely a course target
       4. the in-app markdown reader
     """
-    if slug in _EXTERNAL_APPS:
-        return _EXTERNAL_APPS[slug]
-    if slug in _MOUNTED_SITES:
-        return _MOUNTED_SITES[slug]
+    apps = _external_apps()
+    if slug in apps:
+        return apps[slug]
+    mounted = _mounted_sites()
+    if slug in mounted:
+        return mounted[slug]
 
     url = (course_url or "").strip()
     if url:
@@ -1169,7 +1186,7 @@ def _course_state(row: dict) -> dict:
     so "Continue" opens that lesson rather than dropping you at the course and
     making you find your place again.
 
-    Courses delivered by their own app (statistics, hat-diagnostics) have no
+    Courses delivered by their own app or as a mounted site have no
     manifest; they keep the stored title and their launch URL.
     """
     slug = row.get("slug") or ""

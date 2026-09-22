@@ -407,7 +407,7 @@ export METIS_TOOL_SEARCH=1
 export FASTEMBED_CACHE_PATH="$HOME/.cache/fastembed"
 
 # Corporate proxy SSL fix: point Python's httpx/requests at the system CA bundle
-# (includes institutional root CAs like the institution's) so HuggingFace model downloads
+# (includes institutional root CAs) so HuggingFace model downloads
 # and other HTTPS calls succeed behind intercepting proxies.
 _SYS_CA="/etc/ssl/certs/ca-certificates.crt"
 if [ -f "$_SYS_CA" ]; then

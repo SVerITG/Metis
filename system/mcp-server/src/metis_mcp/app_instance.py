@@ -109,7 +109,7 @@ app = FastMCP(
         "At natural moments, call `next_discovery_tip(context=...)` and weave any "
         "tip into your reply conversationally. It self-limits and never repeats."
     ),
-    website_url="https://github.com/SVerITG/Metis_PH",
+    website_url="https://github.com/SVerITG/Metis",
 )
 
 

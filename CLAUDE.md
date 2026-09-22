@@ -14,7 +14,7 @@
 - Prefer editing existing files over creating new ones.
 - Never commit data files (.csv, .rds, .cas, .geo, .pop, shapefiles) to git.
 - Never store secrets or API keys in source files.
-- **Commit messages and code comments ship.** `Metis_PH` is published and kept
+- **Commit messages and code comments ship.** `Metis` is published and kept
   current by the release coordinator, so everything written into git history
   reaches its readers — the `.gitignore` guards personal *files*, nothing guards
   prose. Describe the defect, not the person: "a badge appeared on 100% of rows",

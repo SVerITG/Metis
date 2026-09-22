@@ -5,7 +5,7 @@ description: Personal — set up / tear down the full demo environment for filmi
 
 # Demo Builder (personal)
 
-**This skill is personal/local — keep it out of the public Metis_PH repo.** It builds a self-contained, fully-coherent demo so the dashboard *and* Codex Desktop both answer from the same invented researcher (Dr. Amélie Fontaine, health economist · global health policy). For recording the README / Reddit demo GIFs.
+**This skill is personal/local — keep it out of the public Metis repo.** It builds a self-contained, fully-coherent demo so the dashboard *and* Codex Desktop both answer from the same invented researcher (Dr. Amélie Fontaine, health economist · global health policy). For recording the README / Reddit demo GIFs.
 
 It exists because Metis reads from both the **database** and the **filesystem** (project folders, `user-config.yaml`, library). A demo that only swaps the DB leaks the real workspace. So this builds a parallel **demo root** in `~/.local/share/metis-demo-root/` (Amélie identity + project folders + the demo DB; agents/.Codex symlinked from real; library deliberately empty) and points both surfaces at it.
 
@@ -42,4 +42,4 @@ Tool: **ScreenToGif**. ~1280px window, 15 fps, slow deliberate cursor, pause ~1.
 - **Never** run `up` against the real DB or real config — the scripts only touch the demo DB and `~/.local/share/metis-demo-root/`; the real `run.sh` is backed up to `run.sh.bak` before any edit.
 - Don't restart the dashboard mid-take (it's fine to leave running).
 - Always offer `down` + the Desktop restart afterwards so the user doesn't accidentally keep working in demo mode.
-- This skill and its scripts are **personal** — do not ship them to Metis_PH.
+- This skill and its scripts are **personal** — do not ship them to Metis.

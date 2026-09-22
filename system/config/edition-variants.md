@@ -22,7 +22,7 @@ Defines what is included/excluded per edition for packaging and the installer co
 
 ---
 
-## Metis_PH editions
+## public-health background packs
 
 | Edition label | Base | What's different | install-state `profile` |
 |---|---|---|---|

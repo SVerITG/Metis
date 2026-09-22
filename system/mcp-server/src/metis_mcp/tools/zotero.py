@@ -120,7 +120,7 @@ def _get_zotero_client():
 
     # Corporate TLS-inspecting proxy.
     #
-    # the institution's network terminates TLS with its own CA, so httpx — which verifies
+    # an institutional network terminates TLS with its own CA, so httpx — which verifies
     # against certifi's bundle, not the system store — fails with
     # "self-signed certificate in certificate chain" while urllib succeeds
     # (verified 2026-08-21: urllib reached api.zotero.org fine, httpx did not).

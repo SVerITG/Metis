@@ -291,7 +291,7 @@ FEED_ALLOWLIST = (
 #  Europe PMC — all 403/404/unparseable on every pattern tried.
 #  Eurosurveillance — five URL patterns all dead.
 #  MDPI ×3       — 403; MDPI blocks automated feed access.
-#  GOARN, Gavi, Wellcome, a research institute — 404/302/Cloudflare challenge.
+#  GOARN, Gavi, Wellcome and similar — 404/302/Cloudflare challenge.
 #  bioRxiv epidemiology — parses but last published 2021-07-10 (1,866d).
 #      medRxiv (above) covers the same ground and is current.
 # ═══════════════════════════════════════════════════════════════════════════════

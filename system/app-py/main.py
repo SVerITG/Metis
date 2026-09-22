@@ -3,6 +3,7 @@ main.py — Metis Dashboard FastAPI application.
 """
 
 import datetime
+import json
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -254,40 +255,58 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 #
 # Registered by slug so a course card's Open button can point at
 # /coursesite/<slug>/ and be guaranteed to land on the real course.
-# Paths are DERIVED, never absolute. A hardcoded home directory is both a
-# personal-data leak on a public repo and an instant break on the second
-# computer. METIS_COURSE_SITES_ROOT overrides; the default walks up from the
-# repo to the sibling Education folder, the same relative shape run.sh uses.
-# NOTE the double .parent (fixed 2026-09-02). "9. Education" is a sibling of
-# "7. Software", NOT of the repo — the repo lives at
-# <docs>/7. Software/Research Cortex, so reaching <docs> takes two steps up, not
-# one. With a single .parent this resolved to "7. Software/9. Education", which
-# does not exist, the mount was skipped with a log.warning nobody reads, and the
-# HAT Diagnostics launch button 404'd while its _site/ sat rendered on disk.
-# A path that silently resolves to nothing is worse than a hardcoded one.
-_EDU_ROOT = Path(
+#
+# WHICH courses exist is configuration, not source. It used to be a literal
+# dict here, which put a reader's own course names and their folder layout into
+# a published repository, and meant nobody else could register a course without
+# editing the application. The mapping now lives in an untracked config file:
+#
+#   system/config/local/course-sites.json
+#     {"sites": {"<slug>": "<path to rendered site>"},
+#      "apps":  {"<slug>": "<url of a course served by its own app>"}}
+#
+# routers/learning.py reads "apps" from the same file and derives its mounted
+# slugs from COURSE_SITES below, so the set of courses has ONE author.
+#
+# Relative paths resolve against METIS_COURSE_SITES_ROOT if set, otherwise
+# against the repository root. Absolute paths are taken as given.
+#
+# Shipping with no course sites at all is the NORMAL state, so an absent config
+# is silent. A site that is configured and missing is still an error, because
+# that renders as a 404 on a launch button and nothing else says so —
+# tools/check_course_launch.py is the real guard.
+_SITES_ROOT = Path(
     os.environ.get("METIS_COURSE_SITES_ROOT")
-    or (Path(os.environ.get("METIS_RC_ROOT", BASE_DIR.parent.parent)).parent.parent
-        / "9. Education")
+    or os.environ.get("METIS_RC_ROOT", str(BASE_DIR.parent.parent))
 )
+_SITES_CONFIG = Path(BASE_DIR.parent) / "config" / "local" / "course-sites.json"
 
-COURSE_SITES: dict[str, Path] = {
-    "hat-diagnostics": _EDU_ROOT / "3. HAT Diagnostics" / "Course"
-                                 / "hat-diagnostics-course" / "_site",
-    "hat-history":     _EDU_ROOT / "4. HAT History" / "Course"
-                                 / "hat-history-course" / "_site",
-}
+
+def _load_course_sites() -> dict[str, Path]:
+    if not _SITES_CONFIG.exists():
+        return {}
+    try:
+        raw = json.loads(_SITES_CONFIG.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        log.error("COURSE SITES CONFIG UNREADABLE (%s): %s", _SITES_CONFIG, exc)
+        return {}
+    sites: dict[str, Path] = {}
+    for slug, where in ((raw or {}).get("sites") or {}).items():
+        p = Path(where)
+        sites[slug] = p if p.is_absolute() else (_SITES_ROOT / p)
+    return sites
+
+
+COURSE_SITES: dict[str, Path] = _load_course_sites()
 for _slug, _dir in COURSE_SITES.items():
     if _dir.is_dir():
         app.mount(f"/coursesite/{_slug}",
                   StaticFiles(directory=str(_dir), html=True),
                   name=f"coursesite-{_slug}")
     else:
-        # Loud, because a skipped mount renders as a 404 on a launch button and
-        # nothing else says so. tools/check_course_launch.py is the real guard.
         log.error("COURSE SITE NOT MOUNTED — launch button will 404: %s -> %s "
-                  "(check the path derivation and that the site is rendered)",
-                  _slug, _dir)
+                  "(configured in %s; check the path and that the site is "
+                  "rendered)", _slug, _dir, _SITES_CONFIG)
 
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))

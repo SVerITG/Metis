@@ -47,30 +47,26 @@
 <br>
 
 <p align="center">
-  <strong>Editions:</strong>&nbsp;
-  <a href="https://github.com/SVerITG/Metis"><b>Metis</b> — Base shell</a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/SVerITG/Metis_PH"><b>Metis_PH</b> — Public Health &amp; Epidemiology</a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/SVerITG/Metis_BM"><b>Metis_BM</b> — Biomedical Sciences <em>(coming soon)</em></a>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/SVerITG/Metis_CL"><b>Metis_CL</b> — Clinical Sciences <em>(coming soon)</em></a>
+  <strong>One install, any field.</strong> Metis ships domain-agnostic and builds
+  <em>your</em> field's knowledge layer from your own documents during setup —
+  or from a downloadable background pack.
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-v1.0-brightgreen" alt="v1.0"/>
-  <a href="https://github.com/SVerITG/Metis_PH/stargazers"><img src="https://img.shields.io/github/stars/SVerITG/Metis_PH?style=flat" alt="Stars"/></a>
-  <img src="https://img.shields.io/github/last-commit/SVerITG/Metis_PH" alt="Last commit"/>
-  <a href="https://github.com/SVerITG/Metis_PH/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
+  <a href="https://github.com/SVerITG/Metis/stargazers"><img src="https://img.shields.io/github/stars/SVerITG/Metis?style=flat" alt="Stars"/></a>
+  <img src="https://img.shields.io/github/last-commit/SVerITG/Metis" alt="Last commit"/>
+  <img src="https://img.shields.io/github/commit-activity/m/SVerITG/Metis" alt="Commits per month"/>
+  <a href="https://github.com/SVerITG/Metis/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue.svg" alt="License"/></a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-blue?logo=python" alt="Python"/>
   <img src="https://img.shields.io/badge/Claude-MCP-orange?logo=anthropic" alt="Claude MCP"/>
-  <a href="https://glama.ai/mcp/servers/SVerITG/Metis_PH"><img src="https://glama.ai/mcp/servers/SVerITG/Metis_PH/badges/score.svg" alt="Glama score"/></a>
+  <a href="https://glama.ai/mcp/servers/SVerITG/Metis"><img src="https://glama.ai/mcp/servers/SVerITG/Metis/badges/score.svg" alt="Glama score"/></a>
   <img src="https://img.shields.io/badge/data%20stays%20local-✓-green" alt="Data stays local"/>
 </p>
 
 <!-- PH-ONLY:START -->
-> ### 🩺 This is the Public Health & Epidemiology edition
-> Metis_PH ships with a **pre-loaded public-health knowledge layer** — WHO guidance, global-health reports, and epidemiology/methods references — so you can ask grounded, cited questions on day one without building a corpus first. The domain-agnostic [**base shell** (`SVerITG/Metis`)](https://github.com/SVerITG/Metis) is identical in every other way; it ships empty and builds *your* field's knowledge layer through the setup questionnaire.
+> ### 📚 Knowledge layers are built, not bundled
+> Metis ships with the machinery to build a searchable knowledge layer and none of the content. Point it at a folder of your own papers, reports and guidance and it indexes them into a corpus you can ask grounded, cited questions against. Prefer to start with something? Install a **background pack** — an index over public sources, distributed as vectors and a manifest, never as the source documents.
 <!-- PH-ONLY:END -->
 <!-- BASE-NOTE -->
 
@@ -224,7 +220,7 @@ The installer asks for an API key so automation *can* run, but you can **skip it
 
 **Windows**
 
-> **[⬇ Download MetisSetup.exe](https://github.com/SVerITG/Metis_PH/releases/latest)**
+> **[⬇ Download MetisSetup.exe](https://github.com/SVerITG/Metis/releases/latest)**
 
 Double-click the installer. The wizard walks you through:
 1. **Full or AI only** — Full gives you the AI assistant + 9-tab research dashboard (~15 min). AI only is faster (~5 min) and you can add the dashboard later.
@@ -243,7 +239,7 @@ Everything else is automatic. Claude Desktop opens at the end with Metis ready t
 Open Terminal and paste:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/system/mcp-server/setup-mcp.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis/main/system/mcp-server/setup-mcp.sh)
 ```
 
 The script asks two questions (Full or AI only, demo workspace) and does the rest. Registers Metis with Claude Desktop and Claude Code automatically. Works on Ubuntu 20/22/24, Debian, and macOS.
@@ -670,7 +666,7 @@ Methods Coach answers grounded in those passages, citing both sources.
 **Option 1 — Single command (Linux, macOS, WSL)**
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis_PH/main/system/mcp-server/setup-mcp.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/SVerITG/Metis/main/system/mcp-server/setup-mcp.sh)
 ```
 
 Detects Ubuntu 20/22/24, Debian, macOS Homebrew. Creates venv, installs all dependencies, registers with Claude Code and Claude Desktop. Idempotent — safe to re-run.
@@ -687,8 +683,8 @@ METIS_PROFILE=full     bash <(curl -fsSL ...)   # Standard + scheduler (~25 min)
 **Option 2 — Clone and install (any platform)**
 
 ```bash
-git clone https://github.com/SVerITG/Metis_PH.git
-cd Metis_PH/system/mcp-server
+git clone https://github.com/SVerITG/Metis.git
+cd Metis/system/mcp-server
 bash setup-mcp.sh
 ```
 
@@ -697,8 +693,8 @@ bash setup-mcp.sh
 **Option 3 — Manual**
 
 ```bash
-git clone https://github.com/SVerITG/Metis_PH.git
-cd Metis_PH/system/mcp-server
+git clone https://github.com/SVerITG/Metis.git
+cd Metis/system/mcp-server
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e "."
 
@@ -786,16 +782,13 @@ docker compose -f system/install/docker/docker-compose.yml up -d
 
 ## Editions and Roadmap
 
-Metis ships in distinct editions — a domain-agnostic base shell, and domain packs that add field-specific content on top.
+Metis is one piece of software. Everything field-specific arrives as a **background pack** — an index over sources, distributed as vectors and a manifest, never as the source documents themselves.
 
-| Repository | Status | What it is |
+| | Status | What it is |
 |---|---|---|
-| **[Metis](https://github.com/SVerITG/Metis)** | ✅ Live (v1.0) | Domain-agnostic base shell. Full architecture, no domain content. Clone this to build your own edition. |
-| **[Metis_PH](https://github.com/SVerITG/Metis_PH)** | ✅ Live (v1.0, this repo) | Public Health & Epidemiology — MCP server, 34 agents, dashboard, knowledge layer |
-| **[Metis_BM](https://github.com/SVerITG/Metis_BM)** | 🧬 Planned | Biomedical Sciences |
-| **[Metis_CL](https://github.com/SVerITG/Metis_CL)** | 🏥 Planned | Clinical Sciences |
-| **Metis [Community]** | 🌍 Open | Domain packs for other research fields — contributions welcome |
-| **Metis Institute Edition** | 🏛 Future | Multi-user, shared knowledge base, institutional deployment |
+| **Metis** | ✅ Live (v1.0) | The system: MCP server, 33 specialists, dashboard, knowledge machinery. Ships with no domain content. |
+| **Background packs** | 🌍 Open | Public Health, Biomedical, Clinical and any other field — installed after setup, contributions welcome |
+| **Institute deployment** | 🏛 Future | Multi-user, shared knowledge base |
 
 **What's in each domain edition:** pre-configured journals + RSS feeds · specialist agents · domain ontology · curated background knowledge library
 
@@ -822,7 +815,7 @@ Open an issue with label `course-package` to pilot or contribute.
 | 9-tab dashboard | ✅ Operational, some features in active development |
 | Windows .exe installer | 🔧 In refinement |
 | Docker images | ✅ Test matrix working |
-| Domain knowledge layer (Metis_PH) | 🔧 Actively being expanded |
+| Background packs | 🔧 Actively being expanded |
 | Automated daily tasks (APScheduler) | ✅ Operational — 22 scheduled jobs |
 | Test suite | ✅ In place — 54 files; a deterministic floor of promise, clickthrough, orchestration and security harnesses |
 | Telegram capture bot | 📋 Planned |

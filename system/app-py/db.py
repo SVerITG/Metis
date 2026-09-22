@@ -460,7 +460,7 @@ RELEVANCE_CLOSE: float = 0.66
 # collapse the two: RELEVANCE_CLOSE above is calibrated against measured anchor
 # scores and drives the `close` flag and the "Closest to your work" rail.
 #
-# Set 2026-09-05 at the owner's request. The problem was intake, not age: 1,302 of
+# Set 2026-09-05. The problem was intake, not age: 1,302 of
 # 4,423 briefs were unseen and 3,507 of them were from the LAST MONTH — about 43
 # a day, which no one triages. Deleting by date was considered and rejected
 # because everything older than a month accounted for only 46 unseen items.

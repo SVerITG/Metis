@@ -53,11 +53,18 @@ def main() -> int:
     ).fetchall()
     con.close()
 
-    # Mirror routers/learning.py::_launch_target. Kept deliberately separate:
-    # an independent restatement catches drift that reusing the function hides.
-    external = {"statistics": "http://127.0.0.1:3000/?from=metis"}
-    mounted = {"hat-diagnostics": "/coursesite/hat-diagnostics/",
-               "hat-history": "/coursesite/hat-history/"}
+    # The RULES are restated independently on purpose — that is what catches
+    # drift a shared helper would hide. WHICH courses exist is not a rule, it is
+    # configuration, so it is read from the one file that owns it. Restating the
+    # data too gave this set a third author and put course names in the repo.
+    import json as _json
+    from pathlib import Path as _Path
+    _root = _Path(os.environ.get("METIS_RC_ROOT")
+                  or _Path(__file__).resolve().parent.parent)
+    _cfg = _root / "system" / "config" / "local" / "course-sites.json"
+    _raw = _json.loads(_cfg.read_text(encoding="utf-8")) if _cfg.exists() else {}
+    external = {str(k): str(v) for k, v in (_raw.get("apps") or {}).items()}
+    mounted = {slug: f"/coursesite/{slug}/" for slug in (_raw.get("sites") or {})}
 
     failures: list[str] = []
     print(f"{'course':<58}{'launch target':<40}{'code':>5}  verdict")

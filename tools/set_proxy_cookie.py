@@ -19,7 +19,7 @@ WHY THIS EXISTS
 
 WHAT TO DO
     1. In your browser, sign in to any ITM library resource so OpenAthens has a
-       live session (example.edu → Databases → any entry).
+       live session (lib.example.edu → Databases → any entry).
     2. Open DevTools (F12) → Network tab.
     3. Visit a redirector link, e.g.
          https://go.openathens.net/redirector/example.edu?url=https%3A%2F%2Fwww.sciencedirect.com%2F

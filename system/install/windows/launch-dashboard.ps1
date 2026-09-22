@@ -10,7 +10,7 @@ if (Test-Path $bat) {
 } else {
     Add-Type -AssemblyName System.Windows.Forms
     [System.Windows.Forms.MessageBox]::Show(
-        "Metis dashboard launcher not found.`n`nExpected:`n$bat`n`nPlease reinstall Metis from:`nhttps://github.com/SVerITG/Metis_PH/releases",
+        "Metis dashboard launcher not found.`n`nExpected:`n$bat`n`nPlease reinstall Metis from:`nhttps://github.com/SVerITG/Metis/releases",
         "Metis — Launcher Error",
         [System.Windows.Forms.MessageBoxButtons]::OK,
         [System.Windows.Forms.MessageBoxIcon]::Error)

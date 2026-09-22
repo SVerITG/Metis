@@ -39,12 +39,12 @@ defaults and pre-loaded knowledge.
 
 ---
 
-## Metis_PH — the reference domain pack
+## Metis — the reference domain pack
 
-**Metis_PH** is the Public Health and Epidemiology edition. It was built alongside
+**Metis** is the Public Health and Epidemiology edition. It was built alongside
 base Metis and serves as the reference implementation for what a domain pack looks like.
 
-### What Metis_PH includes
+### What Metis includes
 
 **Knowledge layers** (indexed at install time via the Background Maker agent):
 
@@ -68,7 +68,7 @@ base Metis and serves as the reference implementation for what a domain pack loo
 
 **Field-specific user-config defaults:**
 
-The `user-config.yaml.example` shipped with Metis_PH pre-fills the `research.field`
+The `user-config.yaml.example` shipped with Metis pre-fills the `research.field`
 with "Public Health · Epidemiology" and seeds example interests, compliance settings
 (GDPR, ethics), and news monitoring topics relevant to the field.
 
@@ -78,9 +78,9 @@ with "Public Health · Epidemiology" and seeds example interests, compliance set
 - Surveillance study design template
 - DHIS2 NTD module implementation tracker
 
-### What Metis_PH is NOT
+### What Metis is NOT
 
-Metis_PH does not contain patient data, unpublished results, or personal research
+Metis does not contain patient data, unpublished results, or personal research
 files from any individual researcher. The knowledge layers contain only publicly
 available documents (WHO guidelines, open-access papers, DHIS2 documentation).
 
@@ -90,9 +90,9 @@ available documents (WHO guidelines, open-access papers, DHIS2 documentation).
 
 You have two options: fork an existing pack, or build from base Metis.
 
-### Option A: Fork Metis_PH (recommended for health researchers)
+### Option A: Fork Metis (recommended for health researchers)
 
-1. Fork the Metis_PH repository to your own GitHub account.
+1. Fork the Metis repository to your own GitHub account.
 2. Run the installer: `bash system/install/setup-mcp.sh`
 3. Run `/metis_config` to personalise names, interests, and monitoring topics.
 4. Ask for a background layer to be built from knowledge PDFs for your specific area.
@@ -189,7 +189,7 @@ Domain pack repositories follow the pattern `Metis_{Domain}`:
 
 | Pack | Repository | Field |
 |---|---|---|
-| Metis_PH | `{username}/Metis_PH` | Public Health / Epidemiology |
+| Metis | `{username}/Metis` | Public Health / Epidemiology |
 | Metis_Econ | `{username}/Metis_Econ` | Health Economics / Development Economics |
 | Metis_Env | `{username}/Metis_Env` | Environmental Science / Climate |
 | Metis_Clin | `{username}/Metis_Clin` | Clinical Research / Medicine |

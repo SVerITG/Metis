@@ -6,7 +6,7 @@ Fallback: BAAI/bge-base-en-v1.5 — 768 dims, ~210MB.
 Model files are cached in ~/.cache/fastembed/ on first use.
 
 Corporate proxy note: fastembed checks HuggingFace for model updates on every
-init. Behind a corporate proxy with a self-signed CA (e.g. the institution's example.edu),
+init. Behind a corporate proxy with a self-signed CA (e.g. a re-signing proxy CA),
 this fails unless SSL_CERT_FILE points at the system CA bundle. The run.sh
 launchers set this; _ensure_ssl_certs() is a safety net for any other entry point.
 
@@ -35,7 +35,7 @@ _SYS_CA = "/etc/ssl/certs/ca-certificates.crt"
 def _ensure_ssl_certs() -> None:
     """Point httpx/requests at the system CA bundle if not already set.
 
-    On institutional networks (the institution) the proxy re-signs TLS traffic with a
+    On institutional networks the proxy re-signs TLS traffic with a
     local root CA. Python's httpx uses certifi which doesn't include it.
     The run.sh launchers export SSL_CERT_FILE, but if someone imports this
     module from another entry point (tests, notebooks) this catches it.

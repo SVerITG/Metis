@@ -35,7 +35,7 @@ DOI_RE = re.compile(r"10\.\d{4,9}/[-._;()/:A-Za-z0-9]+")
 # Crossref asks callers for a contact address so it can reach you about a
 # misbehaving script, and rewards giving one with the faster "polite" pool. It
 # was hard-coded to a real address in a repository that is PUBLIC on GitHub —
-# checked 2026-09-02, both Metis and Metis_PH return 200 unauthenticated. An
+# checked 2026-09-02, both Metis and Metis return 200 unauthenticated. An
 # address in source is a published address. Set METIS_CROSSREF_MAILTO to opt
 # back into the polite pool; without it the script still works, just slower.
 MAILTO = os.environ.get("METIS_CROSSREF_MAILTO", "")

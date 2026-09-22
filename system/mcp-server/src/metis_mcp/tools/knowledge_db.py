@@ -139,7 +139,7 @@ BUILTIN_DATABASES = [
         ],
     },
     {
-        # Public-Health-edition layer (Metis_PH). NTD program knowledge + general
+        # Public-Health-edition layer (Metis). NTD program knowledge + general
         # HAT awareness — roadmaps, global reports, malaria, disease factsheets.
         # The DEEP, personal HAT corpus lives in the separate local 'hat-specialist'
         # custom database (never shipped). See project_knowledge_layer_architecture.

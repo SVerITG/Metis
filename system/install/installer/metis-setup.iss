@@ -5,7 +5,7 @@
 #define MyAppName      "Metis — Public Health Research Cortex"
 #define MyAppVersion   "1.0"
 #define MyAppPublisher "Metis Project"
-#define MyAppURL       "https://github.com/SVerITG/Metis_PH"
+#define MyAppURL       "https://github.com/SVerITG/Metis"
 
 ; RepoRoot = 3 levels up: installer/ → install/ → system/ → repo root
 #define RepoRoot       "..\..\.."

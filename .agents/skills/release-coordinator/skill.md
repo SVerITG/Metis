@@ -33,7 +33,7 @@ Release Coordinator is the **proactive git guardian** for Metis. It monitors the
 - `verify` — check installer, AGENTS.md, and MCP server consistency
 - `changelog [--since <tag>]` — generate CHANGELOG entry from commits
 
-It knows the full repo graph (Metis_PH, Metis base, Metis_BM, Metis_CL), all propagation rules, the commit message standard, commit theme taxonomy, and every personal data pattern that must never reach a public remote.
+It knows the full repo graph (Metis, Metis base, Metis, Metis), all propagation rules, the commit message standard, commit theme taxonomy, and every personal data pattern that must never reach a public remote.
 
 ## This skill stub is safe to publish
 

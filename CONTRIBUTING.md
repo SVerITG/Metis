@@ -141,8 +141,8 @@ README, CONTRIBUTING         ←→   README, CONTRIBUTING
 
 ```bash
 # Clone
-git clone https://github.com/<your-github-username>/Metis_PH.git
-cd Metis_PH
+git clone https://github.com/<your-github-username>/Metis.git
+cd Metis
 
 # Install MCP server (auto-registers with Claude Code + Claude Desktop)
 bash system/mcp-server/setup-mcp.sh

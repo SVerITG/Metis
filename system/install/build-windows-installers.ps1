@@ -71,8 +71,8 @@ if ($SkipUpload) {
     exit 0
 }
 
-# ── 4. Upload to GitHub Release (public repo = Metis_PH) ──────────────────────
-$Repo = "SVerITG/Metis_PH"   # the public repo the README's download link points at
+# ── 4. Upload to GitHub Release (public repo = Metis) ──────────────────────
+$Repo = "SVerITG/Metis"   # the public repo the README's download link points at
 $ghCmd = Get-Command gh -ErrorAction SilentlyContinue
 if (-not $ghCmd) {
     Write-Host ""

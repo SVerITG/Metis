@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Keep the commit message free of who and what did the work.
+#
+# The log is meant to show that the software improves, not who improved it.
+# 624 of 641 commits carried an assistant co-author trailer, which GitHub
+# renders as an avatar on every one — the single largest disclosure of "what
+# performed the work" in the repository, and invisible in the message you type.
+
+set -uo pipefail
+MSG_FILE="$1"
+ROOT="$(git rev-parse --show-toplevel)"
+RULES="$ROOT/tools/base-shell/publish-rules.toml"
+fail=0
+n_lines=$(grep -c . "$MSG_FILE" || true)
+
+if grep -qiE '^co-authored-by:' "$MSG_FILE"; then
+  echo "BLOCKED — the message carries a Co-Authored-By trailer."
+  echo "  Remove it: the log shows the work, never the worker."
+  fail=1
+fi
+
+words="$(python3 "$ROOT/.githooks/_rules.py" words || true)"
+if [ -n "$words" ]; then
+  for w in $words; do
+    if grep -qiE "(^|[^0-9A-Za-z])${w}([^0-9A-Za-z]|$)" "$MSG_FILE"; then
+      echo "BLOCKED — '$w' appears in the commit message (searched $n_lines line(s))."
+      fail=1
+    fi
+  done
+else
+  echo "REFUSING TO JUDGE — no identity rules loaded; the message was not checked."
+  fail=1
+fi
+
+exit "$fail"

@@ -35,20 +35,20 @@ echo "▸ Stripping PH-specific content for the clean shell…"
 sed -i '/<!-- PH-ONLY:START -->/,/<!-- PH-ONLY:END -->/d' README.md
 # Insert the base-only note (points readers to the PH edition to test the layer):
 sed -i -e '/<!-- BASE-NOTE -->/r tools/base-shell/base-note.md' -e '/<!-- BASE-NOTE -->/d' README.md
-# Point the status BADGES at this repo (Metis), not Metis_PH — without touching the
-# intentional Metis_PH links (the base-note + editions table use the bare repo URL).
+# Point the status BADGES at this repo (Metis), not Metis — without touching the
+# intentional Metis links (the base-note + editions table use the bare repo URL).
 sed -i \
-  -e 's#github/stars/SVerITG/Metis_PH#github/stars/SVerITG/Metis#g' \
-  -e 's#github/last-commit/SVerITG/Metis_PH#github/last-commit/SVerITG/Metis#g' \
-  -e 's#SVerITG/Metis_PH/stargazers#SVerITG/Metis/stargazers#g' \
-  -e 's#SVerITG/Metis_PH/blob/main/LICENSE#SVerITG/Metis/blob/main/LICENSE#g' \
-  -e 's#glama.ai/mcp/servers/SVerITG/Metis_PH#glama.ai/mcp/servers/SVerITG/Metis#g' \
+  -e 's#github/stars/SVerITG/Metis#github/stars/SVerITG/Metis#g' \
+  -e 's#github/last-commit/SVerITG/Metis#github/last-commit/SVerITG/Metis#g' \
+  -e 's#SVerITG/Metis/stargazers#SVerITG/Metis/stargazers#g' \
+  -e 's#SVerITG/Metis/blob/main/LICENSE#SVerITG/Metis/blob/main/LICENSE#g' \
+  -e 's#glama.ai/mcp/servers/SVerITG/Metis#glama.ai/mcp/servers/SVerITG/Metis#g' \
   README.md
 # 1b) server.json (official MCP registry): rewrite the PH identity → base identity.
 if [ -f server.json ]; then
   sed -i \
     -e 's#io.github.SVerITG/metis-ph#io.github.SVerITG/metis#g' \
-    -e 's#SVerITG/Metis_PH#SVerITG/Metis#g' \
+    -e 's#SVerITG/Metis#SVerITG/Metis#g' \
     -e 's#Public-health research memory for Claude: cited answers from your library + 30+ specialist agents#Persistent research memory for Claude: cited answers from your library + 30+ specialist agents#g' \
     server.json
   git add server.json

@@ -51,10 +51,10 @@ os.environ.setdefault("METIS_RC_ROOT", str(ROOT))
 # CONTENT FILTER — why topic_tag is not enough.
 #
 # `topic_tag` records WHICH QUERY produced a row, not whether the row is about
-# that topic. The harvest used OpenAlex's `search`, which is semantically loose:
-# the query "human African trypanosomiasis diagnosis" returned, among real
-# papers, a stroke-conference abstract, an ambulance-workforce study and a
-# consumer-health piece — all filed under `hat-diagnostics`.
+# that topic. The harvest uses OpenAlex's `search`, which is semantically loose:
+# a narrow clinical query returned, among real papers, an unrelated conference
+# abstract, a workforce study and a consumer-health piece — all filed under the
+# querying tag.
 #
 # Measured on this queue: 375 rows tagged hat-*, of which 139 (37%) never mention
 # a trypanosome at all. Bulk-adding on the tag would have put that straight into

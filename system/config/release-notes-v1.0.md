@@ -1,7 +1,7 @@
 # Metis v1.0 — Release Notes
 
 **Released:** May 2026
-**Repository:** [SVerITG/Metis_PH](https://github.com/SVerITG/Metis_PH)
+**Repository:** [SVerITG/Metis](https://github.com/SVerITG/Metis)
 **License:** AGPL-3.0 (codebase) · CC-BY-SA 4.0 (course content)
 
 ---

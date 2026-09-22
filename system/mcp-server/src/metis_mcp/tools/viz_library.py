@@ -547,7 +547,7 @@ async def save_viz_style(
     eighth was ever added.
 
     Args:
-        name: e.g. "Upshot editorial", "the institution paper austere".
+        name: e.g. "Upshot editorial", "paper austere".
         one_liner: The feel, in one sentence.
         good_for: paper | briefing | dashboard | talk | poster.
         palette: Hex values AND what each one means. A palette whose roles are

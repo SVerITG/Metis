@@ -5,7 +5,7 @@
 # populated library, or a database — just the server registering its tools.
 # (Verified locally: initialize -> ok, tools/list -> 175 tools.)
 #
-# Build context = the Metis_PH repo root.
+# Build context = the Metis repo root.
 
 FROM python:3.12-slim
 

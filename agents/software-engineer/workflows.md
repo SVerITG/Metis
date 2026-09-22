@@ -63,16 +63,19 @@ INPUT: folder path containing R scripts
 OUTPUT: prioritised audit report
 ```
 
-## Workflow 6: Escalate to swarm-runner swarm
+## Workflow 6: Escalate to parallel specialists
 
 ```
 TRIGGER: 10+ files, greenfield app, externally deployed security audit
-1. Confirm with user before activating
-2. Run:
-   npx swarm-runner@latest swarm init --topology hierarchical --max-agents 5
-   npx swarm-runner@latest agent spawn --type reviewer --name lead
-   npx swarm-runner@latest agent spawn --type coder --name implementer
-   npx swarm-runner@latest swarm start --objective "[stated objective]"
-3. Collect swarm-runner output, summarise for user
-OUTPUT: swarm-runner swarm report + summary
+1. Confirm with the user before fanning out — this costs real tokens
+2. Split the work by DIMENSION, not by file: correctness, security,
+   performance, test coverage. One specialist per dimension, each in its
+   own context, so the summary is what comes back rather than the files
+3. Dispatch them in one batch so they run concurrently
+4. Have the Critic verify each finding before any of it is acted on
+OUTPUT: verified findings, ranked by severity
 ```
+
+Escalation used to mean shelling out to an external swarm runner. It does not
+any more: the specialists are dispatchable in-process, which is cheaper, keeps
+the work inside this system, and adds no dependency.

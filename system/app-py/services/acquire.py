@@ -52,7 +52,7 @@ HONEST LIMITS OF STEP 2
 CONFIGURATION (system/.env — never in source)
     UNPAYWALL_EMAIL         contact address Unpaywall requires (falls back to
                             the profile email)
-    LIBRARY_PROXY_TEMPLATE  e.g. https://example.edu/login?url={url}
+    LIBRARY_PROXY_TEMPLATE  e.g. https://login.example.edu/login?url={url}
     LIBRARY_PROXY_COOKIE    optional pasted session cookie for that host
 """
 from __future__ import annotations
@@ -395,7 +395,7 @@ def _http_get(url: str, cookie: str = "", timeout: int = 45) -> tuple[bytes, str
 
     An OpenAthens fetch is a multi-hop conversation:
         go.openathens.net  (session cookie proves who you are)
-          → example.edu     (asserts entitlement)
+          → idp.example.edu     (asserts entitlement)
             → publisher    (SETS ITS OWN session cookie, then serves the PDF)
 
     `urlopen` follows those redirects but throws away every `Set-Cookie` on the
@@ -604,7 +604,7 @@ def acquire_pdf(conn: sqlite3.Connection, pub: dict, force: bool = False) -> dic
         # NOTE ON WHAT THIS CAN AND CANNOT DO.
         # ITM authenticates through OpenAthens (federated SSO), not an IP-based
         # EZproxy. Without a session cookie the redirector answers with an HTML
-        # "Please wait…" page that bounces the BROWSER to example.edu — there is
+        # "Please wait…" page that bounces the BROWSER to idp.example.edu — there is
         # no PDF at the end of it for a server. _looks_like_pdf rejects that
         # page, the outcome is recorded as failed, and the surface offers the
         # link-out instead. Pasting a session cookie into LIBRARY_PROXY_COOKIE
