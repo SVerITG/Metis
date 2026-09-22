@@ -9,7 +9,12 @@ set -euo pipefail
 INSTALL_TYPE="standard"
 INSTALL_DIR="${HOME}/Documents/Metis"
 API_KEY=""
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+# THREE levels, not four. This file lives at system/install/linux/, so
+# linux -> install -> system -> repo root. The fourth "../" landed ABOVE
+# the repository, where agents/ does not exist, and the first copy step
+# then failed under `set -e`. All three of these scripts carried it, so
+# every Linux install aborted on its own third step.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in

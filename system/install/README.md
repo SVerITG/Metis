@@ -29,7 +29,7 @@ When Claude Desktop opens, Metis will guide you through the 13-question setup wi
 If the `.exe` doesn't work, use the PowerShell script instead:
 
 1. Download and unzip this repository
-2. Open the `metis/system/install/windows/` folder
+2. Open the `system/install/windows/` folder
 3. Right-click `install.bat` → Run as administrator *(only needed if Python install fails)*
 4. Follow the prompts
 

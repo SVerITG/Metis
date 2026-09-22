@@ -18,7 +18,7 @@ services:
   seeder:
     build:
       context: ../../..
-      dockerfile: metis/system/install/docker/Dockerfile
+      dockerfile: system/install/docker/Dockerfile
     container_name: metis-seeder
     env_file: .env
     environment:
@@ -35,7 +35,7 @@ services:
   mcp:
     build:
       context: ../../..
-      dockerfile: metis/system/install/docker/Dockerfile
+      dockerfile: system/install/docker/Dockerfile
     container_name: metis-mcp
     restart: unless-stopped
     env_file: .env
@@ -56,7 +56,7 @@ services:
   dashboard:
     build:
       context: ../../..
-      dockerfile: metis/system/install/docker/Dockerfile
+      dockerfile: system/install/docker/Dockerfile
     container_name: metis-dashboard
     restart: unless-stopped
     ports:

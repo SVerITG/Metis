@@ -7,15 +7,23 @@ on:
         description: "Image tag (e.g. 1.0, 1.1) — also tagged :latest"
         required: false
         default: "latest"
-  # Auto-push disabled until Docker image has been manually tested end-to-end.
-  # Re-enable by uncommenting the block below.
-  # push:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - "metis/system/mcp-server/**"
-  #     - "metis/system/app-py/**"
-  #     - "metis/system/install/docker/**"
+  # Builds on every main push touching the image, so a broken Dockerfile is
+  # caught the day it breaks. It does NOT publish: see `push:` on the build
+  # step, which is true only for a deliberate workflow_dispatch. The original
+  # note here — "disabled until manually tested end-to-end" — was a decision
+  # about publishing an untested image, not about building one.
+  #
+  # The paths below previously carried a `metis/` prefix retired when the repo
+  # root was promoted, so the filter matched nothing and the trigger could
+  # never have fired even if it had been enabled.
+  push:
+    branches:
+      - main
+    paths:
+      - "system/mcp-server/**"
+      - "system/app-py/**"
+      - "system/install/docker/**"
+      - "Dockerfile"
 
 permissions:
   contents: read
@@ -23,7 +31,7 @@ permissions:
 
 jobs:
   build-and-push:
-    name: Build ghcr.io/${{ github.repository_owner }}/metis
+    name: Build (publish only on manual dispatch)
     runs-on: ubuntu-latest
 
     steps:
@@ -55,8 +63,8 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: metis/system/install/docker/Dockerfile
-          push: true
+          file: system/install/docker/Dockerfile
+          push: ${{ github.event_name == 'workflow_dispatch' }}
           tags: ${{ steps.tags.outputs.TAGS }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

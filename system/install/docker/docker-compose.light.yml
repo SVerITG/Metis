@@ -16,7 +16,7 @@ services:
   mcp:
     build:
       context: ../../..
-      dockerfile: metis/system/install/docker/Dockerfile.light
+      dockerfile: system/install/docker/Dockerfile.light
     container_name: metis-mcp-light
     restart: unless-stopped
     env_file: .env

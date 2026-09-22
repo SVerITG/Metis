@@ -31,8 +31,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Install MCP server package
-COPY metis/system/mcp-server/pyproject.toml .
-COPY metis/system/mcp-server/src ./src
+COPY system/mcp-server/pyproject.toml .
+COPY system/mcp-server/src ./src
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -e ".[embedding,library,voice]" && \
@@ -52,15 +52,19 @@ RUN pip install --no-cache-dir --upgrade pip && \
     fi
 
 # Copy dashboard
-COPY metis/system/app-py ./dashboard
+COPY system/app-py ./dashboard
 
 # Copy agents, skills, config (no personal data)
-COPY metis/agents ./metis/agents
-COPY metis/.claude ./metis/.claude
-COPY metis/knowledge/courses ./metis/knowledge/courses
-COPY metis/knowledge/library/concepts ./metis/knowledge/library/concepts
-COPY metis/knowledge/library/methods ./metis/knowledge/library/methods
-COPY metis/system/config ./metis/system/config
+COPY agents ./metis/agents
+COPY .claude ./metis/.claude
+COPY knowledge/library/concepts ./metis/knowledge/library/concepts
+COPY knowledge/library/methods ./metis/knowledge/library/methods
+COPY system/config ./metis/system/config
+# docker-compose.full.yml runs the base seeder from this path. Only the
+# entrypoint was copied from system/install/, so that step referenced a
+# file the image did not contain and the full profile failed to seed.
+COPY system/install/seed_epi_base.py ./metis/system/install/seed_epi_base.py
+COPY system/installer/schema.sql ./metis/system/installer/schema.sql
 
 # ── Runtime configuration ─────────────────────────────────────────────────────
 # METIS_RC_ROOT must point to the mounted volume containing personal data.
@@ -74,7 +78,7 @@ EXPOSE 8080
 
 # ── Entrypoint ────────────────────────────────────────────────────────────────
 # Runs both MCP server and dashboard via a supervisor script.
-COPY metis/system/install/docker/docker-entrypoint.sh /docker-entrypoint.sh
+COPY system/install/docker/docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
