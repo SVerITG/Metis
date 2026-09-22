@@ -263,10 +263,16 @@ def check_identity(repo: Path, rules: dict) -> list[Finding]:
         return [Finding(REFUSE, "identity", "no authorship read — cannot certify.", 0)]
     people = sorted({l for l in lines})
     findings: list[Finding] = []
+    # An identity the owner has DECIDED to publish is not a disclosure. The same
+    # string is still forbidden in file content and commit messages, because an
+    # author line is a deliberate signature and a path like /home/<user>/ is a
+    # leak — different things that happen to share a word.
+    accepted = [a.lower() for a in rules.get("accepted_identity_strings", [])]
     words = rules.get("forbidden_identity_words", [])
     for word in words:
         rx = word_re(word)
-        hits = [p for p in people if rx.search(p)]
+        hits = [p for p in people
+                if rx.search(p) and not any(a in p.lower() for a in accepted)]
         if hits:
             findings.append(Finding(BLOCK, f"identity:{word}",
                                     f"{len(hits)} distinct identity string(s) name '{word}'",
