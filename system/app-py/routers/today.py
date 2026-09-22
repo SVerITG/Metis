@@ -5677,8 +5677,27 @@ FIELD_WEEK_DAYS = 7
 # screen, which is the complaint this merge existed to answer. A digest earns
 # its place by being scannable in one look and honest about what it is standing
 # in front of; the counts in each group header do the second part.
-FIELD_NEWS_SHOWN = 5
-FIELD_PAPERS_SHOWN = 4
+# PER DAY, not per window. Asked for 2026-09-22: "about 20 news and 10 papers
+# new a day, but when I don't visit the dashboard it has to continue, so when I
+# come back after 5 days there will be 100 news and 50 papers."
+#
+# The old constants were a shortlist of the WHOLE week — five and four, total.
+# That answered a different complaint (fourteen rows filled a screen) and made
+# the digest independent of how long you had been away: five items whether you
+# last looked yesterday or a fortnight ago. Roughly 1,978 items arrive weekly
+# and nine were reaching the surface: 0.45%.
+#
+# A quota per day accumulates by construction. Nothing needs to track visits —
+# an unjudged item simply stays in its own day's allocation until it is judged.
+FIELD_NEWS_PER_DAY = 20
+FIELD_PAPERS_PER_DAY = 10
+
+# "But it can always be less if there is nothing relevant to my work."
+# So the quota is a CEILING, not a target. Only items at or above the closeness
+# mark are eligible, and a thin day yields fewer. Measured over ten days: 12-55
+# news and 2-27 papers cleared it, so busy days fill the quota and quiet ones do
+# not. This is db.RELEVANCE_CLOSE — the same constant that draws the "close"
+# badge — so the panel and the badge can no longer disagree about what close is.
 
 
 def _field_week_today_counts() -> dict:
@@ -5781,9 +5800,19 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
                   "AND s.item_id = CAST({id} AS TEXT) AND s.state IN (" + _judged_sql + "))")
 
     news = db_query(
+        # ROW_NUMBER partitioned by DAY is what turns a week-wide shortlist into
+        # a per-day allocation. Ranking inside the day means a loud Monday cannot
+        # consume Thursday's slots, which is what a single ORDER BY ... LIMIT over
+        # the whole window did.
+        "WITH ranked AS ( "
         "SELECT b.brief_id AS id, b.title, b.summary, b.source_url, b.domain, "
         "       b.brief_date AS on_date, COALESCE(b.signal_strength,'medium') AS signal, "
-        "       COALESCE(b.relevance, 0) AS rel, COALESCE(b.image_url,'') AS image_url "
+        "       COALESCE(b.relevance, 0) AS rel, COALESCE(b.image_url,'') AS image_url, "
+        "       ROW_NUMBER() OVER (PARTITION BY b.brief_date "
+        "                          ORDER BY COALESCE(b.relevance,0) DESC, "
+        "                                   CASE COALESCE(b.signal_strength,'medium') "
+        "                                     WHEN 'high' THEN 0 WHEN 'medium' THEN 1 "
+        "                                     ELSE 2 END) AS rn "
         "FROM news_briefs b "
         "WHERE COALESCE(b.brief_date,'') >= ? AND COALESCE(b.seen_at,'') = '' "
         "  AND " + NOT_JUDGED.format(id="b.brief_id") + " "
@@ -5799,17 +5828,28 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         # the whole week, so signal-first would promote a loud item about nothing
         # in particular over a quiet one about their own subject. 699 of 1,502
         # items carried 'high' on 2026-09-08, so it is not a scarce mark.
-        "ORDER BY rel DESC, "
-        "         CASE COALESCE(b.signal_strength,'medium') "
-        "           WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, "
-        "         b.brief_date DESC LIMIT ?",
-        (since, "news", FIELD_NEWS_SHOWN), default=[]) or []
+        "  AND COALESCE(b.relevance, 0) >= ? "
+        ") SELECT * FROM ranked WHERE rn <= ? ORDER BY on_date DESC, rel DESC",
+        (since, "news", RELEVANCE_CLOSE, FIELD_NEWS_PER_DAY), default=[]) or []
 
     papers = db_query(
+        "WITH ranked AS ( "
         "SELECT p.id, p.title, p.journal, p.doi, p.source_url, p.authors, "
-        "       COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) AS on_date, "
+        # CLAMPED TO TODAY. 115 papers carry a publication date in the future —
+        # several read 2050-01-01 — and 105 more are too short to be a date at
+        # all. Ordering by on_date DESC put those permanently at the top of the
+        # panel, where they would never age out. A date after today is a
+        # metadata error, so the item is filed on the day it was actually seen.
+        "       min(COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), "
+        "               p.discovered_at), date('now')) AS on_date, "
         "       COALESCE(p.relevance, 0) AS rel, COALESCE(p.lane,'field') AS lane, "
-        "       COALESCE(p.relevance_note,'') AS why "
+        "       COALESCE(p.relevance_note,'') AS why, "
+        "       ROW_NUMBER() OVER (PARTITION BY substr(min(COALESCE(NULLIF(p.pub_iso,''), "
+        "                            NULLIF(p.pub_date,''), p.discovered_at), "
+        "                            date('now')), 1, 10) "
+        "                          ORDER BY CASE COALESCE(p.lane,'field') "
+        "                                     WHEN 'field' THEN 0 ELSE 1 END, "
+        "                                   COALESCE(p.relevance,0) DESC) AS rn "
         "FROM new_publications p "
         # PAPERS ARE NO LONGER EXEMPT. The exemption in db.py was explicitly
         # conditional on volume — "49 unseen against 1,253 news items" — and a
@@ -5819,9 +5859,9 @@ def _field_week_data(days: int = FIELD_WEEK_DAYS) -> dict:
         "WHERE COALESCE(p.read_at,'') = '' AND COALESCE(p.dismissed_at,'') = '' "
         "  AND COALESCE(NULLIF(p.pub_iso,''), NULLIF(p.pub_date,''), p.discovered_at) >= ? "
         "  AND " + NOT_JUDGED.format(id="p.id") + " "
-        "ORDER BY CASE COALESCE(p.lane,'field') WHEN 'field' THEN 0 ELSE 1 END, "
-        "         rel DESC, on_date DESC LIMIT ?",
-        (since, "paper", FIELD_PAPERS_SHOWN), default=[]) or []
+        "  AND COALESCE(p.relevance, 0) >= ? "
+        ") SELECT * FROM ranked WHERE rn <= ? ORDER BY on_date DESC, rel DESC",
+        (since, "paper", RELEVANCE_CLOSE, FIELD_PAPERS_PER_DAY), default=[]) or []
 
     n_news = db_scalar(
         "SELECT COUNT(*) FROM news_briefs b WHERE COALESCE(b.brief_date,'') >= ? "
