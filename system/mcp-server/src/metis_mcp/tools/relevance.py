@@ -59,6 +59,13 @@ BAND_WEIGHTS = {
 # Anything else — including the empty default — is an ordinary stated topic.
 _TOPIC_BANDS = ("field", "method")
 
+# 'news' is a band of user_topics that is DELIBERATELY excluded from relevance.
+# News terms are what the reader wants watched in the world, which is not the
+# same as what their work is close to — people follow news about subjects they
+# do not research. Left in, an unknown band falls through to the 0.80 default
+# and quietly drags the centroid towards things the reader only reads about.
+_EXCLUDED_FROM_RELEVANCE = ("news",)
+
 
 def _corpus_texts(con: sqlite3.Connection) -> tuple[list[str], list[str], list[str]]:
     """Return (topic_texts, work_texts, library_texts).
@@ -98,7 +105,8 @@ def _corpus_texts(con: sqlite3.Connection) -> tuple[list[str], list[str], list[s
     topic_texts: list[str] = []
     try:
         for topic, desc in con.execute(
-            "SELECT topic, COALESCE(description,'') FROM user_topics WHERE active = 1"
+            "SELECT topic, COALESCE(description,'') FROM user_topics "
+            "WHERE active = 1 AND COALESCE(band,'') <> 'news'"
         ):
             if topic and str(topic).strip():
                 topic_texts.append(" ".join(x for x in (str(topic), str(desc)) if x).strip())
@@ -313,7 +321,8 @@ def _corpus_bands(con: sqlite3.Connection) -> list[tuple[str, str]]:
     try:
         for row in con.execute(
                 "SELECT topic, COALESCE(description,'') AS d, "
-                "       COALESCE(band,'') AS band FROM user_topics WHERE active = 1"):
+                "       COALESCE(band,'') AS band FROM user_topics "
+                "WHERE active = 1 AND COALESCE(band,'') <> 'news'"):
             text = " ".join(x for x in (str(row["topic"]), str(row["d"])) if x).strip()
             if not text:
                 continue

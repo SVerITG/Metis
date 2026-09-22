@@ -242,6 +242,14 @@ Type: files;          Name: "{userappdata}\Claude\claude_desktop_config.json.met
 [Code]
 { ── Page variables ──────────────────────────────────────────────────────── }
 var
+  ErrorCode:      Integer;
+  DepPage:        TWizardPage;
+  DepRowName:     array[0..4] of TNewStaticText;
+  DepRowState:    array[0..4] of TNewStaticText;
+  DepRowNote:     array[0..4] of TNewStaticText;
+  DepSummary:     TNewStaticText;
+  DepFixButton:   TNewButton;
+  DepBlocked:     Boolean;
   McpConsentPage: TInputOptionWizardPage;
   DemoPage:       TInputOptionWizardPage;
   ApiKeyPage:     TInputQueryWizardPage;
@@ -253,6 +261,204 @@ var
   PCat:           array[0..2] of TNewComboBox;
   PFolder:        array[0..2] of TNewEdit;
   PBrowse:        array[0..2] of TNewButton;
+
+{ ── Pre-flight dependency check ──────────────────────────────────────────── }
+{ Shown before anything is asked or installed. Three rules govern it:
+
+  1. It BLOCKS only on what cannot be fixed from here. Something missing but
+     installable is a warning with a button, not a wall.
+  2. Every row says the CONSEQUENCE in words. "not found" tells a reader
+     nothing; "Metis will run, but you will not get the chat interface" tells
+     them whether to care.
+  3. A check that cannot run reports that it could not run. It never reports
+     "ready" by failing to look — the failure this whole project keeps hitting. }
+
+const
+  DEP_READY    = 0;   { present, nothing to do }
+  DEP_FIXABLE  = 1;   { missing, and setup can install it }
+  DEP_OPTIONAL = 2;   { missing, install continues, a feature is unavailable }
+  DEP_BLOCKING = 3;   { missing, and setup cannot continue }
+  DEP_UNKNOWN  = 4;   { the check itself could not run }
+
+var
+  DepState: array[0..4] of Integer;
+
+function DepStateText(S: Integer): String;
+begin
+  case S of
+    DEP_READY:    Result := 'ready';
+    DEP_FIXABLE:  Result := 'will be installed';
+    DEP_OPTIONAL: Result := 'not found';
+    DEP_BLOCKING: Result := 'cannot continue';
+  else
+    Result := 'could not check';
+  end;
+end;
+
+function FreeSpaceGB: Integer;
+var
+  Free, Total: Int64;
+begin
+  Result := -1;
+  if GetSpaceOnDisk64(ExpandConstant('{sd}\'), Free, Total) then
+    Result := Integer(Free div Int64(1073741824));
+end;
+
+function HaveClaudeDesktop: Boolean;
+begin
+  Result := FileExists(ExpandConstant('{commonpf}\Anthropic\Claude\Claude.exe'))
+         or FileExists(ExpandConstant('{localappdata}\AnthropicClaude\Claude.exe'));
+end;
+
+function HavePython: Boolean;
+var
+  Dummy: String;
+begin
+  Result := RegQueryStringValue(HKLM, 'SOFTWARE\Python\PythonCore\3.12\InstallPath', '', Dummy)
+         or RegQueryStringValue(HKLM, 'SOFTWARE\Python\PythonCore\3.11\InstallPath', '', Dummy)
+         or RegQueryStringValue(HKCU, 'SOFTWARE\Python\PythonCore\3.12\InstallPath', '', Dummy)
+         or RegQueryStringValue(HKCU, 'SOFTWARE\Python\PythonCore\3.11\InstallPath', '', Dummy);
+end;
+
+procedure RefreshDependencies;
+var
+  i, ReadyCount, GB: Integer;
+begin
+  { 0 — Windows. MinVersion already refused anything older before this page
+    could be reached, so this row exists to SHOW that it was checked. }
+  DepRowName[0].Caption := 'Windows version';
+  DepState[0] := DEP_READY;
+  DepRowNote[0].Caption := 'Windows 10 build {#MinWinBuild} or newer is required.';
+
+  { 1 — disk space. Blocking: nothing here can create room. }
+  GB := FreeSpaceGB;
+  DepRowName[1].Caption := 'Disk space';
+  if GB < 0 then
+  begin
+    DepState[1] := DEP_UNKNOWN;
+    DepRowNote[1].Caption := 'The free space on this drive could not be read. Setup will continue, but about 2 GB is needed.';
+  end
+  else if GB < 2 then
+  begin
+    DepState[1] := DEP_BLOCKING;
+    DepRowNote[1].Caption := 'Only ' + IntToStr(GB) + ' GB free. Metis needs about 2 GB. Free some space and run setup again.';
+  end
+  else
+  begin
+    DepState[1] := DEP_READY;
+    DepRowNote[1].Caption := IntToStr(GB) + ' GB free on this drive.';
+  end;
+
+  { 2 — Python. Fixable: setup bootstraps it. }
+  DepRowName[2].Caption := 'Python';
+  if HavePython then
+  begin
+    DepState[2] := DEP_READY;
+    DepRowNote[2].Caption := 'Already on this computer — setup will use it.';
+  end
+  else
+  begin
+    DepState[2] := DEP_FIXABLE;
+    DepRowNote[2].Caption := 'Not found. Setup installs it for you; this adds a few minutes.';
+  end;
+
+  { 3 — the chat interface. Optional: Metis runs without it. }
+  DepRowName[3].Caption := 'Claude Desktop';
+  if HaveClaudeDesktop then
+  begin
+    DepState[3] := DEP_READY;
+    DepRowNote[3].Caption := 'Found — Metis will connect itself to it.';
+  end
+  else
+  begin
+    DepState[3] := DEP_OPTIONAL;
+    DepRowNote[3].Caption := 'Not found. Metis and the dashboard still work; you will not get the chat interface until you install it.';
+  end;
+
+  { 4 — where it will be installed. Informational, but people want to know. }
+  DepRowName[4].Caption := 'Install location';
+  DepState[4] := DEP_READY;
+  DepRowNote[4].Caption := ExpandConstant('{app}');
+
+  ReadyCount := 0;
+  DepBlocked := False;
+  for i := 0 to 4 do
+  begin
+    DepRowState[i].Caption := DepStateText(DepState[i]);
+    if DepState[i] = DEP_READY then ReadyCount := ReadyCount + 1;
+    if DepState[i] = DEP_BLOCKING then DepBlocked := True;
+  end;
+
+  { The denominator is always stated. "5 checks" with no count is the shape
+    that lets a check which never ran look like a check that passed. }
+  DepSummary.Caption := IntToStr(ReadyCount) + ' of 5 checks ready';
+  if DepBlocked then
+    DepSummary.Caption := DepSummary.Caption + ' — setup cannot continue until the blocking item is resolved.';
+end;
+
+procedure DepFixClick(Sender: TObject);
+begin
+  { The only thing fixable from this page today is the chat interface, and the
+    honest fix is to send them to the download rather than pretend to install
+    it. Anything setup installs itself is already marked "will be installed". }
+  if not HaveClaudeDesktop then
+    ShellExec('open', 'https://claude.ai/download', '', '', SW_SHOW, ewNoWait, ErrorCode);
+  RefreshDependencies;
+end;
+
+procedure CreateDependencyPage;
+var
+  i, Y: Integer;
+begin
+  DepPage := CreateCustomPage(wpWelcome,
+    'Before we start',
+    'Metis is checking this computer. Nothing has been installed or changed yet.');
+
+  Y := 0;
+  for i := 0 to 4 do
+  begin
+    DepRowName[i] := TNewStaticText.Create(DepPage);
+    DepRowName[i].Parent := DepPage.Surface;
+    DepRowName[i].Left := 0;
+    DepRowName[i].Top := Y;
+    DepRowName[i].AutoSize := True;
+    DepRowName[i].Font.Style := [fsBold];
+
+    DepRowState[i] := TNewStaticText.Create(DepPage);
+    DepRowState[i].Parent := DepPage.Surface;
+    DepRowState[i].Left := ScaleX(150);
+    DepRowState[i].Top := Y;
+    DepRowState[i].AutoSize := True;
+
+    DepRowNote[i] := TNewStaticText.Create(DepPage);
+    DepRowNote[i].Parent := DepPage.Surface;
+    DepRowNote[i].Left := ScaleX(8);
+    DepRowNote[i].Top := Y + ScaleY(14);
+    DepRowNote[i].Width := DepPage.SurfaceWidth - ScaleX(8);
+    DepRowNote[i].WordWrap := True;
+    DepRowNote[i].AutoSize := True;
+
+    Y := Y + ScaleY(46);
+  end;
+
+  DepSummary := TNewStaticText.Create(DepPage);
+  DepSummary.Parent := DepPage.Surface;
+  DepSummary.Left := 0;
+  DepSummary.Top := Y + ScaleY(6);
+  DepSummary.Width := DepPage.SurfaceWidth;
+  DepSummary.WordWrap := True;
+  DepSummary.AutoSize := True;
+  DepSummary.Font.Style := [fsBold];
+
+  DepFixButton := TNewButton.Create(DepPage);
+  DepFixButton.Parent := DepPage.Surface;
+  DepFixButton.Left := 0;
+  DepFixButton.Top := Y + ScaleY(28);
+  DepFixButton.Width := ScaleX(150);
+  DepFixButton.Height := ScaleY(23);
+  DepFixButton.Caption := 'Get Claude Desktop';
+  DepFixButton.OnClick := @DepFixClick;
+end;
 
 { ── Pascal helpers ──────────────────────────────────────────────────────── }
 function ShouldSeedDemo: Boolean;
@@ -309,6 +515,9 @@ var
   Lbl: TNewStaticText;
 begin
   WizardForm.WelcomeLabel2.Caption := CustomMessage('WelcomeText');
+
+  { Pre-flight first: nothing is asked until the machine has been looked at. }
+  CreateDependencyPage;
 
   { ═══════════════════════════════════════════════════════════════════════
     PAGE 1 — MCP SERVER AUTHORISATION
@@ -378,16 +587,25 @@ begin
   { ═══════════════════════════════════════════════════════════════════════
     PAGE 5 — YOUR RESEARCH
     ═══════════════════════════════════════════════════════════════════════ }
+  { Three boxes, not one, because they are weighted differently downstream and
+    a single list cannot express the difference. A subject you work IN counts
+    almost as much as an active project; a method you occasionally apply counts
+    noticeably less; and what you want WATCHED in the news is a different
+    question again — you follow news about things you do not research yourself.
+    Collected flat, all of it collapsed to one middle weight, and the engine
+    could not tell a standing subject from a passing interest. }
   ResearchPage := CreateInputQueryPage(
     AboutPage.ID,
     'Your Research Domain',
-    'Tell Metis what field you work in.',
-    'Metis uses your field for literature alerts, default agents, and your' + #13#10 +
-    'daily brief.  Examples — field: "Epidemiology";  topics: "surveillance,' + #13#10 +
-    'vector control";  tools: "R, QGIS".  Refine any time via /metis_config.');
-  ResearchPage.Add('Primary research field:', False);
-  ResearchPage.Add('Key topics (comma-separated):', False);
-  ResearchPage.Add('Tools and software you use regularly (comma-separated):', False);
+    'Three different questions — they are used differently, so keep them apart.',
+    'FIELD is what you work in; it ranks almost as high as an active project.' + #13#10 +
+    'METHODS are techniques you apply sometimes; they surface occasionally.' + #13#10 +
+    'NEWS is what you want watched in the world — often broader than your own' + #13#10 +
+    'research. Separate each with commas. All of it is editable later.');
+  ResearchPage.Add('Your field — subjects you work IN (e.g. epidemiology, surveillance):', False);
+  ResearchPage.Add('Methods you use — techniques, not subjects (e.g. spatial analysis, mixed models):', False);
+  ResearchPage.Add('Watch in the news — topics to follow, even outside your own work:', False);
+  ResearchPage.Add('Tools and software you use regularly (optional):', False);
 
   { ═══════════════════════════════════════════════════════════════════════
     PAGE 6 — WORKING STYLE
@@ -485,13 +703,33 @@ begin
 end;
 
 { ── Validation on Next ──────────────────────────────────────────────────── }
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if (DepPage <> nil) and (CurPageID = DepPage.ID) then
+    RefreshDependencies;
+end;
+
 function NextButtonClick(CurPageID: Integer): Boolean;
 var
   ApiKey: String;
 begin
   Result := True;
 
-  if CurPageID = McpConsentPage.ID then
+  if (DepPage <> nil) and (CurPageID = DepPage.ID) then
+  begin
+    { Only a blocking check stops us. Missing-but-installable and
+      missing-but-optional both let setup continue, by design. }
+    if DepBlocked then
+    begin
+      MsgBox('Setup cannot continue yet.' + #13#10 + #13#10 +
+             'One of the checks above has to be resolved first — it is not '
+             + 'something setup can fix for you. Resolve it and run setup again.',
+             mbError, MB_OK);
+      Result := False;
+    end;
+  end
+
+  else if CurPageID = McpConsentPage.ID then
   begin
     if not McpConsentPage.CheckListBox.Checked[0] then
     begin
@@ -506,14 +744,19 @@ begin
   else if CurPageID = ApiKeyPage.ID then
   begin
     ApiKey := Trim(ApiKeyPage.Values[0]);
-    if Length(ApiKey) < 20 then
+    { Skippable on purpose. Someone evaluating Metis should not be stopped at
+      the door because they have not signed up yet; the finish page tells them
+      what is still missing and where to add it. An empty key is a choice. }
+    if ApiKey = '' then
+      Result := True
+    else if Length(ApiKey) < 20 then
     begin
-      MsgBox(
-        'Please enter a valid Anthropic API key before continuing.' + #13#10 + #13#10 +
-        'Get one free at: https://console.anthropic.com' + #13#10 +
-        '(sign up → API Keys → Create Key)',
-        mbError, MB_OK);
-      Result := False;
+      if MsgBox(
+        'That key looks too short to be valid.' + #13#10 + #13#10 +
+        'Leave it blank to skip for now — you can add it later from the Metis '
+        + 'tab — or paste the full key.' + #13#10 + #13#10 + 'Continue anyway?',
+        mbConfirmation, MB_YESNO) = IDNO then
+        Result := False;
     end
     else if Copy(ApiKey, 1, 7) <> 'sk-ant-' then
     begin
@@ -617,9 +860,13 @@ begin
       '  "name": "'        + JsonEsc(Trim(AboutPage.Values[0]))    + '",' + #13#10 +
       '  "institution": "' + JsonEsc(Trim(AboutPage.Values[1]))    + '",' + #13#10 +
       '  "role": "'        + JsonEsc(Trim(AboutPage.Values[2]))    + '",' + #13#10 +
+      { Named by BAND, not lumped as "topics". These map straight onto
+        user_topics.band downstream: field=0.95, method=0.72, and news terms
+        drive the brief rather than relevance scoring. }
       '  "field": "'       + JsonEsc(Trim(ResearchPage.Values[0])) + '",' + #13#10 +
-      '  "topics": "'      + JsonEsc(Trim(ResearchPage.Values[1])) + '",' + #13#10 +
-      '  "tools": "'       + JsonEsc(Trim(ResearchPage.Values[2])) + '",' + #13#10 +
+      '  "methods": "'     + JsonEsc(Trim(ResearchPage.Values[1])) + '",' + #13#10 +
+      '  "news_terms": "'  + JsonEsc(Trim(ResearchPage.Values[2])) + '",' + #13#10 +
+      '  "tools": "'       + JsonEsc(Trim(ResearchPage.Values[3])) + '",' + #13#10 +
       '  "feedback_style": "' + StyleStr + '",' + #13#10 +
       '  "challenge_level": "balanced",' + #13#10 +
       '  "output_length": "concise",' + #13#10 +

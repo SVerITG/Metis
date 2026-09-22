@@ -345,6 +345,64 @@ goals:
     return path
 
 
+def write_user_topics(metis_root: Path, answers: dict) -> dict:
+    """Write the reader's subjects into `user_topics`, WITH their band.
+
+    This is the join that was missing. The wizard used to write its topics to
+    user-config.yaml as a flat list, while the thing that scores relevance
+    reads `user_topics` — a table setup never touched. So a new installation
+    had nothing to score "close to my work" against except project names, and
+    the script's own docstring claimed otherwise.
+
+    The band is the point. Downstream weights differ sharply:
+        field  0.95   a standing subject, nearly an active project
+        method 0.72   applied occasionally; must beat your own work to surface
+        news   —      excluded from relevance entirely; it drives the brief
+    Collected flat, all three collapsed to one middle weight and the engine
+    could not tell a subject you work in from one you merely read about.
+    """
+    written = {"field": 0, "method": 0, "news": 0}
+    db_path = metis_root / "system" / "app" / "data" / "metis.sqlite"
+    if not db_path.exists():
+        return {"error": f"database not found at {db_path}", **written}
+
+    bands = (
+        ("field",  answers.get("field", "")),
+        ("method", answers.get("methods", "")),
+        ("news",   answers.get("news_terms", "")),
+    )
+    import sqlite3
+    try:
+        conn = sqlite3.connect(str(db_path))
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(user_topics)")}
+        if not cols:
+            conn.close()
+            return {"error": "user_topics table is absent", **written}
+        if "band" not in cols:
+            conn.execute("ALTER TABLE user_topics ADD COLUMN band TEXT DEFAULT ''")
+        for band, raw in bands:
+            for term in [x.strip() for x in str(raw or "").split(",")]:
+                if not term:
+                    continue
+                dup = conn.execute(
+                    "SELECT 1 FROM user_topics WHERE LOWER(TRIM(topic)) = ?",
+                    (term.lower(),)).fetchone()
+                if dup:
+                    continue
+                conn.execute(
+                    "INSERT INTO user_topics (topic, description, active, band) "
+                    "VALUES (?, '', 1, ?)", (term, band))
+                written[band] += 1
+        conn.commit()
+        conn.close()
+    except Exception as exc:
+        # NOT swallowed. A profile that silently failed to record is the
+        # difference between a system that knows what you work on and one that
+        # ranks everything the same — the caller has to be able to say so.
+        return {"error": f"{type(exc).__name__}: {exc}", **written}
+    return written
+
+
 def write_project_stubs(metis_root: Path, projects: list, scan_type: str = "names") -> list:
     """Write project records: SQLite entry + CLAUDE.md in project folder + planning card."""
     if not projects:
@@ -550,6 +608,7 @@ def process(answers: dict, metis_root: Path, api_key: str | None = None) -> dict
     result["persona_path"] = str(write_persona(metis_root, persona, answers))
     result["config_path"] = str(write_user_config(metis_root, answers, topics))
     result["projects"] = [str(p) for p in write_project_stubs(metis_root, structured_projects, scan_type)]
+    result["topics_written"] = write_user_topics(metis_root, answers)
     result["ai_used"] = ai_used
     result["topics"] = topics
     remove_first_run_marker(metis_root)
