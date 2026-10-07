@@ -1468,16 +1468,17 @@ def job_embedding_backfill() -> None:
 
 
 def job_db_sync() -> None:
-    """Converge this machine's memory with the other computer's.
+    """Keep this computer's database the same as the other computer's.
 
-    The live DB stays on the native filesystem forever — OneDrive corrupted it in
-    June by syncing the .sqlite/-wal/-shm trio mid-write. But a FINISHED, static
-    snapshot has no writer and no WAL, so it is safe to put on OneDrive. This job
-    exports one, and merges the snapshots the other machine left behind.
+    One computer is the main one; the others rebase onto it and the main one
+    merges their changes three-way — every table except derived indexes, so
+    tasks, notes, ideas, Today verdicts and preferences all travel. The live DB
+    itself never goes on OneDrive (it corrupted there in June); only finished
+    snapshots do. Design: tools/metis_sync.py.
 
-    Append-only union, deduped by content fingerprint (ids collide across
-    machines), so it is idempotent. Mutable state (tasks/projects) is deliberately
-    not merged. See tools/metis-sync-db.py for the full reasoning.
+    A sync that cannot see the other computer, or has no main computer set, is
+    logged as an error so the Automation panel shows it red — the old job said
+    "ok · no changes" while nothing had ever arrived.
     """
     import subprocess
 
@@ -1495,10 +1496,63 @@ def job_db_sync() -> None:
             capture_output=True, text=True, timeout=1800,
         )
         out = (proc.stdout or "").strip().splitlines()
-        merged = next((ln.strip() for ln in reversed(out) if "merged" in ln), "no changes")
-        _log_job("db_sync", "ok" if proc.returncode == 0 else "error", merged[:300])
+        problem = next((ln.split(":", 1)[1].strip() for ln in out
+                        if ln.startswith("SYNC-PROBLEM:")), None)
+        summary = next((ln.split(":", 1)[1].strip() for ln in reversed(out)
+                        if ln.startswith("SYNC-SUMMARY:")), "no summary")
+        if proc.returncode != 0:
+            _log_job("db_sync", "error", (proc.stderr or summary).strip()[-300:])
+        elif problem:
+            _log_job("db_sync", "error", problem[:300])
+        else:
+            _log_job("db_sync", "ok", summary[:300])
     except Exception as exc:
         _log_job("db_sync", "error", str(exc)[:300])
+
+
+# Jobs that FETCH or WRITE shared content. On a secondary computer they stand
+# down while the main computer is active, and their results arrive by sync —
+# two machines scanning the same feeds produced the same items twice, under
+# colliding ids, and paid for the same API calls twice.
+SHARED_CONTENT_JOBS = {
+    "morning_scan", "library_scan", "nature_briefings", "inbox_process",
+    "office_sync", "brief_synthesis", "focus_refresh", "dataset_monitor",
+    "board_refresh", "literature_discovery", "evening_reflexion",
+    "memory_consolidation", "weekly_summary", "citation_backfill",
+}
+
+
+def _main_computer_active() -> bool:
+    try:
+        root = os.environ.get("METIS_RC_ROOT")
+        if root and str(Path(root) / "tools") not in sys.path:
+            sys.path.insert(0, str(Path(root) / "tools"))
+        import metis_sync
+        return metis_sync.primary_recently_active()
+    except Exception as exc:  # sync not set up → behave as before
+        log.debug("[scheduler] primary check failed: %s", exc)
+        return False
+
+
+def _shared(job_id: str, func):
+    """Run `func` unless this is a secondary and the main computer is active."""
+    if job_id not in SHARED_CONTENT_JOBS:
+        return func
+    msg = "the main computer is active — runs there, arrives here by sync"
+    if inspect.iscoroutinefunction(func):
+        async def _wrapped():
+            if _main_computer_active():
+                _log_job(job_id, "skip", msg)
+                return
+            return await func()
+    else:
+        def _wrapped():
+            if _main_computer_active():
+                _log_job(job_id, "skip", msg)
+                return
+            return func()
+    _wrapped.__name__ = getattr(func, "__name__", job_id)
+    return _wrapped
 
 
 def job_promise_harness() -> None:
@@ -1675,7 +1729,7 @@ JOB_FUNCS: dict[str, callable] = {
 
 # Human-readable labels for the UI
 JOB_LABELS: dict[str, str] = {
-    "db_sync":              "Two-computer memory sync",
+    "db_sync":              "Two-computer database sync",
     "embedding_backfill":   "Memory embedding reconcile",
     "brief_synthesis":      "Morning brief synthesis",
     "morning_scan":         "Morning scan (news + papers)",
@@ -1706,7 +1760,9 @@ JOB_DEFAULTS: dict[str, dict] = {
     # cost) — it only reconciles rows that are missing an embedding.
     # Sync first, then embed — so memory merged from the other computer is
     # searchable the same night rather than a day later.
-    "db_sync":              {"enabled": True, "time": "22:15"},
+    # Every 15 minutes, and once at start-up (see the catch-up below), so a
+    # computer you sit down at is current within minutes, not by tomorrow.
+    "db_sync":              {"enabled": True, "every_minutes": 15},
     "embedding_backfill":   {"enabled": True, "time": "22:30"},
     "morning_scan":         {"enabled": True, "time": "09:00"},
     # Before library_index (09:05), so a paper discovered this morning is in
@@ -1795,8 +1851,19 @@ def setup_jobs() -> None:
         # IGNORED — the job still registers, at the default 07:00, and looks
         # scheduled. A job that runs on a schedule nobody asked for is harder to
         # notice than one that fails, so unknown keys must either work or be loud.
+        func = _shared(job_id, func)
+
+        every_minutes = cfg.get("every_minutes")
+        if every_minutes:
+            try:
+                n = max(5, min(int(every_minutes), 59))
+                trigger_kwargs = {"minute": f"*/{n}"}
+            except (TypeError, ValueError):
+                log.warning("[scheduler] job '%s' has an unusable every_minutes=%r — "
+                            "falling back to the daily time", job_id, every_minutes)
+
         every_hours = cfg.get("every_hours")
-        if every_hours:
+        if every_hours and not every_minutes:
             try:
                 n = max(1, min(int(every_hours), 23))
                 trigger_kwargs = {"hour": f"*/{n}", "minute": minute}
@@ -1804,7 +1871,7 @@ def setup_jobs() -> None:
                 log.warning("[scheduler] job '%s' has an unusable every_hours=%r — "
                             "falling back to the daily time", job_id, every_hours)
 
-        unknown = set(cfg) - {"enabled", "time", "day", "every_hours"}
+        unknown = set(cfg) - {"enabled", "time", "day", "every_hours", "every_minutes"}
         if unknown:
             log.warning("[scheduler] job '%s' has unrecognised schedule key(s): %s "
                         "— they do nothing", job_id, ", ".join(sorted(unknown)))
@@ -1827,7 +1894,7 @@ def setup_jobs() -> None:
     try:
         from apscheduler.triggers.interval import IntervalTrigger
         scheduler.add_job(
-            job_nature_briefings,
+            _shared("nature_briefings", job_nature_briefings),
             CronTrigger(hour=7, minute=40),
             id="nature_briefings",
             name="Nature Briefing archive",
@@ -1869,7 +1936,6 @@ def setup_jobs() -> None:
         ("dataset_monitor",     job_dataset_monitor),
         ("evening_reflexion",   job_evening_reflexion),
         ("memory_consolidation", job_memory_consolidation),
-        ("db_sync",             job_db_sync),
         ("embedding_backfill",  job_embedding_backfill),
         ("nightly_backup",      job_nightly_backup),
     ]
@@ -1891,7 +1957,7 @@ def setup_jobs() -> None:
         if _ran_today(catch_job_id):
             log.info("[scheduler] catch-up: '%s' already ran today — skipping", catch_job_id)
             continue
-        missed.append((catch_job_id, catch_func))
+        missed.append((catch_job_id, _shared(catch_job_id, catch_func)))
 
     # Weekly catch-up: weekly jobs (summary, board_refresh) only fire on their
     # scheduled day — easy to miss on a laptop. Run on startup if they haven't
@@ -1915,9 +1981,14 @@ def setup_jobs() -> None:
                 last_dt = _dt.datetime.fromisoformat(rows[0]["created_at"])
                 due = (now_local - last_dt).days >= 6
             if due:
-                missed.append((wk_id, wk_func))
+                missed.append((wk_id, _shared(wk_id, wk_func)))
         except Exception as exc:
             log.warning("[scheduler] weekly catch-up check for %s failed: %s", wk_id, exc)
+
+    # Sync FIRST, at every start: a secondary must rebase onto the main
+    # computer's latest before its own jobs run, or it works on yesterday.
+    if {**JOB_DEFAULTS.get("db_sync", {}), **settings_cu.get("db_sync", {})}.get("enabled", True):
+        missed.insert(0, ("db_sync", job_db_sync))
 
     if missed:
         def _run_catchup(jobs):

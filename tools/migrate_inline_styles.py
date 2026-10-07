@@ -38,6 +38,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 TPL = ROOT / "system" / "app-py" / "templates"
 
+# The course reader is its own page with its own stylesheet (static/course-reader.css)
+# and does NOT load styles.css, so none of the --m-* / --t-* tokens exist there. An
+# undefined custom property invalidates the whole declaration, so migrating these
+# templates onto the dashboard scale would silently strip their padding and sizes.
+COURSE_READER_TEMPLATES = {
+    "course_reader.html",
+    "learning_course_overview.html",
+    "learning_lesson_reader.html",
+    "learning_methodology.html",
+}
+
 # ── The rules ──────────────────────────────────────────────────────────────
 # (class, {declarations it reproduces exactly})
 #
@@ -461,6 +472,8 @@ def main() -> int:
     touched = 0
     for f in sorted(TPL.rglob("*.html")):
         if a.only and a.only not in f.name:
+            continue
+        if f.name in COURSE_READER_TEMPLATES:
             continue
         src = f.read_text(encoding="utf-8")
         before += src.count('style="')

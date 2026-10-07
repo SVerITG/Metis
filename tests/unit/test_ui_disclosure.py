@@ -132,6 +132,8 @@ def test_styles_use_existing_tokens_not_new_colours():
     disclosure primitive that introduces its own palette contradicts that."""
     css = (ROOT / "system" / "app-py" / "static" / "styles.css").read_text(encoding="utf-8")
     block = css[css.index("PROGRESSIVE DISCLOSURE"):]
+    # Comments are prose: one explains a past contrast bug by quoting its hex.
+    block = re.sub(r"/\*.*?\*/", "", block, flags=re.S)
     literals = re.findall(r"#[0-9a-fA-F]{3,8}\b", block)
     assert not literals, f"hard-coded colours in the disclosure CSS: {literals}"
 

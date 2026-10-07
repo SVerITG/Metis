@@ -159,9 +159,12 @@ def test_seen_at_is_declared_in_the_schema(today_src):
         "seen_at missing from schema.sql — a column added only by migration is "
         "absent on a fresh install, which is the two-computer failure class"
     )
-    assert "ADD COLUMN seen_at" in today_src, (
-        "no migration for databases created before seen_at"
-    )
+    # The ensure path migrates a list of columns in one PRAGMA-guarded loop.
+    m = re.search(r"def _ensure_board_table\(\):(.*?)\n(?:def |@router)", today_src, re.S)
+    body = m.group(1) if m else ""
+    assert "ADD COLUMN seen_at" in today_src or (
+        re.search(r'\(\s*"seen_at"\s*,', body) and "ADD COLUMN {_col}" in body
+    ), "no migration for databases created before seen_at"
 
 
 def test_seen_and_dismiss_are_separate_routes(today_src):

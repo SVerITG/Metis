@@ -25,7 +25,8 @@ If wslDir = "" Then
 End If
 
 ' Launch dashboard silently (windowStyle=0 hides the terminal)
-WshShell.Run "wsl.exe -- bash " & Chr(34) & wslDir & "/app-py/run.sh" & Chr(34), 0, False
+' run.sh is a machine's own launcher; run-dashboard.sh is the tracked one.
+WshShell.Run "wsl.exe -- bash -c " & Chr(34) & "cd '" & wslDir & "/app-py' && if [ -f run.sh ]; then exec bash run.sh; else exec bash run-dashboard.sh; fi" & Chr(34), 0, False
 
 ' Give run.sh a moment to choose a port and write the port file. With autostart
 ' the server is usually already running, so keep this short — the poll below

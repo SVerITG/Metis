@@ -67,7 +67,8 @@
 <section class="pr-list">
   <form class="pr-search" hx-get="/api/partial/presentation/repository"
         hx-target="#pres-repo" hx-swap="innerHTML" hx-trigger="submit, keyup changed delay:400ms from:input">
-    <input type="search" name="q" value="{{ q }}" placeholder="Search titles and paths…">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search titles and paths…"
+           aria-label="Search decks by title or path">
     {% if collection %}<input type="hidden" name="collection" value="{{ collection }}">{% endif %}
   </form>
 

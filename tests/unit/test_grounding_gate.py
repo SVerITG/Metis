@@ -114,6 +114,8 @@ def test_research_questions_still_ground():
 def test_stopwords_are_filtered_not_merely_absent():
     """The upstream extractor still emits stopwords; the hook must not rely on
     that being fixed. If these ever stop appearing as triggers, the guard can go."""
+    if not TRIGGERS.exists():  # same machine-local cache rule as _gate() above
+        pytest.skip("corpus-trigger cache not present on this machine")
     terms = set(json.loads(TRIGGERS.read_text(encoding="utf-8"))["terms"])
     assert {"what", "have", "hand"} & terms, (
         "stopwords no longer present in the trigger list — the extractor may be "

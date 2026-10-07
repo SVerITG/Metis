@@ -111,6 +111,13 @@ if [ "$MODE" = "--report" ]; then
         fi
     fi
     [ "${dirty:-0}"  -gt 0 ] && echo "METIS SYNC: $dirty uncommitted file(s) in the working tree."
+    # The DATABASE half of the two-computer story. Silence here once meant months
+    # of divergence nobody saw, so any problem is said at the start of a session.
+    if [ -x "$VENV/bin/python3" ] && [ -f "$ROOT/tools/metis-sync-db.py" ]; then
+        "$VENV/bin/python3" "$ROOT/tools/metis-sync-db.py" --status 2>/dev/null \
+            | grep '^SYNC-PROBLEM:' | head -3 \
+            | sed 's/^SYNC-PROBLEM: /METIS SYNC: database — /'
+    fi
     exit 0
 fi
 
@@ -133,6 +140,16 @@ if [ "$MODE" = "--end" ]; then
             nohup "$VENV/bin/python3" "$ROOT/tools/backup-canonical.py" \
                 >"$STATE_DIR/last-db-backup.log" 2>&1 &
         fi
+    fi
+
+    # Database sync → the other computer. Every session end, not daily: walking
+    # away from this computer is exactly when the other one needs our latest.
+    # Backgrounded and locked inside the script, so it never stalls the exit and
+    # never runs twice at once with the dashboard's 15-minute sync.
+    if [ -x "$VENV/bin/python3" ] && [ -f "$ROOT/tools/metis-sync-db.py" ]; then
+        log "syncing the database for the other computer (in the background)…"
+        nohup "$VENV/bin/python3" "$ROOT/tools/metis-sync-db.py" \
+            >"$STATE_DIR/last-sync.log" 2>&1 &
     fi
 
     # Everything below is ADVISORY and non-interactive — nobody is reading stderr

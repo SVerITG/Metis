@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "A research companion for Claude that keeps your data on your machine: your library, notes and memory never leave your computer; answers are cited from your own indexed library; 30+ specialist skills; automatic cross-pollination across papers, meetings, ideas, notes and journal; and a weekly self-review that drafts improvements for your approval. Reasoning runs on the Claude API."
 requires-python = ">=3.10,<3.14"
 dependencies = [
-    "mcp>=1.27.0",
+    "mcp>=1.27.0,<2",
     "pyyaml>=6.0",
     "requests>=2.28",
     "fastapi>=0.110.0",
@@ -41,7 +41,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pytest-asyncio>=0.23"]
+dev = ["pytest>=8.0", "pytest-asyncio>=0.23", "beautifulsoup4>=4.12"]
 # Neural embedding — REQUIRED for all semantic search, RAG, and the knowledge
 # layer (search_pdf_knowledge, vector memory). Pulls ~200 MB of ONNX models (no
 # GPU). setup-mcp.sh installs this by default; without it, semantic search is off.

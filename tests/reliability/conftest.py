@@ -51,7 +51,9 @@ REPO = Path(__file__).resolve().parents[2]
 APP_DIR = REPO / "system" / "app-py"
 LOCK = APP_DIR / ".metis-launch.lock"
 BOOT_SH = REPO / "tools" / "metis-boot.sh"
-RUN_SH = APP_DIR / "run.sh"
+# A machine's own run.sh wins; otherwise the tracked launcher is what runs, and
+# the source guards must hold for whichever one that is.
+RUN_SH = APP_DIR / "run.sh" if (APP_DIR / "run.sh").exists() else APP_DIR / "run-dashboard.sh"
 
 PORT = 8080
 HEALTH_URL = f"http://127.0.0.1:{PORT}/health"
@@ -225,7 +227,7 @@ def run_sh_pids() -> set[int]:
     They are indistinguishable by cmdline — a subshell keeps its parent's argv — so
     they are told apart by parentage in supervisor_pids() below.
     """
-    return {p for p in _pgrep(r"bash .*app-py/run\.sh") if proc_info(p)}
+    return {p for p in _pgrep(r"bash .*app-py/run(-dashboard)?\.sh") if proc_info(p)}
 
 
 def supervisor_pids() -> set[int]:

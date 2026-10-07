@@ -78,11 +78,19 @@ def test_claude_own_agents_are_routable():
 
 
 def test_coverage_reaches_far_more_agents_than_the_original_seed():
-    """The original seed named 21 agents against a registry of 33."""
+    """The original seed named 21 agents against a registry of 33.
+
+    The bar used to be a fixed 40. The 2026-09-14 audit then retired six slugs
+    and deleted rules for seven agents that existed in no file, so the honest
+    measure is not a count but a property: every dispatchable agent that is not
+    deliberately retired can be reached by keyword."""
     with pipeline.connect(pipeline.paths.db) as con:
-        n = con.execute(
-            "SELECT COUNT(DISTINCT agent_slug) FROM agent_routing_rules").fetchone()[0]
-    assert n >= 40, f"only {n} agents reachable by keyword"
+        routable = {r[0] for r in con.execute(
+            "SELECT DISTINCT agent_slug FROM agent_routing_rules")}
+    agents = {p.stem for p in (ROOT / ".claude" / "agents").glob("*.md")}
+    unreachable = sorted(agents - routable - set(pipeline._RETIRED_ROUTING_SLUGS))
+    assert not unreachable, f"registered agents no request can reach: {unreachable}"
+    assert len(routable) > 21, f"only {len(routable)} agents reachable by keyword"
 
 
 # ── 3. plain language ────────────────────────────────────────────────────────

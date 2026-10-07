@@ -30,7 +30,7 @@ if "%WSL_ROOT%"=="" (
 :: Start the dashboard DETACHED so it survives this launcher window closing.
 :: setsid + nohup put uvicorn in its own session — closing the console (or the
 :: parent process exiting) no longer sends SIGHUP and kills the server.
-wsl -e bash -c "setsid nohup bash '%WSL_ROOT%/system/app-py/run.sh' </dev/null >/tmp/metis-dashboard.log 2>&1 & disown" >nul 2>&1
+wsl -e bash -c "cd '%WSL_ROOT%/system/app-py' && R=run.sh && { [ -f run.sh ] || R=run-dashboard.sh; } && setsid nohup bash \"$R\" </dev/null >/tmp/metis-dashboard.log 2>&1 & disown" >nul 2>&1
 
 :: Wait for the port file — run.sh writes it once it has chosen a port. If the
 :: file doesn't appear within 12 seconds, fall back to 8080.
