@@ -75,6 +75,7 @@ from metis_mcp.config import paths  # noqa: E402
 SNAPSHOTS = ROOT / "system" / "app" / "data" / "cloud-backups"  # OneDrive-synced
 HOST = "".join(c if c.isalnum() else "-" for c in platform.node()) or "unknown"
 KEEP_PER_HOST = 7
+STALE_DAYS = 3  # older than this, the other machine has stopped reaching us
 
 # ── What we merge ────────────────────────────────────────────────────────────
 # Append-only logs, each self-contained (nothing else joins to their `id`).
@@ -144,6 +145,38 @@ def _columns(con: sqlite3.Connection, table: str) -> list[str]:
 LOCAL_STATE = {
     "user_decisions": {"hits", "last_applied_at", "delivered", "last_delivered_at"},
 }
+
+# ── Columns that CHANGE after a row is written ───────────────────────────────
+# Unlike LOCAL_STATE these are copied across — they are real data — but they are
+# not identity. Hashing them made every edit look like a new row: a run that
+# finished after the snapshot arrived a second time as 'done' next to a 'working'
+# ghost that never closes, and marking a paper read duplicated the paper. The
+# copies then travelled back to the first machine, so duplicates grew both ways.
+MUTABLE = {
+    "agent_runs": {"status", "output_path", "input_tokens", "output_tokens", "model"},
+    "session_summaries": {"archived"},
+    "episodic_memory": {"archived"},
+    "reflexion_log": {"archived"},
+    "skill_improvement_proposals": {"status", "reviewer_note"},
+}
+
+# Literature is edited wholesale (Zotero refresh, abstract backfill, read state),
+# so no column set is stable. A paper is the same paper by DOI, else by Zotero
+# key, else by title.
+NATURAL_KEY = {
+    "literature_metadata": ("doi", "zotero_key", "title"),
+}
+
+
+def _natural_key(row: sqlite3.Row, cols: tuple[str, ...]) -> str | None:
+    for c in cols:
+        try:
+            v = row[c]
+        except (IndexError, KeyError):
+            continue
+        if v is not None and str(v).strip():
+            return f"{c}:{str(v).strip().lower()}"
+    return None
 
 
 def _fingerprint(row: sqlite3.Row, cols: list[str]) -> str:
@@ -251,24 +284,50 @@ def merge_snapshot(live: sqlite3.Connection, snapshot: Path, dry_run: bool) -> d
                        if c not in pk and c not in LOCAL_STATE.get(table, ())]
             if not content:
                 continue
+            identity = [c for c in content if c not in MUTABLE.get(table, ())]
+            natural = NATURAL_KEY.get(table)
 
-            have = {
-                _fingerprint(r, content)
-                for r in live.execute(f"SELECT * FROM {table}")
-            }
+            # Integer autoincrement ids collide across machines and are dropped.
+            # TEXT ids are random (uuid-based) and ARE the row's identity: other
+            # tables and URLs refer to them, so dropping one left the merged row
+            # with a NULL id that nothing could open, edit or link to.
+            types = {r["name"]: (r["type"] or "").upper()
+                     for r in live.execute(f"PRAGMA table_info({table})")}
+            text_pk = [c for c in pk if c in their_cols and "INT" not in types.get(c, "")]
 
-            insert_cols = content
+            def key(r: sqlite3.Row) -> str | None:
+                return (_natural_key(r, natural) if natural
+                        else _fingerprint(r, identity))
+
+            have: set[str] = set()
+            have_ids: set[tuple] = set()
+            for r in live.execute(f"SELECT * FROM {table}"):
+                k = key(r)
+                if k is not None:
+                    have.add(k)
+                if text_pk:
+                    have_ids.add(tuple(r[c] for c in text_pk))
+
+            insert_cols = text_pk + content
             placeholders = ",".join("?" for _ in insert_cols)
             sql = (
-                f"INSERT INTO {table} ({','.join(insert_cols)}) VALUES ({placeholders})"
+                f"INSERT OR IGNORE INTO {table} ({','.join(insert_cols)}) "
+                f"VALUES ({placeholders})"
             )
 
             n = 0
             for row in other.execute(f"SELECT * FROM {table}"):
-                if _fingerprint(row, content) in have:
+                if text_pk:
+                    ids = tuple(row[c] for c in text_pk)
+                    if None not in ids and ids in have_ids:
+                        continue
+                k = key(row)
+                if k is not None and k in have:
                     continue
                 if not dry_run:
                     live.execute(sql, [row[c] for c in insert_cols])
+                if k is not None:
+                    have.add(k)
                 n += 1
             if n:
                 added[table] = n
@@ -293,6 +352,10 @@ def import_snapshots(dry_run: bool = False) -> int:
     if not foreign:
         print("  no snapshots from other machines yet.")
         print("  → run this script on the OTHER computer to publish its memory.")
+        # Said loudly: the nightly job used to log this as "ok · no changes", so a
+        # sync that had never once seen the other computer looked healthy.
+        print(f"SYNC-PROBLEM: nothing from the other computer has arrived in "
+              f"{SNAPSHOTS.relative_to(ROOT)} — check that this folder syncs on both machines")
         live.close()
         return 0
 
@@ -302,6 +365,10 @@ def import_snapshots(dry_run: bool = False) -> int:
         newest.setdefault(_host_of(snap), snap)
 
     for host, snap in newest.items():
+        age_days = (time.time() - snap.stat().st_mtime) / 86400
+        if age_days > STALE_DAYS:
+            print(f"SYNC-PROBLEM: newest snapshot from {host} is {age_days:.0f} days old "
+                  f"— that computer has stopped exporting, or the folder stopped syncing")
         if snap.name in merged_already:
             print(f"  {snap.name} — already merged")
             continue

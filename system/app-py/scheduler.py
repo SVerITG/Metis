@@ -1495,8 +1495,17 @@ def job_db_sync() -> None:
             capture_output=True, text=True, timeout=1800,
         )
         out = (proc.stdout or "").strip().splitlines()
+        problem = next((ln.split(":", 1)[1].strip() for ln in out
+                        if ln.startswith("SYNC-PROBLEM:")), None)
         merged = next((ln.strip() for ln in reversed(out) if "merged" in ln), "no changes")
-        _log_job("db_sync", "ok" if proc.returncode == 0 else "error", merged[:300])
+        if proc.returncode != 0:
+            _log_job("db_sync", "error", (proc.stderr or merged).strip()[-300:])
+        elif problem:
+            # A sync that never hears from the other computer is a failure, not
+            # a quiet night — it must show red on the Automation panel.
+            _log_job("db_sync", "error", problem[:300])
+        else:
+            _log_job("db_sync", "ok", merged[:300])
     except Exception as exc:
         _log_job("db_sync", "error", str(exc)[:300])
 

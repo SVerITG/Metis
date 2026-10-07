@@ -481,7 +481,11 @@ CREATE TABLE IF NOT EXISTS news_briefs (
     -- it answers "when did Metis notice this" — after the 13 Jul → 18 Aug 2026 scan
     -- gap every July story was stamped 18 August. Any daily/weekly/monthly filter
     -- must read COALESCE(published_at, created_at). Added 2026-08-19.
-    published_at   TEXT DEFAULT ''
+    published_at   TEXT DEFAULT '',
+    -- Relevance score written by the news scan. Previously added only by the
+    -- scan's own ALTER, so a database that had not yet scanned lacked it and
+    -- idx_news_briefs_title_norm below failed to build.
+    relevance      REAL DEFAULT 0
 );
 
 -- RETIRED 2026-09-14. Written by nothing, read by nothing. Kept as a
