@@ -226,14 +226,20 @@ def test_memory_embeddings_are_reconciled():
     sys.path.insert(0, str(REPO / "system" / "mcp-server" / "src"))
     from metis_mcp.config import paths  # noqa: PLC0415
 
+    if not paths.db.exists():
+        pytest.skip("no live database on this machine")
     con = sqlite3.connect(f"file:{paths.db}?mode=ro", uri=True)
     try:
-        total = con.execute("SELECT count(*) FROM episodic_memory").fetchone()[0]
-        embedded = con.execute("SELECT count(*) FROM vec_episodic_rowids").fetchone()[0]
+        has = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        total = (con.execute("SELECT count(*) FROM episodic_memory").fetchone()[0]
+                 if "episodic_memory" in has else 0)
+        if not total:
+            pytest.skip("no episodic memory yet")
+        # Memory but no vector index at all is 0% coverage — a failure, not a skip.
+        embedded = (con.execute("SELECT count(*) FROM vec_episodic_rowids").fetchone()[0]
+                    if "vec_episodic_rowids" in has else 0)
     finally:
         con.close()
-    if not total:
-        pytest.skip("no episodic memory yet")
     coverage = embedded / total
     assert coverage >= 0.95, (
         f"episodic memory is only {coverage:.1%} embedded ({embedded}/{total}). "
@@ -326,7 +332,12 @@ def test_restart_does_not_refire_todays_jobs(running_dashboard):
         try:
             return con.execute(
                 "SELECT count(*) FROM jobs_log "
-                "WHERE date(created_at) = date('now', 'localtime')"
+                "WHERE date(created_at) = date('now', 'localtime') "
+                # db_sync runs at EVERY start by design: a computer you sit
+                # down at must take in the other one's work before anything
+                # else. It is local, idempotent and costs nothing — not the
+                # duplicate-writing, billable re-fire this test guards against.
+                "AND job_type != 'db_sync'"
             ).fetchone()[0]
         finally:
             con.close()

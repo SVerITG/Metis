@@ -86,5 +86,6 @@ else
     echo "  Reset: docker compose -f docker-compose.test.yml down -v"
     echo "══════════════════════════════════════════════════════════"
     echo ""
-    exec bash system/app-py/run.sh
+    if [ -f system/app-py/run.sh ]; then exec bash system/app-py/run.sh; fi
+    exec bash system/app-py/run-dashboard.sh
 fi

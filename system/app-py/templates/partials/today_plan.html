@@ -17,8 +17,7 @@
       route to Work inside a box that had one of each. `bare` is how the column
       asks for the body alone; standalone callers still get the header. -#}
   {%- if not bare %}
-  <div class="u-row u-rule" style="align-items:baseline;justify-content:space-between;
-       gap:var(--m-space-3);padding-bottom:var(--d-stack);">
+  <div class="u-row u-rule" style="align-items:baseline;justify-content:space-between;gap:var(--m-space-3);padding-bottom:var(--d-stack);">
     <span class="u-label">
       Today{% if n_items %} · {{ n_items }} item{{ 's' if n_items != 1 else '' }}{% if n_done %} · {{ n_done }} done{% endif %}{% endif %}
     </span>

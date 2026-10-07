@@ -74,7 +74,11 @@ fi
         # every future heartbeat. That is precisely the fd-inheritance bug that
         # wedged the dashboard (the node course server holding run.sh's fd 9).
         # Do not remove it.
-        setsid nohup bash "$ROOT/system/app-py/run.sh" </dev/null >"$LOG" 2>&1 8>&- &
+        # A local run.sh (a machine's own tuned copy) wins; otherwise the tracked
+        # launcher, so a computer set up from git can start the dashboard at all.
+        RUN="$ROOT/system/app-py/run.sh"
+        [ -f "$RUN" ] || RUN="$ROOT/system/app-py/run-dashboard.sh"
+        setsid nohup bash "$RUN" </dev/null >"$LOG" 2>&1 8>&- &
         disown 2>/dev/null || true
 
         # Wait for it to actually come up. Must be MORE patient than run.sh's

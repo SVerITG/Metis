@@ -136,7 +136,9 @@ def test_moving_a_project_can_invent_its_destination(work_py):
 def test_cards_are_grouped_into_collapsible_sections(cards):
     assert "cat-sec" in cards and "<details" in cards, "sections are not collapsible"
     assert "cat-body" in cards
-    assert 'class="grid grid-2 grid--top cat-body"' in cards, (
+    # Grouped views wrap the SAME grid in a section; the flat (unfiltered) view
+    # drops only the section class. Either way the cards themselves are kept.
+    assert 'class="grid grid-2 grid--top{% if not flat %} cat-body{% endif %}"' in cards, (
         "the cards were replaced rather than wrapped — the project card carries "
         "the next step, the task list and the launchers, which is most of why it "
         "exists"
@@ -159,9 +161,11 @@ def test_an_empty_category_still_gets_a_heading(work_py, cards):
 
 def test_empty_sections_are_hidden_under_a_filter(work_py):
     """Asked to see one category, you should not get the nine that do not match."""
-    assert re.search(r'show_empty\s*=\s*f in \("", "active", "all"\)', work_py), (
-        "empty sections are shown regardless of the filter"
-    )
+    # Unfiltered is the flat view; only there are empty sections allowed.
+    direct = re.search(r'show_empty\s*=\s*f in \("", "active", "all"\)', work_py)
+    via_flat = (re.search(r'flat\s*=\s*f in \("", "active", "all"\)', work_py)
+                and re.search(r"show_empty\s*=\s*flat\b", work_py))
+    assert direct or via_flat, "empty sections are shown regardless of the filter"
 
 
 def test_uncategorised_is_named_and_last(work_py):

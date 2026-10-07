@@ -214,6 +214,7 @@ system/config/install-state.json
 
 # Runtime / machine-local artifacts
 system/app-py/.metis-port
+system/app-py/.metis-launch.lock
 system/app-py/eval-results.json
 system/app-py/DESIGN_BRIEF.md
 system/install/seed_ph_database.py

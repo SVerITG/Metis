@@ -153,7 +153,8 @@ def test_the_navbar_reads_a_stored_count_not_a_live_lens_query():
 def test_the_marker_falls_back_to_the_slot_number():
     """A focus with nothing new must still show its slot, not an empty gap."""
     base = BASE.read_text(encoding="utf-8")
-    m = re.search(r"\{% if f\.n_new %\}(.*?)\{% endif %\}", base, re.S)
+    # `if` or `elif`: a linked focus shows its kind first, then new items, then the slot.
+    m = re.search(r"\{% (?:el)?if f\.n_new %\}(.*?)\{% (?:else|endif) %\}", base, re.S)
     assert m, "the navbar no longer distinguishes new items from the slot number"
     assert "n-meta--new" in m.group(1), "the new-item count is not visually marked"
     assert "f.shelf_slot" in base, "the slot number fallback is gone"

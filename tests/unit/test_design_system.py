@@ -24,6 +24,17 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 CSS = ROOT / "system" / "app-py" / "static" / "styles.css"
 TPL = ROOT / "system" / "app-py" / "templates"
+READER_CSS = ROOT / "system" / "app-py" / "static" / "course-reader.css"
+
+# Rendered inside the course reader, which loads course-reader.css and NOT
+# styles.css. Their tokens and type scale come from that sheet. Kept in step with
+# tools/migrate_inline_styles.py::COURSE_READER_TEMPLATES.
+COURSE_READER_TEMPLATES = {
+    "course_reader.html",
+    "learning_course_overview.html",
+    "learning_lesson_reader.html",
+    "learning_methodology.html",
+}
 
 
 def _css():
@@ -160,12 +171,15 @@ def test_templates_never_reference_a_token_that_does_not_exist():
     sets no padding at all. Two templates were left pointing at a scale that had
     been deleted an hour earlier, and both rendered without complaint."""
     css_tokens = set(re.findall(r"(--[\w-]+)\s*:", _css()))
+    reader_tokens = set(re.findall(r"(--[\w-]+)\s*:", READER_CSS.read_text(encoding="utf-8")))
     bad = []
     for f in _templates():
         src = f.read_text(encoding="utf-8")
         # A template may define tokens for itself in its own <style> block —
-        # capture.html does, and that is legitimate scoping, not a bug.
-        known = css_tokens | set(re.findall(r"(--[\w-]+)\s*:", src))
+        # capture.html does, and that is legitimate scoping, not a bug. A
+        # course-reader template sees course-reader.css instead of styles.css.
+        page = reader_tokens if f.name in COURSE_READER_TEMPLATES else css_tokens
+        known = page | set(re.findall(r"(--[\w-]+)\s*:", src))
         for m in re.finditer(r"var\((--[\w-]+)\s*([,)])", src):
             if m.group(2) == ")" and m.group(1) not in known:
                 bad.append(f"{f.name}: {m.group(1)}")
@@ -288,11 +302,16 @@ def test_every_input_can_be_named_by_a_screen_reader():
     bad = []
     for f in _templates():
         s = _code(f)
+        # An input INSIDE a <label> is labelled by it (an implicit label) — the
+        # pattern the presentation forms use, and announced correctly.
+        wrapped = [m.span() for m in re.finditer(r"<label\b.*?</label>", s, re.S)]
         for m in re.finditer(r"<input\b[^>]*>", s):
             t = m.group(0)
             if re.search(r'type="(hidden|submit|button|checkbox|radio)"', t):
                 continue
             if "aria-label" in t or "aria-labelledby" in t:
+                continue
+            if any(a <= m.start() and m.end() <= b for a, b in wrapped):
                 continue
             idm = re.search(r'id="([^"]+)"', t)
             if idm and f'for="{idm.group(1)}"' in s:
@@ -366,6 +385,8 @@ def test_rem_values_land_on_the_scale_too():
     (--t-body is 0.9375rem), so this was a translation, not a conversion."""
     bad = []
     for f in _templates():
+        if f.name in COURSE_READER_TEMPLATES:
+            continue  # its scale is course-reader.css, written in rem by design
         for m in re.finditer(r'style="[^"]*font-size:\s*([\d.]+rem)', f.read_text(encoding="utf-8")):
             bad.append(f"{f.name}: {m.group(1)}")
     assert len(bad) <= 4, f"raw rem font sizes: {len(bad)} — {bad[:5]}"
