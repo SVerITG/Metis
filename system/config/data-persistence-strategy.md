@@ -154,6 +154,15 @@ Everything below is the user's, persists across updates, never leaves the machin
   safe enough, and an encrypted backup whose key is lost is just unrecoverable data; a plain
   static file restores by copying it back, no key. (`tools/metis-update.sh` also snapshots
   the canonical DB before every update.) Remaining: schedule `backup-canonical.py` daily.
+  **Two computers (2026-10):** the live DB is kept identical on every computer by
+  `tools/metis_sync.py`, run every 15 minutes, at dashboard start and at session end.
+  One computer is the *main* one (`metis-sync-db.py --make-primary`); others rebase onto
+  it, the main one merges their changes three-way, and the main one wins conflicts. Every
+  table syncs except derived indexes and machine-local logs (`LOCAL_TABLES`). Gitignored
+  preference files in `system/config/` travel inside the snapshot; content folders
+  (`knowledge/`, `inputs/literature/`, `projects/`, `journal/`, `outputs/`) are listed in it,
+  and the other computer reports anything that has not arrived. Problems show red on the
+  Automation panel and at session start. `metis-sync-db.py --status` explains the state.
 - `knowledge/` — indexed library, domain/background RAG corpora, courses.
 - `inputs/code/`, registered R-code repositories + data dictionaries.
 - `projects/`, `journal/`, `outputs/` — project cards, session handoffs, agent outputs.

@@ -1,438 +1,144 @@
 #!/usr/bin/env python3
-"""metis-sync-db.py — converge Metis's memory across two computers, safely.
+"""metis-sync-db.py — keep Metis's database the same on every computer.
 
-THE PROBLEM
-    The user works from two machines. The CODE syncs (git + the OneDrive folder), but
-    the DATABASE does not: this machine's memory stopped at 8 July while the other
-    had 8-13 July. Sessions, agent runs, ideas and reflexions diverged silently.
+The design, and why it replaced the append-only merge, is in tools/metis_sync.py.
+In one line: one computer is the MAIN one; every other computer rebases onto it;
+the main computer merges their changes three-way; the main computer wins conflicts.
 
-WHY THE LIVE DB IS NOT SIMPLY PUT ON ONEDRIVE
-    It was, and OneDrive destroyed it (2026-06-19). A live SQLite database is
-    THREE files — .sqlite, -wal, -shm — that must stay mutually consistent.
-    OneDrive copied them at different instants, mid-write, and the result was a
-    corrupt database. That is why the live DB was moved to the native filesystem.
-
-    But the lesson is narrower than "SQLite and OneDrive don't mix". It is:
-
-        ** OneDrive must never touch a file that is being WRITTEN. **
-
-    A finished, static snapshot has no WAL and no writer. It is just bytes. That
-    is provably safe on OneDrive — tools/backup-canonical.py has been doing it
-    correctly all along (snapshot to /tmp via the SQLite backup API, then MOVE the
-    completed file across, so OneDrive never sees a half-written database).
-
-THE DESIGN
-    live DB (local, native FS)  ──export──▶  immutable snapshot on OneDrive
-                                                     │
-    live DB (other machine)     ◀──merge───────────── ┘
-
-    * The live database NEVER goes on OneDrive. That rule is unchanged.
-    * OneDrive carries only finished, hostname-stamped snapshots.
-    * Each machine merges the snapshots the OTHER machines left behind.
-    * Convergence is eventual, and that is fine: this is memory, not a ledger.
-
-WHY THE MERGE IS SAFE
-    The tables we merge are append-only event logs. Union is the correct operation
-    — there is no conflict to resolve, only rows one machine has not seen yet.
-
-    The one real trap: every table has an autoincrement `id`, and those COLLIDE
-    across machines (both have an episodic_memory id=5, meaning different things).
-    So rows are identified by a CONTENT FINGERPRINT — a hash of every column
-    except the local id. Merging is therefore idempotent: re-importing the same
-    snapshot inserts nothing.
-
-    Mutable, stateful tables (tasks, projects) are deliberately NOT merged. They
-    would need real conflict resolution, and getting that subtly wrong is worse
-    than not doing it. See SKIPPED below.
-
-    Newly merged memory has no embedding — the nightly `embedding_backfill` job
-    reconciles that automatically, so semantic recall picks the rows up on its own.
+FIRST TIME (once):
+    on the MAIN computer      python3 tools/metis-sync-cleanup.py --apply
+                              python3 tools/metis-sync-db.py --make-primary
+    on the OTHER computer     python3 tools/metis-sync-cleanup.py --apply
+                              python3 tools/metis-sync-db.py
+    on the MAIN computer      python3 tools/metis-sync-db.py
+    After that the dashboard runs the sync every 15 minutes, at start-up and when a
+    Claude Code session ends. Nothing else to do.
 
 USAGE
-    python3 tools/metis-sync-db.py            # export ours, merge theirs
-    python3 tools/metis-sync-db.py --status   # what's out there, what's merged
-    python3 tools/metis-sync-db.py --dry-run  # show what WOULD be merged
-    python3 tools/metis-sync-db.py --import-only / --export-only
+    python3 tools/metis-sync-db.py                 # sync now
+    python3 tools/metis-sync-db.py --status        # who is main, what has arrived, any problem
+    python3 tools/metis-sync-db.py --make-primary  # this computer becomes the main one
+
+Lines beginning `SYNC-PROBLEM:` are read by the dashboard's scheduler and shown red
+on the Automation panel. The last line, `SYNC-SUMMARY:`, is its status message.
 """
 
 from __future__ import annotations
 
 import argparse
-import hashlib
-import json
-import platform
-import shutil
-import sqlite3
 import sys
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "system" / "mcp-server" / "src"))
 
-from metis_mcp.config import paths  # noqa: E402
-
-SNAPSHOTS = ROOT / "system" / "app" / "data" / "cloud-backups"  # OneDrive-synced
-HOST = "".join(c if c.isalnum() else "-" for c in platform.node()) or "unknown"
-KEEP_PER_HOST = 7
-STALE_DAYS = 3  # older than this, the other machine has stopped reaching us
-
-# ── What we merge ────────────────────────────────────────────────────────────
-# Append-only logs, each self-contained (nothing else joins to their `id`).
-MERGE_TABLES = [
-    "episodic_memory",
-    "semantic_memory",
-    "procedural_memory",
-    "session_summaries",
-    "agent_runs",
-    "memory_entries",
-    "reflexion_log",
-    "ideas",
-    "journal_entries",
-    "personal_notes",
-    "user_decisions",
-    "skill_improvement_proposals",
-    "literature_metadata",
-    "contacts",
-]
-
-# ── What we deliberately DON'T merge, and why ────────────────────────────────
-SKIPPED = {
-    "tasks / projects":     "mutable state — needs real conflict resolution, not a union",
-    "note_links / idea_links": "foreign keys to ids that differ per machine — a union would mis-link",
-    "tracked_files":        "machine-local filesystem paths",
-    "jobs_log":             "machine-local scheduler noise",
-    "pdf_chunks / library_*": "large and regenerable — the PDFs themselves already sync via OneDrive",
-    "vec_* (embeddings)":   "rebuilt locally by the nightly embedding_backfill job",
-}
-
-_SYNC_STATE_DDL = """
-CREATE TABLE IF NOT EXISTS db_sync_state (
-    snapshot   TEXT PRIMARY KEY,   -- filename of the snapshot we merged
-    host       TEXT NOT NULL,      -- which machine produced it
-    merged_at  TEXT NOT NULL,
-    rows_added INTEGER NOT NULL DEFAULT 0
-)
-"""
+import metis_sync as ms  # noqa: E402
 
 
-def _connect(path: Path, readonly: bool = False) -> sqlite3.Connection:
-    uri = f"file:{path}?mode=ro" if readonly else f"file:{path}"
-    con = sqlite3.connect(uri, uri=True, timeout=30)
-    con.row_factory = sqlite3.Row
-    if not readonly:
-        con.execute("PRAGMA busy_timeout=30000")
-    return con
+def live_db() -> Path:
+    from metis_mcp.config import paths  # noqa: E402
+    return Path(paths.db)
 
 
-def _pk_of(con: sqlite3.Connection, table: str) -> set[str]:
-    return {r["name"] for r in con.execute(f"PRAGMA table_info({table})") if r["pk"]}
+class _Lock:
+    """One sync at a time on this computer (scheduler, session end, by hand)."""
 
+    def __init__(self, path: Path):
+        self.path = path
+        self.fh = None
 
-def _columns(con: sqlite3.Connection, table: str) -> list[str]:
-    return [r["name"] for r in con.execute(f"PRAGMA table_info({table})")]
-
-
-# ── Columns that are LOCAL STATE, not identity ───────────────────────────────
-# A usage counter says what this machine did with a row; it does not say which
-# row it is. Including one in the content hash means the same decision, seen on
-# two computers with different counts, hashes differently — so the merge reads it
-# as new and inserts a duplicate on every single run, for ever.
-#
-# The counters were harmless while every value was 0. A delivery count that
-# actually increments makes them divergent, which is exactly when this breaks.
-# Identity is the content; usage is local and starts fresh on each machine.
-LOCAL_STATE = {
-    "user_decisions": {"hits", "last_applied_at", "delivered", "last_delivered_at"},
-}
-
-# ── Columns that CHANGE after a row is written ───────────────────────────────
-# Unlike LOCAL_STATE these are copied across — they are real data — but they are
-# not identity. Hashing them made every edit look like a new row: a run that
-# finished after the snapshot arrived a second time as 'done' next to a 'working'
-# ghost that never closes, and marking a paper read duplicated the paper. The
-# copies then travelled back to the first machine, so duplicates grew both ways.
-MUTABLE = {
-    "agent_runs": {"status", "output_path", "input_tokens", "output_tokens", "model"},
-    "session_summaries": {"archived"},
-    "episodic_memory": {"archived"},
-    "reflexion_log": {"archived"},
-    "skill_improvement_proposals": {"status", "reviewer_note"},
-}
-
-# Literature is edited wholesale (Zotero refresh, abstract backfill, read state),
-# so no column set is stable. A paper is the same paper by DOI, else by Zotero
-# key, else by title.
-NATURAL_KEY = {
-    "literature_metadata": ("doi", "zotero_key", "title"),
-}
-
-
-def _natural_key(row: sqlite3.Row, cols: tuple[str, ...]) -> str | None:
-    for c in cols:
+    def __enter__(self):
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.fh = open(self.path, "w")
         try:
-            v = row[c]
-        except (IndexError, KeyError):
-            continue
-        if v is not None and str(v).strip():
-            return f"{c}:{str(v).strip().lower()}"
-    return None
+            import fcntl
+            fcntl.flock(self.fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except ImportError:
+            pass
+        except OSError:
+            print("SYNC-SUMMARY: another sync is already running on this computer")
+            sys.exit(0)
+        return self
+
+    def __exit__(self, *exc):
+        self.fh.close()
 
 
-def _fingerprint(row: sqlite3.Row, cols: list[str]) -> str:
-    """Machine-independent identity: hash the CONTENT, never the local id.
-
-    Autoincrement ids collide across machines — both computers have an
-    episodic_memory id=5 meaning entirely different things. Hashing the content is
-    what makes the merge idempotent and safe to re-run.
-    """
-    payload = json.dumps(
-        [("" if row[c] is None else str(row[c])) for c in cols],
-        ensure_ascii=False,
-    )
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
-
-
-# ── Export ───────────────────────────────────────────────────────────────────
-
-def export_snapshot(verbose: bool = True) -> Path | None:
-    """Write a consistent, static snapshot of the live DB to OneDrive.
-
-    Snapshot to /tmp with the SQLite backup API (which checkpoints the WAL), then
-    MOVE the finished file. OneDrive therefore only ever sees a complete database —
-    never a half-written one. This is the property whose absence corrupted the DB.
-    """
-    if not paths.db.exists():
-        print("  no live DB — nothing to export")
-        return None
-
-    SNAPSHOTS.mkdir(parents=True, exist_ok=True)
-    stamp = time.strftime("%Y%m%d-%H%M%S")
-    tmp = Path("/tmp") / f"metis-snap-{stamp}.sqlite"
-
-    src = sqlite3.connect(str(paths.db))
-    dst = sqlite3.connect(str(tmp))
-    with dst:
-        src.backup(dst)
-    dst.close()
-    src.close()
-
-    target = SNAPSHOTS / f"metis-{HOST}-{stamp}.sqlite"
-    shutil.move(str(tmp), str(target))  # crosses filesystems (/tmp → OneDrive)
-
-    # Prune only OUR OWN history — never another machine's snapshots.
-    mine = sorted(SNAPSHOTS.glob(f"metis-{HOST}-*.sqlite"))
-    for old in mine[:-KEEP_PER_HOST]:
-        old.unlink(missing_ok=True)
-
-    if verbose:
-        mb = target.stat().st_size / 1_048_576
-        print(f"  exported {target.name} ({mb:.0f} MB) · keeping last {KEEP_PER_HOST}")
-    return target
-
-
-# ── Import / merge ───────────────────────────────────────────────────────────
-
-def _foreign_snapshots() -> list[Path]:
-    """Snapshots produced by OTHER machines, newest first."""
-    out = [
-        p for p in SNAPSHOTS.glob("metis-*.sqlite")
-        if not p.name.startswith(f"metis-{HOST}-")
-    ]
-    return sorted(out, key=lambda p: p.stat().st_mtime, reverse=True)
-
-
-def _host_of(snapshot: Path) -> str:
-    """Machine name from `metis-<host>-<YYYYmmdd>-<HHMMSS>.sqlite`.
-
-    Snapshots taken before hostname-stamping are named `metis-<date>-<time>` with
-    no host at all. Detect that (the field is all digits) and call it what it is,
-    rather than inventing a machine called "20260622".
-    """
-    parts = snapshot.stem.split("-")
-    if len(parts) >= 3 and not parts[1].isdigit():
-        return parts[1]
-    return "legacy"
-
-
-def merge_snapshot(live: sqlite3.Connection, snapshot: Path, dry_run: bool) -> dict[str, int]:
-    """Union the append-only tables from `snapshot` into the live DB."""
-    added: dict[str, int] = {}
-    other = _connect(snapshot, readonly=True)
-    try:
-        their_tables = {
-            r["name"] for r in other.execute(
-                "SELECT name FROM sqlite_master WHERE type='table'"
-            )
-        }
-        for table in MERGE_TABLES:
-            if table not in their_tables:
-                continue
-            try:
-                live_cols = _columns(live, table)
-            except sqlite3.DatabaseError:
-                continue
-            if not live_cols:
-                continue
-
-            pk = _pk_of(live, table)
-            their_cols = _columns(other, table)
-            # Only columns BOTH schemas have — the two machines may sit on
-            # different migrations, and a merge must never fail on a schema drift.
-            shared = [c for c in live_cols if c in their_cols]
-            content = [c for c in shared
-                       if c not in pk and c not in LOCAL_STATE.get(table, ())]
-            if not content:
-                continue
-            identity = [c for c in content if c not in MUTABLE.get(table, ())]
-            natural = NATURAL_KEY.get(table)
-
-            # Integer autoincrement ids collide across machines and are dropped.
-            # TEXT ids are random (uuid-based) and ARE the row's identity: other
-            # tables and URLs refer to them, so dropping one left the merged row
-            # with a NULL id that nothing could open, edit or link to.
-            types = {r["name"]: (r["type"] or "").upper()
-                     for r in live.execute(f"PRAGMA table_info({table})")}
-            text_pk = [c for c in pk if c in their_cols and "INT" not in types.get(c, "")]
-
-            def key(r: sqlite3.Row) -> str | None:
-                return (_natural_key(r, natural) if natural
-                        else _fingerprint(r, identity))
-
-            have: set[str] = set()
-            have_ids: set[tuple] = set()
-            for r in live.execute(f"SELECT * FROM {table}"):
-                k = key(r)
-                if k is not None:
-                    have.add(k)
-                if text_pk:
-                    have_ids.add(tuple(r[c] for c in text_pk))
-
-            insert_cols = text_pk + content
-            placeholders = ",".join("?" for _ in insert_cols)
-            sql = (
-                f"INSERT OR IGNORE INTO {table} ({','.join(insert_cols)}) "
-                f"VALUES ({placeholders})"
-            )
-
-            n = 0
-            for row in other.execute(f"SELECT * FROM {table}"):
-                if text_pk:
-                    ids = tuple(row[c] for c in text_pk)
-                    if None not in ids and ids in have_ids:
-                        continue
-                k = key(row)
-                if k is not None and k in have:
-                    continue
-                if not dry_run:
-                    live.execute(sql, [row[c] for c in insert_cols])
-                if k is not None:
-                    have.add(k)
-                n += 1
-            if n:
-                added[table] = n
-        if not dry_run:
-            live.commit()
-    finally:
-        other.close()
-    return added
-
-
-def import_snapshots(dry_run: bool = False) -> int:
-    live = _connect(paths.db)
-    live.execute(_SYNC_STATE_DDL)
-    live.commit()
-
-    merged_already = {
-        r["snapshot"] for r in live.execute("SELECT snapshot FROM db_sync_state")
-    }
-
-    total = 0
-    foreign = _foreign_snapshots()
-    if not foreign:
-        print("  no snapshots from other machines yet.")
-        print("  → run this script on the OTHER computer to publish its memory.")
-        # Said loudly: the nightly job used to log this as "ok · no changes", so a
-        # sync that had never once seen the other computer looked healthy.
-        print(f"SYNC-PROBLEM: nothing from the other computer has arrived in "
-              f"{SNAPSHOTS.relative_to(ROOT)} — check that this folder syncs on both machines")
-        live.close()
-        return 0
-
-    # Only the newest snapshot per host: an older one is a strict subset of it.
-    newest: dict[str, Path] = {}
-    for snap in foreign:
-        newest.setdefault(_host_of(snap), snap)
-
-    for host, snap in newest.items():
-        age_days = (time.time() - snap.stat().st_mtime) / 86400
-        if age_days > STALE_DAYS:
-            print(f"SYNC-PROBLEM: newest snapshot from {host} is {age_days:.0f} days old "
-                  f"— that computer has stopped exporting, or the folder stopped syncing")
-        if snap.name in merged_already:
-            print(f"  {snap.name} — already merged")
-            continue
-        age_d = (time.time() - snap.stat().st_mtime) / 86400
-        print(f"  merging {snap.name}  (host {host}, {age_d:.0f}d old)")
-        added = merge_snapshot(live, snap, dry_run)
-        n = sum(added.values())
-        total += n
-        if added:
-            for t, c in sorted(added.items(), key=lambda kv: -kv[1]):
-                print(f"      +{c:<5} {t}")
-        else:
-            print("      nothing new — already converged")
-        if not dry_run:
-            live.execute(
-                "INSERT OR REPLACE INTO db_sync_state "
-                "(snapshot, host, merged_at, rows_added) VALUES (?,?,?,?)",
-                (snap.name, host, time.strftime("%Y-%m-%dT%H:%M:%S"), n),
-            )
-            live.commit()
-
-    live.close()
-    if total and not dry_run:
-        print(f"\n  merged {total} row(s). The nightly embedding_backfill job will")
-        print("  embed the new memory so semantic recall picks it up automatically.")
-    return total
-
-
-def status() -> None:
-    print(f"  this machine : {HOST}")
-    print(f"  live DB      : {paths.db}  ({paths.db.stat().st_size / 1_048_576:.0f} MB)")
-    print(f"  snapshots in : {SNAPSHOTS.relative_to(ROOT)}\n")
-    snaps = sorted(SNAPSHOTS.glob("metis-*.sqlite"), key=lambda p: p.stat().st_mtime)
+def status(live: Path, d: Path, host: str) -> int:
+    primary = ms.read_primary(d)
+    role = "main" if primary == host else ("not set" if primary is None else "secondary")
+    print(f"  this computer : {host}  ({role})")
+    print(f"  main computer : {primary or '— not set: run --make-primary on it'}")
+    print(f"  live database : {live}")
+    print(f"  shared folder : {d}")
+    if live.exists():
+        import sqlite3
+        con = sqlite3.connect(str(live))
+        try:
+            st = ms._state(con)
+        finally:
+            con.close()
+        for k in sorted(st):
+            if k != "last_export_digest":
+                print(f"    {k:<20} {st[k]}")
+    snaps = ms.list_snaps(d)
+    print()
     if not snaps:
-        print("  (no snapshots yet)")
-        return
-    for p in snaps:
-        age = (time.time() - p.stat().st_mtime) / 86400
-        who = "ours" if p.name.startswith(f"metis-{HOST}-") else f"host {_host_of(p)}"
-        print(f"    {p.name:<44} {p.stat().st_size / 1_048_576:>5.0f} MB  {age:>4.1f}d  {who}")
-
-    print("\n  NOT merged (by design):")
-    for what, why in SKIPPED.items():
-        print(f"    {what:<24} {why}")
+        print("  (no snapshots in the shared folder yet)")
+    for h, s in ms._newest_by_host(snaps).items():
+        age_h = (time.time() - time.mktime(time.strptime(s.stamp[:15], "%Y%m%d-%H%M%S"))) / 3600
+        who = "this computer" if h == host else h
+        print(f"    newest from {who:<18} {s.name}   {age_h:5.1f} h ago")
+    rep = ms.Report()
+    ms.check_freshness(d, host, primary, rep)
+    if primary is None:
+        rep.problem("no main computer is set")
+    print()
+    for p in rep.problems:
+        print(f"SYNC-PROBLEM: {p}")
+    if not rep.problems:
+        print("  ✓ in sync")
+    print("\n  Not synced, by design (each computer rebuilds them from synced files):")
+    print("    " + ", ".join(sorted(ms.LOCAL_TABLES)) + ", vec_* indexes")
+    return 0
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--status", action="store_true")
-    ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--import-only", action="store_true")
-    ap.add_argument("--export-only", action="store_true")
+    ap.add_argument("--make-primary", action="store_true",
+                    help="make THIS computer the main one (its version wins conflicts)")
+    ap.add_argument("--db", type=Path, help="live database (default: this computer's)")
     a = ap.parse_args()
 
-    if a.status:
-        status()
-        return 0
+    live = a.db or live_db()
+    d = ms.sync_dir()
+    host = ms.host_name()
 
-    if not a.import_only:
-        print("── export ──")
-        export_snapshot()
-    if not a.export_only:
-        print("── merge ──")
-        import_snapshots(dry_run=a.dry_run)
+    if a.status:
+        return status(live, d, host)
+
+    with _Lock(Path.home() / ".local" / "share" / "metis-mcp" / ".sync.lock"):
+        if a.make_primary:
+            old = ms.read_primary(d)
+            ms.make_primary(d, host)
+            print(f"  {host} is now the main computer" + (f" (was {old})" if old and old != host else ""))
+        rep = ms.sync(live, d, host)
+
+    print(f"── sync · {host} · {rep.role} ──")
+    for ln in rep.lines:
+        print("  " + ln)
+    for p in rep.problems:
+        print(f"SYNC-PROBLEM: {p}")
+    if rep.problems:
+        summary = rep.problems[0]
+    elif rep.changed:
+        summary = f"{rep.changed} change(s) synced ({rep.role})"
+    else:
+        summary = f"in sync ({rep.role})"
+    print(f"SYNC-SUMMARY: {summary}")
     return 0
 
 
