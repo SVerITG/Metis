@@ -76,6 +76,12 @@ def _ensure_tables(conn):
         s = stmt.strip()
         if s:
             conn.execute(s)
+    # The installer's schema.sql created this table without session_id, and
+    # CREATE TABLE IF NOT EXISTS never adds a column — so every insert on an
+    # installed database failed. Add it where it is missing.
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(consent_ledger)")}
+    if "session_id" not in cols:
+        conn.execute("ALTER TABLE consent_ledger ADD COLUMN session_id TEXT")
     conn.commit()
 
 

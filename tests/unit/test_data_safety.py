@@ -103,3 +103,24 @@ def test_one_warning_per_label():
     r = scan_content("call +243 812 345 678 or +243 997 001 223")
     phone = [w for w in r["warnings"] if w.startswith("Phone number")]
     assert len(phone) == 1
+
+
+def test_consent_event_logs_on_an_installer_built_table(tmp_path, monkeypatch):
+    """schema.sql created consent_ledger without session_id; every insert failed."""
+    import asyncio
+    import sqlite3
+    from metis_mcp.config import paths
+    from metis_mcp.tools.anonymization import get_consent_ledger, log_consent_event
+
+    db = tmp_path / "t.sqlite"
+    con = sqlite3.connect(db)
+    con.execute("""CREATE TABLE consent_ledger (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+        action TEXT NOT NULL, data_classification TEXT DEFAULT 'PUBLIC',
+        agent_slug TEXT DEFAULT '', notes TEXT DEFAULT '')""")
+    con.commit()
+    con.close()
+    monkeypatch.setattr(paths, "db", db)
+    asyncio.run(log_consent_event(action="blocked", data_classification="SENSITIVE"))
+    assert "blocked" in asyncio.run(get_consent_ledger(limit=5))[0].text

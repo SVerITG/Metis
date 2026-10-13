@@ -47,7 +47,8 @@ CREATE TABLE IF NOT EXISTS consent_ledger (
     action              TEXT NOT NULL,
     data_classification TEXT DEFAULT 'PUBLIC',
     agent_slug          TEXT DEFAULT '',
-    notes               TEXT DEFAULT ''
+    notes               TEXT DEFAULT '',
+    session_id          TEXT
 );
 
 CREATE TABLE IF NOT EXISTS contacts (
