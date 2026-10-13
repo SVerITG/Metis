@@ -1153,7 +1153,7 @@ CREATE TABLE IF NOT EXISTS user_decisions (
     scope       TEXT DEFAULT 'always',
     source      TEXT DEFAULT 'user',
     hits        INTEGER DEFAULT 0,
-    created_at  TEXT NOT NULL,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
     agent_slug  TEXT DEFAULT '',
     supersedes  INTEGER,
     last_applied_at TEXT DEFAULT ''
