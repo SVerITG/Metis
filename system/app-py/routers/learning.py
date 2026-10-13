@@ -247,7 +247,10 @@ async def course_reader_page(slug: str, request: Request):
     used to hardcode the same URL separately, so a change to one silently left
     the other pointing somewhere else.
     """
-    if slug in _external_apps():
+    # A rendered site mounted by main.py is the course too. Without this, links
+    # that build /course/<slug> directly (Today's "Continue learning") opened an
+    # empty reader for it instead of the site the Open button launches.
+    if slug in _external_apps() or slug in _mounted_sites():
         return RedirectResponse(_launch_target(slug, None), status_code=302)
     course = db_query(
         "SELECT title FROM learning_courses WHERE slug=? LIMIT 1",
@@ -1401,8 +1404,23 @@ def _load_lessons_json(slug: str) -> dict:
 
 
 def _lesson_path(slug: str, lesson_id: str) -> Path | None:
-    """Resolve the markdown file for a lesson id."""
+    """Resolve the markdown file for a lesson id.
+
+    Most specific first: an explicit "file" in lessons.json, then a file named
+    after the whole id, and only then the numeric prefix. Matching on the
+    trailing number alone made a deep dive "dd-01" open lesson 01's text.
+    """
     lessons_dir = _COURSES_DIR / slug / "lessons"
+    meta = next((l for l in (_load_lessons_json(slug).get("lessons") or [])
+                 if l.get("id") == lesson_id), {})
+    named = str(meta.get("file") or "").strip()
+    if named:
+        f = (lessons_dir / Path(named).name)
+        if f.is_file():
+            return f
+    for f in sorted(lessons_dir.glob("*.md")):
+        if f.stem == lesson_id or f.stem.startswith(lesson_id + "-"):
+            return f
     # Expect filename like "01-descriptive-statistics.md" matching order
     prefix = lesson_id.split("-")[-1]  # "01", "02", …
     if not prefix.isdigit():
