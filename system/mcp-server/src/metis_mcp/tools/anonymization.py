@@ -84,7 +84,28 @@ def _ensure_tables(conn):
 # ---------------------------------------------------------------------------
 
 # Name heuristic: 2+ consecutive CAPITALIZED words not at sentence start
-_NAME_RE = re.compile(r"(?<!\.\s)(?<!\n)(?<![.!?]\s)(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)")
+# A word may be hyphenated ("Marie-Claire"): without that, the part before the
+# hyphen was left in clear and "Marie-[NAME_001]" leaked the first name.
+_NAME_WORD = r"[A-Z][a-z]+(?:-[A-Z][a-z]+)*"
+_NAME_RE = re.compile(rf"(?<!\.\s)(?<!\n)(?<![.!?]\s)(?:{_NAME_WORD}(?:\s+{_NAME_WORD})+)")
+
+# Direct identifiers by column name, for pasted tables. In a line-list a GPS
+# pair or a birth date sits in a cell with no cue word beside it, so the prose
+# patterns — tuned not to mask statistics — rightly do not fire. The header is
+# the cue. Outcome columns (test result, diagnosis) are left: they are the data
+# being analysed, and without the identifiers they no longer point at anyone.
+_IDENTIFIER_COLUMNS = {
+    "name": "NAME", "full_name": "NAME", "first_name": "NAME", "firstname": "NAME",
+    "last_name": "NAME", "lastname": "NAME", "surname": "NAME", "nom": "NAME",
+    "prenom": "NAME", "prénom": "NAME", "patient_name": "NAME",
+    "dob": "DOB", "date_of_birth": "DOB", "birth_date": "DOB", "birthdate": "DOB",
+    "phone": "PHONE", "telephone": "PHONE", "tel": "PHONE", "mobile": "PHONE",
+    "email": "EMAIL", "address": "ADDRESS",
+    "gps": "GPS", "gps_lat": "GPS", "gps_lon": "GPS", "latitude": "GPS",
+    "longitude": "GPS", "lat": "GPS", "lon": "GPS", "lng": "GPS", "coordinates": "GPS",
+    "national_id": "NID", "nid": "NID", "passport_number": "NID",
+    "mrn": "PATIENT", "record_number": "PATIENT",
+}
 
 # Research-context institution patterns. Generic global orgs ship in the public
 # source; any field- or institution-specific names (e.g. your own institute or
@@ -160,6 +181,8 @@ async def anonymize_text(
         replacements[placeholder] = original
         return placeholder
 
+    text = _mask_identifier_columns(text, _replace)
+
     for label, pattern in _PATTERNS:
         text = pattern.sub(lambda m, lbl=label: _replace(m, lbl), text)
 
@@ -189,6 +212,42 @@ async def anonymize_text(
         }
 
     return [TextContent(type="text", text=json.dumps(result, ensure_ascii=False, indent=2))]
+
+
+def _mask_identifier_columns(text: str, replace) -> str:
+    """Mask whole identifier columns when `text` is a delimited table with a header."""
+    lines = text.split("\n")
+    if len(lines) < 2:
+        return text
+    head = lines[0]
+    sep = next((c for c in ("\t", ",", ";", "|") if c in head), None)
+    if sep is None:
+        return text
+    cols = [h.strip().strip('"\'').lower() for h in head.split(sep)]
+    targets = {i: _IDENTIFIER_COLUMNS[c] for i, c in enumerate(cols)
+               if c in _IDENTIFIER_COLUMNS}
+    if not targets:
+        return text
+
+    class _M:  # the replace callback expects a match-like object
+        def __init__(self, v):
+            self._v = v
+
+        def group(self, _=0):
+            return self._v
+
+    out = [head]
+    for line in lines[1:]:
+        cells = line.split(sep)
+        if len(cells) != len(cols):
+            out.append(line)  # not a row of this table — leave it to the patterns
+            continue
+        for i, label in targets.items():
+            v = cells[i].strip()
+            if v:
+                cells[i] = replace(_M(v), label)
+        out.append(sep.join(cells))
+    return "\n".join(out)
 
 
 def mask_pii(text: str) -> tuple[str, dict[str, int]]:

@@ -120,6 +120,10 @@
       "research_timeline",
       "knowledge_graph",
       "knowledge_db"
+    ],
+    "authoring": [
+      "authoring",
+      "office"
     ]
   },
   "agents": {

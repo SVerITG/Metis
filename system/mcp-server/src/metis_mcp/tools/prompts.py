@@ -17,6 +17,8 @@ gets from CLAUDE.md + the skills:
                         system prompt via get_agent_context() and adopts it.
   * workflow prompts  — morning briefing, research session, capture, handoff,
                         weekly — the high-traffic Code skills, mirrored.
+  * local prompts     — the researcher's own, one .md file each in the
+                        gitignored system/config/local/prompts/.
 
 Registration is defensive: a malformed agent folder is skipped, never fatal.
 The module is loaded by server.py exactly like a tool module.
@@ -432,6 +434,45 @@ _WORKFLOW_PROMPTS = {
 }
 
 
+def _local_prompts_dir() -> Path:
+    return Path(os.environ.get("METIS_LOCAL_PROMPTS_DIR")
+                or paths.root / "system" / "config" / "local" / "prompts")
+
+
+def _local_prompts() -> dict:
+    """Prompts the researcher writes for themselves, one Markdown file each.
+
+    system/config/local/prompts/<name>.md becomes the prompt <name> in the
+    Desktop picker. A first line "# Title" is the label shown there; the rest is
+    the prompt. Kept in a gitignored folder because these are personal — a
+    prepared demo, a recurring request — and Metis is published.
+    """
+    d = _local_prompts_dir()
+    if not d.is_dir():
+        return {}
+    out: dict = {}
+    for f in sorted(d.glob("*.md")):
+        try:
+            text = f.read_text(encoding="utf-8").strip()
+        except Exception:  # noqa: BLE001
+            continue
+        if not text:
+            continue
+        first, _, rest = text.partition("\n")
+        if first.startswith("# "):
+            desc, body = first[2:].strip(), rest.strip()
+        else:
+            desc, body = f.stem.replace("-", " "), text
+        out[f.stem] = (desc, _make_local_prompt(body))
+    return out
+
+
+def _make_local_prompt(body: str):
+    def _fn(note: str = "") -> str:
+        return body + (f"\n\nAlso: {note}\n" if note.strip() else "\n")
+    return _fn
+
+
 def register_prompts() -> dict:
     """Register all Metis prompts on the FastMCP app. Returns a small summary dict."""
     from mcp.server.fastmcp.prompts.base import Prompt
@@ -496,6 +537,19 @@ def register_prompts() -> dict:
         try:
             app.add_prompt(Prompt.from_function(
                 fn, name=name, title=desc.split(" — ")[0], description=desc,
+            ))
+            registered.append(name)
+        except Exception as exc:  # noqa: BLE001
+            failed[name] = f"{type(exc).__name__}: {exc}"
+
+    # 4) The researcher's own prompts — machine-local, never shipped
+    for name, (desc, fn) in _local_prompts().items():
+        if name in registered:
+            failed[name] = "name clashes with a built-in prompt"
+            continue
+        try:
+            app.add_prompt(Prompt.from_function(
+                fn, name=name, title=desc, description=desc,
             ))
             registered.append(name)
         except Exception as exc:  # noqa: BLE001

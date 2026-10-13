@@ -264,11 +264,14 @@ def scan_content(content: str, file_path: str = "") -> dict:
         content: Text content to scan.
         file_path: Optional file path for context-based classification.
     """
-    warnings: list[str] = []
+    # Several patterns can share a label (two phone formats); report the label
+    # once, with the larger count, rather than the same warning twice.
+    counts: dict[str, int] = {}
     for pattern, label in _PII_CHECKS:
         hits = pattern.findall(content)
         if hits:
-            warnings.append(f"{label}(s) detected: {len(hits)} found")
+            counts[label] = max(counts.get(label, 0), len(hits))
+    warnings: list[str] = [f"{label}(s) detected: {n} found" for label, n in counts.items()]
     warnings.extend(_check_sensitive_headers(content))
     classification = _classify(warnings, file_path)
     return {"safe": len(warnings) == 0, "classification": classification, "warnings": warnings}

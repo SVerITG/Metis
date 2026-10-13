@@ -179,6 +179,352 @@ async def create_presentation(
 
 
 # ---------------------------------------------------------------------------
+# Posters — filled into the researcher's own template
+# ---------------------------------------------------------------------------
+#
+# A poster is not a deck: it is one slide, built on an institutional template
+# whose layout is fixed. The template is the researcher's file, so it is looked
+# up in machine-local folders and never shipped with Metis.
+
+_PT = 12700  # EMU per point
+_POSTER_SIZES = (50, 44, 40, 36, 32, 28, 24, 22, 20, 18)
+_TITLE_SIZES = (105, 96, 88, 80, 72, 64, 56, 48, 44, 40, 36)
+
+
+def _template_dirs() -> list[Path]:
+    import os
+    dirs = []
+    if os.environ.get("METIS_TEMPLATES_DIR"):
+        dirs.append(Path(os.environ["METIS_TEMPLATES_DIR"]).expanduser())
+    dirs += [paths.root / "system" / "config" / "local" / "templates",
+             paths.root / "knowledge" / "templates"]
+    return dirs
+
+
+def _find_templates() -> list[Path]:
+    found: list[Path] = []
+    for d in _template_dirs():
+        if d.is_dir():
+            found += sorted(p for p in d.rglob("*")
+                            if p.suffix.lower() in (".potx", ".pptx") and p.is_file()
+                            and not p.name.startswith(("~$", ".")))
+    return found
+
+
+def _open_template(p: Path):
+    """Open a .pptx, or a .potx — which python-pptx refuses only by content type."""
+    import io
+    import zipfile
+    from pptx import Presentation
+
+    if p.suffix.lower() != ".potx":
+        return Presentation(str(p))
+    buf = io.BytesIO()
+    with zipfile.ZipFile(p) as zin, zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename == "[Content_Types].xml":
+                data = data.replace(b"presentationml.template.main+xml",
+                                    b"presentationml.presentation.main+xml")
+            zout.writestr(item, data)
+    buf.seek(0)
+    return Presentation(buf)
+
+
+def _poster_slots(layout) -> dict:
+    """Read a layout's geometry: title, subtitle, band, and (header, box) pairs.
+
+    Content boxes are the large placeholders; a header is the small text strip
+    sitting just above a box. Whatever text placeholder is left is the band
+    under the title (authors, affiliations, key message).
+    """
+    from pptx.enum.shapes import PP_PLACEHOLDER as P
+
+    title = subtitle = None
+    small, boxes = [], []
+    for ph in layout.placeholders:
+        t = ph.placeholder_format.type
+        if t in (P.TITLE, P.CENTER_TITLE):
+            title = ph
+        elif t == P.SUBTITLE:
+            subtitle = ph
+        elif t in (P.OBJECT, P.BODY):
+            (boxes if ph.height >= 6 * 360000 else small).append(ph)
+    # Reading order: down the left column, then the next one.
+    boxes.sort(key=lambda b: (round(b.left / 360000), b.top))
+    pairs, used = [], set()
+    for b in boxes:
+        head = None
+        for s in small:
+            above = 0 <= b.top - (s.top + s.height) <= 3 * 360000
+            overlap = s.left < b.left + b.width and b.left < s.left + s.width
+            if above and overlap and id(s) not in used:
+                head = s
+                used.add(id(s))
+                break
+        pairs.append((head, b))
+    band = [s for s in small if id(s) not in used]
+    band.sort(key=lambda s: s.top)
+    return {"title": title, "subtitle": subtitle,
+            "band": band[0] if band else None, "pairs": pairs}
+
+
+def _parse_sections(text: str) -> list[dict]:
+    out: list[dict] = []
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if not line.strip():
+            continue
+        if line.lstrip().startswith("# "):
+            out.append({"heading": line.lstrip()[2:].strip(), "lines": []})
+        else:
+            if not out:
+                out.append({"heading": "", "lines": []})
+            out[-1]["lines"].append(line.strip())
+    return out
+
+
+def _fit_size(lines: list[str], width_emu: int, height_emu: int,
+              sizes: tuple[int, ...] = _POSTER_SIZES,
+              char_w: float = 0.5) -> tuple[int, bool]:
+    """Largest point size at which the text plausibly fits. (size, fits)."""
+    import math
+    w, h = width_emu / _PT, height_emu / _PT
+    for size in sizes:
+        per_line = max(1, int(w / (char_w * size)))
+        n = sum(max(1, math.ceil(len(l) / per_line)) for l in lines) or 1
+        if n * size * 1.25 <= h * 0.92:
+            return size, True
+    return sizes[-1], False
+
+
+def _first_level_is_heading(layout_ph) -> bool:
+    """Does the box's list level 1 carry heading styling (numbered, bold or caps)?
+
+    Poster templates often reserve level 1 for a block subtitle and put body text
+    on level 2. Writing body text at level 1 there renders it bold, capitalised
+    and numbered.
+    """
+    from pptx.oxml.ns import qn
+    lvl1 = layout_ph._element.find(f".//{qn('a:lstStyle')}/{qn('a:lvl1pPr')}")
+    if lvl1 is None:
+        return False
+    rpr = lvl1.find(qn("a:defRPr"))
+    styled = rpr is not None and (rpr.get("b") == "1" or rpr.get("cap") == "all")
+    return styled or lvl1.find(qn("a:buAutoNum")) is not None
+
+
+def _fill(ph, lines: list[str], size: int | None = None,
+          heading_level: bool = False) -> None:
+    """Write lines into a placeholder.
+
+    "## x" is a block subtitle; "- x" a point; anything else plain prose. With a
+    heading-styled level 1 the subtitle uses it and body text drops to level 2.
+    """
+    from pptx.oxml.ns import qn
+    from pptx.util import Pt
+
+    tf = ph.text_frame
+    tf.clear()
+    tf.word_wrap = True
+    body_lvl = 1 if heading_level else 0
+    for i, raw in enumerate(lines or [""]):
+        para = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        point = raw[:2] in ("- ", "* ", "• ")
+        sub = raw.startswith("## ")
+        text = raw[3:].strip() if sub else (raw[2:].strip() if point else raw)
+        para.text = text
+        para.level = 0 if sub else body_lvl
+        if not point and not (sub and heading_level):
+            ppr = para._p.get_or_add_pPr()
+            for tag in ("a:buNone", "a:buAutoNum", "a:buChar", "a:buBlip"):
+                for el in ppr.findall(qn(tag)):
+                    ppr.remove(el)
+            ppr.append(ppr.makeelement(qn("a:buNone"), {}))
+            ppr.set("marL", "0")
+            ppr.set("indent", "0")
+        for run in para.runs:
+            if size:
+                run.font.size = Pt(size)
+            if sub and not heading_level:
+                run.font.bold = True
+
+
+@app.tool()
+async def create_poster(
+    title: str,
+    sections: str,
+    authors: str = "",
+    band: str = "",
+    template: str = "",
+    layout: str = "auto",
+    filename: str = "",
+) -> list[TextContent]:
+    """Create a conference poster (.pptx) filled into the researcher's own template.
+
+    The template (.potx or .pptx) is looked up in system/config/local/templates/,
+    knowledge/templates/, or $METIS_TEMPLATES_DIR — or pass a path. Each layout's
+    section boxes are detected from its geometry, so any template with a title,
+    small section headers and large content boxes works.
+
+    Args:
+        title: Poster title.
+        sections: The poster body as plain text. Each section starts with a line
+            beginning "# " (its heading); following lines are its text. Lines
+            beginning "- " become points, "## " a block subtitle inside the box,
+            anything else plain prose. Sections fill the boxes down the first
+            column, then the next. Example:
+
+                # Background
+                - Why the question matters
+                # Methods
+                - Design, setting, data
+                # Results
+                - The main finding, with its number
+        authors: Authors line, shown under the title.
+        band: Optional text for the band below the title — affiliations, or a
+            one-sentence key message.
+        template: Template file name (or part of it) or a path. Empty = the first
+            template found; the result says which one was used.
+        layout: "auto" (smallest layout with enough boxes), or part of a layout
+            name such as "one column" / "two column".
+        filename: Optional output filename; derived from the title when omitted.
+
+    Returns:
+        The path written, the template and layout used, and any section whose text
+        is likely to overflow its box.
+    """
+    if not title.strip() or not sections.strip():
+        return [TextContent(type="text", text="A title and sections are required.")]
+    if len(sections) > _MAX_CHARS:
+        return [TextContent(type="text", text="Sections too large.")]
+    try:
+        import pptx  # noqa: F401
+    except ImportError:
+        return [TextContent(type="text", text=(
+            "python-pptx is not installed in the Metis environment.\n"
+            "Install it with:  ~/.local/share/metis-mcp/.venv/bin/pip install python-pptx"
+        ))]
+
+    # ── Template ────────────────────────────────────────────────────────────
+    tpl: Path | None = None
+    if template.strip():
+        cand = Path(template).expanduser()
+        if not cand.is_absolute():
+            cand = paths.root / template
+        if cand.is_file():
+            tpl = cand
+        else:
+            want = template.strip().lower()
+            tpl = next((p for p in _find_templates() if want in p.name.lower()), None)
+    else:
+        found = _find_templates()
+        tpl = found[0] if found else None
+    if tpl is None:
+        where = "\n".join(f"  - {d}" for d in _template_dirs())
+        have = ", ".join(p.name for p in _find_templates()) or "none"
+        return [TextContent(type="text", text=(
+            f"No poster template matched '{template or '(any)'}'. Templates found: {have}.\n"
+            f"Put a .potx or .pptx in one of:\n{where}"
+        ))]
+
+    try:
+        prs = _open_template(tpl)
+    except Exception as exc:  # noqa: BLE001
+        return [TextContent(type="text", text=f"Could not open template {tpl.name}: {exc}")]
+
+    parsed = _parse_sections(sections)
+
+    # ── Layout ──────────────────────────────────────────────────────────────
+    layouts = [(l, _poster_slots(l)) for l in prs.slide_layouts]
+    layouts = [(l, s) for l, s in layouts if s["pairs"]]
+    if not layouts:
+        return [TextContent(type="text", text=(
+            f"{tpl.name} has no layout with content boxes to fill."))]
+    if layout.strip().lower() not in ("", "auto"):
+        want = layout.strip().lower()
+        layouts = [(l, s) for l, s in layouts if want in l.name.lower()] or layouts
+    layouts.sort(key=lambda ls: len(ls[1]["pairs"]))
+    chosen = next(((l, s) for l, s in layouts if len(s["pairs"]) >= len(parsed)),
+                  layouts[-1])
+    lay, slots = chosen
+    capacity = len(slots["pairs"])
+    if len(parsed) > capacity:
+        return [TextContent(type="text", text=(
+            f"{len(parsed)} sections, but the largest layout in {tpl.name} "
+            f"('{lay.name}') has {capacity} boxes. Merge sections and try again."))]
+
+    # ── Build: drop the template's sample slides, add one poster slide ─────
+    sld_ids = prs.slides._sldIdLst
+    for sld in list(sld_ids):
+        prs.part.drop_rel(sld.rId)
+        sld_ids.remove(sld)
+    slide = prs.slides.add_slide(lay)
+    by_idx = {ph.placeholder_format.idx: ph for ph in slide.placeholders}
+
+    def _on_slide(layout_ph):
+        return by_idx.get(layout_ph.placeholder_format.idx) if layout_ph is not None else None
+
+    from pptx.util import Pt
+
+    # Titles are capitalised in most poster templates, so size them as wide
+    # glyphs; a title that does not fit grows out of the top of its box.
+    for key, value, sizes, char_w in (("title", title, _TITLE_SIZES, 0.52),
+                                      ("subtitle", authors, _TITLE_SIZES, 0.62),
+                                      ("band", band, _POSTER_SIZES, 0.55)):
+        lp = slots[key]
+        if (ph := _on_slide(lp)) is None or not value.strip():
+            continue
+        ph.text_frame.text = value.strip()
+        size, _ = _fit_size([value.strip()], lp.width, lp.height, sizes, char_w)
+        for para in ph.text_frame.paragraphs:
+            for run in para.runs:
+                run.font.size = Pt(size)
+
+    overflow: list[str] = []
+    filled: set[int] = set()
+    for sec, (head, box) in zip(parsed, slots["pairs"]):
+        if (hp := _on_slide(head)) is not None:
+            hp.text_frame.text = sec["heading"]
+            filled.add(hp.placeholder_format.idx)
+        bp = _on_slide(box)
+        if bp is None:
+            continue
+        size, fits = _fit_size(sec["lines"], box.width, box.height)
+        _fill(bp, sec["lines"], size, heading_level=_first_level_is_heading(box))
+        filled.add(bp.placeholder_format.idx)
+        if not fits:
+            overflow.append(sec["heading"] or "(untitled section)")
+
+    # Unused boxes would print as "Click to add text" prompts — remove them.
+    for head, box in slots["pairs"][len(parsed):]:
+        for lp in (head, box):
+            sp = _on_slide(lp)
+            if sp is not None and sp.placeholder_format.idx not in filled:
+                sp._element.getparent().remove(sp._element)
+    for key, value in (("subtitle", authors), ("band", band)):
+        sp = _on_slide(slots[key])
+        if sp is not None and not value.strip():
+            sp._element.getparent().remove(sp._element)
+
+    stem = _slug(filename or title)
+    target = _safe_target("posters", f"{datetime.now().date().isoformat()}_{stem}.pptx")
+    prs.save(str(target))
+
+    msg = [
+        f"Poster saved to: {target.relative_to(paths.root)}",
+        f"Template: {tpl.name} · layout '{lay.name}' · "
+        f"{len(parsed)} of {capacity} sections filled · "
+        f"{prs.slide_width / 360000:.0f} × {prs.slide_height / 360000:.0f} cm",
+    ]
+    if overflow:
+        msg.append("Likely to overflow at the smallest size — shorten: "
+                   + ", ".join(overflow))
+    msg.append("Figures go in by hand in PowerPoint; the content boxes accept a pasted image.")
+    return [TextContent(type="text", text="\n".join(msg))]
+
+
+# ---------------------------------------------------------------------------
 # Documents
 # ---------------------------------------------------------------------------
 
