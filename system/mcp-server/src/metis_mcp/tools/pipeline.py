@@ -1502,7 +1502,7 @@ def record_decision(decision: str, category: str = "preference",
             pass
         con.execute(
             "INSERT INTO user_decisions (category, decision, context, scope, source, "
-            "agent_slug) VALUES (?, ?, ?, 'always', 'user', ?)",
+            "agent_slug, created_at) VALUES (?, ?, ?, 'always', 'user', ?, datetime('now'))",
             (category, decision, context, (agent_slug or "").strip()),
         )
         con.commit()

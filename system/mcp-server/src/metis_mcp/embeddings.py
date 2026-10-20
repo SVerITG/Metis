@@ -19,12 +19,21 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from pathlib import Path
 from typing import List
 
 log = logging.getLogger("metis.embeddings")
 
 _model = None
+
+# A failed load is remembered for this long. Each attempt walks every model and
+# cache dir, and fastembed retries a blocked download with backoff, so without
+# this every tool call that embeds stalled for a minute or more on a machine
+# with no cached model and no network.
+_LOAD_RETRY_SECONDS = 600
+_load_error: tuple[float, str] | None = None
+
 EMBEDDING_DIM = 768
 MODEL_NAME = "nomic-ai/nomic-embed-text-v1.5-Q"
 _FALLBACK_MODEL = "BAAI/bge-base-en-v1.5"
@@ -100,8 +109,10 @@ def _get_model():
     machine whose model sits in a legacy cache keeps working offline instead of
     failing with the model already on disk.
     """
-    global _model
+    global _model, _load_error
     if _model is None:
+        if _load_error and time.monotonic() - _load_error[0] < _LOAD_RETRY_SECONDS:
+            raise RuntimeError(_load_error[1])
         _ensure_ssl_certs()
         try:
             MODEL_CACHE.mkdir(parents=True, exist_ok=True)
@@ -134,10 +145,10 @@ def _get_model():
             f"with network access:\n"
             f"    python3 tools/warm_embedding_model.py"
         ) if offline else ""
-        raise RuntimeError(
-            "Could not load any embedding model. Tried:\n  "
-            + "\n  ".join(attempts) + hint
-        )
+        message = ("Could not load any embedding model. Tried:\n  "
+                   + "\n  ".join(attempts) + hint)
+        _load_error = (time.monotonic(), message)
+        raise RuntimeError(message)
     return _model
 
 

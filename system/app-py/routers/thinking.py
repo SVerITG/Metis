@@ -272,8 +272,9 @@ async def note_from_latest_idea():
     now = datetime.datetime.now().isoformat()
     try:
         db_execute(
-            "INSERT INTO personal_notes (content, tags, created_at) VALUES (?, ?, ?)",
-            (content, "exported-from-idea", now),
+            "INSERT INTO personal_notes (content, tags, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?)",
+            (content, "exported-from-idea", now, now),
         )
         return JSONResponse(
             {"status": "ok", "preview": content[:120], "source_idea_id": idea.get("id")}
