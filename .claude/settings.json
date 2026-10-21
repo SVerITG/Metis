@@ -7,6 +7,11 @@
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/tools/metis-preflight.sh\" --report",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/tools/metis-readiness.sh\" --summary",
+            "timeout": 15
           }
         ]
       }

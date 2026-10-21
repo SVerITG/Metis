@@ -63,7 +63,7 @@ follow, and they are the reason routing is now worth its cost:
 2. **The model binds** — per agent (12 opus · 14 sonnet · 7 haiku). Not the answer
    model of this conversation, which the client still owns (`user_decisions` #2,
    2026-08-12), but the subagent's own turn.
-3. **They carry standing decisions.** `get_agent_context(slug)` returns the
+3. **They carry standing decisions.** `get_agent_context(agent_slug)` returns the
    specialist's prompt *and* the decisions already made about how the researcher
    wants things done. Before this they returned a persona and nothing else, which
    is exactly why routing kept not happening.
@@ -360,6 +360,22 @@ bash tools/test-mcp.sh          # smoke-test (exit 0 = healthy)
 
 The dashboard reads source directly — dashboard edits take effect on restart with no reinstall.
 
+## Is this computer ready to work? — the daily readiness check
+
+```bash
+bash tools/metis-readiness.sh --fix             # check now; start a downed dashboard, reinstall a stale MCP
+bash tools/install-readiness-schedule.sh        # run it daily (Windows Task Scheduler on WSL, cron elsewhere)
+```
+
+It checks what a cloud task cannot see: the code is current with the other computer, the
+installed MCP copy matches the source, the server starts through the real `run.sh` and
+answers the protocol, every `metis_doctor` row, database integrity and disk, and the
+dashboard (serving, running current code, every route, HTMX swaps, scheduler jobs).
+The verdict is written to `system/config/readiness.json` (machine-local) and
+`outputs/readiness/<date>.md`, shown in the Today footer and on the Metis tab, and
+printed at session start when it is not READY. If no check has run for 20 hours, the
+session-start hook runs one in the background.
+
 ---
 
 ## Claude Desktop — how Metis is reachable there
@@ -424,7 +440,7 @@ Every session, check:
 
 The Metis MCP server (`metis-rc`) is available. Use its tools to:
 - `update_task` — mark tasks done or update status
-- `add_task` — add new tasks to this project (project_id: `metis-dashboard`)
+- `create_task` — add new tasks to this project (project_id: `metis-dashboard`)
 - `update_project` — update next_step or description
 
 Changes made via these tools appear immediately in the Metis dashboard.

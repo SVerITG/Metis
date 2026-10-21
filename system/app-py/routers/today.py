@@ -6282,6 +6282,16 @@ async def today_system_health(request: Request):
     except Exception:
         pass
 
+    # Last readiness check (tools/metis-readiness.py, run daily by a scheduled task)
+    readiness = None
+    try:
+        rc = os.environ.get("METIS_RC_ROOT", "") or str(Path(__file__).resolve().parents[3])
+        import json as _json
+        d = _json.loads((Path(rc) / "system" / "config" / "readiness.json").read_text(encoding="utf-8"))
+        readiness = {"overall": d.get("overall", ""), "age": _age_label(d.get("run_at", ""))}
+    except Exception:
+        pass
+
     return templates.TemplateResponse(
         request,
         "partials/today_system_health.html",
@@ -6290,6 +6300,7 @@ async def today_system_health(request: Request):
             "last_scan_label": last_scan_label,
             "memory_count": memory_count,
             "api_status": api_status,
+            "readiness": readiness,
         },
     )
 

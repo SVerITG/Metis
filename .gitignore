@@ -208,6 +208,7 @@ system/config/thinking-profile.yaml
 system/config/metis-persona.md
 system/config/eval-report.md
 system/config/eval-results.json
+system/config/readiness.json
 system/config/implementation-plan.md
 system/config/feature-backlog.md
 system/config/install-state.json

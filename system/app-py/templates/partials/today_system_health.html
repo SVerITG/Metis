@@ -1,5 +1,6 @@
 {# today_system_health.html — Compact system status footer.
-   Context: job_count (int), last_scan_label (str), memory_count (int), api_status (str). #}
+   Context: job_count (int), last_scan_label (str), memory_count (int), api_status (str),
+   readiness ({overall, age} | None — last tools/metis-readiness.py run). #}
 <div id="today-system-health" style="text-align:center;padding:var(--m-space-5) 0 var(--m-space-2);">
   <span class="u-label u-label--wide">
     METIS
@@ -7,5 +8,6 @@
     {% if last_scan_label %}&middot; last scan {{ last_scan_label }}{% endif %}
     &middot; {{ memory_count }} memories
     &middot; API: {{ api_status }}
+    {% if readiness %}&middot; <a href="/tab/metis" style="color:{{ 'var(--m-ok)' if readiness.overall == 'READY' else ('var(--m-warn)' if readiness.overall == 'READY WITH WARNINGS' else 'var(--m-alert)') }};">{{ readiness.overall | lower }}</a>{% if readiness.age == 'now' %} (just now){% elif readiness.age %} ({{ readiness.age }} ago){% endif %}{% endif %}
   </span>
 </div>

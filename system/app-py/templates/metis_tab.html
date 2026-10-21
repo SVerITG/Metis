@@ -312,6 +312,14 @@
         <div style="padding:var(--m-space-5);">{{ skeleton_block(rows=3) }}</div>
       </div>
 
+      {{ sec_label("Ready to work?", tail="DAILY READINESS CHECK") }}
+      <div id="metis-readiness-body"
+           hx-get="/api/partial/metis/readiness"
+           hx-trigger="revealed once"
+           hx-swap="innerHTML">
+        <div class="panel u-mb-5 panel--md">{{ skeleton_block(rows=1) }}</div>
+      </div>
+
       {{ sec_label("Startup self-check", tail="BOOT HEALTH") }}
       <div id="metis-startup-eval-body"
            hx-get="/api/partial/metis/startup-eval"

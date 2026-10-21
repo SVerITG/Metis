@@ -927,6 +927,46 @@ async def startup_eval_strip(request: Request):
     )
 
 
+@router.get("/api/partial/metis/readiness", response_class=HTMLResponse)
+async def readiness_panel(request: Request):
+    """The scheduled readiness check (tools/metis-readiness.py): can work start on
+    this computer — MCP server, dashboard, code, database, embedding model."""
+    from html import escape
+    base = Path(os.environ.get("METIS_RC_ROOT", "") or Path(__file__).resolve().parents[3])
+    fp = base / "system" / "config" / "readiness.json"
+    _muted = "font-family:var(--m-mono);font-size:11px;color:var(--m-muted);"
+    try:
+        d = json.loads(fp.read_text(encoding="utf-8"))
+    except Exception:
+        return HTMLResponse(
+            f'<div class="panel" style="padding:14px 18px;margin-bottom:24px;{_muted}">'
+            'No readiness check recorded yet. Run <code>bash tools/metis-readiness.sh</code>, '
+            'or schedule it daily with <code>bash tools/install-readiness-schedule.sh</code>.</div>')
+    overall = str(d.get("overall") or "UNKNOWN")
+    color = {"READY": "var(--m-ok)", "READY WITH WARNINGS": "var(--m-warn)"}.get(overall, "var(--m-alert)")
+    when = str(d.get("run_at") or "")[:16].replace("T", " ")
+    counts = d.get("counts") or {}
+    rows = "".join(
+        '<div style="padding:6px 0;border-top:1px solid var(--m-rule-soft);">'
+        f'<span style="color:{"var(--m-alert)" if c["status"] == "fail" else "var(--m-warn)"};">'
+        f'{"✗" if c["status"] == "fail" else "⚠"}</span> '
+        f'<strong>{escape(c["area"])} · {escape(c["name"])}</strong> '
+        f'<span style="color:var(--m-muted);">— {escape(c.get("detail", ""))[:220]}</span>'
+        + (f'<div style="{_muted}margin-left:18px;">fix: {escape(c["fix"])}</div>' if c.get("fix") else "")
+        + '</div>'
+        for c in sorted((c for c in d.get("checks", []) if c.get("status") != "pass"),
+                        key=lambda c: c["status"] != "fail")
+    )
+    return HTMLResponse(
+        '<div class="panel" style="padding:14px 18px;margin-bottom:24px;">'
+        '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+        f'<span style="color:{color};font-weight:600;">● {escape(overall)}</span>'
+        f'<span style="{_muted}">{escape(when)} · {counts.get("pass", 0)} pass · '
+        f'{counts.get("warn", 0)} warn · {counts.get("fail", 0)} fail</span></div>'
+        f'<div style="margin-top:8px;font-size:13px;">{rows}</div></div>'
+    )
+
+
 @router.get("/api/partial/metis/promise-trend", response_class=HTMLResponse)
 async def promise_trend(request: Request):
     """Drift heatmap (Keystone 3.8) — the promise-harness score over time, so
